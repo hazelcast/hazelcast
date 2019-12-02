@@ -36,12 +36,12 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Removes the specified map partition lost listener. Returns silently if there is no such listener added before.
  */
-@Generated("a0ba0e47aefd1509f958a9393f7be5e5")
+@Generated("ce9177bb66fdeb4aa899ca65060aac63")
 public final class MapRemovePartitionLostListenerCodec {
-    //hex: 0x011D00
-    public static final int REQUEST_MESSAGE_TYPE = 72960;
-    //hex: 0x011D01
-    public static final int RESPONSE_MESSAGE_TYPE = 72961;
+    //hex: 0x011C00
+    public static final int REQUEST_MESSAGE_TYPE = 72704;
+    //hex: 0x011C01
+    public static final int RESPONSE_MESSAGE_TYPE = 72705;
     private static final int REQUEST_REGISTRATION_ID_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_REGISTRATION_ID_FIELD_OFFSET + UUID_SIZE_IN_BYTES;
     private static final int RESPONSE_RESPONSE_FIELD_OFFSET = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
@@ -67,7 +67,6 @@ public final class MapRemovePartitionLostListenerCodec {
     public static ClientMessage encodeRequest(java.lang.String name, java.util.UUID registrationId) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(true);
-        clientMessage.setAcquiresResource(false);
         clientMessage.setOperationName("Map.RemovePartitionLostListener");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);

@@ -36,12 +36,12 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Fetches invalidation metadata from partitions of map.
  */
-@Generated("004122c3400285dcce1a1d03e5fe4b41")
+@Generated("22a98850a36c1be48967dc64d808e347")
 public final class MapFetchNearCacheInvalidationMetadataCodec {
-    //hex: 0x013F00
-    public static final int REQUEST_MESSAGE_TYPE = 81664;
-    //hex: 0x013F01
-    public static final int RESPONSE_MESSAGE_TYPE = 81665;
+    //hex: 0x013E00
+    public static final int REQUEST_MESSAGE_TYPE = 81408;
+    //hex: 0x013E01
+    public static final int RESPONSE_MESSAGE_TYPE = 81409;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
 
@@ -65,7 +65,6 @@ public final class MapFetchNearCacheInvalidationMetadataCodec {
     public static ClientMessage encodeRequest(java.util.Collection<java.lang.String> names, com.hazelcast.cluster.Address address) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
-        clientMessage.setAcquiresResource(false);
         clientMessage.setOperationName("Map.FetchNearCacheInvalidationMetadata");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);

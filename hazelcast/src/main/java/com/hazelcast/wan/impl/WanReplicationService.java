@@ -16,12 +16,14 @@
 
 package com.hazelcast.wan.impl;
 
+import com.hazelcast.config.AbstractWanPublisherConfig;
 import com.hazelcast.config.InvalidConfigurationException;
+import com.hazelcast.config.WanBatchReplicationPublisherConfig;
 import com.hazelcast.config.WanReplicationConfig;
-import com.hazelcast.internal.services.CoreService;
-import com.hazelcast.internal.services.StatisticsAwareService;
 import com.hazelcast.internal.monitor.LocalWanStats;
 import com.hazelcast.internal.monitor.WanSyncState;
+import com.hazelcast.internal.services.CoreService;
+import com.hazelcast.internal.services.StatisticsAwareService;
 import com.hazelcast.version.Version;
 import com.hazelcast.wan.DistributedServiceWanEventCounters;
 import com.hazelcast.wan.WanReplicationPublisher;
@@ -44,6 +46,41 @@ public interface WanReplicationService extends CoreService, StatisticsAwareServi
     String SERVICE_NAME = "hz:core:wanReplicationService";
 
     /**
+     * Returns a WAN replication configured under a WAN replication config with
+     * the name {@code wanReplicationName} and with a WAN publisher ID of
+     * {@code wanPublisherId} or throws a {@link InvalidConfigurationException}
+     * if there is no configuration for the given parameters.
+     *
+     * @param wanReplicationName the name of the {@link WanReplicationConfig}
+     * @param wanPublisherId     WAN replication publisher ID
+     * @return the WAN publisher
+     * @throws InvalidConfigurationException if there is no replication config
+     *                                       with the name {@code wanReplicationName}
+     *                                       and publisher ID {@code wanPublisherId}
+     * @see WanReplicationConfig#getName
+     * @see WanBatchReplicationPublisherConfig#getClusterName()
+     * @see AbstractWanPublisherConfig#getPublisherId()
+     */
+    WanReplicationPublisher getPublisherOrFail(String wanReplicationName,
+                                               String wanPublisherId);
+
+    /**
+     * Appends the provided {@link WanReplicationConfig} to the configuration of
+     * this member. If there is no WAN replication config with the same name/scheme,
+     * the provided config will be used. If there is an existing WAN replication
+     * config with the same name, any publishers with publisher IDs that are
+     * present in the provided {@code newConfig} but not present in the existing
+     * config will be added (appended).
+     * If the existing config contains all of the publishers from the provided
+     * config, no change is done to the existing config.
+     * This method is thread-safe and may be called concurrently.
+     *
+     * @param newConfig the WAN configuration to add
+     * @see AbstractWanPublisherConfig#getPublisherId()
+     */
+    void appendWanReplicationConfig(WanReplicationConfig newConfig);
+
+    /**
      * Creates a new {@link com.hazelcast.wan.WanReplicationPublisher} by the given name. If
      * the name already exists, returns the previous instance.
      *
@@ -60,6 +97,7 @@ public interface WanReplicationService extends CoreService, StatisticsAwareServi
     /**
      * Pauses WAN replication for the given {@code wanReplicationName} and
      * {@code wanPublisherId} on this hazelcast instance.
+     * Silently skips publishers not supporting pausing.
      *
      * @param wanReplicationName name of WAN replication configuration
      * @param wanPublisherId     ID of the WAN replication publisher
@@ -70,6 +108,7 @@ public interface WanReplicationService extends CoreService, StatisticsAwareServi
     /**
      * Stops WAN replication for the given {@code wanReplicationName} and
      * {@code wanPublisherId} on this hazelcast instance.
+     * Silently skips publishers not supporting stopping.
      *
      * @param wanReplicationName name of WAN replication configuration
      * @param wanPublisherId     ID of the WAN replication publisher
@@ -80,6 +119,7 @@ public interface WanReplicationService extends CoreService, StatisticsAwareServi
     /**
      * Resumes WAN replication for the given {@code wanReplicationName} and
      * {@code wanPublisherId} on this hazelcast instance.
+     * Silently skips publishers not supporting resuming.
      *
      * @param wanReplicationName name of WAN replication configuration
      * @param wanPublisherId     ID of the WAN replication publisher

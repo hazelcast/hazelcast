@@ -16,14 +16,17 @@
 
 package com.hazelcast.internal.management;
 
+import com.hazelcast.client.Client;
+import com.hazelcast.client.impl.ClientEndpointImpl;
 import com.hazelcast.client.impl.ClientEngine;
 import com.hazelcast.client.impl.ClientImpl;
 import com.hazelcast.client.impl.ClientSelectors;
-import com.hazelcast.client.Client;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.internal.management.dto.ClientBwListDTO;
 import com.hazelcast.internal.management.dto.ClientBwListEntryDTO;
+import com.hazelcast.internal.nio.Connection;
+import com.hazelcast.internal.nio.ConnectionType;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -44,19 +47,23 @@ import java.util.Set;
 
 import static com.hazelcast.internal.management.dto.ClientBwListDTO.Mode;
 import static com.hazelcast.internal.management.dto.ClientBwListEntryDTO.Type;
+import static java.util.Collections.singletonList;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class ClientBwListConfigHandlerTest extends HazelcastTestSupport {
 
+    private HazelcastInstance instance;
     private ClientEngine clientEngine;
     private ClientBwListConfigHandler handler;
 
     @Before
     public void setUp() {
-        HazelcastInstance instance = createHazelcastInstance();
+        instance = createHazelcastInstance();
         clientEngine = getNode(instance).getClientEngine();
         handler = new ClientBwListConfigHandler(clientEngine);
     }
@@ -81,7 +88,7 @@ public class ClientBwListConfigHandlerTest extends HazelcastTestSupport {
                 new ClientBwListEntryDTO(Type.IP_ADDRESS, "fe80:0:0:0:45c5:47ee:fe15:493a"),
                 new ClientBwListEntryDTO(Type.INSTANCE_NAME, "client*"),
                 new ClientBwListEntryDTO(Type.LABEL, "label*"));
-        handler.handleConfig(configJson);
+        handler.handleNewConfig(configJson);
 
         Client[] allowed = {
                 createClient("127.0.0.3", "a_name"),
@@ -113,7 +120,7 @@ public class ClientBwListConfigHandlerTest extends HazelcastTestSupport {
                 new ClientBwListEntryDTO(Type.IP_ADDRESS, "fe80:0:0:0:45c5:47ee:fe15:*"),
                 new ClientBwListEntryDTO(Type.INSTANCE_NAME, "*_client"),
                 new ClientBwListEntryDTO(Type.LABEL, "test*label"));
-        handler.handleConfig(configJson);
+        handler.handleNewConfig(configJson);
 
         Client[] allowed = {
                 createClient("192.168.0.101", "a_name", "random"),
@@ -140,7 +147,7 @@ public class ClientBwListConfigHandlerTest extends HazelcastTestSupport {
     @Test
     public void testHandleEmptyWhitelist() {
         JsonObject configJson = createConfig(Mode.WHITELIST);
-        handler.handleConfig(configJson);
+        handler.handleNewConfig(configJson);
 
         Client client = createClient("127.0.0.1", "a_name");
         assertFalse(clientEngine.isClientAllowed(client));
@@ -151,7 +158,7 @@ public class ClientBwListConfigHandlerTest extends HazelcastTestSupport {
         clientEngine.applySelector(ClientSelectors.none());
 
         JsonObject configJson = createConfig(Mode.BLACKLIST);
-        handler.handleConfig(configJson);
+        handler.handleNewConfig(configJson);
 
         Client client = createClient("127.0.0.1", "a_name");
         assertTrue(clientEngine.isClientAllowed(client));
@@ -162,7 +169,7 @@ public class ClientBwListConfigHandlerTest extends HazelcastTestSupport {
         clientEngine.applySelector(ClientSelectors.none());
 
         JsonObject configJson = createConfig(Mode.DISABLED);
-        handler.handleConfig(configJson);
+        handler.handleNewConfig(configJson);
 
         Client client = createClient("127.0.0.1", randomString());
         assertTrue(clientEngine.isClientAllowed(client));
@@ -173,7 +180,7 @@ public class ClientBwListConfigHandlerTest extends HazelcastTestSupport {
         clientEngine.applySelector(ClientSelectors.none());
 
         JsonObject configJson = new JsonObject();
-        handler.handleConfig(configJson);
+        handler.handleNewConfig(configJson);
 
         Client client = createClient("127.0.0.1", randomString());
         assertFalse(clientEngine.isClientAllowed(client));
@@ -185,7 +192,7 @@ public class ClientBwListConfigHandlerTest extends HazelcastTestSupport {
 
         JsonObject configJson = createConfig(Mode.DISABLED);
         configJson.get("clientBwList").asObject().set("mode", "invalid_mode");
-        handler.handleConfig(configJson);
+        handler.handleNewConfig(configJson);
 
         Client client = createClient("127.0.0.1", randomString());
         assertFalse(clientEngine.isClientAllowed(client));
@@ -201,7 +208,7 @@ public class ClientBwListConfigHandlerTest extends HazelcastTestSupport {
         configJson.get("clientBwList").asObject()
                 .get("entries").asArray()
                 .get(0).asObject().set("type", "invalid_type");
-        handler.handleConfig(configJson);
+        handler.handleNewConfig(configJson);
 
         Client client1 = createClient("192.168.0.1", randomString());
         assertFalse(clientEngine.isClientAllowed(client1));
@@ -210,8 +217,33 @@ public class ClientBwListConfigHandlerTest extends HazelcastTestSupport {
         assertFalse(clientEngine.isClientAllowed(client2));
     }
 
+    @Test
+    public void testApplyConfig() {
+        clientEngine.applySelector(ClientSelectors.none());
+
+        ClientBwListDTO config = new ClientBwListDTO(
+                Mode.WHITELIST,
+                singletonList(new ClientBwListEntryDTO(Type.IP_ADDRESS, "127.0.0.*"))
+        );
+        handler.applyConfig(config);
+
+        Client client = createClient("127.0.0.42", randomString());
+        assertTrue(clientEngine.isClientAllowed(client));
+    }
+
+    @Test
+    public void testHandleEmptyWhitelist_doesNotDisconnectMCClient() {
+        JsonObject configJson = createConfig(Mode.WHITELIST);
+        handler.handleNewConfig(configJson);
+
+        Connection mockConnection = mock(Connection.class);
+        when(mockConnection.getConnectionType()).thenReturn(ConnectionType.MC_JAVA_CLIENT);
+        ClientEndpointImpl mcClient = new ClientEndpointImpl(clientEngine, getNodeEngineImpl(instance), mockConnection);
+        assertTrue(clientEngine.isClientAllowed(mcClient));
+    }
+
     private JsonObject createConfig(Mode mode, ClientBwListEntryDTO... entries) {
-        List<ClientBwListEntryDTO> entriesList = new ArrayList<ClientBwListEntryDTO>();
+        List<ClientBwListEntryDTO> entriesList = new ArrayList<>();
         if (entries != null) {
             entriesList.addAll(Arrays.asList(entries));
         }
@@ -222,14 +254,11 @@ public class ClientBwListConfigHandlerTest extends HazelcastTestSupport {
     }
 
     private Client createClient(String ip, String name, String... labels) {
-        Set<String> labelsSet = new HashSet<String>();
+        Set<String> labelsSet = new HashSet<>();
         if (labels != null && labels.length > 0) {
-            for (String label : labels) {
-                labelsSet.add(label);
-            }
+            labelsSet.addAll(Arrays.asList(labels));
         }
-        Client client = new ClientImpl(null, createInetSocketAddress(ip), name, labelsSet);
-        return client;
+        return new ClientImpl(null, createInetSocketAddress(ip), name, labelsSet);
     }
 
     private InetSocketAddress createInetSocketAddress(String name) {

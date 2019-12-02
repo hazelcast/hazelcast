@@ -18,8 +18,6 @@ package com.hazelcast.client.cache.impl.nearcache.invalidation;
 
 import com.hazelcast.cache.impl.CacheEventHandler;
 import com.hazelcast.cache.impl.CacheService;
-import com.hazelcast.cache.impl.HazelcastServerCachingProvider;
-import com.hazelcast.client.cache.impl.HazelcastClientCachingProvider;
 import com.hazelcast.client.cache.impl.NearCachedClientCacheProxy;
 import com.hazelcast.client.cache.impl.nearcache.ClientNearCacheTestSupport;
 import com.hazelcast.client.config.ClientConfig;
@@ -58,16 +56,18 @@ import java.util.Collection;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import static com.hazelcast.config.EvictionConfig.MaxSizePolicy.ENTRY_COUNT;
+import static com.hazelcast.cache.CacheTestSupport.createClientCachingProvider;
+import static com.hazelcast.cache.CacheTestSupport.createServerCachingProvider;
+import static com.hazelcast.config.MaxSizePolicy.ENTRY_COUNT;
 import static com.hazelcast.config.InMemoryFormat.BINARY;
 import static com.hazelcast.config.NearCacheConfig.LocalUpdatePolicy.INVALIDATE;
 import static com.hazelcast.internal.nearcache.impl.invalidation.InvalidationUtils.NO_SEQUENCE;
 import static com.hazelcast.internal.nearcache.impl.invalidation.RepairingTask.MAX_TOLERATED_MISS_COUNT;
 import static com.hazelcast.internal.nearcache.impl.invalidation.RepairingTask.RECONCILIATION_INTERVAL_SECONDS;
-import static com.hazelcast.spi.properties.GroupProperty.CACHE_INVALIDATION_MESSAGE_BATCH_ENABLED;
-import static com.hazelcast.spi.properties.GroupProperty.CACHE_INVALIDATION_MESSAGE_BATCH_SIZE;
-import static com.hazelcast.spi.properties.GroupProperty.PARTITION_COUNT;
 import static com.hazelcast.internal.util.RandomPicker.getInt;
+import static com.hazelcast.spi.properties.ClusterProperty.CACHE_INVALIDATION_MESSAGE_BATCH_ENABLED;
+import static com.hazelcast.spi.properties.ClusterProperty.CACHE_INVALIDATION_MESSAGE_BATCH_SIZE;
+import static com.hazelcast.spi.properties.ClusterProperty.PARTITION_COUNT;
 import static java.lang.String.format;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
@@ -104,7 +104,7 @@ public class ClientCacheInvalidationMemberAddRemoveTest extends ClientNearCacheT
         final Config config = createConfig();
         secondNode = hazelcastFactory.newHazelcastInstance(config);
 
-        CachingProvider provider = HazelcastServerCachingProvider.createCachingProvider(serverInstance);
+        CachingProvider provider = createServerCachingProvider(serverInstance);
         final CacheManager serverCacheManager = provider.getCacheManager();
 
         // populated from member
@@ -116,7 +116,7 @@ public class ClientCacheInvalidationMemberAddRemoveTest extends ClientNearCacheT
         ClientConfig clientConfig = createClientConfig()
                 .addNearCacheConfig(createNearCacheConfig(BINARY));
         HazelcastClientProxy client = (HazelcastClientProxy) hazelcastFactory.newHazelcastClient(clientConfig);
-        CachingProvider clientCachingProvider = HazelcastClientCachingProvider.createCachingProvider(client);
+        CachingProvider clientCachingProvider = createClientCachingProvider(client);
 
         final Cache<Integer, Integer> clientCache = clientCachingProvider.getCacheManager().createCache(
                 DEFAULT_CACHE_NAME, createCacheConfig(BINARY));
@@ -266,7 +266,7 @@ public class ClientCacheInvalidationMemberAddRemoveTest extends ClientNearCacheT
     @SuppressWarnings("unchecked")
     protected CacheConfig<Integer, Integer> createCacheConfig(InMemoryFormat inMemoryFormat) {
         EvictionConfig evictionConfig = new EvictionConfig()
-                .setMaximumSizePolicy(ENTRY_COUNT)
+                .setMaxSizePolicy(ENTRY_COUNT)
                 .setSize(Integer.MAX_VALUE);
 
         return (CacheConfig<Integer, Integer>) super.createCacheConfig(inMemoryFormat)
@@ -276,7 +276,7 @@ public class ClientCacheInvalidationMemberAddRemoveTest extends ClientNearCacheT
     @Override
     protected NearCacheConfig createNearCacheConfig(InMemoryFormat inMemoryFormat) {
         EvictionConfig evictionConfig = new EvictionConfig()
-                .setMaximumSizePolicy(ENTRY_COUNT)
+                .setMaxSizePolicy(ENTRY_COUNT)
                 .setSize(Integer.MAX_VALUE);
 
         return super.createNearCacheConfig(inMemoryFormat)

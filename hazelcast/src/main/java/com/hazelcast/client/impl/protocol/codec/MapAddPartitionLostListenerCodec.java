@@ -42,12 +42,12 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * IMPORTANT: Listeners registered from HazelcastClient may miss some of the map partition lost events due
  * to design limitations.
  */
-@Generated("628bd92b01b2be4513bea0d82fbe057c")
+@Generated("ecea72b1986763f8cdb4b18c73772eae")
 public final class MapAddPartitionLostListenerCodec {
-    //hex: 0x011C00
-    public static final int REQUEST_MESSAGE_TYPE = 72704;
-    //hex: 0x011C01
-    public static final int RESPONSE_MESSAGE_TYPE = 72705;
+    //hex: 0x011B00
+    public static final int REQUEST_MESSAGE_TYPE = 72448;
+    //hex: 0x011B01
+    public static final int RESPONSE_MESSAGE_TYPE = 72449;
     private static final int REQUEST_LOCAL_ONLY_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_LOCAL_ONLY_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
     private static final int RESPONSE_RESPONSE_FIELD_OFFSET = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
@@ -55,8 +55,8 @@ public final class MapAddPartitionLostListenerCodec {
     private static final int EVENT_MAP_PARTITION_LOST_PARTITION_ID_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int EVENT_MAP_PARTITION_LOST_UUID_FIELD_OFFSET = EVENT_MAP_PARTITION_LOST_PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int EVENT_MAP_PARTITION_LOST_INITIAL_FRAME_SIZE = EVENT_MAP_PARTITION_LOST_UUID_FIELD_OFFSET + UUID_SIZE_IN_BYTES;
-    //hex: 0x011C02
-    private static final int EVENT_MAP_PARTITION_LOST_MESSAGE_TYPE = 72706;
+    //hex: 0x011B02
+    private static final int EVENT_MAP_PARTITION_LOST_MESSAGE_TYPE = 72450;
 
     private MapAddPartitionLostListenerCodec() {
     }
@@ -78,7 +78,6 @@ public final class MapAddPartitionLostListenerCodec {
     public static ClientMessage encodeRequest(java.lang.String name, boolean localOnly) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
-        clientMessage.setAcquiresResource(false);
         clientMessage.setOperationName("Map.AddPartitionLostListener");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);

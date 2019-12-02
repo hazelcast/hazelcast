@@ -17,6 +17,7 @@
 package com.hazelcast.map.impl.proxy;
 
 import com.hazelcast.aggregation.Aggregator;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.config.EntryListenerConfig;
 import com.hazelcast.config.IndexConfig;
 import com.hazelcast.config.ListenerConfig;
@@ -32,7 +33,10 @@ import com.hazelcast.core.ReadOnly;
 import com.hazelcast.executor.impl.ExecutionCallbackAdapter;
 import com.hazelcast.internal.locksupport.LockProxySupport;
 import com.hazelcast.internal.locksupport.LockSupportServiceImpl;
+import com.hazelcast.internal.monitor.impl.LocalMapStatsImpl;
 import com.hazelcast.internal.nio.ClassLoaderUtil;
+import com.hazelcast.internal.partition.IPartition;
+import com.hazelcast.internal.partition.IPartitionService;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.util.ExceptionUtil;
 import com.hazelcast.internal.util.IterableUtil;
@@ -41,6 +45,7 @@ import com.hazelcast.internal.util.MutableLong;
 import com.hazelcast.internal.util.collection.PartitionIdSet;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.IMap;
+import com.hazelcast.map.LocalMapStats;
 import com.hazelcast.map.MapInterceptor;
 import com.hazelcast.map.impl.EntryEventFilter;
 import com.hazelcast.map.impl.MapEntries;
@@ -68,9 +73,6 @@ import com.hazelcast.map.impl.querycache.subscriber.SubscriberContext;
 import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.map.listener.MapListener;
 import com.hazelcast.map.listener.MapPartitionLostListener;
-import com.hazelcast.map.LocalMapStats;
-import com.hazelcast.internal.monitor.impl.LocalMapStatsImpl;
-import com.hazelcast.cluster.Address;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.partition.PartitioningStrategy;
 import com.hazelcast.projection.Projection;
@@ -87,8 +89,6 @@ import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationFactory;
 import com.hazelcast.spi.impl.operationservice.OperationService;
 import com.hazelcast.spi.impl.operationservice.impl.InvocationFuture;
-import com.hazelcast.internal.partition.IPartition;
-import com.hazelcast.internal.partition.IPartitionService;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.spi.properties.HazelcastProperty;
 
@@ -304,10 +304,6 @@ abstract class MapProxySupport<K, V>
     private <T extends EventListener> T getListenerImplOrNull(ListenerConfig listenerConfig) {
         EventListener implementation = listenerConfig.getImplementation();
         if (implementation != null) {
-            // for this instanceOf check please see EntryListenerConfig#toEntryListener
-            if (implementation instanceof EntryListenerConfig.MapListenerToEntryListenerAdapter) {
-                return (T) ((EntryListenerConfig.MapListenerToEntryListenerAdapter) implementation).getMapListener();
-            }
             return (T) implementation;
         }
 
@@ -1172,9 +1168,9 @@ abstract class MapProxySupport<K, V>
     }
 
     protected UUID addEntryListenerInternal(Object listener,
-                                              Predicate predicate,
-                                              @Nullable Data key,
-                                              boolean includeValue) {
+                                            Predicate predicate,
+                                            @Nullable Data key,
+                                            boolean includeValue) {
         EventFilter eventFilter = new QueryEventFilter(includeValue, key, predicate);
         return mapServiceContext.addEventListener(listener, eventFilter, name);
     }
@@ -1242,29 +1238,29 @@ abstract class MapProxySupport<K, V>
 
         final InternalCompletableFuture resultFuture = new InternalCompletableFuture();
         operationService.invokeOnPartitionsAsync(SERVICE_NAME, operationFactory, partitionsForKeys)
-                        .whenCompleteAsync((response, throwable) -> {
-                            if (throwable == null) {
-                                Map<K, Object> result = null;
-                                try {
-                                    result = createHashMap(response.size());
-                                    for (Object object : response.values()) {
-                                        MapEntries mapEntries = (MapEntries) object;
-                                        mapEntries.putAllToMap(serializationService, result);
-                                    }
-                                } catch (Throwable e) {
-                                    resultFuture.completeExceptionally(e);
-                                }
-                                resultFuture.complete(result);
-                            } else {
-                                resultFuture.completeExceptionally(throwable);
+                .whenCompleteAsync((response, throwable) -> {
+                    if (throwable == null) {
+                        Map<K, Object> result = null;
+                        try {
+                            result = createHashMap(response.size());
+                            for (Object object : response.values()) {
+                                MapEntries mapEntries = (MapEntries) object;
+                                mapEntries.putAllToMap(serializationService, result);
                             }
-                        });
+                        } catch (Throwable e) {
+                            resultFuture.completeExceptionally(e);
+                        }
+                        resultFuture.complete(result);
+                    } else {
+                        resultFuture.completeExceptionally(throwable);
+                    }
+                });
         return resultFuture;
     }
 
     public <R> InternalCompletableFuture<R> executeOnKeyInternal(Object key,
-                                                        EntryProcessor<K, V, R> entryProcessor,
-                                                        ExecutionCallback<? super R> callback) {
+                                                                 EntryProcessor<K, V, R> entryProcessor,
+                                                                 ExecutionCallback<? super R> callback) {
         Data keyData = toDataWithStrategy(key);
         int partitionId = partitionService.getPartitionId(key);
         MapOperation operation = operationProvider.createEntryOperation(name, keyData, entryProcessor);
@@ -1340,7 +1336,7 @@ abstract class MapProxySupport<K, V>
             AddIndexOperation addIndexOperation = new AddIndexOperation(name, indexConfig0);
 
             operationService.invokeOnAllPartitions(SERVICE_NAME,
-                new BinaryOperationFactory(addIndexOperation, getNodeEngine()));
+                    new BinaryOperationFactory(addIndexOperation, getNodeEngine()));
         } catch (Throwable t) {
             throw rethrow(t);
         }

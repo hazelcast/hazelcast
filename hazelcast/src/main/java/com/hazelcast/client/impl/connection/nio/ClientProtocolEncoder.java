@@ -23,7 +23,7 @@ import java.nio.ByteBuffer;
 
 import static com.hazelcast.internal.networking.HandlerStatus.CLEAN;
 import static com.hazelcast.internal.networking.HandlerStatus.DIRTY;
-import static com.hazelcast.internal.nio.Protocols.CLIENT_BINARY_NEW;
+import static com.hazelcast.internal.nio.Protocols.CLIENT_BINARY;
 import static com.hazelcast.internal.nio.Protocols.PROTOCOL_LENGTH;
 import static com.hazelcast.internal.util.StringUtil.stringToBytes;
 
@@ -40,7 +40,7 @@ public class ClientProtocolEncoder extends OutboundHandler<ByteBuffer, ByteBuffe
 
     @Override
     public void handlerAdded() {
-        initDstBuffer(PROTOCOL_LENGTH, stringToBytes(CLIENT_BINARY_NEW));
+        initDstBuffer(PROTOCOL_LENGTH, stringToBytes(CLIENT_BINARY));
     }
 
     @Override

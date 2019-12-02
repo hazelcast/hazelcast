@@ -49,8 +49,6 @@ public class AuthenticationMessageTask extends AuthenticationBaseMessageTask<Cli
         clientVersion = parameters.clientHazelcastVersion;
         clientName = parameters.clientName;
         labels = Collections.unmodifiableSet(new HashSet<>(parameters.labels));
-        partitionCount = parameters.partitionCount;
-        clusterId = parameters.clusterId;
         return parameters;
     }
 

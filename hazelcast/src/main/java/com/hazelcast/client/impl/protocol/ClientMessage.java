@@ -19,7 +19,6 @@ package com.hazelcast.client.impl.protocol;
 import com.hazelcast.internal.networking.OutboundFrame;
 import com.hazelcast.internal.nio.Bits;
 import com.hazelcast.internal.nio.Connection;
-import com.hazelcast.internal.serialization.BinaryInterface;
 
 import java.util.Arrays;
 import java.util.Objects;
@@ -97,7 +96,6 @@ import java.util.Objects;
  * ;UUID                    = int64 int64
  */
 @SuppressWarnings("checkstyle:MagicNumber")
-@BinaryInterface
 public final class ClientMessage implements OutboundFrame {
 
     // All offsets here are offset of frame.content byte[]
@@ -143,12 +141,16 @@ public final class ClientMessage implements OutboundFrame {
 
     }
 
+    //Constructs client message with single frame. StartFrame.next must be null.
     private ClientMessage(Frame startFrame) {
+        assert startFrame.next == null;
         this.startFrame = startFrame;
         endFrame = startFrame;
-        while (endFrame.next != null) {
-            endFrame = endFrame.next;
-        }
+    }
+
+    public ClientMessage(Frame startFrame, Frame endFrame) {
+        this.startFrame = startFrame;
+        this.endFrame = endFrame;
     }
 
     public static ClientMessage createForEncode() {
@@ -283,10 +285,8 @@ public final class ClientMessage implements OutboundFrame {
     public void merge(ClientMessage fragment) {
         // ignore the first frame of the fragment since first frame marks the fragment
         Frame fragmentMessageStartFrame = fragment.startFrame.next;
-        this.endFrame.next = fragmentMessageStartFrame;
-        while (endFrame.next != null) {
-            endFrame = endFrame.next;
-        }
+        endFrame.next = fragmentMessageStartFrame;
+        endFrame = fragment.endFrame;
     }
 
     @Override
@@ -316,7 +316,7 @@ public final class ClientMessage implements OutboundFrame {
     public ClientMessage copyWithNewCorrelationId(long correlationId) {
 
         Frame initialFrameCopy = startFrame.deepCopy();
-        ClientMessage newMessage = new ClientMessage(initialFrameCopy);
+        ClientMessage newMessage = new ClientMessage(initialFrameCopy, endFrame);
 
         newMessage.setCorrelationId(correlationId);
 

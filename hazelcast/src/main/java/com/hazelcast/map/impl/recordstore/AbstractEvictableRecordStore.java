@@ -30,12 +30,15 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.eventservice.EventService;
 import com.hazelcast.spi.merge.SplitBrainMergeTypes.MapMergeTypes;
-import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.spi.properties.HazelcastProperties;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Queue;
 import java.util.concurrent.TimeUnit;
@@ -55,6 +58,7 @@ import static com.hazelcast.map.impl.record.Record.UNSET;
  * Contains eviction specific functionality.
  */
 public abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
+
     protected final long expiryDelayMillis;
     protected final Address thisAddress;
     protected final EventService eventService;
@@ -65,7 +69,7 @@ public abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
      * Iterates over a pre-set entry count/percentage in one round.
      * Used in expiration logic for traversing entries. Initializes lazily.
      */
-    protected Iterator<Record> expirationIterator;
+    protected Iterator<Map.Entry<Data, Record>> expirationIterator;
 
     protected volatile boolean hasEntryWithCustomExpiration;
 
@@ -73,7 +77,7 @@ public abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
         super(mapContainer, partitionId);
         NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
         HazelcastProperties hazelcastProperties = nodeEngine.getProperties();
-        expiryDelayMillis = hazelcastProperties.getMillis(GroupProperty.MAP_EXPIRY_DELAY_SECONDS);
+        expiryDelayMillis = hazelcastProperties.getMillis(ClusterProperty.MAP_EXPIRY_DELAY_SECONDS);
         eventService = nodeEngine.getEventService();
         mapEventPublisher = mapServiceContext.getMapEventPublisher();
         thisAddress = nodeEngine.getThisAddress();
@@ -109,7 +113,7 @@ public abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
             }
         }
 
-        accumulateOrSendExpiredKey(null);
+        accumulateOrSendExpiredKey(null, null);
     }
 
     @Override
@@ -139,21 +143,25 @@ public abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
         int checkedEntryCount = 0;
         initExpirationIterator();
 
-        LinkedList<Record> records = new LinkedList<>();
+        List keyValuePairs = new ArrayList<>();
         while (expirationIterator.hasNext()) {
             if (checkedEntryCount >= maxIterationCount) {
                 break;
             }
+            Map.Entry<Data, Record> entry = expirationIterator.next();
             checkedEntryCount++;
-            records.add(expirationIterator.next());
+
+            keyValuePairs.add(entry.getKey());
+            keyValuePairs.add(entry.getValue());
         }
 
-        while (!records.isEmpty()) {
-            if (getOrNullIfExpired(records.poll(), now, backup) == null) {
+        for (int i = 0; i < keyValuePairs.size(); i += 2) {
+            Data key = (Data) keyValuePairs.get(i);
+            Record record = (Record) keyValuePairs.get(i + 1);
+            if (getOrNullIfExpired(key, record, now, backup) == null) {
                 evictedEntryCount++;
             }
         }
-
         return evictedEntryCount;
     }
 
@@ -175,7 +183,7 @@ public abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
         Queue<Data> keysToRemove = new LinkedList<>();
         Iterable<EntryView> sample = storage.getRandomSamples(entryCountToRemove);
         for (EntryView entryView : sample) {
-            Data dataKey = storage.extractRecordFromLazy(entryView).getKey();
+            Data dataKey = storage.extractDataKeyFromLazy(entryView);
             keysToRemove.add(dataKey);
         }
 
@@ -219,14 +227,14 @@ public abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
 
 
     @Override
-    public Record getOrNullIfExpired(Record record, long now, boolean backup) {
+    public Record getOrNullIfExpired(Data key, Record record,
+                                     long now, boolean backup) {
         if (!isRecordStoreExpirable()) {
             return record;
         }
         if (record == null) {
             return null;
         }
-        Data key = record.getKey();
         if (isLocked(key)) {
             return record;
         }
@@ -235,7 +243,7 @@ public abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
         }
         evict(key, backup);
         if (!backup) {
-            doPostEvictionOperations(record);
+            doPostEvictionOperations(key, record);
         }
         return null;
     }
@@ -295,10 +303,7 @@ public abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
     }
 
     @Override
-    public void doPostEvictionOperations(Record record) {
-        boolean hasEventRegistration = eventService.hasEventRegistration(SERVICE_NAME, name);
-
-        Data key = record.getKey();
+    public void doPostEvictionOperations(Data dataKey, Record record) {
         Object value = record.getValue();
 
         long now = getNow();
@@ -306,14 +311,14 @@ public abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
         boolean ttlExpired = isTTLExpired(record, now, false);
         boolean expired = idleExpired || ttlExpired;
 
-        if (hasEventRegistration) {
+        if (eventService.hasEventRegistration(SERVICE_NAME, name)) {
             mapEventPublisher.publishEvent(thisAddress, name,
-                    expired ? EXPIRED : EVICTED, key, value, null);
+                    expired ? EXPIRED : EVICTED, dataKey, value, null);
         }
 
         if (!ttlExpired && idleExpired) {
             // only send expired key to backup if it is expired according to idleness.
-            accumulateOrSendExpiredKey(record);
+            accumulateOrSendExpiredKey(dataKey, record);
         }
     }
 
@@ -322,13 +327,13 @@ public abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
         return expiredKeys;
     }
 
-    private void accumulateOrSendExpiredKey(Record record) {
+    private void accumulateOrSendExpiredKey(Data dataKey, Record record) {
         if (mapContainer.getTotalBackupCount() == 0) {
             return;
         }
 
         if (record != null) {
-            expiredKeys.offer(new ExpiredKey(toHeapData(record.getKey()), record.getCreationTime()));
+            expiredKeys.offer(new ExpiredKey(toHeapData(dataKey), record.getCreationTime()));
         }
 
         clearExpiredRecordsTask.tryToSendBackupExpiryOp(this, true);
@@ -371,24 +376,25 @@ public abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
     /**
      * Read only iterator. Iterates by checking whether a record expired or not.
      */
-    protected final class ReadOnlyRecordIterator implements Iterator<Record> {
-
+    protected final class ReadOnlyRecordIterator implements Iterator<Map.Entry<Data, Record>> {
         private final long now;
         private final boolean checkExpiration;
         private final boolean backup;
-        private final Iterator<Record> iterator;
-        private Record nextRecord;
-        private Record lastReturned;
+        private final Iterator<Map.Entry<Data, Record>> iterator;
+        private Map.Entry<Data, Record> nextRecord;
+        private Map.Entry<Data, Record> lastReturned;
 
-        protected ReadOnlyRecordIterator(Collection<Record> values, long now, boolean backup) {
+        protected ReadOnlyRecordIterator(Collection<Map.Entry<Data, Record>> values,
+                                         long now, boolean backup) {
             this(values, now, true, backup);
         }
 
-        protected ReadOnlyRecordIterator(Collection<Record> values) {
+        protected ReadOnlyRecordIterator(Collection<Map.Entry<Data, Record>> values) {
             this(values, -1L, false, false);
         }
 
-        private ReadOnlyRecordIterator(Collection<Record> values, long now, boolean checkExpiration, boolean backup) {
+        private ReadOnlyRecordIterator(Collection<Map.Entry<Data, Record>> values,
+                                       long now, boolean checkExpiration, boolean backup) {
             this.iterator = values.iterator();
             this.now = now;
             this.checkExpiration = checkExpiration;
@@ -402,7 +408,7 @@ public abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
         }
 
         @Override
-        public Record next() {
+        public Map.Entry<Data, Record> next() {
             if (nextRecord == null) {
                 throw new NoSuchElementException();
             }
@@ -419,7 +425,7 @@ public abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
         private void advance() {
             long now = this.now;
             boolean checkExpiration = this.checkExpiration;
-            Iterator<Record> iterator = this.iterator;
+            Iterator<Map.Entry<Data, Record>> iterator = this.iterator;
 
             while (iterator.hasNext()) {
                 nextRecord = iterator.next();
@@ -428,7 +434,7 @@ public abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
                         return;
                     }
 
-                    if (!isExpired(nextRecord, now, backup)) {
+                    if (!isExpired(nextRecord.getValue(), now, backup)) {
                         return;
                     }
                 }

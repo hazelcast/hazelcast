@@ -34,163 +34,172 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  */
 
 /**
- * The statistics is a String that is composed of key=value pairs separated by ',' . The following characters
- * ('=' '.' ',' '\') should be escaped in IMap and ICache names by the escape character ('\'). E.g. if the map name is
- * MyMap.First, it will be escaped as: MyMap\.First
+ * The statistics is composed of three parameters.
  * 
- * The statistics key identify the category and name of the statistics. It is formatted as:
- * mainCategory.subCategory.statisticName
+ * The first paramteter is the timestamp taken when the statistics collected.
  * 
- * An e.g. Operating system committedVirtualMemorySize path would be: os.committedVirtualMemorySize
+ * The second parameter, the clientAttribute is a String that is composed of key=value pairs separated by ','. The
+ * following characters ('=' '.' ',' '\') should be escaped.
  * 
- * Please note that if any client implementation can not provide the value for a statistics, the corresponding key, valaue
+ * Please note that if any client implementation can not provide the value for a statistics, the corresponding key, value
  * pair will not be presented in the statistics string. Only the ones, that the client can provide will be added.
  * 
- * The statistics key names can be one of the following (Used IMap named <StatIMapName> and ICache Named
- * <StatICacheName> and assuming that the near cache is configured):
+ * The third parameter, metrics is a compressed byte array containing all metrics recorded by the client.
  * 
- * clientType: The string that represents the client type. See {@link com.hazelcast.core.ClientType}
+ * The metrics are composed of the following fields:
+ *   - string:                 prefix
+ *   - string:                 metric
+ *   - string:                 discriminator
+ *   - string:                 discriminatorValue
+ *   - enum:                   unit [BYTES,MS,PERCENT,COUNT,BOOLEAN,ENUM]
+ *   - set of enum:            excluded targets [MANAGEMENT_CENTER,JMX,DIAGNOSTICS]
+ *   - set of <string,string>: tags associated with the metric
  * 
- * clusterConnectionTimestamp: The time that the client connected to the cluster (milliseconds since epoch). It is reset on
- * each reconnection.
+ * The used compression algorithm is the same that is used inside the IMDG clients and members for storing the metrics blob
+ * in-memory. The algorithm uses a dictionary based delta compression further deflated by using ZLIB compression.
  * 
- * credentials.principal: The principal of the client if it exists. For
- * {@link com.hazelcast.security.UsernamePasswordCredentials}, this is the username, for custom authentication it is set by
- * the {@link com.hazelcast.security.Credentials} implementer.
+ * The byte array has the following layout:
  * 
- * clientAddress: The address of the client. It is formatted as "<IP>:<port>"
+ * +---------------------------------+--------------------+
+ * | Compressor version              |   2 bytes (short)  |
+ * +---------------------------------+--------------------+
+ * | Size of dictionary blob         |   4 bytes (int)    |
+ * +---------------------------------+--------------------+
+ * | ZLIB compressed dictionary blob |   variable size    |
+ * +---------------------------------+--------------------+
+ * | ZLIB compressed metrics blob    |   variable size    |
+ * +---------------------------------+--------------------+
  * 
- * clientName: The name of the client instance. See ClientConfig.setInstanceName.
+ * ==========
+ * THE HEADER
+ * ==========
  * 
- * enterprise: "true" if the client is an enterprise client, "false" otherwise.
+ * Compressor version:      the version currently in use is 1.
+ * Size of dictionary blob: the size of the ZLIB compressed blob as it is constructed as follows.
  * 
- * lastStatisticsCollectionTime: The time stamp (milliseconds since epoch) when the latest update for the statistics is
- * collected.
+ * ===================
+ * THE DICTIONARY BLOB
+ * ===================
  * 
- * Near cache statistics (see {@link com.hazelcast.monitor.NearCacheStats}):
+ * The dictionary is built from the string fields of the metric and assigns an int dictionary id to every string in the metrics
+ * in the blob. The dictionary is serialized to the dictionary blob sorted by the strings using the following layout.
  * 
- * nc.<StatIMapName>.creationTime: The creation time (milliseconds since epoch) of this Near Cache on the client.
+ * +------------------------------------------------+--------------------+
+ * | Number of dictionary entries                   |   4 bytes (int)    |
+ * +------------------------------------------------+--------------------+
+ * | Dictionary id                                  |   4 bytes (int)    |
+ * +------------------------------------------------+--------------------+
+ * | Number of chars shared with previous entry     |   1 unsigned byte  |
+ * +------------------------------------------------+--------------------+
+ * | Number of chars not shared with previous entry |   1 unsigned byte  |
+ * +------------------------------------------------+--------------------+
+ * | The different characters                       |   variable size    |
+ * +------------------------------------------------+--------------------+
+ * | Dictionary id                                  |   4 bytes (int)    |
+ * +------------------------------------------------+--------------------+
+ * | ...                                            |   ...              |
+ * +------------------------------------------------+--------------------+
  * 
- * nc.<StatIMapName>.evictions: The number of evictions of Near Cache entries owned by this client.
+ * Let's say we have the following dictionary:
+ *   - <42,"gc.minorCount">
+ *   - <43,"gc.minorTime">
  * 
- * nc.<StatIMapName>.expirations: The number of TTL and max-idle expirations of Near Cache entries owned by the client.
+ * It is then serialized as follows:
+ * +------------------------------------------------+--------------------+
+ * | 2 (size of the dictionary)                     |   4 bytes (int)    |
+ * +------------------------------------------------+--------------------+
+ * | 42                                             |   4 bytes (int)    |
+ * +------------------------------------------------+--------------------+
+ * | 0                                              |   1 unsigned byte  |
+ * +------------------------------------------------+--------------------+
+ * | 13                                             |   1 unsigned byte  |
+ * +------------------------------------------------+--------------------+
+ * | "gc.minorCount"                                |   13 bytes         |
+ * +------------------------------------------------+--------------------+
+ * | 43                                             |   4 bytes (int)    |
+ * +------------------------------------------------+--------------------+
+ * | 8                                              |   1 unsigned byte  |
+ * +------------------------------------------------+--------------------+
+ * | 4                                              |   1 unsigned byte  |
+ * +------------------------------------------------+--------------------+
+ * | "Time"                                         |   13 bytes         |
+ * +------------------------------------------------+--------------------+
  * 
- * nc.<StatIMapName>.hits: The number of hits (reads) of Near Cache entries owned by the client.
+ * The dictionary blob constructed this way is then gets ZLIB compressed.
  * 
- * nc.<StatIMapName>.lastPersistenceDuration: The duration in milliseconds of the last Near Cache key persistence
- * (when the pre-load feature is enabled).
+ * ===============
+ * THE METRIC BLOB
+ * ===============
  * 
- * nc.<StatIMapName>.lastPersistenceFailure: The failure reason of the last Near Cache persistence (when the pre-load
- * feature is enabled).
+ * The compressed dictionary blob is followed by the compressed metrics blob
+ * with the following layout:
  * 
- * nc.<StatIMapName>.lastPersistenceKeyCount: The number of Near Cache key persistences (when the pre-load feature is
- * enabled).
+ * +------------------------------------------------+--------------------+
+ * | Number of metrics                              |   4 bytes (int)    |
+ * +------------------------------------------------+--------------------+
+ * | Metrics mask                                   |   1 byte           |
+ * +------------------------------------------------+--------------------+
+ * | (*) Dictionary id of prefix                    |   4 bytes (int)    |
+ * +------------------------------------------------+--------------------+
+ * | (*) Dictionary id of metric                    |   4 bytes (int)    |
+ * +------------------------------------------------+--------------------+
+ * | (*) Dictionary id of discriminator             |   4 bytes (int)    |
+ * +------------------------------------------------+--------------------+
+ * | (*) Dictionary id of discriminatorValue        |   4 bytes (int)    |
+ * +------------------------------------------------+--------------------+
+ * | (*) Enum ordinal of the unit                   |   1 byte           |
+ * +------------------------------------------------+--------------------+
+ * | (*) Excluded targets bitset                    |   1 byte           |
+ * +------------------------------------------------+--------------------+
+ * | (*) Number of tags                             |   1 unsigned byte  |
+ * +------------------------------------------------+--------------------+
+ * | (**) Dictionary id of the tag 1                |   4 bytes (int)    |
+ * +------------------------------------------------+--------------------+
+ * | (**) Dictionary id of the value of tag 1       |   4 bytes (int)    |
+ * +------------------------------------------------+--------------------+
+ * | (**) Dictionary id of the tag 2                |   4 bytes (int)    |
+ * +------------------------------------------------+--------------------+
+ * | (**) Dictionary id of the value of tag 2       |   4 bytes (int)    |
+ * +------------------------------------------------+--------------------+
+ * | ...                                            |   ...              |
+ * +------------------------------------------------+--------------------+
+ * | Metrics mask                                   |   1 byte           |
+ * +------------------------------------------------+--------------------+
+ * | (*) Dictionary id of prefix                    |   4 bytes (int)    |
+ * +------------------------------------------------+--------------------+
+ * | ...                                            |   ...              |
+ * +------------------------------------------------+--------------------+
  * 
- * nc.<StatIMapName>.lastPersistenceTime: The timestamp (milliseconds since epoch) of the last Near Cache key
- * persistence (when the pre-load feature is enabled).
+ * The metrics mask shows which fields are the same in the current and the
+ * previous metric. The following masks are used to construct the metrics
+ * mask.
  * 
- * nc.<StatIMapName>.lastPersistenceWrittenBytes: The written number of bytes of the last Near Cache key persistence
- * (when the pre-load feature is enabled).
+ * MASK_PREFIX              = 0b00000001;
+ * MASK_METRIC              = 0b00000010;
+ * MASK_DISCRIMINATOR       = 0b00000100;
+ * MASK_DISCRIMINATOR_VALUE = 0b00001000;
+ * MASK_UNIT                = 0b00010000;
+ * MASK_EXCLUDED_TARGETS    = 0b00100000;
+ * MASK_TAG_COUNT           = 0b01000000;
  * 
- * nc.<StatIMapName>.misses: The number of misses of Near Cache entries owned by the client.
+ * If a bit representing a field is set, the given field marked above with (*)
+ * is not written to blob and the last value for that field should be taken
+ * during deserialization.
  * 
- * nc.<StatIMapName>.ownedEntryCount: the number of Near Cache entries owned by the client.
+ * Since the number of tags are not limited, all tags and their values
+ * marked with (**) are written even if the tag set is the same as in the
+ * previous metric.
  * 
- * nc.<StatIMapName>.ownedEntryMemoryCost: Memory cost (number of bytes) of Near Cache entries owned by the client.
- * 
- * nc.hz/<StatICacheName>.creationTime: The creation time of this Near Cache on the client.
- * 
- * nc.hz/<StatICacheName>.evictions: The number of evictions of Near Cache entries owned by the client.
- * 
- * nc.hz/<StatICacheName>.expirations: The number of TTL and max-idle expirations of Near Cache entries owned by the
- * client.
- * 
- * nc.hz/<StatICacheName>.hits
- * nc.hz/<StatICacheName>.lastPersistenceDuration
- * nc.hz/<StatICacheName>.lastPersistenceFailure
- * nc.hz/<StatICacheName>.lastPersistenceKeyCount
- * nc.hz/<StatICacheName>.lastPersistenceTime
- * nc.hz/<StatICacheName>.lastPersistenceWrittenBytes
- * nc.hz/<StatICacheName>.misses
- * nc.hz/<StatICacheName>.ownedEntryCount
- * nc.hz/<StatICacheName>.ownedEntryMemoryCost
- * 
- * Operating System Statistics (see {@link com.hazelcast.internal.metrics.metricsets.OperatingSystemMetricSet},
- * {@link sun.management.OperatingSystemImpl}) and {@link com.sun.management.UnixOperatingSystemMXBean}:
- * 
- * os.committedVirtualMemorySize: The amount of virtual memory that is guaranteed to be available to the running process in
- * bytes, or -1 if this operation is not supported.
- * 
- * os.freePhysicalMemorySize: The amount of free physical memory in bytes.
- * 
- * os.freeSwapSpaceSize: The amount of free swap space in bytes.
- * 
- * os.maxFileDescriptorCount: The maximum number of file descriptors.
- * 
- * os.openFileDescriptorCount: The number of open file descriptors.
- * 
- * os.processCpuTime: The CPU time used by the process in nanoseconds.
- * 
- * os.systemLoadAverage: The system load average for the last minute. (See
- * {@link java.lang.management.OperatingSystemMXBean#getSystemLoadAverage})
- * The system load average is the sum of the number of runnable entities
- * queued to the {@link java.lang.management.OperatingSystemMXBean#getAvailableProcessors} available processors
- * and the number of runnable entities running on the available processors
- * averaged over a period of time.
- * The way in which the load average is calculated is operating system
- * specific but is typically a damped time-dependent average.
- * <p>
- * If the load average is not available, a negative value is returned.
- * <p>
- * 
- * os.totalPhysicalMemorySize: The total amount of physical memory in bytes.
- * 
- * os.totalSwapSpaceSize: The total amount of swap space in bytes.
- * 
- * Runtime statistics (See {@link Runtime}:
- * 
- * runtime.availableProcessors: The number of processors available to the process.
- * 
- * runtime.freeMemory: an approximation to the total amount of memory currently available for future allocated objects,
- * measured in bytes.
- * 
- * runtime.maxMemory: The maximum amount of memory that the process will  attempt to use, measured in bytes
- * 
- * runtime.totalMemory: The total amount of memory currently available for current and future objects, measured in bytes.
- * 
- * runtime.uptime: The uptime of the process in milliseconds.
- * 
- * runtime.usedMemory: The difference of total memory and used memory in bytes.
- * 
- * userExecutor.queueSize: The number of waiting tasks in the client user executor (See ClientExecutionService#getUserExecutor)
- * 
- * Not: Please observe that the name for the ICache appears to be the hazelcast instance name "hz" followed by "/" and
- * followed by the cache name provided which is StatICacheName.
- * 
- * An example stats string (IMap name: StatIMapName and ICache name: StatICacheName with near-cache enabled):
- * 
- * lastStatisticsCollectionTime=1496137027173,enterprise=false,clientType=JAVA,clusterConnectionTimestamp=1496137018114,
- * clientAddress=127.0.0.1:5001,clientName=hz.client_0,executionService.userExecutorQueueSize=0,runtime.maxMemory=1065025536,
- * os.freePhysicalMemorySize=32067584,os.totalPhysicalMemorySize=17179869184,os.systemLoadAverage=249,
- * runtime.usedMemory=16235040,runtime.freeMemory=115820000,os.totalSwapSpaceSize=5368709120,runtime.availableProcessors=4,
- * runtime.uptime=13616,os.committedVirtualMemorySize=4081422336,os.maxFileDescriptorCount=10240,
- * runtime.totalMemory=132055040,os.processCpuTime=6270000000,os.openFileDescriptorCount=67,os.freeSwapSpaceSize=888406016,
- * nc.StatIMapName.creationTime=1496137021761,nc.StatIMapName.evictions=0,nc.StatIMapName.hits=1,
- * nc.StatIMapName.lastPersistenceDuration=0,nc.StatIMapName.lastPersistenceKeyCount=0,nc.StatIMapName.lastPersistenceTime=0,
- * nc.StatIMapName.lastPersistenceWrittenBytes=0,nc.StatIMapName.misses=1,nc.StatIMapName.ownedEntryCount=1,
- * nc.StatIMapName.expirations=0,nc.StatIMapName.ownedEntryMemoryCost=140,nc.hz/StatICacheName.creationTime=1496137025201,
- * nc.hz/StatICacheName.evictions=0,nc.hz/StatICacheName.hits=1,nc.hz/StatICacheName.lastPersistenceDuration=0,
- * nc.hz/StatICacheName.lastPersistenceKeyCount=0,nc.hz/StatICacheName.lastPersistenceTime=0,
- * nc.hz/StatICacheName.lastPersistenceWrittenBytes=0,nc.hz/StatICacheName.misses=1,nc.hz/StatICacheName.ownedEntryCount=1,
- * nc.hz/StatICacheName.expirations=0,nc.hz/StatICacheName.ownedEntryMemoryCost=140
+ * The metrics blob constructed this way is then gets ZLIB compressed.
  */
-@Generated("1968cd0517bd12ee7b31c0e6a66e1a7b")
+@Generated("141f31d812e32f9f4eafe1eaea039cea")
 public final class ClientStatisticsCodec {
-    //hex: 0x000E00
-    public static final int REQUEST_MESSAGE_TYPE = 3584;
-    //hex: 0x000E01
-    public static final int RESPONSE_MESSAGE_TYPE = 3585;
-    private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    //hex: 0x000D00
+    public static final int REQUEST_MESSAGE_TYPE = 3328;
+    //hex: 0x000D01
+    public static final int RESPONSE_MESSAGE_TYPE = 3329;
+    private static final int REQUEST_TIMESTAMP_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_TIMESTAMP_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
 
     private ClientStatisticsCodec() {
@@ -200,29 +209,41 @@ public final class ClientStatisticsCodec {
     public static class RequestParameters {
 
         /**
-         * The key=value pairs separated by the ',' character
+         * The timestamp taken during statistics collection.
          */
-        public java.lang.String stats;
+        public long timestamp;
+
+        /**
+         * The key=value pairs separated by the ',' character.
+         */
+        public java.lang.String clientAttributes;
+
+        /**
+         * Compressed byte array containing all metrics collected by the client.
+         */
+        public byte[] metricsBlob;
     }
 
-    public static ClientMessage encodeRequest(java.lang.String stats) {
+    public static ClientMessage encodeRequest(long timestamp, java.lang.String clientAttributes, byte[] metricsBlob) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
-        clientMessage.setAcquiresResource(false);
         clientMessage.setOperationName("Client.Statistics");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
+        encodeLong(initialFrame.content, REQUEST_TIMESTAMP_FIELD_OFFSET, timestamp);
         clientMessage.add(initialFrame);
-        StringCodec.encode(clientMessage, stats);
+        StringCodec.encode(clientMessage, clientAttributes);
+        ByteArrayCodec.encode(clientMessage, metricsBlob);
         return clientMessage;
     }
 
     public static ClientStatisticsCodec.RequestParameters decodeRequest(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         RequestParameters request = new RequestParameters();
-        //empty initial frame
-        iterator.next();
-        request.stats = StringCodec.decode(iterator);
+        ClientMessage.Frame initialFrame = iterator.next();
+        request.timestamp = decodeLong(initialFrame.content, REQUEST_TIMESTAMP_FIELD_OFFSET);
+        request.clientAttributes = StringCodec.decode(iterator);
+        request.metricsBlob = ByteArrayCodec.decode(iterator);
         return request;
     }
 

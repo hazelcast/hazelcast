@@ -59,7 +59,7 @@ import com.hazelcast.spi.impl.operationservice.OperationService;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 import com.hazelcast.internal.partition.IPartitionLostEvent;
 import com.hazelcast.internal.partition.MigrationEndpoint;
-import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.spi.properties.HazelcastProperties;
 
 import java.util.ArrayList;
@@ -130,9 +130,9 @@ public class MigrationManager {
         this.partitionServiceLock = partitionServiceLock;
         migrationPlanner = new MigrationPlanner(node.getLogger(MigrationPlanner.class));
         HazelcastProperties properties = node.getProperties();
-        partitionMigrationInterval = properties.getPositiveMillisOrDefault(GroupProperty.PARTITION_MIGRATION_INTERVAL, 0);
-        partitionMigrationTimeout = properties.getMillis(GroupProperty.PARTITION_MIGRATION_TIMEOUT);
-        fragmentedMigrationEnabled = properties.getBoolean(GroupProperty.PARTITION_FRAGMENTED_MIGRATION_ENABLED);
+        partitionMigrationInterval = properties.getPositiveMillisOrDefault(ClusterProperty.PARTITION_MIGRATION_INTERVAL, 0);
+        partitionMigrationTimeout = properties.getMillis(ClusterProperty.PARTITION_MIGRATION_TIMEOUT);
+        fragmentedMigrationEnabled = properties.getBoolean(ClusterProperty.PARTITION_FRAGMENTED_MIGRATION_ENABLED);
         partitionStateManager = partitionService.getPartitionStateManager();
         ILogger migrationThreadLogger = node.getLogger(MigrationThread.class);
         String hzName = nodeEngine.getHazelcastInstance().getName();
@@ -141,7 +141,7 @@ public class MigrationManager {
         ExecutionService executionService = nodeEngine.getExecutionService();
         delayedResumeMigrationTrigger = new CoalescingDelayedTrigger(
                 executionService, migrationPauseDelayMs, 2 * migrationPauseDelayMs, this::resumeMigration);
-        this.memberHeartbeatTimeoutMillis = properties.getMillis(GroupProperty.MAX_NO_HEARTBEAT_SECONDS);
+        this.memberHeartbeatTimeoutMillis = properties.getMillis(ClusterProperty.MAX_NO_HEARTBEAT_SECONDS);
         nodeEngine.getMetricsRegistry().registerStaticMetrics(stats, "partitions");
     }
 
@@ -747,7 +747,8 @@ public class MigrationManager {
             if (!partitionIds.isEmpty()) {
                 PartitionReplica[][] state = partitionStateManager.repartition(shutdownRequestedMembers, partitionIds);
                 if (state != null) {
-                    logger.warning("Assigning new owners for " + partitionIds.size() + " LOST partitions!");
+                    logger.warning("Assigning new owners for " + partitionIds.size()
+                            + " LOST partitions, when migration is not allowed!");
 
                     int replicaUpdateCount = (int) partitionIds.stream()
                             .flatMap(partitionId -> Arrays.stream(state[partitionId]).filter(Objects::nonNull)).count();
@@ -771,6 +772,7 @@ public class MigrationManager {
                                 });
                     });
                     partitionEventManager.sendMigrationProcessCompletedEvent(states[0]);
+                    node.getNodeExtension().onPartitionStateChange();
                 } else {
                     logger.warning("Unable to assign LOST partitions");
                 }
@@ -815,6 +817,7 @@ public class MigrationManager {
                     InternalPartitionImpl partition = partitionStateManager.getPartitionImpl(partitionId);
                     assignLostPartitionOwner(partition, destination);
                 });
+                node.getNodeExtension().onPartitionStateChange();
             }
 
             partitionService.publishPartitionRuntimeState();

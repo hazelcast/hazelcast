@@ -20,7 +20,6 @@ import com.hazelcast.client.LoadBalancer;
 import com.hazelcast.client.util.RandomLB;
 import com.hazelcast.client.util.RoundRobinLB;
 import com.hazelcast.config.AliasedDiscoveryConfig;
-import com.hazelcast.internal.config.AliasedDiscoveryConfigUtils;
 import com.hazelcast.config.ConfigXmlGenerator.XmlGenerator;
 import com.hazelcast.config.CredentialsFactoryConfig;
 import com.hazelcast.config.DiscoveryConfig;
@@ -40,6 +39,7 @@ import com.hazelcast.config.SerializerConfig;
 import com.hazelcast.config.SocketInterceptorConfig;
 import com.hazelcast.config.security.TokenIdentityConfig;
 import com.hazelcast.config.security.UsernamePasswordIdentityConfig;
+import com.hazelcast.internal.config.AliasedDiscoveryConfigUtils;
 import com.hazelcast.internal.util.Preconditions;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
@@ -60,8 +60,8 @@ import java.util.List;
 import java.util.Map;
 
 import static com.hazelcast.client.config.impl.ClientAliasedDiscoveryConfigUtils.aliasedDiscoveryConfigsFrom;
-import static com.hazelcast.internal.util.StringUtil.isNullOrEmpty;
 import static com.hazelcast.internal.nio.IOUtil.closeResource;
+import static com.hazelcast.internal.util.StringUtil.isNullOrEmpty;
 
 /**
  * The ClientConfigXmlGenerator is responsible for transforming a
@@ -136,6 +136,8 @@ public final class ClientConfigXmlGenerator {
         userCodeDeployment(gen, clientConfig.getUserCodeDeploymentConfig());
         //FlakeIdGenerator
         flakeIdGenerator(gen, clientConfig.getFlakeIdGeneratorConfigMap());
+        //Metrics
+        metrics(gen, clientConfig.getMetricsConfig());
 
         //close HazelcastClient
         gen.close();
@@ -304,7 +306,7 @@ public final class ClientConfigXmlGenerator {
             }
             for (SerializerConfig serializer : serializers) {
                 gen.node("serializer", null,
-                        "type-class", classNameOrImplClass(serializer.getTypeClassName(), serializer.getTypeClass()),
+                        "type-class", classNameOrClass(serializer.getTypeClassName(), serializer.getTypeClass()),
                         "class-name", classNameOrImplClass(serializer.getClassName(), serializer.getImplementation()));
             }
             //close serializers
@@ -379,7 +381,7 @@ public final class ClientConfigXmlGenerator {
                         .node("batch-size", queryCache.getBatchSize())
                         .node("buffer-size", queryCache.getBufferSize())
                         .node("eviction", null, "size", queryCache.getEvictionConfig().getSize(),
-                                "max-size-policy", queryCache.getEvictionConfig().getMaximumSizePolicy(),
+                                "max-size-policy", queryCache.getEvictionConfig().getMaxSizePolicy(),
                                 "eviction-policy", queryCache.getEvictionConfig().getEvictionPolicy(),
                                 "comparator-class-name", queryCache.getEvictionConfig().getComparatorClassName());
                 queryCachePredicate(gen, queryCache.getPredicateConfig());
@@ -554,7 +556,7 @@ public final class ClientConfigXmlGenerator {
                 .node("max-idle-seconds", nearCache.getMaxIdleSeconds())
                 .node("local-update-policy", nearCache.getLocalUpdatePolicy())
                 .node("eviction", null, "size", eviction.getSize(),
-                        "max-size-policy", eviction.getMaximumSizePolicy(),
+                        "max-size-policy", eviction.getMaxSizePolicy(),
                         "eviction-policy", eviction.getEvictionPolicy(),
                         "comparator-class-name", eviction.getComparatorClassName())
                 .node("preloader", null, "enabled", preloader.isEnabled(),
@@ -573,7 +575,7 @@ public final class ClientConfigXmlGenerator {
                 .node("initial-backoff-millis", connectionRetry.getInitialBackoffMillis())
                 .node("max-backoff-millis", connectionRetry.getMaxBackoffMillis())
                 .node("multiplier", connectionRetry.getMultiplier())
-                .node("fail-on-max-backoff", connectionRetry.isFailOnMaxBackoff())
+                .node("cluster-connect-timeout-millis", connectionRetry.getClusterConnectTimeoutMillis())
                 .node("jitter", connectionRetry.getJitter())
                 .close();
 
@@ -581,9 +583,23 @@ public final class ClientConfigXmlGenerator {
         gen.close();
     }
 
+    private static String classNameOrClass(String className, Class clazz) {
+        return !isNullOrEmpty(className) ? className
+            : clazz != null ? clazz.getName()
+            : null;
+    }
+
     private static String classNameOrImplClass(String className, Object impl) {
         return !isNullOrEmpty(className) ? className
                 : impl != null ? impl.getClass().getName()
                 : null;
+    }
+
+    private static void metrics(XmlGenerator gen, ClientMetricsConfig metricsConfig) {
+        gen.open("metrics", "enabled", metricsConfig.isEnabled())
+           .open("jmx", "enabled", metricsConfig.getJmxConfig().isEnabled())
+           .close()
+           .node("collection-frequency-seconds", metricsConfig.getCollectionFrequencySeconds())
+           .close();
     }
 }

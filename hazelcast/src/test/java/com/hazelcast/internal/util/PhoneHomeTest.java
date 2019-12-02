@@ -21,7 +21,7 @@ import com.hazelcast.config.ManagementCenterConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.instance.impl.Node;
-import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -108,7 +108,7 @@ public class PhoneHomeTest extends HazelcastTestSupport {
     @Test
     public void testScheduling_whenPhoneHomeIsDisabled() {
         Config config = new Config()
-                .setProperty(GroupProperty.PHONE_HOME_ENABLED.getName(), "false");
+                .setProperty(ClusterProperty.PHONE_HOME_ENABLED.getName(), "false");
 
         HazelcastInstance hz = createHazelcastInstance(config);
         Node node = getNode(hz);
@@ -123,7 +123,7 @@ public class PhoneHomeTest extends HazelcastTestSupport {
         assumeFalse("Skipping. The PhoneHome is disabled by the Environment variable",
                 "false".equals(getenv("HZ_PHONE_HOME_ENABLED")));
         Config config = new Config()
-                .setProperty(GroupProperty.PHONE_HOME_ENABLED.getName(), "true");
+                .setProperty(ClusterProperty.PHONE_HOME_ENABLED.getName(), "true");
 
         HazelcastInstance hz = createHazelcastInstance(config);
         Node node = getNode(hz);

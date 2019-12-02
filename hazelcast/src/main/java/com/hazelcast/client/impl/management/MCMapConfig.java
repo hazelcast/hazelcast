@@ -19,19 +19,19 @@ package com.hazelcast.client.impl.management;
 import com.hazelcast.client.impl.protocol.codec.MCGetMapConfigCodec.ResponseParameters;
 import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.InMemoryFormat;
-import com.hazelcast.config.MaxSizeConfig.MaxSizePolicy;
+import com.hazelcast.config.MaxSizePolicy;
 
 public class MCMapConfig {
-    private InMemoryFormat inMemoryFormat;
+    private boolean readBackupData;
+    private int maxSize;
     private int backupCount;
+    private int maxIdleSeconds;
     private int asyncBackupCount;
     private int timeToLiveSeconds;
-    private int maxIdleSeconds;
-    private int maxSize;
-    private MaxSizePolicy maxSizePolicy;
-    private boolean readBackupData;
-    private EvictionPolicy evictionPolicy;
     private String mergePolicy;
+    private MaxSizePolicy maxSizePolicy;
+    private EvictionPolicy evictionPolicy;
+    private InMemoryFormat inMemoryFormat;
 
     public static MCMapConfig fromResponse(ResponseParameters params) {
         MCMapConfig config = new MCMapConfig();

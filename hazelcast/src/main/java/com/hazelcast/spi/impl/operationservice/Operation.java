@@ -29,7 +29,7 @@ import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.exception.RetryableException;
 import com.hazelcast.spi.exception.SilentException;
-import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.spi.properties.ClusterProperty;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
@@ -496,7 +496,7 @@ public abstract class Operation implements DataSerializable {
      * time.
      *
      * For more information about the default value, see
-     * {@link GroupProperty#OPERATION_CALL_TIMEOUT_MILLIS}
+     * {@link ClusterProperty#OPERATION_CALL_TIMEOUT_MILLIS}
      *
      * @return the call timeout in milliseconds.
      * @see #setCallTimeout(long)

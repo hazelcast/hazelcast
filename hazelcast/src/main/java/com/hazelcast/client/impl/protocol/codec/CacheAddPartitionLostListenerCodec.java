@@ -40,12 +40,12 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * registrations, so if you register the listener twice, it will get events twice.Listeners registered from
  * HazelcastClient may miss some of the cache partition lost events due to design limitations.
  */
-@Generated("e18d90f725c558746995f19b1287aaf7")
+@Generated("dd4bc5bb02eeba30ee07099ad821f180")
 public final class CacheAddPartitionLostListenerCodec {
-    //hex: 0x131A00
-    public static final int REQUEST_MESSAGE_TYPE = 1251840;
-    //hex: 0x131A01
-    public static final int RESPONSE_MESSAGE_TYPE = 1251841;
+    //hex: 0x131900
+    public static final int REQUEST_MESSAGE_TYPE = 1251584;
+    //hex: 0x131901
+    public static final int RESPONSE_MESSAGE_TYPE = 1251585;
     private static final int REQUEST_LOCAL_ONLY_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_LOCAL_ONLY_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
     private static final int RESPONSE_RESPONSE_FIELD_OFFSET = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
@@ -53,8 +53,8 @@ public final class CacheAddPartitionLostListenerCodec {
     private static final int EVENT_CACHE_PARTITION_LOST_PARTITION_ID_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int EVENT_CACHE_PARTITION_LOST_UUID_FIELD_OFFSET = EVENT_CACHE_PARTITION_LOST_PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int EVENT_CACHE_PARTITION_LOST_INITIAL_FRAME_SIZE = EVENT_CACHE_PARTITION_LOST_UUID_FIELD_OFFSET + UUID_SIZE_IN_BYTES;
-    //hex: 0x131A02
-    private static final int EVENT_CACHE_PARTITION_LOST_MESSAGE_TYPE = 1251842;
+    //hex: 0x131902
+    private static final int EVENT_CACHE_PARTITION_LOST_MESSAGE_TYPE = 1251586;
 
     private CacheAddPartitionLostListenerCodec() {
     }
@@ -77,7 +77,6 @@ public final class CacheAddPartitionLostListenerCodec {
     public static ClientMessage encodeRequest(java.lang.String name, boolean localOnly) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
-        clientMessage.setAcquiresResource(false);
         clientMessage.setOperationName("Cache.AddPartitionLostListener");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);

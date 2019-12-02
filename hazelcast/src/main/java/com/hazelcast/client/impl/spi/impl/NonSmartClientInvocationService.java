@@ -16,8 +16,8 @@
 
 package com.hazelcast.client.impl.spi.impl;
 
-import com.hazelcast.client.impl.connection.nio.ClientConnection;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
+import com.hazelcast.client.impl.connection.nio.ClientConnection;
 import com.hazelcast.cluster.Address;
 
 import java.io.IOException;
@@ -51,7 +51,7 @@ public class NonSmartClientInvocationService extends AbstractClientInvocationSer
     }
 
     private ClientConnection getConnection() throws IOException {
-        ClientConnection connection = connectionManager.getActiveConnections().iterator().next();
+        ClientConnection connection = (ClientConnection) connectionManager.getRandomConnection();
         if (connection == null) {
             throw new IOException("NonSmartClientInvocationService: No connection is available.");
         }

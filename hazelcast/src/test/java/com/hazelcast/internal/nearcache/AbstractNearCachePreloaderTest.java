@@ -17,7 +17,7 @@
 package com.hazelcast.internal.nearcache;
 
 import com.hazelcast.config.EvictionConfig;
-import com.hazelcast.config.EvictionConfig.MaxSizePolicy;
+import com.hazelcast.config.MaxSizePolicy;
 import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.NearCacheConfig;
@@ -370,7 +370,7 @@ public abstract class AbstractNearCachePreloaderTest<NK, NV> extends HazelcastTe
     protected final NearCacheConfig getNearCacheConfig(InMemoryFormat inMemoryFormat, boolean serializeKeys,
                                                        boolean invalidationOnChange, int maxSize, String preloaderDir) {
         EvictionConfig evictionConfig = new EvictionConfig()
-                .setMaximumSizePolicy(MaxSizePolicy.ENTRY_COUNT)
+                .setMaxSizePolicy(MaxSizePolicy.ENTRY_COUNT)
                 .setSize(maxSize)
                 .setEvictionPolicy(EvictionPolicy.LRU);
 

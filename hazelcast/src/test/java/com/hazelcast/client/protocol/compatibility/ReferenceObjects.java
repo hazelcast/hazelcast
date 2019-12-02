@@ -16,9 +16,7 @@
 
 package com.hazelcast.client.protocol.compatibility;
 
-import com.hazelcast.cache.CacheEventType;
 import com.hazelcast.cache.impl.CacheEventData;
-import com.hazelcast.cache.impl.CacheEventDataImpl;
 import com.hazelcast.client.impl.MemberImpl;
 import com.hazelcast.client.impl.client.DistributedObjectInfo;
 import com.hazelcast.client.impl.protocol.codec.builtin.CustomTypeFactory;
@@ -32,32 +30,37 @@ import com.hazelcast.client.impl.protocol.task.dynamicconfig.PredicateConfigHold
 import com.hazelcast.client.impl.protocol.task.dynamicconfig.QueryCacheConfigHolder;
 import com.hazelcast.client.impl.protocol.task.dynamicconfig.QueueStoreConfigHolder;
 import com.hazelcast.client.impl.protocol.task.dynamicconfig.RingbufferStoreConfigHolder;
+import com.hazelcast.cluster.Address;
+import com.hazelcast.cluster.Member;
+import com.hazelcast.config.AttributeConfig;
 import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.DurationConfig;
 import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.TimedExpiryPolicyFactoryConfig;
 import com.hazelcast.config.CacheSimpleEntryListenerConfig;
 import com.hazelcast.config.EventJournalConfig;
 import com.hazelcast.config.HotRestartConfig;
-import com.hazelcast.config.AttributeConfig;
 import com.hazelcast.config.IndexConfig;
 import com.hazelcast.config.MergePolicyConfig;
 import com.hazelcast.config.MerkleTreeConfig;
 import com.hazelcast.config.NearCachePreloaderConfig;
 import com.hazelcast.config.WanReplicationRef;
-import com.hazelcast.cluster.Member;
 import com.hazelcast.cp.internal.RaftGroupId;
+import com.hazelcast.internal.cluster.MemberInfo;
+import com.hazelcast.internal.management.dto.ClientBwListEntryDTO;
 import com.hazelcast.internal.serialization.impl.HeapData;
 import com.hazelcast.map.impl.SimpleEntryView;
 import com.hazelcast.map.impl.querycache.event.DefaultQueryCacheEventData;
 import com.hazelcast.map.impl.querycache.event.QueryCacheEventData;
-import com.hazelcast.cluster.Address;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.scheduledexecutor.ScheduledTaskHandler;
 import com.hazelcast.scheduledexecutor.impl.ScheduledTaskHandlerImpl;
 import com.hazelcast.transaction.impl.xa.SerializableXID;
+import com.hazelcast.version.MemberVersion;
+
 import javax.transaction.xa.Xid;
 import java.lang.reflect.Array;
 import java.net.UnknownHostException;
 import java.util.AbstractMap;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.ListIterator;
@@ -613,8 +616,8 @@ public class ReferenceObjects {
     public static int anEnum = 1;
     public static long aLong = -50992225L;
     public static UUID aUUID = new UUID(123456789, 987654321);
-    public static byte[] aByteArray = new byte[] {aByte};
-    public static long[] aLongArray = new long[] {aLong};
+    public static byte[] aByteArray = new byte[]{aByte};
+    public static long[] aLongArray = new long[]{aLong};
     public static String aString = "localhost";
     public static Data aData = new HeapData("111313123131313131".getBytes());
     public static List<Map.Entry<Integer, UUID>> aListOfIntegerToUUID
@@ -627,6 +630,7 @@ public class ReferenceObjects {
     public static List<Long> aListOfLongs = Collections.singletonList(aLong);
     public static List<UUID> aListOfUUIDs = Collections.singletonList(aUUID);
     public static Address anAddress;
+
     static {
         try {
             anAddress = new Address(aString, anInt);
@@ -634,6 +638,7 @@ public class ReferenceObjects {
             e.printStackTrace();
         }
     }
+
     public static Map<String, String> aMapOfStringToString = Collections.singletonMap(aString, aString);
     public static List<String> aListOfStrings = Collections.singletonList(aString);
     public static StackTraceElement aStackTraceElement = new StackTraceElement(aString, aString, aString, anInt);
@@ -643,6 +648,7 @@ public class ReferenceObjects {
     public static DistributedObjectInfo aDistributedObjectInfo = new DistributedObjectInfo(aString, aString);
     public static Member aMember = new MemberImpl(anAddress, aUUID, aMapOfStringToString, aBoolean);
     public static DefaultQueryCacheEventData aQueryCacheEventData;
+
     static {
         aQueryCacheEventData = new DefaultQueryCacheEventData();
         aQueryCacheEventData.setDataKey(aData);
@@ -651,9 +657,11 @@ public class ReferenceObjects {
         aQueryCacheEventData.setEventType(anInt);
         aQueryCacheEventData.setPartitionId(anInt);
     }
+
     public static RaftGroupId aRaftGroupId = new RaftGroupId(aString, aLong, aLong);
     public static ScheduledTaskHandler aScheduledTaskHandler = new ScheduledTaskHandlerImpl(anAddress, anInt, aString, aString);
     public static SimpleEntryView<Data, Data> aSimpleEntryView = new SimpleEntryView<>(aData, aData);
+
     static {
         aSimpleEntryView.setCost(aLong);
         aSimpleEntryView.setCreationTime(aLong);
@@ -666,10 +674,12 @@ public class ReferenceObjects {
         aSimpleEntryView.setTtl(aLong);
         aSimpleEntryView.setMaxIdle(aLong);
     }
+
     public static WanReplicationRef aWanReplicationRef = new WanReplicationRef(aString, aString, aListOfStrings, aBoolean);
     public static Xid anXid = new SerializableXID(anInt, aByteArray, aByteArray);
     public static ErrorHolder anErrorHolder = new ErrorHolder(anInt, aString, aString, aListOfStackTraceElements);
     public static CacheSimpleEntryListenerConfig aCacheSimpleEntryListenerConfig;
+
     static {
         aCacheSimpleEntryListenerConfig = new CacheSimpleEntryListenerConfig();
         aCacheSimpleEntryListenerConfig.setOldValueRequired(aBoolean);
@@ -677,34 +687,45 @@ public class ReferenceObjects {
         aCacheSimpleEntryListenerConfig.setCacheEntryListenerFactory(aString);
         aCacheSimpleEntryListenerConfig.setCacheEntryEventFilterFactory(aString);
     }
+
     public static EventJournalConfig anEventJournalConfig;
+
     static {
         anEventJournalConfig = new EventJournalConfig();
         anEventJournalConfig.setEnabled(aBoolean);
         anEventJournalConfig.setCapacity(anInt);
         anEventJournalConfig.setTimeToLiveSeconds(anInt);
     }
+
     public static EvictionConfigHolder anEvictionConfigHolder = new EvictionConfigHolder(anInt, aString, aString, aString, aData);
-    public static HotRestartConfig aHotRestartConfig; static {
+    public static HotRestartConfig aHotRestartConfig;
+
+    static {
         aHotRestartConfig = new HotRestartConfig();
         aHotRestartConfig.setEnabled(aBoolean);
         aHotRestartConfig.setFsync(aBoolean);
     }
+
     public static ListenerConfigHolder aListenerConfigHolder = new ListenerConfigHolder(anInt, aData, aString, aBoolean, aBoolean);
     public static AttributeConfig anAttributeConfig = new AttributeConfig(aString, aString);
     public static IndexConfig anIndexConfig = CustomTypeFactory.createIndexConfig(aString, anEnum, aListOfStrings);
     public static MapStoreConfigHolder aMapStoreConfigHolder = new MapStoreConfigHolder(aBoolean, aBoolean, anInt, anInt, aString, aData, aString, aData, aMapOfStringToString, aString);
 
-    public static MerkleTreeConfig aMerkleTreeConfig; static {
+    public static MerkleTreeConfig aMerkleTreeConfig;
+
+    static {
         aMerkleTreeConfig = new MerkleTreeConfig();
         aMerkleTreeConfig.setEnabled(aBoolean);
         aMerkleTreeConfig.setDepth(anInt);
     }
+
     public static NearCachePreloaderConfig aNearCachePreloaderConfig = new NearCachePreloaderConfig(aBoolean, aString);
+
     static {
         aNearCachePreloaderConfig.setStoreInitialDelaySeconds(anInt);
         aNearCachePreloaderConfig.setStoreIntervalSeconds(anInt);
     }
+
     public static NearCacheConfigHolder aNearCacheConfigHolder = new NearCacheConfigHolder(aString, aString, aBoolean, aBoolean, anInt, anInt, anEvictionConfigHolder, aBoolean, aString, aNearCachePreloaderConfig);
     public static PredicateConfigHolder aPredicateConfigHolder = new PredicateConfigHolder(aString, aString, aData);
     public static List<ListenerConfigHolder> aListOfListenerConfigHolders = Collections.singletonList(aListenerConfigHolder);
@@ -714,6 +735,7 @@ public class ReferenceObjects {
     public static RingbufferStoreConfigHolder aRingbufferStoreConfigHolder = new RingbufferStoreConfigHolder(aString, aString, aData, aData, aMapOfStringToString, aBoolean);
     public static DurationConfig aDurationConfig = CustomTypeFactory.createDurationConfig(aLong, anEnum);
     public static TimedExpiryPolicyFactoryConfig aTimedExpiryPolicyFactoryConfig = CustomTypeFactory.createTimedExpiryPolicyFactoryConfig(anEnum, aDurationConfig);
+    public static ClientBwListEntryDTO aClientBwListEntry = CustomTypeFactory.createClientBwListEntry(anEnum, aString);
     public static List<Map.Entry<String, String>> aListOfStringToString
             = Collections.singletonList(new AbstractMap.SimpleEntry<>(aString, aString));
     public static List<Map.Entry<String, byte[]>> aListOfStringToByteArray
@@ -742,9 +764,12 @@ public class ReferenceObjects {
     public static List<Xid> aListOfXids = Collections.singletonList(anXid);
     public static List<Map.Entry<Member, List<ScheduledTaskHandler>>> aListOfMemberToListOfScheduledTaskHandlers
             = Collections.singletonList(new AbstractMap.SimpleEntry<>(aMember, aListOfScheduledTaskHandler));
+    public static List<ClientBwListEntryDTO> aListOfClientBwListEntries = Collections.singletonList(aClientBwListEntry);
     public static MergePolicyConfig aMergePolicyConfig = new MergePolicyConfig(aString, anInt);
     public static CacheConfigHolder aCacheConfigHolder = new CacheConfigHolder(aString, aString, aString, anInt, anInt,
             aString, anEvictionConfigHolder, aWanReplicationRef, aString, aString, aData, aData, aData, aBoolean,
             aBoolean, aBoolean, aBoolean, aBoolean, aHotRestartConfig, anEventJournalConfig, aString, aListOfData,
             aMergePolicyConfig, aBoolean, aListOfListenerConfigHolders);
+    private static MemberVersion aMemberVersion = new MemberVersion(anInt, anInt, anInt);
+    public static Collection<MemberInfo> aListOfMemberInfos = Collections.singletonList(new MemberInfo(anAddress, aUUID, aMapOfStringToString, aBoolean, aMemberVersion));
 }

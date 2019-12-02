@@ -43,6 +43,7 @@ public interface ComparatorEx<T> extends Comparator<T>, Serializable {
 
     /**
      * Exception-declaring version of {@link Comparator#compare}.
+     * @throws Exception in case of any exceptional case
      */
     int compareEx(T o1, T o2) throws Exception;
 
@@ -59,6 +60,7 @@ public interface ComparatorEx<T> extends Comparator<T>, Serializable {
      * {@code Serializable} variant of {@link
      * Comparator#naturalOrder()
      * java.util.Comparator#naturalOrder()}.
+     * @param  <T> the {@link Comparable} type of element to be compared
      */
     @SuppressWarnings("unchecked")
     static <T extends Comparable<? super T>> ComparatorEx<T> naturalOrder() {
@@ -69,6 +71,7 @@ public interface ComparatorEx<T> extends Comparator<T>, Serializable {
      * {@code Serializable} variant of {@link
      * Comparator#reverseOrder()
      * java.util.Comparator#reverseOrder()}.
+     * @param  <T> the {@link Comparable} type of element to be compared
      */
     @SuppressWarnings("unchecked")
     static <T extends Comparable<? super T>> ComparatorEx<T> reverseOrder() {
@@ -79,6 +82,7 @@ public interface ComparatorEx<T> extends Comparator<T>, Serializable {
      * {@code Serializable} variant of {@link
      * Comparator#nullsFirst(Comparator)
      * java.util.Comparator#nullsFirst(Comparator)}.
+     * @param  <T> the type of the elements to be compared
      */
     static <T> ComparatorEx<T> nullsFirst(Comparator<? super T> comparator) {
         checkSerializable(comparator, "comparator");
@@ -90,6 +94,7 @@ public interface ComparatorEx<T> extends Comparator<T>, Serializable {
      * {@code Serializable} variant of {@link
      * Comparator#nullsFirst(Comparator)
      * java.util.Comparator#nullsFirst(Comparator)}.
+     * @param  <T> the type of the elements to be compared
      */
     static <T> ComparatorEx<T> nullsFirst(ComparatorEx<? super T> comparator) {
         return nullsFirst((Comparator<? super T>) comparator);
@@ -99,6 +104,7 @@ public interface ComparatorEx<T> extends Comparator<T>, Serializable {
      * {@code Serializable} variant of {@link
      * Comparator#nullsLast(Comparator)
      * java.util.Comparator#nullsLast(Comparator)}.
+     * @param  <T> the type of the elements to be compared
      */
     static <T> ComparatorEx<T> nullsLast(Comparator<? super T> comparator) {
         checkSerializable(comparator, "comparator");
@@ -110,6 +116,7 @@ public interface ComparatorEx<T> extends Comparator<T>, Serializable {
      * {@code Serializable} variant of {@link
      * Comparator#nullsLast(Comparator)
      * java.util.Comparator#nullsLast(Comparator)}.
+     * @param  <T> the type of the elements to be compared
      */
     static <T> ComparatorEx<T> nullsLast(ComparatorEx<? super T> comparator) {
         return nullsLast((Comparator<? super T>) comparator);
@@ -119,6 +126,8 @@ public interface ComparatorEx<T> extends Comparator<T>, Serializable {
      * {@code Serializable} variant of {@link
      * Comparator#comparing(Function, Comparator)
      * java.util.Comparator#comparing(Function, Comparator)}.
+     * @param  <T> the type of element to be compared
+     * @param  <U> the type of the sort key
      */
     static <T, U> ComparatorEx<T> comparing(
             Function<? super T, ? extends U> toKeyFn,
@@ -136,6 +145,8 @@ public interface ComparatorEx<T> extends Comparator<T>, Serializable {
      * {@code Serializable} variant of {@link
      * Comparator#comparing(Function, Comparator)
      * java.util.Comparator#comparing(Function, Comparator)}.
+     * @param  <T> the type of element to be compared
+     * @param  <U> the type of the sort key
      */
     static <T, U> ComparatorEx<T> comparing(
             FunctionEx<? super T, ? extends U> toKeyFn,
@@ -147,6 +158,8 @@ public interface ComparatorEx<T> extends Comparator<T>, Serializable {
      * {@code Serializable} variant of {@link
      * Comparator#comparing(Function)
      * java.util.Comparator#comparing(Function)}.
+     * @param  <T> the type of element to be compared
+     * @param  <U> the type of the {@code Comparable} sort key
      */
     static <T, U extends Comparable<? super U>> ComparatorEx<T> comparing(
             Function<? super T, ? extends U> toKeyFn
@@ -160,6 +173,8 @@ public interface ComparatorEx<T> extends Comparator<T>, Serializable {
      * {@code Serializable} variant of {@link
      * Comparator#comparing(Function)
      * java.util.Comparator#comparing(Function)}.
+     * @param  <T> the type of element to be compared
+     * @param  <U> the type of the {@code Comparable} sort key
      */
     static <T, U extends Comparable<? super U>> ComparatorEx<T> comparing(
             FunctionEx<? super T, ? extends U> toKeyFn
@@ -171,6 +186,7 @@ public interface ComparatorEx<T> extends Comparator<T>, Serializable {
      * {@code Serializable} variant of {@link
      * Comparator#comparingInt(ToIntFunction)
      * java.util.Comparator#comparingInt(ToIntFunction)}.
+     * @param  <T> the type of element to be compared
      */
     static <T> ComparatorEx<T> comparingInt(ToIntFunction<? super T> toKeyFn) {
         checkNotNull(toKeyFn, "toKeyFn");
@@ -182,6 +198,7 @@ public interface ComparatorEx<T> extends Comparator<T>, Serializable {
      * {@code Serializable} variant of {@link
      * Comparator#comparingInt(ToIntFunction)
      * java.util.Comparator#comparingInt(ToIntFunction)}.
+     * @param  <T> the type of element to be compared
      */
     static <T> ComparatorEx<T> comparingInt(ToIntFunctionEx<? super T> toKeyFn) {
         return comparingInt((ToIntFunction<? super T>) toKeyFn);
@@ -191,6 +208,7 @@ public interface ComparatorEx<T> extends Comparator<T>, Serializable {
      * {@code Serializable} variant of {@link
      * Comparator#comparingLong(ToLongFunction)
      * java.util.Comparator#comparingLong(ToLongFunction)}.
+     * @param  <T> the type of element to be compared
      */
     static <T> ComparatorEx<T> comparingLong(ToLongFunction<? super T> toKeyFn) {
         checkNotNull(toKeyFn, "toKeyFn");
@@ -202,6 +220,7 @@ public interface ComparatorEx<T> extends Comparator<T>, Serializable {
      * {@code Serializable} variant of {@link
      * Comparator#comparingLong(ToLongFunction)
      * java.util.Comparator#comparingLong(ToLongFunction)}.
+     * @param  <T> the type of element to be compared
      */
     static <T> ComparatorEx<T> comparingLong(ToLongFunctionEx<? super T> toKeyFn) {
         return comparingLong((ToLongFunction<? super T>) toKeyFn);
@@ -211,6 +230,7 @@ public interface ComparatorEx<T> extends Comparator<T>, Serializable {
      * {@code Serializable} variant of {@link
      * Comparator#comparingDouble(ToDoubleFunction)
      * java.util.Comparator#comparingDouble(ToDoubleFunction)}.
+     * @param  <T> the type of element to be compared
      */
     static <T> ComparatorEx<T> comparingDouble(ToDoubleFunction<? super T> toKeyFn) {
         checkNotNull(toKeyFn, "toKeyFn");
@@ -222,6 +242,7 @@ public interface ComparatorEx<T> extends Comparator<T>, Serializable {
      * {@code Serializable} variant of {@link
      * Comparator#comparingDouble(ToDoubleFunction)
      * java.util.Comparator#comparingDouble(ToDoubleFunction)}.
+     * @param  <T> the type of element to be compared
      */
     static <T> ComparatorEx<T> comparingDouble(ToDoubleFunctionEx<? super T> toKeyFn) {
         return comparingDouble((ToDoubleFunction<? super T>) toKeyFn);
@@ -255,6 +276,7 @@ public interface ComparatorEx<T> extends Comparator<T>, Serializable {
      * {@code Serializable} variant of {@link
      * Comparator#thenComparing(Function, Comparator)
      * java.util.Comparator#thenComparing(Function, Comparator)}.
+     * @param  <U>  the type of the sort key
      */
     @Override
     default <U> ComparatorEx<T> thenComparing(
@@ -269,6 +291,7 @@ public interface ComparatorEx<T> extends Comparator<T>, Serializable {
      * {@code Serializable} variant of {@link
      * Comparator#thenComparing(Function, Comparator)
      * java.util.Comparator#thenComparing(Function, Comparator)}.
+     * @param  <U>  the type of the sort key
      */
     default <U> ComparatorEx<T> thenComparing(
             FunctionEx<? super T, ? extends U> toKeyFn,
@@ -280,6 +303,7 @@ public interface ComparatorEx<T> extends Comparator<T>, Serializable {
      * {@code Serializable} variant of {@link
      * Comparator#thenComparing(Function)
      * java.util.Comparator#thenComparing(Function)}.
+     * @param  <U>  the type of the {@link Comparable} sort key
      */
     @Override
     default <U extends Comparable<? super U>> ComparatorEx<T> thenComparing(
@@ -293,6 +317,7 @@ public interface ComparatorEx<T> extends Comparator<T>, Serializable {
      * {@code Serializable} variant of {@link
      * Comparator#thenComparing(Function)
      * java.util.Comparator#thenComparing(Function)}.
+     * @param  <U>  the type of the {@link Comparable} sort key
      */
     default <U extends Comparable<? super U>> ComparatorEx<T> thenComparing(
             FunctionEx<? super T, ? extends U> toKeyFn) {

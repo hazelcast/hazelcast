@@ -114,7 +114,7 @@ public class MapSetTtlBackupTest extends HazelcastTestSupport {
     }
 
     protected Config getConfig() {
-        return new Config();
+        return smallInstanceConfig();
     }
 
     @SuppressWarnings("SameParameterValue")

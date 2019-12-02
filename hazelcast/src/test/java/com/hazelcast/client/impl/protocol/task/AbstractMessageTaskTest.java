@@ -16,13 +16,12 @@
 
 package com.hazelcast.client.impl.protocol.task;
 
-import com.hazelcast.client.impl.protocol.codec.ClientCreateProxyCodec;
+import com.hazelcast.client.impl.protocol.codec.MapClearNearCacheCodec;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.config.Config;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.internal.util.JavaVersion;
-import com.hazelcast.map.impl.MapService;
-import com.hazelcast.cluster.Address;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -47,10 +46,10 @@ import static org.mockito.Mockito.when;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class AbstractMessageTaskTest {
 
-    final Collection<Address> memberAddresses = new ArrayList<Address>();
-    final Config config = new Config();
-    final ClientCreateProxyCodec.RequestParameters parameters = new ClientCreateProxyCodec.RequestParameters();
-    AbstractMessageTask messageTask;
+    private final Collection<Address> memberAddresses = new ArrayList<Address>();
+    private final Config config = new Config();
+    private final MapClearNearCacheCodec.RequestParameters parameters = new MapClearNearCacheCodec.RequestParameters();
+    private AbstractMessageTask messageTask;
 
     @Before
     public void setup() {
@@ -69,7 +68,7 @@ public class AbstractMessageTaskTest {
 
         // setup common fields of parameters object
         parameters.name = "test";
-        parameters.serviceName = MapService.SERVICE_NAME;
+        parameters.name = "cacheNAme";
         Whitebox.setInternalState(messageTask, "parameters", parameters);
     }
 

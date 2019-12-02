@@ -18,10 +18,10 @@
 package com.hazelcast.internal.monitor;
 
 import com.hazelcast.wan.WanPublisherState;
-import com.hazelcast.json.JsonSerializable;
+import com.hazelcast.json.internal.JsonSerializable;
 import com.hazelcast.wan.DistributedServiceWanEventCounters.DistributedObjectWanEventCounters;
-import com.hazelcast.wan.WanSyncStats;
-import com.hazelcast.wan.ConsistencyCheckResult;
+import com.hazelcast.wan.impl.WanSyncStats;
+import com.hazelcast.wan.impl.ConsistencyCheckResult;
 import com.hazelcast.wan.impl.WanReplicationService;
 
 import java.util.Map;

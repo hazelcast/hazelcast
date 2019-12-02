@@ -25,6 +25,7 @@ import java.util.EventListener;
  * @see HazelcastInstance#getLifecycleService()
  *
  */
+@FunctionalInterface
 public interface LifecycleListener extends EventListener {
     /**
      * Called when instance's state changes. No blocking calls should be made in this method.

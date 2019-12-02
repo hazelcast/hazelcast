@@ -38,6 +38,7 @@ public interface BiFunctionEx<T, U, R> extends BiFunction<T, U, R>, Serializable
 
     /**
      * Exception-declaring version of {@link BiFunction#apply}.
+     * @throws Exception in case of any exceptional case
      */
     R applyEx(T t, U u) throws Exception;
 
@@ -54,6 +55,8 @@ public interface BiFunctionEx<T, U, R> extends BiFunction<T, U, R>, Serializable
      * {@code Serializable} variant of {@link
      * BiFunction#andThen(java.util.function.Function)
      * java.util.function.BiFunction#andThen(Function)}.
+     * @param <V> the type of output of the {@code after} function, and of the
+     *           composed function
      */
     default <V> BiFunctionEx<T, U, V> andThen(FunctionEx<? super R, ? extends V> after) {
         checkNotNull(after, "after");

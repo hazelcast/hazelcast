@@ -16,13 +16,14 @@
 
 package com.hazelcast.internal.metrics.impl;
 
-import com.hazelcast.internal.metrics.MetricTagger;
+import com.hazelcast.internal.metrics.MetricDescriptor;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.metrics.collectors.MetricsCollector;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
+import com.hazelcast.test.RequireAssertEnabled;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
@@ -32,7 +33,9 @@ import org.junit.runner.RunWith;
 import static com.hazelcast.internal.metrics.ProbeLevel.INFO;
 import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
 import static com.hazelcast.internal.metrics.ProbeUnit.BYTES;
-import static java.util.Collections.emptySet;
+import static com.hazelcast.internal.metrics.ProbeUnit.COUNT;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -47,18 +50,33 @@ public class DynamicMetricsCollectionTest extends HazelcastTestSupport {
         source.longField = 42;
         source.doubleField = 42.42D;
 
-        MetricsCollector collectorMock = mock(MetricsCollector.class);
-        MetricsRegistry metricsRegistry = new MetricsRegistryImpl(Logger.getLogger(MetricsRegistryImpl.class), INFO);
-        metricsRegistry.registerDynamicMetricsProvider((taggerSupplier, context) -> {
-            MetricTagger tagger = taggerSupplier.getMetricTagger("test");
-            context.collect(tagger, source);
+        CapturingCollector collector = new CapturingCollector();
+        MetricsRegistry registry = new MetricsRegistryImpl(Logger.getLogger(MetricsRegistryImpl.class), INFO);
+        registry.registerDynamicMetricsProvider((descriptor, context) -> {
+            context.collect(descriptor.withPrefix("test"), source);
         });
-        metricsRegistry.collect(collectorMock);
+        registry.collect(collector);
 
-        verify(collectorMock).collectLong("[unit=count,metric=test.longField]", 42, emptySet());
-        verify(collectorMock).collectDouble("[unit=count,metric=test.doubleField]", 42.42D, emptySet());
-        verify(collectorMock).collectLong("[unit=count,metric=test.longMethod]", 43, emptySet());
-        verify(collectorMock).collectDouble("[unit=count,metric=test.doubleMethod]", 43.52D, emptySet());
+        assertEquals(42L, collector.captures()
+                                   .get(registry.newMetricDescriptor()
+                                                .withPrefix("test")
+                                                .withMetric("longField")
+                                                .withUnit(COUNT)).singleCapturedValue());
+        assertEquals(42.42D, collector.captures()
+                                      .get(registry.newMetricDescriptor()
+                                                   .withPrefix("test")
+                                                   .withMetric("doubleField")
+                                                   .withUnit(COUNT)).singleCapturedValue());
+        assertEquals(43L, collector.captures()
+                                   .get(registry.newMetricDescriptor()
+                                                .withPrefix("test")
+                                                .withMetric("longMethod")
+                                                .withUnit(COUNT)).singleCapturedValue());
+        assertEquals(43.52D, collector.captures()
+                                      .get(registry.newMetricDescriptor()
+                                                   .withPrefix("test")
+                                                   .withMetric("doubleMethod")
+                                                   .withUnit(COUNT)).singleCapturedValue());
     }
 
     @Test
@@ -68,69 +86,111 @@ public class DynamicMetricsCollectionTest extends HazelcastTestSupport {
         source.doubleField = 42.42D;
 
         MetricsCollector collectorMock = mock(MetricsCollector.class);
-        MetricsRegistry metricsRegistry = new MetricsRegistryImpl(Logger.getLogger(MetricsRegistryImpl.class), MANDATORY);
-        metricsRegistry.registerDynamicMetricsProvider((taggerSupplier, context) -> {
-            MetricTagger tagger = taggerSupplier.getMetricTagger("test");
-            context.collect(tagger, source);
-        });
-        metricsRegistry.collect(collectorMock);
+        MetricsRegistry registry = new MetricsRegistryImpl(Logger.getLogger(MetricsRegistryImpl.class), MANDATORY);
+        registry.registerDynamicMetricsProvider((descriptor, context) -> context.collect(descriptor.withPrefix("test"), source));
+        registry.collect(collectorMock);
 
-        verify(collectorMock, never()).collectLong("[unit=count,metric=test.longField]", 42, emptySet());
-        verify(collectorMock, never()).collectDouble("[unit=count,metric=test.doubleField]", 42.42D, emptySet());
-        verify(collectorMock, never()).collectLong("[unit=count,metric=test.longMethod]", 43, emptySet());
-        verify(collectorMock, never()).collectDouble("[unit=count,metric=test.doubleMethod]", 43.52D, emptySet());
+        verify(collectorMock, never()).collectLong(registry.newMetricDescriptor()
+                                                           .withPrefix("test")
+                                                           .withMetric("longField"), 42);
+        verify(collectorMock, never()).collectDouble(registry.newMetricDescriptor()
+                                                             .withPrefix("test")
+                                                             .withMetric("doubleField"), 42.42D);
+        verify(collectorMock, never()).collectLong(registry.newMetricDescriptor()
+                                                           .withPrefix("test")
+                                                           .withMetric("longMethod"), 43);
+        verify(collectorMock, never()).collectDouble(registry.newMetricDescriptor()
+                                                             .withPrefix("test")
+                                                             .withMetric("doubleMethod"), 43.52D);
     }
 
     @Test
     public void testDirectLong() {
-        MetricsCollector collectorMock = mock(MetricsCollector.class);
+        CapturingCollector capturingCollector = new CapturingCollector();
         MetricsRegistry metricsRegistry = new MetricsRegistryImpl(Logger.getLogger(MetricsRegistryImpl.class), INFO);
-        metricsRegistry.registerDynamicMetricsProvider((taggerSupplier, context) -> {
-            MetricTagger tagger = taggerSupplier.getMetricTagger("test");
-            context.collect(tagger, "someMetric", INFO, BYTES, 42);
-        });
-        metricsRegistry.collect(collectorMock);
+        metricsRegistry.registerDynamicMetricsProvider(
+                (descriptor, context) -> context.collect(descriptor.withPrefix("test"), "someMetric", INFO, BYTES, 42));
+        metricsRegistry.collect(capturingCollector);
 
-        verify(collectorMock).collectLong("[unit=bytes,metric=test.someMetric]", 42, emptySet());
+        MetricDescriptor expectedDescriptor = metricsRegistry
+                .newMetricDescriptor()
+                .withPrefix("test")
+                .withUnit(BYTES)
+                .withMetric("someMetric");
+
+        Number number = capturingCollector.captures().get(expectedDescriptor).singleCapturedValue();
+        assertInstanceOf(Long.class, number);
+        assertEquals(42, number.longValue());
     }
 
     @Test
     public void testDirectLongProveLevelFilters() {
         MetricsCollector collectorMock = mock(MetricsCollector.class);
         MetricsRegistry metricsRegistry = new MetricsRegistryImpl(Logger.getLogger(MetricsRegistryImpl.class), MANDATORY);
-        metricsRegistry.registerDynamicMetricsProvider((taggerSupplier, context) -> {
-            MetricTagger tagger = taggerSupplier.getMetricTagger("test");
-            context.collect(tagger, "someMetric", INFO, BYTES, 42);
-        });
+        metricsRegistry.registerDynamicMetricsProvider(
+                (descriptor, context) -> context.collect(descriptor.withPrefix("test"), "someMetric", INFO, BYTES, 42));
         metricsRegistry.collect(collectorMock);
 
-        verify(collectorMock, never()).collectLong("[unit=bytes,metric=test.someMetric]", 42, emptySet());
+        MetricDescriptor expectedDescriptor = metricsRegistry
+                .newMetricDescriptor()
+                .withPrefix("test")
+                .withUnit(BYTES)
+                .withMetric("someMetric");
+        verify(collectorMock, never()).collectLong(expectedDescriptor, 42);
     }
 
     @Test
     public void testDirectDouble() {
-        MetricsCollector collectorMock = mock(MetricsCollector.class);
+        CapturingCollector capturingCollector = new CapturingCollector();
         MetricsRegistry metricsRegistry = new MetricsRegistryImpl(Logger.getLogger(MetricsRegistryImpl.class), INFO);
-        metricsRegistry.registerDynamicMetricsProvider((taggerSupplier, context) -> {
-            MetricTagger tagger = taggerSupplier.getMetricTagger("test");
-            context.collect(tagger, "someMetric", INFO, BYTES, 42.42D);
-        });
-        metricsRegistry.collect(collectorMock);
+        metricsRegistry.registerDynamicMetricsProvider(
+                (descriptor, context) -> context.collect(descriptor.withPrefix("test"), "someMetric", INFO, BYTES, 42.42D));
+        metricsRegistry.collect(capturingCollector);
 
-        verify(collectorMock).collectDouble("[unit=bytes,metric=test.someMetric]", 42.42D, emptySet());
+        MetricDescriptor expectedDescriptor = metricsRegistry
+                .newMetricDescriptor()
+                .withPrefix("test")
+                .withUnit(BYTES)
+                .withMetric("someMetric");
+        Number number = capturingCollector.captures().get(expectedDescriptor).singleCapturedValue();
+        assertInstanceOf(Double.class, number);
+        assertEquals(42.42D, number.doubleValue(), 10E-6);
     }
 
     @Test
     public void testDirectDoubleProveLevelFilters() {
         MetricsCollector collectorMock = mock(MetricsCollector.class);
         MetricsRegistry metricsRegistry = new MetricsRegistryImpl(Logger.getLogger(MetricsRegistryImpl.class), MANDATORY);
-        metricsRegistry.registerDynamicMetricsProvider((taggerSupplier, context) -> {
-            MetricTagger tagger = taggerSupplier.getMetricTagger("test");
-            context.collect(tagger, "someMetric", INFO, BYTES, 42.42D);
-        });
+        metricsRegistry.registerDynamicMetricsProvider(
+                (descriptor, context) -> context.collect(descriptor.withPrefix("test"), "someMetric", INFO, BYTES, 42.42D));
         metricsRegistry.collect(collectorMock);
 
-        verify(collectorMock, never()).collectDouble("[unit=bytes,metric=test.someMetric]", 42.42D, emptySet());
+        MetricDescriptor expectedDescriptor = metricsRegistry
+                .newMetricDescriptor()
+                .withPrefix("test")
+                .withUnit(BYTES)
+                .withMetric("someMetric");
+        verify(collectorMock, never()).collectDouble(expectedDescriptor, 42.42D);
+    }
+
+    @RequireAssertEnabled
+    @Test
+    public void testDynamicProviderExceptionsAreNotPropagated() {
+        MetricsCollector collectorMock = mock(MetricsCollector.class);
+        MetricsRegistry metricsRegistry = new MetricsRegistryImpl(Logger.getLogger(MetricsRegistryImpl.class), MANDATORY);
+        metricsRegistry.registerDynamicMetricsProvider((taggerSupplier, context) -> {
+            throw new RuntimeException("Intentionally failing metrics collection");
+
+        });
+
+        // we just expect there is no exception apart from AssertionError,
+        // which is for testing only
+        try {
+            metricsRegistry.collect(collectorMock);
+            fail("Should throw AssertionError");
+        } catch (AssertionError ex) {
+            // nop
+        }
     }
 
     private static class SourceObject {

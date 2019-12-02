@@ -38,6 +38,7 @@ import com.hazelcast.internal.partition.PartitionAwareService;
 
 import java.util.Collection;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 
 import static com.hazelcast.internal.partition.InternalPartitionService.MIGRATION_EVENT_TOPIC;
 import static com.hazelcast.internal.partition.InternalPartitionService.PARTITION_LOST_EVENT_TOPIC;
@@ -125,6 +126,18 @@ public class PartitionEventManager {
         return registration.getId();
     }
 
+    public CompletableFuture<UUID> addPartitionLostListenerAsync(PartitionLostListener listener) {
+        if (listener == null) {
+            throw new NullPointerException("listener can't be null");
+        }
+
+        final PartitionLostListenerAdapter adapter = new PartitionLostListenerAdapter(listener);
+
+        EventService eventService = nodeEngine.getEventService();
+        return eventService.registerListenerAsync(SERVICE_NAME, PARTITION_LOST_EVENT_TOPIC, adapter)
+                           .thenApply(EventRegistration::getId);
+    }
+
     public UUID addLocalPartitionLostListener(PartitionLostListener listener) {
         if (listener == null) {
             throw new NullPointerException("listener can't be null");
@@ -145,6 +158,15 @@ public class PartitionEventManager {
 
         EventService eventService = nodeEngine.getEventService();
         return eventService.deregisterListener(SERVICE_NAME, PARTITION_LOST_EVENT_TOPIC, registrationId);
+    }
+
+    public CompletableFuture<Boolean> removePartitionLostListenerAsync(UUID registrationId) {
+        if (registrationId == null) {
+            throw new NullPointerException("registrationId can't be null");
+        }
+
+        EventService eventService = nodeEngine.getEventService();
+        return eventService.deregisterListenerAsync(SERVICE_NAME, PARTITION_LOST_EVENT_TOPIC, registrationId);
     }
 
     public void onPartitionLost(IPartitionLostEvent event) {

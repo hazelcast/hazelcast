@@ -18,6 +18,7 @@ package com.hazelcast.internal.monitor.impl;
 
 import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.internal.metrics.Probe;
+import com.hazelcast.json.internal.JsonSerializable;
 import com.hazelcast.query.LocalIndexStats;
 import com.hazelcast.replicatedmap.LocalReplicatedMapStats;
 import com.hazelcast.internal.util.Clock;
@@ -34,7 +35,7 @@ import static java.util.concurrent.atomic.AtomicLongFieldUpdater.newUpdater;
  * able to transform those between wire format and instance view.
  */
 @SuppressWarnings("checkstyle:methodcount")
-public class LocalReplicatedMapStatsImpl implements LocalReplicatedMapStats {
+public class LocalReplicatedMapStatsImpl implements LocalReplicatedMapStats, JsonSerializable {
 
     private static final AtomicLongFieldUpdater<LocalReplicatedMapStatsImpl> LAST_ACCESS_TIME =
             newUpdater(LocalReplicatedMapStatsImpl.class, "lastAccessTime");

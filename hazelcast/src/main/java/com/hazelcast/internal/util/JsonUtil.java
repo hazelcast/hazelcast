@@ -21,9 +21,7 @@ import com.hazelcast.internal.json.JsonArray;
 import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.internal.json.JsonValue;
 
-import java.util.Collection;
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.Map;
 
 /**
@@ -319,54 +317,5 @@ public final class JsonUtil {
         if (value == null) {
             throw new IllegalArgumentException("No field found: " + field);
         }
-    }
-
-    /**
-     * Returns the JSON representation of the provided {@code value}
-     *
-     * @param value the value to serialize to JSON
-     * @return the serialized value
-     */
-    public static String toJson(Object value) {
-        if (value instanceof String) {
-            return '"' + (String) value + '"';
-        } else if (value instanceof Collection) {
-            return "[" + toJsonCollection((Collection) value) + "]";
-        } else if (value instanceof JsonValue) {
-            return value.toString();
-        } else {
-            throw new IllegalArgumentException("Unable to convert " + value + " to JSON");
-        }
-    }
-
-    /**
-     * Serializes a collection of objects into its JSON representation.
-     *
-     * @param objects collection of items to be serialized into JSON
-     * @return the serialized JSON
-     */
-    private static String toJsonCollection(Collection objects) {
-        Iterator iterator = objects.iterator();
-        if (!iterator.hasNext()) {
-            return "";
-        }
-        final Object first = iterator.next();
-        if (!iterator.hasNext()) {
-            return toJson(first);
-        }
-
-        final StringBuilder buf = new StringBuilder();
-        if (first != null) {
-            buf.append(toJson(first));
-        }
-
-        while (iterator.hasNext()) {
-            buf.append(',');
-            final Object obj = iterator.next();
-            if (obj != null) {
-                buf.append(toJson(obj));
-            }
-        }
-        return buf.toString();
     }
 }

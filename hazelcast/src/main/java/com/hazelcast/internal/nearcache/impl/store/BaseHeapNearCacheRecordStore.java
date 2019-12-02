@@ -17,7 +17,7 @@
 package com.hazelcast.internal.nearcache.impl.store;
 
 import com.hazelcast.config.EvictionConfig;
-import com.hazelcast.config.EvictionConfig.MaxSizePolicy;
+import com.hazelcast.config.MaxSizePolicy;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.config.NearCachePreloaderConfig;
 import com.hazelcast.internal.adapter.DataStructureAdapter;
@@ -25,8 +25,8 @@ import com.hazelcast.internal.eviction.EvictionChecker;
 import com.hazelcast.internal.nearcache.NearCacheRecord;
 import com.hazelcast.internal.nearcache.impl.maxsize.EntryCountNearCacheEvictionChecker;
 import com.hazelcast.internal.nearcache.impl.preloader.NearCachePreloader;
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.nio.serialization.Data;
 
 import java.util.Map;
 import java.util.function.BiFunction;
@@ -60,7 +60,7 @@ public abstract class BaseHeapNearCacheRecordStore<K, V, R extends NearCacheReco
     @Override
     protected EvictionChecker createNearCacheEvictionChecker(EvictionConfig evictionConfig,
                                                              NearCacheConfig nearCacheConfig) {
-        MaxSizePolicy maxSizePolicy = evictionConfig.getMaximumSizePolicy();
+        MaxSizePolicy maxSizePolicy = evictionConfig.getMaxSizePolicy();
         if (maxSizePolicy == MaxSizePolicy.ENTRY_COUNT) {
             return new EntryCountNearCacheEvictionChecker(evictionConfig.getSize(), records);
         }

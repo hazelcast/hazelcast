@@ -36,12 +36,12 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Returns true if this map contains no key-value mappings.
  */
-@Generated("d70ccfe0d4b9a52f293443d6b0aab95b")
+@Generated("520ab48a3fdd0667adc8d8e934c86999")
 public final class MapIsEmptyCodec {
-    //hex: 0x012C00
-    public static final int REQUEST_MESSAGE_TYPE = 76800;
-    //hex: 0x012C01
-    public static final int RESPONSE_MESSAGE_TYPE = 76801;
+    //hex: 0x012B00
+    public static final int REQUEST_MESSAGE_TYPE = 76544;
+    //hex: 0x012B01
+    public static final int RESPONSE_MESSAGE_TYPE = 76545;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_RESPONSE_FIELD_OFFSET = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_RESPONSE_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
@@ -61,7 +61,6 @@ public final class MapIsEmptyCodec {
     public static ClientMessage encodeRequest(java.lang.String name) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(true);
-        clientMessage.setAcquiresResource(false);
         clientMessage.setOperationName("Map.IsEmpty");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);

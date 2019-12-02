@@ -16,6 +16,7 @@
 
 package com.hazelcast.map.impl.operation;
 
+import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.map.MapLoader;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
@@ -97,7 +98,7 @@ public class LoadAllOperation extends MapOperation implements PartitionAwareOper
         final int size = keys.size();
         out.writeInt(size);
         for (Data key : keys) {
-            out.writeData(key);
+            IOUtil.writeData(out, key);
         }
         out.writeBoolean(replaceExistingValues);
     }
@@ -110,7 +111,7 @@ public class LoadAllOperation extends MapOperation implements PartitionAwareOper
             keys = new ArrayList<>(size);
         }
         for (int i = 0; i < size; i++) {
-            Data data = in.readData();
+            Data data = IOUtil.readData(in);
             keys.add(data);
         }
         replaceExistingValues = in.readBoolean();

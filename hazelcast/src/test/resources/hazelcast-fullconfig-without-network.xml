@@ -252,22 +252,9 @@
             Any integer between 0 and Integer.MAX_VALUE. 0 means infinite. Default is 0.
         -->
         <max-idle-seconds>2</max-idle-seconds>
-        <!--
-            Valid values are:
-            NONE (no eviction),
-            LRU (Least Recently Used),
-            LFU (Least Frequently Used).
-            NONE is the default.
-        -->
-        <eviction-policy>LRU</eviction-policy>
-        <!--
-            Maximum size of the map. When max size is reached,
-            map is evicted based on the policy defined.
-            Any integer between 0 and Integer.MAX_VALUE. 0 means
-            Integer.MAX_VALUE. Default is 0.
-        -->
 
-        <max-size policy="PER_NODE">20</max-size>
+        <!-- By default map's eviction mechanism is disabled. -->
+        <eviction max-size-policy="PER_NODE" eviction-policy="LRU" size="20"/>
 
         <!--
             While recovering from split-brain (network partitioning), data structure entries in the small cluster
@@ -504,8 +491,8 @@
         <in-memory-format>OBJECT</in-memory-format>
         <backup-count>2</backup-count>
         <async-backup-count>2</async-backup-count>
-        <eviction comparator-class-name="DummyClass" eviction-policy="LRU" max-size-policy="FREE_NATIVE_MEMORY_PERCENTAGE"
-                  size="50"/>
+        <eviction comparator-class-name="DummyClass" eviction-policy="LRU"
+                  max-size-policy="ENTRY_COUNT" size="50"/>
         <wan-replication-ref name="my-wan-cluster">
             <merge-policy>hz.PASS_THROUGH</merge-policy>
             <filters>
@@ -585,17 +572,6 @@
         <page-size>123</page-size>
         <metadata-space-percentage>12.5</metadata-space-percentage>
     </native-memory>
-
-    <services enable-defaults="false">
-        <service enabled="true">
-            <name>custom-service</name>
-            <class-name>com.hazelcast.examples.MyService</class-name>
-            <properties>
-                <property name="prop1">prop1-value</property>
-                <property name="prop2">prop2-value</property>
-            </properties>
-        </service>
-    </services>
 
     <security enabled="false">
         <realms>
@@ -844,4 +820,12 @@
             </fenced-lock>
         </locks>
     </cp-subsystem>
+
+    <metrics enabled="false">
+        <management-center enabled="false">
+            <retention-seconds>42</retention-seconds>
+        </management-center>
+        <jmx enabled="false"/>
+        <collection-frequency-seconds>24</collection-frequency-seconds>
+    </metrics>
 </hazelcast>

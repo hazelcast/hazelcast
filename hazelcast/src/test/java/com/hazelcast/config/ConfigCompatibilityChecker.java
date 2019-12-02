@@ -19,6 +19,9 @@ package com.hazelcast.config;
 import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig;
 import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.DurationConfig;
 import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.TimedExpiryPolicyFactoryConfig;
+import com.hazelcast.config.cp.CPSubsystemConfig;
+import com.hazelcast.config.cp.FencedLockConfig;
+import com.hazelcast.config.cp.RaftAlgorithmConfig;
 import com.hazelcast.config.cp.SemaphoreConfig;
 import com.hazelcast.config.security.JaasAuthenticationConfig;
 import com.hazelcast.config.security.LdapAuthenticationConfig;
@@ -26,12 +29,10 @@ import com.hazelcast.config.security.RealmConfig;
 import com.hazelcast.config.security.TlsAuthenticationConfig;
 import com.hazelcast.config.security.TokenIdentityConfig;
 import com.hazelcast.config.security.UsernamePasswordIdentityConfig;
-import com.hazelcast.config.cp.CPSubsystemConfig;
-import com.hazelcast.config.cp.FencedLockConfig;
-import com.hazelcast.config.cp.RaftAlgorithmConfig;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.internal.config.AliasedDiscoveryConfigUtils;
+import com.hazelcast.internal.config.ServicesConfig;
 import com.hazelcast.internal.util.CollectionUtil;
 import org.apache.commons.lang3.ArrayUtils;
 
@@ -85,7 +86,6 @@ public class ConfigCompatibilityChecker {
                 new PartitionGroupConfigChecker());
         checkCompatibleConfigs("serialization", c1.getSerializationConfig(), c2.getSerializationConfig(),
                 new SerializationConfigChecker());
-        checkCompatibleConfigs("services", c1.getServicesConfig(), c2.getServicesConfig(), new ServicesConfigChecker());
         checkCompatibleConfigs("management center", c1.getManagementCenterConfig(), c2.getManagementCenterConfig(),
                 new ManagementCenterConfigChecker());
         checkCompatibleConfigs("hot restart", c1.getHotRestartPersistenceConfig(), c2.getHotRestartPersistenceConfig(),
@@ -545,13 +545,13 @@ public class ConfigCompatibilityChecker {
 
             boolean cpSubsystemConfigValuesEqual =
                     (c1.getCPMemberCount() == c2.getCPMemberCount() && c1.getGroupSize() == c2.getGroupSize()
-                    && c1.getSessionTimeToLiveSeconds() == c2.getSessionTimeToLiveSeconds()
-                    && c1.getSessionHeartbeatIntervalSeconds() == c2.getSessionHeartbeatIntervalSeconds()
-                    && c1.getMissingCPMemberAutoRemovalSeconds() == c2.getMissingCPMemberAutoRemovalSeconds()
-                    && c1.isFailOnIndeterminateOperationState() == c2.isFailOnIndeterminateOperationState())
-                    && c1.isPersistenceEnabled() == c2.isPersistenceEnabled()
-                    && c1.getBaseDir().getAbsoluteFile().equals(c2.getBaseDir().getAbsoluteFile())
-                    && c1.getDataLoadTimeoutSeconds() == c2.getDataLoadTimeoutSeconds();
+                            && c1.getSessionTimeToLiveSeconds() == c2.getSessionTimeToLiveSeconds()
+                            && c1.getSessionHeartbeatIntervalSeconds() == c2.getSessionHeartbeatIntervalSeconds()
+                            && c1.getMissingCPMemberAutoRemovalSeconds() == c2.getMissingCPMemberAutoRemovalSeconds()
+                            && c1.isFailOnIndeterminateOperationState() == c2.isFailOnIndeterminateOperationState())
+                            && c1.isPersistenceEnabled() == c2.isPersistenceEnabled()
+                            && c1.getBaseDir().getAbsoluteFile().equals(c2.getBaseDir().getAbsoluteFile())
+                            && c1.getDataLoadTimeoutSeconds() == c2.getDataLoadTimeoutSeconds();
 
             if (!cpSubsystemConfigValuesEqual) {
                 return false;
@@ -630,12 +630,11 @@ public class ConfigCompatibilityChecker {
             }
 
             return c1.isEnabled() == c2.isEnabled()
-                    && c1.isMcEnabled() == c2.isMcEnabled()
-                    && c1.isJmxEnabled() == c2.isJmxEnabled()
-                    && c1.getCollectionIntervalSeconds() == c2.getCollectionIntervalSeconds()
-                    && c1.getRetentionSeconds() == c2.getRetentionSeconds()
-                    && c1.isMetricsForDataStructuresEnabled() == c2.isMetricsForDataStructuresEnabled()
-                    && c1.getMinimumLevel() == c2.getMinimumLevel();
+                    && c1.getManagementCenterConfig().isEnabled() == c2.getManagementCenterConfig().isEnabled()
+                    && c1.getManagementCenterConfig().getRetentionSeconds() == c2.getManagementCenterConfig()
+                                                                                 .getRetentionSeconds()
+                    && c1.getJmxConfig().isEnabled() == c2.getJmxConfig().isEnabled()
+                    && c1.getCollectionFrequencySeconds() == c2.getCollectionFrequencySeconds();
         }
 
         @Override
@@ -695,7 +694,7 @@ public class ConfigCompatibilityChecker {
         private static boolean isCompatible(EvictionConfig c1, EvictionConfig c2) {
             return c1 == c2 || !(c1 == null || c2 == null)
                     && nullSafeEqual(c1.getSize(), c2.getSize())
-                    && nullSafeEqual(c1.getMaximumSizePolicy(), c2.getMaximumSizePolicy())
+                    && nullSafeEqual(c1.getMaxSizePolicy(), c2.getMaxSizePolicy())
                     && nullSafeEqual(c1.getEvictionPolicy(), c2.getEvictionPolicy())
                     && nullSafeEqual(c1.getComparatorClassName(), c2.getComparatorClassName());
         }
@@ -724,8 +723,8 @@ public class ConfigCompatibilityChecker {
             if (c1 == null || c2 == null) {
                 return false;
             }
-            int maxSize1 = c1.getMaxSizeConfig().getSize();
-            int maxSize2 = c2.getMaxSizeConfig().getSize();
+            int maxSize1 = c1.getEvictionConfig().getSize();
+            int maxSize2 = c2.getEvictionConfig().getSize();
 
             return nullSafeEqual(c1.getName(), c2.getName())
                     && nullSafeEqual(c1.getInMemoryFormat(), c2.getInMemoryFormat())
@@ -736,7 +735,8 @@ public class ConfigCompatibilityChecker {
                     && nullSafeEqual(c1.getAsyncBackupCount(), c2.getAsyncBackupCount())
                     && nullSafeEqual(c1.getTimeToLiveSeconds(), c2.getTimeToLiveSeconds())
                     && nullSafeEqual(c1.getMaxIdleSeconds(), c2.getMaxIdleSeconds())
-                    && nullSafeEqual(c1.getEvictionPolicy(), c2.getEvictionPolicy())
+                    && nullSafeEqual(c1.getEvictionConfig().getEvictionPolicy(),
+                    c2.getEvictionConfig().getEvictionPolicy())
                     && (nullSafeEqual(maxSize1, maxSize2)
                     || (Math.min(maxSize1, maxSize2) == 0 && Math.max(maxSize1, maxSize2) == Integer.MAX_VALUE))
                     && ConfigCompatibilityChecker.isCompatible(c1.getMergePolicyConfig(), c2.getMergePolicyConfig())
@@ -777,7 +777,7 @@ public class ConfigCompatibilityChecker {
         private static boolean isCompatible(EvictionConfig c1, EvictionConfig c2) {
             return c1 == c2 || !(c1 == null || c2 == null)
                     && nullSafeEqual(c1.getSize(), c2.getSize())
-                    && nullSafeEqual(c1.getMaximumSizePolicy(), c2.getMaximumSizePolicy())
+                    && nullSafeEqual(c1.getMaxSizePolicy(), c2.getMaxSizePolicy())
                     && nullSafeEqual(c1.getEvictionPolicy(), c2.getEvictionPolicy())
                     && nullSafeEqual(c1.getEvictionStrategyType(), c2.getEvictionStrategyType())
                     && nullSafeEqual(c1.getComparatorClassName(), c2.getComparatorClassName());
@@ -1378,7 +1378,7 @@ public class ConfigCompatibilityChecker {
             if (c1 == null || c2 == null || c1.size() != c2.size()) {
                 return false;
             }
-            for (String realmName: c1.keySet()) {
+            for (String realmName : c1.keySet()) {
                 if (!isCompatible(c1.get(realmName), c2.get(realmName))) {
                     return false;
                 }

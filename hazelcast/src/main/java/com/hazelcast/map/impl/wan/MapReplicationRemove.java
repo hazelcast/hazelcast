@@ -16,6 +16,7 @@
 
 package com.hazelcast.map.impl.wan;
 
+import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -84,13 +85,13 @@ public class MapReplicationRemove implements InternalWanReplicationEvent, Identi
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeUTF(mapName);
-        out.writeData(key);
+        IOUtil.writeData(out, key);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         mapName = in.readUTF();
-        key = in.readData();
+        key = IOUtil.readData(in);
     }
 
     @Override

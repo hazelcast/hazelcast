@@ -16,11 +16,25 @@
 
 package com.hazelcast.client.config;
 
-import static com.hazelcast.internal.config.ConfigUtils.lookupByPattern;
-import static com.hazelcast.internal.util.Preconditions.checkFalse;
-import static com.hazelcast.internal.util.Preconditions.isNotNull;
-import static com.hazelcast.partition.strategy.StringPartitioningStrategy.getBaseName;
+import com.hazelcast.client.Client;
+import com.hazelcast.client.LoadBalancer;
+import com.hazelcast.config.Config;
+import com.hazelcast.config.ConfigPatternMatcher;
+import com.hazelcast.config.InvalidConfigurationException;
+import com.hazelcast.config.ListenerConfig;
+import com.hazelcast.config.NativeMemoryConfig;
+import com.hazelcast.config.NearCacheConfig;
+import com.hazelcast.config.QueryCacheConfig;
+import com.hazelcast.config.SerializationConfig;
+import com.hazelcast.config.matcher.MatchingPointConfigPatternMatcher;
+import com.hazelcast.core.ManagedContext;
+import com.hazelcast.flakeidgen.FlakeIdGenerator;
+import com.hazelcast.internal.config.ConfigUtils;
+import com.hazelcast.internal.util.Preconditions;
+import com.hazelcast.partition.strategy.StringPartitioningStrategy;
+import com.hazelcast.security.Credentials;
 
+import javax.annotation.Nonnull;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -33,26 +47,10 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
-import javax.annotation.Nonnull;
-
-import com.hazelcast.client.Client;
-import com.hazelcast.client.LoadBalancer;
-import com.hazelcast.config.Config;
-import com.hazelcast.config.ConfigPatternMatcher;
-import com.hazelcast.config.InvalidConfigurationException;
-import com.hazelcast.config.ListenerConfig;
-import com.hazelcast.config.MetricsConfig;
-import com.hazelcast.config.NativeMemoryConfig;
-import com.hazelcast.config.NearCacheConfig;
-import com.hazelcast.config.QueryCacheConfig;
-import com.hazelcast.config.SerializationConfig;
-import com.hazelcast.config.matcher.MatchingPointConfigPatternMatcher;
-import com.hazelcast.core.ManagedContext;
-import com.hazelcast.flakeidgen.FlakeIdGenerator;
-import com.hazelcast.internal.config.ConfigUtils;
-import com.hazelcast.internal.util.Preconditions;
-import com.hazelcast.partition.strategy.StringPartitioningStrategy;
-import com.hazelcast.security.Credentials;
+import static com.hazelcast.internal.config.ConfigUtils.lookupByPattern;
+import static com.hazelcast.internal.util.Preconditions.checkFalse;
+import static com.hazelcast.internal.util.Preconditions.isNotNull;
+import static com.hazelcast.partition.strategy.StringPartitioningStrategy.getBaseName;
 
 /**
  * Main configuration to setup a Hazelcast Client
@@ -109,7 +107,7 @@ public class ClientConfig {
     private final Map<String, ClientFlakeIdGeneratorConfig> flakeIdGeneratorConfigMap;
     private final Set<String> labels;
     private final ConcurrentMap<String, Object> userContext;
-    private MetricsConfig metricsConfig = new MetricsConfig();
+    private ClientMetricsConfig metricsConfig = new ClientMetricsConfig();
 
     public ClientConfig() {
         listenerConfigs = new LinkedList<>();
@@ -172,7 +170,7 @@ public class ClientConfig {
         }
         labels = new HashSet<>(config.labels);
         userContext = new ConcurrentHashMap<>(config.userContext);
-        metricsConfig = new MetricsConfig(config.metricsConfig);
+        metricsConfig = new ClientMetricsConfig(config.metricsConfig);
     }
 
     /**
@@ -589,7 +587,7 @@ public class ClientConfig {
     /**
      * Sets the classLoader which is used by serialization and listener configuration
      *
-     * @param classLoader
+     * @param classLoader the classLoader
      * @return configured {@link com.hazelcast.client.config.ClientConfig} for chaining
      */
     public ClientConfig setClassLoader(ClassLoader classLoader) {
@@ -770,7 +768,7 @@ public class ClientConfig {
     /**
      * Set User Code Deployment configuration
      *
-     * @param userCodeDeploymentConfig
+     * @param userCodeDeploymentConfig the configuration of User Code Deployment
      * @return configured {@link com.hazelcast.client.config.ClientConfig} for chaining
      * @since 3.9
      */
@@ -893,7 +891,7 @@ public class ClientConfig {
      * Returns the metrics collection config.
      */
     @Nonnull
-    public MetricsConfig getMetricsConfig() {
+    public ClientMetricsConfig getMetricsConfig() {
         return metricsConfig;
     }
 
@@ -901,7 +899,7 @@ public class ClientConfig {
      * Sets the metrics collection config.
      */
     @Nonnull
-    public ClientConfig setMetricsConfig(@Nonnull MetricsConfig metricsConfig) {
+    public ClientConfig setMetricsConfig(@Nonnull ClientMetricsConfig metricsConfig) {
         Preconditions.checkNotNull(metricsConfig, "metricsConfig");
         this.metricsConfig = metricsConfig;
         return this;

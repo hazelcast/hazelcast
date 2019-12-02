@@ -39,12 +39,12 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * This method is always executed by a distributed query, so it may throw a QueryResultSizeExceededException
  * if query result size limit is configured.
  */
-@Generated("fb89aff6448a916072e8d1b6271957cf")
+@Generated("993ea16a69b7e3487aab80e1b7566425")
 public final class MapEntrySetCodec {
-    //hex: 0x012600
-    public static final int REQUEST_MESSAGE_TYPE = 75264;
-    //hex: 0x012601
-    public static final int RESPONSE_MESSAGE_TYPE = 75265;
+    //hex: 0x012500
+    public static final int REQUEST_MESSAGE_TYPE = 75008;
+    //hex: 0x012501
+    public static final int RESPONSE_MESSAGE_TYPE = 75009;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
 
@@ -63,7 +63,6 @@ public final class MapEntrySetCodec {
     public static ClientMessage encodeRequest(java.lang.String name) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(true);
-        clientMessage.setAcquiresResource(false);
         clientMessage.setOperationName("Map.EntrySet");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);

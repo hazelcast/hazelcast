@@ -16,20 +16,20 @@
 
 package com.hazelcast.security;
 
-import java.io.IOException;
-
 import com.hazelcast.internal.serialization.BinaryInterface;
-import com.hazelcast.nio.serialization.Portable;
-import com.hazelcast.nio.serialization.PortableReader;
-import com.hazelcast.nio.serialization.PortableWriter;
-import com.hazelcast.spi.impl.SpiPortableHook;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.spi.impl.SpiDataSerializerHook;
+
+import java.io.IOException;
 
 /**
  * Simple implementation of {@link PasswordCredentials} using
  * name and password as security attributes.
  */
 @BinaryInterface
-public class UsernamePasswordCredentials implements PasswordCredentials, Portable {
+public class UsernamePasswordCredentials implements PasswordCredentials, IdentifiedDataSerializable {
 
     private static final long serialVersionUID = -1508314631354255039L;
 
@@ -73,12 +73,12 @@ public class UsernamePasswordCredentials implements PasswordCredentials, Portabl
 
     @Override
     public int getFactoryId() {
-        return SpiPortableHook.ID;
+        return SpiDataSerializerHook.F_ID;
     }
 
     @Override
     public int getClassId() {
-        return SpiPortableHook.USERNAME_PWD_CRED;
+        return SpiDataSerializerHook.USERNAME_PWD_CRED;
     }
 
     @Override
@@ -87,17 +87,15 @@ public class UsernamePasswordCredentials implements PasswordCredentials, Portabl
     }
 
     @Override
-    public final void writePortable(PortableWriter writer) throws IOException {
-        writer.writeUTF("name", name);
-        writer.writeUTF("pwd", password);
-        writePortableInternal(writer);
+    public void writeData(ObjectDataOutput out) throws IOException {
+        out.writeUTF(name);
+        out.writeUTF(password);
     }
 
     @Override
-    public final void readPortable(PortableReader reader) throws IOException {
-        name = reader.readUTF("name");
-        password = reader.readUTF("pwd");
-        readPortableInternal(reader);
+    public void readData(ObjectDataInput in) throws IOException {
+        name = in.readUTF();
+        password = in.readUTF();
     }
 
     @Override
@@ -136,12 +134,6 @@ public class UsernamePasswordCredentials implements PasswordCredentials, Portabl
             return false;
         }
         return true;
-    }
-
-    protected void writePortableInternal(PortableWriter writer) throws IOException {
-    }
-
-    protected void readPortableInternal(PortableReader reader) throws IOException {
     }
 
 }

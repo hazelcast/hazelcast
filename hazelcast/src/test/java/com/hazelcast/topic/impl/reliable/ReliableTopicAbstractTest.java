@@ -72,11 +72,6 @@ public abstract class ReliableTopicAbstractTest extends HazelcastTestSupport {
 
     // ============== addMessageListener ==============================
 
-    @Test(expected = NullPointerException.class)
-    public void addMessageListener_whenNull() {
-        topic.addMessageListener(null);
-    }
-
     @Test
     public void addMessageListener() {
         UUID id = topic.addMessageListener(new ReliableMessageListenerMock());
@@ -85,11 +80,6 @@ public abstract class ReliableTopicAbstractTest extends HazelcastTestSupport {
     }
 
     // ============== removeMessageListener ==============================
-
-    @Test(expected = NullPointerException.class)
-    public void removeMessageListener_whenNull() {
-        topic.removeMessageListener(null);
-    }
 
     @Test
     public void removeMessageListener_whenExisting() {
@@ -149,20 +139,6 @@ public abstract class ReliableTopicAbstractTest extends HazelcastTestSupport {
             @Override
             public void run() throws Exception {
                 assertContains(listener.objects, msg);
-            }
-        });
-    }
-
-    @Test
-    public void publishNull() throws InterruptedException {
-        final ReliableMessageListenerMock listener = new ReliableMessageListenerMock();
-        topic.addMessageListener(listener);
-        topic.publish(null);
-
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertContains(listener.objects, null);
             }
         });
     }

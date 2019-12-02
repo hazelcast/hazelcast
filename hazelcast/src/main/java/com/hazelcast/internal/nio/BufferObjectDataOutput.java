@@ -17,14 +17,14 @@
 package com.hazelcast.internal.nio;
 
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.spi.impl.SerializationServiceSupport;
 
 import java.io.Closeable;
 import java.io.IOException;
 import java.nio.ByteOrder;
 
-public interface BufferObjectDataOutput extends ObjectDataOutput, Closeable {
-
-    int UTF_BUFFER_SIZE = 1024;
+public interface BufferObjectDataOutput extends ObjectDataOutput, Closeable,
+                                                SerializationServiceSupport, DataWriter {
 
     void write(int position, int b);
 

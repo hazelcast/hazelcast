@@ -16,6 +16,7 @@
 
 package com.hazelcast.internal.locksupport;
 
+import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.internal.util.Clock;
 import com.hazelcast.internal.util.UUIDSerializationUtil;
 import com.hazelcast.nio.ObjectDataInput;
@@ -264,7 +265,7 @@ final class LockResourceImpl implements IdentifiedDataSerializable, LockResource
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeData(key);
+        IOUtil.writeData(out, key);
         UUIDSerializationUtil.writeUUID(out, owner);
         out.writeLong(threadId);
         out.writeLong(referenceId);
@@ -277,7 +278,7 @@ final class LockResourceImpl implements IdentifiedDataSerializable, LockResource
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        key = in.readData();
+        key = IOUtil.readData(in);
         owner = UUIDSerializationUtil.readUUID(in);
         threadId = in.readLong();
         referenceId = in.readLong();

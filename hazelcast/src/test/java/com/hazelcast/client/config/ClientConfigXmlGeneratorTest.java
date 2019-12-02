@@ -44,6 +44,9 @@ import com.hazelcast.config.security.TokenIdentityConfig;
 import com.hazelcast.config.security.UsernamePasswordIdentityConfig;
 import com.hazelcast.memory.MemorySize;
 import com.hazelcast.memory.MemoryUnit;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.StreamSerializer;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -53,6 +56,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.nio.ByteOrder;
 import java.util.Collection;
 import java.util.Collections;
@@ -63,10 +67,10 @@ import java.util.Properties;
 import java.util.Random;
 import java.util.Set;
 
-import static com.hazelcast.client.config.impl.ClientAliasedDiscoveryConfigUtils.aliasedDiscoveryConfigsFrom;
 import static com.hazelcast.client.config.ClientConnectionStrategyConfig.ReconnectMode.ASYNC;
-import static com.hazelcast.config.EvictionConfig.MaxSizePolicy.USED_NATIVE_MEMORY_SIZE;
+import static com.hazelcast.client.config.impl.ClientAliasedDiscoveryConfigUtils.aliasedDiscoveryConfigsFrom;
 import static com.hazelcast.config.EvictionPolicy.LFU;
+import static com.hazelcast.config.MaxSizePolicy.USED_NATIVE_MEMORY_SIZE;
 import static com.hazelcast.config.NearCacheConfig.LocalUpdatePolicy.CACHE_ON_UPDATE;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -304,20 +308,9 @@ public class ClientConfigXmlGeneratorTest extends HazelcastTestSupport {
 
     @Test
     public void serialization() {
-        SerializationConfig expected = new SerializationConfig();
-        expected.setPortableVersion(randomInt())
-                .setUseNativeByteOrder(true)
-                .setByteOrder(ByteOrder.LITTLE_ENDIAN)
-                .setEnableCompression(true)
-                .setEnableSharedObject(false)
-                .setAllowUnsafe(true)
-                .setCheckClassDefErrors(false)
-                .addDataSerializableFactoryClass(randomInt(), randomString())
-                .addPortableFactoryClass(randomInt(), randomString())
-                .setGlobalSerializerConfig(new GlobalSerializerConfig()
-                        .setClassName(randomString()).setOverrideJavaSerialization(true))
-                .addSerializerConfig(new SerializerConfig()
-                        .setClassName(randomString()).setTypeClassName(randomString()));
+        SerializationConfig expected = buildSerializationConfig()
+            .addSerializerConfig(new SerializerConfig()
+                                     .setClassName(TestSerializer.class.getName()).setTypeClassName(TestType.class.getName()));
 
         clientConfig.setSerializationConfig(expected);
         SerializationConfig actual = newConfigViaGenerator().getSerializationConfig();
@@ -334,6 +327,72 @@ public class ClientConfigXmlGeneratorTest extends HazelcastTestSupport {
         assertCollection(expected.getSerializerConfigs(), actual.getSerializerConfigs());
         assertMap(expected.getDataSerializableFactoryClasses(), actual.getDataSerializableFactoryClasses());
         assertMap(expected.getPortableFactoryClasses(), actual.getPortableFactoryClasses());
+    }
+
+    private SerializationConfig buildSerializationConfig() {
+        SerializationConfig expected = new SerializationConfig();
+        expected.setPortableVersion(randomInt())
+            .setUseNativeByteOrder(true)
+            .setByteOrder(ByteOrder.LITTLE_ENDIAN)
+            .setEnableCompression(true)
+            .setEnableSharedObject(false)
+            .setAllowUnsafe(true)
+            .setCheckClassDefErrors(false)
+            .addDataSerializableFactoryClass(randomInt(), randomString())
+            .addPortableFactoryClass(randomInt(), randomString())
+            .setGlobalSerializerConfig(new GlobalSerializerConfig()
+                                           .setClassName(randomString()).setOverrideJavaSerialization(true));
+        return expected;
+    }
+
+    @Test
+    public void serialization_class() {
+        SerializationConfig expected = buildSerializationConfig()
+            .addSerializerConfig(new SerializerConfig()
+                                     .setClass(TestSerializer.class).setTypeClass(TestType.class));
+
+        clientConfig.setSerializationConfig(expected);
+        SerializationConfig actual = newConfigViaGenerator().getSerializationConfig();
+
+        assertEquals(expected.getPortableVersion(), actual.getPortableVersion());
+        assertEquals(expected.isUseNativeByteOrder(), actual.isUseNativeByteOrder());
+        assertEquals(expected.getByteOrder(), actual.getByteOrder());
+        assertEquals(expected.isEnableCompression(), actual.isEnableCompression());
+        assertEquals(expected.isEnableSharedObject(), actual.isEnableSharedObject());
+        assertEquals(expected.isAllowUnsafe(), actual.isAllowUnsafe());
+        assertEquals(expected.isCheckClassDefErrors(), actual.isCheckClassDefErrors());
+        assertEquals(expected.getGlobalSerializerConfig(), actual.getGlobalSerializerConfig());
+
+        assertCollection(
+            expected.getSerializerConfigs(), actual.getSerializerConfigs(),
+            (e, a) -> e.getTypeClass().getName().compareTo(a.getTypeClassName())
+        );
+        assertMap(expected.getDataSerializableFactoryClasses(), actual.getDataSerializableFactoryClasses());
+        assertMap(expected.getPortableFactoryClasses(), actual.getPortableFactoryClasses());
+    }
+
+    private static class TestType { }
+
+    private static class TestSerializer implements StreamSerializer {
+        @Override
+        public void write(ObjectDataOutput out, Object object) throws IOException {
+
+        }
+
+        @Override
+        public Object read(ObjectDataInput in) throws IOException {
+            return null;
+        }
+
+        @Override
+        public int getTypeId() {
+            return 0;
+        }
+
+        @Override
+        public void destroy() {
+
+        }
     }
 
     @Test
@@ -389,7 +448,7 @@ public class ClientConfigXmlGeneratorTest extends HazelcastTestSupport {
                 .setEvictionConfig(
                         new EvictionConfig()
                                 .setEvictionPolicy(LFU)
-                                .setMaximumSizePolicy(USED_NATIVE_MEMORY_SIZE)
+                                .setMaxSizePolicy(USED_NATIVE_MEMORY_SIZE)
                                 //Comparator class name cannot set via xml
                                 //see https://github.com/hazelcast/hazelcast/issues/14093
                                 //.setComparatorClassName(randomString())
@@ -416,7 +475,7 @@ public class ClientConfigXmlGeneratorTest extends HazelcastTestSupport {
                 .setEvictionConfig(
                         new EvictionConfig()
                                 .setEvictionPolicy(LFU)
-                                .setMaximumSizePolicy(USED_NATIVE_MEMORY_SIZE)
+                                .setMaxSizePolicy(USED_NATIVE_MEMORY_SIZE)
                                 //Comparator class name cannot set via xml
                                 //see https://github.com/hazelcast/hazelcast/issues/14093
                                 //.setComparatorClassName(randomString())
@@ -445,7 +504,7 @@ public class ClientConfigXmlGeneratorTest extends HazelcastTestSupport {
                         .setInitialBackoffMillis(1000)
                         .setMaxBackoffMillis(30000)
                         .setMultiplier(2.0)
-                        .setFailOnMaxBackoff(true)
+                        .setClusterConnectTimeoutMillis(5)
                         .setJitter(0.2));
         clientConfig.setConnectionStrategyConfig(expected);
 
@@ -480,6 +539,22 @@ public class ClientConfigXmlGeneratorTest extends HazelcastTestSupport {
         assertMap(clientConfig.getFlakeIdGeneratorConfigMap(), actual);
     }
 
+    @Test
+    public void testMetricsConfig() {
+        clientConfig.getMetricsConfig()
+                    .setEnabled(false)
+                    .setCollectionFrequencySeconds(10);
+
+        clientConfig.getMetricsConfig().getJmxConfig()
+                    .setEnabled(false);
+
+        ClientMetricsConfig originalConfig = clientConfig.getMetricsConfig();
+        ClientMetricsConfig generatedConfig = newConfigViaGenerator().getMetricsConfig();
+        assertEquals(originalConfig.isEnabled(), generatedConfig.isEnabled());
+        assertEquals(originalConfig.getJmxConfig().isEnabled(), generatedConfig.getJmxConfig().isEnabled());
+        assertEquals(originalConfig.getCollectionFrequencySeconds(), generatedConfig.getCollectionFrequencySeconds());
+    }
+
     private ClientConfig newConfigViaGenerator() {
         String xml = ClientConfigXmlGenerator.generate(clientConfig, DEBUG ? 5 : -1);
         debug(xml);
@@ -497,24 +572,6 @@ public class ClientConfigXmlGeneratorTest extends HazelcastTestSupport {
     private static <T> void assertCollection(Collection<T> expected, Collection<T> actual) {
         assertEquals(expected.size(), actual.size());
         assertContainsAll(actual, expected);
-    }
-
-    private static <T> void assertCollection(Collection<T> expected, Collection<T> actual, Comparator<T> comparator) {
-        assertEquals(expected.size(), actual.size());
-        for (T item : expected) {
-            if (!contains(item, actual, comparator)) {
-                throw new AssertionError("Actual collection does not contain the item " + item);
-            }
-        }
-    }
-
-    private static <T> boolean contains(T item1, Collection<T> collection, Comparator<T> comparator) {
-        for (T item2 : collection) {
-            if (comparator.compare(item1, item2) == 0) {
-                return true;
-            }
-        }
-        return false;
     }
 
     private static <K, V> void assertMap(Map<K, V> expected, Map<K, V> actual) {

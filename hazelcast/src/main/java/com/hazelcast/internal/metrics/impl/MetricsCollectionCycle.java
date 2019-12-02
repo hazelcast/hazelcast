@@ -19,17 +19,16 @@ package com.hazelcast.internal.metrics.impl;
 import com.hazelcast.internal.metrics.DoubleProbeFunction;
 import com.hazelcast.internal.metrics.DynamicMetricsProvider;
 import com.hazelcast.internal.metrics.LongProbeFunction;
-import com.hazelcast.internal.metrics.MetricTagger;
-import com.hazelcast.internal.metrics.MetricTaggerSupplier;
+import com.hazelcast.internal.metrics.MetricDescriptor;
 import com.hazelcast.internal.metrics.MetricTarget;
 import com.hazelcast.internal.metrics.MetricsCollectionContext;
 import com.hazelcast.internal.metrics.MetricsRegistry;
-import com.hazelcast.internal.metrics.Probe;
-import com.hazelcast.internal.metrics.ProbeAware;
 import com.hazelcast.internal.metrics.ProbeFunction;
 import com.hazelcast.internal.metrics.ProbeLevel;
 import com.hazelcast.internal.metrics.ProbeUnit;
 import com.hazelcast.internal.metrics.collectors.MetricsCollector;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
 
 import java.util.Collection;
 import java.util.Map;
@@ -47,37 +46,37 @@ import static java.util.Collections.emptySet;
 class MetricsCollectionCycle {
     private static final MetricValueCatcher NOOP_CATCHER = new NoOpMetricValueCatcher();
 
-    private final MetricTaggerSupplier taggerSupplier;
+    private final PoolingMetricDescriptorSupplier descriptorSupplier = new PoolingMetricDescriptorSupplier();
     private final Function<Class, SourceMetadata> lookupMetadataFn;
-    private final Function<String, MetricValueCatcher> lookupMetricValueCatcherFn;
+    private final Function<MetricDescriptor, MetricValueCatcher> lookupMetricValueCatcherFn;
     private final MetricsCollector metricsCollector;
     private final ProbeLevel minimumLevel;
     private final MetricsContext metricsContext = new MetricsContext();
     private final long collectionId = System.nanoTime();
+    private final ILogger logger = Logger.getLogger(MetricsCollectionCycle.class);
 
     MetricsCollectionCycle(Function<Class, SourceMetadata> lookupMetadataFn,
-                           Function<String, MetricValueCatcher> lookupMetricValueCatcherFn,
+                           Function<MetricDescriptor, MetricValueCatcher> lookupMetricValueCatcherFn,
                            MetricsCollector metricsCollector,
                            ProbeLevel minimumLevel) {
-        this.taggerSupplier = new TaggerSupplier();
         this.lookupMetadataFn = lookupMetadataFn;
         this.lookupMetricValueCatcherFn = lookupMetricValueCatcherFn;
         this.metricsCollector = metricsCollector;
         this.minimumLevel = minimumLevel;
     }
 
-    void collectStaticMetrics(Map<String, ProbeInstance> probeInstanceEntries) {
-        for (Map.Entry<String, ProbeInstance> entry : probeInstanceEntries.entrySet()) {
-            String metricId = entry.getKey();
+    void collectStaticMetrics(Map<MetricDescriptorImpl.LookupView, ProbeInstance> probeInstanceEntries) {
+        for (Map.Entry<MetricDescriptorImpl.LookupView, ProbeInstance> entry : probeInstanceEntries.entrySet()) {
+            MetricDescriptorImpl.LookupView lookupView = entry.getKey();
             ProbeInstance probeInstance = entry.getValue();
             ProbeFunction function = probeInstance.function;
 
-            lookupMetricValueCatcher(metricId).catchMetricValue(collectionId, probeInstance, function);
+            lookupMetricValueCatcher(lookupView.descriptor()).catchMetricValue(collectionId, probeInstance, function);
 
             if (function instanceof LongProbeFunction) {
-                collectLong(probeInstance.source, probeInstance.name, (LongProbeFunction) function);
+                collectLong(probeInstance.source, probeInstance.descriptor, (LongProbeFunction) function);
             } else if (function instanceof DoubleProbeFunction) {
-                collectDouble(probeInstance.source, probeInstance.name, (DoubleProbeFunction) function);
+                collectDouble(probeInstance.source, probeInstance.descriptor, (DoubleProbeFunction) function);
             } else {
                 throw new IllegalStateException("Unhandled ProbeFunction encountered: " + function.getClass().getName());
             }
@@ -86,7 +85,12 @@ class MetricsCollectionCycle {
 
     void collectDynamicMetrics(Collection<DynamicMetricsProvider> metricsSources) {
         for (DynamicMetricsProvider metricsSource : metricsSources) {
-            metricsSource.provideDynamicMetrics(taggerSupplier, metricsContext);
+            try {
+                metricsSource.provideDynamicMetrics(descriptorSupplier.get(), metricsContext);
+            } catch (Throwable t) {
+                logger.warning("Collecting metrics from source " + metricsSource.getClass().getName() + " failed", t);
+                assert false : "Collecting metrics from source " + metricsSource.getClass().getName() + " failed";
+            }
         }
     }
 
@@ -96,132 +100,133 @@ class MetricsCollectionCycle {
         }
     }
 
-    private MetricValueCatcher lookupMetricValueCatcher(String metricId) {
-        MetricValueCatcher catcher = lookupMetricValueCatcherFn.apply(metricId);
+    private MetricValueCatcher lookupMetricValueCatcher(MetricDescriptor descriptor) {
+        MetricValueCatcher catcher = lookupMetricValueCatcherFn.apply(descriptor);
         return catcher != null ? catcher : NOOP_CATCHER;
     }
 
-    private void extractAndCollectDynamicMetrics(MetricTagger tagger, Object source) {
+    private void extractAndCollectDynamicMetrics(MetricDescriptor descriptor, Object source) {
         SourceMetadata metadata = lookupMetadataFn.apply(source.getClass());
 
         for (MethodProbe methodProbe : metadata.methods()) {
             if (methodProbe.probe.level().isEnabled(minimumLevel)) {
-                MetricTagger metricTagger = tagger.withTag("unit", methodProbe.probe.unit().name().toLowerCase())
-                                                  .withMetricTag(methodProbe.getProbeOrMethodName());
-                String metricId = metricTagger.metricId();
-                String name = metricTagger.metricName();
+                MetricDescriptor descriptorCopy = descriptor
+                        .copy()
+                        .withUnit(methodProbe.probe.unit())
+                        .withMetric(methodProbe.getProbeOrMethodName())
+                        .withExcludedTargets(getExcludedTargets(methodProbe));
 
-                lookupMetricValueCatcher(metricId).catchMetricValue(collectionId, source, methodProbe);
-
-                collect(name, source, methodProbe);
+                lookupMetricValueCatcher(descriptorCopy).catchMetricValue(collectionId, source, methodProbe);
+                collect(descriptorCopy, source, methodProbe);
             }
         }
 
         for (FieldProbe fieldProbe : metadata.fields()) {
             if (fieldProbe.probe.level().isEnabled(minimumLevel)) {
-                MetricTagger metricTagger = tagger
-                        .withTag("unit", fieldProbe.probe.unit().name().toLowerCase())
-                        .withMetricTag(fieldProbe.getProbeOrFieldName());
-                String metricId = metricTagger.metricId();
-                String name = metricTagger.metricName();
+                MetricDescriptor descriptorCopy = descriptor
+                        .copy()
+                        .withUnit(fieldProbe.probe.unit())
+                        .withMetric(fieldProbe.getProbeOrFieldName())
+                        .withExcludedTargets(getExcludedTargets(fieldProbe));
 
-                lookupMetricValueCatcher(metricId).catchMetricValue(collectionId, source, fieldProbe);
-                collect(name, source, fieldProbe);
+                lookupMetricValueCatcher(descriptorCopy).catchMetricValue(collectionId, source, fieldProbe);
+                collect(descriptorCopy, source, fieldProbe);
             }
         }
     }
 
-    private void collect(String name, Object source, ProbeFunction function) {
-        Set<MetricTarget> excludedTargets = getExcludedTargets(function);
-
+    private void collect(MetricDescriptor descriptor, Object source, ProbeFunction function) {
         if (function == null || source == null) {
-            metricsCollector.collectNoValue(name, excludedTargets);
+            metricsCollector.collectNoValue(descriptor);
             return;
         }
 
         if (function instanceof LongProbeFunction) {
             LongProbeFunction longFunction = (LongProbeFunction) function;
-            collectLong(source, name, longFunction);
+            collectLong(source, descriptor, longFunction);
         } else {
             DoubleProbeFunction doubleFunction = (DoubleProbeFunction) function;
-            collectDouble(source, name, doubleFunction);
+            collectDouble(source, descriptor, doubleFunction);
+        }
+
+        if (descriptor instanceof MetricDescriptorImpl) {
+            descriptorSupplier.recycle((MetricDescriptorImpl) descriptor);
         }
     }
 
-    private void collectDouble(Object source, String name, DoubleProbeFunction function) {
-        Set<MetricTarget> excludedTargets = getExcludedTargets(function);
+    private void collectDouble(Object source, MetricDescriptor descriptor, DoubleProbeFunction function) {
         try {
             double value = function.get(source);
-            metricsCollector.collectDouble(name, value, excludedTargets);
+            metricsCollector.collectDouble(descriptor, value);
         } catch (Exception ex) {
-            metricsCollector.collectException(name, ex, excludedTargets);
+            metricsCollector.collectException(descriptor, ex);
         }
     }
 
-    private void collectLong(Object source, String name, LongProbeFunction function) {
-        Set<MetricTarget> excludedTargets = getExcludedTargets(function);
+    private void collectLong(Object source, MetricDescriptor descriptor, LongProbeFunction function) {
         try {
             long value = function.get(source);
-            metricsCollector.collectLong(name, value, excludedTargets);
+            metricsCollector.collectLong(descriptor, value);
         } catch (Exception ex) {
-            metricsCollector.collectException(name, ex, excludedTargets);
+            metricsCollector.collectException(descriptor, ex);
         }
     }
 
     private Set<MetricTarget> getExcludedTargets(Object object) {
         if (object instanceof ProbeAware) {
-            Probe probe = ((ProbeAware) object).getProbe();
+            CachedProbe probe = ((ProbeAware) object).getProbe();
             return MetricTarget.asSet(probe.excludedTargets());
         }
 
         return emptySet();
     }
 
-    private class MetricsContext implements MetricsCollectionContext {
-        @Override
-        public void collect(MetricTagger metricTagger, Object source) {
-            extractAndCollectDynamicMetrics(metricTagger, source);
-        }
-
-        @Override
-        public void collect(MetricTagger tagger, String name, ProbeLevel level, ProbeUnit unit, long value) {
-            if (level.isEnabled(minimumLevel)) {
-                MetricTagger metricTagger = tagger.withTag("unit", unit.name().toLowerCase())
-                                                  .withMetricTag(name);
-                String metricName = metricTagger.metricName();
-                String metricId = metricTagger.metricId();
-
-                lookupMetricValueCatcher(metricId).catchMetricValue(collectionId, value);
-                metricsCollector.collectLong(metricName, value, emptySet());
-            }
-        }
-
-
-        @Override
-        public void collect(MetricTagger tagger, String name, ProbeLevel level, ProbeUnit unit, double value) {
-            if (level.isEnabled(minimumLevel)) {
-                MetricTagger metricTagger = tagger.withTag("unit", unit.name().toLowerCase())
-                                                  .withMetricTag(name);
-
-                String metricName = metricTagger.metricName();
-                String metricId = metricTagger.metricId();
-
-                lookupMetricValueCatcher(metricId).catchMetricValue(collectionId, value);
-                metricsCollector.collectDouble(metricName, value, emptySet());
-            }
-        }
+    public void cleanUp() {
+        descriptorSupplier.close();
     }
 
-    private static class TaggerSupplier implements MetricTaggerSupplier {
-
+    private class MetricsContext implements MetricsCollectionContext {
         @Override
-        public MetricTagger getMetricTagger() {
-            return getMetricTagger(null);
+        public void collect(MetricDescriptor descriptor, Object source) {
+            extractAndCollectDynamicMetrics(descriptor, source);
         }
 
         @Override
-        public MetricTagger getMetricTagger(String namespace) {
-            return new MetricTaggerImpl(namespace);
+        public void collect(MetricDescriptor descriptor, String name, ProbeLevel level, ProbeUnit unit, long value) {
+            if (level.isEnabled(minimumLevel)) {
+                MetricDescriptor descriptorCopy = descriptor
+                        .copy()
+                        .withUnit(unit)
+                        .withMetric(name);
+
+                lookupMetricValueCatcher(descriptorCopy).catchMetricValue(collectionId, value);
+                metricsCollector.collectLong(descriptorCopy, value);
+            }
+        }
+
+        @Override
+        public void collect(MetricDescriptor descriptor, String name, ProbeLevel level, ProbeUnit unit, double value) {
+            if (level.isEnabled(minimumLevel)) {
+                MetricDescriptor descriptorCopy = descriptor
+                        .copy()
+                        .withUnit(unit)
+                        .withMetric(name);
+
+                lookupMetricValueCatcher(descriptorCopy).catchMetricValue(collectionId, value);
+                metricsCollector.collectDouble(descriptorCopy, value);
+            }
+        }
+
+        @Override
+        public void collect(MetricDescriptor descriptor, long value) {
+            lookupMetricValueCatcher(descriptor).catchMetricValue(collectionId, value);
+            metricsCollector.collectLong(descriptor, value);
+        }
+
+        @Override
+        public void collect(MetricDescriptor descriptor, double value) {
+            lookupMetricValueCatcher(descriptor).catchMetricValue(collectionId, value);
+            metricsCollector.collectDouble(descriptor, value);
         }
     }
 

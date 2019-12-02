@@ -17,20 +17,20 @@
 package com.hazelcast.internal.serialization.impl;
 
 import com.hazelcast.core.HazelcastException;
-import com.hazelcast.partition.PartitioningStrategy;
 import com.hazelcast.instance.impl.OutOfMemoryErrorDispatcher;
 import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.internal.serialization.SerializableByConvention;
+import com.hazelcast.internal.util.collection.PartitionIdSet;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.ByteArraySerializer;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.nio.serialization.Portable;
-import com.hazelcast.internal.serialization.SerializableByConvention;
 import com.hazelcast.nio.serialization.Serializer;
 import com.hazelcast.nio.serialization.StreamSerializer;
 import com.hazelcast.nio.serialization.VersionedPortable;
-import com.hazelcast.internal.util.collection.PartitionIdSet;
+import com.hazelcast.partition.PartitioningStrategy;
 
 import javax.annotation.Nonnull;
 import java.io.ByteArrayInputStream;

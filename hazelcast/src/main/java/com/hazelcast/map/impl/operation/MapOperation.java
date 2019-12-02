@@ -47,6 +47,7 @@ import static com.hazelcast.internal.util.CollectionUtil.isEmpty;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 import static com.hazelcast.internal.util.ToHeapDataConverter.toHeapData;
 import static com.hazelcast.map.impl.EntryViews.createSimpleEntryView;
+import static com.hazelcast.map.impl.operation.ForcedEviction.runWithForcedEvictionStrategies;
 
 @SuppressWarnings("checkstyle:methodcount")
 public abstract class MapOperation extends AbstractNamedOperation
@@ -55,7 +56,7 @@ public abstract class MapOperation extends AbstractNamedOperation
     private static final boolean ASSERTION_ENABLED = MapOperation.class.desiredAssertionStatus();
 
     protected transient MapService mapService;
-    protected transient RecordStore recordStore;
+    protected transient RecordStore<Record> recordStore;
     protected transient MapContainer mapContainer;
     protected transient MapServiceContext mapServiceContext;
     protected transient MapEventPublisher mapEventPublisher;
@@ -109,7 +110,7 @@ public abstract class MapOperation extends AbstractNamedOperation
         try {
             runInternal();
         } catch (NativeOutOfMemoryError e) {
-            WithForcedEviction.rerun(this);
+            rerunWithForcedEviction();
         }
     }
 
@@ -118,11 +119,25 @@ public abstract class MapOperation extends AbstractNamedOperation
         // Concrete classes can override this method.
     }
 
+    private void rerunWithForcedEviction() {
+        try {
+            runWithForcedEvictionStrategies(this);
+        } catch (NativeOutOfMemoryError e) {
+            disposeDeferredBlocks();
+            throw e;
+        }
+    }
+
     @Override
     public final void afterRun() throws Exception {
         afterRunInternal();
         disposeDeferredBlocks();
         super.afterRun();
+    }
+
+    protected void afterRunInternal() {
+        // Intentionally empty method body.
+        // Concrete classes can override this method.
     }
 
     private void assertNativeMapOnPartitionThread() {
@@ -133,10 +148,6 @@ public abstract class MapOperation extends AbstractNamedOperation
         assert mapContainer.getMapConfig().getInMemoryFormat() != NATIVE
                 || getPartitionId() != GENERIC_PARTITION_ID
                 : "Native memory backed map operations are not allowed to run on GENERIC_PARTITION_ID";
-    }
-
-    protected void afterRunInternal() {
-
     }
 
     ILogger logger() {
@@ -272,8 +283,6 @@ public abstract class MapOperation extends AbstractNamedOperation
     }
 
     protected final void evict(Data justAddedKey) {
-        assert recordStore != null : "Record-store cannot be null";
-
         recordStore.evictEntries(justAddedKey);
         disposeDeferredBlocks();
     }

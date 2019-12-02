@@ -20,14 +20,13 @@ import com.hazelcast.config.AttributeConfig;
 import com.hazelcast.config.CacheDeserializedValues;
 import com.hazelcast.config.EntryListenerConfig;
 import com.hazelcast.config.EventJournalConfig;
-import com.hazelcast.config.EvictionPolicy;
+import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.HotRestartConfig;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.IndexConfig;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapPartitionLostListenerConfig;
 import com.hazelcast.config.MapStoreConfig;
-import com.hazelcast.config.MaxSizeConfig;
 import com.hazelcast.config.MergePolicyConfig;
 import com.hazelcast.config.MerkleTreeConfig;
 import com.hazelcast.config.NearCacheConfig;
@@ -35,7 +34,6 @@ import com.hazelcast.config.PartitioningStrategyConfig;
 import com.hazelcast.config.QueryCacheConfig;
 import com.hazelcast.config.WanReplicationRef;
 import com.hazelcast.internal.util.CollectionUtil;
-import com.hazelcast.map.eviction.MapEvictionPolicy;
 
 import javax.annotation.Nonnull;
 import java.util.ArrayList;
@@ -47,10 +45,11 @@ import java.util.List;
  *
  * @see MapConfig
  */
-@SuppressWarnings({"checkstyle:methodcount", "checkstyle:executablestatementcount"})
+@SuppressWarnings({"checkstyle:methodcount",
+        "checkstyle:executablestatementcount"})
 public class MapConfigReadOnly extends MapConfig {
 
-    private final MaxSizeConfigReadOnly maxSizeConfigReadOnly;
+    private final EvictionConfigReadOnly evictionConfigReadOnly;
     private final WanReplicationRefReadOnly wanReplicationRefReadOnly;
     private final MapStoreConfigReadOnly mapStoreConfigReadOnly;
     private final NearCacheConfigReadOnly nearCacheConfigReadOnly;
@@ -66,9 +65,8 @@ public class MapConfigReadOnly extends MapConfig {
     public MapConfigReadOnly(MapConfig config) {
         super(config);
 
-        MaxSizeConfig maxSizeConfig = super.getMaxSizeConfig();
-        maxSizeConfigReadOnly = maxSizeConfig == null
-                ? null : new MaxSizeConfigReadOnly(maxSizeConfig);
+        EvictionConfig evictionConfig = super.getEvictionConfig();
+        this.evictionConfigReadOnly = new EvictionConfigReadOnly(evictionConfig);
 
         WanReplicationRef wanReplicationRef = super.getWanReplicationRef();
         wanReplicationRefReadOnly = wanReplicationRef == null
@@ -154,8 +152,8 @@ public class MapConfigReadOnly extends MapConfig {
     }
 
     @Override
-    public MaxSizeConfig getMaxSizeConfig() {
-        return maxSizeConfigReadOnly;
+    public EvictionConfig getEvictionConfig() {
+        return evictionConfigReadOnly;
     }
 
     @Override
@@ -262,17 +260,7 @@ public class MapConfigReadOnly extends MapConfig {
     }
 
     @Override
-    public MapConfig setMaxSizeConfig(MaxSizeConfig maxSizeConfig) {
-        throw throwReadOnly();
-    }
-
-    @Override
-    public MapConfig setEvictionPolicy(EvictionPolicy evictionPolicy) {
-        throw throwReadOnly();
-    }
-
-    @Override
-    public MapConfig setMapEvictionPolicy(MapEvictionPolicy mapEvictionPolicy) {
+    public MapConfig setEvictionConfig(EvictionConfig evictionConfig) {
         throw throwReadOnly();
     }
 

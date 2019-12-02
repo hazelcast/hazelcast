@@ -19,9 +19,10 @@ package com.hazelcast.internal.monitor.impl;
 import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.internal.monitor.WanSyncState;
 import com.hazelcast.internal.util.Clock;
+import com.hazelcast.json.internal.JsonSerializable;
 import com.hazelcast.wan.impl.WanSyncStatus;
 
-public class WanSyncStateImpl implements WanSyncState {
+public class WanSyncStateImpl implements WanSyncState, JsonSerializable {
 
     private long creationTime;
     private WanSyncStatus status = WanSyncStatus.READY;

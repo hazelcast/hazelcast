@@ -37,6 +37,7 @@ import static com.hazelcast.config.NearCacheConfig.DEFAULT_MEMORY_FORMAT;
 import static com.hazelcast.internal.util.Preconditions.checkNotInstanceOf;
 
 public class DefaultNearCache<K, V> implements NearCache<K, V> {
+
     protected final String name;
     protected final TaskScheduler scheduler;
     protected final ClassLoader classLoader;

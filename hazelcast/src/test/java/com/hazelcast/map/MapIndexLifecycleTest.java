@@ -17,6 +17,7 @@
 package com.hazelcast.map;
 
 import com.hazelcast.config.Config;
+import com.hazelcast.config.ConfigAccessor;
 import com.hazelcast.config.IndexConfig;
 import com.hazelcast.config.IndexType;
 import com.hazelcast.config.ServiceConfig;
@@ -38,7 +39,7 @@ import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationService;
 import com.hazelcast.internal.services.PostJoinAwareService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -121,10 +122,10 @@ public class MapIndexLifecycleTest extends HazelcastTestSupport {
         TestHazelcastInstanceFactory instanceFactory = createHazelcastInstanceFactory(clusterSize);
         HazelcastInstance[] instances = new HazelcastInstance[clusterSize];
 
-        Config config = getConfig().setProperty(GroupProperty.PARTITION_COUNT.getName(), "4");
+        Config config = getConfig().setProperty(ClusterProperty.PARTITION_COUNT.getName(), "4");
         config.getMapConfig(mapName);
-        config.getServicesConfig()
-              .addServiceConfig(
+        ConfigAccessor.getServicesConfig(config)
+                      .addServiceConfig(
                       new ServiceConfig()
                               .setName("SlowPostJoinAwareService")
                               .setEnabled(true)
@@ -254,7 +255,7 @@ public class MapIndexLifecycleTest extends HazelcastTestSupport {
 
     private int getPartitionCount(HazelcastInstance instance) {
         Node node = getNode(instance);
-        return node.getProperties().getInteger(GroupProperty.PARTITION_COUNT);
+        return node.getProperties().getInteger(ClusterProperty.PARTITION_COUNT);
     }
 
     private MapServiceContext getMapServiceContext(HazelcastInstance instance) {
@@ -265,7 +266,7 @@ public class MapIndexLifecycleTest extends HazelcastTestSupport {
 
 
     private HazelcastInstance createNode(TestHazelcastInstanceFactory instanceFactory) {
-        Config config = getConfig().setProperty(GroupProperty.PARTITION_COUNT.getName(), "4");
+        Config config = getConfig().setProperty(ClusterProperty.PARTITION_COUNT.getName(), "4");
         config.getMapConfig(mapName)
               .addIndexConfig(getIndexConfig("author", false))
               .addIndexConfig(getIndexConfig("year", true))

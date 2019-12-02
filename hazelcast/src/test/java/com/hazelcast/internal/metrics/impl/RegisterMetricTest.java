@@ -76,7 +76,7 @@ public class RegisterMetricTest extends HazelcastTestSupport {
     @Test
     public void testRegisterStaticMetrics() {
         MultiFieldAndMethod source = new MultiFieldAndMethod();
-        metricsRegistry.registerStaticMetrics(metricsRegistry.newMetricTagger("test"), source);
+        metricsRegistry.registerStaticMetrics(metricsRegistry.newMetricDescriptor().withPrefix("test"), source);
         Set<String> metricNames = metricsRegistry.getNames();
 
         assertContains(metricNames, "[unit=count,metric=test.method1]");
@@ -89,10 +89,8 @@ public class RegisterMetricTest extends HazelcastTestSupport {
 
     @Test
     public void testRegisterStaticProbeLong_withTagger() {
-        metricsRegistry
-                .registerStaticProbe(new MultiFieldAndMethod(), metricsRegistry.newMetricTagger("test"), "someMetric", INFO,
-                        BYTES,
-                        (LongProbeFunction<MultiFieldAndMethod>) source -> IGNORED);
+        metricsRegistry.registerStaticProbe(new MultiFieldAndMethod(), metricsRegistry.newMetricDescriptor().withPrefix("test"),
+                "someMetric", INFO, BYTES, (LongProbeFunction<MultiFieldAndMethod>) source -> IGNORED);
         Set<String> metricNames = metricsRegistry.getNames();
 
         assertContains(metricNames, "[unit=bytes,metric=test.someMetric]");
@@ -120,10 +118,8 @@ public class RegisterMetricTest extends HazelcastTestSupport {
 
     @Test
     public void testRegisterStaticProbeDouble_withTagger() {
-        metricsRegistry
-                .registerStaticProbe(new MultiFieldAndMethod(), metricsRegistry.newMetricTagger("test"), "someMetric", INFO,
-                        BYTES,
-                        (DoubleProbeFunction<MultiFieldAndMethod>) source -> IGNORED);
+        metricsRegistry.registerStaticProbe(new MultiFieldAndMethod(), metricsRegistry.newMetricDescriptor().withPrefix("test"),
+                "someMetric", INFO, BYTES, (DoubleProbeFunction<MultiFieldAndMethod>) source -> IGNORED);
         Set<String> metricNames = metricsRegistry.getNames();
 
         assertContains(metricNames, "[unit=bytes,metric=test.someMetric]");

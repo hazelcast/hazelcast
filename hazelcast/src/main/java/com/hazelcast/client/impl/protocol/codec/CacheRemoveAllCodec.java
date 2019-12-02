@@ -39,12 +39,12 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * a write-through cache, the CacheWriter.If the cache is empty, the CacheWriter is not called.
  * This is potentially an expensive operation as listeners are invoked. Use  #clear() to avoid this.
  */
-@Generated("00bd090c8e1951f1612c2310ad2abf35")
+@Generated("84bc40e307dda16685516c9ed28d9414")
 public final class CacheRemoveAllCodec {
-    //hex: 0x130500
-    public static final int REQUEST_MESSAGE_TYPE = 1246464;
-    //hex: 0x130501
-    public static final int RESPONSE_MESSAGE_TYPE = 1246465;
+    //hex: 0x130400
+    public static final int REQUEST_MESSAGE_TYPE = 1246208;
+    //hex: 0x130401
+    public static final int RESPONSE_MESSAGE_TYPE = 1246209;
     private static final int REQUEST_COMPLETION_ID_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_COMPLETION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
@@ -70,7 +70,6 @@ public final class CacheRemoveAllCodec {
     public static ClientMessage encodeRequest(java.lang.String name, int completionId) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
-        clientMessage.setAcquiresResource(false);
         clientMessage.setOperationName("Cache.RemoveAll");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);

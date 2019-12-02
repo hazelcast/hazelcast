@@ -47,7 +47,7 @@ public class XmlYamlClientConfigBuilderEqualsTest {
     }
 
     @Test
-    public void testFullClientConfig() throws IOException {
+    public void testFullExampleClientConfig() throws IOException {
         String fullExampleXml = readResourceToString("hazelcast-client-full-example.xml");
         String fullExampleYaml = readResourceToString("hazelcast-client-full-example.yaml");
 
@@ -59,6 +59,26 @@ public class XmlYamlClientConfigBuilderEqualsTest {
 
         ClientConfig xmlConfig = buildConfigFromXml(fullExampleXml);
         ClientConfig yamlConfig = buildConfigFromYaml(fullExampleYaml);
+
+        String xmlConfigFromXml = ClientConfigXmlGenerator.generate(xmlConfig, 4);
+        String xmlConfigFromYaml = ClientConfigXmlGenerator.generate(yamlConfig, 4);
+
+        assertEquals(xmlConfigFromXml, xmlConfigFromYaml);
+    }
+
+    @Test
+    public void testFullClientConfig() throws IOException {
+        String fullConfigXml = readResourceToString("hazelcast-client-full.xml");
+        String fullConfigYaml = readResourceToString("hazelcast-client-full.yaml");
+
+        // remove imports to prevent the test from failing with importing non-existing files
+        fullConfigXml = fullConfigXml.replace("<import resource=\"your-client-configuration-XML-file\"/>", "");
+        fullConfigYaml = fullConfigYaml
+                .replace("\r", "")
+                .replace("import:\n    - your-client-configuration-YAML-file", "");
+
+        ClientConfig xmlConfig = buildConfigFromXml(fullConfigXml);
+        ClientConfig yamlConfig = buildConfigFromYaml(fullConfigYaml);
 
         String xmlConfigFromXml = ClientConfigXmlGenerator.generate(xmlConfig, 4);
         String xmlConfigFromYaml = ClientConfigXmlGenerator.generate(yamlConfig, 4);

@@ -28,7 +28,7 @@ import com.hazelcast.internal.services.MemberAttributeServiceEvent;
 import com.hazelcast.internal.services.MembershipAwareService;
 import com.hazelcast.map.IMap;
 import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.splitbrainprotection.impl.ProbabilisticSplitBrainProtectionFunction;
 import com.hazelcast.splitbrainprotection.impl.RecentlyActiveSplitBrainProtectionFunction;
 import com.hazelcast.splitbrainprotection.impl.SplitBrainProtectionServiceImpl;
@@ -105,7 +105,7 @@ public class SplitBrainProtectionTest extends HazelcastTestSupport {
 
         Config config = new Config()
                 .addSplitBrainProtectionConfig(splitBrainProtectionConfig)
-                .setProperty(GroupProperty.HEARTBEAT_INTERVAL_SECONDS.getName(), "1");
+                .setProperty(ClusterProperty.HEARTBEAT_INTERVAL_SECONDS.getName(), "1");
 
         HazelcastInstance instance = createHazelcastInstance(config);
 
@@ -130,7 +130,7 @@ public class SplitBrainProtectionTest extends HazelcastTestSupport {
 
         Config config = new Config()
                 .addSplitBrainProtectionConfig(splitBrainProtectionConfig)
-                .setProperty(GroupProperty.HEARTBEAT_INTERVAL_SECONDS.getName(), "1");
+                .setProperty(ClusterProperty.HEARTBEAT_INTERVAL_SECONDS.getName(), "1");
 
         HazelcastInstance instance = createHazelcastInstance(config);
 
@@ -412,7 +412,7 @@ public class SplitBrainProtectionTest extends HazelcastTestSupport {
     @Test(expected = InvalidConfigurationException.class)
     public void givenProbabilisticSplitBrainProtection_whenAcceptableHeartbeatPause_greaterThanMaxNoHeartbeat_exceptionIsThrown() {
         Config config = new Config();
-        config.setProperty(GroupProperty.MAX_NO_HEARTBEAT_SECONDS.getName(), "10");
+        config.setProperty(ClusterProperty.MAX_NO_HEARTBEAT_SECONDS.getName(), "10");
         SplitBrainProtectionConfig probabilisticSplitBrainProtectionConfig = SplitBrainProtectionConfig.newProbabilisticSplitBrainProtectionConfigBuilder("prob-split-brain-protection", 3)
                 .withAcceptableHeartbeatPauseMillis(13000)
                 .build();
@@ -425,7 +425,7 @@ public class SplitBrainProtectionTest extends HazelcastTestSupport {
     @Test(expected = InvalidConfigurationException.class)
     public void givenProbabilisticSplitBrainProtection_whenAcceptableHeartbeatPause_lessThanHeartbeatInterval_exceptionIsThrown() {
         Config config = new Config();
-        config.setProperty(GroupProperty.HEARTBEAT_INTERVAL_SECONDS.getName(), "5");
+        config.setProperty(ClusterProperty.HEARTBEAT_INTERVAL_SECONDS.getName(), "5");
         SplitBrainProtectionConfig probabilisticSplitBrainProtectionConfig = SplitBrainProtectionConfig.newProbabilisticSplitBrainProtectionConfigBuilder("prob-split-brain-protection", 3)
                 .withAcceptableHeartbeatPauseMillis(3000)
                 .build();
@@ -438,7 +438,7 @@ public class SplitBrainProtectionTest extends HazelcastTestSupport {
     @Test(expected = InvalidConfigurationException.class)
     public void givenRecentlyActiveSplitBrainProtection_whenHeartbeatTolerance_greaterThanMaxNoHeartbeat_exceptionIsThrown() {
         Config config = new Config();
-        config.setProperty(GroupProperty.MAX_NO_HEARTBEAT_SECONDS.getName(), "10");
+        config.setProperty(ClusterProperty.MAX_NO_HEARTBEAT_SECONDS.getName(), "10");
         SplitBrainProtectionConfig recentlyActiveSplitBrainProtectionConfig = SplitBrainProtectionConfig
                 .newRecentlyActiveSplitBrainProtectionConfigBuilder("test-splitBrainProtection", 3, 13000)
                 .build();
@@ -451,7 +451,7 @@ public class SplitBrainProtectionTest extends HazelcastTestSupport {
     @Test(expected = InvalidConfigurationException.class)
     public void givenRecentlyActiveSplitBrainProtection_whenHeartbeatTolerance_lessThanHeartbeatInterval_exceptionIsThrown() {
         Config config = new Config();
-        config.setProperty(GroupProperty.HEARTBEAT_INTERVAL_SECONDS.getName(), "5");
+        config.setProperty(ClusterProperty.HEARTBEAT_INTERVAL_SECONDS.getName(), "5");
         SplitBrainProtectionConfig recentlyActiveSplitBrainProtectionConfig = SplitBrainProtectionConfig
                 .newRecentlyActiveSplitBrainProtectionConfigBuilder("test-splitBrainProtection", 3, 3000)
                 .build();

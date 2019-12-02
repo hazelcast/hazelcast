@@ -18,6 +18,8 @@ package com.hazelcast.cache.impl.merge.entry;
 
 import com.hazelcast.cache.CacheEntryView;
 import com.hazelcast.cache.impl.CacheDataSerializerHook;
+import com.hazelcast.internal.nio.DataWriter;
+import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -80,7 +82,7 @@ public class DefaultCacheEntryView
     }
 
     @Override
-    public long getAccessHit() {
+    public long getHits() {
         return accessHit;
     }
 
@@ -96,13 +98,14 @@ public class DefaultCacheEntryView
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
+        assert out instanceof DataWriter;
         out.writeLong(creationTime);
         out.writeLong(expirationTime);
         out.writeLong(lastAccessTime);
         out.writeLong(accessHit);
-        out.writeData(key);
-        out.writeData(value);
-        out.writeData(expiryPolicy);
+        IOUtil.writeData(out, key);
+        IOUtil.writeData(out, value);
+        IOUtil.writeData(out, expiryPolicy);
     }
 
     @Override
@@ -111,9 +114,9 @@ public class DefaultCacheEntryView
         expirationTime = in.readLong();
         lastAccessTime = in.readLong();
         accessHit = in.readLong();
-        key = in.readData();
-        value = in.readData();
-        expiryPolicy = in.readData();
+        key = IOUtil.readData(in);
+        value = IOUtil.readData(in);
+        expiryPolicy = IOUtil.readData(in);
     }
 
     @Override

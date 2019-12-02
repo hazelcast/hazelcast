@@ -36,15 +36,13 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 
 /**
  * Adds listener to map. This listener will be used to listen near cache invalidation events.
- * Eventually consistent client near caches should use this method to add invalidation listeners
- * instead of {@link #addNearCacheEntryListener(String, int, boolean)}
  */
-@Generated("ed24be7b6d4f5738996e25d079f67d24")
+@Generated("08bf645a3a46594d65e131a7ddfd11c1")
 public final class MapAddNearCacheInvalidationListenerCodec {
-    //hex: 0x014200
-    public static final int REQUEST_MESSAGE_TYPE = 82432;
-    //hex: 0x014201
-    public static final int RESPONSE_MESSAGE_TYPE = 82433;
+    //hex: 0x014100
+    public static final int REQUEST_MESSAGE_TYPE = 82176;
+    //hex: 0x014101
+    public static final int RESPONSE_MESSAGE_TYPE = 82177;
     private static final int REQUEST_LISTENER_FLAGS_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_LOCAL_ONLY_FIELD_OFFSET = REQUEST_LISTENER_FLAGS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_LOCAL_ONLY_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
@@ -54,11 +52,11 @@ public final class MapAddNearCacheInvalidationListenerCodec {
     private static final int EVENT_I_MAP_INVALIDATION_PARTITION_UUID_FIELD_OFFSET = EVENT_I_MAP_INVALIDATION_SOURCE_UUID_FIELD_OFFSET + UUID_SIZE_IN_BYTES;
     private static final int EVENT_I_MAP_INVALIDATION_SEQUENCE_FIELD_OFFSET = EVENT_I_MAP_INVALIDATION_PARTITION_UUID_FIELD_OFFSET + UUID_SIZE_IN_BYTES;
     private static final int EVENT_I_MAP_INVALIDATION_INITIAL_FRAME_SIZE = EVENT_I_MAP_INVALIDATION_SEQUENCE_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
-    //hex: 0x014202
-    private static final int EVENT_I_MAP_INVALIDATION_MESSAGE_TYPE = 82434;
+    //hex: 0x014102
+    private static final int EVENT_I_MAP_INVALIDATION_MESSAGE_TYPE = 82178;
     private static final int EVENT_I_MAP_BATCH_INVALIDATION_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    //hex: 0x014203
-    private static final int EVENT_I_MAP_BATCH_INVALIDATION_MESSAGE_TYPE = 82435;
+    //hex: 0x014103
+    private static final int EVENT_I_MAP_BATCH_INVALIDATION_MESSAGE_TYPE = 82179;
 
     private MapAddNearCacheInvalidationListenerCodec() {
     }
@@ -85,7 +83,6 @@ public final class MapAddNearCacheInvalidationListenerCodec {
     public static ClientMessage encodeRequest(java.lang.String name, int listenerFlags, boolean localOnly) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
-        clientMessage.setAcquiresResource(false);
         clientMessage.setOperationName("Map.AddNearCacheInvalidationListener");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);

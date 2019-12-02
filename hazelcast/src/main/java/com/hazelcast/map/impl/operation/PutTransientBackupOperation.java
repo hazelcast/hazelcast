@@ -25,8 +25,9 @@ public class PutTransientBackupOperation extends PutBackupOperation {
     public PutTransientBackupOperation() {
     }
 
-    public PutTransientBackupOperation(String name, Record<Data> record, Data dataValue) {
-        super(name, record, dataValue);
+    public PutTransientBackupOperation(String name, Data dataKey,
+                                       Record<Data> record, Data dataValue) {
+        super(name, dataKey, record, dataValue);
     }
 
     @Override

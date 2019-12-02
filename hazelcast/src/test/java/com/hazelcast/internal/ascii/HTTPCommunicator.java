@@ -16,10 +16,10 @@
 
 package com.hazelcast.internal.ascii;
 
+import com.hazelcast.cluster.impl.MemberImpl;
 import com.hazelcast.config.AdvancedNetworkConfig;
 import com.hazelcast.config.SSLConfig;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.cluster.impl.MemberImpl;
 import com.hazelcast.internal.ascii.rest.HttpCommandProcessor;
 import com.hazelcast.internal.nio.IOUtil;
 import org.apache.http.Consts;
@@ -60,8 +60,8 @@ import java.util.UUID;
 
 import static com.hazelcast.instance.EndpointQualifier.REST;
 import static com.hazelcast.internal.ascii.rest.HttpCommand.CONTENT_TYPE_PLAIN_TEXT;
-import static com.hazelcast.test.HazelcastTestSupport.getNode;
 import static com.hazelcast.internal.util.StringUtil.bytesToString;
+import static com.hazelcast.test.HazelcastTestSupport.getNode;
 
 @SuppressWarnings("SameParameterValue")
 public class HTTPCommunicator {
@@ -216,14 +216,14 @@ public class HTTPCommunicator {
         return doPost(url, clusterName, groupPassword);
     }
 
-    public String shutdownMember(String clusterName, String groupPassword) throws IOException {
+    public ConnectionResponse shutdownMember(String clusterName, String groupPassword) throws IOException {
         String url = address + "management/cluster/memberShutdown";
-        return doPost(url, clusterName, groupPassword).response;
+        return doPost(url, clusterName, groupPassword);
     }
 
-    public String getClusterState(String clusterName, String groupPassword) throws IOException {
+    public ConnectionResponse getClusterState(String clusterName, String groupPassword) throws IOException {
         String url = address + "management/cluster/state";
-        return doPost(url, clusterName, groupPassword).response;
+        return doPost(url, clusterName, groupPassword);
     }
 
     public ConnectionResponse changeClusterState(String clusterName, String groupPassword, String newState) throws IOException {
@@ -267,54 +267,63 @@ public class HTTPCommunicator {
         return doPost(url, clusterName, groupPassword);
     }
 
-    public String listClusterNodes(String clusterName, String groupPassword) throws IOException {
+    public ConnectionResponse listClusterNodes(String clusterName, String groupPassword) throws IOException {
         String url = address + "management/cluster/nodes";
-        return doPost(url, clusterName, groupPassword).response;
+        return doPost(url, clusterName, groupPassword);
     }
 
-    public String syncMapOverWAN(String wanRepName, String publisherId, String mapName) throws IOException {
+    public String syncMapOverWAN(String clusterName, String clusterPassword,
+                                 String wanRepName, String publisherId, String mapName) throws IOException {
         String url = address + "mancenter/wan/sync/map";
-        return doPost(url, wanRepName, publisherId, mapName).response;
+        return doPost(url, clusterName, clusterPassword, wanRepName, publisherId, mapName).response;
     }
 
-    public String syncMapsOverWAN(String wanRepName, String publisherId) throws IOException {
+    public String syncMapsOverWAN(String clusterName, String clusterPassword,
+                                  String wanRepName, String publisherId) throws IOException {
         String url = address + "mancenter/wan/sync/allmaps";
-        return doPost(url, wanRepName, publisherId).response;
+        return doPost(url, clusterName, clusterPassword, wanRepName, publisherId).response;
     }
 
-    public String wanMapConsistencyCheck(String wanRepName, String publisherId, String mapName) throws IOException {
+    public String wanMapConsistencyCheck(String clusterName, String clusterPassword,
+                                         String wanRepName, String publisherId, String mapName) throws IOException {
         String url = address + "mancenter/wan/consistencyCheck/map";
-        return doPost(url, wanRepName, publisherId, mapName).response;
+        return doPost(url, clusterName, clusterPassword, wanRepName, publisherId, mapName).response;
     }
 
-    public String wanPausePublisher(String wanRepName, String publisherId) throws IOException {
+    public String wanPausePublisher(String clusterName, String clusterPassword,
+                                    String wanRepName, String publisherId) throws IOException {
         String url = address + "mancenter/wan/pausePublisher";
-        return doPost(url, wanRepName, publisherId).response;
+        return doPost(url, clusterName, clusterPassword, wanRepName, publisherId).response;
     }
 
-    public String wanStopPublisher(String wanRepName, String publisherId) throws IOException {
+    public String wanStopPublisher(String clusterName, String clusterPassword,
+                                   String wanRepName, String publisherId) throws IOException {
         String url = address + "mancenter/wan/stopPublisher";
-        return doPost(url, wanRepName, publisherId).response;
+        return doPost(url, clusterName, clusterPassword, wanRepName, publisherId).response;
     }
 
-    public String wanResumePublisher(String wanRepName, String publisherId) throws IOException {
+    public String wanResumePublisher(String clusterName, String clusterPassword,
+                                     String wanRepName, String publisherId) throws IOException {
         String url = address + "mancenter/wan/resumePublisher";
-        return doPost(url, wanRepName, publisherId).response;
+        return doPost(url, clusterName, clusterPassword, wanRepName, publisherId).response;
     }
 
-    public String wanClearQueues(String wanRepName, String targetClusterName) throws IOException {
+    public String wanClearQueues(String clusterName, String clusterPassword,
+                                 String wanRepName, String targetClusterName) throws IOException {
         String url = address + "mancenter/wan/clearWanQueues";
-        return doPost(url, wanRepName, targetClusterName).response;
+        return doPost(url, clusterName, clusterPassword, wanRepName, targetClusterName).response;
     }
 
-    public String addWanConfig(String wanRepConfigJson) throws IOException {
+    public String addWanConfig(String clusterName, String clusterPassword,
+                               String wanRepConfigJson) throws IOException {
         String url = address + "mancenter/wan/addWanConfig";
-        return doPost(url, wanRepConfigJson).response;
+        return doPost(url, clusterName, clusterPassword, wanRepConfigJson).response;
     }
 
-    public String updatePermissions(String clusterName, String groupPassword, String permConfJson) throws IOException {
+    public ConnectionResponse updatePermissions(String clusterName, String groupPassword, String permConfJson)
+            throws IOException {
         String url = address + "mancenter/security/permissions";
-        return doPost(url, clusterName, groupPassword, permConfJson).response;
+        return doPost(url, clusterName, groupPassword, permConfJson);
     }
 
     public ConnectionResponse getCPGroupIds() throws IOException {
@@ -515,6 +524,7 @@ public class HTTPCommunicator {
         String url = address + "undefined";
         return doPost(url);
     }
+
     public ConnectionResponse deleteRequestToUndefinedURI() throws IOException {
         String url = address + "undefined";
         return doDelete(url);

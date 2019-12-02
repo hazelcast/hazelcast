@@ -43,11 +43,11 @@ import static com.hazelcast.internal.networking.HandlerStatus.CLEAN;
 import static com.hazelcast.internal.nio.IOService.KILO_BYTE;
 import static com.hazelcast.internal.nio.IOUtil.compactOrClear;
 import static com.hazelcast.internal.nio.IOUtil.newByteBuffer;
-import static com.hazelcast.internal.nio.Protocols.CLIENT_BINARY_NEW;
+import static com.hazelcast.internal.nio.Protocols.CLIENT_BINARY;
 import static com.hazelcast.internal.nio.Protocols.CLUSTER;
 import static com.hazelcast.internal.nio.Protocols.PROTOCOL_LENGTH;
-import static com.hazelcast.spi.properties.GroupProperty.SOCKET_CLIENT_RECEIVE_BUFFER_SIZE;
-import static com.hazelcast.spi.properties.GroupProperty.SOCKET_RECEIVE_BUFFER_SIZE;
+import static com.hazelcast.spi.properties.ClusterProperty.SOCKET_CLIENT_RECEIVE_BUFFER_SIZE;
+import static com.hazelcast.spi.properties.ClusterProperty.SOCKET_RECEIVE_BUFFER_SIZE;
 import static com.hazelcast.internal.util.StringUtil.bytesToString;
 import static com.hazelcast.internal.util.StringUtil.stringToBytes;
 
@@ -97,7 +97,7 @@ public class UnifiedProtocolDecoder
                 .log();
             if (CLUSTER.equals(protocol)) {
                 initChannelForCluster();
-            } else if (CLIENT_BINARY_NEW.equals(protocol)) {
+            } else if (CLIENT_BINARY.equals(protocol)) {
                 initChannelForClient();
             } else if (RestApiTextDecoder.TEXT_PARSERS.isCommandPrefix(protocol)) {
                 RestApiConfig restApiConfig = ioService.getRestApiConfig();
@@ -141,7 +141,7 @@ public class UnifiedProtocolDecoder
                 .setOption(SO_SNDBUF, props.getInteger(SOCKET_RECEIVE_BUFFER_SIZE) * KILO_BYTE);
 
         TcpIpConnection connection = (TcpIpConnection) channel.attributeMap().get(TcpIpConnection.class);
-        connection.setType(ConnectionType.MEMBER);
+        connection.setConnectionType(ConnectionType.MEMBER);
         channel.inboundPipeline().replace(this, ioService.createInboundHandlers(EndpointQualifier.MEMBER, connection));
     }
 

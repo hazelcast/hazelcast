@@ -23,6 +23,7 @@ import java.util.Collection;
 /**
  * {@link SplitBrainProtectionFunction}s which implement this interface will be notified of member heartbeats.
  */
+@FunctionalInterface
 public interface HeartbeatAware {
 
     /**

@@ -193,6 +193,8 @@ public final class Predicates {
 
     /**
      * Creates an <b>always true</b> predicate that will pass all items.
+     * @param <K> the type of keys the predicate operates on.
+     * @param <V> the type of values the predicate operates on.
      */
     public static <K, V> Predicate<K, V> alwaysTrue() {
         return TruePredicate.INSTANCE;
@@ -200,6 +202,8 @@ public final class Predicates {
 
     /**
      * Creates an <b>always false</b> predicate that will filter out all items.
+     * @param <K> the type of keys the predicate operates on.
+     * @param <V> the type of values the predicate operates on.
      */
     public static <K, V> Predicate<K, V> alwaysFalse() {
         return FalsePredicate.INSTANCE;
@@ -210,6 +214,8 @@ public final class Predicates {
      * the value class is an {@code instanceof} the given {@code klass}.
      *
      * @param klass the class the created predicate will check for.
+     * @param <K>   the type of keys the predicate operates on.
+     * @param <V>   the type of values the predicate operates on.
      * @return the created <b>instance of</b> predicate.
      */
     public static <K, V> Predicate<K, V> instanceOf(final Class klass) {
@@ -223,6 +229,8 @@ public final class Predicates {
      * and will pass any item.
      *
      * @param predicates the child predicates to form the resulting <b>and</b> predicate from.
+     * @param <K>        the type of keys the predicate operates on.
+     * @param <V>        the type of values the predicate operates on.
      * @return the created <b>and</b> predicate instance.
      */
     public static <K, V> Predicate<K, V> and(Predicate... predicates) {
@@ -233,6 +241,8 @@ public final class Predicates {
      * Creates a <b>not</b> predicate that will negate the result of the given {@code predicate}.
      *
      * @param predicate the predicate to negate the value of.
+     * @param <K>       the type of keys the predicate operates on.
+     * @param <V>       the type of values the predicate operates on.
      * @return the created <b>not</b> predicate instance.
      */
     public static <K, V> Predicate<K, V> not(Predicate predicate) {
@@ -246,6 +256,8 @@ public final class Predicates {
      * and will never pass any items.
      *
      * @param predicates the child predicates to form the resulting <b>or</b> predicate from.
+     * @param <K>        the type of keys the predicate operates on.
+     * @param <V>        the type of values the predicate operates on.
      * @return the created <b>or</b> predicate instance.
      */
     public static <K, V> Predicate<K, V> or(Predicate... predicates) {
@@ -261,6 +273,8 @@ public final class Predicates {
      *
      * @param attribute the attribute to fetch the value for comparison from.
      * @param value     the value to compare the attribute value against. Can be {@code null}.
+     * @param <K>       the type of keys the predicate operates on.
+     * @param <V>       the type of values the predicate operates on.
      * @return the created <b>not equal</b> predicate instance.
      * @throws IllegalArgumentException if the {@code attribute} does not exist.
      */
@@ -277,6 +291,8 @@ public final class Predicates {
      *
      * @param attribute the attribute to fetch the value for comparison from.
      * @param value     the value to compare the attribute value against. Can be {@code null}.
+     * @param <K>       the type of keys the predicate operates on.
+     * @param <V>       the type of values the predicate operates on.
      * @return the created <b>equal</b> predicate instance.
      * @throws IllegalArgumentException if the {@code attribute} does not exist.
      */
@@ -297,6 +313,8 @@ public final class Predicates {
      *                  match the percentage sign or the underscore character itself, escape it with the backslash,
      *                  for example {@code "\\%"} string will match the percentage sign. Can be {@code null}.
      * @return the created <b>like</b> predicate instance.
+     * @param <K> the type of keys the predicate operates on.
+     * @param <V> the type of values the predicate operates on.
      * @throws IllegalArgumentException if the {@code attribute} does not exist.
      * @see #ilike(String, String)
      * @see #regex(String, String)
@@ -317,6 +335,8 @@ public final class Predicates {
      *                  multiple characters, the _ (underscore) is a placeholder for a single character. If you need to
      *                  match the percentage sign or the underscore character itself, escape it with the backslash,
      *                  for example {@code "\\%"} string will match the percentage sign. Can be {@code null}.
+     * @param <K>       the type of keys the predicate operates on.
+     * @param <V>       the type of values the predicate operates on.
      * @return the created <b>case-insensitive like</b> predicate instance.
      * @throws IllegalArgumentException if the {@code attribute} does not exist.
      * @see #like(String, String)
@@ -336,6 +356,8 @@ public final class Predicates {
      * @param attribute the attribute to fetch the value for matching from.
      * @param pattern   the pattern to match the attribute value against. The pattern interpreted exactly the same as
      *                  described in {@link java.util.regex.Pattern}. Can be {@code null}.
+     * @param <K>       the type of keys the predicate operates on.
+     * @param <V>       the type of values the predicate operates on.
      * @return the created <b>regex</b> predicate instance.
      * @throws IllegalArgumentException if the {@code attribute} does not exist.
      * @see #like(String, String)
@@ -354,6 +376,8 @@ public final class Predicates {
      *
      * @param attribute the left-hand side attribute to fetch the value for comparison from.
      * @param value     the right-hand side value to compare the attribute value against.
+     * @param <K>       the type of keys the predicate operates on.
+     * @param <V>       the type of values the predicate operates on.
      * @return the created <b>greater than</b> predicate.
      * @throws IllegalArgumentException if the {@code attribute} does not exist.
      */
@@ -370,6 +394,8 @@ public final class Predicates {
      *
      * @param attribute the left-hand side attribute to fetch the value for comparison from.
      * @param value     the right-hand side value to compare the attribute value against.
+     * @param <K>       the type of keys the predicate operates on.
+     * @param <V>       the type of values the predicate operates on.
      * @return the created <b>greater than or equal to</b> predicate.
      * @throws IllegalArgumentException if the {@code attribute} does not exist.
      */
@@ -386,6 +412,8 @@ public final class Predicates {
      *
      * @param attribute the left-hand side attribute to fetch the value for comparison from.
      * @param value     the right-hand side value to compare the attribute value against.
+     * @param <K>       the type of keys the predicate operates on.
+     * @param <V>       the type of values the predicate operates on.
      * @return the created <b>less than</b> predicate.
      * @throws IllegalArgumentException if the {@code attribute} does not exist.
      */
@@ -402,6 +430,8 @@ public final class Predicates {
      *
      * @param attribute the left-hand side attribute to fetch the value for comparison from.
      * @param value     the right-hand side value to compare the attribute value against.
+     * @param <K>       the type of keys the predicate operates on.
+     * @param <V>       the type of values the predicate operates on.
      * @return the created <b>less than or equal to</b> predicate.
      * @throws IllegalArgumentException if the {@code attribute} does not exist.
      */
@@ -420,6 +450,8 @@ public final class Predicates {
      * @param attribute the attribute to fetch the value to check from.
      * @param from      the inclusive lower bound of the range to check.
      * @param to        the inclusive upper bound of the range to check.
+     * @param <K>       the type of keys the predicate operates on.
+     * @param <V>       the type of values the predicate operates on.
      * @return the created <b>between</b> predicate.
      * @throws IllegalArgumentException if the {@code attribute} does not exist.
      */
@@ -436,6 +468,8 @@ public final class Predicates {
      *
      * @param attribute the attribute to fetch the value to test from.
      * @param values    the values set to test the membership in. Individual values can be {@code null}.
+     * @param <K>       the type of keys the predicate operates on.
+     * @param <V>       the type of values the predicate operates on.
      * @return the created <b>in</b> predicate.
      * @throws IllegalArgumentException if the {@code attribute} does not exist.
      */
@@ -455,6 +489,8 @@ public final class Predicates {
      * <i>Implicit Type Conversion</i> sections of {@link Predicates}.
      *
      * @param expression the 'where' expression.
+     * @param <K>        the type of keys the predicate operates on.
+     * @param <V>        the type of values the predicate operates on.
      * @return the created <b>sql</b> predicate instance.
      * @throws IllegalArgumentException if the SQL expression is invalid.
      */
@@ -466,7 +502,9 @@ public final class Predicates {
      * Creates a paging predicate with a page size. Results will not be filtered and will be returned in natural order.
      *
      * @param pageSize page size
-     * @throws {@link IllegalArgumentException} if pageSize is not greater than 0
+     * @param <K>      the type of keys the predicate operates on.
+     * @param <V>      the type of values the predicate operates on.
+     * @throws IllegalArgumentException if pageSize is not greater than 0
      */
     public static <K, V> PagingPredicate<K, V> pagingPredicate(int pageSize) {
         return new PagingPredicateImpl<>(pageSize);
@@ -478,8 +516,10 @@ public final class Predicates {
      *
      * @param predicate the inner predicate through which results will be filtered
      * @param pageSize  the page size
-     * @throws {@link IllegalArgumentException} if pageSize is not greater than 0
-     * @throws {@link IllegalArgumentException} if inner predicate is also a paging predicate
+     * @param <K>       the type of keys the predicate operates on.
+     * @param <V>       the type of values the predicate operates on.
+     * @throws IllegalArgumentException if pageSize is not greater than 0
+     * @throws IllegalArgumentException if inner predicate is also a paging predicate
      */
     public static <K, V> PagingPredicate<K, V> pagingPredicate(Predicate predicate, int pageSize) {
         return new PagingPredicateImpl<>(predicate, pageSize);
@@ -491,7 +531,9 @@ public final class Predicates {
      *
      * @param comparator the comparator through which results will be ordered
      * @param pageSize   the page size
-     * @throws {@link IllegalArgumentException} if pageSize is not greater than 0
+     * @param <K>        the type of keys the predicate operates on.
+     * @param <V>        the type of values the predicate operates on.
+     * @throws IllegalArgumentException if pageSize is not greater than 0
      */
     public static <K, V> PagingPredicate<K, V> pagingPredicate(Comparator<Map.Entry<K, V>> comparator, int pageSize) {
         return new PagingPredicateImpl<>(comparator, pageSize);
@@ -504,8 +546,10 @@ public final class Predicates {
      * @param predicate  the inner predicate through which results will be filtered
      * @param comparator the comparator through which results will be ordered
      * @param pageSize   the page size
-     * @throws {@link IllegalArgumentException} if pageSize is not greater than 0
-     * @throws {@link IllegalArgumentException} if inner predicate is also a {@link PagingPredicate}
+     * @param <K>        the type of keys the predicate operates on.
+     * @param <V>        the type of values the predicate operates on.
+     * @throws IllegalArgumentException if pageSize is not greater than 0
+     * @throws IllegalArgumentException if inner predicate is also a {@link PagingPredicate}
      */
     public static <K, V> PagingPredicate<K, V> pagingPredicate(Predicate<K, V> predicate, Comparator<Map.Entry<K, V>> comparator,
                                                                int pageSize) {
@@ -517,6 +561,8 @@ public final class Predicates {
      *
      * @param partitionKey the partition key
      * @param target       the target {@link Predicate}
+     * @param <K>          the type of keys the predicate operates on.
+     * @param <V>          the type of values the predicate operates on.
      * @throws NullPointerException     if partition key or target predicate is {@code null}
      */
     public static <K, V> PartitionPredicate<K, V> partitionPredicate(Object partitionKey, Predicate<K, V> target) {

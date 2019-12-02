@@ -16,35 +16,43 @@
 
 package com.hazelcast.internal.eviction.impl.comparator;
 
-import com.hazelcast.internal.eviction.EvictableEntryView;
-import com.hazelcast.internal.eviction.EvictionPolicyComparator;
+import com.hazelcast.spi.eviction.EvictableEntryView;
+import com.hazelcast.spi.eviction.EvictionPolicyComparator;
 import com.hazelcast.internal.serialization.SerializableByConvention;
 
 /**
- * {@link com.hazelcast.config.EvictionPolicy#LFU} policy based {@link EvictionPolicyComparator}.
+ * {@link com.hazelcast.config.EvictionPolicy#LFU}
+ * policy based {@link EvictionPolicyComparator}.
  */
 @SerializableByConvention
-public class LFUEvictionPolicyComparator extends EvictionPolicyComparator {
+public class LFUEvictionPolicyComparator
+        implements EvictionPolicyComparator<Object, Object, EvictableEntryView<Object, Object>> {
+
+    public static final LFUEvictionPolicyComparator INSTANCE
+            = new LFUEvictionPolicyComparator();
 
     @Override
     public int compare(EvictableEntryView e1, EvictableEntryView e2) {
-        long hits1 = e1.getAccessHit();
-        long hits2 = e2.getAccessHit();
-        if (hits2 < hits1) {
-            return SECOND_ENTRY_HAS_HIGHER_PRIORITY_TO_BE_EVICTED;
-        } else if (hits1 < hits2) {
-            return FIRST_ENTRY_HAS_HIGHER_PRIORITY_TO_BE_EVICTED;
-        } else {
-            long creationTime1 = e1.getCreationTime();
-            long creationTime2 = e2.getCreationTime();
-            // if hits are same, we select the oldest entry to evict
-            if (creationTime2 < creationTime1) {
-                return SECOND_ENTRY_HAS_HIGHER_PRIORITY_TO_BE_EVICTED;
-            } else if (creationTime2 > creationTime1) {
-                return FIRST_ENTRY_HAS_HIGHER_PRIORITY_TO_BE_EVICTED;
-            } else {
-                return BOTH_OF_ENTRIES_HAVE_SAME_PRIORITY_TO_BE_EVICTED;
-            }
+        int result = Long.compare(e1.getHits(), e2.getHits());
+        // if hits are same, we try to select oldest entry to evict
+        return result == 0 ? Long.compare(e1.getCreationTime(), e2.getCreationTime()) : result;
+    }
+
+    @Override
+    public String toString() {
+        return "LFUEvictionPolicyComparator{" + super.toString() + "} ";
+    }
+
+    @Override
+    public final boolean equals(Object o) {
+        if (o == null) {
+            return false;
         }
+        return getClass().equals(o.getClass());
+    }
+
+    @Override
+    public final int hashCode() {
+        return getClass().hashCode();
     }
 }

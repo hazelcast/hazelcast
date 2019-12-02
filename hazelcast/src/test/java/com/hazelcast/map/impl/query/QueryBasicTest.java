@@ -36,7 +36,7 @@ import com.hazelcast.query.SampleTestObjects.ObjectWithOptional;
 import com.hazelcast.query.SampleTestObjects.State;
 import com.hazelcast.query.SampleTestObjects.Value;
 import com.hazelcast.query.SampleTestObjects.ValueType;
-import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -70,7 +70,7 @@ public class QueryBasicTest extends HazelcastTestSupport {
     public void testPredicatedEvaluatedSingleThreadedByDefault() {
         Config config = getConfig();
         HazelcastProperties properties = new HazelcastProperties(config);
-        boolean parallelEvaluation = properties.getBoolean(GroupProperty.QUERY_PREDICATE_PARALLEL_EVALUATION);
+        boolean parallelEvaluation = properties.getBoolean(ClusterProperty.QUERY_PREDICATE_PARALLEL_EVALUATION);
         assertFalse(parallelEvaluation);
     }
 
@@ -848,7 +848,7 @@ public class QueryBasicTest extends HazelcastTestSupport {
     @Test
     public void testQueryPortableObject_parallel() {
         Config config = getConfig();
-        config.setProperty(GroupProperty.QUERY_PREDICATE_PARALLEL_EVALUATION.getName(), "true");
+        config.setProperty(ClusterProperty.QUERY_PREDICATE_PARALLEL_EVALUATION.getName(), "true");
         testQueryUsingPortableObject(config, randomMapName());
     }
 

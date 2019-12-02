@@ -79,6 +79,9 @@ public class IdentifiedFactory implements DataSerializableFactory {
         if (typeId == TaskWithUnserializableResponse.CLASS_ID) {
             return new TaskWithUnserializableResponse();
         }
+        if (typeId == CustomCredentials.CLASS_ID) {
+            return new CustomCredentials();
+        }
         return null;
     }
 }

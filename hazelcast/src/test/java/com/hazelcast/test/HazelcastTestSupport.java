@@ -24,6 +24,7 @@ import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.collection.ISet;
 import com.hazelcast.config.Config;
+import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.cp.ICountDownLatch;
 import com.hazelcast.instance.BuildInfoProvider;
@@ -64,7 +65,7 @@ import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 import com.hazelcast.internal.partition.IPartition;
 import com.hazelcast.internal.partition.IPartitionService;
-import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.jitter.JitterRule;
 import com.hazelcast.test.starter.HazelcastStarter;
 import junit.framework.AssertionFailedError;
@@ -83,6 +84,7 @@ import java.nio.ByteOrder;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -159,6 +161,24 @@ public abstract class HazelcastTestSupport {
         PERSISTENT_MEMORY_DIRECTORY =  pmemDirectory != null ? pmemDirectory : "/tmp/pmem";
     }
 
+    protected static <T> boolean containsIn(T item1, Collection<T> collection, Comparator<T> comparator) {
+        for (T item2 : collection) {
+            if (comparator.compare(item1, item2) == 0) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    protected static <T> void assertCollection(Collection<T> expected, Collection<T> actual, Comparator<T> comparator) {
+        assertEquals(expected.size(), actual.size());
+        for (T item : expected) {
+            if (!containsIn(item, actual, comparator)) {
+                throw new AssertionError("Actual collection does not contain the item " + item);
+            }
+        }
+    }
+
     @After
     public final void shutdownNodeFactory() {
         TestHazelcastInstanceFactory testHazelcastInstanceFactory = factory;
@@ -175,10 +195,10 @@ public abstract class HazelcastTestSupport {
     public static Config smallInstanceConfig() {
         // make the test instances consume less resources per default
         return new Config()
-                .setProperty(GroupProperty.PARTITION_COUNT.getName(), "11")
-                .setProperty(GroupProperty.PARTITION_OPERATION_THREAD_COUNT.getName(), "2")
-                .setProperty(GroupProperty.GENERIC_OPERATION_THREAD_COUNT.getName(), "2")
-                .setProperty(GroupProperty.EVENT_THREAD_COUNT.getName(), "1");
+                .setProperty(ClusterProperty.PARTITION_COUNT.getName(), "11")
+                .setProperty(ClusterProperty.PARTITION_OPERATION_THREAD_COUNT.getName(), "2")
+                .setProperty(ClusterProperty.GENERIC_OPERATION_THREAD_COUNT.getName(), "2")
+                .setProperty(ClusterProperty.EVENT_THREAD_COUNT.getName(), "1");
     }
 
     public static Config regularInstanceConfig() {
@@ -1794,4 +1814,10 @@ public abstract class HazelcastTestSupport {
         return results;
     }
 
+    public static void destroyAllDistributedObjects(HazelcastInstance hz) {
+        Collection<DistributedObject> distributedObjects = hz.getDistributedObjects();
+        for (DistributedObject object : distributedObjects) {
+            object.destroy();
+        }
+    }
 }

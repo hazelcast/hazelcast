@@ -16,25 +16,24 @@
 
 package com.hazelcast.security;
 
-import static java.util.Objects.requireNonNull;
+import com.hazelcast.internal.serialization.BinaryInterface;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.spi.impl.SpiDataSerializerHook;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
 import java.util.Arrays;
 
-import com.hazelcast.internal.serialization.BinaryInterface;
-import com.hazelcast.nio.serialization.Portable;
-import com.hazelcast.nio.serialization.PortableReader;
-import com.hazelcast.nio.serialization.PortableWriter;
-import com.hazelcast.spi.impl.SpiPortableHook;
-
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import static java.util.Objects.requireNonNull;
 
 /**
  * Simple implementation of {@link Credentials} using a raw byte array token.
  */
 @BinaryInterface
 @SuppressFBWarnings("EI_EXPOSE_REP2")
-public class SimpleTokenCredentials implements TokenCredentials, Portable {
+public class SimpleTokenCredentials implements TokenCredentials, IdentifiedDataSerializable {
 
     private static final long serialVersionUID = -1508314631354255039L;
 
@@ -65,23 +64,23 @@ public class SimpleTokenCredentials implements TokenCredentials, Portable {
     }
 
     @Override
-    public final void writePortable(PortableWriter writer) throws IOException {
-        writer.writeByteArray("token", token);
+    public void writeData(ObjectDataOutput out) throws IOException {
+        out.writeByteArray(token);
     }
 
     @Override
-    public final void readPortable(PortableReader reader) throws IOException {
-        token = reader.readByteArray("token");
+    public void readData(ObjectDataInput in) throws IOException {
+        token = in.readByteArray();
     }
 
     @Override
     public int getFactoryId() {
-        return SpiPortableHook.ID;
+        return SpiDataSerializerHook.F_ID;
     }
 
     @Override
     public int getClassId() {
-        return SpiPortableHook.SIMPLE_TOKEN_CRED;
+        return SpiDataSerializerHook.SIMPLE_TOKEN_CRED;
     }
 
     @Override

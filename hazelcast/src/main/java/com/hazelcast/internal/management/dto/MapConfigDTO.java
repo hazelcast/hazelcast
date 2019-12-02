@@ -17,15 +17,16 @@
 package com.hazelcast.internal.management.dto;
 
 import com.hazelcast.config.CacheDeserializedValues;
+import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.MapConfig;
-import com.hazelcast.config.MaxSizeConfig;
+import com.hazelcast.config.MaxSizePolicy;
 import com.hazelcast.config.MetadataPolicy;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.internal.json.JsonValue;
-import com.hazelcast.json.JsonSerializable;
+import com.hazelcast.json.internal.JsonSerializable;
 import com.hazelcast.internal.management.ManagementDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -69,9 +70,10 @@ public class MapConfigDTO implements JsonSerializable, IdentifiedDataSerializabl
             root.add("splitBrainProtectionName", splitBrainProtectionName);
         }
 
-        root.add("maxSize", mapConfig.getMaxSizeConfig().getSize());
-        root.add("maxSizePolicy", mapConfig.getMaxSizeConfig().getMaxSizePolicy().toString());
-        root.add("evictionPolicy", mapConfig.getEvictionPolicy().name());
+        EvictionConfig evictionConfig = mapConfig.getEvictionConfig();
+        root.add("maxSize", evictionConfig.getSize());
+        root.add("maxSizePolicy", evictionConfig.getMaxSizePolicy().toString());
+        root.add("evictionPolicy", evictionConfig.getEvictionPolicy().toString());
         root.add("memoryFormat", mapConfig.getInMemoryFormat().toString());
         root.add("cacheDeserializedValues", mapConfig.getCacheDeserializedValues().toString());
         root.add("metadataPolicy", mapConfig.getMetadataPolicy().toString());
@@ -106,9 +108,10 @@ public class MapConfigDTO implements JsonSerializable, IdentifiedDataSerializabl
             mapConfig.setSplitBrainProtectionName(getString(json, "splitBrainProtectionName"));
         }
 
-        mapConfig.setMaxSizeConfig(new MaxSizeConfig().setSize(getInt(json, "maxSize"))
-                .setMaxSizePolicy(MaxSizeConfig.MaxSizePolicy.valueOf(getString(json, "maxSizePolicy"))));
-        mapConfig.setEvictionPolicy(EvictionPolicy.valueOf(getString(json, "evictionPolicy")));
+        EvictionConfig evictionConfig = mapConfig.getEvictionConfig();
+        evictionConfig.setSize(getInt(json, "maxSize"));
+        evictionConfig.setMaxSizePolicy(MaxSizePolicy.valueOf(getString(json, "maxSizePolicy")));
+        evictionConfig.setEvictionPolicy(EvictionPolicy.valueOf(getString(json, "evictionPolicy")));
         mapConfig.setInMemoryFormat(InMemoryFormat.valueOf(getString(json, "memoryFormat")));
         mapConfig.setCacheDeserializedValues(CacheDeserializedValues.valueOf(
                 getString(json, "cacheDeserializedValues", DEFAULT_CACHED_DESERIALIZED_VALUES.name())));
@@ -146,9 +149,9 @@ public class MapConfigDTO implements JsonSerializable, IdentifiedDataSerializabl
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeUTF(mapConfig.getName());
         out.writeUTF(mapConfig.getSplitBrainProtectionName());
-        out.writeInt(mapConfig.getMaxSizeConfig().getSize());
-        out.writeUTF(mapConfig.getMaxSizeConfig().getMaxSizePolicy().toString());
-        out.writeUTF(mapConfig.getEvictionPolicy().name());
+        out.writeInt(mapConfig.getEvictionConfig().getSize());
+        out.writeUTF(mapConfig.getEvictionConfig().getMaxSizePolicy().toString());
+        out.writeUTF(mapConfig.getEvictionConfig().getEvictionPolicy().toString());
         out.writeUTF(mapConfig.getInMemoryFormat().toString());
         out.writeUTF(mapConfig.getCacheDeserializedValues().toString());
         out.writeUTF(mapConfig.getMetadataPolicy().toString());
@@ -168,11 +171,10 @@ public class MapConfigDTO implements JsonSerializable, IdentifiedDataSerializabl
         mapConfig = new MapConfig();
         mapConfig.setName(in.readUTF());
         mapConfig.setSplitBrainProtectionName(in.readUTF());
-        mapConfig.setMaxSizeConfig(
-                new MaxSizeConfig()
-                        .setSize(in.readInt())
-                        .setMaxSizePolicy(MaxSizeConfig.MaxSizePolicy.valueOf(in.readUTF())));
-        mapConfig.setEvictionPolicy(EvictionPolicy.valueOf(in.readUTF()));
+        EvictionConfig evictionConfig = mapConfig.getEvictionConfig();
+        evictionConfig.setSize(in.readInt());
+        evictionConfig.setMaxSizePolicy(MaxSizePolicy.valueOf(in.readUTF()));
+        evictionConfig.setEvictionPolicy(EvictionPolicy.valueOf(in.readUTF()));
         mapConfig.setInMemoryFormat(InMemoryFormat.valueOf(in.readUTF()));
         mapConfig.setCacheDeserializedValues(CacheDeserializedValues.valueOf(in.readUTF()));
         mapConfig.setMetadataPolicy(MetadataPolicy.valueOf(in.readUTF()));

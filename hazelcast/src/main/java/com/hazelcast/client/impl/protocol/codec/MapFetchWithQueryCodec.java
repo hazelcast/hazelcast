@@ -37,12 +37,12 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Fetches the specified number of entries from the specified partition starting from specified table index
  * that match the predicate and applies the projection logic on them.
  */
-@Generated("d042355b4157eac9b5a4bdf374e4c928")
+@Generated("4eb6409c48948de6a8eadf5fc2f7fc01")
 public final class MapFetchWithQueryCodec {
-    //hex: 0x014300
-    public static final int REQUEST_MESSAGE_TYPE = 82688;
-    //hex: 0x014301
-    public static final int RESPONSE_MESSAGE_TYPE = 82689;
+    //hex: 0x014200
+    public static final int REQUEST_MESSAGE_TYPE = 82432;
+    //hex: 0x014201
+    public static final int RESPONSE_MESSAGE_TYPE = 82433;
     private static final int REQUEST_TABLE_INDEX_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_BATCH_FIELD_OFFSET = REQUEST_TABLE_INDEX_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_BATCH_FIELD_OFFSET + INT_SIZE_IN_BYTES;
@@ -84,7 +84,6 @@ public final class MapFetchWithQueryCodec {
     public static ClientMessage encodeRequest(java.lang.String name, int tableIndex, int batch, com.hazelcast.nio.serialization.Data projection, com.hazelcast.nio.serialization.Data predicate) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(true);
-        clientMessage.setAcquiresResource(false);
         clientMessage.setOperationName("Map.FetchWithQuery");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);

@@ -20,7 +20,6 @@ import com.hazelcast.cache.HazelcastExpiryPolicy;
 import com.hazelcast.cache.ICache;
 import com.hazelcast.cache.impl.CachePartitionSegment;
 import com.hazelcast.cache.impl.CacheService;
-import com.hazelcast.cache.impl.HazelcastServerCachingProvider;
 import com.hazelcast.cache.impl.eviction.CacheClearExpiredRecordsTask;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.config.CacheConfiguration;
@@ -47,6 +46,7 @@ import javax.cache.event.CacheEntryListenerException;
 import java.io.Serializable;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static com.hazelcast.cache.CacheTestSupport.createServerCachingProvider;
 import static com.hazelcast.core.LifecycleEvent.LifecycleState.MERGED;
 import static com.hazelcast.core.LifecycleEvent.LifecycleState.MERGING;
 import static com.hazelcast.core.LifecycleEvent.LifecycleState.SHUTTING_DOWN;
@@ -217,7 +217,7 @@ public class CacheExpirationManagerTest extends AbstractExpirationManagerTest {
     }
 
     protected CacheManager createCacheManager(HazelcastInstance instance) {
-        return HazelcastServerCachingProvider.createCachingProvider(instance).getCacheManager();
+        return createServerCachingProvider(instance).getCacheManager();
     }
 
     @Override

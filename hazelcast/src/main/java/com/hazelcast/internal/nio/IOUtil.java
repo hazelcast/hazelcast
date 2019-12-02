@@ -118,7 +118,7 @@ public final class IOUtil {
         boolean isBinary = object instanceof Data;
         out.writeBoolean(isBinary);
         if (isBinary) {
-            out.writeData((Data) object);
+            writeData(out, (Data) object);
         } else {
             out.writeObject(object);
         }
@@ -128,9 +128,24 @@ public final class IOUtil {
     public static <T> T readObject(ObjectDataInput in) throws IOException {
         boolean isBinary = in.readBoolean();
         if (isBinary) {
-            return (T) in.readData();
+            return (T) readData(in);
         }
         return in.readObject();
+    }
+
+    public static void writeData(ObjectDataOutput out, Data data) throws IOException {
+        assert out instanceof DataWriter : "out must be an instance of DataWriter";
+        ((DataWriter) out).writeData(data);
+    }
+
+    public static Data readData(ObjectDataInput in) throws IOException {
+        assert in instanceof DataReader : "in must be an instance of DataReader";
+        return ((DataReader) in).readData();
+    }
+
+    public static <T> T readDataAsObject(ObjectDataInput in) throws IOException {
+        assert in instanceof DataReader : "in must be an instance of DataReader";
+        return ((DataReader) in).readDataAsObject();
     }
 
     /**

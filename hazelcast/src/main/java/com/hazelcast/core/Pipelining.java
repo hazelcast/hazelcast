@@ -75,7 +75,7 @@ import static com.hazelcast.internal.util.Preconditions.checkPositive;
  * evolve. But there is no problem using it in production. We use similar techniques
  * to achieve high performance.
  *
- * @param <E>
+ * @param <E> the result type of the Pipelining
  */
 @Beta
 public class Pipelining<E> {

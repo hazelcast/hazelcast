@@ -36,12 +36,12 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * TODO DOC
  */
-@Generated("c5a87fe3238dcdde7fff4fcb940974f3")
+@Generated("aecf23ed30df9d9bf9dcb545db875f3e")
 public final class MapKeySetWithPagingPredicateCodec {
-    //hex: 0x013500
-    public static final int REQUEST_MESSAGE_TYPE = 79104;
-    //hex: 0x013501
-    public static final int RESPONSE_MESSAGE_TYPE = 79105;
+    //hex: 0x013400
+    public static final int REQUEST_MESSAGE_TYPE = 78848;
+    //hex: 0x013401
+    public static final int RESPONSE_MESSAGE_TYPE = 78849;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
 
@@ -65,7 +65,6 @@ public final class MapKeySetWithPagingPredicateCodec {
     public static ClientMessage encodeRequest(java.lang.String name, com.hazelcast.nio.serialization.Data predicate) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(true);
-        clientMessage.setAcquiresResource(false);
         clientMessage.setOperationName("Map.KeySetWithPagingPredicate");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);

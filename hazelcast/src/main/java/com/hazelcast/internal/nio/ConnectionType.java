@@ -16,37 +16,98 @@
 
 package com.hazelcast.internal.nio;
 
+import java.util.HashMap;
+import java.util.Map;
+
 /**
- * An enumeration of all possible Connection types.
+ * An enumeration of in-house Connection types.
+ * Note that a type could be provided by a custom client
+ * and it can be a string outside of {@link ConnectionType}
  */
-public enum ConnectionType {
+@SuppressWarnings("MagicNumber")
+public final class ConnectionType {
 
-    NONE(false, false),
-    MEMBER(true, true),
-    JAVA_CLIENT(false, true),
-    CSHARP_CLIENT(false, true),
-    CPP_CLIENT(false, true),
-    PYTHON_CLIENT(false, true),
-    RUBY_CLIENT(false, true),
-    NODEJS_CLIENT(false, true),
-    GO_CLIENT(false, true),
-    BINARY_CLIENT(false, true),
-    REST_CLIENT(false, false),
-    MEMCACHE_CLIENT(false, false);
+    /**
+     * If connection type is not set yet
+     */
+    public static final String NONE = "NONE";
 
-    final boolean member;
-    final boolean binary;
+    /**
+     * Member Connection Type
+     */
+    public static final String MEMBER = "MEMBER";
 
-    ConnectionType(boolean member, boolean binary) {
-        this.member = member;
-        this.binary = binary;
+    /**
+     * JVM clients Connection Type
+     */
+    public static final String JAVA_CLIENT = "JVM";
+
+    /**
+     * CSHARP client Connection Type
+     */
+    public static final String CSHARP_CLIENT = "CSP";
+
+    /**
+     * CPP client Connection Type
+     */
+    public static final String CPP_CLIENT = "CPP";
+
+    /**
+     * PYTHON client Connection Type
+     */
+    public static final String PYTHON_CLIENT = "PYH";
+
+    /**
+     * Node.JS client Connection Type
+     */
+    public static final String NODEJS_CLIENT = "NJS";
+
+    /**
+     * Go client Connection Type
+     */
+    public static final String GO_CLIENT = "GOO";
+
+    /**
+     * Rest client Connection Type
+     */
+    public static final String REST_CLIENT = "REST";
+
+    /**
+     * Memcache client Connection Type
+     */
+    public static final String MEMCACHE_CLIENT = "MEMCACHE";
+
+    /**
+     * Management Center Java client Connection Type
+     */
+    public static final String MC_JAVA_CLIENT = "MCJVM";
+
+    private static final Map<String, Integer> ID_MAP = new HashMap<>();
+
+    static {
+        ID_MAP.put(NONE, 0);
+        ID_MAP.put(MEMBER, 1);
+        ID_MAP.put(JAVA_CLIENT, 2);
+        ID_MAP.put(CPP_CLIENT, 3);
+        ID_MAP.put(PYTHON_CLIENT, 4);
+        ID_MAP.put(NODEJS_CLIENT, 5);
+        ID_MAP.put(GO_CLIENT, 6);
+        ID_MAP.put(REST_CLIENT, 7);
+        ID_MAP.put(MEMCACHE_CLIENT, 8);
+        ID_MAP.put(MC_JAVA_CLIENT, 9);
     }
 
-    public boolean isBinary() {
-        return binary;
+    private ConnectionType() {
+
     }
 
-    public boolean isClient() {
-        return !member;
+    /**
+     * @param type name of the client
+     * @return corresponding type id for in-house connection types(member/client),
+     *         or -1 if connection is opened via a custom client
+     */
+    public static int getTypeId(String type) {
+        return ID_MAP.getOrDefault(type, -1);
     }
+
 }

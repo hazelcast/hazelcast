@@ -18,7 +18,8 @@ package com.hazelcast.client.impl.protocol.task.dynamicconfig;
 
 import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.EvictionPolicy;
-import com.hazelcast.internal.eviction.EvictionPolicyComparator;
+import com.hazelcast.config.MaxSizePolicy;
+import com.hazelcast.spi.eviction.EvictionPolicyComparator;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
 
@@ -65,7 +66,7 @@ public class EvictionConfigHolder {
     public EvictionConfig asEvictionConfg(SerializationService serializationService) {
         EvictionConfig config = new EvictionConfig();
         config.setSize(size)
-                .setMaximumSizePolicy(EvictionConfig.MaxSizePolicy.valueOf(maxSizePolicy))
+                .setMaxSizePolicy(MaxSizePolicy.valueOf(maxSizePolicy))
                 .setEvictionPolicy(EvictionPolicy.valueOf(evictionPolicy));
 
         if (comparatorClassName != null) {
@@ -80,7 +81,7 @@ public class EvictionConfigHolder {
     }
 
     public static EvictionConfigHolder of(EvictionConfig config, SerializationService serializationService) {
-        return new EvictionConfigHolder(config.getSize(), config.getMaximumSizePolicy().name(),
+        return new EvictionConfigHolder(config.getSize(), config.getMaxSizePolicy().name(),
                 config.getEvictionPolicy().name(), config.getComparatorClassName(),
                 serializationService.toData(config.getComparator()));
     }

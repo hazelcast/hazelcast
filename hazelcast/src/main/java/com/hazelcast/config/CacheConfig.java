@@ -16,15 +16,16 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.cache.impl.CacheDataSerializerHook;
 import com.hazelcast.cache.impl.DeferredValue;
 import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.DurationConfig;
 import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.TimedExpiryPolicyFactoryConfig;
 import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.TimedExpiryPolicyFactoryConfig.ExpiryPolicyType;
 import com.hazelcast.internal.nio.Bits;
 import com.hazelcast.internal.nio.ClassLoaderUtil;
-import com.hazelcast.internal.serialization.BinaryInterface;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.spi.impl.SerializationServiceSupport;
 import com.hazelcast.spi.merge.SplitBrainMergeTypeProvider;
 import com.hazelcast.spi.merge.SplitBrainMergeTypes;
 import com.hazelcast.spi.tenantcontrol.TenantControl;
@@ -65,7 +66,6 @@ import static com.hazelcast.spi.tenantcontrol.TenantControl.NOOP_TENANT_CONTROL;
  * @param <K> the key type
  * @param <V> the value type
  */
-@BinaryInterface
 public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> implements SplitBrainMergeTypeProvider {
 
     private String name;
@@ -546,6 +546,11 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> implements Spli
     }
 
     @Override
+    public int getClassId() {
+        return CacheDataSerializerHook.CACHE_CONFIG;
+    }
+
+    @Override
     public void readData(ObjectDataInput in) throws IOException {
         name = in.readUTF();
         managerPrefix = in.readUTF();
@@ -589,7 +594,8 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> implements Spli
         disablePerEntryInvalidationEvents = in.readBoolean();
 
         setClassLoader(in.getClassLoader());
-        this.serializationService = in.getSerializationService();
+        assert in instanceof SerializationServiceSupport;
+        this.serializationService = ((SerializationServiceSupport) in).getSerializationService();
 
         readPartitionLostListenerConfigs(in);
     }
@@ -709,6 +715,7 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> implements Spli
      *                 or will be resolved to loaded classes and the actual {@code keyType} and {@code valueType} will be copied.
      *                 Otherwise, this configuration's {@code keyClassName} and {@code valueClassName} will be copied to the
      *                 target config, to be resolved at a later time.
+     * @param <T>      the target object type
      * @return the target config
      */
     public <T extends CacheConfig<K, V>> T copy(T target, boolean resolved) {

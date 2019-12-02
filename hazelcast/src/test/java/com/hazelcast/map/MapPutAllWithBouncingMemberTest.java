@@ -17,23 +17,21 @@
 package com.hazelcast.map;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.SlowTest;
+import com.hazelcast.test.bounce.BounceMemberRule;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.util.HashMap;
-import java.util.concurrent.atomic.AtomicBoolean;
 
-import static java.util.concurrent.TimeUnit.NANOSECONDS;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(SlowTest.class)
@@ -44,6 +42,12 @@ public class MapPutAllWithBouncingMemberTest extends HazelcastTestSupport {
 
     private TestHazelcastInstanceFactory factory;
     private Config config;
+
+    @Rule
+    public BounceMemberRule bounceMemberRule =
+            BounceMemberRule.with(getConfig())
+                    .clusterSize(2)
+                    .build();
 
     @Before
     public void setUp() {
@@ -69,45 +73,21 @@ public class MapPutAllWithBouncingMemberTest extends HazelcastTestSupport {
     }
 
     private void testPutAll() {
-        HazelcastInstance instance = factory.newHazelcastInstance(config);
-        final IMap<Integer, Integer> map = instance.getMap(randomMapName());
+        final IMap<Integer, Integer> map = bounceMemberRule.getSteadyMember().getMap(randomMapName());
 
-        final AtomicBoolean done = new AtomicBoolean(false);
-        Thread bouncingThread = new Thread() {
-            public void run() {
-                while (!done.get()) {
-                    HazelcastInstance newInstance = factory.newHazelcastInstance(config);
-                    sleepSeconds(5);
-                    factory.terminate(newInstance);
-                }
-            }
-        };
-        bouncingThread.start();
-
-        HashMap<Integer, Integer> batch = new HashMap<Integer, Integer>();
+        HashMap<Integer, Integer> batch = new HashMap<>();
         for (int i = 0; i < MAP_SIZE; i++) {
             batch.put(i, i);
         }
 
-        long started = System.nanoTime();
-        long elapsed;
-        int i = 0;
-        do {
-            map.clear();
-            map.putAll(batch);
-            sleepMillis(3);
-
-            elapsed = NANOSECONDS.toSeconds(System.nanoTime() - started);
-            if (++i % 500 == 0) {
-                System.out.println(elapsed + " sec (" + i + " iterations)");
-            }
-        } while (elapsed < DURATION_SECONDS);
-        System.out.println(elapsed + " sec (" + i + " iterations)");
-
-        done.set(true);
-        assertJoinable(bouncingThread);
+        bounceMemberRule.testRepeatedly(new Runnable[]{
+                () -> {
+                    map.clear();
+                    map.putAll(batch);
+                    sleepMillis(3);
+                }
+        }, DURATION_SECONDS);
 
         assertEquals("The map size should be " + MAP_SIZE, MAP_SIZE, map.size());
-        assertTrue("There should have been multiple iterations, but was " + i, i > 1);
     }
 }

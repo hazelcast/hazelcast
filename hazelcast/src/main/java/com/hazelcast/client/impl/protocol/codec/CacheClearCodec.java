@@ -36,12 +36,12 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Clears the contents of the cache, without notifying listeners or CacheWriters.
  */
-@Generated("7ce831f51f0f01269de2b1c6718b7ec8")
+@Generated("be535953166fbb861c76d8d6f3de211a")
 public final class CacheClearCodec {
-    //hex: 0x130300
-    public static final int REQUEST_MESSAGE_TYPE = 1245952;
-    //hex: 0x130301
-    public static final int RESPONSE_MESSAGE_TYPE = 1245953;
+    //hex: 0x130200
+    public static final int REQUEST_MESSAGE_TYPE = 1245696;
+    //hex: 0x130201
+    public static final int RESPONSE_MESSAGE_TYPE = 1245697;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
 
@@ -60,7 +60,6 @@ public final class CacheClearCodec {
     public static ClientMessage encodeRequest(java.lang.String name) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
-        clientMessage.setAcquiresResource(false);
         clientMessage.setOperationName("Cache.Clear");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);

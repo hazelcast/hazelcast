@@ -25,7 +25,6 @@ import com.hazelcast.config.HotRestartConfig;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.MergePolicyConfig;
 import com.hazelcast.config.WanReplicationRef;
-import com.hazelcast.internal.serialization.BinaryInterface;
 
 import javax.annotation.Nonnull;
 import javax.cache.configuration.CacheEntryListenerConfiguration;
@@ -43,7 +42,6 @@ import java.util.Set;
  * @param <K> type of the key
  * @param <V> type of the value
  */
-@BinaryInterface
 @SuppressWarnings("checkstyle:methodcount")
 public class CacheConfigReadOnly<K, V> extends CacheConfig<K, V> {
 

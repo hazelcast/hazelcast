@@ -17,7 +17,7 @@
 package com.hazelcast.internal.nearcache;
 
 import com.hazelcast.config.EvictionConfig;
-import com.hazelcast.config.EvictionConfig.MaxSizePolicy;
+import com.hazelcast.config.MaxSizePolicy;
 import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.NearCacheConfig;
@@ -153,7 +153,7 @@ public class NearCacheRecordStoreTest extends NearCacheRecordStoreTestSupport {
         int maxSize = DEFAULT_RECORD_COUNT / 2;
 
         EvictionConfig evictionConfig = new EvictionConfig()
-                .setMaximumSizePolicy(MaxSizePolicy.ENTRY_COUNT)
+                .setMaxSizePolicy(MaxSizePolicy.ENTRY_COUNT)
                 .setSize(maxSize)
                 .setEvictionPolicy(evictionPolicy == null ? EvictionConfig.DEFAULT_EVICTION_POLICY : evictionPolicy);
 

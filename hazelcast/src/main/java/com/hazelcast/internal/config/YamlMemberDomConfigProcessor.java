@@ -39,7 +39,6 @@ import com.hazelcast.config.ListConfig;
 import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapPartitionLostListenerConfig;
-import com.hazelcast.config.MaxSizeConfig;
 import com.hazelcast.config.MemberGroupConfig;
 import com.hazelcast.config.MergePolicyConfig;
 import com.hazelcast.config.MultiMapConfig;
@@ -61,8 +60,6 @@ import com.hazelcast.config.SecurityInterceptorConfig;
 import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.config.SerializerConfig;
 import com.hazelcast.config.ServerSocketEndpointConfig;
-import com.hazelcast.config.ServiceConfig;
-import com.hazelcast.config.ServicesConfig;
 import com.hazelcast.config.SetConfig;
 import com.hazelcast.config.SplitBrainProtectionConfig;
 import com.hazelcast.config.SplitBrainProtectionListenerConfig;
@@ -446,18 +443,6 @@ public class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
     }
 
     @Override
-    protected void handleMaxSizeConfig(MapConfig mapConfig, Node node, String value) {
-        MaxSizeConfig msc = mapConfig.getMaxSizeConfig();
-        NamedNodeMap attributes = node.getAttributes();
-        Node maxSizePolicy = attributes.getNamedItem("policy");
-        if (maxSizePolicy != null) {
-            msc.setMaxSizePolicy(MaxSizeConfig.MaxSizePolicy.valueOf(
-                    upperCaseInternal(getTextContent(maxSizePolicy))));
-        }
-        msc.setSize(getIntegerValue("max-size", getTextContent(attributes.getNamedItem("max-size"))));
-    }
-
-    @Override
     protected void mapIndexesHandle(Node n, MapConfig mapConfig) {
         for (Node indexNode : childElements(n)) {
             IndexConfig indexConfig = IndexUtils.getIndexConfigFromYaml(indexNode, domLevel3);
@@ -600,25 +585,6 @@ public class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
         for (Node listenerNode : childElements(n)) {
             String listenerClass = listenerNode.getNodeValue().trim();
             splitBrainProtectionConfig.addListenerConfig(new SplitBrainProtectionListenerConfig(listenerClass));
-        }
-    }
-
-    @Override
-    protected void handleServiceNodes(Node node, ServicesConfig servicesConfig) {
-        for (Node child : childElements(node)) {
-            String nodeName = cleanNodeName(child);
-            if (!"enable-defaults".equals(nodeName)) {
-                ServiceConfig serviceConfig = new ServiceConfig();
-                serviceConfig.setName(nodeName);
-                String enabledValue = getAttribute(child, "enabled");
-                boolean enabled = getBooleanValue(enabledValue);
-                serviceConfig.setEnabled(enabled);
-
-                for (Node n : childElements(child)) {
-                    handleServiceNode(n, serviceConfig);
-                }
-                servicesConfig.addServiceConfig(serviceConfig);
-            }
         }
     }
 

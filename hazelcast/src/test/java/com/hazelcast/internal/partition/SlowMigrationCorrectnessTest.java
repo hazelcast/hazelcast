@@ -20,7 +20,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.impl.TestUtil;
 import com.hazelcast.cluster.Address;
-import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
 import com.hazelcast.test.annotation.SlowTest;
 import com.hazelcast.internal.util.RandomPicker;
@@ -68,7 +68,7 @@ public class SlowMigrationCorrectnessTest extends AbstractMigrationCorrectnessTe
         partitionCount = 14;
 
         Config config = getConfig(true, false);
-        config.setProperty(GroupProperty.PARTITION_MIGRATION_INTERVAL.getName(), "1");
+        config.setProperty(ClusterProperty.PARTITION_MIGRATION_INTERVAL.getName(), "1");
 
         HazelcastInstance[] instances = factory.newInstances(config, nodeCount);
         warmUpPartitions(instances);

@@ -30,6 +30,7 @@ package com.hazelcast.config.properties;
  *
  * @param <T> type of the element to be tested
  */
+@FunctionalInterface
 public interface ValueValidator<T extends Comparable<T>> {
 
     /**

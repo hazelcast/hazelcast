@@ -40,12 +40,12 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * 
  * Similar to the put operation except that set doesn't return the old value, which is more efficient.
  */
-@Generated("24f6ba0b6d4f33cd54db3453f4efea0e")
+@Generated("727fd3b39b61e2565c1b63a19dc52520")
 public final class MapSetWithMaxIdleCodec {
-    //hex: 0x014A00
-    public static final int REQUEST_MESSAGE_TYPE = 84480;
-    //hex: 0x014A01
-    public static final int RESPONSE_MESSAGE_TYPE = 84481;
+    //hex: 0x014900
+    public static final int REQUEST_MESSAGE_TYPE = 84224;
+    //hex: 0x014901
+    public static final int RESPONSE_MESSAGE_TYPE = 84225;
     private static final int REQUEST_THREAD_ID_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_TTL_FIELD_OFFSET = REQUEST_THREAD_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
     private static final int REQUEST_MAX_IDLE_FIELD_OFFSET = REQUEST_TTL_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
@@ -93,7 +93,6 @@ public final class MapSetWithMaxIdleCodec {
     public static ClientMessage encodeRequest(java.lang.String name, com.hazelcast.nio.serialization.Data key, com.hazelcast.nio.serialization.Data value, long threadId, long ttl, long maxIdle) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
-        clientMessage.setAcquiresResource(false);
         clientMessage.setOperationName("Map.SetWithMaxIdle");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);

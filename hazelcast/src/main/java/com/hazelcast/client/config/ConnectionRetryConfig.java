@@ -24,11 +24,12 @@ public class ConnectionRetryConfig {
 
     private static final int INITIAL_BACKOFF_MILLIS = 1000;
     private static final int MAX_BACKOFF_MILLIS = 30000;
-    private static final double JITTER = 0.2;
+    private static final long CLUSTER_CONNECT_TIMEOUT_MILLIS = 20000;
+    private static final double JITTER = 0;
     private int initialBackoffMillis = INITIAL_BACKOFF_MILLIS;
     private int maxBackoffMillis = MAX_BACKOFF_MILLIS;
-    private double multiplier = 2;
-    private boolean failOnMaxBackoff = true;
+    private double multiplier = 1;
+    private long connectTimeoutMillis = CLUSTER_CONNECT_TIMEOUT_MILLIS;
     private double jitter = JITTER;
     private boolean enabled;
 
@@ -39,7 +40,7 @@ public class ConnectionRetryConfig {
         initialBackoffMillis = connectionRetryConfig.initialBackoffMillis;
         maxBackoffMillis = connectionRetryConfig.maxBackoffMillis;
         multiplier = connectionRetryConfig.multiplier;
-        failOnMaxBackoff = connectionRetryConfig.failOnMaxBackoff;
+        connectTimeoutMillis = connectionRetryConfig.connectTimeoutMillis;
         jitter = connectionRetryConfig.jitter;
         enabled = connectionRetryConfig.enabled;
     }
@@ -64,8 +65,7 @@ public class ConnectionRetryConfig {
     }
 
     /**
-     * When backoff reaches this upper bound, it does not increase any more. Behaviour after that changes
-     * depending on `failOnMaxBackoff` option
+     * When backoff reaches this upper bound, it does not increase any more.
      *
      * @return maxBackoffMillis
      */
@@ -74,8 +74,7 @@ public class ConnectionRetryConfig {
     }
 
     /**
-     * When backoff reaches this upper bound, it does not increase any more. Behaviour after that changes
-     * depending on `failOnMaxBackoff` option
+     * When backoff reaches this upper bound, it does not increase any more.
      *
      * @param maxBackoffMillis upper bound on backoff
      * @return updated ConnectionRetryConfig
@@ -104,22 +103,23 @@ public class ConnectionRetryConfig {
     }
 
     /**
-     * whether to fail when the max-backoff has reached or continue waiting max-backoff-millis at each iteration
-     * When on fail, client shuts down.
+     * Timeout value in seconds for the client to give up to connect to the current cluster
+     * Depending on FailoverConfig, a client can shutdown or start trying on alternative cluster after reaching the timeout.
      *
-     * @return failOnMaxBackoff
+     * @return clusterConnectTimeoutMillis
      */
-    public boolean isFailOnMaxBackoff() {
-        return failOnMaxBackoff;
+    public long getClusterConnectTimeoutMillis() {
+        return connectTimeoutMillis;
     }
 
     /**
-     * @param failOnMaxBackoff whether to fail when the max-backoff has reached or
-     *                         continue waiting max-backoff-millis at each iteration
+     * @param clusterConnectTimeoutMillis timeout in milliseconds for the client to give up to connect to the current cluster
+     *                                    Depending on FailoverConfig, a client can shutdown or start trying on alternative
+     *                                    cluster after reaching the timeout.
      * @return updated ConnectionRetryConfig
      */
-    public ConnectionRetryConfig setFailOnMaxBackoff(boolean failOnMaxBackoff) {
-        this.failOnMaxBackoff = failOnMaxBackoff;
+    public ConnectionRetryConfig setClusterConnectTimeoutMillis(long clusterConnectTimeoutMillis) {
+        this.connectTimeoutMillis = clusterConnectTimeoutMillis;
         return this;
     }
 
@@ -168,7 +168,7 @@ public class ConnectionRetryConfig {
         if (Double.compare(that.multiplier, multiplier) != 0) {
             return false;
         }
-        if (failOnMaxBackoff != that.failOnMaxBackoff) {
+        if (connectTimeoutMillis != that.connectTimeoutMillis) {
             return false;
         }
         if (Double.compare(that.jitter, jitter) != 0) {
@@ -185,7 +185,7 @@ public class ConnectionRetryConfig {
         result = 31 * result + maxBackoffMillis;
         temp = Double.doubleToLongBits(multiplier);
         result = 31 * result + (int) (temp ^ (temp >>> 32));
-        result = 31 * result + (failOnMaxBackoff ? 1 : 0);
+        result = 31 * result + (int) (connectTimeoutMillis ^ (connectTimeoutMillis >>> 32));
         temp = Double.doubleToLongBits(jitter);
         result = 31 * result + (int) (temp ^ (temp >>> 32));
         result = 31 * result + (enabled ? 1 : 0);
@@ -199,7 +199,7 @@ public class ConnectionRetryConfig {
                 + ", initialBackoffMillis=" + initialBackoffMillis
                 + ", maxBackoffMillis=" + maxBackoffMillis
                 + ", multiplier=" + multiplier
-                + ", failOnMaxBackoff=" + failOnMaxBackoff
+                + ", clusterConnectTimeoutMillis=" + connectTimeoutMillis
                 + ", jitter=" + jitter
                 + '}';
     }

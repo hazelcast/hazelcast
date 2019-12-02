@@ -19,9 +19,8 @@ package com.hazelcast.client.impl.spi;
 import com.hazelcast.cache.impl.CacheService;
 import com.hazelcast.client.cache.impl.nearcache.invalidation.ClientCacheInvalidationMetaDataFetcher;
 import com.hazelcast.client.config.ClientConfig;
-import com.hazelcast.client.impl.connection.ClientConnectionManager;
-import com.hazelcast.client.impl.connection.nio.ClusterConnectorService;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
+import com.hazelcast.client.impl.connection.ClientConnectionManager;
 import com.hazelcast.client.impl.querycache.ClientQueryCacheContext;
 import com.hazelcast.client.map.impl.nearcache.invalidation.ClientMapInvalidationMetaDataFetcher;
 import com.hazelcast.core.HazelcastInstance;
@@ -31,14 +30,14 @@ import com.hazelcast.internal.nearcache.impl.invalidation.InvalidationMetaDataFe
 import com.hazelcast.internal.nearcache.impl.invalidation.MinimalPartitionService;
 import com.hazelcast.internal.nearcache.impl.invalidation.RepairingTask;
 import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.internal.util.ConstructorFunction;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.properties.HazelcastProperties;
-import com.hazelcast.internal.util.ConstructorFunction;
 
-import java.util.UUID;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -50,7 +49,6 @@ import static java.lang.String.format;
  */
 public class ClientContext {
 
-    private UUID localUuid;
     private final InternalSerializationService serializationService;
     private final ClientClusterService clusterService;
     private final ClientPartitionService partitionService;
@@ -58,24 +56,17 @@ public class ClientContext {
     private final ClientExecutionService executionService;
     private final ClientListenerService listenerService;
     private final ClientConnectionManager clientConnectionManager;
-    private final ClusterConnectorService clusterConnectorService;
     private final LifecycleService lifecycleService;
     private final ClientTransactionManagerService transactionManager;
     private final ProxyManager proxyManager;
     private final ClientConfig clientConfig;
     private final LoggingService loggingService;
     private final HazelcastProperties properties;
-    private final NearCacheManager nearCacheManager;
+    private final Map<String, NearCacheManager> nearCacheManagers;
     private final MinimalPartitionService minimalPartitionService;
     private final ClientQueryCacheContext queryCacheContext;
-    private final ConcurrentMap<String, RepairingTask> repairingTasks = new ConcurrentHashMap<String, RepairingTask>();
-    private final ConstructorFunction<String, RepairingTask> repairingTaskConstructor
-            = new ConstructorFunction<String, RepairingTask>() {
-        @Override
-        public RepairingTask createNew(String serviceName) {
-            return newRepairingTask(serviceName);
-        }
-    };
+    private final ConcurrentMap<String, RepairingTask> repairingTasks = new ConcurrentHashMap<>();
+    private final ConstructorFunction<String, RepairingTask> repairingTaskConstructor = this::newRepairingTask;
     private final String name;
 
     public ClientContext(HazelcastClientInstanceImpl client) {
@@ -87,15 +78,13 @@ public class ClientContext {
         this.executionService = client.getClientExecutionService();
         this.listenerService = client.getListenerService();
         this.clientConnectionManager = client.getConnectionManager();
-        this.clusterConnectorService = client.getClusterConnectorService();
         this.lifecycleService = client.getLifecycleService();
         this.proxyManager = client.getProxyManager();
         this.clientConfig = client.getClientConfig();
         this.transactionManager = client.getTransactionManager();
         this.loggingService = client.getLoggingService();
-        this.nearCacheManager = client.getNearCacheManager();
+        this.nearCacheManagers = client.getNearCacheManagers();
         this.properties = client.getProperties();
-        this.localUuid = clientConnectionManager.getClientUuid();
         this.minimalPartitionService = new ClientMinimalPartitionService();
         this.queryCacheContext = client.getQueryCacheContext();
     }
@@ -108,19 +97,12 @@ public class ClientContext {
         return getOrPutIfAbsent(repairingTasks, serviceName, repairingTaskConstructor);
     }
 
-    private UUID getLocalUuid() {
-        if (this.localUuid == null) {
-            this.localUuid = clusterService.getLocalClient().getUuid();
-        }
-        return this.localUuid;
-    }
-
     private RepairingTask newRepairingTask(String serviceName) {
         InvalidationMetaDataFetcher invalidationMetaDataFetcher = newMetaDataFetcher(serviceName);
         ILogger logger = loggingService.getLogger(RepairingTask.class);
         return new RepairingTask(properties, invalidationMetaDataFetcher,
                 executionService, serializationService, minimalPartitionService,
-                getLocalUuid(), logger);
+                clientConnectionManager.getClientUuid(), logger);
     }
 
     private InvalidationMetaDataFetcher newMetaDataFetcher(String serviceName) {
@@ -160,10 +142,6 @@ public class ClientContext {
         }
     }
 
-    public ClusterConnectorService getClusterConnectorService() {
-        return clusterConnectorService;
-    }
-
     public HazelcastInstance getHazelcastInstance() {
         return proxyManager.getHazelcastInstance();
     }
@@ -192,8 +170,8 @@ public class ClientContext {
         return listenerService;
     }
 
-    public NearCacheManager getNearCacheManager() {
-        return nearCacheManager;
+    public NearCacheManager getNearCacheManager(String serviceName) {
+        return nearCacheManagers.get(serviceName);
     }
 
     public LoggingService getLoggingService() {

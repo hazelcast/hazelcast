@@ -71,6 +71,7 @@ import com.hazelcast.cache.impl.record.CacheObjectRecord;
 import com.hazelcast.cache.impl.tenantcontrol.CacheDestroyEventContext;
 import com.hazelcast.client.impl.protocol.task.cache.CacheAssignAndGetUuidsOperation;
 import com.hazelcast.client.impl.protocol.task.cache.CacheAssignAndGetUuidsOperationFactory;
+import com.hazelcast.config.CacheConfig;
 import com.hazelcast.internal.management.request.GetCacheEntryRequest;
 import com.hazelcast.internal.serialization.DataSerializerHook;
 import com.hazelcast.internal.serialization.impl.ArrayDataSerializableFactory;
@@ -160,8 +161,9 @@ public final class CacheDataSerializerHook
     public static final int SET_EXPIRY_POLICY_BACKUP = 64;
     public static final int EXPIRE_BATCH_BACKUP = 65;
     public static final int CACHE_DESTROY_EVENT_CONTEXT = 66;
+    public static final int CACHE_CONFIG = 67;
 
-    private static final int LEN = CACHE_DESTROY_EVENT_CONTEXT + 1;
+    private static final int LEN = CACHE_CONFIG + 1;
 
     public int getFactoryId() {
         return F_ID;
@@ -235,6 +237,7 @@ public final class CacheDataSerializerHook
         constructors[SET_EXPIRY_POLICY_BACKUP] = arg -> new CacheSetExpiryPolicyBackupOperation();
         constructors[EXPIRE_BATCH_BACKUP] = arg -> new CacheExpireBatchBackupOperation();
         constructors[CACHE_DESTROY_EVENT_CONTEXT] = arg -> new CacheDestroyEventContext();
+        constructors[CACHE_CONFIG] = arg -> new CacheConfig<>();
 
         return new ArrayDataSerializableFactory(constructors);
     }

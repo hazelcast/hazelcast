@@ -29,7 +29,7 @@ import com.hazelcast.internal.networking.nio.NioOutboundPipeline;
 import com.hazelcast.internal.networking.nio.NioThread;
 import com.hazelcast.internal.nio.EndpointManager;
 import com.hazelcast.internal.nio.tcp.TcpIpConnection;
-import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.OverridePropertyRule;
@@ -66,8 +66,8 @@ public class IOBalancerStressTest extends HazelcastTestSupport {
     @Test
     public void testEachConnectionUseDifferentOwnerEventually() {
         Config config = new Config()
-                .setProperty(GroupProperty.IO_BALANCER_INTERVAL_SECONDS.getName(), "1")
-                .setProperty(GroupProperty.IO_THREAD_COUNT.getName(), "2");
+                .setProperty(ClusterProperty.IO_BALANCER_INTERVAL_SECONDS.getName(), "1")
+                .setProperty(ClusterProperty.IO_THREAD_COUNT.getName(), "2");
 
         HazelcastInstance instance1 = Hazelcast.newHazelcastInstance(config);
         HazelcastInstance instance2 = Hazelcast.newHazelcastInstance(config);

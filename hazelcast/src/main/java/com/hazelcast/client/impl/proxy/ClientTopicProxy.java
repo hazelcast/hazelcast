@@ -23,20 +23,17 @@ import com.hazelcast.client.impl.protocol.codec.TopicRemoveMessageListenerCodec;
 import com.hazelcast.client.impl.spi.ClientContext;
 import com.hazelcast.client.impl.spi.EventHandler;
 import com.hazelcast.client.impl.spi.impl.ListenerMessageCodec;
+import com.hazelcast.cluster.Member;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.topic.ITopic;
+import com.hazelcast.topic.LocalTopicStats;
 import com.hazelcast.topic.Message;
 import com.hazelcast.topic.MessageListener;
-import com.hazelcast.cluster.Member;
-import com.hazelcast.topic.LocalTopicStats;
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.topic.impl.DataAwareMessage;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-
 import java.util.UUID;
 
-import static com.hazelcast.client.impl.proxy.ClientMapProxy.NULL_LISTENER_IS_NOT_ALLOWED;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 /**
@@ -46,12 +43,16 @@ import static com.hazelcast.internal.util.Preconditions.checkNotNull;
  */
 public class ClientTopicProxy<E> extends PartitionSpecificClientProxy implements ITopic<E> {
 
+    private static final String NULL_MESSAGE_IS_NOT_ALLOWED = "Null message is not allowed!";
+    private static final String NULL_LISTENER_IS_NOT_ALLOWED = "Null listener is not allowed!";
+
     public ClientTopicProxy(String serviceName, String objectId, ClientContext context) {
         super(serviceName, objectId, context);
     }
 
     @Override
-    public void publish(@Nullable E message) {
+    public void publish(@Nonnull E message) {
+        checkNotNull(message, NULL_MESSAGE_IS_NOT_ALLOWED);
         Data data = toData(message);
         ClientMessage request = TopicPublishCodec.encodeRequest(name, data);
         invokeOnPartition(request);
@@ -94,14 +95,6 @@ public class ClientTopicProxy<E> extends PartitionSpecificClientProxy implements
             Member member = getContext().getClusterService().getMember(uuid);
             Message message = new DataAwareMessage(name, item, publishTime, member, getSerializationService());
             listener.onMessage(message);
-        }
-
-        @Override
-        public void beforeListenerRegister() {
-        }
-
-        @Override
-        public void onListenerRegister() {
         }
     }
 

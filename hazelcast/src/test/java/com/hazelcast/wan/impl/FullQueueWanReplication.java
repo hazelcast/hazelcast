@@ -18,9 +18,9 @@ package com.hazelcast.wan.impl;
 
 import com.hazelcast.config.AbstractWanPublisherConfig;
 import com.hazelcast.config.WanReplicationConfig;
-import com.hazelcast.wan.WanReplicationQueueFullException;
 import com.hazelcast.wan.WanReplicationEvent;
 import com.hazelcast.wan.WanReplicationPublisher;
+import com.hazelcast.wan.WanReplicationQueueFullException;
 
 public class FullQueueWanReplication implements WanReplicationPublisher {
 
@@ -39,10 +39,6 @@ public class FullQueueWanReplication implements WanReplicationPublisher {
 
     @Override
     public void publishReplicationEventBackup(WanReplicationEvent event) {
-    }
-
-    @Override
-    public void republishReplicationEvent(WanReplicationEvent event) {
     }
 
     @Override

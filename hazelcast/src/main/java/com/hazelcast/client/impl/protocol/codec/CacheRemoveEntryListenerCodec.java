@@ -36,12 +36,12 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * TODO DOC
  */
-@Generated("f9ba8a13b0e393529e406925d6ec415a")
+@Generated("2e9b2105da32f314a549d75d5fe9a429")
 public final class CacheRemoveEntryListenerCodec {
-    //hex: 0x131500
-    public static final int REQUEST_MESSAGE_TYPE = 1250560;
-    //hex: 0x131501
-    public static final int RESPONSE_MESSAGE_TYPE = 1250561;
+    //hex: 0x131400
+    public static final int REQUEST_MESSAGE_TYPE = 1250304;
+    //hex: 0x131401
+    public static final int RESPONSE_MESSAGE_TYPE = 1250305;
     private static final int REQUEST_REGISTRATION_ID_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_REGISTRATION_ID_FIELD_OFFSET + UUID_SIZE_IN_BYTES;
     private static final int RESPONSE_RESPONSE_FIELD_OFFSET = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
@@ -67,7 +67,6 @@ public final class CacheRemoveEntryListenerCodec {
     public static ClientMessage encodeRequest(java.lang.String name, java.util.UUID registrationId) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(true);
-        clientMessage.setAcquiresResource(false);
         clientMessage.setOperationName("Cache.RemoveEntryListener");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);

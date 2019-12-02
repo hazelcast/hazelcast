@@ -39,8 +39,8 @@ public class PutTransientOperation extends BasePutOperation implements MutatingO
     }
 
     @Override
-    protected PutBackupOperation newBackupOperation(Record record, Data dataValue) {
-        return new PutTransientBackupOperation(name, record, dataValue);
+    protected PutBackupOperation newBackupOperation(Data dataKey, Record record, Data dataValue) {
+        return new PutTransientBackupOperation(name, dataKey, record, dataValue);
     }
 
     protected long getTtl() {

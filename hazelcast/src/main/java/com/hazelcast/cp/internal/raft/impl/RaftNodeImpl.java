@@ -1365,6 +1365,10 @@ public final class RaftNodeImpl implements RaftNode {
         @Override
         protected void innerRun() {
             try {
+                if (state.role() == LEADER) {
+                    return;
+                }
+
                 RaftEndpoint leader = state.leader();
                 if (leader == null) {
                     if (state.role() == FOLLOWER) {

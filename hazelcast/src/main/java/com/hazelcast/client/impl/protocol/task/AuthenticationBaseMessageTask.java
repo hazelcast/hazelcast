@@ -16,13 +16,11 @@
 
 package com.hazelcast.client.impl.protocol.task;
 
-import com.hazelcast.client.impl.ClientTypes;
 import com.hazelcast.client.impl.protocol.AuthenticationStatus;
 import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
-import com.hazelcast.internal.nio.ConnectionType;
-import com.hazelcast.cluster.Address;
 import com.hazelcast.security.Credentials;
 import com.hazelcast.security.PasswordCredentials;
 import com.hazelcast.security.SecurityContext;
@@ -50,8 +48,6 @@ public abstract class AuthenticationBaseMessageTask<P> extends AbstractMessageTa
     protected transient String clientName;
     protected transient Set<String> labels;
     protected transient Credentials credentials;
-    protected transient UUID clusterId;
-    protected transient int partitionCount;
     transient byte clientSerializationVersion;
     transient String clientVersion;
 
@@ -102,18 +98,6 @@ public abstract class AuthenticationBaseMessageTask<P> extends AbstractMessageTa
         } else if (credentials == null) {
             logger.severe("Could not retrieve Credentials object!");
             return CREDENTIALS_FAILED;
-        } else if (partitionCount != -1 && clientEngine.getPartitionService().getPartitionCount() != partitionCount) {
-            logger.warning("Received auth from " + connection + " with clientUuid " + clientUuid
-                    + ",  authentication rejected because client has a different partition count. "
-                    + "Partition count client expects :" + partitionCount
-                    + ", Member partition count:" + clientEngine.getPartitionService().getPartitionCount());
-            return NOT_ALLOWED_IN_CLUSTER;
-        } else if (clusterId != null && !clientEngine.getClusterService().getClusterId().equals(clusterId)) {
-            logger.warning("Received auth from " + connection + " with clientUuid " + clientUuid
-                    + ",  authentication rejected because client has a different cluster id. "
-                    + "Cluster Id client expects :" + clusterId
-                    + ", Member partition count:" + clientEngine.getClusterService().getClusterId());
-            return NOT_ALLOWED_IN_CLUSTER;
         } else if (clientEngine.getSecurityContext() != null) {
             // security is enabled, let's do full JAAS authentication
             return authenticate(clientEngine.getSecurityContext());
@@ -194,25 +178,7 @@ public abstract class AuthenticationBaseMessageTask<P> extends AbstractMessageTa
     }
 
     private void setConnectionType() {
-        String type = getClientType();
-        if (ClientTypes.JAVA.equals(type)) {
-            connection.setType(ConnectionType.JAVA_CLIENT);
-        } else if (ClientTypes.CSHARP.equals(type)) {
-            connection.setType(ConnectionType.CSHARP_CLIENT);
-        } else if (ClientTypes.CPP.equals(type)) {
-            connection.setType(ConnectionType.CPP_CLIENT);
-        } else if (ClientTypes.PYTHON.equals(type)) {
-            connection.setType(ConnectionType.PYTHON_CLIENT);
-        } else if (ClientTypes.RUBY.equals(type)) {
-            connection.setType(ConnectionType.RUBY_CLIENT);
-        } else if (ClientTypes.NODEJS.equals(type)) {
-            connection.setType(ConnectionType.NODEJS_CLIENT);
-        } else if (ClientTypes.GO.equals(type)) {
-            connection.setType(ConnectionType.GO_CLIENT);
-        } else {
-            logger.info("Unknown client type: " + type);
-            connection.setType(ConnectionType.BINARY_CLIENT);
-        }
+        connection.setConnectionType(getClientType());
     }
 
     protected abstract ClientMessage encodeAuth(byte status, Address thisAddress, UUID uuid,

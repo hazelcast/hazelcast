@@ -1019,50 +1019,47 @@ hazelcast:
   # this time are evicted automatically. An entry is idle if no get, put, EntryProcessor.process or
   # containsKey is called.  Valid values are integers between 0 and Integer.MAX VALUE. Its default value
   # is 0, which means infinite.
-  # * "eviction-policy":
-  # Eviction policy configuration. Its default values is NONE. Available values are as follows:
-  # - NONE:
-  #     No items will be evicted and the property max-size will be ignored. You still
-  #     can combine it with time-to-live-seconds and max-idle-seconds.
-  # - LRU: 	Least Recently Used.
-  # - LFU: 	Least Frequently Used.
-  # * "map-eviction-policy-class-name":
-  # Internal eviction algorithm finds the most appropriate entry to evict from the map by using this policy.
-  # * "max-size":
-  # Maximum size of the map depending on the given policy specified by its "policy" attribute. When maximum
-  # size is reached, the map is evicted based on the policy defined. Valid values are integers between 0 and
-  # Integer.MAX VALUE. Its default value is 0 and its default policy attribute is "PER_NODE". If you want
-  # max-size to work, set the "eviction-policy" to a value other than NONE. Available max-size policies are
-  # as follows:
-  # - PER_NODE:
+  # "eviction":
+  # By default map has no eviction configured. Its <eviction-policy> is NONE.
+  # To make it work you have to configure it.
+  # Configuration has the following attributes:
+  # - size: Maximum size of the map.
+  # - max-size-policy: Maximum size policy for eviction of the map. Available values are as follows:
+  #   * PER_NODE:
   #     Maximum number of map entries in each cluster member. You cannot set the max-size to a value lower
   #     than the partition count (which is 271 by default).
-  # - PER_PARTITION:
+  #   * PER_PARTITION:
   #     Maximum number of map entries within each partition.
-  # - USED_HEAP_SIZE:
+  #   * USED_HEAP_SIZE:
   #     Maximum used heap size in megabytes per map for each Hazelcast instance. It does not work when
   #     "in-memory-format" is set to OBJECT.
-  # - USED_HEAP_PERCENTAGE:
+  #   * USED_HEAP_PERCENTAGE:
   #     Maximum used heap size percentage per map for each Hazelcast instance. If, for example, JVM is
   #     configured to have 1000 MB and this value is 10, then the map entries will be evicted when used heap size
   #     exceeds 100 MB. It does not work when "in-memory-format" is set to OBJECT.
-  # - FREE_HEAP_SIZE:
+  #   * FREE_HEAP_SIZE:
   #     Minimum free heap size in megabytes for each Hazelcast instance.
-  # - FREE_HEAP_PERCENTAGE:
+  #   * FREE_HEAP_PERCENTAGE:
   #     Minimum free heap size percentage for each Hazelcast instance. If, for example, JVM is configured to
   #     have 1000 MB and this value is 10, then the map entries will be evicted when free heap size is below 100 MB.
-  # - USED_NATIVE_MEMORY_SIZE:
+  #   * USED_NATIVE_MEMORY_SIZE:
   #     Maximum used native memory size in megabytes per map for each Hazelcast instance. It is available only in
   #     Hazelcast Enterprise HD.
-  # - USED_NATIVE_MEMORY_PERCENTAGE:
+  #   * USED_NATIVE_MEMORY_PERCENTAGE:
   #     Maximum used native memory size percentage per map for each Hazelcast instance. It is available only in
   #     Hazelcast Enterprise HD.
-  # - FREE_NATIVE_MEMORY_SIZE:
+  #   * FREE_NATIVE_MEMORY_SIZE:
   #     Minimum free native memory size in megabytes for each Hazelcast instance. It is available only in
   #     Hazelcast Enterprise HD.
-  # - FREE_NATIVE_MEMORY_PERCENTAGE:
+  #   * FREE_NATIVE_MEMORY_PERCENTAGE:
   #     Minimum free native memory size percentage for each Hazelcast instance. It is available only in
   #     Hazelcast Enterprise HD.
+  # - eviction-policy:
+  #     Eviction policy has following values:
+  #   * NONE: No eviction.
+  #   * LRU: Least recently used entries will be removed.
+  #   * LFU: Least frequently used entries will be removed.
+  #   * RANDOM: Randomly selected entries will be removed.
   # * "merge-policy":
   # Policy that specifies how the map entries in the small cluster will merge with the bigger cluster after a
   # split-brain syndrome. Its default values is "com.hazelcast.spi.merge.PutIfAbsentMergePolicy". Available
@@ -1260,10 +1257,10 @@ hazelcast:
       async-backup-count: 0
       time-to-live-seconds: 0
       max-idle-seconds: 0
-      eviction-policy: NONE
-      max-size:
-        policy: PER_NODE
-        max-size: 0
+      eviction:
+        eviction-policy: NONE
+        max-size-policy: PER_NODE
+        size: 0
       merge-policy:
         batch-size: 100
         class-name: PutIfAbsentMergePolicy
@@ -2072,38 +2069,6 @@ hazelcast:
     page-size: 4194304
     metadata-space-percentage: 12.5
     persistent-memory-directory: /mnt/optane
-  #
-  # ===== HAZELCAST USER DEFINED SERVICES CONFIGURATION =====
-  #
-  # This part is used to perform configurations after you develop your own data structure or service using
-  # Hazelcast's Service Provider Interface (SPI). Configuration element's name is "services". You can list
-  # your services here.
-  # It has the following attribute:
-  # * enable-defaults:
-  #     Set as true if you want to use Hazelcast's services and operations (getMap, putAsync, etc.)
-  #     in your own service implementation. Its default value is true.
-  #
-  # Each service has the following sub-elements:
-  # * "enabled":
-  #     Specifies whether the service is enabled.
-  # * "name":
-  #     Name of your service to be registered.
-  # * "class-name":
-  #     Full name of the class that you developed for your service on top of Hazelcast SPI.
-  # * "properties":
-  #     Lists the properties, with which you can specify the name and value of your
-  #     custom service properties.
-  # * "configuration":
-  #     Lists the configuration elements that you defined for your service using Hazelcast's "Config" object.
-  #
-  services:
-    enable-defaults: false
-    custom-service:
-      enabled: true
-      class-name: com.hazelcast.examples.MyService
-      properties:
-        prop1: prop1-value
-        prop2: prop2-value
   #
   # ===== HAZELCAST SECURITY CONFIGURATION =====
   #
@@ -3234,11 +3199,60 @@ hazelcast:
       lock2:
         lock-acquire-limit: 2
 
+  #
+  # ===== HAZELCAST METRICS CONFIGURATION =====
+  #
+  # Configuration element's name is "metrics".
+  #
+  # It has the following sub-elements:
+  #     * "enabled":
+  #         The master-switch for the metrics collection. If this is set
+  #         to false no metrics collection is done, regardless of the other
+  #         settings. Its default value is true.
+  #
+  # * "management-center":
+  #     Defines the Hazelcast Management Center related metrics configuration.
+  #
+  #       It has the following sub-elements:
+  #     * "enabled":
+  #         Controls whether the metrics collected are exposed to
+  #         Hazelcast Management Center. It is enabled by default.
+  #         Please note that the metrics are polled by the
+  #         Hazelcast Management Center, hence the members need to
+  #         buffer the collected metrics between two polls. The aim
+  #         for this switch is to reduce memory consumption of the
+  #         metrics system if the Hazelcast Management Center is not
+  #         used.
+  #
+  #       It has the following  sub-elements:
+  #     * "retention-seconds":
+  #         Sets the number of seconds the metrics will be retained on the
+  #         instance. By default, metrics are retained for 5 seconds (that is for
+  #         one collection of metrics values, if default "collection-frequency-seconds"
+  #         collection frequency is used). More retention means more heap memory, but
+  #         allows for longer client hiccups without losing a value (for example to
+  #         restart the Management Center).
+  #
+  # * "jmx":
+  #     Defines the JMX related metrics configuration.
+  #
+  #       It has the following attributes:
+  #     * "enabled":
+  #         Controls whether the metrics collected are exposed to
+  #         through JMX. It is enabled by default.
+  #         In order to expose the metrics, the metrics system need
+  #         to be enabled via the enabled master-switch attribute.
+  #
+  # * "collection-frequency-seconds":
+  #     Sets the metrics collection frequency in seconds.
+  #     By default, metrics are collected every 5 seconds.
+  #
+  #
   metrics:
     enabled: false
-    mc-enabled: false
-    jmx-enabled: false
-    collection-interval-seconds: 10
-    retention-seconds: 30
-    metrics-for-data-structures: true
-    minimum-level: DEBUG
+    management-center:
+      enabled: false
+      retention-seconds: 30
+    jmx:
+      enabled: false
+    collection-frequency-seconds: 10

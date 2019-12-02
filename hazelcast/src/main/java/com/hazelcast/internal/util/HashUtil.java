@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Portions Copyright 2014 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -328,7 +329,7 @@ public final class HashUtil {
      *
      * @param length the length of the array/list
      * @return the mod of the hash
-     * @throws IllegalArgumentException if mod smaller than 1.
+     * @throws IllegalArgumentException if length is smaller than 1.
      */
     public static int hashToIndex(int hash, int length) {
         checkPositive(length, "length must be larger than 0");

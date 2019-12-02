@@ -37,19 +37,19 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * TODO DOC
  */
-@Generated("bdf682d9f24932f49064771e4421b0a7")
+@Generated("7501d07f7c9b9268bd8b5b45ed30f22b")
 public final class ClientAddDistributedObjectListenerCodec {
-    //hex: 0x000B00
-    public static final int REQUEST_MESSAGE_TYPE = 2816;
-    //hex: 0x000B01
-    public static final int RESPONSE_MESSAGE_TYPE = 2817;
+    //hex: 0x000A00
+    public static final int REQUEST_MESSAGE_TYPE = 2560;
+    //hex: 0x000A01
+    public static final int RESPONSE_MESSAGE_TYPE = 2561;
     private static final int REQUEST_LOCAL_ONLY_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_LOCAL_ONLY_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
     private static final int RESPONSE_RESPONSE_FIELD_OFFSET = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_RESPONSE_FIELD_OFFSET + UUID_SIZE_IN_BYTES;
     private static final int EVENT_DISTRIBUTED_OBJECT_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    //hex: 0x000B02
-    private static final int EVENT_DISTRIBUTED_OBJECT_MESSAGE_TYPE = 2818;
+    //hex: 0x000A02
+    private static final int EVENT_DISTRIBUTED_OBJECT_MESSAGE_TYPE = 2562;
 
     private ClientAddDistributedObjectListenerCodec() {
     }
@@ -67,7 +67,6 @@ public final class ClientAddDistributedObjectListenerCodec {
     public static ClientMessage encodeRequest(boolean localOnly) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
-        clientMessage.setAcquiresResource(false);
         clientMessage.setOperationName("Client.AddDistributedObjectListener");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);

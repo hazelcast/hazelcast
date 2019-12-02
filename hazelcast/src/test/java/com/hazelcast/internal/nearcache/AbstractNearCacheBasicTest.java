@@ -26,8 +26,8 @@ import com.hazelcast.internal.adapter.ICacheCompletionListener;
 import com.hazelcast.internal.adapter.ICacheReplaceEntryProcessor;
 import com.hazelcast.internal.adapter.IMapReplaceEntryProcessor;
 import com.hazelcast.internal.adapter.ReplicatedMapDataStructureAdapter;
-import com.hazelcast.nearcache.NearCacheStats;
 import com.hazelcast.internal.monitor.impl.NearCacheStatsImpl;
+import com.hazelcast.nearcache.NearCacheStats;
 import com.hazelcast.query.Predicates;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -49,9 +49,9 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 
-import static com.hazelcast.config.EvictionConfig.MaxSizePolicy.ENTRY_COUNT;
 import static com.hazelcast.config.EvictionPolicy.LRU;
 import static com.hazelcast.config.EvictionPolicy.NONE;
+import static com.hazelcast.config.MaxSizePolicy.ENTRY_COUNT;
 import static com.hazelcast.internal.nearcache.NearCacheTestUtils.assertNearCacheContent;
 import static com.hazelcast.internal.nearcache.NearCacheTestUtils.assertNearCacheEvictionsEventually;
 import static com.hazelcast.internal.nearcache.NearCacheTestUtils.assertNearCacheInvalidationRequests;
@@ -1366,46 +1366,47 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
     public void testNearCacheExpiration_withTTL() {
         nearCacheConfig.setTimeToLiveSeconds(MAX_TTL_SECONDS);
 
-        testNearCacheExpiration(MAX_TTL_SECONDS);
+        testNearCacheExpiration();
     }
 
     @Test
     public void testNearCacheExpiration_withMaxIdle() {
         nearCacheConfig.setMaxIdleSeconds(MAX_IDLE_SECONDS);
 
-        testNearCacheExpiration(MAX_IDLE_SECONDS);
+        testNearCacheExpiration();
     }
 
     @SuppressWarnings("UnnecessaryLocalVariable")
-    private void testNearCacheExpiration(int expireSeconds) {
-        final NearCacheTestContext<Integer, String, NK, NV> context = createContext();
+    private void testNearCacheExpiration() {
+        NearCacheTestContext<Integer, String, NK, NV> context = createContext();
 
         populateDataAdapter(context, DEFAULT_RECORD_COUNT);
         populateNearCache(context);
 
-        // we allow a difference of -1 here, since the NearCacheStats are not updated atomically,
-        // so one entry could already be removed from the owned entry count, but not added to the
-        // expirations yet (we also copy the stats, so there are no on-fly changes during the assert)
-        NearCacheStats stats = new NearCacheStatsImpl(context.stats);
-        assertTrue(format("All entries (beside one) should be in the Near Cache or expired from the Near Cache (%s)", stats),
-                stats.getOwnedEntryCount() + stats.getExpirations() >= DEFAULT_RECORD_COUNT - 1
-                        && stats.getOwnedEntryCount() + stats.getExpirations() <= DEFAULT_RECORD_COUNT);
+        assertTrueEventually(() -> {
+            NearCacheStatsImpl stats = context.stats;
 
-        sleepSeconds(expireSeconds + 1);
+            // make assertions over near cache's backing map size.
+            long nearCacheSize = context.nearCache.size();
+            assertEquals(format("Expected zero near cache size but found: %d, [%s] ",
+                    nearCacheSize, stats), 0, nearCacheSize);
 
-        assertTrueEventually(new AssertTask() {
-            public void run() {
-                // the get() call triggers the Near Cache eviction/expiration process,
-                // but we need to call this on every assert, since the Near Cache has a cooldown for TTL cleanups
-                context.nearCacheAdapter.get(0);
+            // make assertions over near cache stats.
+            long ownedEntryCount = stats.getOwnedEntryCount();
+            assertEquals(format("Expected no owned entry but found: %d, [%s]",
+                    ownedEntryCount, stats), 0, ownedEntryCount);
 
-                long nearCacheSize = context.nearCache.size();
-                assertTrue(format("Expected the Near Cache to contain either only the trigger entry or no entry."
-                        + "Near Cache size is %d (%s)", nearCacheSize, context.stats), nearCacheSize <= 1);
-                assertEquals("Expected no Near Cache evictions", 0, context.stats.getEvictions());
-                assertTrue(format("Expected at least %d entries to be expired from the Near Cache", DEFAULT_RECORD_COUNT),
-                        context.stats.getExpirations() >= DEFAULT_RECORD_COUNT);
-            }
+            long ownedEntryMemoryCost = stats.getOwnedEntryMemoryCost();
+            assertEquals(format("Expected zero memory cost but found: %d, [%s]",
+                    ownedEntryMemoryCost, stats), 0, ownedEntryMemoryCost);
+
+            long expiredCount = stats.getExpirations();
+            assertEquals(format("Expected to see all entries as expired but found: %d, [%s]",
+                    expiredCount, stats), DEFAULT_RECORD_COUNT, expiredCount);
+
+            long evictedCount = context.stats.getEvictions();
+            assertEquals(format("Expiration should not trigger eviction stat but found: %d, [%s]",
+                    evictedCount, stats), 0, evictedCount);
         });
     }
 
@@ -1679,12 +1680,12 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
     }
 
     protected void populateNearCache(NearCacheTestContext<Integer, String, ?, ?> context, DataStructureMethods method,
-                                          int size) {
+                                     int size) {
         populateNearCache(context, method, size, "value-");
     }
 
     protected void populateNearCache(NearCacheTestContext<Integer, String, ?, ?> context, DataStructureMethods method,
-                                          int size, String valuePrefix) {
+                                     int size, String valuePrefix) {
         switch (method) {
             case GET:
                 for (int i = 0; i < size; i++) {

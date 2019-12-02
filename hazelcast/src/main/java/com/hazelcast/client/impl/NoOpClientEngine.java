@@ -16,18 +16,18 @@
 
 package com.hazelcast.client.impl;
 
+import com.hazelcast.client.Client;
 import com.hazelcast.client.impl.protocol.ClientExceptions;
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.Client;
-import com.hazelcast.client.ClientType;
-import com.hazelcast.internal.cluster.ClusterService;
-import com.hazelcast.logging.ILogger;
+import com.hazelcast.client.impl.statistics.ClientStatistics;
 import com.hazelcast.cluster.Address;
+import com.hazelcast.internal.cluster.ClusterService;
+import com.hazelcast.internal.partition.IPartitionService;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.security.SecurityContext;
+import com.hazelcast.spi.exception.TargetNotMemberException;
 import com.hazelcast.spi.impl.eventservice.EventService;
 import com.hazelcast.spi.impl.proxyservice.ProxyService;
-import com.hazelcast.spi.exception.TargetNotMemberException;
-import com.hazelcast.internal.partition.IPartitionService;
 import com.hazelcast.transaction.TransactionManagerService;
 
 import javax.annotation.Nonnull;
@@ -108,17 +108,17 @@ public class NoOpClientEngine implements ClientEngine {
     }
 
     @Override
-    public ClientPartitionListenerService getPartitionListenerService() {
+    public ClientClusterListenerService getClientClusterListenerService() {
         return null;
     }
 
     @Override
-    public Map<ClientType, Integer> getConnectedClientStats() {
+    public Map<String, Integer> getConnectedClientStats() {
         return emptyMap();
     }
 
     @Override
-    public Map<UUID, String> getClientStatistics() {
+    public Map<UUID, ClientStatistics> getClientStatistics() {
         return emptyMap();
     }
 

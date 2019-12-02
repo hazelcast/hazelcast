@@ -22,6 +22,7 @@ import com.hazelcast.config.EntryListenerConfig;
 import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.InMemoryFormat;
+import com.hazelcast.config.MaxSizePolicy;
 import com.hazelcast.config.QueryCacheConfig;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
@@ -97,8 +98,8 @@ abstract class AbstractQueryCacheConfigBuilderHelper implements QueryCacheConfig
             evictionConfig.setSize(Integer.parseInt(getTextContent(size)));
         }
         if (maxSizePolicy != null) {
-            evictionConfig.setMaximumSizePolicy(
-                    EvictionConfig.MaxSizePolicy.valueOf(
+            evictionConfig.setMaxSizePolicy(
+                    MaxSizePolicy.valueOf(
                             upperCaseInternal(getTextContent(maxSizePolicy)))
             );
         }

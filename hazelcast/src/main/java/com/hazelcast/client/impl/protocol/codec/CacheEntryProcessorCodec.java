@@ -36,12 +36,12 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * TODO DOC
  */
-@Generated("16aa6d5499cc565a76907189864b4b64")
+@Generated("0188b32f9684d4f5d29cad1af5171a13")
 public final class CacheEntryProcessorCodec {
-    //hex: 0x130900
-    public static final int REQUEST_MESSAGE_TYPE = 1247488;
-    //hex: 0x130901
-    public static final int RESPONSE_MESSAGE_TYPE = 1247489;
+    //hex: 0x130800
+    public static final int REQUEST_MESSAGE_TYPE = 1247232;
+    //hex: 0x130801
+    public static final int RESPONSE_MESSAGE_TYPE = 1247233;
     private static final int REQUEST_COMPLETION_ID_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_COMPLETION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
@@ -83,7 +83,6 @@ public final class CacheEntryProcessorCodec {
     public static ClientMessage encodeRequest(java.lang.String name, com.hazelcast.nio.serialization.Data key, com.hazelcast.nio.serialization.Data entryProcessor, java.util.Collection<com.hazelcast.nio.serialization.Data> arguments, int completionId) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
-        clientMessage.setAcquiresResource(false);
         clientMessage.setOperationName("Cache.EntryProcessor");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);

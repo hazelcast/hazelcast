@@ -64,7 +64,7 @@ public class ClientReliableTopicOnClusterRestartTest {
         HazelcastInstance server = hazelcastFactory.newHazelcastInstance();
         String topicName = "topic";
         ClientConfig clientConfig = new ClientConfig();
-        clientConfig.getConnectionStrategyConfig().getConnectionRetryConfig().setFailOnMaxBackoff(false);
+        clientConfig.getConnectionStrategyConfig().getConnectionRetryConfig().setClusterConnectTimeoutMillis(Long.MAX_VALUE);
         HazelcastInstance hazelcastClient = hazelcastFactory.newHazelcastClient(clientConfig);
         HazelcastInstance hazelcastClient2 = hazelcastFactory.newHazelcastClient(clientConfig);
         ITopic<Integer> topic = hazelcastClient.getReliableTopic(topicName);
@@ -95,7 +95,7 @@ public class ClientReliableTopicOnClusterRestartTest {
     public void shouldContinue_OnClusterRestart_afterInvocationTimeout() throws InterruptedException {
         HazelcastInstance member = hazelcastFactory.newHazelcastInstance();
         ClientConfig clientConfig = new ClientConfig();
-        clientConfig.getConnectionStrategyConfig().getConnectionRetryConfig().setFailOnMaxBackoff(false);
+        clientConfig.getConnectionStrategyConfig().getConnectionRetryConfig().setClusterConnectTimeoutMillis(Long.MAX_VALUE);
         int invocationTimeoutSeconds = 2;
         clientConfig.setProperty(ClientProperty.INVOCATION_TIMEOUT_SECONDS.getName(), String.valueOf(invocationTimeoutSeconds));
         HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig);
@@ -132,7 +132,7 @@ public class ClientReliableTopicOnClusterRestartTest {
     public void shouldContinue_OnClusterRestart_whenDataLoss_LossTolerant_afterInvocationTimeout() throws InterruptedException {
         HazelcastInstance member = hazelcastFactory.newHazelcastInstance();
         ClientConfig clientConfig = new ClientConfig();
-        clientConfig.getConnectionStrategyConfig().getConnectionRetryConfig().setFailOnMaxBackoff(false);
+        clientConfig.getConnectionStrategyConfig().getConnectionRetryConfig().setClusterConnectTimeoutMillis(Long.MAX_VALUE);
         int invocationTimeoutSeconds = 2;
         clientConfig.setProperty(ClientProperty.INVOCATION_TIMEOUT_SECONDS.getName(), String.valueOf(invocationTimeoutSeconds));
         HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig);
@@ -176,7 +176,7 @@ public class ClientReliableTopicOnClusterRestartTest {
     public void shouldFail_OnClusterRestart_whenDataLoss_notLossTolerant() {
         HazelcastInstance member = hazelcastFactory.newHazelcastInstance();
         ClientConfig clientConfig = new ClientConfig();
-        clientConfig.getConnectionStrategyConfig().getConnectionRetryConfig().setFailOnMaxBackoff(false);
+        clientConfig.getConnectionStrategyConfig().getConnectionRetryConfig().setClusterConnectTimeoutMillis(Long.MAX_VALUE);
         HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig);
 
         final AtomicLong messageCount = new AtomicLong();

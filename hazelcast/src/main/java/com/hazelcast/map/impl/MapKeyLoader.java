@@ -16,8 +16,13 @@
 
 package com.hazelcast.map.impl;
 
+import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.Member;
+import com.hazelcast.config.MaxSizePolicy;
 import com.hazelcast.internal.cluster.ClusterService;
+import com.hazelcast.internal.util.FutureUtil;
+import com.hazelcast.internal.util.StateMachine;
+import com.hazelcast.internal.util.scheduler.CoalescingDelayedTrigger;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.MapLoader;
 import com.hazelcast.map.impl.mapstore.MapStoreContext;
@@ -26,7 +31,6 @@ import com.hazelcast.map.impl.operation.KeyLoadStatusOperationFactory;
 import com.hazelcast.map.impl.operation.MapOperation;
 import com.hazelcast.map.impl.operation.MapOperationProvider;
 import com.hazelcast.map.impl.operation.TriggerLoadIfNeededOperation;
-import com.hazelcast.cluster.Address;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.executionservice.ExecutionService;
@@ -34,10 +38,7 @@ import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationService;
 import com.hazelcast.internal.partition.IPartition;
 import com.hazelcast.internal.partition.IPartitionService;
-import com.hazelcast.spi.properties.GroupProperty;
-import com.hazelcast.internal.util.FutureUtil;
-import com.hazelcast.internal.util.StateMachine;
-import com.hazelcast.internal.util.scheduler.CoalescingDelayedTrigger;
+import com.hazelcast.spi.properties.ClusterProperty;
 
 import java.io.Closeable;
 import java.util.ArrayList;
@@ -51,15 +52,15 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
 
+import static com.hazelcast.internal.nio.IOUtil.closeResource;
+import static com.hazelcast.internal.util.IterableUtil.limit;
+import static com.hazelcast.internal.util.IterableUtil.map;
 import static com.hazelcast.logging.Logger.getLogger;
 import static com.hazelcast.map.impl.MapKeyLoaderUtil.assignRole;
 import static com.hazelcast.map.impl.MapKeyLoaderUtil.toBatches;
 import static com.hazelcast.map.impl.MapKeyLoaderUtil.toPartition;
 import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
-import static com.hazelcast.internal.nio.IOUtil.closeResource;
 import static com.hazelcast.spi.impl.executionservice.ExecutionService.MAP_LOAD_ALL_KEYS_EXECUTOR;
-import static com.hazelcast.internal.util.IterableUtil.limit;
-import static com.hazelcast.internal.util.IterableUtil.map;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
@@ -82,14 +83,14 @@ public class MapKeyLoader {
     /**
      * The configured maximum entry count per node or {@code -1} if the
      * default is used or the max size policy is not
-     * {@link com.hazelcast.config.MaxSizeConfig.MaxSizePolicy#PER_NODE}
+     * {@link MaxSizePolicy#PER_NODE}
      */
     private int maxSizePerNode;
     /**
      * The maximum size of a batch of loaded keys sent to a
      * single partition for value loading
      *
-     * @see GroupProperty#MAP_LOAD_CHUNK_SIZE
+     * @see ClusterProperty#MAP_LOAD_CHUNK_SIZE
      */
     private int maxBatch;
     private int mapNamePartition;
@@ -535,7 +536,7 @@ public class MapKeyLoader {
      * Sets the configured maximum entry count per node.
      *
      * @param maxSize the maximum entry count per node
-     * @see com.hazelcast.config.MaxSizeConfig
+     * @see com.hazelcast.config.EvictionConfig
      */
     public void setMaxSize(int maxSize) {
         this.maxSizePerNode = maxSize;

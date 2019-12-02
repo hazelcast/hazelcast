@@ -64,7 +64,7 @@ import static java.util.logging.Level.WARNING;
 
 public class ProxyServiceImpl
         implements InternalProxyService, PostJoinAwareService,
-                   EventPublishingService<DistributedObjectEventPacket, Object>, StaticMetricsProvider {
+        EventPublishingService<DistributedObjectEventPacket, Object>, StaticMetricsProvider {
 
     public static final String SERVICE_NAME = "hz:core:proxyService";
 
@@ -123,6 +123,12 @@ public class ProxyServiceImpl
         }
 
         return count;
+    }
+
+    public void initializeAndPublishProxies() {
+        for (ProxyRegistry registry : registries.values()) {
+            registry.initializeAndPublishProxies();
+        }
     }
 
     @Override

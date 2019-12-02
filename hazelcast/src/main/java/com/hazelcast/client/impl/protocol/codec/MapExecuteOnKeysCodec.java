@@ -37,12 +37,12 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Applies the user defined EntryProcessor to the entries mapped by the collection of keys.The results mapped by
  * each key in the collection.
  */
-@Generated("8c17d002b2d50c2e510e1190d6cf09cc")
+@Generated("33811a50694f0c8ca4fb313907b8a74c")
 public final class MapExecuteOnKeysCodec {
-    //hex: 0x013300
-    public static final int REQUEST_MESSAGE_TYPE = 78592;
-    //hex: 0x013301
-    public static final int RESPONSE_MESSAGE_TYPE = 78593;
+    //hex: 0x013200
+    public static final int REQUEST_MESSAGE_TYPE = 78336;
+    //hex: 0x013201
+    public static final int RESPONSE_MESSAGE_TYPE = 78337;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
 
@@ -71,7 +71,6 @@ public final class MapExecuteOnKeysCodec {
     public static ClientMessage encodeRequest(java.lang.String name, com.hazelcast.nio.serialization.Data entryProcessor, java.util.Collection<com.hazelcast.nio.serialization.Data> keys) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
-        clientMessage.setAcquiresResource(false);
         clientMessage.setOperationName("Map.ExecuteOnKeys");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);

@@ -32,7 +32,6 @@ import com.hazelcast.spi.merge.PassThroughMergePolicy;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -69,10 +68,10 @@ public class MapConfigDTOTest {
 
     private static MapConfig fullMapConfig() {
         MapConfig mapConfig = new MapConfig(MAP_NAME);
+        mapConfig.getEvictionConfig().setEvictionPolicy(EvictionPolicy.RANDOM);
         mapConfig.setBackupCount(2)
                 .setAsyncBackupCount(3)
                 .setCacheDeserializedValues(CacheDeserializedValues.ALWAYS)
-                .setEvictionPolicy(EvictionPolicy.RANDOM)
                 .setInMemoryFormat(InMemoryFormat.NATIVE)
                 .setSplitBrainProtectionName("triple");
 

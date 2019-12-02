@@ -17,15 +17,15 @@
 package com.hazelcast.map.impl.eviction;
 
 import com.hazelcast.core.EntryView;
-import com.hazelcast.map.eviction.MapEvictionPolicy;
-import com.hazelcast.map.impl.record.Record;
-import com.hazelcast.map.impl.recordstore.LazyEntryViewFromRecord;
-import com.hazelcast.map.impl.recordstore.RecordStore;
-import com.hazelcast.map.impl.recordstore.Storage;
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.internal.partition.IPartition;
 import com.hazelcast.internal.partition.IPartitionService;
 import com.hazelcast.internal.util.Clock;
+import com.hazelcast.map.impl.record.Record;
+import com.hazelcast.map.impl.recordstore.LazyEvictableEntryView;
+import com.hazelcast.map.impl.recordstore.RecordStore;
+import com.hazelcast.map.impl.recordstore.Storage;
+import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.spi.eviction.EvictionPolicyComparator;
 
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.internal.util.ThreadUtil.assertRunningOnPartitionThread;
@@ -34,17 +34,20 @@ import static com.hazelcast.internal.util.ThreadUtil.assertRunningOnPartitionThr
  * Evictor helper methods.
  */
 public class EvictorImpl implements Evictor {
+
     protected final EvictionChecker evictionChecker;
+    protected final EvictionPolicyComparator policy;
     protected final IPartitionService partitionService;
-    protected final MapEvictionPolicy mapEvictionPolicy;
 
     private final int batchSize;
 
-    public EvictorImpl(MapEvictionPolicy mapEvictionPolicy,
-                       EvictionChecker evictionChecker, IPartitionService partitionService, int batchSize) {
+    public EvictorImpl(EvictionPolicyComparator policy,
+                       EvictionChecker evictionChecker, int batchSize,
+                       IPartitionService partitionService) {
+
         this.evictionChecker = checkNotNull(evictionChecker);
         this.partitionService = checkNotNull(partitionService);
-        this.mapEvictionPolicy = checkNotNull(mapEvictionPolicy);
+        this.policy = checkNotNull(policy);
         this.batchSize = batchSize;
     }
 
@@ -53,57 +56,53 @@ public class EvictorImpl implements Evictor {
         assertRunningOnPartitionThread();
 
         for (int i = 0; i < batchSize; i++) {
-            EntryView evictableEntry = selectEvictableEntry(recordStore, excludedKey);
-            if (evictableEntry == null) {
+            EntryView entryView = selectEvictableEntry(recordStore, excludedKey);
+            if (entryView == null) {
                 return;
             }
-            evictEntry(recordStore, evictableEntry);
+            evictEntry(recordStore, entryView);
         }
     }
 
     @Override
-    public void forceEvict(RecordStore recordStore) {
-
+    public void forceEvictByPercentage(RecordStore recordStore, double evictionPercentage) {
+        // NOP.
     }
 
+    @SuppressWarnings("checkstyle:rvcheckcomparetoforspecificreturnvalue")
     private EntryView selectEvictableEntry(RecordStore recordStore, Data excludedKey) {
-        Iterable<EntryView> samples = getSamples(recordStore);
         EntryView excluded = null;
         EntryView selected = null;
 
-        for (EntryView candidate : samples) {
-            if (excludedKey != null && excluded == null && getDataKey(candidate).equals(excludedKey)) {
-                excluded = candidate;
+        for (EntryView current : getRandomSamples(recordStore)) {
+            if (excludedKey != null && excluded == null
+                    && getDataKeyFromEntryView(current).equals(excludedKey)) {
+                excluded = current;
                 continue;
             }
 
-            if (selected == null) {
-                selected = candidate;
-            } else if (mapEvictionPolicy.compare(candidate, selected) < 0) {
-                selected = candidate;
+            if (selected == null
+                    || policy.compare(current, selected) < 0) {
+                selected = current;
             }
         }
 
         return selected == null ? excluded : selected;
     }
 
-    private Data getDataKey(EntryView candidate) {
-        return getRecordFromEntryView(candidate).getKey();
-    }
-
     private void evictEntry(RecordStore recordStore, EntryView selectedEntry) {
         Record record = getRecordFromEntryView(selectedEntry);
-        Data key = record.getKey();
+        Data dataKey = getDataKeyFromEntryView(selectedEntry);
 
-        if (recordStore.isLocked(record.getKey())) {
+        if (recordStore.isLocked(dataKey)) {
             return;
         }
 
         boolean backup = isBackup(recordStore);
-        recordStore.evict(key, backup);
+        recordStore.evict(dataKey, backup);
 
         if (!backup) {
-            recordStore.doPostEvictionOperations(record);
+            recordStore.doPostEvictionOperations(dataKey, record);
         }
     }
 
@@ -114,9 +113,14 @@ public class EvictorImpl implements Evictor {
         return evictionChecker.checkEvictable(recordStore);
     }
 
-    // this method is overridden in another context.
-    protected Record getRecordFromEntryView(EntryView selectedEntry) {
-        return ((LazyEntryViewFromRecord) selectedEntry).getRecord();
+    // Overridden by EE code
+    protected Record getRecordFromEntryView(EntryView evictableEntryView) {
+        return ((LazyEvictableEntryView) evictableEntryView).getRecord();
+    }
+
+    // Overridden by EE code
+    protected Data getDataKeyFromEntryView(EntryView selectedEntry) {
+        return ((LazyEvictableEntryView) selectedEntry).getDataKey();
     }
 
     protected boolean isBackup(RecordStore recordStore) {
@@ -125,7 +129,7 @@ public class EvictorImpl implements Evictor {
         return !partition.isLocal();
     }
 
-    protected Iterable<EntryView> getSamples(RecordStore recordStore) {
+    protected Iterable<EntryView> getRandomSamples(RecordStore recordStore) {
         Storage storage = recordStore.getStorage();
         return storage.getRandomSamples(SAMPLE_COUNT);
     }
@@ -137,7 +141,7 @@ public class EvictorImpl implements Evictor {
     @Override
     public String toString() {
         return "EvictorImpl{"
-                + ", mapEvictionPolicy=" + mapEvictionPolicy
+                + ", evictionPolicyComparator=" + policy
                 + ", batchSize=" + batchSize
                 + '}';
     }

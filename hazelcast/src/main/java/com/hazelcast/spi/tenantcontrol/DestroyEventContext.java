@@ -40,13 +40,13 @@ public interface DestroyEventContext<T> {
 
     /**
      *
-     * @return
+     * @return the name of the distributed object
      */
     String getDistributedObjectName();
 
     /**
      *
-     * @return
+     * @return the service name
      */
     String getServiceName();
 }

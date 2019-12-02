@@ -183,9 +183,9 @@ public abstract class TextDecoder extends InboundHandler<ByteBuffer, Void> {
     private boolean isCommandTypeEnabled(TextCommand command) {
         if (!connectionTypeSet) {
             if (command instanceof HttpCommand) {
-                connection.setType(ConnectionType.REST_CLIENT);
+                connection.setConnectionType(ConnectionType.REST_CLIENT);
             } else {
-                connection.setType(ConnectionType.MEMCACHE_CLIENT);
+                connection.setConnectionType(ConnectionType.MEMCACHE_CLIENT);
             }
             connectionTypeSet = true;
         }

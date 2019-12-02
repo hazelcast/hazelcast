@@ -22,7 +22,7 @@ import com.hazelcast.core.ConsistencyLostException;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.crdt.pncounter.PNCounter;
 import com.hazelcast.cluster.Address;
-import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -46,12 +46,12 @@ public class PNCounterConsistencyLostTest extends AbstractPNCounterConsistencyLo
     @Before
     public void setup() {
         final Config dataConfig = new Config()
-                .setProperty(GroupProperty.PARTITION_COUNT.getName(), "5")
+                .setProperty(ClusterProperty.PARTITION_COUNT.getName(), "5")
                 .setCRDTReplicationConfig(new CRDTReplicationConfig()
                         .setReplicationPeriodMillis(Integer.MAX_VALUE)
                         .setMaxConcurrentReplicationTargets(Integer.MAX_VALUE));
         final Config liteConfig = new Config()
-                .setProperty(GroupProperty.PARTITION_COUNT.getName(), "5")
+                .setProperty(ClusterProperty.PARTITION_COUNT.getName(), "5")
                 .setLiteMember(true);
 
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(3);

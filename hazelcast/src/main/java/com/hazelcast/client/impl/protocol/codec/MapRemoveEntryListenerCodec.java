@@ -36,12 +36,12 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Removes the specified entry listener. Returns silently if there is no such listener added before.
  */
-@Generated("a6a03622b3c6aea254951ddc7a89141e")
+@Generated("3197abf8424d8ed3e364a8c37fff1d03")
 public final class MapRemoveEntryListenerCodec {
-    //hex: 0x011B00
-    public static final int REQUEST_MESSAGE_TYPE = 72448;
-    //hex: 0x011B01
-    public static final int RESPONSE_MESSAGE_TYPE = 72449;
+    //hex: 0x011A00
+    public static final int REQUEST_MESSAGE_TYPE = 72192;
+    //hex: 0x011A01
+    public static final int RESPONSE_MESSAGE_TYPE = 72193;
     private static final int REQUEST_REGISTRATION_ID_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_REGISTRATION_ID_FIELD_OFFSET + UUID_SIZE_IN_BYTES;
     private static final int RESPONSE_RESPONSE_FIELD_OFFSET = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
@@ -67,7 +67,6 @@ public final class MapRemoveEntryListenerCodec {
     public static ClientMessage encodeRequest(java.lang.String name, java.util.UUID registrationId) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(true);
-        clientMessage.setAcquiresResource(false);
         clientMessage.setOperationName("Map.RemoveEntryListener");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);

@@ -18,7 +18,6 @@ package com.hazelcast.client.splitbrainprotection.durableexecutor;
 
 import com.hazelcast.client.splitbrainprotection.PartitionedClusterClients;
 import com.hazelcast.client.test.TestHazelcastFactory;
-import com.hazelcast.config.Config;
 import com.hazelcast.durableexecutor.DurableExecutorService;
 import com.hazelcast.splitbrainprotection.SplitBrainProtectionOn;
 import com.hazelcast.splitbrainprotection.durableexecutor.DurableExecutorSplitBrainProtectionReadTest;
@@ -42,7 +41,7 @@ public class ClientDurableExecutorSplitBrainProtectionReadTest extends DurableEx
     @BeforeClass
     public static void setUp() {
         TestHazelcastFactory factory = new TestHazelcastFactory();
-        initTestEnvironment(new Config(), factory);
+        initTestEnvironment(smallInstanceConfig(), factory);
         clients = new PartitionedClusterClients(cluster, factory);
     }
 

@@ -38,12 +38,12 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * representing that task.EntryProcessor is not cancellable, so calling Future.cancel() method won't cancel the
  * operation of EntryProcessor.
  */
-@Generated("6c7befb9fdf11f36b0a75eac90cd4317")
+@Generated("f23d0c1c42ae90c34bd15a2cf3c5cbf4")
 public final class MapSubmitToKeyCodec {
-    //hex: 0x013000
-    public static final int REQUEST_MESSAGE_TYPE = 77824;
-    //hex: 0x013001
-    public static final int RESPONSE_MESSAGE_TYPE = 77825;
+    //hex: 0x012F00
+    public static final int REQUEST_MESSAGE_TYPE = 77568;
+    //hex: 0x012F01
+    public static final int RESPONSE_MESSAGE_TYPE = 77569;
     private static final int REQUEST_THREAD_ID_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_THREAD_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
@@ -78,7 +78,6 @@ public final class MapSubmitToKeyCodec {
     public static ClientMessage encodeRequest(java.lang.String name, com.hazelcast.nio.serialization.Data entryProcessor, com.hazelcast.nio.serialization.Data key, long threadId) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
-        clientMessage.setAcquiresResource(false);
         clientMessage.setOperationName("Map.SubmitToKey");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);

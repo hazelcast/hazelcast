@@ -17,14 +17,13 @@
 package com.hazelcast.config;
 
 import com.hazelcast.internal.config.ConfigDataSerializerHook;
+import com.hazelcast.internal.partition.IPartition;
 import com.hazelcast.map.IMap;
-import com.hazelcast.map.eviction.MapEvictionPolicy;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.merge.SplitBrainMergeTypeProvider;
 import com.hazelcast.spi.merge.SplitBrainMergeTypes;
-import com.hazelcast.internal.partition.IPartition;
 
 import javax.annotation.Nonnull;
 import java.io.IOException;
@@ -70,11 +69,6 @@ public class MapConfig implements SplitBrainMergeTypeProvider,
     public static final int DEFAULT_MAX_IDLE_SECONDS = 0;
 
     /**
-     * Default policy for eviction.
-     */
-    public static final EvictionPolicy DEFAULT_EVICTION_POLICY = EvictionPolicy.NONE;
-
-    /**
      * Default In-Memory format is binary.
      */
     public static final InMemoryFormat DEFAULT_IN_MEMORY_FORMAT = InMemoryFormat.BINARY;
@@ -93,6 +87,20 @@ public class MapConfig implements SplitBrainMergeTypeProvider,
      * Default value of whether statistics are enabled or not
      */
     public static final boolean DEFAULT_STATISTICS_ENABLED = true;
+    /**
+     * Default max size.
+     */
+    public static final int DEFAULT_MAX_SIZE = Integer.MAX_VALUE;
+
+    /**
+     * Default max size policy
+     */
+    public static final MaxSizePolicy DEFAULT_MAX_SIZE_POLICY = MaxSizePolicy.PER_NODE;
+
+    /**
+     * Default eviction policy
+     */
+    public static final EvictionPolicy DEFAULT_EVICTION_POLICY = EvictionPolicy.NONE;
 
     private boolean readBackupData;
     private boolean statisticsEnabled = DEFAULT_STATISTICS_ENABLED;
@@ -102,9 +110,6 @@ public class MapConfig implements SplitBrainMergeTypeProvider,
     private int maxIdleSeconds = DEFAULT_MAX_IDLE_SECONDS;
     private String name;
     private String splitBrainProtectionName;
-    private MaxSizeConfig maxSizeConfig = new MaxSizeConfig();
-    private EvictionPolicy evictionPolicy = DEFAULT_EVICTION_POLICY;
-    private MapEvictionPolicy mapEvictionPolicy;
     private MapStoreConfig mapStoreConfig = new MapStoreConfig().setEnabled(false);
     private NearCacheConfig nearCacheConfig;
     private CacheDeserializedValues cacheDeserializedValues = DEFAULT_CACHED_DESERIALIZED_VALUES;
@@ -121,6 +126,10 @@ public class MapConfig implements SplitBrainMergeTypeProvider,
     private HotRestartConfig hotRestartConfig = new HotRestartConfig();
     private MerkleTreeConfig merkleTreeConfig = new MerkleTreeConfig();
     private EventJournalConfig eventJournalConfig = new EventJournalConfig();
+    private EvictionConfig evictionConfig = new EvictionConfig()
+            .setEvictionPolicy(DEFAULT_EVICTION_POLICY)
+            .setMaxSizePolicy(DEFAULT_MAX_SIZE_POLICY)
+            .setSize(DEFAULT_MAX_SIZE);
 
     public MapConfig() {
     }
@@ -136,9 +145,7 @@ public class MapConfig implements SplitBrainMergeTypeProvider,
         this.timeToLiveSeconds = config.timeToLiveSeconds;
         this.maxIdleSeconds = config.maxIdleSeconds;
         this.metadataPolicy = config.metadataPolicy;
-        this.maxSizeConfig = config.maxSizeConfig != null ? new MaxSizeConfig(config.maxSizeConfig) : null;
-        this.evictionPolicy = config.evictionPolicy;
-        this.mapEvictionPolicy = config.mapEvictionPolicy;
+        this.evictionConfig = new EvictionConfig(config.evictionConfig);
         this.inMemoryFormat = config.inMemoryFormat;
         this.mapStoreConfig = config.mapStoreConfig != null ? new MapStoreConfig(config.mapStoreConfig) : null;
         this.nearCacheConfig = config.nearCacheConfig != null ? new NearCacheConfig(config.nearCacheConfig) : null;
@@ -148,8 +155,7 @@ public class MapConfig implements SplitBrainMergeTypeProvider,
         this.mergePolicyConfig = new MergePolicyConfig(config.mergePolicyConfig);
         this.wanReplicationRef = config.wanReplicationRef != null ? new WanReplicationRef(config.wanReplicationRef) : null;
         this.entryListenerConfigs = new ArrayList<>(config.getEntryListenerConfigs());
-        this.partitionLostListenerConfigs =
-                new ArrayList<>(config.getPartitionLostListenerConfigs());
+        this.partitionLostListenerConfigs = new ArrayList<>(config.getPartitionLostListenerConfigs());
         this.indexConfigs = new ArrayList<>(config.getIndexConfigs());
         this.attributeConfigs = new ArrayList<>(config.getAttributeConfigs());
         this.queryCacheConfigs = new ArrayList<>(config.getQueryCacheConfigs());
@@ -203,6 +209,30 @@ public class MapConfig implements SplitBrainMergeTypeProvider,
      */
     public MapConfig setInMemoryFormat(InMemoryFormat inMemoryFormat) {
         this.inMemoryFormat = isNotNull(inMemoryFormat, "inMemoryFormat");
+        return this;
+    }
+
+    /**
+     * Gets the {@link EvictionConfig} instance of the eviction
+     * configuration for this {@link IMap}.
+     *
+     * @return the {@link EvictionConfig}
+     * instance of the eviction configuration
+     */
+    public EvictionConfig getEvictionConfig() {
+        return evictionConfig;
+    }
+
+    /**
+     * Sets the {@link EvictionConfig} instance for eviction
+     * configuration for this {@link IMap}.
+     *
+     * @param evictionConfig the {@link EvictionConfig}
+     *                       instance to set for the eviction configuration
+     * @return current map config instance
+     */
+    public MapConfig setEvictionConfig(EvictionConfig evictionConfig) {
+        this.evictionConfig = isNotNull(evictionConfig, "evictionConfig");
         return this;
     }
 
@@ -311,57 +341,6 @@ public class MapConfig implements SplitBrainMergeTypeProvider,
      */
     public MapConfig setMaxIdleSeconds(int maxIdleSeconds) {
         this.maxIdleSeconds = maxIdleSeconds;
-        return this;
-    }
-
-    public MaxSizeConfig getMaxSizeConfig() {
-        return maxSizeConfig;
-    }
-
-    public MapConfig setMaxSizeConfig(MaxSizeConfig maxSizeConfig) {
-        this.maxSizeConfig = maxSizeConfig;
-        return this;
-    }
-
-    /**
-     * Returns the {@link EvictionPolicy}.
-     *
-     * @return the evictionPolicy
-     */
-    public EvictionPolicy getEvictionPolicy() {
-        return evictionPolicy;
-    }
-
-    /**
-     * Sets the {@link EvictionPolicy}. Default value is {@link EvictionPolicy#NONE}.
-     *
-     * @param evictionPolicy the evictionPolicy to set
-     */
-    public MapConfig setEvictionPolicy(EvictionPolicy evictionPolicy) {
-        this.evictionPolicy = checkNotNull(evictionPolicy, "evictionPolicy cannot be null");
-        return this;
-    }
-
-    /**
-     * Returns custom eviction policy if it is set otherwise returns {@code null}.
-     *
-     * @return custom eviction policy or {@code null}
-     */
-    public MapEvictionPolicy getMapEvictionPolicy() {
-        return mapEvictionPolicy;
-    }
-
-    /**
-     * Sets custom eviction policy implementation for this map.
-     * <p>
-     * Internal eviction algorithm finds most appropriate
-     * entry to evict from this map by using supplied policy.
-     *
-     * @param mapEvictionPolicy custom eviction policy implementation
-     * @return the updated map configuration
-     */
-    public MapConfig setMapEvictionPolicy(MapEvictionPolicy mapEvictionPolicy) {
-        this.mapEvictionPolicy = checkNotNull(mapEvictionPolicy, "mapEvictionPolicy cannot be null");
         return this;
     }
 
@@ -570,7 +549,7 @@ public class MapConfig implements SplitBrainMergeTypeProvider,
      * Sets the metadata policy. See {@link MetadataPolicy} for more
      * information.
      *
-     * @param metadataPolicy
+     * @param metadataPolicy the metadata policy
      */
     public MapConfig setMetadataPolicy(MetadataPolicy metadataPolicy) {
         this.metadataPolicy = metadataPolicy;
@@ -610,6 +589,7 @@ public class MapConfig implements SplitBrainMergeTypeProvider,
 
     /**
      * Sets {@link QueryCacheConfig} instances to this {@code MapConfig}.
+     *
      * @return this configuration
      */
     public MapConfig setQueryCacheConfigs(List<QueryCacheConfig> queryCacheConfigs) {
@@ -762,13 +742,7 @@ public class MapConfig implements SplitBrainMergeTypeProvider,
         if (!name.equals(that.name)) {
             return false;
         }
-        if (!Objects.equals(maxSizeConfig, that.maxSizeConfig)) {
-            return false;
-        }
-        if (evictionPolicy != that.evictionPolicy) {
-            return false;
-        }
-        if (!Objects.equals(mapEvictionPolicy, that.mapEvictionPolicy)) {
+        if (!Objects.equals(evictionConfig, that.evictionConfig)) {
             return false;
         }
         if (!Objects.equals(mapStoreConfig, that.mapStoreConfig)) {
@@ -829,9 +803,7 @@ public class MapConfig implements SplitBrainMergeTypeProvider,
         result = 31 * result + asyncBackupCount;
         result = 31 * result + timeToLiveSeconds;
         result = 31 * result + maxIdleSeconds;
-        result = 31 * result + (maxSizeConfig != null ? maxSizeConfig.hashCode() : 0);
-        result = 31 * result + (evictionPolicy != null ? evictionPolicy.hashCode() : 0);
-        result = 31 * result + (mapEvictionPolicy != null ? mapEvictionPolicy.hashCode() : 0);
+        result = 31 * result + evictionConfig.hashCode();
         result = 31 * result + (mapStoreConfig != null ? mapStoreConfig.hashCode() : 0);
         result = 31 * result + (nearCacheConfig != null ? nearCacheConfig.hashCode() : 0);
         result = 31 * result + (readBackupData ? 1 : 0);
@@ -864,10 +836,8 @@ public class MapConfig implements SplitBrainMergeTypeProvider,
                 + ", asyncBackupCount=" + asyncBackupCount
                 + ", timeToLiveSeconds=" + timeToLiveSeconds
                 + ", maxIdleSeconds=" + maxIdleSeconds
-                + ", evictionPolicy='" + evictionPolicy + '\''
-                + ", mapEvictionPolicy='" + mapEvictionPolicy + '\''
-                + ", maxSizeConfig=" + maxSizeConfig
                 + ", readBackupData=" + readBackupData
+                + ", evictionConfig=" + evictionConfig
                 + ", merkleTree=" + merkleTreeConfig
                 + ", eventJournal=" + eventJournalConfig
                 + ", hotRestart=" + hotRestartConfig
@@ -901,9 +871,7 @@ public class MapConfig implements SplitBrainMergeTypeProvider,
         out.writeInt(asyncBackupCount);
         out.writeInt(timeToLiveSeconds);
         out.writeInt(maxIdleSeconds);
-        out.writeObject(maxSizeConfig);
-        out.writeUTF(evictionPolicy.name());
-        out.writeObject(mapEvictionPolicy);
+        out.writeObject(evictionConfig);
         out.writeObject(mapStoreConfig);
         out.writeObject(nearCacheConfig);
         out.writeBoolean(readBackupData);
@@ -932,9 +900,7 @@ public class MapConfig implements SplitBrainMergeTypeProvider,
         asyncBackupCount = in.readInt();
         timeToLiveSeconds = in.readInt();
         maxIdleSeconds = in.readInt();
-        maxSizeConfig = in.readObject();
-        evictionPolicy = EvictionPolicy.valueOf(in.readUTF());
-        mapEvictionPolicy = in.readObject();
+        evictionConfig = in.readObject();
         mapStoreConfig = in.readObject();
         nearCacheConfig = in.readObject();
         readBackupData = in.readBoolean();

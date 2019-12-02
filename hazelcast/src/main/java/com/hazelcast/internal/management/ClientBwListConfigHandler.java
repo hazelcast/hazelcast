@@ -24,6 +24,7 @@ import com.hazelcast.internal.management.dto.ClientBwListDTO;
 import com.hazelcast.internal.management.dto.ClientBwListEntryDTO;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
+import com.hazelcast.spi.impl.operationservice.AbstractLocalOperation;
 
 import java.util.List;
 import java.util.regex.Pattern;
@@ -32,6 +33,11 @@ import static com.hazelcast.internal.util.JsonUtil.getObject;
 
 /**
  * Handles client B/W list configuration received from Management Center and applies changes.
+ * <p>
+ * This class is thread-safe.
+ * <p>
+ * Note: Once MC migrates to client comms, this class may be converted into a {@link AbstractLocalOperation}.
+ * The {@link #handleLostConnection} and {@link #handleNewConfig} methods won't be required when the migration happens.
  *
  * @see ManagementCenterService ManagementCenterService for more details on usage.
  */
@@ -58,10 +64,11 @@ public class ClientBwListConfigHandler {
 
     /**
      * Parses client B/W list filtering configuration in JSON format and applies the configuration.
+     * Never throws.
      *
-     * @param configJson Configuration object
+     * @param configJson configuration JSON object
      */
-    public void handleConfig(JsonObject configJson) {
+    public void handleNewConfig(JsonObject configJson) {
         try {
             JsonObject bwListConfigJson = getObject(configJson, "clientBwList");
             ClientBwListDTO configDTO = new ClientBwListDTO();
@@ -72,8 +79,13 @@ public class ClientBwListConfigHandler {
         }
     }
 
-    private void applyConfig(ClientBwListDTO configDTO) {
-        ClientSelector selector = null;
+    /**
+     * Applies the given config.
+     *
+     * @param configDTO configuration object
+     */
+    public void applyConfig(ClientBwListDTO configDTO) {
+        ClientSelector selector;
         switch (configDTO.mode) {
             case DISABLED:
                 selector = ClientSelectors.any();

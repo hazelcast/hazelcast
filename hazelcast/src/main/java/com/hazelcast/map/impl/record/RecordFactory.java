@@ -16,8 +16,6 @@
 
 package com.hazelcast.map.impl.record;
 
-import com.hazelcast.nio.serialization.Data;
-
 /**
  * Factory for creating records. Created for every partition.
  *
@@ -25,7 +23,5 @@ import com.hazelcast.nio.serialization.Data;
  */
 public interface RecordFactory<T> {
 
-    Record<T> newRecord(Data key, Object value);
-
-    void setValue(Record<T> record, Object value);
+    Record<T> newRecord(Object value);
 }

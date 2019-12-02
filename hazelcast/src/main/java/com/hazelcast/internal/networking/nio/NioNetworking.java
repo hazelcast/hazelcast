@@ -18,10 +18,9 @@ package com.hazelcast.internal.networking.nio;
 
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.internal.metrics.DynamicMetricsProvider;
-import com.hazelcast.internal.metrics.MetricTagger;
-import com.hazelcast.internal.metrics.MetricTaggerSupplier;
 import com.hazelcast.internal.metrics.MetricsCollectionContext;
 import com.hazelcast.internal.metrics.MetricsRegistry;
+import com.hazelcast.internal.metrics.MetricDescriptor;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.metrics.ProbeLevel;
 import com.hazelcast.internal.networking.Channel;
@@ -51,6 +50,7 @@ import java.util.logging.Level;
 
 import static com.hazelcast.internal.networking.nio.SelectorMode.SELECT;
 import static com.hazelcast.internal.networking.nio.SelectorMode.SELECT_NOW_STRING;
+import static com.hazelcast.internal.networking.nio.SelectorMode.SELECT_WITH_FIX;
 import static com.hazelcast.internal.nio.IOUtil.closeResource;
 import static com.hazelcast.internal.util.HashUtil.hashToIndex;
 import static com.hazelcast.internal.util.ThreadUtil.createThreadPoolName;
@@ -137,8 +137,20 @@ public final class NioNetworking implements Networking, DynamicMetricsProvider {
         this.selectorWorkaroundTest = ctx.selectorWorkaroundTest;
         this.idleStrategy = ctx.idleStrategy;
         this.concurrencyDetection = ctx.concurrencyDetection;
-        this.writeThroughEnabled = ctx.writeThroughEnabled;
-        this.selectionKeyWakeupEnabled = ctx.selectionKeyWakeupEnabled;
+        // selector mode SELECT_WITH_FIX requires that a single thread
+        // accesses a selector & its selectionKeys. Selection key wake-up
+        // and write through break this requirement, therefore must be
+        // disabled with SELECT_WITH_FIX.
+        this.writeThroughEnabled = ctx.writeThroughEnabled && selectorMode != SELECT_WITH_FIX;
+        this.selectionKeyWakeupEnabled = ctx.selectionKeyWakeupEnabled && selectorMode != SELECT_WITH_FIX;
+        if (selectorMode == SELECT_WITH_FIX
+                && (ctx.writeThroughEnabled || ctx.selectionKeyWakeupEnabled)) {
+            logger.warning("Selector mode SELECT_WITH_FIX is incompatible with write-through and selection key wakeup "
+                    + "optimizations and they have been disabled. Start Hazelcast with options "
+                    + "\"-Dhazelcast.io.selectionKeyWakeupEnabled=false -Dhazelcast.io.write.through=false\" to "
+                    + "explicitly disable selection key wakeup and write-through optimizations and avoid logging this "
+                    + "warning.");
+        }
     }
 
     @SuppressFBWarnings(value = "EI_EXPOSE_REP", justification = "used only for testing")
@@ -326,39 +338,61 @@ public final class NioNetworking implements Networking, DynamicMetricsProvider {
     }
 
     @Override
-    public void provideDynamicMetrics(MetricTaggerSupplier taggerSupplier, MetricsCollectionContext context) {
+    public void provideDynamicMetrics(MetricDescriptor descriptor,
+                                      MetricsCollectionContext context) {
         for (Channel channel : channels) {
             String pipelineId = channel.localSocketAddress() + "->" + channel.remoteSocketAddress();
 
-            MetricTagger taggerIn = taggerSupplier.getMetricTagger("tcp.connection.in")
-                                                  .withIdTag("pipelineId", pipelineId);
-            context.collect(taggerIn, channel.inboundPipeline());
+            MetricDescriptor descriptorIn = descriptor
+                    .copy()
+                    .withPrefix("tcp.connection.in")
+                    .withDiscriminator("pipelineId", pipelineId);
+            context.collect(descriptorIn, channel.inboundPipeline());
 
-            MetricTagger taggerOut = taggerSupplier.getMetricTagger("tcp.connection.out")
-                                                   .withIdTag("pipelineId", pipelineId);
-            context.collect(taggerOut, channel.outboundPipeline());
+            MetricDescriptor descriptorOut = descriptor
+                    .copy()
+                    .withPrefix("tcp.connection.out")
+                    .withDiscriminator("pipelineId", pipelineId);
+            context.collect(descriptorOut, channel.outboundPipeline());
         }
 
         for (NioThread nioThread : inputThreads) {
-            MetricTagger tagger = taggerSupplier.getMetricTagger("tcp.inputThread")
-                                                .withIdTag("thread", nioThread.getName());
-            context.collect(tagger, nioThread);
+            MetricDescriptor descriptorInThread = descriptor
+                    .copy()
+                    .withPrefix("tcp.inputThread")
+                    .withDiscriminator("thread", nioThread.getName());
+            context.collect(descriptorInThread, nioThread);
         }
 
         for (NioThread nioThread : outputThreads) {
-            MetricTagger tagger = taggerSupplier.getMetricTagger("tcp.outputThread")
-                                                .withIdTag("thread", nioThread.getName());
-            context.collect(tagger, nioThread);
+            MetricDescriptor descriptorOutThread = descriptor
+                    .copy()
+                    .withPrefix("tcp.outputThread")
+                    .withDiscriminator("thread", nioThread.getName());
+            context.collect(descriptorOutThread, nioThread);
         }
 
         IOBalancer ioBalancer = this.ioBalancer;
         if (ioBalancer != null) {
-            MetricTagger taggerBalancer = taggerSupplier.getMetricTagger("tcp.balancer");
-            context.collect(taggerBalancer, ioBalancer);
+            MetricDescriptor descriptorBalancer = descriptor
+                    .copy()
+                    .withPrefix("tcp.balancer");
+            context.collect(descriptorBalancer, ioBalancer);
         }
 
-        MetricTagger tagger = taggerSupplier.getMetricTagger("tcp");
-        context.collect(tagger, this);
+        MetricDescriptor descriptorTcp = descriptor
+                .copy()
+                .withPrefix("tcp");
+        context.collect(descriptorTcp, this);
+    }
+
+    // package private accessors for testing
+    boolean isWriteThroughEnabled() {
+        return writeThroughEnabled;
+    }
+
+    boolean isSelectionKeyWakeupEnabled() {
+        return selectionKeyWakeupEnabled;
     }
 
     private class ChannelCloseListenerImpl implements ChannelCloseListener {
@@ -453,8 +487,9 @@ public final class NioNetworking implements Networking, DynamicMetricsProvider {
             }
         }
 
-        public void setSelectionKeyWakeupEnabled(boolean selectionKeyWakeupEnabled) {
+        public Context selectionKeyWakeupEnabled(boolean selectionKeyWakeupEnabled) {
             this.selectionKeyWakeupEnabled = selectionKeyWakeupEnabled;
+            return this;
         }
 
         public Context writeThroughEnabled(boolean writeThroughEnabled) {

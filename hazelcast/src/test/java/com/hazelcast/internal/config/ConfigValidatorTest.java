@@ -20,7 +20,9 @@ import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.InMemoryFormat;
+import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.config.MapConfig;
+import com.hazelcast.config.MaxSizePolicy;
 import com.hazelcast.config.NativeMemoryConfig;
 import com.hazelcast.config.cp.CPSubsystemConfig;
 import com.hazelcast.spi.impl.NodeEngine;
@@ -84,7 +86,7 @@ public class ConfigValidatorTest extends HazelcastTestSupport {
     /**
      * Not supported in open source version, so test is expected to throw exception.
      */
-    @Test(expected = IllegalArgumentException.class)
+    @Test(expected = InvalidConfigurationException.class)
     public void checkMapConfig_NATIVE() {
         checkMapConfig(getMapConfig(NATIVE), nativeMemoryConfig, splitBrainMergePolicyProvider, properties);
     }
@@ -97,7 +99,7 @@ public class ConfigValidatorTest extends HazelcastTestSupport {
     @Test
     public void checkCacheConfig_withEntryCountMaxSizePolicy_OBJECT() {
         EvictionConfig evictionConfig = new EvictionConfig()
-                .setMaximumSizePolicy(EvictionConfig.MaxSizePolicy.ENTRY_COUNT);
+                .setMaxSizePolicy(MaxSizePolicy.ENTRY_COUNT);
         CacheSimpleConfig cacheSimpleConfig = new CacheSimpleConfig()
                 .setInMemoryFormat(OBJECT)
                 .setEvictionConfig(evictionConfig);
@@ -108,7 +110,7 @@ public class ConfigValidatorTest extends HazelcastTestSupport {
     @Test(expected = IllegalArgumentException.class)
     public void checkCacheConfig_withEntryCountMaxSizePolicy_NATIVE() {
         EvictionConfig evictionConfig = new EvictionConfig()
-                .setMaximumSizePolicy(EvictionConfig.MaxSizePolicy.ENTRY_COUNT);
+                .setMaxSizePolicy(MaxSizePolicy.ENTRY_COUNT);
         CacheSimpleConfig cacheSimpleConfig = new CacheSimpleConfig()
                 .setInMemoryFormat(NATIVE)
                 .setEvictionConfig(evictionConfig);
@@ -139,7 +141,7 @@ public class ConfigValidatorTest extends HazelcastTestSupport {
         checkNearCacheNativeMemoryConfig(NATIVE, nativeMemoryConfig, true);
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test(expected = InvalidConfigurationException.class)
     public void checkNearCacheNativeMemoryConfig_shouldThrowExceptionWithoutNativeMemoryConfig_NATIVE_onEE() {
         checkNearCacheNativeMemoryConfig(NATIVE, null, true);
     }

@@ -36,12 +36,12 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * TODO DOC
  */
-@Generated("3dda2391ceb66647c196005113178c08")
+@Generated("eb58a15bdc819f4928f0e55aa5655ba9")
 public final class MapClearNearCacheCodec {
-    //hex: 0x013800
-    public static final int REQUEST_MESSAGE_TYPE = 79872;
-    //hex: 0x013801
-    public static final int RESPONSE_MESSAGE_TYPE = 79873;
+    //hex: 0x013700
+    public static final int REQUEST_MESSAGE_TYPE = 79616;
+    //hex: 0x013701
+    public static final int RESPONSE_MESSAGE_TYPE = 79617;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
 
@@ -65,7 +65,6 @@ public final class MapClearNearCacheCodec {
     public static ClientMessage encodeRequest(java.lang.String name, com.hazelcast.cluster.Address target) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
-        clientMessage.setAcquiresResource(false);
         clientMessage.setOperationName("Map.ClearNearCache");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);

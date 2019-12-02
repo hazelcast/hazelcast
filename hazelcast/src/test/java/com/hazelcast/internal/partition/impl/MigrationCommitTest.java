@@ -16,6 +16,7 @@
 
 package com.hazelcast.internal.partition.impl;
 
+import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.ListenerConfig;
@@ -26,10 +27,7 @@ import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.partition.MigrationInfo;
 import com.hazelcast.internal.partition.impl.MigrationInterceptorTest.MigrationInterceptorImpl;
 import com.hazelcast.internal.partition.impl.MigrationInterceptorTest.MigrationProgressNotification;
-import com.hazelcast.logging.LogEvent;
-import com.hazelcast.logging.LogListener;
-import com.hazelcast.cluster.Address;
-import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -41,11 +39,15 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Supplier;
 import java.util.logging.Level;
+import java.util.logging.LogRecord;
 
 import static com.hazelcast.internal.partition.MigrationInfo.MigrationStatus.SUCCESS;
 import static com.hazelcast.internal.partition.impl.MigrationInterceptorTest.MigrationProgressEvent.COMMIT;
@@ -497,27 +499,36 @@ public class MigrationCommitTest extends HazelcastTestSupport {
         warmUpPartitions(hz1, hz2);
         waitAllForSafeState(hz1, hz2);
 
-        final AtomicReference<Throwable> exceptionRef = new AtomicReference<Throwable>();
-        hz1.getLoggingService().addLogListener(Level.WARNING, new LogListener() {
-            @Override
-            public void log(LogEvent logEvent) {
-                if (logEvent.getLogRecord().getThrown() != null) {
-                    exceptionRef.set(logEvent.getLogRecord().getThrown());
-                }
+        final AtomicReference<Throwable> exceptionRef = new AtomicReference<>();
+        hz1.getLoggingService().addLogListener(Level.WARNING, event -> {
+            LogRecord log = event.getLogRecord();
+            // We want to ensure there's no unexpected exception caught by MigrationThread.
+            if (!MigrationThread.class.getName().equals(log.getLoggerName())) {
+                return;
             }
+            exceptionRef.compareAndSet(null, log.getThrown());
         });
 
         hz1.getCluster().changeClusterState(ClusterState.NO_MIGRATION);
         hz2.getLifecycleService().shutdown();
         waitAllForSafeState(hz1);
 
-        assertNull(exceptionRef.get());
+        Throwable t = exceptionRef.get();
+        Supplier<String> messageSupplier = () -> {
+            StringWriter sw = new StringWriter();
+            if (t != null) {
+                sw.write("Unexpected exception! Stacktrace: \n");
+                t.printStackTrace(new PrintWriter(sw));
+            }
+            return sw.toString();
+        };
+        assertNull(messageSupplier.get(), t);
     }
 
     private Config createConfig() {
         Config config = new Config();
-        config.setProperty(GroupProperty.PARTITION_MAX_PARALLEL_REPLICATIONS.getName(), "0");
-        config.setProperty(GroupProperty.PARTITION_COUNT.getName(), String.valueOf(PARTITION_COUNT));
+        config.setProperty(ClusterProperty.PARTITION_MAX_PARALLEL_REPLICATIONS.getName(), "0");
+        config.setProperty(ClusterProperty.PARTITION_COUNT.getName(), String.valueOf(PARTITION_COUNT));
         return config;
     }
 

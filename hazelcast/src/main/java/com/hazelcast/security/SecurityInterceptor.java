@@ -30,7 +30,7 @@ public interface SecurityInterceptor {
      * @param objectName
      * @param methodName
      * @param parameters
-     * @throws AccessControlException
+     * @throws AccessControlException if access is denied
      */
     void before(Credentials credentials, String objectType, String objectName, String methodName,
                 Parameters parameters) throws AccessControlException;

@@ -47,6 +47,7 @@ import javax.cache.event.CacheEntryUpdatedListener;
 import java.io.Serializable;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static com.hazelcast.cache.CacheTestSupport.createServerCachingProvider;
 import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.assertNotNull;
 import static junit.framework.Assert.assertNull;
@@ -71,8 +72,8 @@ public class BasicCacheLiteMemberTest
         final HazelcastInstance instance = factory.newHazelcastInstance();
         final HazelcastInstance lite = factory.newHazelcastInstance(new Config().setLiteMember(true));
 
-        instanceCachingProvider = HazelcastServerCachingProvider.createCachingProvider(instance);
-        liteCachingProvider = HazelcastServerCachingProvider.createCachingProvider(lite);
+        instanceCachingProvider = createServerCachingProvider(instance);
+        liteCachingProvider = createServerCachingProvider(lite);
         cacheName = randomMapName();
     }
 

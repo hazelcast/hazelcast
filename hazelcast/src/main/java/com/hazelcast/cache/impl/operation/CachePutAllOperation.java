@@ -18,6 +18,7 @@ package com.hazelcast.cache.impl.operation;
 
 import com.hazelcast.cache.impl.CacheDataSerializerHook;
 import com.hazelcast.cache.impl.record.CacheRecord;
+import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -106,8 +107,8 @@ public class CachePutAllOperation extends CacheOperation
         out.writeInt(completionId);
         out.writeInt(entries.size());
         for (Map.Entry<Data, Data> entry : entries) {
-            out.writeData(entry.getKey());
-            out.writeData(entry.getValue());
+            IOUtil.writeData(out, entry.getKey());
+            IOUtil.writeData(out, entry.getValue());
         }
     }
 
@@ -119,8 +120,8 @@ public class CachePutAllOperation extends CacheOperation
         int size = in.readInt();
         entries = new ArrayList<Map.Entry<Data, Data>>(size);
         for (int i = 0; i < size; i++) {
-            Data key = in.readData();
-            Data value = in.readData();
+            Data key = IOUtil.readData(in);
+            Data value = IOUtil.readData(in);
             entries.add(new AbstractMap.SimpleImmutableEntry<Data, Data>(key, value));
         }
     }

@@ -31,6 +31,7 @@ import com.hazelcast.config.IndexType;
 import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.config.JavaSerializationFilterConfig;
 import com.hazelcast.config.ListenerConfig;
+import com.hazelcast.config.MaxSizePolicy;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.config.QueryCacheConfig;
 import com.hazelcast.config.SSLConfig;
@@ -177,7 +178,7 @@ public abstract class AbstractClientConfigBuilderTest extends HazelcastTestSuppo
         final NearCacheConfig evictableNearCacheConfig = fullClientConfig.getNearCacheConfig("NearCacheEvictionConfigExample");
         EvictionConfig nearCacheEvictionConfig = evictableNearCacheConfig.getEvictionConfig();
         assertEquals(EvictionPolicy.LRU, nearCacheEvictionConfig.getEvictionPolicy());
-        assertEquals(EvictionConfig.MaxSizePolicy.ENTRY_COUNT, nearCacheEvictionConfig.getMaximumSizePolicy());
+        assertEquals(MaxSizePolicy.ENTRY_COUNT, nearCacheEvictionConfig.getMaxSizePolicy());
         assertEquals(10000, nearCacheEvictionConfig.getSize());
         assertEquals("com.hazelcast.examples.MyEvictionComparator", nearCacheEvictionConfig.getComparatorClassName());
     }
@@ -216,7 +217,7 @@ public abstract class AbstractClientConfigBuilderTest extends HazelcastTestSuppo
 
         assertNotNull(nearCacheConfig.getEvictionConfig());
         assertEquals(100, nearCacheConfig.getEvictionConfig().getSize());
-        assertEquals(EvictionConfig.MaxSizePolicy.ENTRY_COUNT, nearCacheConfig.getEvictionConfig().getMaximumSizePolicy());
+        assertEquals(MaxSizePolicy.ENTRY_COUNT, nearCacheConfig.getEvictionConfig().getMaxSizePolicy());
         assertEquals(EvictionPolicy.LFU, nearCacheConfig.getEvictionConfig().getEvictionPolicy());
 
         assertNotNull(nearCacheConfig.getPreloaderConfig());
@@ -244,7 +245,7 @@ public abstract class AbstractClientConfigBuilderTest extends HazelcastTestSuppo
         assertEquals(0, queryCacheClassPredicateConfig.getDelaySeconds());
         EvictionConfig evictionConfig = queryCacheClassPredicateConfig.getEvictionConfig();
         assertEquals(EvictionPolicy.LRU, evictionConfig.getEvictionPolicy());
-        assertEquals(EvictionConfig.MaxSizePolicy.ENTRY_COUNT, evictionConfig.getMaximumSizePolicy());
+        assertEquals(MaxSizePolicy.ENTRY_COUNT, evictionConfig.getMaxSizePolicy());
         assertEquals(10000, evictionConfig.getSize());
         assertEquals("com.hazelcast.examples.MyEvictionComparator", evictionConfig.getComparatorClassName());
         assertEquals(InMemoryFormat.BINARY, queryCacheClassPredicateConfig.getInMemoryFormat());
@@ -280,7 +281,7 @@ public abstract class AbstractClientConfigBuilderTest extends HazelcastTestSuppo
     public void testExponentialConnectionRetryConfig() {
         ClientConnectionStrategyConfig connectionStrategyConfig = fullClientConfig.getConnectionStrategyConfig();
         ConnectionRetryConfig exponentialRetryConfig = connectionStrategyConfig.getConnectionRetryConfig();
-        assertFalse(exponentialRetryConfig.isFailOnMaxBackoff());
+        assertEquals(5000, exponentialRetryConfig.getClusterConnectTimeoutMillis());
         assertEquals(0.5, exponentialRetryConfig.getJitter(), 0);
         assertEquals(2000, exponentialRetryConfig.getInitialBackoffMillis());
         assertEquals(60000, exponentialRetryConfig.getMaxBackoffMillis());
@@ -291,11 +292,11 @@ public abstract class AbstractClientConfigBuilderTest extends HazelcastTestSuppo
     public void testExponentialConnectionRetryConfig_defaults() {
         ClientConnectionStrategyConfig connectionStrategyConfig = defaultClientConfig.getConnectionStrategyConfig();
         ConnectionRetryConfig exponentialRetryConfig = connectionStrategyConfig.getConnectionRetryConfig();
-        assertTrue(exponentialRetryConfig.isFailOnMaxBackoff());
-        assertEquals(0.2, exponentialRetryConfig.getJitter(), 0);
+        assertEquals(20000, exponentialRetryConfig.getClusterConnectTimeoutMillis());
+        assertEquals(0, exponentialRetryConfig.getJitter(), 0);
         assertEquals(1000, exponentialRetryConfig.getInitialBackoffMillis());
         assertEquals(30000, exponentialRetryConfig.getMaxBackoffMillis());
-        assertEquals(2, exponentialRetryConfig.getMultiplier(), 0);
+        assertEquals(1, exponentialRetryConfig.getMultiplier(), 0);
     }
 
     @Test
@@ -456,4 +457,14 @@ public abstract class AbstractClientConfigBuilderTest extends HazelcastTestSuppo
 
     @Test
     public abstract void testTokenIdentityConfig();
+
+    @Test
+    public abstract void testMetricsConfig();
+
+    @Test
+    public abstract void testMetricsConfigMasterSwitchDisabled();
+
+    @Test
+    public abstract void testMetricsConfigJmxDisabled();
+
 }

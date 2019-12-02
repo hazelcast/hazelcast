@@ -18,9 +18,11 @@ package com.hazelcast.spi.impl;
 
 import com.hazelcast.internal.serialization.DataSerializerHook;
 import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
+import com.hazelcast.internal.services.DistributedObjectNamespace;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.internal.services.DistributedObjectNamespace;
+import com.hazelcast.security.SimpleTokenCredentials;
+import com.hazelcast.security.UsernamePasswordCredentials;
 import com.hazelcast.spi.impl.eventservice.impl.EventEnvelope;
 import com.hazelcast.spi.impl.eventservice.impl.Registration;
 import com.hazelcast.spi.impl.eventservice.impl.TrueEventFilter;
@@ -37,6 +39,7 @@ import com.hazelcast.spi.impl.operationservice.impl.responses.BackupAckResponse;
 import com.hazelcast.spi.impl.operationservice.impl.responses.CallTimeoutResponse;
 import com.hazelcast.spi.impl.operationservice.impl.responses.ErrorResponse;
 import com.hazelcast.spi.impl.operationservice.impl.responses.NormalResponse;
+import com.hazelcast.spi.impl.proxyservice.impl.DistributedObjectEventPacket;
 import com.hazelcast.spi.impl.proxyservice.impl.operations.DistributedObjectDestroyOperation;
 import com.hazelcast.spi.impl.proxyservice.impl.operations.InitializeDistributedObjectOperation;
 import com.hazelcast.spi.impl.proxyservice.impl.operations.PostJoinProxyOperation;
@@ -72,6 +75,9 @@ public final class SpiDataSerializerHook implements DataSerializerHook {
     public static final int DISTRIBUTED_OBJECT_NS = 20;
     public static final int REGISTRATION = 21;
     public static final int NOOP_TENANT_CONTROL = 22;
+    public static final int USERNAME_PWD_CRED = 23;
+    public static final int SIMPLE_TOKEN_CRED = 24;
+    public static final int DISTRIBUTED_OBJECT_EVENT_PACKET = 25;
 
     private static final DataSerializableFactory FACTORY = createFactoryInternal();
 
@@ -131,6 +137,12 @@ public final class SpiDataSerializerHook implements DataSerializerHook {
                         return new Registration();
                     case NOOP_TENANT_CONTROL:
                         return (IdentifiedDataSerializable) TenantControl.NOOP_TENANT_CONTROL;
+                    case USERNAME_PWD_CRED:
+                        return new UsernamePasswordCredentials();
+                    case SIMPLE_TOKEN_CRED:
+                        return new SimpleTokenCredentials();
+                    case DISTRIBUTED_OBJECT_EVENT_PACKET:
+                        return new DistributedObjectEventPacket();
                     default:
                         return null;
                 }

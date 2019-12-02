@@ -31,6 +31,8 @@ import java.security.AccessControlException;
 
 /**
  * Operation to execute script on the node.
+ * <p>
+ * Note: Once MC migrates to client comms, this class can be merged into {@link RunScriptOperation}.
  */
 public class ScriptExecutorOperation extends AbstractManagementOperation {
 

@@ -17,6 +17,7 @@
 package com.hazelcast.map.impl.querycache.event;
 
 import com.hazelcast.cluster.Address;
+import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.internal.serialization.BinaryInterface;
@@ -167,8 +168,8 @@ public class DefaultQueryCacheEventData implements QueryCacheEventData {
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeLong(sequence);
-        out.writeData(dataKey);
-        out.writeData(dataNewValue);
+        IOUtil.writeData(out, dataKey);
+        IOUtil.writeData(out, dataNewValue);
         out.writeInt(eventType);
         out.writeInt(partitionId);
     }
@@ -176,8 +177,8 @@ public class DefaultQueryCacheEventData implements QueryCacheEventData {
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         this.sequence = in.readLong();
-        this.dataKey = in.readData();
-        this.dataNewValue = in.readData();
+        this.dataKey = IOUtil.readData(in);
+        this.dataNewValue = IOUtil.readData(in);
         this.eventType = in.readInt();
         this.partitionId = in.readInt();
     }

@@ -37,12 +37,12 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Releases the lock for the specified key regardless of the lock owner.It always successfully unlocks the key,
  * never blocks,and returns immediately.
  */
-@Generated("a2bb8cde6a3a9fd101ef034d9b01cffc")
+@Generated("bdc05760d9d1c8da069d5fb4ea4721d3")
 public final class MapForceUnlockCodec {
-    //hex: 0x013400
-    public static final int REQUEST_MESSAGE_TYPE = 78848;
-    //hex: 0x013401
-    public static final int RESPONSE_MESSAGE_TYPE = 78849;
+    //hex: 0x013300
+    public static final int REQUEST_MESSAGE_TYPE = 78592;
+    //hex: 0x013301
+    public static final int RESPONSE_MESSAGE_TYPE = 78593;
     private static final int REQUEST_REFERENCE_ID_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_REFERENCE_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
@@ -72,7 +72,6 @@ public final class MapForceUnlockCodec {
     public static ClientMessage encodeRequest(java.lang.String name, com.hazelcast.nio.serialization.Data key, long referenceId) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(true);
-        clientMessage.setAcquiresResource(false);
         clientMessage.setOperationName("Map.ForceUnlock");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);

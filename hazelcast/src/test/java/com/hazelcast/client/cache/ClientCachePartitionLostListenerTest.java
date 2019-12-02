@@ -21,13 +21,12 @@ import com.hazelcast.cache.impl.CacheService;
 import com.hazelcast.cache.impl.HazelcastServerCachingProvider;
 import com.hazelcast.cache.impl.event.CachePartitionLostEvent;
 import com.hazelcast.cache.impl.event.CachePartitionLostListener;
-import com.hazelcast.client.cache.impl.HazelcastClientCachingProvider;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.internal.partition.PartitionLostEventImpl;
 import com.hazelcast.spi.impl.eventservice.EventRegistration;
 import com.hazelcast.spi.impl.eventservice.EventService;
-import com.hazelcast.internal.partition.PartitionLostEventImpl;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -48,7 +47,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.UUID;
 
-import static com.hazelcast.cache.impl.HazelcastServerCachingProvider.createCachingProvider;
+import static com.hazelcast.cache.CacheTestSupport.createClientCachingProvider;
+import static com.hazelcast.cache.CacheTestSupport.createServerCachingProvider;
 import static com.hazelcast.cache.impl.ICacheService.SERVICE_NAME;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -74,7 +74,7 @@ public class ClientCachePartitionLostListenerTest extends HazelcastTestSupport {
         HazelcastInstance instance = hazelcastFactory.newHazelcastInstance();
         final HazelcastInstance client = hazelcastFactory.newHazelcastClient();
 
-        final CachingProvider cachingProvider = HazelcastClientCachingProvider.createCachingProvider(client);
+        final CachingProvider cachingProvider = createClientCachingProvider(client);
         final CacheManager cacheManager = cachingProvider.getCacheManager();
         final CacheConfig<Integer, String> cacheConfig = new CacheConfig<Integer, String>();
         final Cache<Integer, String> cache = cacheManager.createCache(cacheName, cacheConfig);
@@ -95,13 +95,13 @@ public class ClientCachePartitionLostListenerTest extends HazelcastTestSupport {
         HazelcastInstance instance = hazelcastFactory.newHazelcastInstance();
         final HazelcastInstance client = hazelcastFactory.newHazelcastClient();
 
-        final HazelcastServerCachingProvider cachingProvider = createCachingProvider(instance);
+        final HazelcastServerCachingProvider cachingProvider = createServerCachingProvider(instance);
         final CacheManager cacheManager = cachingProvider.getCacheManager();
         final CacheConfig<Integer, String> config = new CacheConfig<Integer, String>();
         config.setBackupCount(0);
         cacheManager.createCache(cacheName, config);
 
-        final CachingProvider clientCachingProvider = HazelcastClientCachingProvider.createCachingProvider(client);
+        final CachingProvider clientCachingProvider = createClientCachingProvider(client);
         final CacheManager clientCacheManager = clientCachingProvider.getCacheManager();
         final Cache<Integer, String> cache = clientCacheManager.getCache(cacheName);
 
@@ -125,13 +125,13 @@ public class ClientCachePartitionLostListenerTest extends HazelcastTestSupport {
         HazelcastInstance instance2 = hazelcastFactory.newHazelcastInstance();
         final HazelcastInstance client = hazelcastFactory.newHazelcastClient();
 
-        final HazelcastServerCachingProvider cachingProvider = createCachingProvider(instance1);
+        final HazelcastServerCachingProvider cachingProvider = createServerCachingProvider(instance1);
         final CacheManager cacheManager = cachingProvider.getCacheManager();
         final CacheConfig<Integer, String> config = new CacheConfig<Integer, String>();
         config.setBackupCount(0);
         cacheManager.createCache(cacheName, config);
 
-        final CachingProvider clientCachingProvider = HazelcastClientCachingProvider.createCachingProvider(client);
+        final CachingProvider clientCachingProvider = createClientCachingProvider(client);
         final CacheManager clientCacheManager = clientCachingProvider.getCacheManager();
         final Cache<Integer, String> cache = clientCacheManager.getCache(cacheName);
 
@@ -158,13 +158,13 @@ public class ClientCachePartitionLostListenerTest extends HazelcastTestSupport {
         HazelcastInstance instance = hazelcastFactory.newHazelcastInstance();
         final HazelcastInstance client = hazelcastFactory.newHazelcastClient();
 
-        final HazelcastServerCachingProvider cachingProvider = createCachingProvider(instance);
+        final HazelcastServerCachingProvider cachingProvider = createServerCachingProvider(instance);
         final CacheManager cacheManager = cachingProvider.getCacheManager();
         final CacheConfig<Integer, String> config = new CacheConfig<Integer, String>();
         config.setBackupCount(0);
         cacheManager.createCache(cacheName, config);
 
-        final CachingProvider clientCachingProvider = HazelcastClientCachingProvider.createCachingProvider(client);
+        final CachingProvider clientCachingProvider = createClientCachingProvider(client);
         final CacheManager clientCacheManager = clientCachingProvider.getCacheManager();
         final Cache<Integer, String> cache = clientCacheManager.getCache(cacheName);
         final ICache iCache = cache.unwrap(ICache.class);

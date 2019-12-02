@@ -16,12 +16,12 @@
 
 package com.hazelcast.internal.nio.tcp;
 
+import com.hazelcast.cluster.Address;
 import com.hazelcast.config.EndpointConfig;
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.instance.ProtocolType;
 import com.hazelcast.internal.metrics.DynamicMetricsProvider;
-import com.hazelcast.internal.metrics.MetricTagger;
-import com.hazelcast.internal.metrics.MetricTaggerSupplier;
+import com.hazelcast.internal.metrics.MetricDescriptor;
 import com.hazelcast.internal.metrics.MetricsCollectionContext;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.networking.Channel;
@@ -42,8 +42,7 @@ import com.hazelcast.internal.util.counters.MwCounter;
 import com.hazelcast.internal.util.executor.StripedRunnable;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
-import com.hazelcast.cluster.Address;
-import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
@@ -51,6 +50,7 @@ import java.io.IOException;
 import java.nio.channels.SocketChannel;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArraySet;
@@ -130,7 +130,7 @@ public class TcpIpEndpointManager
         this.logger = loggingService.getLogger(TcpIpEndpointManager.class);
         this.connector = new TcpIpConnector(this);
 
-        boolean spoofingChecks = properties != null && properties.getBoolean(GroupProperty.BIND_SPOOFING_CHECKS);
+        boolean spoofingChecks = properties != null && properties.getBoolean(ClusterProperty.BIND_SPOOFING_CHECKS);
         this.bindHandler = new BindHandler(this, ioService, logger, spoofingChecks, supportedProtocolTypes);
 
         if (endpointQualifier == null) {
@@ -404,14 +404,33 @@ public class TcpIpEndpointManager
     }
 
     @Override
-    public void provideDynamicMetrics(MetricTaggerSupplier taggerSupplier, MetricsCollectionContext context) {
+    public void provideDynamicMetrics(MetricDescriptor descriptor, MetricsCollectionContext context) {
+        MetricDescriptor rootDescriptor = descriptor.withPrefix("tcp.connection");
         if (endpointQualifier == null) {
-            MetricTagger tagger = taggerSupplier.getMetricTagger("tcp.connection");
-            context.collect(tagger, this);
+            context.collect(rootDescriptor.copy(), this);
         } else {
-            MetricTagger tagger = taggerSupplier.getMetricTagger("tcp.connection")
-                                                .withIdTag("endpoint", endpointQualifier.toMetricsPrefixString());
-            context.collect(tagger, this);
+            context.collect(rootDescriptor
+                    .copy()
+                    .withDiscriminator("endpoint", endpointQualifier.toMetricsPrefixString()), this);
+        }
+
+        for (TcpIpConnection connection : activeConnections) {
+            if (connection.getEndPoint() != null) {
+                context.collect(rootDescriptor
+                        .copy()
+                        .withDiscriminator("endpoint", connection.getEndPoint().toString()), connection);
+            }
+        }
+
+        for (Map.Entry<Address, TcpIpConnection> entry : connectionsMap.entrySet()) {
+            Address bindAddress = entry.getKey();
+            TcpIpConnection connection = entry.getValue();
+            if (connection.getEndPoint() != null) {
+                context.collect(rootDescriptor
+                        .copy()
+                        .withDiscriminator("bindAddress", bindAddress.toString())
+                        .withTag("endpoint", connection.getEndPoint().toString()), connection);
+            }
         }
     }
 

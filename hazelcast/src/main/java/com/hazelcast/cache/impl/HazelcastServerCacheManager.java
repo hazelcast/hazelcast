@@ -16,7 +16,6 @@
 
 package com.hazelcast.cache.impl;
 
-import com.hazelcast.cache.HazelcastCacheManager;
 import com.hazelcast.cache.HazelcastCachingProvider;
 import com.hazelcast.cache.impl.operation.CacheGetConfigOperation;
 import com.hazelcast.cache.impl.operation.CacheManagementConfigOperation;
@@ -38,7 +37,6 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.internal.config.ConfigValidator.checkCacheConfig;
-import static com.hazelcast.internal.config.MergePolicyValidator.checkMergePolicySupportsInMemoryFormat;
 import static com.hazelcast.internal.util.FutureUtil.waitWithDeadline;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
@@ -166,7 +164,7 @@ public class HazelcastServerCacheManager extends AbstractHazelcastCacheManager {
         CacheGetConfigOperation op = new CacheGetConfigOperation(cacheNameWithPrefix, cacheName);
         int partitionId = nodeEngine.getPartitionService().getPartitionId(cacheNameWithPrefix);
         InvocationFuture<CacheConfig<K, V>> f = nodeEngine.getOperationService()
-                                                          .invokeOnPartition(CacheService.SERVICE_NAME, op, partitionId);
+                .invokeOnPartition(CacheService.SERVICE_NAME, op, partitionId);
         return f.joinInternal();
     }
 
@@ -180,10 +178,6 @@ public class HazelcastServerCacheManager extends AbstractHazelcastCacheManager {
     protected <K, V> void validateCacheConfig(CacheConfig<K, V> cacheConfig) {
         SplitBrainMergePolicyProvider mergePolicyProvider = nodeEngine.getSplitBrainMergePolicyProvider();
         checkCacheConfig(cacheConfig, mergePolicyProvider);
-
-        Object mergePolicy = mergePolicyProvider.getMergePolicy(cacheConfig.getMergePolicyConfig().getPolicy());
-        checkMergePolicySupportsInMemoryFormat(cacheConfig.getName(), mergePolicy, cacheConfig.getInMemoryFormat(),
-                true, nodeEngine.getLogger(HazelcastCacheManager.class));
     }
 
     @Override

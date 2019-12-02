@@ -31,7 +31,7 @@ import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.proxy.MapProxyImpl;
-import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -141,7 +141,7 @@ public class ClientMapStoreTest extends HazelcastTestSupport {
         int maxCapacity = 1000;
 
         Config config = getConfig();
-        config.setProperty(GroupProperty.MAP_WRITE_BEHIND_QUEUE_CAPACITY.getName(), String.valueOf(maxCapacity));
+        config.setProperty(ClusterProperty.MAP_WRITE_BEHIND_QUEUE_CAPACITY.getName(), String.valueOf(maxCapacity));
 
         MapConfig mapConfig = new MapConfig();
         MapStoreConfig mapStoreConfig = new MapStoreConfig();
@@ -188,7 +188,7 @@ public class ClientMapStoreTest extends HazelcastTestSupport {
         int maxCapacity = 1000;
 
         Config config = getConfig();
-        config.setProperty(GroupProperty.MAP_WRITE_BEHIND_QUEUE_CAPACITY.getName(), String.valueOf(maxCapacity));
+        config.setProperty(ClusterProperty.MAP_WRITE_BEHIND_QUEUE_CAPACITY.getName(), String.valueOf(maxCapacity));
 
         MapConfig mapConfig = new MapConfig();
         MapStoreConfig mapStoreConfig = new MapStoreConfig();
@@ -390,11 +390,8 @@ public class ClientMapStoreTest extends HazelcastTestSupport {
                 + "        <backup-count>1</backup-count>\n"
                 + "        <async-backup-count>0</async-backup-count>\n"
                 + "        <max-idle-seconds>0</max-idle-seconds>\n"
-                + "        <eviction-policy>LRU</eviction-policy>\n"
-                + "        <max-size policy=\"PER_NODE\">10</max-size>\n"
-                + "\n"
+                + "        <eviction size=\"10\" max-size-policy=\"PER_NODE\" eviction-policy=\"LRU\" />\n"
                 + "        <merge-policy>PassThroughMergePolicy</merge-policy>\n"
-                + "\n"
                 + "        <map-store enabled=\"true\">\n"
                 + "            <class-name>com.hazelcast.client.map.helpers.AMapStore</class-name>\n"
                 + "            <write-delay-seconds>5</write-delay-seconds>\n"

@@ -16,12 +16,14 @@
 
 package com.hazelcast.spi.impl.eventservice;
 
+import com.hazelcast.internal.nio.Packet;
 import com.hazelcast.internal.services.PostJoinAwareService;
 import com.hazelcast.internal.services.PreJoinAwareService;
-import com.hazelcast.internal.nio.Packet;
+import com.hazelcast.spi.properties.ClusterProperty;
 
 import javax.annotation.Nonnull;
 import java.util.Collection;
+import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 
 /**
@@ -33,7 +35,7 @@ public interface EventService extends Consumer<Packet>, PreJoinAwareService, Pos
      * Returns the event thread count.
      *
      * @return the event thread count
-     * @see com.hazelcast.spi.properties.GroupProperty#EVENT_THREAD_COUNT
+     * @see ClusterProperty#EVENT_THREAD_COUNT
      */
     int getEventThreadCount();
 
@@ -41,7 +43,7 @@ public interface EventService extends Consumer<Packet>, PreJoinAwareService, Pos
      * Returns the queue capacity per event thread.
      *
      * @return the queue capacity per event thread
-     * @see com.hazelcast.spi.properties.GroupProperty#EVENT_QUEUE_CAPACITY
+     * @see ClusterProperty#EVENT_QUEUE_CAPACITY
      */
     int getEventQueueCapacity();
 
@@ -94,6 +96,19 @@ public interface EventService extends Consumer<Packet>, PreJoinAwareService, Pos
                                        @Nonnull Object listener);
 
     /**
+     * Registers a listener on all cluster nodes.
+     *
+     * @param serviceName service name
+     * @param topic       topic name
+     * @param listener    listener instance
+     * @return event registration future
+     * @throws IllegalArgumentException if the listener is {@code null}
+     */
+    CompletableFuture<EventRegistration> registerListenerAsync(@Nonnull String serviceName,
+                                                               @Nonnull String topic,
+                                                               @Nonnull Object listener);
+
+    /**
      * Registers a listener on all cluster nodes with an event filter.
      *
      * @param serviceName service name
@@ -104,6 +119,21 @@ public interface EventService extends Consumer<Packet>, PreJoinAwareService, Pos
      * @throws IllegalArgumentException if the listener or filter is {@code null}
      */
     EventRegistration registerListener(@Nonnull String serviceName,
+                                       @Nonnull String topic,
+                                       @Nonnull EventFilter filter,
+                                       @Nonnull Object listener);
+
+    /**
+     * Registers a listener on all cluster nodes with an event filter.
+     *
+     * @param serviceName service name
+     * @param topic       topic name
+     * @param filter      event filter
+     * @param listener    listener instance
+     * @return event registration future
+     * @throws IllegalArgumentException if the listener or filter is {@code null}
+     */
+    CompletableFuture<EventRegistration> registerListenerAsync(@Nonnull String serviceName,
                                        @Nonnull String topic,
                                        @Nonnull EventFilter filter,
                                        @Nonnull Object listener);
@@ -120,6 +150,22 @@ public interface EventService extends Consumer<Packet>, PreJoinAwareService, Pos
      * @see #registerLocalListener(String, String, Object)
      */
     boolean deregisterListener(@Nonnull String serviceName,
+                               @Nonnull String topic,
+                               @Nonnull Object id);
+
+    /**
+     * Deregisters a listener with the given registration ID.
+     *
+     * @param serviceName service name
+     * @param topic       topic name
+     * @param id          registration ID
+     * @return de-registration future. The future returns true if listener is deregistered successfully, false otherwise
+     * @see EventRegistration#getId()
+     * @see #registerListener(String, String, Object)
+     * @see #registerListenerAsync(String, String, Object)
+     * @see #registerLocalListener(String, String, Object)
+     */
+    CompletableFuture<Boolean> deregisterListenerAsync(@Nonnull String serviceName,
                                @Nonnull String topic,
                                @Nonnull Object id);
 

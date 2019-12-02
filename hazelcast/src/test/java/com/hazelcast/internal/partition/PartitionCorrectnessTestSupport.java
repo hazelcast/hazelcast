@@ -16,27 +16,28 @@
 
 package com.hazelcast.internal.partition;
 
-import com.hazelcast.config.Config;
-import com.hazelcast.config.ServicesConfig;
-import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.Member;
+import com.hazelcast.config.Config;
+import com.hazelcast.config.ConfigAccessor;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.instance.impl.TestUtil;
 import com.hazelcast.internal.cluster.ClusterService;
+import com.hazelcast.internal.config.ServicesConfig;
 import com.hazelcast.internal.partition.service.TestAbstractMigrationAwareService;
 import com.hazelcast.internal.partition.service.TestIncrementOperation;
 import com.hazelcast.internal.partition.service.TestMigrationAwareService;
 import com.hazelcast.internal.partition.service.fragment.TestFragmentIncrementOperation;
 import com.hazelcast.internal.partition.service.fragment.TestFragmentedMigrationAwareService;
-import com.hazelcast.cluster.Address;
+import com.hazelcast.internal.services.ServiceNamespace;
+import com.hazelcast.internal.util.ExceptionUtil;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.operationservice.OperationService;
-import com.hazelcast.internal.services.ServiceNamespace;
-import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
-import com.hazelcast.internal.util.ExceptionUtil;
 import org.junit.Before;
 import org.junit.runners.Parameterized;
 
@@ -363,16 +364,16 @@ public abstract class PartitionCorrectnessTestSupport extends HazelcastTestSuppo
         Config config = new Config();
 
         if (withService) {
-            ServicesConfig servicesConfig = config.getServicesConfig();
+            ServicesConfig servicesConfig = ConfigAccessor.getServicesConfig(config);
             servicesConfig.addServiceConfig(TestMigrationAwareService.createServiceConfig(backupCount));
             servicesConfig.addServiceConfig(TestFragmentedMigrationAwareService.createServiceConfig(backupCount));
         }
 
-        config.setProperty(GroupProperty.PARTITION_COUNT.getName(), String.valueOf(partitionCount));
-        config.setProperty(GroupProperty.PARTITION_BACKUP_SYNC_INTERVAL.getName(), String.valueOf(BACKUP_SYNC_INTERVAL));
+        config.setProperty(ClusterProperty.PARTITION_COUNT.getName(), String.valueOf(partitionCount));
+        config.setProperty(ClusterProperty.PARTITION_BACKUP_SYNC_INTERVAL.getName(), String.valueOf(BACKUP_SYNC_INTERVAL));
 
         int parallelReplications = antiEntropyEnabled ? PARALLEL_REPLICATIONS : 0;
-        config.setProperty(GroupProperty.PARTITION_MAX_PARALLEL_REPLICATIONS.getName(), String.valueOf(parallelReplications));
+        config.setProperty(ClusterProperty.PARTITION_MAX_PARALLEL_REPLICATIONS.getName(), String.valueOf(parallelReplications));
         return config;
     }
 

@@ -21,6 +21,7 @@ package com.hazelcast.nio.serialization;
  *
  * @see com.hazelcast.nio.serialization.IdentifiedDataSerializable
  */
+@FunctionalInterface
 public interface DataSerializableFactory {
 
     /**

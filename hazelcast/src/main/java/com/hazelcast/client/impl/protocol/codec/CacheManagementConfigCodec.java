@@ -36,12 +36,12 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * TODO DOC
  */
-@Generated("f03334363ced4c6f7057501c78196e19")
+@Generated("fa9fbb740890e5196eea57692ee65321")
 public final class CacheManagementConfigCodec {
-    //hex: 0x131200
-    public static final int REQUEST_MESSAGE_TYPE = 1249792;
-    //hex: 0x131201
-    public static final int RESPONSE_MESSAGE_TYPE = 1249793;
+    //hex: 0x131100
+    public static final int REQUEST_MESSAGE_TYPE = 1249536;
+    //hex: 0x131101
+    public static final int RESPONSE_MESSAGE_TYPE = 1249537;
     private static final int REQUEST_IS_STAT_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_ENABLED_FIELD_OFFSET = REQUEST_IS_STAT_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_ENABLED_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
@@ -77,7 +77,6 @@ public final class CacheManagementConfigCodec {
     public static ClientMessage encodeRequest(java.lang.String name, boolean isStat, boolean enabled, com.hazelcast.cluster.Address address) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(true);
-        clientMessage.setAcquiresResource(false);
         clientMessage.setOperationName("Cache.ManagementConfig");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);

@@ -42,6 +42,7 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.util.AbstractMap;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -53,6 +54,7 @@ import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.Map;
+import java.util.PriorityQueue;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
@@ -85,6 +87,7 @@ import static com.hazelcast.internal.serialization.impl.ConstantSerializers.Shor
 import static com.hazelcast.internal.serialization.impl.ConstantSerializers.StringSerializer;
 import static com.hazelcast.internal.serialization.impl.ConstantSerializers.TheByteArraySerializer;
 import static com.hazelcast.internal.serialization.impl.ConstantSerializers.UuidSerializer;
+import static com.hazelcast.internal.serialization.impl.ConstantSerializers.SimpleEntrySerializer;
 import static com.hazelcast.internal.serialization.impl.DataSerializableSerializer.EE_FLAG;
 import static com.hazelcast.internal.serialization.impl.DataSerializableSerializer.IDS_FLAG;
 import static com.hazelcast.internal.serialization.impl.DataSerializableSerializer.isFlagSet;
@@ -177,6 +180,8 @@ public class SerializationServiceV1 extends AbstractSerializationService {
         registerConstant(Double.class, new DoubleSerializer());
         registerConstant(String.class, new StringSerializer());
         registerConstant(UUID.class, new UuidSerializer());
+        registerConstant(AbstractMap.SimpleEntry.class, new SimpleEntrySerializer());
+        registerConstant(AbstractMap.SimpleImmutableEntry.class, new ConstantSerializers.SimpleImmutableEntrySerializer());
         //Arrays of primitives and String
         registerConstant(byte[].class, new TheByteArraySerializer());
         registerConstant(boolean[].class, new BooleanArraySerializer());
@@ -217,6 +222,7 @@ public class SerializationServiceV1 extends AbstractSerializationService {
         registerConstant(LinkedBlockingQueue.class, new LinkedBlockingQueueStreamSerializer());
         registerConstant(ArrayBlockingQueue.class, new ArrayBlockingQueueStreamSerializer());
         registerConstant(PriorityBlockingQueue.class, new PriorityBlockingQueueStreamSerializer());
+        registerConstant(PriorityQueue.class, new PriorityQueueStreamSerializer());
         registerConstant(DelayQueue.class, new DelayQueueStreamSerializer());
         registerConstant(SynchronousQueue.class, new SynchronousQueueStreamSerializer());
         registerConstant(LinkedTransferQueue.class, new LinkedTransferQueueStreamSerializer());

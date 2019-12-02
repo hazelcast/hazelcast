@@ -19,11 +19,11 @@ package com.hazelcast.config;
 import com.google.common.collect.ImmutableSet;
 import com.hazelcast.config.LoginModuleConfig.LoginModuleUsage;
 import com.hazelcast.config.PermissionConfig.PermissionType;
-import com.hazelcast.config.cp.SemaphoreConfig;
-import com.hazelcast.config.security.RealmConfig;
 import com.hazelcast.config.cp.CPSubsystemConfig;
 import com.hazelcast.config.cp.FencedLockConfig;
 import com.hazelcast.config.cp.RaftAlgorithmConfig;
+import com.hazelcast.config.cp.SemaphoreConfig;
+import com.hazelcast.config.security.RealmConfig;
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.splitbrainprotection.SplitBrainProtectionOn;
@@ -56,15 +56,14 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 
-import static com.hazelcast.config.EvictionConfig.MaxSizePolicy.ENTRY_COUNT;
 import static com.hazelcast.config.EvictionPolicy.LRU;
+import static com.hazelcast.config.MaxSizePolicy.ENTRY_COUNT;
 import static com.hazelcast.config.PermissionConfig.PermissionType.CACHE;
 import static com.hazelcast.config.PermissionConfig.PermissionType.CONFIG;
 import static com.hazelcast.config.RestEndpointGroup.CLUSTER_READ;
 import static com.hazelcast.config.RestEndpointGroup.HEALTH_CHECK;
 import static com.hazelcast.config.WanQueueFullBehavior.THROW_EXCEPTION;
 import static com.hazelcast.config.XmlYamlConfigBuilderEqualsTest.readResourceToString;
-import static com.hazelcast.internal.metrics.ProbeLevel.DEBUG;
 import static java.io.File.createTempFile;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -701,6 +700,33 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    @Test(expected = InvalidConfigurationException.class)
+    public void testCaseInsensitivityOfSettings() {
+        String xml = HAZELCAST_START_TAG
+                + "<map name=\"testCaseInsensitivity\">"
+                + "    <in-memory-format>BINARY</in-memory-format>"
+                + "    <backup-count>1</backup-count>"
+                + "    <async-backup-count>0</async-backup-count>"
+                + "    <time-to-live-seconds>0</time-to-live-seconds>"
+                + "    <max-idle-seconds>0</max-idle-seconds>    "
+                + "    <eviction eviction-policy=\"NONE\" max-size-policy=\"per_partition\" size=\"0\"/>"
+                + "    <merge-policy batch-size=\"2342\">CustomMergePolicy</merge-policy>"
+                + "</map>"
+                + HAZELCAST_END_TAG;
+
+        Config config = buildConfig(xml);
+        MapConfig mapConfig = config.getMapConfig("testCaseInsensitivity");
+
+        assertEquals(InMemoryFormat.BINARY, mapConfig.getInMemoryFormat());
+        assertEquals(EvictionPolicy.NONE, mapConfig.getEvictionConfig().getEvictionPolicy());
+        assertEquals(MaxSizePolicy.PER_PARTITION, mapConfig.getEvictionConfig().getMaxSizePolicy());
+
+        MergePolicyConfig mergePolicyConfig = mapConfig.getMergePolicyConfig();
+        assertEquals("CustomMergePolicy", mergePolicyConfig.getPolicy());
+        assertEquals(2342, mergePolicyConfig.getBatchSize());
+    }
+
+    @Override
     @Test
     public void readRingbuffer() {
         String xml = HAZELCAST_START_TAG
@@ -737,34 +763,6 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         assertEquals("customSplitBrainProtectionRule", ringbufferConfig.getSplitBrainProtectionName());
 
         MergePolicyConfig mergePolicyConfig = ringbufferConfig.getMergePolicyConfig();
-        assertEquals("CustomMergePolicy", mergePolicyConfig.getPolicy());
-        assertEquals(2342, mergePolicyConfig.getBatchSize());
-    }
-
-    @Override
-    @Test
-    public void testCaseInsensitivityOfSettings() {
-        String xml = HAZELCAST_START_TAG
-                + "<map name=\"testCaseInsensitivity\">"
-                + "    <in-memory-format>BINARY</in-memory-format>"
-                + "    <backup-count>1</backup-count>"
-                + "    <async-backup-count>0</async-backup-count>"
-                + "    <time-to-live-seconds>0</time-to-live-seconds>"
-                + "    <max-idle-seconds>0</max-idle-seconds>    "
-                + "    <eviction-policy>NONE</eviction-policy>  "
-                + "    <max-size policy=\"per_partition\">0</max-size>"
-                + "    <merge-policy batch-size=\"2342\">CustomMergePolicy</merge-policy>"
-                + "</map>"
-                + HAZELCAST_END_TAG;
-
-        Config config = buildConfig(xml);
-        MapConfig mapConfig = config.getMapConfig("testCaseInsensitivity");
-
-        assertEquals(InMemoryFormat.BINARY, mapConfig.getInMemoryFormat());
-        assertEquals(EvictionPolicy.NONE, mapConfig.getEvictionPolicy());
-        assertEquals(MaxSizeConfig.MaxSizePolicy.PER_PARTITION, mapConfig.getMaxSizeConfig().getMaxSizePolicy());
-
-        MergePolicyConfig mergePolicyConfig = mapConfig.getMergePolicyConfig();
         assertEquals("CustomMergePolicy", mergePolicyConfig.getPolicy());
         assertEquals(2342, mergePolicyConfig.getBatchSize());
     }
@@ -937,25 +935,25 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
     public void testMapConfig_evictions() {
         String xml = HAZELCAST_START_TAG
                 + "<map name=\"lruMap\">"
-                + "        <eviction-policy>LRU</eviction-policy>\n"
+                + "        <eviction eviction-policy=\"LRU\"/>\n"
                 + "    </map>\n"
                 + "<map name=\"lfuMap\">"
-                + "        <eviction-policy>LFU</eviction-policy>\n"
+                + "         <eviction eviction-policy=\"LFU\"/>\n"
                 + "    </map>\n"
                 + "<map name=\"noneMap\">"
-                + "        <eviction-policy>NONE</eviction-policy>\n"
+                + "         <eviction eviction-policy=\"NONE\"/>\n"
                 + "    </map>\n"
                 + "<map name=\"randomMap\">"
-                + "        <eviction-policy>RANDOM</eviction-policy>\n"
+                + "       <eviction eviction-policy=\"RANDOM\"/>\n"
                 + "    </map>\n"
                 + HAZELCAST_END_TAG;
 
         Config config = buildConfig(xml);
 
-        assertEquals(EvictionPolicy.LRU, config.getMapConfig("lruMap").getEvictionPolicy());
-        assertEquals(EvictionPolicy.LFU, config.getMapConfig("lfuMap").getEvictionPolicy());
-        assertEquals(EvictionPolicy.NONE, config.getMapConfig("noneMap").getEvictionPolicy());
-        assertEquals(EvictionPolicy.RANDOM, config.getMapConfig("randomMap").getEvictionPolicy());
+        assertEquals(EvictionPolicy.LRU, config.getMapConfig("lruMap").getEvictionConfig().getEvictionPolicy());
+        assertEquals(EvictionPolicy.LFU, config.getMapConfig("lfuMap").getEvictionConfig().getEvictionPolicy());
+        assertEquals(EvictionPolicy.NONE, config.getMapConfig("noneMap").getEvictionConfig().getEvictionPolicy());
+        assertEquals(EvictionPolicy.RANDOM, config.getMapConfig("randomMap").getEvictionConfig().getEvictionPolicy());
     }
 
     @Override
@@ -1251,7 +1249,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         assertFalse(nearCacheConfig.isInvalidateOnChange());
         assertFalse(nearCacheConfig.isCacheLocalEntries());
         assertEquals(LRU, nearCacheConfig.getEvictionConfig().getEvictionPolicy());
-        assertEquals(ENTRY_COUNT, nearCacheConfig.getEvictionConfig().getMaximumSizePolicy());
+        assertEquals(ENTRY_COUNT, nearCacheConfig.getEvictionConfig().getMaxSizePolicy());
         assertEquals(3333, nearCacheConfig.getEvictionConfig().getSize());
         assertEquals("test", nearCacheConfig.getName());
     }
@@ -1961,7 +1959,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         assertEquals(1, cacheConfig.getBackupCount());
         assertEquals(0, cacheConfig.getAsyncBackupCount());
         assertEquals(1000, cacheConfig.getEvictionConfig().getSize());
-        assertEquals(EvictionConfig.MaxSizePolicy.ENTRY_COUNT, cacheConfig.getEvictionConfig().getMaximumSizePolicy());
+        assertEquals(MaxSizePolicy.ENTRY_COUNT, cacheConfig.getEvictionConfig().getMaxSizePolicy());
         assertEquals(EvictionPolicy.LFU, cacheConfig.getEvictionConfig().getEvictionPolicy());
         assertEquals("LatestAccessMergePolicy", cacheConfig.getMergePolicyConfig().getPolicy());
         assertEquals(111, cacheConfig.getMergePolicyConfig().getBatchSize());
@@ -2250,8 +2248,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "        <async-backup-count>1</async-backup-count>"
                 + "        <time-to-live-seconds>42</time-to-live-seconds>"
                 + "        <max-idle-seconds>42</max-idle-seconds>"
-                + "        <eviction-policy>RANDOM</eviction-policy>"
-                + "        <max-size policy=\"PER_NODE\">42</max-size>"
+                + "        <eviction eviction-policy=\"RANDOM\" max-size-policy=\"PER_NODE\" size=\"42\"/>"
                 + "        <read-backup-data>true</read-backup-data>"
                 + "        <merkle-tree enabled=\"true\">\n"
                 + "            <depth>20</depth>\n"
@@ -2319,9 +2316,9 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         assertEquals(1, mapConfig.getAsyncBackupCount());
         assertEquals(42, mapConfig.getTimeToLiveSeconds());
         assertEquals(42, mapConfig.getMaxIdleSeconds());
-        assertEquals(EvictionPolicy.RANDOM, mapConfig.getEvictionPolicy());
-        assertEquals(MaxSizeConfig.MaxSizePolicy.PER_NODE, mapConfig.getMaxSizeConfig().getMaxSizePolicy());
-        assertEquals(42, mapConfig.getMaxSizeConfig().getSize());
+        assertEquals(EvictionPolicy.RANDOM, mapConfig.getEvictionConfig().getEvictionPolicy());
+        assertEquals(MaxSizePolicy.PER_NODE, mapConfig.getEvictionConfig().getMaxSizePolicy());
+        assertEquals(42, mapConfig.getEvictionConfig().getSize());
         assertTrue(mapConfig.isReadBackupData());
         assertEquals(1, mapConfig.getIndexConfigs().size());
         assertEquals("age", mapConfig.getIndexConfigs().get(0).getAttributes().get(0));
@@ -2365,7 +2362,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         assertTrue(nearCacheConfig.isInvalidateOnChange());
         assertEquals(1000, nearCacheConfig.getEvictionConfig().getSize());
         assertEquals(EvictionPolicy.LFU, nearCacheConfig.getEvictionConfig().getEvictionPolicy());
-        assertEquals(EvictionConfig.MaxSizePolicy.ENTRY_COUNT, nearCacheConfig.getEvictionConfig().getMaximumSizePolicy());
+        assertEquals(MaxSizePolicy.ENTRY_COUNT, nearCacheConfig.getEvictionConfig().getMaxSizePolicy());
 
         WanReplicationRef wanReplicationRef = mapConfig.getWanReplicationRef();
         assertNotNull(wanReplicationRef);
@@ -2373,6 +2370,23 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         assertEquals("PassThroughMergePolicy", wanReplicationRef.getMergePolicy());
         assertEquals(1, wanReplicationRef.getFilters().size());
         assertEquals("com.example.SampleFilter".toLowerCase(), wanReplicationRef.getFilters().get(0).toLowerCase());
+    }
+
+    @Override
+    @Test
+    public void testMapCustomEvictionPolicy() {
+        String comparatorClassName = "com.my.custom.eviction.policy.class";
+
+        String xml = HAZELCAST_START_TAG
+                + "   <map name=\"mappy\">\n"
+                + "       <eviction comparator-class-name=\"" + comparatorClassName + "\" />"
+                + "   </map>"
+                + HAZELCAST_END_TAG;
+
+        Config config = buildConfig(xml);
+        MapConfig mapConfig = config.getMapConfig("mappy");
+
+        assertEquals(comparatorClassName, mapConfig.getEvictionConfig().getComparatorClassName());
     }
 
     @Override
@@ -2536,7 +2550,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         assertIndexesEqual(queryCacheConfig);
         assertEquals("com.hazelcast.examples.SimplePredicate", queryCacheConfig.getPredicateConfig().getClassName());
         assertEquals(LRU, queryCacheConfig.getEvictionConfig().getEvictionPolicy());
-        assertEquals(ENTRY_COUNT, queryCacheConfig.getEvictionConfig().getMaximumSizePolicy());
+        assertEquals(ENTRY_COUNT, queryCacheConfig.getEvictionConfig().getMaxSizePolicy());
         assertEquals(133, queryCacheConfig.getEvictionConfig().getSize());
     }
 
@@ -2635,21 +2649,25 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         String xmlFormat = HAZELCAST_START_TAG
                 + "<map name=\"mymap\">"
                 + "<in-memory-format>NATIVE</in-memory-format>"
-                + "<max-size policy=\"{0}\">9991</max-size>"
+                + "<eviction max-size-policy=\"{0}\" size=\"9991\"/>"
                 + "</map>"
                 + HAZELCAST_END_TAG;
         MessageFormat messageFormat = new MessageFormat(xmlFormat);
 
-        MaxSizeConfig.MaxSizePolicy[] maxSizePolicies = MaxSizeConfig.MaxSizePolicy.values();
-        for (MaxSizeConfig.MaxSizePolicy maxSizePolicy : maxSizePolicies) {
+        MaxSizePolicy[] maxSizePolicies = MaxSizePolicy.values();
+        for (MaxSizePolicy maxSizePolicy : maxSizePolicies) {
+            if (maxSizePolicy == ENTRY_COUNT) {
+                // imap does not support ENTRY_COUNT
+                continue;
+            }
             Object[] objects = {maxSizePolicy.toString()};
             String xml = messageFormat.format(objects);
             Config config = buildConfig(xml);
             MapConfig mapConfig = config.getMapConfig("mymap");
-            MaxSizeConfig maxSizeConfig = mapConfig.getMaxSizeConfig();
+            EvictionConfig evictionConfig = mapConfig.getEvictionConfig();
 
-            assertEquals(9991, maxSizeConfig.getSize());
-            assertEquals(maxSizePolicy, maxSizeConfig.getMaxSizePolicy());
+            assertEquals(9991, evictionConfig.getSize());
+            assertEquals(maxSizePolicy, evictionConfig.getMaxSizePolicy());
         }
     }
 
@@ -2896,37 +2914,6 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         assertEquals("com.hazelcast.nio.ssl.BasicSSLContextFactory", sslConfig.getFactoryClassName());
         assertEquals(1, sslConfig.getProperties().size());
         assertEquals("TLS", sslConfig.getProperties().get("protocol"));
-    }
-
-    @Override
-    @Test
-    public void testMapEvictionPolicyClassName() {
-        String mapEvictionPolicyClassName = "com.hazelcast.map.eviction.LRUEvictionPolicy";
-        String xml = HAZELCAST_START_TAG
-                + "<map name=\"test\">"
-                + "<map-eviction-policy-class-name>" + mapEvictionPolicyClassName + "</map-eviction-policy-class-name> "
-                + "</map>"
-                + HAZELCAST_END_TAG;
-        Config config = buildConfig(xml);
-        MapConfig mapConfig = config.getMapConfig("test");
-
-        assertEquals(mapEvictionPolicyClassName, mapConfig.getMapEvictionPolicy().getClass().getName());
-    }
-
-    @Override
-    @Test
-    public void testMapEvictionPolicyIsSelected_whenEvictionPolicySet() {
-        String mapEvictionPolicyClassName = "com.hazelcast.map.eviction.LRUEvictionPolicy";
-        String xml = HAZELCAST_START_TAG
-                + "<map name=\"test\">"
-                + "<map-eviction-policy-class-name>" + mapEvictionPolicyClassName + "</map-eviction-policy-class-name> "
-                + "<eviction-policy>LFU</eviction-policy>"
-                + "</map>"
-                + HAZELCAST_END_TAG;
-        Config config = buildConfig(xml);
-        MapConfig mapConfig = config.getMapConfig("test");
-
-        assertEquals(mapEvictionPolicyClassName, mapConfig.getMapEvictionPolicy().getClass().getName());
     }
 
     @Override
@@ -3439,22 +3426,22 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
     @Test
     public void testMetricsConfig() {
         String xml = HAZELCAST_START_TAG
-                + "<metrics enabled=\"false\" mc-enabled=\"false\" jmx-enabled=\"false\">\n"
-                + "  <collection-interval-seconds>10</collection-interval-seconds>\n"
-                + "  <retention-seconds>11</retention-seconds>\n"
-                + "  <metrics-for-data-structures>true</metrics-for-data-structures>\n"
-                + "  <minimum-level>DEBUG</minimum-level>\n"
+                + "<metrics enabled=\"false\">"
+                + "  <management-center enabled=\"false\">"
+                + "    <retention-seconds>11</retention-seconds>"
+                + "  </management-center>"
+                + "  <jmx enabled=\"false\" />"
+                + "  <collection-frequency-seconds>10</collection-frequency-seconds>\n"
                 + "</metrics>"
                 + HAZELCAST_END_TAG;
         Config config = new InMemoryXmlConfig(xml);
         MetricsConfig metricsConfig = config.getMetricsConfig();
+        MetricsManagementCenterConfig metricsMcConfig = metricsConfig.getManagementCenterConfig();
         assertFalse(metricsConfig.isEnabled());
-        assertFalse(metricsConfig.isMcEnabled());
-        assertFalse(metricsConfig.isJmxEnabled());
-        assertEquals(10, metricsConfig.getCollectionIntervalSeconds());
-        assertEquals(11, metricsConfig.getRetentionSeconds());
-        assertTrue(metricsConfig.isMetricsForDataStructuresEnabled());
-        assertEquals(DEBUG, metricsConfig.getMinimumLevel());
+        assertFalse(metricsMcConfig.isEnabled());
+        assertFalse(metricsConfig.getJmxConfig().isEnabled());
+        assertEquals(10, metricsConfig.getCollectionFrequencySeconds());
+        assertEquals(11, metricsMcConfig.getRetentionSeconds());
     }
 
     @Override
@@ -3466,33 +3453,37 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         Config config = new InMemoryXmlConfig(xml);
         MetricsConfig metricsConfig = config.getMetricsConfig();
         assertFalse(metricsConfig.isEnabled());
-        assertTrue(metricsConfig.isMcEnabled());
-        assertTrue(metricsConfig.isJmxEnabled());
+        assertTrue(metricsConfig.getManagementCenterConfig().isEnabled());
+        assertTrue(metricsConfig.getJmxConfig().isEnabled());
     }
 
     @Override
     @Test
     public void testMetricsConfigMcDisabled() {
         String xml = HAZELCAST_START_TAG
-                + "<metrics mc-enabled=\"false\"/>"
+                + "<metrics>"
+                + "  <management-center enabled=\"false\" />"
+                + "</metrics>"
                 + HAZELCAST_END_TAG;
         Config config = new InMemoryXmlConfig(xml);
         MetricsConfig metricsConfig = config.getMetricsConfig();
         assertTrue(metricsConfig.isEnabled());
-        assertFalse(metricsConfig.isMcEnabled());
-        assertTrue(metricsConfig.isJmxEnabled());
+        assertFalse(metricsConfig.getManagementCenterConfig().isEnabled());
+        assertTrue(metricsConfig.getJmxConfig().isEnabled());
     }
 
     @Override
     @Test
     public void testMetricsConfigJmxDisabled() {
         String xml = HAZELCAST_START_TAG
-                + "<metrics jmx-enabled=\"false\"/>"
+                + "<metrics>"
+                + "  <jmx enabled=\"false\" />"
+                + "</metrics>"
                 + HAZELCAST_END_TAG;
         Config config = new InMemoryXmlConfig(xml);
         MetricsConfig metricsConfig = config.getMetricsConfig();
         assertTrue(metricsConfig.isEnabled());
-        assertTrue(metricsConfig.isMcEnabled());
-        assertFalse(metricsConfig.isJmxEnabled());
+        assertTrue(metricsConfig.getManagementCenterConfig().isEnabled());
+        assertFalse(metricsConfig.getJmxConfig().isEnabled());
     }
 }

@@ -27,6 +27,7 @@ import com.hazelcast.spi.impl.operationservice.PartitionAwareOperation;
 import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 import com.hazelcast.spi.merge.SplitBrainMergeTypes.MapMergeTypes;
 
+import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -46,6 +47,7 @@ public class MergeOperation extends MapOperation
     private List<MapMergeTypes> mergingEntries;
     private SplitBrainMergePolicy<Data, MapMergeTypes> mergePolicy;
 
+    private transient int currentIndex;
     private transient boolean hasMapListener;
     private transient boolean hasWanReplication;
     private transient boolean hasBackups;
@@ -54,7 +56,7 @@ public class MergeOperation extends MapOperation
     private transient List<Data> invalidationKeys;
     private transient boolean hasMergedValues;
 
-    private List backupRecordAndDataValuePairs;
+    private List backupPairs;
 
     public MergeOperation() {
     }
@@ -76,19 +78,25 @@ public class MergeOperation extends MapOperation
     @Override
     protected void runInternal() {
         hasMapListener = mapEventPublisher.hasEventListener(name);
-        hasWanReplication = mapContainer.isWanReplicationEnabled() && !disableWanReplicationEvent;
+        hasWanReplication = mapContainer.isWanReplicationEnabled()
+                && !disableWanReplicationEvent;
         hasBackups = mapContainer.getTotalBackupCount() > 0;
         hasInvalidation = mapContainer.hasInvalidationListener();
 
         if (hasBackups) {
-            backupRecordAndDataValuePairs = new ArrayList<>(mergingEntries.size() * 2);
+            backupPairs = new ArrayList(2 * mergingEntries.size());
         }
+
         if (hasInvalidation) {
             invalidationKeys = new ArrayList<>(mergingEntries.size());
         }
 
-        for (MapMergeTypes mergingEntry : mergingEntries) {
-            merge(mergingEntry);
+        // if currentIndex is not zero, this is a
+        // continuation of the operation after a NativeOOME
+        int size = mergingEntries.size();
+        while (currentIndex < size) {
+            merge(mergingEntries.get(currentIndex));
+            currentIndex++;
         }
     }
 
@@ -98,27 +106,28 @@ public class MergeOperation extends MapOperation
 
         if (recordStore.merge(mergingEntry, mergePolicy, getCallerProvenance())) {
             hasMergedValues = true;
+
             Data dataValue = getValueOrPostProcessedValue(dataKey, getValue(dataKey));
             mapServiceContext.interceptAfterPut(mapContainer.getInterceptorRegistry(), dataValue);
 
             if (hasMapListener) {
                 mapEventPublisher.publishEvent(getCallerAddress(), name, MERGED, dataKey, oldValue, dataValue);
             }
+
             if (hasWanReplication) {
                 publishWanUpdate(dataKey, dataValue);
             }
-            if (hasBackups) {
-                Record record = recordStore.getRecord(dataKey);
-                if (record != null) {
-                    // TODO what about backup of removed records?
-                    backupRecordAndDataValuePairs.add(record);
-                    backupRecordAndDataValuePairs.add(dataValue);
-                }
-            }
-            evict(dataKey);
+
             if (hasInvalidation) {
                 invalidationKeys.add(dataKey);
             }
+
+            if (hasBackups) {
+                backupPairs.add(dataKey);
+                backupPairs.add(dataValue);
+            }
+
+            evict(dataKey);
         }
     }
 
@@ -145,7 +154,7 @@ public class MergeOperation extends MapOperation
 
     @Override
     public boolean shouldBackup() {
-        return hasBackups && !backupRecordAndDataValuePairs.isEmpty();
+        return hasBackups && !backupPairs.isEmpty();
     }
 
     @Override
@@ -161,16 +170,43 @@ public class MergeOperation extends MapOperation
     @Override
     protected void afterRunInternal() {
         invalidateNearCache(invalidationKeys);
+
+        super.afterRunInternal();
     }
 
     @Override
     public Operation getBackupOperation() {
-        return new PutAllBackupOperation(name, backupRecordAndDataValuePairs, disableWanReplicationEvent);
+        return new PutAllBackupOperation(name,
+                toBackupListByRemovingEvictedRecords(), disableWanReplicationEvent);
+    }
+
+    /**
+     * Since records may get evicted on NOOME after
+     * they have been merged. We are re-checking
+     * backup pair list to eliminate evicted entries.
+     *
+     * @return list of existing records which can
+     * safely be transferred to backup replica.
+     */
+    @Nonnull
+    private List toBackupListByRemovingEvictedRecords() {
+        List toBackupList = new ArrayList(backupPairs.size());
+        for (int i = 0; i < backupPairs.size(); i += 2) {
+            Data dataKey = ((Data) backupPairs.get(i));
+            Record record = recordStore.getRecord(dataKey);
+            if (record != null) {
+                toBackupList.add(dataKey);
+                toBackupList.add(backupPairs.get(i + 1));
+                toBackupList.add(record);
+            }
+        }
+        return toBackupList;
     }
 
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
+
         out.writeInt(mergingEntries.size());
         for (MapMergeTypes mergingEntry : mergingEntries) {
             out.writeObject(mergingEntry);
@@ -182,6 +218,7 @@ public class MergeOperation extends MapOperation
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
+
         int size = in.readInt();
         mergingEntries = new ArrayList<>(size);
         for (int i = 0; i < size; i++) {

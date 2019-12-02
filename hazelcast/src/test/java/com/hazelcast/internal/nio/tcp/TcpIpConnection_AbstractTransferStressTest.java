@@ -108,8 +108,8 @@ public abstract class TcpIpConnection_AbstractTransferStressTest extends TcpIpCo
         thread1.assertSucceedsEventually();
         thread2.assertSucceedsEventually();
 
-        // there is always one packet extra for the double bind-request
-        final long expectedNormalPackets = thread1.normalPackets + thread2.normalPackets + 2;
+        // there is always one packet extra for the bind-request
+        final long expectedNormalPackets = thread1.normalPackets + thread2.normalPackets + 1;
         final long expectedUrgentPackets = thread1.urgentPackets + thread2.urgentPackets;
 
         logger.info("expected normal packets: " + expectedNormalPackets);

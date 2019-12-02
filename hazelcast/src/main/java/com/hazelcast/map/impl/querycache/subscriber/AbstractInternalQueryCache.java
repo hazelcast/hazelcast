@@ -18,6 +18,7 @@ package com.hazelcast.map.impl.querycache.subscriber;
 
 import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.IndexConfig;
+import com.hazelcast.config.MaxSizePolicy;
 import com.hazelcast.config.QueryCacheConfig;
 import com.hazelcast.map.IMap;
 import com.hazelcast.internal.eviction.EvictionListener;
@@ -123,8 +124,8 @@ abstract class AbstractInternalQueryCache<K, V> implements InternalQueryCache<K,
     @Override
     public boolean reachedMaxCapacity() {
         EvictionConfig evictionConfig = queryCacheConfig.getEvictionConfig();
-        EvictionConfig.MaxSizePolicy maximumSizePolicy = evictionConfig.getMaximumSizePolicy();
-        return maximumSizePolicy == EvictionConfig.MaxSizePolicy.ENTRY_COUNT
+        MaxSizePolicy maximumSizePolicy = evictionConfig.getMaxSizePolicy();
+        return maximumSizePolicy == MaxSizePolicy.ENTRY_COUNT
                 && size() == evictionConfig.getSize();
     }
 

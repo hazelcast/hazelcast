@@ -34,6 +34,7 @@ public interface SupplierEx<T> extends Supplier<T>, Serializable {
 
     /**
      * Exception-declaring version of {@link Supplier#get}.
+     * @throws Exception in case of any exceptional case
      */
     T getEx() throws Exception;
 

@@ -25,8 +25,7 @@ import com.hazelcast.internal.networking.nio.NioNetworking;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.internal.nio.NetworkingService;
 import com.hazelcast.internal.nio.Protocols;
-import com.hazelcast.spi.properties.GroupProperty;
-import com.hazelcast.test.AssertTask;
+import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.NightlyTest;
@@ -55,8 +54,8 @@ public class IOBalancerMemoryLeakTest extends HazelcastTestSupport {
     public void testMemoryLeak_with_RestConnections() throws IOException {
         Config config = new Config();
         config.setClusterName(randomName());
-        config.setProperty(GroupProperty.REST_ENABLED.getName(), "true");
-        config.setProperty(GroupProperty.IO_BALANCER_INTERVAL_SECONDS.getName(), "1");
+        config.getNetworkConfig().getRestApiConfig().setEnabled(true);
+        config.setProperty(ClusterProperty.IO_BALANCER_INTERVAL_SECONDS.getName(), "1");
 
         HazelcastInstance instance = Hazelcast.newHazelcastInstance(config);
         HTTPCommunicator communicator = new HTTPCommunicator(instance);
@@ -64,14 +63,11 @@ public class IOBalancerMemoryLeakTest extends HazelcastTestSupport {
             communicator.getClusterInfo();
         }
         final IOBalancer ioBalancer = getIoBalancer(instance);
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                int inPipelineSize = ioBalancer.getInLoadTracker().getPipelines().size();
-                int outPipelineSize = ioBalancer.getOutLoadTracker().getPipelines().size();
-                assertEquals(0, inPipelineSize);
-                assertEquals(0, outPipelineSize);
-            }
+        assertTrueEventually(() -> {
+            int inPipelineSize = ioBalancer.getInLoadTracker().getPipelines().size();
+            int outPipelineSize = ioBalancer.getOutLoadTracker().getPipelines().size();
+            assertEquals(0, inPipelineSize);
+            assertEquals(0, outPipelineSize);
         });
     }
 
@@ -79,24 +75,22 @@ public class IOBalancerMemoryLeakTest extends HazelcastTestSupport {
     public void testMemoryLeak_with_SocketConnections() {
         Config config = new Config();
         config.setClusterName(randomName());
-        config.setProperty(GroupProperty.IO_BALANCER_INTERVAL_SECONDS.getName(), "1");
+        config.setProperty(ClusterProperty.IO_BALANCER_INTERVAL_SECONDS.getName(), "1");
         HazelcastInstance instance = Hazelcast.newHazelcastInstance(config);
         final Address address = instance.getCluster().getLocalMember().getAddress();
         int threadCount = 10;
         final int connectionCountPerThread = 100;
 
-        Runnable runnable = new Runnable() {
-            public void run() {
-                for (int i = 0; i < connectionCountPerThread; i++) {
-                    Socket socket;
-                    try {
-                        socket = new Socket(address.getHost(), address.getPort());
-                        socket.getOutputStream().write(Protocols.CLUSTER.getBytes());
-                        sleepMillis(1000);
-                        socket.close();
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
+        Runnable runnable = () -> {
+            for (int i = 0; i < connectionCountPerThread; i++) {
+                Socket socket;
+                try {
+                    socket = new Socket(address.getHost(), address.getPort());
+                    socket.getOutputStream().write(Protocols.CLUSTER.getBytes());
+                    sleepMillis(1000);
+                    socket.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
                 }
             }
         };
@@ -110,24 +104,21 @@ public class IOBalancerMemoryLeakTest extends HazelcastTestSupport {
         assertJoinable(threads);
 
         final IOBalancer ioBalancer = getIoBalancer(instance);
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                LoadTracker inLoadTracker = ioBalancer.getInLoadTracker();
-                LoadTracker outLoadTracker = ioBalancer.getOutLoadTracker();
-                int inPipelineSize = inLoadTracker.getPipelines().size();
-                int outPipelineSize = outLoadTracker.getPipelines().size();
-                int inLoadCount = inLoadTracker.getPipelineLoadCount().keySet().size();
-                int outLoadCount = outLoadTracker.getPipelineLoadCount().keySet().size();
-                int inLastLoadCount = inLoadTracker.getLastLoadCounter().keySet().size();
-                int outLastLoadCount = outLoadTracker.getLastLoadCounter().keySet().size();
-                assertEquals(0, inPipelineSize);
-                assertEquals(0, outPipelineSize);
-                assertEquals(0, inLoadCount);
-                assertEquals(0, outLoadCount);
-                assertEquals(0, inLastLoadCount);
-                assertEquals(0, outLastLoadCount);
-            }
+        assertTrueEventually(() -> {
+            LoadTracker inLoadTracker = ioBalancer.getInLoadTracker();
+            LoadTracker outLoadTracker = ioBalancer.getOutLoadTracker();
+            int inPipelineSize = inLoadTracker.getPipelines().size();
+            int outPipelineSize = outLoadTracker.getPipelines().size();
+            int inLoadCount = inLoadTracker.getPipelineLoadCount().keySet().size();
+            int outLoadCount = outLoadTracker.getPipelineLoadCount().keySet().size();
+            int inLastLoadCount = inLoadTracker.getLastLoadCounter().keySet().size();
+            int outLastLoadCount = outLoadTracker.getLastLoadCounter().keySet().size();
+            assertEquals(0, inPipelineSize);
+            assertEquals(0, outPipelineSize);
+            assertEquals(0, inLoadCount);
+            assertEquals(0, outLoadCount);
+            assertEquals(0, inLastLoadCount);
+            assertEquals(0, outLastLoadCount);
         });
     }
 

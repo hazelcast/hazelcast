@@ -17,17 +17,13 @@
 package com.hazelcast.client.config;
 
 import com.hazelcast.config.InvalidConfigurationException;
+import com.hazelcast.core.HazelcastException;
 import com.hazelcast.test.HazelcastTestSupport;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
-import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
-
-import static com.hazelcast.internal.nio.IOUtil.closeResource;
-import static java.io.File.createTempFile;
 
 public abstract class AbstractClientConfigImportVariableReplacementTest extends HazelcastTestSupport {
     @Rule
@@ -41,6 +37,15 @@ public abstract class AbstractClientConfigImportVariableReplacementTest extends 
 
     @Test
     public abstract void readVariables();
+
+    @Test
+    public abstract void testImportResourceWithConfigReplacers() throws IOException;
+
+    @Test
+    public abstract void testImportResourceWithNestedImports() throws IOException;
+
+    @Test
+    public abstract void testImportResourceWithNestedImportsAndProperties() throws IOException;
 
     @Test
     public abstract void testImportConfigFromResourceVariables() throws IOException;
@@ -62,6 +67,9 @@ public abstract class AbstractClientConfigImportVariableReplacementTest extends 
 
     @Test(expected = InvalidConfigurationException.class)
     public abstract void testImportNotExistingResourceThrowsException();
+
+    @Test(expected = HazelcastException.class)
+    public abstract void testImportNotExistingUrlResourceThrowsException();
 
     @Test
     public abstract void testReplacers() throws Exception;
@@ -89,17 +97,4 @@ public abstract class AbstractClientConfigImportVariableReplacementTest extends 
 
     @Test
     public abstract void testReplaceVariablesWithClasspathConfig();
-
-    protected static File createConfigFile(String filename, String suffix) throws IOException {
-        File file = createTempFile(filename, suffix);
-        file.setWritable(true);
-        file.deleteOnExit();
-        return file;
-    }
-
-    protected static void writeStringToStreamAndClose(FileOutputStream os, String string) throws IOException {
-        os.write(string.getBytes());
-        os.flush();
-        closeResource(os);
-    }
 }

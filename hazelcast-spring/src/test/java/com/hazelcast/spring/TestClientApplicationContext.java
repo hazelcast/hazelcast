@@ -24,6 +24,7 @@ import com.hazelcast.client.config.ClientConnectionStrategyConfig;
 import com.hazelcast.client.config.ClientConnectionStrategyConfig.ReconnectMode;
 import com.hazelcast.client.config.ClientFlakeIdGeneratorConfig;
 import com.hazelcast.client.config.ClientIcmpPingConfig;
+import com.hazelcast.client.config.ClientMetricsConfig;
 import com.hazelcast.client.config.ClientNetworkConfig;
 import com.hazelcast.client.config.ClientReliableTopicConfig;
 import com.hazelcast.client.config.ClientUserCodeDeploymentConfig;
@@ -31,13 +32,16 @@ import com.hazelcast.client.config.ConnectionRetryConfig;
 import com.hazelcast.client.config.ProxyFactoryConfig;
 import com.hazelcast.client.impl.clientside.HazelcastClientProxy;
 import com.hazelcast.client.util.RoundRobinLB;
+import com.hazelcast.collection.IList;
+import com.hazelcast.collection.IQueue;
+import com.hazelcast.collection.ISet;
 import com.hazelcast.config.AwsConfig;
 import com.hazelcast.config.EntryListenerConfig;
-import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.IndexConfig;
 import com.hazelcast.config.IndexType;
+import com.hazelcast.config.MaxSizePolicy;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.config.NearCachePreloaderConfig;
 import com.hazelcast.config.QueryCacheConfig;
@@ -48,15 +52,12 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.cp.IAtomicLong;
 import com.hazelcast.cp.IAtomicReference;
 import com.hazelcast.cp.ICountDownLatch;
-import com.hazelcast.collection.IList;
-import com.hazelcast.map.IMap;
-import com.hazelcast.collection.IQueue;
 import com.hazelcast.cp.ISemaphore;
-import com.hazelcast.topic.ITopic;
-import com.hazelcast.collection.ISet;
+import com.hazelcast.map.IMap;
 import com.hazelcast.multimap.MultiMap;
 import com.hazelcast.security.Credentials;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.topic.ITopic;
 import com.hazelcast.topic.TopicOverloadPolicy;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -134,6 +135,9 @@ public class TestClientApplicationContext {
 
     @Resource(name = "client17-backupAckToClient")
     private HazelcastClientProxy backupAckToClient;
+
+    @Resource(name = "client18-metrics")
+    private HazelcastClientProxy metricsClient;
 
     @Resource(name = "instance")
     private HazelcastInstance instance;
@@ -278,7 +282,7 @@ public class TestClientApplicationContext {
         assertNotNull(client5);
 
         ClientConfig config = client5.getClientConfig();
-        assertFalse(config.getConnectionStrategyConfig().getConnectionRetryConfig().isFailOnMaxBackoff());
+        assertEquals(1000, config.getConnectionStrategyConfig().getConnectionRetryConfig().getClusterConnectTimeoutMillis());
     }
 
     @Test
@@ -385,7 +389,7 @@ public class TestClientApplicationContext {
         assertFalse(queryCacheConfig.isPopulate());
         assertEquals("__key > 12", queryCacheConfig.getPredicateConfig().getSql());
         assertEquals(EvictionPolicy.LRU, queryCacheConfig.getEvictionConfig().getEvictionPolicy());
-        assertEquals(EvictionConfig.MaxSizePolicy.ENTRY_COUNT, queryCacheConfig.getEvictionConfig().getMaximumSizePolicy());
+        assertEquals(MaxSizePolicy.ENTRY_COUNT, queryCacheConfig.getEvictionConfig().getMaxSizePolicy());
         assertEquals(111, queryCacheConfig.getEvictionConfig().getSize());
 
         assertEquals(2, queryCacheConfig.getIndexConfigs().size());
@@ -445,7 +449,7 @@ public class TestClientApplicationContext {
     public void testConnectionRetry() {
         ConnectionRetryConfig connectionRetryConfig = connectionRetryClient
                 .getClientConfig().getConnectionStrategyConfig().getConnectionRetryConfig();
-        assertTrue(connectionRetryConfig.isFailOnMaxBackoff());
+        assertEquals(5000, connectionRetryConfig.getClusterConnectTimeoutMillis());
         assertEquals(0.5, connectionRetryConfig.getJitter(), 0);
         assertEquals(2000, connectionRetryConfig.getInitialBackoffMillis());
         assertEquals(60000, connectionRetryConfig.getMaxBackoffMillis());
@@ -487,5 +491,14 @@ public class TestClientApplicationContext {
     @Test
     public void testBackupAckToClient() {
         assertFalse(backupAckToClient.getClientConfig().isBackupAckToClientEnabled());
+    }
+
+    @Test
+    public void testMetrics() {
+        ClientMetricsConfig metricsConfig = metricsClient.getClientConfig().getMetricsConfig();
+
+        assertFalse(metricsConfig.isEnabled());
+        assertFalse(metricsConfig.getJmxConfig().isEnabled());
+        assertEquals(42, metricsConfig.getCollectionFrequencySeconds());
     }
 }

@@ -39,12 +39,12 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * in the collection, and vice-versa. This method is always executed by a distributed query, so it may throw a
  * QueryResultSizeExceededException if query result size limit is configured.
  */
-@Generated("100ecba16a715492ee3beab34102c088")
+@Generated("d7656b0a7f8d6b5e3623d82b23fd8823")
 public final class MapEntriesWithPredicateCodec {
-    //hex: 0x012900
-    public static final int REQUEST_MESSAGE_TYPE = 76032;
-    //hex: 0x012901
-    public static final int RESPONSE_MESSAGE_TYPE = 76033;
+    //hex: 0x012800
+    public static final int REQUEST_MESSAGE_TYPE = 75776;
+    //hex: 0x012801
+    public static final int RESPONSE_MESSAGE_TYPE = 75777;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
 
@@ -68,7 +68,6 @@ public final class MapEntriesWithPredicateCodec {
     public static ClientMessage encodeRequest(java.lang.String name, com.hazelcast.nio.serialization.Data predicate) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(true);
-        clientMessage.setAcquiresResource(false);
         clientMessage.setOperationName("Map.EntriesWithPredicate");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);

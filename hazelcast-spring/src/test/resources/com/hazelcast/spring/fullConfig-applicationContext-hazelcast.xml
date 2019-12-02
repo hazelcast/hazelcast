@@ -21,8 +21,6 @@
        xmlns:hz="http://www.hazelcast.com/schema/spring"
        xsi:schemaLocation="http://www.springframework.org/schema/beans
         http://www.springframework.org/schema/beans/spring-beans.xsd
-        http://www.hazelcast.com/schema/sample
-        hazelcast-sample-service.xsd
         http://www.hazelcast.com/schema/spring
         http://www.hazelcast.com/schema/spring/hazelcast-spring-4.0.xsd">
 
@@ -353,15 +351,19 @@
 
             <hz:map name="testMap"
                     backup-count="2"
-                    max-size="0"
                     read-backup-data="true"
-                    eviction-policy="NONE"
                     in-memory-format="BINARY"
                     metadata-policy="OFF">
-                <hz:map-store enabled="true" class-name="com.hazelcast.spring.DummyStore" write-delay-seconds="0"
-                              initial-mode="EAGER" write-batch-size="10"/>
-                <hz:near-cache time-to-live-seconds="0" max-idle-seconds="60"
-                               invalidate-on-change="true" serialize-keys="false">
+                <hz:eviction size="0" eviction-policy="NONE"/>
+                <hz:map-store enabled="true"
+                              class-name="com.hazelcast.spring.DummyStore"
+                              write-delay-seconds="0"
+                              initial-mode="EAGER"
+                              write-batch-size="10"/>
+                <hz:near-cache time-to-live-seconds="0"
+                               max-idle-seconds="60"
+                               invalidate-on-change="true"
+                               serialize-keys="false">
                     <hz:eviction size="5000" eviction-policy="LRU"/>
                 </hz:near-cache>
 
@@ -392,11 +394,12 @@
             </hz:map>
             <hz:map name="testMap2"
                     backup-count="2"
-                    max-size="1000"
-                    max-size-policy="PER_NODE"
-                    read-backup-data="true"
-                    eviction-policy="NONE">
-                <hz:map-store enabled="true" implementation="dummyMapStore" write-delay-seconds="0"
+                    read-backup-data="true">
+                <hz:eviction size="1000" max-size-policy="PER_NODE"
+                             eviction-policy="NONE"/>
+                <hz:map-store enabled="true"
+                              implementation="dummyMapStore"
+                              write-delay-seconds="0"
                               initial-mode="LAZY"/>
                 <hz:wan-replication-ref name="testWan" merge-policy="PUT_IF_ABSENT"/>
 
@@ -410,10 +413,18 @@
                 <hz:wan-replication-ref name="testWan" />
             </hz:map>
 
-            <hz:map name="lfuEvictionMap" eviction-policy="LFU"/>
-            <hz:map name="lruEvictionMap" eviction-policy="LRU"/>
-            <hz:map name="noneEvictionMap" eviction-policy="NONE"/>
-            <hz:map name="randomEvictionMap" eviction-policy="RANDOM"/>
+            <hz:map name="lfuEvictionMap">
+                <hz:eviction eviction-policy="LFU"/>
+            </hz:map>
+            <hz:map name="lruEvictionMap">
+                <hz:eviction eviction-policy="LRU"/>
+            </hz:map>
+            <hz:map name="noneEvictionMap">
+                <hz:eviction eviction-policy="NONE"/>
+            </hz:map>
+            <hz:map name="randomEvictionMap">
+                <hz:eviction eviction-policy="RANDOM"/>
+            </hz:map>
 
             <hz:map name="lfuNearCacheEvictionMap">
                 <hz:near-cache>
@@ -438,11 +449,11 @@
 
             <hz:map name="testMap3"
                     backup-count="2"
-                    max-size="0"
-                    max-size-policy="PER_NODE"
-                    read-backup-data="true"
-                    eviction-policy="NONE">
-                <hz:map-store enabled="true" factory-class-name="com.hazelcast.spring.DummyStoreFactory"
+                    read-backup-data="true">
+                <hz:eviction eviction-policy="NONE"
+                             max-size-policy="PER_NODE" size="0"/>
+                <hz:map-store enabled="true"
+                              factory-class-name="com.hazelcast.spring.DummyStoreFactory"
                               write-delay-seconds="0">
                     <hz:properties>
                         <hz:property name="dummy.property">value</hz:property>
@@ -452,10 +463,11 @@
             </hz:map>
             <hz:map name="testMap4"
                     backup-count="2"
-                    max-size="0"
-                    read-backup-data="true"
-                    eviction-policy="NONE">
-                <hz:map-store enabled="true" factory-implementation="dummyMapStoreFactory" write-delay-seconds="0"/>
+                    read-backup-data="true">
+                <hz:eviction eviction-policy="NONE" size="0"/>
+                <hz:map-store enabled="true"
+                              factory-implementation="dummyMapStoreFactory"
+                              write-delay-seconds="0"/>
             </hz:map>
             <hz:map name="map-with-query-cache">
                 <hz:query-caches>
@@ -486,15 +498,16 @@
             <hz:map name="simpleMap"
                     backup-count="3"
                     async-backup-count="1"
-                    time-to-live-seconds="1"
-                    max-size="10"
-                    eviction-policy="LRU"/>
+                    time-to-live-seconds="1">
+                <hz:eviction eviction-policy="LRU" size="10"/>
+            </hz:map>
 
             <hz:map name="mapWithValueCachingSetToNever" cache-deserialized-values="NEVER"/>
             <hz:map name="mapWithValueCachingSetToAlways" cache-deserialized-values="${map.conf.cache.deserialized.values}"/>
             <hz:map name="mapWithDefaultValueCaching"/>
-            <hz:map name="map-with-native-max-size-policy" max-size-policy="USED_NATIVE_MEMORY_PERCENTAGE"
-                    in-memory-format="NATIVE"/>
+            <hz:map name="map-with-native-max-size-policy" in-memory-format="NATIVE">
+                <hz:eviction max-size-policy="USED_NATIVE_MEMORY_PERCENTAGE"/>
+            </hz:map>
 
             <hz:map name="mapWithPartitionLostListener">
                 <hz:partition-lost-listeners>
@@ -506,16 +519,17 @@
                 <hz:partition-strategy>com.hazelcast.spring.DummyPartitionStrategy</hz:partition-strategy>
             </hz:map>
 
-            <hz:map name="mapWithMapEvictionPolicyClassName">
-                <hz:map-eviction-policy class-name="com.hazelcast.map.eviction.LRUEvictionPolicy"/>
+            <hz:map name="mapWithComparatorClassName">
+                <hz:eviction comparator-class-name="com.hazelcast.internal.eviction.impl.comparator.LRUEvictionPolicyComparator"/>
             </hz:map>
 
-            <hz:map name="mapWithMapEvictionPolicyImpl">
-                <hz:map-eviction-policy implementation="dummyMapEvictionPolicy"/>
+            <hz:map name="mapWithComparatorImpl">
+                <hz:eviction comparator-bean="dummyEvictionPolicyComparator"/>
             </hz:map>
 
-            <hz:map name="mapBothMapEvictionPolicyClassNameAndEvictionPolicy" eviction-policy="LRU">
-                <hz:map-eviction-policy class-name="com.hazelcast.map.eviction.LRUEvictionPolicy"/>
+            <hz:map name="mapWithBothComparatorClassNameAndEvictionPolicy">
+                <hz:eviction eviction-policy="LRU"
+                             comparator-class-name="com.hazelcast.internal.eviction.impl.comparator.LFUEvictionPolicyComparator"/>
             </hz:map>
 
             <hz:cache name="testCache" disable-per-entry-invalidation-events="true">
@@ -796,24 +810,6 @@
                 <hz:attribute name="cluster.name">spring-cluster</hz:attribute>
             </hz:member-attributes>
 
-            <hz:services>
-                <hz:service implementation="dummyService">
-                    <hz:name>my-service</hz:name>
-                    <hz:class-name>com.hazelcast.spring.MyService</hz:class-name>
-                    <hz:properties>
-                        <hz:property name="prop1">prop1-value</hz:property>
-                        <hz:property name="prop2">prop2-value</hz:property>
-                    </hz:properties>
-                    <hz:configuration parser="com.hazelcast.spring.MyServiceConfigParser">
-                        <s:my-service id="my-service">
-                            <s:string-prop>prop1</s:string-prop>
-                            <s:int-prop>123</s:int-prop>
-                            <s:bool-prop>true</s:bool-prop>
-                        </s:my-service>
-                    </hz:configuration>
-                </hz:service>
-            </hz:services>
-
             <hz:split-brain-protection enabled="true" name="my-split-brain-protection">
                 <hz:minimum-cluster-size>2</hz:minimum-cluster-size>
                 <hz:protect-on>READ</hz:protect-on>
@@ -917,6 +913,14 @@
                     </hz:fenced-lock>
                 </hz:locks>
             </hz:cp-subsystem>
+
+            <hz:metrics enabled="false">
+                <hz:management-center enabled="false">
+                    <hz:retention-seconds>42</hz:retention-seconds>
+                </hz:management-center>
+                <hz:jmx enabled="false"/>
+                <hz:collection-frequency-seconds>24</hz:collection-frequency-seconds>
+            </hz:metrics>
         </hz:config>
     </hz:hazelcast>
 
@@ -952,7 +956,7 @@
     <bean id="dummyQueueStoreFactory" class="com.hazelcast.spring.DummyQueueStoreFactory"/>
     <bean id="dummyRingbufferStore" class="com.hazelcast.spring.DummyRingbufferStore"/>
     <bean id="dummyRingbufferStoreFactory" class="com.hazelcast.spring.DummyRingbufferStoreFactory"/>
-    <bean id="dummyMapEvictionPolicy" class="com.hazelcast.spring.DummyMapEvictionPolicy"/>
+    <bean id="dummyEvictionPolicyComparator" class="com.hazelcast.spring.DummyMapEvictionPolicyComparator"/>
     <bean id="dummyWanReplication" class="com.hazelcast.spring.DummyWanReplication"/>
     <bean id="dummyMembershipListener" class="com.hazelcast.spring.DummyMembershipListener"/>
     <bean id="dummyEntryListener" class="com.hazelcast.spring.DummyEntryListener"/>

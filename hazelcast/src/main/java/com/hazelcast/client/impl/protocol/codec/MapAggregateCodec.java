@@ -36,12 +36,12 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Applies the aggregation logic on all map entries and returns the result
  */
-@Generated("2b17e00580d85da906f0461f34ba6d05")
+@Generated("0a3f86dd2a292b3034707e5855809630")
 public final class MapAggregateCodec {
-    //hex: 0x013B00
-    public static final int REQUEST_MESSAGE_TYPE = 80640;
-    //hex: 0x013B01
-    public static final int RESPONSE_MESSAGE_TYPE = 80641;
+    //hex: 0x013A00
+    public static final int REQUEST_MESSAGE_TYPE = 80384;
+    //hex: 0x013A01
+    public static final int RESPONSE_MESSAGE_TYPE = 80385;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
 
@@ -65,7 +65,6 @@ public final class MapAggregateCodec {
     public static ClientMessage encodeRequest(java.lang.String name, com.hazelcast.nio.serialization.Data aggregator) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(true);
-        clientMessage.setAcquiresResource(false);
         clientMessage.setOperationName("Map.Aggregate");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);

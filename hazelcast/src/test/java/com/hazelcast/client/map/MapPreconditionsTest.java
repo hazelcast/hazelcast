@@ -29,7 +29,7 @@ import com.hazelcast.map.impl.MapListenerAdapter;
 import com.hazelcast.map.listener.MapListener;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.Predicates;
-import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -61,7 +61,7 @@ public class MapPreconditionsTest extends HazelcastTestSupport {
     public void setUp() {
         Config config = getConfig();
         // Default minimum is 100000 * 1.5f
-        config.setProperty(GroupProperty.QUERY_RESULT_SIZE_LIMIT.getName(), "1");
+        config.setProperty(ClusterProperty.QUERY_RESULT_SIZE_LIMIT.getName(), "1");
         hazelcastFactory.newHazelcastInstance(config);
         HazelcastInstance client = hazelcastFactory.newHazelcastClient();
 

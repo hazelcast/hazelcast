@@ -36,12 +36,12 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * TODO DOC
  */
-@Generated("7fb27afcc1b5301c63b7a93b1ae09575")
+@Generated("f9ac17d442298f399900859f2de1b785")
 public final class MapAssignAndGetUuidsCodec {
-    //hex: 0x014000
-    public static final int REQUEST_MESSAGE_TYPE = 81920;
-    //hex: 0x014001
-    public static final int RESPONSE_MESSAGE_TYPE = 81921;
+    //hex: 0x013F00
+    public static final int REQUEST_MESSAGE_TYPE = 81664;
+    //hex: 0x013F01
+    public static final int RESPONSE_MESSAGE_TYPE = 81665;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
 
@@ -55,7 +55,6 @@ public final class MapAssignAndGetUuidsCodec {
     public static ClientMessage encodeRequest() {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(true);
-        clientMessage.setAcquiresResource(false);
         clientMessage.setOperationName("Map.AssignAndGetUuids");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);

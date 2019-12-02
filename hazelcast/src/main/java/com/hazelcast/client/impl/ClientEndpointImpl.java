@@ -17,14 +17,19 @@
 package com.hazelcast.client.impl;
 
 import com.hazelcast.client.Client;
-import com.hazelcast.client.ClientType;
+import com.hazelcast.client.impl.statistics.ClientStatistics;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
-import com.hazelcast.logging.ILogger;
+import com.hazelcast.internal.metrics.DynamicMetricsProvider;
+import com.hazelcast.internal.metrics.MetricConsumer;
+import com.hazelcast.internal.metrics.MetricDescriptor;
+import com.hazelcast.internal.metrics.MetricTarget;
+import com.hazelcast.internal.metrics.MetricsCollectionContext;
+import com.hazelcast.internal.metrics.impl.MetricsCompressor;
 import com.hazelcast.internal.nio.Connection;
-import com.hazelcast.internal.nio.tcp.TcpIpConnection;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.security.Credentials;
-import com.hazelcast.spi.impl.eventservice.EventService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.spi.impl.eventservice.EventService;
 import com.hazelcast.transaction.TransactionContext;
 import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.impl.xa.XATransactionContextImpl;
@@ -39,11 +44,17 @@ import java.util.UUID;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.atomic.AtomicReference;
+
+import static com.hazelcast.internal.metrics.MetricTarget.MANAGEMENT_CENTER;
 
 /**
  * The {@link com.hazelcast.client.impl.ClientEndpoint} and {@link Client} implementation.
  */
-public final class ClientEndpointImpl implements ClientEndpoint {
+public final class ClientEndpointImpl
+    implements ClientEndpoint, DynamicMetricsProvider {
+    private static final String METRICS_TAG_CLIENT = "client";
+    private static final String METRICS_TAG_TIMESTAMP = "timestamp";
 
     private final ClientEngine clientEngine;
     private final ILogger logger;
@@ -51,7 +62,7 @@ public final class ClientEndpointImpl implements ClientEndpoint {
     private final Connection connection;
     private final ConcurrentMap<UUID, TransactionContext> transactionContextMap
             = new ConcurrentHashMap<>();
-    private final ConcurrentHashMap<UUID, Callable> removeListenerActions = new ConcurrentHashMap<UUID, Callable>();
+    private final ConcurrentHashMap<UUID, Callable> removeListenerActions = new ConcurrentHashMap<>();
     private final SocketAddress socketAddress;
     private final long creationTime;
 
@@ -60,7 +71,7 @@ public final class ClientEndpointImpl implements ClientEndpoint {
     private Credentials credentials;
     private volatile boolean authenticated;
     private String clientVersion;
-    private volatile String stats;
+    private final AtomicReference<ClientStatistics> statsRef = new AtomicReference<>();
     private String clientName;
     private Set<String> labels;
 
@@ -69,14 +80,10 @@ public final class ClientEndpointImpl implements ClientEndpoint {
         this.logger = clientEngine.getLogger(getClass());
         this.nodeEngine = nodeEngine;
         this.connection = connection;
-        if (connection instanceof TcpIpConnection) {
-            TcpIpConnection tcpIpConnection = (TcpIpConnection) connection;
-            socketAddress = tcpIpConnection.getRemoteSocketAddress();
-        } else {
-            socketAddress = null;
-        }
+        this.socketAddress = connection.getRemoteSocketAddress();
         this.clientVersion = "Unknown";
         this.creationTime = System.currentTimeMillis();
+        nodeEngine.getMetricsRegistry().registerDynamicMetricsProvider(this);
     }
 
     @Override
@@ -126,13 +133,19 @@ public final class ClientEndpointImpl implements ClientEndpoint {
     }
 
     @Override
-    public void setClientStatistics(String stats) {
-        this.stats = stats;
+    public void setClientStatistics(ClientStatistics stats) {
+        statsRef.set(stats);
     }
 
     @Override
-    public String getClientStatistics() {
-        return stats;
+    public String getClientAttributes() {
+        ClientStatistics statistics = statsRef.get();
+        return statistics != null ? statistics.clientAttributes() : null;
+    }
+
+    @Override
+    public ClientStatistics getClientStatistics() {
+        return statsRef.get();
     }
 
     @Override
@@ -141,37 +154,8 @@ public final class ClientEndpointImpl implements ClientEndpoint {
     }
 
     @Override
-    public ClientType getClientType() {
-        ClientType type;
-        switch (connection.getType()) {
-            case JAVA_CLIENT:
-                type = ClientType.JAVA;
-                break;
-            case CSHARP_CLIENT:
-                type = ClientType.CSHARP;
-                break;
-            case CPP_CLIENT:
-                type = ClientType.CPP;
-                break;
-            case PYTHON_CLIENT:
-                type = ClientType.PYTHON;
-                break;
-            case RUBY_CLIENT:
-                type = ClientType.RUBY;
-                break;
-            case NODEJS_CLIENT:
-                type = ClientType.NODEJS;
-                break;
-            case GO_CLIENT:
-                type = ClientType.GO;
-                break;
-            case BINARY_CLIENT:
-                type = ClientType.OTHER;
-                break;
-            default:
-                throw new IllegalArgumentException("Invalid connection type: " + connection.getType());
-        }
-        return type;
+    public String getClientType() {
+        return connection.getConnectionType();
     }
 
     @Override
@@ -211,12 +195,7 @@ public final class ClientEndpointImpl implements ClientEndpoint {
     @Override
     public void addListenerDestroyAction(final String service, final String topic, final UUID id) {
         final EventService eventService = clientEngine.getEventService();
-        addDestroyAction(id, new Callable<Boolean>() {
-            @Override
-            public Boolean call() {
-                return eventService.deregisterListener(service, topic, id);
-            }
-        });
+        addDestroyAction(id, () -> eventService.deregisterListener(service, topic, id));
     }
 
     @Override
@@ -272,7 +251,39 @@ public final class ClientEndpointImpl implements ClientEndpoint {
                 + ", authenticated=" + authenticated
                 + ", clientVersion=" + clientVersion
                 + ", creationTime=" + creationTime
-                + ", latest statistics=" + stats
+                + ", latest clientAttributes=" + getClientAttributes()
                 + '}';
+    }
+
+    @Override
+    public void provideDynamicMetrics(MetricDescriptor descriptor, MetricsCollectionContext context) {
+        ClientStatistics clientStatistics = statsRef.get();
+        if (clientStatistics != null && clientStatistics.metricsBlob() != null) {
+            long timestamp = clientStatistics.timestamp();
+            byte[] metricsBlob = clientStatistics.metricsBlob();
+            MetricConsumer consumer = new MetricConsumer() {
+                @Override
+                public void consumeLong(MetricDescriptor descriptor, long value) {
+                    context.collect(enhanceDescriptor(descriptor, timestamp), value);
+                }
+
+                @Override
+                public void consumeDouble(MetricDescriptor descriptor, double value) {
+                    context.collect(enhanceDescriptor(descriptor, timestamp), value);
+                }
+
+                private MetricDescriptor enhanceDescriptor(MetricDescriptor descriptor, long timestamp) {
+                    return descriptor
+                        // we exclude all metric targets here besides MANAGEMENT_CENTER
+                        // since we want to send the client-side metrics only to MC
+                        .withExcludedTargets(MetricTarget.VALUES_LIST)
+                        .withIncludedTarget(MANAGEMENT_CENTER)
+                        // we add "client" and "timestamp" tags for MC
+                        .withTag(METRICS_TAG_CLIENT, getUuid().toString())
+                        .withTag(METRICS_TAG_TIMESTAMP, Long.toString(timestamp));
+                }
+            };
+            MetricsCompressor.extractMetrics(metricsBlob, consumer);
+        }
     }
 }

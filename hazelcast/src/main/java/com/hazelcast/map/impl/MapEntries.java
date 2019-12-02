@@ -16,6 +16,7 @@
 
 package com.hazelcast.map.impl;
 
+import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -137,8 +138,8 @@ public final class MapEntries implements IdentifiedDataSerializable {
         int size = size();
         out.writeInt(size);
         for (int i = 0; i < size; i++) {
-            out.writeData(keys.get(i));
-            out.writeData(values.get(i));
+            IOUtil.writeData(out, keys.get(i));
+            IOUtil.writeData(out, values.get(i));
         }
     }
 
@@ -148,8 +149,8 @@ public final class MapEntries implements IdentifiedDataSerializable {
         keys = new ArrayList<>(size);
         values = new ArrayList<>(size);
         for (int i = 0; i < size; i++) {
-            keys.add(in.readData());
-            values.add(in.readData());
+            keys.add(IOUtil.readData(in));
+            values.add(IOUtil.readData(in));
         }
     }
 }

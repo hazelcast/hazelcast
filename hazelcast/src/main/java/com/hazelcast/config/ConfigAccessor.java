@@ -16,6 +16,7 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.internal.config.ServicesConfig;
 import com.hazelcast.spi.annotation.PrivateApi;
 
 /**
@@ -37,4 +38,7 @@ public final class ConfigAccessor {
         return config.getNetworkConfig();
     }
 
+    public static ServicesConfig getServicesConfig(Config config) {
+        return config.getServicesConfig();
+    }
 }

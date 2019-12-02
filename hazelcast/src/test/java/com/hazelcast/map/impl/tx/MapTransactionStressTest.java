@@ -17,8 +17,9 @@
 package com.hazelcast.map.impl.tx;
 
 import com.hazelcast.config.Config;
+import com.hazelcast.config.ConfigAccessor;
 import com.hazelcast.config.ServiceConfig;
-import com.hazelcast.config.ServicesConfig;
+import com.hazelcast.internal.config.ServicesConfig;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;
@@ -194,7 +195,7 @@ public class MapTransactionStressTest extends HazelcastTestSupport {
 
     private Config createConfigWithDummyTxService() {
         Config config = getConfig();
-        ServicesConfig servicesConfig = config.getServicesConfig();
+        ServicesConfig servicesConfig = ConfigAccessor.getServicesConfig(config);
         servicesConfig.addServiceConfig(new ServiceConfig().setName(DUMMY_TX_SERVICE)
                 .setEnabled(true).setImplementation(new DummyTransactionalService(DUMMY_TX_SERVICE)));
         return config;

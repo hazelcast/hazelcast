@@ -68,7 +68,7 @@ public class HeartbeatManager implements Runnable {
 
     @Override
     public void run() {
-        if (!clientConnectionManager.alive) {
+        if (!clientConnectionManager.isAlive()) {
             return;
         }
 

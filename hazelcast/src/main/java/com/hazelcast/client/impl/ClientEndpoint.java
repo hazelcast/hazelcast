@@ -17,6 +17,7 @@
 package com.hazelcast.client.impl;
 
 import com.hazelcast.client.Client;
+import com.hazelcast.client.impl.statistics.ClientStatistics;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.security.Credentials;
 import com.hazelcast.transaction.TransactionContext;
@@ -100,10 +101,17 @@ public interface ClientEndpoint extends Client {
      *
      * @param stats the latest statistics retrieved from the client
      */
-    void setClientStatistics(String stats);
+    void setClientStatistics(ClientStatistics stats);
 
     /**
-     * @return statistics string for the client
+     * Returns the latest client statistics.
+     *
+     * @return the client statistics
      */
-    String getClientStatistics();
+    ClientStatistics getClientStatistics();
+
+    /**
+     * @return client attributes string for the client
+     */
+    String getClientAttributes();
 }

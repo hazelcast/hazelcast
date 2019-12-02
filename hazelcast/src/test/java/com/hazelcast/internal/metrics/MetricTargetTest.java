@@ -23,11 +23,13 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.util.Set;
+
+import static com.google.common.math.IntMath.factorial;
 import static com.hazelcast.internal.metrics.MetricTarget.DIAGNOSTICS;
 import static com.hazelcast.internal.metrics.MetricTarget.JMX;
 import static com.hazelcast.internal.metrics.MetricTarget.MANAGEMENT_CENTER;
-import static com.hazelcast.test.HazelcastTestSupport.assertContainsAll;
-import static java.util.Arrays.asList;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertSame;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -55,19 +57,51 @@ public class MetricTargetTest {
     }
 
     @Test
+    public void testAsSetWith_returnsSameObjects() {
+        Set<MetricTarget> targetsWithoutJmx = MetricTarget.asSet(new MetricTarget[]{MANAGEMENT_CENTER});
+        Set<MetricTarget> targetsWithJmx = MetricTarget.asSet(new MetricTarget[]{MANAGEMENT_CENTER, JMX});
+        assertSame(
+                targetsWithJmx,
+                MetricTarget.asSetWith(targetsWithoutJmx, JMX)
+        );
+    }
+
+    @Test
+    public void testAsSetWithout_returnsSameObjects() {
+        Set<MetricTarget> targetsWithoutJmx = MetricTarget.asSet(new MetricTarget[]{MANAGEMENT_CENTER});
+        Set<MetricTarget> targetsWithJmx = MetricTarget.asSet(new MetricTarget[]{MANAGEMENT_CENTER, JMX});
+        assertSame(
+                targetsWithoutJmx,
+                MetricTarget.asSetWithout(targetsWithJmx, JMX)
+        );
+    }
+
+    @Test
+    @SuppressWarnings("checkstyle:IllegalTokenText")
+    public void testBitset() {
+        Set<MetricTarget> targets = MetricTarget.asSet(new MetricTarget[]{MANAGEMENT_CENTER, DIAGNOSTICS});
+        assertEquals(0b101, MetricTarget.bitset(targets));
+    }
+
+    @Test
+    @SuppressWarnings("checkstyle:IllegalTokenText")
+    public void testAsSet_bitset() {
+        Set<MetricTarget> expectedTargets = MetricTarget.asSet(new MetricTarget[]{MANAGEMENT_CENTER, DIAGNOSTICS});
+        assertSame(
+                expectedTargets,
+                MetricTarget.asSet(0b101)
+        );
+    }
+
+    @Test
     public void testAsSet_supportsAllCombinations() {
-        assertAsSetContainsAll();
-        assertAsSetContainsAll(MANAGEMENT_CENTER);
-        assertAsSetContainsAll(JMX);
-        assertAsSetContainsAll(DIAGNOSTICS);
-        assertAsSetContainsAll(DIAGNOSTICS, JMX);
-        assertAsSetContainsAll(DIAGNOSTICS, MANAGEMENT_CENTER);
-        assertAsSetContainsAll(MANAGEMENT_CENTER, JMX);
-        assertAsSetContainsAll(MANAGEMENT_CENTER, JMX, DIAGNOSTICS);
-    }
+        int all = MetricTarget.values().length;
+        int allCombinations = 0;
+        for (int choose = 0; choose <= all; choose++) {
+            // C(n,r) = n!/r!(n-r)!
+            allCombinations += factorial(all) / (factorial(choose) * factorial(all - choose));
+        }
 
-    private void assertAsSetContainsAll(MetricTarget... targets) {
-        assertContainsAll(MetricTarget.asSet(targets), asList(targets));
+        assertEquals(allCombinations, MetricTarget.BITSET_TO_SET_CACHE.size());
     }
-
 }

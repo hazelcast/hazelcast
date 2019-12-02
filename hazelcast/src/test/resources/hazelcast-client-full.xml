@@ -285,7 +285,7 @@
             <initial-backoff-millis>2000</initial-backoff-millis>
             <max-backoff-millis>60000</max-backoff-millis>
             <multiplier>3</multiplier>
-            <fail-on-max-backoff>false</fail-on-max-backoff>
+            <cluster-connect-timeout-millis>5000</cluster-connect-timeout-millis>
             <jitter>0.5</jitter>
         </connection-retry>
     </connection-strategy>
@@ -305,5 +305,10 @@
             <className>test.sampleClassName</className>
         </classNames>
     </user-code-deployment>
+
+    <metrics enabled="false">
+        <jmx enabled="false"/>
+        <collection-frequency-seconds>42</collection-frequency-seconds>
+    </metrics>
 
 </hazelcast-client>

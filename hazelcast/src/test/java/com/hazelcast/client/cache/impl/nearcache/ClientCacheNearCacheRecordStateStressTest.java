@@ -16,8 +16,6 @@
 
 package com.hazelcast.client.cache.impl.nearcache;
 
-import com.hazelcast.cache.impl.HazelcastServerCachingProvider;
-import com.hazelcast.client.cache.impl.HazelcastClientCachingProvider;
 import com.hazelcast.client.cache.impl.NearCachedClientCacheProxy;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.test.TestHazelcastFactory;
@@ -50,12 +48,14 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import static com.hazelcast.config.EvictionConfig.MaxSizePolicy.ENTRY_COUNT;
+import static com.hazelcast.cache.CacheTestSupport.createClientCachingProvider;
+import static com.hazelcast.cache.CacheTestSupport.createServerCachingProvider;
+import static com.hazelcast.config.MaxSizePolicy.ENTRY_COUNT;
 import static com.hazelcast.config.NearCacheConfig.LocalUpdatePolicy.CACHE_ON_UPDATE;
 import static com.hazelcast.config.NearCacheConfig.LocalUpdatePolicy.INVALIDATE;
 import static com.hazelcast.internal.nearcache.NearCacheTestUtils.getBaseConfig;
-import static com.hazelcast.map.impl.nearcache.MapNearCacheRecordStateStressTest.assertNearCacheRecordStates;
 import static com.hazelcast.internal.util.RandomPicker.getInt;
+import static com.hazelcast.map.impl.nearcache.MapNearCacheRecordStateStressTest.assertNearCacheRecordStates;
 import static java.lang.Integer.MAX_VALUE;
 import static java.util.Arrays.asList;
 
@@ -101,7 +101,7 @@ public class ClientCacheNearCacheRecordStateStressTest extends HazelcastTestSupp
                 .addNearCacheConfig(newNearCacheConfig(cacheName));
 
         EvictionConfig evictionConfig = new EvictionConfig()
-                .setMaximumSizePolicy(ENTRY_COUNT)
+                .setMaxSizePolicy(ENTRY_COUNT)
                 .setSize(MAX_VALUE);
 
         CacheConfig<Integer, Integer> cacheConfig = new CacheConfig<Integer, Integer>()
@@ -113,12 +113,12 @@ public class ClientCacheNearCacheRecordStateStressTest extends HazelcastTestSupp
 
         HazelcastInstance client = factory.newHazelcastClient(clientConfig);
 
-        CachingProvider provider = HazelcastServerCachingProvider.createCachingProvider(member);
+        CachingProvider provider = createServerCachingProvider(member);
         CacheManager serverCacheManager = provider.getCacheManager();
 
         memberCache = serverCacheManager.createCache(cacheName, cacheConfig);
 
-        CachingProvider clientCachingProvider = HazelcastClientCachingProvider.createCachingProvider(client);
+        CachingProvider clientCachingProvider = createClientCachingProvider(client);
         CacheManager cacheManager = clientCachingProvider.getCacheManager();
 
         clientCache = cacheManager.createCache(cacheName, cacheConfig);
@@ -187,7 +187,7 @@ public class ClientCacheNearCacheRecordStateStressTest extends HazelcastTestSupp
 
     private NearCacheConfig newNearCacheConfig(String cacheName) {
         EvictionConfig evictionConfig = new EvictionConfig()
-                .setMaximumSizePolicy(ENTRY_COUNT)
+                .setMaxSizePolicy(ENTRY_COUNT)
                 .setSize(MAX_VALUE);
 
         return new NearCacheConfig(cacheName)

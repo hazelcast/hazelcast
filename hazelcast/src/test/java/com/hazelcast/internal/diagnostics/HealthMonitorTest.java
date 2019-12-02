@@ -30,10 +30,10 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
-import static com.hazelcast.spi.properties.GroupProperty.HEALTH_MONITORING_DELAY_SECONDS;
-import static com.hazelcast.spi.properties.GroupProperty.HEALTH_MONITORING_LEVEL;
-import static com.hazelcast.spi.properties.GroupProperty.HEALTH_MONITORING_THRESHOLD_CPU_PERCENTAGE;
-import static com.hazelcast.spi.properties.GroupProperty.HEALTH_MONITORING_THRESHOLD_MEMORY_PERCENTAGE;
+import static com.hazelcast.spi.properties.ClusterProperty.HEALTH_MONITORING_DELAY_SECONDS;
+import static com.hazelcast.spi.properties.ClusterProperty.HEALTH_MONITORING_LEVEL;
+import static com.hazelcast.spi.properties.ClusterProperty.HEALTH_MONITORING_THRESHOLD_CPU_PERCENTAGE;
+import static com.hazelcast.spi.properties.ClusterProperty.HEALTH_MONITORING_THRESHOLD_MEMORY_PERCENTAGE;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 

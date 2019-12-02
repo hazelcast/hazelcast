@@ -42,12 +42,12 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * matching to a different partition id shall be ignored. The API implementation using this request may need to send multiple
  * of these request messages for filling a request for a key set if the keys belong to different partitions.
  */
-@Generated("41d39207c126cb496bcc7bcda3b1d1bb")
+@Generated("73d16d36e74fe1d8e9799e804055cf50")
 public final class MapPutAllCodec {
-    //hex: 0x012D00
-    public static final int REQUEST_MESSAGE_TYPE = 77056;
-    //hex: 0x012D01
-    public static final int RESPONSE_MESSAGE_TYPE = 77057;
+    //hex: 0x012C00
+    public static final int REQUEST_MESSAGE_TYPE = 76800;
+    //hex: 0x012C01
+    public static final int RESPONSE_MESSAGE_TYPE = 76801;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
 
@@ -71,7 +71,6 @@ public final class MapPutAllCodec {
     public static ClientMessage encodeRequest(java.lang.String name, java.util.Collection<java.util.Map.Entry<com.hazelcast.nio.serialization.Data, com.hazelcast.nio.serialization.Data>> entries) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
-        clientMessage.setAcquiresResource(false);
         clientMessage.setOperationName("Map.PutAll");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);

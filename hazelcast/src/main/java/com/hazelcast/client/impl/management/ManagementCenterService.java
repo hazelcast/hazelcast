@@ -20,23 +20,55 @@ import com.hazelcast.client.impl.ClientDelegatingFuture;
 import com.hazelcast.client.impl.clientside.ClientMessageDecoder;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.codec.MCApplyMCConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.MCChangeClusterStateCodec;
+import com.hazelcast.client.impl.protocol.codec.MCChangeClusterVersionCodec;
+import com.hazelcast.client.impl.protocol.codec.MCGetClusterMetadataCodec;
 import com.hazelcast.client.impl.protocol.codec.MCGetMapConfigCodec;
+import com.hazelcast.client.impl.protocol.codec.MCGetMemberConfigCodec;
+import com.hazelcast.client.impl.protocol.codec.MCGetSystemPropertiesCodec;
+import com.hazelcast.client.impl.protocol.codec.MCGetThreadDumpCodec;
+import com.hazelcast.client.impl.protocol.codec.MCGetTimedMemberStateCodec;
+import com.hazelcast.client.impl.protocol.codec.MCMatchMCConfigCodec;
+import com.hazelcast.client.impl.protocol.codec.MCPromoteLiteMemberCodec;
 import com.hazelcast.client.impl.protocol.codec.MCReadMetricsCodec;
+import com.hazelcast.client.impl.protocol.codec.MCRunConsoleCommandCodec;
+import com.hazelcast.client.impl.protocol.codec.MCRunGcCodec;
+import com.hazelcast.client.impl.protocol.codec.MCRunScriptCodec;
+import com.hazelcast.client.impl.protocol.codec.MCShutdownClusterCodec;
+import com.hazelcast.client.impl.protocol.codec.MCShutdownMemberCodec;
 import com.hazelcast.client.impl.protocol.codec.MCUpdateMapConfigCodec;
 import com.hazelcast.client.impl.spi.impl.ClientInvocation;
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.cluster.Member;
+import com.hazelcast.internal.management.TimedMemberState;
+import com.hazelcast.internal.management.dto.ClientBwListDTO;
 import com.hazelcast.internal.metrics.managementcenter.MetricsResultSet;
+import com.hazelcast.internal.nio.ConnectionType;
 import com.hazelcast.internal.serialization.InternalSerializationService;
-
-import java.util.concurrent.CompletableFuture;
+import com.hazelcast.internal.util.MapUtil;
+import com.hazelcast.spi.properties.HazelcastProperty;
+import com.hazelcast.version.Version;
 
 import javax.annotation.Nonnull;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
+/**
+ * Only works for smart clients, i.e. doesn't work for unisocket clients.
+ */
 public class ManagementCenterService {
+
+    /**
+     * Internal property for enabling MC client mode ({@link ConnectionType#MC_JAVA_CLIENT}).
+     */
+    public static final HazelcastProperty MC_CLIENT_MODE_PROP
+            = new HazelcastProperty("hazelcast.client.internal.mc.mode", false);
 
     private final HazelcastClientInstanceImpl client;
     private final InternalSerializationService serializationService;
@@ -161,6 +193,334 @@ public class ManagementCenterService {
                 invocation.invoke(),
                 serializationService,
                 clientMessage -> null
+        );
+    }
+
+    /**
+     * Gets the config of a given member rendered as XML.
+     */
+    @Nonnull
+    public CompletableFuture<String> getMemberConfig(Member member) {
+        checkNotNull(member);
+
+        ClientInvocation invocation = new ClientInvocation(
+                client,
+                MCGetMemberConfigCodec.encodeRequest(),
+                null,
+                member.getAddress()
+        );
+        return new ClientDelegatingFuture<>(
+                invocation.invoke(),
+                serializationService,
+                clientMessage -> MCGetMemberConfigCodec.decodeResponse(clientMessage).configXml
+        );
+    }
+
+    /**
+     * Runs GC on a given member.
+     */
+    @Nonnull
+    public CompletableFuture<Void> runGc(Member member) {
+        checkNotNull(member);
+
+        ClientInvocation invocation = new ClientInvocation(
+                client,
+                MCRunGcCodec.encodeRequest(),
+                null,
+                member.getAddress()
+        );
+        return new ClientDelegatingFuture<>(
+                invocation.invoke(),
+                serializationService,
+                clientMessage -> null
+        );
+    }
+
+    /**
+     * Gets thread dump of a given member.
+     *
+     * @param member        {@link Member} to get the thread dump of
+     * @param dumpDeadLocks whether only dead-locked threads or all threads should be dumped.
+     */
+    @Nonnull
+    public CompletableFuture<String> getThreadDump(Member member, boolean dumpDeadLocks) {
+        checkNotNull(member);
+
+        ClientInvocation invocation = new ClientInvocation(
+                client,
+                MCGetThreadDumpCodec.encodeRequest(dumpDeadLocks),
+                null,
+                member.getAddress()
+        );
+        return new ClientDelegatingFuture<>(
+                invocation.invoke(),
+                serializationService,
+                clientMessage -> MCGetThreadDumpCodec.decodeResponse(clientMessage).threadDump
+        );
+    }
+
+    /**
+     * Shuts down a given member.
+     *
+     * @param member {@link Member} to shut down
+     */
+    public void shutdownMember(Member member) {
+        checkNotNull(member);
+
+        ClientInvocation invocation = new ClientInvocation(
+                client,
+                MCShutdownMemberCodec.encodeRequest(),
+                null,
+                member.getAddress()
+        );
+        invocation.invoke();
+    }
+
+    /**
+     * Promotes a lite member to a data member.
+     *
+     * @param member {@link Member} to promote
+     */
+    @Nonnull
+    public CompletableFuture<Void> promoteLiteMember(Member member) {
+        checkNotNull(member);
+
+        ClientInvocation invocation = new ClientInvocation(
+                client,
+                MCPromoteLiteMemberCodec.encodeRequest(),
+                null,
+                member.getAddress()
+        );
+
+        return new ClientDelegatingFuture<>(
+                invocation.invoke(),
+                serializationService,
+                clientMessage -> null
+        );
+    }
+
+    /**
+     * Gets system properties of a given member.
+     *
+     * @param member {@link Member} to get system properties of
+     */
+    @Nonnull
+    public CompletableFuture<Map<String, String>> getSystemProperties(Member member) {
+        checkNotNull(member);
+
+        ClientInvocation invocation = new ClientInvocation(
+                client,
+                MCGetSystemPropertiesCodec.encodeRequest(),
+                null,
+                member.getAddress()
+        );
+
+        return new ClientDelegatingFuture<>(
+                invocation.invoke(),
+                serializationService,
+                clientMessage -> {
+                    List<Entry<String, String>> systemProperties
+                            = MCGetSystemPropertiesCodec.decodeResponse(clientMessage).systemProperties;
+
+                    Map<String, String> result = MapUtil.createHashMap(systemProperties.size());
+                    for (Entry<String, String> property : systemProperties) {
+                        result.put(property.getKey(), property.getValue());
+                    }
+                    return result;
+                }
+        );
+    }
+
+    /**
+     * Gets the latest {@link TimedMemberState} of the member it's called on.
+     *
+     * @param member {@link Member} to get {@link TimedMemberState} of
+     */
+    @Nonnull
+    public CompletableFuture<Optional<String>> getTimedMemberState(Member member) {
+        checkNotNull(member);
+
+        ClientInvocation invocation = new ClientInvocation(
+                client,
+                MCGetTimedMemberStateCodec.encodeRequest(),
+                null,
+                member.getAddress());
+
+        return new ClientDelegatingFuture<>(
+                invocation.invoke(),
+                serializationService,
+                clientMessage -> Optional.ofNullable(
+                        MCGetTimedMemberStateCodec.decodeResponse(clientMessage).timedMemberStateJson)
+        );
+    }
+
+    /**
+     * Checks if local MC config (client B/W list) on a given member has the same ETag as provided.
+     *
+     * @param member    target member
+     * @param eTag      ETag value of MC config to match with (should be the latest value from MC)
+     * @return          operation future object with match result: <code>true</code> if config ETags match
+     */
+    @Nonnull
+    public CompletableFuture<Boolean> matchMCConfig(Member member, String eTag) {
+        checkNotNull(member);
+        checkNotNull(eTag);
+
+        ClientInvocation invocation = new ClientInvocation(
+                client,
+                MCMatchMCConfigCodec.encodeRequest(eTag),
+                null,
+                member.getAddress()
+        );
+        return new ClientDelegatingFuture<>(
+                invocation.invoke(),
+                serializationService,
+                clientMessage -> {
+                    MCMatchMCConfigCodec.ResponseParameters response =
+                            MCMatchMCConfigCodec.decodeResponse(clientMessage);
+                    return response.result;
+                },
+                false
+        );
+    }
+
+    /**
+     * Applies the MC config (client B/W list) on a given member.
+     *
+     * @param member        target member
+     * @param eTag          ETag of the new config
+     * @param clientBwList  new config for client B/W list filtering
+     * @return              operation future object
+     */
+    @Nonnull
+    public CompletableFuture<Void> applyMCConfig(Member member, String eTag, ClientBwListDTO clientBwList) {
+        checkNotNull(member);
+        checkNotNull(eTag);
+        checkNotNull(clientBwList);
+        checkNotNull(clientBwList.mode);
+        checkNotNull(clientBwList.entries);
+
+        ClientInvocation invocation = new ClientInvocation(
+                client,
+                MCApplyMCConfigCodec.encodeRequest(eTag, clientBwList.mode.getId(), clientBwList.entries),
+                null,
+                member.getAddress()
+        );
+        return new ClientDelegatingFuture<>(
+                invocation.invoke(),
+                serializationService,
+                clientMessage -> null
+        );
+    }
+
+    /**
+     * Gets the current metadata of the cluster.
+     *
+     * @param member {@link Member} to get current cluster metadata of
+     */
+    @Nonnull
+    public CompletableFuture<MCClusterMetadata> getClusterMetadata(Member member) {
+        checkNotNull(member);
+
+        ClientInvocation invocation = new ClientInvocation(
+                client,
+                MCGetClusterMetadataCodec.encodeRequest(),
+                null,
+                member.getAddress());
+
+        return new ClientDelegatingFuture<>(
+                invocation.invoke(),
+                serializationService,
+                clientMessage -> {
+                    MCGetClusterMetadataCodec.ResponseParameters response =
+                            MCGetClusterMetadataCodec.decodeResponse(clientMessage);
+                    return MCClusterMetadata.fromResponse(response);
+                }
+        );
+    }
+
+    /**
+     * Shuts down the cluster.
+     */
+    public void shutdownCluster() {
+        ClientInvocation invocation = new ClientInvocation(
+                client,
+                MCShutdownClusterCodec.encodeRequest(),
+                null
+        );
+        invocation.invoke();
+    }
+
+    /**
+     * Changes the cluster version
+     *
+     * @param version new cluster version
+     */
+    @Nonnull
+    public CompletableFuture<Void> changeClusterVersion(Version version) {
+        ClientInvocation invocation = new ClientInvocation(
+                client,
+                MCChangeClusterVersionCodec.encodeRequest(version.getMajor(), version.getMinor()),
+                null
+        );
+
+        return new ClientDelegatingFuture<>(
+                invocation.invoke(),
+                serializationService,
+                clientMessage -> null
+        );
+    }
+
+    /**
+     * Runs the script on a given member.
+     *
+     * @param member    target member
+     * @param engine    the name of script engine which will be used for the execution
+     * @param script    the script to execute
+     * @return          operation future object with script execution output
+     */
+    @Nonnull
+    public CompletableFuture<String> runScript(Member member, String engine, String script) {
+        checkNotNull(member);
+        checkNotNull(script);
+        checkNotNull(engine);
+
+        ClientInvocation invocation = new ClientInvocation(
+                client,
+                MCRunScriptCodec.encodeRequest(engine, script),
+                null,
+                member.getAddress()
+        );
+        return new ClientDelegatingFuture<>(
+                invocation.invoke(),
+                serializationService,
+                clientMessage -> MCRunScriptCodec.decodeResponse(clientMessage).result
+        );
+    }
+
+    /**
+     * Runs the console command on a given member.
+     *
+     * @param member        target member
+     * @param namespace     namespace to be set before the command is executed (optional)
+     * @param command       the command to execute
+     * @return              operation future object with command execution output
+     */
+    @Nonnull
+    public CompletableFuture<String> runConsoleCommand(Member member, String namespace, String command) {
+        checkNotNull(member);
+        checkNotNull(command);
+
+        ClientInvocation invocation = new ClientInvocation(
+                client,
+                MCRunConsoleCommandCodec.encodeRequest(namespace, command),
+                null,
+                member.getAddress()
+        );
+        return new ClientDelegatingFuture<>(
+                invocation.invoke(),
+                serializationService,
+                clientMessage -> MCRunConsoleCommandCodec.decodeResponse(clientMessage).result
         );
     }
 }

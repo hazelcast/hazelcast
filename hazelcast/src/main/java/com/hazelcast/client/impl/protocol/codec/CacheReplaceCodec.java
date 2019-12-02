@@ -39,12 +39,12 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * If the cache is configured for write-through operation mode, the underlying configured
  * javax.cache.integration.CacheWriter might be called to store the value of the key to any kind of external resource.
  */
-@Generated("9deb1f39c7db55bd78fd510a9913fced")
+@Generated("e4126ccd1d59629eaa4055fa6b5a8f6e")
 public final class CacheReplaceCodec {
-    //hex: 0x131800
-    public static final int REQUEST_MESSAGE_TYPE = 1251328;
-    //hex: 0x131801
-    public static final int RESPONSE_MESSAGE_TYPE = 1251329;
+    //hex: 0x131700
+    public static final int REQUEST_MESSAGE_TYPE = 1251072;
+    //hex: 0x131701
+    public static final int RESPONSE_MESSAGE_TYPE = 1251073;
     private static final int REQUEST_COMPLETION_ID_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_COMPLETION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
@@ -91,7 +91,6 @@ public final class CacheReplaceCodec {
     public static ClientMessage encodeRequest(java.lang.String name, com.hazelcast.nio.serialization.Data key, @Nullable com.hazelcast.nio.serialization.Data oldValue, com.hazelcast.nio.serialization.Data newValue, @Nullable com.hazelcast.nio.serialization.Data expiryPolicy, int completionId) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
-        clientMessage.setAcquiresResource(false);
         clientMessage.setOperationName("Cache.Replace");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);

@@ -22,7 +22,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
-import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.internal.util.FilteringClassLoader;
@@ -239,8 +239,8 @@ public abstract class UserCodeDeploymentAbstractTest extends HazelcastTestSuppor
 
     protected void lowerOperationTimeouts(Config config) {
         // lower operation call timeout 60s -> 20s
-        config.setProperty(GroupProperty.OPERATION_CALL_TIMEOUT_MILLIS.getName(), "20000");
+        config.setProperty(ClusterProperty.OPERATION_CALL_TIMEOUT_MILLIS.getName(), "20000");
         // max retry count 250 -> 20
-        config.setProperty(GroupProperty.INVOCATION_MAX_RETRY_COUNT.getName(), "20");
+        config.setProperty(ClusterProperty.INVOCATION_MAX_RETRY_COUNT.getName(), "20");
     }
 }

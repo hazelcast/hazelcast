@@ -20,6 +20,14 @@ import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.config.WanAcknowledgeType;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.internal.cluster.ClusterStateListener;
+import com.hazelcast.internal.metrics.DynamicMetricsProvider;
+import com.hazelcast.internal.metrics.MetricDescriptor;
+import com.hazelcast.internal.metrics.MetricsCollectionContext;
+import com.hazelcast.internal.partition.FragmentedMigrationAwareService;
+import com.hazelcast.internal.partition.IPartitionLostEvent;
+import com.hazelcast.internal.partition.PartitionAwareService;
+import com.hazelcast.internal.partition.PartitionMigrationEvent;
+import com.hazelcast.internal.partition.PartitionReplicationEvent;
 import com.hazelcast.internal.services.ClientAwareService;
 import com.hazelcast.internal.services.DistributedObjectNamespace;
 import com.hazelcast.internal.services.LockInterceptorService;
@@ -31,24 +39,23 @@ import com.hazelcast.internal.services.RemoteService;
 import com.hazelcast.internal.services.ReplicationSupportingService;
 import com.hazelcast.internal.services.ServiceNamespace;
 import com.hazelcast.internal.services.SplitBrainHandlerService;
+import com.hazelcast.internal.services.SplitBrainProtectionAwareService;
 import com.hazelcast.internal.services.StatisticsAwareService;
 import com.hazelcast.internal.services.TransactionalService;
+import com.hazelcast.map.LocalMapStats;
 import com.hazelcast.map.impl.event.MapEventPublishingService;
 import com.hazelcast.map.impl.recordstore.RecordStore;
-import com.hazelcast.map.LocalMapStats;
+import com.hazelcast.nearcache.NearCacheStats;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.internal.services.SplitBrainProtectionAwareService;
+import com.hazelcast.query.LocalIndexStats;
 import com.hazelcast.spi.impl.CountingMigrationAwareService;
 import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.eventservice.EventFilter;
 import com.hazelcast.spi.impl.eventservice.EventPublishingService;
 import com.hazelcast.spi.impl.eventservice.EventRegistration;
 import com.hazelcast.spi.impl.operationservice.Operation;
-import com.hazelcast.internal.partition.FragmentedMigrationAwareService;
-import com.hazelcast.internal.partition.IPartitionLostEvent;
-import com.hazelcast.internal.partition.PartitionAwareService;
-import com.hazelcast.internal.partition.PartitionMigrationEvent;
-import com.hazelcast.internal.partition.PartitionReplicationEvent;
+import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.transaction.TransactionalObject;
 import com.hazelcast.transaction.impl.Transaction;
 import com.hazelcast.wan.WanReplicationEvent;
@@ -71,17 +78,18 @@ import static com.hazelcast.core.EntryEventType.INVALIDATION;
  * @see MapPostJoinAwareService
  * @see MapSplitBrainHandlerService
  * @see MapReplicationSupportingService
- * @see MapStatisticsAwareService
  * @see MapPartitionAwareService
  * @see MapSplitBrainProtectionAwareService
  * @see MapClientAwareService
  * @see MapServiceContext
  */
-public class MapService implements ManagedService, FragmentedMigrationAwareService,
-        TransactionalService, RemoteService, EventPublishingService<Object, ListenerAdapter>,
-        PostJoinAwareService, SplitBrainHandlerService, ReplicationSupportingService, StatisticsAwareService<LocalMapStats>,
-        PartitionAwareService, ClientAwareService, SplitBrainProtectionAwareService, NotifiableEventListener,
-        ClusterStateListener, LockInterceptorService<Data> {
+@SuppressWarnings({"checkstyle:ClassFanOutComplexity", "checkstyle:MethodCount"})
+public class MapService implements ManagedService, FragmentedMigrationAwareService, TransactionalService, RemoteService,
+                                   EventPublishingService<Object, ListenerAdapter>, PostJoinAwareService,
+                                   SplitBrainHandlerService, ReplicationSupportingService, StatisticsAwareService<LocalMapStats>,
+                                   PartitionAwareService, ClientAwareService, SplitBrainProtectionAwareService,
+                                   NotifiableEventListener, ClusterStateListener, LockInterceptorService<Data>,
+                                   DynamicMetricsProvider {
 
     public static final String SERVICE_NAME = "hz:impl:mapService";
 
@@ -110,6 +118,11 @@ public class MapService implements ManagedService, FragmentedMigrationAwareServi
     @Override
     public void init(NodeEngine nodeEngine, Properties properties) {
         managedService.init(nodeEngine, properties);
+
+        boolean dsMetricsEnabled = nodeEngine.getProperties().getBoolean(ClusterProperty.METRICS_DATASTRUCTURES);
+        if (dsMetricsEnabled) {
+            ((NodeEngineImpl) nodeEngine).getMetricsRegistry().registerDynamicMetricsProvider(this);
+        }
     }
 
     @Override
@@ -263,5 +276,47 @@ public class MapService implements ManagedService, FragmentedMigrationAwareServi
 
     public static ObjectNamespace getObjectNamespace(String mapName) {
         return new DistributedObjectNamespace(SERVICE_NAME, mapName);
+    }
+
+    @Override
+    public void provideDynamicMetrics(MetricDescriptor descriptor, MetricsCollectionContext context) {
+        LocalMapStatsProvider localMapStatsProvider = mapServiceContext.getLocalMapStatsProvider();
+        Map<String, LocalMapStats> stats = localMapStatsProvider.createAllLocalMapStats();
+        if (stats == null) {
+            return;
+        }
+
+        for (Map.Entry<String, LocalMapStats> entry : stats.entrySet()) {
+            String mapName = entry.getKey();
+            LocalMapStats localInstanceStats = entry.getValue();
+
+            // map
+            MetricDescriptor dsDescriptor = descriptor
+                .copy()
+                .withPrefix("map")
+                .withDiscriminator("name", mapName);
+            context.collect(dsDescriptor, localInstanceStats);
+
+            // index
+            Map<String, LocalIndexStats> indexStats = localInstanceStats.getIndexStats();
+            for (Map.Entry<String, LocalIndexStats> indexEntry : indexStats.entrySet()) {
+                MetricDescriptor indexDescriptor = descriptor
+                    .copy()
+                    .withPrefix("map.index")
+                    .withDiscriminator("name", mapName)
+                    .withTag("index", indexEntry.getKey());
+                context.collect(indexDescriptor, indexEntry.getValue());
+            }
+
+            // near cache
+            NearCacheStats nearCacheStats = localInstanceStats.getNearCacheStats();
+            if (nearCacheStats != null) {
+                MetricDescriptor nearCacheDescriptor = descriptor
+                    .copy()
+                    .withPrefix("map.nearcache")
+                    .withDiscriminator("name", mapName);
+                context.collect(nearCacheDescriptor, nearCacheStats);
+            }
+        }
     }
 }

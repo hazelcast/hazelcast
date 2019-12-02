@@ -80,15 +80,16 @@ final class ClientCacheHelper {
     /**
      * Creates a new cache configuration on Hazelcast members.
      *
-     * @param client             the client instance which will send the operation to server
-     * @param newCacheConfig     the cache configuration to be sent to server
-     * @param <K>                type of the key of the cache
-     * @param <V>                type of the value of the cache
+     * @param client         the client instance which will send the operation to server
+     * @param newCacheConfig the cache configuration to be sent to server
+     * @param <K>            type of the key of the cache
+     * @param <V>            type of the value of the cache
+     * @param urgent         whether creating the config is urgent or not(urgent messages can be send in DISCONNECTED state )
      * @return the created cache configuration
      * @see com.hazelcast.cache.impl.operation.AddCacheConfigOperation
      */
     static <K, V> CacheConfig<K, V> createCacheConfig(HazelcastClientInstanceImpl client,
-                                                      CacheConfig<K, V> newCacheConfig) {
+                                                      CacheConfig<K, V> newCacheConfig, boolean urgent) {
         try {
             String nameWithPrefix = newCacheConfig.getNameWithPrefix();
             int partitionId = client.getClientPartitionService().getPartitionId(nameWithPrefix);
@@ -97,7 +98,7 @@ final class ClientCacheHelper {
             ClientMessage request = CacheCreateConfigCodec
                     .encodeRequest(CacheConfigHolder.of(newCacheConfig, serializationService), true);
             ClientInvocation clientInvocation = new ClientInvocation(client, request, nameWithPrefix, partitionId);
-            Future<ClientMessage> future = clientInvocation.invoke();
+            Future<ClientMessage> future = urgent ? clientInvocation.invokeUrgent() : clientInvocation.invoke();
             final ClientMessage response = future.get();
             final CacheConfigHolder cacheConfigHolder = CacheCreateConfigCodec.decodeResponse(response).response;
             if (cacheConfigHolder == null) {

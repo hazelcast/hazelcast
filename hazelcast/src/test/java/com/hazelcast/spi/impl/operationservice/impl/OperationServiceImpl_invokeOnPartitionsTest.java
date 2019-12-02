@@ -43,8 +43,8 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static com.hazelcast.spi.properties.GroupProperty.OPERATION_CALL_TIMEOUT_MILLIS;
-import static com.hazelcast.spi.properties.GroupProperty.PARTITION_COUNT;
+import static com.hazelcast.spi.properties.ClusterProperty.OPERATION_CALL_TIMEOUT_MILLIS;
+import static com.hazelcast.spi.properties.ClusterProperty.PARTITION_COUNT;
 import static java.util.Collections.emptyList;
 import static org.junit.Assert.assertEquals;
 
@@ -215,7 +215,7 @@ public class OperationServiceImpl_invokeOnPartitionsTest extends HazelcastTestSu
     @Test
     public void testLongRunning() throws Exception {
         Config config = new Config()
-                .setProperty(OPERATION_CALL_TIMEOUT_MILLIS.getName(), "2000")
+                .setProperty(OPERATION_CALL_TIMEOUT_MILLIS.getName(), "10000")
                 .setProperty(PARTITION_COUNT.getName(), "10");
         config.getSerializationConfig().addDataSerializableFactory(123, new SlowOperationSerializationFactory());
         TestHazelcastInstanceFactory hzFactory = createHazelcastInstanceFactory(2);
@@ -318,7 +318,7 @@ public class OperationServiceImpl_invokeOnPartitionsTest extends HazelcastTestSu
 
         @Override
         public void run() {
-            sleepSeconds(5);
+            sleepSeconds(20);
             response = getPartitionId() * 2;
         }
 

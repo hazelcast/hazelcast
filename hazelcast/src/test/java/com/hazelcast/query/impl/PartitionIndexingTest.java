@@ -17,17 +17,18 @@
 package com.hazelcast.query.impl;
 
 import com.hazelcast.config.Config;
+import com.hazelcast.config.ConfigAccessor;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.IndexConfig;
 import com.hazelcast.config.IndexType;
 import com.hazelcast.config.ServiceConfig;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.map.IMap;
 import com.hazelcast.internal.partition.MigrationAwareService;
 import com.hazelcast.internal.partition.PartitionMigrationEvent;
 import com.hazelcast.internal.partition.PartitionReplicationEvent;
+import com.hazelcast.map.IMap;
 import com.hazelcast.spi.impl.operationservice.Operation;
-import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -86,12 +87,13 @@ public class PartitionIndexingTest extends HazelcastTestSupport {
 
     @Override
     protected Config getConfig() {
-        Config config = super.getConfig();
-        config.setProperty(GroupProperty.PARTITION_COUNT.getName(), "101");
+        Config config = smallInstanceConfig();
+        config.setProperty(ClusterProperty.PARTITION_COUNT.getName(), "101");
         config.getMapConfig(MAP_NAME).setInMemoryFormat(inMemoryFormat);
-        config.getServicesConfig().addServiceConfig(
-                new ServiceConfig().setEnabled(true).setImplementation(migrationFailingService)
-                                   .setName(MigrationFailingService.class.getName()));
+        ServiceConfig serviceConfig = new ServiceConfig().setEnabled(true)
+                .setImplementation(migrationFailingService)
+                .setName(MigrationFailingService.class.getName());
+        ConfigAccessor.getServicesConfig(config).addServiceConfig(serviceConfig);
         return config;
     }
 

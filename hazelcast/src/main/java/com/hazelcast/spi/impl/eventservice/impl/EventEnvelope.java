@@ -16,10 +16,10 @@
 
 package com.hazelcast.spi.impl.eventservice.impl;
 
+import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.internal.util.UUIDSerializationUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.impl.SpiDataSerializerHook;
 
@@ -71,25 +71,14 @@ public final class EventEnvelope implements IdentifiedDataSerializable {
     public void writeData(ObjectDataOutput out) throws IOException {
         UUIDSerializationUtil.writeUUID(out, id);
         out.writeUTF(serviceName);
-        boolean isBinary = event instanceof Data;
-        out.writeBoolean(isBinary);
-        if (isBinary) {
-            out.writeData((Data) event);
-        } else {
-            out.writeObject(event);
-        }
+        IOUtil.writeObject(out, event);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         id = UUIDSerializationUtil.readUUID(in);
         serviceName = in.readUTF();
-        boolean isBinary = in.readBoolean();
-        if (isBinary) {
-            event = in.readData();
-        } else {
-            event = in.readObject();
-        }
+        event = IOUtil.readObject(in);
     }
 
     @Override

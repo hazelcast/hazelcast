@@ -58,7 +58,7 @@ import static com.hazelcast.internal.yaml.YamlUtil.isSequence;
  * Contains logic for replacing system variables in the YAML file and importing YAML files from different locations.
  */
 public abstract class AbstractYamlConfigBuilder {
-    private final Set<String> currentlyImportedFiles = new HashSet<String>();
+    private final Set<String> currentlyImportedFiles = new HashSet<>();
     private Properties properties = System.getProperties();
 
     /**
@@ -122,6 +122,7 @@ public abstract class AbstractYamlConfigBuilder {
             // YAML documents define mappings where the name of the nodes should be unique
             merge(imdgRootLoaded, imdgRoot);
         }
+        replaceVariables(asW3cNode(imdgRoot));
 
         ((MutableYamlMapping) rootAsMapping).removeChild(ConfigSections.IMPORT.getName());
     }
@@ -196,7 +197,7 @@ public abstract class AbstractYamlConfigBuilder {
         // if no config-replacer is defined, use backward compatible default behavior for missing properties
         boolean failFast = false;
 
-        List<ConfigReplacer> replacers = new ArrayList<ConfigReplacer>();
+        List<ConfigReplacer> replacers = new ArrayList<>();
 
         // Always use the Property replacer first.
         PropertyReplacer propertyReplacer = new PropertyReplacer();

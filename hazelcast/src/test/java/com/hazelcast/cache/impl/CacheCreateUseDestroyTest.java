@@ -59,7 +59,7 @@ import java.util.Collection;
 import java.util.Collections;
 
 import static com.hazelcast.cache.HazelcastCachingProvider.propertiesByInstanceItself;
-import static com.hazelcast.config.EvictionConfig.MaxSizePolicy.USED_NATIVE_MEMORY_PERCENTAGE;
+import static com.hazelcast.config.MaxSizePolicy.USED_NATIVE_MEMORY_PERCENTAGE;
 import static com.hazelcast.config.EvictionPolicy.LFU;
 import static com.hazelcast.config.InMemoryFormat.BINARY;
 import static com.hazelcast.config.InMemoryFormat.NATIVE;
@@ -134,7 +134,7 @@ public class CacheCreateUseDestroyTest extends HazelcastTestSupport {
 
         if (inMemoryFormat == NATIVE) {
             EvictionConfig evictionConfig = new EvictionConfig().setSize(90)
-                    .setMaximumSizePolicy(USED_NATIVE_MEMORY_PERCENTAGE).setEvictionPolicy(LFU);
+                    .setMaxSizePolicy(USED_NATIVE_MEMORY_PERCENTAGE).setEvictionPolicy(LFU);
             cacheSimpleConfig.setEvictionConfig(evictionConfig);
 
             NativeMemoryConfig memoryConfig = new NativeMemoryConfig()

@@ -18,7 +18,7 @@ package com.hazelcast.cluster;
 
 import com.hazelcast.hotrestart.HotRestartService;
 import com.hazelcast.instance.impl.NodeExtension;
-import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.TransactionOptions;
 import com.hazelcast.version.Version;
@@ -232,7 +232,7 @@ public interface Cluster {
      * <p>
      * Any node can start the shutdown process. A shutdown command is sent to other nodes periodically until
      * either all other nodes leave the cluster or a configurable timeout occurs
-     * (see {@link GroupProperty#CLUSTER_SHUTDOWN_TIMEOUT_SECONDS}). If some of the nodes do not
+     * (see {@link ClusterProperty#CLUSTER_SHUTDOWN_TIMEOUT_SECONDS}). If some of the nodes do not
      * shutdown before the timeout duration, shutdown can be also invoked on them.
      *
      * @throws IllegalStateException if member-list changes during the transaction
@@ -241,7 +241,7 @@ public interface Cluster {
      * @throws TransactionException  if there's already an ongoing transaction
      *                               or this transaction fails
      *                               or this transaction timeouts
-     * @see GroupProperty#CLUSTER_SHUTDOWN_TIMEOUT_SECONDS
+     * @see ClusterProperty#CLUSTER_SHUTDOWN_TIMEOUT_SECONDS
      * @see #changeClusterState(ClusterState)
      * @see ClusterState#PASSIVE
      * @since 3.6
@@ -257,7 +257,7 @@ public interface Cluster {
      * <p>
      * Any node can start the shutdown process. A shutdown command is sent to other nodes periodically until
      * either all other nodes leave the cluster or a configurable timeout occurs
-     * (see {@link GroupProperty#CLUSTER_SHUTDOWN_TIMEOUT_SECONDS}). If some of the nodes do not
+     * (see {@link ClusterProperty#CLUSTER_SHUTDOWN_TIMEOUT_SECONDS}). If some of the nodes do not
      * shutdown before the timeout duration, shutdown can be also invoked on them.
      *
      * @param transactionOptions transaction options
@@ -267,7 +267,7 @@ public interface Cluster {
      * @throws TransactionException  if there's already an ongoing transaction
      *                               or this transaction fails
      *                               or this transaction timeouts
-     * @see GroupProperty#CLUSTER_SHUTDOWN_TIMEOUT_SECONDS
+     * @see ClusterProperty#CLUSTER_SHUTDOWN_TIMEOUT_SECONDS
      * @see #changeClusterState(ClusterState)
      * @see ClusterState#PASSIVE
      * @since 3.6

@@ -16,11 +16,10 @@
 
 package com.hazelcast.cache.eviction;
 
-import com.hazelcast.cache.impl.HazelcastServerCachingProvider;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -32,6 +31,7 @@ import org.junit.runner.RunWith;
 import javax.cache.spi.CachingProvider;
 import java.util.concurrent.ConcurrentMap;
 
+import static com.hazelcast.cache.CacheTestSupport.createServerCachingProvider;
 import static com.hazelcast.cache.impl.maxsize.impl.EntryCountCacheEvictionChecker.calculateMaxPartitionSize;
 import static com.hazelcast.config.EvictionConfig.DEFAULT_MAX_ENTRY_COUNT;
 
@@ -41,7 +41,7 @@ public class CacheEvictionPolicyComparatorTest extends AbstractCacheEvictionPoli
 
     @Override
     protected CachingProvider createCachingProvider(HazelcastInstance instance) {
-        return HazelcastServerCachingProvider.createCachingProvider(instance);
+        return createServerCachingProvider(instance);
     }
 
     @Override
@@ -57,7 +57,7 @@ public class CacheEvictionPolicyComparatorTest extends AbstractCacheEvictionPoli
 
     @Test
     public void test_evictionPolicyComparator_with_comparatorClassName_when_maxSizePolicy_is_entryCount() {
-        int partitionCount = Integer.parseInt(GroupProperty.PARTITION_COUNT.getDefaultValue());
+        int partitionCount = Integer.parseInt(ClusterProperty.PARTITION_COUNT.getDefaultValue());
         int iterationCount = (calculateMaxPartitionSize(DEFAULT_MAX_ENTRY_COUNT, partitionCount) * partitionCount) * 2;
         EvictionConfig evictionConfig = new EvictionConfig().setComparatorClassName(MyEvictionPolicyComparator.class.getName());
 
@@ -66,7 +66,7 @@ public class CacheEvictionPolicyComparatorTest extends AbstractCacheEvictionPoli
 
     @Test
     public void test_evictionPolicyComparator_with_comparatorInstance_when_maxSizePolicy_is_entryCount() {
-        int partitionCount = Integer.parseInt(GroupProperty.PARTITION_COUNT.getDefaultValue());
+        int partitionCount = Integer.parseInt(ClusterProperty.PARTITION_COUNT.getDefaultValue());
         int iterationCount = (calculateMaxPartitionSize(DEFAULT_MAX_ENTRY_COUNT, partitionCount) * partitionCount) * 2;
         EvictionConfig evictionConfig = new EvictionConfig().setComparator(new MyEvictionPolicyComparator());
 

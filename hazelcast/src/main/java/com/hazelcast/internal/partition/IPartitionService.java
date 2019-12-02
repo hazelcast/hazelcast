@@ -27,6 +27,7 @@ import javax.annotation.Nonnull;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 
 /**
  * An SPI service for accessing partition related information.
@@ -55,7 +56,7 @@ public interface IPartitionService extends CoreService {
      *
      * @param partitionId the partitionId
      * @return owner of partition
-     * @throws InterruptedException
+     * @throws InterruptedException if interrupted while waiting
      * @throws NoDataMemberInClusterException if all nodes are lite members and partitions can't be assigned
      */
     Address getPartitionOwnerOrWait(int partitionId);
@@ -134,9 +135,13 @@ public interface IPartitionService extends CoreService {
 
     UUID addPartitionLostListener(PartitionLostListener partitionLostListener);
 
+    CompletableFuture<UUID> addPartitionLostListenerAsync(PartitionLostListener partitionLostListener);
+
     UUID addLocalPartitionLostListener(PartitionLostListener partitionLostListener);
 
     boolean removePartitionLostListener(UUID registrationId);
+
+    CompletableFuture<Boolean> removePartitionLostListenerAsync(UUID registrationId);
 
     long getMigrationQueueSize();
 

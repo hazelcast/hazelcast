@@ -25,8 +25,8 @@ import com.hazelcast.internal.util.collection.PartitionIdSet;
 
 import java.util.PrimitiveIterator;
 
-import static com.hazelcast.spi.properties.GroupProperty.QUERY_MAX_LOCAL_PARTITION_LIMIT_FOR_PRE_CHECK;
-import static com.hazelcast.spi.properties.GroupProperty.QUERY_RESULT_SIZE_LIMIT;
+import static com.hazelcast.spi.properties.ClusterProperty.QUERY_MAX_LOCAL_PARTITION_LIMIT_FOR_PRE_CHECK;
+import static com.hazelcast.spi.properties.ClusterProperty.QUERY_RESULT_SIZE_LIMIT;
 import static java.lang.Math.ceil;
 import static java.lang.Math.min;
 

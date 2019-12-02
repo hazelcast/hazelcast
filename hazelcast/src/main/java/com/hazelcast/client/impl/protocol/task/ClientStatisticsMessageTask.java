@@ -16,6 +16,7 @@
 
 package com.hazelcast.client.impl.protocol.task;
 
+import com.hazelcast.client.impl.statistics.ClientStatistics;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ClientStatisticsCodec;
 import com.hazelcast.instance.impl.Node;
@@ -42,7 +43,9 @@ public class ClientStatisticsMessageTask
 
     @Override
     protected Object call() throws Exception {
-        endpoint.setClientStatistics(parameters.stats);
+        ClientStatistics clientStatistics = new ClientStatistics(parameters.timestamp, parameters.clientAttributes,
+                parameters.metricsBlob);
+        endpoint.setClientStatistics(clientStatistics);
         return null;
     }
 

@@ -23,8 +23,9 @@ import com.hazelcast.client.impl.ClientEngineImpl;
 import com.hazelcast.collection.impl.list.ListService;
 import com.hazelcast.collection.impl.queue.QueueService;
 import com.hazelcast.collection.impl.set.SetService;
+import com.hazelcast.config.ConfigAccessor;
 import com.hazelcast.config.ServiceConfig;
-import com.hazelcast.config.ServicesConfig;
+import com.hazelcast.internal.config.ServicesConfig;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.internal.locksupport.LockSupportService;
 import com.hazelcast.internal.locksupport.LockSupportServiceImpl;
@@ -36,6 +37,11 @@ import com.hazelcast.flakeidgen.impl.FlakeIdGeneratorService;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.instance.impl.NodeExtension;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
+import com.hazelcast.internal.crdt.CRDTReplicationMigrationService;
+import com.hazelcast.internal.crdt.pncounter.PNCounterService;
+import com.hazelcast.internal.locksupport.LockSupportService;
+import com.hazelcast.internal.locksupport.LockSupportServiceImpl;
+import com.hazelcast.internal.metrics.impl.MetricsService;
 import com.hazelcast.internal.metrics.impl.MetricsService;
 import com.hazelcast.internal.nio.ClassLoaderUtil;
 import com.hazelcast.internal.partition.InternalPartitionService;
@@ -86,7 +92,7 @@ public final class ServiceManagerImpl implements ServiceManager {
 
     private final NodeEngineImpl nodeEngine;
     private final ILogger logger;
-    private final ConcurrentMap<String, ServiceInfo> services = new ConcurrentHashMap<String, ServiceInfo>(20, .75f, 1);
+    private final ConcurrentMap<String, ServiceInfo> services = new ConcurrentHashMap<>(20, .75f, 1);
 
     public ServiceManagerImpl(final NodeEngineImpl nodeEngine) {
         this.nodeEngine = nodeEngine;
@@ -94,8 +100,8 @@ public final class ServiceManagerImpl implements ServiceManager {
     }
 
     public synchronized void start() {
-        Map<String, Properties> serviceProps = new HashMap<String, Properties>();
-        Map<String, Object> serviceConfigObjects = new HashMap<String, Object>();
+        Map<String, Properties> serviceProps = new HashMap<>();
+        Map<String, Object> serviceConfigObjects = new HashMap<>();
 
         registerServices(serviceProps, serviceConfigObjects);
         initServices(serviceProps, serviceConfigObjects);
@@ -106,7 +112,7 @@ public final class ServiceManagerImpl implements ServiceManager {
         registerExtensionServices();
 
         Node node = nodeEngine.getNode();
-        ServicesConfig servicesConfig = node.getConfig().getServicesConfig();
+        ServicesConfig servicesConfig = ConfigAccessor.getServicesConfig(node.getConfig());
         if (servicesConfig != null) {
             registerDefaultServices(servicesConfig);
             registerUserServices(servicesConfig, serviceProps, serviceConfigObjects);
@@ -322,7 +328,7 @@ public final class ServiceManagerImpl implements ServiceManager {
                         + ", Service: " + currentServiceInfo.getService());
             }
             if (currentServiceInfo.isManagedService()) {
-                shutdownService((ManagedService) currentServiceInfo.getService(), false);
+                shutdownService(currentServiceInfo.getService(), false);
             }
             services.put(serviceName, serviceInfo);
         }
@@ -335,10 +341,10 @@ public final class ServiceManagerImpl implements ServiceManager {
 
     @Override
     public <S> List<S> getServices(Class<S> serviceClass) {
-        final LinkedList<S> result = new LinkedList<S>();
+        final LinkedList<S> result = new LinkedList<>();
         for (ServiceInfo serviceInfo : services.values()) {
             if (serviceInfo.isInstanceOf(serviceClass)) {
-                final S service = (S) serviceInfo.getService();
+                final S service = serviceInfo.getService();
                 if (serviceInfo.isCoreService()) {
                     result.addFirst(service);
                 } else {
@@ -362,7 +368,7 @@ public final class ServiceManagerImpl implements ServiceManager {
      */
     @Override
     public List<ServiceInfo> getServiceInfos(Class serviceClass) {
-        final LinkedList<ServiceInfo> result = new LinkedList<ServiceInfo>();
+        final LinkedList<ServiceInfo> result = new LinkedList<>();
         for (ServiceInfo serviceInfo : services.values()) {
             if (serviceInfo.isInstanceOf(serviceClass)) {
                 if (serviceInfo.isCoreService()) {

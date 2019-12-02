@@ -17,24 +17,25 @@
 package com.hazelcast.map.impl.nearcache;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.InMemoryFormat;
+import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.config.MapConfig;
+import com.hazelcast.config.MaxSizePolicy;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.map.IMap;
 import com.hazelcast.internal.nearcache.NearCache;
 import com.hazelcast.internal.partition.InternalPartitionService;
-import com.hazelcast.map.impl.proxy.NearCachedMapProxyImpl;
+import com.hazelcast.map.IMap;
 import com.hazelcast.map.LocalMapStats;
+import com.hazelcast.map.impl.proxy.NearCachedMapProxyImpl;
 import com.hazelcast.nearcache.NearCacheStats;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.PredicateBuilder.EntryObject;
 import com.hazelcast.query.Predicates;
 import com.hazelcast.query.SampleTestObjects.Employee;
-import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -125,8 +126,8 @@ public class NearCacheTest extends NearCacheTestSupport {
 
     @Override
     protected Config getConfig() {
-        Config config = super.getConfig();
-        config.setProperty(GroupProperty.MAP_INVALIDATION_MESSAGE_BATCH_ENABLED.getName(), valueOf(batchInvalidationEnabled));
+        Config config = smallInstanceConfig();
+        config.setProperty(ClusterProperty.MAP_INVALIDATION_MESSAGE_BATCH_ENABLED.getName(), valueOf(batchInvalidationEnabled));
         config.setProperty(NearCache.PROP_EXPIRATION_TASK_INITIAL_DELAY_SECONDS, "0");
         config.setProperty(NearCache.PROP_EXPIRATION_TASK_PERIOD_SECONDS, "1");
         return config;
@@ -672,8 +673,8 @@ public class NearCacheTest extends NearCacheTestSupport {
         NearCacheConfig nearCacheConfig = newNearCacheConfig();
         nearCacheConfig.setInMemoryFormat(InMemoryFormat.OBJECT);
         nearCacheConfig.getEvictionConfig()
-                       .setMaximumSizePolicy(EvictionConfig.MaxSizePolicy.ENTRY_COUNT)
-                       .setSize(10);
+                .setMaxSizePolicy(MaxSizePolicy.ENTRY_COUNT)
+                .setSize(10);
 
         Config config = getConfig();
         config.addMapConfig(new MapConfig(mapName).setNearCacheConfig(nearCacheConfig));
@@ -727,7 +728,7 @@ public class NearCacheTest extends NearCacheTestSupport {
         int size = 1000;
         final String mapName = randomMapName();
         Config config = createNearCachedMapConfig(mapName);
-        config.setProperty(GroupProperty.PARTITION_COUNT.getName(), "1");
+        config.setProperty(ClusterProperty.PARTITION_COUNT.getName(), "1");
 
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
         final HazelcastInstance instance1 = factory.newHazelcastInstance(config);
@@ -752,7 +753,7 @@ public class NearCacheTest extends NearCacheTestSupport {
         int size = 1000;
         final String mapName = randomMapName();
         Config config = createNearCachedMapConfig(mapName);
-        config.setProperty(GroupProperty.PARTITION_COUNT.getName(), "1");
+        config.setProperty(ClusterProperty.PARTITION_COUNT.getName(), "1");
 
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
         final HazelcastInstance instance1 = factory.newHazelcastInstance(config);
@@ -808,10 +809,10 @@ public class NearCacheTest extends NearCacheTestSupport {
         IMap<Integer, Integer> nearCachedMap = instance2.getMap(mapName);
         populateNearCache(nearCachedMap, MAX_CACHE_SIZE);
 
-        assertNearCacheExpiration(nearCachedMap, MAX_CACHE_SIZE, MAX_IDLE_SECONDS);
+        assertNearCacheExpiration(nearCachedMap, MAX_CACHE_SIZE);
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test(expected = InvalidConfigurationException.class)
     public void testNearCache_whenInMemoryFormatIsNative_thenThrowIllegalArgumentException() {
         String mapName = randomMapName();
 
@@ -835,7 +836,7 @@ public class NearCacheTest extends NearCacheTestSupport {
         nearCacheConfig.setCacheLocalEntries(true);
 
         config.getMapConfig(mapName)
-              .setNearCacheConfig(nearCacheConfig);
+                .setNearCacheConfig(nearCacheConfig);
 
         HazelcastInstance node = createHazelcastInstance(config);
         IMap map = node.getMap(mapName);

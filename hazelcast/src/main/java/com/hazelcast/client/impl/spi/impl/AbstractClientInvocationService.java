@@ -20,13 +20,12 @@ import com.hazelcast.client.HazelcastClientNotActiveException;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.connection.ClientConnectionManager;
 import com.hazelcast.client.impl.connection.nio.ClientConnection;
-import com.hazelcast.client.config.ClientConnectionStrategyConfig;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.spi.ClientExecutionService;
 import com.hazelcast.client.impl.spi.ClientInvocationService;
 import com.hazelcast.client.impl.spi.ClientPartitionService;
 import com.hazelcast.client.impl.spi.EventHandler;
-import com.hazelcast.client.impl.spi.impl.listener.AbstractClientListenerService;
+import com.hazelcast.client.impl.spi.impl.listener.ClientListenerServiceImpl;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.exception.TargetDisconnectedException;
@@ -59,7 +58,7 @@ public abstract class AbstractClientInvocationService implements ClientInvocatio
     protected ClientConnectionManager connectionManager;
     protected ClientPartitionService partitionService;
     final ILogger invocationLogger;
-    private AbstractClientListenerService clientListenerService;
+    private ClientListenerServiceImpl clientListenerService;
 
     @Probe(name = "pendingCalls", level = MANDATORY)
     private ConcurrentMap<Long, ClientInvocation> invocations = new ConcurrentHashMap<Long, ClientInvocation>();
@@ -72,7 +71,6 @@ public abstract class AbstractClientInvocationService implements ClientInvocatio
     private final CallIdSequence callIdSequence;
     private final boolean shouldFailOnIndeterminateOperationState;
     private final int operationBackupTimeoutMillis;
-    private final ClientConnectionStrategyConfig.ReconnectMode reconnectMode;
 
     public AbstractClientInvocationService(HazelcastClientInstanceImpl client) {
         this.client = client;
@@ -80,7 +78,6 @@ public abstract class AbstractClientInvocationService implements ClientInvocatio
         this.invocationTimeoutMillis = initInvocationTimeoutMillis();
         this.invocationRetryPauseMillis = initInvocationRetryPauseMillis();
         this.responseHandlerSupplier = new ClientResponseHandlerSupplier(this, client.getConcurrencyDetection());
-        this.reconnectMode = client.getClientConfig().getConnectionStrategyConfig().getReconnectMode();
         HazelcastProperties properties = client.getProperties();
         this.callIdSequence = CallIdFactory.newCallIdSequence(
                 properties.getInteger(MAX_CONCURRENT_INVOCATIONS),
@@ -94,10 +91,6 @@ public abstract class AbstractClientInvocationService implements ClientInvocatio
 
     private long initInvocationRetryPauseMillis() {
         return client.getProperties().getPositiveMillisOrDefault(INVOCATION_RETRY_PAUSE_MILLIS);
-    }
-
-    public ClientConnectionStrategyConfig.ReconnectMode getReconnectMode() {
-        return reconnectMode;
     }
 
     private long initInvocationTimeoutMillis() {
@@ -128,7 +121,7 @@ public abstract class AbstractClientInvocationService implements ClientInvocatio
 
     public void start() {
         connectionManager = client.getConnectionManager();
-        clientListenerService = (AbstractClientListenerService) client.getListenerService();
+        clientListenerService = (ClientListenerServiceImpl) client.getListenerService();
         partitionService = client.getClientPartitionService();
         responseHandlerSupplier.start();
         ClientExecutionService executionService = client.getClientExecutionService();
@@ -149,7 +142,7 @@ public abstract class AbstractClientInvocationService implements ClientInvocatio
 
     protected final void send(ClientInvocation invocation, ClientConnection connection) throws IOException {
         if (isShutdown) {
-            throw new HazelcastClientNotActiveException("Client is shut down");
+            throw new HazelcastClientNotActiveException();
         }
         registerInvocation(invocation);
 
@@ -193,8 +186,12 @@ public abstract class AbstractClientInvocationService implements ClientInvocatio
         responseHandlerSupplier.shutdown();
 
         for (ClientInvocation invocation : invocations.values()) {
-            invocation.notifyException(new HazelcastClientNotActiveException("Client is shutting down"));
+            invocation.notifyException(new HazelcastClientNotActiveException());
         }
+    }
+
+    void checkInvocationAllowed() throws IOException {
+        connectionManager.checkInvocationAllowed();
     }
 
     boolean shouldFailOnIndeterminateOperationState() {

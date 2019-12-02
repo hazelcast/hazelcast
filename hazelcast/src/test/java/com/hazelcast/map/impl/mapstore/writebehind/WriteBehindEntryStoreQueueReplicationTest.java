@@ -20,9 +20,15 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.internal.util.Clock;
 import com.hazelcast.map.EntryStore;
 import com.hazelcast.map.IMap;
+import com.hazelcast.map.impl.MapService;
+import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.mapstore.TestEntryStore;
+import com.hazelcast.map.impl.record.Record;
+import com.hazelcast.map.impl.recordstore.RecordStore;
+import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -32,6 +38,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -81,9 +88,31 @@ public class WriteBehindEntryStoreQueueReplicationTest extends HazelcastTestSupp
         // expiration times and expired accordingly
         assertTrueEventually(() -> {
             for (int i = 0; i < entryCount; i++) {
-                assertNull(mapFromSurvivingInstance.get(i));
+                assertNull(dumpNotExpiredRecordsToString(instances[2], mapName),
+                        mapFromSurvivingInstance.get(i));
             }
-        });
+        }, 240);
+    }
+
+    private static String dumpNotExpiredRecordsToString(HazelcastInstance node, String mapName) {
+        String msg = "";
+        NodeEngineImpl nodeEngine = getNode(node).getNodeEngine();
+        MapService mapService = nodeEngine.getService(MapService.SERVICE_NAME);
+        MapServiceContext mapServiceContext = mapService.getMapServiceContext();
+        int partitionCount = nodeEngine.getPartitionService().getPartitionCount();
+        for (int i = 0; i < partitionCount; i++) {
+            RecordStore<Record> recordStore = mapServiceContext.getExistingRecordStore(i, mapName);
+            if (recordStore == null) {
+                continue;
+            }
+            Collection<Record> records = recordStore.getStorage().values();
+            for (Record record : records) {
+                if (!recordStore.isExpired(record, Clock.currentTimeMillis(), false)) {
+                    msg += record.getTtl() + ", ";
+                }
+            }
+        }
+        return msg;
     }
 
     @Test
@@ -125,9 +154,10 @@ public class WriteBehindEntryStoreQueueReplicationTest extends HazelcastTestSupp
         // expiration times and expired accordingly
         assertTrueEventually(() -> {
             for (int i = 0; i < entryCount; i++) {
-                assertNull(mapFromNewInstance.get(i));
+                assertNull(dumpNotExpiredRecordsToString(node3, mapName),
+                        mapFromNewInstance.get(i));
             }
-        });
+        }, 240);
     }
 
     private Config getConfigWithEntryStore(EntryStore entryStore,

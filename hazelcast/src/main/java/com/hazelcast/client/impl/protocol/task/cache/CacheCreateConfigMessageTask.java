@@ -33,7 +33,6 @@ import java.security.Permission;
 import java.util.function.BiConsumer;
 
 import static com.hazelcast.internal.config.ConfigValidator.checkCacheConfig;
-import static com.hazelcast.internal.config.MergePolicyValidator.checkMergePolicySupportsInMemoryFormat;
 
 /**
  * Creates the given CacheConfig on all members of the cluster.
@@ -55,10 +54,7 @@ public class CacheCreateConfigMessageTask
         CacheService cacheService = getService(CacheService.SERVICE_NAME);
 
         SplitBrainMergePolicyProvider mergePolicyProvider = nodeEngine.getSplitBrainMergePolicyProvider();
-    checkCacheConfig(cacheConfig, mergePolicyProvider);
-
-    Object mergePolicy = mergePolicyProvider.getMergePolicy(cacheConfig.getMergePolicyConfig().getPolicy());
-    checkMergePolicySupportsInMemoryFormat(cacheConfig.getName(), mergePolicy, cacheConfig.getInMemoryFormat(), true, logger);
+        checkCacheConfig(cacheConfig, mergePolicyProvider);
 
         InternalCompletableFuture future =
                 cacheService.createCacheConfigOnAllMembersAsync(PreJoinCacheConfig.of(cacheConfig));

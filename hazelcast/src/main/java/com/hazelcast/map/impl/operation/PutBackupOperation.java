@@ -16,6 +16,7 @@
 
 package com.hazelcast.map.impl.operation;
 
+import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.record.Records;
@@ -30,10 +31,13 @@ public class PutBackupOperation
         extends MapOperation implements BackupOperation {
 
     protected Record<Data> record;
+    protected Data dataKey;
     private Data dataValue;
 
-    public PutBackupOperation(String name, Record<Data> record, Data dataValue) {
+    public PutBackupOperation(String name, Data dataKey,
+                              Record<Data> record, Data dataValue) {
         super(name);
+        this.dataKey = dataKey;
         this.record = record;
         this.dataValue = dataValue;
     }
@@ -44,7 +48,7 @@ public class PutBackupOperation
     @Override
     protected void runInternal() {
         // TODO performance: we can put this record directly into record-store if memory format is BINARY
-        Record currentRecord = recordStore.putBackup(record, isPutTransient(), getCallerProvenance());
+        Record currentRecord = recordStore.putBackup(dataKey, record, isPutTransient(), getCallerProvenance());
         Records.copyMetadataFrom(record, currentRecord);
     }
 
@@ -54,8 +58,8 @@ public class PutBackupOperation
 
     @Override
     protected void afterRunInternal() {
-        evict(record.getKey());
-        publishWanUpdate(record.getKey(), record.getValue());
+        evict(dataKey);
+        publishWanUpdate(dataKey, record.getValue());
 
         super.afterRunInternal();
     }
@@ -73,12 +77,16 @@ public class PutBackupOperation
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
+
+        IOUtil.writeData(out, dataKey);
         Records.writeRecord(out, record, dataValue);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
+
+        dataKey = IOUtil.readData(in);
         record = Records.readRecord(in);
     }
 }

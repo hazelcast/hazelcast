@@ -32,6 +32,7 @@ public final class Functions {
     /**
      * Synonym for {@link FunctionEx#identity}, to be used as a
      * projection function (e.g., key extractor).
+     * @param <T> the type of the input and output objects to the function
      */
     @Nonnull
     public static <T> FunctionEx<T, T> wholeItem() {

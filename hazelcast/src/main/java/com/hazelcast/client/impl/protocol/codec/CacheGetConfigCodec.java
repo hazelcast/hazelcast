@@ -36,12 +36,12 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * TODO DOC
  */
-@Generated("af0c952f1b6a5d42ea72f7a974870c6e")
+@Generated("7132948bfdb1a98837323a645ac65c1a")
 public final class CacheGetConfigCodec {
-    //hex: 0x130D00
-    public static final int REQUEST_MESSAGE_TYPE = 1248512;
-    //hex: 0x130D01
-    public static final int RESPONSE_MESSAGE_TYPE = 1248513;
+    //hex: 0x130C00
+    public static final int REQUEST_MESSAGE_TYPE = 1248256;
+    //hex: 0x130C01
+    public static final int RESPONSE_MESSAGE_TYPE = 1248257;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
 
@@ -65,7 +65,6 @@ public final class CacheGetConfigCodec {
     public static ClientMessage encodeRequest(java.lang.String name, java.lang.String simpleName) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(true);
-        clientMessage.setAcquiresResource(false);
         clientMessage.setOperationName("Cache.GetConfig");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);

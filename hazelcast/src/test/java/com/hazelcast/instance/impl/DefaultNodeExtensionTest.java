@@ -25,7 +25,7 @@ import com.hazelcast.internal.cluster.impl.JoinRequest;
 import com.hazelcast.internal.cluster.impl.VersionMismatchException;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.internal.nio.Packet;
-import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -203,7 +203,7 @@ public class DefaultNodeExtensionTest extends HazelcastTestSupport {
     @Test
     public void test_clusterVersionListener_invokedWithOverriddenPropertyValue_whenClusterVersionIsNull() throws Exception {
         // override initial cluster version
-        System.setProperty(GroupProperty.INIT_CLUSTER_VERSION.getName(), "2.1.7");
+        System.setProperty(ClusterProperty.INIT_CLUSTER_VERSION.getName(), "2.1.7");
         final CountDownLatch latch = new CountDownLatch(1);
         final AtomicBoolean failed = new AtomicBoolean(false);
         ClusterVersionListener listener = newVersion -> {
@@ -213,7 +213,7 @@ public class DefaultNodeExtensionTest extends HazelcastTestSupport {
             latch.countDown();
         };
         makeClusterVersionUnknownAndVerifyListener(latch, failed, listener);
-        System.clearProperty(GroupProperty.INIT_CLUSTER_VERSION.getName());
+        System.clearProperty(ClusterProperty.INIT_CLUSTER_VERSION.getName());
     }
 
     private void makeClusterVersionUnknownAndVerifyListener(CountDownLatch latch, AtomicBoolean failed,

@@ -19,8 +19,6 @@ package com.hazelcast.client.cache.impl.nearcache.invalidation;
 import com.hazelcast.cache.ICache;
 import com.hazelcast.cache.impl.CacheEventHandler;
 import com.hazelcast.cache.impl.CacheService;
-import com.hazelcast.cache.impl.HazelcastServerCachingProvider;
-import com.hazelcast.client.cache.impl.HazelcastClientCachingProvider;
 import com.hazelcast.client.cache.impl.NearCachedClientCacheProxy;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.impl.clientside.HazelcastClientProxy;
@@ -45,7 +43,9 @@ import org.junit.runner.RunWith;
 import javax.cache.CacheManager;
 import javax.cache.spi.CachingProvider;
 
-import static com.hazelcast.config.EvictionConfig.MaxSizePolicy.ENTRY_COUNT;
+import static com.hazelcast.cache.CacheTestSupport.createClientCachingProvider;
+import static com.hazelcast.cache.CacheTestSupport.createServerCachingProvider;
+import static com.hazelcast.config.MaxSizePolicy.ENTRY_COUNT;
 import static com.hazelcast.internal.nearcache.NearCacheTestUtils.getBaseConfig;
 import static java.lang.Integer.MAX_VALUE;
 import static org.junit.Assert.assertNotNull;
@@ -79,7 +79,7 @@ public class ClientCacheMetaDataGeneratorTest extends HazelcastTestSupport {
         Config config = getConfig();
         server = factory.newHazelcastInstance(config);
 
-        CachingProvider provider = HazelcastServerCachingProvider.createCachingProvider(server);
+        CachingProvider provider = createServerCachingProvider(server);
         CacheManager serverCacheManager = provider.getCacheManager();
 
         serverCache = (ICache<Integer, Integer>) serverCacheManager.createCache(CACHE_NAME, cacheConfig);
@@ -125,7 +125,7 @@ public class ClientCacheMetaDataGeneratorTest extends HazelcastTestSupport {
 
     protected CacheConfig<Integer, Integer> getCacheConfig(String cacheName) {
         EvictionConfig evictionConfig = new EvictionConfig()
-                .setMaximumSizePolicy(ENTRY_COUNT)
+                .setMaxSizePolicy(ENTRY_COUNT)
                 .setSize(MAX_VALUE);
 
         return new CacheConfig<Integer, Integer>()
@@ -140,7 +140,7 @@ public class ClientCacheMetaDataGeneratorTest extends HazelcastTestSupport {
 
     private ICache<Integer, Integer> createCacheFromNewClient() {
         HazelcastClientProxy client = (HazelcastClientProxy) factory.newHazelcastClient(clientConfig);
-        CachingProvider clientCachingProvider = HazelcastClientCachingProvider.createCachingProvider(client);
+        CachingProvider clientCachingProvider = createClientCachingProvider(client);
 
         CacheManager cacheManager = clientCachingProvider.getCacheManager();
         ICache<Integer, Integer> cache = (ICache<Integer, Integer>) cacheManager.createCache(CACHE_NAME, cacheConfig);

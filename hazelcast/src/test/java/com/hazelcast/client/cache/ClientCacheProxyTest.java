@@ -16,7 +16,6 @@
 
 package com.hazelcast.client.cache;
 
-import com.hazelcast.client.cache.impl.HazelcastClientCachingProvider;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.test.ClientTestSupport;
 import com.hazelcast.client.test.TestHazelcastFactory;
@@ -35,9 +34,9 @@ import javax.cache.CacheManager;
 import javax.cache.configuration.CompleteConfiguration;
 import javax.cache.configuration.MutableConfiguration;
 import javax.cache.spi.CachingProvider;
-
 import java.util.concurrent.CountDownLatch;
 
+import static com.hazelcast.cache.CacheTestSupport.createClientCachingProvider;
 import static org.junit.Assert.assertNull;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -55,10 +54,10 @@ public class ClientCacheProxyTest extends ClientTestSupport {
     public void clusterRestart_proxyRemainsUsableOnClient() {
         HazelcastInstance instance = factory.newHazelcastInstance();
         ClientConfig clientConfig = new ClientConfig();
-        clientConfig.getConnectionStrategyConfig().getConnectionRetryConfig().setFailOnMaxBackoff(false);
+        clientConfig.getConnectionStrategyConfig().getConnectionRetryConfig().setClusterConnectTimeoutMillis(Long.MAX_VALUE);
         HazelcastInstance client = factory.newHazelcastClient(clientConfig);
 
-        CachingProvider cachingProvider = HazelcastClientCachingProvider.createCachingProvider(client);
+        CachingProvider cachingProvider = createClientCachingProvider(client);
 
         CacheManager cacheManager = cachingProvider.getCacheManager();
 
@@ -93,7 +92,7 @@ public class ClientCacheProxyTest extends ClientTestSupport {
         factory.newHazelcastInstance();
 
         HazelcastInstance client = factory.newHazelcastClient();
-        CachingProvider cachingProvider = HazelcastClientCachingProvider.createCachingProvider(client);
+        CachingProvider cachingProvider = createClientCachingProvider(client);
         CacheManager cacheManager = cachingProvider.getCacheManager();
         CompleteConfiguration<String, String> config =
                 new MutableConfiguration<String, String>()
@@ -104,7 +103,7 @@ public class ClientCacheProxyTest extends ClientTestSupport {
         //restarting client and getting already created cache
         client.shutdown();
         client = factory.newHazelcastClient();
-        cachingProvider = HazelcastClientCachingProvider.createCachingProvider(client);
+        cachingProvider = createClientCachingProvider(client);
         cacheManager = cachingProvider.getCacheManager();
         javax.cache.Cache<String, String> cache = cacheManager.getCache(cacheName);
 

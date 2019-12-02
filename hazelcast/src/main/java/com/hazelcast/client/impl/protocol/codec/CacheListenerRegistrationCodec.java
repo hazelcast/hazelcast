@@ -36,12 +36,12 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * TODO DOC
  */
-@Generated("24e996e182abf95ab15200a92ff75b10")
+@Generated("eb04ab66c353837b656884fda963a9f3")
 public final class CacheListenerRegistrationCodec {
-    //hex: 0x131000
-    public static final int REQUEST_MESSAGE_TYPE = 1249280;
-    //hex: 0x131001
-    public static final int RESPONSE_MESSAGE_TYPE = 1249281;
+    //hex: 0x130F00
+    public static final int REQUEST_MESSAGE_TYPE = 1249024;
+    //hex: 0x130F01
+    public static final int RESPONSE_MESSAGE_TYPE = 1249025;
     private static final int REQUEST_SHOULD_REGISTER_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_SHOULD_REGISTER_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
@@ -77,7 +77,6 @@ public final class CacheListenerRegistrationCodec {
     public static ClientMessage encodeRequest(java.lang.String name, com.hazelcast.nio.serialization.Data listenerConfig, boolean shouldRegister, com.hazelcast.cluster.Address address) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
-        clientMessage.setAcquiresResource(false);
         clientMessage.setOperationName("Cache.ListenerRegistration");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);

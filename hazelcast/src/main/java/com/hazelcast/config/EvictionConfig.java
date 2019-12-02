@@ -16,47 +16,43 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.internal.config.ConfigDataSerializerHook;
 import com.hazelcast.internal.eviction.EvictionConfiguration;
-import com.hazelcast.internal.eviction.EvictionPolicyComparator;
+import com.hazelcast.spi.eviction.EvictionPolicyComparator;
 import com.hazelcast.internal.eviction.EvictionStrategyType;
-import com.hazelcast.map.IMap;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.internal.serialization.BinaryInterface;
-import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.Objects;
 
+import static com.hazelcast.internal.util.Preconditions.checkNotNegative;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
-import static com.hazelcast.internal.util.Preconditions.checkPositive;
 
 /**
  * Configuration for eviction.
- * You can set a limit for number of entries or total memory cost of entries.
+ *
+ * You can set a limit for number of
+ * entries or total memory cost of entries.
  * <p>
- * The default values of the eviction configuration are
+ * The default values of the eviction configuration are:
  * <ul>
  * <li>{@link EvictionPolicy#LRU} as eviction policy</li>
- * <li>{@link EvictionConfig.MaxSizePolicy#ENTRY_COUNT} as max size policy</li>
- * <li>{@value DEFAULT_MAX_ENTRY_COUNT_FOR_ON_HEAP_MAP} as maximum size for on-heap {@link IMap}</li>
- * <li>{@value DEFAULT_MAX_ENTRY_COUNT} as maximum size for all other data structures and configurations</li>
+ * <li>{@link MaxSizePolicy#ENTRY_COUNT} as max size policy</li>
+ * <li>{@value MapConfig#DEFAULT_MAX_SIZE as maximum
+ * size for on-heap {@link com.hazelcast.map.IMap}</li>
+ * <li>{@value DEFAULT_MAX_ENTRY_COUNT} as maximum size
+ *      for all other data structures and configurations</li>
  * </ul>
  */
-@BinaryInterface
-public class EvictionConfig implements EvictionConfiguration,
-        DataSerializable, Serializable {
+public class EvictionConfig implements EvictionConfiguration, IdentifiedDataSerializable, Serializable {
 
     /**
      * Default maximum entry count.
      */
     public static final int DEFAULT_MAX_ENTRY_COUNT = 10000;
-
-    /**
-     * Default maximum entry count for Map on-heap Near Caches.
-     */
-    public static final int DEFAULT_MAX_ENTRY_COUNT_FOR_ON_HEAP_MAP = Integer.MAX_VALUE;
 
     /**
      * Default Max-Size Policy.
@@ -67,37 +63,6 @@ public class EvictionConfig implements EvictionConfiguration,
      * Default Eviction Policy.
      */
     public static final EvictionPolicy DEFAULT_EVICTION_POLICY = EvictionPolicy.LRU;
-
-    /**
-     * Maximum Size Policy
-     */
-    public enum MaxSizePolicy {
-        /**
-         * Policy based on maximum number of entries
-         * stored per data structure (map, cache etc)
-         */
-        ENTRY_COUNT,
-        /**
-         * Policy based on maximum used native memory in megabytes per
-         * data structure (map, cache etc) on each Hazelcast instance
-         */
-        USED_NATIVE_MEMORY_SIZE,
-        /**
-         * Policy based on maximum used native memory percentage per
-         * data structure (map, cache etc) on each Hazelcast instance
-         */
-        USED_NATIVE_MEMORY_PERCENTAGE,
-        /**
-         * Policy based on minimum free native
-         * memory in megabytes per Hazelcast instance
-         */
-        FREE_NATIVE_MEMORY_SIZE,
-        /**
-         * Policy based on minimum free native
-         * memory percentage per Hazelcast instance
-         */
-        FREE_NATIVE_MEMORY_PERCENTAGE
-    }
 
     protected int size = DEFAULT_MAX_ENTRY_COUNT;
     protected MaxSizePolicy maxSizePolicy = DEFAULT_MAX_SIZE_POLICY;
@@ -142,7 +107,7 @@ public class EvictionConfig implements EvictionConfiguration,
      * The interpretation of the value depends
      * on the configured {@link MaxSizePolicy}.
      * <p>
-     * Accepts any positive number. The default
+     * Accepts any non-negative number. The default
      * value is {@value #DEFAULT_MAX_ENTRY_COUNT}.
      *
      * @param size the size which is used by the {@link MaxSizePolicy}
@@ -150,8 +115,8 @@ public class EvictionConfig implements EvictionConfiguration,
      */
     public EvictionConfig setSize(int size) {
         this.sizeConfigured = true;
-        this.size = checkPositive(size,
-                "size must be positive number!");
+        this.size = checkNotNegative(size,
+                "size cannot be a negative number!");
         return this;
     }
 
@@ -160,7 +125,7 @@ public class EvictionConfig implements EvictionConfiguration,
      *
      * @return the {@link MaxSizePolicy} of this eviction configuration
      */
-    public MaxSizePolicy getMaximumSizePolicy() {
+    public MaxSizePolicy getMaxSizePolicy() {
         return maxSizePolicy;
     }
 
@@ -170,7 +135,7 @@ public class EvictionConfig implements EvictionConfiguration,
      * @param maxSizePolicy the {@link MaxSizePolicy} of this eviction configuration
      * @return this EvictionConfig instance
      */
-    public EvictionConfig setMaximumSizePolicy(MaxSizePolicy maxSizePolicy) {
+    public EvictionConfig setMaxSizePolicy(MaxSizePolicy maxSizePolicy) {
         this.maxSizePolicy = checkNotNull(maxSizePolicy,
                 "maxSizePolicy cannot be null!");
         return this;
@@ -238,9 +203,11 @@ public class EvictionConfig implements EvictionConfiguration,
     }
 
     /**
-     * Returns the instance of the configured {@link EvictionPolicyComparator} implementation.
+     * Returns the instance of the configured {@link
+     * EvictionPolicyComparator} implementation.
      *
-     * @return the instance of the configured {@link EvictionPolicyComparator} implementation
+     * @return the instance of the configured {@link
+     * EvictionPolicyComparator} implementation
      */
     @Override
     public EvictionPolicyComparator getComparator() {
@@ -257,11 +224,23 @@ public class EvictionConfig implements EvictionConfiguration,
      * @param comparator the instance of the configured
      *                   {@link EvictionPolicyComparator} implementation
      * @return this EvictionConfig instance
+     * @see com.hazelcast.map.MapEvictionPolicyComparator
+     * @see com.hazelcast.cache.CacheEvictionPolicyComparator
      */
     public EvictionConfig setComparator(EvictionPolicyComparator comparator) {
         this.comparator = checkNotNull(comparator,
                 "Eviction policy comparator cannot be null!");
         return this;
+    }
+
+    @Override
+    public int getFactoryId() {
+        return ConfigDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getClassId() {
+        return ConfigDataSerializerHook.EVICTION_CONFIG;
     }
 
     @Override

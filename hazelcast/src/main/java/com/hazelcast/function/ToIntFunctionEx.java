@@ -34,6 +34,7 @@ public interface ToIntFunctionEx<T> extends ToIntFunction<T>, Serializable {
 
     /**
      * Exception-declaring version of {@link ToIntFunction#applyAsInt}.
+     * @throws Exception in case of any exceptional case
      */
     int applyAsIntEx(T value) throws Exception;
 

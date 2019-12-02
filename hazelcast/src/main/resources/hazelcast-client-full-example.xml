@@ -756,9 +756,10 @@
                 Its default value is 1000 ms.
             * <max-backoff-millis>: Specifies the upper limit for the backoff in milliseconds. Its default value is 30000 ms.
             * <multiplier>: Factor to multiply the backoff after a failed retry. Its default value is 2.
-            * <fail-on-max-backoff>:
-                Specifies whether to fail when the max-backoff-millis has reached or continue waiting max-backoff-millis
-                at each iteration. Its default value is false.
+            * <cluster-connect-timeout-millis>: Timeout value in milliseconds for the client to give up to connect to
+              the current cluster
+              Depending on FailoverConfig, a client can shutdown or start trying on alternative cluster after reaching the timeout.
+              Its default value is 20000
             * <jitter>: Specifies by how much to randomize backoffs. Its default value is 0.2.
     -->
     <connection-strategy async-start="true" reconnect-mode="ASYNC">
@@ -766,7 +767,7 @@
             <initial-backoff-millis>2000</initial-backoff-millis>
             <max-backoff-millis>60000</max-backoff-millis>
             <multiplier>3</multiplier>
-            <fail-on-max-backoff>true</fail-on-max-backoff>
+            <cluster-connect-timeout-millis>5000</cluster-connect-timeout-millis>
             <jitter>0.5</jitter>
         </connection-retry>
     </connection-strategy>
@@ -863,5 +864,37 @@
             <className>test.sampleClassName</className>
         </classNames>
     </user-code-deployment>
+
+    <!--
+        ===== HAZELCAST METRICS CONFIGURATION =====
+
+        Configuration element's name is <metrics>.
+
+        It has the following attributes:
+        - enabled:
+            The master-switch for the metrics collection. If this is set
+            to false no metrics collection is done, regardless of the other
+            settings. Its default value is true.
+
+        It has the following sub-elements:
+        * <jmx>:
+            Defines the JMX related metrics configuration.
+
+            It has the following attributes:
+            * "enabled":
+                Controls whether the metrics collected are exposed to
+                through JMX. It is enabled by default.
+                In order to expose the metrics, the metrics system need
+                to be enabled via the enabled master-switch attribute.
+
+        * <collection-frequency-seconds>:
+            Sets the metrics collection frequency in seconds.
+            By default, metrics are collected every 5 seconds.
+
+    -->
+    <metrics enabled="false">
+        <jmx enabled="false"/>
+        <collection-frequency-seconds>42</collection-frequency-seconds>
+    </metrics>
 
 </hazelcast-client>

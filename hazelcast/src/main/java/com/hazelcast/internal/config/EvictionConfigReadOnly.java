@@ -18,13 +18,12 @@ package com.hazelcast.internal.config;
 
 import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.EvictionPolicy;
-import com.hazelcast.internal.eviction.EvictionPolicyComparator;
-import com.hazelcast.internal.serialization.BinaryInterface;
+import com.hazelcast.config.MaxSizePolicy;
+import com.hazelcast.spi.eviction.EvictionPolicyComparator;
 
 /**
  * Read only version of {@link com.hazelcast.config.EvictionConfig}.
  */
-@BinaryInterface
 public class EvictionConfigReadOnly extends EvictionConfig {
 
     public EvictionConfigReadOnly(EvictionConfig config) {
@@ -37,7 +36,7 @@ public class EvictionConfigReadOnly extends EvictionConfig {
     }
 
     @Override
-    public EvictionConfigReadOnly setMaximumSizePolicy(MaxSizePolicy maxSizePolicy) {
+    public EvictionConfigReadOnly setMaxSizePolicy(MaxSizePolicy maxSizePolicy) {
         throw new UnsupportedOperationException("This config is read-only");
     }
 

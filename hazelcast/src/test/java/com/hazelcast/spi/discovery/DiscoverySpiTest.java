@@ -49,7 +49,7 @@ import com.hazelcast.spi.discovery.integration.DiscoveryService;
 import com.hazelcast.spi.discovery.integration.DiscoveryServiceProvider;
 import com.hazelcast.spi.discovery.integration.DiscoveryServiceSettings;
 import com.hazelcast.spi.partitiongroup.PartitionGroupStrategy;
-import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -108,7 +108,7 @@ public class DiscoverySpiTest extends HazelcastTestSupport {
     @Test(expected = InvalidConfigurationException.class)
     public void whenStrategyClassNameNotExist_thenFailFast() {
         Config config = new Config();
-        config.setProperty(GroupProperty.DISCOVERY_SPI_ENABLED.getName(), "true");
+        config.setProperty(ClusterProperty.DISCOVERY_SPI_ENABLED.getName(), "true");
 
         DiscoveryConfig discoveryConfig = new DiscoveryConfig();
         discoveryConfig.addDiscoveryStrategyConfig(new DiscoveryStrategyConfig("non.existing.ClassName"));
@@ -124,7 +124,7 @@ public class DiscoverySpiTest extends HazelcastTestSupport {
         // than once.
 
         Config config = new Config();
-        config.setProperty(GroupProperty.DISCOVERY_SPI_ENABLED.getName(), "true");
+        config.setProperty(ClusterProperty.DISCOVERY_SPI_ENABLED.getName(), "true");
 
         JoinConfig join = config.getNetworkConfig().getJoin();
         join.getMulticastConfig().setEnabled(false);
@@ -395,7 +395,7 @@ public class DiscoverySpiTest extends HazelcastTestSupport {
     @Test(expected = IllegalArgumentException.class)
     public void test_enabled_whenDiscoveryConfigIsNull() {
         Config config = new Config();
-        config.setProperty(GroupProperty.DISCOVERY_SPI_ENABLED.getName(), "true");
+        config.setProperty(ClusterProperty.DISCOVERY_SPI_ENABLED.getName(), "true");
 
         config.getNetworkConfig().getJoin().setDiscoveryConfig(null);
     }
@@ -403,7 +403,7 @@ public class DiscoverySpiTest extends HazelcastTestSupport {
     @Test
     public void testCustomDiscoveryService_whenDiscoveredNodes_isNull() {
         Config config = new Config();
-        config.setProperty(GroupProperty.DISCOVERY_SPI_ENABLED.getName(), "true");
+        config.setProperty(ClusterProperty.DISCOVERY_SPI_ENABLED.getName(), "true");
 
         DiscoveryServiceProvider discoveryServiceProvider = new DiscoveryServiceProvider() {
             public DiscoveryService newDiscoveryService(DiscoveryServiceSettings arg0) {
@@ -424,7 +424,7 @@ public class DiscoverySpiTest extends HazelcastTestSupport {
     @Test
     public void testCustomDiscoveryService_whenDiscoveredNodes_isEmpty() {
         Config config = new Config();
-        config.setProperty(GroupProperty.DISCOVERY_SPI_ENABLED.getName(), "true");
+        config.setProperty(ClusterProperty.DISCOVERY_SPI_ENABLED.getName(), "true");
 
         final DiscoveryService discoveryService = mock(DiscoveryService.class);
         DiscoveryServiceProvider discoveryServiceProvider = new DiscoveryServiceProvider() {
@@ -448,7 +448,7 @@ public class DiscoverySpiTest extends HazelcastTestSupport {
         // this test has no assert. it's a regression test checking an instance can start when a SPI-driven member group
         // strategy is configured. see #11681
         Config config = new Config();
-        config.setProperty(GroupProperty.DISCOVERY_SPI_ENABLED.getName(), "true");
+        config.setProperty(ClusterProperty.DISCOVERY_SPI_ENABLED.getName(), "true");
         JoinConfig joinConfig = config.getNetworkConfig().getJoin();
         joinConfig.getMulticastConfig().setEnabled(false);
 

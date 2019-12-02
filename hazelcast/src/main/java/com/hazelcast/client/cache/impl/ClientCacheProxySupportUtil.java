@@ -233,14 +233,6 @@ final class ClientCacheProxySupportUtil {
         public void handleCacheEvent(int type, Collection<CacheEventData> keys, int completionId) {
             adaptor.handle(type, keys, completionId);
         }
-
-        @Override
-        public void beforeListenerRegister() {
-        }
-
-        @Override
-        public void onListenerRegister() {
-        }
     }
 
     static final class FutureEntriesTuple {
@@ -274,14 +266,6 @@ final class ClientCacheProxySupportUtil {
             this.name = name;
             this.clientContext = clientContext;
             this.listener = listener;
-        }
-
-        @Override
-        public void beforeListenerRegister() {
-        }
-
-        @Override
-        public void onListenerRegister() {
         }
 
         @Override

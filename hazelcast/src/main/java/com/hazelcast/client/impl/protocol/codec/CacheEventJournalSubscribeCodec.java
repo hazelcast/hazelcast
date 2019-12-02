@@ -38,12 +38,12 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * This includes retrieving the event journal sequences of the
  * oldest and newest event in the journal.
  */
-@Generated("c083745f0581108698a57e34e9225af5")
+@Generated("67e6f1519f5afaab6dee21cc695d0ca1")
 public final class CacheEventJournalSubscribeCodec {
-    //hex: 0x132100
-    public static final int REQUEST_MESSAGE_TYPE = 1253632;
-    //hex: 0x132101
-    public static final int RESPONSE_MESSAGE_TYPE = 1253633;
+    //hex: 0x132000
+    public static final int REQUEST_MESSAGE_TYPE = 1253376;
+    //hex: 0x132001
+    public static final int RESPONSE_MESSAGE_TYPE = 1253377;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_OLDEST_SEQUENCE_FIELD_OFFSET = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_NEWEST_SEQUENCE_FIELD_OFFSET = RESPONSE_OLDEST_SEQUENCE_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
@@ -64,7 +64,6 @@ public final class CacheEventJournalSubscribeCodec {
     public static ClientMessage encodeRequest(java.lang.String name) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(true);
-        clientMessage.setAcquiresResource(false);
         clientMessage.setOperationName("Cache.EventJournalSubscribe");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);

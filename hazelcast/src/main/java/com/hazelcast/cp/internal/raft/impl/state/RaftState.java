@@ -327,6 +327,10 @@ public final class RaftState {
      */
     public void leader(RaftEndpoint endpoint) {
         leader = endpoint;
+        if (endpoint != null) {
+            // Since we have a new leader, preCandidateState becomes obsolete.
+            preCandidateState = null;
+        }
     }
 
     /**
@@ -460,6 +464,13 @@ public final class RaftState {
     public void initPreCandidateState() {
         preCandidateState = new CandidateState(majority());
         preCandidateState.grantVote(localEndpoint);
+    }
+
+    /**
+     * Removes pre-candidate state
+     */
+    public void removePreCandidateState() {
+        preCandidateState = null;
     }
 
     /**

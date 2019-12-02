@@ -17,15 +17,18 @@
 package com.hazelcast.internal.management;
 
 import com.hazelcast.cache.impl.JCacheDetector;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.cluster.MemberAttributeEvent;
 import com.hazelcast.cluster.MembershipEvent;
 import com.hazelcast.cluster.MembershipListener;
 import com.hazelcast.config.ManagementCenterConfig;
+import com.hazelcast.core.HazelcastException;
 import com.hazelcast.instance.impl.HazelcastInstanceImpl;
 import com.hazelcast.internal.ascii.rest.HttpCommand;
 import com.hazelcast.internal.json.Json;
 import com.hazelcast.internal.json.JsonObject;
+import com.hazelcast.internal.management.dto.ClientBwListDTO;
 import com.hazelcast.internal.management.events.Event;
 import com.hazelcast.internal.management.events.EventBatch;
 import com.hazelcast.internal.management.operation.UpdateManagementCenterUrlOperation;
@@ -53,13 +56,15 @@ import com.hazelcast.internal.management.request.WanCheckConsistencyRequest;
 import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.internal.util.Clock;
 import com.hazelcast.internal.util.ExceptionUtil;
+import com.hazelcast.internal.util.executor.ExecutorType;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.impl.MapService;
-import com.hazelcast.cluster.Address;
+import com.hazelcast.spi.exception.RetryableException;
 import com.hazelcast.spi.impl.executionservice.ExecutionService;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationService;
 import com.hazelcast.spi.impl.operationservice.impl.InvocationFuture;
+import com.hazelcast.spi.properties.ClusterProperty;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -74,6 +79,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
@@ -105,6 +111,7 @@ public class ManagementCenterService {
     private static final long SLEEP_BETWEEN_POLL_MILLIS = 1000;
     private static final long DEFAULT_UPDATE_INTERVAL = 3000;
     private static final long EVENT_SEND_INTERVAL_MILLIS = 1000;
+    private static final int EXECUTOR_QUEUE_CAPACITY_PER_THREAD = 1000;
 
     private final HazelcastInstanceImpl instance;
     private final TaskPollThread taskPollThread;
@@ -114,11 +121,12 @@ public class ManagementCenterService {
     private final ILogger logger;
 
     private final ConsoleCommandHandler commandHandler;
+    private final ClientBwListConfigHandler bwListConfigHandler;
     private final ManagementCenterConfig managementCenterConfig;
     private final AtomicBoolean isRunning = new AtomicBoolean(false);
     private final TimedMemberStateFactory timedMemberStateFactory;
     private final ManagementCenterConnectionFactory connectionFactory;
-    private final AtomicReference<TimedMemberState> timedMemberState = new AtomicReference<>();
+    private final AtomicReference<String> timedMemberStateJson = new AtomicReference<>();
     private final BlockingQueue<Event> events = new LinkedBlockingQueue<>();
 
     private volatile String managementCenterUrl;
@@ -127,6 +135,7 @@ public class ManagementCenterService {
     private volatile boolean taskPollFailed;
     private volatile boolean eventSendFailed;
     private volatile ManagementCenterEventListener eventListener;
+    private volatile String lastMCConfigETag;
 
     public ManagementCenterService(HazelcastInstanceImpl instance) {
         this.instance = instance;
@@ -134,12 +143,14 @@ public class ManagementCenterService {
         this.managementCenterConfig = getManagementCenterConfig();
         this.managementCenterUrl = getManagementCenterUrl();
         this.commandHandler = new ConsoleCommandHandler(instance);
+        this.bwListConfigHandler = new ClientBwListConfigHandler(instance.node.clientEngine);
         this.taskPollThread = new TaskPollThread();
         this.stateSendThread = new StateSendThread();
         this.prepareStateThread = new PrepareStateThread();
         this.eventSendThread = new EventSendThread();
         this.timedMemberStateFactory = instance.node.getNodeExtension().createTimedMemberStateFactory(instance);
         this.connectionFactory = instance.node.getNodeExtension().getManagementCenterConnectionFactory();
+        registerExecutor();
 
         if (this.managementCenterConfig.isEnabled()) {
             this.instance.getCluster().addMembershipListener(new ManagementCenterService.MemberListenerImpl());
@@ -208,6 +219,19 @@ public class ManagementCenterService {
         } catch (Throwable ignored) {
             ignore(ignored);
         }
+    }
+
+    private void registerExecutor() {
+        final ExecutionService executionService = instance.node.nodeEngine.getExecutionService();
+        int threadCount = instance.node.getProperties().getInteger(ClusterProperty.MC_EXECUTOR_THREAD_COUNT);
+        logger.finest("Creating new executor for Management Center service tasks with threadCount=" + threadCount);
+        executionService.register(ExecutionService.MC_EXECUTOR,
+                threadCount, threadCount * EXECUTOR_QUEUE_CAPACITY_PER_THREAD,
+                ExecutorType.CACHED);
+    }
+
+    public Optional<String> getTimedMemberStateJson() {
+        return Optional.ofNullable(timedMemberStateJson.get());
     }
 
     public byte[] clusterWideUpdateManagementCenterUrl(String newUrl) {
@@ -323,6 +347,36 @@ public class ManagementCenterService {
             if (eventListener != null) {
                 eventListener.onEventLogged(event);
             }
+        }
+    }
+
+    /**
+     * Returns ETag value of last applied MC config (client B/W list filtering).
+     *
+     * @return  last or <code>null</code>
+     */
+    public String getLastMCConfigETag() {
+        return lastMCConfigETag;
+    }
+
+    /**
+     * Applies given MC config (client B/W list filtering).
+     *
+     * @param eTag          ETag of new config
+     * @param bwListConfig  new config
+     */
+    public void applyMCConfig(String eTag, ClientBwListDTO bwListConfig) {
+        if (eTag.equals(lastMCConfigETag)) {
+            logger.warning("Client B/W list filtering config with the same ETag is already applied.");
+            return;
+        }
+
+        try {
+            bwListConfigHandler.applyConfig(bwListConfig);
+            lastMCConfigETag = eTag;
+        } catch (Exception e) {
+            logger.warning("Could not apply client B/W list filtering config.", e);
+            throw new HazelcastException("Error while applying MC config", e);
         }
     }
 
@@ -447,7 +501,17 @@ public class ManagementCenterService {
         public void run() {
             try {
                 while (isRunning()) {
-                    timedMemberState.set(timedMemberStateFactory.createTimedMemberState());
+                    try {
+                        TimedMemberState tms = timedMemberStateFactory.createTimedMemberState();
+                        JsonObject tmsJson = new JsonObject();
+                        tmsJson.add("timedMemberState", tms.toJson());
+                        timedMemberStateJson.set(tmsJson.toString());
+                    } catch (Throwable e) {
+                        if (!(e instanceof RetryableException)) {
+                            throw rethrow(e);
+                        }
+                        logger.warning("Can't create TimedMemberState. Will retry after " + updateIntervalMs + " ms");
+                    }
                     sleep();
                 }
             } catch (Throwable throwable) {
@@ -470,14 +534,12 @@ public class ManagementCenterService {
     private final class StateSendThread extends Thread {
 
         private final long updateIntervalMs;
-        private final ClientBwListConfigHandler bwListConfigHandler;
 
         private String lastConfigETag;
 
         private StateSendThread() {
             super(createThreadName(instance.getName(), "MC.State.Sender"));
             updateIntervalMs = calcUpdateInterval();
-            bwListConfigHandler = new ClientBwListConfigHandler(instance.node.clientEngine);
         }
 
         private long calcUpdateInterval() {
@@ -515,12 +577,9 @@ public class ManagementCenterService {
                 outputStream = connection.getOutputStream();
                 writer = new OutputStreamWriter(outputStream, UTF_8);
 
-                JsonObject root = new JsonObject();
-                TimedMemberState memberState = timedMemberState.get();
-                if (memberState != null) {
-                    root.add("timedMemberState", memberState.toJson());
-                    root.writeTo(writer);
-
+                String memberStateJson = timedMemberStateJson.get();
+                if (memberStateJson != null) {
+                    writer.write(memberStateJson);
                     writer.flush();
                     outputStream.flush();
 
@@ -566,7 +625,7 @@ public class ManagementCenterService {
                 reader = new InputStreamReader(inputStream, UTF_8);
                 JsonObject response = Json.parse(reader).asObject();
                 lastConfigETag = connection.getHeaderField("ETag");
-                bwListConfigHandler.handleConfig(response);
+                bwListConfigHandler.handleNewConfig(response);
             } finally {
                 closeResource(reader);
                 closeResource(inputStream);

@@ -159,9 +159,9 @@ public class ListenerTest extends HazelcastTestSupport {
         UUID id2 = map1.addEntryListener(createEntryListener(false), true);
         UUID id3 = map2.addEntryListener(createEntryListener(false), true);
         int k = 3;
-        map1.removeEntryListener(id1);
-        map1.removeEntryListener(id2);
-        map1.removeEntryListener(id3);
+        assertTrue(map1.removeEntryListener(id1));
+        assertTrue(map1.removeEntryListener(id2));
+        assertTrue(map1.removeEntryListener(id3));
         putDummyData(map2, k);
         checkCountWithExpected(0, 0, 0);
     }

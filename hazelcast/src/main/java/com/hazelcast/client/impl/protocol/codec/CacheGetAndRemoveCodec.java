@@ -36,12 +36,12 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Atomically removes the entry for a key only if currently mapped to some value.
  */
-@Generated("168a9fad8429184f09984713ab5ab2ae")
+@Generated("79b0109d0d6c2c7a540b86235fd9c4b6")
 public final class CacheGetAndRemoveCodec {
-    //hex: 0x130B00
-    public static final int REQUEST_MESSAGE_TYPE = 1248000;
-    //hex: 0x130B01
-    public static final int RESPONSE_MESSAGE_TYPE = 1248001;
+    //hex: 0x130A00
+    public static final int REQUEST_MESSAGE_TYPE = 1247744;
+    //hex: 0x130A01
+    public static final int RESPONSE_MESSAGE_TYPE = 1247745;
     private static final int REQUEST_COMPLETION_ID_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_COMPLETION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
@@ -72,7 +72,6 @@ public final class CacheGetAndRemoveCodec {
     public static ClientMessage encodeRequest(java.lang.String name, com.hazelcast.nio.serialization.Data key, int completionId) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
-        clientMessage.setAcquiresResource(false);
         clientMessage.setOperationName("Cache.GetAndRemove");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);

@@ -17,13 +17,15 @@
 package com.hazelcast.map.impl.operation;
 
 import com.hazelcast.internal.eviction.ExpiredKey;
+import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.spi.exception.WrongTargetException;
 import com.hazelcast.spi.impl.operationservice.BackupOperation;
 import com.hazelcast.spi.impl.operationservice.ExceptionAction;
-import com.hazelcast.spi.exception.WrongTargetException;
 
 import java.io.IOException;
 import java.util.Collection;
@@ -61,9 +63,10 @@ public class EvictBatchBackupOperation extends MapOperation implements BackupOpe
         }
 
         for (ExpiredKey expiredKey : expiredKeys) {
-            Record existingRecord = recordStore.getRecord(expiredKey.getKey());
+            Data key = expiredKey.getKey();
+            Record existingRecord = recordStore.getRecord(key);
             if (canEvictRecord(existingRecord, expiredKey)) {
-                recordStore.evict(existingRecord.getKey(), true);
+                recordStore.evict(key, true);
             }
         }
 
@@ -132,7 +135,7 @@ public class EvictBatchBackupOperation extends MapOperation implements BackupOpe
         out.writeUTF(name);
         out.writeInt(expiredKeys.size());
         for (ExpiredKey expiredKey : expiredKeys) {
-            out.writeData(expiredKey.getKey());
+            IOUtil.writeData(out, expiredKey.getKey());
             out.writeLong(expiredKey.getCreationTime());
         }
         out.writeInt(primaryEntryCount);
@@ -146,7 +149,7 @@ public class EvictBatchBackupOperation extends MapOperation implements BackupOpe
         int size = in.readInt();
         expiredKeys = new LinkedList<>();
         for (int i = 0; i < size; i++) {
-            expiredKeys.add(new ExpiredKey(in.readData(), in.readLong()));
+            expiredKeys.add(new ExpiredKey(IOUtil.readData(in), in.readLong()));
         }
         primaryEntryCount = in.readInt();
     }

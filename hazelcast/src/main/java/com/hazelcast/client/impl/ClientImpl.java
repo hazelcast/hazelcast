@@ -17,7 +17,7 @@
 package com.hazelcast.client.impl;
 
 import com.hazelcast.client.Client;
-import com.hazelcast.client.ClientType;
+import com.hazelcast.internal.nio.ConnectionType;
 
 import java.net.InetSocketAddress;
 import java.util.Set;
@@ -51,8 +51,8 @@ public class ClientImpl implements Client {
     }
 
     @Override
-    public ClientType getClientType() {
-        return ClientType.JAVA;
+    public String getClientType() {
+        return ConnectionType.JAVA_CLIENT;
     }
 
     @Override

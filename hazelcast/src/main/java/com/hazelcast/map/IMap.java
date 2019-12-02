@@ -19,6 +19,7 @@ package com.hazelcast.map;
 import com.hazelcast.aggregation.Aggregator;
 import com.hazelcast.config.IndexConfig;
 import com.hazelcast.config.IndexType;
+import com.hazelcast.config.MaxSizePolicy;
 import com.hazelcast.core.EntryView;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.Offloadable;
@@ -28,7 +29,7 @@ import com.hazelcast.map.listener.MapPartitionLostListener;
 import com.hazelcast.projection.Projection;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.impl.IndexUtils;
-import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.spi.properties.ClusterProperty;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -192,7 +193,7 @@ import java.util.concurrent.TimeUnit;
  * map grows larger than the maximum allowed size, an eviction policy decides
  * which item to evict from the map to reduce its size. The maximum allowed
  * size may be configured using the
- * {@link com.hazelcast.config.MaxSizeConfig.MaxSizePolicy max-size} setting
+ * {@link MaxSizePolicy max-size} setting
  * and the eviction policy may be configured using the
  * {@link com.hazelcast.config.EvictionPolicy eviction-policy} setting as well.
  * By default, maps have no restrictions on the size and may grow arbitrarily
@@ -846,8 +847,8 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * @see #setAsync(Object, Object, long, TimeUnit)
      */
     CompletionStage<V> putAsync(@Nonnull K key, @Nonnull V value,
-                                   long ttl, @Nonnull TimeUnit ttlUnit,
-                                   long maxIdle, @Nonnull TimeUnit maxIdleUnit);
+                                long ttl, @Nonnull TimeUnit ttlUnit,
+                                long maxIdle, @Nonnull TimeUnit maxIdleUnit);
 
     /**
      * Asynchronously puts the given key and value.
@@ -925,7 +926,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * methods:
      * <pre>
      *   CompletionStage&lt;Void&gt; future = map.setAsync("a", "b", 5, TimeUnit.MINUTES);
-     *   future.thenRunAsync(() -> System.out.println("done"));
+     *   future.thenRunAsync(() -&gt; System.out.println("done"));
      * </pre>
      * <p>
      * <b>Warning 1:</b>
@@ -999,7 +1000,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * methods:
      * <pre>
      *   CompletionStage&lt;Void&gt; future = map.setAsync("a", "b", 5, TimeUnit.MINUTES);
-     *   future.thenRunAsync(() -> System.out.println("Done"));
+     *   future.thenRunAsync(() -&gt; System.out.println("Done"));
      * </pre>
      * <p>
      * <b>Warning 1:</b>
@@ -1041,8 +1042,8 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * @see CompletionStage
      */
     CompletionStage<Void> setAsync(@Nonnull K key, @Nonnull V value,
-                                      long ttl, @Nonnull TimeUnit ttlUnit,
-                                      long maxIdle, @Nonnull TimeUnit maxIdleUnit);
+                                   long ttl, @Nonnull TimeUnit ttlUnit,
+                                   long maxIdle, @Nonnull TimeUnit maxIdleUnit);
 
     /**
      * Asynchronously removes the given key, returning an {@link CompletionStage}
@@ -1816,6 +1817,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * @return {@code true} if the lock was acquired, {@code false} if the waiting time
      * elapsed before the lock was acquired
      * @throws NullPointerException if the specified key is {@code null}
+     * @throws InterruptedException if interrupted while trying to acquire the lock
      */
     boolean tryLock(@Nonnull K key, long time, @Nullable TimeUnit timeunit) throws InterruptedException;
 
@@ -1846,6 +1848,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * @return {@code true} if the lock was acquired, {@code false} if the waiting time
      * elapsed before the lock was acquired
      * @throws NullPointerException if the specified key is {@code null}
+     * @throws InterruptedException if interrupted while trying to acquire the lock
      */
     boolean tryLock(@Nonnull K key,
                     long time, @Nullable TimeUnit timeunit,
@@ -1928,8 +1931,8 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * @see MapListener
      */
     UUID addLocalEntryListener(@Nonnull MapListener listener,
-                                 @Nonnull Predicate<K, V> predicate,
-                                 boolean includeValue);
+                               @Nonnull Predicate<K, V> predicate,
+                               boolean includeValue);
 
     /**
      * Adds a local entry listener for this map.
@@ -1949,9 +1952,9 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * @see MapListener
      */
     UUID addLocalEntryListener(@Nonnull MapListener listener,
-                                 @Nonnull Predicate<K, V> predicate,
-                                 @Nullable K key,
-                                 boolean includeValue);
+                               @Nonnull Predicate<K, V> predicate,
+                               @Nullable K key,
+                               boolean includeValue);
 
     /**
      * Adds an interceptor for this map.
@@ -2070,8 +2073,8 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * @see MapListener
      */
     UUID addEntryListener(@Nonnull MapListener listener,
-                            @Nonnull Predicate<K, V> predicate,
-                            boolean includeValue);
+                          @Nonnull Predicate<K, V> predicate,
+                          boolean includeValue);
 
     /**
      * Adds a {@link MapListener} for this map.
@@ -2087,9 +2090,9 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * @see MapListener
      */
     UUID addEntryListener(@Nonnull MapListener listener,
-                            @Nonnull Predicate<K, V> predicate,
-                            @Nullable K key,
-                            boolean includeValue);
+                          @Nonnull Predicate<K, V> predicate,
+                          @Nullable K key,
+                          boolean includeValue);
 
     /**
      * Returns the {@code EntryView} for the specified key.
@@ -2162,11 +2165,11 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * <p>
      * This method is always executed by a distributed query,
      * so it may throw a {@link QueryResultSizeExceededException}
-     * if {@link GroupProperty#QUERY_RESULT_SIZE_LIMIT} is configured.
+     * if {@link ClusterProperty#QUERY_RESULT_SIZE_LIMIT} is configured.
      *
      * @return an immutable set clone of the keys contained in this map
      * @throws QueryResultSizeExceededException if query result size limit is exceeded
-     * @see GroupProperty#QUERY_RESULT_SIZE_LIMIT
+     * @see ClusterProperty#QUERY_RESULT_SIZE_LIMIT
      */
     @Nonnull
     Set<K> keySet();
@@ -2181,11 +2184,11 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * <p>
      * This method is always executed by a distributed query,
      * so it may throw a {@link QueryResultSizeExceededException}
-     * if {@link GroupProperty#QUERY_RESULT_SIZE_LIMIT} is configured.
+     * if {@link ClusterProperty#QUERY_RESULT_SIZE_LIMIT} is configured.
      *
      * @return an immutable collection clone of the values contained in this map
      * @throws QueryResultSizeExceededException if query result size limit is exceeded
-     * @see GroupProperty#QUERY_RESULT_SIZE_LIMIT
+     * @see ClusterProperty#QUERY_RESULT_SIZE_LIMIT
      */
     @Nonnull
     Collection<V> values();
@@ -2200,11 +2203,11 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * <p>
      * This method is always executed by a distributed query,
      * so it may throw a {@link QueryResultSizeExceededException}
-     * if {@link GroupProperty#QUERY_RESULT_SIZE_LIMIT} is configured.
+     * if {@link ClusterProperty#QUERY_RESULT_SIZE_LIMIT} is configured.
      *
      * @return an immutable set clone of the keys mappings in this map
      * @throws QueryResultSizeExceededException if query result size limit is exceeded
-     * @see GroupProperty#QUERY_RESULT_SIZE_LIMIT
+     * @see ClusterProperty#QUERY_RESULT_SIZE_LIMIT
      */
     @Nonnull
     Set<Map.Entry<K, V>> entrySet();
@@ -2222,13 +2225,13 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * <p>
      * This method is always executed by a distributed query,
      * so it may throw a {@link QueryResultSizeExceededException}
-     * if {@link GroupProperty#QUERY_RESULT_SIZE_LIMIT} is configured.
+     * if {@link ClusterProperty#QUERY_RESULT_SIZE_LIMIT} is configured.
      *
      * @param predicate specified query criteria
      * @return result key set of the query
      * @throws QueryResultSizeExceededException if query result size limit is exceeded
      * @throws NullPointerException             if the predicate is {@code null}
-     * @see GroupProperty#QUERY_RESULT_SIZE_LIMIT
+     * @see ClusterProperty#QUERY_RESULT_SIZE_LIMIT
      */
     Set<K> keySet(@Nonnull Predicate<K, V> predicate);
 
@@ -2244,13 +2247,13 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * <p>
      * This method is always executed by a distributed query,
      * so it may throw a {@link QueryResultSizeExceededException}
-     * if {@link GroupProperty#QUERY_RESULT_SIZE_LIMIT} is configured.
+     * if {@link ClusterProperty#QUERY_RESULT_SIZE_LIMIT} is configured.
      *
      * @param predicate specified query criteria
      * @return result entry set of the query
      * @throws QueryResultSizeExceededException if query result size limit is exceeded
      * @throws NullPointerException             if the predicate is {@code null}
-     * @see GroupProperty#QUERY_RESULT_SIZE_LIMIT
+     * @see ClusterProperty#QUERY_RESULT_SIZE_LIMIT
      */
     Set<Map.Entry<K, V>> entrySet(@Nonnull Predicate<K, V> predicate);
 
@@ -2267,13 +2270,13 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * <p>
      * This method is always executed by a distributed query,
      * so it may throw a {@link QueryResultSizeExceededException}
-     * if {@link GroupProperty#QUERY_RESULT_SIZE_LIMIT} is configured.
+     * if {@link ClusterProperty#QUERY_RESULT_SIZE_LIMIT} is configured.
      *
      * @param predicate specified query criteria
      * @return result value collection of the query
      * @throws QueryResultSizeExceededException if query result size limit is exceeded
      * @throws NullPointerException             if the predicate is {@code null}
-     * @see GroupProperty#QUERY_RESULT_SIZE_LIMIT
+     * @see ClusterProperty#QUERY_RESULT_SIZE_LIMIT
      */
     Collection<V> values(@Nonnull Predicate<K, V> predicate);
 
@@ -2294,11 +2297,11 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * <p>
      * This method is always executed by a distributed query,
      * so it may throw a {@link QueryResultSizeExceededException}
-     * if {@link GroupProperty#QUERY_RESULT_SIZE_LIMIT} is configured.
+     * if {@link ClusterProperty#QUERY_RESULT_SIZE_LIMIT} is configured.
      *
      * @return locally owned immutable set of keys
      * @throws QueryResultSizeExceededException if query result size limit is exceeded
-     * @see GroupProperty#QUERY_RESULT_SIZE_LIMIT
+     * @see ClusterProperty#QUERY_RESULT_SIZE_LIMIT
      */
     Set<K> localKeySet();
 
@@ -2319,12 +2322,12 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * <p>
      * This method is always executed by a distributed query,
      * so it may throw a {@link QueryResultSizeExceededException}
-     * if {@link GroupProperty#QUERY_RESULT_SIZE_LIMIT} is configured.
+     * if {@link ClusterProperty#QUERY_RESULT_SIZE_LIMIT} is configured.
      *
      * @param predicate specified query criteria
      * @return an immutable set of the keys of matching locally owned entries
      * @throws QueryResultSizeExceededException if query result size limit is exceeded
-     * @see GroupProperty#QUERY_RESULT_SIZE_LIMIT
+     * @see ClusterProperty#QUERY_RESULT_SIZE_LIMIT
      */
     Set<K> localKeySet(@Nonnull Predicate<K, V> predicate);
 
@@ -2332,10 +2335,10 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * Convenient method to add an index to this map with the given type and attributes.
      * Attributes are indexed in ascending order.
      * <p>
-     * @see #addIndex(IndexConfig)
      *
-     * @param type Index type.
+     * @param type       Index type.
      * @param attributes Attributes to be indexed.
+     * @see #addIndex(IndexConfig)
      */
     default void addIndex(IndexType type, String... attributes) {
         IndexConfig config = IndexUtils.createIndexConfig(type, attributes);
@@ -2472,6 +2475,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * if the write-behind queue has reached its per-node maximum
      * capacity.
      *
+     * @param <R> the entry processor return type
      * @return result of {@link EntryProcessor#process(Entry)}
      * @throws NullPointerException if the specified key is {@code null}
      * @see Offloadable
@@ -2530,6 +2534,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      *
      * @param keys The keys to execute the entry processor on. Can be empty, in
      *             that case it's a local no-op
+     * @param <R>  the entry processor return type
      * @return results of {@link EntryProcessor#process(Entry)}
      * @throws NullPointerException if there's null element in {@code keys}
      */

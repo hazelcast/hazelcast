@@ -16,7 +16,6 @@
 
 package com.hazelcast.map.impl.record;
 
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.impl.Metadata;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
@@ -24,7 +23,6 @@ import java.util.Objects;
 
 import static com.hazelcast.internal.nio.Bits.INT_SIZE_IN_BYTES;
 import static com.hazelcast.internal.nio.Bits.LONG_SIZE_IN_BYTES;
-import static com.hazelcast.internal.util.JVMUtil.REFERENCE_COST_IN_BYTES;
 import static com.hazelcast.map.impl.record.RecordReaderWriter.DATA_RECORD_READER_WRITER;
 
 /**
@@ -36,7 +34,6 @@ public abstract class AbstractRecord<V> implements Record<V> {
     private static final int NUMBER_OF_LONGS = 1;
     private static final int NUMBER_OF_INTS = 6;
 
-    protected Data key;
     protected int ttl;
     protected int maxIdle;
     protected long version;
@@ -121,8 +118,7 @@ public abstract class AbstractRecord<V> implements Record<V> {
 
     @Override
     public long getCost() {
-        return REFERENCE_COST_IN_BYTES
-                + (NUMBER_OF_LONGS * LONG_SIZE_IN_BYTES)
+        return (NUMBER_OF_LONGS * LONG_SIZE_IN_BYTES)
                 + (NUMBER_OF_INTS * INT_SIZE_IN_BYTES);
     }
 
@@ -134,15 +130,6 @@ public abstract class AbstractRecord<V> implements Record<V> {
     @Override
     public boolean casCachedValue(Object expectedValue, Object newValue) {
         return true;
-    }
-
-    @Override
-    public Data getKey() {
-        return key;
-    }
-
-    public void setKey(Data key) {
-        this.key = key;
     }
 
     @Override
@@ -205,17 +192,12 @@ public abstract class AbstractRecord<V> implements Record<V> {
         if (creationTime != that.creationTime) {
             return false;
         }
-        if (!key.equals(that.key)) {
-            return false;
-        }
         return Objects.equals(metadata, that.metadata);
     }
 
     @Override
     public int hashCode() {
-        int result = key.hashCode();
-        result = 31 * result + ttl;
-        result = 31 * result + maxIdle;
+        int result = 31 * ttl + maxIdle;
         result = 31 * result + (int) (version ^ (version >>> 32));
         result = 31 * result + hits;
         result = 31 * result + lastAccessTime;
@@ -298,7 +280,6 @@ public abstract class AbstractRecord<V> implements Record<V> {
     @Override
     public String toString() {
         return "AbstractRecord{"
-                + "key=" + key
                 + ", ttl=" + ttl
                 + ", maxIdle=" + maxIdle
                 + ", version=" + version

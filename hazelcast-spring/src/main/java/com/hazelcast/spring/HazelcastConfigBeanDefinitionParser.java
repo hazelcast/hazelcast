@@ -18,7 +18,7 @@ package com.hazelcast.spring;
 
 import com.hazelcast.config.AdvancedNetworkConfig;
 import com.hazelcast.config.AliasedDiscoveryConfig;
-import com.hazelcast.internal.config.AliasedDiscoveryConfigUtils;
+import com.hazelcast.config.AttributeConfig;
 import com.hazelcast.config.CRDTReplicationConfig;
 import com.hazelcast.config.CachePartitionLostListenerConfig;
 import com.hazelcast.config.CacheSimpleConfig;
@@ -52,19 +52,19 @@ import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.config.LoginModuleConfig;
 import com.hazelcast.config.MCMutualAuthConfig;
 import com.hazelcast.config.ManagementCenterConfig;
-import com.hazelcast.config.AttributeConfig;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapPartitionLostListenerConfig;
 import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.config.MapStoreConfig.InitialLoadMode;
-import com.hazelcast.config.MaxSizeConfig;
-import com.hazelcast.config.MaxSizeConfig.MaxSizePolicy;
 import com.hazelcast.config.MemberAddressProviderConfig;
 import com.hazelcast.config.MemberAttributeConfig;
 import com.hazelcast.config.MemberGroupConfig;
 import com.hazelcast.config.MemcacheProtocolConfig;
 import com.hazelcast.config.MergePolicyConfig;
 import com.hazelcast.config.MerkleTreeConfig;
+import com.hazelcast.config.MetricsConfig;
+import com.hazelcast.config.MetricsJmxConfig;
+import com.hazelcast.config.MetricsManagementCenterConfig;
 import com.hazelcast.config.MultiMapConfig;
 import com.hazelcast.config.MulticastConfig;
 import com.hazelcast.config.NativeMemoryConfig;
@@ -95,8 +95,6 @@ import com.hazelcast.config.ScheduledExecutorConfig;
 import com.hazelcast.config.SecurityConfig;
 import com.hazelcast.config.SecurityInterceptorConfig;
 import com.hazelcast.config.ServerSocketEndpointConfig;
-import com.hazelcast.config.ServiceConfig;
-import com.hazelcast.config.ServicesConfig;
 import com.hazelcast.config.SetConfig;
 import com.hazelcast.config.SplitBrainProtectionConfig;
 import com.hazelcast.config.SplitBrainProtectionConfigBuilder;
@@ -110,6 +108,9 @@ import com.hazelcast.config.WanConsumerConfig;
 import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.config.WanReplicationRef;
 import com.hazelcast.config.WanSyncConfig;
+import com.hazelcast.config.cp.CPSubsystemConfig;
+import com.hazelcast.config.cp.FencedLockConfig;
+import com.hazelcast.config.cp.RaftAlgorithmConfig;
 import com.hazelcast.config.cp.SemaphoreConfig;
 import com.hazelcast.config.security.JaasAuthenticationConfig;
 import com.hazelcast.config.security.LdapAuthenticationConfig;
@@ -120,18 +121,12 @@ import com.hazelcast.config.security.TlsAuthenticationConfig;
 import com.hazelcast.config.security.TokenEncoding;
 import com.hazelcast.config.security.TokenIdentityConfig;
 import com.hazelcast.config.security.UsernamePasswordIdentityConfig;
-import com.hazelcast.config.cp.CPSubsystemConfig;
-import com.hazelcast.config.cp.FencedLockConfig;
-import com.hazelcast.config.cp.RaftAlgorithmConfig;
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.instance.ProtocolType;
-import com.hazelcast.internal.services.ServiceConfigurationParser;
-import com.hazelcast.map.eviction.MapEvictionPolicy;
+import com.hazelcast.internal.config.AliasedDiscoveryConfigUtils;
 import com.hazelcast.memory.MemorySize;
 import com.hazelcast.memory.MemoryUnit;
-import com.hazelcast.internal.nio.ClassLoaderUtil;
 import com.hazelcast.splitbrainprotection.SplitBrainProtectionOn;
-import com.hazelcast.internal.util.ExceptionUtil;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.support.AbstractBeanDefinition;
 import org.springframework.beans.factory.support.BeanDefinitionBuilder;
@@ -157,8 +152,6 @@ import static com.hazelcast.internal.config.DomConfigHelper.getBooleanValue;
 import static com.hazelcast.internal.config.DomConfigHelper.getDoubleValue;
 import static com.hazelcast.internal.config.DomConfigHelper.getIntegerValue;
 import static com.hazelcast.internal.config.DomConfigHelper.getLongValue;
-import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
-import static com.hazelcast.internal.util.Preconditions.checkHasText;
 import static com.hazelcast.internal.util.StringUtil.isNullOrEmpty;
 import static com.hazelcast.internal.util.StringUtil.upperCaseInternal;
 import static java.lang.Boolean.parseBoolean;
@@ -322,8 +315,6 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                         handleLiteMember(node);
                     } else if ("management-center".equals(nodeName)) {
                         handleManagementCenter(node);
-                    } else if ("services".equals(nodeName)) {
-                        handleServices(node);
                     } else if ("spring-aware".equals(nodeName)) {
                         handleSpringAware();
                     } else if ("split-brain-protection".equals(nodeName)) {
@@ -338,6 +329,8 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                         handlePNCounter(node);
                     } else if ("cp-subsystem".equals(nodeName)) {
                         handleCPSubSystem(node);
+                    } else if ("metrics".equals(nodeName)) {
+                        handleMetrics(node);
                     }
                 }
             }
@@ -574,11 +567,11 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                     ProbabilisticSplitBrainProtectionConfigBuilder.DEFAULT_HEARTBEAT_INTERVAL_MILLIS);
             splitBrainProtectionConfigBuilder =
                     SplitBrainProtectionConfig.newProbabilisticSplitBrainProtectionConfigBuilder(name, splitBrainProtectionSize)
-                            .withAcceptableHeartbeatPauseMillis(acceptableHeartPause)
-                            .withSuspicionThreshold(threshold)
-                            .withHeartbeatIntervalMillis(heartbeatIntervalMillis)
-                            .withMinStdDeviationMillis(minStdDeviation)
-                            .withMaxSampleSize(maxSampleSize);
+                                              .withAcceptableHeartbeatPauseMillis(acceptableHeartPause)
+                                              .withSuspicionThreshold(threshold)
+                                              .withHeartbeatIntervalMillis(heartbeatIntervalMillis)
+                                              .withMinStdDeviationMillis(minStdDeviation)
+                                              .withMaxSampleSize(maxSampleSize);
             return splitBrainProtectionConfigBuilder;
         }
 
@@ -593,64 +586,6 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
         private void handleLiteMember(Node node) {
             Node attrEnabled = node.getAttributes().getNamedItem("enabled");
             configBuilder.addPropertyValue(xmlToJavaName(cleanNodeName(node)), getTextContent(attrEnabled));
-        }
-
-        public void handleServices(Node node) {
-            BeanDefinitionBuilder servicesConfigBuilder = createBeanBuilder(ServicesConfig.class);
-            AbstractBeanDefinition beanDefinition = servicesConfigBuilder.getBeanDefinition();
-            fillAttributeValues(node, servicesConfigBuilder);
-            ManagedList<AbstractBeanDefinition> serviceConfigManagedList = new ManagedList<>();
-            for (Node child : childElements(node)) {
-                String nodeName = cleanNodeName(child);
-                if ("service".equals(nodeName)) {
-                    serviceConfigManagedList.add(handleService(child));
-                }
-            }
-            servicesConfigBuilder.addPropertyValue("serviceConfigs", serviceConfigManagedList);
-            configBuilder.addPropertyValue("servicesConfig", beanDefinition);
-        }
-
-        private AbstractBeanDefinition handleService(Node node) {
-            BeanDefinitionBuilder serviceConfigBuilder = createBeanBuilder(ServiceConfig.class);
-            AbstractBeanDefinition beanDefinition = serviceConfigBuilder.getBeanDefinition();
-            fillAttributeValues(node, serviceConfigBuilder);
-            boolean classNameSet = false;
-            for (Node child : childElements(node)) {
-                String nodeName = cleanNodeName(child);
-                if ("name".equals(nodeName)) {
-                    serviceConfigBuilder.addPropertyValue(xmlToJavaName(nodeName), getTextContent(child));
-                } else if ("class-name".equals(nodeName)) {
-                    // log message about element deprecation..?
-                    serviceConfigBuilder.addPropertyValue(xmlToJavaName(nodeName), getTextContent(child));
-                    classNameSet = true;
-                } else if ("properties".equals(nodeName)) {
-                    handleProperties(child, serviceConfigBuilder);
-                } else if ("configuration".equals(nodeName)) {
-                    Node parser = child.getAttributes().getNamedItem("parser");
-                    String name = getTextContent(parser);
-                    try {
-                        ServiceConfigurationParser serviceConfigurationParser =
-                                ClassLoaderUtil.newInstance(getClass().getClassLoader(), name);
-                        Object obj = serviceConfigurationParser.parse((Element) child);
-                        serviceConfigBuilder.addPropertyValue(xmlToJavaName("config-object"), obj);
-                    } catch (Exception e) {
-                        ExceptionUtil.sneakyThrow(e);
-                    }
-                }
-            }
-
-            NamedNodeMap attributes = node.getAttributes();
-            Node classNameNode = attributes.getNamedItem("class-name");
-            if (classNameNode != null) {
-                serviceConfigBuilder.addPropertyValue("className", getTextContent(classNameNode));
-            }
-            Node implNode = attributes.getNamedItem("implementation");
-            if (implNode != null) {
-                serviceConfigBuilder.addPropertyReference("implementation", getTextContent(implNode));
-            }
-            isTrue(classNameSet || classNameNode != null || implNode != null, "One of 'class-name' or 'implementation'"
-                    + " attributes is required to create ServiceConfig!");
-            return beanDefinition;
         }
 
         public void handleReplicatedMap(Node node) {
@@ -1230,19 +1165,8 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
             Node attName = node.getAttributes().getNamedItem("name");
             String name = getTextContent(attName);
             mapConfigBuilder.addPropertyValue("name", name);
-            fillAttributeValues(node, mapConfigBuilder, "maxSize", "maxSizePolicy");
-            BeanDefinitionBuilder maxSizeConfigBuilder = createBeanBuilder(MaxSizeConfig.class);
-            AbstractBeanDefinition maxSizeConfigBeanDefinition = maxSizeConfigBuilder.getBeanDefinition();
-            mapConfigBuilder.addPropertyValue("maxSizeConfig", maxSizeConfigBeanDefinition);
-            Node maxSizeNode = node.getAttributes().getNamedItem("max-size");
-            if (maxSizeNode != null) {
-                maxSizeConfigBuilder.addPropertyValue("size", getTextContent(maxSizeNode));
-            }
-            Node maxSizePolicyNode = node.getAttributes().getNamedItem("max-size-policy");
-            if (maxSizePolicyNode != null) {
-                maxSizeConfigBuilder.addPropertyValue(xmlToJavaName(cleanNodeName(maxSizePolicyNode)),
-                        MaxSizePolicy.valueOf(getTextContent(maxSizePolicyNode)));
-            }
+            fillAttributeValues(node, mapConfigBuilder);
+
             Node cacheDeserializedValueNode = node.getAttributes().getNamedItem("cache-deserialized-values");
             if (cacheDeserializedValueNode != null) {
                 mapConfigBuilder.addPropertyValue("cacheDeserializedValues", getTextContent(cacheDeserializedValueNode));
@@ -1289,39 +1213,14 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                     handleHotRestartConfig(mapConfigBuilder, childNode);
                 } else if ("event-journal".equals(nodeName)) {
                     handleEventJournalConfig(mapConfigBuilder, childNode);
-                } else if ("map-eviction-policy".equals(nodeName)) {
-                    handleMapEvictionPolicyConfig(mapConfigBuilder, childNode);
+                } else if ("eviction".equals(nodeName)) {
+                    handleEvictionConfig(childNode, mapConfigBuilder, false, true);
                 } else if ("partition-strategy".equals(nodeName)) {
                     PartitioningStrategyConfig psConfig = new PartitioningStrategyConfig(getTextContent(childNode));
                     mapConfigBuilder.addPropertyValue("partitioningStrategyConfig", psConfig);
                 }
             }
             mapConfigManagedMap.put(name, beanDefinition);
-        }
-
-        private void handleMapEvictionPolicyConfig(BeanDefinitionBuilder mapConfigBuilder, Node childNode) {
-            NamedNodeMap attributes = childNode.getAttributes();
-            Node implementationNode = attributes.getNamedItem("implementation");
-            Node classNameNode = attributes.getNamedItem("class-name");
-
-            String implementation = implementationNode != null ? getTextContent(implementationNode) : null;
-            String className = classNameNode != null ? getTextContent(classNameNode) : null;
-
-            if (implementation != null) {
-                mapConfigBuilder.addPropertyReference("mapEvictionPolicy", implementation);
-            } else if (className != null) {
-                className = checkHasText(className, "map-eviction-policy `className` cannot be null or empty");
-                try {
-                    MapEvictionPolicy mapEvictionPolicy = ClassLoaderUtil.newInstance(getClass().getClassLoader(), className);
-                    mapConfigBuilder.addPropertyValue("mapEvictionPolicy", mapEvictionPolicy);
-
-                } catch (Exception e) {
-                    throw rethrow(e);
-                }
-            } else {
-                throw new IllegalArgumentException("One of `className` or `implementation`"
-                        + " attributes is required to create map-eviction-policy");
-            }
         }
 
         private void handleMerkleTreeConfig(BeanDefinitionBuilder configBuilder, Node node) {
@@ -1415,7 +1314,7 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                     }
                     builder.addPropertyValue("indexConfigs", indexes);
                 } else if ("eviction".equals(nodeName)) {
-                    builder.addPropertyValue("evictionConfig", getEvictionConfig(node, false));
+                    builder.addPropertyValue("evictionConfig", getEvictionConfig(node, false, false));
                 }
             }
             return builder;
@@ -1429,7 +1328,8 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
             for (Node childNode : childElements(node)) {
                 String nodeName = cleanNodeName(childNode);
                 if ("eviction".equals(nodeName)) {
-                    cacheConfigBuilder.addPropertyValue("evictionConfig", getEvictionConfig(childNode, false));
+                    cacheConfigBuilder.addPropertyValue("evictionConfig",
+                            getEvictionConfig(childNode, false, false));
                 } else if ("expiry-policy-factory".equals(cleanNodeName(childNode))) {
                     cacheConfigBuilder.addPropertyValue("expiryPolicyFactoryConfig", getExpiryPolicyFactoryConfig(childNode));
                 } else if ("cache-entry-listeners".equals(nodeName)) {
@@ -1624,14 +1524,15 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
             for (Node childNode : childElements(node)) {
                 String nodeName = cleanNodeName(childNode);
                 if ("eviction".equals(nodeName)) {
-                    handleEvictionConfig(childNode, nearCacheConfigBuilder, true);
+                    handleEvictionConfig(childNode, nearCacheConfigBuilder, true, false);
                 }
             }
             configBuilder.addPropertyValue("nearCacheConfig", nearCacheConfigBuilder.getBeanDefinition());
         }
 
-        private void handleEvictionConfig(Node node, BeanDefinitionBuilder configBuilder, boolean isNearCache) {
-            configBuilder.addPropertyValue("evictionConfig", getEvictionConfig(node, isNearCache));
+        private void handleEvictionConfig(Node node, BeanDefinitionBuilder configBuilder,
+                                          boolean isNearCache, boolean isIMap) {
+            configBuilder.addPropertyValue("evictionConfig", getEvictionConfig(node, isNearCache, isIMap));
         }
 
         private ExpiryPolicyFactoryConfig getExpiryPolicyFactoryConfig(Node node) {
@@ -1958,7 +1859,7 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
         private void handleLoginModules(Node node, BeanDefinitionBuilder realmConfigBuilder) {
             BeanDefinitionBuilder jaasConfigBuilder = createBeanBuilder(JaasAuthenticationConfig.class);
             AbstractBeanDefinition beanDefinition = jaasConfigBuilder.getBeanDefinition();
-            List<BeanDefinition> lms = new ManagedList<BeanDefinition>();
+            List<BeanDefinition> lms = new ManagedList<>();
             for (Node child : childElements(node)) {
                 String nodeName = cleanNodeName(child);
                 if ("login-module".equals(nodeName)) {
@@ -2160,6 +2061,36 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
         // endpoint-config or server-socket-endpoint-config node
         private EndpointQualifier createEndpointQualifier(ProtocolType type, Node node) {
             return EndpointQualifier.resolve(type, getAttribute(node, "name"));
+        }
+
+        private void handleMetrics(Node node) {
+            BeanDefinitionBuilder metricsConfigBuilder = createBeanBuilder(MetricsConfig.class);
+
+            fillValues(node, metricsConfigBuilder, "managementCenter", "jmx");
+
+            NamedNodeMap attributes = node.getAttributes();
+            Node attrEnabled = attributes.getNamedItem("enabled");
+            boolean enabled = attrEnabled != null && getBooleanValue(getTextContent(attrEnabled));
+            metricsConfigBuilder.addPropertyValue("enabled", enabled);
+
+            for (Node child : childElements(node)) {
+                String nodeName = cleanNodeName(child);
+                if ("management-center".equals(nodeName)) {
+                    BeanDefinitionBuilder metricsMcConfigBuilder = createBeanBuilder(MetricsManagementCenterConfig.class);
+                    fillValues(child, metricsMcConfigBuilder);
+
+                    metricsConfigBuilder.addPropertyValue("managementCenterConfig",
+                            metricsMcConfigBuilder.getBeanDefinition());
+                } else if ("jmx".equals(nodeName)) {
+                    BeanDefinitionBuilder metricsJmxConfigBuilder = createBeanBuilder(MetricsJmxConfig.class);
+                    fillValues(child, metricsJmxConfigBuilder);
+
+                    metricsConfigBuilder.addPropertyValue("jmxConfig",
+                            metricsJmxConfigBuilder.getBeanDefinition());
+                }
+            }
+
+            configBuilder.addPropertyValue("metricsConfig", metricsConfigBuilder.getBeanDefinition());
         }
     }
 }

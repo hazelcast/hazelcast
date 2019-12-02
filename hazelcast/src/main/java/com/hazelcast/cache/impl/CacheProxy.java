@@ -17,16 +17,17 @@
 package com.hazelcast.cache.impl;
 
 import com.hazelcast.cache.CacheStatistics;
+import com.hazelcast.cache.EventJournalCacheEvent;
 import com.hazelcast.cache.impl.event.CachePartitionLostEventFilter;
 import com.hazelcast.cache.impl.event.CachePartitionLostListener;
 import com.hazelcast.cache.impl.event.InternalCachePartitionLostListenerAdapter;
 import com.hazelcast.cache.impl.journal.CacheEventJournalReadOperation;
 import com.hazelcast.cache.impl.journal.CacheEventJournalSubscribeOperation;
-import com.hazelcast.cache.EventJournalCacheEvent;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.internal.config.CacheConfigReadOnly;
 import com.hazelcast.internal.journal.EventJournalInitialSubscriberState;
 import com.hazelcast.internal.journal.EventJournalReader;
+import com.hazelcast.internal.util.Clock;
 import com.hazelcast.internal.util.collection.PartitionIdSet;
 import com.hazelcast.map.impl.MapEntries;
 import com.hazelcast.nio.serialization.Data;
@@ -90,6 +91,8 @@ import static java.util.Collections.emptyMap;
 @SuppressWarnings({"checkstyle:methodcount", "checkstyle:classfanoutcomplexity"})
 public class CacheProxy<K, V> extends CacheProxySupport<K, V>
         implements EventJournalReader<EventJournalCacheEvent<K, V>> {
+
+    private static final CacheStatistics EMPTY_CACHE_STATS = new CacheStatisticsImpl(Clock.currentTimeMillis());
 
     CacheProxy(CacheConfig<K, V> cacheConfig, NodeEngine nodeEngine, ICacheService cacheService) {
         super(cacheConfig, nodeEngine, cacheService);
@@ -282,7 +285,7 @@ public class CacheProxy<K, V> extends CacheProxySupport<K, V>
         CacheEventListenerAdaptor<K, V> entryListener = new CacheEventListenerAdaptor<K, V>(this,
                 cacheEntryListenerConfiguration,
                 getNodeEngine().getSerializationService());
-        UUID regId = getService().registerListener(getDistributedObjectName(), entryListener, entryListener, false);
+        UUID regId = getService().registerListener(getDistributedObjectName(), entryListener, entryListener);
         if (regId != null) {
             if (addToConfig) {
                 cacheConfig.addCacheEntryListenerConfiguration(cacheEntryListenerConfiguration);
@@ -374,7 +377,9 @@ public class CacheProxy<K, V> extends CacheProxySupport<K, V>
 
     @Override
     public CacheStatistics getLocalCacheStatistics() {
-        // TODO: throw UnsupportedOperationException if cache statistics are not enabled (but it breaks backward compatibility)
+        if (!cacheConfig.isStatisticsEnabled()) {
+            return EMPTY_CACHE_STATS;
+        }
         return getService().createCacheStatIfAbsent(cacheConfig.getNameWithPrefix());
     }
 

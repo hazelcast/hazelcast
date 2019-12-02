@@ -17,13 +17,12 @@
 package com.hazelcast.cache.impl.journal;
 
 import com.hazelcast.cache.impl.CacheProxy;
-import com.hazelcast.cache.impl.HazelcastServerCachingProvider;
 import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.EventJournalConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.ringbuffer.ReadResultSet;
-import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -40,6 +39,7 @@ import java.util.LinkedList;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ExecutionException;
 
+import static com.hazelcast.cache.CacheTestSupport.createServerCachingProvider;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastSerialClassRunner.class)
@@ -63,7 +63,7 @@ public class AdvancedCacheJournalTest extends HazelcastTestSupport {
         cacheConfig.setEventJournalConfig(new EventJournalConfig().setEnabled(true));
 
         return super.getConfig()
-                    .setProperty(GroupProperty.PARTITION_COUNT.getName(), String.valueOf(PARTITION_COUNT))
+                    .setProperty(ClusterProperty.PARTITION_COUNT.getName(), String.valueOf(PARTITION_COUNT))
                     .addCacheConfig(cacheConfig);
     }
 
@@ -96,8 +96,7 @@ public class AdvancedCacheJournalTest extends HazelcastTestSupport {
     }
 
     private Cache<Object, Object> getCache(HazelcastInstance instance, String name) {
-        CacheManager cacheManager =
-                HazelcastServerCachingProvider.createCachingProvider(instance).getCacheManager();
+        CacheManager cacheManager = createServerCachingProvider(instance).getCacheManager();
         return cacheManager.getCache(name);
     }
 

@@ -141,7 +141,7 @@ public final class HazelcastClientCacheManager extends AbstractHazelcastCacheMan
 
     @Override
     protected <K, V> void createCacheConfig(String cacheName, CacheConfig<K, V> config) {
-        ClientCacheHelper.createCacheConfig(client, config);
+        ClientCacheHelper.createCacheConfig(client, config, false);
     }
 
     @Override
@@ -173,7 +173,8 @@ public final class HazelcastClientCacheManager extends AbstractHazelcastCacheMan
 
     @Override
     protected <K, V> void validateCacheConfig(CacheConfig<K, V> cacheConfig) {
-        checkCacheConfig(cacheConfig, null);
+        checkCacheConfig(cacheConfig, null
+        );
     }
 
     @Override
@@ -185,7 +186,7 @@ public final class HazelcastClientCacheManager extends AbstractHazelcastCacheMan
      *
      * @return the related {@link NearCacheManager} with the underlying client instance
      */
-    public NearCacheManager getNearCacheManager() {
-        return client.getNearCacheManager();
+    public NearCacheManager getNearCacheManager(String serviceName) {
+        return client.getNearCacheManager(serviceName);
     }
 }

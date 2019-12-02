@@ -42,7 +42,7 @@ import static com.hazelcast.instance.impl.DefaultAddressPicker.PREFER_IPV4_STACK
 import static com.hazelcast.instance.impl.DefaultAddressPicker.PREFER_IPV6_ADDRESSES;
 import static com.hazelcast.instance.impl.DefaultAddressPickerTest.findIPv6NonLoopbackInterface;
 import static com.hazelcast.instance.EndpointQualifier.MEMBER;
-import static com.hazelcast.spi.properties.GroupProperty.PREFER_IPv4_STACK;
+import static com.hazelcast.spi.properties.ClusterProperty.PREFER_IPv4_STACK;
 import static com.hazelcast.test.OverridePropertyRule.clear;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assume.assumeNotNull;

@@ -24,13 +24,14 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.LifecycleEvent;
 import com.hazelcast.core.LifecycleListener;
 import com.hazelcast.instance.BuildInfoProvider;
-import com.hazelcast.test.AssertTask;
+import com.hazelcast.internal.ascii.HTTPCommunicator.ConnectionResponse;
+import com.hazelcast.internal.json.Json;
+import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestAwareInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
 import org.apache.http.NoHttpResponseException;
-import org.hamcrest.CoreMatchers;
 import org.junit.After;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -47,16 +48,15 @@ import static com.hazelcast.test.HazelcastTestSupport.assertContains;
 import static com.hazelcast.test.HazelcastTestSupport.assertOpenEventually;
 import static com.hazelcast.test.HazelcastTestSupport.assertTrueEventually;
 import static com.hazelcast.test.HazelcastTestSupport.smallInstanceConfig;
+import static java.net.HttpURLConnection.HTTP_FORBIDDEN;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
 public class RestClusterTest {
-
-    protected static final String STATUS_FORBIDDEN = "{\"status\":\"forbidden\"}";
 
     protected final TestAwareInstanceFactory factory = new TestAwareInstanceFactory();
 
@@ -109,14 +109,10 @@ public class RestClusterTest {
 
 
         String response = communicator.shutdownCluster(config.getClusterName(), getPassword()).response;
-        assertThat(response, CoreMatchers.containsString("\"status\":\"success\""));
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run()
-                    throws Exception {
-                assertFalse(instance1.getLifecycleService().isRunning());
-                assertFalse(instance2.getLifecycleService().isRunning());
-            }
+        assertJsonContains(response, "status", "success");
+        assertTrueEventually(() -> {
+            assertFalse(instance1.getLifecycleService().isRunning());
+            assertFalse(instance2.getLifecycleService().isRunning());
         });
     }
 
@@ -130,12 +126,14 @@ public class RestClusterTest {
         HTTPCommunicator communicator2 = new HTTPCommunicator(instance2);
 
         instance1.getCluster().changeClusterState(ClusterState.FROZEN);
-        assertEquals("{\"status\":\"success\",\"state\":\"frozen\"}",
-                communicator1.getClusterState(clusterName, getPassword()));
+        assertJsonContains(communicator1.getClusterState(clusterName, getPassword()).response,
+                "status", "success",
+                "state", "frozen");
 
         instance1.getCluster().changeClusterState(ClusterState.PASSIVE);
-        assertEquals("{\"status\":\"success\",\"state\":\"passive\"}",
-                communicator2.getClusterState(clusterName, getPassword()));
+        assertJsonContains(communicator2.getClusterState(clusterName, getPassword()).response,
+                "status", "success",
+                "state", "passive");
     }
 
     @Test
@@ -146,8 +144,10 @@ public class RestClusterTest {
         HTTPCommunicator communicator = new HTTPCommunicator(instance1);
         String clusterName = config.getClusterName();
 
-        assertEquals(STATUS_FORBIDDEN, communicator.changeClusterState(clusterName + "1", getPassword(), "frozen").response);
-        assertEquals(HttpURLConnection.HTTP_OK, communicator.changeClusterState(clusterName, getPassword(), "frozen").responseCode);
+        assertEquals(HTTP_FORBIDDEN,
+                communicator.changeClusterState(clusterName + "1", getPassword(), "frozen").responseCode);
+        assertEquals(HttpURLConnection.HTTP_OK,
+                communicator.changeClusterState(clusterName, getPassword(), "frozen").responseCode);
 
         assertClusterStateEventually(ClusterState.FROZEN, instance1);
         assertClusterStateEventually(ClusterState.FROZEN, instance2);
@@ -157,9 +157,9 @@ public class RestClusterTest {
     public void testGetClusterVersion() throws IOException {
         final HazelcastInstance instance = factory.newHazelcastInstance(createConfigWithRestEnabled());
         final HTTPCommunicator communicator = new HTTPCommunicator(instance);
-        final String expected = "{\"status\":\"success\","
-                + "\"version\":\"" + instance.getCluster().getClusterVersion().toString() + "\"}";
-        assertEquals(expected, communicator.getClusterVersion());
+        assertJsonContains(communicator.getClusterVersion(),
+                "status", "success",
+                "version", instance.getCluster().getClusterVersion().toString());
     }
 
     @Test
@@ -170,7 +170,8 @@ public class RestClusterTest {
         String clusterName = config.getClusterName();
         assertEquals(HttpURLConnection.HTTP_OK, communicator.changeClusterVersion(clusterName, getPassword(),
                 instance.getCluster().getClusterVersion().toString()).responseCode);
-        assertEquals(STATUS_FORBIDDEN, communicator.changeClusterVersion(clusterName + "1", getPassword(), "1.2.3").response);
+        ConnectionResponse resp = communicator.changeClusterVersion(clusterName + "1", getPassword(), "1.2.3");
+        assertEquals(HTTP_FORBIDDEN, resp.responseCode);
     }
 
     @Test
@@ -180,9 +181,9 @@ public class RestClusterTest {
         final HTTPCommunicator communicator = new HTTPCommunicator(instance);
         String clusterName = config.getClusterName();
         assertEquals(HttpURLConnection.HTTP_OK, communicator.hotBackup(clusterName, getPassword()).responseCode);
-        assertEquals(STATUS_FORBIDDEN, communicator.hotBackup(clusterName + "1", getPassword()).response);
+        assertEquals(HTTP_FORBIDDEN, communicator.hotBackup(clusterName + "1", getPassword()).responseCode);
         assertEquals(HttpURLConnection.HTTP_OK, communicator.hotBackupInterrupt(clusterName, getPassword()).responseCode);
-        assertEquals(STATUS_FORBIDDEN, communicator.hotBackupInterrupt(clusterName + "1", getPassword()).response);
+        assertEquals(HTTP_FORBIDDEN, communicator.hotBackupInterrupt(clusterName + "1", getPassword()).responseCode);
     }
 
     @Test
@@ -192,9 +193,9 @@ public class RestClusterTest {
         final HTTPCommunicator communicator = new HTTPCommunicator(instance);
         String clusterName = config.getClusterName();
         assertEquals(HttpURLConnection.HTTP_OK, communicator.forceStart(clusterName, getPassword()).responseCode);
-        assertEquals(STATUS_FORBIDDEN, communicator.forceStart(clusterName + "1", getPassword()).response);
+        assertEquals(HTTP_FORBIDDEN, communicator.forceStart(clusterName + "1", getPassword()).responseCode);
         assertEquals(HttpURLConnection.HTTP_OK, communicator.partialStart(clusterName, getPassword()).responseCode);
-        assertEquals(STATUS_FORBIDDEN, communicator.partialStart(clusterName + "1", getPassword()).response);
+        assertEquals(HTTP_FORBIDDEN, communicator.partialStart(clusterName + "1", getPassword()).responseCode);
     }
 
     @Test
@@ -213,12 +214,12 @@ public class RestClusterTest {
         HazelcastInstance instance = factory.newHazelcastInstance(config);
         HTTPCommunicator communicator = new HTTPCommunicator(instance);
         HazelcastTestSupport.waitInstanceForSafeState(instance);
-        String result = String.format("{\"status\":\"success\",\"response\":\"[%s]\n%s\n%s\"}",
-                instance.getCluster().getLocalMember().toString(),
-                BuildInfoProvider.getBuildInfo().getVersion(),
-                System.getProperty("java.version"));
         String clusterName = config.getClusterName();
-        assertEquals(result, communicator.listClusterNodes(clusterName, getPassword()));
+        assertJsonContains(communicator.listClusterNodes(clusterName, getPassword()).response,
+                "status", "success",
+                "response", String.format("[%s]\n%s\n%s", instance.getCluster().getLocalMember().toString(),
+                        BuildInfoProvider.getBuildInfo().getVersion(),
+                        System.getProperty("java.version")));
     }
 
     @Test
@@ -228,7 +229,8 @@ public class RestClusterTest {
         HTTPCommunicator communicator = new HTTPCommunicator(instance1);
         HazelcastTestSupport.waitInstanceForSafeState(instance1);
         String clusterName = config.getClusterName();
-        assertEquals(STATUS_FORBIDDEN, communicator.listClusterNodes(clusterName + "1", getPassword()));
+        ConnectionResponse resp = communicator.listClusterNodes(clusterName + "1", getPassword());
+        assertEquals(HTTP_FORBIDDEN, resp.responseCode);
     }
 
     @Test
@@ -248,7 +250,7 @@ public class RestClusterTest {
         });
         String clusterName = config.getClusterName();
         try {
-            assertEquals("{\"status\":\"success\"}", communicator.shutdownMember(clusterName, getPassword()));
+            assertJsonContains(communicator.shutdownMember(clusterName, getPassword()).response, "status", "success");
         } catch (SocketException ignored) {
             // if the node shuts down before response is received, a `SocketException` (or instance of its subclass) is expected
         } catch (NoHttpResponseException ignored) {
@@ -267,7 +269,8 @@ public class RestClusterTest {
         HazelcastInstance instance = factory.newHazelcastInstance(config);
         HTTPCommunicator communicator = new HTTPCommunicator(instance);
         String clusterName = config.getClusterName();
-        assertEquals(STATUS_FORBIDDEN, communicator.shutdownMember(clusterName + "1", getPassword()));
+        ConnectionResponse resp = communicator.shutdownMember(clusterName + "1", getPassword());
+        assertEquals(HTTP_FORBIDDEN, resp.responseCode);
     }
 
     @Test
@@ -276,11 +279,12 @@ public class RestClusterTest {
         HTTPCommunicator communicator = new HTTPCommunicator(instance);
         String result = communicator.getClusterHealth();
 
-        assertEquals("Hazelcast::NodeState=ACTIVE\n"
-                + "Hazelcast::ClusterState=ACTIVE\n"
-                + "Hazelcast::ClusterSafe=TRUE\n"
-                + "Hazelcast::MigrationQueueSize=0\n"
-                + "Hazelcast::ClusterSize=1\n", result);
+        JsonObject jsonResult = assertJsonContains(result,
+                "nodeState", "ACTIVE",
+                "clusterState", "ACTIVE");
+        assertTrue(jsonResult.getBoolean("clusterSafe", false));
+        assertEquals(0, jsonResult.getInt("migrationQueueSize", -1));
+        assertEquals(1, jsonResult.getInt("clusterSize", -1));
     }
 
     @Test
@@ -288,8 +292,8 @@ public class RestClusterTest {
         HazelcastInstance instance = factory.newHazelcastInstance(createConfigWithRestEnabled());
         HTTPCommunicator communicator = new HTTPCommunicator(instance);
 
-        assertEquals("ACTIVE", communicator.getClusterHealth("/node-state"));
-        assertEquals("ACTIVE", communicator.getClusterHealth("/cluster-state"));
+        assertEquals("\"ACTIVE\"", communicator.getClusterHealth("/node-state"));
+        assertEquals("\"ACTIVE\"", communicator.getClusterHealth("/cluster-state"));
         assertEquals(HttpURLConnection.HTTP_OK, communicator.getClusterHealthResponseCode("/cluster-safe"));
         assertEquals("0", communicator.getClusterHealth("/migration-queue-size"));
         assertEquals("1", communicator.getClusterHealth("/cluster-size"));
@@ -373,6 +377,16 @@ public class RestClusterTest {
         HTTPCommunicator.ConnectionResponse response =
                 communicator.setLicense(config.getClusterName(), getPassword(), "whatever");
         assertEquals(HttpURLConnection.HTTP_OK, response.responseCode);
-        assertEquals(response.response, "{\"status\":\"success\"}");
+        assertJsonContains(response.response, "status", "success");
+    }
+
+    private JsonObject assertJsonContains(String json, String... attributesAndValues) {
+        JsonObject object = Json.parse(json).asObject();
+        for (int i = 0; i < attributesAndValues.length; ) {
+            String key = attributesAndValues[i++];
+            String expectedValue = attributesAndValues[i++];
+            assertEquals(expectedValue, object.getString(key, null));
+        }
+        return object;
     }
 }

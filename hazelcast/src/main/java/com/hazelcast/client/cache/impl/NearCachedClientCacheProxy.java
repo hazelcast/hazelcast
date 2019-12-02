@@ -34,6 +34,7 @@ import com.hazelcast.internal.nearcache.NearCache;
 import com.hazelcast.internal.nearcache.NearCacheManager;
 import com.hazelcast.internal.nearcache.impl.invalidation.RepairingHandler;
 import com.hazelcast.internal.nearcache.impl.invalidation.RepairingTask;
+import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
 
@@ -97,7 +98,7 @@ public class NearCachedClientCacheProxy<K, V> extends ClientCacheProxy<K, V> {
         serializeKeys = nearCacheConfig.isSerializeKeys();
 
         ICacheDataStructureAdapter<K, V> adapter = new ICacheDataStructureAdapter<>(this);
-        nearCacheManager = getContext().getNearCacheManager();
+        nearCacheManager = getContext().getNearCacheManager(getServiceName());
         nearCache = nearCacheManager.getOrCreateNearCache(nameWithPrefix, nearCacheConfig, adapter);
         CacheStatistics localCacheStatistics = super.getLocalCacheStatistics();
         ((ClientCacheStatisticsImpl) localCacheStatistics).setNearCacheStats(nearCache.getNearCacheStats());
@@ -714,13 +715,9 @@ public class NearCachedClientCacheProxy<K, V> extends ClientCacheProxy<K, V> {
         }
 
         @Override
-        public void beforeListenerRegister() {
+        public void beforeListenerRegister(Connection connection) {
             RepairingTask repairingTask = getContext().getRepairingTask(getServiceName());
             repairingHandler = repairingTask.registerAndGetHandler(nameWithPrefix, nearCache);
-        }
-
-        @Override
-        public void onListenerRegister() {
         }
 
         @Override

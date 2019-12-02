@@ -38,12 +38,12 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * This includes retrieving the event journal sequences of the
  * oldest and newest event in the journal.
  */
-@Generated("de9f3b9ae03f56d09c9499564170aa26")
+@Generated("d92d272058071cdfcc558278ae96d132")
 public final class MapEventJournalSubscribeCodec {
-    //hex: 0x014400
-    public static final int REQUEST_MESSAGE_TYPE = 82944;
-    //hex: 0x014401
-    public static final int RESPONSE_MESSAGE_TYPE = 82945;
+    //hex: 0x014300
+    public static final int REQUEST_MESSAGE_TYPE = 82688;
+    //hex: 0x014301
+    public static final int RESPONSE_MESSAGE_TYPE = 82689;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_OLDEST_SEQUENCE_FIELD_OFFSET = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_NEWEST_SEQUENCE_FIELD_OFFSET = RESPONSE_OLDEST_SEQUENCE_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
@@ -64,7 +64,6 @@ public final class MapEventJournalSubscribeCodec {
     public static ClientMessage encodeRequest(java.lang.String name) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(true);
-        clientMessage.setAcquiresResource(false);
         clientMessage.setOperationName("Map.EventJournalSubscribe");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);

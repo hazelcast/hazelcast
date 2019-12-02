@@ -59,7 +59,7 @@ import com.hazelcast.config.ManagementCenterConfig;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapPartitionLostListenerConfig;
 import com.hazelcast.config.MapStoreConfig;
-import com.hazelcast.config.MaxSizeConfig;
+import com.hazelcast.config.MaxSizePolicy;
 import com.hazelcast.config.MemberAddressProviderConfig;
 import com.hazelcast.config.MemberGroupConfig;
 import com.hazelcast.config.MemcacheProtocolConfig;
@@ -67,6 +67,8 @@ import com.hazelcast.config.MergePolicyConfig;
 import com.hazelcast.config.MerkleTreeConfig;
 import com.hazelcast.config.MetadataPolicy;
 import com.hazelcast.config.MetricsConfig;
+import com.hazelcast.config.MetricsJmxConfig;
+import com.hazelcast.config.MetricsManagementCenterConfig;
 import com.hazelcast.config.MultiMapConfig;
 import com.hazelcast.config.MulticastConfig;
 import com.hazelcast.config.NearCacheConfig;
@@ -99,8 +101,6 @@ import com.hazelcast.config.SecurityConfig;
 import com.hazelcast.config.SecurityInterceptorConfig;
 import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.config.ServerSocketEndpointConfig;
-import com.hazelcast.config.ServiceConfig;
-import com.hazelcast.config.ServicesConfig;
 import com.hazelcast.config.SetConfig;
 import com.hazelcast.config.SocketInterceptorConfig;
 import com.hazelcast.config.SplitBrainProtectionConfig;
@@ -130,13 +130,8 @@ import com.hazelcast.config.security.TokenEncoding;
 import com.hazelcast.config.security.TokenIdentityConfig;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.instance.ProtocolType;
-import com.hazelcast.internal.metrics.ProbeLevel;
-import com.hazelcast.internal.services.ServiceConfigurationParser;
-import com.hazelcast.internal.util.ExceptionUtil;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
-import com.hazelcast.map.eviction.MapEvictionPolicy;
-import com.hazelcast.internal.nio.ClassLoaderUtil;
 import com.hazelcast.query.impl.IndexUtils;
 import com.hazelcast.splitbrainprotection.SplitBrainProtectionOn;
 import com.hazelcast.topic.TopicOverloadPolicy;
@@ -156,6 +151,12 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 
+import static com.hazelcast.config.ServerSocketEndpointConfig.DEFAULT_SOCKET_CONNECT_TIMEOUT_SECONDS;
+import static com.hazelcast.config.ServerSocketEndpointConfig.DEFAULT_SOCKET_LINGER_SECONDS;
+import static com.hazelcast.config.ServerSocketEndpointConfig.DEFAULT_SOCKET_RECEIVE_BUFFER_SIZE_KB;
+import static com.hazelcast.config.ServerSocketEndpointConfig.DEFAULT_SOCKET_SEND_BUFFER_SIZE_KB;
+import static com.hazelcast.config.security.LdapRoleMappingMode.getRoleMappingMode;
+import static com.hazelcast.config.security.LdapSearchScope.getSearchScope;
 import static com.hazelcast.internal.config.AliasedDiscoveryConfigUtils.getConfigByTag;
 import static com.hazelcast.internal.config.ConfigSections.ADVANCED_NETWORK;
 import static com.hazelcast.internal.config.ConfigSections.CACHE;
@@ -190,13 +191,16 @@ import static com.hazelcast.internal.config.ConfigSections.RINGBUFFER;
 import static com.hazelcast.internal.config.ConfigSections.SCHEDULED_EXECUTOR_SERVICE;
 import static com.hazelcast.internal.config.ConfigSections.SECURITY;
 import static com.hazelcast.internal.config.ConfigSections.SERIALIZATION;
-import static com.hazelcast.internal.config.ConfigSections.SERVICES;
 import static com.hazelcast.internal.config.ConfigSections.SET;
 import static com.hazelcast.internal.config.ConfigSections.SPLIT_BRAIN_PROTECTION;
 import static com.hazelcast.internal.config.ConfigSections.TOPIC;
 import static com.hazelcast.internal.config.ConfigSections.USER_CODE_DEPLOYMENT;
 import static com.hazelcast.internal.config.ConfigSections.WAN_REPLICATION;
 import static com.hazelcast.internal.config.ConfigSections.canOccurMultipleTimes;
+import static com.hazelcast.internal.config.ConfigValidator.checkCacheConfig;
+import static com.hazelcast.internal.config.ConfigValidator.checkCacheEvictionConfig;
+import static com.hazelcast.internal.config.ConfigValidator.checkMapEvictionConfig;
+import static com.hazelcast.internal.config.ConfigValidator.checkNearCacheEvictionConfig;
 import static com.hazelcast.internal.config.DomConfigHelper.childElements;
 import static com.hazelcast.internal.config.DomConfigHelper.childElementsWithName;
 import static com.hazelcast.internal.config.DomConfigHelper.cleanNodeName;
@@ -205,15 +209,6 @@ import static com.hazelcast.internal.config.DomConfigHelper.getBooleanValue;
 import static com.hazelcast.internal.config.DomConfigHelper.getDoubleValue;
 import static com.hazelcast.internal.config.DomConfigHelper.getIntegerValue;
 import static com.hazelcast.internal.config.DomConfigHelper.getLongValue;
-import static com.hazelcast.config.ServerSocketEndpointConfig.DEFAULT_SOCKET_CONNECT_TIMEOUT_SECONDS;
-import static com.hazelcast.config.ServerSocketEndpointConfig.DEFAULT_SOCKET_LINGER_SECONDS;
-import static com.hazelcast.config.ServerSocketEndpointConfig.DEFAULT_SOCKET_RECEIVE_BUFFER_SIZE_KB;
-import static com.hazelcast.config.ServerSocketEndpointConfig.DEFAULT_SOCKET_SEND_BUFFER_SIZE_KB;
-import static com.hazelcast.config.security.LdapRoleMappingMode.getRoleMappingMode;
-import static com.hazelcast.config.security.LdapSearchScope.getSearchScope;
-import static com.hazelcast.internal.config.ConfigValidator.checkCacheConfig;
-import static com.hazelcast.internal.config.ConfigValidator.checkEvictionConfig;
-import static com.hazelcast.internal.util.Preconditions.checkHasText;
 import static com.hazelcast.internal.util.StringUtil.isNullOrEmpty;
 import static com.hazelcast.internal.util.StringUtil.lowerCaseInternal;
 import static com.hazelcast.internal.util.StringUtil.upperCaseInternal;
@@ -281,8 +276,6 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
             handleDurableExecutor(node);
         } else if (SCHEDULED_EXECUTOR_SERVICE.isEqual(nodeName)) {
             handleScheduledExecutor(node);
-        } else if (SERVICES.isEqual(nodeName)) {
-            handleServices(node);
         } else if (QUEUE.isEqual(nodeName)) {
             handleQueue(node);
         } else if (MAP.isEqual(nodeName)) {
@@ -635,58 +628,6 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
                 .withMinStdDeviationMillis(minStdDeviation)
                 .withMaxSampleSize(maxSampleSize);
         return splitBrainProtectionConfigBuilder;
-    }
-
-    private void handleServices(Node node) {
-        Node attDefaults = node.getAttributes().getNamedItem("enable-defaults");
-        boolean enableDefaults = attDefaults == null || getBooleanValue(getTextContent(attDefaults));
-        ServicesConfig servicesConfig = config.getServicesConfig();
-        servicesConfig.setEnableDefaults(enableDefaults);
-
-        handleServiceNodes(node, servicesConfig);
-    }
-
-    protected void handleServiceNodes(Node node, ServicesConfig servicesConfig) {
-        for (Node child : childElements(node)) {
-            String nodeName = cleanNodeName(child);
-            if ("service".equals(nodeName)) {
-                ServiceConfig serviceConfig = new ServiceConfig();
-                String enabledValue = getAttribute(child, "enabled");
-                boolean enabled = getBooleanValue(enabledValue);
-                serviceConfig.setEnabled(enabled);
-
-                for (Node n : childElements(child)) {
-                    handleServiceNode(n, serviceConfig);
-                }
-                servicesConfig.addServiceConfig(serviceConfig);
-            }
-        }
-    }
-
-    protected void handleServiceNode(Node n, ServiceConfig serviceConfig) {
-        String value = cleanNodeName(n);
-        if ("name".equals(value)) {
-            String name = getTextContent(n);
-            serviceConfig.setName(name);
-        } else if ("class-name".equals(value)) {
-            String className = getTextContent(n);
-            serviceConfig.setClassName(className);
-        } else if ("properties".equals(value)) {
-            fillProperties(n, serviceConfig.getProperties());
-        } else if ("configuration".equals(value)) {
-            Node parserNode = n.getAttributes().getNamedItem("parser");
-            String parserClass = getTextContent(parserNode);
-            if (parserNode == null || parserClass == null) {
-                throw new InvalidConfigurationException("Parser is required!");
-            }
-            try {
-                ServiceConfigurationParser parser = ClassLoaderUtil.newInstance(config.getClassLoader(), parserClass);
-                Object obj = parser.parse((Element) n);
-                serviceConfig.setConfigObject(obj);
-            } catch (Exception e) {
-                ExceptionUtil.sneakyThrow(e);
-            }
-        }
     }
 
     protected void handleWanReplication(Node node) {
@@ -1786,10 +1727,8 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
                 mapConfig.setInMemoryFormat(InMemoryFormat.valueOf(upperCaseInternal(value)));
             } else if ("async-backup-count".equals(nodeName)) {
                 mapConfig.setAsyncBackupCount(getIntegerValue("async-backup-count", value));
-            } else if ("eviction-policy".equals(nodeName)) {
-                mapConfig.setEvictionPolicy(EvictionPolicy.valueOf(upperCaseInternal(value)));
-            } else if ("max-size".equals(nodeName)) {
-                handleMaxSizeConfig(mapConfig, node, value);
+            } else if ("eviction".equals(nodeName)) {
+                mapConfig.setEvictionConfig(getEvictionConfig(node, false, true));
             } else if ("time-to-live-seconds".equals(nodeName)) {
                 mapConfig.setTimeToLiveSeconds(getIntegerValue("time-to-live-seconds", value));
             } else if ("max-idle-seconds".equals(nodeName)) {
@@ -1836,30 +1775,11 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
                 mapConfig.setSplitBrainProtectionName(value);
             } else if ("query-caches".equals(nodeName)) {
                 mapQueryCacheHandler(node, mapConfig);
-            } else if ("map-eviction-policy-class-name".equals(nodeName)) {
-                String className = checkHasText(getTextContent(node), "map-eviction-policy-class-name cannot be null or empty");
-                try {
-                    MapEvictionPolicy mapEvictionPolicy = ClassLoaderUtil.newInstance(config.getClassLoader(), className);
-                    mapConfig.setMapEvictionPolicy(mapEvictionPolicy);
-                } catch (Exception e) {
-                    throw ExceptionUtil.rethrow(e);
-                }
             }
         }
         config.addMapConfig(mapConfig);
     }
 
-    protected void handleMaxSizeConfig(MapConfig mapConfig, Node node, String value) {
-        MaxSizeConfig msc = mapConfig.getMaxSizeConfig();
-        Node maxSizePolicy = node.getAttributes().getNamedItem("policy");
-        if (maxSizePolicy != null) {
-            msc.setMaxSizePolicy(MaxSizeConfig.MaxSizePolicy.valueOf(
-                    upperCaseInternal(getTextContent(maxSizePolicy))));
-        }
-        msc.setSize(getIntegerValue("max-size", value));
-    }
-
-    @SuppressWarnings("deprecation")
     private NearCacheConfig handleNearCacheConfig(Node node) {
         String name = getAttribute(node, "name");
         NearCacheConfig nearCacheConfig = new NearCacheConfig(name);
@@ -1884,7 +1804,7 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
                 NearCacheConfig.LocalUpdatePolicy policy = NearCacheConfig.LocalUpdatePolicy.valueOf(value);
                 nearCacheConfig.setLocalUpdatePolicy(policy);
             } else if ("eviction".equals(nodeName)) {
-                nearCacheConfig.setEvictionConfig(getEvictionConfig(child, true));
+                nearCacheConfig.setEvictionConfig(getEvictionConfig(child, true, false));
             }
         }
         if (serializeKeys != null && !serializeKeys && nearCacheConfig.getInMemoryFormat() == InMemoryFormat.NATIVE) {
@@ -1954,7 +1874,7 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
             } else if ("wan-replication-ref".equals(nodeName)) {
                 cacheWanReplicationRefHandle(n, cacheConfig);
             } else if ("eviction".equals(nodeName)) {
-                cacheConfig.setEvictionConfig(getEvictionConfig(n, false));
+                cacheConfig.setEvictionConfig(getEvictionConfig(n, false, false));
             } else if ("split-brain-protection-ref".equals(nodeName)) {
                 cacheConfig.setSplitBrainProtectionName(value);
             } else if ("partition-lost-listeners".equals(nodeName)) {
@@ -2038,34 +1958,60 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         return new CacheSimpleConfig.ExpiryPolicyFactoryConfig.TimedExpiryPolicyFactoryConfig(expiryPolicyType, durationConfig);
     }
 
-    private EvictionConfig getEvictionConfig(Node node, boolean isNearCache) {
+    private EvictionConfig getEvictionConfig(Node node, boolean isNearCache, boolean isIMap) {
         EvictionConfig evictionConfig = new EvictionConfig();
+        if (isIMap) {
+            // Set IMap defaults
+            evictionConfig
+                    .setEvictionPolicy(MapConfig.DEFAULT_EVICTION_POLICY)
+                    .setMaxSizePolicy(MapConfig.DEFAULT_MAX_SIZE_POLICY)
+                    .setSize(MapConfig.DEFAULT_MAX_SIZE);
+        }
+
         Node size = node.getAttributes().getNamedItem("size");
         Node maxSizePolicy = node.getAttributes().getNamedItem("max-size-policy");
         Node evictionPolicy = node.getAttributes().getNamedItem("eviction-policy");
         Node comparatorClassName = node.getAttributes().getNamedItem("comparator-class-name");
+
         if (size != null) {
             evictionConfig.setSize(parseInt(getTextContent(size)));
+            if (isIMap && evictionConfig.getSize() == 0) {
+                evictionConfig.setSize(MapConfig.DEFAULT_MAX_SIZE);
+            }
         }
         if (maxSizePolicy != null) {
-            evictionConfig
-                    .setMaximumSizePolicy(EvictionConfig.MaxSizePolicy.valueOf(upperCaseInternal(getTextContent(maxSizePolicy)))
-                    );
+            evictionConfig.setMaxSizePolicy(MaxSizePolicy.valueOf(upperCaseInternal(getTextContent(maxSizePolicy))));
         }
         if (evictionPolicy != null) {
-            evictionConfig.setEvictionPolicy(EvictionPolicy.valueOf(upperCaseInternal(getTextContent(evictionPolicy)))
-            );
+            evictionConfig.setEvictionPolicy(EvictionPolicy.valueOf(upperCaseInternal(getTextContent(evictionPolicy))));
         }
         if (comparatorClassName != null) {
             evictionConfig.setComparatorClassName(getTextContent(comparatorClassName));
         }
 
         try {
-            checkEvictionConfig(evictionConfig, isNearCache);
+            doEvictionConfigChecks(evictionConfig, isIMap, isNearCache);
         } catch (IllegalArgumentException e) {
             throw new InvalidConfigurationException(e.getMessage());
         }
         return evictionConfig;
+    }
+
+    private static void doEvictionConfigChecks(EvictionConfig evictionConfig,
+                                               boolean isIMap,
+                                               boolean isNearCache) {
+        if (isIMap) {
+            checkMapEvictionConfig(evictionConfig);
+            return;
+        }
+
+        if (isNearCache) {
+            checkNearCacheEvictionConfig(evictionConfig.getEvictionPolicy(),
+                    evictionConfig.getComparatorClassName(), evictionConfig.getComparator());
+            return;
+        }
+
+        checkCacheEvictionConfig(evictionConfig);
     }
 
     private void cacheWanReplicationRefHandle(Node n, CacheSimpleConfig cacheConfig) {
@@ -2240,7 +2186,7 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
                 } else if ("predicate".equals(nodeName)) {
                     queryCachePredicateHandler(childNode, queryCacheConfig);
                 } else if ("eviction".equals(nodeName)) {
-                    queryCacheConfig.setEvictionConfig(getEvictionConfig(childNode, false));
+                    queryCacheConfig.setEvictionConfig(getEvictionConfig(childNode, false, false));
                 }
             }
         }
@@ -3030,26 +2976,52 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
             if ("enabled".equals(att.getNodeName())) {
                 boolean enabled = getBooleanValue(getAttribute(node, "enabled"));
                 metricsConfig.setEnabled(enabled);
-            } else if ("mc-enabled".equals(att.getNodeName())) {
-                boolean enabled = getBooleanValue(getAttribute(node, "mc-enabled"));
-                metricsConfig.setMcEnabled(enabled);
-            } else if ("jmx-enabled".equals(att.getNodeName())) {
-                boolean enabled = getBooleanValue(getAttribute(node, "jmx-enabled"));
-                metricsConfig.setJmxEnabled(enabled);
             }
         }
 
         for (Node child : childElements(node)) {
             String nodeName = cleanNodeName(child);
             String value = getTextContent(child).trim();
-            if ("collection-interval-seconds".equals(nodeName)) {
-                metricsConfig.setCollectionIntervalSeconds(Integer.parseInt(value));
-            } else if ("retention-seconds".equals(nodeName)) {
-                metricsConfig.setRetentionSeconds(Integer.parseInt(value));
-            } else if ("metrics-for-data-structures".equals(nodeName)) {
-                metricsConfig.setMetricsForDataStructuresEnabled(Boolean.parseBoolean(value));
-            } else if ("minimum-level".equals(nodeName)) {
-                metricsConfig.setMinimumLevel(ProbeLevel.valueOf(value));
+            if ("management-center".equals(nodeName)) {
+                handleMetricsManagementCenter(child);
+            } else if ("jmx".equals(nodeName)) {
+                handleMetricsJmx(child);
+            } else if ("collection-frequency-seconds".equals(nodeName)) {
+                metricsConfig.setCollectionFrequencySeconds(Integer.parseInt(value));
+            }
+        }
+    }
+
+    private void handleMetricsManagementCenter(Node node) {
+        MetricsManagementCenterConfig managementCenterConfig = config.getMetricsConfig().getManagementCenterConfig();
+
+        NamedNodeMap attributes = node.getAttributes();
+        for (int a = 0; a < attributes.getLength(); a++) {
+            Node att = attributes.item(a);
+            if ("enabled".equals(att.getNodeName())) {
+                boolean enabled = getBooleanValue(getAttribute(node, "enabled"));
+                managementCenterConfig.setEnabled(enabled);
+            }
+
+            for (Node child : childElements(node)) {
+                String nodeName = cleanNodeName(child);
+                String value = getTextContent(child).trim();
+                if ("retention-seconds".equals(nodeName)) {
+                    managementCenterConfig.setRetentionSeconds(Integer.parseInt(value));
+                }
+            }
+        }
+    }
+
+    private void handleMetricsJmx(Node node) {
+        MetricsJmxConfig jmxConfig = config.getMetricsConfig().getJmxConfig();
+
+        NamedNodeMap attributes = node.getAttributes();
+        for (int a = 0; a < attributes.getLength(); a++) {
+            Node att = attributes.item(a);
+            if ("enabled".equals(att.getNodeName())) {
+                boolean enabled = getBooleanValue(getAttribute(node, "enabled"));
+                jmxConfig.setEnabled(enabled);
             }
         }
     }

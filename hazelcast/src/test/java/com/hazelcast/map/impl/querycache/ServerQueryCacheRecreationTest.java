@@ -51,8 +51,8 @@ public class ServerQueryCacheRecreationTest extends HazelcastTestSupport {
     private final String queryCacheName = "queryCacheName";
     private final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
 
-    private HazelcastInstance serverWithQueryCache;
     private HazelcastInstance server;
+    private HazelcastInstance serverWithQueryCache;
 
     @Override
     protected Config getConfig() {
@@ -72,6 +72,7 @@ public class ServerQueryCacheRecreationTest extends HazelcastTestSupport {
     @Test
     public void query_cache_recreates_itself_after_server_restart() {
         IMap<Object, Object> map = server.getMap(mapName);
+
         for (int i = 0; i < 100; i++) {
             map.put(i, i);
         }

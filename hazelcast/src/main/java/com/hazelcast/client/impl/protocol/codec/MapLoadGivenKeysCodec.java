@@ -36,12 +36,12 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Loads the given keys. This is a batch load operation so that an implementation can optimize the multiple loads.
  */
-@Generated("6bfaa4059a23a953017d10ab82eb7e68")
+@Generated("4e504c2e17069e3bf84ecb5856755954")
 public final class MapLoadGivenKeysCodec {
-    //hex: 0x012200
-    public static final int REQUEST_MESSAGE_TYPE = 74240;
-    //hex: 0x012201
-    public static final int RESPONSE_MESSAGE_TYPE = 74241;
+    //hex: 0x012100
+    public static final int REQUEST_MESSAGE_TYPE = 73984;
+    //hex: 0x012101
+    public static final int RESPONSE_MESSAGE_TYPE = 73985;
     private static final int REQUEST_REPLACE_EXISTING_VALUES_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_REPLACE_EXISTING_VALUES_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
@@ -71,7 +71,6 @@ public final class MapLoadGivenKeysCodec {
     public static ClientMessage encodeRequest(java.lang.String name, java.util.Collection<com.hazelcast.nio.serialization.Data> keys, boolean replaceExistingValues) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
-        clientMessage.setAcquiresResource(false);
         clientMessage.setOperationName("Map.LoadGivenKeys");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);

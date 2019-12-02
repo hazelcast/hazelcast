@@ -16,10 +16,12 @@
 
 package com.hazelcast.internal.serialization.impl;
 
+import com.hazelcast.internal.nio.DataWriter;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.spi.impl.SerializationServiceSupport;
 
 import java.io.Closeable;
 import java.io.DataOutputStream;
@@ -31,7 +33,8 @@ import static com.hazelcast.internal.nio.Bits.NULL_ARRAY_LENGTH;
 import static com.hazelcast.internal.nio.Bits.UTF_8;
 
 @SuppressWarnings("checkstyle:methodcount")
-public class ObjectDataOutputStream extends VersionedObjectDataOutput implements ObjectDataOutput, Closeable {
+public class ObjectDataOutputStream extends VersionedObjectDataOutput
+        implements ObjectDataOutput, Closeable, SerializationServiceSupport, DataWriter {
 
     private final InternalSerializationService serializationService;
     private final DataOutputStream dataOut;

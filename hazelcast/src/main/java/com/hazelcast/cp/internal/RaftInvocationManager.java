@@ -45,7 +45,7 @@ import com.hazelcast.spi.impl.operationservice.impl.Invocation;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 import com.hazelcast.spi.impl.operationservice.impl.RaftInvocation;
 import com.hazelcast.spi.impl.operationservice.impl.RaftInvocationContext;
-import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.spi.properties.ClusterProperty;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -78,9 +78,9 @@ public class RaftInvocationManager {
         this.logger = nodeEngine.getLogger(getClass());
         this.raftService = raftService;
         this.raftInvocationContext = new RaftInvocationContext(logger, raftService);
-        this.invocationMaxRetryCount = nodeEngine.getProperties().getInteger(GroupProperty.INVOCATION_MAX_RETRY_COUNT);
-        this.invocationRetryPauseMillis = nodeEngine.getProperties().getMillis(GroupProperty.INVOCATION_RETRY_PAUSE);
-        this.operationCallTimeout = nodeEngine.getProperties().getMillis(GroupProperty.OPERATION_CALL_TIMEOUT_MILLIS);
+        this.invocationMaxRetryCount = nodeEngine.getProperties().getInteger(ClusterProperty.INVOCATION_MAX_RETRY_COUNT);
+        this.invocationRetryPauseMillis = nodeEngine.getProperties().getMillis(ClusterProperty.INVOCATION_RETRY_PAUSE);
+        this.operationCallTimeout = nodeEngine.getProperties().getMillis(ClusterProperty.OPERATION_CALL_TIMEOUT_MILLIS);
         this.cpSubsystemEnabled = raftService.isCpSubsystemEnabled();
     }
 

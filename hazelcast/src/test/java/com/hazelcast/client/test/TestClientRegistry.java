@@ -17,28 +17,27 @@
 package com.hazelcast.client.test;
 
 import com.hazelcast.client.HazelcastClient;
+import com.hazelcast.client.impl.clientside.ClientConnectionManagerFactory;
+import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.connection.ClientConnectionManager;
 import com.hazelcast.client.impl.connection.nio.ClientConnection;
 import com.hazelcast.client.impl.connection.nio.ClientConnectionManagerImpl;
-import com.hazelcast.client.impl.clientside.ClientConnectionManagerFactory;
-import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.test.TwoWayBlockableExecutor.LockPair;
-import com.hazelcast.core.HazelcastException;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.instance.impl.NodeState;
 import com.hazelcast.internal.networking.OutboundFrame;
 import com.hazelcast.internal.networking.nio.NioNetworking;
+import com.hazelcast.internal.nio.ConnectionType;
+import com.hazelcast.internal.util.ConstructorFunction;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
-import com.hazelcast.cluster.Address;
-import com.hazelcast.internal.nio.ConnectionType;
 import com.hazelcast.spi.exception.TargetDisconnectedException;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.test.mocknetwork.MockConnection;
 import com.hazelcast.test.mocknetwork.TestNodeRegistry;
-import com.hazelcast.internal.util.ConstructorFunction;
 
 import java.io.IOException;
 import java.net.InetAddress;
@@ -49,15 +48,16 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
+import static com.hazelcast.client.impl.management.ManagementCenterService.MC_CLIENT_MODE_PROP;
 import static com.hazelcast.instance.EndpointQualifier.CLIENT;
-import static com.hazelcast.test.HazelcastTestSupport.getNodeEngineImpl;
 import static com.hazelcast.internal.util.ConcurrencyUtil.getOrPutIfAbsent;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
+import static com.hazelcast.test.HazelcastTestSupport.getNodeEngineImpl;
 
 class TestClientRegistry {
 
-    private static final AtomicInteger CLIENT_PORTS = new AtomicInteger(40000);
     private static final ILogger LOGGER = Logger.getLogger(HazelcastClient.class);
+    private final AtomicInteger CLIENT_PORTS = new AtomicInteger(40000);
 
     private final TestNodeRegistry nodeRegistry;
 
@@ -102,7 +102,7 @@ class TestClientRegistry {
         }
 
         @Override
-        protected NioNetworking initNetworking(HazelcastClientInstanceImpl client) {
+        protected NioNetworking initNetworking() {
             return null;
         }
 
@@ -115,10 +115,8 @@ class TestClientRegistry {
         }
 
         @Override
-        protected ClientConnection createSocketConnection(Address address) throws IOException {
-            if (!alive) {
-                throw new HazelcastException("ConnectionManager is not active!!!");
-            }
+        protected ClientConnection createSocketConnection(Address address) {
+            checkClientActive();
             try {
                 HazelcastInstance instance = nodeRegistry.getInstance(address);
                 if (instance == null) {
@@ -132,7 +130,7 @@ class TestClientRegistry {
                 LOGGER.info("Created connection to endpoint: " + address + ", connection: " + connection);
                 return connection;
             } catch (Exception e) {
-                throw rethrow(e, IOException.class);
+                throw rethrow(e);
             }
         }
 
@@ -189,6 +187,7 @@ class TestClientRegistry {
         private final Address localAddress;
         private final TwoWayBlockableExecutor executor;
         private final MockedNodeConnection serverSideConnection;
+        private final String connectionType;
 
         private volatile long lastReadTime;
         private volatile long lastWriteTime;
@@ -203,6 +202,8 @@ class TestClientRegistry {
             this.executor = new TwoWayBlockableExecutor(lockPair);
             this.serverSideConnection = new MockedNodeConnection(connectionId, remoteAddress,
                     localAddress, serverNodeEngine, this);
+            this.connectionType = client.getProperties().getBoolean(MC_CLIENT_MODE_PROP)
+                    ? ConnectionType.MC_JAVA_CLIENT : ConnectionType.JAVA_CLIENT;
         }
 
         @Override
@@ -331,6 +332,11 @@ class TestClientRegistry {
         }
 
         @Override
+        public String getConnectionType() {
+            return connectionType;
+        }
+
+        @Override
         public String toString() {
             return "MockedClientConnection{"
                     + "localAddress=" + localAddress
@@ -441,8 +447,8 @@ class TestClientRegistry {
         }
 
         @Override
-        public ConnectionType getType() {
-            return ConnectionType.JAVA_CLIENT;
+        public String getConnectionType() {
+            return responseConnection.getConnectionType();
         }
 
         @Override

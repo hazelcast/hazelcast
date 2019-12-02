@@ -193,7 +193,7 @@
         <hz:cluster-name>${cluster.name}</hz:cluster-name>
         <hz:connection-strategy>
             <hz:connection-retry>
-                <hz:fail-on-max-backoff>false</hz:fail-on-max-backoff>
+                <hz:cluster-connect-timeout-millis>1000</hz:cluster-connect-timeout-millis>
             </hz:connection-retry>
         </hz:connection-strategy>
         <hz:network>
@@ -338,7 +338,7 @@
                 <hz:initial-backoff-millis>2000</hz:initial-backoff-millis>
                 <hz:max-backoff-millis>60000</hz:max-backoff-millis>
                 <hz:multiplier>3</hz:multiplier>
-                <hz:fail-on-max-backoff>true</hz:fail-on-max-backoff>
+                <hz:cluster-connect-timeout-millis>5000</hz:cluster-connect-timeout-millis>
                 <hz:jitter>0.5</hz:jitter>
             </hz:connection-retry>
         </hz:connection-strategy>
@@ -377,6 +377,18 @@
             <hz:member>127.0.0.1:5701</hz:member>
         </hz:network>
         <hz:backup-ack-to-client-enabled>false</hz:backup-ack-to-client-enabled>
+    </hz:client>
+
+    <hz:client id="client18-metrics">
+        <hz:cluster-name>${cluster.name}</hz:cluster-name>
+        <hz:network>
+            <hz:member>127.0.0.1:5700</hz:member>
+            <hz:member>127.0.0.1:5701</hz:member>
+        </hz:network>
+        <hz:metrics enabled="false">
+            <hz:jmx enabled="false"/>
+            <hz:collection-frequency-seconds>42</hz:collection-frequency-seconds>
+        </hz:metrics>
     </hz:client>
 
     <bean id="credentials" class="com.hazelcast.security.UsernamePasswordCredentials">

@@ -16,6 +16,7 @@
 
 package com.hazelcast.cache.impl;
 
+import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -71,7 +72,7 @@ public class CacheKeyIterationResult implements IdentifiedDataSerializable {
         int size = keys.size();
         out.writeInt(size);
         for (Data o : keys) {
-            out.writeData(o);
+            IOUtil.writeData(out, o);
         }
 
     }
@@ -83,7 +84,7 @@ public class CacheKeyIterationResult implements IdentifiedDataSerializable {
         int size = in.readInt();
         keys = new ArrayList<Data>(size);
         for (int i = 0; i < size; i++) {
-            Data data = in.readData();
+            Data data = IOUtil.readData(in);
             keys.add(data);
         }
     }

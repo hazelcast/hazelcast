@@ -213,7 +213,7 @@ class DefaultQueryCache<K, V> extends AbstractInternalQueryCache<K, V> {
                 subscriberContext.getEventService().removePublisherListener(mapName, cacheId, publisherListenerId);
             } finally {
                 Object removePublisher = subscriberContextSupport.createDestroyQueryCacheOperation(mapName, cacheId);
-                invokerWrapper.invoke(removePublisher);
+                invokerWrapper.invoke(removePublisher, false);
             }
         }
     }
@@ -502,6 +502,7 @@ class DefaultQueryCache<K, V> extends AbstractInternalQueryCache<K, V> {
         QueryCacheRequest request = newQueryCacheRequest()
                 .withCacheName(cacheName)
                 .forMap(delegate)
+                .urgent(true)
                 .withContext(context);
 
         QueryCacheEndToEndProvider queryCacheEndToEndProvider = subscriberContext.getEndToEndQueryCacheProvider();

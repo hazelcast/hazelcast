@@ -37,6 +37,7 @@ public interface BiConsumerEx<T, U> extends BiConsumer<T, U>, Serializable {
 
     /**
      * Exception-declaring version of {@link BiConsumer#accept}.
+     * @throws Exception in case of any exceptional case
      */
     void acceptEx(T t, U u) throws Exception;
 

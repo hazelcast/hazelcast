@@ -18,7 +18,6 @@ package com.hazelcast.client.splitbrainprotection.map;
 
 import com.hazelcast.client.splitbrainprotection.PartitionedClusterClients;
 import com.hazelcast.client.test.TestHazelcastFactory;
-import com.hazelcast.config.Config;
 import com.hazelcast.map.IMap;
 import com.hazelcast.splitbrainprotection.map.MapSplitBrainProtectionWriteTest;
 import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
@@ -41,7 +40,7 @@ public class ClientMapSplitBrainProtectionWriteTest extends MapSplitBrainProtect
     @BeforeClass
     public static void setUp() {
         TestHazelcastFactory factory = new TestHazelcastFactory();
-        initTestEnvironment(new Config(), factory);
+        initTestEnvironment(smallInstanceConfig(), factory);
         clients = new PartitionedClusterClients(cluster, factory);
     }
 

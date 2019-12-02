@@ -21,6 +21,7 @@ import com.hazelcast.config.CRDTReplicationConfig;
 import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.CardinalityEstimatorConfig;
 import com.hazelcast.config.Config;
+import com.hazelcast.config.ConfigAccessor;
 import com.hazelcast.config.ConfigPatternMatcher;
 import com.hazelcast.config.DurableExecutorConfig;
 import com.hazelcast.config.ExecutorConfig;
@@ -45,7 +46,7 @@ import com.hazelcast.config.RingbufferConfig;
 import com.hazelcast.config.ScheduledExecutorConfig;
 import com.hazelcast.config.SecurityConfig;
 import com.hazelcast.config.SerializationConfig;
-import com.hazelcast.config.ServicesConfig;
+import com.hazelcast.internal.config.ServicesConfig;
 import com.hazelcast.config.SetConfig;
 import com.hazelcast.config.SplitBrainProtectionConfig;
 import com.hazelcast.config.TopicConfig;
@@ -81,7 +82,7 @@ import java.util.concurrent.ConcurrentMap;
 
 import static com.hazelcast.internal.dynamicconfig.AggregatingMap.aggregate;
 import static com.hazelcast.internal.dynamicconfig.search.ConfigSearch.supplierFor;
-import static com.hazelcast.spi.properties.GroupProperty.SEARCH_DYNAMIC_CONFIG_FIRST;
+import static com.hazelcast.spi.properties.ClusterProperty.SEARCH_DYNAMIC_CONFIG_FIRST;
 
 @SuppressWarnings({"unchecked",
         "checkstyle:methodcount",
@@ -894,13 +895,8 @@ public class DynamicConfigurationAwareConfig extends Config {
     }
 
     @Override
-    public ServicesConfig getServicesConfig() {
-        return staticConfig.getServicesConfig();
-    }
-
-    @Override
-    public Config setServicesConfig(ServicesConfig servicesConfig) {
-        throw new UnsupportedOperationException("Unsupported operation");
+    protected ServicesConfig getServicesConfig() {
+        return ConfigAccessor.getServicesConfig(staticConfig);
     }
 
     @Override

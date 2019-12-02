@@ -33,7 +33,7 @@ import org.junit.runner.RunWith;
 import java.util.ArrayList;
 import java.util.concurrent.Future;
 
-import static com.hazelcast.spi.properties.GroupProperty.GRACEFUL_SHUTDOWN_MAX_WAIT;
+import static com.hazelcast.spi.properties.ClusterProperty.GRACEFUL_SHUTDOWN_MAX_WAIT;
 import static com.hazelcast.test.OverridePropertyRule.clear;
 
 @RunWith(HazelcastParallelClassRunner.class)

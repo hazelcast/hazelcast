@@ -50,7 +50,7 @@ public class EntryStoreSimpleTest extends HazelcastTestSupport {
 
     @Parameters(name = "inMemoryFormat: {0}")
     public static Collection<Object[]> parameters() {
-        return asList(new Object[][] {
+        return asList(new Object[][]{
                 {InMemoryFormat.BINARY},
                 {InMemoryFormat.OBJECT}
         });
@@ -184,7 +184,7 @@ public class EntryStoreSimpleTest extends HazelcastTestSupport {
     public void testRemoveAll() {
         final int mapSize = 100;
         for (int i = 0; i < mapSize; i++) {
-            map.put("k" + i,  "v" + i);
+            map.put("k" + i, "v" + i);
         }
         map.removeAll(Predicates.alwaysTrue());
         for (int i = 0; i < mapSize; i++) {
@@ -210,7 +210,7 @@ public class EntryStoreSimpleTest extends HazelcastTestSupport {
     public void testReplace_withTtl() {
         map.put("key", "value", 10, TimeUnit.DAYS);
         map.replace("key", "replaced");
-        assertEntryStore("key", "replaced", 10, TimeUnit.DAYS, 10000);
+        assertEntryStore("key", "replaced");
     }
 
     @Test
@@ -224,7 +224,7 @@ public class EntryStoreSimpleTest extends HazelcastTestSupport {
     public void testReplaceIfSame_withTtl() {
         map.put("key", "value", 10, TimeUnit.DAYS);
         map.replace("key", "value", "replaced");
-        assertEntryStore("key", "replaced", 10, TimeUnit.DAYS, 10000);
+        assertEntryStore("key", "replaced");
     }
 
     @Test

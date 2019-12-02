@@ -18,12 +18,15 @@ package com.hazelcast.internal.metrics.managementcenter;
 
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.test.TestHazelcastFactory;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.cluster.impl.MemberImpl;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.internal.metrics.MetricConsumer;
+import com.hazelcast.internal.metrics.MetricDescriptor;
+import com.hazelcast.internal.metrics.impl.MetricsCompressor;
 import com.hazelcast.internal.util.UuidUtil;
-import com.hazelcast.cluster.Address;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -37,12 +40,12 @@ import org.junit.experimental.categories.Category;
 import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
-import java.util.Iterator;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicLong;
 
 import static com.hazelcast.client.impl.clientside.ClientTestUtil.getHazelcastClientInstanceImpl;
-import static com.hazelcast.internal.metrics.managementcenter.MetricsCompressor.decompressingIterator;
+import static com.hazelcast.internal.metrics.ProbeUnit.COUNT;
+import static com.hazelcast.internal.metrics.impl.DefaultMetricDescriptorSupplier.DEFAULT_DESCRIPTOR_SUPPLIER;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
@@ -65,7 +68,7 @@ public class ReadMetricsTest extends HazelcastTestSupport {
         Config conf = getConfig();
         conf.getMetricsConfig()
             .setEnabled(true)
-            .setCollectionIntervalSeconds(1);
+            .setCollectionFrequencySeconds(1);
 
         HazelcastInstance instance = hazelcastFactory.newHazelcastInstance(conf);
         HazelcastClientInstanceImpl client = getHazelcastClientInstanceImpl(hazelcastFactory.newHazelcastClient());
@@ -81,14 +84,13 @@ public class ReadMetricsTest extends HazelcastTestSupport {
 
             boolean operationMetricFound = false;
             byte[] blob = result.collections().get(0).getValue();
-            Iterator<Metric> metricIterator = decompressingIterator(blob);
-            MetricKeyConsumer metricConsumer = new MetricKeyConsumer();
-            while (metricIterator.hasNext()) {
-                Metric metric = metricIterator.next();
-                metric.provide(metricConsumer);
-                operationMetricFound |= metricConsumer.key.equals("[unit=count,metric=operation.queueSize]");
-            }
-            assertTrue(operationMetricFound);
+            MetricDescriptor expectedDescriptor = DEFAULT_DESCRIPTOR_SUPPLIER.get()
+                                                                             .withPrefix("operation")
+                                                                             .withMetric("queueSize")
+                                                                             .withUnit(COUNT);
+            MetricKeyConsumer metricConsumer = new MetricKeyConsumer(expectedDescriptor);
+            MetricsCompressor.extractMetrics(blob, metricConsumer);
+            assertTrue(metricConsumer.operationMetricFound);
         });
     }
 
@@ -118,16 +120,21 @@ public class ReadMetricsTest extends HazelcastTestSupport {
 
     private static class MetricKeyConsumer implements MetricConsumer {
 
-        String key;
+        private final MetricDescriptor expectedDescriptor;
+        private boolean operationMetricFound;
 
-        @Override
-        public void consumeLong(String key, long value) {
-            this.key = key;
+        private MetricKeyConsumer(MetricDescriptor expectedDescriptor) {
+            this.expectedDescriptor = expectedDescriptor;
         }
 
         @Override
-        public void consumeDouble(String key, double value) {
-            this.key = key;
+        public void consumeLong(MetricDescriptor descriptor, long value) {
+            operationMetricFound |= descriptor.equals(expectedDescriptor);
+        }
+
+        @Override
+        public void consumeDouble(MetricDescriptor descriptor, double value) {
+            operationMetricFound |= descriptor.equals(expectedDescriptor);
         }
     }
 }

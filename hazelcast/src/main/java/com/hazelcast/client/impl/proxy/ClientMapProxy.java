@@ -106,14 +106,17 @@ import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.ReadOnly;
 import com.hazelcast.internal.journal.EventJournalInitialSubscriberState;
 import com.hazelcast.internal.journal.EventJournalReader;
+import com.hazelcast.internal.monitor.impl.LocalMapStatsImpl;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.util.CollectionUtil;
 import com.hazelcast.internal.util.IterationType;
 import com.hazelcast.internal.util.collection.ImmutableInflatableSet;
 import com.hazelcast.map.EntryProcessor;
+import com.hazelcast.map.EventJournalMapEvent;
 import com.hazelcast.map.IMap;
 import com.hazelcast.map.IMapEvent;
+import com.hazelcast.map.LocalMapStats;
 import com.hazelcast.map.MapEvent;
 import com.hazelcast.map.MapInterceptor;
 import com.hazelcast.map.MapPartitionLostEvent;
@@ -125,11 +128,8 @@ import com.hazelcast.map.impl.SimpleEntryView;
 import com.hazelcast.map.impl.querycache.subscriber.QueryCacheEndToEndProvider;
 import com.hazelcast.map.impl.querycache.subscriber.QueryCacheRequest;
 import com.hazelcast.map.impl.querycache.subscriber.SubscriberContext;
-import com.hazelcast.map.EventJournalMapEvent;
 import com.hazelcast.map.listener.MapListener;
 import com.hazelcast.map.listener.MapPartitionLostListener;
-import com.hazelcast.map.LocalMapStats;
-import com.hazelcast.internal.monitor.impl.LocalMapStatsImpl;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.projection.Projection;
 import com.hazelcast.query.PagingPredicate;
@@ -138,7 +138,7 @@ import com.hazelcast.query.Predicate;
 import com.hazelcast.query.impl.IndexUtils;
 import com.hazelcast.query.impl.predicates.PagingPredicateImpl;
 import com.hazelcast.ringbuffer.ReadResultSet;
-import com.hazelcast.ringbuffer.impl.client.PortableReadResultSet;
+import com.hazelcast.ringbuffer.impl.ReadResultSetImpl;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.UnmodifiableLazyList;
 
@@ -1622,13 +1622,23 @@ public class ClientMapProxy<K, V> extends ClientProxy
         if (keys.isEmpty()) {
             return InternalCompletableFuture.newCompletedFuture(Collections.emptyMap());
         }
+        Collection<Data> dataKeys = objectToDataCollection(keys, getSerializationService());
+        return submitToKeysInternal(keys, dataKeys, entryProcessor);
+    }
 
-        Collection<Data> dataCollection = objectToDataCollection(keys, getSerializationService());
-
-        ClientMessage request = MapExecuteOnKeysCodec.encodeRequest(name, toData(entryProcessor), dataCollection);
+    /**
+     * @param objectKeys not serialized key
+     * @param dataKeys   serialized keys
+     */
+    @Nonnull
+    protected <R> InternalCompletableFuture<Map<K, R>> submitToKeysInternal(@Nonnull Set<K> objectKeys,
+                                                                            @Nonnull Collection<Data> dataKeys,
+                                                                            @Nonnull EntryProcessor<K, V, R> entryProcessor) {
+        ClientMessage request = MapExecuteOnKeysCodec.encodeRequest(name, toData(entryProcessor), dataKeys);
         ClientInvocationFuture future = new ClientInvocation(getClient(), request, getName()).invoke();
-        return new ClientDelegatingFuture<>(future, getSerializationService(),
-                message -> prepareResult(MapExecuteOnKeysCodec.decodeResponse(message).response));
+        return new ClientDelegatingFuture<>(
+            future, getSerializationService(),
+            message -> prepareResult(MapExecuteOnKeysCodec.decodeResponse(message).response));
     }
 
     @Override
@@ -1832,7 +1842,7 @@ public class ClientMapProxy<K, V> extends ClientProxy
         final ClientInvocationFuture fut = new ClientInvocation(getClient(), request, getName(), partitionId).invoke();
         return new ClientDelegatingFuture<>(fut, ss, message -> {
             MapEventJournalReadCodec.ResponseParameters params = MapEventJournalReadCodec.decodeResponse(message);
-            PortableReadResultSet<?> resultSet = new PortableReadResultSet<>(
+            ReadResultSetImpl resultSet = new ReadResultSetImpl<>(
                     params.readCount, params.items, params.itemSeqs, params.nextSeq);
             resultSet.setSerializationService(getSerializationService());
             return resultSet;
@@ -2012,14 +2022,6 @@ public class ClientMapProxy<K, V> extends ClientProxy
             return new DataAwareEntryEvent<>(member, eventType, name, keyData, valueData, oldValueData,
                     mergingValueData, getSerializationService());
         }
-
-        @Override
-        public void beforeListenerRegister() {
-        }
-
-        @Override
-        public void onListenerRegister() {
-        }
     }
 
     private class ClientMapPartitionLostEventHandler
@@ -2030,14 +2032,6 @@ public class ClientMapProxy<K, V> extends ClientProxy
 
         ClientMapPartitionLostEventHandler(MapPartitionLostListener listener) {
             this.listener = listener;
-        }
-
-        @Override
-        public void beforeListenerRegister() {
-        }
-
-        @Override
-        public void onListenerRegister() {
         }
 
         @Override

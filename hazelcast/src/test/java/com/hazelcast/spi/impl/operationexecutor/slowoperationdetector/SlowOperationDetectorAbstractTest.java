@@ -18,6 +18,8 @@ package com.hazelcast.spi.impl.operationexecutor.slowoperationdetector;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.internal.monitor.LocalOperationStats;
+import com.hazelcast.json.internal.JsonSerializable;
 import com.hazelcast.map.IMap;
 import com.hazelcast.internal.json.JsonArray;
 import com.hazelcast.internal.json.JsonObject;
@@ -25,7 +27,7 @@ import com.hazelcast.internal.management.TimedMemberStateFactory;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
-import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.HazelcastTestSupport;
 
 import java.lang.reflect.Field;
@@ -49,8 +51,8 @@ abstract class SlowOperationDetectorAbstractTest extends HazelcastTestSupport {
     private List<SlowEntryProcessor> entryProcessors = new ArrayList<>();
 
     HazelcastInstance getSingleNodeCluster(int slowOperationThresholdMillis) {
-        Config config = new Config();
-        config.setProperty(GroupProperty.SLOW_OPERATION_DETECTOR_THRESHOLD_MILLIS.getName(),
+        Config config = smallInstanceConfig();
+        config.setProperty(ClusterProperty.SLOW_OPERATION_DETECTOR_THRESHOLD_MILLIS.getName(),
                 valueOf(slowOperationThresholdMillis));
 
         return createHazelcastInstance(config);
@@ -95,7 +97,10 @@ abstract class SlowOperationDetectorAbstractTest extends HazelcastTestSupport {
 
     static JsonObject getOperationStats(HazelcastInstance instance) {
         TimedMemberStateFactory timedMemberStateFactory = new TimedMemberStateFactory(getHazelcastInstanceImpl(instance));
-        return timedMemberStateFactory.createTimedMemberState().getMemberState().getOperationStats().toJson();
+        LocalOperationStats operationStats = timedMemberStateFactory.createTimedMemberState()
+                                                                    .getMemberState()
+                                                                    .getOperationStats();
+        return ((JsonSerializable) operationStats).toJson();
     }
 
     static Collection<SlowOperationLog> getSlowOperationLogsAndAssertNumberOfSlowOperationLogs(final HazelcastInstance instance,

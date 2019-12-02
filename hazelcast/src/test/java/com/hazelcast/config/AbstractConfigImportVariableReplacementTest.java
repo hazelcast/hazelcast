@@ -23,8 +23,7 @@ import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.junit.rules.TemporaryFolder;
 
-import java.io.File;
-import java.io.FileOutputStream;
+import java.io.IOException;
 import java.util.Properties;
 
 /**
@@ -37,25 +36,22 @@ public abstract class AbstractConfigImportVariableReplacementTest {
     @Rule
     public TemporaryFolder tempFolder = new TemporaryFolder();
 
-    @SuppressWarnings("ResultOfMethodCallIgnored")
-    protected static File createConfigFile(String filename, String suffix) throws Exception {
-        File file = File.createTempFile(filename, suffix);
-        file.setWritable(true);
-        file.deleteOnExit();
-        return file;
-    }
-
-    protected static void writeStringToStreamAndClose(FileOutputStream os, String string) throws Exception {
-        os.write(string.getBytes());
-        os.flush();
-        os.close();
-    }
+    abstract String contentWithImportResource(String url);
 
     @Test
     public abstract void testHazelcastElementOnlyAppearsOnce();
 
     @Test
     public abstract void readVariables();
+
+    @Test
+    public abstract void testImportResourceWithConfigReplacers() throws IOException;
+
+    @Test
+    public abstract void testImportResourceWithNestedImports() throws IOException;
+
+    @Test
+    public abstract void testImportResourceWithNestedImportsAndProperties() throws IOException;
 
     @Test
     public abstract void testImportConfigFromResourceVariables() throws Exception;
@@ -77,6 +73,9 @@ public abstract class AbstractConfigImportVariableReplacementTest {
 
     @Test
     public abstract void testImportNotExistingResourceThrowsException();
+
+    @Test
+    public abstract void testImportNotExistingUrlResourceThrowsException();
 
     @Test
     public abstract void testImportNetworkConfigFromFile() throws Exception;
@@ -143,10 +142,6 @@ public abstract class AbstractConfigImportVariableReplacementTest {
 
     @Test
     public abstract void testReplaceVariablesUseSystemProperties() throws Exception;
-
-    protected void expectInvalid() {
-        InvalidConfigurationTest.expectInvalid(rule);
-    }
 
     public static class IdentityReplacer implements ConfigReplacer {
         @Override

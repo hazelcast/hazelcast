@@ -58,7 +58,6 @@
                 <xs:element name="listeners" type="listeners" minOccurs="0" maxOccurs="1"/>
                 <xs:element name="serialization" type="serialization" minOccurs="0" maxOccurs="1"/>
                 <xs:element name="native-memory" type="native-memory" minOccurs="0" maxOccurs="1"/>
-                <xs:element name="services" type="services" minOccurs="0" maxOccurs="1"/>
                 <xs:element name="security" type="security" minOccurs="0" maxOccurs="1"/>
                 <xs:element ref="member-attributes" minOccurs="0" maxOccurs="1"/>
                 <xs:element name="split-brain-protection" type="split-brain-protection" minOccurs="0" maxOccurs="1"/>
@@ -190,74 +189,57 @@
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
-            <xs:element name="eviction-policy" type="eviction-policy" minOccurs="0" maxOccurs="1">
+            <xs:element name="eviction" type="eviction-map" minOccurs="0" maxOccurs="1">
                 <xs:annotation>
                     <xs:documentation>
-                        Valid values are:
-                        NONE (no eviction).
-                        LRU (Least Recently Used).
-                        LFU (Least Frequently Used).
-                        RANDOM (evict random entry).
-                        NONE is the default.
-                    </xs:documentation>
-                </xs:annotation>
-            </xs:element>
-            <xs:element name="map-eviction-policy-class-name" type="xs:string" minOccurs="0" maxOccurs="1">
-                <xs:annotation>
-                    <xs:documentation>
-                        Internal eviction algorithm finds most appropriate entry
-                        to evict from this map by using this policy.
-                    </xs:documentation>
-                </xs:annotation>
-            </xs:element>
-            <xs:element name="max-size" minOccurs="0" maxOccurs="1" default="0">
-                <xs:annotation>
-                    <xs:documentation>
-                        Maximum size of the map.
-                        Any integer between 0 and Integer.MAX_VALUE. 0 means Integer.MAX_VALUE. Default is 0.
+                        When maximum size is reached, map is evicted based on the eviction policy.
+                        IMap has no eviction by default.
+
+                        size:
+                        maximum size can be any integer between 0 and Integer.MAX_VALUE.
                         For max-size to work, set the eviction-policy property to a value other than NONE.
+
+                        Default value is 0.
+
+                        max-size-policy:
+                        max-size-policy has these valid values:
+                        PER_NODE: Maximum number of map entries in each Hazelcast instance.
+                        This is the default policy.
+                        PER_PARTITION: Maximum number of map entries within each partition. Storage size
+                        depends on the partition count in a Hazelcast instance.
+                        This attribute should not be used often.
+                        Avoid using this attribute with a small cluster: if the cluster is small it will
+                        be hosting more partitions, and therefore map entries, than that of a larger
+                        cluster. Thus, for a small cluster, eviction of the entries will decrease
+                        performance (the number of entries is large).
+                        USED_HEAP_SIZE: Maximum used heap size in megabytes per map for each Hazelcast instance.
+                        USED_HEAP_PERCENTAGE: Maximum used heap size percentage per map for each Hazelcast
+                        instance.
+                        If, for example, JVM is configured to have 1000 MB and this value is 10, then the map
+                        entries will be evicted when used heap size exceeds 100 MB.
+                        FREE_HEAP_SIZE: Minimum free heap size in megabytes for each JVM.
+                        FREE_HEAP_PERCENTAGE: Minimum free heap size percentage for each JVM.
+                        For example, if JVM is configured to have 1000 MB and this value is 10,
+                        then the map entries will be evicted when free heap size is below 100 MB.
+                        USED_NATIVE_MEMORY_SIZE: Maximum used native memory size in megabytes per map
+                        for each Hazelcast instance.
+                        USED_NATIVE_MEMORY_PERCENTAGE: Maximum used native memory size percentage per map
+                        for each Hazelcast instance.
+                        FREE_NATIVE_MEMORY_SIZE: Minimum free native memory size in megabytes
+                        for each Hazelcast instance.
+                        FREE_NATIVE_MEMORY_PERCENTAGE: Minimum free native memory size percentage
+                        for each Hazelcast instance.
+
+                        eviction-policy:
+                        Eviction policy has these valid values:
+                        LRU (Least Recently Used),
+                        LFU (Least Frequently Used),
+                        RANDOM,
+                        NONE.
+
+                        Default value is "NONE".
                     </xs:documentation>
                 </xs:annotation>
-                <xs:complexType>
-                    <xs:simpleContent>
-                        <xs:extension base="xs:integer">
-                            <!--policy attribute didn't converted into enumeration to support case-insensitivity-->
-                            <xs:attribute name="policy" use="optional" default="PER_NODE">
-                                <xs:annotation>
-                                    <xs:documentation>
-                                        Valid values are:
-                                        PER_NODE: Maximum number of map entries in each Hazelcast instance.
-                                        This is the default policy.
-                                        PER_PARTITION: Maximum number of map entries within each partition. Storage size
-                                        depends on the partition count in a Hazelcast instance.
-                                        This attribute should not be used often.
-                                        Avoid using this attribute with a small cluster: if the cluster is small it will
-                                        be hosting more partitions, and therefore map entries, than that of a larger
-                                        cluster. Thus, for a small cluster, eviction of the entries will decrease
-                                        performance (the number of entries is large).
-                                        USED_HEAP_SIZE: Maximum used heap size in megabytes per map for each Hazelcast instance.
-                                        USED_HEAP_PERCENTAGE: Maximum used heap size percentage per map for each Hazelcast
-                                        instance.
-                                        If, for example, JVM is configured to have 1000 MB and this value is 10, then the map
-                                        entries will be evicted when used heap size exceeds 100 MB.
-                                        FREE_HEAP_SIZE: Minimum free heap size in megabytes for each JVM.
-                                        FREE_HEAP_PERCENTAGE: Minimum free heap size percentage for each JVM.
-                                        For example, if JVM is configured to have 1000 MB and this value is 10,
-                                        then the map entries will be evicted when free heap size is below 100 MB.
-                                        USED_NATIVE_MEMORY_SIZE: Maximum used native memory size in megabytes per map
-                                        for each Hazelcast instance.
-                                        USED_NATIVE_MEMORY_PERCENTAGE: Maximum used native memory size percentage per map
-                                        for each Hazelcast instance.
-                                        FREE_NATIVE_MEMORY_SIZE: Minimum free native memory size in megabytes
-                                        for each Hazelcast instance.
-                                        FREE_NATIVE_MEMORY_PERCENTAGE: Minimum free native memory size percentage
-                                        for each Hazelcast instance.
-                                    </xs:documentation>
-                                </xs:annotation>
-                            </xs:attribute>
-                        </xs:extension>
-                    </xs:simpleContent>
-                </xs:complexType>
             </xs:element>
             <xs:element name="merge-policy" type="merge-policy" minOccurs="0" maxOccurs="1"/>
             <xs:element name="read-backup-data" type="xs:boolean" minOccurs="0" maxOccurs="1" default="false">
@@ -2572,53 +2554,6 @@
             </xs:annotation>
         </xs:attribute>
     </xs:complexType>
-    <xs:complexType name="services">
-        <xs:sequence>
-            <xs:element name="service" type="service" minOccurs="0" maxOccurs="unbounded"/>
-        </xs:sequence>
-        <xs:attribute name="enable-defaults" type="xs:boolean" default="true"/>
-    </xs:complexType>
-    <xs:complexType name="service">
-        <xs:all>
-            <xs:element name="name" type="xs:string" minOccurs="1" maxOccurs="1">
-                <xs:annotation>
-                    <xs:documentation>
-                        Name of the service to be registered.
-                    </xs:documentation>
-                </xs:annotation>
-            </xs:element>
-            <xs:element name="class-name" type="xs:string" minOccurs="0" maxOccurs="1">
-                <xs:annotation>
-                    <xs:documentation>
-                        Name of the class that you develop for your service.
-                    </xs:documentation>
-                </xs:annotation>
-            </xs:element>
-            <xs:element name="properties" type="properties" minOccurs="0" maxOccurs="1">
-                <xs:annotation>
-                    <xs:documentation>
-                        The custom properties that you can add to your service. You enable/disable
-                        these properties and set their values using this element.
-                    </xs:documentation>
-                </xs:annotation>
-            </xs:element>
-            <xs:element name="configuration" minOccurs="0" maxOccurs="1">
-                <xs:annotation>
-                    <xs:documentation>
-                        You can include configuration items which you develop using the Config object
-                        in your code.
-                    </xs:documentation>
-                </xs:annotation>
-                <xs:complexType>
-                    <xs:sequence>
-                        <xs:any minOccurs="0" maxOccurs="unbounded"/>
-                    </xs:sequence>
-                    <xs:attribute name="parser" type="xs:string" use="required"/>
-                </xs:complexType>
-            </xs:element>
-        </xs:all>
-        <xs:attribute name="enabled" type="xs:boolean" default="true"/>
-    </xs:complexType>
     <xs:complexType name="security">
         <xs:all>
             <xs:element name="client-permission-policy" type="security-object" minOccurs="0" maxOccurs="1"/>
@@ -3261,9 +3196,31 @@
         </xs:restriction>
     </xs:simpleType>
 
+    <xs:simpleType name="max-size-policy-map">
+        <xs:restriction base="non-space-string">
+            <xs:enumeration value="PER_NODE"/>
+            <xs:enumeration value="PER_PARTITION"/>
+            <xs:enumeration value="USED_HEAP_SIZE"/>
+            <xs:enumeration value="USED_HEAP_PERCENTAGE"/>
+            <xs:enumeration value="FREE_HEAP_SIZE"/>
+            <xs:enumeration value="FREE_HEAP_PERCENTAGE"/>
+            <xs:enumeration value="USED_NATIVE_MEMORY_SIZE"/>
+            <xs:enumeration value="USED_NATIVE_MEMORY_PERCENTAGE"/>
+            <xs:enumeration value="FREE_NATIVE_MEMORY_SIZE"/>
+            <xs:enumeration value="FREE_NATIVE_MEMORY_PERCENTAGE"/>
+        </xs:restriction>
+    </xs:simpleType>
+
     <xs:complexType name="eviction">
         <xs:attribute name="size" type="xs:nonNegativeInteger" default="10000" use="optional"/>
         <xs:attribute name="max-size-policy" type="max-size-policy" default="ENTRY_COUNT" use="optional"/>
+        <xs:attribute name="eviction-policy" type="eviction-policy" default="LRU" use="optional"/>
+        <xs:attribute name="comparator-class-name" type="xs:string" use="optional"/>
+    </xs:complexType>
+
+    <xs:complexType name="eviction-map">
+        <xs:attribute name="size" type="xs:nonNegativeInteger" default="0" use="optional"/>
+        <xs:attribute name="max-size-policy" type="max-size-policy-map" default="PER_NODE" use="optional"/>
         <xs:attribute name="eviction-policy" type="eviction-policy" default="LRU" use="optional"/>
         <xs:attribute name="comparator-class-name" type="xs:string" use="optional"/>
     </xs:complexType>
@@ -4717,20 +4674,49 @@
 
     <xs:complexType name="metrics">
         <xs:all>
-            <xs:element name="collection-interval-seconds" type="xs:unsignedInt" default="5" minOccurs="0"/>
-            <xs:element name="retention-seconds" type="xs:unsignedInt" default="5" minOccurs="0"/>
-            <xs:element name="metrics-for-data-structures" type="xs:boolean" default="false" minOccurs="0"/>
-            <xs:element name="minimum-level" type="metric-minimum-level" default="INFO" minOccurs="0"/>
+            <xs:element name="management-center" type="metrics-management-center" minOccurs="0"/>
+            <xs:element name="jmx" type="metrics-jmx" minOccurs="0"/>
+            <xs:element name="collection-frequency-seconds" type="xs:unsignedInt" default="5" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        Sets the metrics collection frequency in seconds.
+                        By default, metrics are collected every 5 seconds.
+                        May be overridden by 'hazelcast.metrics.collection.frequency'
+                        system property.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
         </xs:all>
         <xs:attribute name="enabled" type="xs:boolean" default="true">
             <xs:annotation>
                 <xs:documentation>
                     Master-switch for the metrics system. Controls whether
                     the metrics are collected and publishers are enabled.
+                    May be overridden by 'hazelcast.metrics.enabled'
+                    system property.
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
-        <xs:attribute name="mc-enabled" type="xs:boolean" default="true">
+    </xs:complexType>
+
+    <xs:complexType name="metrics-management-center">
+        <xs:all>
+            <xs:element name="retention-seconds" type="xs:unsignedInt" default="5" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        Sets the number of seconds the metrics will be retained on the
+                        instance. By default, metrics are retained for 5 seconds (that is for
+                        one collection of metrics values, if default "collection-frequency-seconds"
+                        collection frequency is used). More retention means more heap memory, but
+                        allows for longer client hiccups without losing a value (for example to
+                        restart the Management Center).
+                        May be overridden by 'hazelcast.metrics.mc.retention'
+                        system property.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+        </xs:all>
+        <xs:attribute name="enabled" type="xs:boolean" default="true">
             <xs:annotation>
                 <xs:documentation>
                     Controls whether the metrics collected are exposed to
@@ -4743,28 +4729,27 @@
                     used.
                     In order to expose the metrics, the metrics system need
                     to be enabled via the enabled master-switch attribute.
+                    May be overridden by 'hazelcast.metrics.mc.enabled'
+                    system property.
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
-        <xs:attribute name="jmx-enabled" type="xs:boolean" default="true">
+    </xs:complexType>
+
+    <xs:complexType name="metrics-jmx">
+        <xs:attribute name="enabled" type="xs:boolean" default="true">
             <xs:annotation>
                 <xs:documentation>
                     Controls whether the metrics collected are exposed to
                     through JMX. It is enabled by default.
                     In order to expose the metrics, the metrics system need
                     to be enabled via the enabled master-switch attribute.
+                    May be overridden by 'hazelcast.metrics.jmx.enabled'
+                    system property.
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
     </xs:complexType>
-
-    <xs:simpleType name="metric-minimum-level">
-        <xs:restriction base="non-space-string">
-            <xs:enumeration value="MANDATORY"/>
-            <xs:enumeration value="INFO"/>
-            <xs:enumeration value="DEBUG"/>
-        </xs:restriction>
-    </xs:simpleType>
 
     <xs:complexType name="realms">
         <xs:sequence>

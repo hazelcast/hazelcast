@@ -274,7 +274,7 @@ hazelcast-client:
       initial-backoff-millis: 2000
       max-backoff-millis: 60000
       multiplier: 3
-      fail-on-max-backoff: false
+      cluster-connect-timeout-millis: 5000
       jitter: 0.5
 
   reliable-topic:
@@ -286,7 +286,13 @@ hazelcast-client:
     enabled: true
     jarPaths:
       - /User/test/sample.jar
-      - https://hazelcast.com
+      - https://hazelcast.com/
       - file://User/test/sample.jar
     classNames:
       - test.sampleClassName
+
+  metrics:
+    enabled: false
+    jmx:
+      enabled: false
+    collection-frequency-seconds: 42

@@ -25,7 +25,7 @@ import com.hazelcast.instance.impl.DefaultNodeContext;
 import com.hazelcast.instance.impl.HazelcastInstanceFactory;
 import com.hazelcast.instance.impl.NodeContext;
 import com.hazelcast.cluster.Address;
-import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.mocknetwork.TestNodeRegistry;
 
 import java.net.UnknownHostException;
@@ -273,7 +273,9 @@ public class TestHazelcastInstanceFactory {
     public void terminate(HazelcastInstance instance) {
         Address address = getNode(instance).address;
         terminateInstance(instance);
-        registry.removeInstance(address);
+        if (isMockNetwork) {
+            registry.removeInstance(address);
+        }
     }
 
     /**
@@ -361,10 +363,10 @@ public class TestHazelcastInstanceFactory {
         if (config == null) {
             config = new XmlConfigBuilder().build();
         }
-        config.setProperty(GroupProperty.WAIT_SECONDS_BEFORE_JOIN.getName(), "0");
-        String gracefulShutdownMaxWaitValue = System.getProperty(GroupProperty.GRACEFUL_SHUTDOWN_MAX_WAIT.getName(), "120");
-        config.setProperty(GroupProperty.GRACEFUL_SHUTDOWN_MAX_WAIT.getName(), gracefulShutdownMaxWaitValue);
-        config.setProperty(GroupProperty.PARTITION_BACKUP_SYNC_INTERVAL.getName(), "1");
+        config.setProperty(ClusterProperty.WAIT_SECONDS_BEFORE_JOIN.getName(), "0");
+        String gracefulShutdownMaxWaitValue = System.getProperty(ClusterProperty.GRACEFUL_SHUTDOWN_MAX_WAIT.getName(), "120");
+        config.setProperty(ClusterProperty.GRACEFUL_SHUTDOWN_MAX_WAIT.getName(), gracefulShutdownMaxWaitValue);
+        config.setProperty(ClusterProperty.PARTITION_BACKUP_SYNC_INTERVAL.getName(), "1");
         config.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(false);
         return config;
     }
@@ -374,6 +376,9 @@ public class TestHazelcastInstanceFactory {
      * instances. This allows an address to be reused.
      */
     public void cleanup() {
+        if (!isMockNetwork) {
+            return;
+        }
         final TestNodeRegistry registry = getRegistry();
         synchronized (addressMap) {
             final Iterator<Entry<Integer, Address>> addressIterator = addressMap.entrySet().iterator();

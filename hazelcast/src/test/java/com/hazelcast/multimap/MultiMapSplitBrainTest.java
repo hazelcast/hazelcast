@@ -128,6 +128,7 @@ public class MultiMapSplitBrainTest extends SplitBrainTestSupport {
                 .setStatisticsEnabled(true)
                 .setBackupCount(1)
                 .setAsyncBackupCount(0);
+
         return config;
     }
 
