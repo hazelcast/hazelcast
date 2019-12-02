@@ -41,7 +41,7 @@ public class DistributedObjectDestroyOperation
 
     @Override
     public void run() throws Exception {
-        ProxyServiceImpl proxyService = getService();
+        ProxyServiceImpl proxyService = getNodeEngine().getService(ProxyServiceImpl.SERVICE_NAME);
         proxyService.destroyLocalDistributedObject(serviceName, name, false);
     }
 

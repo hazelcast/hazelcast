@@ -20,11 +20,10 @@ import com.hazelcast.config.AbstractWanPublisherConfig;
 import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.config.WanBatchReplicationPublisherConfig;
 import com.hazelcast.config.WanReplicationConfig;
-import com.hazelcast.internal.metrics.DynamicMetricsProvider;
-import com.hazelcast.internal.services.CoreService;
-import com.hazelcast.internal.services.StatisticsAwareService;
 import com.hazelcast.internal.monitor.LocalWanStats;
 import com.hazelcast.internal.monitor.WanSyncState;
+import com.hazelcast.internal.services.CoreService;
+import com.hazelcast.internal.services.StatisticsAwareService;
 import com.hazelcast.version.Version;
 import com.hazelcast.wan.DistributedServiceWanEventCounters;
 import com.hazelcast.wan.WanReplicationPublisher;
@@ -39,7 +38,7 @@ import java.util.UUID;
  * values to other clusters over the wide area network, so it has to deal
  * with long delays, slow uploads and higher latencies.
  */
-public interface WanReplicationService extends CoreService, StatisticsAwareService<LocalWanStats>, DynamicMetricsProvider {
+public interface WanReplicationService extends CoreService, StatisticsAwareService<LocalWanStats> {
 
     /**
      * Service name.

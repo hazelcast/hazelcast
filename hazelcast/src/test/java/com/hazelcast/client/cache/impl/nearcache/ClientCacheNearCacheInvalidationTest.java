@@ -17,6 +17,7 @@
 package com.hazelcast.client.cache.impl.nearcache;
 
 import com.hazelcast.cache.ICache;
+import com.hazelcast.cache.impl.CacheService;
 import com.hazelcast.cache.impl.HazelcastServerCacheManager;
 import com.hazelcast.cache.impl.HazelcastServerCachingProvider;
 import com.hazelcast.client.cache.impl.HazelcastClientCacheManager;
@@ -91,7 +92,6 @@ import static org.junit.Assert.assertTrue;
 @RunWith(Parameterized.class)
 @UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
 @Category({SlowTest.class, ParallelJVMTest.class})
-@SuppressWarnings("WeakerAccess")
 public class ClientCacheNearCacheInvalidationTest extends HazelcastTestSupport {
 
     private static final String DEFAULT_CACHE_NAME = "ClientCacheNearCacheInvalidationTest";
@@ -156,7 +156,7 @@ public class ClientCacheNearCacheInvalidationTest extends HazelcastTestSupport {
         ICache<Integer, String> cache = cacheManager.createCache(DEFAULT_CACHE_NAME, cacheConfig);
         ICache<Integer, String> memberCache = memberCacheManager.getCache(getPrefixedCacheName(DEFAULT_CACHE_NAME, null, null));
 
-        NearCacheManager nearCacheManager = client.client.getNearCacheManager();
+        NearCacheManager nearCacheManager = client.client.getNearCacheManager(cache.getServiceName());
         NearCache<Object, String> nearCache = nearCacheManager.getNearCache(
                 cacheManager.getCacheNameWithPrefix(DEFAULT_CACHE_NAME));
 
@@ -409,7 +409,7 @@ public class ClientCacheNearCacheInvalidationTest extends HazelcastTestSupport {
                 .addNearCacheConfig(nearCacheConfig);
 
         HazelcastClientProxy client = (HazelcastClientProxy) hazelcastFactory.newHazelcastClient(clientConfig);
-        NearCacheManager nearCacheManager = client.client.getNearCacheManager();
+        NearCacheManager nearCacheManager = client.client.getNearCacheManager(CacheService.SERVICE_NAME);
         CachingProvider provider = createClientCachingProvider(client);
         HazelcastClientCacheManager cacheManager = (HazelcastClientCacheManager) provider.getCacheManager();
 

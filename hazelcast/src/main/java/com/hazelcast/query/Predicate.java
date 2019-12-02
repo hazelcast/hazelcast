@@ -32,6 +32,7 @@ import java.util.Map;
  * @param <V> the type of values the predicate operates on.
  */
 @BinaryInterface
+@FunctionalInterface
 public interface Predicate<K, V> extends Serializable {
 
     /**

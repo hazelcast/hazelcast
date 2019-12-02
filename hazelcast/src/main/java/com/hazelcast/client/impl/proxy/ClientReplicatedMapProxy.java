@@ -112,7 +112,7 @@ public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements Repli
     private void initNearCache() {
         NearCacheConfig nearCacheConfig = getContext().getClientConfig().getNearCacheConfig(name);
         if (nearCacheConfig != null) {
-            nearCache = getContext().getNearCacheManager().getOrCreateNearCache(name, nearCacheConfig);
+            nearCache = getContext().getNearCacheManager(getServiceName()).getOrCreateNearCache(name, nearCacheConfig);
             if (nearCacheConfig.isInvalidateOnChange()) {
                 registerInvalidationListener();
             }
@@ -124,7 +124,7 @@ public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements Repli
         try {
             if (nearCache != null) {
                 removeNearCacheInvalidationListener();
-                getContext().getNearCacheManager().destroyNearCache(name);
+                getContext().getNearCacheManager(getServiceName()).destroyNearCache(name);
             }
         } finally {
             super.postDestroy();

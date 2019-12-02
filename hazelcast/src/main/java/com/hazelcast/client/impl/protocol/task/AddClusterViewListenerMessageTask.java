@@ -103,12 +103,12 @@ public class AddClusterViewListenerMessageTask
 
     @Override
     public void memberAdded(MembershipEvent membershipEvent) {
-        //noop. Member view send insted of events via  ClientClusterListenerService
+        //noop. Member view send instead of events via  ClientClusterListenerService
     }
 
     @Override
     public void memberRemoved(MembershipEvent membershipEvent) {
-        //noop. Member view send insted of events via  ClientClusterListenerService
+        //noop. Member view send instead of events via  ClientClusterListenerService
     }
 
     @Override

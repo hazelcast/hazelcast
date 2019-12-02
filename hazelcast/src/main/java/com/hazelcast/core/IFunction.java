@@ -33,6 +33,7 @@ import java.io.Serializable;
  * @since 3.2
  */
 @BinaryInterface
+@FunctionalInterface
 public interface IFunction<T, R> extends Serializable {
 
     R apply(T input);

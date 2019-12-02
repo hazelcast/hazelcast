@@ -23,6 +23,7 @@ import java.util.Properties;
  *
  * @param <T> type of the queue items
  */
+@FunctionalInterface
 public interface QueueStoreFactory<T> {
 
     QueueStore<T> newQueueStore(String name, Properties properties);

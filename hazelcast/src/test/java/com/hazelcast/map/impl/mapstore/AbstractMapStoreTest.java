@@ -48,4 +48,9 @@ public abstract class AbstractMapStoreTest extends HazelcastTestSupport {
         mapConfig.setMapStoreConfig(mapStoreConfig);
         return config;
     }
+
+    @Override
+    protected Config getConfig() {
+        return smallInstanceConfig();
+    }
 }

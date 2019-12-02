@@ -30,6 +30,7 @@ import com.hazelcast.map.EventLostEvent;
  *
  * @since 3.5
  */
+@FunctionalInterface
 public interface EventLostListener extends MapListener {
 
     /**

@@ -300,7 +300,7 @@ public interface RecordStore<R extends Record> {
      * @param consumer to inject logic @param backup   <code>true</code>
      *                 if a backup partition, otherwise <code>false</code>.
      */
-    void loadAwareIterator(BiConsumer<Data, R> consumer, boolean backup);
+    void forEachAfterLoad(BiConsumer<Data, R> consumer, boolean backup);
 
     /**
      * Fetches specified number of keys from provided tableIndex.

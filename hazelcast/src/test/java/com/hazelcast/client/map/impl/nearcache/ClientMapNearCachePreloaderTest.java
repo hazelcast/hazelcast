@@ -125,7 +125,7 @@ public class ClientMapNearCachePreloaderTest extends AbstractNearCachePreloaderT
         HazelcastClientProxy client = (HazelcastClientProxy) hazelcastFactory.newHazelcastClient(clientConfig);
         IMap<K, V> clientMap = client.getMap(nearCacheConfig.getName());
 
-        NearCacheManager nearCacheManager = client.client.getNearCacheManager();
+        NearCacheManager nearCacheManager = client.client.getNearCacheManager(clientMap.getServiceName());
         NearCache<Data, String> nearCache = nearCacheManager.getNearCache(nearCacheConfig.getName());
 
         return new NearCacheTestContextBuilder<K, V, Data, String>(nearCacheConfig, client.getSerializationService())

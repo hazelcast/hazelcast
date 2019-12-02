@@ -98,7 +98,7 @@ public class NearCachedClientCacheProxy<K, V> extends ClientCacheProxy<K, V> {
         serializeKeys = nearCacheConfig.isSerializeKeys();
 
         ICacheDataStructureAdapter<K, V> adapter = new ICacheDataStructureAdapter<>(this);
-        nearCacheManager = getContext().getNearCacheManager();
+        nearCacheManager = getContext().getNearCacheManager(getServiceName());
         nearCache = nearCacheManager.getOrCreateNearCache(nameWithPrefix, nearCacheConfig, adapter);
         CacheStatistics localCacheStatistics = super.getLocalCacheStatistics();
         ((ClientCacheStatisticsImpl) localCacheStatistics).setNearCacheStats(nearCache.getNearCacheStats());

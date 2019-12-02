@@ -25,6 +25,7 @@ import com.hazelcast.core.EntryEvent;
  * @param <V> the type of value.
  * @since 3.5
  */
+@FunctionalInterface
 public interface EntryUpdatedListener<K, V> extends MapListener {
 
     /**

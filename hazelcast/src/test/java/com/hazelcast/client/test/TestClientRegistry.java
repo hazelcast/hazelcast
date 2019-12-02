@@ -56,8 +56,8 @@ import static com.hazelcast.test.HazelcastTestSupport.getNodeEngineImpl;
 
 class TestClientRegistry {
 
-    private static final AtomicInteger CLIENT_PORTS = new AtomicInteger(40000);
     private static final ILogger LOGGER = Logger.getLogger(HazelcastClient.class);
+    private final AtomicInteger CLIENT_PORTS = new AtomicInteger(40000);
 
     private final TestNodeRegistry nodeRegistry;
 
