@@ -19,7 +19,6 @@ package com.hazelcast.util.collection;
 import com.hazelcast.util.QuickMath;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
-import java.io.Serializable;
 import java.util.*;
 
 /**
@@ -30,7 +29,7 @@ import java.util.*;
  * @param <K> type of keys stored in the {@link Map}
  */
 public class Object2LongHashMap<K>
-    implements Map<K, Long>, Serializable
+    implements Map<K, Long>
 {
     private static final float DEFAULT_LOAD_FACTOR = 0.6F;
     private static final int MIN_CAPACITY = 8;
@@ -637,8 +636,7 @@ public class Object2LongHashMap<K>
     // Sets and Collections
     ///////////////////////////////////////////////////////////////////////////////////////////////
 
-    @SuppressFBWarnings(value = "SE_INNER_CLASS")
-    public final class KeySet extends AbstractSet<K> implements Serializable
+    public final class KeySet extends AbstractSet<K>
     {
         private final KeyIterator keyIterator = shouldAvoidAllocation ? new KeyIterator() : null;
 
@@ -679,8 +677,7 @@ public class Object2LongHashMap<K>
         }
     }
 
-    @SuppressFBWarnings(value = "SE_INNER_CLASS")
-    public final class ValueCollection extends AbstractCollection<Long> implements Serializable
+    public final class ValueCollection extends AbstractCollection<Long>
     {
         private final ValueIterator valueIterator = shouldAvoidAllocation ? new ValueIterator() : null;
 
@@ -715,8 +712,7 @@ public class Object2LongHashMap<K>
         }
     }
 
-    @SuppressFBWarnings(value = "SE_INNER_CLASS")
-    public final class EntrySet extends AbstractSet<Entry<K, Long>> implements Serializable
+    public final class EntrySet extends AbstractSet<Entry<K, Long>>
     {
         private final EntryIterator entryIterator = shouldAvoidAllocation ? new EntryIterator() : null;
 
@@ -760,7 +756,7 @@ public class Object2LongHashMap<K>
     // Iterators
     ///////////////////////////////////////////////////////////////////////////////////////////////
 
-    abstract class AbstractIterator<T> implements Iterator<T>, Serializable
+    abstract class AbstractIterator<T> implements Iterator<T>
     {
         private int posCounter;
         private int stopCounter;

@@ -30,6 +30,7 @@ import com.hazelcast.query.impl.SkipIndexPredicate;
 import com.hazelcast.query.impl.predicates.BoundedRangePredicate;
 import com.hazelcast.query.impl.predicates.CompositeEqualPredicate;
 import com.hazelcast.query.impl.predicates.CompositeRangePredicate;
+import com.hazelcast.query.impl.predicates.EvaluatePredicate;
 import com.hazelcast.spi.AbstractLocalOperation;
 import com.hazelcast.spi.annotation.PrivateApi;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -348,6 +349,7 @@ public class DataSerializableConventionsTest {
         whiteList.add(CompositeRangePredicate.class);
         whiteList.add(CompositeEqualPredicate.class);
         whiteList.add(AddIndexBackupOperation.class);
+        whiteList.add(EvaluatePredicate.class);
         try {
             // these can't be accessed through the meta class since they are private
             whiteList.add(Class.forName("com.hazelcast.query.impl.predicates.CompositeIndexVisitor$Output"));
