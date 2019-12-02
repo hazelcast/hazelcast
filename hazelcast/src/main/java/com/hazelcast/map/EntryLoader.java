@@ -70,7 +70,7 @@ public interface EntryLoader<K, V> extends MapLoader<K, EntryLoader.MetadataAwar
 
         /**
          * Returns the value
-         * @return
+         * @return the value
          */
         public V getValue() {
             return value;

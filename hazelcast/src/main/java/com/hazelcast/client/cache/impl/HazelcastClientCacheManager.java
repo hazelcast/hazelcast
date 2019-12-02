@@ -186,7 +186,7 @@ public final class HazelcastClientCacheManager extends AbstractHazelcastCacheMan
      *
      * @return the related {@link NearCacheManager} with the underlying client instance
      */
-    public NearCacheManager getNearCacheManager() {
-        return client.getNearCacheManager();
+    public NearCacheManager getNearCacheManager(String serviceName) {
+        return client.getNearCacheManager(serviceName);
     }
 }

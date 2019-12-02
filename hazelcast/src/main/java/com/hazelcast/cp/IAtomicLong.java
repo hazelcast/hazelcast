@@ -32,7 +32,7 @@ import java.util.concurrent.CompletionStage;
  * from which the operation's result can be obtained in a blocking manner. For example:
  * <pre>
  * CompletionStage&lt;Long&gt; stage = atomicLong.addAndGetAsync(13);
- * stage.whenCompleteAsync((response, t) -> {
+ * stage.whenCompleteAsync((response, t) -&gt; {
  *     if (t == null) {
  *         // do something with the result
  *     } else {
@@ -170,6 +170,7 @@ public interface IAtomicLong extends DistributedObject {
      * Applies a function on the value, the actual stored value will not change.
      *
      * @param function the function applied to the value, the value is not changed
+     * @param <R> the result type of the function
      * @return the result of the function application
      * @throws IllegalArgumentException if function is {@code null}
      * @since 3.2
@@ -194,7 +195,7 @@ public interface IAtomicLong extends DistributedObject {
      * </pre>
      * <pre>
      * CompletionStage&lt;Long&gt; stage = atomicLong.addAndGetAsync(13);
-     * stage.whenCompleteAsync((response, t) -> {
+     * stage.whenCompleteAsync((response, t) -&gt; {
      *     if (t == null) {
      *         // do something with the result
      *     } else {
@@ -358,7 +359,7 @@ public interface IAtomicLong extends DistributedObject {
      * }
      *
      * CompletionStage&lt;Boolean&gt; stage = atomicLong.applyAsync(new IsOneFunction());
-     * stage.whenCompleteAsync((response, t) -> {
+     * stage.whenCompleteAsync((response, t) -&gt; {
      *    if (t == null) {
      *        // do something with the response
      *    } else {
@@ -368,6 +369,7 @@ public interface IAtomicLong extends DistributedObject {
      * </pre>
      *
      * @param function the function
+     * @param <R> the result type of the function
      * @return a {@link CompletionStage} with the result of the function application
      * @throws IllegalArgumentException if function is {@code null}
      * @since 3.7

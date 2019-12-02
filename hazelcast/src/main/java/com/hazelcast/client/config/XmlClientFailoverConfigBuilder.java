@@ -92,11 +92,11 @@ public class XmlClientFailoverConfigBuilder extends AbstractXmlConfigBuilder {
     /**
      * Constructs a {@link XmlClientFailoverConfigBuilder} that loads the configuration
      * with the provided {@link XmlClientFailoverConfigLocator}.
-     * <p/>
+     * <p>
      * If the provided {@link XmlClientFailoverConfigLocator} is {@code null}, a new
      * instance is created and the config is located in every possible
      * places. For these places, please see {@link XmlClientFailoverConfigLocator}.
-     * <p/>
+     * <p>
      * If the provided {@link XmlClientFailoverConfigLocator} is not {@code null}, it
      * is expected that it already located the configuration XML to load
      * from. No further attempt to locate the configuration XML is made

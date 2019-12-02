@@ -38,12 +38,7 @@ import static java.lang.String.format;
 public final class ConfigUtils {
 
     private static final ILogger LOGGER = Logger.getLogger(Config.class);
-    private static final BiConsumer<NamedConfig, String> DEFAULT_NAME_SETTER = new BiConsumer<NamedConfig, String>() {
-        @Override
-        public void accept(NamedConfig namedConfig, String name) {
-            namedConfig.setName(name);
-        }
-    };
+    private static final BiConsumer<NamedConfig, String> DEFAULT_NAME_SETTER = NamedConfig::setName;
 
     private ConfigUtils() {
     }
@@ -126,29 +121,19 @@ public final class ConfigUtils {
             nameSetter.accept(config, name);
             configs.put(name, config);
             return config;
-        } catch (NoSuchMethodException e) {
-            LOGGER.severe("Could not create class " + clazz.getName());
-            assert false;
-            return null;
-        } catch (InstantiationException e) {
-            LOGGER.severe("Could not create class " + clazz.getName());
-            assert false;
-            return null;
-        } catch (IllegalAccessException e) {
-            LOGGER.severe("Could not create class " + clazz.getName());
-            assert false;
-            return null;
-        } catch (InvocationTargetException e) {
+        } catch (NoSuchMethodException | InstantiationException
+                | IllegalAccessException | InvocationTargetException e) {
             LOGGER.severe("Could not create class " + clazz.getName());
             assert false;
             return null;
         }
     }
 
-    public static InvalidConfigurationException createAmbigiousConfigrationException(String itemName, String candidate,
-                                                                                     String duplicate) {
-        return new InvalidConfigurationException(format("Found ambiguous configurations for item\"%s\": \"%s\" vs. \"%s\"%n"
-                + "Please specify your configuration.", itemName, candidate, duplicate));
+    public static InvalidConfigurationException createAmbigiousConfigrationException(
+            String itemName, String candidate, String duplicate) {
+        return new InvalidConfigurationException(
+                format("Found ambiguous configurations for item\"%s\": \"%s\" vs. \"%s\"%n"
+                        + "Please specify your configuration.", itemName, candidate, duplicate));
     }
 
 }

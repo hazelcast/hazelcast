@@ -90,11 +90,11 @@ public class YamlClientFailoverConfigBuilder extends AbstractYamlConfigBuilder {
     /**
      * Constructs a {@link YamlClientFailoverConfigBuilder} that loads the configuration
      * with the provided {@link YamlClientFailoverConfigLocator}.
-     * <p/>
+     * <p>
      * If the provided {@link YamlClientFailoverConfigLocator} is {@code null}, a new
      * instance is created and the config is located in every possible
      * places. For these places, please see {@link YamlClientFailoverConfigLocator}.
-     * <p/>
+     * <p>
      * If the provided {@link YamlClientFailoverConfigLocator} is not {@code null}, it
      * is expected that it already located the configuration YAML to load
      * from. No further attempt to locate the configuration YAML is made

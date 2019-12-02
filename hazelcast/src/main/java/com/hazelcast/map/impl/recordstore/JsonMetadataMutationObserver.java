@@ -48,25 +48,23 @@ public class JsonMetadataMutationObserver implements MutationObserver<Record> {
 
     @Override
     public void onPutRecord(@Nonnull Data key, Record record, Object oldValue, boolean backup) {
-        onPutInternal(record);
+        onPutInternal(key, record);
     }
 
     @Override
     public void onReplicationPutRecord(@Nonnull Data key, @Nonnull Record record, boolean populateIndex) {
-        onPutInternal(record);
-
+        onPutInternal(key, record);
     }
 
     @Override
     public void onUpdateRecord(@Nonnull Data key, @Nonnull Record record,
                                Object oldValue, Object newValue, boolean backup) {
-        updateValueMetadataIfNeccessary(record, newValue, oldValue);
+        updateValueMetadataIfNecessary(key, record, oldValue, newValue);
     }
 
     @Override
     public void onLoadRecord(@Nonnull Data key, @Nonnull Record record, boolean backup) {
-        onPutInternal(record);
-
+        onPutInternal(key, record);
     }
 
     @Override
@@ -94,27 +92,28 @@ public class JsonMetadataMutationObserver implements MutationObserver<Record> {
         // no-op
     }
 
-    protected Metadata getMetadata(Record record) {
+    protected Metadata getMetadata(Data dataKey, Record record) {
         return record.getMetadata();
     }
 
-    protected void setMetadata(Record record, Metadata metadata) {
+    protected void setMetadata(Data dataKey, Record record, Metadata metadata) {
         record.setMetadata(metadata);
     }
 
-    protected void removeMetadata(Record record) {
+    protected void removeMetadata(Data dataKey, Record record) {
         record.setMetadata(null);
     }
 
-    private void onPutInternal(Record record) {
-        Metadata metadata = initializeMetadata(record.getKey(), record.getValue());
+    private void onPutInternal(Data dataKey, Record record) {
+        Metadata metadata = initializeMetadata(dataKey, record.getValue());
         if (metadata != null) {
-            setMetadata(record, metadata);
+            setMetadata(dataKey, record, metadata);
         }
     }
 
     @SuppressFBWarnings("NP_LOAD_OF_KNOWN_NULL_VALUE")
-    private void updateValueMetadataIfNeccessary(Record record, Object updateValue, Object oldValue) {
+    private void updateValueMetadataIfNecessary(Data dataKey, Record record,
+                                                Object oldValue, Object updateValue) {
         Object valueMetadata = null;
         try {
             if (oldValue instanceof Data) {
@@ -130,19 +129,19 @@ public class JsonMetadataMutationObserver implements MutationObserver<Record> {
         }
         if (valueMetadata != null) {
             // There is some valueMetadata. We either set existing record.valueMetadata or create a new one.
-            Metadata existing = getMetadata(record);
+            Metadata existing = getMetadata(dataKey, record);
             if (existing == null) {
                 existing = new Metadata();
-                setMetadata(record, existing);
+                setMetadata(dataKey, record, existing);
             }
             existing.setValueMetadata(valueMetadata);
         } else {
             // Value metadata is empty. We either remove metadata altogether (if keyMetadata is null too)
             // or set valueMetadata to null.
-            Metadata existing = getMetadata(record);
+            Metadata existing = getMetadata(dataKey, record);
             if (existing != null) {
                 if (existing.getKeyMetadata() == null) {
-                    removeMetadata(record);
+                    removeMetadata(dataKey, record);
                 } else {
                     existing.setValueMetadata(valueMetadata);
                 }

@@ -22,6 +22,7 @@ package com.hazelcast.nio.serialization;
  * @see com.hazelcast.nio.serialization.Portable
  * @see com.hazelcast.nio.serialization.VersionedPortable
  */
+@FunctionalInterface
 public interface PortableFactory {
 
     /**

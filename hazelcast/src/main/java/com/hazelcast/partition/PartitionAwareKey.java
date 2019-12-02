@@ -29,8 +29,8 @@ import static com.hazelcast.internal.util.Preconditions.isNotNull;
  * A {@link PartitionAware} key. This is useful in combination with a Map where you want to control the
  * partition of a key.
  *
- * @param <K>
- * @param <P>
+ * @param <K> the key type
+ * @param <P> the partitionKey type
  */
 @BinaryInterface
 public final class PartitionAwareKey<K, P> implements PartitionAware<Object>, DataSerializable {

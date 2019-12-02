@@ -19,7 +19,6 @@ package com.hazelcast.spi.impl;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.impl.MemberImpl;
 import com.hazelcast.config.Config;
-import com.hazelcast.config.MetricsConfig;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.impl.Node;
@@ -30,13 +29,13 @@ import com.hazelcast.internal.dynamicconfig.ClusterWideConfigurationService;
 import com.hazelcast.internal.dynamicconfig.DynamicConfigListener;
 import com.hazelcast.internal.management.ManagementCenterService;
 import com.hazelcast.internal.metrics.MetricsRegistry;
+import com.hazelcast.internal.metrics.impl.MetricsConfigHelper;
 import com.hazelcast.internal.metrics.impl.MetricsRegistryImpl;
 import com.hazelcast.internal.metrics.metricsets.ClassLoadingMetricSet;
 import com.hazelcast.internal.metrics.metricsets.FileMetricSet;
 import com.hazelcast.internal.metrics.metricsets.GarbageCollectionMetricSet;
 import com.hazelcast.internal.metrics.metricsets.OperatingSystemMetricSet;
 import com.hazelcast.internal.metrics.metricsets.RuntimeMetricSet;
-import com.hazelcast.internal.metrics.metricsets.StatisticsAwareMetricsSet;
 import com.hazelcast.internal.metrics.metricsets.ThreadMetricSet;
 import com.hazelcast.internal.nio.Packet;
 import com.hazelcast.internal.partition.InternalPartitionService;
@@ -183,7 +182,7 @@ public class NodeEngineImpl implements NodeEngine {
 
     private MetricsRegistryImpl newMetricRegistry(Node node) {
         return new MetricsRegistryImpl(getHazelcastInstance().getName(), node.getLogger(MetricsRegistry.class),
-                memberMetricsLevel(node.getProperties()));
+                memberMetricsLevel(node.getProperties(), getLogger(MetricsConfigHelper.class)));
     }
 
     private Diagnostics newDiagnostics() {
@@ -214,13 +213,6 @@ public class NodeEngineImpl implements NodeEngine {
         ClassLoadingMetricSet.register(metricsRegistry);
         FileMetricSet.register(metricsRegistry);
 
-        MetricsConfig metricsConfig = node.getConfig().getMetricsConfig();
-        HazelcastProperties properties = new HazelcastProperties(node.getConfig().getProperties());
-        boolean dataStructureMetrics = properties.getBoolean(ClusterProperty.METRICS_DATASTRUCTURES);
-        if (metricsConfig.isEnabled() && dataStructureMetrics) {
-            StatisticsAwareMetricsSet.register(serviceManager, metricsRegistry);
-        }
-
         metricsRegistry.registerStaticMetrics(node.getNodeExtension().getMemoryStats(), "memory");
         metricsRegistry.provideMetrics(operationService, proxyService, eventService, operationParker);
 
@@ -228,8 +220,8 @@ public class NodeEngineImpl implements NodeEngine {
         proxyService.init();
         operationService.start();
         splitBrainProtectionService.start();
-        diagnostics.start();
 
+        diagnostics.start();
         node.getNodeExtension().registerPlugins(diagnostics);
     }
 

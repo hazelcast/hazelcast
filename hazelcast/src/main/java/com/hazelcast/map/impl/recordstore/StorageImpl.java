@@ -42,15 +42,14 @@ import static com.hazelcast.map.impl.OwnedEntryCostEstimatorFactory.createMapSiz
  */
 public class StorageImpl<R extends Record> implements Storage<Data, R> {
 
-    private final InMemoryFormat inMemoryFormat;
     private final StorageSCHM<R> records;
     private final SerializationService ss;
+    private final InMemoryFormat inMemoryFormat;
 
     // not final for testing purposes.
     private EntryCostEstimator<Data, Record> entryCostEstimator;
 
-    StorageImpl(InMemoryFormat inMemoryFormat,
-                SerializationService ss) {
+    StorageImpl(InMemoryFormat inMemoryFormat, SerializationService ss) {
         this.entryCostEstimator = createMapSizeEstimator(inMemoryFormat);
         this.inMemoryFormat = inMemoryFormat;
         this.records = new StorageSCHM<>(ss);
@@ -70,15 +69,12 @@ public class StorageImpl<R extends Record> implements Storage<Data, R> {
     }
 
     @Override
-    public Iterator<R> mutationTolerantIterator() {
-        return records.values().iterator();
+    public Iterator<Map.Entry<Data, R>> mutationTolerantIterator() {
+        return records.cachedEntrySet().iterator();
     }
 
     @Override
     public void put(Data key, R record) {
-
-        record.setKey(key);
-
         R previousRecord = records.put(key, record);
 
         if (previousRecord == null) {
@@ -134,15 +130,10 @@ public class StorageImpl<R extends Record> implements Storage<Data, R> {
     }
 
     @Override
-    public void removeRecord(R record) {
-        if (record == null) {
-            return;
-        }
+    public void removeRecord(Data dataKey, R record) {
+        records.remove(dataKey);
 
-        Data key = record.getKey();
-        records.remove(key);
-
-        updateCostEstimate(-entryCostEstimator.calculateEntryCost(key, record));
+        updateCostEstimate(-entryCostEstimator.calculateEntryCost(dataKey, record));
     }
 
     protected void updateCostEstimate(long entrySize) {
@@ -179,7 +170,17 @@ public class StorageImpl<R extends Record> implements Storage<Data, R> {
     }
 
     @Override
-    public Record extractRecordFrom(EntryView entryView) {
+    public Record extractRecordFromLazy(EntryView entryView) {
         return ((LazyEvictableEntryView) entryView).getRecord();
+    }
+
+    @Override
+    public Data extractDataKeyFromLazy(EntryView entryView) {
+        return ((LazyEvictableEntryView) entryView).getDataKey();
+    }
+
+    @Override
+    public Data toBackingDataKeyFormat(Data key) {
+        return key;
     }
 }

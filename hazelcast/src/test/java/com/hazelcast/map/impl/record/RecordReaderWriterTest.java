@@ -113,7 +113,6 @@ public class RecordReaderWriterTest {
         writtenRecord.setCreationTime(7);
         writtenRecord.setVersion(8);
         writtenRecord.setHits(9);
-        writtenRecord.setKey(ss.toData(10));
         writtenRecord.setValue(ss.toData(11));
         return writtenRecord;
     }
@@ -128,14 +127,12 @@ public class RecordReaderWriterTest {
 
     private static Record<Data> asDataRecord(Record fromRecord, Data value) {
         DataRecord toRecord = new DataRecord(value);
-        toRecord.setKey(fromRecord.getKey());
         toRecord.setValue(value);
         return copyMetadata(fromRecord, toRecord);
     }
 
     private static Record<Data> asDataRecordWithStats(Record fromRecord, Data value) {
         DataRecordWithStats toRecord = new DataRecordWithStats(value);
-        toRecord.setKey(fromRecord.getKey());
         toRecord.setValue(value);
         return copyMetadata(fromRecord, toRecord);
     }

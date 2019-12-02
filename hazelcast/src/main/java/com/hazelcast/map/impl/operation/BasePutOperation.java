@@ -65,11 +65,11 @@ public abstract class BasePutOperation
     public Operation getBackupOperation() {
         Record record = recordStore.getRecord(dataKey);
         dataValue = getValueOrPostProcessedValue(record, dataValue);
-        return newBackupOperation(record, dataValue);
+        return newBackupOperation(dataKey, record, dataValue);
     }
 
-    protected PutBackupOperation newBackupOperation(Record record, Data dataValue) {
-        return new PutBackupOperation(name, record, dataValue);
+    protected PutBackupOperation newBackupOperation(Data dataKey, Record record, Data dataValue) {
+        return new PutBackupOperation(name, dataKey, record, dataValue);
     }
 
     @Override

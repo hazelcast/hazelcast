@@ -573,17 +573,6 @@
         <metadata-space-percentage>12.5</metadata-space-percentage>
     </native-memory>
 
-    <services enable-defaults="false">
-        <service enabled="true">
-            <name>custom-service</name>
-            <class-name>com.hazelcast.examples.MyService</class-name>
-            <properties>
-                <property name="prop1">prop1-value</property>
-                <property name="prop2">prop2-value</property>
-            </properties>
-        </service>
-    </services>
-
     <security enabled="false">
         <realms>
             <realm name="mr">

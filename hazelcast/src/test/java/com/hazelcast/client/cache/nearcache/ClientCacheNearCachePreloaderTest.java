@@ -96,7 +96,7 @@ public class ClientCacheNearCachePreloaderTest extends AbstractNearCachePreloade
         CacheConfig<K, V> cacheConfig = getCacheConfig(nearCacheConfig);
 
         Cache<K, V> memberCache = context.cacheManager.createCache(name, cacheConfig.setName(name));
-        return new ICacheDataStructureAdapter<K, V>((ICache<K, V>) memberCache.unwrap(ICache.class));
+        return new ICacheDataStructureAdapter<>((ICache<K, V>) memberCache.unwrap(ICache.class));
     }
 
     @Override
@@ -109,7 +109,7 @@ public class ClientCacheNearCachePreloaderTest extends AbstractNearCachePreloade
         CachingProvider memberProvider = createServerCachingProvider(member);
         HazelcastServerCacheManager memberCacheManager = (HazelcastServerCacheManager) memberProvider.getCacheManager();
         ICache<K, V> memberCache = memberCacheManager.createCache(nearCacheConfig.getName(), cacheConfig);
-        ICacheDataStructureAdapter<K, V> dataAdapter = new ICacheDataStructureAdapter<K, V>(memberCache);
+        ICacheDataStructureAdapter<K, V> dataAdapter = new ICacheDataStructureAdapter<>(memberCache);
 
         if (createNearCacheInstance) {
             return createNearCacheContextBuilder(cacheConfig)
@@ -165,12 +165,12 @@ public class ClientCacheNearCachePreloaderTest extends AbstractNearCachePreloade
         String cacheNameWithPrefix = cacheManager.getCacheNameWithPrefix(nearCacheConfig.getName());
         ICache<K, V> clientCache = cacheManager.createCache(nearCacheConfig.getName(), cacheConfig);
 
-        NearCacheManager nearCacheManager = client.client.getNearCacheManager();
+        NearCacheManager nearCacheManager = client.client.getNearCacheManager(clientCache.getServiceName());
         NearCache<Data, String> nearCache = nearCacheManager.getNearCache(cacheNameWithPrefix);
 
         return new NearCacheTestContextBuilder<K, V, Data, String>(nearCacheConfig, client.getSerializationService())
                 .setNearCacheInstance(client)
-                .setNearCacheAdapter(new ICacheDataStructureAdapter<K, V>(clientCache))
+                .setNearCacheAdapter(new ICacheDataStructureAdapter<>(clientCache))
                 .setNearCache(nearCache)
                 .setNearCacheManager(nearCacheManager)
                 .setCacheManager(cacheManager);

@@ -94,7 +94,7 @@ public class ConsoleCommandHandler {
 
         @Override
         public void print(Object obj) {
-            buffer.append(String.valueOf(obj));
+            buffer.append(obj);
         }
 
         @Override

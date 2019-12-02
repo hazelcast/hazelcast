@@ -22,9 +22,10 @@ import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.spi.exception.WrongTargetException;
 import com.hazelcast.spi.impl.operationservice.BackupOperation;
 import com.hazelcast.spi.impl.operationservice.ExceptionAction;
-import com.hazelcast.spi.exception.WrongTargetException;
 
 import java.io.IOException;
 import java.util.Collection;
@@ -62,9 +63,10 @@ public class EvictBatchBackupOperation extends MapOperation implements BackupOpe
         }
 
         for (ExpiredKey expiredKey : expiredKeys) {
-            Record existingRecord = recordStore.getRecord(expiredKey.getKey());
+            Data key = expiredKey.getKey();
+            Record existingRecord = recordStore.getRecord(key);
             if (canEvictRecord(existingRecord, expiredKey)) {
-                recordStore.evict(existingRecord.getKey(), true);
+                recordStore.evict(key, true);
             }
         }
 

@@ -52,34 +52,26 @@ public class AbstractRecordTest {
     @Before
     public void setUp() throws Exception {
         record = new ObjectRecord(VALUE);
-        record.setKey(KEY);
 
         recordSameAttributes = new ObjectRecord();
-        recordSameAttributes.setKey(KEY);
         recordSameAttributes.setValue(VALUE);
 
         recordOtherVersion = new ObjectRecord(VALUE);
-        recordOtherVersion.setKey(KEY);
         recordOtherVersion.setVersion(42);
 
         recordOtherTtl = new ObjectRecord(VALUE);
-        recordOtherTtl.setKey(KEY);
         recordOtherTtl.setTtl(2342);
 
         recordOtherCreationTime = new ObjectRecord(VALUE);
-        recordOtherCreationTime.setKey(KEY);
         recordOtherCreationTime.setCreationTime(Clock.currentTimeMillis());
 
         recordOtherHits = new ObjectRecord(VALUE);
-        recordOtherHits.setKey(KEY);
         recordOtherHits.setHits(23);
 
         recordOtherLastAccessTime = new ObjectRecord(VALUE);
-        recordOtherLastAccessTime.setKey(KEY);
         recordOtherLastAccessTime.setLastAccessTime(Clock.currentTimeMillis());
 
         recordOtherLastUpdateTime = new ObjectRecord(VALUE);
-        recordOtherLastUpdateTime.setKey(KEY);
         recordOtherLastUpdateTime.setLastUpdateTime(Clock.currentTimeMillis() + 10000);
     }
 

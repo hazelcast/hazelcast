@@ -18,6 +18,7 @@ package com.hazelcast.internal.partition.impl;
 
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.config.Config;
+import com.hazelcast.config.ConfigAccessor;
 import com.hazelcast.config.ServiceConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.partition.PartitionReplica;
@@ -203,7 +204,7 @@ public class PartitionReplicaStateCheckerTest extends HazelcastTestSupport {
     public void shouldNotBeSafe_whenReplicasAreNotSync() {
         Config config = new Config();
         ServiceConfig serviceConfig = TestMigrationAwareService.createServiceConfig(1);
-        config.getServicesConfig().addServiceConfig(serviceConfig);
+        ConfigAccessor.getServicesConfig(config).addServiceConfig(serviceConfig);
 
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
         HazelcastInstance hz = factory.newHazelcastInstance(config);

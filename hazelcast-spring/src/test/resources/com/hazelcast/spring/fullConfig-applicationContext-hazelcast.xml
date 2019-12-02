@@ -21,8 +21,6 @@
        xmlns:hz="http://www.hazelcast.com/schema/spring"
        xsi:schemaLocation="http://www.springframework.org/schema/beans
         http://www.springframework.org/schema/beans/spring-beans.xsd
-        http://www.hazelcast.com/schema/sample
-        hazelcast-sample-service.xsd
         http://www.hazelcast.com/schema/spring
         http://www.hazelcast.com/schema/spring/hazelcast-spring-4.0.xsd">
 
@@ -811,24 +809,6 @@
             <hz:member-attributes>
                 <hz:attribute name="cluster.name">spring-cluster</hz:attribute>
             </hz:member-attributes>
-
-            <hz:services>
-                <hz:service implementation="dummyService">
-                    <hz:name>my-service</hz:name>
-                    <hz:class-name>com.hazelcast.spring.MyService</hz:class-name>
-                    <hz:properties>
-                        <hz:property name="prop1">prop1-value</hz:property>
-                        <hz:property name="prop2">prop2-value</hz:property>
-                    </hz:properties>
-                    <hz:configuration parser="com.hazelcast.spring.MyServiceConfigParser">
-                        <s:my-service id="my-service">
-                            <s:string-prop>prop1</s:string-prop>
-                            <s:int-prop>123</s:int-prop>
-                            <s:bool-prop>true</s:bool-prop>
-                        </s:my-service>
-                    </hz:configuration>
-                </hz:service>
-            </hz:services>
 
             <hz:split-brain-protection enabled="true" name="my-split-brain-protection">
                 <hz:minimum-cluster-size>2</hz:minimum-cluster-size>

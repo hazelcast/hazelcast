@@ -26,8 +26,8 @@ import java.util.Collection;
  *
  * @see MultiMap
  * @see TransactionalMultiMap
- * @param <K>
- * @param <V>
+ * @param <K> type of the multimap key
+ * @param <V> type of the multimap value
  */
 public interface BaseMultiMap<K, V> extends DistributedObject {
 

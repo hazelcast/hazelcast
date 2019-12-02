@@ -26,22 +26,22 @@ import com.hazelcast.cluster.Member;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.internal.management.dto.ClientBwListDTO;
-import com.hazelcast.internal.management.dto.ClientBwListEntryDTO;
 import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.internal.cluster.impl.VersionMismatchException;
+import com.hazelcast.internal.management.dto.ClientBwListDTO;
+import com.hazelcast.internal.management.dto.ClientBwListEntryDTO;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.version.Version;
-
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.security.AccessControlException;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
@@ -83,7 +83,7 @@ public class ManagementCenterServiceTest extends HazelcastTestSupport {
         hazelcastInstances[0] = factory.newHazelcastInstance(getConfig());
         hazelcastInstances[1] = factory.newHazelcastInstance(getConfig().setLiteMember(true));
         Config config = getConfig();
-        config.getManagementCenterConfig().setEnabled(true).setUrl("a");
+        config.getManagementCenterConfig().setEnabled(true).setUrl("a").setScriptingEnabled(false);
         hazelcastInstances[2] = factory.newHazelcastInstance(config);
 
         members = stream(hazelcastInstances)
@@ -301,6 +301,36 @@ public class ManagementCenterServiceTest extends HazelcastTestSupport {
         managementCenterService.applyMCConfig(members[0], "testETag", bwListDTO).get();
 
         assertEquals("testETag", getMemberMCService(hazelcastInstances[0]).getLastMCConfigETag());
+    }
+
+    @Test
+    public void runScript() throws Exception {
+        String result = resolve(managementCenterService.runScript(members[0], "javascript", "'hello world';"));
+        assertEquals("hello world", result);
+    }
+
+    @Test
+    public void runScript_scriptingDisabled() {
+        assertThrows(AccessControlException.class, () -> {
+            try {
+                resolve(managementCenterService.runScript(members[2], "javascript", "'hello world';"));
+            } catch (Exception e) {
+                //noinspection ThrowableNotThrown
+                rethrow(e);
+            }
+        });
+    }
+
+    @Test
+    public void runConsoleCommand_defaultNamespace() throws Exception {
+        String result = resolve(managementCenterService.runConsoleCommand(members[0], null, "m.size"));
+        assertContains(result, "0");
+    }
+
+    @Test
+    public void runConsoleCommand_withNamespace() throws Exception {
+        String result = resolve(managementCenterService.runConsoleCommand(members[0], "baz", "m.size"));
+        assertContains(result, "0");
     }
 
     private static com.hazelcast.internal.management.ManagementCenterService getMemberMCService(HazelcastInstance instance) {

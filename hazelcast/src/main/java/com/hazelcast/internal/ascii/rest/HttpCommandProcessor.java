@@ -16,8 +16,15 @@
 
 package com.hazelcast.internal.ascii.rest;
 
+import com.hazelcast.core.HazelcastJsonValue;
 import com.hazelcast.internal.ascii.AbstractTextCommandProcessor;
 import com.hazelcast.internal.ascii.TextCommandService;
+import com.hazelcast.internal.json.JsonValue;
+
+import static com.hazelcast.internal.ascii.rest.HttpCommand.CONTENT_TYPE_BINARY;
+import static com.hazelcast.internal.ascii.rest.HttpCommand.CONTENT_TYPE_JSON;
+import static com.hazelcast.internal.ascii.rest.HttpCommand.CONTENT_TYPE_PLAIN_TEXT;
+import static com.hazelcast.internal.util.StringUtil.stringToBytes;
 
 
 public abstract class HttpCommandProcessor<T> extends AbstractTextCommandProcessor<T> {
@@ -78,5 +85,22 @@ public abstract class HttpCommandProcessor<T> extends AbstractTextCommandProcess
 
     protected HttpCommandProcessor(TextCommandService textCommandService) {
         super(textCommandService);
+    }
+
+    protected void prepareResponse(HttpCommand command, Object value) {
+        if (value == null) {
+            command.send204();
+        } else if (value instanceof byte[]) {
+            command.setResponse(CONTENT_TYPE_BINARY, (byte[]) value);
+        } else if (value instanceof RestValue) {
+            RestValue restValue = (RestValue) value;
+            command.setResponse(restValue.getContentType(), restValue.getValue());
+        } else if (value instanceof HazelcastJsonValue || value instanceof JsonValue) {
+            command.setResponse(CONTENT_TYPE_JSON, stringToBytes(value.toString()));
+        } else if (value instanceof String) {
+            command.setResponse(CONTENT_TYPE_PLAIN_TEXT, stringToBytes((String) value));
+        } else {
+            command.setResponse(CONTENT_TYPE_BINARY, textCommandService.toByteArray(value));
+        }
     }
 }

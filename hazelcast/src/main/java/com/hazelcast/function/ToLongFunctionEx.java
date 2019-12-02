@@ -34,6 +34,7 @@ public interface ToLongFunctionEx<T> extends ToLongFunction<T>, Serializable {
 
     /**
      * Exception-declaring version of {@link ToLongFunction#applyAsLong}.
+     * @throws Exception in case of any exceptional case
      */
     long applyAsLongEx(T value) throws Exception;
 

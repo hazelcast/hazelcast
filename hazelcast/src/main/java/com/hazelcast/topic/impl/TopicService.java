@@ -18,8 +18,12 @@ package com.hazelcast.topic.impl;
 
 import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.impl.MemberImpl;
+import com.hazelcast.config.Config;
 import com.hazelcast.config.TopicConfig;
 import com.hazelcast.internal.cluster.ClusterService;
+import com.hazelcast.internal.metrics.DynamicMetricsProvider;
+import com.hazelcast.internal.metrics.MetricDescriptor;
+import com.hazelcast.internal.metrics.MetricsCollectionContext;
 import com.hazelcast.internal.monitor.impl.LocalTopicStatsImpl;
 import com.hazelcast.internal.services.ManagedService;
 import com.hazelcast.internal.services.RemoteService;
@@ -29,9 +33,11 @@ import com.hazelcast.internal.util.HashUtil;
 import com.hazelcast.internal.util.MapUtil;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.eventservice.EventPublishingService;
 import com.hazelcast.spi.impl.eventservice.EventRegistration;
 import com.hazelcast.spi.impl.eventservice.EventService;
+import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.topic.ITopic;
 import com.hazelcast.topic.LocalTopicStats;
 import com.hazelcast.topic.Message;
@@ -49,10 +55,11 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
+import static com.hazelcast.internal.metrics.impl.ProviderHelper.provide;
 import static com.hazelcast.internal.util.ConcurrencyUtil.getOrPutSynchronized;
 
 public class TopicService implements ManagedService, RemoteService, EventPublishingService,
-        StatisticsAwareService<LocalTopicStats> {
+                                     StatisticsAwareService<LocalTopicStats>, DynamicMetricsProvider {
 
     public static final String SERVICE_NAME = "hz:impl:topicService";
 
@@ -76,6 +83,11 @@ public class TopicService implements ManagedService, RemoteService, EventPublish
             orderingLocks[i] = new ReentrantLock();
         }
         eventService = nodeEngine.getEventService();
+
+        boolean dsMetricsEnabled = nodeEngine.getProperties().getBoolean(ClusterProperty.METRICS_DATASTRUCTURES);
+        if (dsMetricsEnabled) {
+            ((NodeEngineImpl) nodeEngine).getMetricsRegistry().registerDynamicMetricsProvider(this);
+        }
     }
 
     // only for testing
@@ -200,9 +212,18 @@ public class TopicService implements ManagedService, RemoteService, EventPublish
     @Override
     public Map<String, LocalTopicStats> getStats() {
         Map<String, LocalTopicStats> topicStats = MapUtil.createHashMap(statsMap.size());
-        for (Map.Entry<String, LocalTopicStatsImpl> queueStat : statsMap.entrySet()) {
-            topicStats.put(queueStat.getKey(), queueStat.getValue());
+        Config config = nodeEngine.getConfig();
+        for (Map.Entry<String, LocalTopicStatsImpl> statEntry : statsMap.entrySet()) {
+            String name = statEntry.getKey();
+            if (config.getTopicConfig(name).isStatisticsEnabled()) {
+                topicStats.put(name, statEntry.getValue());
+            }
         }
         return topicStats;
+    }
+
+    @Override
+    public void provideDynamicMetrics(MetricDescriptor descriptor, MetricsCollectionContext context) {
+        provide(descriptor, context, "topic", getStats());
     }
 }

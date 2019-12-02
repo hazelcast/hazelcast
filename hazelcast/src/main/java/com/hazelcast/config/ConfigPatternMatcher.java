@@ -26,6 +26,7 @@ package com.hazelcast.config;
  * <p>
  * Default matcher is {@link com.hazelcast.config.matcher.MatchingPointConfigPatternMatcher}.
  */
+@FunctionalInterface
 public interface ConfigPatternMatcher {
 
     /**

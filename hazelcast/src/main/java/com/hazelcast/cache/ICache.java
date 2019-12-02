@@ -64,7 +64,7 @@ import java.util.concurrent.ForkJoinPool;
  * In a reactive way:
  * <pre>
  *   CompletionStage&lt;Value&gt; stage = unwrappedCache.getAsync( &quot;key-1&quot; ) ;
- *   stage.thenAcceptAsync(value -> {
+ *   stage.thenAcceptAsync(value -&gt; {
  *         System.out.println(value);
  *     });
  * </pre>
@@ -76,20 +76,18 @@ import java.util.concurrent.ForkJoinPool;
  * </pre>
  *
  * <p>
- *     Dependent actions can be registered on the returned {@link CompletionStage}.
- *     Their execution follows {@link java.util.concurrent.CompletableFuture}
- *     execution conventions:
- *     <ul>
- *         <li>dependent actions registered by <em>non-async</em> methods may
- *        be executed by the thread that completes the current CompletableFuture or by any other
- *        caller of a completion method.</li>
- *        <li>dependent actions registered by default <em>async</em> methods without an explicit
- *        {@code Executor} argument are executed by {@link ForkJoinPool#commonPool()} unless
- *        its parallelism level is less than 2, in which case a new {@code Thread} is created to
- *        run each action</li>
- *     </ul>
- *
- * </p>
+ * Dependent actions can be registered on the returned {@link CompletionStage}.
+ * Their execution follows {@link java.util.concurrent.CompletableFuture}
+ * execution conventions:
+ * <ul>
+ *     <li>dependent actions registered by <em>non-async</em> methods may
+ *     be executed by the thread that completes the current CompletableFuture or by any other
+ *     caller of a completion method.</li>
+ *     <li>dependent actions registered by default <em>async</em> methods without an explicit
+ *     {@code Executor} argument are executed by {@link ForkJoinPool#commonPool()} unless
+ *     its parallelism level is less than 2, in which case a new {@code Thread} is created to
+ *     run each action</li>
+ * </ul>
  *
  * <b>Custom ExpiryPolicy:</b><br>
  * For most of the typical operations, Hazelcast provides overloaded versions with an additional

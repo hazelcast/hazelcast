@@ -38,6 +38,7 @@ public interface PredicateEx<T> extends Predicate<T>, Serializable {
 
     /**
      * Exception-declaring version of {@link Predicate#test}.
+     * @throws Exception in case of any exceptional case
      */
     boolean testEx(T t) throws Exception;
 
@@ -52,6 +53,7 @@ public interface PredicateEx<T> extends Predicate<T>, Serializable {
 
     /**
      * Returns a predicate that always evaluates to {@code true}.
+     * @param <T> the type of the input to the predicate
      */
     @Nonnull
     static <T> PredicateEx<T> alwaysTrue() {
@@ -60,6 +62,7 @@ public interface PredicateEx<T> extends Predicate<T>, Serializable {
 
     /**
      * Returns a predicate that always evaluates to {@code false}.
+     * @param <T> the type of the input to the predicate
      */
     @Nonnull
     static <T> PredicateEx<T> alwaysFalse() {
@@ -68,6 +71,7 @@ public interface PredicateEx<T> extends Predicate<T>, Serializable {
 
     /**
      * {@code Serializable} variant of
+     * @param <T> the type of the input to the predicate
      * {@link Predicate#isEqual(Object) java.util.function.Predicate#isEqual(Object)}.
      */
     @Nonnull

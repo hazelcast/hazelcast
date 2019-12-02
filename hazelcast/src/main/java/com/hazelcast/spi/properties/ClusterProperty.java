@@ -292,12 +292,12 @@ public final class ClusterProperty {
      * This property sets the window the concurrency detection will signalling
      * that concurrency has been detected, even if there are no further updates in that window.
      *
-     * Normally in a concurrency system the windows keeps sliding forward so it will always remain
+     * Normally in a concurrent system the window keeps sliding forward so it will always remain
      * concurrent.
      *
-     * Setting it too high effectively disabled the optimization because once concurrency has been detected
+     * Setting it too high effectively disables the optimization because once concurrency has been detected
      * it will keep that way. Setting it too low could lead to suboptimal performance because the system
-     * will try write through and other optimization even though the system is concurrent.
+     * will try write through and other optimizations even though the system is concurrent.
      */
     public static final HazelcastProperty CONCURRENT_WINDOW_MS
             = new HazelcastProperty("hazelcast.concurrent.window.ms", 100, MILLISECONDS);
@@ -333,13 +333,13 @@ public final class ClusterProperty {
             = new HazelcastProperty("hazelcast.map.load.chunk.size", 1000);
 
     /**
-     * The delay until the first run of the {@link com.hazelcast.internal.cluster.impl.SplitBrainHandler}
+     * The delay until the first run of the split-brain handler.
      */
     public static final HazelcastProperty MERGE_FIRST_RUN_DELAY_SECONDS
             = new HazelcastProperty("hazelcast.merge.first.run.delay.seconds", 300, SECONDS);
 
     /**
-     * The interval between invocations of the {@link com.hazelcast.internal.cluster.impl.SplitBrainHandler}
+     * The interval between invocations of the split-brain handler.
      */
     public static final HazelcastProperty MERGE_NEXT_RUN_DELAY_SECONDS
             = new HazelcastProperty("hazelcast.merge.next.run.delay.seconds", 120, SECONDS);
@@ -578,6 +578,13 @@ public final class ClusterProperty {
     public static final HazelcastProperty MC_MAX_VISIBLE_SLOW_OPERATION_COUNT
             = new HazelcastProperty("hazelcast.mc.max.visible.slow.operations.count", 10);
 
+    /**
+     * The number of threads that the Management Center service has available for processing operations
+     * sent from connected Management Center instance.
+     */
+    public static final HazelcastProperty MC_EXECUTOR_THREAD_COUNT
+            = new HazelcastProperty("hazelcast.mc.executor.thread.count", 2);
+
     public static final HazelcastProperty CONNECTION_MONITOR_INTERVAL
             = new HazelcastProperty("hazelcast.connection.monitor.interval", 100, MILLISECONDS);
     public static final HazelcastProperty CONNECTION_MONITOR_MAX_FAULTS
@@ -655,7 +662,8 @@ public final class ClusterProperty {
             = new HazelcastProperty("hazelcast.enterprise.license.key");
 
     /**
-     * Setting this capacity is valid if you set {@link com.hazelcast.config.MapStoreConfig#writeCoalescing} to {@code false}.
+     * Setting this capacity is valid if you set {@code writeCoalescing} to {@code false}
+     * (see {@link com.hazelcast.config.MapStoreConfig#setWriteCoalescing(boolean)}).
      * Otherwise its value will not be taken into account.
      * <p>
      * The per node maximum write-behind queue capacity is the total of all write-behind queue sizes in a node, including backups.
@@ -938,13 +946,6 @@ public final class ClusterProperty {
             = new HazelcastProperty("hazelcast.init.cluster.version");
 
     /**
-     * Enables legacy (pre-3.9) member list format which is printed in logs. New format is introduced by 3.9
-     * includes member list version.
-     */
-    public static final HazelcastProperty USE_LEGACY_MEMBER_LIST_FORMAT
-            = new HazelcastProperty("hazelcast.legacy.memberlist.format.enabled", false);
-
-    /**
      * Controls whether we apply more strict checks upon BIND requests towards a cluster member.
      * The checks mainly validate the remote BIND request against the remote address as found in the socket.
      * By default they are disabled, to avoid connectivity issues when deployed under NAT'ed infrastructure.
@@ -976,11 +977,11 @@ public final class ClusterProperty {
 
     /**
      * Defines whether Moby Names should be used for instance name generating when it is not provided by user.
-     * </p>
+     * <p>
      * Moby Name is a short human-readable name consisting of randomly chosen adjective and the surname of a famous person.
-     * </p>
+     * <p>
      * If set to true, Moby Name will be chosen, otherwise a name that is concatenation of static prefix, number and cluster name.
-     * </p>
+     * <p>
      * By default is true.
      */
     public static final HazelcastProperty MOBY_NAMING_ENABLED

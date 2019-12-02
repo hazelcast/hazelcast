@@ -183,4 +183,9 @@ public class WriteBehindFlushTest extends HazelcastTestSupport {
             }
         }, 240);
     }
+
+    @Override
+    protected Config getConfig() {
+        return smallInstanceConfig();
+    }
 }

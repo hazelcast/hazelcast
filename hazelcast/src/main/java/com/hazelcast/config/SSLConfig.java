@@ -42,7 +42,8 @@ public final class SSLConfig {
     /**
      * Returns the name of the implementation class.
      * <p>
-     * Class can either be an  {@link com.hazelcast.nio.ssl.SSLContextFactory} or {@link com.hazelcast.nio.ssl.SSLEngineFactory}.
+     * Class can either be an {@link com.hazelcast.nio.ssl.SSLContextFactory} or {@code com.hazelcast.nio.ssl.SSLEngineFactory}
+     * (Enterprise edition).
      *
      * @return the name implementation class
      */
@@ -53,7 +54,8 @@ public final class SSLConfig {
     /**
      * Sets the name for the implementation class.
      * <p>
-     * Class can either be an  {@link com.hazelcast.nio.ssl.SSLContextFactory} or {@link com.hazelcast.nio.ssl.SSLEngineFactory}.
+     * Class can either be an {@link com.hazelcast.nio.ssl.SSLContextFactory} or {@code com.hazelcast.nio.ssl.SSLEngineFactory}
+     * (Enterprise edition).
      *
      * @param factoryClassName the name implementation class
      */
@@ -85,7 +87,7 @@ public final class SSLConfig {
      * Sets the implementation object.
      * <p>
      * Object must be instance of an {@link com.hazelcast.nio.ssl.SSLContextFactory} or
-     * {@link com.hazelcast.nio.ssl.SSLEngineFactory}.
+     * {@code com.hazelcast.nio.ssl.SSLEngineFactory} (Enterprise edition).
      *
      * @param factoryImplementation the implementation object
      * @return this SSLConfig instance
@@ -98,7 +100,8 @@ public final class SSLConfig {
     /**
      * Returns the factory implementation object.
      * <p>
-     * Object is instance of an {@link com.hazelcast.nio.ssl.SSLContextFactory} or {@link com.hazelcast.nio.ssl.SSLEngineFactory}.
+     * Object is instance of an {@link com.hazelcast.nio.ssl.SSLContextFactory} or {@code com.hazelcast.nio.ssl.SSLEngineFactory}
+     * (Enterprise edition).
      *
      * @return the factory implementation object
      */

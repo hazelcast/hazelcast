@@ -18,10 +18,12 @@ package com.hazelcast.map.impl.operation;
 
 import com.hazelcast.config.IndexConfig;
 import com.hazelcast.config.MapConfig;
+import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.services.ObjectNamespace;
 import com.hazelcast.internal.services.ServiceNamespace;
 import com.hazelcast.internal.util.Clock;
+import com.hazelcast.internal.util.ExceptionUtil;
 import com.hazelcast.internal.util.ThreadUtil;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapDataSerializerHook;
@@ -44,7 +46,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -62,7 +63,7 @@ public class MapReplicationStateHolder implements IdentifiedDataSerializable {
     protected transient Map<String, RecordStore<Record>> storesByMapName;
 
     // data for each map
-    protected transient Map<String, Collection<Record<Data>>> data;
+    protected transient Map<String, List> data;
 
     // propagates the information if the given record store has been already loaded with map-loaded
     // if so, the loading won't be triggered again after a migration to avoid duplicate loading.
@@ -141,9 +142,9 @@ public class MapReplicationStateHolder implements IdentifiedDataSerializable {
         applyIndexesState();
 
         if (!isNullOrEmpty(data)) {
-            for (Map.Entry<String, Collection<Record<Data>>> dataEntry : data.entrySet()) {
-                Collection<Record<Data>> records = dataEntry.getValue();
-                final String mapName = dataEntry.getKey();
+            for (Map.Entry<String, List> dataEntry : data.entrySet()) {
+                String mapName = dataEntry.getKey();
+                List keyRecord = dataEntry.getValue();
                 RecordStore recordStore = operation.getRecordStore(mapName);
                 recordStore.reset();
                 recordStore.setPreMigrationLoadedStatus(loaded.get(mapName));
@@ -166,12 +167,16 @@ public class MapReplicationStateHolder implements IdentifiedDataSerializable {
 
                 long nowInMillis = Clock.currentTimeMillis();
                 final InternalIndex[] indexesSnapshot = indexes.getIndexes();
-                for (Record<Data> record : records) {
-                    Record newRecord = recordStore.putReplicatedRecord(record, nowInMillis, populateIndexes);
+                for (int i = 0; i < keyRecord.size(); i += 2) {
+                    Data dataKey = (Data) keyRecord.get(i);
+                    Record record = (Record) keyRecord.get(i + 1);
+
+                    recordStore.putReplicatedRecord(dataKey, record, nowInMillis, populateIndexes);
+
                     if (recordStore.shouldEvict()) {
                         // No need to continue replicating records anymore.
                         // We are already over eviction threshold, each put record will cause another eviction.
-                        recordStore.evictEntries(newRecord.getKey());
+                        recordStore.evictEntries(dataKey);
                         break;
                     }
                     recordStore.disposeDeferredBlocks();
@@ -228,13 +233,17 @@ public class MapReplicationStateHolder implements IdentifiedDataSerializable {
             out.writeUTF(mapName);
 
             SerializationService ss = getSerializationService(operation.getRecordStore(mapName).getMapContainer());
-            RecordStore recordStore = entry.getValue();
+            RecordStore<Record> recordStore = entry.getValue();
             out.writeInt(recordStore.size());
-            Iterator<Record> iterator = recordStore.iterator();
-            while (iterator.hasNext()) {
-                Record record = iterator.next();
-                Records.writeRecord(out, record, ss.toData(record.getValue()));
-            }
+            // No expiration should be done in forEach, since we have serialized size before.
+            recordStore.forEach((dataKey, record) -> {
+                try {
+                    IOUtil.writeData(out, dataKey);
+                    Records.writeRecord(out, record, ss.toData(record.getValue()));
+                } catch (IOException e) {
+                    throw ExceptionUtil.rethrow(e);
+                }
+            }, operation.getReplicaIndex() != 0, true);
         }
 
         out.writeInt(loaded.size());
@@ -262,12 +271,15 @@ public class MapReplicationStateHolder implements IdentifiedDataSerializable {
         for (int i = 0; i < size; i++) {
             String name = in.readUTF();
             int numOfRecords = in.readInt();
-            Collection<Record<Data>> allRecords = new ArrayList<>(numOfRecords);
+            List keyRecord = new ArrayList<>(numOfRecords * 2);
             for (int j = 0; j < numOfRecords; j++) {
+                Data dataKey = IOUtil.readData(in);
                 Record record = Records.readRecord(in);
-                allRecords.add(record);
+
+                keyRecord.add(dataKey);
+                keyRecord.add(record);
             }
-            data.put(name, allRecords);
+            data.put(name, keyRecord);
         }
 
         int loadedSize = in.readInt();

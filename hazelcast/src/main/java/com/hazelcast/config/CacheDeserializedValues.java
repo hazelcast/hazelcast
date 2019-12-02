@@ -56,7 +56,7 @@ public enum CacheDeserializedValues {
     /**
      * Create instance from String
      *
-     * @param string
+     * @param string the string value to parse
      * @return instance of {@link CacheDeserializedValues}
      * @throws IllegalArgumentException when unknown value is passed
      */

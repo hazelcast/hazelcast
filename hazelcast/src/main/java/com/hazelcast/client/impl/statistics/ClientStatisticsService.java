@@ -33,7 +33,6 @@ import com.hazelcast.internal.metrics.impl.MetricsCompressor;
 import com.hazelcast.internal.metrics.impl.PublisherMetricsCollector;
 import com.hazelcast.internal.metrics.jmx.JmxPublisher;
 import com.hazelcast.internal.monitor.impl.NearCacheStatsImpl;
-import com.hazelcast.internal.nearcache.NearCache;
 import com.hazelcast.internal.nio.ConnectionType;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
@@ -82,7 +81,7 @@ public class ClientStatisticsService {
             return;
         }
 
-        metricsRegistry.registerDynamicMetricsProvider(new NearCacheMetricsProvider(client.getNearCacheManager()));
+        metricsRegistry.registerDynamicMetricsProvider(new NearCacheMetricsProvider(client.getNearCacheManagers().values()));
         metricsRegistry.registerDynamicMetricsProvider(new ClusterConnectionMetricsProvider(client.getConnectionManager()));
 
         long periodSeconds = metricsConfig.getCollectionFrequencySeconds();
@@ -112,10 +111,11 @@ public class ClientStatisticsService {
      * @param periodSeconds the interval at which the statistics collection and send is being run
      */
     private void schedulePeriodicStatisticsSendTask(long periodSeconds) {
-        PublisherMetricsCollector publisherMetricsCollector = new PublisherMetricsCollector();
-
+        PublisherMetricsCollector publisherMetricsCollector;
         if (metricsConfig.isEnabled() && metricsConfig.getJmxConfig().isEnabled()) {
-            publisherMetricsCollector.addPublisher(new JmxPublisher(client.getName(), "com.hazelcast"));
+            publisherMetricsCollector = new PublisherMetricsCollector(new JmxPublisher(client.getName(), "com.hazelcast"));
+        } else {
+            publisherMetricsCollector = new PublisherMetricsCollector();
         }
 
         ClientMetricCollector clientMetricCollector = new ClientMetricCollector();
@@ -143,34 +143,40 @@ public class ClientStatisticsService {
     }
 
     private void addNearCacheStats(final StringBuilder stats) {
-        for (NearCache nearCache : client.getNearCacheManager().listAllNearCaches()) {
-            String nearCacheName = nearCache.getName();
-            StringBuilder nearCacheNameWithPrefix = getNameWithPrefix(nearCacheName);
+        client.getNearCacheManagers()
+            .values()
+            .stream()
+            .flatMap(nearCacheManager -> nearCacheManager.listAllNearCaches().stream())
+            .forEach(
+                nearCache -> {
+                    String nearCacheName = nearCache.getName();
+                    StringBuilder nearCacheNameWithPrefix = getNameWithPrefix(nearCacheName);
 
-            nearCacheNameWithPrefix.append('.');
+                    nearCacheNameWithPrefix.append('.');
 
-            NearCacheStatsImpl nearCacheStats = (NearCacheStatsImpl) nearCache.getNearCacheStats();
+                    NearCacheStatsImpl nearCacheStats = (NearCacheStatsImpl) nearCache.getNearCacheStats();
 
-            String prefix = nearCacheNameWithPrefix.toString();
+                    String prefix = nearCacheNameWithPrefix.toString();
 
-            addStat(stats, prefix, "creationTime", nearCacheStats.getCreationTime());
-            addStat(stats, prefix, "evictions", nearCacheStats.getEvictions());
-            addStat(stats, prefix, "hits", nearCacheStats.getHits());
-            addStat(stats, prefix, "lastPersistenceDuration", nearCacheStats.getLastPersistenceDuration());
-            addStat(stats, prefix, "lastPersistenceKeyCount", nearCacheStats.getLastPersistenceKeyCount());
-            addStat(stats, prefix, "lastPersistenceTime", nearCacheStats.getLastPersistenceTime());
-            addStat(stats, prefix, "lastPersistenceWrittenBytes", nearCacheStats.getLastPersistenceWrittenBytes());
-            addStat(stats, prefix, "misses", nearCacheStats.getMisses());
-            addStat(stats, prefix, "ownedEntryCount", nearCacheStats.getOwnedEntryCount());
-            addStat(stats, prefix, "expirations", nearCacheStats.getExpirations());
-            addStat(stats, prefix, "invalidations", nearCacheStats.getInvalidations());
-            addStat(stats, prefix, "invalidationRequests", nearCacheStats.getInvalidationRequests());
-            addStat(stats, prefix, "ownedEntryMemoryCost", nearCacheStats.getOwnedEntryMemoryCost());
-            String persistenceFailure = nearCacheStats.getLastPersistenceFailure();
-            if (persistenceFailure != null && !persistenceFailure.isEmpty()) {
-                addStat(stats, prefix, "lastPersistenceFailure", persistenceFailure);
-            }
-        }
+                    addStat(stats, prefix, "creationTime", nearCacheStats.getCreationTime());
+                    addStat(stats, prefix, "evictions", nearCacheStats.getEvictions());
+                    addStat(stats, prefix, "hits", nearCacheStats.getHits());
+                    addStat(stats, prefix, "lastPersistenceDuration", nearCacheStats.getLastPersistenceDuration());
+                    addStat(stats, prefix, "lastPersistenceKeyCount", nearCacheStats.getLastPersistenceKeyCount());
+                    addStat(stats, prefix, "lastPersistenceTime", nearCacheStats.getLastPersistenceTime());
+                    addStat(stats, prefix, "lastPersistenceWrittenBytes", nearCacheStats.getLastPersistenceWrittenBytes());
+                    addStat(stats, prefix, "misses", nearCacheStats.getMisses());
+                    addStat(stats, prefix, "ownedEntryCount", nearCacheStats.getOwnedEntryCount());
+                    addStat(stats, prefix, "expirations", nearCacheStats.getExpirations());
+                    addStat(stats, prefix, "invalidations", nearCacheStats.getInvalidations());
+                    addStat(stats, prefix, "invalidationRequests", nearCacheStats.getInvalidationRequests());
+                    addStat(stats, prefix, "ownedEntryMemoryCost", nearCacheStats.getOwnedEntryMemoryCost());
+                    String persistenceFailure = nearCacheStats.getLastPersistenceFailure();
+                    if (persistenceFailure != null && !persistenceFailure.isEmpty()) {
+                        addStat(stats, prefix, "lastPersistenceFailure", persistenceFailure);
+                    }
+                }
+            );
     }
 
     private void addStat(final StringBuilder stats, final String name, long value) {

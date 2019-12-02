@@ -16,17 +16,14 @@
 
 package com.hazelcast.config;
 
-import com.hazelcast.config.helpers.IOUtils;
 import com.hazelcast.config.replacer.PropertyReplacer;
 import com.hazelcast.config.replacer.spi.ConfigReplacer;
-import com.hazelcast.core.HazelcastException;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.junit.rules.TemporaryFolder;
 
-import java.io.File;
-import java.io.FileOutputStream;
+import java.io.IOException;
 import java.util.Properties;
 
 /**
@@ -39,19 +36,22 @@ public abstract class AbstractConfigImportVariableReplacementTest {
     @Rule
     public TemporaryFolder tempFolder = new TemporaryFolder();
 
-    protected static File createConfigFile(String filename, String suffix) throws Exception {
-        return IOUtils.createConfigFile(filename, suffix);
-    }
-
-    protected static void writeStringToStreamAndClose(FileOutputStream os, String string) throws Exception {
-        IOUtils.writeStringToStreamAndClose(os, string);
-    }
+    abstract String contentWithImportResource(String url);
 
     @Test
     public abstract void testHazelcastElementOnlyAppearsOnce();
 
     @Test
     public abstract void readVariables();
+
+    @Test
+    public abstract void testImportResourceWithConfigReplacers() throws IOException;
+
+    @Test
+    public abstract void testImportResourceWithNestedImports() throws IOException;
+
+    @Test
+    public abstract void testImportResourceWithNestedImportsAndProperties() throws IOException;
 
     @Test
     public abstract void testImportConfigFromResourceVariables() throws Exception;
@@ -142,14 +142,6 @@ public abstract class AbstractConfigImportVariableReplacementTest {
 
     @Test
     public abstract void testReplaceVariablesUseSystemProperties() throws Exception;
-
-    protected void expectInvalid() {
-        InvalidConfigurationTest.expectInvalid(rule);
-    }
-
-    protected void expectHazelcastException() {
-        rule.expect(HazelcastException.class);
-    }
 
     public static class IdentityReplacer implements ConfigReplacer {
         @Override

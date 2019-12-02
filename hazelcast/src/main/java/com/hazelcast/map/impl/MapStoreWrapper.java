@@ -17,14 +17,13 @@
 package com.hazelcast.map.impl;
 
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.internal.diagnostics.Diagnostics;
+import com.hazelcast.internal.diagnostics.StoreLatencyPlugin;
+import com.hazelcast.map.EntryLoader;
 import com.hazelcast.map.MapLoader;
 import com.hazelcast.map.MapLoaderLifecycleSupport;
 import com.hazelcast.map.MapStore;
 import com.hazelcast.map.PostProcessingMapStore;
-import com.hazelcast.internal.diagnostics.Diagnostics;
-import com.hazelcast.internal.diagnostics.StoreLatencyPlugin;
-import com.hazelcast.map.EntryLoader;
-import com.hazelcast.query.impl.getters.ReflectionHelper;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 
@@ -154,14 +153,7 @@ public class MapStoreWrapper implements MapStore, MapLoaderLifecycleSupport {
     @Override
     public Iterable<Object> loadAllKeys() {
         if (isMapLoader()) {
-            Iterable<Object> allKeys;
-            try {
-                allKeys = mapLoader.loadAllKeys();
-            } catch (AbstractMethodError e) {
-                // Invoke reflectively to preserve backwards binary compatibility. Removable in v4.x
-                allKeys = ReflectionHelper.invokeMethod(mapLoader, "loadAllKeys");
-            }
-            return allKeys;
+            return (Iterable<Object>) mapLoader.loadAllKeys();
         }
         return null;
     }

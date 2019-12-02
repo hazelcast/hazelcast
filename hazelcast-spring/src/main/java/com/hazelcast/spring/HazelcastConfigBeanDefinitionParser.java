@@ -95,8 +95,6 @@ import com.hazelcast.config.ScheduledExecutorConfig;
 import com.hazelcast.config.SecurityConfig;
 import com.hazelcast.config.SecurityInterceptorConfig;
 import com.hazelcast.config.ServerSocketEndpointConfig;
-import com.hazelcast.config.ServiceConfig;
-import com.hazelcast.config.ServicesConfig;
 import com.hazelcast.config.SetConfig;
 import com.hazelcast.config.SplitBrainProtectionConfig;
 import com.hazelcast.config.SplitBrainProtectionConfigBuilder;
@@ -126,9 +124,6 @@ import com.hazelcast.config.security.UsernamePasswordIdentityConfig;
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.instance.ProtocolType;
 import com.hazelcast.internal.config.AliasedDiscoveryConfigUtils;
-import com.hazelcast.internal.nio.ClassLoaderUtil;
-import com.hazelcast.internal.services.ServiceConfigurationParser;
-import com.hazelcast.internal.util.ExceptionUtil;
 import com.hazelcast.memory.MemorySize;
 import com.hazelcast.memory.MemoryUnit;
 import com.hazelcast.splitbrainprotection.SplitBrainProtectionOn;
@@ -320,8 +315,6 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                         handleLiteMember(node);
                     } else if ("management-center".equals(nodeName)) {
                         handleManagementCenter(node);
-                    } else if ("services".equals(nodeName)) {
-                        handleServices(node);
                     } else if ("spring-aware".equals(nodeName)) {
                         handleSpringAware();
                     } else if ("split-brain-protection".equals(nodeName)) {
@@ -574,11 +567,11 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                     ProbabilisticSplitBrainProtectionConfigBuilder.DEFAULT_HEARTBEAT_INTERVAL_MILLIS);
             splitBrainProtectionConfigBuilder =
                     SplitBrainProtectionConfig.newProbabilisticSplitBrainProtectionConfigBuilder(name, splitBrainProtectionSize)
-                            .withAcceptableHeartbeatPauseMillis(acceptableHeartPause)
-                            .withSuspicionThreshold(threshold)
-                            .withHeartbeatIntervalMillis(heartbeatIntervalMillis)
-                            .withMinStdDeviationMillis(minStdDeviation)
-                            .withMaxSampleSize(maxSampleSize);
+                                              .withAcceptableHeartbeatPauseMillis(acceptableHeartPause)
+                                              .withSuspicionThreshold(threshold)
+                                              .withHeartbeatIntervalMillis(heartbeatIntervalMillis)
+                                              .withMinStdDeviationMillis(minStdDeviation)
+                                              .withMaxSampleSize(maxSampleSize);
             return splitBrainProtectionConfigBuilder;
         }
 
@@ -593,64 +586,6 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
         private void handleLiteMember(Node node) {
             Node attrEnabled = node.getAttributes().getNamedItem("enabled");
             configBuilder.addPropertyValue(xmlToJavaName(cleanNodeName(node)), getTextContent(attrEnabled));
-        }
-
-        public void handleServices(Node node) {
-            BeanDefinitionBuilder servicesConfigBuilder = createBeanBuilder(ServicesConfig.class);
-            AbstractBeanDefinition beanDefinition = servicesConfigBuilder.getBeanDefinition();
-            fillAttributeValues(node, servicesConfigBuilder);
-            ManagedList<AbstractBeanDefinition> serviceConfigManagedList = new ManagedList<>();
-            for (Node child : childElements(node)) {
-                String nodeName = cleanNodeName(child);
-                if ("service".equals(nodeName)) {
-                    serviceConfigManagedList.add(handleService(child));
-                }
-            }
-            servicesConfigBuilder.addPropertyValue("serviceConfigs", serviceConfigManagedList);
-            configBuilder.addPropertyValue("servicesConfig", beanDefinition);
-        }
-
-        private AbstractBeanDefinition handleService(Node node) {
-            BeanDefinitionBuilder serviceConfigBuilder = createBeanBuilder(ServiceConfig.class);
-            AbstractBeanDefinition beanDefinition = serviceConfigBuilder.getBeanDefinition();
-            fillAttributeValues(node, serviceConfigBuilder);
-            boolean classNameSet = false;
-            for (Node child : childElements(node)) {
-                String nodeName = cleanNodeName(child);
-                if ("name".equals(nodeName)) {
-                    serviceConfigBuilder.addPropertyValue(xmlToJavaName(nodeName), getTextContent(child));
-                } else if ("class-name".equals(nodeName)) {
-                    // log message about element deprecation..?
-                    serviceConfigBuilder.addPropertyValue(xmlToJavaName(nodeName), getTextContent(child));
-                    classNameSet = true;
-                } else if ("properties".equals(nodeName)) {
-                    handleProperties(child, serviceConfigBuilder);
-                } else if ("configuration".equals(nodeName)) {
-                    Node parser = child.getAttributes().getNamedItem("parser");
-                    String name = getTextContent(parser);
-                    try {
-                        ServiceConfigurationParser serviceConfigurationParser =
-                                ClassLoaderUtil.newInstance(getClass().getClassLoader(), name);
-                        Object obj = serviceConfigurationParser.parse((Element) child);
-                        serviceConfigBuilder.addPropertyValue(xmlToJavaName("config-object"), obj);
-                    } catch (Exception e) {
-                        ExceptionUtil.sneakyThrow(e);
-                    }
-                }
-            }
-
-            NamedNodeMap attributes = node.getAttributes();
-            Node classNameNode = attributes.getNamedItem("class-name");
-            if (classNameNode != null) {
-                serviceConfigBuilder.addPropertyValue("className", getTextContent(classNameNode));
-            }
-            Node implNode = attributes.getNamedItem("implementation");
-            if (implNode != null) {
-                serviceConfigBuilder.addPropertyReference("implementation", getTextContent(implNode));
-            }
-            isTrue(classNameSet || classNameNode != null || implNode != null, "One of 'class-name' or 'implementation'"
-                    + " attributes is required to create ServiceConfig!");
-            return beanDefinition;
         }
 
         public void handleReplicatedMap(Node node) {
@@ -1924,7 +1859,7 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
         private void handleLoginModules(Node node, BeanDefinitionBuilder realmConfigBuilder) {
             BeanDefinitionBuilder jaasConfigBuilder = createBeanBuilder(JaasAuthenticationConfig.class);
             AbstractBeanDefinition beanDefinition = jaasConfigBuilder.getBeanDefinition();
-            List<BeanDefinition> lms = new ManagedList<BeanDefinition>();
+            List<BeanDefinition> lms = new ManagedList<>();
             for (Node child : childElements(node)) {
                 String nodeName = cleanNodeName(child);
                 if ("login-module".equals(nodeName)) {

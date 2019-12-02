@@ -36,6 +36,7 @@ public class WanDataSerializerHook implements DataSerializerHook {
     public static final int MAP_REPLICATION_UPDATE = 0;
     public static final int MAP_REPLICATION_REMOVE = 1;
     public static final int WAN_MAP_ENTRY_VIEW = 2;
+    public static final int WAN_EVENT_CONTAINER_REPLICATION_OPERATION = 3;
 
     @Override
     public int getFactoryId() {
@@ -52,6 +53,8 @@ public class WanDataSerializerHook implements DataSerializerHook {
                     return new MapReplicationRemove();
                 case WAN_MAP_ENTRY_VIEW:
                     return new WanMapEntryView<>();
+                case WAN_EVENT_CONTAINER_REPLICATION_OPERATION:
+                    return new WanEventContainerReplicationOperation();
                 default:
                     throw new IllegalArgumentException("Unknown type-id: " + typeId);
             }

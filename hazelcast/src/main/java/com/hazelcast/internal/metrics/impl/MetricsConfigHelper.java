@@ -25,7 +25,6 @@ import com.hazelcast.config.MetricsJmxConfig;
 import com.hazelcast.config.MetricsManagementCenterConfig;
 import com.hazelcast.internal.metrics.ProbeLevel;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.logging.Logger;
 import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.spi.properties.HazelcastProperty;
@@ -38,8 +37,6 @@ import static com.hazelcast.internal.metrics.ProbeLevel.DEBUG;
 import static com.hazelcast.internal.metrics.ProbeLevel.INFO;
 
 public final class MetricsConfigHelper {
-    private static final ILogger LOGGER = Logger.getLogger(MetricsConfigHelper.class);
-
     private MetricsConfigHelper() {
     }
 
@@ -51,37 +48,37 @@ public final class MetricsConfigHelper {
      *
      * @param config The configuration
      */
-    public static void overrideMemberMetricsConfig(Config config) {
+    public static void overrideMemberMetricsConfig(Config config, ILogger logger) {
         MetricsConfig metricsConfig = config.getMetricsConfig();
         MetricsManagementCenterConfig managementCenterConfig = metricsConfig.getManagementCenterConfig();
         MetricsJmxConfig jmxConfig = metricsConfig.getJmxConfig();
 
         // MetricsConfig.enabled
         tryOverride(ClusterProperty.METRICS_ENABLED, config::getProperty,
-                prop -> metricsConfig.setEnabled(Boolean.parseBoolean(prop)),
-                () -> Boolean.toString(metricsConfig.isEnabled()), "MetricsConfig.enabled");
+            prop -> metricsConfig.setEnabled(Boolean.parseBoolean(prop)),
+            () -> Boolean.toString(metricsConfig.isEnabled()), "MetricsConfig.enabled", logger);
 
         // MetricsManagementCenterConfig.enabled
         tryOverride(ClusterProperty.METRICS_MC_ENABLED, config::getProperty,
-                prop -> managementCenterConfig.setEnabled(Boolean.parseBoolean(prop)),
-                () -> Boolean.toString(managementCenterConfig.isEnabled()), "MetricsManagementCenterConfig.enabled");
+            prop -> managementCenterConfig.setEnabled(Boolean.parseBoolean(prop)),
+            () -> Boolean.toString(managementCenterConfig.isEnabled()), "MetricsManagementCenterConfig.enabled", logger);
 
         // MetricsManagementCenterConfig.retentionSeconds
         tryOverride(ClusterProperty.METRICS_MC_RETENTION, config::getProperty,
-                prop -> managementCenterConfig.setRetentionSeconds(Integer.parseInt(prop)),
-                () -> Integer.toString(managementCenterConfig.getRetentionSeconds()),
-                "MetricsManagementCenterConfig.retentionSeconds");
+            prop -> managementCenterConfig.setRetentionSeconds(Integer.parseInt(prop)),
+            () -> Integer.toString(managementCenterConfig.getRetentionSeconds()),
+            "MetricsManagementCenterConfig.retentionSeconds", logger);
 
         // MetricsJmxConfig.enabled
         tryOverride(ClusterProperty.METRICS_JMX_ENABLED, config::getProperty,
-                prop -> jmxConfig.setEnabled(Boolean.parseBoolean(prop)),
-                () -> Boolean.toString(jmxConfig.isEnabled()), "MetricsJmxConfig.enabled");
+            prop -> jmxConfig.setEnabled(Boolean.parseBoolean(prop)),
+            () -> Boolean.toString(jmxConfig.isEnabled()), "MetricsJmxConfig.enabled", logger);
 
         // MetricsConfig.collectionFrequencySeconds
         tryOverride(ClusterProperty.METRICS_COLLECTION_FREQUENCY, config::getProperty,
-                prop -> metricsConfig.setCollectionFrequencySeconds(Integer.parseInt(prop)),
-                () -> Integer.toString(metricsConfig.getCollectionFrequencySeconds()),
-                "MetricsConfig.collectionFrequencySeconds");
+            prop -> metricsConfig.setCollectionFrequencySeconds(Integer.parseInt(prop)),
+            () -> Integer.toString(metricsConfig.getCollectionFrequencySeconds()),
+            "MetricsConfig.collectionFrequencySeconds", logger);
     }
 
     /**
@@ -92,63 +89,64 @@ public final class MetricsConfigHelper {
      *
      * @param config The configuration
      */
-    public static void overrideClientMetricsConfig(ClientConfig config) {
+    public static void overrideClientMetricsConfig(ClientConfig config, ILogger logger) {
         ClientMetricsConfig metricsConfig = config.getMetricsConfig();
         MetricsJmxConfig jmxConfig = metricsConfig.getJmxConfig();
 
         // MetricsConfig.enabled
         tryOverride(ClientProperty.METRICS_ENABLED, config::getProperty,
-                prop -> metricsConfig.setEnabled(Boolean.parseBoolean(prop)),
-                () -> Boolean.toString(metricsConfig.isEnabled()), "ClientMetricsConfig.enabled");
+            prop -> metricsConfig.setEnabled(Boolean.parseBoolean(prop)),
+            () -> Boolean.toString(metricsConfig.isEnabled()), "ClientMetricsConfig.enabled", logger);
 
         // MetricsJmxConfig.enabled
         tryOverride(ClientProperty.METRICS_JMX_ENABLED, config::getProperty,
-                prop -> jmxConfig.setEnabled(Boolean.parseBoolean(prop)),
-                () -> Boolean.toString(jmxConfig.isEnabled()), "MetricsJmxConfig.enabled");
+            prop -> jmxConfig.setEnabled(Boolean.parseBoolean(prop)),
+            () -> Boolean.toString(jmxConfig.isEnabled()), "MetricsJmxConfig.enabled", logger);
 
         // MetricsConfig.collectionFrequencySeconds
         tryOverride(ClientProperty.METRICS_COLLECTION_FREQUENCY, config::getProperty,
-                prop -> metricsConfig.setCollectionFrequencySeconds(Integer.parseInt(prop)),
-                () -> Integer.toString(metricsConfig.getCollectionFrequencySeconds()),
-                "ClientMetricsConfig.collectionFrequencySeconds");
+            prop -> metricsConfig.setCollectionFrequencySeconds(Integer.parseInt(prop)),
+            () -> Integer.toString(metricsConfig.getCollectionFrequencySeconds()),
+            "ClientMetricsConfig.collectionFrequencySeconds", logger);
     }
 
     private static void tryOverride(HazelcastProperty property, Function<String, String> getPropertyValueFn,
-                                    Consumer<String> setterFn, Supplier<String> getterFn, String configOverridden) {
+                                    Consumer<String> setterFn, Supplier<String> getterFn, String configOverridden,
+                                    ILogger logger) {
         String propertyValue = getPropertyValueFn.apply(property.getName());
         try {
             if (propertyValue != null) {
                 setterFn.accept(propertyValue);
-                LOGGER.info(String.format("Overridden metrics configuration with system property '%s'='%s' -> '%s'='%s'",
+                logger.info(String.format("Overridden metrics configuration with system property '%s'='%s' -> '%s'='%s'",
                         property, propertyValue, configOverridden, getterFn.get()));
             }
         } catch (Exception ex) {
-            LOGGER.warning(String.format("Failed to override metrics configuration with system property '%s'='%s'. Kept "
+            logger.warning(String.format("Failed to override metrics configuration with system property '%s'='%s'. Kept "
                     + "'%s'='%s'", property.getName(), propertyValue, configOverridden, getterFn.get()), ex);
         }
     }
 
-    public static ProbeLevel memberMetricsLevel(HazelcastProperties properties) {
+    public static ProbeLevel memberMetricsLevel(HazelcastProperties properties, ILogger logger) {
         boolean debugMetrics = properties.getBoolean(ClusterProperty.METRICS_DEBUG);
         ProbeLevel probeLevel = debugMetrics ? DEBUG : INFO;
 
         if (probeLevel == INFO) {
-            LOGGER.fine("Collecting debug metrics and sending them to diagnostics is disabled");
+            logger.fine("Collecting debug metrics and sending to diagnostics is disabled");
         } else {
-            LOGGER.info("Collecting debug metrics and sending them to diagnostics is enabled");
+            logger.info("Collecting debug metrics and sending to diagnostics is enabled");
         }
 
         return probeLevel;
     }
 
-    public static ProbeLevel clientMetricsLevel(HazelcastProperties properties) {
+    public static ProbeLevel clientMetricsLevel(HazelcastProperties properties, ILogger logger) {
         boolean debugMetrics = properties.getBoolean(ClientProperty.METRICS_DEBUG);
         ProbeLevel probeLevel = debugMetrics ? DEBUG : INFO;
 
         if (probeLevel == INFO) {
-            LOGGER.fine("Collecting debug metrics and sending them to diagnostics is disabled");
+            logger.fine("Collecting debug metrics and sending to diagnostics is disabled");
         } else {
-            LOGGER.info("Collecting debug metrics and sending them to diagnostics is enabled");
+            logger.info("Collecting debug metrics and sending to diagnostics is enabled");
         }
 
         return probeLevel;

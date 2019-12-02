@@ -35,11 +35,15 @@ import com.hazelcast.config.security.TokenEncoding;
 import com.hazelcast.config.security.TokenIdentityConfig;
 import com.hazelcast.memory.MemorySize;
 import com.hazelcast.memory.MemoryUnit;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.StreamSerializer;
 import com.hazelcast.spi.merge.DiscardMergePolicy;
 import com.hazelcast.spi.merge.HigherHitsMergePolicy;
 import com.hazelcast.spi.merge.LatestUpdateMergePolicy;
 import com.hazelcast.splitbrainprotection.SplitBrainProtectionOn;
 import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.topic.TopicOverloadPolicy;
@@ -50,6 +54,7 @@ import org.junit.runner.RunWith;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
+import java.io.IOException;
 import java.nio.ByteOrder;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -61,7 +66,6 @@ import static com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.T
 import static com.hazelcast.config.ConfigCompatibilityChecker.checkEndpointConfigCompatible;
 import static com.hazelcast.config.ConfigXmlGenerator.MASK_FOR_SENSITIVE_DATA;
 import static com.hazelcast.instance.ProtocolType.MEMBER;
-import static com.hazelcast.test.HazelcastTestSupport.randomName;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -72,7 +76,7 @@ import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class ConfigXmlGeneratorTest {
+public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
 
     @Test
     public void testIfSensitiveDataIsMasked_whenMaskingEnabled() {
@@ -398,27 +402,6 @@ public class ConfigXmlGeneratorTest {
     }
 
     @Test
-    public void testServicesConfig() {
-        Config cfg = new Config();
-
-        Properties properties = new Properties();
-        properties.setProperty("key", "value");
-
-        ServiceConfig serviceConfig = new ServiceConfig()
-                .setName("ServiceConfig")
-                .setEnabled(true)
-                .setClassName("ServiceClass")
-                .setProperties(properties);
-        ServicesConfig expectedConfig = cfg.getServicesConfig()
-                .setEnableDefaults(true)
-                .setServiceConfigs(singletonList(serviceConfig));
-
-        ServicesConfig actualConfig = getNewConfigViaXMLGenerator(cfg).getServicesConfig();
-
-        assertEquals(expectedConfig, actualConfig);
-    }
-
-    @Test
     public void testSecurityConfig() {
         Config cfg = new Config();
 
@@ -535,8 +518,8 @@ public class ConfigXmlGeneratorTest {
                 .setOverrideJavaSerialization(true);
 
         SerializerConfig serializerConfig = new SerializerConfig()
-                .setClassName("SerializerClass")
-                .setTypeClassName("TypeClass");
+                .setClassName(SerializerClass.class.getName())
+                .setTypeClassName(TypeClass.class.getName());
 
         JavaSerializationFilterConfig filterConfig = new JavaSerializationFilterConfig();
         filterConfig.getBlacklist().addClasses("example.Class1", "acme.Test").addPackages("org.infinitban")
@@ -574,6 +557,83 @@ public class ConfigXmlGeneratorTest {
         assertEquals(expectedConfig.getPortableFactoryClasses(), actualConfig.getPortableFactoryClasses());
         assertEquals(expectedConfig.getSerializerConfigs(), actualConfig.getSerializerConfigs());
         assertEquals(expectedConfig.getJavaSerializationFilterConfig(), actualConfig.getJavaSerializationFilterConfig());
+    }
+
+    @Test
+    public void testSerializationConfig_class() {
+        Config cfg = new Config();
+
+        GlobalSerializerConfig globalSerializerConfig = new GlobalSerializerConfig()
+                .setClassName("GlobalSerializer")
+                .setOverrideJavaSerialization(true);
+
+        SerializerConfig serializerConfig = new SerializerConfig()
+                .setClass(SerializerClass.class)
+                .setTypeClass(TypeClass.class);
+
+        JavaSerializationFilterConfig filterConfig = new JavaSerializationFilterConfig();
+        filterConfig.getBlacklist().addClasses("example.Class1", "acme.Test").addPackages("org.infinitban")
+                .addPrefixes("dangerous.", "bang");
+        filterConfig.getWhitelist().addClasses("WhiteOne", "WhiteTwo").addPackages("com.hazelcast", "test.package")
+                .addPrefixes("java");
+
+        SerializationConfig expectedConfig = new SerializationConfig()
+                .setAllowUnsafe(true)
+                .setPortableVersion(2)
+                .setByteOrder(ByteOrder.BIG_ENDIAN)
+                .setUseNativeByteOrder(true)
+                .setCheckClassDefErrors(true)
+                .setEnableCompression(true)
+                .setEnableSharedObject(true)
+                .setGlobalSerializerConfig(globalSerializerConfig)
+                .setJavaSerializationFilterConfig(filterConfig)
+                .addDataSerializableFactoryClass(10, "SerializableFactory")
+                .addPortableFactoryClass(10, "PortableFactory")
+                .addSerializerConfig(serializerConfig);
+
+        cfg.setSerializationConfig(expectedConfig);
+
+        SerializationConfig actualConfig = getNewConfigViaXMLGenerator(cfg).getSerializationConfig();
+
+        assertEquals(expectedConfig.isAllowUnsafe(), actualConfig.isAllowUnsafe());
+        assertEquals(expectedConfig.getPortableVersion(), actualConfig.getPortableVersion());
+        assertEquals(expectedConfig.getByteOrder(), actualConfig.getByteOrder());
+        assertEquals(expectedConfig.isUseNativeByteOrder(), actualConfig.isUseNativeByteOrder());
+        assertEquals(expectedConfig.isCheckClassDefErrors(), actualConfig.isCheckClassDefErrors());
+        assertEquals(expectedConfig.isEnableCompression(), actualConfig.isEnableCompression());
+        assertEquals(expectedConfig.isEnableSharedObject(), actualConfig.isEnableSharedObject());
+        assertEquals(expectedConfig.getGlobalSerializerConfig(), actualConfig.getGlobalSerializerConfig());
+        assertEquals(expectedConfig.getDataSerializableFactoryClasses(), actualConfig.getDataSerializableFactoryClasses());
+        assertEquals(expectedConfig.getPortableFactoryClasses(), actualConfig.getPortableFactoryClasses());
+        assertCollection(
+            expectedConfig.getSerializerConfigs(), actualConfig.getSerializerConfigs(),
+            (e, a) -> e.getTypeClass().getName().compareTo(a.getTypeClassName())
+        );
+        assertEquals(expectedConfig.getJavaSerializationFilterConfig(), actualConfig.getJavaSerializationFilterConfig());
+    }
+
+    private static class TypeClass { }
+
+    private static class SerializerClass implements StreamSerializer {
+        @Override
+        public void write(ObjectDataOutput out, Object object) throws IOException {
+
+        }
+
+        @Override
+        public Object read(ObjectDataInput in) throws IOException {
+            return null;
+        }
+
+        @Override
+        public int getTypeId() {
+            return 0;
+        }
+
+        @Override
+        public void destroy() {
+
+        }
     }
 
     @Test

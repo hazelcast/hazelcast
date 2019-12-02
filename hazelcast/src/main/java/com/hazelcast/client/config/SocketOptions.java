@@ -70,8 +70,8 @@ public class SocketOptions {
     /**
      * Enable/disable TCP_NODELAY socket option.
      *
-     * @param tcpNoDelay
-     * @return
+     * @param tcpNoDelay the TCP_NODELAY socket option
+     * @return SocketOptions configured
      */
     public SocketOptions setTcpNoDelay(boolean tcpNoDelay) {
         this.tcpNoDelay = tcpNoDelay;

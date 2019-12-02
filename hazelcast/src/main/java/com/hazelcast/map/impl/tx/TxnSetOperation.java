@@ -133,7 +133,8 @@ public class TxnSetOperation extends BasePutOperation
     public Operation getBackupOperation() {
         Record record = recordStore.getRecord(dataKey);
         dataValue = getValueOrPostProcessedValue(record, dataValue);
-        return new TxnSetBackupOperation(name, record, dataValue, transactionId);
+        return new TxnSetBackupOperation(name, dataKey,
+                record, dataValue, transactionId);
     }
 
     @Override

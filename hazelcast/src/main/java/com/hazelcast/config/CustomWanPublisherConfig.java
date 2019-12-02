@@ -17,6 +17,7 @@
 package com.hazelcast.config;
 
 import com.hazelcast.internal.config.ConfigDataSerializerHook;
+import com.hazelcast.wan.WanReplicationPublisher;
 
 import javax.annotation.Nonnull;
 import java.util.Map;
@@ -66,7 +67,7 @@ public class CustomWanPublisherConfig extends AbstractWanPublisherConfig {
     }
 
     @Override
-    public CustomWanPublisherConfig setImplementation(Object implementation) {
+    public CustomWanPublisherConfig setImplementation(WanReplicationPublisher implementation) {
         super.setImplementation(implementation);
         return this;
     }

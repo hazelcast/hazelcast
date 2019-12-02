@@ -22,11 +22,6 @@ import com.hazelcast.internal.metrics.collectors.MetricsCollector;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 
-import java.util.List;
-import java.util.concurrent.CopyOnWriteArrayList;
-
-import static java.util.Collections.unmodifiableList;
-
 /**
  * {@link MetricsCollector} implementation delegating to the configured
  * publishers.
@@ -34,18 +29,10 @@ import static java.util.Collections.unmodifiableList;
 public class PublisherMetricsCollector implements MetricsCollector {
     private final ILogger logger = Logger.getLogger(PublisherMetricsCollector.class);
 
-    private final List<MetricsPublisher> publishers = new CopyOnWriteArrayList<>();
+    private final MetricsPublisher[] publishers;
 
-    public void addPublisher(MetricsPublisher publisher) {
-        publishers.add(publisher);
-    }
-
-    public boolean hasPublishers() {
-        return !publishers.isEmpty();
-    }
-
-    public List<MetricsPublisher> getPublishers() {
-        return unmodifiableList(publishers);
+    public PublisherMetricsCollector(MetricsPublisher... publishers) {
+        this.publishers = publishers;
     }
 
     public void publishCollectedMetrics() {
@@ -104,4 +91,5 @@ public class PublisherMetricsCollector implements MetricsCollector {
         logger.fine("Error publishing metric to: " + publisher.name() + ", metric=" + descriptor.toString()
                 + ", value=" + value, e);
     }
+
 }

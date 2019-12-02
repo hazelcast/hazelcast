@@ -119,7 +119,8 @@ public abstract class AbstractPbeReplacer implements ConfigReplacer {
      *
      * @param secretStr sensitive string to be protected by encryption
      * @param iterations iteration count
-     * @return Encrypted value.
+     * @return the encrypted value.
+     * @throws Exception in case of any exceptional case
      */
     protected String encrypt(String secretStr, int iterations) throws Exception {
         SecureRandom secureRandom = new SecureRandom();
@@ -133,8 +134,9 @@ public abstract class AbstractPbeReplacer implements ConfigReplacer {
     /**
      * Decrypts given encrypted variable.
      *
-     * @param encryptedStr
-     * @return
+     * @param encryptedStr the encrypted value
+     * @return the decrypted value
+     * @throws Exception in case of any exceptional case
      */
     protected String decrypt(String encryptedStr) throws Exception {
         String[] split = encryptedStr.split(":");

@@ -34,6 +34,8 @@ import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.internal.cluster.ClusterStateListener;
 import com.hazelcast.internal.eviction.ExpirationManager;
+import com.hazelcast.internal.metrics.MetricDescriptor;
+import com.hazelcast.internal.metrics.MetricsCollectionContext;
 import com.hazelcast.internal.monitor.LocalCacheStats;
 import com.hazelcast.internal.monitor.impl.LocalCacheStatsImpl;
 import com.hazelcast.internal.nio.IOUtil;
@@ -56,12 +58,14 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.eventservice.EventFilter;
 import com.hazelcast.spi.impl.eventservice.EventRegistration;
 import com.hazelcast.spi.impl.eventservice.EventService;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 import com.hazelcast.spi.merge.SplitBrainMergePolicyProvider;
+import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.spi.tenantcontrol.TenantControlFactory;
 import com.hazelcast.wan.impl.WanReplicationService;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
@@ -86,6 +90,7 @@ import static com.hazelcast.cache.impl.AbstractCacheRecordStore.SOURCE_NOT_AVAIL
 import static com.hazelcast.cache.impl.PreJoinCacheConfig.asCacheConfig;
 import static com.hazelcast.config.CacheConfigAccessor.getTenantControl;
 import static com.hazelcast.internal.config.ConfigValidator.checkCacheConfig;
+import static com.hazelcast.internal.metrics.impl.ProviderHelper.provide;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 import static com.hazelcast.internal.util.FutureUtil.RETHROW_EVERYTHING;
 import static com.hazelcast.internal.util.MapUtil.createHashMap;
@@ -95,8 +100,9 @@ import static java.util.Collections.newSetFromMap;
 import static java.util.Collections.singleton;
 
 @SuppressWarnings("checkstyle:classdataabstractioncoupling")
-public abstract class AbstractCacheService implements ICacheService, PreJoinAwareService,
-        PartitionAwareService, SplitBrainProtectionAwareService, SplitBrainHandlerService, ClusterStateListener {
+public abstract class AbstractCacheService implements ICacheService, PreJoinAwareService, PartitionAwareService,
+                                                      SplitBrainProtectionAwareService, SplitBrainHandlerService,
+                                                      ClusterStateListener {
 
     public static final String TENANT_CONTROL_FACTORY = "com.hazelcast.spi.tenantcontrol.TenantControlFactory";
 
@@ -161,7 +167,8 @@ public abstract class AbstractCacheService implements ICacheService, PreJoinAwar
         this.eventJournal = new RingbufferCacheEventJournalImpl(nodeEngine);
         this.mergePolicyProvider = nodeEngine.getSplitBrainMergePolicyProvider();
 
-        postInit(nodeEngine, properties);
+        boolean dsMetricsEnabled = nodeEngine.getProperties().getBoolean(ClusterProperty.METRICS_DATASTRUCTURES);
+        postInit(nodeEngine, properties, dsMetricsEnabled);
     }
 
     public SplitBrainMergePolicyProvider getMergePolicyProvider() {
@@ -182,7 +189,10 @@ public abstract class AbstractCacheService implements ICacheService, PreJoinAwar
         return cacheConfigs;
     }
 
-    protected void postInit(NodeEngine nodeEngine, Properties properties) {
+    protected void postInit(NodeEngine nodeEngine, Properties properties, boolean metricsEnabled) {
+        if (metricsEnabled) {
+            ((NodeEngineImpl) nodeEngine).getMetricsRegistry().registerDynamicMetricsProvider(this);
+        }
     }
 
     protected abstract CachePartitionSegment newPartitionSegment(int partitionId);
@@ -868,5 +878,10 @@ public abstract class AbstractCacheService implements ICacheService, PreJoinAwar
         if (expManager != null) {
             expManager.onClusterStateChange(newState);
         }
+    }
+
+    @Override
+    public void provideDynamicMetrics(MetricDescriptor descriptor, MetricsCollectionContext context) {
+        provide(descriptor, context, "cache", getStats());
     }
 }

@@ -16,6 +16,8 @@
 
 package com.hazelcast.map.impl;
 
+import com.hazelcast.nio.serialization.Data;
+
 /**
  * Adapter of arbitrary store. This adapter is used to pass record store to the index store.
  */
@@ -24,15 +26,18 @@ public interface StoreAdapter<R> {
     /**
      * Checks whether the record is expired and evicts it if so. Updates the record's last access time
      * if it is not evicted.
+     *
+     * @param key    key in data format
      * @param record the record to check
-     * @param now the current time
-     * @param backup  {@code true} if a backup partition, otherwise {@code false}.
+     * @param now    the current time
+     * @param backup {@code true} if a backup partition, otherwise {@code false}.
      * @return {@code true} is the record is expired and evicted, otherwise {@code false}.
      */
-    boolean evictIfExpired(R record, long now, boolean backup);
+    boolean evictIfExpired(Data key, R record, long now, boolean backup);
 
     /**
      * Checks whether ttl or maxIdle are set on the record.
+     *
      * @param record the record to be checked
      * @return {@code true} if ttl or maxIdle are defined on the {@code record}, otherwise {@code false}.
      */

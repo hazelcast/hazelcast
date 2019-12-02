@@ -50,6 +50,7 @@ import java.util.logging.Level;
 
 import static com.hazelcast.internal.networking.nio.SelectorMode.SELECT;
 import static com.hazelcast.internal.networking.nio.SelectorMode.SELECT_NOW_STRING;
+import static com.hazelcast.internal.networking.nio.SelectorMode.SELECT_WITH_FIX;
 import static com.hazelcast.internal.nio.IOUtil.closeResource;
 import static com.hazelcast.internal.util.HashUtil.hashToIndex;
 import static com.hazelcast.internal.util.ThreadUtil.createThreadPoolName;
@@ -136,8 +137,20 @@ public final class NioNetworking implements Networking, DynamicMetricsProvider {
         this.selectorWorkaroundTest = ctx.selectorWorkaroundTest;
         this.idleStrategy = ctx.idleStrategy;
         this.concurrencyDetection = ctx.concurrencyDetection;
-        this.writeThroughEnabled = ctx.writeThroughEnabled;
-        this.selectionKeyWakeupEnabled = ctx.selectionKeyWakeupEnabled;
+        // selector mode SELECT_WITH_FIX requires that a single thread
+        // accesses a selector & its selectionKeys. Selection key wake-up
+        // and write through break this requirement, therefore must be
+        // disabled with SELECT_WITH_FIX.
+        this.writeThroughEnabled = ctx.writeThroughEnabled && selectorMode != SELECT_WITH_FIX;
+        this.selectionKeyWakeupEnabled = ctx.selectionKeyWakeupEnabled && selectorMode != SELECT_WITH_FIX;
+        if (selectorMode == SELECT_WITH_FIX
+                && (ctx.writeThroughEnabled || ctx.selectionKeyWakeupEnabled)) {
+            logger.warning("Selector mode SELECT_WITH_FIX is incompatible with write-through and selection key wakeup "
+                    + "optimizations and they have been disabled. Start Hazelcast with options "
+                    + "\"-Dhazelcast.io.selectionKeyWakeupEnabled=false -Dhazelcast.io.write.through=false\" to "
+                    + "explicitly disable selection key wakeup and write-through optimizations and avoid logging this "
+                    + "warning.");
+        }
     }
 
     @SuppressFBWarnings(value = "EI_EXPOSE_REP", justification = "used only for testing")
@@ -373,6 +386,15 @@ public final class NioNetworking implements Networking, DynamicMetricsProvider {
         context.collect(descriptorTcp, this);
     }
 
+    // package private accessors for testing
+    boolean isWriteThroughEnabled() {
+        return writeThroughEnabled;
+    }
+
+    boolean isSelectionKeyWakeupEnabled() {
+        return selectionKeyWakeupEnabled;
+    }
+
     private class ChannelCloseListenerImpl implements ChannelCloseListener {
         @Override
         public void onClose(Channel channel) {
@@ -465,8 +487,9 @@ public final class NioNetworking implements Networking, DynamicMetricsProvider {
             }
         }
 
-        public void setSelectionKeyWakeupEnabled(boolean selectionKeyWakeupEnabled) {
+        public Context selectionKeyWakeupEnabled(boolean selectionKeyWakeupEnabled) {
             this.selectionKeyWakeupEnabled = selectionKeyWakeupEnabled;
+            return this;
         }
 
         public Context writeThroughEnabled(boolean writeThroughEnabled) {

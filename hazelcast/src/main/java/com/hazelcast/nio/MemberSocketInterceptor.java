@@ -34,7 +34,7 @@ public interface MemberSocketInterceptor extends SocketInterceptor {
      * meaning security requirements and clusters are matching.
      *
      * @param acceptedSocket accepted socket
-     * @throws IOException
+     * @throws IOException in case of any exceptional case
      */
     void onAccept(Socket acceptedSocket) throws IOException;
 }

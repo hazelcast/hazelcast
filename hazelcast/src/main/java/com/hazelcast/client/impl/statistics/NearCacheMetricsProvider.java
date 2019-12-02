@@ -20,25 +20,28 @@ import com.hazelcast.internal.metrics.DynamicMetricsProvider;
 import com.hazelcast.internal.metrics.MetricDescriptor;
 import com.hazelcast.internal.metrics.MetricsCollectionContext;
 import com.hazelcast.internal.monitor.impl.NearCacheStatsImpl;
-import com.hazelcast.internal.nearcache.NearCache;
 import com.hazelcast.internal.nearcache.NearCacheManager;
 
-class NearCacheMetricsProvider implements DynamicMetricsProvider {
-    private final NearCacheManager nearCacheManager;
+import java.util.Collection;
 
-    NearCacheMetricsProvider(NearCacheManager nearCacheManager) {
-        this.nearCacheManager = nearCacheManager;
+class NearCacheMetricsProvider implements DynamicMetricsProvider {
+    private final Collection<NearCacheManager> nearCacheManagers;
+
+    NearCacheMetricsProvider(Collection<NearCacheManager> nearCacheManagers) {
+        this.nearCacheManagers = nearCacheManagers;
     }
 
     @Override
     public void provideDynamicMetrics(MetricDescriptor descriptor, MetricsCollectionContext context) {
 
         descriptor.withPrefix("nearcache");
-        for (NearCache nearCache : nearCacheManager.listAllNearCaches()) {
-            String nearCacheName = nearCache.getName();
+        nearCacheManagers.stream()
+            .flatMap(nearCacheManager -> nearCacheManager.listAllNearCaches().stream())
+            .forEach(nearCache -> {
+                String nearCacheName = nearCache.getName();
 
-            NearCacheStatsImpl nearCacheStats = (NearCacheStatsImpl) nearCache.getNearCacheStats();
-            context.collect(descriptor.copy().withDiscriminator("name", nearCacheName), nearCacheStats);
-        }
+                NearCacheStatsImpl nearCacheStats = (NearCacheStatsImpl) nearCache.getNearCacheStats();
+                context.collect(descriptor.copy().withDiscriminator("name", nearCacheName), nearCacheStats);
+            });
     }
 }

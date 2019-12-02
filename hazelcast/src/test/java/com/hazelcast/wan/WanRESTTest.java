@@ -68,21 +68,21 @@ public class WanRESTTest extends HazelcastTestSupport {
     @Test
     public void pauseSuccess() throws Exception {
         startInstance();
-        assertSuccess(communicator.wanPausePublisher("atob", "B"));
+        assertSuccess(communicator.wanPausePublisher(getConfig().getClusterName(), "", "atob", "B"));
         verify(wanServiceMock, times(1)).pause("atob", "B");
     }
 
     @Test
     public void stopSuccess() throws Exception {
         startInstance();
-        assertSuccess(communicator.wanStopPublisher("atob", "B"));
+        assertSuccess(communicator.wanStopPublisher(getConfig().getClusterName(), "", "atob", "B"));
         verify(wanServiceMock, times(1)).stop("atob", "B");
     }
 
     @Test
     public void resumeSuccess() throws Exception {
         startInstance();
-        assertSuccess(communicator.wanResumePublisher("atob", "B"));
+        assertSuccess(communicator.wanResumePublisher(getConfig().getClusterName(), "", "atob", "B"));
         verify(wanServiceMock, times(1)).resume("atob", "B");
     }
 
@@ -93,7 +93,7 @@ public class WanRESTTest extends HazelcastTestSupport {
                 .thenReturn(expectedUuid);
         startInstance();
 
-        String result = communicator.wanMapConsistencyCheck("atob", "B", "mapName");
+        String result = communicator.wanMapConsistencyCheck(getConfig().getClusterName(), "", "atob", "B", "mapName");
         assertSuccess(result);
         assertUuid(result, expectedUuid);
         verify(wanServiceMock, times(1)).consistencyCheck("atob", "B", "mapName");
@@ -105,7 +105,7 @@ public class WanRESTTest extends HazelcastTestSupport {
         when(wanServiceMock.syncMap("atob", "B", "mapName")).thenReturn(expectedUuid);
         startInstance();
 
-        String result = communicator.syncMapOverWAN("atob", "B", "mapName");
+        String result = communicator.syncMapOverWAN(getConfig().getClusterName(), "", "atob", "B", "mapName");
         assertSuccess(result);
         assertUuid(result, expectedUuid);
         verify(wanServiceMock, times(1)).syncMap("atob", "B", "mapName");
@@ -117,7 +117,7 @@ public class WanRESTTest extends HazelcastTestSupport {
         when(wanServiceMock.syncAllMaps("atob", "B")).thenReturn(expectedUuid);
         startInstance();
 
-        String result = communicator.syncMapsOverWAN("atob", "B");
+        String result = communicator.syncMapsOverWAN(getConfig().getClusterName(), "", "atob", "B");
         assertSuccess(result);
         assertUuid(result, expectedUuid);
         verify(wanServiceMock, times(1)).syncAllMaps("atob", "B");
@@ -130,7 +130,7 @@ public class WanRESTTest extends HazelcastTestSupport {
                 .pause("atob", "B");
         startInstance();
 
-        assertFail(communicator.wanPausePublisher("atob", "B"));
+        assertFail(communicator.wanPausePublisher(getConfig().getClusterName(), "", "atob", "B"));
         verify(wanServiceMock, times(1)).pause("atob", "B");
     }
 
@@ -141,7 +141,7 @@ public class WanRESTTest extends HazelcastTestSupport {
                 .stop("atob", "B");
         startInstance();
 
-        assertFail(communicator.wanStopPublisher("atob", "B"));
+        assertFail(communicator.wanStopPublisher(getConfig().getClusterName(), "", "atob", "B"));
         verify(wanServiceMock, times(1)).stop("atob", "B");
     }
 
@@ -152,7 +152,7 @@ public class WanRESTTest extends HazelcastTestSupport {
                 .resume("atob", "B");
         startInstance();
 
-        assertFail(communicator.wanResumePublisher("atob", "B"));
+        assertFail(communicator.wanResumePublisher(getConfig().getClusterName(), "", "atob", "B"));
         verify(wanServiceMock, times(1)).resume("atob", "B");
     }
 
@@ -163,7 +163,7 @@ public class WanRESTTest extends HazelcastTestSupport {
                 .consistencyCheck("atob", "B", "mapName");
         startInstance();
 
-        assertFail(communicator.wanMapConsistencyCheck("atob", "B", "mapName"));
+        assertFail(communicator.wanMapConsistencyCheck(getConfig().getClusterName(), "", "atob", "B", "mapName"));
         verify(wanServiceMock, times(1)).consistencyCheck("atob", "B", "mapName");
     }
 
@@ -174,7 +174,7 @@ public class WanRESTTest extends HazelcastTestSupport {
                 .syncMap("atob", "B", "mapName");
         startInstance();
 
-        assertFail(communicator.syncMapOverWAN("atob", "B", "mapName"));
+        assertFail(communicator.syncMapOverWAN(getConfig().getClusterName(), "", "atob", "B", "mapName"));
         verify(wanServiceMock, times(1)).syncMap("atob", "B", "mapName");
     }
 
@@ -190,7 +190,7 @@ public class WanRESTTest extends HazelcastTestSupport {
                 .syncAllMaps("atob", "B");
         startInstance();
 
-        assertFail(communicator.syncMapsOverWAN("atob", "B"));
+        assertFail(communicator.syncMapsOverWAN(getConfig().getClusterName(), "", "atob", "B"));
         verify(wanServiceMock, times(1)).syncAllMaps("atob", "B");
     }
 

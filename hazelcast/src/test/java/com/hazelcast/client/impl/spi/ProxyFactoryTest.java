@@ -21,6 +21,7 @@ import com.hazelcast.client.config.ProxyFactoryConfig;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.Config;
+import com.hazelcast.config.ConfigAccessor;
 import com.hazelcast.config.ServiceConfig;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.HazelcastInstance;
@@ -55,8 +56,8 @@ public class ProxyFactoryTest {
                 .setImplementation(new CustomService());
 
         Config config = new Config();
-        config.getServicesConfig()
-                .addServiceConfig(serviceConfig);
+        ConfigAccessor.getServicesConfig(config)
+                      .addServiceConfig(serviceConfig);
 
         hazelcastFactory.newHazelcastInstance(config);
     }

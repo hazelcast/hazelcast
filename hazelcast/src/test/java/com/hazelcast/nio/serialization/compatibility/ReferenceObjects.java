@@ -30,6 +30,7 @@ import java.io.Serializable;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.nio.CharBuffer;
+import java.util.AbstractMap;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -39,8 +40,10 @@ import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
+import java.util.PriorityQueue;
 import java.util.TreeMap;
 import java.util.TreeSet;
+import java.util.UUID;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentSkipListMap;
@@ -90,6 +93,7 @@ class ReferenceObjects {
     static long aLong = -50992225L;
     static String aString;
     static String anSqlString = "this > 5 AND this < 100";
+    static UUID aUUID = new UUID(aLong, anInt);
 
     static {
         CharBuffer cb = CharBuffer.allocate(Character.MAX_VALUE);
@@ -123,11 +127,14 @@ class ReferenceObjects {
     static CustomByteArraySerializable aCustomByteArraySerializable = new CustomByteArraySerializable(anInt, aFloat);
     static Portable[] portables = {anInnerPortable, anInnerPortable, anInnerPortable};
 
+    static AbstractMap.SimpleEntry aSimpleMapEntry = new AbstractMap.SimpleEntry(aString, anInnerPortable);
+    static AbstractMap.SimpleImmutableEntry aSimpleImmutableMapEntry = new AbstractMap.SimpleImmutableEntry(aString,
+            anInnerPortable);
+
     static AnIdentifiedDataSerializable anIdentifiedDataSerializable = new AnIdentifiedDataSerializable(
             aBoolean, aByte, aChar, aDouble, aShort, aFloat, anInt, aLong, aString,
             booleans, bytes, chars, doubles, shorts, floats, ints, longs, strings,
-            anInnerPortable,
-            (AnIdentifiedDataSerializable) null,
+            anInnerPortable, null,
             aCustomStreamSerializable,
             aCustomByteArraySerializable, aData);
     static APortable aPortable = new APortable(
@@ -162,7 +169,7 @@ class ReferenceObjects {
             booleans, bytes, chars, doubles, shorts, floats, ints, longs, strings,
             aCustomStreamSerializable, aCustomByteArraySerializable,
             anIdentifiedDataSerializable, aPortable,
-            aDate, aBigInteger, aBigDecimal, aClass, anEnum,
+            aDate, aBigInteger, aBigDecimal, aClass, anEnum, aSimpleMapEntry, aSimpleImmutableMapEntry,
             serializable, externalizable));
 
     static ArrayList arrayList = new ArrayList(asList(aNullObject, nonNullList));
@@ -200,24 +207,26 @@ class ReferenceObjects {
     static LinkedBlockingQueue linkedBlockingQueue = new LinkedBlockingQueue(nonNullList);
     static ArrayBlockingQueue arrayBlockingQueue = new ArrayBlockingQueue(5);
     static PriorityBlockingQueue priorityBlockingQueue = new PriorityBlockingQueue();
+    static PriorityQueue priorityQueue = new PriorityQueue();
     static {
         arrayBlockingQueue.offer(aPortable);
         priorityBlockingQueue.offer(anInt);
+        priorityQueue.offer(aString);
     }
     static DelayQueue delayQueue = new DelayQueue();
     static SynchronousQueue synchronousQueue = new SynchronousQueue();
     static LinkedTransferQueue linkedTransferQueue = new LinkedTransferQueue(nonNullList);
 
     static Object[] allTestObjects = {
-            aNullObject, aBoolean, aByte, aChar, aDouble, aShort, aFloat, anInt, aLong, aString, anInnerPortable,
-            booleans, bytes, chars, doubles, shorts, floats, ints, longs, strings,
+            aNullObject, aBoolean, aByte, aChar, aDouble, aShort, aFloat, anInt, aLong, aString, aUUID, anInnerPortable,
+            aSimpleMapEntry, aSimpleImmutableMapEntry, booleans, bytes, chars, doubles, shorts, floats, ints, longs, strings,
             aCustomStreamSerializable, aCustomByteArraySerializable,
             anIdentifiedDataSerializable, aPortable,
             aDate, aBigInteger, aBigDecimal, aClass, anEnum,
             serializable, externalizable,
             arrayList, linkedList, copyOnWriteArrayList, concurrentSkipListMap, concurrentHashMap, linkedHashMap, treeMap,
             hashSet, treeSet, linkedHashSet, copyOnWriteArraySet, concurrentSkipListSet, arrayDeque, linkedBlockingQueue,
-            arrayBlockingQueue, priorityBlockingQueue, delayQueue, synchronousQueue, linkedTransferQueue,
+            arrayBlockingQueue, priorityQueue, priorityBlockingQueue, delayQueue, synchronousQueue, linkedTransferQueue,
 
             // predicates
             Predicates.alwaysTrue(),

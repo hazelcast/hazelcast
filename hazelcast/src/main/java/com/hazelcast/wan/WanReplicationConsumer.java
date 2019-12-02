@@ -18,7 +18,6 @@ package com.hazelcast.wan;
 
 import com.hazelcast.config.WanConsumerConfig;
 import com.hazelcast.config.WanReplicationConfig;
-import com.hazelcast.instance.impl.Node;
 
 /**
  * Interface to be implemented by custom WAN event consumers. Wan replication
@@ -45,11 +44,10 @@ public interface WanReplicationConsumer {
      * implementation which uses blocking or spinning locks to check for new
      * events. The implementation is free however to choose another approach.
      *
-     * @param node               this node
      * @param wanReplicationName the name of the {@link WanReplicationConfig}
      * @param config             the WAN consumer config
      */
-    void init(Node node, String wanReplicationName, WanConsumerConfig config);
+    void init(String wanReplicationName, WanConsumerConfig config);
 
     /**
      * Callback method to shutdown the WAN replication consumer. This is called

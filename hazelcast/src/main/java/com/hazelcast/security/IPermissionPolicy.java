@@ -35,7 +35,7 @@ public interface IPermissionPolicy {
      * Configures {@link IPermissionPolicy}.
      *
      * @param config Hazelcast {@link Config}
-     * @param properties
+     * @param properties additional properties used to configure the IPermissionPolicy
      */
     void configure(Config config, Properties properties);
 

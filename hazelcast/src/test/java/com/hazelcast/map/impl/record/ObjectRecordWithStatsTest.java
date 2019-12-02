@@ -16,11 +16,11 @@
 
 package com.hazelcast.map.impl.record;
 
+import com.hazelcast.internal.util.Clock;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.internal.util.Clock;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -47,30 +47,23 @@ public class ObjectRecordWithStatsTest {
     @Before
     public void setUp() {
         Data key = mock(Data.class);
-        Data otherKey = mock(Data.class);
         Object otherValue = new Object();
 
         record = new ObjectRecordWithStats(VALUE);
-        record.setKey(key);
 
         recordSameAttributes = new ObjectRecordWithStats();
-        recordSameAttributes.setKey(key);
         recordSameAttributes.setValue(VALUE);
 
         recordOtherLastStoredTime = new ObjectRecordWithStats(VALUE);
-        recordOtherLastStoredTime.setKey(key);
         recordOtherLastStoredTime.onStore();
 
         recordOtherExpirationTime = new ObjectRecordWithStats(VALUE);
-        recordOtherExpirationTime.setKey(key);
         recordOtherExpirationTime.setExpirationTime(Clock.currentTimeMillis());
 
         recordOtherKeyAndValue = new ObjectRecordWithStats();
-        recordOtherKeyAndValue.setKey(otherKey);
         recordOtherKeyAndValue.setValue(otherValue);
 
         dataRecord = new DataRecordWithStats();
-        dataRecord.setKey(key);
         dataRecord.setValue(key);
     }
 

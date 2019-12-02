@@ -17,7 +17,6 @@
 package com.hazelcast.map.impl.record;
 
 import com.hazelcast.internal.util.Clock;
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.impl.Metadata;
 
 import static com.hazelcast.internal.util.TimeUtil.zeroOutMs;
@@ -55,10 +54,6 @@ public interface Record<V> {
      * If not a {@link com.hazelcast.map.impl.record.CachedDataRecord}.
      */
     Object NOT_CACHED = new Object();
-
-    Data getKey();
-
-    void setKey(Data key);
 
     V getValue();
 
