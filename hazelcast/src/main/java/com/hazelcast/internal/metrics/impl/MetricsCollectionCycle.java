@@ -20,7 +20,6 @@ import com.hazelcast.internal.metrics.DoubleProbeFunction;
 import com.hazelcast.internal.metrics.DynamicMetricsProvider;
 import com.hazelcast.internal.metrics.LongProbeFunction;
 import com.hazelcast.internal.metrics.MetricDescriptor;
-import com.hazelcast.internal.metrics.MetricTarget;
 import com.hazelcast.internal.metrics.MetricsCollectionContext;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.ProbeFunction;
@@ -32,10 +31,10 @@ import com.hazelcast.logging.Logger;
 
 import java.util.Collection;
 import java.util.Map;
-import java.util.Set;
 import java.util.function.Function;
 
-import static java.util.Collections.emptySet;
+import static com.hazelcast.internal.metrics.impl.MetricsUtil.adjustExclusionsWithLevel;
+import static com.hazelcast.internal.metrics.impl.MetricsUtil.extractExcludedTargets;
 
 /**
  * Class representing a metrics collection cycle. It collects both static
@@ -114,7 +113,7 @@ class MetricsCollectionCycle {
                         .copy()
                         .withUnit(methodProbe.probe.unit())
                         .withMetric(methodProbe.getProbeOrMethodName())
-                        .withExcludedTargets(getExcludedTargets(methodProbe));
+                        .withExcludedTargets(extractExcludedTargets(methodProbe));
 
                 lookupMetricValueCatcher(descriptorCopy).catchMetricValue(collectionId, source, methodProbe);
                 collect(descriptorCopy, source, methodProbe);
@@ -127,7 +126,7 @@ class MetricsCollectionCycle {
                         .copy()
                         .withUnit(fieldProbe.probe.unit())
                         .withMetric(fieldProbe.getProbeOrFieldName())
-                        .withExcludedTargets(getExcludedTargets(fieldProbe));
+                        .withExcludedTargets(extractExcludedTargets(fieldProbe));
 
                 lookupMetricValueCatcher(descriptorCopy).catchMetricValue(collectionId, source, fieldProbe);
                 collect(descriptorCopy, source, fieldProbe);
@@ -172,15 +171,6 @@ class MetricsCollectionCycle {
         }
     }
 
-    private Set<MetricTarget> getExcludedTargets(Object object) {
-        if (object instanceof ProbeAware) {
-            CachedProbe probe = ((ProbeAware) object).getProbe();
-            return MetricTarget.asSet(probe.excludedTargets());
-        }
-
-        return emptySet();
-    }
-
     public void cleanUp() {
         descriptorSupplier.close();
     }
@@ -198,6 +188,7 @@ class MetricsCollectionCycle {
                         .copy()
                         .withUnit(unit)
                         .withMetric(name);
+                adjustExclusionsWithLevel(descriptorCopy, level);
 
                 lookupMetricValueCatcher(descriptorCopy).catchMetricValue(collectionId, value);
                 metricsCollector.collectLong(descriptorCopy, value);
@@ -211,6 +202,7 @@ class MetricsCollectionCycle {
                         .copy()
                         .withUnit(unit)
                         .withMetric(name);
+                adjustExclusionsWithLevel(descriptorCopy, level);
 
                 lookupMetricValueCatcher(descriptorCopy).catchMetricValue(collectionId, value);
                 metricsCollector.collectDouble(descriptorCopy, value);

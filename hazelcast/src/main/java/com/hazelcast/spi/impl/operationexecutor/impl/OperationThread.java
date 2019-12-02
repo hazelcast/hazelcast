@@ -17,8 +17,9 @@
 package com.hazelcast.spi.impl.operationexecutor.impl;
 
 import com.hazelcast.instance.impl.NodeExtension;
-import com.hazelcast.internal.metrics.MetricsRegistry;
+import com.hazelcast.internal.metrics.ExcludedMetricTargets;
 import com.hazelcast.internal.metrics.MetricDescriptor;
+import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.metrics.StaticMetricsProvider;
 import com.hazelcast.internal.nio.Packet;
@@ -32,6 +33,7 @@ import com.hazelcast.spi.impl.operationservice.Operation;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.instance.impl.OutOfMemoryErrorDispatcher.inspectOutOfMemoryError;
+import static com.hazelcast.internal.metrics.MetricTarget.MANAGEMENT_CENTER;
 import static com.hazelcast.internal.util.counters.SwCounter.newSwCounter;
 
 /**
@@ -44,6 +46,7 @@ import static com.hazelcast.internal.util.counters.SwCounter.newSwCounter;
  * <p>
  * The actual processing of an operation is forwarded to the {@link OperationRunner}.
  */
+@ExcludedMetricTargets(MANAGEMENT_CENTER)
 public abstract class OperationThread extends HazelcastManagedThread implements StaticMetricsProvider {
 
     final int threadId;
