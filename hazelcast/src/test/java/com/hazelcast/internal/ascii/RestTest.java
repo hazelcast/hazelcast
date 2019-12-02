@@ -29,7 +29,7 @@ import com.hazelcast.internal.ascii.HTTPCommunicator.ConnectionResponse;
 import com.hazelcast.internal.json.Json;
 import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.internal.management.dto.WanReplicationConfigDTO;
-import com.hazelcast.internal.management.request.UpdatePermissionConfigRequest;
+import com.hazelcast.internal.management.dto.UpdatePermissionConfigDTO;
 import com.hazelcast.map.IMap;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -253,9 +253,9 @@ public class RestTest {
     @Test
     public void updatePermissions() throws Exception {
         Config config = instance.getConfig();
-        Set<PermissionConfig> permissionConfigs = new HashSet<PermissionConfig>();
+        Set<PermissionConfig> permissionConfigs = new HashSet<>();
         permissionConfigs.add(new PermissionConfig(PermissionConfig.PermissionType.MAP, "test", "*"));
-        UpdatePermissionConfigRequest request = new UpdatePermissionConfigRequest(permissionConfigs);
+        UpdatePermissionConfigDTO request = new UpdatePermissionConfigDTO(permissionConfigs);
         ConnectionResponse resp =
                 communicator.updatePermissions(config.getClusterName(), "", request.toJson().toString());
         assertEquals(HttpURLConnection.HTTP_FORBIDDEN, resp.responseCode);

@@ -16,11 +16,17 @@
 
 package com.hazelcast.internal.management;
 
-import static org.junit.Assert.assertEquals;
-
-import java.security.AccessControlException;
-import java.util.concurrent.ExecutionException;
-
+import com.hazelcast.config.Config;
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.instance.impl.HazelcastInstanceFactory;
+import com.hazelcast.internal.management.operation.RunScriptOperation;
+import com.hazelcast.map.impl.MapService;
+import com.hazelcast.spi.impl.InternalCompletableFuture;
+import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.HazelcastTestSupport;
+import com.hazelcast.test.TestHazelcastInstanceFactory;
+import com.hazelcast.test.annotation.ParallelJVMTest;
+import com.hazelcast.test.annotation.QuickTest;
 import org.hamcrest.CoreMatchers;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -30,17 +36,10 @@ import org.junit.experimental.categories.Category;
 import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
-import com.hazelcast.config.Config;
-import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.instance.impl.HazelcastInstanceFactory;
-import com.hazelcast.internal.management.operation.ScriptExecutorOperation;
-import com.hazelcast.map.impl.MapService;
-import com.hazelcast.spi.impl.InternalCompletableFuture;
-import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.TestHazelcastInstanceFactory;
-import com.hazelcast.test.annotation.ParallelJVMTest;
-import com.hazelcast.test.annotation.QuickTest;
+import java.security.AccessControlException;
+import java.util.concurrent.ExecutionException;
+
+import static org.junit.Assert.assertEquals;
 
 /**
  * Tests possibility to disable scripting on members.
@@ -64,22 +63,22 @@ public class ScriptingProtectionTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testScritpingDisabled() throws InterruptedException, ExecutionException {
+    public void testScriptingDisabled() throws InterruptedException, ExecutionException {
         testInternal(false, false);
     }
 
     @Test
-    public void testScritpingDisabledOnSrc() throws InterruptedException, ExecutionException {
+    public void testScriptingDisabledOnSrc() throws InterruptedException, ExecutionException {
         testInternal(false, true);
     }
 
     @Test
-    public void testScritpingDisabledOnDest() throws InterruptedException, ExecutionException {
+    public void testScriptingDisabledOnDest() throws InterruptedException, ExecutionException {
         testInternal(true, false);
     }
 
     @Test
-    public void testScritpingEnabled() throws InterruptedException, ExecutionException {
+    public void testScriptingEnabled() throws InterruptedException, ExecutionException {
         testInternal(true, true);
     }
 
@@ -88,12 +87,12 @@ public class ScriptingProtectionTest extends HazelcastTestSupport {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
         HazelcastInstance hz1 = factory.newHazelcastInstance();
         HazelcastInstance hz2 = factory.newHazelcastInstance();
-        ScriptExecutorOperation op = createScriptExecutorOp();
+        RunScriptOperation op = createScriptExecutorOp();
         InternalCompletableFuture<Object> result = getOperationService(hz1).invokeOnTarget(MapService.SERVICE_NAME, op,
                 getAddress(hz2));
         if (!getScriptingEnabledDefaultValue()) {
             expectedException.expect(ExecutionException.class);
-            expectedException.expectCause(CoreMatchers.<Throwable>instanceOf(AccessControlException.class));
+            expectedException.expectCause(CoreMatchers.instanceOf(AccessControlException.class));
         }
         assertEquals(SCRIPT_RETURN_VAL, result.get());
     }
@@ -106,7 +105,7 @@ public class ScriptingProtectionTest extends HazelcastTestSupport {
     }
 
     /**
-     * Tests scripting protection on 2 nodes cluster. The source node sends a {@link ScriptExecutorOperation} to the destination
+     * Tests scripting protection on 2 nodes cluster. The source node sends a {@link RunScriptOperation} to the destination
      * one. If the destination node has scripting disabled, an exception is thrown, otherwise the source gets correct script
      * execution result.
      *
@@ -117,7 +116,7 @@ public class ScriptingProtectionTest extends HazelcastTestSupport {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
         HazelcastInstance hz1 = factory.newHazelcastInstance(createConfig(srcEnabled));
         HazelcastInstance hz2 = factory.newHazelcastInstance(createConfig(destEnabled));
-        ScriptExecutorOperation op = createScriptExecutorOp();
+        RunScriptOperation op = createScriptExecutorOp();
         InternalCompletableFuture<Object> result = getOperationService(hz1).invokeOnTarget(MapService.SERVICE_NAME, op,
                 getAddress(hz2));
         if (!destEnabled) {
@@ -127,9 +126,8 @@ public class ScriptingProtectionTest extends HazelcastTestSupport {
         assertEquals(SCRIPT_RETURN_VAL, result.get());
     }
 
-    protected ScriptExecutorOperation createScriptExecutorOp() {
-        ScriptExecutorOperation op = new ScriptExecutorOperation(ENGINE, SCRIPT);
-        return op;
+    protected RunScriptOperation createScriptExecutorOp() {
+        return new RunScriptOperation(ENGINE, SCRIPT);
     }
 
     protected Config createConfig(boolean scriptingEnabled) {

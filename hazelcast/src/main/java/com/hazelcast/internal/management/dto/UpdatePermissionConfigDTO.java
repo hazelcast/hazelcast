@@ -14,32 +14,32 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.management.request;
+package com.hazelcast.internal.management.dto;
 
 import com.hazelcast.config.PermissionConfig;
-import com.hazelcast.json.internal.JsonSerializable;
-import com.hazelcast.internal.management.dto.PermissionConfigDTO;
 import com.hazelcast.internal.json.JsonArray;
 import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.internal.json.JsonValue;
+import com.hazelcast.json.internal.JsonSerializable;
 
 import java.util.HashSet;
 import java.util.Set;
 
 /**
+ * TODO do we need this one (currently only used in tests)
+ *
  * Helper class to serialize/deserialize client permission update requests.
  *
  * @see com.hazelcast.internal.ascii.rest.HttpCommandProcessor
  */
-public class UpdatePermissionConfigRequest implements JsonSerializable {
+public class UpdatePermissionConfigDTO implements JsonSerializable {
 
     private Set<PermissionConfig> permissionConfigs;
 
-    public UpdatePermissionConfigRequest() {
-
+    public UpdatePermissionConfigDTO() {
     }
 
-    public UpdatePermissionConfigRequest(Set<PermissionConfig> permissionConfigs) {
+    public UpdatePermissionConfigDTO(Set<PermissionConfig> permissionConfigs) {
         this.permissionConfigs = permissionConfigs;
     }
 
@@ -57,7 +57,7 @@ public class UpdatePermissionConfigRequest implements JsonSerializable {
     @Override
     public void fromJson(JsonObject json) {
         JsonArray confArray = json.get("permissionConfigs").asArray();
-        permissionConfigs = new HashSet<PermissionConfig>(confArray.size());
+        permissionConfigs = new HashSet<>(confArray.size());
         for (JsonValue permissionConfigDTO : confArray.values()) {
             PermissionConfigDTO dto = new PermissionConfigDTO();
             dto.fromJson(permissionConfigDTO.asObject());

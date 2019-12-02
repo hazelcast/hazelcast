@@ -16,11 +16,18 @@
 
 package com.hazelcast.internal.management.operation;
 
+import com.hazelcast.config.ManagementCenterConfig;
+import com.hazelcast.core.HazelcastException;
 import com.hazelcast.internal.management.ManagementCenterService;
+import com.hazelcast.internal.management.ScriptEngineManagerContext;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.executionservice.ExecutionService;
 import com.hazelcast.spi.impl.operationservice.AbstractLocalOperation;
 
+import javax.script.ScriptEngine;
+import javax.script.ScriptEngineManager;
+import javax.script.ScriptException;
+import java.security.AccessControlException;
 import java.util.concurrent.Future;
 
 import static com.hazelcast.internal.util.ExceptionUtil.peel;
@@ -28,9 +35,6 @@ import static com.hazelcast.internal.util.ExceptionUtil.withTryCatch;
 
 /**
  * Operation to execute script on the node. The script is executed on {@link ExecutionService#MC_EXECUTOR} executor.
- *  <p>
- *  Note: This operation reuses {@link ScriptExecutorOperation} to execute the script.
- *  Once MC migrates to client comms, these classes can be merged.
  */
 public class RunScriptOperation extends AbstractLocalOperation {
 
@@ -46,14 +50,28 @@ public class RunScriptOperation extends AbstractLocalOperation {
     public void run() {
         final ILogger logger = getNodeEngine().getLogger(getClass());
         final ExecutionService executionService = getNodeEngine().getExecutionService();
-        final ScriptExecutorOperation legacyOperation = new ScriptExecutorOperation(engine, script);
-        legacyOperation.setNodeEngine(getNodeEngine());
 
         Future<Object> future = executionService.submit(
                 ExecutionService.MC_EXECUTOR,
                 () -> {
-                    legacyOperation.run();
-                    return legacyOperation.getResponse();
+                    ManagementCenterConfig managementCenterConfig = getNodeEngine().getConfig().getManagementCenterConfig();
+                    if (!managementCenterConfig.isScriptingEnabled()) {
+                        throw new AccessControlException("Using ScriptEngine is not allowed on this Hazelcast member.");
+                    }
+                    ScriptEngineManager scriptEngineManager = ScriptEngineManagerContext.getScriptEngineManager();
+                    ScriptEngine scriptEngine = scriptEngineManager.getEngineByName(engine);
+                    if (scriptEngine == null) {
+                        throw new IllegalArgumentException("Could not find ScriptEngine named '" + engine + "'.");
+                    }
+                    scriptEngine.put("hazelcast", getNodeEngine().getHazelcastInstance());
+                    try {
+                        return scriptEngine.eval(script);
+                    } catch (ScriptException e) {
+                        // ScriptException's cause is not serializable - we don't need the cause
+                        HazelcastException hazelcastException = new HazelcastException(e.getMessage());
+                        hazelcastException.setStackTrace(e.getStackTrace());
+                        throw hazelcastException;
+                    }
                 });
 
         executionService.asCompletableFuture(future).whenComplete(

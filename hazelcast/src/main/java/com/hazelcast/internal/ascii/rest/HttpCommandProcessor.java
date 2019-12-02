@@ -31,7 +31,6 @@ public abstract class HttpCommandProcessor<T> extends AbstractTextCommandProcess
     public static final String URI_MAPS = "/hazelcast/rest/maps/";
     public static final String URI_QUEUES = "/hazelcast/rest/queues/";
     public static final String URI_MANCENTER_BASE_URL = "/hazelcast/rest/mancenter";
-    public static final String URI_MANCENTER_CHANGE_URL = URI_MANCENTER_BASE_URL + "/changeurl";
     public static final String URI_UPDATE_PERMISSIONS = URI_MANCENTER_BASE_URL + "/security/permissions";
     public static final String URI_HEALTH_URL = "/hazelcast/health";
     public static final String URI_HEALTH_READY = URI_HEALTH_URL + "/ready";

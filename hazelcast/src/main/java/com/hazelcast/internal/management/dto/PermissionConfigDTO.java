@@ -17,15 +17,15 @@
 package com.hazelcast.internal.management.dto;
 
 import com.hazelcast.config.PermissionConfig;
-import com.hazelcast.json.internal.JsonSerializable;
-import com.hazelcast.internal.management.ManagementDataSerializerHook;
 import com.hazelcast.internal.json.JsonArray;
 import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.internal.json.JsonValue;
+import com.hazelcast.internal.management.ManagementDataSerializerHook;
+import com.hazelcast.internal.util.StringUtil;
+import com.hazelcast.json.internal.JsonSerializable;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.internal.util.StringUtil;
 
 import java.io.IOException;
 import java.util.HashSet;

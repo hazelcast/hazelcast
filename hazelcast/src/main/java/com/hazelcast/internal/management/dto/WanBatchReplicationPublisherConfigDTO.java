@@ -23,14 +23,14 @@ import com.hazelcast.config.DiscoveryConfig;
 import com.hazelcast.config.EurekaConfig;
 import com.hazelcast.config.GcpConfig;
 import com.hazelcast.config.KubernetesConfig;
-import com.hazelcast.config.WanQueueFullBehavior;
 import com.hazelcast.config.WanAcknowledgeType;
 import com.hazelcast.config.WanBatchReplicationPublisherConfig;
-import com.hazelcast.wan.WanPublisherState;
+import com.hazelcast.config.WanQueueFullBehavior;
 import com.hazelcast.config.WanSyncConfig;
 import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.internal.json.JsonValue;
 import com.hazelcast.json.internal.JsonSerializable;
+import com.hazelcast.wan.WanPublisherState;
 
 import java.util.function.Consumer;
 
