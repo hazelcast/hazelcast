@@ -82,6 +82,7 @@ import java.util.concurrent.ConcurrentMap;
 
 import static com.hazelcast.internal.config.ConfigValidator.checkQueueConfig;
 import static com.hazelcast.internal.metrics.impl.ProviderHelper.provide;
+import static com.hazelcast.internal.util.ConcurrencyUtil.CALLER_RUNS;
 import static com.hazelcast.internal.util.ConcurrencyUtil.getOrPutSynchronized;
 import static com.hazelcast.internal.util.MapUtil.createHashMap;
 import static com.hazelcast.internal.util.scheduler.ScheduleType.POSTPONE;
@@ -294,7 +295,7 @@ public class QueueService implements ManagedService, MigrationAwareService, Tran
         EventService eventService = nodeEngine.getEventService();
         QueueEventFilter filter = new QueueEventFilter(includeValue);
         return eventService.registerListenerAsync(QueueService.SERVICE_NAME, name, filter, listener)
-                           .thenApply(EventRegistration::getId);
+                           .thenApplyAsync(EventRegistration::getId, CALLER_RUNS);
     }
 
     public boolean removeItemListener(String name, UUID registrationId) {

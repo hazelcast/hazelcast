@@ -23,6 +23,7 @@ import com.hazelcast.spi.impl.operationservice.AbstractLocalOperation;
 
 import java.util.concurrent.Future;
 
+import static com.hazelcast.internal.util.ConcurrencyUtil.CALLER_RUNS;
 import static com.hazelcast.internal.util.ExceptionUtil.peel;
 import static com.hazelcast.internal.util.ExceptionUtil.withTryCatch;
 
@@ -56,11 +57,11 @@ public class RunScriptOperation extends AbstractLocalOperation {
                     return legacyOperation.getResponse();
                 });
 
-        executionService.asCompletableFuture(future).whenComplete(
+        executionService.asCompletableFuture(future).whenCompleteAsync(
                 withTryCatch(
                         logger,
                         (result, error) -> sendResponse(error != null ? peel(error) : result)
-                )
+                ), CALLER_RUNS
         );
     }
 

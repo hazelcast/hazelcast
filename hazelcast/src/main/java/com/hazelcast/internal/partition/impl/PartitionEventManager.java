@@ -19,8 +19,10 @@ package com.hazelcast.internal.partition.impl;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
+import com.hazelcast.internal.partition.IPartitionLostEvent;
 import com.hazelcast.internal.partition.MigrationInfo;
 import com.hazelcast.internal.partition.MigrationInfo.MigrationStatus;
+import com.hazelcast.internal.partition.PartitionAwareService;
 import com.hazelcast.internal.partition.PartitionLostEventImpl;
 import com.hazelcast.internal.partition.PartitionReplica;
 import com.hazelcast.internal.partition.ReplicaMigrationEventImpl;
@@ -29,23 +31,22 @@ import com.hazelcast.partition.MigrationListener;
 import com.hazelcast.partition.MigrationState;
 import com.hazelcast.partition.PartitionLostEvent;
 import com.hazelcast.partition.PartitionLostListener;
-import com.hazelcast.spi.impl.eventservice.EventRegistration;
-import com.hazelcast.spi.impl.eventservice.EventService;
 import com.hazelcast.partition.ReplicaMigrationEvent;
 import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.internal.partition.IPartitionLostEvent;
-import com.hazelcast.internal.partition.PartitionAwareService;
+import com.hazelcast.spi.impl.eventservice.EventRegistration;
+import com.hazelcast.spi.impl.eventservice.EventService;
 
 import java.util.Collection;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
+import static com.hazelcast.internal.partition.IPartitionService.SERVICE_NAME;
 import static com.hazelcast.internal.partition.InternalPartitionService.MIGRATION_EVENT_TOPIC;
 import static com.hazelcast.internal.partition.InternalPartitionService.PARTITION_LOST_EVENT_TOPIC;
-import static com.hazelcast.spi.impl.executionservice.ExecutionService.SYSTEM_EXECUTOR;
 import static com.hazelcast.internal.partition.impl.MigrationListenerAdapter.MIGRATION_FINISHED;
 import static com.hazelcast.internal.partition.impl.MigrationListenerAdapter.MIGRATION_STARTED;
-import static com.hazelcast.internal.partition.IPartitionService.SERVICE_NAME;
+import static com.hazelcast.internal.util.ConcurrencyUtil.CALLER_RUNS;
+import static com.hazelcast.spi.impl.executionservice.ExecutionService.SYSTEM_EXECUTOR;
 
 /**
  * Maintains registration of partition-system related listeners and dispatches corresponding events.
@@ -135,7 +136,7 @@ public class PartitionEventManager {
 
         EventService eventService = nodeEngine.getEventService();
         return eventService.registerListenerAsync(SERVICE_NAME, PARTITION_LOST_EVENT_TOPIC, adapter)
-                           .thenApply(EventRegistration::getId);
+                           .thenApplyAsync(EventRegistration::getId, CALLER_RUNS);
     }
 
     public UUID addLocalPartitionLostListener(PartitionLostListener listener) {

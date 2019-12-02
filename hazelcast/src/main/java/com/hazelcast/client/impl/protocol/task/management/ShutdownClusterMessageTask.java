@@ -29,6 +29,7 @@ import com.hazelcast.spi.impl.executionservice.ExecutionService;
 import java.security.Permission;
 import java.util.concurrent.Future;
 
+import static com.hazelcast.internal.util.ConcurrencyUtil.CALLER_RUNS;
 import static com.hazelcast.internal.util.ExceptionUtil.peel;
 import static com.hazelcast.internal.util.ExceptionUtil.withTryCatch;
 
@@ -49,10 +50,10 @@ public class ShutdownClusterMessageTask extends AbstractCallableMessageTask<Requ
                     return null;
                 });
 
-        executionService.asCompletableFuture(future).whenComplete(
+        executionService.asCompletableFuture(future).whenCompleteAsync(
                 withTryCatch(
                         logger,
-                        (empty, error) -> sendResponse(error != null ? peel(error) : null)));
+                        (empty, error) -> sendResponse(error != null ? peel(error) : null)), CALLER_RUNS);
 
         return null;
     }

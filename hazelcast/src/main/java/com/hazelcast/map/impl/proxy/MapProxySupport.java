@@ -1052,7 +1052,7 @@ abstract class MapProxySupport<K, V>
                 operationService.invokeOnPartitionsAsync(SERVICE_NAME, factory, singletonMap(address, asIntegerList(partitions)));
         InternalCompletableFuture<Void> resultFuture = new InternalCompletableFuture<>();
         long finalTotalSize = totalSize;
-        future.whenComplete((response, t) -> {
+        future.whenCompleteAsync((response, t) -> {
             putAllVisitSerializedKeys(entries);
             if (t == null) {
                 localMapStats.incrementPutLatencyNanos(finalTotalSize, System.nanoTime() - startTimeNanos);
@@ -1060,7 +1060,7 @@ abstract class MapProxySupport<K, V>
             } else {
                 resultFuture.completeExceptionally(t);
             }
-        });
+        }, CALLER_RUNS);
         return resultFuture;
     }
 
