@@ -168,7 +168,8 @@ public class ClientStatisticsService {
                             addStat(stats, prefix, "lastPersistenceDuration", nearCacheStats.getLastPersistenceDuration());
                             addStat(stats, prefix, "lastPersistenceKeyCount", nearCacheStats.getLastPersistenceKeyCount());
                             addStat(stats, prefix, "lastPersistenceTime", nearCacheStats.getLastPersistenceTime());
-                            addStat(stats, prefix, "lastPersistenceWrittenBytes", nearCacheStats.getLastPersistenceWrittenBytes());
+                            addStat(stats, prefix, "lastPersistenceWrittenBytes",
+                                    nearCacheStats.getLastPersistenceWrittenBytes());
                             addStat(stats, prefix, "misses", nearCacheStats.getMisses());
                             addStat(stats, prefix, "ownedEntryCount", nearCacheStats.getOwnedEntryCount());
                             addStat(stats, prefix, "expirations", nearCacheStats.getExpirations());
