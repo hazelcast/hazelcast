@@ -16,7 +16,6 @@
 
 package com.hazelcast.internal.management;
 
-import com.hazelcast.config.ManagementCenterConfig;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.instance.impl.HazelcastInstanceImpl;
 import com.hazelcast.internal.json.JsonObject;
@@ -60,7 +59,6 @@ public class ManagementCenterService {
 
     private final ConsoleCommandHandler commandHandler;
     private final ClientBwListConfigHandler bwListConfigHandler;
-    private final ManagementCenterConfig managementCenterConfig;
     private final AtomicBoolean isRunning = new AtomicBoolean(false);
     private final TimedMemberStateFactory timedMemberStateFactory;
     private final AtomicReference<String> timedMemberStateJson = new AtomicReference<>();
@@ -73,27 +71,15 @@ public class ManagementCenterService {
     public ManagementCenterService(HazelcastInstanceImpl instance) {
         this.instance = instance;
         this.logger = instance.node.getLogger(ManagementCenterService.class);
-        this.managementCenterConfig = getManagementCenterConfig();
         this.commandHandler = new ConsoleCommandHandler(instance);
         this.bwListConfigHandler = new ClientBwListConfigHandler(instance.node.clientEngine);
         this.prepareStateThread = new PrepareStateThread();
         this.timedMemberStateFactory = instance.node.getNodeExtension().createTimedMemberStateFactory(instance);
         registerExecutor();
 
-        if (this.managementCenterConfig.isEnabled()) {
-            mcEvents = new LinkedBlockingQueue<>(EVENT_QUEUE_CAPACITY);
-            start();
-        } else {
-            mcEvents = new LinkedBlockingQueue<>(0);
-        }
-    }
-
-    private ManagementCenterConfig getManagementCenterConfig() {
-        ManagementCenterConfig config = instance.node.config.getManagementCenterConfig();
-        if (config == null) {
-            throw new IllegalStateException("ManagementCenterConfig can't be null!");
-        }
-        return config;
+        // TODO
+        mcEvents = new LinkedBlockingQueue<>(EVENT_QUEUE_CAPACITY);
+        start();
     }
 
     private void start() {
@@ -164,7 +150,7 @@ public class ManagementCenterService {
      */
     @SuppressFBWarnings("RV_RETURN_VALUE_IGNORED_BAD_PRACTICE")
     public void log(Event event) {
-        if (this.managementCenterConfig.isEnabled() && isRunning()) {
+        if (isRunning()) {
             mcEvents.offer(event);
             if (eventListener != null) {
                 eventListener.onEventLogged(event);
@@ -228,7 +214,7 @@ public class ManagementCenterService {
         }
 
         private long calcUpdateInterval() {
-            long updateInterval = managementCenterConfig.getUpdateInterval();
+            long updateInterval = 3000; // managementCenterConfig.getUpdateInterval();
             return (updateInterval > 0) ? TimeUnit.SECONDS.toMillis(updateInterval) : DEFAULT_UPDATE_INTERVAL;
         }
 

@@ -40,15 +40,7 @@ hazelcast:
   instance-name: dummy
 
   management-center:
-    enabled: true
-    update-interval: 5
     scripting-enabled: false
-    url: http://mywebserver:8080
-    mutual-auth:
-      enabled: true
-      factory-class-name: com.hazelcast.examples.MySSLContextFactory
-      properties:
-        foo: bar
 
   properties:
     foo: bar

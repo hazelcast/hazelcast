@@ -2521,35 +2521,10 @@
         </xs:attribute>
     </xs:complexType>
     <xs:complexType name="management-center" mixed="true">
-        <xs:sequence minOccurs="0">
-            <xs:element name="url" type="xs:string" minOccurs="1" maxOccurs="1">
-                <xs:annotation>
-                    <xs:documentation>
-                        Management Center endpoint/URL.
-                    </xs:documentation>
-                </xs:annotation>
-            </xs:element>
-            <xs:element name="mutual-auth" type="mutual-auth" minOccurs="0" maxOccurs="1"/>
-        </xs:sequence>
-        <xs:attribute name="enabled" type="xs:boolean" default="false" use="optional">
-            <xs:annotation>
-                <xs:documentation>
-                    True to enable management center, false to disable.
-                </xs:documentation>
-            </xs:annotation>
-        </xs:attribute>
         <xs:attribute name="scripting-enabled" type="xs:boolean" use="optional">
             <xs:annotation>
                 <xs:documentation>
                     True to allow scripting on the member, false to disallow.
-                </xs:documentation>
-            </xs:annotation>
-        </xs:attribute>
-        <xs:attribute name="update-interval" type="xs:integer" default="3" use="optional">
-            <xs:annotation>
-                <xs:documentation>
-                    The time frequency (in seconds) for which Management Center will take
-                    information from the Hazelcast cluster.
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>

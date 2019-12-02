@@ -89,7 +89,7 @@ public class ManagementCenterServiceTest extends HazelcastTestSupport {
         hazelcastInstances[0] = factory.newHazelcastInstance(getConfig());
         hazelcastInstances[1] = factory.newHazelcastInstance(getConfig().setLiteMember(true));
         Config config = getConfig();
-        config.getManagementCenterConfig().setEnabled(true).setUrl("a").setScriptingEnabled(false);
+        config.getManagementCenterConfig().setScriptingEnabled(false);
         hazelcastInstances[2] = factory.newHazelcastInstance(config);
 
         members = stream(hazelcastInstances)

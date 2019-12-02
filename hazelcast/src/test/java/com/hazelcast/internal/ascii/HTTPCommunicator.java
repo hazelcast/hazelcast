@@ -256,12 +256,6 @@ public class HTTPCommunicator {
         return doPost(url, clusterName, groupPassword);
     }
 
-    public ConnectionResponse changeManagementCenterUrl(String clusterName,
-                                                        String groupPassword, String newUrl) throws IOException {
-        String url = address + "mancenter/changeurl";
-        return doPost(url, clusterName, groupPassword, newUrl);
-    }
-
     public ConnectionResponse partialStart(String clusterName, String groupPassword) throws IOException {
         String url = address + "management/cluster/partialStart";
         return doPost(url, clusterName, groupPassword);
@@ -274,55 +268,55 @@ public class HTTPCommunicator {
 
     public String syncMapOverWAN(String clusterName, String clusterPassword,
                                  String wanRepName, String publisherId, String mapName) throws IOException {
-        String url = address + "mancenter/wan/sync/map";
+        String url = address + "management/wan/sync/map";
         return doPost(url, clusterName, clusterPassword, wanRepName, publisherId, mapName).response;
     }
 
     public String syncMapsOverWAN(String clusterName, String clusterPassword,
                                   String wanRepName, String publisherId) throws IOException {
-        String url = address + "mancenter/wan/sync/allmaps";
+        String url = address + "management/wan/sync/allmaps";
         return doPost(url, clusterName, clusterPassword, wanRepName, publisherId).response;
     }
 
     public String wanMapConsistencyCheck(String clusterName, String clusterPassword,
                                          String wanRepName, String publisherId, String mapName) throws IOException {
-        String url = address + "mancenter/wan/consistencyCheck/map";
+        String url = address + "management/wan/consistencyCheck/map";
         return doPost(url, clusterName, clusterPassword, wanRepName, publisherId, mapName).response;
     }
 
     public String wanPausePublisher(String clusterName, String clusterPassword,
                                     String wanRepName, String publisherId) throws IOException {
-        String url = address + "mancenter/wan/pausePublisher";
+        String url = address + "management/wan/pausePublisher";
         return doPost(url, clusterName, clusterPassword, wanRepName, publisherId).response;
     }
 
     public String wanStopPublisher(String clusterName, String clusterPassword,
                                    String wanRepName, String publisherId) throws IOException {
-        String url = address + "mancenter/wan/stopPublisher";
+        String url = address + "management/wan/stopPublisher";
         return doPost(url, clusterName, clusterPassword, wanRepName, publisherId).response;
     }
 
     public String wanResumePublisher(String clusterName, String clusterPassword,
                                      String wanRepName, String publisherId) throws IOException {
-        String url = address + "mancenter/wan/resumePublisher";
+        String url = address + "management/wan/resumePublisher";
         return doPost(url, clusterName, clusterPassword, wanRepName, publisherId).response;
     }
 
     public String wanClearQueues(String clusterName, String clusterPassword,
                                  String wanRepName, String targetClusterName) throws IOException {
-        String url = address + "mancenter/wan/clearWanQueues";
+        String url = address + "management/wan/clearWanQueues";
         return doPost(url, clusterName, clusterPassword, wanRepName, targetClusterName).response;
     }
 
     public String addWanConfig(String clusterName, String clusterPassword,
                                String wanRepConfigJson) throws IOException {
-        String url = address + "mancenter/wan/addWanConfig";
+        String url = address + "management/wan/addWanConfig";
         return doPost(url, clusterName, clusterPassword, wanRepConfigJson).response;
     }
 
     public ConnectionResponse updatePermissions(String clusterName, String groupPassword, String permConfJson)
             throws IOException {
-        String url = address + "mancenter/security/permissions";
+        String url = address + "management/security/permissions";
         return doPost(url, clusterName, groupPassword, permConfJson);
     }
 

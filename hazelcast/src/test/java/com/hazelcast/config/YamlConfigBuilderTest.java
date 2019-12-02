@@ -783,40 +783,12 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
         String yaml = ""
                 + "hazelcast:\n"
                 + "  management-center:\n"
-                + "    enabled: true\n"
-                + "    scripting-enabled: false\n"
-                + "    url: someUrl\n";
+                + "    scripting-enabled: false\n";
 
         Config config = buildConfig(yaml);
         ManagementCenterConfig manCenterCfg = config.getManagementCenterConfig();
 
-        assertTrue(manCenterCfg.isEnabled());
         assertFalse(manCenterCfg.isScriptingEnabled());
-        assertEquals("someUrl", manCenterCfg.getUrl());
-    }
-
-    @Override
-    @Test
-    public void testManagementCenterConfigComplex() {
-        String yaml = ""
-                + "hazelcast:\n"
-                + "  management-center:\n"
-                + "    enabled: true\n"
-                + "    url: wowUrl\n"
-                + "    mutual-auth:\n"
-                + "      enabled: true\n"
-                + "      properties:\n"
-                + "        keyStore: /tmp/foo_keystore\n"
-                + "        trustStore: /tmp/foo_truststore\n";
-
-        Config config = buildConfig(yaml);
-        ManagementCenterConfig manCenterCfg = config.getManagementCenterConfig();
-
-        assertTrue(manCenterCfg.isEnabled());
-        assertEquals("wowUrl", manCenterCfg.getUrl());
-        assertTrue(manCenterCfg.getMutualAuthConfig().isEnabled());
-        assertEquals("/tmp/foo_keystore", manCenterCfg.getMutualAuthConfig().getProperty("keyStore"));
-        assertEquals("/tmp/foo_truststore", manCenterCfg.getMutualAuthConfig().getProperty("trustStore"));
     }
 
     @Override
@@ -829,8 +801,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
         Config config = buildConfig(yaml);
         ManagementCenterConfig manCenterCfg = config.getManagementCenterConfig();
 
-        assertFalse(manCenterCfg.isEnabled());
-        assertNull(manCenterCfg.getUrl());
+        assertFalse(manCenterCfg.isScriptingEnabled());
     }
 
     @Override
@@ -841,57 +812,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
         Config config = buildConfig(yaml);
         ManagementCenterConfig manCenterCfg = config.getManagementCenterConfig();
 
-        assertFalse(manCenterCfg.isEnabled());
-        assertNull(manCenterCfg.getUrl());
-    }
-
-    @Override
-    @Test
-    public void testNotEnabledManagementCenterConfig() {
-        String yaml = ""
-                + "hazelcast:\n"
-                + "  management-center:\n"
-                + "    enabled: false\n";
-
-        Config config = buildConfig(yaml);
-        ManagementCenterConfig manCenterCfg = config.getManagementCenterConfig();
-        assertFalse(manCenterCfg.isEnabled());
-        assertNull(manCenterCfg.getUrl());
-    }
-
-    @Override
-    @Test
-    public void testNotEnabledWithURLManagementCenterConfig() {
-        String yaml = ""
-                + "hazelcast:\n"
-                + "  management-center:\n"
-                + "    enabled: false\n"
-                + "    url: http://localhost:8080/mancenter\n";
-
-        Config config = buildConfig(yaml);
-        ManagementCenterConfig manCenterCfg = config.getManagementCenterConfig();
-
-        assertFalse(manCenterCfg.isEnabled());
-        assertEquals("http://localhost:8080/mancenter", manCenterCfg.getUrl());
-    }
-
-    @Override
-    @Test
-    public void testManagementCenterConfigComplexDisabledMutualAuth() {
-        String yaml = ""
-                + "hazelcast:\n"
-                + "  management-center:\n"
-                + "    enabled: true\n"
-                + "    url: wowUrl\n"
-                + "    mutual-auth:\n"
-                + "      enabled: false\n";
-
-        Config config = buildConfig(yaml);
-        ManagementCenterConfig manCenterCfg = config.getManagementCenterConfig();
-
-        assertTrue(manCenterCfg.isEnabled());
-        assertEquals("wowUrl", manCenterCfg.getUrl());
-        assertFalse(manCenterCfg.getMutualAuthConfig().isEnabled());
+        assertFalse(manCenterCfg.isScriptingEnabled());
     }
 
     @Override

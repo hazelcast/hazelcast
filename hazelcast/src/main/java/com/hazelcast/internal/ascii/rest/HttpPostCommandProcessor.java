@@ -95,13 +95,13 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
             } else if (uri.startsWith(URI_SHUTDOWN_NODE_CLUSTER_URL)) {
                 handleShutdownNode(command);
                 return;
-            } else if (uri.startsWith(URI_WAN_SYNC_MAP) || uri.startsWith(LEGACY_URI_WAN_SYNC_MAP)) {
+            } else if (uri.startsWith(URI_WAN_SYNC_MAP)) {
                 handleWanSyncMap(command);
-            } else if (uri.startsWith(URI_WAN_SYNC_ALL_MAPS) || uri.startsWith(LEGACY_URI_WAN_SYNC_ALL_MAPS)) {
+            } else if (uri.startsWith(URI_WAN_SYNC_ALL_MAPS)) {
                 handleWanSyncAllMaps(command);
-            } else if (uri.startsWith(URI_MANCENTER_WAN_CLEAR_QUEUES) || uri.startsWith(LEGACY_URI_MANCENTER_WAN_CLEAR_QUEUES)) {
+            } else if (uri.startsWith(URI_WAN_CLEAR_QUEUES)) {
                 handleWanClearQueues(command);
-            } else if (uri.startsWith(URI_ADD_WAN_CONFIG) || uri.startsWith(LEGACY_URI_ADD_WAN_CONFIG)) {
+            } else if (uri.startsWith(URI_ADD_WAN_CONFIG)) {
                 handleAddWanConfig(command);
             } else if (uri.startsWith(URI_WAN_PAUSE_PUBLISHER)) {
                 handleWanPausePublisher(command);

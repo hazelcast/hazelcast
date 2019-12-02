@@ -54,7 +54,6 @@ import com.hazelcast.config.JoinConfig;
 import com.hazelcast.config.ListConfig;
 import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.config.LoginModuleConfig;
-import com.hazelcast.config.MCMutualAuthConfig;
 import com.hazelcast.config.ManagementCenterConfig;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapPartitionLostListenerConfig;
@@ -145,7 +144,6 @@ import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
@@ -2314,25 +2312,6 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         endpointConfig.setSSLConfig(sslConfig);
     }
 
-    private void handleMcMutualAuthConfig(Node node) {
-        MCMutualAuthConfig mcMutualAuthConfig = new MCMutualAuthConfig();
-        NamedNodeMap attributes = node.getAttributes();
-        Node enabledNode = attributes.getNamedItem("enabled");
-        boolean enabled = enabledNode != null && getBooleanValue(getTextContent(enabledNode).trim());
-        mcMutualAuthConfig.setEnabled(enabled);
-
-        for (Node n : childElements(node)) {
-            String nodeName = cleanNodeName(n);
-            if ("factory-class-name".equals(nodeName)) {
-                mcMutualAuthConfig.setFactoryClassName(getTextContent(n).trim());
-            } else if ("properties".equals(nodeName)) {
-                fillProperties(n, mcMutualAuthConfig.getProperties());
-            }
-        }
-
-        config.getManagementCenterConfig().setMutualAuthConfig(mcMutualAuthConfig);
-    }
-
     private void handleMemberAddressProvider(Node node, boolean advancedNetworkConfig) {
         MemberAddressProviderConfig memberAddressProviderConfig = memberAddressProviderConfig(advancedNetworkConfig);
 
@@ -2568,48 +2547,11 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
     private void handleManagementCenterConfig(Node node) {
         NamedNodeMap attrs = node.getAttributes();
 
-        Node enabledNode = attrs.getNamedItem("enabled");
-        boolean enabled = enabledNode != null && getBooleanValue(getTextContent(enabledNode));
-
-        Node intervalNode = attrs.getNamedItem("update-interval");
-        int interval = intervalNode != null ? getIntegerValue("update-interval",
-                getTextContent(intervalNode)) : ManagementCenterConfig.UPDATE_INTERVAL;
-
         ManagementCenterConfig managementCenterConfig = config.getManagementCenterConfig();
-        managementCenterConfig.setEnabled(enabled);
-        managementCenterConfig.setUpdateInterval(interval);
 
         Node scriptingEnabledNode = attrs.getNamedItem("scripting-enabled");
         if (scriptingEnabledNode != null) {
             managementCenterConfig.setScriptingEnabled(getBooleanValue(getTextContent(scriptingEnabledNode)));
-        }
-
-        handleManagementCenterChildElements(node, managementCenterConfig);
-    }
-
-    private void handleManagementCenterChildElements(Node node, ManagementCenterConfig managementCenterConfig) {
-        // < 3.9 - Backwards compatibility
-        boolean isComplexType = false;
-        List<String> complexTypeElements = Arrays.asList("url", "mutual-auth");
-        for (Node c : childElements(node)) {
-            if (complexTypeElements.contains(c.getNodeName())) {
-                isComplexType = true;
-                break;
-            }
-        }
-
-        if (!isComplexType) {
-            String url = getTextContent(node);
-            managementCenterConfig.setUrl("".equals(url) ? null : url);
-        } else {
-            for (Node child : childElements(node)) {
-                if ("url".equals(cleanNodeName(child))) {
-                    String url = getTextContent(child);
-                    managementCenterConfig.setUrl(url);
-                } else if ("mutual-auth".equals(cleanNodeName(child))) {
-                    handleMcMutualAuthConfig(child);
-                }
-            }
         }
     }
 

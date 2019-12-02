@@ -183,7 +183,7 @@ public class MapLoaderTest extends HazelcastTestSupport {
         HazelcastInstance instance = createHazelcastInstance(config);
         IMap<String, String> map = instance.getMap(name);
 
-        final Set<String> keys = new HashSet<String>();
+        final Set<String> keys = new HashSet<>();
         keys.add("key");
         keys.add(null);
 
@@ -215,7 +215,7 @@ public class MapLoaderTest extends HazelcastTestSupport {
 
                     @Override
                     public Map<String, String> loadAll(Collection<String> keys) {
-                        Map<String, String> val = new HashMap<String, String>();
+                        Map<String, String> val = new HashMap<>();
                         if (keys.contains("1")) {
                             val.put("1", "1");
                         }
@@ -230,7 +230,7 @@ public class MapLoaderTest extends HazelcastTestSupport {
 
                     @Override
                     public Iterable<String> loadAllKeys() {
-                        List<String> keys = new ArrayList<String>();
+                        List<String> keys = new ArrayList<>();
                         keys.add("1");
                         keys.add("2");
                         keys.add("3");
@@ -288,7 +288,7 @@ public class MapLoaderTest extends HazelcastTestSupport {
 
                     @Override
                     public Map<String, String> loadAll(Collection<String> keys) {
-                        Map<String, String> val = new HashMap<String, String>();
+                        Map<String, String> val = new HashMap<>();
                         if (keys.contains("1")) {
                             val.put("1", "1");
                         }
@@ -303,7 +303,7 @@ public class MapLoaderTest extends HazelcastTestSupport {
 
                     @Override
                     public Iterable<String> loadAllKeys() {
-                        List<String> keys = new ArrayList<String>();
+                        List<String> keys = new ArrayList<>();
                         keys.add("1");
                         keys.add("2");
                         keys.add("3");
@@ -351,7 +351,7 @@ public class MapLoaderTest extends HazelcastTestSupport {
 
                     @Override
                     public Map<String, String> loadAll(Collection<String> keys) {
-                        Map<String, String> val = new HashMap<String, String>();
+                        Map<String, String> val = new HashMap<>();
                         if (keys.contains("1")) {
                             val.put("1", "1");
                         }
@@ -366,7 +366,7 @@ public class MapLoaderTest extends HazelcastTestSupport {
 
                     @Override
                     public Iterable<String> loadAllKeys() {
-                        List<String> keys = new ArrayList<String>();
+                        List<String> keys = new ArrayList<>();
                         keys.add("1");
                         keys.add("2");
                         keys.add("3");
@@ -422,7 +422,7 @@ public class MapLoaderTest extends HazelcastTestSupport {
 
                     @Override
                     public Map<String, String> loadAll(Collection keys) {
-                        Map<String, String> val = new HashMap<String, String>();
+                        Map<String, String> val = new HashMap<>();
                         if (keys.contains("1")) {
                             val.put("1", "1");
                         }
@@ -437,7 +437,7 @@ public class MapLoaderTest extends HazelcastTestSupport {
 
                     @Override
                     public Iterable<String> loadAllKeys() {
-                        List<String> keys = new ArrayList<String>();
+                        List<String> keys = new ArrayList<>();
                         keys.add("1");
                         keys.add(null);
                         keys.add("3");
@@ -521,21 +521,16 @@ public class MapLoaderTest extends HazelcastTestSupport {
                     @Override
                     public Map<Object, Object> loadAll(Collection keys) {
                         loadAllCalled.set(true);
-                        return new HashMap<Object, Object>();
+                        return new HashMap<>();
                     }
 
                     @Override
                     public Set<Object> loadAllKeys() {
-                        return new HashSet<Object>(Collections.singletonList(1));
+                        return new HashSet<>(Collections.singletonList(1));
                     }
                 });
 
-        ManagementCenterConfig managementCenterConfig = new ManagementCenterConfig()
-                .setEnabled(true)
-                .setUrl("http://127.0.0.1:8090/mancenter");
-
-        Config config = getConfig()
-                .setManagementCenterConfig(managementCenterConfig);
+        Config config = getConfig();
 
         MapConfig mapConfig = config.getMapConfig("foo")
                 .setMapStoreConfig(mapStoreConfig);
@@ -543,12 +538,7 @@ public class MapLoaderTest extends HazelcastTestSupport {
         HazelcastInstance hz = createHazelcastInstance(config);
         hz.getMap(mapConfig.getName());
 
-        assertTrueAllTheTime(new AssertTask() {
-            @Override
-            public void run() {
-                assertFalse("LoadAll should not have been called", loadAllCalled.get());
-            }
-        }, 10);
+        assertTrueAllTheTime(() -> assertFalse("LoadAll should not have been called", loadAllCalled.get()), 10);
     }
 
     @Test
@@ -601,7 +591,7 @@ public class MapLoaderTest extends HazelcastTestSupport {
                 .withPartitionCount(1)
                 .build();
 
-        Set<Integer> keySet = new HashSet<Integer>(Arrays.asList(requestedKeys));
+        Set<Integer> keySet = new HashSet<>(Arrays.asList(requestedKeys));
 
         map.getAll(keySet);
         map.getAll(keySet);
@@ -640,15 +630,12 @@ public class MapLoaderTest extends HazelcastTestSupport {
         // the result from the first load before initiating a second load but
         // unfortunately we can't observe this as some partitions are completed
         // twice and we might just end up observing the first completion.
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                try {
-                    map.loadAll(true);
-                    assertEquals(1, map.size());
-                } catch (IllegalStateException e) {
-                    logger.info("Map load observed result from a previous load, retrying...", e);
-                }
+        assertTrueEventually(() -> {
+            try {
+                map.loadAll(true);
+                assertEquals(1, map.size());
+            } catch (IllegalStateException e) {
+                logger.info("Map load observed result from a previous load, retrying...", e);
             }
         });
     }
@@ -687,7 +674,7 @@ public class MapLoaderTest extends HazelcastTestSupport {
             public Map<Integer, Integer> loadAll(Collection<Integer> keys) {
                 loadAllCounter.addAndGet(keys.size());
 
-                Map<Integer, Integer> map = new HashMap<Integer, Integer>();
+                Map<Integer, Integer> map = new HashMap<>();
                 for (Integer key : keys) {
                     map.put(key, key);
                 }
@@ -717,7 +704,7 @@ public class MapLoaderTest extends HazelcastTestSupport {
 
         @Override
         public Map<Integer, Integer> loadAll(Collection<Integer> keys) {
-            Map<Integer, Integer> entries = new HashMap<Integer, Integer>(keys.size());
+            Map<Integer, Integer> entries = new HashMap<>(keys.size());
             for (Integer key : keys) {
                 entries.put(key, key);
             }
@@ -726,7 +713,7 @@ public class MapLoaderTest extends HazelcastTestSupport {
 
         @Override
         public Iterable<Integer> loadAllKeys() {
-            Collection<Integer> keys = new ArrayList<Integer>();
+            Collection<Integer> keys = new ArrayList<>();
             for (int i = 0; i < entriesCount; i++) {
                 keys.add(i);
             }
@@ -751,25 +738,19 @@ public class MapLoaderTest extends HazelcastTestSupport {
 
     @SuppressWarnings("SameParameterValue")
     private void assertLoadAllKeysCount(final SampleIndexableObjectMapLoader loader, final int instanceCount) {
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertEquals("call-count of loadAllKeys method is problematic", instanceCount, loader.loadAllKeysCallCount.get());
-            }
-        });
+        assertTrueEventually(
+                () -> assertEquals("call-count of loadAllKeys method is problematic",
+                        instanceCount, loader.loadAllKeysCallCount.get()));
     }
 
     private void assertPredicateResultCorrect(final IMap<Integer, SampleIndexableObject> map, final Predicate predicate) {
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                final int mapSize = map.size();
-                final String message = format("Map size is %d", mapSize);
+        assertTrueEventually(() -> {
+            final int mapSize = map.size();
+            final String message = format("Map size is %d", mapSize);
 
-                Set<Map.Entry<Integer, SampleIndexableObject>> result = map.entrySet(predicate);
-                assertEquals(message, 1, result.size());
-                assertEquals(message, 5, (int) result.iterator().next().getValue().value);
-            }
+            Set<Map.Entry<Integer, SampleIndexableObject>> result = map.entrySet(predicate);
+            assertEquals(message, 1, result.size());
+            assertEquals(message, 5, (int) result.iterator().next().getValue().value);
         });
     }
 
@@ -817,7 +798,7 @@ public class MapLoaderTest extends HazelcastTestSupport {
 
         static final int DEFAULT_SIZE = 1000;
 
-        final Map<Integer, Integer> map = new ConcurrentHashMap<Integer, Integer>(DEFAULT_SIZE);
+        final Map<Integer, Integer> map = new ConcurrentHashMap<>(DEFAULT_SIZE);
 
         public DummyMapLoader() {
             this(DEFAULT_SIZE);
@@ -836,7 +817,7 @@ public class MapLoaderTest extends HazelcastTestSupport {
 
         @Override
         public Map<Integer, Integer> loadAll(Collection<Integer> keys) {
-            HashMap<Integer, Integer> hashMap = new HashMap<Integer, Integer>();
+            HashMap<Integer, Integer> hashMap = new HashMap<>();
             for (Integer key : keys) {
                 hashMap.put(key, map.get(key));
             }
@@ -855,7 +836,7 @@ public class MapLoaderTest extends HazelcastTestSupport {
         volatile boolean preloadValues = false;
 
         private SampleIndexableObject[] values = new SampleIndexableObject[10];
-        private Set<Integer> keys = new HashSet<Integer>();
+        private Set<Integer> keys = new HashSet<>();
         private AtomicInteger loadAllKeysCallCount = new AtomicInteger(0);
 
         public SampleIndexableObjectMapLoader() {
@@ -878,7 +859,7 @@ public class MapLoaderTest extends HazelcastTestSupport {
             if (!preloadValues) {
                 return Collections.emptyMap();
             }
-            Map<Integer, SampleIndexableObject> data = new HashMap<Integer, SampleIndexableObject>();
+            Map<Integer, SampleIndexableObject> data = new HashMap<>();
             for (Integer key : keys) {
                 data.put(key, values[key]);
             }
@@ -986,7 +967,6 @@ public class MapLoaderTest extends HazelcastTestSupport {
         @Override
         public void stateChanged(LifecycleEvent event) {
             logger.info("State changed for " + nodeInfo + " to " + event.getState());
-
         }
     }
 }

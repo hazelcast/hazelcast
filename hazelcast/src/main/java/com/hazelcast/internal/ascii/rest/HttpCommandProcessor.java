@@ -30,8 +30,7 @@ import static com.hazelcast.internal.util.StringUtil.stringToBytes;
 public abstract class HttpCommandProcessor<T> extends AbstractTextCommandProcessor<T> {
     public static final String URI_MAPS = "/hazelcast/rest/maps/";
     public static final String URI_QUEUES = "/hazelcast/rest/queues/";
-    public static final String URI_MANCENTER_BASE_URL = "/hazelcast/rest/mancenter";
-    public static final String URI_UPDATE_PERMISSIONS = URI_MANCENTER_BASE_URL + "/security/permissions";
+    public static final String URI_WAN_BASE_URL = "/hazelcast/rest/wan";
     public static final String URI_HEALTH_URL = "/hazelcast/health";
     public static final String URI_HEALTH_READY = URI_HEALTH_URL + "/ready";
 
@@ -56,19 +55,14 @@ public abstract class HttpCommandProcessor<T> extends AbstractTextCommandProcess
             = URI_CLUSTER_MANAGEMENT_BASE_URL + "/hotBackupInterrupt";
 
     // WAN
-    public static final String URI_WAN_SYNC_MAP = URI_MANCENTER_BASE_URL + "/wan/sync/map";
-    public static final String URI_WAN_SYNC_ALL_MAPS = URI_MANCENTER_BASE_URL + "/wan/sync/allmaps";
-    public static final String URI_MANCENTER_WAN_CLEAR_QUEUES = URI_MANCENTER_BASE_URL + "/wan/clearWanQueues";
-    public static final String URI_ADD_WAN_CONFIG = URI_MANCENTER_BASE_URL + "/wan/addWanConfig";
-    public static final String URI_WAN_PAUSE_PUBLISHER = URI_MANCENTER_BASE_URL + "/wan/pausePublisher";
-    public static final String URI_WAN_STOP_PUBLISHER = URI_MANCENTER_BASE_URL + "/wan/stopPublisher";
-    public static final String URI_WAN_RESUME_PUBLISHER = URI_MANCENTER_BASE_URL + "/wan/resumePublisher";
-    public static final String URI_WAN_CONSISTENCY_CHECK_MAP = URI_MANCENTER_BASE_URL + "/wan/consistencyCheck/map";
-
-    public static final String LEGACY_URI_WAN_SYNC_MAP = "/hazelcast/rest/wan/sync/map";
-    public static final String LEGACY_URI_WAN_SYNC_ALL_MAPS = "/hazelcast/rest/wan/sync/allmaps";
-    public static final String LEGACY_URI_MANCENTER_WAN_CLEAR_QUEUES = "/hazelcast/rest/mancenter/clearWanQueues";
-    public static final String LEGACY_URI_ADD_WAN_CONFIG = "/hazelcast/rest/wan/addWanConfig";
+    public static final String URI_WAN_SYNC_MAP = URI_WAN_BASE_URL + "/sync/map";
+    public static final String URI_WAN_SYNC_ALL_MAPS = URI_WAN_BASE_URL + "/sync/allmaps";
+    public static final String URI_WAN_CLEAR_QUEUES = URI_WAN_BASE_URL + "/clearWanQueues";
+    public static final String URI_ADD_WAN_CONFIG = URI_WAN_BASE_URL + "/addWanConfig";
+    public static final String URI_WAN_PAUSE_PUBLISHER = URI_WAN_BASE_URL + "/pausePublisher";
+    public static final String URI_WAN_STOP_PUBLISHER = URI_WAN_BASE_URL + "/stopPublisher";
+    public static final String URI_WAN_RESUME_PUBLISHER = URI_WAN_BASE_URL + "/resumePublisher";
+    public static final String URI_WAN_CONSISTENCY_CHECK_MAP = URI_WAN_BASE_URL + "/consistencyCheck/map";
 
     // License info
     public static final String URI_LICENSE_INFO = "/hazelcast/rest/license";
@@ -81,6 +75,9 @@ public abstract class HttpCommandProcessor<T> extends AbstractTextCommandProcess
     public static final String URI_REMOVE_SUFFIX = "/remove";
     public static final String URI_CP_MEMBERS_URL = URI_CP_SUBSYSTEM_BASE_URL + "/members";
     public static final String URI_LOCAL_CP_MEMBER_URL = URI_CP_MEMBERS_URL + "/local";
+
+    // Security
+    public static final String URI_UPDATE_PERMISSIONS = "/hazelcast/rest/management/security/permissions";
 
     protected HttpCommandProcessor(TextCommandService textCommandService) {
         super(textCommandService);
