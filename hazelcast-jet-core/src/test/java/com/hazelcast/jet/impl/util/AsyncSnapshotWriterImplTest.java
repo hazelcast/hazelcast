@@ -55,6 +55,7 @@ import java.util.stream.Stream;
 
 import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.impl.util.Util.uncheckCall;
+import static java.util.Collections.nCopies;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Stream.generate;
 import static junit.framework.TestCase.assertEquals;
@@ -73,6 +74,7 @@ public class AsyncSnapshotWriterImplTest extends JetTestSupport {
     @Rule
     public ExpectedException exception = ExpectedException.none();
 
+    private NodeEngineImpl nodeEngine;
     private AsyncSnapshotWriterImpl writer;
     private IMap<SnapshotDataKey, byte[]> map;
     private InternalSerializationService serializationService;
@@ -89,7 +91,7 @@ public class AsyncSnapshotWriterImplTest extends JetTestSupport {
               .setImplementation(new AlwaysFailingMapStore());
 
         JetInstance instance = createJetMember(jetConfig);
-        NodeEngineImpl nodeEngine = ((HazelcastInstanceImpl) instance.getHazelcastInstance()).node.nodeEngine;
+        nodeEngine = ((HazelcastInstanceImpl) instance.getHazelcastInstance()).node.nodeEngine;
         serializationService = ((HazelcastInstanceImpl) instance.getHazelcastInstance()).getSerializationService();
         partitionService = nodeEngine.getPartitionService();
         snapshotContext = mock(SnapshotContext.class);
@@ -98,7 +100,7 @@ public class AsyncSnapshotWriterImplTest extends JetTestSupport {
         writer = new AsyncSnapshotWriterImpl(128, nodeEngine, snapshotContext, "vertex", 0, 1);
         when(snapshotContext.currentSnapshotId()).thenReturn(1L); // simulates starting new snapshot
         map = instance.getHazelcastInstance().getMap("map1");
-        assertTrue(writer.usableChunkSize > 0);
+        assertTrue(writer.usableChunkCapacity > 0);
     }
 
     @After
@@ -106,6 +108,20 @@ public class AsyncSnapshotWriterImplTest extends JetTestSupport {
         assertTrue(writer.flushAndResetMap());
         assertTrueEventually(() -> assertFalse(uncheckCall(() -> writer.hasPendingAsyncOps())));
         assertTrue(writer.isEmpty());
+    }
+
+    @Test
+    public void test_flushingAtEdgeCases() {
+        for (int i = 64; i < 196; i++) {
+            when(snapshotContext.currentMapName()).thenReturn(randomMapName());
+            writer = new AsyncSnapshotWriterImpl(128, nodeEngine, snapshotContext, "vertex", 0, 1);
+            try {
+                assertTrue(writer.offer(entry(serialize("k"), serialize(String.join("", nCopies(i, "a"))))));
+                assertTrue(writer.flushAndResetMap());
+            } catch (Exception e) {
+                throw new RuntimeException("error at i=" + i, e);
+            }
+        }
     }
 
     @Test
@@ -126,7 +142,8 @@ public class AsyncSnapshotWriterImplTest extends JetTestSupport {
     public void when_chunkSizeWouldExceedLimit_then_flushedAutomatically() {
         // When
         Entry<Data, Data> entry = entry(serialize("k"), serialize("v"));
-        int entriesInChunk = (writer.usableChunkSize - writer.serializedByteArrayHeader.length) / serializedLength(entry);
+        int entriesInChunk =
+                (writer.usableChunkCapacity - writer.serializedByteArrayHeader.length) / serializedLength(entry);
         assertTrue("entriesInChunk=" + entriesInChunk, entriesInChunk > 1 && entriesInChunk < 10);
 
         for (int i = 0; i < entriesInChunk; i++) {
@@ -177,7 +194,7 @@ public class AsyncSnapshotWriterImplTest extends JetTestSupport {
         String key = "k";
         String value = generate(() -> "a").limit(128).collect(joining());
         Entry<Data, Data> entry = entry(serialize(key), serialize(value));
-        assertTrue("entry not longer than usable chunk size", serializedLength(entry) > writer.usableChunkSize);
+        assertTrue("entry not longer than usable chunk size", serializedLength(entry) > writer.usableChunkCapacity);
         assertTrue(writer.offer(entry));
 
         // Then
@@ -201,7 +218,8 @@ public class AsyncSnapshotWriterImplTest extends JetTestSupport {
         // artificially increase number of async ops so that the writer cannot proceed
         writer.numConcurrentAsyncOps.set(JetService.MAX_PARALLEL_ASYNC_OPS);
         Entry<Data, Data> entry = entry(serialize("k"), serialize("v"));
-        int entriesInChunk = (writer.usableChunkSize - writer.serializedByteArrayHeader.length) / serializedLength(entry);
+        int entriesInChunk =
+                (writer.usableChunkCapacity - writer.serializedByteArrayHeader.length) / serializedLength(entry);
         assertTrue("entriesInChunk=" + entriesInChunk, entriesInChunk > 1 && entriesInChunk < 10);
         for (int i = 0; i < entriesInChunk; i++) {
             assertTrue(writer.offer(entry));
