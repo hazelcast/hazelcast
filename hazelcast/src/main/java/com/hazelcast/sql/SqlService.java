@@ -16,9 +16,6 @@
 
 package com.hazelcast.sql;
 
-import com.hazelcast.cluster.Address;
-import com.hazelcast.sql.impl.operation.QueryOperation;
-
 /**
  * Service to query Hazelcast data with SQL.
  */
@@ -34,12 +31,4 @@ public interface SqlService {
      * @return Cursor.
      */
     SqlCursor query(String sql, Object... args);
-
-    /**
-     * Sends the request to the target node.
-     *
-     * @param operation Operation.
-     * @param address Address.
-     */
-    void sendRequest(QueryOperation operation, Address address);
 }

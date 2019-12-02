@@ -172,7 +172,6 @@ public class SqlServiceImpl implements SqlService, ManagedService, Consumer<Pack
         return new QueryHandle(queryId, plan, consumer);
     }
 
-    @Override
     public void sendRequest(QueryOperation operation, Address address) {
         assert operation != null;
         assert address != null;
