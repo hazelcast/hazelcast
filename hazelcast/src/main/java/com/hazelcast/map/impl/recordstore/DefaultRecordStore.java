@@ -1124,10 +1124,15 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
     public boolean isLoaded() {
         boolean result = FutureUtil.allDone(loadingFutures);
         if (result) {
-            loadingFutures.removeAll(loadingFutures);
+            loadingFutures.removeAll(FutureUtil.getAllDone(loadingFutures));
         }
 
         return result;
+    }
+
+    // only used for testing purposes
+    public Collection<Future> getLoadingFutures() {
+        return loadingFutures;
     }
 
     @Override
