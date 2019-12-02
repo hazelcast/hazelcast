@@ -51,10 +51,12 @@ public class SqlTestSupport {
         return plan.getFragments().get(0);
     }
 
-    protected SqlCursorImpl executeQuery(HazelcastInstance target, String sql) {
-        SqlCursor cursor = target.getSqlService().query(sql);
+    protected SqlCursor executeQuery(HazelcastInstance target, String sql) {
+        return target.getSqlService().query(sql);
+    }
 
-        return (SqlCursorImpl) cursor;
+    protected SqlCursorImpl executeQueryEx(HazelcastInstance target, String sql) {
+        return (SqlCursorImpl) executeQuery(target, sql);
     }
 
     protected List<SqlRow> getQueryRows(SqlCursor cursor) {

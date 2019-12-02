@@ -46,6 +46,10 @@ public class ModelGenerator {
     }
 
     public static void generatePerson(HazelcastInstance member) {
+        generatePerson(member, PERSON_CNT);
+    }
+
+    public static void generatePerson(HazelcastInstance member, int personCnt) {
         // Prepare config.
         ReplicatedMapConfig cityCfg = new ReplicatedMapConfig(CITY);
         cityCfg.setAsyncFillup(false);
@@ -82,7 +86,7 @@ public class ModelGenerator {
         int age = 40;
         long salary = 1000;
 
-        for (int i = 0; i < PERSON_CNT; i++) {
+        for (int i = 0; i < personCnt; i++) {
             int deptId = i % DEPARTMENT_CNT;
 
             PersonKey key = new PersonKey(i, deptId);

@@ -17,7 +17,6 @@
 package com.hazelcast.sql;
 
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.sql.impl.SqlCursorImpl;
 import com.hazelcast.sql.support.ModelGenerator;
 import com.hazelcast.sql.support.SqlTestSupport;
 import com.hazelcast.sql.support.model.person.Person;
@@ -75,7 +74,7 @@ public class AggregateSqlTest extends SqlTestSupport {
             collector.add(person.getSalary());
         }
 
-        SqlCursorImpl cursor = executeQuery(
+        SqlCursor cursor = executeQuery(
             member,
             "SELECT SUM(salary), COUNT(salary), AVG(salary), MIN(salary), MAX(salary) FROM person"
         );
@@ -106,7 +105,7 @@ public class AggregateSqlTest extends SqlTestSupport {
             collectors.computeIfAbsent(deptId, (k) -> new PersonSalaryCollector()).add(salary);
         }
 
-        SqlCursorImpl cursor = executeQuery(
+        SqlCursor cursor = executeQuery(
             member,
             "SELECT deptId, SUM(salary), COUNT(salary), AVG(salary), MIN(salary), MAX(salary) FROM person GROUP BY deptId"
         );
@@ -142,7 +141,7 @@ public class AggregateSqlTest extends SqlTestSupport {
             collectors.computeIfAbsent(deptTitle, (k) -> new PersonSalaryCollector()).add(salary);
         }
 
-        SqlCursorImpl cursor = executeQuery(
+        SqlCursor cursor = executeQuery(
             member,
             "SELECT deptTitle, SUM(salary), COUNT(salary), AVG(salary), MIN(salary), MAX(salary) FROM person GROUP BY deptTitle"
         );

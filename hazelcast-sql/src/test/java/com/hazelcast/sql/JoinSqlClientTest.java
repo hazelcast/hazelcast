@@ -16,17 +16,15 @@
 
 package com.hazelcast.sql;
 
+import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.sql.impl.QueryFragment;
-import com.hazelcast.sql.impl.QueryPlan;
+import com.hazelcast.sql.impl.client.SqlClientServiceImpl;
 import com.hazelcast.sql.support.ModelGenerator;
 import com.hazelcast.sql.support.SqlTestSupport;
 import com.hazelcast.test.HazelcastSerialClassRunner;
-import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.AfterClass;
-import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -38,18 +36,21 @@ import static junit.framework.TestCase.assertEquals;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class JoinSqlTest extends SqlTestSupport {
-    private static TestHazelcastInstanceFactory factory;
-    private static HazelcastInstance member;
+public class JoinSqlClientTest extends SqlTestSupport {
+    /** Make sure that we fetch several pages. */
+    private static final int PERSON_CNT = SqlClientServiceImpl.DEFAULT_PAGE_SIZE * 2;
+
+    private static TestHazelcastFactory factory;
+    private static HazelcastInstance client;
 
     @BeforeClass
     public static void beforeClass() {
-        factory = new TestHazelcastInstanceFactory(2);
+        factory = new TestHazelcastFactory(2);
 
-        member = factory.newHazelcastInstance();
-        factory.newHazelcastInstance();
+        HazelcastInstance member = factory.newHazelcastInstance();
+        client = factory.newHazelcastClient();
 
-        ModelGenerator.generatePerson(member);
+        ModelGenerator.generatePerson(member, PERSON_CNT);
     }
 
     @AfterClass
@@ -60,42 +61,14 @@ public class JoinSqlTest extends SqlTestSupport {
     }
 
     @Test
-    public void testEquiPartitionedPartitionedNonCollocated() {
+    public void testJoinClient() {
         SqlCursor cursor = executeQuery(
-            member,
+            client,
             "SELECT p.name, p.deptTitle FROM person p INNER JOIN department d ON p.deptTitle = d.title"
         );
 
         List<SqlRow> rows = getQueryRows(cursor);
 
-        assertEquals(ModelGenerator.PERSON_CNT, rows.size());
-    }
-
-    @Test
-    public void testJoinConditionOn() {
-        List<SqlRow> res = getQueryRows(
-            member,
-            "SELECT p.name, d.title FROM person p INNER JOIN department d ON p.deptId = d.__key"
-        );
-
-        Assert.assertEquals(ModelGenerator.PERSON_CNT, res.size());
-    }
-
-    @Test
-    public void testJoinConditionWhere() {
-        QueryPlan planWhere = getPlan(
-            member,
-            "SELECT p.name, d.title FROM person p, department d WHERE p.deptId = d.__key"
-        );
-
-        QueryPlan planOn = getPlan(
-            member,
-            "SELECT p.name, d.title FROM person p INNER JOIN department d ON p.deptId = d.__key"
-        );
-
-        QueryFragment fragmentOn = planOn.getFragments().get(0);
-        QueryFragment fragmentWhere = planWhere.getFragments().get(0);
-
-        Assert.assertEquals(fragmentOn.getNode(), fragmentWhere.getNode());
+        assertEquals(PERSON_CNT, rows.size());
     }
 }

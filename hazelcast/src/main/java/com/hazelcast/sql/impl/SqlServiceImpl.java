@@ -23,6 +23,7 @@ import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.nio.EndpointManager;
 import com.hazelcast.internal.nio.Packet;
 import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.internal.services.ClientAwareService;
 import com.hazelcast.internal.services.ManagedService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.NodeEngine;
@@ -30,6 +31,8 @@ import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.SqlCursor;
 import com.hazelcast.sql.SqlService;
+import com.hazelcast.sql.impl.client.SqlClientPage;
+import com.hazelcast.sql.impl.client.SqlClientQueryRegistry;
 import com.hazelcast.sql.impl.operation.QueryBatchOperation;
 import com.hazelcast.sql.impl.operation.QueryExecuteOperation;
 import com.hazelcast.sql.impl.operation.QueryExecuteOperationFactory;
@@ -49,7 +52,7 @@ import java.util.function.Consumer;
 /**
  * Proxy for SQL service. Backed by either Calcite-based or no-op implementation.
  */
-public class SqlServiceImpl implements SqlService, ManagedService, Consumer<Packet> {
+public class SqlServiceImpl implements SqlService, ManagedService, ClientAwareService, Consumer<Packet> {
     /** Calcite optimizer class name. */
     private static final String OPTIMIZER_CLASS = "com.hazelcast.sql.impl.calcite.CalciteSqlOptimizer";
 
@@ -61,6 +64,9 @@ public class SqlServiceImpl implements SqlService, ManagedService, Consumer<Pack
 
     /** Query optimizer. */
     private final SqlOptimizer optimizer;
+
+    /** Currently active cursors. */
+    private final SqlClientQueryRegistry clientRegistry;
 
     /** Logger. */
     private final ILogger logger;
@@ -81,6 +87,8 @@ public class SqlServiceImpl implements SqlService, ManagedService, Consumer<Pack
         }
 
         workerPool = new QueryWorkerPool(nodeEngine, cfg.getThreadCount());
+
+        clientRegistry = new SqlClientQueryRegistry(nodeEngine);
     }
 
     @Override
@@ -172,6 +180,7 @@ public class SqlServiceImpl implements SqlService, ManagedService, Consumer<Pack
         return new QueryHandle(queryId, plan, consumer);
     }
 
+    @SuppressWarnings({"rawtypes", "unchecked"})
     public void sendRequest(QueryOperation operation, Address address) {
         assert operation != null;
         assert address != null;
@@ -192,7 +201,6 @@ public class SqlServiceImpl implements SqlService, ManagedService, Consumer<Pack
 
             Connection connection = endpointManager.getConnection(address);
 
-            @SuppressWarnings("unchecked")
             boolean res = endpointManager.transmit(packet, connection);
 
             // TODO: Proper handling.
@@ -227,7 +235,7 @@ public class SqlServiceImpl implements SqlService, ManagedService, Consumer<Pack
      * @param nodeEngine Node engine.
      * @return Optimizer.
      */
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings({"unchecked", "rawtypes"})
     private SqlOptimizer createOptimizer(NodeEngine nodeEngine) {
         SqlOptimizer res;
 
@@ -306,6 +314,37 @@ public class SqlServiceImpl implements SqlService, ManagedService, Consumer<Pack
         assert absoluteDeploymentOffset >= 0;
 
         return absoluteDeploymentOffset % workerPool.getThreadCount();
+    }
+
+    /**
+     * Execute query for the client.
+     *
+     * @param clientId Client ID.
+     * @param sql SQL.
+     * @param args Arguments.
+     * @return Query ID,
+     */
+    public QueryId queryClient(UUID clientId, String sql, Object... args) {
+        SqlCursorImpl res = (SqlCursorImpl) query(sql, args);
+
+        QueryId queryId = res.getHandle().getQueryId();
+
+        clientRegistry.execute(clientId, queryId, res);
+
+        return queryId;
+    }
+
+    public SqlClientPage fetchClient(UUID clientId, QueryId queryId, int pageSize) {
+        return clientRegistry.fetch(clientId, queryId, pageSize);
+    }
+
+    public void closeClient(UUID clientId, QueryId queryId) {
+        clientRegistry.close(clientId, queryId);
+    }
+
+    @Override
+    public void clientDisconnected(UUID clientUuid) {
+        clientRegistry.onClientDisconnected(clientUuid);
     }
 
     private static boolean isExplain(String sql) {

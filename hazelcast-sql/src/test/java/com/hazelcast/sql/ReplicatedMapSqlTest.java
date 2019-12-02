@@ -78,7 +78,7 @@ public class ReplicatedMapSqlTest extends SqlTestSupport {
             expNames.add(city.getName());
         }
 
-        try (SqlCursorImpl cursor = executeQuery(member, "SELECT name FROM city")) {
+        try (SqlCursorImpl cursor = executeQueryEx(member, "SELECT name FROM city")) {
             QueryPlan plan = cursor.getHandle().getPlan();
 
             assertEquals(1, plan.getFragments().size());
@@ -107,7 +107,7 @@ public class ReplicatedMapSqlTest extends SqlTestSupport {
             expNames.add(city.getName());
         }
 
-        try (SqlCursorImpl cursor = executeQuery(member, "SELECT name FROM (SELECT name FROM city)")) {
+        try (SqlCursorImpl cursor = executeQueryEx(member, "SELECT name FROM (SELECT name FROM city)")) {
             QueryPlan plan = cursor.getHandle().getPlan();
 
             assertEquals(1, plan.getFragments().size());
@@ -132,7 +132,7 @@ public class ReplicatedMapSqlTest extends SqlTestSupport {
 
         String name = city.getValue().getName();
 
-        try (SqlCursorImpl cursor = executeQuery(member, "SELECT name FROM city WHERE name='" + name + "'")) {
+        try (SqlCursorImpl cursor = executeQueryEx(member, "SELECT name FROM city WHERE name='" + name + "'")) {
             QueryPlan plan = cursor.getHandle().getPlan();
 
             assertEquals(1, plan.getFragments().size());

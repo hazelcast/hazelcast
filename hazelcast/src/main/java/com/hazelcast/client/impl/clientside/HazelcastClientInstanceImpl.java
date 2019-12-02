@@ -73,6 +73,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IExecutorService;
 import com.hazelcast.map.IMap;
 import com.hazelcast.sql.SqlService;
+import com.hazelcast.sql.impl.client.SqlClientServiceImpl;
 import com.hazelcast.topic.ITopic;
 import com.hazelcast.core.LifecycleService;
 import com.hazelcast.cp.CPSubsystem;
@@ -190,6 +191,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
     private final ClientProxySessionManager proxySessionManager;
     private final CPSubsystemImpl cpSubsystem;
     private final ManagementCenterService managementCenterService;
+    private final SqlClientServiceImpl sqlService;
 
     public HazelcastClientInstanceImpl(ClientConfig clientConfig,
                                        ClientFailoverConfig clientFailoverConfig,
@@ -197,11 +199,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
                                        AddressProvider externalAddressProvider) {
         assert clientConfig != null || clientFailoverConfig != null : "At most one type of config can be provided";
         assert clientConfig == null || clientFailoverConfig == null : "At least one config should be provided ";
-        if (clientConfig != null) {
-            this.config = clientConfig;
-        } else {
-            this.config = clientFailoverConfig.getClientConfigs().get(0);
-        }
+        this.config = clientConfig != null ? clientConfig : clientFailoverConfig.getClientConfigs().get(0);
         this.clientFailoverConfig = clientFailoverConfig;
         if (config.getInstanceName() != null) {
             instanceName = config.getInstanceName();
@@ -253,6 +251,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         proxySessionManager = new ClientProxySessionManager(this);
         cpSubsystem = new CPSubsystemImpl(this);
         managementCenterService = new ManagementCenterService(this, serializationService);
+        sqlService = new SqlClientServiceImpl(this);
     }
 
     private ConcurrentMap<String, NearCacheManager> createNearCacheManagers() {
@@ -818,7 +817,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
 
     @Override
     public SqlService getSqlService() {
-        throw new UnsupportedOperationException();
+        return sqlService;
     }
 
     public void clear() {

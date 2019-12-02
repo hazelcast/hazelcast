@@ -332,7 +332,7 @@ public class NodeEngineImpl implements NodeEngine {
     }
 
     @Override
-    public SqlService getSqlService() {
+    public SqlServiceImpl getSqlService() {
         return sqlService;
     }
 
