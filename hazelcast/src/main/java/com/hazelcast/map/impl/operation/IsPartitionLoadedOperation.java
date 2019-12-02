@@ -20,7 +20,8 @@ import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.spi.impl.operationservice.PartitionAwareOperation;
 import com.hazelcast.spi.impl.operationservice.ReadonlyOperation;
 
-public class IsPartitionLoadedOperation extends MapOperation implements PartitionAwareOperation, ReadonlyOperation {
+public class IsPartitionLoadedOperation extends MapOperation
+        implements PartitionAwareOperation, ReadonlyOperation {
 
     private boolean isFinished;
 
