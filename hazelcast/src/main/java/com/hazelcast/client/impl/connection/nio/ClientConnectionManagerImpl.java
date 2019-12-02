@@ -758,7 +758,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
                 clusterId = newClusterId;
 
                 if (changedCluster) {
-                    client.clear();
+                    client.onClusterChange();
                 }
                 activeConnections.put(resolveAddress(result.address), connection);
                 fireConnectionAddedEvent(connection);

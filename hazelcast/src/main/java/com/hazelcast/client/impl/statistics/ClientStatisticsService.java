@@ -33,6 +33,7 @@ import com.hazelcast.internal.metrics.impl.MetricsCompressor;
 import com.hazelcast.internal.metrics.impl.PublisherMetricsCollector;
 import com.hazelcast.internal.metrics.jmx.JmxPublisher;
 import com.hazelcast.internal.monitor.impl.NearCacheStatsImpl;
+import com.hazelcast.internal.nearcache.NearCacheManager;
 import com.hazelcast.internal.nio.ConnectionType;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
@@ -40,6 +41,7 @@ import com.hazelcast.security.Credentials;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ConcurrentMap;
 
 import static java.util.concurrent.TimeUnit.SECONDS;
 
@@ -49,6 +51,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
  * it will be scheduled for periodic statistics collection and sent.
  */
 public class ClientStatisticsService {
+
     private static final String NEAR_CACHE_CATEGORY_PREFIX = "nc.";
     private static final char STAT_SEPARATOR = ',';
     private static final char KEY_VALUE_SEPARATOR = '=';
@@ -64,6 +67,8 @@ public class ClientStatisticsService {
     private final ClientMetricsConfig metricsConfig;
 
     private PeriodicStatistics periodicStats;
+
+    private volatile ConcurrentMap<String, NearCacheManager> nearCacheManagers;
 
     public ClientStatisticsService(final HazelcastClientInstanceImpl clientInstance) {
         this.metricsConfig = clientInstance.getClientConfig().getMetricsConfig();
@@ -81,7 +86,6 @@ public class ClientStatisticsService {
             return;
         }
 
-        metricsRegistry.registerDynamicMetricsProvider(new NearCacheMetricsProvider(client.getNearCacheManagers().values()));
         metricsRegistry.registerDynamicMetricsProvider(new ClusterConnectionMetricsProvider(client.getConnectionManager()));
 
         long periodSeconds = metricsConfig.getCollectionFrequencySeconds();
@@ -120,7 +124,7 @@ public class ClientStatisticsService {
 
         ClientMetricCollector clientMetricCollector = new ClientMetricCollector();
         CompositeMetricsCollector compositeMetricsCollector = new CompositeMetricsCollector(clientMetricCollector,
-            publisherMetricsCollector);
+                publisherMetricsCollector);
 
         client.getClientExecutionService().scheduleWithRepetition(() -> {
             long collectionTimestamp = System.currentTimeMillis();
@@ -143,40 +147,40 @@ public class ClientStatisticsService {
     }
 
     private void addNearCacheStats(final StringBuilder stats) {
-        client.getNearCacheManagers()
-            .values()
-            .stream()
-            .flatMap(nearCacheManager -> nearCacheManager.listAllNearCaches().stream())
-            .forEach(
-                nearCache -> {
-                    String nearCacheName = nearCache.getName();
-                    StringBuilder nearCacheNameWithPrefix = getNameWithPrefix(nearCacheName);
+        nearCacheManagers
+                .values()
+                .stream()
+                .flatMap(nearCacheManager -> nearCacheManager.listAllNearCaches().stream())
+                .forEach(
+                        nearCache -> {
+                            String nearCacheName = nearCache.getName();
+                            StringBuilder nearCacheNameWithPrefix = getNameWithPrefix(nearCacheName);
 
-                    nearCacheNameWithPrefix.append('.');
+                            nearCacheNameWithPrefix.append('.');
 
-                    NearCacheStatsImpl nearCacheStats = (NearCacheStatsImpl) nearCache.getNearCacheStats();
+                            NearCacheStatsImpl nearCacheStats = (NearCacheStatsImpl) nearCache.getNearCacheStats();
 
-                    String prefix = nearCacheNameWithPrefix.toString();
+                            String prefix = nearCacheNameWithPrefix.toString();
 
-                    addStat(stats, prefix, "creationTime", nearCacheStats.getCreationTime());
-                    addStat(stats, prefix, "evictions", nearCacheStats.getEvictions());
-                    addStat(stats, prefix, "hits", nearCacheStats.getHits());
-                    addStat(stats, prefix, "lastPersistenceDuration", nearCacheStats.getLastPersistenceDuration());
-                    addStat(stats, prefix, "lastPersistenceKeyCount", nearCacheStats.getLastPersistenceKeyCount());
-                    addStat(stats, prefix, "lastPersistenceTime", nearCacheStats.getLastPersistenceTime());
-                    addStat(stats, prefix, "lastPersistenceWrittenBytes", nearCacheStats.getLastPersistenceWrittenBytes());
-                    addStat(stats, prefix, "misses", nearCacheStats.getMisses());
-                    addStat(stats, prefix, "ownedEntryCount", nearCacheStats.getOwnedEntryCount());
-                    addStat(stats, prefix, "expirations", nearCacheStats.getExpirations());
-                    addStat(stats, prefix, "invalidations", nearCacheStats.getInvalidations());
-                    addStat(stats, prefix, "invalidationRequests", nearCacheStats.getInvalidationRequests());
-                    addStat(stats, prefix, "ownedEntryMemoryCost", nearCacheStats.getOwnedEntryMemoryCost());
-                    String persistenceFailure = nearCacheStats.getLastPersistenceFailure();
-                    if (persistenceFailure != null && !persistenceFailure.isEmpty()) {
-                        addStat(stats, prefix, "lastPersistenceFailure", persistenceFailure);
-                    }
-                }
-            );
+                            addStat(stats, prefix, "creationTime", nearCacheStats.getCreationTime());
+                            addStat(stats, prefix, "evictions", nearCacheStats.getEvictions());
+                            addStat(stats, prefix, "hits", nearCacheStats.getHits());
+                            addStat(stats, prefix, "lastPersistenceDuration", nearCacheStats.getLastPersistenceDuration());
+                            addStat(stats, prefix, "lastPersistenceKeyCount", nearCacheStats.getLastPersistenceKeyCount());
+                            addStat(stats, prefix, "lastPersistenceTime", nearCacheStats.getLastPersistenceTime());
+                            addStat(stats, prefix, "lastPersistenceWrittenBytes", nearCacheStats.getLastPersistenceWrittenBytes());
+                            addStat(stats, prefix, "misses", nearCacheStats.getMisses());
+                            addStat(stats, prefix, "ownedEntryCount", nearCacheStats.getOwnedEntryCount());
+                            addStat(stats, prefix, "expirations", nearCacheStats.getExpirations());
+                            addStat(stats, prefix, "invalidations", nearCacheStats.getInvalidations());
+                            addStat(stats, prefix, "invalidationRequests", nearCacheStats.getInvalidationRequests());
+                            addStat(stats, prefix, "ownedEntryMemoryCost", nearCacheStats.getOwnedEntryMemoryCost());
+                            String persistenceFailure = nearCacheStats.getLastPersistenceFailure();
+                            if (persistenceFailure != null && !persistenceFailure.isEmpty()) {
+                                addStat(stats, prefix, "lastPersistenceFailure", persistenceFailure);
+                            }
+                        }
+                );
     }
 
     private void addStat(final StringBuilder stats, final String name, long value) {
@@ -318,25 +322,32 @@ public class ClientStatisticsService {
         }
     }
 
+    // called only one time from ClientContext to register nearCacheManagers
+    public void watchNearCacheManagers(ConcurrentMap<String, NearCacheManager> nearCacheManagers) {
+        this.nearCacheManagers = nearCacheManagers;
+        client.getMetricsRegistry()
+                .registerDynamicMetricsProvider(new NearCacheMetricsProvider(nearCacheManagers.values()));
+    }
+
     class PeriodicStatistics {
         private final Gauge[] allGauges = {
-            metricsRegistry.newLongGauge("os.committedVirtualMemorySize"),
-            metricsRegistry.newLongGauge("os.freePhysicalMemorySize"),
-            metricsRegistry.newLongGauge("os.freeSwapSpaceSize"),
-            metricsRegistry.newLongGauge("os.maxFileDescriptorCount"),
-            metricsRegistry.newLongGauge("os.openFileDescriptorCount"),
-            metricsRegistry.newLongGauge("os.processCpuTime"),
-            metricsRegistry.newDoubleGauge("os.systemLoadAverage"),
-            metricsRegistry.newLongGauge("os.totalPhysicalMemorySize"),
-            metricsRegistry.newLongGauge("os.totalSwapSpaceSize"),
-            metricsRegistry.newLongGauge("runtime.availableProcessors"),
-            metricsRegistry.newLongGauge("runtime.freeMemory"),
-            metricsRegistry.newLongGauge("runtime.maxMemory"),
-            metricsRegistry.newLongGauge("runtime.totalMemory"),
-            metricsRegistry.newLongGauge("runtime.uptime"),
-            metricsRegistry.newLongGauge("runtime.usedMemory"),
-            metricsRegistry.newLongGauge("executionService.userExecutorQueueSize"),
-            };
+                metricsRegistry.newLongGauge("os.committedVirtualMemorySize"),
+                metricsRegistry.newLongGauge("os.freePhysicalMemorySize"),
+                metricsRegistry.newLongGauge("os.freeSwapSpaceSize"),
+                metricsRegistry.newLongGauge("os.maxFileDescriptorCount"),
+                metricsRegistry.newLongGauge("os.openFileDescriptorCount"),
+                metricsRegistry.newLongGauge("os.processCpuTime"),
+                metricsRegistry.newDoubleGauge("os.systemLoadAverage"),
+                metricsRegistry.newLongGauge("os.totalPhysicalMemorySize"),
+                metricsRegistry.newLongGauge("os.totalSwapSpaceSize"),
+                metricsRegistry.newLongGauge("runtime.availableProcessors"),
+                metricsRegistry.newLongGauge("runtime.freeMemory"),
+                metricsRegistry.newLongGauge("runtime.maxMemory"),
+                metricsRegistry.newLongGauge("runtime.totalMemory"),
+                metricsRegistry.newLongGauge("runtime.uptime"),
+                metricsRegistry.newLongGauge("runtime.usedMemory"),
+                metricsRegistry.newLongGauge("executionService.userExecutorQueueSize"),
+        };
 
         void fillMetrics(long collectionTimestamp, final StringBuilder stats, final ClientConnection mainConnection) {
             stats.append("lastStatisticsCollectionTime").append(KEY_VALUE_SEPARATOR).append(collectionTimestamp);
@@ -346,7 +357,7 @@ public class ClientStatisticsService {
             addStat(stats, "clusterConnectionTimestamp", mainConnection.getStartTime());
 
             stats.append(STAT_SEPARATOR).append("clientAddress").append(KEY_VALUE_SEPARATOR)
-                 .append(mainConnection.getLocalSocketAddress().getAddress().getHostAddress());
+                    .append(mainConnection.getLocalSocketAddress().getAddress().getHostAddress());
 
             addStat(stats, "clientName", client.getName());
 
@@ -364,7 +375,7 @@ public class ClientStatisticsService {
     }
 
     private class ClientMetricCollector
-        implements MetricsCollector {
+            implements MetricsCollector {
 
         private final MetricsCompressor compressor = new MetricsCompressor();
 

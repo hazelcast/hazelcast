@@ -18,6 +18,7 @@ package com.hazelcast.client.cache.nearcache;
 
 import com.hazelcast.cache.ICache;
 import com.hazelcast.cache.impl.HazelcastServerCacheManager;
+import com.hazelcast.client.cache.impl.ClientCacheProxy;
 import com.hazelcast.client.cache.impl.HazelcastClientCacheManager;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.impl.clientside.HazelcastClientProxy;
@@ -49,9 +50,9 @@ import javax.cache.spi.CachingProvider;
 
 import static com.hazelcast.cache.CacheTestSupport.createClientCachingProvider;
 import static com.hazelcast.cache.CacheTestSupport.createServerCachingProvider;
-import static com.hazelcast.config.MaxSizePolicy.USED_NATIVE_MEMORY_PERCENTAGE;
 import static com.hazelcast.config.EvictionPolicy.LRU;
 import static com.hazelcast.config.InMemoryFormat.NATIVE;
+import static com.hazelcast.config.MaxSizePolicy.USED_NATIVE_MEMORY_PERCENTAGE;
 import static com.hazelcast.config.NearCacheConfig.DEFAULT_LOCAL_UPDATE_POLICY;
 import static com.hazelcast.config.NearCacheConfig.DEFAULT_MEMORY_FORMAT;
 import static com.hazelcast.config.NearCacheConfig.DEFAULT_SERIALIZE_KEYS;
@@ -151,7 +152,8 @@ public class ClientCacheNearCacheBasicTest extends AbstractNearCacheBasicTest<Da
         HazelcastClientCacheManager cacheManager = (HazelcastClientCacheManager) provider.getCacheManager();
         ICache<K, V> clientCache = cacheManager.createCache(DEFAULT_NEAR_CACHE_NAME, cacheConfig);
 
-        NearCacheManager nearCacheManager = client.client.getNearCacheManager(clientCache.getServiceName());
+        NearCacheManager nearCacheManager = ((ClientCacheProxy) clientCache).getContext()
+                .getNearCacheManager(clientCache.getServiceName());
         String cacheNameWithPrefix = cacheManager.getCacheNameWithPrefix(DEFAULT_NEAR_CACHE_NAME);
         NearCache<Data, String> nearCache = nearCacheManager.getNearCache(cacheNameWithPrefix);
 

@@ -26,7 +26,6 @@ import com.hazelcast.client.impl.clientside.HazelcastClientProxy;
 import com.hazelcast.client.impl.spi.ProxyManager;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.internal.nearcache.NearCacheManager;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.net.URI;
@@ -173,20 +172,10 @@ public final class HazelcastClientCacheManager extends AbstractHazelcastCacheMan
 
     @Override
     protected <K, V> void validateCacheConfig(CacheConfig<K, V> cacheConfig) {
-        checkCacheConfig(cacheConfig, null
-        );
+        checkCacheConfig(cacheConfig, null);
     }
 
     @Override
     protected void onShuttingDown() {
-    }
-
-    /**
-     * Gets the related {@link NearCacheManager} with the underlying client instance.
-     *
-     * @return the related {@link NearCacheManager} with the underlying client instance
-     */
-    public NearCacheManager getNearCacheManager(String serviceName) {
-        return client.getNearCacheManager(serviceName);
     }
 }
