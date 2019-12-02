@@ -36,12 +36,12 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Clear WAN replication queues for the given wan replication and publisher
  */
-@Generated("f9d310c32e43cf4f496a2277687e2737")
+@Generated("6507cb101970c688f23ac3583e9e9fe0")
 public final class MCClearWanQueuesCodec {
-    //hex: 0x201200
-    public static final int REQUEST_MESSAGE_TYPE = 2101760;
-    //hex: 0x201201
-    public static final int RESPONSE_MESSAGE_TYPE = 2101761;
+    //hex: 0x201400
+    public static final int REQUEST_MESSAGE_TYPE = 2102272;
+    //hex: 0x201401
+    public static final int RESPONSE_MESSAGE_TYPE = 2102273;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
 

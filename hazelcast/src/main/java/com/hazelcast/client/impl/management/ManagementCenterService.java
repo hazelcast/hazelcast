@@ -486,10 +486,10 @@ public class ManagementCenterService {
     /**
      * Runs the script on a given member.
      *
-     * @param member    target member
-     * @param engine    the name of script engine which will be used for the execution
-     * @param script    the script to execute
-     * @return          operation future object with script execution output
+     * @param member target member
+     * @param engine the name of script engine which will be used for the execution
+     * @param script the script to execute
+     * @return operation future object with script execution output
      */
     @Nonnull
     public CompletableFuture<String> runScript(Member member, String engine, String script) {
@@ -513,10 +513,10 @@ public class ManagementCenterService {
     /**
      * Runs the console command on a given member.
      *
-     * @param member        target member
-     * @param namespace     namespace to be set before the command is executed (optional)
-     * @param command       the command to execute
-     * @return              operation future object with command execution output
+     * @param member    target member
+     * @param namespace namespace to be set before the command is executed (optional)
+     * @param command   the command to execute
+     * @return operation future object with command execution output
      */
     @Nonnull
     public CompletableFuture<String> runConsoleCommand(Member member, String namespace, String command) {

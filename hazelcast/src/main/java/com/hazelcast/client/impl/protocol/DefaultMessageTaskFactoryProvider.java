@@ -1671,37 +1671,16 @@ public class DefaultMessageTaskFactoryProvider implements MessageTaskFactoryProv
                 (cm, con) -> new RunScriptMessageTask(cm, node, con));
         factories.put(MCRunConsoleCommandCodec.REQUEST_MESSAGE_TYPE,
                 (cm, con) -> new RunConsoleCommandMessageTask(cm, node, con));
-
         factories.put(com.hazelcast.client.impl.protocol.codec.MCChangeWanReplicationStateCodec.REQUEST_MESSAGE_TYPE,
-                new MessageTaskFactory() {
-                    public MessageTask create(ClientMessage clientMessage, Connection connection) {
-                        return new ChangeWanReplicationStateMessageTask(clientMessage, node, connection);
-                    }
-                });
+                (cm, con) -> new ChangeWanReplicationStateMessageTask(cm, node, con));
         factories.put(com.hazelcast.client.impl.protocol.codec.MCClearWanQueuesCodec.REQUEST_MESSAGE_TYPE,
-                new MessageTaskFactory() {
-                    public MessageTask create(ClientMessage clientMessage, Connection connection) {
-                        return new ClearWanQueuesMessageTask(clientMessage, node, connection);
-                    }
-                });
+                (cm, con) -> new ClearWanQueuesMessageTask(cm, node, con));
         factories.put(com.hazelcast.client.impl.protocol.codec.MCAddWanReplicationConfigCodec.REQUEST_MESSAGE_TYPE,
-                new MessageTaskFactory() {
-                    public MessageTask create(ClientMessage clientMessage, Connection connection) {
-                        return new AddWanReplicationConfigMessageTask(clientMessage, node, connection);
-                    }
-                });
+                (cm, con) -> new AddWanReplicationConfigMessageTask(cm, node, con));
         factories.put(com.hazelcast.client.impl.protocol.codec.MCWanSyncMapCodec.REQUEST_MESSAGE_TYPE,
-                new MessageTaskFactory() {
-                    public MessageTask create(ClientMessage clientMessage, Connection connection) {
-                        return new WanSyncMapMessageTask(clientMessage, node, connection);
-                    }
-                });
+                (cm, con) -> new WanSyncMapMessageTask(cm, node, con));
         factories.put(com.hazelcast.client.impl.protocol.codec.MCCheckWanConsistencyCodec.REQUEST_MESSAGE_TYPE,
-                new MessageTaskFactory() {
-                    public MessageTask create(ClientMessage clientMessage, Connection connection) {
-                        return new CheckWanConsistencyMessageTask(clientMessage, node, connection);
-                    }
-                });
+                (cm, con) -> new CheckWanConsistencyMessageTask(cm, node, con));
     }
 
     @SuppressFBWarnings({"MS_EXPOSE_REP", "EI_EXPOSE_REP"})

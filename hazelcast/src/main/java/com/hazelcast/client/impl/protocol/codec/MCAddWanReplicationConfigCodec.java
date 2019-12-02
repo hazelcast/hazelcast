@@ -36,12 +36,12 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Add a new WAN replication configuration
  */
-@Generated("c319fd39ba7676da5cdab2f4e2233fd5")
+@Generated("81020ffe23d8bfdaa1c496dcd1720eb2")
 public final class MCAddWanReplicationConfigCodec {
-    //hex: 0x201300
-    public static final int REQUEST_MESSAGE_TYPE = 2102016;
-    //hex: 0x201301
-    public static final int RESPONSE_MESSAGE_TYPE = 2102017;
+    //hex: 0x201500
+    public static final int REQUEST_MESSAGE_TYPE = 2102528;
+    //hex: 0x201501
+    public static final int RESPONSE_MESSAGE_TYPE = 2102529;
     private static final int REQUEST_QUEUE_CAPACITY_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_BATCH_SIZE_FIELD_OFFSET = REQUEST_QUEUE_CAPACITY_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_BATCH_MAX_DELAY_MILLIS_FIELD_OFFSET = REQUEST_BATCH_SIZE_FIELD_OFFSET + INT_SIZE_IN_BYTES;
