@@ -54,6 +54,7 @@ public class ReplicatedMapScanExec extends AbstractMapScanExec {
         super(id, mapName, fieldNames, projects, filter);
     }
 
+    @SuppressWarnings("rawtypes")
     @Override
     public IterationResult advance() {
         if (rows == null) {

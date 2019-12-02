@@ -16,7 +16,6 @@
 
 package com.hazelcast.sql.impl.exec;
 
-import com.hazelcast.internal.util.Clock;
 import com.hazelcast.internal.util.collection.PartitionIdSet;
 import com.hazelcast.map.impl.PartitionContainer;
 import com.hazelcast.map.impl.proxy.MapProxyImpl;
@@ -38,6 +37,7 @@ import java.util.List;
 /**
  * Executor for map scan.
  */
+@SuppressWarnings("rawtypes")
 public class MapScanExec extends AbstractMapScanExec {
     /** Underlying map. */
     private final MapProxyImpl map;
@@ -82,14 +82,9 @@ public class MapScanExec extends AbstractMapScanExec {
                 // Per-partition stuff.
                 PartitionContainer partitionContainer = map.getMapServiceContext().getPartitionContainer(i);
 
-                RecordStore recordStore = partitionContainer.getRecordStore(mapName);
+                RecordStore<Record<Object>> recordStore = partitionContainer.getRecordStore(mapName);
 
-                Iterator<Record> iterator = recordStore.loadAwareIterator(Clock.currentTimeMillis(), false);
-
-                while (iterator.hasNext()) {
-                    Record record = iterator.next();
-
-                    Data keyData =  record.getKey();
+                recordStore.forEachAfterLoad((keyData, record) -> {
                     Object valData = record.getValue();
 
                     Object key = serializationService.toObject(keyData);
@@ -100,7 +95,7 @@ public class MapScanExec extends AbstractMapScanExec {
                     if (row != null) {
                         rows.add(row);
                     }
-                }
+                }, false);
             }
 
             rowsIter = rows.iterator();

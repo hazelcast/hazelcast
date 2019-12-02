@@ -43,6 +43,7 @@ import java.util.Set;
  * Index scan executor.
  */
 //  TODO: Make sure to support merge joins!
+@SuppressWarnings("rawtypes")
 public class MapIndexScanExec extends AbstractMapScanExec {
     /** Underlying map. */
     private final MapProxyImpl map;
@@ -94,7 +95,7 @@ public class MapIndexScanExec extends AbstractMapScanExec {
             for (QueryableEntry entry : entries) {
                 Record record = entry.getRecord();
 
-                Data keyData =  record.getKey();
+                Data keyData =  entry.getKeyData();
                 Object valData = record.getValue();
 
                 Object key = serializationService.toObject(keyData);

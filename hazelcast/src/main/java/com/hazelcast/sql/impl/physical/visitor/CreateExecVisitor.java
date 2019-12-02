@@ -257,6 +257,7 @@ public class CreateExecVisitor implements PhysicalNodeVisitor {
          return outboxes;
      }
 
+    @SuppressWarnings("rawtypes")
     @Override
     public void onMapScanNode(MapScanPhysicalNode node) {
         Exec res;
