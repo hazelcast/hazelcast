@@ -791,7 +791,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         Config config = buildConfig(xml);
         ManagementCenterConfig manCenterCfg = config.getManagementCenterConfig();
 
-        assertFalse(manCenterCfg.isScriptingEnabled());
+        assertTrue(manCenterCfg.isScriptingEnabled());
     }
 
     @Override
@@ -802,7 +802,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         Config config = buildConfig(xml);
         ManagementCenterConfig manCenterCfg = config.getManagementCenterConfig();
 
-        assertFalse(manCenterCfg.isScriptingEnabled());
+        assertTrue(manCenterCfg.isScriptingEnabled());
     }
 
     @Override

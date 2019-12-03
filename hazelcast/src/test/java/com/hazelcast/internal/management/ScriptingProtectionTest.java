@@ -16,15 +16,14 @@
 
 package com.hazelcast.internal.management;
 
+import com.hazelcast.client.impl.clientside.HazelcastClientProxy;
+import com.hazelcast.client.impl.management.ManagementCenterService;
+import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.impl.HazelcastInstanceFactory;
-import com.hazelcast.internal.management.operation.RunScriptOperation;
-import com.hazelcast.map.impl.MapService;
-import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.hamcrest.CoreMatchers;
@@ -64,37 +63,25 @@ public class ScriptingProtectionTest extends HazelcastTestSupport {
 
     @Test
     public void testScriptingDisabled() throws InterruptedException, ExecutionException {
-        testInternal(false, false);
-    }
-
-    @Test
-    public void testScriptingDisabledOnSrc() throws InterruptedException, ExecutionException {
-        testInternal(false, true);
-    }
-
-    @Test
-    public void testScriptingDisabledOnDest() throws InterruptedException, ExecutionException {
-        testInternal(true, false);
+        testInternal(false);
     }
 
     @Test
     public void testScriptingEnabled() throws InterruptedException, ExecutionException {
-        testInternal(true, true);
+        testInternal(true);
     }
 
     @Test
-    public void testDefaultValue() throws InterruptedException, ExecutionException {
-        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
-        HazelcastInstance hz1 = factory.newHazelcastInstance();
-        HazelcastInstance hz2 = factory.newHazelcastInstance();
-        RunScriptOperation op = createScriptExecutorOp();
-        InternalCompletableFuture<Object> result = getOperationService(hz1).invokeOnTarget(MapService.SERVICE_NAME, op,
-                getAddress(hz2));
+    public void testDefaultValue() throws ExecutionException, InterruptedException {
+        TestHazelcastFactory factory = new TestHazelcastFactory(1);
+        HazelcastInstance hz = factory.newHazelcastInstance();
+        HazelcastInstance client = factory.newHazelcastClient();
+        ManagementCenterService mcs = ((HazelcastClientProxy) client).client.getManagementCenterService();
         if (!getScriptingEnabledDefaultValue()) {
             expectedException.expect(ExecutionException.class);
             expectedException.expectCause(CoreMatchers.instanceOf(AccessControlException.class));
         }
-        assertEquals(SCRIPT_RETURN_VAL, result.get());
+        assertEquals(SCRIPT_RETURN_VAL, mcs.runScript(hz.getCluster().getLocalMember(), ENGINE, SCRIPT).get());
     }
 
     /**
@@ -105,29 +92,22 @@ public class ScriptingProtectionTest extends HazelcastTestSupport {
     }
 
     /**
-     * Tests scripting protection on 2 nodes cluster. The source node sends a {@link RunScriptOperation} to the destination
-     * one. If the destination node has scripting disabled, an exception is thrown, otherwise the source gets correct script
+     * Tests scripting protection on single node cluster with a client. The client tries to run script on the node.
+     * If the node has scripting disabled, an exception is thrown, otherwise the client gets correct script
      * execution result.
      *
-     * @param srcEnabled scripting enabled on source node (it's value should have no effect on the test)
-     * @param destEnabled scripting enabled on destination node
+     * @param enabled scripting enabled on the node
      */
-    protected void testInternal(boolean srcEnabled, boolean destEnabled) throws InterruptedException, ExecutionException {
-        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
-        HazelcastInstance hz1 = factory.newHazelcastInstance(createConfig(srcEnabled));
-        HazelcastInstance hz2 = factory.newHazelcastInstance(createConfig(destEnabled));
-        RunScriptOperation op = createScriptExecutorOp();
-        InternalCompletableFuture<Object> result = getOperationService(hz1).invokeOnTarget(MapService.SERVICE_NAME, op,
-                getAddress(hz2));
-        if (!destEnabled) {
+    protected void testInternal(boolean enabled) throws InterruptedException, ExecutionException {
+        TestHazelcastFactory factory = new TestHazelcastFactory(1);
+        HazelcastInstance hz = factory.newHazelcastInstance(createConfig(enabled));
+        HazelcastInstance client = factory.newHazelcastClient();
+        ManagementCenterService mcs = ((HazelcastClientProxy) client).client.getManagementCenterService();
+        if (!enabled) {
             expectedException.expect(ExecutionException.class);
-            expectedException.expectCause(CoreMatchers.<Throwable>instanceOf(AccessControlException.class));
+            expectedException.expectCause(CoreMatchers.instanceOf(AccessControlException.class));
         }
-        assertEquals(SCRIPT_RETURN_VAL, result.get());
-    }
-
-    protected RunScriptOperation createScriptExecutorOp() {
-        return new RunScriptOperation(ENGINE, SCRIPT);
+        assertEquals(SCRIPT_RETURN_VAL, mcs.runScript(hz.getCluster().getLocalMember(), ENGINE, SCRIPT).get());
     }
 
     protected Config createConfig(boolean scriptingEnabled) {

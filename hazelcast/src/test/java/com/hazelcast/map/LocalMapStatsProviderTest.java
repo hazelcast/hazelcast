@@ -29,7 +29,7 @@ import org.junit.runner.RunWith;
 import static org.junit.Assert.assertEquals;
 
 /**
- * TODO: revisit this test
+ * TODO: revisit this test when ManagementCenterService is finalized
  */
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})

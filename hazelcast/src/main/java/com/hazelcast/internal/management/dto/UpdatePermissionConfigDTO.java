@@ -26,8 +26,6 @@ import java.util.HashSet;
 import java.util.Set;
 
 /**
- * TODO do we need this one (currently only used in tests)
- *
  * Helper class to serialize/deserialize client permission update requests.
  *
  * @see com.hazelcast.internal.ascii.rest.HttpCommandProcessor
