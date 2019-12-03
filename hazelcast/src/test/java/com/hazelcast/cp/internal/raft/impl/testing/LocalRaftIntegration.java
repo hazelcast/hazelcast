@@ -427,4 +427,8 @@ public class LocalRaftIntegration implements RaftIntegration {
     @Override
     public void onNodeStatusChange(RaftNodeStatus status) {
     }
+
+    @Override
+    public void onGroupDestroyed(CPGroupId groupId) {
+    }
 }

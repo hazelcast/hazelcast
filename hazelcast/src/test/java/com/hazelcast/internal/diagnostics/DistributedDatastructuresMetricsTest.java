@@ -205,8 +205,8 @@ public class DistributedDatastructuresMetricsTest extends HazelcastTestSupport {
         latch.await();
         latchNoStat.await();
 
-        assertHasStatsEventually(EXECUTOR_NAME, "executor.");
-        assertHasNoStats(EXECUTOR_NAME_NO_STAT, "executor.");
+        assertHasStatsEventually(EXECUTOR_NAME, "executor.pending");
+        assertHasNoStats(EXECUTOR_NAME_NO_STAT, "executor.pending");
     }
 
     @Test

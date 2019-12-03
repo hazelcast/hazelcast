@@ -58,6 +58,10 @@ public class CapturingCollector implements MetricsCollector {
         return unmodifiableMap(captures);
     }
 
+    public boolean isCaptured(MetricDescriptor descriptor) {
+        return captures.containsKey(descriptor);
+    }
+
     public static final class Capture {
         private final List<Number> values = new LinkedList<>();
         private int hits = 0;

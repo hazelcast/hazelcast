@@ -26,8 +26,9 @@ import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.instance.impl.NodeState;
 import com.hazelcast.instance.impl.OutOfMemoryErrorDispatcher;
-import com.hazelcast.internal.metrics.MetricsRegistry;
+import com.hazelcast.internal.metrics.ExcludedMetricTargets;
 import com.hazelcast.internal.metrics.MetricDescriptor;
+import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.metrics.StaticMetricsProvider;
 import com.hazelcast.internal.nio.Connection;
@@ -67,6 +68,7 @@ import com.hazelcast.splitbrainprotection.impl.SplitBrainProtectionServiceImpl;
 import java.io.IOException;
 import java.util.logging.Level;
 
+import static com.hazelcast.internal.metrics.MetricTarget.MANAGEMENT_CENTER;
 import static com.hazelcast.internal.metrics.ProbeLevel.DEBUG;
 import static com.hazelcast.internal.util.counters.MwCounter.newMwCounter;
 import static com.hazelcast.internal.util.counters.SwCounter.newSwCounter;
@@ -90,6 +92,7 @@ import static java.util.logging.Level.WARNING;
  * Responsible for processing an Operation.
  */
 @SuppressWarnings("checkstyle:classfanoutcomplexity")
+@ExcludedMetricTargets(MANAGEMENT_CENTER)
 class OperationRunnerImpl extends OperationRunner implements StaticMetricsProvider {
 
     static final int AD_HOC_PARTITION_ID = -2;
