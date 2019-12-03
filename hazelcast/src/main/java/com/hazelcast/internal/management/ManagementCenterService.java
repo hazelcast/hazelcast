@@ -52,6 +52,7 @@ public class ManagementCenterService {
     private static final long DEFAULT_UPDATE_INTERVAL = 3000;
     private static final int EVENT_QUEUE_CAPACITY = 1000;
     private static final int EXECUTOR_QUEUE_CAPACITY_PER_THREAD = 1000;
+    private static final int UPDATE_INTERVAL_MS = 3000;
 
     private final HazelcastInstanceImpl instance;
     private final PrepareStateThread prepareStateThread;
@@ -214,7 +215,7 @@ public class ManagementCenterService {
         }
 
         private long calcUpdateInterval() {
-            long updateInterval = 3000; // managementCenterConfig.getUpdateInterval();
+            long updateInterval = UPDATE_INTERVAL_MS;
             return (updateInterval > 0) ? TimeUnit.SECONDS.toMillis(updateInterval) : DEFAULT_UPDATE_INTERVAL;
         }
 
