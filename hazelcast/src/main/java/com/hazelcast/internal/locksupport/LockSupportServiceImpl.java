@@ -20,9 +20,12 @@ import com.hazelcast.cluster.impl.MemberImpl;
 import com.hazelcast.internal.locksupport.operations.LocalLockCleanupOperation;
 import com.hazelcast.internal.locksupport.operations.LockReplicationOperation;
 import com.hazelcast.internal.locksupport.operations.UnlockOperation;
+import com.hazelcast.internal.partition.FragmentedMigrationAwareService;
+import com.hazelcast.internal.partition.MigrationEndpoint;
+import com.hazelcast.internal.partition.PartitionMigrationEvent;
+import com.hazelcast.internal.partition.PartitionReplicationEvent;
 import com.hazelcast.internal.services.ClientAwareService;
 import com.hazelcast.internal.services.ManagedService;
-import com.hazelcast.internal.services.MemberAttributeServiceEvent;
 import com.hazelcast.internal.services.MembershipAwareService;
 import com.hazelcast.internal.services.MembershipServiceEvent;
 import com.hazelcast.internal.services.ObjectNamespace;
@@ -35,10 +38,6 @@ import com.hazelcast.spi.impl.PartitionSpecificRunnable;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationService;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
-import com.hazelcast.internal.partition.FragmentedMigrationAwareService;
-import com.hazelcast.internal.partition.MigrationEndpoint;
-import com.hazelcast.internal.partition.PartitionMigrationEvent;
-import com.hazelcast.internal.partition.PartitionReplicationEvent;
 import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.spi.properties.HazelcastProperties;
 
@@ -150,10 +149,6 @@ public final class LockSupportServiceImpl implements LockSupportService, Managed
         releaseLocksOwnedBy(uuid);
     }
 
-    @Override
-    public void memberAttributeChanged(MemberAttributeServiceEvent event) {
-    }
-
     private void releaseLocksOwnedBy(final UUID uuid) {
         final OperationServiceImpl operationService = (OperationServiceImpl) nodeEngine.getOperationService();
         for (final LockStoreContainer container : containers) {
@@ -235,7 +230,7 @@ public final class LockSupportServiceImpl implements LockSupportService, Managed
 
     @Override
     public Operation prepareReplicationOperation(PartitionReplicationEvent event,
-            Collection<ServiceNamespace> namespaces) {
+                                                 Collection<ServiceNamespace> namespaces) {
         int partitionId = event.getPartitionId();
         LockStoreContainer container = containers[partitionId];
         int replicaIndex = event.getReplicaIndex();

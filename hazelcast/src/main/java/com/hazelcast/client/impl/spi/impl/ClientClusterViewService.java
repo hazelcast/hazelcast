@@ -35,12 +35,9 @@ import com.hazelcast.cluster.Cluster;
 import com.hazelcast.cluster.InitialMembershipEvent;
 import com.hazelcast.cluster.InitialMembershipListener;
 import com.hazelcast.cluster.Member;
-import com.hazelcast.cluster.MemberAttributeEvent;
-import com.hazelcast.cluster.MemberAttributeOperationType;
 import com.hazelcast.cluster.MemberSelector;
 import com.hazelcast.cluster.MembershipEvent;
 import com.hazelcast.cluster.MembershipListener;
-import com.hazelcast.cluster.impl.AbstractMember;
 import com.hazelcast.cluster.memberselector.MemberSelectors;
 import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.internal.cluster.MemberInfo;
@@ -60,7 +57,6 @@ import com.hazelcast.partition.PartitionLostListener;
 import com.hazelcast.spi.exception.TargetDisconnectedException;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.net.InetSocketAddress;
 import java.util.Collection;
 import java.util.Collections;
@@ -490,23 +486,7 @@ public class ClientClusterViewService implements ClientClusterService, ClientPar
             fireEvents(events);
         }
 
-        @Override
-        public void handleMemberAttributeChangeEvent(Member member, String key, int operationType, @Nullable String value) {
-            Set<Member> currentMembers = clusterSnapshot.get().memberSet;
-            Cluster cluster = client.getCluster();
-            UUID uuid = member.getUuid();
-            for (Member target : currentMembers) {
-                if (target.getUuid().equals(uuid)) {
-                    MemberAttributeOperationType type = MemberAttributeOperationType.getValue(operationType);
-                    ((AbstractMember) target).updateAttribute(type, key, value);
-                    MemberAttributeEvent event = new MemberAttributeEvent(cluster, target, currentMembers, type, key, value);
-                    for (MembershipListener listener : listeners.values()) {
-                        listener.memberAttributeChanged(event);
-                    }
-                    break;
-                }
-            }
-        }
+
     }
 
     private void fireEvents(List<MembershipEvent> events) {

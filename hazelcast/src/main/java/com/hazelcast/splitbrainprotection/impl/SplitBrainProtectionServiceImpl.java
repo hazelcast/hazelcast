@@ -24,7 +24,6 @@ import com.hazelcast.config.SplitBrainProtectionConfig;
 import com.hazelcast.config.SplitBrainProtectionListenerConfig;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.nio.ClassLoaderUtil;
-import com.hazelcast.internal.services.MemberAttributeServiceEvent;
 import com.hazelcast.internal.services.MembershipAwareService;
 import com.hazelcast.internal.services.MembershipServiceEvent;
 import com.hazelcast.internal.services.ServiceNamespace;
@@ -326,13 +325,6 @@ public class SplitBrainProtectionServiceImpl implements EventPublishingService<S
             return;
         }
         nodeEngine.getExecutionService().execute(SPLIT_BRAIN_PROTECTION_EXECUTOR, new UpdateSplitBrainProtections(event));
-    }
-
-    @Override
-    public void memberAttributeChanged(MemberAttributeServiceEvent event) {
-        // nop
-        // MemberAttributeServiceEvent does NOT contain set of members
-        // They cannot change split brain protection state
     }
 
     @Nonnull

@@ -25,7 +25,6 @@ import static java.lang.String.format;
 
 /**
  * Membership event fired when a new member is added to the cluster and/or when a member leaves the cluster
- * or when there is a member attribute change via {@link Member#setAttribute(String, String)}
  * and similar methods.
  *
  * @see MembershipListener
@@ -43,13 +42,6 @@ public class MembershipEvent extends EventObject {
      * unresponsive by other members for a extended time.
      */
     public static final int MEMBER_REMOVED = 2;
-
-    /**
-     * This event type is fired if a member attribute has been changed or removed.
-     *
-     * @since 3.2
-     */
-    public static final int MEMBER_ATTRIBUTE_CHANGED = 5;
 
     private static final long serialVersionUID = -2010865371829087371L;
 
@@ -77,8 +69,6 @@ public class MembershipEvent extends EventObject {
      * <p>
      * The set is immutable and ordered. For more information see {@link Cluster#getMembers()}.
      *
-     * Warning: If the event is triggered by a member attribute change then {@link #members} is empty.
-     *
      * @return the members at the moment after this event.
      */
     public Set<Member> getMembers() {
@@ -98,7 +88,6 @@ public class MembershipEvent extends EventObject {
      * Returns the membership event type;
      * #MEMBER_ADDED
      * #MEMBER_REMOVED
-     * #MEMBER_ATTRIBUTE_CHANGED
      *
      * @return the membership event type
      */
@@ -124,9 +113,6 @@ public class MembershipEvent extends EventObject {
                 break;
             case MEMBER_REMOVED:
                 type = "removed";
-                break;
-            case MEMBER_ATTRIBUTE_CHANGED:
-                type = "attributed_changes";
                 break;
             default:
                 throw new IllegalStateException();

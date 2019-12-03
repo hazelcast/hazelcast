@@ -25,7 +25,6 @@ import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.metrics.ProbeLevel;
 import com.hazelcast.internal.services.ClientAwareService;
 import com.hazelcast.internal.services.ManagedService;
-import com.hazelcast.internal.services.MemberAttributeServiceEvent;
 import com.hazelcast.internal.services.MembershipAwareService;
 import com.hazelcast.internal.services.MembershipServiceEvent;
 import com.hazelcast.internal.util.counters.Counter;
@@ -192,10 +191,6 @@ public class TransactionManagerServiceImpl implements TransactionManagerService,
             logger.finest("Will not commit/roll-back transactions of " + member.getAddress() + ", UUID: " + uuid
                     + " because this member is not running");
         }
-    }
-
-    @Override
-    public void memberAttributeChanged(MemberAttributeServiceEvent event) {
     }
 
     private void finalizeTransactionsOf(UUID callerUuid) {

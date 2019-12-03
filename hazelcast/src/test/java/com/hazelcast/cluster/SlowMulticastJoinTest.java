@@ -95,9 +95,6 @@ public class SlowMulticastJoinTest extends AbstractJoinTest {
                 splitLatch.countDown();
             }
 
-            @Override
-            public void memberAttributeChanged(MemberAttributeEvent memberAttributeEvent) {
-            }
         });
 
         final CountDownLatch mergeLatch = new CountDownLatch(1);

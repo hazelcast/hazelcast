@@ -24,14 +24,10 @@ import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.SplitBrainProtectionConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceAware;
-import com.hazelcast.internal.services.MemberAttributeServiceEvent;
-import com.hazelcast.internal.services.MembershipAwareService;
 import com.hazelcast.map.IMap;
-import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.splitbrainprotection.impl.ProbabilisticSplitBrainProtectionFunction;
 import com.hazelcast.splitbrainprotection.impl.RecentlyActiveSplitBrainProtectionFunction;
-import com.hazelcast.splitbrainprotection.impl.SplitBrainProtectionServiceImpl;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -49,7 +45,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
-import static org.mockito.Mockito.mock;
 
 /**
  * Tests split brain protection related configurations.
@@ -142,36 +137,6 @@ public class SplitBrainProtectionTest extends HazelcastTestSupport {
                 assertTrue(splitBrainProtection.hasMinimumSize());
             }
         });
-    }
-
-    @Test
-    public void testSplitBrainProtectionIgnoresMemberAttributeEvents() {
-        final RecordingSplitBrainProtectionFunction function = new RecordingSplitBrainProtectionFunction();
-
-        SplitBrainProtectionConfig splitBrainProtectionConfig = new SplitBrainProtectionConfig()
-                .setName(randomString())
-                .setEnabled(true)
-                .setFunctionImplementation(function);
-
-        Config config = new Config()
-                .addSplitBrainProtectionConfig(splitBrainProtectionConfig);
-
-        HazelcastInstance hazelcastInstance = createHazelcastInstance(config);
-        NodeEngineImpl nodeEngine = getNodeEngineImpl(hazelcastInstance);
-        MembershipAwareService service = nodeEngine.getService(SplitBrainProtectionServiceImpl.SERVICE_NAME);
-
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertTrue(function.wasCalled);
-            }
-        });
-        function.wasCalled = false;
-
-        MemberAttributeServiceEvent event = mock(MemberAttributeServiceEvent.class);
-        service.memberAttributeChanged(event);
-
-        assertFalse(function.wasCalled);
     }
 
     @Test(expected = SplitBrainProtectionException.class)

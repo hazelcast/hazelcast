@@ -40,12 +40,4 @@ public interface MembershipAwareService {
      */
     void memberRemoved(MembershipServiceEvent event);
 
-
-    /**
-     * Invoked when a member attribute is changed.
-     *
-     * @param event the event for a member attribute being changed
-     */
-    void memberAttributeChanged(MemberAttributeServiceEvent event);
-
 }
