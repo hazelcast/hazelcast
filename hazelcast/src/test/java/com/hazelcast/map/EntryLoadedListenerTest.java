@@ -50,7 +50,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static com.hazelcast.core.EntryEventType.LOADED;
 import static org.junit.Assert.assertEquals;
 
-@SuppressWarnings("deprecation")
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class EntryLoadedListenerTest extends HazelcastTestSupport {

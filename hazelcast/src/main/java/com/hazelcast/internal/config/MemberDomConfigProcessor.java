@@ -1673,7 +1673,6 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         }
     }
 
-    @SuppressWarnings("deprecation")
     protected void handleReplicatedMap(Node node) {
         Node attName = node.getAttributes().getNamedItem("name");
         String name = getTextContent(attName);
@@ -1707,7 +1706,6 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         config.addReplicatedMapConfig(replicatedMapConfig);
     }
 
-    @SuppressWarnings("deprecation")
     protected void handleMap(Node parentNode) throws Exception {
         String name = getAttribute(parentNode, "name");
         MapConfig mapConfig = new MapConfig();
