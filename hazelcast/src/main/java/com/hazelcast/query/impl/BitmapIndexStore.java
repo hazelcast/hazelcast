@@ -17,6 +17,7 @@
 package com.hazelcast.query.impl;
 
 import com.hazelcast.core.TypeConverter;
+import com.hazelcast.internal.json.NonTerminalJsonValue;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.monitor.impl.IndexOperationStats;
 import com.hazelcast.nio.serialization.Data;
@@ -109,6 +110,10 @@ public final class BitmapIndexStore extends BaseIndexStore {
     @SuppressWarnings("unchecked")
     @Override
     public void insert(Object value, QueryableEntry entry, IndexOperationStats operationStats) {
+        if (value == NonTerminalJsonValue.INSTANCE) {
+            return;
+        }
+
         if (internalObjectKeys == null) {
             // no remapping or long-to-long remapping
 
@@ -153,6 +158,11 @@ public final class BitmapIndexStore extends BaseIndexStore {
     @SuppressWarnings("unchecked")
     @Override
     public void update(Object oldValue, Object newValue, QueryableEntry entry, IndexOperationStats operationStats) {
+        if (oldValue == NonTerminalJsonValue.INSTANCE) {
+            insert(newValue, entry, operationStats);
+            return;
+        }
+
         if (internalObjectKeys == null) {
             // no remapping or long-to-long remapping
 
@@ -195,6 +205,10 @@ public final class BitmapIndexStore extends BaseIndexStore {
     @SuppressWarnings("unchecked")
     @Override
     public void remove(Object value, Data entryKey, Object entryValue, IndexOperationStats operationStats) {
+        if (value == NonTerminalJsonValue.INSTANCE) {
+            return;
+        }
+
         if (internalObjectKeys == null) {
             // no remapping or long-to-long remapping
 
