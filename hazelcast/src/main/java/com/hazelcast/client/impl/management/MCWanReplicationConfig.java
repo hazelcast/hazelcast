@@ -110,4 +110,20 @@ public class MCWanReplicationConfig {
     public void setQueueFullBehaviour(WanQueueFullBehavior queueFullBehaviour) {
         this.queueFullBehaviour = queueFullBehaviour;
     }
+
+    @Override
+    public String toString() {
+        return "MCWanReplicationConfig{" +
+                "name='" + name + '\'' +
+                ", targetCluster='" + targetCluster + '\'' +
+                ", publisherId='" + publisherId + '\'' +
+                ", endpoints='" + endpoints + '\'' +
+                ", queueCapacity=" + queueCapacity +
+                ", batchSize=" + batchSize +
+                ", batchMaxDelayMillis=" + batchMaxDelayMillis +
+                ", responseTimeoutMillis=" + responseTimeoutMillis +
+                ", ackType=" + ackType +
+                ", queueFullBehaviour=" + queueFullBehaviour +
+                '}';
+    }
 }
