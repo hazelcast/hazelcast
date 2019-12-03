@@ -161,8 +161,7 @@ public final class Sources {
      * still give incorrect results without reporting a failure. Concurrent
      * mutation is not detected at all.
      * <p>
-     * The default local parallelism for this processor is 2 (or 1 if just 1
-     * CPU is available).
+     * The default local parallelism for this processor is 1.
      */
     @Nonnull
     public static <K, V> BatchSource<Entry<K, V>> map(@Nonnull String mapName) {
@@ -190,8 +189,7 @@ public final class Sources {
      * still give incorrect results without reporting a failure. Concurrent
      * mutation is not detected at all.
      * <p>
-     * The default local parallelism for this processor is 2 (or 1 if just 1
-     * CPU is available).
+     * The default local parallelism for this processor is 1.
      */
     @Nonnull
     public static <K, V> BatchSource<Entry<K, V>> map(@Nonnull IMap<? extends K, ? extends V> map) {
@@ -230,8 +228,7 @@ public final class Sources {
      * still give incorrect results without reporting a failure. Concurrent
      * mutation is not detected at all.
      * <p>
-     * The default local parallelism for this processor is 2 (or 1 if just 1
-     * CPU is available).
+     * The default local parallelism for this processor is 1.
      *
      * <h4>Predicate/projection class requirements</h4>
      *
@@ -300,8 +297,7 @@ public final class Sources {
      * still give incorrect results without reporting a failure. Concurrent
      * mutation is not detected at all.
      * <p>
-     * The default local parallelism for this processor is 2 (or 1 if just 1
-     * CPU is available).
+     * The default local parallelism for this processor 1.
      *
      * <h4>Predicate/projection class requirements</h4>
      * <p>
@@ -687,8 +683,7 @@ public final class Sources {
      * still give incorrect results without reporting a failure. Concurrent
      * mutation is not detected at all.
      * <p>
-     * The default local parallelism for this processor is 2 (or 1 if just 1
-     * CPU is available).
+     * The default local parallelism for this processor 1.
      */
     @Nonnull
     public static <K, V> BatchSource<Entry<K, V>> cache(@Nonnull String cacheName) {
@@ -883,7 +878,8 @@ public final class Sources {
      * The source does not save any state to snapshot. If the job is restarted,
      * it will re-emit all entries.
      * <p>
-     * The default local parallelism for this processor is 1.
+     * One instance of this processor runs only on the member that owns the
+     * list.
      */
     @Nonnull
     public static <T> BatchSource<T> list(@Nonnull String listName) {
@@ -906,7 +902,8 @@ public final class Sources {
      * The source does not save any state to snapshot. If the job is restarted,
      * it will re-emit all entries.
      * <p>
-     * The default local parallelism for this processor is 1.
+     * One instance of this processor runs only on the member that owns the
+     * list.
      */
     @Nonnull
     public static <T> BatchSource<T> list(@Nonnull IList<? extends T> list) {
@@ -924,7 +921,7 @@ public final class Sources {
      * The source does not save any state to snapshot. If the job is restarted,
      * it will re-emit all entries.
      * <p>
-     * The default local parallelism for this processor is 1.
+     * Only 1 instance of this processor runs in the cluster.
      */
     @Nonnull
     public static <T> BatchSource<T> remoteList(@Nonnull String listName, @Nonnull ClientConfig clientConfig) {

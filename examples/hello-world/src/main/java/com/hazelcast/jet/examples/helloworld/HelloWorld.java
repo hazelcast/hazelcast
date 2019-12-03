@@ -65,7 +65,7 @@ public class HelloWorld {
     }
 
     public static void main(String[] args) throws InterruptedException {
-        /**
+        /*
          * JetBootstrap.getInstance() can be changed to Jet.newJetInstance()
          * to start an embedded Jet node instead and submit the job to it.
          */

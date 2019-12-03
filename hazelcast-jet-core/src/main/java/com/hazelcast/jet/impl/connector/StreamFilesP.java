@@ -361,8 +361,8 @@ public class StreamFilesP<R> extends AbstractProcessor {
     ) {
         checkSerializable(mapOutputFn, "mapOutputFn");
 
-        return ProcessorMetaSupplier.of(() ->
-                new StreamFilesP<>(watchedDirectory, Charset.forName(charset), glob, sharedFileSystem, mapOutputFn), 2);
+        return ProcessorMetaSupplier.of(2, () ->
+                new StreamFilesP<>(watchedDirectory, Charset.forName(charset), glob, sharedFileSystem, mapOutputFn));
     }
 
     private static WatchEvent.Modifier[] getHighSensitivityModifiers() {

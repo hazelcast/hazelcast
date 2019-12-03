@@ -33,7 +33,7 @@ public class PeekingWrapperPreferredParallelismTest {
     public void when_peekInput_then_propagatesPreferredParallelism() {
         // Given
         int preferredParallelism = 3;
-        ProcessorMetaSupplier wrappedMetaSupplier = ProcessorMetaSupplier.of(Processors.noopP(), preferredParallelism);
+        ProcessorMetaSupplier wrappedMetaSupplier = ProcessorMetaSupplier.of(preferredParallelism, Processors.noopP());
 
         // When
         ProcessorMetaSupplier peekingMetaSupplier = peekInputP(wrappedMetaSupplier);
@@ -46,7 +46,7 @@ public class PeekingWrapperPreferredParallelismTest {
     public void when_peekOutput_then_propagatesPreferredParallelism() {
         // Given
         int preferredParallelism = 3;
-        ProcessorMetaSupplier wrappedMetaSupplier = ProcessorMetaSupplier.of(Processors.noopP(), preferredParallelism);
+        ProcessorMetaSupplier wrappedMetaSupplier = ProcessorMetaSupplier.of(preferredParallelism, Processors.noopP());
 
         // When
         ProcessorMetaSupplier peekingMetaSupplier = peekOutputP(wrappedMetaSupplier);
@@ -59,7 +59,7 @@ public class PeekingWrapperPreferredParallelismTest {
     public void when_peekSnapshot_then_propagatesPreferredParallelism() {
         // Given
         int preferredParallelism = 3;
-        ProcessorMetaSupplier wrappedMetaSupplier = ProcessorMetaSupplier.of(Processors.noopP(), preferredParallelism);
+        ProcessorMetaSupplier wrappedMetaSupplier = ProcessorMetaSupplier.of(preferredParallelism, Processors.noopP());
 
         // When
         ProcessorMetaSupplier peekingMetaSupplier = peekSnapshotP(wrappedMetaSupplier);

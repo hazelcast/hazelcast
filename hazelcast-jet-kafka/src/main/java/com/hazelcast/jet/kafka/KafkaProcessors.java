@@ -55,8 +55,8 @@ public final class KafkaProcessors {
         Preconditions.checkPositive(topics.length, "At least one topic must be supplied");
         properties.put("enable.auto.commit", false);
         return ProcessorMetaSupplier.of(
-                StreamKafkaP.processorSupplier(properties, Arrays.asList(topics), projectionFn, eventTimePolicy),
-                PREFERRED_LOCAL_PARALLELISM
+                PREFERRED_LOCAL_PARALLELISM,
+                StreamKafkaP.processorSupplier(properties, Arrays.asList(topics), projectionFn, eventTimePolicy)
         );
     }
 

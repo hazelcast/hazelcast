@@ -19,12 +19,12 @@ package com.hazelcast.jet.examples.sessionwindow;
 import com.hazelcast.jet.Jet;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.aggregate.AggregateOperation1;
-import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.datamodel.KeyedWindowResult;
 import com.hazelcast.jet.datamodel.Tuple2;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.jet.pipeline.Sources;
+import com.hazelcast.jet.pipeline.StreamSource;
 import com.hazelcast.jet.pipeline.WindowDefinition;
 
 import javax.annotation.Nonnull;
@@ -37,6 +37,7 @@ import static com.hazelcast.jet.aggregate.AggregateOperations.allOf;
 import static com.hazelcast.jet.aggregate.AggregateOperations.mapping;
 import static com.hazelcast.jet.aggregate.AggregateOperations.summingLong;
 import static com.hazelcast.jet.aggregate.AggregateOperations.toSet;
+import static com.hazelcast.jet.core.ProcessorMetaSupplier.preferLocalParallelismOne;
 
 /**
  * Demonstrates the usage of a {@link WindowDefinition#session session
@@ -69,14 +70,17 @@ public class SessionWindow {
         );
 
         Pipeline p = Pipeline.create();
-        p.readFrom(Sources.<ProductEvent>streamFromProcessor("generator",
-                ProcessorMetaSupplier.of(GenerateEventsP::new, 1)))
+        p.readFrom(eventsSource())
          .withTimestamps(ProductEvent::getTimestamp, 0)
          .groupingKey(ProductEvent::getUserId)
          .window(WindowDefinition.session(SESSION_TIMEOUT))
          .aggregate(aggrOp)
          .writeTo(Sinks.logger(SessionWindow::sessionToString));
         return p;
+    }
+
+    private static StreamSource<ProductEvent> eventsSource() {
+        return Sources.streamFromProcessor("generator", preferLocalParallelismOne(GenerateEventsP::new));
     }
 
     @Nonnull

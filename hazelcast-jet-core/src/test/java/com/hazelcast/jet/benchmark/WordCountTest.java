@@ -49,6 +49,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.StringTokenizer;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -69,15 +70,15 @@ import static org.junit.Assert.assertNotNull;
 @RunWith(HazelcastSerialClassRunner.class)
 public class WordCountTest extends HazelcastTestSupport implements Serializable {
 
-    private static final int NODE_COUNT = 2;
+    private static final int NODE_COUNT = 1;
     private static final int PARALLELISM = Runtime.getRuntime().availableProcessors() / NODE_COUNT;
 
     private static final int COUNT = 1_000_000;
     private static final int DISTINCT = 100_000;
     private static final int WORDS_PER_ROW = 20;
 
-    private static final int WARMUP_TIME = 20_000;
-    private static final int TOTAL_TIME = 60_000;
+    private static final int WARMUP_TIME = 10_000;
+    private static final int TOTAL_TIME = 30_000;
 
     private JetInstance instance;
     private ILogger logger;
@@ -97,7 +98,7 @@ public class WordCountTest extends HazelcastTestSupport implements Serializable 
         join.getMulticastConfig().setEnabled(false);
         join.getTcpIpConfig().setEnabled(true).addMember("127.0.0.1");
 
-        for (int i = 1; i < NODE_COUNT; i++) {
+        for (int i = 0; i < NODE_COUNT; i++) {
             instance = Jet.newJetInstance(config);
         }
         logger = instance.getHazelcastInstance().getLoggingService().getLogger(WordCountTest.class);
@@ -174,13 +175,13 @@ public class WordCountTest extends HazelcastTestSupport implements Serializable 
         );
         Vertex sink = dag.newVertex("sink", SinkProcessors.writeMapP("counts"));
 
-        dag.edge(between(source.localParallelism(1), tokenize))
+        dag.edge(between(source, tokenize))
            .edge(between(tokenize, aggregateStage1)
                    .partitioned(wholeItem(), HASH_CODE))
            .edge(between(aggregateStage1, aggregateStage2)
                    .distributed()
                    .partitioned(entryKey()))
-           .edge(between(aggregateStage2, sink.localParallelism(1)));
+           .edge(between(aggregateStage2, sink));
 
         benchmark("jet", () -> instance.newJob(dag).join());
         assertCounts(instance.getMap("counts"));
@@ -208,7 +209,7 @@ public class WordCountTest extends HazelcastTestSupport implements Serializable 
 
     private void benchmark(String label, Runnable run) {
         List<Long> times = new ArrayList<>();
-        long testStart = System.currentTimeMillis();
+        long testStart = System.nanoTime();
         int warmupCount = 0;
         boolean warmupEnded = false;
         logger.info("Starting test..");
@@ -216,13 +217,13 @@ public class WordCountTest extends HazelcastTestSupport implements Serializable 
         while (true) {
             System.gc();
             System.gc();
-            long start = System.currentTimeMillis();
+            long start = System.nanoTime();
             run.run();
-            long end = System.currentTimeMillis();
+            long end = System.nanoTime();
             long time = end - start;
-            times.add(time);
+            times.add(TimeUnit.NANOSECONDS.toMillis(time));
             logger.info(label + ": totalTime=" + time);
-            long sinceTestStart = end - testStart;
+            long sinceTestStart = TimeUnit.NANOSECONDS.toMillis(end - testStart);
             if (sinceTestStart < WARMUP_TIME) {
                 warmupCount++;
             }

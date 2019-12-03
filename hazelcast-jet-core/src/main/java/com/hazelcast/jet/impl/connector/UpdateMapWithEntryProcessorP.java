@@ -53,7 +53,7 @@ public final class UpdateMapWithEntryProcessorP<T, K, V, R> extends AsyncHazelca
             T item = (T) object;
             EntryProcessor<K, V, R> entryProcessor = toEntryProcessorFn.apply(item);
             K key = toKeyFn.apply(item);
-            setCallback(map.submitToKey(key, entryProcessor).toCompletableFuture());
+            setCallback(map.submitToKey(key, entryProcessor));
             inbox.remove();
         }
     }

@@ -27,7 +27,7 @@ import com.hazelcast.logging.Logger;
 
 import javax.annotation.CheckReturnValue;
 import javax.annotation.Nonnull;
-import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiConsumer;
@@ -110,8 +110,8 @@ public abstract class AsyncHazelcastWriterP implements Processor {
 
     protected abstract void processInternal(Inbox inbox);
 
-    protected final void setCallback(CompletableFuture future) {
-        future.whenCompleteAsync(callback);
+    protected final void setCallback(CompletionStage stage) {
+        stage.whenCompleteAsync(callback);
     }
 
     @CheckReturnValue

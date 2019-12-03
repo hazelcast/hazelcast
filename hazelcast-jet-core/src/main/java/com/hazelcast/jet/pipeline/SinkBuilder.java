@@ -183,6 +183,6 @@ public final class SinkBuilder<W, T> {
     public Sink<T> build() {
         Preconditions.checkNotNull(receiveFn, "receiveFn must be set");
         SupplierEx<Processor> supplier = writeBufferedP(createFn, receiveFn, flushFn, destroyFn);
-        return Sinks.fromProcessor(name, ProcessorMetaSupplier.of(supplier, preferredLocalParallelism));
+        return Sinks.fromProcessor(name, ProcessorMetaSupplier.of(preferredLocalParallelism, supplier));
     }
 }

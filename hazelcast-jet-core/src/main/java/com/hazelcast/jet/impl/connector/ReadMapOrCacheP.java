@@ -249,6 +249,11 @@ public final class ReadMapOrCacheP<F extends CompletableFuture, B, R> extends Ab
         public Function<Address, ProcessorSupplier> get(@Nonnull List<Address> addresses) {
             return address -> new LocalProcessorSupplier<>(readerSupplier, addrToPartitions.get(address));
         }
+
+        @Override
+        public int preferredLocalParallelism() {
+            return 1;
+        }
     }
 
     private static final class LocalProcessorSupplier<F extends CompletableFuture, B, R> implements ProcessorSupplier {

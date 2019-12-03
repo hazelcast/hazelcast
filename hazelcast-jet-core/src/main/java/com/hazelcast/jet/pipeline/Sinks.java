@@ -589,7 +589,7 @@ public final class Sinks {
      * but overwritten. After the job is restarted from snapshot, duplicate
      * items will not change the state in the target map.
      * <p>
-     * The default local parallelism for this sink is 1.
+     * The default local parallelism for this sink is 2.
      */
     @Nonnull
     public static <T extends Entry> Sink<T> cache(@Nonnull String cacheName) {
@@ -607,7 +607,7 @@ public final class Sinks {
      * but overwritten. After the job is restarted from snapshot, duplicate
      * items will not change the state in the target map.
      * <p>
-     * The default local parallelism for this sink is 1.
+     * The default local parallelism for this sink is 2.
      */
     @Nonnull
     public static <T extends Entry> Sink<T> remoteCache(

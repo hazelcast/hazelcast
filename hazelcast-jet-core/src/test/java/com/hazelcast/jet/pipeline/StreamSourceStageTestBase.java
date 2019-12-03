@@ -23,7 +23,6 @@ import com.hazelcast.jet.aggregate.AggregateOperations;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.core.AbstractProcessor;
 import com.hazelcast.jet.core.JetTestSupport;
-import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.Watermark;
 import com.hazelcast.test.AssertTask;
 import org.junit.AfterClass;
@@ -39,6 +38,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Function;
 
 import static com.hazelcast.jet.core.JobStatus.RUNNING;
+import static com.hazelcast.jet.core.ProcessorMetaSupplier.preferLocalParallelismOne;
 import static com.hazelcast.spi.properties.ClusterProperty.PARTITION_COUNT;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
@@ -109,7 +109,7 @@ public abstract class StreamSourceStageTestBase extends JetTestSupport {
                 .aggregate(AggregateOperations.counting())
                 .peek()
                 .writeTo(Sinks.fromProcessor("wmCollector",
-                        ProcessorMetaSupplier.of(WatermarkCollector::new, 1))
+                        preferLocalParallelismOne(WatermarkCollector::new))
                 );
         Job job = instance.newJob(p);
 

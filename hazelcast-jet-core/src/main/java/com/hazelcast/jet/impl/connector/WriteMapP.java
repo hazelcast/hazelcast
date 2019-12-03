@@ -17,112 +17,73 @@
 package com.hazelcast.jet.impl.connector;
 
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.jet.config.EdgeConfig;
 import com.hazelcast.jet.core.Inbox;
 import com.hazelcast.jet.core.Outbox;
 import com.hazelcast.jet.core.Processor;
-import com.hazelcast.jet.core.Watermark;
 import com.hazelcast.jet.impl.connector.HazelcastWriters.ArrayMap;
 import com.hazelcast.jet.impl.util.ImdgUtil;
 import com.hazelcast.map.IMap;
 
 import javax.annotation.Nonnull;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.BiConsumer;
+import java.util.Map.Entry;
+import java.util.function.Consumer;
 
-import static com.hazelcast.jet.impl.connector.HazelcastWriters.handleInstanceNotActive;
-import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
+import static java.lang.Integer.max;
 
-public final class WriteMapP<K, V> implements Processor {
-    // This is a cooperative processor it will use maximum
-    // local parallelism by default. We also use an incoming
-    // local partitioned edge so each processor deals with a
-    // subset of the partitions. We want to limit the number of
-    // in flight operations since putAll operation can be slow
-    // and bulky, otherwise we may face timeouts.
-    private final AtomicBoolean pendingOp = new AtomicBoolean();
-    private final AtomicReference<Throwable> firstFailure = new AtomicReference<>();
-    private final HazelcastInstance instance;
+public final class WriteMapP<K, V> extends AsyncHazelcastWriterP {
+
+    private static final int BUFFER_LIMIT = 1024;
     private final String mapName;
-    private final boolean isLocal;
     private final ArrayMap<K, V> buffer = new ArrayMap<>(EdgeConfig.DEFAULT_QUEUE_SIZE);
-    private final BiConsumer<Object, Throwable> callback = (r, t) -> {
-        if (t != null) {
-            firstFailure.compareAndSet(null, t);
-        }
-        buffer.clear();
-        pendingOp.set(false);
-    };
-
 
     private IMap<K, V> map;
+    private Consumer<Entry<K, V>> addToBuffer = buffer::add;
 
-    private WriteMapP(HazelcastInstance instance, String mapName) {
-        this.instance = instance;
+    private WriteMapP(HazelcastInstance instance, int maxParallelAsyncOps, String mapName) {
+        super(instance, maxParallelAsyncOps);
         this.mapName = mapName;
-        this.isLocal = ImdgUtil.isMemberInstance(instance);
     }
 
     @Override
     public void init(@Nonnull Outbox outbox, @Nonnull Context context) {
-        map = instance.getMap(mapName);
+        map = instance().getMap(mapName);
     }
 
     @Override
-    public boolean tryProcess() {
-        checkFailure();
+    protected void processInternal(Inbox inbox) {
+        if (buffer.size() < BUFFER_LIMIT) {
+            inbox.drain(addToBuffer);
+        }
+        submitPending();
+    }
+
+    @Override
+    protected boolean flushInternal() {
+        return submitPending();
+    }
+
+    private boolean submitPending() {
+        if (buffer.isEmpty()) {
+            return true;
+        }
+        if (!tryAcquirePermit()) {
+            return false;
+        }
+        setCallback(ImdgUtil.mapPutAllAsync(map, buffer));
+        buffer.clear();
         return true;
-    }
-
-    @Override
-    public void process(int ordinal, @Nonnull Inbox inbox) {
-        checkFailure();
-        if (pendingOp.compareAndSet(false, true)) {
-            inbox.drain(buffer::add);
-            ImdgUtil.mapPutAllAsync(map, buffer)
-                    .whenComplete(callback);
-        }
-    }
-
-    @Override
-    public boolean tryProcessWatermark(@Nonnull Watermark watermark) {
-        return true;
-    }
-
-    @Override
-    public boolean saveToSnapshot() {
-        return ensureAllSuccessfullyWritten();
-    }
-
-    @Override
-    public boolean complete() {
-        return ensureAllSuccessfullyWritten();
-    }
-
-    private void checkFailure() {
-        Throwable failure = firstFailure.get();
-        if (failure != null) {
-            if (failure instanceof HazelcastInstanceNotActiveException) {
-                failure = handleInstanceNotActive((HazelcastInstanceNotActiveException) failure, isLocal);
-            }
-            throw sneakyThrow(failure);
-        }
-    }
-
-    private boolean ensureAllSuccessfullyWritten() {
-        try {
-            return !pendingOp.get();
-        } finally {
-            checkFailure();
-        }
     }
 
     public static class Supplier<K, V> extends AbstractHazelcastConnectorSupplier {
         private static final long serialVersionUID = 1L;
 
+        // use a conservative max parallelism to prevent overloading
+        // the cluster with putAll operations
+        private static final int MAX_PARALLELISM = 16;
+
         private final String mapName;
+        private int maxParallelAsyncOps;
 
         public Supplier(String clientXml, String mapName) {
             super(clientXml);
@@ -130,8 +91,14 @@ public final class WriteMapP<K, V> implements Processor {
         }
 
         @Override
+        public void init(@Nonnull Context context) {
+            super.init(context);
+            maxParallelAsyncOps = max(1, MAX_PARALLELISM / context.localParallelism());
+        }
+
+        @Override
         protected Processor createProcessor(HazelcastInstance instance) {
-            return new WriteMapP<>(instance, mapName);
+            return new WriteMapP<>(instance, maxParallelAsyncOps, mapName);
         }
     }
 }

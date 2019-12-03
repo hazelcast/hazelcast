@@ -34,6 +34,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.stream.StreamSupport;
 
+import static com.hazelcast.jet.core.ProcessorMetaSupplier.preferLocalParallelismOne;
 import static com.hazelcast.jet.impl.util.Util.uncheckRun;
 
 /**
@@ -76,14 +77,13 @@ public final class AvroProcessors {
             @Nonnull SupplierEx<Schema> schemaSupplier,
             @Nonnull SupplierEx<DatumWriter<D>> datumWriterSupplier
     ) {
-        return ProcessorMetaSupplier.of(
-                WriteBufferedP.<DataFileWriter<D>, D>supplier(
+        return preferLocalParallelismOne(WriteBufferedP.<DataFileWriter<D>, D>supplier(
                         context -> createWriter(Paths.get(directoryName), context.globalProcessorIndex(),
                                 schemaSupplier, datumWriterSupplier),
                         DataFileWriter::append,
                         DataFileWriter::flush,
                         DataFileWriter::close
-                ), 1);
+                ));
     }
 
     @SuppressFBWarnings(value = "RV_RETURN_VALUE_IGNORED_BAD_PRACTICE",

@@ -149,8 +149,8 @@ public final class ReadFilesP<R, T> extends AbstractProcessor {
         checkSerializable(readFileFn, "readFileFn");
         checkSerializable(mapOutputFn, "mapOutputFn");
 
-        return ProcessorMetaSupplier.of(() -> new ReadFilesP<>(
-                directory, glob, sharedFileSystem, readFileFn, mapOutputFn),
-                2);
+        return ProcessorMetaSupplier.of(2, () -> new ReadFilesP<>(
+                directory, glob, sharedFileSystem, readFileFn, mapOutputFn)
+        );
     }
 }

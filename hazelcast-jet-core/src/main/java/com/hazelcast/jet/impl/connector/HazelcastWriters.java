@@ -62,7 +62,7 @@ public final class HazelcastWriters {
             @Nonnull String name,
             @Nullable ClientConfig clientConfig
     ) {
-        return ProcessorMetaSupplier.of(new WriteMapP.Supplier<>(asXmlString(clientConfig), name));
+        return preferLocalParallelismOne(new WriteMapP.Supplier<>(asXmlString(clientConfig), name));
     }
 
     @Nonnull
