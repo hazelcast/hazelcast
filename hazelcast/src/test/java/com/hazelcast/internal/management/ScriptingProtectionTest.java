@@ -38,6 +38,7 @@ import org.junit.runner.RunWith;
 import java.security.AccessControlException;
 import java.util.concurrent.ExecutionException;
 
+import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.Assert.assertEquals;
 
 /**
@@ -62,26 +63,18 @@ public class ScriptingProtectionTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testScriptingDisabled() throws InterruptedException, ExecutionException {
+    public void testScriptingDisabled() throws Exception {
         testInternal(false);
     }
 
     @Test
-    public void testScriptingEnabled() throws InterruptedException, ExecutionException {
+    public void testScriptingEnabled() throws Exception {
         testInternal(true);
     }
 
     @Test
-    public void testDefaultValue() throws ExecutionException, InterruptedException {
-        TestHazelcastFactory factory = new TestHazelcastFactory(1);
-        HazelcastInstance hz = factory.newHazelcastInstance();
-        HazelcastInstance client = factory.newHazelcastClient();
-        ManagementCenterService mcs = ((HazelcastClientProxy) client).client.getManagementCenterService();
-        if (!getScriptingEnabledDefaultValue()) {
-            expectedException.expect(ExecutionException.class);
-            expectedException.expectCause(CoreMatchers.instanceOf(AccessControlException.class));
-        }
-        assertEquals(SCRIPT_RETURN_VAL, mcs.runScript(hz.getCluster().getLocalMember(), ENGINE, SCRIPT).get());
+    public void testDefaultValue() throws Exception {
+        testInternal(null, getScriptingEnabledDefaultValue());
     }
 
     /**
@@ -98,16 +91,21 @@ public class ScriptingProtectionTest extends HazelcastTestSupport {
      *
      * @param enabled scripting enabled on the node
      */
-    protected void testInternal(boolean enabled) throws InterruptedException, ExecutionException {
+    protected void testInternal(boolean enabled) throws Exception {
+        testInternal(createConfig(enabled), enabled);
+    }
+
+    private void testInternal(Config config, boolean expectEnabled) throws Exception {
         TestHazelcastFactory factory = new TestHazelcastFactory(1);
-        HazelcastInstance hz = factory.newHazelcastInstance(createConfig(enabled));
+        HazelcastInstance hz = config != null ? factory.newHazelcastInstance(config) : factory.newHazelcastInstance();
         HazelcastInstance client = factory.newHazelcastClient();
         ManagementCenterService mcs = ((HazelcastClientProxy) client).client.getManagementCenterService();
-        if (!enabled) {
+        if (!expectEnabled) {
             expectedException.expect(ExecutionException.class);
             expectedException.expectCause(CoreMatchers.instanceOf(AccessControlException.class));
         }
-        assertEquals(SCRIPT_RETURN_VAL, mcs.runScript(hz.getCluster().getLocalMember(), ENGINE, SCRIPT).get());
+        assertEquals(SCRIPT_RETURN_VAL,
+                mcs.runScript(hz.getCluster().getLocalMember(), ENGINE, SCRIPT).get(ASSERT_TRUE_EVENTUALLY_TIMEOUT, SECONDS));
     }
 
     protected Config createConfig(boolean scriptingEnabled) {

@@ -231,6 +231,7 @@ public class ManagementCenterServiceTest extends HazelcastTestSupport {
         });
     }
 
+    // TODO: revisit this test
     @Test
     public void testGetTimedMemberState_empty() throws Exception {
         Optional<String> timedMemberStateJson = managementCenterService.getTimedMemberState(members[0])

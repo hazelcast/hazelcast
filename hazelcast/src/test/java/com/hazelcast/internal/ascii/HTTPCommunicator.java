@@ -268,49 +268,49 @@ public class HTTPCommunicator {
 
     public String syncMapOverWAN(String clusterName, String clusterPassword,
                                  String wanRepName, String publisherId, String mapName) throws IOException {
-        String url = address + "management/wan/sync/map";
+        String url = address + "wan/sync/map";
         return doPost(url, clusterName, clusterPassword, wanRepName, publisherId, mapName).response;
     }
 
     public String syncMapsOverWAN(String clusterName, String clusterPassword,
                                   String wanRepName, String publisherId) throws IOException {
-        String url = address + "management/wan/sync/allmaps";
+        String url = address + "wan/sync/allmaps";
         return doPost(url, clusterName, clusterPassword, wanRepName, publisherId).response;
     }
 
     public String wanMapConsistencyCheck(String clusterName, String clusterPassword,
                                          String wanRepName, String publisherId, String mapName) throws IOException {
-        String url = address + "management/wan/consistencyCheck/map";
+        String url = address + "wan/consistencyCheck/map";
         return doPost(url, clusterName, clusterPassword, wanRepName, publisherId, mapName).response;
     }
 
     public String wanPausePublisher(String clusterName, String clusterPassword,
                                     String wanRepName, String publisherId) throws IOException {
-        String url = address + "management/wan/pausePublisher";
+        String url = address + "wan/pausePublisher";
         return doPost(url, clusterName, clusterPassword, wanRepName, publisherId).response;
     }
 
     public String wanStopPublisher(String clusterName, String clusterPassword,
                                    String wanRepName, String publisherId) throws IOException {
-        String url = address + "management/wan/stopPublisher";
+        String url = address + "wan/stopPublisher";
         return doPost(url, clusterName, clusterPassword, wanRepName, publisherId).response;
     }
 
     public String wanResumePublisher(String clusterName, String clusterPassword,
                                      String wanRepName, String publisherId) throws IOException {
-        String url = address + "management/wan/resumePublisher";
+        String url = address + "wan/resumePublisher";
         return doPost(url, clusterName, clusterPassword, wanRepName, publisherId).response;
     }
 
     public String wanClearQueues(String clusterName, String clusterPassword,
                                  String wanRepName, String targetClusterName) throws IOException {
-        String url = address + "management/wan/clearWanQueues";
+        String url = address + "wan/clearWanQueues";
         return doPost(url, clusterName, clusterPassword, wanRepName, targetClusterName).response;
     }
 
     public String addWanConfig(String clusterName, String clusterPassword,
                                String wanRepConfigJson) throws IOException {
-        String url = address + "management/wan/addWanConfig";
+        String url = address + "wan/addWanConfig";
         return doPost(url, clusterName, clusterPassword, wanRepConfigJson).response;
     }
 
