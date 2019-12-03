@@ -30,6 +30,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.function.BiConsumer;
 
+import static com.hazelcast.internal.util.ConcurrencyUtil.CALLER_RUNS;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertSame;
@@ -71,7 +72,7 @@ public class SimpleCompletedFutureTest {
             }
         };
 
-        f.whenComplete(callback);
+        f.whenCompleteAsync(callback, CALLER_RUNS);
         assertEquals(1, intField[0]);
 
         f.whenCompleteAsync(callback, command -> {
@@ -130,7 +131,7 @@ public class SimpleCompletedFutureTest {
             }
         };
 
-        f.whenComplete(callback);
+        f.whenCompleteAsync(callback, CALLER_RUNS);
         assertEquals(1, intField[0]);
 
         f.whenCompleteAsync(callback, command -> {

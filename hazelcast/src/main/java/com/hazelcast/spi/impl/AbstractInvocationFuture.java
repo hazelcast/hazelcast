@@ -687,6 +687,11 @@ public abstract class AbstractInvocationFuture<V> extends InternalCompletableFut
             dependents++;
             index = ((WaitNode) index).next;
         }
+        if (index instanceof Waiter) {
+            // the first dependent registered with a default executor
+            // is not wrapped in a WaitNode
+            dependents++;
+        }
         return dependents;
     }
 

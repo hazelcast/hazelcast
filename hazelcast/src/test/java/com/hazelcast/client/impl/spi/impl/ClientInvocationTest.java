@@ -48,7 +48,6 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.LockSupport;
 import java.util.function.BiConsumer;
@@ -155,8 +154,7 @@ public class ClientInvocationTest extends ClientTestSupport {
             }).toCompletableFuture();
             userCallbackFutures[i] = userCallbackFuture;
             userCallbackFuture.whenCompleteAsync((v, t) -> {
-                if (t instanceof HazelcastClientNotActiveException
-                    && t.getCause() instanceof RejectedExecutionException) {
+                if (t instanceof HazelcastClientNotActiveException) {
                     errorLatch.countDown();
                 } else {
                     throw rethrow(t);
@@ -164,9 +162,9 @@ public class ClientInvocationTest extends ClientTestSupport {
             });
         }
         FutureUtil.waitWithDeadline(Arrays.asList(userCallbackFutures), 30, TimeUnit.SECONDS, t -> {
-            // t is ExecutionException < HazelcastClientNotActiveException < RejectedExecutionException
+            // t is ExecutionException < HazelcastClientNotActiveException
             if (t.getCause() == null
-                    || !(t.getCause().getCause() instanceof RejectedExecutionException)) {
+                    || !(t.getCause() instanceof HazelcastClientNotActiveException)) {
                 System.out.println("Throwable was unexpected instance of "
                         + (t.getCause() == null ? t.getClass() : t.getCause().getClass()));
                 throw rethrow(t);

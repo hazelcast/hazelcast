@@ -58,6 +58,12 @@ public class AbstractInvocationFuture_MiscTest extends AbstractInvocationFuture_
     }
 
     @Test
+    public void getNumberOfDependents_whenOneIsRegistered() {
+        future.thenRun(() -> ignore(null));
+        assertEquals(1, future.getNumberOfDependents());
+    }
+
+    @Test
     public void obtrudeValue_whenIncomplete() {
         future.obtrudeValue(value);
 
