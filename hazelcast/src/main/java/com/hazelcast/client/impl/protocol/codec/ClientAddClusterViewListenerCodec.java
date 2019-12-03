@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * TODO DOC
  */
-@Generated("5649a4bd254f460cbf361ea0021d360d")
+@Generated("31932e989ca413ed287b11a2e8f57174")
 public final class ClientAddClusterViewListenerCodec {
     //hex: 0x000300
     public static final int REQUEST_MESSAGE_TYPE = 768;
@@ -51,10 +51,6 @@ public final class ClientAddClusterViewListenerCodec {
     private static final int EVENT_MEMBERS_VIEW_INITIAL_FRAME_SIZE = EVENT_MEMBERS_VIEW_PARTITION_STATE_VERSION_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     //hex: 0x000302
     private static final int EVENT_MEMBERS_VIEW_MESSAGE_TYPE = 770;
-    private static final int EVENT_MEMBER_ATTRIBUTE_CHANGE_OPERATION_TYPE_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    private static final int EVENT_MEMBER_ATTRIBUTE_CHANGE_INITIAL_FRAME_SIZE = EVENT_MEMBER_ATTRIBUTE_CHANGE_OPERATION_TYPE_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    //hex: 0x000303
-    private static final int EVENT_MEMBER_ATTRIBUTE_CHANGE_MESSAGE_TYPE = 771;
 
     private ClientAddClusterViewListenerCodec() {
     }
@@ -122,19 +118,6 @@ public final class ClientAddClusterViewListenerCodec {
         EntryListCodec.encode(clientMessage, partitions, AddressCodec::encode, ListIntegerCodec::encode);
         return clientMessage;
     }
-    public static ClientMessage encodeMemberAttributeChangeEvent(com.hazelcast.cluster.Member member, java.lang.String key, int operationType, @Nullable java.lang.String value) {
-        ClientMessage clientMessage = ClientMessage.createForEncode();
-        ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[EVENT_MEMBER_ATTRIBUTE_CHANGE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
-        initialFrame.flags |= ClientMessage.IS_EVENT_FLAG;
-        encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, EVENT_MEMBER_ATTRIBUTE_CHANGE_MESSAGE_TYPE);
-        encodeInt(initialFrame.content, EVENT_MEMBER_ATTRIBUTE_CHANGE_OPERATION_TYPE_FIELD_OFFSET, operationType);
-        clientMessage.add(initialFrame);
-
-        MemberCodec.encode(clientMessage, member);
-        StringCodec.encode(clientMessage, key);
-        CodecUtil.encodeNullable(clientMessage, value, StringCodec::encode);
-        return clientMessage;
-    }
 
     public abstract static class AbstractEventHandler {
 
@@ -150,18 +133,8 @@ public final class ClientAddClusterViewListenerCodec {
                 handleMembersViewEvent(version, memberInfos, partitions, partitionStateVersion);
                 return;
             }
-            if (messageType == EVENT_MEMBER_ATTRIBUTE_CHANGE_MESSAGE_TYPE) {
-                ClientMessage.Frame initialFrame = iterator.next();
-                int operationType = decodeInt(initialFrame.content, EVENT_MEMBER_ATTRIBUTE_CHANGE_OPERATION_TYPE_FIELD_OFFSET);
-                com.hazelcast.cluster.Member member = MemberCodec.decode(iterator);
-                java.lang.String key = StringCodec.decode(iterator);
-                java.lang.String value = CodecUtil.decodeNullable(iterator, StringCodec::decode);
-                handleMemberAttributeChangeEvent(member, key, operationType, value);
-                return;
-            }
             Logger.getLogger(super.getClass()).finest("Unknown message type received on event handler :" + messageType);
         }
         public abstract void handleMembersViewEvent(int version, java.util.Collection<com.hazelcast.internal.cluster.MemberInfo> memberInfos, java.util.Collection<java.util.Map.Entry<com.hazelcast.cluster.Address, java.util.List<java.lang.Integer>>> partitions, int partitionStateVersion);
-        public abstract void handleMemberAttributeChangeEvent(com.hazelcast.cluster.Member member, java.lang.String key, int operationType, @Nullable java.lang.String value);
     }
 }

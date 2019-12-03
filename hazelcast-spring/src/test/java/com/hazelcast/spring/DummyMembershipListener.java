@@ -16,7 +16,6 @@
 
 package com.hazelcast.spring;
 
-import com.hazelcast.cluster.MemberAttributeEvent;
 import com.hazelcast.cluster.MembershipEvent;
 import com.hazelcast.cluster.MembershipListener;
 
@@ -32,8 +31,4 @@ public class DummyMembershipListener implements MembershipListener {
         //System.err.println(membershipEvent);
     }
 
-    @Override
-    public void memberAttributeChanged(MemberAttributeEvent memberAttributeEvent) {
-        System.err.println(memberAttributeEvent);
-    }
 }

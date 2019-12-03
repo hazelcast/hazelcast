@@ -95,20 +95,7 @@ public class MemberImplTest extends HazelcastTestSupport {
     @Test
     public void testConstructor_withMemberImpl() {
         MemberImpl member = new MemberImpl(new MemberImpl(address, VERSION));
-
         assertBasicMemberImplFields(member);
-    }
-
-    @Test(expected = UnsupportedOperationException.class)
-    public void testSetAttribute() {
-        MemberImpl member = new MemberImpl(address, VERSION);
-        member.setAttribute("stringKey", "stringValue");
-    }
-
-    @Test(expected = UnsupportedOperationException.class)
-    public void testRemoveAttribute() {
-        MemberImpl member = new MemberImpl(address, VERSION);
-        member.removeAttribute("removeKey");
     }
 
     private static void assertBasicMemberImplFields(MemberImpl member) {

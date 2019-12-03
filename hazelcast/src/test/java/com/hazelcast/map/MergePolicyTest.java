@@ -16,7 +16,6 @@
 
 package com.hazelcast.map;
 
-import com.hazelcast.cluster.MemberAttributeEvent;
 import com.hazelcast.cluster.MembershipEvent;
 import com.hazelcast.cluster.MembershipListener;
 import com.hazelcast.config.Config;
@@ -321,8 +320,5 @@ public class MergePolicyTest extends HazelcastTestSupport {
             memberRemovedLatch.countDown();
         }
 
-        @Override
-        public void memberAttributeChanged(MemberAttributeEvent memberAttributeEvent) {
-        }
     }
 }
