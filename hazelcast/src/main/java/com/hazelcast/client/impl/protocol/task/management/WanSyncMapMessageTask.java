@@ -49,7 +49,8 @@ public class WanSyncMapMessageTask extends AbstractCallableMessageTask<RequestPa
             case SINGLE_MAP:
                 return syncSingleMap();
             default:
-                return isNullOrEmptyAfterTrim(parameters.mapName) ? syncAllMaps() : syncSingleMap();
+                throw new IllegalArgumentException(
+                        String.format("Unsupported wanSyncType: %s", parameters.wanSyncType));
         }
     }
 
