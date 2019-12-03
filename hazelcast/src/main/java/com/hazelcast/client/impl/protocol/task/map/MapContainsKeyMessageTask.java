@@ -46,17 +46,14 @@ public class MapContainsKeyMessageTask
     }
 
     @Override
-    protected void afterSendingResponse(Object response, Throwable throwable) {
-        if (throwable != null) {
-            return;
-        }
-
-        final MapService mapService = getService(MapService.SERVICE_NAME);
+    protected Object processResponseBeforeSending(Object response) {
+        MapService mapService = getService(MapService.SERVICE_NAME);
         MapContainer mapContainer = mapService.getMapServiceContext().getMapContainer(parameters.name);
         if (mapContainer.getMapConfig().isStatisticsEnabled()) {
             LocalMapStatsProvider localMapStatsProvider = mapService.getMapServiceContext().getLocalMapStatsProvider();
             localMapStatsProvider.getLocalMapStatsImpl(parameters.name).incrementOtherOperations();
         }
+        return super.processResponseBeforeSending(response);
     }
 
     @Override
