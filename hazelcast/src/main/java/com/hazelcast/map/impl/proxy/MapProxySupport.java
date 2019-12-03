@@ -669,14 +669,16 @@ abstract class MapProxySupport<K, V>
 
     public void waitUntilLoaded() {
         try {
-            int mapNamePartition = partitionService.getPartitionId(name);
-            // first we have to check if key-load finished - otherwise the loading on other partitions might not have started.
-            // In this case we can't invoke IsPartitionLoadedOperation -> they will return "true", but it won't be correct
+            int mapNamesPartitionId = partitionService.getPartitionId(name);
+            // first we have to check if key-load finished - otherwise
+            // the loading on other partitions might not have started.
+            // In this case we can't invoke IsPartitionLoadedOperation
+            // -> they will return "true", but it won't be correct
 
             int sleepDurationMillis = INITIAL_WAIT_LOAD_SLEEP_MILLIS;
             while (true) {
                 Operation op = new IsKeyLoadFinishedOperation(name);
-                Future<Boolean> loadingFuture = operationService.invokeOnPartition(SERVICE_NAME, op, mapNamePartition);
+                Future<Boolean> loadingFuture = operationService.invokeOnPartition(SERVICE_NAME, op, mapNamesPartitionId);
                 if (loadingFuture.get()) {
                     break;
                 }
