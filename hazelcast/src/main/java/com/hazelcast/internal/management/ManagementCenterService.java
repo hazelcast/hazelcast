@@ -48,7 +48,7 @@ public class ManagementCenterService {
 
     private static final int EVENT_QUEUE_CAPACITY = 1000;
     private static final int EXECUTOR_QUEUE_CAPACITY_PER_THREAD = 1000;
-    private static final long TMS_MEMOIZATION_TIMEOUT_NANOS = TimeUnit.SECONDS.toNanos(1);
+    private static final long TMS_CACHE_TIMEOUT_NANOS = TimeUnit.SECONDS.toNanos(1);
 
     private final HazelcastInstanceImpl instance;
     private final ILogger logger;
@@ -56,13 +56,13 @@ public class ManagementCenterService {
     private final ConsoleCommandHandler commandHandler;
     private final ClientBwListConfigHandler bwListConfigHandler;
     private final BlockingQueue<Event> mcEvents;
-    private final AtomicReference<String> timedMemberStateJson = new AtomicReference<>();
+    private final AtomicReference<String> tmsJson = new AtomicReference<>();
     private final TimedMemberStateFactory tmsFactory;
     private final AtomicBoolean tmsFactoryInitialized = new AtomicBoolean(false);
 
     private volatile ManagementCenterEventListener eventListener;
     private volatile String lastMCConfigETag;
-    private volatile long lastTMSUpdateAttemptNanos = 0;
+    private volatile long lastTMSUpdateNanos;
 
     public ManagementCenterService(HazelcastInstanceImpl instance) {
         this.instance = instance;
@@ -89,23 +89,27 @@ public class ManagementCenterService {
             tmsFactory.init();
         }
 
-        if (System.nanoTime() - lastTMSUpdateAttemptNanos > TMS_MEMOIZATION_TIMEOUT_NANOS) {
+        if (System.nanoTime() - lastTMSUpdateNanos <= TMS_CACHE_TIMEOUT_NANOS) {
+            return Optional.ofNullable(tmsJson.get());
+        }
+
+        synchronized (tmsFactory) {
             try {
-                lastTMSUpdateAttemptNanos = System.nanoTime();
                 TimedMemberState tms = tmsFactory.createTimedMemberState();
-                JsonObject tmsJson = new JsonObject();
-                tmsJson.add("timedMemberState", tms.toJson());
-                timedMemberStateJson.set(tmsJson.toString());
+                JsonObject json = new JsonObject();
+                json.add("timedMemberState", tms.toJson());
+                tmsJson.set(json.toString());
+                lastTMSUpdateNanos = System.nanoTime();
             } catch (Throwable e) {
                 if (e instanceof RetryableException) {
-                    logger.warning("Failed to create TimedMemberState. Will try again on next request from Management Center.");
+                    logger.warning("Failed to create TimedMemberState. Will try again on next request "
+                            + "from Management Center.");
                 } else {
                     inspectOutOfMemoryError(e);
                 }
             }
         }
-
-        return Optional.ofNullable(timedMemberStateJson.get());
+        return Optional.ofNullable(tmsJson.get());
     }
 
     public HazelcastInstanceImpl getHazelcastInstance() {
