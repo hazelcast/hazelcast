@@ -231,14 +231,6 @@ public class ManagementCenterServiceTest extends HazelcastTestSupport {
         });
     }
 
-    // TODO: revisit this test
-    @Test
-    public void testGetTimedMemberState_empty() throws Exception {
-        Optional<String> timedMemberStateJson = managementCenterService.getTimedMemberState(members[0])
-                .get(ASSERT_TRUE_EVENTUALLY_TIMEOUT, SECONDS);
-        assertFalse(timedMemberStateJson.isPresent());
-    }
-
     @Test
     public void testGetClusterMetadata() throws Exception {
         MCClusterMetadata metadata = resolve(managementCenterService.getClusterMetadata(members[0]));

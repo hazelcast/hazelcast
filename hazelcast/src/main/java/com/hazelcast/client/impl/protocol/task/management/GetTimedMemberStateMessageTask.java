@@ -19,23 +19,30 @@ package com.hazelcast.client.impl.protocol.task.management;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.MCGetTimedMemberStateCodec;
 import com.hazelcast.client.impl.protocol.codec.MCGetTimedMemberStateCodec.RequestParameters;
-import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
+import com.hazelcast.client.impl.protocol.task.AbstractInvocationMessageTask;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.management.ManagementCenterService;
+import com.hazelcast.internal.management.operation.GetTimedMemberStateOperation;
 import com.hazelcast.internal.nio.Connection;
+import com.hazelcast.spi.impl.operationservice.InvocationBuilder;
+import com.hazelcast.spi.impl.operationservice.Operation;
 
 import java.security.Permission;
 
-public class GetTimedMemberStateMessageTask extends AbstractCallableMessageTask<RequestParameters> {
+public class GetTimedMemberStateMessageTask extends AbstractInvocationMessageTask<MCGetTimedMemberStateCodec.RequestParameters> {
 
     public GetTimedMemberStateMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
     @Override
-    protected Object call() throws Exception {
-        ManagementCenterService mcs = nodeEngine.getManagementCenterService();
-        return mcs != null ? mcs.getTimedMemberStateJson().orElse(null) : null;
+    protected InvocationBuilder getInvocationBuilder(Operation op) {
+        return nodeEngine.getOperationService().createInvocationBuilder(getServiceName(), op, nodeEngine.getThisAddress());
+    }
+
+    @Override
+    protected Operation prepareOperation() {
+        return new GetTimedMemberStateOperation();
     }
 
     @Override

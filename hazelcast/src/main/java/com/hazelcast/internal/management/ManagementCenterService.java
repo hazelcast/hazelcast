@@ -39,9 +39,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static com.hazelcast.instance.impl.OutOfMemoryErrorDispatcher.inspectOutOfMemoryError;
-import static com.hazelcast.internal.util.EmptyStatement.ignore;
-import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
-import static com.hazelcast.internal.util.ThreadUtil.createThreadName;
 
 /**
  * ManagementCenterService is responsible for sending statistics data to the Management Center.
@@ -49,64 +46,33 @@ import static com.hazelcast.internal.util.ThreadUtil.createThreadName;
 public class ManagementCenterService {
     public static final String SERVICE_NAME = "hz:core:managementCenterService";
 
-    private static final long DEFAULT_UPDATE_INTERVAL = 3000;
     private static final int EVENT_QUEUE_CAPACITY = 1000;
     private static final int EXECUTOR_QUEUE_CAPACITY_PER_THREAD = 1000;
-    private static final int UPDATE_INTERVAL_MS = 3000;
+    private static final long TMS_MEMOIZATION_TIMEOUT_NANOS = TimeUnit.SECONDS.toNanos(1);
 
     private final HazelcastInstanceImpl instance;
-    private final PrepareStateThread prepareStateThread;
     private final ILogger logger;
 
     private final ConsoleCommandHandler commandHandler;
     private final ClientBwListConfigHandler bwListConfigHandler;
-    private final AtomicBoolean isRunning = new AtomicBoolean(false);
-    private final TimedMemberStateFactory timedMemberStateFactory;
-    private final AtomicReference<String> timedMemberStateJson = new AtomicReference<>();
-
     private final BlockingQueue<Event> mcEvents;
+    private final AtomicReference<String> timedMemberStateJson = new AtomicReference<>();
+    private final TimedMemberStateFactory tmsFactory;
+    private final AtomicBoolean tmsFactoryInitialized = new AtomicBoolean(false);
 
     private volatile ManagementCenterEventListener eventListener;
     private volatile String lastMCConfigETag;
+    private volatile long lastTMSUpdateAttemptNanos = 0;
 
     public ManagementCenterService(HazelcastInstanceImpl instance) {
         this.instance = instance;
         this.logger = instance.node.getLogger(ManagementCenterService.class);
         this.commandHandler = new ConsoleCommandHandler(instance);
         this.bwListConfigHandler = new ClientBwListConfigHandler(instance.node.clientEngine);
-        this.prepareStateThread = new PrepareStateThread();
-        this.timedMemberStateFactory = instance.node.getNodeExtension().createTimedMemberStateFactory(instance);
+        this.tmsFactory = instance.node.getNodeExtension().createTimedMemberStateFactory(instance);
+        this.mcEvents = new LinkedBlockingQueue<>(EVENT_QUEUE_CAPACITY);
         registerExecutor();
-
-        // TODO
-        mcEvents = new LinkedBlockingQueue<>(EVENT_QUEUE_CAPACITY);
-        start();
-    }
-
-    private void start() {
-        if (!isRunning.compareAndSet(false, true)) {
-            // it is already started
-            return;
-        }
-
-        timedMemberStateFactory.init();
-
-        prepareStateThread.start();
         logger.info("Hazelcast is ready for communication with Hazelcast Management Center");
-    }
-
-    public void shutdown() {
-        if (!isRunning.compareAndSet(true, false)) {
-            //it is already shutdown.
-            return;
-        }
-
-        logger.info("Shutting down Hazelcast Management Center Service");
-        try {
-            interruptThread(prepareStateThread);
-        } catch (Throwable ignored) {
-            ignore(ignored);
-        }
     }
 
     private void registerExecutor() {
@@ -119,13 +85,27 @@ public class ManagementCenterService {
     }
 
     public Optional<String> getTimedMemberStateJson() {
-        return Optional.ofNullable(timedMemberStateJson.get());
-    }
-
-    private void interruptThread(Thread thread) {
-        if (thread != null) {
-            thread.interrupt();
+        if (tmsFactoryInitialized.compareAndSet(false, true)) {
+            tmsFactory.init();
         }
+
+        if (System.nanoTime() - lastTMSUpdateAttemptNanos > TMS_MEMOIZATION_TIMEOUT_NANOS) {
+            try {
+                lastTMSUpdateAttemptNanos = System.nanoTime();
+                TimedMemberState tms = tmsFactory.createTimedMemberState();
+                JsonObject tmsJson = new JsonObject();
+                tmsJson.add("timedMemberState", tms.toJson());
+                timedMemberStateJson.set(tmsJson.toString());
+            } catch (Throwable e) {
+                if (e instanceof RetryableException) {
+                    logger.warning("Failed to create TimedMemberState. Will try again on next request from Management Center.");
+                } else {
+                    inspectOutOfMemoryError(e);
+                }
+            }
+        }
+
+        return Optional.ofNullable(timedMemberStateJson.get());
     }
 
     public HazelcastInstanceImpl getHazelcastInstance() {
@@ -151,11 +131,10 @@ public class ManagementCenterService {
      */
     @SuppressFBWarnings("RV_RETURN_VALUE_IGNORED_BAD_PRACTICE")
     public void log(Event event) {
-        if (isRunning()) {
-            mcEvents.offer(event);
-            if (eventListener != null) {
-                eventListener.onEventLogged(event);
-            }
+        // TODO ignore events if polls happened a while ago
+        mcEvents.offer(event);
+        if (eventListener != null) {
+            eventListener.onEventLogged(event);
         }
     }
 
@@ -198,55 +177,6 @@ public class ManagementCenterService {
         } catch (Exception e) {
             logger.warning("Could not apply client B/W list filtering config.", e);
             throw new HazelcastException("Error while applying MC config", e);
-        }
-    }
-
-    private boolean isRunning() {
-        return isRunning.get();
-    }
-
-    private final class PrepareStateThread extends Thread {
-
-        private final long updateIntervalMs;
-
-        private PrepareStateThread() {
-            super(createThreadName(instance.getName(), "MC.State.Sender"));
-            updateIntervalMs = calcUpdateInterval();
-        }
-
-        private long calcUpdateInterval() {
-            long updateInterval = UPDATE_INTERVAL_MS;
-            return (updateInterval > 0) ? TimeUnit.SECONDS.toMillis(updateInterval) : DEFAULT_UPDATE_INTERVAL;
-        }
-
-        @Override
-        public void run() {
-            try {
-                while (isRunning()) {
-                    try {
-                        TimedMemberState tms = timedMemberStateFactory.createTimedMemberState();
-                        JsonObject tmsJson = new JsonObject();
-                        tmsJson.add("timedMemberState", tms.toJson());
-                        timedMemberStateJson.set(tmsJson.toString());
-                    } catch (Throwable e) {
-                        if (!(e instanceof RetryableException)) {
-                            throw rethrow(e);
-                        }
-                        logger.warning("Can't create TimedMemberState. Will retry after " + updateIntervalMs + " ms");
-                    }
-                    sleep();
-                }
-            } catch (Throwable throwable) {
-                inspectOutOfMemoryError(throwable);
-                if (!(throwable instanceof InterruptedException)) {
-                    logger.warning("Hazelcast Management Center Service will be shutdown due to exception.", throwable);
-                    shutdown();
-                }
-            }
-        }
-
-        private void sleep() throws InterruptedException {
-            Thread.sleep(updateIntervalMs);
         }
     }
 }
