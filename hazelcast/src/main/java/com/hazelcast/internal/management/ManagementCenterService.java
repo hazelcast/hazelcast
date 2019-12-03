@@ -93,6 +93,7 @@ public class ManagementCenterService {
             return Optional.ofNullable(tmsJson.get());
         }
 
+        // TODO: do we really need synchronization here?
         synchronized (tmsFactory) {
             try {
                 TimedMemberState tms = tmsFactory.createTimedMemberState();
