@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * TODO DOC
  */
-@Generated("0f1608cbbff9c69acacd8ee0119950b7")
+@Generated("a4a2ff1f18bf4ac69a73936a7344e753")
 public final class ClientAuthenticationCustomCodec {
     //hex: 0x000200
     public static final int REQUEST_MESSAGE_TYPE = 512;
@@ -66,7 +66,7 @@ public final class ClientAuthenticationCustomCodec {
         /**
          * Secret byte array for authentication.
          */
-        public com.hazelcast.nio.serialization.Data credentials;
+        public byte[] credentials;
 
         /**
          * Unique string identifying the connected client uniquely.
@@ -99,7 +99,7 @@ public final class ClientAuthenticationCustomCodec {
         public java.util.List<java.lang.String> labels;
     }
 
-    public static ClientMessage encodeRequest(java.lang.String clusterName, com.hazelcast.nio.serialization.Data credentials, @Nullable java.util.UUID uuid, java.lang.String clientType, byte serializationVersion, java.lang.String clientHazelcastVersion, java.lang.String clientName, java.util.Collection<java.lang.String> labels) {
+    public static ClientMessage encodeRequest(java.lang.String clusterName, byte[] credentials, @Nullable java.util.UUID uuid, java.lang.String clientType, byte serializationVersion, java.lang.String clientHazelcastVersion, java.lang.String clientName, java.util.Collection<java.lang.String> labels) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(true);
         clientMessage.setOperationName("Client.AuthenticationCustom");
@@ -109,7 +109,7 @@ public final class ClientAuthenticationCustomCodec {
         encodeByte(initialFrame.content, REQUEST_SERIALIZATION_VERSION_FIELD_OFFSET, serializationVersion);
         clientMessage.add(initialFrame);
         StringCodec.encode(clientMessage, clusterName);
-        DataCodec.encode(clientMessage, credentials);
+        ByteArrayCodec.encode(clientMessage, credentials);
         StringCodec.encode(clientMessage, clientType);
         StringCodec.encode(clientMessage, clientHazelcastVersion);
         StringCodec.encode(clientMessage, clientName);
@@ -124,7 +124,7 @@ public final class ClientAuthenticationCustomCodec {
         request.uuid = decodeUUID(initialFrame.content, REQUEST_UUID_FIELD_OFFSET);
         request.serializationVersion = decodeByte(initialFrame.content, REQUEST_SERIALIZATION_VERSION_FIELD_OFFSET);
         request.clusterName = StringCodec.decode(iterator);
-        request.credentials = DataCodec.decode(iterator);
+        request.credentials = ByteArrayCodec.decode(iterator);
         request.clientType = StringCodec.decode(iterator);
         request.clientHazelcastVersion = StringCodec.decode(iterator);
         request.clientName = StringCodec.decode(iterator);
