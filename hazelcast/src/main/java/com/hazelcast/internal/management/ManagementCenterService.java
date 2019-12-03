@@ -16,6 +16,7 @@
 
 package com.hazelcast.internal.management;
 
+import com.hazelcast.console.ConsoleApp;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.instance.impl.HazelcastInstanceImpl;
 import com.hazelcast.internal.json.JsonObject;
@@ -44,33 +45,36 @@ import static com.hazelcast.instance.impl.OutOfMemoryErrorDispatcher.inspectOutO
  * ManagementCenterService is responsible for sending statistics data to the Management Center.
  */
 public class ManagementCenterService {
+
     public static final String SERVICE_NAME = "hz:core:managementCenterService";
 
     private static final int EVENT_QUEUE_CAPACITY = 1000;
     private static final int EXECUTOR_QUEUE_CAPACITY_PER_THREAD = 1000;
     private static final long TMS_CACHE_TIMEOUT_NANOS = TimeUnit.SECONDS.toNanos(1);
+    private static final long MC_EVENTS_WINDOW_NANOS = TimeUnit.SECONDS.toNanos(30);
 
     private final HazelcastInstanceImpl instance;
     private final ILogger logger;
 
-    private final ConsoleCommandHandler commandHandler;
-    private final ClientBwListConfigHandler bwListConfigHandler;
-    private final BlockingQueue<Event> mcEvents;
     private final AtomicReference<String> tmsJson = new AtomicReference<>();
     private final TimedMemberStateFactory tmsFactory;
     private final AtomicBoolean tmsFactoryInitialized = new AtomicBoolean(false);
+    private final BlockingQueue<Event> mcEvents;
+    private final ConsoleCommandHandler commandHandler;
+    private final ClientBwListConfigHandler bwListConfigHandler;
 
     private volatile ManagementCenterEventListener eventListener;
     private volatile String lastMCConfigETag;
     private volatile long lastTMSUpdateNanos;
+    private volatile long lastMCEventsPollNanos;
 
     public ManagementCenterService(HazelcastInstanceImpl instance) {
         this.instance = instance;
         this.logger = instance.node.getLogger(ManagementCenterService.class);
-        this.commandHandler = new ConsoleCommandHandler(instance);
-        this.bwListConfigHandler = new ClientBwListConfigHandler(instance.node.clientEngine);
         this.tmsFactory = instance.node.getNodeExtension().createTimedMemberStateFactory(instance);
         this.mcEvents = new LinkedBlockingQueue<>(EVENT_QUEUE_CAPACITY);
+        this.commandHandler = new ConsoleCommandHandler(instance);
+        this.bwListConfigHandler = new ClientBwListConfigHandler(instance.node.clientEngine);
         registerExecutor();
         logger.info("Hazelcast is ready for communication with Hazelcast Management Center");
     }
@@ -84,6 +88,13 @@ public class ManagementCenterService {
                 ExecutorType.CACHED);
     }
 
+    /**
+     * Returns JSON string representation of the latest {@link TimedMemberState}.
+     * The value is lazily calculated and cached for 1 second.
+     *
+     * @return optional JSON string (result of {@link TimedMemberState#toJson()})
+     */
+    @Nonnull
     public Optional<String> getTimedMemberStateJson() {
         if (tmsFactoryInitialized.compareAndSet(false, true)) {
             tmsFactory.init();
@@ -93,7 +104,6 @@ public class ManagementCenterService {
             return Optional.ofNullable(tmsJson.get());
         }
 
-        // TODO: do we really need synchronization here?
         synchronized (tmsFactory) {
             try {
                 TimedMemberState tms = tmsFactory.createTimedMemberState();
@@ -113,34 +123,30 @@ public class ManagementCenterService {
         return Optional.ofNullable(tmsJson.get());
     }
 
-    public HazelcastInstanceImpl getHazelcastInstance() {
-        return instance;
-    }
+    /**
+     * Logs an event to Management Center and calls the configured
+     * {@link ManagementCenterEventListener} with the logged event if it is set.
+     * <p>
+     * Events are used by Management Center to show the user what happens when on a cluster member.
+     */
+    @SuppressFBWarnings("RV_RETURN_VALUE_IGNORED_BAD_PRACTICE")
+    public void log(Event event) {
+        if (System.nanoTime() - lastMCEventsPollNanos > MC_EVENTS_WINDOW_NANOS) {
+            // ignore event and clear the queue if polls happened a while ago
+            mcEvents.clear();
+        } else {
+            mcEvents.offer(event);
+        }
 
-    public ConsoleCommandHandler getCommandHandler() {
-        return commandHandler;
+        if (eventListener != null) {
+            eventListener.onEventLogged(event);
+        }
     }
 
     // used for tests
     @SuppressWarnings("unused")
     public void setEventListener(ManagementCenterEventListener eventListener) {
         this.eventListener = eventListener;
-    }
-
-    /**
-     * Logs an event to Management Center and calls the configured
-     * {@link ManagementCenterEventListener} with the logged event if it
-     * is set.
-     * <p>
-     * Events are used by Management Center to show the user what happens when on a cluster member.
-     */
-    @SuppressFBWarnings("RV_RETURN_VALUE_IGNORED_BAD_PRACTICE")
-    public void log(Event event) {
-        // TODO ignore events if polls happened a while ago
-        mcEvents.offer(event);
-        if (eventListener != null) {
-            eventListener.onEventLogged(event);
-        }
     }
 
     /**
@@ -152,7 +158,18 @@ public class ManagementCenterService {
     public List<Event> pollMCEvents() {
         List<Event> polled = new ArrayList<>();
         mcEvents.drainTo(polled);
+        lastMCEventsPollNanos = System.nanoTime();
         return polled;
+    }
+
+    /**
+     * Run console command with internal {@link ConsoleCommandHandler}.
+     *
+     * @param command   command string (see {@link ConsoleApp})
+     * @return          command output
+     */
+    public String runConsoleCommand(String command) throws InterruptedException {
+        return commandHandler.handleCommand(command);
     }
 
     /**

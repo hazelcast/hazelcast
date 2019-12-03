@@ -21,6 +21,8 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.json.Json;
 import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.internal.json.ParseException;
+import com.hazelcast.internal.management.events.Event;
+import com.hazelcast.internal.management.events.EventMetadata;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -30,6 +32,8 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+
+import java.util.List;
 
 import static com.hazelcast.internal.util.StringUtil.isNullOrEmpty;
 import static org.junit.Assert.assertEquals;
@@ -94,6 +98,61 @@ public class ManagementCenterServiceIntegrationTest extends HazelcastTestSupport
         sleepSeconds(2);
         String responseTwo = mcs.getTimedMemberStateJson().orElse(null);
         assertNotSame(responseOne, responseTwo);
+    }
+
+    @Test
+    public void testMCEvents_storesEvents_recentPoll() {
+        mcs.pollMCEvents();
+
+        TestEvent expectedEvent = new TestEvent();
+        mcs.log(expectedEvent);
+        mcs.log(new TestEvent());
+        mcs.log(new TestEvent());
+
+        List<Event> actualEvents = mcs.pollMCEvents();
+        assertEquals(3, actualEvents.size());
+        assertEquals(expectedEvent, actualEvents.get(0));
+    }
+
+    @Test
+    public void testMCEvents_ignoresEvents_noPollAtAll() {
+        mcs.log(new TestEvent());
+        mcs.log(new TestEvent());
+
+        assertEquals(0, mcs.pollMCEvents().size());
+    }
+
+    @Test
+    public void testMCEvents_clearsEventQueue_noRecentPoll() {
+        mcs.pollMCEvents();
+
+        mcs.log(new TestEvent());
+        mcs.log(new TestEvent());
+
+        sleepSeconds(31);
+
+        assertEquals(2, mcs.pollMCEvents().size());
+        mcs.pollMCEvents();
+        assertEquals(0, mcs.pollMCEvents().size());
+    }
+
+    private static class TestEvent implements Event {
+
+        @Override
+        public EventMetadata.EventType getType() {
+            return EventMetadata.EventType.WAN_SYNC_STARTED;
+        }
+
+        @Override
+        public long getTimestamp() {
+            return 42;
+        }
+
+        @Override
+        public JsonObject toJson() {
+            return null;
+        }
+
     }
 
 }

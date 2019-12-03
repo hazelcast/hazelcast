@@ -17,7 +17,6 @@
 package com.hazelcast.internal.management.operation;
 
 import com.hazelcast.core.HazelcastException;
-import com.hazelcast.internal.management.ConsoleCommandHandler;
 import com.hazelcast.internal.management.ManagementCenterService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.NodeEngineImpl;
@@ -56,7 +55,6 @@ public class RunConsoleCommandOperation extends AbstractLocalOperation {
         Future<String> future = executionService.submit(
                 ExecutionService.MC_EXECUTOR,
                 () -> {
-                    ConsoleCommandHandler handler = mcs.getCommandHandler();
                     try {
                         final String ns = namespace;
                         String cmd = command;
@@ -64,7 +62,7 @@ public class RunConsoleCommandOperation extends AbstractLocalOperation {
                             // set namespace as a part of the command
                             cmd = ns + "__" + cmd;
                         }
-                        return handler.handleCommand(cmd);
+                        return mcs.runConsoleCommand(cmd);
                     } catch (InterruptedException e) {
                         Thread.currentThread().interrupt();
                         throw e;
