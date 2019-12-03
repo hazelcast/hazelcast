@@ -27,6 +27,7 @@ import com.hazelcast.config.MetadataPolicy;
 import com.hazelcast.config.PartitioningStrategyConfig;
 import com.hazelcast.config.QueryCacheConfig;
 import com.hazelcast.instance.impl.Node;
+import com.hazelcast.internal.dynamicconfig.DynamicConfigurationAwareConfig;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.partition.PartitioningStrategy;
@@ -113,5 +114,14 @@ public class AddMapConfigMessageTask
     @Override
     public String getMethodName() {
         return "addMapConfig";
+    }
+
+    @Override
+    protected boolean checkStaticConfigDoesNotExist(IdentifiedDataSerializable config) {
+        DynamicConfigurationAwareConfig nodeConfig = (DynamicConfigurationAwareConfig) nodeEngine.getConfig();
+        MapConfig mapConfig = (MapConfig) config;
+        return nodeConfig.checkStaticConfigDoesNotExist(
+                nodeConfig.getStaticConfig().getMapConfigs(),
+                mapConfig.getName(), mapConfig);
     }
 }

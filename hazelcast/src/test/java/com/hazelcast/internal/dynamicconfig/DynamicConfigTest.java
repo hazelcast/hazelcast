@@ -59,14 +59,14 @@ import com.hazelcast.config.TopicConfig;
 import com.hazelcast.config.WanReplicationRef;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.spi.eviction.EvictableEntryView;
-import com.hazelcast.spi.eviction.EvictionPolicyComparator;
 import com.hazelcast.map.MapPartitionLostEvent;
 import com.hazelcast.map.listener.EntryAddedListener;
 import com.hazelcast.map.listener.MapPartitionLostListener;
 import com.hazelcast.replicatedmap.ReplicatedMap;
 import com.hazelcast.ringbuffer.RingbufferStore;
 import com.hazelcast.ringbuffer.RingbufferStoreFactory;
+import com.hazelcast.spi.eviction.EvictableEntryView;
+import com.hazelcast.spi.eviction.EvictionPolicyComparator;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -89,6 +89,7 @@ import java.util.concurrent.TimeUnit;
 import static com.hazelcast.config.MaxSizePolicy.ENTRY_COUNT;
 import static com.hazelcast.config.MaxSizePolicy.PER_NODE;
 import static com.hazelcast.config.MultiMapConfig.ValueCollectionType.LIST;
+import static com.hazelcast.test.TestConfigUtils.NON_DEFAULT_BACKUP_COUNT;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -453,6 +454,17 @@ public class DynamicConfigTest extends HazelcastTestSupport {
         driver.getConfig().addCacheConfig(config);
 
         assertConfigurationsEqualsOnAllMembers(config);
+    }
+
+    @Test
+    public void testSameCacheConfig_canBeAddedTwice() {
+        CacheSimpleConfig config = new CacheSimpleConfig()
+                .setName(name)
+                .setBackupCount(NON_DEFAULT_BACKUP_COUNT);
+
+        driver.getConfig().addCacheConfig(config);
+        driver.getCacheManager().getCache(name);
+        driver.getConfig().addCacheConfig(config);
     }
 
     @Test
