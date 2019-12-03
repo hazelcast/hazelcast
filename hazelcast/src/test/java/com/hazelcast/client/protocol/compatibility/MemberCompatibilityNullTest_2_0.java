@@ -92,7 +92,7 @@ public class MemberCompatibilityNullTest_2_0 {
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         ClientAuthenticationCustomCodec.RequestParameters parameters = ClientAuthenticationCustomCodec.decodeRequest(fromFile);
         assertTrue(isEqual(aString, parameters.clusterName));
-        assertTrue(isEqual(aData, parameters.credentials));
+        assertTrue(isEqual(aByteArray, parameters.credentials));
         assertTrue(isEqual(null, parameters.uuid));
         assertTrue(isEqual(aString, parameters.clientType));
         assertTrue(isEqual(aByte, parameters.serializationVersion));
