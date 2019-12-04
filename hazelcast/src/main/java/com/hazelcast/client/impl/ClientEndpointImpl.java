@@ -19,7 +19,6 @@ package com.hazelcast.client.impl;
 import com.hazelcast.client.Client;
 import com.hazelcast.client.impl.statistics.ClientStatistics;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
-import com.hazelcast.internal.metrics.DynamicMetricsProvider;
 import com.hazelcast.internal.metrics.MetricConsumer;
 import com.hazelcast.internal.metrics.MetricDescriptor;
 import com.hazelcast.internal.metrics.MetricTarget;
@@ -51,8 +50,7 @@ import static com.hazelcast.internal.metrics.MetricTarget.MANAGEMENT_CENTER;
 /**
  * The {@link com.hazelcast.client.impl.ClientEndpoint} and {@link Client} implementation.
  */
-public final class ClientEndpointImpl
-    implements ClientEndpoint, DynamicMetricsProvider {
+public final class ClientEndpointImpl implements ClientEndpoint {
     private static final String METRICS_TAG_CLIENT = "client";
     private static final String METRICS_TAG_TIMESTAMP = "timestamp";
 
@@ -83,7 +81,6 @@ public final class ClientEndpointImpl
         this.socketAddress = connection.getRemoteSocketAddress();
         this.clientVersion = "Unknown";
         this.creationTime = System.currentTimeMillis();
-        nodeEngine.getMetricsRegistry().registerDynamicMetricsProvider(this);
     }
 
     @Override
