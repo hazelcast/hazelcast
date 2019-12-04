@@ -1726,13 +1726,7 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
             } else if ("async-backup-count".equals(nodeName)) {
                 mapConfig.setAsyncBackupCount(getIntegerValue("async-backup-count", value));
             } else if ("eviction".equals(nodeName)) {
-                EvictionConfig evictionConfig = getEvictionConfig(node, false, true);
-                try {
-                    checkMapConfig(mapConfig, config.getNativeMemoryConfig(), null, new HazelcastProperties(config));
-                } catch (IllegalArgumentException e) {
-                    throw new InvalidConfigurationException(e.getMessage());
-                }
-                mapConfig.setEvictionConfig(evictionConfig);
+                mapConfig.setEvictionConfig(getEvictionConfig(node, false, true));
             } else if ("time-to-live-seconds".equals(nodeName)) {
                 mapConfig.setTimeToLiveSeconds(getIntegerValue("time-to-live-seconds", value));
             } else if ("max-idle-seconds".equals(nodeName)) {
@@ -1780,6 +1774,11 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
             } else if ("query-caches".equals(nodeName)) {
                 mapQueryCacheHandler(node, mapConfig);
             }
+        }
+        try {
+            checkMapConfig(mapConfig, config.getNativeMemoryConfig(), null, new HazelcastProperties(config));
+        } catch (IllegalArgumentException e) {
+            throw new InvalidConfigurationException(e.getMessage());
         }
         config.addMapConfig(mapConfig);
     }
