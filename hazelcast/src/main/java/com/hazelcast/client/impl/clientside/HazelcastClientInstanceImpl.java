@@ -809,7 +809,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
 
     public void onClusterChange() {
         ILogger logger = loggingService.getLogger(HazelcastInstance.class);
-        logger.info("Resetting local state of the client");
+        logger.info("Resetting local state of the client, because of a cluster change ");
 
         for (Disposable disposable : onClusterChangeDisposables) {
             disposable.dispose();
@@ -822,6 +822,22 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         //non retryable client messages will fail immediately
         //retryable client messages will be retried but they will wait for new partition table
         connectionManager.reset();
+    }
+
+    public void onClusterRestart() {
+        ILogger logger = loggingService.getLogger(HazelcastInstance.class);
+        logger.info("Clearing local state of the client, because of a cluster restart ");
+
+        for (Disposable disposable : onClusterChangeDisposables) {
+            disposable.dispose();
+        }
+        //clear the member list version
+        clusterService.clearMemberListVersion();
+    }
+
+    public void waitForInitialMembershipEvents() {
+        //after clusterService/connection manager has reset, cluster listeners will be re added
+        clusterService.waitInitialMemberListFetched();
     }
 
     public void sendStateToCluster() throws ExecutionException, InterruptedException {

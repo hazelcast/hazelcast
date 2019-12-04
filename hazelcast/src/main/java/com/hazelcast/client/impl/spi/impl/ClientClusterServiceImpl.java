@@ -74,18 +74,17 @@ public class ClientClusterServiceImpl implements ClientClusterService {
 
     private static final int INITIAL_MEMBERS_TIMEOUT_SECONDS = 120;
 
-    private static final MemberListSnapshot EMPTY_MEMBERLIST_SNAPSHOT =
+    private static final MemberListSnapshot EMPTY_SNAPSHOT =
             new MemberListSnapshot(-1, new LinkedHashMap<>(), Collections.emptySet());
     private final HazelcastClientInstanceImpl client;
 
-    private final AtomicReference<MemberListSnapshot> memberListSnapshot = new AtomicReference<>(EMPTY_MEMBERLIST_SNAPSHOT);
+    private final AtomicReference<MemberListSnapshot> memberListSnapshot = new AtomicReference<>(EMPTY_SNAPSHOT);
     private final ConcurrentMap<UUID, MembershipListener> listeners = new ConcurrentHashMap<>();
     private final Object clusterViewLock = new Object();
     private final Set<String> labels;
     private final ILogger logger;
     private final ClientConnectionManager connectionManager;
-    private final CountDownLatch initialListFetchedLatch = new CountDownLatch(1);
-
+    private volatile CountDownLatch initialListFetchedLatch = new CountDownLatch(1);
 
     private static final class MemberListSnapshot {
         private final int version;
@@ -237,7 +236,7 @@ public class ClientClusterServiceImpl implements ClientClusterService {
     public void shutdown() {
     }
 
-    private void waitInitialMemberListFetched() {
+    public void waitInitialMemberListFetched() {
         try {
             boolean success = initialListFetchedLatch.await(INITIAL_MEMBERS_TIMEOUT_SECONDS, TimeUnit.SECONDS);
             if (!success) {
@@ -249,17 +248,28 @@ public class ClientClusterServiceImpl implements ClientClusterService {
         }
     }
 
+    public void clearMemberListVersion() {
+        synchronized (clusterViewLock) {
+            if (logger.isFineEnabled()) {
+                logger.fine("Resetting the member list version ");
+            }
+            MemberListSnapshot clusterViewSnapshot = memberListSnapshot.get();
+            //This check is necessary so that `clearMemberListVersion` when handling auth response will not
+            //intervene with client failover logic
+            if (clusterViewSnapshot != EMPTY_SNAPSHOT) {
+                memberListSnapshot.set(new MemberListSnapshot(0, clusterViewSnapshot.members, clusterViewSnapshot.memberSet));
+            }
+        }
+    }
+
     public void reset() {
-        List<MembershipEvent> events;
         synchronized (clusterViewLock) {
             if (logger.isFineEnabled()) {
                 logger.fine("Resetting the cluster snapshot");
             }
-            MemberListSnapshot cleanSnapshot = new MemberListSnapshot(-1, new LinkedHashMap<>(), Collections.emptySet());
-            events = detectMembershipEvents(memberListSnapshot.get().memberSet, Collections.emptySet());
-            memberListSnapshot.set(cleanSnapshot);
+            initialListFetchedLatch = new CountDownLatch(1);
+            memberListSnapshot.set(EMPTY_SNAPSHOT);
         }
-        fireEvents(events);
     }
 
     private void applyInitialState(int version, Collection<MemberInfo> memberInfos) {
@@ -315,7 +325,10 @@ public class ClientClusterServiceImpl implements ClientClusterService {
         }
 
         if (events.size() != 0) {
-            logger.info(membersString(memberListSnapshot.get()));
+            MemberListSnapshot snapshot = memberListSnapshot.get();
+            if (snapshot.members.values().size() != 0) {
+                logger.info(membersString(snapshot));
+            }
         }
         return events;
     }
@@ -339,10 +352,10 @@ public class ClientClusterServiceImpl implements ClientClusterService {
                     + membersString(snapshot));
         }
         MemberListSnapshot clusterViewSnapshot = memberListSnapshot.get();
-        if (clusterViewSnapshot == EMPTY_MEMBERLIST_SNAPSHOT) {
+        if (clusterViewSnapshot == EMPTY_SNAPSHOT) {
             synchronized (clusterViewLock) {
                 clusterViewSnapshot = memberListSnapshot.get();
-                if (clusterViewSnapshot == EMPTY_MEMBERLIST_SNAPSHOT) {
+                if (clusterViewSnapshot == EMPTY_SNAPSHOT) {
                     //this means this is the first time client connected to cluster
                     applyInitialState(memberListVersion, memberInfos);
                     initialListFetchedLatch.countDown();
