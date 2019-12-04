@@ -18,6 +18,7 @@ package com.hazelcast.client.impl;
 
 import com.hazelcast.client.Client;
 import com.hazelcast.client.impl.statistics.ClientStatistics;
+import com.hazelcast.internal.metrics.DynamicMetricsProvider;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.security.Credentials;
 import com.hazelcast.transaction.TransactionContext;
@@ -31,7 +32,7 @@ import java.util.concurrent.Callable;
 /**
  * Represents an endpoint to a client. So for each client connected to a member, a ClientEndpoint object is available.
  */
-public interface ClientEndpoint extends Client {
+public interface ClientEndpoint extends Client, DynamicMetricsProvider {
 
     /**
      * Checks if the endpoint is alive.
