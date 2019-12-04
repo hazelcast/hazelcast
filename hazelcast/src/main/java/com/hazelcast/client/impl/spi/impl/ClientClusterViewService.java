@@ -121,7 +121,7 @@ public class ClientClusterViewService implements ClientClusterService, ClientPar
     private final ILogger logger;
     private final ClientConnectionManager connectionManager;
     private final ClientListenerService listenerService;
-    private final CountDownLatch initialListFetchedLatch = new CountDownLatch(1);
+    private volatile CountDownLatch initialListFetchedLatch = new CountDownLatch(1);
     private volatile int partitionCount;
     private volatile UUID clusterViewListenerUUID;
 
@@ -286,7 +286,7 @@ public class ClientClusterViewService implements ClientClusterService, ClientPar
         }
     }
 
-    private void waitInitialMemberListFetched() {
+    public void waitInitialMemberListFetched() {
         try {
             boolean success = initialListFetchedLatch.await(INITIAL_MEMBERS_TIMEOUT_SECONDS, TimeUnit.SECONDS);
             if (!success) {
@@ -298,18 +298,29 @@ public class ClientClusterViewService implements ClientClusterService, ClientPar
         }
     }
 
-    public void reset() {
-        List<MembershipEvent> events;
+    public void clearMemberListVersion() {
         synchronized (clusterViewLock) {
+            if (logger.isFineEnabled()) {
+                logger.fine("Resetting the member list version ");
+            }
+            ClusterViewSnapshot clusterViewSnapshot = clusterSnapshot.get();
+            //This check is necessary so that `clearMemberListVersion` when handling auth response will not
+            //intervene with client failover logic
+            if (clusterViewSnapshot != EMPTY_SNAPSHOT) {
+                clusterSnapshot.set(new ClusterViewSnapshot(0, clusterViewSnapshot.members, clusterViewSnapshot.memberSet,
+                        clusterViewSnapshot.partitionSateVersion, clusterViewSnapshot.partitions));
+            }
+        }
+    }
+
+    public void reset() {
+        synchronized (clusterViewLock) {
+            initialListFetchedLatch = new CountDownLatch(1);
             if (logger.isFineEnabled()) {
                 logger.fine("Resetting the cluster snapshot");
             }
-            ClusterViewSnapshot cleanSnapshot = new ClusterViewSnapshot(-1, new LinkedHashMap<>(), Collections.emptySet(),
-                    -1, new Int2ObjectHashMap<>());
-            events = detectMembershipEvents(clusterSnapshot.get().memberSet, Collections.emptySet());
-            clusterSnapshot.set(cleanSnapshot);
+            clusterSnapshot.set(EMPTY_SNAPSHOT);
         }
-        fireEvents(events);
     }
 
     private void applyInitialState(int version, Collection<MemberInfo> memberInfos,
@@ -418,7 +429,10 @@ public class ClientClusterViewService implements ClientClusterService, ClientPar
         }
 
         if (events.size() != 0) {
-            logger.info(membersString(clusterSnapshot.get()));
+            ClusterViewSnapshot snapshot = clusterSnapshot.get();
+            if (snapshot.members.values().size() != 0) {
+                logger.info(membersString(snapshot));
+            }
         }
         return events;
     }
