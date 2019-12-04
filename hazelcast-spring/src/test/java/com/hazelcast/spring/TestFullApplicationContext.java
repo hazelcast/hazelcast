@@ -28,8 +28,6 @@ import com.hazelcast.config.ClassFilter;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.ConsistencyCheckStrategy;
 import com.hazelcast.config.CountDownLatchConfig;
-import com.hazelcast.config.DiscoveryConfig;
-import com.hazelcast.config.DiscoveryStrategyConfig;
 import com.hazelcast.config.DurableExecutorConfig;
 import com.hazelcast.config.EntryListenerConfig;
 import com.hazelcast.config.EurekaConfig;
@@ -834,8 +832,6 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
 
         assertTrue("reuse-address", networkConfig.isReuseAddress());
 
-        assertDiscoveryConfig(networkConfig.getJoin().getDiscoveryConfig());
-
         MemberAddressProviderConfig memberAddressProviderConfig = networkConfig.getMemberAddressProviderConfig();
         assertFalse(memberAddressProviderConfig.isEnabled());
         assertEquals("com.hazelcast.spring.DummyMemberAddressProvider", memberAddressProviderConfig.getClassName());
@@ -892,25 +888,6 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         assertFalse(eureka.isEnabled());
         assertEquals("true", eureka.getProperty("self-registration"));
         assertEquals("hazelcast", eureka.getProperty("namespace"));
-    }
-
-    private void assertDiscoveryConfig(DiscoveryConfig discoveryConfig) {
-        assertTrue(discoveryConfig.getDiscoveryServiceProvider() instanceof DummyDiscoveryServiceProvider);
-        assertTrue(discoveryConfig.getNodeFilter() instanceof DummyNodeFilter);
-        List<DiscoveryStrategyConfig> discoveryStrategyConfigs
-                = (List<DiscoveryStrategyConfig>) discoveryConfig.getDiscoveryStrategyConfigs();
-        assertEquals(2, discoveryStrategyConfigs.size());
-        DiscoveryStrategyConfig discoveryStrategyConfig = discoveryStrategyConfigs.get(0);
-        assertTrue(discoveryStrategyConfig.getDiscoveryStrategyFactory() instanceof DummyDiscoveryStrategyFactory);
-        assertEquals(3, discoveryStrategyConfig.getProperties().size());
-        assertEquals("foo", discoveryStrategyConfig.getProperties().get("key-string"));
-        assertEquals("123", discoveryStrategyConfig.getProperties().get("key-int"));
-        assertEquals("true", discoveryStrategyConfig.getProperties().get("key-boolean"));
-
-        DiscoveryStrategyConfig discoveryStrategyConfig2 = discoveryStrategyConfigs.get(1);
-        assertEquals(DummyDiscoveryStrategy.class.getName(), discoveryStrategyConfig2.getClassName());
-        assertEquals(1, discoveryStrategyConfig2.getProperties().size());
-        assertEquals("foo2", discoveryStrategyConfig2.getProperties().get("key-string"));
     }
 
     @Test
@@ -996,22 +973,6 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         assertEquals("5000", publisherProps.get("response.timeout.millis"));
         assertEquals(WanAcknowledgeType.ACK_ON_OPERATION_COMPLETE.name(), publisherProps.get("ack.type"));
         assertEquals("pass", publisherProps.get("group.password"));
-
-        WanPublisherConfig customPublisher = wcfg.getWanPublisherConfigs().get(1);
-        assertEquals("istanbul", customPublisher.getGroupName());
-        assertEquals("istanbulPublisherId", customPublisher.getPublisherId());
-        assertEquals("com.hazelcast.wan.custom.CustomPublisher", customPublisher.getClassName());
-        assertEquals(WANQueueFullBehavior.THROW_EXCEPTION_ONLY_IF_REPLICATION_ACTIVE, customPublisher.getQueueFullBehavior());
-        Map<String, Comparable> customPublisherProps = customPublisher.getProperties();
-        assertEquals("prop.publisher", customPublisherProps.get("custom.prop.publisher"));
-        assertEquals("5", customPublisherProps.get("discovery.period"));
-        assertEquals("2", customPublisherProps.get("maxEndpoints"));
-        assertAwsConfig(customPublisher.getAwsConfig());
-        assertGcpConfig(customPublisher.getGcpConfig());
-        assertAzureConfig(customPublisher.getAzureConfig());
-        assertKubernetesConfig(customPublisher.getKubernetesConfig());
-        assertEurekaConfig(customPublisher.getEurekaConfig());
-        assertDiscoveryConfig(customPublisher.getDiscoveryConfig());
 
         WanPublisherConfig publisherPlaceHolderConfig = wcfg.getWanPublisherConfigs().get(2);
         assertEquals(5000, publisherPlaceHolderConfig.getQueueCapacity());

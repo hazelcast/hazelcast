@@ -390,13 +390,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "            properties:\n"
                 + "              key-string: foo\n"
                 + "              key-int: 123\n"
-                + "              key-boolean: true\n"
-                + "          - class: DummyDiscoveryStrategy2\n"
-                + "            enabled: true\n"
-                + "            properties:\n"
-                + "              key-string: foobar\n"
-                + "              key-int: 321\n"
-                + "              key-boolean: false\n";
+                + "              key-boolean: true\n";
 
         Config config = buildConfig(yaml);
         DiscoveryConfig discoveryConfig = config.getNetworkConfig().getJoin().getDiscoveryConfig();
@@ -1825,12 +1819,6 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "                  key-string: foo\n"
                 + "                  key-int: 123\n"
                 + "                  key-boolean: true\n"
-                + "              - class: DummyDiscoveryStrategy2\n"
-                + "                enabled: true\n"
-                + "                properties:\n"
-                + "                  key-string: foobar\n"
-                + "                  key-int: 321\n"
-                + "                  key-boolean: false\n"
                 + "          properties:\n"
                 + "            custom.prop.publisher: prop.publisher\n"
                 + "            discovery.period: 5\n"
@@ -1891,7 +1879,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
 
     private void assertDiscoveryConfig(DiscoveryConfig c) {
         assertEquals("DummyFilterClass", c.getNodeFilterClass());
-        assertEquals(2, c.getDiscoveryStrategyConfigs().size());
+        assertEquals(1, c.getDiscoveryStrategyConfigs().size());
 
         Iterator<DiscoveryStrategyConfig> iterator = c.getDiscoveryStrategyConfigs().iterator();
         DiscoveryStrategyConfig config = iterator.next();
@@ -1901,14 +1889,6 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
         assertEquals("foo", props.get("key-string"));
         assertEquals("123", props.get("key-int"));
         assertEquals("true", props.get("key-boolean"));
-
-        DiscoveryStrategyConfig config2 = iterator.next();
-        assertEquals("DummyDiscoveryStrategy2", config2.getClassName());
-
-        Map<String, Comparable> props2 = config2.getProperties();
-        assertEquals("foobar", props2.get("key-string"));
-        assertEquals("321", props2.get("key-int"));
-        assertEquals("false", props2.get("key-boolean"));
     }
 
     @Override

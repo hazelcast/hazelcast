@@ -105,22 +105,6 @@
                     <hz:eureka enabled="false"
                                self-registration="true"
                                namespace="hazelcast"/>
-                    <hz:discovery-strategies>
-                        <hz:node-filter implementation="dummyNodeFilter"/>
-                        <hz:discovery-strategy discovery-strategy-factory="dummyDiscoveryStrategyFactory">
-                            <hz:properties>
-                                <hz:property name="key-string">foo</hz:property>
-                                <hz:property name="key-int">123</hz:property>
-                                <hz:property name="key-boolean">true</hz:property>
-                            </hz:properties>
-                        </hz:discovery-strategy>
-                        <hz:discovery-strategy class-name="com.hazelcast.spring.DummyDiscoveryStrategy">
-                            <hz:properties>
-                                <hz:property name="key-string">foo2</hz:property>
-                            </hz:properties>
-                        </hz:discovery-strategy>
-                        <hz:discovery-service-provider implementation="dummyDiscoveryServiceProvider"/>
-                    </hz:discovery-strategies>
                     <hz:properties>
                         <hz:property name="custom.prop.publisher">prop.publisher</hz:property>
                         <hz:property name="discovery.period">5</hz:property>
@@ -192,22 +176,6 @@
                     <hz:eureka enabled="false"
                                self-registration="true"
                                namespace="hazelcast"/>
-                    <hz:discovery-strategies>
-                        <hz:node-filter implementation="dummyNodeFilter"/>
-                        <hz:discovery-strategy discovery-strategy-factory="dummyDiscoveryStrategyFactory">
-                            <hz:properties>
-                                <hz:property name="key-string">foo</hz:property>
-                                <hz:property name="key-int">123</hz:property>
-                                <hz:property name="key-boolean">true</hz:property>
-                            </hz:properties>
-                        </hz:discovery-strategy>
-                        <hz:discovery-strategy class-name="com.hazelcast.spring.DummyDiscoveryStrategy">
-                            <hz:properties>
-                                <hz:property name="key-string">foo2</hz:property>
-                            </hz:properties>
-                        </hz:discovery-strategy>
-                        <hz:discovery-service-provider implementation="dummyDiscoveryServiceProvider"/>
-                    </hz:discovery-strategies>
                 </hz:join>
                 <hz:interfaces enabled="false">
                     <hz:interface>10.10.1.*</hz:interface>
