@@ -1,5 +1,14 @@
 This document lists the new features, enhancements, fixed issues and, removed or deprecated features for Hazelcast IMDG 3.11.x releases. The numbers in the square brackets refer to the issues in Hazelcast's GitHub repositories.
 
+==== 3.11.6 ====
+
+1. Fixes
+
+* Fixed an issue where the `OSMBean.getFreePhysicalMemorySize()`
+method was being excessively executed on AIX operating
+systems: added the option to disable the retrieval using
+this method. [#16091]
+
 ==== 3.11.6-SNAPSHOT ====
 
 1. Fixes
