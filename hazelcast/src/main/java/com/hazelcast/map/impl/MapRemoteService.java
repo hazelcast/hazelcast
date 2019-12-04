@@ -27,7 +27,6 @@ import com.hazelcast.spi.merge.SplitBrainMergePolicyProvider;
 
 import static com.hazelcast.config.NearCacheConfigAccessor.initDefaultMaxSizeForOnHeapMaps;
 import static com.hazelcast.internal.config.ConfigValidator.checkMapConfig;
-import static com.hazelcast.internal.config.ConfigValidator.checkNotNativeWhenOpenSource;
 import static com.hazelcast.internal.config.ConfigValidator.checkNearCacheConfig;
 
 /**
@@ -51,7 +50,6 @@ class MapRemoteService implements RemoteService {
         MapConfig mapConfig = config.findMapConfig(name);
         SplitBrainMergePolicyProvider mergePolicyProvider = nodeEngine.getSplitBrainMergePolicyProvider();
 
-        checkNotNativeWhenOpenSource(mapConfig.getInMemoryFormat());
         checkMapConfig(mapConfig, config.getNativeMemoryConfig(), mergePolicyProvider,
                 mapServiceContext.getNodeEngine().getProperties());
 

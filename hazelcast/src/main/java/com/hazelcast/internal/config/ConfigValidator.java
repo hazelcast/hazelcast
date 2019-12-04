@@ -124,6 +124,7 @@ public final class ConfigValidator {
                                       NativeMemoryConfig nativeMemoryConfig,
                                       SplitBrainMergePolicyProvider mergePolicyProvider,
                                       HazelcastProperties properties) {
+        checkNotNativeWhenOpenSource(mapConfig.getInMemoryFormat());
 
         if (getBuildInfo().isEnterprise()) {
             checkMapNativeConfig(mapConfig, nativeMemoryConfig);
@@ -631,7 +632,7 @@ public final class ConfigValidator {
      *
      * @param inMemoryFormat supplied inMemoryFormat
      */
-    public static void checkNotNativeWhenOpenSource(InMemoryFormat inMemoryFormat) {
+    private static void checkNotNativeWhenOpenSource(InMemoryFormat inMemoryFormat) {
         if (inMemoryFormat == NATIVE && !getBuildInfo().isEnterprise()) {
             throw new InvalidConfigurationException("NATIVE storage format is supported in Hazelcast Enterprise only."
                     + " Make sure you have Hazelcast Enterprise JARs on your classpath!");
