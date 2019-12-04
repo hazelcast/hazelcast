@@ -28,8 +28,6 @@ import com.hazelcast.wan.impl.WanSyncType;
 import java.security.Permission;
 import java.util.UUID;
 
-import static com.hazelcast.internal.util.StringUtil.isNullOrEmptyAfterTrim;
-
 public class WanSyncMapMessageTask extends AbstractCallableMessageTask<RequestParameters> {
 
     public WanSyncMapMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
@@ -96,7 +94,7 @@ public class WanSyncMapMessageTask extends AbstractCallableMessageTask<RequestPa
 
     @Override
     public Object[] getParameters() {
-        return new Object[] {
+        return new Object[]{
                 parameters.wanReplicationName,
                 parameters.wanPublisherId,
                 parameters.wanSyncType,

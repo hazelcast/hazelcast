@@ -113,17 +113,17 @@ public class MCWanBatchReplicationPublisherConfig {
 
     @Override
     public String toString() {
-        return "MCWanBatchReplicationPublisherConfig{" +
-                "name='" + name + '\'' +
-                ", targetCluster='" + targetCluster + '\'' +
-                ", publisherId='" + publisherId + '\'' +
-                ", endpoints='" + endpoints + '\'' +
-                ", queueCapacity=" + queueCapacity +
-                ", batchSize=" + batchSize +
-                ", batchMaxDelayMillis=" + batchMaxDelayMillis +
-                ", responseTimeoutMillis=" + responseTimeoutMillis +
-                ", ackType=" + ackType +
-                ", queueFullBehaviour=" + queueFullBehaviour +
-                '}';
+        return "MCWanBatchReplicationPublisherConfig{"
+                + "name='" + name + '\''
+                + ", targetCluster='" + targetCluster + '\''
+                + ", publisherId='" + publisherId + '\''
+                + ", endpoints='" + endpoints + '\''
+                + ", queueCapacity=" + queueCapacity
+                + ", batchSize=" + batchSize
+                + ", batchMaxDelayMillis=" + batchMaxDelayMillis
+                + ", responseTimeoutMillis=" + responseTimeoutMillis
+                + ", ackType=" + ackType
+                + ", queueFullBehaviour=" + queueFullBehaviour
+                + '}';
     }
 }
