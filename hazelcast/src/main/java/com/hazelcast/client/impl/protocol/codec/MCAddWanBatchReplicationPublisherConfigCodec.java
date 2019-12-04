@@ -34,10 +34,10 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  */
 
 /**
- * Add a new WAN replication configuration
+ * Add a new WAN batch replication publisher configuration
  */
-@Generated("81020ffe23d8bfdaa1c496dcd1720eb2")
-public final class MCAddWanReplicationConfigCodec {
+@Generated("fca985fda7b497363eac562545d07108")
+public final class MCAddWanBatchReplicationPublisherConfigCodec {
     //hex: 0x201500
     public static final int REQUEST_MESSAGE_TYPE = 2102528;
     //hex: 0x201501
@@ -51,7 +51,7 @@ public final class MCAddWanReplicationConfigCodec {
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_QUEUE_FULL_BEHAVIOR_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
 
-    private MCAddWanReplicationConfigCodec() {
+    private MCAddWanBatchReplicationPublisherConfigCodec() {
     }
 
     @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
@@ -121,7 +121,7 @@ public final class MCAddWanReplicationConfigCodec {
     public static ClientMessage encodeRequest(java.lang.String name, java.lang.String targetCluster, @Nullable java.lang.String publisherId, java.lang.String endpoints, int queueCapacity, int batchSize, int batchMaxDelayMillis, int responseTimeoutMillis, int ackType, int queueFullBehavior) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
-        clientMessage.setOperationName("MC.AddWanReplicationConfig");
+        clientMessage.setOperationName("MC.AddWanBatchReplicationPublisherConfig");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
         encodeInt(initialFrame.content, REQUEST_QUEUE_CAPACITY_FIELD_OFFSET, queueCapacity);
@@ -138,7 +138,7 @@ public final class MCAddWanReplicationConfigCodec {
         return clientMessage;
     }
 
-    public static MCAddWanReplicationConfigCodec.RequestParameters decodeRequest(ClientMessage clientMessage) {
+    public static MCAddWanBatchReplicationPublisherConfigCodec.RequestParameters decodeRequest(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         RequestParameters request = new RequestParameters();
         ClientMessage.Frame initialFrame = iterator.next();
@@ -181,7 +181,7 @@ public final class MCAddWanReplicationConfigCodec {
         return clientMessage;
     }
 
-    public static MCAddWanReplicationConfigCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
+    public static MCAddWanBatchReplicationPublisherConfigCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         ResponseParameters response = new ResponseParameters();
         //empty initial frame

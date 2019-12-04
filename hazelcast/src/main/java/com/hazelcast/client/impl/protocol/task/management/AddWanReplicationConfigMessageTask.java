@@ -17,8 +17,8 @@
 package com.hazelcast.client.impl.protocol.task.management;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.codec.MCAddWanReplicationConfigCodec;
-import com.hazelcast.client.impl.protocol.codec.MCAddWanReplicationConfigCodec.RequestParameters;
+import com.hazelcast.client.impl.protocol.codec.MCAddWanBatchReplicationPublisherConfigCodec;
+import com.hazelcast.client.impl.protocol.codec.MCAddWanBatchReplicationPublisherConfigCodec.RequestParameters;
 import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
 import com.hazelcast.config.WanAcknowledgeType;
 import com.hazelcast.config.WanBatchReplicationPublisherConfig;
@@ -66,13 +66,13 @@ public class AddWanReplicationConfigMessageTask extends AbstractCallableMessageT
 
     @Override
     protected RequestParameters decodeClientMessage(ClientMessage clientMessage) {
-        return MCAddWanReplicationConfigCodec.decodeRequest(clientMessage);
+        return MCAddWanBatchReplicationPublisherConfigCodec.decodeRequest(clientMessage);
     }
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
         AddWanConfigResult result = (AddWanConfigResult) response;
-        return MCAddWanReplicationConfigCodec.encodeResponse(
+        return MCAddWanBatchReplicationPublisherConfigCodec.encodeResponse(
                 result.getAddedPublisherIds(), result.getIgnoredPublisherIds());
     }
 

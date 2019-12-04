@@ -7280,10 +7280,10 @@ public class MemberCompatibilityNullTest_2_0 {
     }
 
     @Test
-    public void test_MCAddWanReplicationConfigCodec_decodeRequest() {
+    public void test_MCAddWanBatchReplicationPublisherConfigCodec_decodeRequest() {
         int fileClientMessageIndex = 807;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
-        MCAddWanReplicationConfigCodec.RequestParameters parameters = MCAddWanReplicationConfigCodec.decodeRequest(fromFile);
+        MCAddWanBatchReplicationPublisherConfigCodec.RequestParameters parameters = MCAddWanBatchReplicationPublisherConfigCodec.decodeRequest(fromFile);
         assertTrue(isEqual(aString, parameters.name));
         assertTrue(isEqual(aString, parameters.targetCluster));
         assertTrue(isEqual(null, parameters.publisherId));
@@ -7297,9 +7297,9 @@ public class MemberCompatibilityNullTest_2_0 {
     }
 
     @Test
-    public void test_MCAddWanReplicationConfigCodec_encodeResponse() {
+    public void test_MCAddWanBatchReplicationPublisherConfigCodec_encodeResponse() {
         int fileClientMessageIndex = 808;
-        ClientMessage encoded = MCAddWanReplicationConfigCodec.encodeResponse(aListOfStrings, aListOfStrings);
+        ClientMessage encoded = MCAddWanBatchReplicationPublisherConfigCodec.encodeResponse(aListOfStrings, aListOfStrings);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
     }
