@@ -1101,7 +1101,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
             return;
         }
 
-        if (isLoaded()) {
+        if (FutureUtil.allDone(loadingFutures)) {
             List<Future> doneFutures = null;
             try {
                 doneFutures = FutureUtil.getAllDone(loadingFutures);
@@ -1118,6 +1118,21 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
             throw new RetryableHazelcastException("Map " + getName()
                     + " is still loading data from external store");
         }
+    }
+
+    @Override
+    public boolean isLoaded() {
+        boolean result = FutureUtil.allDone(loadingFutures);
+        if (result) {
+            loadingFutures.removeAll(FutureUtil.getAllDone(loadingFutures));
+        }
+
+        return result;
+    }
+
+    // only used for testing purposes
+    public Collection<Future> getLoadingFutures() {
+        return loadingFutures;
     }
 
     @Override
@@ -1144,11 +1159,6 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
     @Override
     public void setPreMigrationLoadedStatus(boolean loaded) {
         loadedOnPreMigration = loaded;
-    }
-
-    @Override
-    public boolean isLoaded() {
-        return FutureUtil.allDone(loadingFutures);
     }
 
     @Override

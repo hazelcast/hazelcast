@@ -20,6 +20,7 @@ import com.hazelcast.cache.ICache;
 import com.hazelcast.cache.impl.CacheService;
 import com.hazelcast.cache.impl.HazelcastServerCacheManager;
 import com.hazelcast.cache.impl.HazelcastServerCachingProvider;
+import com.hazelcast.client.cache.impl.ClientCacheProxy;
 import com.hazelcast.client.cache.impl.HazelcastClientCacheManager;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.impl.clientside.HazelcastClientProxy;
@@ -156,7 +157,7 @@ public class ClientCacheNearCacheInvalidationTest extends HazelcastTestSupport {
         ICache<Integer, String> cache = cacheManager.createCache(DEFAULT_CACHE_NAME, cacheConfig);
         ICache<Integer, String> memberCache = memberCacheManager.getCache(getPrefixedCacheName(DEFAULT_CACHE_NAME, null, null));
 
-        NearCacheManager nearCacheManager = client.client.getNearCacheManager(cache.getServiceName());
+        NearCacheManager nearCacheManager = ((ClientCacheProxy) cache).getContext().getNearCacheManager(cache.getServiceName());
         NearCache<Object, String> nearCache = nearCacheManager.getNearCache(
                 cacheManager.getCacheNameWithPrefix(DEFAULT_CACHE_NAME));
 
@@ -409,11 +410,11 @@ public class ClientCacheNearCacheInvalidationTest extends HazelcastTestSupport {
                 .addNearCacheConfig(nearCacheConfig);
 
         HazelcastClientProxy client = (HazelcastClientProxy) hazelcastFactory.newHazelcastClient(clientConfig);
-        NearCacheManager nearCacheManager = client.client.getNearCacheManager(CacheService.SERVICE_NAME);
         CachingProvider provider = createClientCachingProvider(client);
         HazelcastClientCacheManager cacheManager = (HazelcastClientCacheManager) provider.getCacheManager();
 
         ICache<K, V> cache = cacheManager.createCache(cacheName, cacheConfig);
+        NearCacheManager nearCacheManager = ((ClientCacheProxy) cache).getContext().getNearCacheManager(CacheService.SERVICE_NAME);
         NearCache<NK, NV> nearCache = nearCacheManager.getNearCache(cacheManager.getCacheNameWithPrefix(cacheName));
 
         NearCacheTestContextBuilder<K, V, NK, NV> builder = new NearCacheTestContextBuilder<>(nearCacheConfig,
