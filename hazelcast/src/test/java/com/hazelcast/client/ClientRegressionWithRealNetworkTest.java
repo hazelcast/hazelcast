@@ -221,6 +221,7 @@ public class ClientRegressionWithRealNetworkTest extends ClientTestSupport {
             public void run() {
                 map.put(1, 2);
                 assertNotEquals(0, eventCount.get());
+                map.remove(1);
             }
         });
     }
