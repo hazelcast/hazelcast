@@ -288,5 +288,4 @@ abstract class AbstractRecordStore implements RecordStore<Record> {
         stats.setLastAccessTime(now);
         stats.increaseHits();
     }
-
 }
