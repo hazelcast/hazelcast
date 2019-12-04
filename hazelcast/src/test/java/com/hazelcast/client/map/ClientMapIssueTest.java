@@ -102,7 +102,7 @@ public class ClientMapIssueTest extends HazelcastTestSupport {
         final CompletionStage<Integer> future = map.getAsync(1);
         final CountDownLatch latch = new CountDownLatch(1);
         future.thenRun(latch::countDown);
-        assertOpenEventually(latch, 10);
+        assertOpenEventually(latch);
     }
 
     @Test
