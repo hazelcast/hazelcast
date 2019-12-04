@@ -17,9 +17,8 @@
 
 package com.hazelcast.instance.impl;
 
-import com.hazelcast.internal.util.RandomPicker;
-
 import java.util.Arrays;
+import java.util.Collections;
 
 /**
  * Java port of the Moby Project random name generator (https://github.com/moby/moby).
@@ -27,6 +26,7 @@ import java.util.Arrays;
 final class MobyNames {
 
     private static final String NAME_FORMAT = "%s_%s";
+    private static final int LARGE_PRIME = 1_000_000_007;
 
     private static final String[] LEFT = {"admiring", "adoring", "affectionate", "agitated", "amazing", "angry", "awesome",
                                           "blissful", "boring", "brave", "charming", "clever", "cocky", "cool", "compassionate",
@@ -993,27 +993,26 @@ final class MobyNames {
             "zhukovsky"};
 
     static {
-        Arrays.sort(LEFT, MobyNames::compareRandomly);
-        Arrays.sort(RIGHT, MobyNames::compareRandomly);
+        Collections.shuffle(Arrays.asList(LEFT));
+        Collections.shuffle(Arrays.asList(RIGHT));
     }
 
     private MobyNames() {
     }
 
     /**
-     * Returns a name from the list of adjectives and surnames in this package formatted as
-     * "adjective_surname". For example 'focused_turing'.
-     * @param number in the sequence of all possible names. The sequence is created randomly on class initialization.
-     * @return name in Moby style.
+     * Returns a name from the list of names formatted as "adjective_surname",
+     * for example 'focused_turing'. The list is randomized on class
+     * initialization, but the answers from repeated calls with the same number
+     * are stable.
+     *
+     * @param number index into the sequence of names
+     * @return a Moby name
      */
     static String getRandomName(int number) {
         int combinationIdx = number % (LEFT.length * RIGHT.length);
         int rightIdx = combinationIdx / LEFT.length;
         int leftIdx = combinationIdx % LEFT.length;
         return String.format(NAME_FORMAT, LEFT[leftIdx], RIGHT[rightIdx]);
-    }
-
-    private static int compareRandomly(String a, String b) {
-        return RandomPicker.getInt(-1, 1);
     }
 }
