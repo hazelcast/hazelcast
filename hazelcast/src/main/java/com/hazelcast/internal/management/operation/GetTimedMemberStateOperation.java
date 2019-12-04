@@ -29,7 +29,7 @@ import static com.hazelcast.internal.util.ExceptionUtil.peel;
 import static com.hazelcast.internal.util.ExceptionUtil.withTryCatch;
 
 /**
- * Operation to fetch JSON representation of {@link TimedMemberState} from the node.
+ * Operation to fetch JSON representation of the latest {@link TimedMemberState} from the node.
  * The operation is executed on {@link ExecutionService#MC_EXECUTOR} executor.
  */
 public class GetTimedMemberStateOperation extends AbstractLocalOperation {

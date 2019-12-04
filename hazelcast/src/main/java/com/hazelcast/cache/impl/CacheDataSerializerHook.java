@@ -228,6 +228,7 @@ public final class CacheDataSerializerHook
         constructors[EVENT_JOURNAL_INTERNAL_CACHE_EVENT] = arg -> new InternalEventJournalCacheEvent();
         constructors[EVENT_JOURNAL_READ_RESULT_SET] = arg -> new CacheEventJournalReadResultSetImpl<>();
         constructors[PRE_JOIN_CACHE_CONFIG] = arg -> new PreJoinCacheConfig();
+        // TODO: do we need these?
         constructors[CACHE_BROWSER_ENTRY_VIEW] = arg -> new GetCacheEntryViewEntryProcessor.CacheBrowserEntryView();
         constructors[GET_CACHE_ENTRY_VIEW_PROCESSOR] = arg -> new GetCacheEntryViewEntryProcessor();
         constructors[MERGE_FACTORY] = arg -> new CacheMergeOperationFactory();
