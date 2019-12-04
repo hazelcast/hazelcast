@@ -16,14 +16,17 @@
 
 package com.hazelcast.map;
 
+import com.hazelcast.cluster.Address;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.core.Offloadable;
 import com.hazelcast.core.ReadOnly;
+import com.hazelcast.cp.IAtomicReference;
+import com.hazelcast.cp.ICountDownLatch;
 import com.hazelcast.internal.util.FutureUtil;
-import com.hazelcast.cluster.Address;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.operationservice.impl.InvocationMonitor;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
@@ -33,6 +36,7 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.test.annotation.SlowTest;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -834,12 +838,13 @@ public class EntryProcessorOffloadableTest extends HazelcastTestSupport {
      * </pre>
      */
     @Test
+    @Category(SlowTest.class)
     public void testHeartBeatsComingWhenEntryProcessorOffloaded() {
         /* Shut down the cluster since we want to use a different
          * OPERATION_CALL_TIMEOUT_MILLIS value in this test. */
         shutdownNodeFactory();
 
-        int heartbeatsIntervalSec = 2;
+        int heartbeatsIntervalSec = 15;
         Config config = getConfig();
         config.getProperties().setProperty(ClusterProperty.OPERATION_CALL_TIMEOUT_MILLIS.getName(),
                 String.valueOf(heartbeatsIntervalSec * 4 * 1000));
@@ -847,6 +852,13 @@ public class EntryProcessorOffloadableTest extends HazelcastTestSupport {
         instances = factory.newInstances(config);
 
         final String key = generateKeyOwnedBy(instances[1]);
+        String offloadableStartTimeRefName = "offloadableStartTimeRefName";
+        String exitLatchName = "exitLatchName";
+        IAtomicReference offloadableStartedTimeRef
+                = instances[0].getCPSubsystem().getAtomicReference(offloadableStartTimeRefName);
+        ICountDownLatch exitLatch = instances[0].getCPSubsystem().getCountDownLatch(exitLatchName);
+        exitLatch.trySetCount(1);
+
         TimestampedSimpleValue givenValue = new TimestampedSimpleValue(1);
 
         final IMap<String, TimestampedSimpleValue> map = instances[0].getMap(MAP_NAME);
@@ -866,7 +878,11 @@ public class EntryProcessorOffloadableTest extends HazelcastTestSupport {
                         long newlastbeat = timestamp.get();
                         if (lastbeat != newlastbeat) {
                             lastbeat = newlastbeat;
-                            heartBeatTimestamps.add(newlastbeat);
+                            long offloadableStartTime = (long) offloadableStartedTimeRef.get();
+                            if (offloadableStartTime != 0 && offloadableStartTime < newlastbeat) {
+                                heartBeatTimestamps.add(newlastbeat);
+                                exitLatch.countDown();
+                            }
                         }
                     }
                     HazelcastTestSupport.sleepMillis(100);
@@ -874,10 +890,10 @@ public class EntryProcessorOffloadableTest extends HazelcastTestSupport {
             }
         };
 
-        final int secondsToRun = 8;
+        final int secondsToRun = 55;
         try {
             hbMonitorThread.start();
-            map.executeOnKey(key, new TimeConsumingOffloadableTask(secondsToRun));
+            map.executeOnKey(key, new TimeConsumingOffloadableTask(secondsToRun, offloadableStartTimeRefName, exitLatchName));
         } finally {
             hbMonitorThread.interrupt();
         }
@@ -895,24 +911,40 @@ public class EntryProcessorOffloadableTest extends HazelcastTestSupport {
     }
 
     private static class TimeConsumingOffloadableTask
-            implements EntryProcessor<String, TimestampedSimpleValue, Object>, Offloadable, Serializable {
+            implements HazelcastInstanceAware,
+                       EntryProcessor<String, TimestampedSimpleValue, Object>,
+                       Offloadable,
+                       Serializable {
 
         private final int secondsToWork;
+        private final String startTimeRefName;
+        private final String exitLatchName;
+        private transient ICountDownLatch exitLatch;
+        private transient IAtomicReference startedTime;
 
-        private TimeConsumingOffloadableTask(int secondsToWork) {
+        private TimeConsumingOffloadableTask(int secondsToWork, String startTimeRefName, String exitLatchName) {
             this.secondsToWork = secondsToWork;
+            this.startTimeRefName = startTimeRefName;
+            this.exitLatchName = exitLatchName;
+        }
+
+        @Override
+        public void setHazelcastInstance(HazelcastInstance hazelcastInstance) {
+            this.exitLatch = hazelcastInstance.getCPSubsystem().getCountDownLatch(exitLatchName);
+            this.startedTime = hazelcastInstance.getCPSubsystem().getAtomicReference(startTimeRefName);
         }
 
         @Override
         public Object process(final Map.Entry<String, TimestampedSimpleValue> entry) {
             final TimestampedSimpleValue value = entry.getValue();
             value.processStart = System.currentTimeMillis();
+            startedTime.set(value.processStart);
             long endTime = TimeUnit.SECONDS.toMillis(secondsToWork) + System.currentTimeMillis() + 500L;
             do {
                 HazelcastTestSupport.sleepMillis(200);
                 value.i++;
                 entry.setValue(value);
-            } while (System.currentTimeMillis() < endTime);
+            } while (System.currentTimeMillis() < endTime && exitLatch.getCount() > 0);
             value.i = 1;
             entry.setValue(value);
             value.processEnd = System.currentTimeMillis();
