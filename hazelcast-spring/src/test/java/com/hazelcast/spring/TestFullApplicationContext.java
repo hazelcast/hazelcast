@@ -33,7 +33,8 @@ import com.hazelcast.config.CardinalityEstimatorConfig;
 import com.hazelcast.config.ClassFilter;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.ConsistencyCheckStrategy;
-import com.hazelcast.config.CustomWanPublisherConfig;
+import com.hazelcast.config.WanBatchPublisherConfig;
+import com.hazelcast.config.WanCustomPublisherConfig;
 import com.hazelcast.config.DiscoveryConfig;
 import com.hazelcast.config.DiscoveryStrategyConfig;
 import com.hazelcast.config.DurableExecutorConfig;
@@ -100,10 +101,9 @@ import com.hazelcast.config.TcpIpConfig;
 import com.hazelcast.config.TopicConfig;
 import com.hazelcast.config.VaultSecureStoreConfig;
 import com.hazelcast.config.WanAcknowledgeType;
-import com.hazelcast.config.WanBatchReplicationPublisherConfig;
+import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.config.WanConsumerConfig;
 import com.hazelcast.config.WanQueueFullBehavior;
-import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.config.WanReplicationRef;
 import com.hazelcast.config.WanSyncConfig;
 import com.hazelcast.config.cp.CPSubsystemConfig;
@@ -143,7 +143,7 @@ import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.topic.ITopic;
 import com.hazelcast.topic.TopicOverloadPolicy;
 import com.hazelcast.wan.WanPublisherState;
-import com.hazelcast.wan.WanReplicationPublisher;
+import com.hazelcast.wan.WanPublisher;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -255,7 +255,7 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
     private RingbufferStoreFactory dummyRingbufferStoreFactory;
 
     @Autowired
-    private WanReplicationPublisher wanReplication;
+    private WanPublisher wanReplication;
 
     @Autowired
     private MembershipListener membershipListener;
@@ -907,7 +907,7 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         WanReplicationConfig wcfg = config.getWanReplicationConfig("testWan");
         assertNotNull(wcfg);
 
-        WanBatchReplicationPublisherConfig pc = wcfg.getBatchPublisherConfigs().get(0);
+        WanBatchPublisherConfig pc = wcfg.getBatchPublisherConfigs().get(0);
         assertEquals("tokyo", pc.getClusterName());
         assertEquals("tokyoPublisherId", pc.getPublisherId());
         assertEquals("com.hazelcast.enterprise.wan.impl.replication.WanBatchReplication", pc.getClassName());
@@ -933,13 +933,13 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         assertKubernetesConfig(pc.getKubernetesConfig());
         assertEurekaConfig(pc.getEurekaConfig());
 
-        CustomWanPublisherConfig customPublisher = wcfg.getCustomPublisherConfigs().get(0);
+        WanCustomPublisherConfig customPublisher = wcfg.getCustomPublisherConfigs().get(0);
         assertEquals("istanbulPublisherId", customPublisher.getPublisherId());
         assertEquals("com.hazelcast.wan.custom.CustomPublisher", customPublisher.getClassName());
         Map<String, Comparable> customPublisherProps = customPublisher.getProperties();
         assertEquals("prop.publisher", customPublisherProps.get("custom.prop.publisher"));
 
-        WanBatchReplicationPublisherConfig publisherPlaceHolderConfig = wcfg.getBatchPublisherConfigs().get(1);
+        WanBatchPublisherConfig publisherPlaceHolderConfig = wcfg.getBatchPublisherConfigs().get(1);
         assertEquals(5000, publisherPlaceHolderConfig.getQueueCapacity());
 
         WanConsumerConfig consumerConfig = wcfg.getWanConsumerConfig();
@@ -975,11 +975,11 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         assertEquals("prop.consumer", consumerConfig.getProperties().get("custom.prop.consumer"));
         assertFalse(consumerConfig.isPersistWanReplicatedData());
 
-        final List<WanBatchReplicationPublisherConfig> publisherConfigs = wcfg.getBatchPublisherConfigs();
+        final List<WanBatchPublisherConfig> publisherConfigs = wcfg.getBatchPublisherConfigs();
         assertNotNull(publisherConfigs);
         assertEquals(1, publisherConfigs.size());
 
-        final WanBatchReplicationPublisherConfig pc = publisherConfigs.get(0);
+        final WanBatchPublisherConfig pc = publisherConfigs.get(0);
         assertEquals("tokyo", pc.getClusterName());
 
         final WanSyncConfig wanSyncConfig = pc.getWanSyncConfig();

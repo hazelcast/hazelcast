@@ -22,8 +22,8 @@ import com.hazelcast.config.EventJournalConfig;
 import com.hazelcast.config.IndexConfig;
 import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.config.MapConfig;
-import com.hazelcast.config.WanConsumerConfig;
 import com.hazelcast.config.WanReplicationConfig;
+import com.hazelcast.config.WanConsumerConfig;
 import com.hazelcast.config.WanReplicationRef;
 import com.hazelcast.config.WanSyncConfig;
 import com.hazelcast.internal.nio.ClassLoaderUtil;
@@ -54,7 +54,7 @@ import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.spi.eviction.EvictionPolicyComparator;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.merge.SplitBrainMergePolicy;
-import com.hazelcast.wan.impl.DelegatingWanReplicationScheme;
+import com.hazelcast.wan.impl.DelegatingWanScheme;
 import com.hazelcast.wan.impl.WanReplicationService;
 
 import java.util.HashMap;
@@ -101,7 +101,7 @@ public class MapContainer {
     protected final AtomicInteger invalidationListenerCount = new AtomicInteger();
 
     protected SplitBrainMergePolicy wanMergePolicy;
-    protected DelegatingWanReplicationScheme wanReplicationDelegate;
+    protected DelegatingWanScheme wanReplicationDelegate;
 
     protected volatile MapConfig mapConfig;
     private volatile Evictor evictor;
@@ -288,7 +288,7 @@ public class MapContainer {
         return globalIndexes != null;
     }
 
-    public DelegatingWanReplicationScheme getWanReplicationDelegate() {
+    public DelegatingWanScheme getWanReplicationDelegate() {
         return wanReplicationDelegate;
     }
 

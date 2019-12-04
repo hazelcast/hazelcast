@@ -668,10 +668,10 @@ public class ConfigXmlGenerator {
     private static void wanReplicationXmlGenerator(XmlGenerator gen, Config config) {
         for (WanReplicationConfig wan : config.getWanReplicationConfigs().values()) {
             gen.open("wan-replication", "name", wan.getName());
-            for (WanBatchReplicationPublisherConfig p : wan.getBatchPublisherConfigs()) {
+            for (WanBatchPublisherConfig p : wan.getBatchPublisherConfigs()) {
                 wanBatchReplicationPublisherXmlGenerator(gen, p);
             }
-            for (CustomWanPublisherConfig p : wan.getCustomPublisherConfigs()) {
+            for (WanCustomPublisherConfig p : wan.getCustomPublisherConfigs()) {
                 wanCustomPublisherXmlGenerator(gen, p);
             }
 
@@ -695,7 +695,7 @@ public class ConfigXmlGenerator {
                 .close();
     }
 
-    private static void wanBatchReplicationPublisherXmlGenerator(XmlGenerator gen, WanBatchReplicationPublisherConfig c) {
+    private static void wanBatchReplicationPublisherXmlGenerator(XmlGenerator gen, WanBatchPublisherConfig c) {
         String publisherId = c.getPublisherId();
         gen.open("batch-publisher");
         gen.node("cluster-name", c.getClusterName())
@@ -730,7 +730,7 @@ public class ConfigXmlGenerator {
         gen.close();
     }
 
-    private static void wanCustomPublisherXmlGenerator(XmlGenerator gen, CustomWanPublisherConfig c) {
+    private static void wanCustomPublisherXmlGenerator(XmlGenerator gen, WanCustomPublisherConfig c) {
         String publisherId = c.getPublisherId();
         gen.open("custom-publisher")
                 .appendProperties(c.getProperties())

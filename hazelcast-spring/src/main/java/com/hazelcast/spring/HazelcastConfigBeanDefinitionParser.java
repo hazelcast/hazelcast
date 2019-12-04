@@ -30,7 +30,8 @@ import com.hazelcast.config.CacheSimpleEntryListenerConfig;
 import com.hazelcast.config.CardinalityEstimatorConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.CredentialsFactoryConfig;
-import com.hazelcast.config.CustomWanPublisherConfig;
+import com.hazelcast.config.WanBatchPublisherConfig;
+import com.hazelcast.config.WanCustomPublisherConfig;
 import com.hazelcast.config.DurableExecutorConfig;
 import com.hazelcast.config.EncryptionAtRestConfig;
 import com.hazelcast.config.EndpointConfig;
@@ -103,7 +104,6 @@ import com.hazelcast.config.SymmetricEncryptionConfig;
 import com.hazelcast.config.TcpIpConfig;
 import com.hazelcast.config.TopicConfig;
 import com.hazelcast.config.VaultSecureStoreConfig;
-import com.hazelcast.config.WanBatchReplicationPublisherConfig;
 import com.hazelcast.config.WanConsumerConfig;
 import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.config.WanReplicationRef;
@@ -1383,7 +1383,7 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
         }
 
         private AbstractBeanDefinition handleBatchPublisher(Node n) {
-            BeanDefinitionBuilder builder = createBeanBuilder(WanBatchReplicationPublisherConfig.class);
+            BeanDefinitionBuilder builder = createBeanBuilder(WanBatchPublisherConfig.class);
             AbstractBeanDefinition definition = builder.getBeanDefinition();
 
             ArrayList<String> excluded = new ArrayList<>(AliasedDiscoveryConfigUtils.getTags());
@@ -1410,7 +1410,7 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
         }
 
         private AbstractBeanDefinition handleCustomPublisher(Node n) {
-            BeanDefinitionBuilder builder = createBeanBuilder(CustomWanPublisherConfig.class);
+            BeanDefinitionBuilder builder = createBeanBuilder(WanCustomPublisherConfig.class);
             AbstractBeanDefinition definition = builder.getBeanDefinition();
             fillValues(n, builder, "properties");
 

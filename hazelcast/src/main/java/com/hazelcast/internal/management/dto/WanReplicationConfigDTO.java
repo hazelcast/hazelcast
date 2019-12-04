@@ -16,8 +16,8 @@
 
 package com.hazelcast.internal.management.dto;
 
-import com.hazelcast.config.CustomWanPublisherConfig;
-import com.hazelcast.config.WanBatchReplicationPublisherConfig;
+import com.hazelcast.config.WanBatchPublisherConfig;
+import com.hazelcast.config.WanCustomPublisherConfig;
 import com.hazelcast.config.WanConsumerConfig;
 import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.internal.json.JsonArray;
@@ -46,10 +46,10 @@ public class WanReplicationConfigDTO implements JsonSerializable {
         JsonArray batchPublishers = new JsonArray();
         JsonArray customPublishers = new JsonArray();
 
-        for (WanBatchReplicationPublisherConfig publisherConfig : config.getBatchPublisherConfigs()) {
-            batchPublishers.add(new WanBatchReplicationPublisherConfigDTO(publisherConfig).toJson());
+        for (WanBatchPublisherConfig publisherConfig : config.getBatchPublisherConfigs()) {
+            batchPublishers.add(new WanBatchPublisherConfigDTO(publisherConfig).toJson());
         }
-        for (CustomWanPublisherConfig publisherConfig : config.getCustomPublisherConfigs()) {
+        for (WanCustomPublisherConfig publisherConfig : config.getCustomPublisherConfigs()) {
             customPublishers.add(new CustomWanPublisherConfigDTO(publisherConfig).toJson());
         }
         root.add("batchPublishers", batchPublishers);
@@ -74,7 +74,7 @@ public class WanReplicationConfigDTO implements JsonSerializable {
         JsonValue batchPublishers = json.get("batchPublishers");
         if (batchPublishers != null && !batchPublishers.isNull()) {
             for (JsonValue jsonValue : batchPublishers.asArray()) {
-                WanBatchReplicationPublisherConfigDTO dto = new WanBatchReplicationPublisherConfigDTO();
+                WanBatchPublisherConfigDTO dto = new WanBatchPublisherConfigDTO();
                 dto.fromJson(jsonValue.asObject());
                 config.addWanBatchReplicationPublisherConfig(dto.getConfig());
             }

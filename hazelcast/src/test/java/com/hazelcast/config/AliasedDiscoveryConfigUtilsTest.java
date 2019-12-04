@@ -69,7 +69,7 @@ public class AliasedDiscoveryConfigUtilsTest {
     @Test
     public void createDiscoveryStrategyConfigsFromWanPublisherConfig() {
         // given
-        WanBatchReplicationPublisherConfig config = new WanBatchReplicationPublisherConfig();
+        WanBatchPublisherConfig config = new WanBatchPublisherConfig();
         config.getGcpConfig().setEnabled(true);
 
         // when
@@ -173,7 +173,7 @@ public class AliasedDiscoveryConfigUtilsTest {
     @Test
     public void getConfigByTagFromWanPublisherConfig() {
         // given
-        WanBatchReplicationPublisherConfig config = new WanBatchReplicationPublisherConfig();
+        WanBatchPublisherConfig config = new WanBatchPublisherConfig();
 
         // when
         AliasedDiscoveryConfig result = AliasedDiscoveryConfigUtils.getConfigByTag(config, "gcp");
@@ -185,7 +185,7 @@ public class AliasedDiscoveryConfigUtilsTest {
     @Test(expected = IllegalArgumentException.class)
     public void getConfigByInvalidTagFromWanPublisherConfig() {
         // given
-        WanBatchReplicationPublisherConfig config = new WanBatchReplicationPublisherConfig();
+        WanBatchPublisherConfig config = new WanBatchPublisherConfig();
 
         // when
         AliasedDiscoveryConfigUtils.getConfigByTag(config, "unknown");

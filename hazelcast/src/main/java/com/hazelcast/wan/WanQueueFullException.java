@@ -26,9 +26,9 @@ import com.hazelcast.core.HazelcastException;
  * This exception is only thrown when WAN is configured with
  * {@link WanQueueFullBehavior#THROW_EXCEPTION}
  */
-public class WanReplicationQueueFullException extends HazelcastException {
+public class WanQueueFullException extends HazelcastException {
 
-    public WanReplicationQueueFullException(String message) {
+    public WanQueueFullException(String message) {
         super(message);
     }
 }

@@ -61,7 +61,7 @@ import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.TransactionNotActiveException;
 import com.hazelcast.transaction.TransactionTimedOutException;
 import com.hazelcast.internal.util.AddressUtil;
-import com.hazelcast.wan.WanReplicationQueueFullException;
+import com.hazelcast.wan.WanQueueFullException;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -248,7 +248,7 @@ public class ClientExceptionFactoryTest extends HazelcastTestSupport {
                 new Object[]{new NoDataMemberInClusterException(randomString())},
                 new Object[]{new ReplicatedMapCantBeCreatedOnLiteMemberException(randomString())},
                 new Object[]{new MaxMessageSizeExceeded(randomString())},
-                new Object[]{new WanReplicationQueueFullException(randomString())},
+                new Object[]{new WanQueueFullException(randomString())},
                 new Object[]{new AssertionError(randomString())},
                 new Object[]{new OutOfMemoryError(randomString())},
                 new Object[]{new StackOverflowError(randomString())},

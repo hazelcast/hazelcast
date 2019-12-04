@@ -23,8 +23,8 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.merge.SplitBrainMergePolicy;
-import com.hazelcast.wan.DistributedServiceWanEventCounters;
-import com.hazelcast.wan.impl.InternalWanReplicationEvent;
+import com.hazelcast.wan.WanEventDistributedServiceCounters;
+import com.hazelcast.wan.impl.InternalWanEvent;
 import com.hazelcast.wan.impl.WanDataSerializerHook;
 
 import javax.annotation.Nonnull;
@@ -35,7 +35,7 @@ import java.util.Set;
 /**
  * WAN replication object for map update operations.
  */
-public class MapReplicationUpdate implements InternalWanReplicationEvent, IdentifiedDataSerializable {
+public class WanMapUpdateEvent implements InternalWanEvent, IdentifiedDataSerializable {
     private String mapName;
     /**
      * The policy how to merge the entry on the receiving cluster
@@ -46,12 +46,12 @@ public class MapReplicationUpdate implements InternalWanReplicationEvent, Identi
      */
     private WanMapEntryView<Data, Data> entryView;
 
-    public MapReplicationUpdate() {
+    public WanMapUpdateEvent() {
     }
 
-    public MapReplicationUpdate(String mapName,
-                                SplitBrainMergePolicy mergePolicy,
-                                EntryView<Data, Data> entryView) {
+    public WanMapUpdateEvent(String mapName,
+                             SplitBrainMergePolicy mergePolicy,
+                             EntryView<Data, Data> entryView) {
         this.mergePolicy = mergePolicy;
         this.mapName = mapName;
         if (entryView instanceof WanMapEntryView) {
@@ -102,7 +102,7 @@ public class MapReplicationUpdate implements InternalWanReplicationEvent, Identi
     }
 
     @Override
-    public void incrementEventCount(DistributedServiceWanEventCounters counters) {
+    public void incrementEventCount(WanEventDistributedServiceCounters counters) {
         counters.incrementUpdate(mapName);
     }
 

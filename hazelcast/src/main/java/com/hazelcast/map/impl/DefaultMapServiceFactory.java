@@ -23,7 +23,7 @@ import com.hazelcast.internal.services.ManagedService;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.internal.services.PostJoinAwareService;
 import com.hazelcast.internal.services.RemoteService;
-import com.hazelcast.internal.services.ReplicationSupportingService;
+import com.hazelcast.internal.services.WanSupportingService;
 import com.hazelcast.internal.services.SplitBrainHandlerService;
 import com.hazelcast.internal.services.StatisticsAwareService;
 import com.hazelcast.internal.services.TransactionalService;
@@ -92,8 +92,8 @@ class DefaultMapServiceFactory extends AbstractMapServiceFactory {
     }
 
     @Override
-    ReplicationSupportingService createReplicationSupportingService() {
-        return new MapReplicationSupportingService(mapServiceContext);
+    WanSupportingService createReplicationSupportingService() {
+        return new WanMapSupportingService(mapServiceContext);
     }
 
     @Override

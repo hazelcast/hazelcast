@@ -17,7 +17,7 @@
 package com.hazelcast.internal.management.dto;
 
 import com.hazelcast.config.ConfigCompatibilityChecker.WanCustomPublisherConfigChecker;
-import com.hazelcast.config.CustomWanPublisherConfig;
+import com.hazelcast.config.WanCustomPublisherConfig;
 import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -33,7 +33,7 @@ import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class CustomCustomWanPublisherConfigDTOTest {
+public class WanCustomPublisherConfigDTOTest {
 
     private static final WanCustomPublisherConfigChecker WAN_PUBLISHER_CONFIG_CHECKER = new WanCustomPublisherConfigChecker();
 
@@ -43,26 +43,26 @@ public class CustomCustomWanPublisherConfigDTOTest {
         properties.put("key1", "value1");
         properties.put("key2", "value2");
 
-        CustomWanPublisherConfig expected = new CustomWanPublisherConfig()
+        WanCustomPublisherConfig expected = new WanCustomPublisherConfig()
                 .setPublisherId("myPublisherId")
                 .setClassName("className")
                 .setProperties(properties);
 
-        CustomWanPublisherConfig actual = cloneThroughJson(expected);
+        WanCustomPublisherConfig actual = cloneThroughJson(expected);
         assertTrue("Expected: " + expected + ", got:" + actual,
                 WAN_PUBLISHER_CONFIG_CHECKER.check(expected, actual));
     }
 
     @Test
     public void testDefault() {
-        CustomWanPublisherConfig expected = new CustomWanPublisherConfig();
+        WanCustomPublisherConfig expected = new WanCustomPublisherConfig();
 
-        CustomWanPublisherConfig actual = cloneThroughJson(expected);
+        WanCustomPublisherConfig actual = cloneThroughJson(expected);
         assertTrue("Expected: " + expected + ", got:" + actual,
                 WAN_PUBLISHER_CONFIG_CHECKER.check(expected, actual));
     }
 
-    private CustomWanPublisherConfig cloneThroughJson(CustomWanPublisherConfig expected) {
+    private WanCustomPublisherConfig cloneThroughJson(WanCustomPublisherConfig expected) {
         CustomWanPublisherConfigDTO dto = new CustomWanPublisherConfigDTO(expected);
 
         JsonObject json = dto.toJson();

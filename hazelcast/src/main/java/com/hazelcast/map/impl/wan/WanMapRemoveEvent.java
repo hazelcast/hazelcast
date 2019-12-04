@@ -22,8 +22,8 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.wan.DistributedServiceWanEventCounters;
-import com.hazelcast.wan.impl.InternalWanReplicationEvent;
+import com.hazelcast.wan.WanEventDistributedServiceCounters;
+import com.hazelcast.wan.impl.InternalWanEvent;
 import com.hazelcast.wan.impl.WanDataSerializerHook;
 
 import javax.annotation.Nonnull;
@@ -31,16 +31,16 @@ import java.io.IOException;
 import java.util.Collections;
 import java.util.Set;
 
-public class MapReplicationRemove implements InternalWanReplicationEvent, IdentifiedDataSerializable {
+public class WanMapRemoveEvent implements InternalWanEvent, IdentifiedDataSerializable {
     private String mapName;
     private Data key;
 
-    public MapReplicationRemove(String mapName, Data key) {
+    public WanMapRemoveEvent(String mapName, Data key) {
         this.mapName = mapName;
         this.key = key;
     }
 
-    public MapReplicationRemove() {
+    public WanMapRemoveEvent() {
     }
 
     @Nonnull
@@ -105,7 +105,7 @@ public class MapReplicationRemove implements InternalWanReplicationEvent, Identi
     }
 
     @Override
-    public void incrementEventCount(DistributedServiceWanEventCounters counters) {
+    public void incrementEventCount(WanEventDistributedServiceCounters counters) {
         counters.incrementRemove(mapName);
     }
 }

@@ -1206,7 +1206,7 @@ public class ConfigCompatibilityChecker {
                     && nullSafeEqual(c1.getName(), c2.getName())
                     && WAN_CONSUMER_CONFIG_CHECKER.check(c1.getWanConsumerConfig(), c2.getWanConsumerConfig())
                     && isCollectionCompatible(c1.getBatchPublisherConfigs(), c2.getBatchPublisherConfigs(),
-                    new WanBatchReplicationPublisherConfigChecker())
+                    new WanBatchPublisherConfigChecker())
                     && isCollectionCompatible(c1.getCustomPublisherConfigs(), c2.getCustomPublisherConfigs(),
                     new WanCustomPublisherConfigChecker());
         }
@@ -1223,9 +1223,9 @@ public class ConfigCompatibilityChecker {
         }
     }
 
-    public static class WanCustomPublisherConfigChecker extends ConfigChecker<CustomWanPublisherConfig> {
+    public static class WanCustomPublisherConfigChecker extends ConfigChecker<WanCustomPublisherConfig> {
         @Override
-        public boolean check(CustomWanPublisherConfig c1, CustomWanPublisherConfig c2) {
+        public boolean check(WanCustomPublisherConfig c1, WanCustomPublisherConfig c2) {
             return c1 == c2 || !(c1 == null || c2 == null)
                     && nullSafeEqual(c1.getPublisherId(), c2.getPublisherId())
                     && nullSafeEqual(c1.getClassName(), c2.getClassName())
@@ -1234,9 +1234,9 @@ public class ConfigCompatibilityChecker {
         }
     }
 
-    public static class WanBatchReplicationPublisherConfigChecker extends ConfigChecker<WanBatchReplicationPublisherConfig> {
+    public static class WanBatchPublisherConfigChecker extends ConfigChecker<WanBatchPublisherConfig> {
         @Override
-        public boolean check(WanBatchReplicationPublisherConfig c1, WanBatchReplicationPublisherConfig c2) {
+        public boolean check(WanBatchPublisherConfig c1, WanBatchPublisherConfig c2) {
             return c1 == c2 || !(c1 == null || c2 == null)
                     && nullSafeEqual(c1.getClusterName(), c2.getClusterName())
                     && nullSafeEqual(c1.getPublisherId(), c2.getPublisherId())

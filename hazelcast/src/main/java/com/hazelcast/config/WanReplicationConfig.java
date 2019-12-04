@@ -34,13 +34,13 @@ import static com.hazelcast.internal.util.Preconditions.checkNotNull;
  * Configuration for WAN replication. This configuration is referenced from a
  * IMap or ICache configuration to determine the receivers for the WAN events.
  * Each receiver is defined with a either a
- * {@link WanBatchReplicationPublisherConfig} or a {@link CustomWanPublisherConfig}.
+ * {@link WanBatchPublisherConfig} or a {@link WanCustomPublisherConfig}.
  * <p>
  * A single WAN replication configuration may consist of several WAN publisher
  * configurations. The built-in WAN publisher implementation should be
- * configured using {@link WanBatchReplicationPublisherConfig} and custom
+ * configured using {@link WanBatchPublisherConfig} and custom
  * WAN publisher implementations can be configured using
- * {@link CustomWanPublisherConfig}.
+ * {@link WanCustomPublisherConfig}.
  * <p>
  * You may consider each WAN publisher configuration as a single target cluster
  * or a single external system. The WAN subsystem will track replication for
@@ -60,8 +60,8 @@ public class WanReplicationConfig implements IdentifiedDataSerializable {
 
     private String name;
     private WanConsumerConfig wanConsumerConfig;
-    private List<CustomWanPublisherConfig> customPublisherConfigs = new ArrayList<>(0);
-    private List<WanBatchReplicationPublisherConfig> batchPublisherConfigs = new ArrayList<>(1);
+    private List<WanCustomPublisherConfig> customPublisherConfigs = new ArrayList<>(0);
+    private List<WanBatchPublisherConfig> batchPublisherConfigs = new ArrayList<>(1);
 
     public String getName() {
         return name;
@@ -107,7 +107,7 @@ public class WanReplicationConfig implements IdentifiedDataSerializable {
      * replication.
      */
     public @Nonnull
-    List<CustomWanPublisherConfig> getCustomPublisherConfigs() {
+    List<WanCustomPublisherConfig> getCustomPublisherConfigs() {
         return customPublisherConfigs;
     }
 
@@ -119,7 +119,7 @@ public class WanReplicationConfig implements IdentifiedDataSerializable {
      * @return this config
      */
     public WanReplicationConfig setCustomPublisherConfigs(
-            @Nonnull List<CustomWanPublisherConfig> customPublisherConfigs) {
+            @Nonnull List<WanCustomPublisherConfig> customPublisherConfigs) {
         this.customPublisherConfigs = checkNotNull(customPublisherConfigs, "Publisher configurations must not be null");
         return this;
     }
@@ -130,7 +130,7 @@ public class WanReplicationConfig implements IdentifiedDataSerializable {
      * batching WAN implementation for this WAN replication.
      */
     public @Nonnull
-    List<WanBatchReplicationPublisherConfig> getBatchPublisherConfigs() {
+    List<WanBatchPublisherConfig> getBatchPublisherConfigs() {
         return batchPublisherConfigs;
     }
 
@@ -142,7 +142,7 @@ public class WanReplicationConfig implements IdentifiedDataSerializable {
      * @return this config
      */
     public WanReplicationConfig setBatchPublisherConfigs(
-            @Nonnull List<WanBatchReplicationPublisherConfig> batchPublisherConfigs) {
+            @Nonnull List<WanBatchPublisherConfig> batchPublisherConfigs) {
         this.batchPublisherConfigs = checkNotNull(batchPublisherConfigs, "Publisher configurations must not be null");
         return this;
     }
@@ -154,7 +154,7 @@ public class WanReplicationConfig implements IdentifiedDataSerializable {
      * @param config the WAN publisher configuration
      * @return this config
      */
-    public WanReplicationConfig addWanBatchReplicationPublisherConfig(WanBatchReplicationPublisherConfig config) {
+    public WanReplicationConfig addWanBatchReplicationPublisherConfig(WanBatchPublisherConfig config) {
         this.batchPublisherConfigs.add(config);
         return this;
     }
@@ -166,7 +166,7 @@ public class WanReplicationConfig implements IdentifiedDataSerializable {
      * @param config the WAN publisher configuration
      * @return this config
      */
-    public WanReplicationConfig addCustomPublisherConfig(CustomWanPublisherConfig config) {
+    public WanReplicationConfig addCustomPublisherConfig(WanCustomPublisherConfig config) {
         this.customPublisherConfigs.add(config);
         return this;
     }

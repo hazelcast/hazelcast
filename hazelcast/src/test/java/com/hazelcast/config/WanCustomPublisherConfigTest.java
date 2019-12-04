@@ -34,9 +34,9 @@ import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class CustomWanPublisherConfigTest {
+public class WanCustomPublisherConfigTest {
 
-    private CustomWanPublisherConfig config = new CustomWanPublisherConfig();
+    private WanCustomPublisherConfig config = new WanCustomPublisherConfig();
     private static final WanCustomPublisherConfigChecker WAN_PUBLISHER_CONFIG_CHECKER
             = new WanCustomPublisherConfigChecker();
 
@@ -46,7 +46,7 @@ public class CustomWanPublisherConfigTest {
         properties.put("key1", "value1");
         properties.put("key2", "value2");
 
-        CustomWanPublisherConfig config = new CustomWanPublisherConfig()
+        WanCustomPublisherConfig config = new WanCustomPublisherConfig()
                 .setPublisherId("myPublisherId")
                 .setClassName("className")
                 .setProperties(properties)
@@ -54,13 +54,13 @@ public class CustomWanPublisherConfigTest {
 
         SerializationService serializationService = new DefaultSerializationServiceBuilder().build();
         Data serialized = serializationService.toData(config);
-        CustomWanPublisherConfig deserialized = serializationService.toObject(serialized);
+        WanCustomPublisherConfig deserialized = serializationService.toObject(serialized);
 
         assertWanPublisherConfig(config, deserialized);
     }
 
-    private static void assertWanPublisherConfig(CustomWanPublisherConfig expected,
-                                                 CustomWanPublisherConfig actual) {
+    private static void assertWanPublisherConfig(WanCustomPublisherConfig expected,
+                                                 WanCustomPublisherConfig actual) {
         WAN_PUBLISHER_CONFIG_CHECKER.check(expected, actual);
         assertEquals(expected.toString(), actual.toString());
     }

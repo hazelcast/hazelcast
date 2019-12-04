@@ -1356,10 +1356,10 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         assertEquals(1, properties.size());
         assertEquals("propValue1", properties.get("propName1"));
 
-        List<WanBatchReplicationPublisherConfig> publishers = wanReplicationConfig.getBatchPublisherConfigs();
+        List<WanBatchPublisherConfig> publishers = wanReplicationConfig.getBatchPublisherConfigs();
         assertNotNull(publishers);
         assertEquals(1, publishers.size());
-        WanBatchReplicationPublisherConfig pc = publishers.get(0);
+        WanBatchPublisherConfig pc = publishers.get(0);
 
         assertEquals("nyc", pc.getClusterName());
         assertEquals("publisherId", pc.getPublisherId());
@@ -1387,10 +1387,10 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         assertEquals("propValue1", properties.get("propName1"));
 
 
-        List<CustomWanPublisherConfig> customPublishers = wanReplicationConfig.getCustomPublisherConfigs();
+        List<WanCustomPublisherConfig> customPublishers = wanReplicationConfig.getCustomPublisherConfigs();
         assertNotNull(customPublishers);
         assertEquals(1, customPublishers.size());
-        CustomWanPublisherConfig customPublisher = customPublishers.get(0);
+        WanCustomPublisherConfig customPublisher = customPublishers.get(0);
         assertEquals("customPublisherId", customPublisher.getPublisherId());
         assertEquals("PublisherClassName", customPublisher.getClassName());
         properties = customPublisher.getProperties();
@@ -1436,10 +1436,10 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
 
         assertEquals(configName, wanReplicationConfig.getName());
 
-        List<WanBatchReplicationPublisherConfig> publishers = wanReplicationConfig.getBatchPublisherConfigs();
+        List<WanBatchPublisherConfig> publishers = wanReplicationConfig.getBatchPublisherConfigs();
         assertNotNull(publishers);
         assertEquals(1, publishers.size());
-        WanBatchReplicationPublisherConfig pc = publishers.get(0);
+        WanBatchPublisherConfig pc = publishers.get(0);
         assertEquals(ConsistencyCheckStrategy.MERKLE_TREES, pc.getWanSyncConfig().getConsistencyCheckStrategy());
     }
 
@@ -1665,12 +1665,12 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
                 + HAZELCAST_END_TAG;
 
         Config config = buildConfig(xml);
-        WanReplicationConfig wanConfig = config.getWanReplicationConfig("my-wan-cluster");
-        assertNotNull(wanConfig);
+        WanReplicationConfig wanReplicationConfig = config.getWanReplicationConfig("my-wan-cluster");
+        assertNotNull(wanReplicationConfig);
 
-        List<WanBatchReplicationPublisherConfig> publisherConfigs = wanConfig.getBatchPublisherConfigs();
+        List<WanBatchPublisherConfig> publisherConfigs = wanReplicationConfig.getBatchPublisherConfigs();
         assertEquals(2, publisherConfigs.size());
-        WanBatchReplicationPublisherConfig pc1 = publisherConfigs.get(0);
+        WanBatchPublisherConfig pc1 = publisherConfigs.get(0);
         assertEquals("istanbul", pc1.getClusterName());
         assertEquals("istanbulPublisherId", pc1.getPublisherId());
         assertEquals(100, pc1.getBatchSize());
@@ -1700,16 +1700,16 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         assertFalse(pc1.getEurekaConfig().isEnabled());
         assertDiscoveryConfig(pc1.getDiscoveryConfig());
 
-        WanBatchReplicationPublisherConfig pc2 = publisherConfigs.get(1);
+        WanBatchPublisherConfig pc2 = publisherConfigs.get(1);
         assertEquals("ankara", pc2.getClusterName());
         assertEquals("", pc2.getPublisherId());
         assertEquals(WanQueueFullBehavior.THROW_EXCEPTION_ONLY_IF_REPLICATION_ACTIVE, pc2.getQueueFullBehavior());
         assertEquals(WanPublisherState.STOPPED, pc2.getInitialPublisherState());
 
-        List<CustomWanPublisherConfig> customPublishers = wanConfig.getCustomPublisherConfigs();
+        List<WanCustomPublisherConfig> customPublishers = wanReplicationConfig.getCustomPublisherConfigs();
         assertNotNull(customPublishers);
         assertEquals(1, customPublishers.size());
-        CustomWanPublisherConfig customPublisher = customPublishers.get(0);
+        WanCustomPublisherConfig customPublisher = customPublishers.get(0);
         assertEquals("customPublisherId", customPublisher.getPublisherId());
         assertEquals("PublisherClassName", customPublisher.getClassName());
         Map<String, Comparable> properties = customPublisher.getProperties();
@@ -1717,7 +1717,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         assertEquals(1, properties.size());
         assertEquals("propValue1", properties.get("propName1"));
 
-        WanConsumerConfig consumerConfig = wanConfig.getWanConsumerConfig();
+        WanConsumerConfig consumerConfig = wanReplicationConfig.getWanConsumerConfig();
         assertEquals("com.hazelcast.wan.custom.WanConsumer", consumerConfig.getClassName());
         Map<String, Comparable> consProperties = consumerConfig.getProperties();
         assertEquals("prop.consumer", consProperties.get("custom.prop.consumer"));

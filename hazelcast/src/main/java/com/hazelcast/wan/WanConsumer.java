@@ -22,7 +22,7 @@ import com.hazelcast.config.WanReplicationConfig;
 /**
  * Interface to be implemented by custom WAN event consumers. Wan replication
  * consumers are typically used in conjunction with a custom
- * {@link WanReplicationPublisher}. The publisher will then publish events
+ * {@link WanPublisher}. The publisher will then publish events
  * in a custom fashion which the consumer expects and processes accordingly.
  * This way, you can provide custom publication and consumption mechanisms
  * and protocols for WAN replication. The default implementation of the WAN
@@ -30,9 +30,9 @@ import com.hazelcast.config.WanReplicationConfig;
  * be processed as if there was no custom consumer implementation.
  * Can be registered by programmatically or by XML using {@link WanConsumerConfig}.
  *
- * @see WanReplicationPublisher
+ * @see WanPublisher
  */
-public interface WanReplicationConsumer {
+public interface WanConsumer {
 
     /**
      * Initialize the WAN consumer. The method is invoked once the node has

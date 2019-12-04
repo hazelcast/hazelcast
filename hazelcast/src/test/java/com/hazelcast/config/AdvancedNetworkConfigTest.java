@@ -69,7 +69,7 @@ public class AdvancedNetworkConfigTest extends HazelcastTestSupport {
                 new WanReplicationConfig()
                         .setName("seattle-tokyo")
                         .addWanBatchReplicationPublisherConfig(
-                                new WanBatchReplicationPublisherConfig()
+                                new WanBatchPublisherConfig()
                                         .setClusterName("target-cluster")
                                         .setEndpoint("does-not-exist")));
 

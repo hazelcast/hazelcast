@@ -19,13 +19,13 @@ package com.hazelcast.wan;
 /**
  * Interface for all WAN replication messages
  */
-public interface WanReplicationEvent {
+public interface WanEvent {
     /**
      * Increments the count for the related event in the {@code counters}
      *
      * @param counters the WAN event counter
      */
-    void incrementEventCount(DistributedServiceWanEventCounters counters);
+    void incrementEventCount(WanEventDistributedServiceCounters counters);
 
     /**
      * Returns the service name on which this event occurred.

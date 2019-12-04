@@ -35,7 +35,7 @@ import java.util.Set;
  * @see PartitionMigrationEvent
  * @see com.hazelcast.internal.partition.MigrationAwareService
  */
-public interface MigrationAwareWanReplicationPublisher<T> {
+public interface WanMigrationAwarePublisher<T> {
     /**
      * Indicates that migration started for a given partition
      *

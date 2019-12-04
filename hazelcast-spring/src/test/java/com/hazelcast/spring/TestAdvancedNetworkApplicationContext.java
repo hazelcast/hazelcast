@@ -23,7 +23,7 @@ import com.hazelcast.config.MemberAddressProviderConfig;
 import com.hazelcast.config.RestServerEndpointConfig;
 import com.hazelcast.config.ServerSocketEndpointConfig;
 import com.hazelcast.config.TcpIpConfig;
-import com.hazelcast.config.WanBatchReplicationPublisherConfig;
+import com.hazelcast.config.WanBatchPublisherConfig;
 import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.EndpointQualifier;
@@ -117,7 +117,7 @@ public class TestAdvancedNetworkApplicationContext {
                 Arrays.asList(HEALTH_CHECK, CLUSTER_READ));
 
         WanReplicationConfig testWan = config.getWanReplicationConfig("testWan");
-        WanBatchReplicationPublisherConfig tokyoWanPublisherConfig =
+        WanBatchPublisherConfig tokyoWanPublisherConfig =
                 testWan.getBatchPublisherConfigs()
                        .stream()
                        .filter(pc -> pc.getPublisherId().equals("tokyoPublisherId"))

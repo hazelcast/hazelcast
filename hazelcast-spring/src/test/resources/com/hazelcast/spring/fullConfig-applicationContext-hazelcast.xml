@@ -925,7 +925,7 @@
     <bean id="dummyRingbufferStore" class="com.hazelcast.spring.DummyRingbufferStore"/>
     <bean id="dummyRingbufferStoreFactory" class="com.hazelcast.spring.DummyRingbufferStoreFactory"/>
     <bean id="dummyEvictionPolicyComparator" class="com.hazelcast.spring.DummyMapEvictionPolicyComparator"/>
-    <bean id="dummyWanReplication" class="com.hazelcast.spring.DummyWanReplication"/>
+    <bean id="dummyWanReplication" class="com.hazelcast.spring.WanDummyPublisher"/>
     <bean id="dummyMembershipListener" class="com.hazelcast.spring.DummyMembershipListener"/>
     <bean id="dummyEntryListener" class="com.hazelcast.spring.DummyEntryListener"/>
     <bean id="dummySplitBrainProtectionListener" class="com.hazelcast.spring.DummySplitBrainProtectionListener"/>

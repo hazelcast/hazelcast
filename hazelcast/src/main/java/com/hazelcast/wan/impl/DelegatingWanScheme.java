@@ -19,9 +19,9 @@ package com.hazelcast.wan.impl;
 import com.hazelcast.internal.monitor.LocalWanPublisherStats;
 import com.hazelcast.internal.partition.PartitionReplicationEvent;
 import com.hazelcast.internal.services.ServiceNamespace;
-import com.hazelcast.wan.MigrationAwareWanReplicationPublisher;
-import com.hazelcast.wan.WanReplicationEvent;
-import com.hazelcast.wan.WanReplicationPublisher;
+import com.hazelcast.wan.WanEvent;
+import com.hazelcast.wan.WanMigrationAwarePublisher;
+import com.hazelcast.wan.WanPublisher;
 
 import javax.annotation.Nonnull;
 import java.util.Collection;
@@ -39,31 +39,31 @@ import static com.hazelcast.internal.util.Preconditions.checkNotNull;
  * for multiple WAN publishers.
  * When publishing an event on this delegate, all publishers are notified.
  */
-public final class DelegatingWanReplicationScheme {
+public final class DelegatingWanScheme {
     /** Non-null WAN replication name */
     private final String name;
     /** Non-null WAN publishers, grouped by publisher ID */
-    private final ConcurrentMap<String, WanReplicationPublisher> publishers;
+    private final ConcurrentMap<String, WanPublisher> publishers;
 
-    public DelegatingWanReplicationScheme(@Nonnull String name,
-                                          @Nonnull ConcurrentMap<String, WanReplicationPublisher> publishers) {
+    public DelegatingWanScheme(@Nonnull String name,
+                               @Nonnull ConcurrentMap<String, WanPublisher> publishers) {
         checkNotNull(name, "WAN publisher name should not be null");
         checkNotNull(publishers, "WAN publisher map should not be null");
         this.name = name;
         this.publishers = publishers;
     }
 
-    /** Returns all {@link WanReplicationPublisher}s for this delegate */
+    /** Returns all {@link WanPublisher}s for this delegate */
     public @Nonnull
-    Collection<WanReplicationPublisher> getPublishers() {
+    Collection<WanPublisher> getPublishers() {
         return publishers.values();
     }
 
     /**
-     * Returns the {@link WanReplicationPublisher} with the {@code publisherId}
+     * Returns the {@link WanPublisher} with the {@code publisherId}
      * or {@code null} if it doesn't exist.
      */
-    public WanReplicationPublisher getPublisher(String publisherId) {
+    public WanPublisher getPublisher(String publisherId) {
         return publishers.get(publisherId);
     }
 
@@ -79,7 +79,7 @@ public final class DelegatingWanReplicationScheme {
      * @param publisher   the WAN replication publisher to add
      */
     public void addPublisher(@Nonnull String publisherId,
-                             @Nonnull WanReplicationPublisher publisher) {
+                             @Nonnull WanPublisher publisher) {
         if (publishers.putIfAbsent(publisherId, publisher) != null) {
             throw new IllegalStateException("Publisher with publisher ID " + publisherId
                     + " on WAN replication scheme " + name + " is already present and cannot be overriden");
@@ -94,8 +94,8 @@ public final class DelegatingWanReplicationScheme {
      * Publishes a replication event to all publishers to which this publisher
      * delegates.
      */
-    public void publishReplicationEvent(WanReplicationEvent event) {
-        for (WanReplicationPublisher publisher : publishers.values()) {
+    public void publishReplicationEvent(WanEvent event) {
+        for (WanPublisher publisher : publishers.values()) {
             publisher.publishReplicationEvent(event);
         }
     }
@@ -104,8 +104,8 @@ public final class DelegatingWanReplicationScheme {
      * Publishes a backup replication event to all publishers to which this
      * publisher delegates.
      */
-    public void publishReplicationEventBackup(WanReplicationEvent event) {
-        for (WanReplicationPublisher publisher : publishers.values()) {
+    public void publishReplicationEventBackup(WanEvent event) {
+        for (WanPublisher publisher : publishers.values()) {
             publisher.publishReplicationEventBackup(event);
         }
     }
@@ -116,10 +116,10 @@ public final class DelegatingWanReplicationScheme {
      * Silently skips publishers not supporting republication.
      * NOTE: used only in Hazelcast Enterprise
      */
-    public void republishReplicationEvent(WanReplicationEvent wanReplicationEvent) {
-        for (WanReplicationPublisher publisher : publishers.values()) {
-            if (publisher instanceof InternalWanReplicationPublisher) {
-                ((InternalWanReplicationPublisher) publisher).republishReplicationEvent(wanReplicationEvent);
+    public void republishReplicationEvent(WanEvent wanEvent) {
+        for (WanPublisher publisher : publishers.values()) {
+            if (publisher instanceof InternalWanPublisher) {
+                ((InternalWanPublisher) publisher).republishReplicationEvent(wanEvent);
             }
         }
     }
@@ -131,11 +131,11 @@ public final class DelegatingWanReplicationScheme {
      */
     public Map<String, LocalWanPublisherStats> getStats() {
         final Map<String, LocalWanPublisherStats> statsMap = createHashMap(publishers.size());
-        for (Entry<String, WanReplicationPublisher> publisherEntry : publishers.entrySet()) {
-            WanReplicationPublisher publisher = publisherEntry.getValue();
-            if (publisher instanceof InternalWanReplicationPublisher) {
+        for (Entry<String, WanPublisher> publisherEntry : publishers.entrySet()) {
+            WanPublisher publisher = publisherEntry.getValue();
+            if (publisher instanceof InternalWanPublisher) {
                 String publisherId = publisherEntry.getKey();
-                LocalWanPublisherStats stats = ((InternalWanReplicationPublisher) publisher).getStats();
+                LocalWanPublisherStats stats = ((InternalWanPublisher) publisher).getStats();
                 if (stats != null) {
                     statsMap.put(publisherId, stats);
                 }
@@ -145,7 +145,7 @@ public final class DelegatingWanReplicationScheme {
     }
 
     public void doPrepublicationChecks() {
-        for (WanReplicationPublisher publisher : publishers.values()) {
+        for (WanPublisher publisher : publishers.values()) {
             publisher.doPrepublicationChecks();
         }
     }
@@ -163,10 +163,10 @@ public final class DelegatingWanReplicationScheme {
     public Map<String, Object> prepareEventContainerReplicationData(PartitionReplicationEvent event,
                                                                     Collection<ServiceNamespace> namespaces) {
         Map<String, Object> eventContainers = createHashMap(publishers.size());
-        for (Entry<String, WanReplicationPublisher> publisherEntry : publishers.entrySet()) {
-            WanReplicationPublisher publisher = publisherEntry.getValue();
-            if (publisher instanceof MigrationAwareWanReplicationPublisher) {
-                Object eventContainer = ((MigrationAwareWanReplicationPublisher) publisher)
+        for (Entry<String, WanPublisher> publisherEntry : publishers.entrySet()) {
+            WanPublisher publisher = publisherEntry.getValue();
+            if (publisher instanceof WanMigrationAwarePublisher) {
+                Object eventContainer = ((WanMigrationAwarePublisher) publisher)
                         .prepareEventContainerReplicationData(event, namespaces);
                 if (eventContainer != null) {
                     String publisherId = publisherEntry.getKey();
@@ -187,9 +187,9 @@ public final class DelegatingWanReplicationScheme {
      */
     public void collectAllServiceNamespaces(PartitionReplicationEvent event,
                                             Set<ServiceNamespace> namespaces) {
-        for (WanReplicationPublisher publisher : publishers.values()) {
-            if (publisher instanceof MigrationAwareWanReplicationPublisher) {
-                ((MigrationAwareWanReplicationPublisher) publisher)
+        for (WanPublisher publisher : publishers.values()) {
+            if (publisher instanceof WanMigrationAwarePublisher) {
+                ((WanMigrationAwarePublisher) publisher)
                         .collectAllServiceNamespaces(event, namespaces);
             }
         }
@@ -202,9 +202,9 @@ public final class DelegatingWanReplicationScheme {
      * @param mapName the map mapName
      */
     public void destroyMapData(String mapName) {
-        for (WanReplicationPublisher publisher : publishers.values()) {
-            if (publisher instanceof InternalWanReplicationPublisher) {
-                ((InternalWanReplicationPublisher) publisher).destroyMapData(mapName);
+        for (WanPublisher publisher : publishers.values()) {
+            if (publisher instanceof InternalWanPublisher) {
+                ((InternalWanPublisher) publisher).destroyMapData(mapName);
             }
         }
     }

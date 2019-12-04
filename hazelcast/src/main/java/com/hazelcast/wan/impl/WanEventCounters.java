@@ -19,14 +19,14 @@ package com.hazelcast.wan.impl;
 import com.hazelcast.cache.impl.CacheService;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.internal.util.ConstructorFunction;
-import com.hazelcast.wan.DistributedServiceWanEventCounters;
+import com.hazelcast.wan.WanEventDistributedServiceCounters;
 
 import java.util.concurrent.ConcurrentHashMap;
 
 import static com.hazelcast.internal.util.ConcurrencyUtil.getOrPutIfAbsent;
 
 /**
- * Thread safe container for {@link DistributedServiceWanEventCounters}
+ * Thread safe container for {@link WanEventDistributedServiceCounters}
  * grouped by WAN publisher, distributed service name and distributed object
  * name.
  * The publisher is defined by the WAN replication name and the target group
@@ -40,9 +40,9 @@ public class WanEventCounters {
 
 
     /**
-     * Returns the {@link DistributedServiceWanEventCounters} for the given {@code serviceName}
+     * Returns the {@link WanEventDistributedServiceCounters} for the given {@code serviceName}
      */
-    public DistributedServiceWanEventCounters getWanEventCounter(String wanReplicationName,
+    public WanEventDistributedServiceCounters getWanEventCounter(String wanReplicationName,
                                                                  String wanPublisherId,
                                                                  String serviceName) {
         final String counterId = wanReplicationName + ":" + wanPublisherId;
@@ -62,12 +62,12 @@ public class WanEventCounters {
     }
 
     /**
-     * Thread safe container for {@link DistributedServiceWanEventCounters}s
+     * Thread safe container for {@link WanEventDistributedServiceCounters}s
      * for all distributed objects and a single WAN publisher.
      */
     private static final class WanPublisherEventCounters {
-        private final DistributedServiceWanEventCounters mapEventCounters = new DistributedServiceWanEventCounters();
-        private final DistributedServiceWanEventCounters cacheEventCounters = new DistributedServiceWanEventCounters();
+        private final WanEventDistributedServiceCounters mapEventCounters = new WanEventDistributedServiceCounters();
+        private final WanEventDistributedServiceCounters cacheEventCounters = new WanEventDistributedServiceCounters();
 
         /**
          * Removes the counter for the given {@code serviceName} and {@code dataStructureName}.
@@ -77,9 +77,9 @@ public class WanEventCounters {
         }
 
         /**
-         * Returns the {@link DistributedServiceWanEventCounters} for the given {@code serviceName}
+         * Returns the {@link WanEventDistributedServiceCounters} for the given {@code serviceName}
          */
-        DistributedServiceWanEventCounters getWanEventCounter(String serviceName) {
+        WanEventDistributedServiceCounters getWanEventCounter(String serviceName) {
             if (MapService.SERVICE_NAME.equals(serviceName)) {
                 return mapEventCounters;
             } else if (CacheService.SERVICE_NAME.equals(serviceName)) {

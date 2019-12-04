@@ -17,7 +17,7 @@
 package com.hazelcast.wan.impl;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.config.CustomWanPublisherConfig;
+import com.hazelcast.config.WanCustomPublisherConfig;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.config.WanReplicationRef;
@@ -45,7 +45,7 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.wan.WanReplicationEvent;
+import com.hazelcast.wan.WanEvent;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -69,15 +69,15 @@ import static org.junit.Assert.assertTrue;
  */
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class WanReplicationTest extends HazelcastTestSupport {
+public class WanCustomPublisherTest extends HazelcastTestSupport {
 
     private TestHazelcastInstanceFactory factory;
     private HazelcastInstance instance1;
     private HazelcastInstance instance2;
     private IMap<Object, Object> map;
 
-    private DummyWanReplication impl1;
-    private DummyWanReplication impl2;
+    private WanDummyPublisher impl1;
+    private WanDummyPublisher impl2;
 
     @Before
     public void setUp() {
@@ -211,10 +211,10 @@ public class WanReplicationTest extends HazelcastTestSupport {
     @Test
     public void programmaticImplCreationTest() {
         Config config = getConfig();
-        CustomWanPublisherConfig publisherConfig = config.getWanReplicationConfig("dummyWan")
+        WanCustomPublisherConfig publisherConfig = config.getWanReplicationConfig("dummyWan")
                                                          .getCustomPublisherConfigs()
                                                          .get(0);
-        DummyWanReplication dummyWanReplication = new DummyWanReplication();
+        WanDummyPublisher dummyWanReplication = new WanDummyPublisher();
         publisherConfig.setImplementation(dummyWanReplication);
         instance1 = factory.newHazelcastInstance(config);
 
@@ -274,7 +274,7 @@ public class WanReplicationTest extends HazelcastTestSupport {
 
     @Override
     protected Config getConfig() {
-        WanReplicationConfig wanConfig = new WanReplicationConfig()
+        WanReplicationConfig wanReplicationConfig = new WanReplicationConfig()
                 .setName("dummyWan")
                 .addCustomPublisherConfig(getPublisherConfig());
 
@@ -286,20 +286,20 @@ public class WanReplicationTest extends HazelcastTestSupport {
                 .setWanReplicationRef(wanRef);
 
         return new Config()
-                .addWanReplicationConfig(wanConfig)
+                .addWanReplicationConfig(wanReplicationConfig)
                 .addMapConfig(mapConfig);
     }
 
-    private CustomWanPublisherConfig getPublisherConfig() {
-        return new CustomWanPublisherConfig()
+    private WanCustomPublisherConfig getPublisherConfig() {
+        return new WanCustomPublisherConfig()
                 .setPublisherId("dummyPublisherId")
-                .setClassName(DummyWanReplication.class.getName());
+                .setClassName(WanDummyPublisher.class.getName());
     }
 
-    private DummyWanReplication getWanReplicationImpl(HazelcastInstance instance) {
+    private WanDummyPublisher getWanReplicationImpl(HazelcastInstance instance) {
         WanReplicationService service = getNodeEngineImpl(instance).getWanReplicationService();
-        DelegatingWanReplicationScheme delegate = service.getWanReplicationPublishers("dummyWan");
-        return (DummyWanReplication) delegate.getPublishers().iterator().next();
+        DelegatingWanScheme delegate = service.getWanReplicationPublishers("dummyWan");
+        return (WanDummyPublisher) delegate.getPublishers().iterator().next();
     }
 
     private MapOperationProvider getOperationProvider(Map map) {
@@ -314,8 +314,8 @@ public class WanReplicationTest extends HazelcastTestSupport {
             impl2 = getWanReplicationImpl(instance2);
         }
 
-        final Queue<WanReplicationEvent> eventQueue1 = impl1.eventQueue;
-        final Queue<WanReplicationEvent> eventQueue2 = impl2.eventQueue;
+        final Queue<WanEvent> eventQueue1 = impl1.eventQueue;
+        final Queue<WanEvent> eventQueue2 = impl2.eventQueue;
         assertTrueEventually(() -> assertEquals(expectedQueueSize, eventQueue1.size() + eventQueue2.size()));
     }
 
