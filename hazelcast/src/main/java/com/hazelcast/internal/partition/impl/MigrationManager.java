@@ -75,6 +75,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
@@ -120,6 +121,8 @@ public class MigrationManager {
     private final boolean fragmentedMigrationEnabled;
     private final long memberHeartbeatTimeoutMillis;
     private boolean triggerRepartitioningWhenClusterStateAllowsMigration;
+    private final Set<MigrationInfo> finalizingMigrationsRegistry
+            = Collections.newSetFromMap(new ConcurrentHashMap<MigrationInfo, Boolean>());
 
     MigrationManager(Node node, InternalPartitionServiceImpl service, Lock partitionServiceLock) {
         this.node = node;
@@ -217,8 +220,8 @@ public class MigrationManager {
 
                 MigrationEndpoint endpoint = source ? MigrationEndpoint.SOURCE : MigrationEndpoint.DESTINATION;
                 FinalizeMigrationOperation op = new FinalizeMigrationOperation(migrationInfo, endpoint, success);
-                op.setPartitionId(partitionId).setNodeEngine(nodeEngine).setValidateTarget(false)
-                        .setService(partitionService);
+                op.setPartitionId(partitionId).setNodeEngine(nodeEngine).setValidateTarget(false).setService(partitionService);
+                registerFinalizingMigration(migrationInfo);
                 InternalOperationService operationService = nodeEngine.getOperationService();
                 if (operationService.isRunAllowed(op)) {
                     // When migration finalization is triggered by subsequent migrations
@@ -246,6 +249,23 @@ public class MigrationManager {
         } finally {
             migrationInfo.doneProcessing();
         }
+    }
+
+    private void registerFinalizingMigration(MigrationInfo migration) {
+        finalizingMigrationsRegistry.add(migration);
+    }
+
+    public boolean removeFinalizingMigration(MigrationInfo migration) {
+        return finalizingMigrationsRegistry.remove(migration);
+    }
+
+    public boolean isFinalizingMigrationRegistered(int partitionId) {
+        for (MigrationInfo migrationInfo : finalizingMigrationsRegistry) {
+            if (partitionId == migrationInfo.getPartitionId()) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**
