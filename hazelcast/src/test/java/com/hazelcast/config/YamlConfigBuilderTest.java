@@ -101,6 +101,17 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
 
     @Override
     @Test
+    public void testClusterName() {
+        String yaml = ""
+                + "hazelcast:\n"
+                + "  cluster-name: my-cluster\n";
+
+        Config config = buildConfig(yaml);
+        assertEquals("my-cluster", config.getClusterName());
+    }
+
+    @Override
+    @Test
     public void testConfigurationWithFileName() throws Exception {
         assumeThatNotZingJDK6(); // https://github.com/hazelcast/hazelcast/issues/9044
 

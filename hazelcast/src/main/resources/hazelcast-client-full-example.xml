@@ -82,7 +82,7 @@
         Specifies the cluster name. It's sent as part of the client authentication message to Hazelcast
         member(s).
     -->
-    <cluster-name>dev</cluster-name>
+    <cluster-name>my-cluster</cluster-name>
 
     <!--
         When Hazelcast instances are created, they are put in a global registry with their creation names.

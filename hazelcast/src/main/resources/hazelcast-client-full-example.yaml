@@ -68,8 +68,9 @@ hazelcast-client:
           secretKeyAlgorithm: DES
           secretKeyFactoryAlgorithm: PBKDF2WithHmacSHA1
   #
-  # Specifies the cluster name
-  cluster-name: dev
+  # Specifies the cluster name. It's sent as part of the client authentication message to Hazelcast
+  # member(s).
+  cluster-name: my-cluster
   #
   # When Hazelcast instances are created, they are put in a global registry with their creation names.
   # "instance-name" gives you the ability to get a specific Hazelcast instance from this registry
