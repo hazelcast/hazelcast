@@ -25,7 +25,11 @@ import com.hazelcast.jet.datamodel.KeyedWindowResult;
 import com.hazelcast.jet.datamodel.Tag;
 import com.hazelcast.jet.datamodel.Tuple2;
 import com.hazelcast.jet.datamodel.Tuple3;
+import com.hazelcast.jet.pipeline.test.SimpleEvent;
+import com.hazelcast.jet.pipeline.test.TestSources;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.ExpectedException;
 
 import java.util.List;
 import java.util.Map.Entry;
@@ -38,6 +42,7 @@ import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.aggregate.AggregateOperations.aggregateOperation2;
 import static com.hazelcast.jet.aggregate.AggregateOperations.aggregateOperation3;
 import static com.hazelcast.jet.aggregate.AggregateOperations.coAggregateOperationBuilder;
+import static com.hazelcast.jet.aggregate.AggregateOperations.counting;
 import static com.hazelcast.jet.aggregate.AggregateOperations.mapping;
 import static com.hazelcast.jet.aggregate.AggregateOperations.summingLong;
 import static com.hazelcast.jet.datamodel.Tuple2.tuple2;
@@ -87,6 +92,22 @@ public class WindowGroupAggregateTest extends PipelineStreamTestSupport {
 
     private static final AggregateOperation1<Entry<String, Integer>, LongAccumulator, Long> SUMMING =
             summingLong(Entry::getValue);
+
+    @Rule
+    public ExpectedException exception = ExpectedException.none();
+
+    @Test
+    public void when_noTimestamps_then_error() {
+        StageWithWindow<SimpleEvent> stage = p
+                .readFrom(TestSources.itemStream(0))
+                // When
+                .withoutTimestamps()
+                .window(tumbling(1));
+
+        // Then
+        exception.expectMessage("is missing a timestamp definition");
+        stage.aggregate(counting());
+    }
 
     @Test
     public void windowDefinition() {

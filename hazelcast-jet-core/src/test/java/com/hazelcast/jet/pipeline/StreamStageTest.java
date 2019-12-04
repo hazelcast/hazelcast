@@ -32,9 +32,13 @@ import com.hazelcast.jet.datamodel.Tuple2;
 import com.hazelcast.jet.datamodel.Tuple3;
 import com.hazelcast.jet.function.TriFunction;
 import com.hazelcast.jet.impl.JetEvent;
+import com.hazelcast.jet.pipeline.test.SimpleEvent;
+import com.hazelcast.jet.pipeline.test.TestSources;
 import com.hazelcast.map.IMap;
 import com.hazelcast.replicatedmap.ReplicatedMap;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.ExpectedException;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -72,6 +76,9 @@ public class StreamStageTest extends PipelineStreamTestSupport {
 
     private static BiFunction<String, Integer, String> ENRICHING_FORMAT_FN =
             (prefix, i) -> String.format("%s-%04d", prefix, i);
+
+    @Rule
+    public ExpectedException exception = ExpectedException.none();
 
     @Test
     public void setName() {
@@ -889,6 +896,47 @@ public class StreamStageTest extends PipelineStreamTestSupport {
 
         // When
         StreamStage<Integer> merged = srcStage0.merge(srcStage1);
+
+        // Then
+        merged.writeTo(sink);
+        execute();
+        assertEquals(
+                streamToString(input.stream().flatMap(i -> Stream.of(i, i)), formatFn),
+                streamToString(sinkStreamOf(Integer.class), formatFn));
+    }
+
+    @Test
+    public void when_mergeTimestampedToNonTimestamped_then_error() {
+        StreamStage<SimpleEvent> timestamped = p.readFrom(TestSources.itemStream(1)).withIngestionTimestamps();
+        StreamStage<SimpleEvent> nonTimestamped = p.readFrom(TestSources.itemStream(1)).withoutTimestamps();
+
+        // Then
+        exception.expectMessage("both have or both not have timestamp definitions");
+
+        // When
+        nonTimestamped.merge(timestamped);
+    }
+
+    @Test
+    public void when_mergeNonTimestampedToTimestamped_then_error() {
+        StreamStage<SimpleEvent> timestamped = p.readFrom(TestSources.itemStream(1)).withIngestionTimestamps();
+        StreamStage<SimpleEvent> nonTimestamped = p.readFrom(TestSources.itemStream(1)).withoutTimestamps();
+
+        // Then
+        exception.expectMessage("both have or both not have timestamp definitions");
+
+        // When
+        timestamped.merge(nonTimestamped);
+    }
+
+    @Test
+    public void when_mergeToItself_then_doubleOutput() {
+        List<Integer> input = sequence(itemCount);
+        Function<Integer, String> formatFn = i -> String.format("%04d", i);
+        StreamStage<Integer> srcStage0 = streamStageFromList(input);
+
+        // When
+        StreamStage<Integer> merged = srcStage0.merge(srcStage0);
 
         // Then
         merged.writeTo(sink);

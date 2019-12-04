@@ -105,10 +105,10 @@ public final class AsyncTransformUsingServiceOrderedP<S, T, R> extends AbstractP
             return false;
         }
         @SuppressWarnings("unchecked")
-        T castedItem = (T) item;
-        CompletableFuture<? extends Traverser<R>> future = callAsyncFn.apply(service, castedItem);
+        T castItem = (T) item;
+        CompletableFuture<? extends Traverser<R>> future = callAsyncFn.apply(service, castItem);
         if (future != null) {
-            queue.add(tuple2(castedItem, future));
+            queue.add(tuple2(castItem, future));
         }
         return true;
     }

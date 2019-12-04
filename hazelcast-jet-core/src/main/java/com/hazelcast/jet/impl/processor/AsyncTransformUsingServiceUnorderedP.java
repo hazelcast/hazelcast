@@ -138,8 +138,8 @@ public final class AsyncTransformUsingServiceUnorderedP<S, T, K, R> extends Abst
         }
         asyncOpsCounterMetric.lazySet(asyncOpsCounter);
         @SuppressWarnings("unchecked")
-        T castedItem = (T) item;
-        if (!processItem(castedItem)) {
+        T castItem = (T) item;
+        if (!processItem(castItem)) {
             // if queue is full, try to emit and apply backpressure
             tryFlushQueue();
             return false;

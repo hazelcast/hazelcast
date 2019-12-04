@@ -97,10 +97,10 @@ public final class UpdateMapP<T, K, V, R> extends AsyncHazelcastWriterP {
         map = instance().getMap(mapName);
         int partitionCount;
         if (isLocal()) {
-            HazelcastInstanceImpl castedInstance = (HazelcastInstanceImpl) instance();
+            HazelcastInstanceImpl castInstance = (HazelcastInstanceImpl) instance();
             clientPartitionService = null;
-            memberPartitionService = castedInstance.node.nodeEngine.getPartitionService();
-            serializationService = castedInstance.getSerializationService();
+            memberPartitionService = castInstance.node.nodeEngine.getPartitionService();
+            serializationService = castInstance.getSerializationService();
             partitionCount = memberPartitionService.getPartitionCount();
         } else {
             HazelcastClientProxy clientProxy = (HazelcastClientProxy) instance();
@@ -267,8 +267,8 @@ public final class UpdateMapP<T, K, V, R> extends AsyncHazelcastWriterP {
             }
             if (item instanceof List) {
                 @SuppressWarnings("unchecked")
-                List<Data> castedList = (List<Data>) item;
-                for (Data o : castedList) {
+                List<Data> castList = (List<Data>) item;
+                for (Data o : castList) {
                     handle(entry, o);
                 }
             } else {

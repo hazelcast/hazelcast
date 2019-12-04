@@ -76,8 +76,8 @@ public class ExplodeSnapshotP extends AbstractProcessor {
             // ignore the validation record
             return true;
         }
-        Entry<SnapshotDataKey, byte[]> casted = (Entry<SnapshotDataKey, byte[]>) item;
-        String vertexName = casted.getKey().vertexName();
+        Entry<SnapshotDataKey, byte[]> castItem = (Entry<SnapshotDataKey, byte[]>) item;
+        String vertexName = castItem.getKey().vertexName();
         FlatMapper<byte[], Object> flatMapper = vertexToFlatMapper.get(vertexName);
         if (flatMapper == null) {
             if (!vertexToFlatMapper.containsKey(vertexName)) {
@@ -87,12 +87,12 @@ public class ExplodeSnapshotP extends AbstractProcessor {
             }
             return true;
         }
-        long snapshotId = casted.getKey().snapshotId();
+        long snapshotId = castItem.getKey().snapshotId();
         if (snapshotId != expectedSnapshotId) {
             getLogger().warning("Data for unexpected snapshot ID encountered, ignoring. Expected="
                     + expectedSnapshotId + ", found=" + snapshotId);
             return true;
         }
-        return flatMapper.tryProcess(casted.getValue());
+        return flatMapper.tryProcess(castItem.getValue());
     }
 }
