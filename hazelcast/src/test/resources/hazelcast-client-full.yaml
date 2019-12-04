@@ -34,7 +34,7 @@ hazelcast-client:
           secretKeyAlgorithm: DES
           secretKeyFactoryAlgorithm: PBKDF2WithHmacSHA1
 
-  cluster-name: dev
+  cluster-name: my-cluster
   instance-name: CLIENT_NAME
   license-key: HAZELCAST_ENTERPRISE_LICENSE_KEY
   properties:

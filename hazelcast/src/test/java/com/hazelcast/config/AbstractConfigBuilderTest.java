@@ -59,6 +59,9 @@ public abstract class AbstractConfigBuilderTest extends HazelcastTestSupport {
     public abstract void testConfigurationURL() throws Exception;
 
     @Test
+    public abstract void testClusterName();
+
+    @Test
     public abstract void testConfigurationWithFileName() throws Exception;
 
     @Test(expected = IllegalArgumentException.class)
