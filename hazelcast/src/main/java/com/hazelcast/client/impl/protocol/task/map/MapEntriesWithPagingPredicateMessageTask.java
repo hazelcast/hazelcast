@@ -19,19 +19,18 @@ package com.hazelcast.client.impl.protocol.task.map;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.MapEntriesWithPagingPredicateCodec;
 import com.hazelcast.instance.impl.Node;
-import com.hazelcast.map.impl.query.QueryResultRow;
 import com.hazelcast.internal.nio.Connection;
+import com.hazelcast.internal.util.IterationType;
+import com.hazelcast.map.impl.query.QueryResultRow;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.query.Predicate;
-import com.hazelcast.internal.util.IterationType;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
 public class MapEntriesWithPagingPredicateMessageTask
-        extends DefaultMapQueryMessageTask<MapEntriesWithPagingPredicateCodec.RequestParameters> {
+        extends AbstractMapQueryWithPagingPredicateMessageTask<MapEntriesWithPagingPredicateCodec.RequestParameters> {
 
     public MapEntriesWithPagingPredicateMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -39,11 +38,7 @@ public class MapEntriesWithPagingPredicateMessageTask
 
     @Override
     protected Object reduce(Collection<QueryResultRow> result) {
-        List<Map.Entry<Data, Data>> entries = new ArrayList<Map.Entry<Data, Data>>(result.size());
-        for (QueryResultRow resultRow : result) {
-            entries.add(resultRow);
-        }
-        return entries;
+        return getSortedPageEntries(result, parameters.predicate);
     }
 
     @Override

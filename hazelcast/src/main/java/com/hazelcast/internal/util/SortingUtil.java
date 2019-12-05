@@ -16,10 +16,14 @@
 
 package com.hazelcast.internal.util;
 
+import com.hazelcast.map.impl.LazyMapEntry;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.PagingPredicate;
 import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.query.impl.predicates.PagingPredicateImpl;
 
+import java.util.AbstractMap;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
@@ -187,6 +191,21 @@ public final class SortingUtil {
         Comparator<Map.Entry> comparator = pagingPredicate.getComparator();
         IterationType iterationType = pagingPredicateImpl.getIterationType();
         return SortingUtil.compare(comparator, iterationType, anchor, queryEntry) < 0;
+    }
+
+    public static List<Map.Entry<Data, Data>> getSortedSubList(ArrayList<LazyMapEntry> accumulatedList,
+                                                               PagingPredicateImpl pagingPredicate) {
+        Comparator<Map.Entry> comparator = (entry1, entry2) ->
+                SortingUtil.compare(pagingPredicate.getComparator(), pagingPredicate.getIterationType(), entry1, entry2);
+        Collections.sort(accumulatedList, comparator);
+
+        int expectedEntryCount = Math.min(pagingPredicate.getPageSize(), accumulatedList.size());
+        List<LazyMapEntry> sortedSubList = accumulatedList.subList(0, expectedEntryCount);
+
+        List<Map.Entry<Data, Data>> entries = new ArrayList<>(sortedSubList.size());
+        sortedSubList
+                .forEach(entry -> entries.add(new AbstractMap.SimpleImmutableEntry<>(entry.getKeyData(), entry.getValueData())));
+        return entries;
     }
 
     private static void setAnchor(List<Map.Entry> list, PagingPredicateImpl pagingPredicate, int nearestPage) {

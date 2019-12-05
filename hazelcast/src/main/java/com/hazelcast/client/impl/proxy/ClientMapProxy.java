@@ -148,6 +148,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -164,7 +165,6 @@ import static com.hazelcast.internal.util.MapUtil.createHashMap;
 import static com.hazelcast.internal.util.Preconditions.checkNotInstanceOf;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.internal.util.Preconditions.checkPositive;
-import static com.hazelcast.internal.util.SortingUtil.getSortedQueryResultSet;
 import static com.hazelcast.internal.util.ThreadUtil.getThreadId;
 import static com.hazelcast.internal.util.TimeUtil.timeInMsOrOneIfResultIsZero;
 import static com.hazelcast.internal.util.TimeUtil.timeInMsOrTimeIfNullUnit;
@@ -1263,12 +1263,27 @@ public class ClientMapProxy<K, V> extends ClientProxy
         MapKeySetWithPagingPredicateCodec.ResponseParameters resultParameters = MapKeySetWithPagingPredicateCodec
                 .decodeResponse(response);
 
-        ArrayList<Map.Entry> resultList = new ArrayList<>();
-        for (Data keyData : resultParameters.response) {
-            K key = toObject(keyData);
-            resultList.add(new AbstractMap.SimpleImmutableEntry<K, V>(key, null));
+        if (resultParameters.response.isEmpty()) {
+            return Collections.EMPTY_SET;
         }
-        return (Set<K>) getSortedQueryResultSet(resultList, pagingPredicate, IterationType.KEY);
+
+        SerializationService serializationService = getSerializationService();
+
+        int size = resultParameters.response.size();
+        Set<K> keySet = new HashSet<>(size);
+        K lastKey = null;
+        for (int i = 0; i < size; i++) {
+            K key = serializationService.toObject(resultParameters.response.get(i));
+            keySet.add(key);
+            if (i == size - 1) {
+                lastKey = key;
+            }
+        }
+        resultParameters.response.forEach(data -> keySet.add(serializationService.toObject(data)));
+
+        pagingPredicate.setAnchor(pagingPredicate.getPage(), new AbstractMap.SimpleImmutableEntry(lastKey, null));
+
+        return keySet;
     }
 
     @SuppressWarnings("unchecked")
@@ -1303,13 +1318,28 @@ public class ClientMapProxy<K, V> extends ClientProxy
         MapEntriesWithPagingPredicateCodec.ResponseParameters resultParameters = MapEntriesWithPagingPredicateCodec
                 .decodeResponse(response);
 
-        ArrayList<Map.Entry> resultList = new ArrayList<>();
-        for (Entry<Data, Data> entry : resultParameters.response) {
-            K key = toObject(entry.getKey());
-            V value = toObject(entry.getValue());
-            resultList.add(new AbstractMap.SimpleEntry<>(key, value));
+        if (resultParameters.response.isEmpty()) {
+            return Collections.EMPTY_SET;
         }
-        return getSortedQueryResultSet(resultList, pagingPredicate, iterationType);
+
+        SerializationService serializationService = getSerializationService();
+        int size = resultParameters.response.size();
+        Set<Map.Entry> entries = new HashSet<>(size);
+        Map.Entry lastEntry = null;
+        for (int i = 0; i < size; i++) {
+            Entry<Data, Data> dataEntry = resultParameters.response.get(i);
+            K key = serializationService.toObject(dataEntry.getKey());
+            V value = serializationService.toObject(dataEntry.getValue());
+            Map.Entry<K, V> entry = new AbstractMap.SimpleImmutableEntry<>(key, value);
+            entries.add(entry);
+            if (i == size - 1) {
+                lastEntry = entry;
+            }
+        }
+
+        pagingPredicate.setAnchor(pagingPredicate.getPage(), lastEntry);
+
+        return entries;
     }
 
     @Override
@@ -1347,13 +1377,23 @@ public class ClientMapProxy<K, V> extends ClientProxy
         MapValuesWithPagingPredicateCodec.ResponseParameters resultParameters = MapValuesWithPagingPredicateCodec
                 .decodeResponse(response);
 
-        List<Entry> resultList = new ArrayList<>(resultParameters.response.size());
-        for (Entry<Data, Data> entry : resultParameters.response) {
-            K key = toObject(entry.getKey());
-            V value = toObject(entry.getValue());
-            resultList.add(new AbstractMap.SimpleImmutableEntry<>(key, value));
+        if (resultParameters.response.isEmpty()) {
+            return Collections.EMPTY_LIST;
         }
-        return (Collection<V>) getSortedQueryResultSet(resultList, pagingPredicate, IterationType.VALUE);
+
+        SerializationService serializationService = getSerializationService();
+
+        List<V> valueList = new ArrayList<>(resultParameters.response.size());
+        resultParameters.response.forEach(entry -> {
+            valueList.add(serializationService.toObject(entry.getValue()));
+        });
+
+        int lastEntryIndex = valueList.size() - 1;
+        K lastEntryKey = serializationService.toObject(resultParameters.response.get(lastEntryIndex).getKey());
+        V lastEntryValue = valueList.get(lastEntryIndex);
+        pagingPredicate.setAnchor(pagingPredicate.getPage(), new AbstractMap.SimpleImmutableEntry(lastEntryKey, lastEntryValue));
+
+        return valueList;
     }
 
     @Override
