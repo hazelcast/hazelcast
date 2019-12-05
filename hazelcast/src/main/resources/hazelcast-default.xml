@@ -33,7 +33,6 @@
 
     <cluster-name>dev</cluster-name>
 
-    <management-center />
     <network>
         <port auto-increment="true" port-count="100">5701</port>
         <outbound-ports>

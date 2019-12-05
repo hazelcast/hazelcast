@@ -24,7 +24,6 @@
 # at https://hazelcast.org/documentation/
 hazelcast:
   cluster-name: dev
-  management-center: {}
   network:
     port:
       auto-increment: true
