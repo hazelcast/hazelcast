@@ -280,6 +280,23 @@ public class JmxPublisherTest {
                 singletonList(entry("c", 2L)))));
     }
 
+    @Test
+    public void when_shutdown_noMBeansLeak() throws Exception {
+        MetricDescriptor descriptor = newDescriptor()
+                .withMetric("c")
+                .withTag("tag1", "a")
+                .withTag("tag2", "b");
+        jmxPublisher.publishLong(descriptor, 1L);
+        jmxPublisher.whenComplete();
+        assertMBeans(singletonList(
+                of(domainPrefix + ":type=Metrics,instance=inst1,tag0=\"tag1=a\",tag1=\"tag2=b\"",
+                        singletonList(entry("c", 1L)))));
+
+        jmxPublisher.shutdown();
+
+        assertMBeans(emptyList());
+    }
+
     private MetricDescriptor newDescriptor() {
         return DEFAULT_DESCRIPTOR_SUPPLIER.get();
     }

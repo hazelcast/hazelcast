@@ -736,6 +736,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
 
     @Override
     public void shutdown() {
+        clientStatisticsService.shutdown();
         getLifecycleService().shutdown();
     }
 

@@ -16,7 +16,6 @@
 
 package com.hazelcast.internal.metrics.jmx;
 
-import com.hazelcast.config.MetricsConfig;
 import com.hazelcast.internal.metrics.MetricDescriptor;
 import com.hazelcast.internal.metrics.MetricsPublisher;
 import com.hazelcast.internal.metrics.ProbeUnit;
@@ -175,7 +174,7 @@ public class JmxPublisher implements MetricsPublisher {
         boolean wasPresent;
 
         /**
-         * See {@link MetricsConfig#setJmxEnabled(boolean)}.
+         * See {@link com.hazelcast.config.MetricsJmxConfig#setEnabled(boolean)}.
          */
         @SuppressWarnings({"checkstyle:ExecutableStatementCount", "checkstyle:NPathComplexity",
                            "checkstyle:CyclomaticComplexity"})
@@ -254,5 +253,7 @@ public class JmxPublisher implements MetricsPublisher {
         for (ObjectName bean : platformMBeanServer.queryNames(name, null)) {
             unregisterMBeanIgnoreError(bean);
         }
+
+        //        mBeans.forEach((objectName, metricsMBean) -> unregisterMBeanIgnoreError(objectName));
     }
 }

@@ -69,6 +69,7 @@ public class ClientStatisticsService {
     private PeriodicStatistics periodicStats;
 
     private volatile ConcurrentMap<String, NearCacheManager> nearCacheManagers;
+    private volatile PublisherMetricsCollector publisherMetricsCollector;
 
     public ClientStatisticsService(final HazelcastClientInstanceImpl clientInstance) {
         this.metricsConfig = clientInstance.getClientConfig().getMetricsConfig();
@@ -86,6 +87,12 @@ public class ClientStatisticsService {
             return;
         }
 
+        if (metricsConfig.getJmxConfig().isEnabled()) {
+            publisherMetricsCollector = new PublisherMetricsCollector(new JmxPublisher(client.getName(), "com.hazelcast"));
+        } else {
+            publisherMetricsCollector = new PublisherMetricsCollector();
+        }
+        
         metricsRegistry.registerDynamicMetricsProvider(new ClusterConnectionMetricsProvider(client.getConnectionManager()));
 
         long periodSeconds = metricsConfig.getCollectionFrequencySeconds();
@@ -97,6 +104,10 @@ public class ClientStatisticsService {
         schedulePeriodicStatisticsSendTask(metricsConfig.getCollectionFrequencySeconds());
 
         logger.info("Client statistics is enabled with period " + periodSeconds + " seconds.");
+    }
+
+    public void shutdown() {
+        publisherMetricsCollector.shutdown();
     }
 
     // visible for testing
@@ -115,13 +126,6 @@ public class ClientStatisticsService {
      * @param periodSeconds the interval at which the statistics collection and send is being run
      */
     private void schedulePeriodicStatisticsSendTask(long periodSeconds) {
-        PublisherMetricsCollector publisherMetricsCollector;
-        if (metricsConfig.isEnabled() && metricsConfig.getJmxConfig().isEnabled()) {
-            publisherMetricsCollector = new PublisherMetricsCollector(new JmxPublisher(client.getName(), "com.hazelcast"));
-        } else {
-            publisherMetricsCollector = new PublisherMetricsCollector();
-        }
-
         ClientMetricCollector clientMetricCollector = new ClientMetricCollector();
         CompositeMetricsCollector compositeMetricsCollector = new CompositeMetricsCollector(clientMetricCollector,
                 publisherMetricsCollector);
