@@ -104,4 +104,15 @@ public class MetricTargetTest {
 
         assertEquals(allCombinations, MetricTarget.BITSET_TO_SET_CACHE.size());
     }
+
+    @Test
+    public void testUnion() {
+        Set<MetricTarget> excludedTargets1 = MetricTarget.asSet(MANAGEMENT_CENTER, JMX);
+        Set<MetricTarget> excludedTargets2 = MetricTarget.asSet(DIAGNOSTICS, JMX);
+
+        assertSame(
+            MetricTarget.asSet(MANAGEMENT_CENTER, DIAGNOSTICS, JMX),
+            MetricTarget.union(excludedTargets1, excludedTargets2)
+        );
+    }
 }

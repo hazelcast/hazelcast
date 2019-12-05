@@ -21,8 +21,8 @@ import com.hazelcast.config.ExecutorConfig;
 import com.hazelcast.config.ScheduledExecutorConfig;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.metrics.DynamicMetricsProvider;
-import com.hazelcast.internal.metrics.MetricsCollectionContext;
 import com.hazelcast.internal.metrics.MetricDescriptor;
+import com.hazelcast.internal.metrics.MetricsCollectionContext;
 import com.hazelcast.internal.util.ConcurrencyUtil;
 import com.hazelcast.internal.util.ConstructorFunction;
 import com.hazelcast.internal.util.RuntimeAvailableProcessors;
@@ -51,6 +51,7 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
+import static com.hazelcast.internal.metrics.MetricTarget.MANAGEMENT_CENTER;
 import static com.hazelcast.internal.util.ThreadUtil.createThreadPoolName;
 import static java.lang.Thread.currentThread;
 
@@ -394,24 +395,27 @@ public final class ExecutionServiceImpl implements ExecutionService {
             for (ManagedExecutorService executorService : executors.values()) {
                 MetricDescriptor executorDescriptor = descriptor
                         .copy()
-                        .withPrefix("internal-executor")
-                        .withDiscriminator("executor", executorService.getName());
+                        .withPrefix("executor.internal")
+                        .withDiscriminator("name", executorService.getName())
+                        .withExcludedTarget(MANAGEMENT_CENTER);
                 context.collect(executorDescriptor, executorService);
             }
 
             for (ManagedExecutorService executorService : durableExecutors.values()) {
                 MetricDescriptor executorDescriptor = descriptor
                         .copy()
-                        .withPrefix("durable-executor")
-                        .withDiscriminator("executor", executorService.getName());
+                        .withPrefix("executor.durable.internal")
+                        .withDiscriminator("name", executorService.getName())
+                        .withExcludedTarget(MANAGEMENT_CENTER);
                 context.collect(executorDescriptor, executorService);
             }
 
             for (ManagedExecutorService executorService : scheduleDurableExecutors.values()) {
                 MetricDescriptor executorDescriptor = descriptor
                         .copy()
-                        .withPrefix("scheduled-durable-executor")
-                        .withDiscriminator("executor", executorService.getName());
+                        .withPrefix("executor.scheduled.internal")
+                        .withDiscriminator("name", executorService.getName())
+                        .withExcludedTarget(MANAGEMENT_CENTER);
                 context.collect(executorDescriptor, executorService);
             }
         }

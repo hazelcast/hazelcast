@@ -83,7 +83,7 @@ public class MethodProbeTest extends HazelcastTestSupport {
         SomeSource source = new SomeSource();
         Method method = source.getClass().getDeclaredMethod("getSomeIntegerMethod");
         Probe probe = method.getAnnotation(Probe.class);
-        MethodProbe methodProbe = createMethodProbe(method, probe);
+        MethodProbe methodProbe = createMethodProbe(method, probe, new SourceMetadata(SomeSource.class));
 
         MetricsRegistryImpl metricsRegistry = new MetricsRegistryImpl(mock(ILogger.class), ProbeLevel.DEBUG);
         methodProbe.register(metricsRegistry, source, "prefix");
@@ -98,7 +98,7 @@ public class MethodProbeTest extends HazelcastTestSupport {
         SomeSource source = new SomeSource();
         Method method = source.getClass().getDeclaredMethod(methodName);
         Probe probe = method.getAnnotation(Probe.class);
-        MethodProbe methodProbe = createMethodProbe(method, probe);
+        MethodProbe methodProbe = createMethodProbe(method, probe, new SourceMetadata(SomeSource.class));
 
         LongMethodProbe longMethodProbe = assertInstanceOf(LongMethodProbe.class, methodProbe);
 
@@ -122,7 +122,7 @@ public class MethodProbeTest extends HazelcastTestSupport {
         SomeSource source = new SomeSource();
         Method method = source.getClass().getDeclaredMethod(fieldName);
         Probe probe = method.getAnnotation(Probe.class);
-        MethodProbe methodProbe = createMethodProbe(method, probe);
+        MethodProbe methodProbe = createMethodProbe(method, probe, new SourceMetadata(SomeSource.class));
 
         MethodProbe.DoubleMethodProbe doubleMethodProbe = assertInstanceOf(MethodProbe.DoubleMethodProbe.class, methodProbe);
         double value = doubleMethodProbe.get(source);

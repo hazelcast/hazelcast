@@ -18,6 +18,7 @@ package com.hazelcast.client.cache.nearcache;
 
 import com.hazelcast.cache.ICache;
 import com.hazelcast.cache.impl.HazelcastServerCacheManager;
+import com.hazelcast.client.cache.impl.ClientCacheProxy;
 import com.hazelcast.client.cache.impl.HazelcastClientCacheManager;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.impl.clientside.HazelcastClientProxy;
@@ -165,7 +166,8 @@ public class ClientCacheNearCachePreloaderTest extends AbstractNearCachePreloade
         String cacheNameWithPrefix = cacheManager.getCacheNameWithPrefix(nearCacheConfig.getName());
         ICache<K, V> clientCache = cacheManager.createCache(nearCacheConfig.getName(), cacheConfig);
 
-        NearCacheManager nearCacheManager = client.client.getNearCacheManager(clientCache.getServiceName());
+        NearCacheManager nearCacheManager = ((ClientCacheProxy) clientCache).getContext()
+                .getNearCacheManager(clientCache.getServiceName());
         NearCache<Data, String> nearCache = nearCacheManager.getNearCache(cacheNameWithPrefix);
 
         return new NearCacheTestContextBuilder<K, V, Data, String>(nearCacheConfig, client.getSerializationService())

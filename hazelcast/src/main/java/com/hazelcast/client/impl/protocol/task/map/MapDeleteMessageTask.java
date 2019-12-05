@@ -54,12 +54,11 @@ public class MapDeleteMessageTask
 
     @Override
     protected Object processResponseBeforeSending(Object response) {
-        final long latencyNanos = System.nanoTime() - startTimeNanos;
-        final MapService mapService = getService(MapService.SERVICE_NAME);
+        MapService mapService = getService(MapService.SERVICE_NAME);
         MapContainer mapContainer = mapService.getMapServiceContext().getMapContainer(parameters.name);
         if (mapContainer.getMapConfig().isStatisticsEnabled()) {
             mapService.getMapServiceContext().getLocalMapStatsProvider().getLocalMapStatsImpl(parameters.name)
-                    .incrementRemoveLatencyNanos(latencyNanos);
+                    .incrementRemoveLatencyNanos(System.nanoTime() - startTimeNanos);
         }
         return response;
     }

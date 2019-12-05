@@ -68,13 +68,9 @@ hazelcast:
           secretKeyAlgorithm: DES
           secretKeyFactoryAlgorithm: PBKDF2WithHmacSHA1
   #
-  # Specifies the name and password for a cluster group you create.
-  # Cluster groups allow you to create separate sub-clusters with different names.
-  # They are also referenced in the WAN Replication configuration.
-  # The group password is only used when the security is enabled (Enterprise edition feature).
-  cluster:
-    name: dev
-    password: dev-pass
+  # Specifies the cluster name. It allows creating separate sub-clusters with different names.
+  #  name is also referenced in the WAN Replication configuration.
+  cluster-name: my-cluster
   #
   # ===== HAZELCAST LICENSE CONFIGURATION =====
   #

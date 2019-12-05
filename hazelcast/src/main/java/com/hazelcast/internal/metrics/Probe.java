@@ -94,8 +94,14 @@ public @interface Probe {
     /**
      * Returns the targets excluded for this Probe. Used for filtering in
      * {@link MetricsPublisher}s.
+     * <p/>
+     * The final excluded targets for a metric will be the union of the
+     * exclusions defined with this annotation and the exclusions defined
+     * on the {@link ExcludedMetricTargets}s annotation of the class
+     * containing the given Probe.
      *
      * @return the targets excluded for this Probe
+     * @see ExcludedMetricTargets
      */
     MetricTarget[] excludedTargets() default {};
 }

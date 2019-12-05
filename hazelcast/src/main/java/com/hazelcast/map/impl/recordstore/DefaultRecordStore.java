@@ -1101,7 +1101,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
             return;
         }
 
-        if (isLoaded()) {
+        if (FutureUtil.allDone(loadingFutures)) {
             List<Future> doneFutures = null;
             try {
                 doneFutures = FutureUtil.getAllDone(loadingFutures);
@@ -1118,6 +1118,21 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
             throw new RetryableHazelcastException("Map " + getName()
                     + " is still loading data from external store");
         }
+    }
+
+    @Override
+    public boolean isLoaded() {
+        boolean result = FutureUtil.allDone(loadingFutures);
+        if (result) {
+            loadingFutures.removeAll(FutureUtil.getAllDone(loadingFutures));
+        }
+
+        return result;
+    }
+
+    // only used for testing purposes
+    public Collection<Future> getLoadingFutures() {
+        return loadingFutures;
     }
 
     @Override
@@ -1144,11 +1159,6 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
     @Override
     public void setPreMigrationLoadedStatus(boolean loaded) {
         loadedOnPreMigration = loaded;
-    }
-
-    @Override
-    public boolean isLoaded() {
-        return FutureUtil.allDone(loadingFutures);
     }
 
     @Override
@@ -1270,7 +1280,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
     @Override
     public void clearPartition(boolean onShutdown, boolean onStorageDestroy) {
         clearLockStore();
-        clearOtherDataThanStorage(onShutdown, onStorageDestroy);
+        mapDataStore.reset();
 
         if (onShutdown) {
             if (hasPooledMemoryAllocator()) {
@@ -1291,14 +1301,6 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
         NativeMemoryConfig nativeMemoryConfig = nodeEngine.getConfig().getNativeMemoryConfig();
         return nativeMemoryConfig != null && nativeMemoryConfig.getAllocatorType() == POOLED;
-    }
-
-    /**
-     * Only cleans the data other than storage-data that is held on this record
-     * store. Other services data like lock-service-data is not cleared here.
-     */
-    public void clearOtherDataThanStorage(boolean onShutdown, boolean onStorageDestroy) {
-        mapDataStore.reset();
     }
 
     private void destroyStorageImmediate(boolean isDuringShutdown, boolean internal) {
@@ -1331,9 +1333,5 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
             ObjectNamespace namespace = MapService.getObjectNamespace(name);
             lockService.clearLockStore(partitionId, namespace);
         }
-    }
-
-    private void clearMapStore() {
-        mapDataStore.reset();
     }
 }

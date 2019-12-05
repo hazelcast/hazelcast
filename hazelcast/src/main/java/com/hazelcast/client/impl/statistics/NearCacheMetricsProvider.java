@@ -25,6 +25,7 @@ import com.hazelcast.internal.nearcache.NearCacheManager;
 import java.util.Collection;
 
 class NearCacheMetricsProvider implements DynamicMetricsProvider {
+
     private final Collection<NearCacheManager> nearCacheManagers;
 
     NearCacheMetricsProvider(Collection<NearCacheManager> nearCacheManagers) {
