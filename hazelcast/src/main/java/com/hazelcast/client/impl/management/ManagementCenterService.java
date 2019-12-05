@@ -607,7 +607,7 @@ public class ManagementCenterService {
      * added to the configuration, and the ones that are ignored/not added to the configuration
      */
     @Nonnull
-    public CompletableFuture<AddWanConfigResult> addWanReplicationConfig(MCWanBatchReplicationPublisherConfig config) {
+    public CompletableFuture<AddWanConfigResult> addWanReplicationConfig(MCWanBatchPublisherConfig config) {
         checkNotNull(config);
 
         ClientInvocation invocation = new ClientInvocation(

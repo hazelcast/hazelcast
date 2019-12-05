@@ -19,7 +19,7 @@ package com.hazelcast.client.impl.management;
 import com.hazelcast.config.WanAcknowledgeType;
 import com.hazelcast.config.WanQueueFullBehavior;
 
-public class MCWanBatchReplicationPublisherConfig {
+public class MCWanBatchPublisherConfig {
     private String name;
     private String targetCluster;
     private String publisherId;
@@ -113,7 +113,7 @@ public class MCWanBatchReplicationPublisherConfig {
 
     @Override
     public String toString() {
-        return "MCWanBatchReplicationPublisherConfig{"
+        return "MCWanBatchPublisherConfig{"
                 + "name='" + name + '\''
                 + ", targetCluster='" + targetCluster + '\''
                 + ", publisherId='" + publisherId + '\''
