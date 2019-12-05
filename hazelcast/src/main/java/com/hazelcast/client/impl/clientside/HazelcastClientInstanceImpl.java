@@ -761,6 +761,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         invocationService.shutdown();
         executionService.shutdown();
         listenerService.shutdown();
+        clientStatisticsService.shutdown();
         metricsRegistry.shutdown();
         diagnostics.shutdown();
         serializationService.dispose();
