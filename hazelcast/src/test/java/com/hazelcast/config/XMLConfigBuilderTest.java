@@ -115,6 +115,18 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
 
     @Override
     @Test
+    public void testClusterName() {
+        String xml = HAZELCAST_START_TAG
+                + "  <cluster-name>my-cluster</cluster-name>\n"
+                + HAZELCAST_END_TAG;
+
+        Config config = buildConfig(xml);
+
+        assertEquals("my-cluster", config.getClusterName());
+    }
+
+    @Override
+    @Test
     public void testConfigurationWithFileName() throws Exception {
         assumeThatNotZingJDK6(); // https://github.com/hazelcast/hazelcast/issues/9044
 

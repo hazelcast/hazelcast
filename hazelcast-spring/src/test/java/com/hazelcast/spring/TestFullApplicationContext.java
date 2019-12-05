@@ -763,8 +763,6 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
 
         assertTrue("reuse-address", networkConfig.isReuseAddress());
 
-        assertDiscoveryConfig(networkConfig.getJoin().getDiscoveryConfig());
-
         MemberAddressProviderConfig memberAddressProviderConfig = networkConfig.getMemberAddressProviderConfig();
         assertFalse(memberAddressProviderConfig.isEnabled());
         assertEquals("com.hazelcast.spring.DummyMemberAddressProvider", memberAddressProviderConfig.getClassName());
@@ -934,7 +932,6 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         assertAzureConfig(pc.getAzureConfig());
         assertKubernetesConfig(pc.getKubernetesConfig());
         assertEurekaConfig(pc.getEurekaConfig());
-        assertDiscoveryConfig(pc.getDiscoveryConfig());
 
         CustomWanPublisherConfig customPublisher = wcfg.getCustomPublisherConfigs().get(0);
         assertEquals("istanbulPublisherId", customPublisher.getPublisherId());

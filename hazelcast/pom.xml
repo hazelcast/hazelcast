@@ -178,8 +178,12 @@
                     <execution>
                         <goals>
                             <goal>test-jar</goal>
-                            <!--Need to add sources for this test jar to Maven central. partic TestHazelcastInstanceFactory. Brian request. -->
                         </goals>
+                        <configuration>
+                            <excludes>
+                                <exclude>**/*.serialization.compatibility.binary</exclude>
+                            </excludes>
+                        </configuration>
                     </execution>
                 </executions>
             </plugin>

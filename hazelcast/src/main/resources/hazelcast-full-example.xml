@@ -78,10 +78,11 @@
         </replacer>
     </config-replacers>
 
-    <!--Specifies the cluster name. It allows creating separate sub-clusters with different names.
+    <!--
+        Specifies the cluster name. It allows creating separate sub-clusters with different names.
         The name is also referenced in the WAN Replication configuration.
     -->
-    <cluster-name>dev</cluster-name>
+    <cluster-name>my-cluster</cluster-name>
     <!--
         ===== HAZELCAST LICENSE CONFIGURATION =====
 
