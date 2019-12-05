@@ -30,6 +30,7 @@ import com.hazelcast.config.CacheSimpleEntryListenerConfig;
 import com.hazelcast.config.CardinalityEstimatorConfig;
 import com.hazelcast.config.DurableExecutorConfig;
 import com.hazelcast.config.EntryListenerConfig;
+import com.hazelcast.config.EventJournalConfig;
 import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.ExecutorConfig;
@@ -44,8 +45,10 @@ import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapPartitionLostListenerConfig;
 import com.hazelcast.config.MergePolicyConfig;
+import com.hazelcast.config.MerkleTreeConfig;
 import com.hazelcast.config.MetadataPolicy;
 import com.hazelcast.config.MultiMapConfig;
+import com.hazelcast.config.PNCounterConfig;
 import com.hazelcast.config.PredicateConfig;
 import com.hazelcast.config.QueryCacheConfig;
 import com.hazelcast.config.QueueConfig;
@@ -639,6 +642,24 @@ public class DynamicConfigTest extends HazelcastTestSupport {
         assertConfigurationsEqualsOnAllMembers(reliableTopicConfig);
     }
 
+    @Test
+    public void testPNCounterConfig() {
+        PNCounterConfig pnCounterConfig = new PNCounterConfig(name)
+                .setReplicaCount(NON_DEFAULT_BACKUP_COUNT)
+                .setStatisticsEnabled(false);
+
+        driver.getConfig().addPNCounterConfig(pnCounterConfig);
+        assertConfigurationsEqualsOnAllMembers(pnCounterConfig);
+    }
+
+    private void assertConfigurationsEqualsOnAllMembers(PNCounterConfig config) {
+        String name = config.getName();
+        for (HazelcastInstance instance : members) {
+            PNCounterConfig registeredConfig = instance.getConfig().getPNCounterConfig(name);
+            assertEquals(config, registeredConfig);
+        }
+    }
+
     private void assertConfigurationsEqualsOnAllMembers(CacheSimpleConfig config) {
         String name = config.getName();
         for (HazelcastInstance instance : members) {
@@ -765,7 +786,6 @@ public class DynamicConfigTest extends HazelcastTestSupport {
         entryListenerConfig.setOldValueRequired(true);
         entryListenerConfig.setCacheEntryEventFilterFactory("CacheEntryEventFilterFactory");
 
-        // TODO add journal config when client protocol for map codec is updated
         CacheSimpleConfig config = new CacheSimpleConfig()
                 .setName(name)
                 .setSplitBrainProtectionName("split-brain-protection")
@@ -780,10 +800,9 @@ public class DynamicConfigTest extends HazelcastTestSupport {
                 .setReadThrough(true)
                 .setWriteThrough(true)
                 .setHotRestartConfig(new HotRestartConfig().setEnabled(true).setFsync(true))
-//                .setEventJournalConfig(new EventJournalConfig().setEnabled(true)
-//                                                               .setCapacity(42)
-//                                                               .setTimeToLiveSeconds(52))
-                ;
+                .setEventJournalConfig(new EventJournalConfig().setEnabled(true)
+                                                               .setCapacity(42)
+                                                               .setTimeToLiveSeconds(52));
 
         config.setWanReplicationRef(new WanReplicationRef(randomName(), "com.hazelcast.MergePolicy",
                 Collections.singletonList("filter"), true));
@@ -825,11 +844,10 @@ public class DynamicConfigTest extends HazelcastTestSupport {
         mapConfig.setAsyncBackupCount(3)
                 .setBackupCount(2)
                 .setCacheDeserializedValues(CacheDeserializedValues.ALWAYS)
-                // TODO add merkle tree and journal config when client protocol for map codec is updated
-                //.setMerkleTreeConfig(new MerkleTreeConfig().setEnabled(true).setDepth(15))
-//                .setEventJournalConfig(new EventJournalConfig().setEnabled(true)
-//                                                               .setCapacity(42)
-//                                                               .setTimeToLiveSeconds(52))
+                .setMerkleTreeConfig(new MerkleTreeConfig().setEnabled(true).setDepth(15))
+                .setEventJournalConfig(new EventJournalConfig().setEnabled(true)
+                                                               .setCapacity(42)
+                                                               .setTimeToLiveSeconds(52))
                 .setHotRestartConfig(new HotRestartConfig().setEnabled(true).setFsync(true))
                 .setInMemoryFormat(InMemoryFormat.OBJECT)
                 .setMergePolicyConfig(new MergePolicyConfig(NON_DEFAULT_MERGE_POLICY, NON_DEFAULT_MERGE_BATCH_SIZE))

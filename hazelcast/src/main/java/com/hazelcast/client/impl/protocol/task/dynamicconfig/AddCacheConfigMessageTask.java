@@ -66,6 +66,7 @@ public class AddCacheConfigMessageTask
                     new ExpiryPolicyFactoryConfig(parameters.timedExpiryPolicyFactoryConfig);
             config.setExpiryPolicyFactoryConfig(expiryPolicyFactoryConfig);
         }
+        config.setEventJournalConfig(parameters.eventJournalConfig);
         config.setHotRestartConfig(parameters.hotRestartConfig);
         config.setInMemoryFormat(InMemoryFormat.valueOf(parameters.inMemoryFormat));
         config.setKeyType(parameters.keyType);
