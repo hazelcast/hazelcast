@@ -481,6 +481,7 @@ import com.hazelcast.client.impl.protocol.task.executorservice.durable.DurableEx
 import com.hazelcast.client.impl.protocol.task.executorservice.durable.DurableExecutorIsShutdownMessageTask;
 import com.hazelcast.client.impl.protocol.task.executorservice.durable.DurableExecutorRetrieveAndDisposeResultMessageTask;
 import com.hazelcast.client.impl.protocol.task.executorservice.durable.DurableExecutorRetrieveResultMessageTask;
+import com.hazelcast.client.impl.protocol.task.management.AddWanBatchPublisherConfigMessageTask;
 import com.hazelcast.client.impl.protocol.task.executorservice.durable.DurableExecutorShutdownMessageTask;
 import com.hazelcast.client.impl.protocol.task.executorservice.durable.DurableExecutorSubmitToPartitionMessageTask;
 import com.hazelcast.client.impl.protocol.task.list.ListAddAllMessageTask;
@@ -509,6 +510,9 @@ import com.hazelcast.client.impl.protocol.task.list.ListSubMessageTask;
 import com.hazelcast.client.impl.protocol.task.management.ApplyMCConfigMessageTask;
 import com.hazelcast.client.impl.protocol.task.management.ChangeClusterStateMessageTask;
 import com.hazelcast.client.impl.protocol.task.management.ChangeClusterVersionMessageTask;
+import com.hazelcast.client.impl.protocol.task.management.ChangeWanReplicationStateMessageTask;
+import com.hazelcast.client.impl.protocol.task.management.CheckWanConsistencyMessageTask;
+import com.hazelcast.client.impl.protocol.task.management.ClearWanQueuesMessageTask;
 import com.hazelcast.client.impl.protocol.task.management.GetClusterMetadataMessageTask;
 import com.hazelcast.client.impl.protocol.task.management.GetMapConfigMessageTask;
 import com.hazelcast.client.impl.protocol.task.management.GetMemberConfigMessageTask;
@@ -523,6 +527,7 @@ import com.hazelcast.client.impl.protocol.task.management.RunScriptMessageTask;
 import com.hazelcast.client.impl.protocol.task.management.ShutdownClusterMessageTask;
 import com.hazelcast.client.impl.protocol.task.management.ShutdownMemberMessageTask;
 import com.hazelcast.client.impl.protocol.task.management.UpdateMapConfigMessageTask;
+import com.hazelcast.client.impl.protocol.task.management.WanSyncMapMessageTask;
 import com.hazelcast.client.impl.protocol.task.map.MapAddEntryListenerMessageTask;
 import com.hazelcast.client.impl.protocol.task.map.MapAddEntryListenerToKeyMessageTask;
 import com.hazelcast.client.impl.protocol.task.map.MapAddEntryListenerToKeyWithPredicateMessageTask;
@@ -1666,6 +1671,16 @@ public class DefaultMessageTaskFactoryProvider implements MessageTaskFactoryProv
                 (cm, con) -> new RunScriptMessageTask(cm, node, con));
         factories.put(MCRunConsoleCommandCodec.REQUEST_MESSAGE_TYPE,
                 (cm, con) -> new RunConsoleCommandMessageTask(cm, node, con));
+        factories.put(com.hazelcast.client.impl.protocol.codec.MCChangeWanReplicationStateCodec.REQUEST_MESSAGE_TYPE,
+                (cm, con) -> new ChangeWanReplicationStateMessageTask(cm, node, con));
+        factories.put(com.hazelcast.client.impl.protocol.codec.MCClearWanQueuesCodec.REQUEST_MESSAGE_TYPE,
+                (cm, con) -> new ClearWanQueuesMessageTask(cm, node, con));
+        factories.put(com.hazelcast.client.impl.protocol.codec.MCAddWanBatchPublisherConfigCodec.REQUEST_MESSAGE_TYPE,
+                (cm, con) -> new AddWanBatchPublisherConfigMessageTask(cm, node, con));
+        factories.put(com.hazelcast.client.impl.protocol.codec.MCWanSyncMapCodec.REQUEST_MESSAGE_TYPE,
+                (cm, con) -> new WanSyncMapMessageTask(cm, node, con));
+        factories.put(com.hazelcast.client.impl.protocol.codec.MCCheckWanConsistencyCodec.REQUEST_MESSAGE_TYPE,
+                (cm, con) -> new CheckWanConsistencyMessageTask(cm, node, con));
     }
 
     @SuppressFBWarnings({"MS_EXPOSE_REP", "EI_EXPOSE_REP"})
