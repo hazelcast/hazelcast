@@ -34,8 +34,8 @@ import java.security.Permission;
 import static com.hazelcast.config.WanBatchReplicationPublisherConfig.DEFAULT_ACKNOWLEDGE_TYPE;
 import static com.hazelcast.config.WanBatchReplicationPublisherConfig.DEFAULT_QUEUE_FULL_BEHAVIOUR;
 
-public class AddWanReplicationConfigMessageTask extends AbstractCallableMessageTask<RequestParameters> {
-    public AddWanReplicationConfigMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
+public class AddWanBatchPublisherConfigMessageTask extends AbstractCallableMessageTask<RequestParameters> {
+    public AddWanBatchPublisherConfigMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
@@ -93,7 +93,7 @@ public class AddWanReplicationConfigMessageTask extends AbstractCallableMessageT
 
     @Override
     public String getMethodName() {
-        return "addWanReplicationConfig";
+        return "addWanBatchPublisherConfig";
     }
 
     @Override

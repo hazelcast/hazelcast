@@ -481,7 +481,7 @@ import com.hazelcast.client.impl.protocol.task.executorservice.durable.DurableEx
 import com.hazelcast.client.impl.protocol.task.executorservice.durable.DurableExecutorIsShutdownMessageTask;
 import com.hazelcast.client.impl.protocol.task.executorservice.durable.DurableExecutorRetrieveAndDisposeResultMessageTask;
 import com.hazelcast.client.impl.protocol.task.executorservice.durable.DurableExecutorRetrieveResultMessageTask;
-import com.hazelcast.client.impl.protocol.task.management.AddWanReplicationConfigMessageTask;
+import com.hazelcast.client.impl.protocol.task.management.AddWanBatchPublisherConfigMessageTask;
 import com.hazelcast.client.impl.protocol.task.executorservice.durable.DurableExecutorShutdownMessageTask;
 import com.hazelcast.client.impl.protocol.task.executorservice.durable.DurableExecutorSubmitToPartitionMessageTask;
 import com.hazelcast.client.impl.protocol.task.list.ListAddAllMessageTask;
@@ -1676,7 +1676,7 @@ public class DefaultMessageTaskFactoryProvider implements MessageTaskFactoryProv
         factories.put(com.hazelcast.client.impl.protocol.codec.MCClearWanQueuesCodec.REQUEST_MESSAGE_TYPE,
                 (cm, con) -> new ClearWanQueuesMessageTask(cm, node, con));
         factories.put(com.hazelcast.client.impl.protocol.codec.MCAddWanBatchPublisherConfigCodec.REQUEST_MESSAGE_TYPE,
-                (cm, con) -> new AddWanReplicationConfigMessageTask(cm, node, con));
+                (cm, con) -> new AddWanBatchPublisherConfigMessageTask(cm, node, con));
         factories.put(com.hazelcast.client.impl.protocol.codec.MCWanSyncMapCodec.REQUEST_MESSAGE_TYPE,
                 (cm, con) -> new WanSyncMapMessageTask(cm, node, con));
         factories.put(com.hazelcast.client.impl.protocol.codec.MCCheckWanConsistencyCodec.REQUEST_MESSAGE_TYPE,
