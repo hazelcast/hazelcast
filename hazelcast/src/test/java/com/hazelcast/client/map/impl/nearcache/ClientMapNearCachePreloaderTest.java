@@ -18,10 +18,10 @@ package com.hazelcast.client.map.impl.nearcache;
 
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.impl.clientside.HazelcastClientProxy;
+import com.hazelcast.client.impl.proxy.ClientMapProxy;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.map.IMap;
 import com.hazelcast.internal.adapter.DataStructureAdapter;
 import com.hazelcast.internal.adapter.IMapDataStructureAdapter;
 import com.hazelcast.internal.nearcache.AbstractNearCachePreloaderTest;
@@ -29,6 +29,7 @@ import com.hazelcast.internal.nearcache.NearCache;
 import com.hazelcast.internal.nearcache.NearCacheManager;
 import com.hazelcast.internal.nearcache.NearCacheTestContext;
 import com.hazelcast.internal.nearcache.NearCacheTestContextBuilder;
+import com.hazelcast.map.IMap;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -125,7 +126,8 @@ public class ClientMapNearCachePreloaderTest extends AbstractNearCachePreloaderT
         HazelcastClientProxy client = (HazelcastClientProxy) hazelcastFactory.newHazelcastClient(clientConfig);
         IMap<K, V> clientMap = client.getMap(nearCacheConfig.getName());
 
-        NearCacheManager nearCacheManager = client.client.getNearCacheManager(clientMap.getServiceName());
+        NearCacheManager nearCacheManager = ((ClientMapProxy) clientMap).getContext()
+                .getNearCacheManager(clientMap.getServiceName());
         NearCache<Data, String> nearCache = nearCacheManager.getNearCache(nearCacheConfig.getName());
 
         return new NearCacheTestContextBuilder<K, V, Data, String>(nearCacheConfig, client.getSerializationService())

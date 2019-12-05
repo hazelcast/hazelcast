@@ -54,7 +54,6 @@ import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.nio.ConnectionListener;
 import com.hazelcast.internal.nio.ConnectionType;
 import com.hazelcast.internal.serialization.InternalSerializationService;
-import com.hazelcast.internal.serialization.impl.HeapData;
 import com.hazelcast.internal.util.AddressUtil;
 import com.hazelcast.internal.util.ConcurrencyUtil;
 import com.hazelcast.internal.util.EmptyStatement;
@@ -63,7 +62,6 @@ import com.hazelcast.internal.util.executor.LoggingScheduledExecutor;
 import com.hazelcast.internal.util.executor.PoolExecutorThreadFactory;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.SocketInterceptor;
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.security.Credentials;
 import com.hazelcast.security.PasswordCredentials;
 import com.hazelcast.security.TokenCredentials;
@@ -592,6 +590,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
         }
     }
 
+    @SuppressWarnings("unchecked")
     protected ClientConnection createSocketConnection(Address target) {
         CandidateClusterContext currentClusterContext = discoveryService.current();
         SocketChannel socketChannel = null;
@@ -603,6 +602,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
 
             ChannelInitializerProvider channelInitializer = currentClusterContext.getChannelInitializerProvider();
             Channel channel = networking.register(null, channelInitializer, socketChannel, true);
+            channel.attributeMap().put(Address.class, target);
             channel.connect(resolveAddress(target), connectionTimeoutMillis);
 
             ClientConnection connection = new ClientConnection(client, connectionIdGen.incrementAndGet(), channel);
@@ -758,7 +758,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
                 clusterId = newClusterId;
 
                 if (changedCluster) {
-                    client.clear();
+                    client.onClusterChange();
                 }
                 activeConnections.put(resolveAddress(result.address), connection);
                 fireConnectionAddedEvent(connection);
@@ -819,13 +819,13 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
                     .encodeRequest(clusterName, cr.getName(), cr.getPassword(), clientUuid, connectionType,
                             serializationVersion, BuildInfoProvider.getBuildInfo().getVersion(), client.getName(), labels);
         } else {
-            Data data;
+            byte[] secretBytes;
             if (credentials instanceof TokenCredentials) {
-                data = new HeapData(((TokenCredentials) credentials).getToken());
+                secretBytes = ((TokenCredentials) credentials).getToken();
             } else {
-                data = ss.toData(credentials);
+                secretBytes = ss.toData(credentials).toByteArray();
             }
-            return ClientAuthenticationCustomCodec.encodeRequest(clusterName, data, clientUuid, connectionType,
+            return ClientAuthenticationCustomCodec.encodeRequest(clusterName, secretBytes, clientUuid, connectionType,
                     serializationVersion, BuildInfoProvider.getBuildInfo().getVersion(), client.getName(), labels);
         }
     }

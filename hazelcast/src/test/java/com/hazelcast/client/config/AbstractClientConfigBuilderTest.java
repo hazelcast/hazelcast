@@ -375,7 +375,7 @@ public abstract class AbstractClientConfigBuilderTest extends HazelcastTestSuppo
 
     @Test
     public void testClusterName() {
-        assertEquals("dev", fullClientConfig.getClusterName());
+        assertEquals("my-cluster", fullClientConfig.getClusterName());
     }
 
     @Test

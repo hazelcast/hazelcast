@@ -16,7 +16,6 @@
 
 package com.hazelcast.client.impl.clientside;
 
-import com.hazelcast.cache.impl.ICacheService;
 import com.hazelcast.cache.impl.JCacheDetector;
 import com.hazelcast.cardinality.CardinalityEstimator;
 import com.hazelcast.cardinality.impl.CardinalityEstimatorService;
@@ -97,7 +96,7 @@ import com.hazelcast.internal.metrics.metricsets.GarbageCollectionMetricSet;
 import com.hazelcast.internal.metrics.metricsets.OperatingSystemMetricSet;
 import com.hazelcast.internal.metrics.metricsets.RuntimeMetricSet;
 import com.hazelcast.internal.metrics.metricsets.ThreadMetricSet;
-import com.hazelcast.internal.nearcache.NearCacheManager;
+import com.hazelcast.internal.nio.Disposable;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.util.ConcurrencyDetection;
 import com.hazelcast.internal.util.ServiceLoader;
@@ -134,10 +133,10 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
@@ -170,7 +169,6 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
     private final ClientExecutionServiceImpl executionService;
     private final ClientListenerServiceImpl listenerService;
     private final ClientTransactionManagerServiceImpl transactionManager;
-    private final ConcurrentMap<String, NearCacheManager> nearCacheManagers;
     private final ProxyManager proxyManager;
     private final ConcurrentMap<String, Object> userContext;
     private final LoadBalancer loadBalancer;
@@ -189,6 +187,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
     private final ClientProxySessionManager proxySessionManager;
     private final CPSubsystemImpl cpSubsystem;
     private final ManagementCenterService managementCenterService;
+    private final ConcurrentLinkedQueue<Disposable> onClusterChangeDisposables = new ConcurrentLinkedQueue();
 
     public HazelcastClientInstanceImpl(ClientConfig clientConfig,
                                        ClientFailoverConfig clientFailoverConfig,
@@ -214,11 +213,11 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
 
         if (clientConfig != null) {
             MetricsConfigHelper.overrideClientMetricsConfig(clientConfig,
-                getLoggingService().getLogger(MetricsConfigHelper.class));
+                    getLoggingService().getLogger(MetricsConfigHelper.class));
         } else {
             for (ClientConfig failoverClientConfig : clientFailoverConfig.getClientConfigs()) {
                 MetricsConfigHelper.overrideClientMetricsConfig(failoverClientConfig,
-                    getLoggingService().getLogger(MetricsConfigHelper.class));
+                        getLoggingService().getLogger(MetricsConfigHelper.class));
             }
         }
 
@@ -245,21 +244,12 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         hazelcastCacheManager = new ClientICacheManager(this);
         queryCacheContext = new ClientQueryCacheContext(this);
         lockReferenceIdGenerator = new ClientLockReferenceIdGenerator();
-        nearCacheManagers = createNearCacheManagers();
         clientExceptionFactory = initClientExceptionFactory();
         clientStatisticsService = new ClientStatisticsService(this);
         userCodeDeploymentService = new ClientUserCodeDeploymentService(config.getUserCodeDeploymentConfig(), classLoader);
         proxySessionManager = new ClientProxySessionManager(this);
         cpSubsystem = new CPSubsystemImpl(this);
         managementCenterService = new ManagementCenterService(this, serializationService);
-    }
-
-    private ConcurrentMap<String, NearCacheManager> createNearCacheManagers() {
-        ConcurrentMap<String, NearCacheManager> nearCacheManagers = new ConcurrentHashMap<>();
-        nearCacheManagers.put(MapService.SERVICE_NAME, clientExtension.createNearCacheManager());
-        nearCacheManagers.put(ReplicatedMapService.SERVICE_NAME, clientExtension.createNearCacheManager());
-        nearCacheManagers.put(ICacheService.SERVICE_NAME, clientExtension.createNearCacheManager());
-        return nearCacheManagers;
     }
 
     private ConcurrencyDetection initConcurrencyDetection() {
@@ -298,7 +288,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
     private MetricsRegistryImpl initMetricsRegistry() {
         ILogger logger = loggingService.getLogger(MetricsRegistryImpl.class);
         return new MetricsRegistryImpl(getName(), logger, clientMetricsLevel(properties,
-            loggingService.getLogger(MetricsConfigHelper.class)));
+                loggingService.getLogger(MetricsConfigHelper.class)));
     }
 
     private void startMetrics() {
@@ -413,6 +403,9 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         }
     }
 
+    public void disposeOnClusterChange(Disposable disposable) {
+        onClusterChangeDisposables.add(disposable);
+    }
 
     public MetricsRegistryImpl getMetricsRegistry() {
         return metricsRegistry;
@@ -733,14 +726,6 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         return listenerService;
     }
 
-    public Map<String, NearCacheManager> getNearCacheManagers() {
-        return nearCacheManagers;
-    }
-
-    public NearCacheManager getNearCacheManager(String serviceName) {
-        return nearCacheManagers.get(serviceName);
-    }
-
     public LoadBalancer getLoadBalancer() {
         return loadBalancer;
     }
@@ -776,7 +761,6 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         invocationService.shutdown();
         executionService.shutdown();
         listenerService.shutdown();
-        nearCacheManagers.values().forEach(NearCacheManager::destroyAllNearCaches);
         metricsRegistry.shutdown();
         diagnostics.shutdown();
         serializationService.dispose();
@@ -815,11 +799,13 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         return concurrencyDetection;
     }
 
-    public void clear() {
+    public void onClusterChange() {
         ILogger logger = loggingService.getLogger(HazelcastInstance.class);
         logger.info("Resetting local state of the client");
-        //reset near caches, clears all near cache data
-        nearCacheManagers.values().forEach(NearCacheManager::clearAllNearCaches);
+
+        for (Disposable disposable : onClusterChangeDisposables) {
+            disposable.dispose();
+        }
         //clear the member lists
         clusterService.reset();
         //close all the connections, consequently waiting invocations get TargetDisconnectedException

@@ -432,7 +432,7 @@ public final class FutureUtil {
     }
 
     /**
-     * Rethrow exeception of the fist future that completed with an exception
+     * Rethrow exception of the fist future that completed with an exception
      *
      * @param futures
      * @throws Exception

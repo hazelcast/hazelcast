@@ -51,7 +51,7 @@ public class AuthenticationCustomCredentialsMessageTask
         assert uuid != null;
         clientUuid = uuid;
         clusterName = parameters.clusterName;
-        credentials = new SimpleTokenCredentials(parameters.credentials.toByteArray());
+        credentials = new SimpleTokenCredentials(parameters.credentials);
         clientSerializationVersion = parameters.serializationVersion;
         clientVersion = parameters.clientHazelcastVersion;
         clientName = parameters.clientName;

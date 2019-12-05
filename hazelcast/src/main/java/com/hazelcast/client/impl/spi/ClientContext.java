@@ -19,6 +19,7 @@ package com.hazelcast.client.impl.spi;
 import com.hazelcast.cache.impl.CacheService;
 import com.hazelcast.client.cache.impl.nearcache.invalidation.ClientCacheInvalidationMetaDataFetcher;
 import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.client.impl.ClientExtension;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.connection.ClientConnectionManager;
 import com.hazelcast.client.impl.querycache.ClientQueryCacheContext;
@@ -30,14 +31,12 @@ import com.hazelcast.internal.nearcache.impl.invalidation.InvalidationMetaDataFe
 import com.hazelcast.internal.nearcache.impl.invalidation.MinimalPartitionService;
 import com.hazelcast.internal.nearcache.impl.invalidation.RepairingTask;
 import com.hazelcast.internal.serialization.InternalSerializationService;
-import com.hazelcast.internal.util.ConstructorFunction;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.properties.HazelcastProperties;
 
-import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -62,11 +61,11 @@ public class ClientContext {
     private final ClientConfig clientConfig;
     private final LoggingService loggingService;
     private final HazelcastProperties properties;
-    private final Map<String, NearCacheManager> nearCacheManagers;
     private final MinimalPartitionService minimalPartitionService;
     private final ClientQueryCacheContext queryCacheContext;
     private final ConcurrentMap<String, RepairingTask> repairingTasks = new ConcurrentHashMap<>();
-    private final ConstructorFunction<String, RepairingTask> repairingTaskConstructor = this::newRepairingTask;
+    private final ConcurrentMap<String, NearCacheManager> nearCacheManagers = new ConcurrentHashMap<>();
+    private final ClientExtension clientExtension;
     private final String name;
 
     public ClientContext(HazelcastClientInstanceImpl client) {
@@ -83,26 +82,35 @@ public class ClientContext {
         this.clientConfig = client.getClientConfig();
         this.transactionManager = client.getTransactionManager();
         this.loggingService = client.getLoggingService();
-        this.nearCacheManagers = client.getNearCacheManagers();
         this.properties = client.getProperties();
         this.minimalPartitionService = new ClientMinimalPartitionService();
         this.queryCacheContext = client.getQueryCacheContext();
+        this.clientExtension = client.getClientExtension();
+
+        client.getClientStatisticsService().watchNearCacheManagers(nearCacheManagers);
+        client.disposeOnClusterChange(() -> {
+            //reset near caches, clears all near cache data
+            nearCacheManagers.values().forEach(NearCacheManager::clearAllNearCaches);
+        });
     }
 
     public ClientQueryCacheContext getQueryCacheContext() {
         return queryCacheContext;
     }
 
-    public RepairingTask getRepairingTask(String serviceName) {
-        return getOrPutIfAbsent(repairingTasks, serviceName, repairingTaskConstructor);
+    public NearCacheManager getNearCacheManager(String serviceName) {
+        return getOrPutIfAbsent(nearCacheManagers, serviceName,
+                anyArg -> clientExtension.createNearCacheManager());
     }
 
-    private RepairingTask newRepairingTask(String serviceName) {
-        InvalidationMetaDataFetcher invalidationMetaDataFetcher = newMetaDataFetcher(serviceName);
-        ILogger logger = loggingService.getLogger(RepairingTask.class);
-        return new RepairingTask(properties, invalidationMetaDataFetcher,
-                executionService, serializationService, minimalPartitionService,
-                clientConnectionManager.getClientUuid(), logger);
+    public RepairingTask getRepairingTask(String serviceName) {
+        return getOrPutIfAbsent(repairingTasks, serviceName, name -> {
+            InvalidationMetaDataFetcher invalidationMetaDataFetcher = newMetaDataFetcher(serviceName);
+            ILogger logger = loggingService.getLogger(RepairingTask.class);
+            return new RepairingTask(properties, invalidationMetaDataFetcher,
+                    executionService, serializationService, minimalPartitionService,
+                    clientConnectionManager.getClientUuid(), logger);
+        });
     }
 
     private InvalidationMetaDataFetcher newMetaDataFetcher(String serviceName) {
@@ -168,10 +176,6 @@ public class ClientContext {
 
     public ClientListenerService getListenerService() {
         return listenerService;
-    }
-
-    public NearCacheManager getNearCacheManager(String serviceName) {
-        return nearCacheManagers.get(serviceName);
     }
 
     public LoggingService getLoggingService() {

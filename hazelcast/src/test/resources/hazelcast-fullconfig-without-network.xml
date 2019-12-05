@@ -41,7 +41,7 @@
            xsi:schemaLocation="http://www.hazelcast.com/schema/config
            http://www.hazelcast.com/schema/config/hazelcast-config-4.0.xsd">
 
-    <cluster-name>dev</cluster-name>
+    <cluster-name>my-cluster</cluster-name>
     <license-key>HAZELCAST_ENTERPRISE_LICENSE_KEY</license-key>
     <instance-name>dummy</instance-name>
     <management-center enabled="true" update-interval="5" scripting-enabled="false">

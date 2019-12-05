@@ -72,12 +72,11 @@ public class MapPutAllMessageTask
 
     @Override
     protected Object processResponseBeforeSending(Object response) {
-        final long latencyNanos = System.nanoTime() - startTimeNanos;
-        final MapService mapService = getService(MapService.SERVICE_NAME);
+        MapService mapService = getService(MapService.SERVICE_NAME);
         MapContainer mapContainer = mapService.getMapServiceContext().getMapContainer(parameters.name);
         if (mapContainer.getMapConfig().isStatisticsEnabled()) {
             mapService.getMapServiceContext().getLocalMapStatsProvider().getLocalMapStatsImpl(parameters.name)
-                    .incrementPutLatencyNanos(parameters.entries.size(), latencyNanos);
+                    .incrementPutLatencyNanos(parameters.entries.size(), System.nanoTime() - startTimeNanos);
         }
         return response;
     }

@@ -23,8 +23,7 @@
 # To learn how to configure Hazelcast, please see the Reference Manual
 # at https://hazelcast.org/documentation/
 hazelcast:
-  cluster:
-    name: dev
+  cluster-name: dev
   management-center:
     enabled: false
     url: http://localhost:8080/hazelcast-mancenter
