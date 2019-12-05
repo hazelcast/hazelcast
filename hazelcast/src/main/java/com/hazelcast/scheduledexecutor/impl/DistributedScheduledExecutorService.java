@@ -50,7 +50,10 @@ import java.util.UUID;
 import java.util.WeakHashMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.atomic.AtomicLong;
 
+import static com.hazelcast.config.ScheduledExecutorConfig.CapacityPolicy.PER_NODE;
 import static com.hazelcast.internal.config.ConfigValidator.checkScheduledExecutorConfig;
 import static com.hazelcast.internal.util.ConcurrencyUtil.getOrPutSynchronized;
 import static com.hazelcast.internal.util.ExceptionUtil.peel;
@@ -72,6 +75,7 @@ public class DistributedScheduledExecutorService
     private static final Object NULL_OBJECT = new Object();
 
     private final ConcurrentMap<String, Boolean> shutdownExecutors = new ConcurrentHashMap<>();
+    private final ConcurrentMap<String, AtomicLong> schedulerTaskCounts = new ConcurrentHashMap<>();
     private final Set<ScheduledFutureProxy> lossListeners = synchronizedSet(newSetFromMap(new WeakHashMap<>()));
 
     private final ConcurrentMap<String, Object> splitBrainProtectionConfigCache = new ConcurrentHashMap<>();
@@ -122,7 +126,7 @@ public class DistributedScheduledExecutorService
     public void reset() {
         shutdown(true);
 
-        memberBin = new ScheduledExecutorMemberBin(nodeEngine);
+        memberBin = new ScheduledExecutorMemberBin(nodeEngine, this);
 
         // Keep using the public API due to the benefit of getting events on all partitions and not just local
         if (partitionLostRegistration == null) {
@@ -133,13 +137,14 @@ public class DistributedScheduledExecutorService
             if (partitions[partitionId] != null) {
                 partitions[partitionId].destroy();
             }
-            partitions[partitionId] = new ScheduledExecutorPartition(nodeEngine, partitionId);
+            partitions[partitionId] = new ScheduledExecutorPartition(nodeEngine, this, partitionId);
         }
     }
 
     @Override
     public void shutdown(boolean terminate) {
         shutdownExecutors.clear();
+        schedulerTaskCounts.clear();
 
         if (memberBin != null) {
             memberBin.destroy();
@@ -152,6 +157,24 @@ public class DistributedScheduledExecutorService
         for (ScheduledExecutorPartition partition : partitions) {
             if (partition != null) {
                 partition.destroy();
+            }
+        }
+    }
+
+    void ensurePerNodeCapacity(String scheduler) {
+        ScheduledExecutorConfig executorConfig = nodeEngine.getConfig().findScheduledExecutorConfig(scheduler);
+
+        if (executorConfig.getCapacityPolicy().equals(PER_NODE) && executorConfig.getCapacity() > 0) {
+            AtomicLong newCounter = new AtomicLong();
+            AtomicLong tasksCount = schedulerTaskCounts.putIfAbsent(scheduler, newCounter);
+            tasksCount = tasksCount == null ? newCounter : tasksCount;
+
+            if (tasksCount.getAndIncrement() >= executorConfig.getCapacity()) {
+                tasksCount.decrementAndGet(); // Release that incr
+                throw new RejectedExecutionException(
+                        "Maximum capacity (" + executorConfig.getCapacity() + ") of tasks reached for this member "
+                                + "and scheduled executor (" + scheduler + "). "
+                                + "Reminder, that tasks must be disposed if not needed.");
             }
         }
     }
@@ -241,6 +264,7 @@ public class DistributedScheduledExecutorService
     }
 
     private void resetPartitionOrMemberBinContainer(String name) {
+        schedulerTaskCounts.remove(name);
         if (memberBin != null) {
             memberBin.destroyContainer(name);
         }

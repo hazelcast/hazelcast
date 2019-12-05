@@ -527,6 +527,7 @@ public class ConfigXmlGenerator {
                     .node("pool-size", ex.getPoolSize())
                     .node("durability", ex.getDurability())
                     .node("capacity", ex.getCapacity())
+                    .node("capacity-policy", ex.getCapacityPolicy().name())
                     .node("split-brain-protection-ref", ex.getSplitBrainProtectionName())
                     .node("merge-policy", mergePolicyConfig.getPolicy(), "batch-size", mergePolicyConfig.getBatchSize())
                     .close();

@@ -23,6 +23,7 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import java.io.IOException;
 
+import static com.hazelcast.config.ScheduledExecutorConfig.CapacityPolicy.PER_NODE;
 import static com.hazelcast.internal.util.Preconditions.checkNotNegative;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.internal.util.Preconditions.checkPositive;
@@ -52,6 +53,8 @@ public class ScheduledExecutorConfig implements IdentifiedDataSerializable, Name
     private int durability = DEFAULT_DURABILITY;
 
     private int capacity = DEFAULT_CAPACITY;
+
+    private CapacityPolicy capacityPolicy = PER_NODE;
 
     private int poolSize = DEFAULT_POOL_SIZE;
 
@@ -170,6 +173,21 @@ public class ScheduledExecutorConfig implements IdentifiedDataSerializable, Name
         return this;
     }
 
+    /**
+     * @return the policy of the capacity setting
+     */
+    public CapacityPolicy getCapacityPolicy() {
+        return capacityPolicy;
+    }
+
+    /**
+     * Set the capacity policy for the configured {@link capacity} value
+     * @param capacityPolicy
+     */
+    public ScheduledExecutorConfig setCapacityPolicy(CapacityPolicy capacityPolicy) {
+        this.capacityPolicy = capacityPolicy;
+        return this;
+    }
     /**
      * Returns the split brain protection name for operations.
      *
@@ -292,5 +310,13 @@ public class ScheduledExecutorConfig implements IdentifiedDataSerializable, Name
         result = 31 * result + (splitBrainProtectionName != null ? splitBrainProtectionName.hashCode() : 0);
         result = 31 * result + (mergePolicyConfig != null ? mergePolicyConfig.hashCode() : 0);
         return result;
+    }
+
+    public static enum CapacityPolicy {
+
+        PER_NODE,
+
+        PER_PARTITION
+
     }
 }

@@ -1626,6 +1626,7 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
         ScheduledExecutorConfig scheduledExecutorConfig =
                 new ScheduledExecutorConfig()
                         .setCapacity(1)
+                        .setCapacityPolicy(ScheduledExecutorConfig.CapacityPolicy.PER_PARTITION)
                         .setDurability(2)
                         .setName("Existing")
                         .setPoolSize(3)
@@ -1643,6 +1644,7 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
                 .getScheduledExecutorConfig("NotExisting/Default");
         assertEquals(defaultSchedExecConfig.getMergePolicyConfig(), fallsbackToDefault.getMergePolicyConfig());
         assertEquals(defaultSchedExecConfig.getCapacity(), fallsbackToDefault.getCapacity());
+        assertEquals(defaultSchedExecConfig.getCapacityPolicy(), fallsbackToDefault.getCapacityPolicy());
         assertEquals(defaultSchedExecConfig.getPoolSize(), fallsbackToDefault.getPoolSize());
         assertEquals(defaultSchedExecConfig.getDurability(), fallsbackToDefault.getDurability());
     }

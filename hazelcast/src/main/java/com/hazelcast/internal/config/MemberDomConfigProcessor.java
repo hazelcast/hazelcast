@@ -1014,6 +1014,8 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
                 scheduledExecutorConfig.setMergePolicyConfig(createMergePolicyConfig(child));
             } else if ("capacity".equals(nodeName)) {
                 scheduledExecutorConfig.setCapacity(parseInt(getTextContent(child)));
+            } else if ("capacity-policy".equals(nodeName)) {
+                scheduledExecutorConfig.setCapacityPolicy(ScheduledExecutorConfig.CapacityPolicy.valueOf(getTextContent(child)));
             } else if ("durability".equals(nodeName)) {
                 scheduledExecutorConfig.setDurability(parseInt(getTextContent(child)));
             } else if ("pool-size".equals(nodeName)) {

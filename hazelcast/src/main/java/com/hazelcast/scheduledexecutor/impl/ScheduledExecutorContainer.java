@@ -63,6 +63,8 @@ public class ScheduledExecutorContainer {
 
     private final NodeEngine nodeEngine;
 
+    private final DistributedScheduledExecutorService service;
+
     private final ExecutionService executionService;
 
     private final int partitionId;
@@ -71,15 +73,17 @@ public class ScheduledExecutorContainer {
 
     private final int capacity;
 
-    ScheduledExecutorContainer(String name, int partitionId, NodeEngine nodeEngine, int durability, int capacity) {
-        this(name, partitionId, nodeEngine, durability, capacity, new ConcurrentHashMap<>());
+    ScheduledExecutorContainer(String name, int partitionId, NodeEngine nodeEngine, DistributedScheduledExecutorService service,
+                               int durability, int capacity) {
+        this(name, partitionId, nodeEngine, service, durability, capacity, new ConcurrentHashMap<>());
     }
 
-    ScheduledExecutorContainer(String name, int partitionId, NodeEngine nodeEngine, int durability, int capacity,
-                               ConcurrentMap<String, ScheduledTaskDescriptor> tasks) {
+    ScheduledExecutorContainer(String name, int partitionId, NodeEngine nodeEngine, DistributedScheduledExecutorService service,
+                               int durability, int capacity, ConcurrentMap<String, ScheduledTaskDescriptor> tasks) {
         this.logger = nodeEngine.getLogger(getClass());
         this.name = name;
         this.nodeEngine = nodeEngine;
+        this.service = service;
         this.executionService = nodeEngine.getExecutionService();
         this.partitionId = partitionId;
         this.durability = durability;
@@ -351,9 +355,12 @@ public class ScheduledExecutorContainer {
     }
 
     void checkNotAtCapacity() {
+        service.ensurePerNodeCapacity(name);
+
         if (capacity != 0 && tasks.size() >= capacity) {
             throw new RejectedExecutionException(
-                    "Maximum capacity (" + capacity + ") of tasks reached, " + "for scheduled executor (" + name + "). "
+                    "Maximum capacity (" + capacity + ") of tasks reached for partition (" + partitionId + ") "
+                            + "and scheduled executor (" + name + "). "
                             + "Reminder that tasks must be disposed if not needed.");
         }
     }

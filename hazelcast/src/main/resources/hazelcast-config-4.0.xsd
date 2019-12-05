@@ -1659,6 +1659,13 @@
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
+            <xs:element name="capacity-policy" type="scheduled-executor-capacity-policy" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation>
+                        The active policy for the capacity setting
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
             <xs:element name="split-brain-protection-ref" minOccurs="0" maxOccurs="1">
                 <xs:annotation>
                     <xs:documentation>
@@ -3183,6 +3190,13 @@
             <xs:enumeration value="USED_NATIVE_MEMORY_PERCENTAGE"/>
             <xs:enumeration value="FREE_NATIVE_MEMORY_SIZE"/>
             <xs:enumeration value="FREE_NATIVE_MEMORY_PERCENTAGE"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:simpleType name="scheduled-executor-capacity-policy">
+        <xs:restriction base="non-space-string">
+            <xs:enumeration value="PER_NODE"/>
+            <xs:enumeration value="PER_PARTITION"/>
         </xs:restriction>
     </xs:simpleType>
 

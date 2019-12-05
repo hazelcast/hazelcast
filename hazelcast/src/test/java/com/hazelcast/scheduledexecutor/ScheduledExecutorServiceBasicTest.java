@@ -118,7 +118,7 @@ public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceT
     }
 
     @Test
-    public void capacity_whenNoLimit() {
+    public void capacity_whenNoLimit_perNode() {
         String schedulerName = "foobar";
 
         ScheduledExecutorConfig sec = new ScheduledExecutorConfig()
@@ -126,6 +126,28 @@ public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceT
                 .setDurability(1)
                 .setPoolSize(1)
                 .setCapacity(0);
+
+        Config config = new Config().addScheduledExecutorConfig(sec);
+
+        HazelcastInstance[] instances = createClusterWithCount(1, config);
+        IScheduledExecutorService service = instances[0].getScheduledExecutorService(schedulerName);
+        String keyOwner = "hitSamePartitionToCheckCapacity";
+
+        for (int i = 0; i < 101; i++) {
+            service.scheduleOnKeyOwner(new PlainCallableTask(), keyOwner, 0, TimeUnit.SECONDS);
+        }
+    }
+
+    @Test
+    public void capacity_whenNoLimit_perPartition() {
+        String schedulerName = "foobar";
+
+        ScheduledExecutorConfig sec = new ScheduledExecutorConfig()
+                .setName(schedulerName)
+                .setDurability(1)
+                .setPoolSize(1)
+                .setCapacity(0)
+                .setCapacityPolicy(ScheduledExecutorConfig.CapacityPolicy.PER_PARTITION);
 
         Config config = new Config().addScheduledExecutorConfig(sec);
 
@@ -155,7 +177,34 @@ public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceT
             fail("Should have been rejected.");
         } catch (RejectedExecutionException ex) {
             assertEquals("Got wrong RejectedExecutionException",
-                    "Maximum capacity (100) of tasks reached, for scheduled executor (foobar). "
+                    "Maximum capacity (100) of tasks reached for this member and scheduled executor (foobar). "
+                            + "Reminder, that tasks must be disposed if not needed.", ex.getMessage());
+        }
+    }
+
+    @Test
+    public void capacity_whenDefault_perPartition() {
+        String schedulerName = "foobar";
+        ScheduledExecutorConfig sec = new ScheduledExecutorConfig()
+                .setName(schedulerName)
+                .setCapacityPolicy(ScheduledExecutorConfig.CapacityPolicy.PER_PARTITION);
+
+        Config config = new Config().addScheduledExecutorConfig(sec);
+
+        HazelcastInstance[] instances = createClusterWithCount(1, config);
+        IScheduledExecutorService service = instances[0].getScheduledExecutorService(schedulerName);
+        String keyOwner = "hitSamePartitionToCheckCapacity";
+
+        for (int i = 0; i < 100; i++) {
+            service.scheduleOnKeyOwner(new PlainCallableTask(), keyOwner, 0, TimeUnit.SECONDS);
+        }
+
+        try {
+            service.scheduleOnKeyOwner(new PlainCallableTask(), keyOwner, 0, TimeUnit.SECONDS);
+            fail("Should have been rejected.");
+        } catch (RejectedExecutionException ex) {
+            assertEquals("Got wrong RejectedExecutionException",
+                    "Maximum capacity (100) of tasks reached for partition (262) and scheduled executor (foobar). "
                             + "Reminder that tasks must be disposed if not needed.", ex.getMessage());
         }
     }
@@ -168,7 +217,8 @@ public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceT
                 .setName(schedulerName)
                 .setDurability(1)
                 .setPoolSize(1)
-                .setCapacity(10);
+                .setCapacity(10)
+                .setCapacityPolicy(ScheduledExecutorConfig.CapacityPolicy.PER_PARTITION);
 
         Config config = new Config().addScheduledExecutorConfig(sec);
 
@@ -185,7 +235,7 @@ public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceT
             fail("Should have been rejected.");
         } catch (RejectedExecutionException ex) {
             assertEquals("Got wrong RejectedExecutionException",
-                    "Maximum capacity (10) of tasks reached, for scheduled executor (foobar). "
+                    "Maximum capacity (10) of tasks reached for partition (262) and scheduled executor (foobar). "
                             + "Reminder that tasks must be disposed if not needed.", ex.getMessage());
         }
     }
@@ -215,9 +265,34 @@ public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceT
             fail("Should have been rejected.");
         } catch (RejectedExecutionException ex) {
             assertEquals("Got wrong RejectedExecutionException",
-                    "Maximum capacity (10) of tasks reached, for scheduled executor (foobar). "
-                            + "Reminder that tasks must be disposed if not needed.", ex.getMessage());
+                    "Maximum capacity (10) of tasks reached for this member and scheduled executor (foobar). "
+                            + "Reminder, that tasks must be disposed if not needed.", ex.getMessage());
         }
+    }
+
+    @Test
+    public void capacity_onMember_whenPositiveLimit_perPartition_shouldNotReject() {
+        String schedulerName = "foobar";
+
+        ScheduledExecutorConfig sec = new ScheduledExecutorConfig()
+                .setName(schedulerName)
+                .setDurability(1)
+                .setPoolSize(1)
+                .setCapacity(10)
+                .setCapacityPolicy(ScheduledExecutorConfig.CapacityPolicy.PER_PARTITION);
+
+        Config config = new Config().addScheduledExecutorConfig(sec);
+
+        HazelcastInstance[] instances = createClusterWithCount(1, config);
+        IScheduledExecutorService service = instances[0].getScheduledExecutorService(schedulerName);
+        Member member = instances[0].getCluster().getLocalMember();
+
+        for (int i = 0; i < 10; i++) {
+            service.scheduleOnMember(new PlainCallableTask(), member, 0, TimeUnit.SECONDS);
+        }
+
+        // Should pass - PER_PARTITION policy disables MEMBER OWNED capacity checking
+        service.scheduleOnMember(new PlainCallableTask(), member, 0, TimeUnit.SECONDS);
     }
 
     @Test

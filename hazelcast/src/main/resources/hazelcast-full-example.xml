@@ -879,6 +879,7 @@
         <pool-size>16</pool-size>
         <durability>1</durability>
         <capacity>100</capacity>
+        <capacity-policy>PER_NODE</capacity-policy>
         <split-brain-protection-ref>splitBrainProtectionRuleWithThreeNodes</split-brain-protection-ref>
         <merge-policy batch-size="100">PutIfAbsentMergePolicy</merge-policy>
     </scheduled-executor-service>

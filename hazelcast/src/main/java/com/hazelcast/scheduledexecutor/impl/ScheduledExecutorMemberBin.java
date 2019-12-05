@@ -24,6 +24,12 @@ import com.hazelcast.internal.util.ConstructorFunction;
 public class ScheduledExecutorMemberBin
         extends AbstractScheduledExecutorContainerHolder {
 
+    /**
+     * Capacity controlled by PER_NODE config in the service layer
+     * (if set, {@link DistributedScheduledExecutorService#ensurePerNodeCapacity(String)}).
+     */
+    private static final int CAPACITY_DISABLED = 0;
+
     private final ILogger logger;
 
     private final NodeEngine nodeEngine;
@@ -37,12 +43,12 @@ public class ScheduledExecutorMemberBin
                     }
 
                     ScheduledExecutorConfig config = nodeEngine.getConfig().findScheduledExecutorConfig(name);
-                    return new ScheduledExecutorMemberOwnedContainer(name, config.getCapacity(), nodeEngine);
+                    return new ScheduledExecutorMemberOwnedContainer(name, CAPACITY_DISABLED, nodeEngine, service);
                 }
             };
 
-    public ScheduledExecutorMemberBin(NodeEngine nodeEngine) {
-        super(nodeEngine);
+    public ScheduledExecutorMemberBin(NodeEngine nodeEngine, DistributedScheduledExecutorService service) {
+        super(nodeEngine, service);
         this.logger = nodeEngine.getLogger(getClass());
         this.nodeEngine = nodeEngine;
     }
