@@ -38,14 +38,14 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import javax.management.MBeanServer;
+import javax.management.ObjectName;
 import java.lang.management.ManagementFactory;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
-import javax.management.MBeanServer;
-import javax.management.ObjectName;
 
 import static com.hazelcast.jet.aggregate.AggregateOperations.counting;
 import static com.hazelcast.jet.core.Edge.between;
@@ -189,8 +189,8 @@ public class MetricsTest extends JetTestSupport {
                 .filterUsingServiceAsync(
                         ServiceFactory.withCreateFn(i -> 0L),
                         (ctx, l) -> {
-                            Metric dropped = Metrics.threadSafeMetric("dropped", Unit.COUNT);
-                            Metric total = Metrics.threadSafeMetric("total", Unit.COUNT);
+                            Metric dropped = Metrics.threadSafeMetric("dropped");
+                            Metric total = Metrics.threadSafeMetric("total");
                             return CompletableFuture.supplyAsync(
                                     () -> {
                                         boolean pass = l % 2L == ctx;

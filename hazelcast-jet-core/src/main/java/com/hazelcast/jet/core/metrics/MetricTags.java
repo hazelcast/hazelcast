@@ -26,7 +26,6 @@ import com.hazelcast.jet.core.Processor;
  * tag names that are used in Jet. See individual descriptions for the
  * meaning of information carried by each tag.
  */
-@SuppressWarnings({"WeakerAccess", "unused"})
 public final class MetricTags {
 
     /**
