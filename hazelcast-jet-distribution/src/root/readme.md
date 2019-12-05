@@ -39,7 +39,7 @@ directory, type this:
 $ bin/jet-start
 ```
 
-### 2. (Optional) Start a Second Node to Form a Cluster
+### 2. (Optional) Start a Second Node to Form a Cluster
 
 Repeat the first step on the terminal and within the log output you
 should see the text like below, after the nodes have discovered each other: 
