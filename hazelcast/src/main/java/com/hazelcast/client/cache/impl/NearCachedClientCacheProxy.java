@@ -485,11 +485,24 @@ public class NearCachedClientCacheProxy<K, V> extends ClientCacheProxy<K, V> {
     @Override
     protected void postDestroy() {
         try {
-            removeInvalidationListener();
-            nearCacheManager.destroyNearCache(nearCache.getName());
+            destroyNearCache();
         } finally {
             super.postDestroy();
         }
+    }
+
+    @Override
+    protected void onShutdown() {
+        try {
+            destroyNearCache();
+        } finally {
+            super.onShutdown();
+        }
+    }
+
+    private void destroyNearCache() {
+        removeInvalidationListener();
+        nearCacheManager.destroyNearCache(nearCache.getName());
     }
 
     private Object getCachedValue(Object key, boolean deserializeValue) {
