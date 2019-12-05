@@ -776,7 +776,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         invocationService.shutdown();
         executionService.shutdown();
         listenerService.shutdown();
-        nearCacheManagers.values().forEach(NearCacheManager::destroyAllNearCaches);
+        clientStatisticsService.shutdown();
         metricsRegistry.shutdown();
         diagnostics.shutdown();
         serializationService.dispose();
