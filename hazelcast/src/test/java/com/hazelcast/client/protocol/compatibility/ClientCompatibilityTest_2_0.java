@@ -6786,18 +6786,18 @@ public class ClientCompatibilityTest_2_0 {
     }
 
     @Test
-    public void test_MCAddWanBatchReplicationPublisherConfigCodec_encodeRequest() {
+    public void test_MCAddWanBatchPublisherConfigCodec_encodeRequest() {
         int fileClientMessageIndex = 807;
-        ClientMessage encoded = MCAddWanBatchReplicationPublisherConfigCodec.encodeRequest(aString, aString, aString, aString, anInt, anInt, anInt, anInt, anInt, anInt);
+        ClientMessage encoded = MCAddWanBatchPublisherConfigCodec.encodeRequest(aString, aString, aString, aString, anInt, anInt, anInt, anInt, anInt, anInt);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
     }
 
     @Test
-    public void test_MCAddWanBatchReplicationPublisherConfigCodec_decodeResponse() {
+    public void test_MCAddWanBatchPublisherConfigCodec_decodeResponse() {
         int fileClientMessageIndex = 808;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
-        MCAddWanBatchReplicationPublisherConfigCodec.ResponseParameters parameters = MCAddWanBatchReplicationPublisherConfigCodec.decodeResponse(fromFile);
+        MCAddWanBatchPublisherConfigCodec.ResponseParameters parameters = MCAddWanBatchPublisherConfigCodec.decodeResponse(fromFile);
         assertTrue(isEqual(aListOfStrings, parameters.addedPublisherIds));
         assertTrue(isEqual(aListOfStrings, parameters.ignoredPublisherIds));
     }

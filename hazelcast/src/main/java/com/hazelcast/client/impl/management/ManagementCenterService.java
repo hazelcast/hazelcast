@@ -20,7 +20,7 @@ import com.hazelcast.client.impl.ClientDelegatingFuture;
 import com.hazelcast.client.impl.clientside.ClientMessageDecoder;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.codec.MCAddWanBatchReplicationPublisherConfigCodec;
+import com.hazelcast.client.impl.protocol.codec.MCAddWanBatchPublisherConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.MCApplyMCConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.MCChangeClusterStateCodec;
 import com.hazelcast.client.impl.protocol.codec.MCChangeClusterVersionCodec;
@@ -612,7 +612,7 @@ public class ManagementCenterService {
 
         ClientInvocation invocation = new ClientInvocation(
                 client,
-                MCAddWanBatchReplicationPublisherConfigCodec.encodeRequest(
+                MCAddWanBatchPublisherConfigCodec.encodeRequest(
                         config.getName(),
                         config.getTargetCluster(),
                         config.getPublisherId(),
@@ -631,8 +631,8 @@ public class ManagementCenterService {
                 invocation.invoke(),
                 serializationService,
                 clientMessage -> {
-                    MCAddWanBatchReplicationPublisherConfigCodec.ResponseParameters response =
-                            MCAddWanBatchReplicationPublisherConfigCodec.decodeResponse(clientMessage);
+                    MCAddWanBatchPublisherConfigCodec.ResponseParameters response =
+                            MCAddWanBatchPublisherConfigCodec.decodeResponse(clientMessage);
                     return new AddWanConfigResult(response.addedPublisherIds, response.ignoredPublisherIds);
                 }
         );

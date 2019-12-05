@@ -1675,7 +1675,7 @@ public class DefaultMessageTaskFactoryProvider implements MessageTaskFactoryProv
                 (cm, con) -> new ChangeWanReplicationStateMessageTask(cm, node, con));
         factories.put(com.hazelcast.client.impl.protocol.codec.MCClearWanQueuesCodec.REQUEST_MESSAGE_TYPE,
                 (cm, con) -> new ClearWanQueuesMessageTask(cm, node, con));
-        factories.put(com.hazelcast.client.impl.protocol.codec.MCAddWanBatchReplicationPublisherConfigCodec.REQUEST_MESSAGE_TYPE,
+        factories.put(com.hazelcast.client.impl.protocol.codec.MCAddWanBatchPublisherConfigCodec.REQUEST_MESSAGE_TYPE,
                 (cm, con) -> new AddWanReplicationConfigMessageTask(cm, node, con));
         factories.put(com.hazelcast.client.impl.protocol.codec.MCWanSyncMapCodec.REQUEST_MESSAGE_TYPE,
                 (cm, con) -> new WanSyncMapMessageTask(cm, node, con));
