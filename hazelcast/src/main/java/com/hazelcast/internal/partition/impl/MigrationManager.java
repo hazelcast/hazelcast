@@ -27,7 +27,6 @@ import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.partition.IPartitionLostEvent;
 import com.hazelcast.internal.partition.InternalPartition;
-import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.partition.MigrationEndpoint;
 import com.hazelcast.internal.partition.MigrationInfo;
 import com.hazelcast.internal.partition.MigrationInfo.MigrationStatus;
@@ -1071,12 +1070,9 @@ public class MigrationManager {
             int partitionStateVersion = partitionStateManager.getVersion();
             Operation op = new MigrationRequestOperation(migrationInfo, completedMigrations, partitionStateVersion,
                     fragmentedMigrationEnabled);
-            Future future = nodeEngine.getOperationService().createInvocationBuilder(SERVICE_NAME, op,
-                    fromMember.getAddress())
+            Future future = nodeEngine.getOperationService().createInvocationBuilder(SERVICE_NAME, op, fromMember.getAddress())
                     .setCallTimeout(partitionMigrationTimeout)
-                    .setTryCount(InternalPartitionService.MIGRATION_RETRY_COUNT)
-                    .setTryPauseMillis(InternalPartitionService.MIGRATION_RETRY_PAUSE).invoke();
-
+                    .invoke();
             try {
                 Object response = future.get();
                 return (Boolean) nodeEngine.toObject(response);

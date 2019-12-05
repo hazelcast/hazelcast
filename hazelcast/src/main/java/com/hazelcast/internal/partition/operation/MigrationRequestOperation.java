@@ -16,12 +16,17 @@
 
 package com.hazelcast.internal.partition.operation;
 
+import com.hazelcast.cluster.Address;
 import com.hazelcast.core.MemberLeftException;
+import com.hazelcast.internal.partition.FragmentedMigrationAwareService;
 import com.hazelcast.internal.partition.InternalPartitionService;
+import com.hazelcast.internal.partition.MigrationEndpoint;
 import com.hazelcast.internal.partition.MigrationInfo;
 import com.hazelcast.internal.partition.NonFragmentedServiceNamespace;
+import com.hazelcast.internal.partition.PartitionMigrationEvent;
 import com.hazelcast.internal.partition.PartitionReplica;
 import com.hazelcast.internal.partition.PartitionReplicaVersionManager;
+import com.hazelcast.internal.partition.PartitionReplicationEvent;
 import com.hazelcast.internal.partition.ReplicaFragmentMigrationState;
 import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
 import com.hazelcast.internal.partition.impl.MigrationInterceptor.MigrationParticipant;
@@ -29,7 +34,6 @@ import com.hazelcast.internal.partition.impl.MigrationManager;
 import com.hazelcast.internal.partition.impl.PartitionDataSerializerHook;
 import com.hazelcast.internal.services.ServiceNamespace;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.cluster.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.exception.TargetNotMemberException;
@@ -40,13 +44,9 @@ import com.hazelcast.spi.impl.operationservice.CallStatus;
 import com.hazelcast.spi.impl.operationservice.ExceptionAction;
 import com.hazelcast.spi.impl.operationservice.Offload;
 import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.spi.impl.operationservice.OperationService;
 import com.hazelcast.spi.impl.operationservice.UrgentSystemOperation;
-import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 import com.hazelcast.spi.impl.servicemanager.ServiceInfo;
-import com.hazelcast.internal.partition.FragmentedMigrationAwareService;
-import com.hazelcast.internal.partition.MigrationEndpoint;
-import com.hazelcast.internal.partition.PartitionMigrationEvent;
-import com.hazelcast.internal.partition.PartitionReplicationEvent;
 
 import java.io.IOException;
 import java.util.Collection;
@@ -61,6 +61,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.function.BiConsumer;
 import java.util.logging.Level;
 
+import static java.util.Collections.emptySet;
 import static java.util.Collections.singleton;
 
 /**
@@ -108,10 +109,7 @@ public class MigrationRequestOperation extends BaseMigrationOperation {
             try {
                 executeBeforeMigrations();
                 namespacesContext = new ServiceNamespacesContext(nodeEngine, getPartitionReplicationEvent());
-                ReplicaFragmentMigrationState migrationState = fragmentedMigrationEnabled
-                        ? createNextReplicaFragmentMigrationState()
-                        : createAllReplicaFragmentsMigrationState();
-                invokeMigrationOperation(migrationState, true);
+                invokeMigrationOperation(initialReplicaFragmentMigrationState(), true);
             } catch (Throwable e) {
                 logThrowable(e);
                 completeMigration(false);
@@ -137,7 +135,7 @@ public class MigrationRequestOperation extends BaseMigrationOperation {
      * Invokes the {@link MigrationOperation} on the migration destination.
      */
     private void invokeMigrationOperation(ReplicaFragmentMigrationState migrationState, boolean firstFragment) {
-        boolean lastFragment = !fragmentedMigrationEnabled || !namespacesContext.hasNext();
+        boolean lastFragment = !namespacesContext.hasNext();
         Operation operation = new MigrationOperation(migrationInfo,
                 firstFragment ? completedMigrations : Collections.emptyList(),
                 partitionStateVersion, migrationState, firstFragment, lastFragment);
@@ -145,7 +143,7 @@ public class MigrationRequestOperation extends BaseMigrationOperation {
         ILogger logger = getLogger();
         if (logger.isFinestEnabled()) {
             Set<ServiceNamespace> namespaces = migrationState != null
-                    ? migrationState.getNamespaceVersionMap().keySet() : Collections.emptySet();
+                    ? migrationState.getNamespaceVersionMap().keySet() : emptySet();
             logger.finest("Invoking MigrationOperation for namespaces " + namespaces + " and " + migrationInfo
                     + ", lastFragment: " + lastFragment);
         }
@@ -158,15 +156,12 @@ public class MigrationRequestOperation extends BaseMigrationOperation {
                 .createInvocationBuilder(InternalPartitionService.SERVICE_NAME, operation, target)
                 .setResultDeserialized(true)
                 .setCallTimeout(partitionService.getPartitionMigrationTimeout())
-                .setTryCount(InternalPartitionService.MIGRATION_RETRY_COUNT)
-                .setTryPauseMillis(InternalPartitionService.MIGRATION_RETRY_PAUSE)
                 .invoke()
                 .whenCompleteAsync(new MigrationCallback());
     }
 
     private void trySendNewFragment() {
         try {
-            assert fragmentedMigrationEnabled : "Fragmented migration should be enabled!";
             verifyMaster();
             verifyExistingDestination();
 
@@ -191,11 +186,26 @@ public class MigrationRequestOperation extends BaseMigrationOperation {
         }
     }
 
-    private ReplicaFragmentMigrationState createNextReplicaFragmentMigrationState() {
-        assert fragmentedMigrationEnabled : "Fragmented migration should be enabled!";
+    /**
+     * Creates an empty {@code ReplicaFragmentMigrationState} to perform a ready-check on destination.
+     * That way initial {@code MigrationOperation} will be empty and any failure or retry
+     * will be very cheap, instead of copying partition data on each retry.
+     */
+    private ReplicaFragmentMigrationState initialReplicaFragmentMigrationState() {
+        return createReplicaFragmentMigrationState(emptySet(), emptySet());
+    }
 
+    private ReplicaFragmentMigrationState createNextReplicaFragmentMigrationState() {
         if (!namespacesContext.hasNext()) {
             return null;
+        }
+
+        if (!fragmentedMigrationEnabled) {
+            // Drain the iterator completely.
+            while (namespacesContext.hasNext()) {
+                namespacesContext.next();
+            }
+            return createAllReplicaFragmentsMigrationState();
         }
 
         ServiceNamespace namespace = namespacesContext.next();
@@ -315,12 +325,8 @@ public class MigrationRequestOperation extends BaseMigrationOperation {
         @Override
         public void accept(Object result, Throwable throwable) {
             if (Boolean.TRUE.equals(result)) {
-                if (fragmentedMigrationEnabled) {
-                    OperationServiceImpl operationService = (OperationServiceImpl) getNodeEngine().getOperationService();
-                    operationService.execute(new SendNewMigrationFragmentRunnable());
-                } else {
-                    completeMigration(true);
-                }
+                OperationService operationService = getNodeEngine().getOperationService();
+                operationService.execute(new SendNewMigrationFragmentRunnable());
             } else {
                 ILogger logger = getLogger();
                 if (logger.isFineEnabled()) {
