@@ -26,7 +26,6 @@ import java.util.Collections;
 final class MobyNames {
 
     private static final String NAME_FORMAT = "%s_%s";
-    private static final int LARGE_PRIME = 1_000_000_007;
 
     private static final String[] LEFT = {"admiring", "adoring", "affectionate", "agitated", "amazing", "angry", "awesome",
                                           "blissful", "boring", "brave", "charming", "clever", "cocky", "cool", "compassionate",
