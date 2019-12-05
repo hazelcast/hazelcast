@@ -19,10 +19,14 @@ package com.hazelcast.jet.impl.connector;
 import com.hazelcast.jet.pipeline.PipelineTestSupport;
 import com.hazelcast.jet.pipeline.Sources;
 import org.h2.tools.DeleteDbFiles;
+import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import java.io.IOException;
 import java.io.Serializable;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
@@ -33,21 +37,30 @@ import static org.junit.Assert.assertEquals;
 
 public class ReadJdbcPTest extends PipelineTestSupport {
 
-    private static final String DIR = "~";
-    private static final String DB = ReadJdbcPTest.class.getSimpleName();
-    private static final String DB_CONNECTION_URL = "jdbc:h2:" + DIR + "/" + DB;
     private static final int PERSON_COUNT = 100;
 
+    private static Path tempDirectory;
+    private static String dbConnectionUrl;
+
     @BeforeClass
-    public static void setupClass() throws SQLException {
-        DeleteDbFiles.execute(DIR, DB, true);
+    public static void setupClass() throws SQLException, IOException {
+        String dbName = ReadJdbcPTest.class.getSimpleName();
+        tempDirectory = Files.createTempDirectory(dbName);
+        dbConnectionUrl = "jdbc:h2:" + tempDirectory + "/" + dbName;
+
         createAndFillTable();
+    }
+
+    @AfterClass
+    public static void deleteDbFiles() throws IOException {
+        DeleteDbFiles.execute(tempDirectory.toString(), ReadJdbcPTest.class.getSimpleName(), true);
+        Files.delete(tempDirectory);
     }
 
     @Test
     public void test_whenPartitionedQuery() {
         p.readFrom(Sources.jdbc(
-                () -> DriverManager.getConnection(DB_CONNECTION_URL),
+                () -> DriverManager.getConnection(dbConnectionUrl),
                 (con, parallelism, index) -> {
                     PreparedStatement statement = con.prepareStatement("select * from PERSON where mod(id,?)=?");
                     statement.setInt(1, parallelism);
@@ -64,7 +77,7 @@ public class ReadJdbcPTest extends PipelineTestSupport {
 
     @Test
     public void test_whenTotalParallelismOne() {
-        p.readFrom(Sources.jdbc(DB_CONNECTION_URL, "select * from PERSON",
+        p.readFrom(Sources.jdbc(dbConnectionUrl, "select * from PERSON",
                 resultSet -> new Person(resultSet.getInt(1), resultSet.getString(2))))
          .writeTo(sink);
 
@@ -74,7 +87,7 @@ public class ReadJdbcPTest extends PipelineTestSupport {
     }
 
     private static void createAndFillTable() throws SQLException {
-        try (Connection connection = DriverManager.getConnection(DB_CONNECTION_URL);
+        try (Connection connection = DriverManager.getConnection(dbConnectionUrl);
              Statement statement = connection.createStatement()) {
             statement.execute("CREATE TABLE PERSON(id int primary key, name varchar(255))");
             try (PreparedStatement stmt = connection.prepareStatement("INSERT INTO PERSON(id, name) VALUES(?, ?)")) {

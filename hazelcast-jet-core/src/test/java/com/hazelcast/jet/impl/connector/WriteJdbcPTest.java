@@ -21,13 +21,17 @@ import com.hazelcast.function.SupplierEx;
 import com.hazelcast.jet.pipeline.PipelineTestSupport;
 import com.hazelcast.jet.pipeline.Sinks;
 import org.h2.tools.DeleteDbFiles;
+import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TestName;
 
+import java.io.IOException;
 import java.io.Serializable;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
@@ -41,18 +45,26 @@ import static org.junit.Assert.assertEquals;
 
 public class WriteJdbcPTest extends PipelineTestSupport {
 
-    private static final String DIR = "~";
-    private static final String DB = WriteJdbcPTest.class.getSimpleName();
-    private static final String DB_CONNECTION_URL = "jdbc:h2:" + DIR + "/" + DB;
     private static final int PERSON_COUNT = 10;
 
-    @Rule public TestName testName = new TestName();
+    private static Path tempDirectory;
+    private static String dbConnectionUrl;
 
+    @Rule
+    public TestName testName = new TestName();
     private String tableName;
 
     @BeforeClass
-    public static void setupClass() {
-        DeleteDbFiles.execute(DIR, DB, true);
+    public static void setupClass() throws IOException {
+        String dbName = WriteJdbcPTest.class.getSimpleName();
+        tempDirectory = Files.createTempDirectory(dbName);
+        dbConnectionUrl = "jdbc:h2:" + tempDirectory + "/" + dbName;
+    }
+
+    @AfterClass
+    public static void deleteDbFiles() throws IOException {
+        DeleteDbFiles.execute(tempDirectory.toString(), WriteJdbcPTest.class.getSimpleName(), true);
+        Files.delete(tempDirectory);
     }
 
     @Before
@@ -66,7 +78,7 @@ public class WriteJdbcPTest extends PipelineTestSupport {
         addToSrcList(sequence(PERSON_COUNT));
         p.readFrom(source)
          .map(item -> new Person((Integer) item, item.toString()))
-         .writeTo(Sinks.jdbc("INSERT INTO " + tableName + "(id, name) VALUES(?, ?)", DB_CONNECTION_URL,
+         .writeTo(Sinks.jdbc("INSERT INTO " + tableName + "(id, name) VALUES(?, ?)", dbConnectionUrl,
                  (stmt, item) -> {
                      stmt.setInt(1, item.id);
                      stmt.setString(2, item.name);
@@ -97,7 +109,7 @@ public class WriteJdbcPTest extends PipelineTestSupport {
         addToSrcList(sequence(PERSON_COUNT));
         p.readFrom(source)
          .map(item -> new Person((Integer) item, item.toString()))
-         .writeTo(Sinks.jdbc("INSERT INTO " + tableName + "(id, name) VALUES(?, ?)", DB_CONNECTION_URL,
+         .writeTo(Sinks.jdbc("INSERT INTO " + tableName + "(id, name) VALUES(?, ?)", dbConnectionUrl,
                  (stmt, item) -> {
                      throw new SQLNonTransientException();
                  }
@@ -107,14 +119,14 @@ public class WriteJdbcPTest extends PipelineTestSupport {
     }
 
     private void createTable() throws SQLException {
-        try (Connection connection = DriverManager.getConnection(DB_CONNECTION_URL);
+        try (Connection connection = DriverManager.getConnection(dbConnectionUrl);
              Statement statement = connection.createStatement()) {
             statement.execute("CREATE TABLE " + tableName + "(id int primary key, name varchar(255))");
         }
     }
 
     private int rowCount() throws SQLException {
-        try (Connection connection = DriverManager.getConnection(DB_CONNECTION_URL);
+        try (Connection connection = DriverManager.getConnection(dbConnectionUrl);
              Statement statement = connection.createStatement()) {
             ResultSet resultSet = statement.executeQuery("SELECT COUNT(id) FROM " + tableName);
             resultSet.next();
@@ -132,7 +144,7 @@ public class WriteJdbcPTest extends PipelineTestSupport {
                     exceptionThrown = true;
                     throw new SQLException();
                 }
-                return DriverManager.getConnection(DB_CONNECTION_URL);
+                return DriverManager.getConnection(dbConnectionUrl);
             }
         };
     }
