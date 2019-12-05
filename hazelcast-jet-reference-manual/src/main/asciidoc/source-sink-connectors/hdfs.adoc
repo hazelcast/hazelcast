@@ -1,9 +1,23 @@
 = Hadoop
 
-The Hadoop Distributed File System is a production-worthy choice for
-both a data source and a data sink in a batch computation job. It is a
-distributed, replicated storage system that handles these concerns
-automatically, exposing a simple unified view to the client.
+The Hadoop connector is a production-worthy choice for
+both a data source and a data sink in a batch computation job. 
+
+You can use Hadoop connector to read/write files from/to Hadoop 
+Distributed File System (HDFS), local file system, or any Hadoop Compatible 
+File System including various cloud storages. Jet was tested with:
+
+ - Amazon S3
+ - Google Cloud Storage
+ - Azure Cloud Storage
+ - Azure Data Lake
+ 
+For more information you can check the
+{jet-examples}/hadoop/src/main/java/com/hazelcast/jet/examples/hadoop[code samples]
+which includes `Avro` and `Parquet` file format examples and different cloud storage
+options.
+
+== Configuration
 
 The Hadoop source and sink require a configuration object of type
 https://hadoop.apache.org/docs/r2.8.3/api/org/apache/hadoop/conf/Configuration.html[Configuration]
@@ -31,18 +45,20 @@ Here's a configuration sample for new API:
 include::{javasource}/integration/HdfsAndKafka.java[tag=s2]
 ----
 
-With the new API, most of the `RecordReader`s return the same key/value
-instances for each record, aiming to lessen object creation. Hazelcast Jet
-expects the objects to be immutable thus makes a copy of each object after the
-configured projection function applied to the record. The source copies the
-objects by serializing and de-serializing them. The objects should be either
+With the new API, most of the `RecordReader` implementations return the
+same key/value instances for each record, aiming to lessen object
+creation. Hazelcast Jet expects the objects to be immutable thus makes a
+copy of each object after the configured projection function applied to
+the record. The source copies the objects by serializing and
+de-serializing them. The objects should be either
 https://hadoop.apache.org/docs/r2.8.3/api/org/apache/hadoop/io/Writable.html[Writable]
 or serializable in a way which Hazelcast Jet can serialize/de-serialize.
 
-For readers which create a new instance for each record, the source can be
-configured to not copy the objects for performance. Also if the configured
-projection function doesn't refer to any mutable state from the key or value,
-again the source can be configured to not copy the objects.
+For readers which create a new instance for each record, the source can
+be configured to not copy the objects for performance. Also if the
+configured projection function doesn't refer to any mutable state from
+the key or value, again the source can be configured to not copy the
+objects.
 
 Here's a configuration sample which disables copying objects:
 
@@ -62,7 +78,7 @@ include::{javasource}/integration/HdfsAndKafka.java[tag=s4]
 
 Jet will split the input data across the cluster, with each processor
 instance reading a part of the input. If the Jet nodes are running along
-the HDFS datanodes, then Jet can make use of data locality by reading
+the Hadoop datanodes, then Jet can make use of data locality by reading
 the blocks locally where possible. This can bring a significant increase
 in read speed.
 

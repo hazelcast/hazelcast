@@ -1,16 +1,13 @@
 [[connector-files]]
 = Files
 
-Hazelcast Jet provides file and TCP/IP socket connectors that have
-limited production use, but are simple and can be very useful in an
-early rapid prototyping phase. They assume the data is in the form of
-plain text and emit/receive data items which represent individual lines
-of text.
+Hazelcast Jet file connector is designed to work with text files 
+residing in local or shared file systems. It is a simple choice 
+that can be very useful in an early rapid prototyping phase. 
 
-These connectors are not fault-tolerant. On job restart they behave the
-as if you started a new job. The sources don't do snapshotting. The
-sinks don't suppress duplicate data.
-
+The <<hadoop, Hadoop>> module provides a more robust option with 
+support for various file systems and file formats including plain 
+text storage (eg, CSV, TSV files), Sequence Files, Avro or Parquet.
 
 == File Sources
 
