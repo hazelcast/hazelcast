@@ -1,5 +1,64 @@
 You can also see the Release Notes document at http://docs.hazelcast.org/docs/release-notes/.
 
+Release 4.0-BETA-1, 2
+
+- Added support for persistent memory.
+- Provided a framework and implementation to encrypt data in Hot Restart stores.
+- Added support for credential retrieval by the members from the X.509 certificates.
+- Added out of the box LDAP configuration.
+- Merged the client module into the core module. All the classes in the `hazelcast-client` module have been moved to `hazelcast`. `hazelcast-client.jar` will not be created anymore.
+- Renamed StartServer class to HazelcastMemberStarter.
+- Implemented persistency for Hazelcast's CP subsystem.
+- Introduced `UNSAFE` mode for the CP data structures.
+- Separated the previously known `wan-publisher` into built-in and custom WAN publishers.
+- Management Center, logs and diagnostics now report the progress of a WAN synchronization.
+- Performed improvements in the JAAS authentication mechanism and security configuration.
+- Added Javadoc JAR file for the Hazelcast IMDG Enterprise Edition.
+- Enabled the REST endpoints for the `cluster.sh` and `healthcheck.sh` scripts to use HTTPS.
+- Introduced the `EntryStore` and `EntryLoader` interfaces.
+- Introduced friendly names for the Hazelcast instances to be shown in the Hazelcast Management Center.
+- Introduced a way to eliminate the sync backup wait from the client: improved the client performance.
+- Introduced the ownerless client concept (system properties to control the clients' lifecycles).
+- Optimized the Hazelcast clients performance for a single thread doing the requests.
+- Added support for `HazelcastJsonValue` over REST API.
+- Introduced dynamic metric collection.
+- Added support for nested JSON objects in arrays.
+- To be shown on Management Center, the clients now send both its IP address and canonical hostname.
+- Added the full example configuration files (XML and YAML) for the Hazelcast Java client.
+- Introduced functional and serializable interfaces having a single abstract method which declares a checked exception.
+- Improved the WAN feature so that now lazy deserialization is used when merging entries received via WAN.
+- Introduced "split brain protection" concept to replace "quorum" to make it more explicit and unambiguous.
+- Added support for the default Java serializers for collections.
+- Replaced ICompletableFuture with CompletionStage.
+- Renamed the group-name configuration element as cluster-name and removed the GroupConfig class.
+- Converted Projection, Aggregator and custom query attribute classes, and entry processor interface to functional interfaces to make them lambda friendly. 
+- Moved various private classes to internal packages.
+- Removed the legacy merge policies.
+- Removed the deprecated client configuration methods.
+- Removed all deprecated classes/methods/configurations. See the Breaking Changes section in the Release Notes document for Hazelcast 4.0.
+- Separated private and public classes. See the Breaking Changes section in the Release Notes document for Hazelcast 4.0.
+- Changed various classes' packages. See the Breaking Changes section in the Release Notes document for Hazelcast 4.0.
+- Removed the User Defined Services (Hazelcast's SPI) feature.
+- Removed the setLicenseKey() method of ClientConfig.
+- Removed the deprecated diagnostics property names.
+- Removed the legacy IdGenerator interface.
+- Removed the deprecated AsyncAtomicLong and AsyncAtomicReference classes.
+- Removed the deprecated cache eviction configurations.
+- Removed the MapReduce feature.
+- Removed the deprecated LOCAL transaction type (`TransactionType.LOCAL`).
+- Removed the deprecated optimizeQueries map configuration parameter.
+- Removed the following deprecated group properties:
+    - hazelcast.version.check.enabled
+    - hazelcast.icmp.enabled
+    - hazelcast.icmp.parallel.mode
+    - hazelcast.icmp.echo.fail.fast.on.startup
+    - hazelcast.icmp.timeout
+    - hazelcast.icmp.interval
+    - hazelcast.icmp.max.attempts
+    - hazelcast.icmp.ttl
+    - hazelcast.mc.url.change.enabled
+    - hazelcast.slow.invocation.detector.threshold.millis
+
 Release 3.12
 
 - Support for JDK 6 and 7 has been dropped. The minimum Java version that Hazelcast supports now is Java 8.
