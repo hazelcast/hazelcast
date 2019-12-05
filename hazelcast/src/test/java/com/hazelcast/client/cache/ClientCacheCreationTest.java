@@ -112,6 +112,8 @@ public class ClientCacheCreationTest extends CacheCreationTest {
         ClientConfig clientConfig = new ClientConfig();
         clientConfig.getConnectionStrategyConfig().getConnectionRetryConfig().setClusterConnectTimeoutMillis(Long.MAX_VALUE);
         clientConfig.setProperty(ClientProperty.MAX_CONCURRENT_INVOCATIONS.getName(), "1");
+        // disable metrics collection (the periodic send statistics task may interfere with the test)
+        clientConfig.getMetricsConfig().setEnabled(false);
         HazelcastInstance client = HazelcastClient.newHazelcastClient(clientConfig);
         HazelcastClientCachingProvider cachingProvider = createClientCachingProvider(client);
         final CacheManager cacheManager = cachingProvider.getCacheManager();
