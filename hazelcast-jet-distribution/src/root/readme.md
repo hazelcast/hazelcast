@@ -1,4 +1,4 @@
-# Hazelcast Jet Readme
+Hazelcast Jet Readme
 ======================
 
 About Hazelcast Jet
