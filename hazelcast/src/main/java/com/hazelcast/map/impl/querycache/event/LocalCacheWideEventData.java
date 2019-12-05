@@ -17,10 +17,10 @@
 package com.hazelcast.map.impl.querycache.event;
 
 import com.hazelcast.map.impl.event.EventData;
-import com.hazelcast.nio.Address;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.BinaryInterface;
+import com.hazelcast.internal.serialization.BinaryInterface;
 
 import java.io.IOException;
 

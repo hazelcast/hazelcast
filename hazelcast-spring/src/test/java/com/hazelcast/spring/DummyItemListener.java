@@ -16,8 +16,8 @@
 
 package com.hazelcast.spring;
 
-import com.hazelcast.core.ItemEvent;
-import com.hazelcast.core.ItemListener;
+import com.hazelcast.collection.ItemEvent;
+import com.hazelcast.collection.ItemListener;
 
 public class DummyItemListener implements ItemListener {
 

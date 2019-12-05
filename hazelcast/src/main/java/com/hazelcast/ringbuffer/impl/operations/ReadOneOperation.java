@@ -20,9 +20,9 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.ringbuffer.impl.RingbufferContainer;
-import com.hazelcast.spi.BlockingOperation;
-import com.hazelcast.spi.ReadonlyOperation;
-import com.hazelcast.spi.WaitNotifyKey;
+import com.hazelcast.spi.impl.operationservice.BlockingOperation;
+import com.hazelcast.spi.impl.operationservice.ReadonlyOperation;
+import com.hazelcast.spi.impl.operationservice.WaitNotifyKey;
 
 import java.io.IOException;
 
@@ -81,7 +81,7 @@ public class ReadOneOperation extends AbstractRingBufferOperation implements Blo
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return READ_ONE_OPERATION;
     }
 

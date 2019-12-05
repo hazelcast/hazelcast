@@ -39,8 +39,8 @@ import java.util.LinkedList;
 import java.util.List;
 
 import static com.hazelcast.internal.diagnostics.AbstractDiagnosticsPluginTest.cleanupDiagnosticFiles;
-import static com.hazelcast.nio.IOUtil.closeResource;
-import static com.hazelcast.util.StringUtil.LINE_SEPARATOR;
+import static com.hazelcast.internal.nio.IOUtil.closeResource;
+import static com.hazelcast.internal.util.StringUtil.LINE_SEPARATOR;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
@@ -100,7 +100,7 @@ public class DiagnosticsLogTest extends HazelcastTestSupport {
             }
         };
         for (int k = 0; k < 50; k++) {
-            metricsRegistry.register(this, id + k, ProbeLevel.MANDATORY, probe);
+            metricsRegistry.registerStaticProbe(this, id + k, ProbeLevel.MANDATORY, probe);
         }
 
         // we run for some time to make sure we get enough rollovers

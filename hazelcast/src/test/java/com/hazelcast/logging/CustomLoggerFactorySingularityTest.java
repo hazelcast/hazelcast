@@ -91,7 +91,7 @@ public class CustomLoggerFactorySingularityTest extends HazelcastTestSupport {
 
         public static volatile boolean singularityCheckFailed = false;
 
-        public CustomLoggerFactory() {
+        CustomLoggerFactory() {
             final long count = INSTANCE_COUNT.incrementAndGet();
 
             // XXX: All exceptions during factory construction are inhibited in Logger.tryCreateLoggerFactory(), so we use a flag

@@ -23,7 +23,7 @@ import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Before;
@@ -48,12 +48,13 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static com.hazelcast.cache.CacheTestSupport.createServerCachingProvider;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 
 @RunWith(HazelcastSerialClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class CacheFromDifferentNodesTest
         extends HazelcastTestSupport {
 
@@ -67,8 +68,8 @@ public class CacheFromDifferentNodesTest
         factory = new TestHazelcastInstanceFactory(2);
         HazelcastInstance hz1 = factory.newHazelcastInstance();
         HazelcastInstance hz2 = factory.newHazelcastInstance();
-        cachingProvider1 = HazelcastServerCachingProvider.createCachingProvider(hz1);
-        cachingProvider2 = HazelcastServerCachingProvider.createCachingProvider(hz2);
+        cachingProvider1 = createServerCachingProvider(hz1);
+        cachingProvider2 = createServerCachingProvider(hz2);
     }
 
     @After

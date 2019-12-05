@@ -22,10 +22,11 @@ import com.hazelcast.config.JoinConfig;
 import com.hazelcast.config.NetworkConfig;
 import com.hazelcast.config.PartitionGroupConfig;
 import com.hazelcast.config.TcpIpConfig;
+import com.hazelcast.config.security.RealmConfig;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.instance.HazelcastInstanceFactory;
-import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.instance.impl.HazelcastInstanceFactory;
+import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
@@ -141,17 +142,17 @@ public class TcpIpJoinTest extends AbstractJoinTest {
     @Test
     public void test_whenIncompatibleGroups() throws Exception {
         Config config1 = new Config();
-        config1.setProperty(GroupProperty.WAIT_SECONDS_BEFORE_JOIN.getName(), "0");
-        config1.setProperty(GroupProperty.MAX_JOIN_SECONDS.getName(), "3");
-        config1.getGroupConfig().setName("group1");
+        config1.setProperty(ClusterProperty.WAIT_SECONDS_BEFORE_JOIN.getName(), "0");
+        config1.setProperty(ClusterProperty.MAX_JOIN_SECONDS.getName(), "3");
+        config1.setClusterName("group1");
         config1.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(false);
         config1.getNetworkConfig().getJoin().getTcpIpConfig()
                 .setEnabled(true).setConnectionTimeoutSeconds(3).addMember("127.0.0.1");
 
         Config config2 = new Config();
-        config2.setProperty(GroupProperty.WAIT_SECONDS_BEFORE_JOIN.getName(), "0");
-        config2.setProperty(GroupProperty.MAX_JOIN_SECONDS.getName(), "3");
-        config2.getGroupConfig().setName("group2");
+        config2.setProperty(ClusterProperty.WAIT_SECONDS_BEFORE_JOIN.getName(), "0");
+        config2.setProperty(ClusterProperty.MAX_JOIN_SECONDS.getName(), "3");
+        config2.setClusterName("group2");
         config2.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(false);
         config2.getNetworkConfig().getJoin().getTcpIpConfig()
                 .setEnabled(true).setConnectionTimeoutSeconds(3).addMember("127.0.0.1");
@@ -160,20 +161,22 @@ public class TcpIpJoinTest extends AbstractJoinTest {
     }
 
     @Test
-    public void test_whenSameGroupNamesButDifferentPassword()
+    public void test_whenSameClusterNamesButDifferentPassword()
             throws Exception {
         Config config1 = new Config();
-        config1.setProperty(GroupProperty.WAIT_SECONDS_BEFORE_JOIN.getName(), "0");
-        config1.setProperty(GroupProperty.MAX_JOIN_SECONDS.getName(), "3");
-        config1.getGroupConfig().setPassword("pass1");
+        config1.setProperty(ClusterProperty.WAIT_SECONDS_BEFORE_JOIN.getName(), "0");
+        config1.setProperty(ClusterProperty.MAX_JOIN_SECONDS.getName(), "3");
+        config1.getSecurityConfig().setMemberRealmConfig("m1",
+                new RealmConfig().setUsernamePasswordIdentityConfig("foo", "Here"));
         config1.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(false);
         config1.getNetworkConfig().getJoin().getTcpIpConfig().setEnabled(true).setConnectionTimeoutSeconds(3)
                 .addMember("127.0.0.1");
 
         Config config2 = new Config();
-        config2.setProperty(GroupProperty.WAIT_SECONDS_BEFORE_JOIN.getName(), "0");
-        config2.setProperty(GroupProperty.MAX_JOIN_SECONDS.getName(), "3");
-        config2.getGroupConfig().setPassword("pass2");
+        config2.setProperty(ClusterProperty.WAIT_SECONDS_BEFORE_JOIN.getName(), "0");
+        config2.setProperty(ClusterProperty.MAX_JOIN_SECONDS.getName(), "3");
+        config2.getSecurityConfig().setMemberRealmConfig("m1",
+                new RealmConfig().setUsernamePasswordIdentityConfig("foo", "There"));
         config2.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(false);
         config2.getNetworkConfig().getJoin().getTcpIpConfig().setEnabled(true).setConnectionTimeoutSeconds(3)
                 .addMember("127.0.0.1");
@@ -188,8 +191,8 @@ public class TcpIpJoinTest extends AbstractJoinTest {
     @Test
     public void test_whenIncompatiblePartitionGroups() throws Exception {
         Config config1 = new Config();
-        config1.setProperty(GroupProperty.WAIT_SECONDS_BEFORE_JOIN.getName(), "0");
-        config1.setProperty(GroupProperty.MAX_JOIN_SECONDS.getName(), "3");
+        config1.setProperty(ClusterProperty.WAIT_SECONDS_BEFORE_JOIN.getName(), "0");
+        config1.setProperty(ClusterProperty.MAX_JOIN_SECONDS.getName(), "3");
         config1.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(false);
         config1.getNetworkConfig().getJoin().getTcpIpConfig()
                 .setEnabled(true).setConnectionTimeoutSeconds(3).addMember("127.0.0.1");
@@ -197,8 +200,8 @@ public class TcpIpJoinTest extends AbstractJoinTest {
                 .setGroupType(PartitionGroupConfig.MemberGroupType.CUSTOM);
 
         Config config2 = new Config();
-        config2.setProperty(GroupProperty.WAIT_SECONDS_BEFORE_JOIN.getName(), "0");
-        config2.setProperty(GroupProperty.MAX_JOIN_SECONDS.getName(), "3");
+        config2.setProperty(ClusterProperty.WAIT_SECONDS_BEFORE_JOIN.getName(), "0");
+        config2.setProperty(ClusterProperty.MAX_JOIN_SECONDS.getName(), "3");
         config2.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(false);
         config2.getNetworkConfig().getJoin().getTcpIpConfig()
                 .setEnabled(true).setConnectionTimeoutSeconds(3).addMember("127.0.0.1");
@@ -210,14 +213,14 @@ public class TcpIpJoinTest extends AbstractJoinTest {
     @Test
     public void test_whenIncompatibleJoiners() throws Exception {
         Config config1 = new Config();
-        config1.setProperty(GroupProperty.WAIT_SECONDS_BEFORE_JOIN.getName(), "0");
-        config1.setProperty(GroupProperty.MAX_JOIN_SECONDS.getName(), "3");
+        config1.setProperty(ClusterProperty.WAIT_SECONDS_BEFORE_JOIN.getName(), "0");
+        config1.setProperty(ClusterProperty.MAX_JOIN_SECONDS.getName(), "3");
         config1.getNetworkConfig().getJoin().getMulticastConfig().setMulticastTimeoutSeconds(3);
         config1.getNetworkConfig().getJoin().getTcpIpConfig().setEnabled(false);
 
         Config config2 = new Config();
-        config2.setProperty(GroupProperty.WAIT_SECONDS_BEFORE_JOIN.getName(), "0");
-        config2.setProperty(GroupProperty.MAX_JOIN_SECONDS.getName(), "3");
+        config2.setProperty(ClusterProperty.WAIT_SECONDS_BEFORE_JOIN.getName(), "0");
+        config2.setProperty(ClusterProperty.MAX_JOIN_SECONDS.getName(), "3");
         config2.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(false);
         config2.getNetworkConfig().getJoin().getTcpIpConfig().setConnectionTimeoutSeconds(3)
                 .setEnabled(true).addMember("127.0.0.1");

@@ -17,8 +17,9 @@
 package com.hazelcast.internal.nearcache.impl.invalidation;
 
 import com.hazelcast.core.EntryEventType;
-import com.hazelcast.core.IMapEvent;
-import com.hazelcast.core.Member;
+import com.hazelcast.internal.util.UUIDSerializationUtil;
+import com.hazelcast.map.IMapEvent;
+import com.hazelcast.cluster.Member;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -30,8 +31,8 @@ import java.util.UUID;
 
 import static com.hazelcast.core.EntryEventType.INVALIDATION;
 import static com.hazelcast.internal.nearcache.impl.invalidation.InvalidationUtils.NO_SEQUENCE;
-import static com.hazelcast.util.Preconditions.checkNotNull;
-import static com.hazelcast.util.Preconditions.checkPositive;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.Preconditions.checkPositive;
 
 /**
  * Root interface for Near Cache invalidation data.
@@ -39,7 +40,7 @@ import static com.hazelcast.util.Preconditions.checkPositive;
 public abstract class Invalidation implements IMapEvent, IdentifiedDataSerializable {
 
     private String dataStructureName;
-    private String sourceUuid;
+    private UUID sourceUuid;
     private UUID partitionUuid;
     private long sequence = NO_SEQUENCE;
 
@@ -50,7 +51,7 @@ public abstract class Invalidation implements IMapEvent, IdentifiedDataSerializa
         this.dataStructureName = checkNotNull(dataStructureName, "dataStructureName cannot be null");
     }
 
-    public Invalidation(String dataStructureName, String sourceUuid, UUID partitionUuid, long sequence) {
+    public Invalidation(String dataStructureName, UUID sourceUuid, UUID partitionUuid, long sequence) {
         this.dataStructureName = checkNotNull(dataStructureName, "dataStructureName cannot be null");
         // sourceUuid can be null.
         this.sourceUuid = sourceUuid;
@@ -62,7 +63,7 @@ public abstract class Invalidation implements IMapEvent, IdentifiedDataSerializa
         return partitionUuid;
     }
 
-    public final String getSourceUuid() {
+    public final UUID getSourceUuid() {
         return sourceUuid;
     }
 
@@ -92,7 +93,7 @@ public abstract class Invalidation implements IMapEvent, IdentifiedDataSerializa
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeUTF(dataStructureName);
-        out.writeUTF(sourceUuid);
+        UUIDSerializationUtil.writeUUID(out, sourceUuid);
         out.writeLong(sequence);
 
         boolean nullUuid = partitionUuid == null;
@@ -106,7 +107,7 @@ public abstract class Invalidation implements IMapEvent, IdentifiedDataSerializa
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         dataStructureName = in.readUTF();
-        sourceUuid = in.readUTF();
+        sourceUuid = UUIDSerializationUtil.readUUID(in);
         sequence = in.readLong();
         boolean nullUuid = in.readBoolean();
         if (!nullUuid) {

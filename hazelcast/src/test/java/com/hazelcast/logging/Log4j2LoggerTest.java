@@ -17,7 +17,7 @@
 package com.hazelcast.logging;
 
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.apache.logging.log4j.spi.ExtendedLogger;
 import org.junit.Before;
@@ -39,7 +39,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class Log4j2LoggerTest extends AbstractLoggerTest {
 
     private static final String LOGGER_NAME = Log4j2Factory.Log4j2Logger.class.getName();

@@ -19,7 +19,7 @@ package com.hazelcast.core;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.SplitBrainTestSupport;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -27,18 +27,18 @@ import org.junit.runner.RunWith;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class ProxySplitBrainTest extends SplitBrainTestSupport {
 
     @Override
     protected void onAfterSplitBrainCreated(HazelcastInstance[] firstBrain, HazelcastInstance[] secondBrain) {
         HazelcastInstance isolatedInstance = secondBrain[0];
-        isolatedInstance.getLock("isolatedLock");
+        isolatedInstance.getQueue("isolatedQ");
         assertDistributedObjectCountEventually(1, isolatedInstance);
 
         for (HazelcastInstance hz : firstBrain) {
             String name = generateKeyOwnedBy(hz);
-            hz.getLock(name);
+            hz.getQueue(name);
         }
 
         for (HazelcastInstance hz : firstBrain) {

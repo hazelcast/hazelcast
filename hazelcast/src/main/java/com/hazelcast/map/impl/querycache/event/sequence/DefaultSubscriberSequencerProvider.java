@@ -16,12 +16,12 @@
 
 package com.hazelcast.map.impl.querycache.event.sequence;
 
-import com.hazelcast.util.ConstructorFunction;
+import com.hazelcast.internal.util.ConstructorFunction;
 
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
-import static com.hazelcast.util.ConcurrencyUtil.getOrPutIfAbsent;
+import static com.hazelcast.internal.util.ConcurrencyUtil.getOrPutIfAbsent;
 
 /**
  * This class provides on-demand {@link PartitionSequencer} implementations
@@ -32,17 +32,12 @@ import static com.hazelcast.util.ConcurrencyUtil.getOrPutIfAbsent;
 public class DefaultSubscriberSequencerProvider implements SubscriberSequencerProvider {
 
     private static final ConstructorFunction<Integer, PartitionSequencer> PARTITION_SEQUENCER_CONSTRUCTOR
-            = new ConstructorFunction<Integer, PartitionSequencer>() {
-        @Override
-        public PartitionSequencer createNew(Integer arg) {
-            return new DefaultPartitionSequencer();
-        }
-    };
+            = arg -> new DefaultPartitionSequencer();
 
     private final ConcurrentMap<Integer, PartitionSequencer> partitionSequences;
 
     public DefaultSubscriberSequencerProvider() {
-        this.partitionSequences = new ConcurrentHashMap<Integer, PartitionSequencer>();
+        this.partitionSequences = new ConcurrentHashMap<>();
     }
 
     @Override
@@ -61,6 +56,13 @@ public class DefaultSubscriberSequencerProvider implements SubscriberSequencerPr
     public void reset(int partitionId) {
         PartitionSequencer sequence = getOrCreateSequence(partitionId);
         sequence.reset();
+    }
+
+    @Override
+    public void resetAll() {
+        for (PartitionSequencer partitionSequencer : partitionSequences.values()) {
+            partitionSequencer.reset();
+        }
     }
 
     private PartitionSequencer getOrCreateSequence(int partitionId) {

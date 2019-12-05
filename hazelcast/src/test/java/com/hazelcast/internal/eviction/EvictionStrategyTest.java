@@ -21,12 +21,12 @@ import com.hazelcast.cache.impl.ICacheService;
 import com.hazelcast.cache.impl.record.CacheObjectRecord;
 import com.hazelcast.cache.impl.record.CacheRecordHashMap;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.instance.Node;
+import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.eviction.impl.evaluator.EvictionPolicyEvaluator;
 import com.hazelcast.internal.eviction.impl.strategy.sampling.SampleableEvictableStore;
 import com.hazelcast.internal.eviction.impl.strategy.sampling.SamplingEvictionStrategy;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.serialization.SerializationService;
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
@@ -97,8 +97,8 @@ public class EvictionStrategyTest<K, V extends Evictable, S extends SampleableEv
         }
 
         @Override
-        public long getAccessHit() {
-            return getEvictable().getAccessHit();
+        public long getHits() {
+            return getEvictable().getHits();
         }
     }
 

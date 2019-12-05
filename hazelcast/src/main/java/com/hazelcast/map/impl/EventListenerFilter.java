@@ -20,7 +20,7 @@ import com.hazelcast.core.EntryEventType;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.spi.EventFilter;
+import com.hazelcast.spi.impl.eventservice.EventFilter;
 import com.hazelcast.spi.impl.eventservice.impl.TrueEventFilter;
 
 import java.io.IOException;
@@ -32,15 +32,15 @@ import static com.hazelcast.map.impl.MapListenerFlagOperator.SET_ALL_LISTENER_FL
  * involve it when evaluating if the event matches.
  * Prevents sending of not requested events to a {@link com.hazelcast.map.listener.MapListener MapListener}
  * by filtering events according the implemented {@link com.hazelcast.map.listener.MapListener MapListener} sub-interfaces.
- * <p/>
+ * <p>
  * Specifically, for example, if a listener is registered via an implementation like this:
- * <p/>
+ * <p>
  * {@code}
  * public class MyMapListener implements EntryAddedListener, EntryRemovedListener {
  * ...
  * }
  * {@code}
- * <p/>
+ * <p>
  * That listener will only be notified for {@link EntryEventType#ADDED} and {@link EntryEventType#REMOVED} events.
  * Other events, like {@link EntryEventType#EVICTED} or {@link EntryEventType#EXPIRED}, will not be sent over wire.
  * This may help to reduce load on eventing system and network.
@@ -102,7 +102,7 @@ public class EventListenerFilter implements EventFilter, IdentifiedDataSerializa
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MapDataSerializerHook.EVENT_LISTENER_FILTER;
     }
 }

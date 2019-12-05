@@ -17,10 +17,11 @@
 package com.hazelcast.spi.impl.operationservice.impl;
 
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.spi.InternalCompletableFuture;
-import com.hazelcast.spi.OperationService;
+import com.hazelcast.internal.util.RootCauseMatcher;
+import com.hazelcast.spi.impl.InternalCompletableFuture;
+import com.hazelcast.spi.impl.operationservice.OperationService;
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Rule;
 import org.junit.Test;
@@ -28,11 +29,13 @@ import org.junit.experimental.categories.Category;
 import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
+import java.util.concurrent.CompletionException;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class Invocation_NestedRemoteTest extends Invocation_NestedAbstractTest {
 
     private static final String RESPONSE = "someresponse";
@@ -86,7 +89,7 @@ public class Invocation_NestedRemoteTest extends Invocation_NestedAbstractTest {
     }
 
     @Test
-    public void invokeOnPartition_outerRemote_innerSameInstance_callsDifferentPartition_mappedToSameThread() throws Exception {
+    public void invokeOnPartition_outerRemote_innerSameInstance_callsDifferentPartition_mappedToSameThread() {
         HazelcastInstance[] cluster = createHazelcastInstanceFactory(2).newInstances();
         HazelcastInstance local = cluster[0];
         HazelcastInstance remote = cluster[1];
@@ -99,7 +102,8 @@ public class Invocation_NestedRemoteTest extends Invocation_NestedAbstractTest {
         OuterOperation outerOperation = new OuterOperation(innerOperation, outerPartitionId);
         InternalCompletableFuture future = operationService.invokeOnPartition(null, outerOperation, outerPartitionId);
 
-        expected.expect(IllegalThreadStateException.class);
+        expected.expect(CompletionException.class);
+        expected.expect(new RootCauseMatcher(IllegalThreadStateException.class));
         expected.expectMessage("cannot make remote call");
         future.join();
     }
@@ -118,7 +122,8 @@ public class Invocation_NestedRemoteTest extends Invocation_NestedAbstractTest {
         OuterOperation outerOperation = new OuterOperation(innerOperation, outerPartitionId);
         InternalCompletableFuture future = operationService.invokeOnPartition(null, outerOperation, outerPartitionId);
 
-        expected.expect(IllegalThreadStateException.class);
+        expected.expect(CompletionException.class);
+        expected.expect(new RootCauseMatcher(IllegalThreadStateException.class));
         expected.expectMessage("cannot make remote call");
         future.join();
     }
@@ -137,7 +142,8 @@ public class Invocation_NestedRemoteTest extends Invocation_NestedAbstractTest {
         OuterOperation outerOperation = new OuterOperation(innerOperation, outerPartitionId);
         InternalCompletableFuture future = operationService.invokeOnPartition(null, outerOperation, outerPartitionId);
 
-        expected.expect(IllegalThreadStateException.class);
+        expected.expect(CompletionException.class);
+        expected.expect(new RootCauseMatcher(IllegalThreadStateException.class));
         expected.expectMessage("cannot make remote call");
         future.join();
     }

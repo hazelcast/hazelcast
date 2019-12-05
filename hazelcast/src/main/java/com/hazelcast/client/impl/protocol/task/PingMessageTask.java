@@ -18,12 +18,12 @@ package com.hazelcast.client.impl.protocol.task;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ClientPingCodec;
-import com.hazelcast.instance.Node;
-import com.hazelcast.nio.Connection;
+import com.hazelcast.instance.impl.Node;
+import com.hazelcast.internal.nio.Connection;
 
 import java.security.Permission;
 
-public class PingMessageTask extends AbstractCallableMessageTask<ClientPingCodec.RequestParameters> {
+public class PingMessageTask extends AbstractCallableMessageTask<ClientPingCodec.RequestParameters> implements UrgentMessageTask {
 
     public PingMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -69,4 +69,8 @@ public class PingMessageTask extends AbstractCallableMessageTask<ClientPingCodec
         return null;
     }
 
+    @Override
+    public int getPartitionId() {
+        return -1;
+    }
 }

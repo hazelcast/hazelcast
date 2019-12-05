@@ -16,8 +16,9 @@
 
 package com.hazelcast.query.impl;
 
+import com.hazelcast.config.IndexConfig;
 import com.hazelcast.core.TypeConverter;
-import com.hazelcast.monitor.impl.PerIndexStats;
+import com.hazelcast.internal.monitor.impl.PerIndexStats;
 import com.hazelcast.nio.serialization.Data;
 
 import java.util.HashMap;
@@ -44,33 +45,29 @@ public class GlobalQueryContextWithStats extends QueryContext {
     }
 
     @Override
-    public Index getIndex(String attributeName) {
-        if (indexes == null) {
-            return null;
+    void applyPerQueryStats() {
+        for (QueryTrackingIndex trackedIndex : trackedIndexes) {
+            trackedIndex.incrementQueryCount();
         }
+    }
 
-        InternalIndex delegate = indexes.getIndex(attributeName);
+    @Override
+    public Index matchIndex(String pattern, IndexMatchHint matchHint) {
+        InternalIndex delegate = indexes.matchIndex(pattern, matchHint);
         if (delegate == null) {
             return null;
         }
 
-        QueryTrackingIndex trackingIndex = knownIndexes.get(attributeName);
+        QueryTrackingIndex trackingIndex = knownIndexes.get(pattern);
         if (trackingIndex == null) {
             trackingIndex = new QueryTrackingIndex();
-            knownIndexes.put(attributeName, trackingIndex);
+            knownIndexes.put(pattern, trackingIndex);
         }
 
         trackingIndex.attachTo(delegate);
         trackedIndexes.add(trackingIndex);
 
         return trackingIndex;
-    }
-
-    @Override
-    void applyPerQueryStats() {
-        for (QueryTrackingIndex trackedIndex : trackedIndexes) {
-            trackedIndex.incrementQueryCount();
-        }
     }
 
     private static class QueryTrackingIndex implements InternalIndex {
@@ -94,8 +91,18 @@ public class GlobalQueryContextWithStats extends QueryContext {
         }
 
         @Override
-        public String getAttributeName() {
-            return delegate.getAttributeName();
+        public String getName() {
+            return delegate.getName();
+        }
+
+        @Override
+        public String[] getComponents() {
+            return delegate.getComponents();
+        }
+
+        @Override
+        public IndexConfig getConfig() {
+            return delegate.getConfig();
         }
 
         @Override
@@ -104,18 +111,18 @@ public class GlobalQueryContextWithStats extends QueryContext {
         }
 
         @Override
-        public void saveEntryIndex(QueryableEntry entry, Object oldValue, OperationSource operationSource) {
-            delegate.saveEntryIndex(entry, oldValue, operationSource);
-        }
-
-        @Override
-        public void removeEntryIndex(Data key, Object value, OperationSource operationSource) {
-            delegate.removeEntryIndex(key, value, operationSource);
-        }
-
-        @Override
         public TypeConverter getConverter() {
             return delegate.getConverter();
+        }
+
+        @Override
+        public void putEntry(QueryableEntry entry, Object oldValue, OperationSource operationSource) {
+            delegate.putEntry(entry, oldValue, operationSource);
+        }
+
+        @Override
+        public void removeEntry(Data key, Object value, OperationSource operationSource) {
+            delegate.removeEntry(key, value, operationSource);
         }
 
         @Override
@@ -133,15 +140,15 @@ public class GlobalQueryContextWithStats extends QueryContext {
         }
 
         @Override
-        public Set<QueryableEntry> getSubRecordsBetween(Comparable from, Comparable to) {
-            Set<QueryableEntry> result = delegate.getSubRecordsBetween(from, to);
+        public Set<QueryableEntry> getRecords(Comparable from, boolean fromInclusive, Comparable to, boolean toInclusive) {
+            Set<QueryableEntry> result = delegate.getRecords(from, fromInclusive, to, toInclusive);
             hasQueries = true;
             return result;
         }
 
         @Override
-        public Set<QueryableEntry> getSubRecords(ComparisonType comparisonType, Comparable searchedValue) {
-            Set<QueryableEntry> result = delegate.getSubRecords(comparisonType, searchedValue);
+        public Set<QueryableEntry> getRecords(Comparison comparison, Comparable value) {
+            Set<QueryableEntry> result = delegate.getRecords(comparison, value);
             hasQueries = true;
             return result;
         }
@@ -154,6 +161,11 @@ public class GlobalQueryContextWithStats extends QueryContext {
         @Override
         public void destroy() {
             delegate.destroy();
+        }
+
+        @Override
+        public Comparable canonicalizeQueryArgumentScalar(Comparable value) {
+            return delegate.canonicalizeQueryArgumentScalar(value);
         }
 
         @Override

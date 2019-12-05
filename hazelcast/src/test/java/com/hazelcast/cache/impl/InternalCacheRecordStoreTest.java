@@ -22,16 +22,16 @@ import com.hazelcast.cache.HazelcastCacheManager;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.instance.Node;
+import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.spi.impl.AbstractNamedOperation;
+import com.hazelcast.spi.impl.operationservice.AbstractNamedOperation;
 import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.spi.impl.operationservice.InternalOperationService;
+import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -46,7 +46,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class InternalCacheRecordStoreTest extends CacheTestSupport {
 
     private TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
@@ -157,7 +157,7 @@ public class InternalCacheRecordStoreTest extends CacheTestSupport {
 
     private void verifyPrimaryState(Node node, String fullCacheName, int partitionId, boolean expectedState) throws Exception {
         NodeEngineImpl nodeEngine = node.getNodeEngine();
-        InternalOperationService operationService = nodeEngine.getOperationService();
+        OperationServiceImpl operationService = nodeEngine.getOperationService();
         Future<Boolean> isPrimaryOnNode = operationService.invokeOnTarget(
                 ICacheService.SERVICE_NAME,
                 createCacheOwnerStateGetterOperation(fullCacheName, partitionId),
@@ -207,7 +207,7 @@ public class InternalCacheRecordStoreTest extends CacheTestSupport {
         }
 
         @Override
-        public int getId() {
+        public int getClassId() {
             return InternalCacheRecordStoreTestFactory.INTERNAL_CACHE_PRIMARY_STATE_GETTER;
         }
     }

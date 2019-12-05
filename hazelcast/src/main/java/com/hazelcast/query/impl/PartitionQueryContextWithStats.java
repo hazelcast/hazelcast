@@ -16,7 +16,7 @@
 
 package com.hazelcast.query.impl;
 
-import com.hazelcast.monitor.impl.PerIndexStats;
+import com.hazelcast.internal.monitor.impl.PerIndexStats;
 
 import java.util.HashSet;
 
@@ -47,12 +47,15 @@ public class PartitionQueryContextWithStats extends QueryContext {
     }
 
     @Override
-    public Index getIndex(String attributeName) {
-        if (indexes == null) {
-            return null;
+    void applyPerQueryStats() {
+        for (PerIndexStats stats : trackedStats) {
+            stats.incrementQueryCount();
         }
+    }
 
-        InternalIndex index = indexes.getIndex(attributeName);
+    @Override
+    public Index matchIndex(String pattern, IndexMatchHint matchHint) {
+        InternalIndex index = indexes.matchIndex(pattern, matchHint);
         if (index == null) {
             return null;
         }
@@ -60,13 +63,6 @@ public class PartitionQueryContextWithStats extends QueryContext {
         trackedStats.add(index.getPerIndexStats());
 
         return index;
-    }
-
-    @Override
-    void applyPerQueryStats() {
-        for (PerIndexStats stats : trackedStats) {
-            stats.incrementQueryCount();
-        }
     }
 
 }

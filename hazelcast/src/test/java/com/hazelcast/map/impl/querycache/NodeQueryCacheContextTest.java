@@ -23,7 +23,7 @@ import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
 import org.junit.Test;
@@ -38,7 +38,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class NodeQueryCacheContextTest extends HazelcastTestSupport {
 
     private QueryCacheContext context;
@@ -65,18 +65,18 @@ public class NodeQueryCacheContextTest extends HazelcastTestSupport {
     public void testInvokerWrapper_invokeOnAllPartitions() throws Exception {
         MadePublishableOperationFactory factory = new MadePublishableOperationFactory("mapName", "cacheId");
 
-        Map<Integer, Object> result = (Map<Integer, Object>) context.getInvokerWrapper().invokeOnAllPartitions(factory);
+        Map<Integer, Object> result = (Map<Integer, Object>) context.getInvokerWrapper().invokeOnAllPartitions(factory, false);
         assertEquals(partitionCount, result.size());
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void testInvokerWrapper_invokeOnAllPartitions_whenRequestOfWrongType_thenThrowException() throws Exception {
-        context.getInvokerWrapper().invokeOnAllPartitions(new Object());
+        context.getInvokerWrapper().invokeOnAllPartitions(new Object(), false);
     }
 
     @Test(expected = UnsupportedOperationException.class)
     public void testInvokerWrapper_invoke() {
-        context.getInvokerWrapper().invoke(null);
+        context.getInvokerWrapper().invoke(null, false);
     }
 
     @Test

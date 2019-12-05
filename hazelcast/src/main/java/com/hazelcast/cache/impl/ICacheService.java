@@ -16,26 +16,31 @@
 
 package com.hazelcast.cache.impl;
 
-import com.hazelcast.cache.CacheStatistics;
 import com.hazelcast.cache.impl.event.CacheWanEventPublisher;
 import com.hazelcast.cache.impl.journal.CacheEventJournal;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.internal.eviction.ExpirationManager;
+import com.hazelcast.internal.metrics.DynamicMetricsProvider;
+import com.hazelcast.internal.monitor.LocalCacheStats;
+import com.hazelcast.internal.partition.FragmentedMigrationAwareService;
+import com.hazelcast.internal.services.ManagedService;
+import com.hazelcast.internal.services.RemoteService;
+import com.hazelcast.internal.services.StatisticsAwareService;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.EventFilter;
-import com.hazelcast.spi.EventPublishingService;
-import com.hazelcast.spi.FragmentedMigrationAwareService;
-import com.hazelcast.spi.ManagedService;
-import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.RemoteService;
+import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.spi.impl.eventservice.EventFilter;
+import com.hazelcast.spi.impl.eventservice.EventPublishingService;
 
 import java.util.Collection;
+import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 
 @SuppressWarnings({"checkstyle:methodcount"})
 public interface ICacheService
         extends ManagedService, RemoteService, FragmentedMigrationAwareService,
-        EventPublishingService<Object, CacheEventListener> {
+                EventPublishingService<Object, CacheEventListener>,
+                StatisticsAwareService<LocalCacheStats>, DynamicMetricsProvider {
 
     String CACHE_SUPPORT_NOT_AVAILABLE_ERROR_MESSAGE =
             "There is no valid JCache API library at classpath. "
@@ -87,7 +92,7 @@ public interface ICacheService
 
     CacheContext getOrCreateCacheContext(String cacheNameWithPrefix);
 
-    void deleteCache(String cacheNameWithPrefix, String callerUuid, boolean destroy);
+    void deleteCache(String cacheNameWithPrefix, UUID callerUuid, boolean destroy);
 
     void deleteCacheStat(String cacheNameWithPrefix);
 
@@ -101,15 +106,24 @@ public interface ICacheService
 
     NodeEngine getNodeEngine();
 
-    String registerListener(String cacheNameWithPrefix, CacheEventListener listener, boolean isLocal);
+    UUID registerLocalListener(String cacheNameWithPrefix, CacheEventListener listener);
 
-    String registerListener(String cacheNameWithPrefix, CacheEventListener listener, EventFilter eventFilter, boolean isLocal);
+    UUID registerLocalListener(String cacheNameWithPrefix, CacheEventListener listener, EventFilter eventFilter);
 
-    boolean deregisterListener(String cacheNameWithPrefix, String registrationId);
+    UUID registerListener(String cacheNameWithPrefix, CacheEventListener listener);
+
+    UUID registerListener(String cacheNameWithPrefix, CacheEventListener listener, EventFilter eventFilter);
+
+    CompletableFuture<UUID> registerListenerAsync(String cacheNameWithPrefix, CacheEventListener listener);
+
+    CompletableFuture<UUID> registerListenerAsync(String cacheNameWithPrefix, CacheEventListener listener,
+                                                  EventFilter eventFilter);
+
+    boolean deregisterListener(String cacheNameWithPrefix, UUID registrationId);
+
+    CompletableFuture<Boolean> deregisterListenerAsync(String cacheNameWithPrefix, UUID registrationId);
 
     void deregisterAllListener(String cacheNameWithPrefix);
-
-    CacheStatistics getStatistics(String cacheNameWithPrefix);
 
     ExpirationManager getExpirationManager();
 
@@ -118,9 +132,7 @@ public interface ICacheService
      */
     CacheOperationProvider getCacheOperationProvider(String cacheNameWithPrefix, InMemoryFormat storageType);
 
-    String addInvalidationListener(String cacheNameWithPrefix, CacheEventListener listener, boolean localOnly);
-
-    void sendInvalidationEvent(String cacheNameWithPrefix, Data key, String sourceUuid);
+    void sendInvalidationEvent(String cacheNameWithPrefix, Data key, UUID sourceUuid);
 
     /**
      * Returns {@code true} if WAN replication is enabled for the cache named {@code cacheNameWithPrefix}.
@@ -135,6 +147,13 @@ public interface ICacheService
      */
     CacheWanEventPublisher getCacheWanEventPublisher();
 
+
+    /**
+     * @param cacheNameWithPrefix the full name of the {@link
+     *                            com.hazelcast.cache.ICache}, including the manager scope prefix
+     */
+    void doPrepublicationChecks(String cacheNameWithPrefix);
+
     /**
      * Returns an interface for interacting with the cache event journals.
      */
@@ -145,10 +164,12 @@ public interface ICacheService
      * cluster version 3.10 or greater, the cluster-wide invocation ensures that all members of
      * the cluster will receive the cache config even in the face of cluster membership changes.
      *
-     * @param cacheConfig   the cache config to create on all members of the cluster
-     * @param <K>           key type parameter
-     * @param <V>           value type parameter
+     * @param cacheConfig the cache config to create on all members of the cluster
+     * @param <K>         key type parameter
+     * @param <V>         value type parameter
      * @since 3.10
      */
     <K, V> void createCacheConfigOnAllMembers(PreJoinCacheConfig<K, V> cacheConfig);
+
+    <K, V> void setTenantControl(CacheConfig<K, V> cacheConfig);
 }

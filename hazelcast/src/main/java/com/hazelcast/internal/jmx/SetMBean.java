@@ -16,10 +16,10 @@
 
 package com.hazelcast.internal.jmx;
 
-import com.hazelcast.core.ISet;
+import com.hazelcast.collection.ISet;
 
 /**
- * Management bean for {@link com.hazelcast.core.ISet}
+ * Management bean for {@link ISet}
  */
 @ManagedDescription("ISet")
 public class SetMBean extends HazelcastMBean<ISet> {

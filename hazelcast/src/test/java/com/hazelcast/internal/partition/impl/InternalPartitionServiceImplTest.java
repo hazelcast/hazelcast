@@ -20,19 +20,18 @@ import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
-import com.hazelcast.core.Member;
-import com.hazelcast.instance.DefaultNodeExtension;
-import com.hazelcast.instance.HazelcastInstanceFactory;
-import com.hazelcast.instance.Node;
-import com.hazelcast.instance.NodeContext;
-import com.hazelcast.instance.NodeExtension;
-import com.hazelcast.internal.partition.PartitionListener;
+import com.hazelcast.cluster.Member;
+import com.hazelcast.instance.impl.DefaultNodeExtension;
+import com.hazelcast.instance.impl.HazelcastInstanceFactory;
+import com.hazelcast.instance.impl.Node;
+import com.hazelcast.instance.impl.NodeContext;
+import com.hazelcast.instance.impl.NodeExtension;
 import com.hazelcast.internal.partition.PartitionReplica;
 import com.hazelcast.internal.partition.PartitionTableView;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.test.mocknetwork.MockNodeContext;
 import org.junit.Before;
@@ -52,7 +51,7 @@ import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class InternalPartitionServiceImplTest extends HazelcastTestSupport {
 
     private HazelcastInstance instance;
@@ -154,20 +153,6 @@ public class InternalPartitionServiceImplTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void test_setInitialState_listenerShouldNOTBeCalled() {
-        PartitionReplica[][] addresses = new PartitionReplica[partitionCount][MAX_REPLICA_COUNT];
-        for (int i = 0; i < partitionCount; i++) {
-            addresses[i][0] = PartitionReplica.from(localMember);
-        }
-
-        TestPartitionListener listener = new TestPartitionListener();
-        partitionService.addPartitionListener(listener);
-
-        partitionService.setInitialState(new PartitionTableView(addresses, 0));
-        assertEquals(0, listener.eventCount);
-    }
-
-    @Test
     public void test_getMemberPartitions_whenNotInitialized() {
         List<Integer> partitions = partitionService.getMemberPartitions(getAddress(instance));
         assertTrue(partitionService.getPartitionStateManager().isInitialized());
@@ -192,15 +177,5 @@ public class InternalPartitionServiceImplTest extends HazelcastTestSupport {
         partitionService.firstArrangement();
         List<Integer> partitions = partitionService.getMemberPartitionsIfAssigned(getAddress(instance));
         assertEquals(partitionCount, partitions.size());
-    }
-
-    private static class TestPartitionListener implements PartitionListener {
-
-        private int eventCount;
-
-        @Override
-        public void replicaChanged(PartitionReplicaChangeEvent event) {
-            eventCount++;
-        }
     }
 }

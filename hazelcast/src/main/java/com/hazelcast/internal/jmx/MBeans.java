@@ -16,39 +16,29 @@
 
 package com.hazelcast.internal.jmx;
 
+import com.hazelcast.collection.IList;
+import com.hazelcast.collection.IQueue;
+import com.hazelcast.collection.ISet;
 import com.hazelcast.collection.impl.list.ListService;
 import com.hazelcast.collection.impl.queue.QueueService;
 import com.hazelcast.collection.impl.set.SetService;
-import com.hazelcast.concurrent.atomiclong.AtomicLongService;
-import com.hazelcast.concurrent.atomicreference.AtomicReferenceService;
-import com.hazelcast.concurrent.countdownlatch.CountDownLatchService;
-import com.hazelcast.concurrent.lock.LockService;
-import com.hazelcast.concurrent.semaphore.SemaphoreService;
 import com.hazelcast.core.DistributedObject;
-import com.hazelcast.core.IAtomicLong;
-import com.hazelcast.core.IAtomicReference;
-import com.hazelcast.core.ICountDownLatch;
 import com.hazelcast.core.IExecutorService;
-import com.hazelcast.core.IList;
-import com.hazelcast.core.ILock;
-import com.hazelcast.core.IMap;
-import com.hazelcast.core.IQueue;
-import com.hazelcast.core.ISemaphore;
-import com.hazelcast.core.ISet;
-import com.hazelcast.core.ITopic;
-import com.hazelcast.core.MultiMap;
 import com.hazelcast.executor.impl.DistributedExecutorService;
+import com.hazelcast.map.IMap;
 import com.hazelcast.map.impl.MapService;
+import com.hazelcast.multimap.MultiMap;
 import com.hazelcast.multimap.impl.MultiMapService;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapProxy;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
+import com.hazelcast.topic.ITopic;
 import com.hazelcast.topic.impl.TopicService;
 import com.hazelcast.topic.impl.reliable.ReliableTopicProxy;
 import com.hazelcast.topic.impl.reliable.ReliableTopicService;
 
 import java.util.concurrent.ConcurrentMap;
 
-import static com.hazelcast.util.MapUtil.createConcurrentHashMap;
+import static com.hazelcast.internal.util.MapUtil.createConcurrentHashMap;
 
 /**
  * A helper class which contains various types of {@link HazelcastMBean} factory methods and metadata.
@@ -119,74 +109,6 @@ final class MBeans {
             }
         },
 
-        ATOMIC_LONG {
-            @Override
-            public HazelcastMBean createNew(DistributedObject distributedObject, ManagementService managementService) {
-                return new AtomicLongMBean((IAtomicLong) distributedObject, managementService);
-            }
-
-            @Override
-            public String getObjectType() {
-                return "IAtomicLong";
-            }
-
-            @Override
-            public String getServiceName() {
-                return AtomicLongService.SERVICE_NAME;
-            }
-        },
-
-        ATOMIC_REFERENCE {
-            @Override
-            public HazelcastMBean createNew(DistributedObject distributedObject, ManagementService managementService) {
-                return new AtomicReferenceMBean((IAtomicReference) distributedObject, managementService);
-            }
-
-            @Override
-            public String getObjectType() {
-                return "IAtomicReference";
-            }
-
-            @Override
-            public String getServiceName() {
-                return AtomicReferenceService.SERVICE_NAME;
-            }
-        },
-
-        COUNT_DOWN_LATCH {
-            @Override
-            public HazelcastMBean createNew(DistributedObject distributedObject, ManagementService managementService) {
-                return new CountDownLatchMBean((ICountDownLatch) distributedObject, managementService);
-            }
-
-            @Override
-            public String getObjectType() {
-                return "ICountDownLatch";
-            }
-
-            @Override
-            public String getServiceName() {
-                return CountDownLatchService.SERVICE_NAME;
-            }
-        },
-
-        LOCK {
-            @Override
-            public HazelcastMBean createNew(DistributedObject distributedObject, ManagementService managementService) {
-                return new LockMBean((ILock) distributedObject, managementService);
-            }
-
-            @Override
-            public String getObjectType() {
-                return "ILock";
-            }
-
-            @Override
-            public String getServiceName() {
-                return LockService.SERVICE_NAME;
-            }
-        },
-
         MULTI_MAP {
             @Override
             public HazelcastMBean createNew(DistributedObject distributedObject, ManagementService managementService) {
@@ -218,23 +140,6 @@ final class MBeans {
             @Override
             public String getServiceName() {
                 return QueueService.SERVICE_NAME;
-            }
-        },
-
-        SEMAPHORE {
-            @Override
-            public HazelcastMBean createNew(DistributedObject distributedObject, ManagementService managementService) {
-                return new SemaphoreMBean((ISemaphore) distributedObject, managementService);
-            }
-
-            @Override
-            public String getObjectType() {
-                return "ISemaphore";
-            }
-
-            @Override
-            public String getServiceName() {
-                return SemaphoreService.SERVICE_NAME;
             }
         },
 

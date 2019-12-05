@@ -19,9 +19,9 @@ package com.hazelcast.spi.impl.operationservice.impl;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.spi.InternalCompletableFuture;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.OperationService;
+import com.hazelcast.spi.impl.InternalCompletableFuture;
+import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.spi.impl.operationservice.OperationService;
 import com.hazelcast.spi.impl.operationexecutor.impl.OperationExecutorImpl;
 import com.hazelcast.test.HazelcastTestSupport;
 
@@ -45,10 +45,10 @@ abstract class Invocation_NestedAbstractTest extends HazelcastTestSupport {
         public Object result;
 
         @SuppressWarnings("unused")
-        public OuterOperation() {
+        OuterOperation() {
         }
 
-        public OuterOperation(Operation innerOperation, int partitionId) {
+        OuterOperation(Operation innerOperation, int partitionId) {
             this.innerOperation = innerOperation;
             setPartitionId(partitionId);
         }
@@ -89,10 +89,10 @@ abstract class Invocation_NestedAbstractTest extends HazelcastTestSupport {
         public Object value;
 
         @SuppressWarnings("unused")
-        public InnerOperation() {
+        InnerOperation() {
         }
 
-        public InnerOperation(Object value, int partitionId) {
+        InnerOperation(Object value, int partitionId) {
             this.value = value;
 
             setPartitionId(partitionId);

@@ -20,10 +20,12 @@ import com.hazelcast.aggregation.Aggregator;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.query.impl.Numbers;
 
 import java.io.IOException;
+import java.util.Objects;
 
-public final class IntegerAverageAggregator<I> extends AbstractAggregator<I, Integer, Double>
+public final class IntegerAverageAggregator<I> extends AbstractAggregator<I, Number, Double>
         implements IdentifiedDataSerializable {
 
     private long sum;
@@ -39,9 +41,9 @@ public final class IntegerAverageAggregator<I> extends AbstractAggregator<I, Int
     }
 
     @Override
-    public void accumulateExtracted(I entry, Integer value) {
+    public void accumulateExtracted(I entry, Number value) {
         count++;
-        sum += value;
+        sum += Numbers.asIntExactly(value);
     }
 
     @Override
@@ -65,7 +67,7 @@ public final class IntegerAverageAggregator<I> extends AbstractAggregator<I, Int
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return AggregatorDataSerializerHook.INT_AVG;
     }
 
@@ -83,4 +85,23 @@ public final class IntegerAverageAggregator<I> extends AbstractAggregator<I, Int
         this.count = in.readLong();
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        if (!super.equals(o)) {
+            return false;
+        }
+        IntegerAverageAggregator<?> that = (IntegerAverageAggregator<?>) o;
+        return sum == that.sum && count == that.count;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), sum, count);
+    }
 }

@@ -17,11 +17,11 @@
 package com.hazelcast.internal.util;
 
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.OperationResponseHandler;
+import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.spi.impl.operationservice.OperationResponseHandler;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
-import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.spi.properties.ClusterProperty;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -35,13 +35,13 @@ import static java.util.logging.Level.WARNING;
  * not have an {@link OperationResponseHandler} set and it must return
  * response.
  * The retry will use the configured
- * {@link GroupProperty#INVOCATION_MAX_RETRY_COUNT} and
- * {@link GroupProperty#INVOCATION_RETRY_PAUSE}.
+ * {@link ClusterProperty#INVOCATION_MAX_RETRY_COUNT} and
+ * {@link ClusterProperty#INVOCATION_RETRY_PAUSE}.
  *
  * @see Operation#returnsResponse()
  * @see Operation#getOperationResponseHandler()
- * @see GroupProperty#INVOCATION_MAX_RETRY_COUNT
- * @see GroupProperty#INVOCATION_RETRY_PAUSE
+ * @see ClusterProperty#INVOCATION_MAX_RETRY_COUNT
+ * @see ClusterProperty#INVOCATION_RETRY_PAUSE
  * @see InvocationUtil#executeLocallyWithRetry(NodeEngine, Operation)
  */
 public class LocalRetryableExecution implements Runnable, OperationResponseHandler {
@@ -59,8 +59,8 @@ public class LocalRetryableExecution implements Runnable, OperationResponseHandl
     LocalRetryableExecution(NodeEngine nodeEngine, Operation op) {
         this.nodeEngine = nodeEngine;
         this.logger = nodeEngine.getLogger(LocalRetryableExecution.class);
-        this.invocationMaxRetryCount = nodeEngine.getProperties().getInteger(GroupProperty.INVOCATION_MAX_RETRY_COUNT);
-        this.invocationRetryPauseMillis = nodeEngine.getProperties().getMillis(GroupProperty.INVOCATION_RETRY_PAUSE);
+        this.invocationMaxRetryCount = nodeEngine.getProperties().getInteger(ClusterProperty.INVOCATION_MAX_RETRY_COUNT);
+        this.invocationRetryPauseMillis = nodeEngine.getProperties().getMillis(ClusterProperty.INVOCATION_RETRY_PAUSE);
         this.op = op;
         op.setOperationResponseHandler(this);
     }

@@ -21,12 +21,12 @@ import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.RingbufferConfig;
 import com.hazelcast.config.RingbufferStoreConfig;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.RingbufferStore;
+import com.hazelcast.ringbuffer.RingbufferStore;
 import com.hazelcast.ringbuffer.Ringbuffer;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Before;
@@ -37,11 +37,11 @@ import org.junit.runner.RunWith;
 import java.io.File;
 import java.util.Random;
 
-import static com.hazelcast.nio.IOUtil.deleteQuietly;
+import static com.hazelcast.internal.nio.IOUtil.deleteQuietly;
 import static com.hazelcast.test.TestStringUtils.fileAsText;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class StoreLatencyPluginRingbufferIntegrationTest extends HazelcastTestSupport {
 
     private HazelcastInstance hz;

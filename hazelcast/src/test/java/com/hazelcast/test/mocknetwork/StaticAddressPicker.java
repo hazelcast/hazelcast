@@ -17,9 +17,13 @@
 package com.hazelcast.test.mocknetwork;
 
 import com.hazelcast.instance.AddressPicker;
-import com.hazelcast.nio.Address;
+import com.hazelcast.instance.EndpointQualifier;
+import com.hazelcast.cluster.Address;
 
 import java.nio.channels.ServerSocketChannel;
+import java.util.Map;
+
+import static java.util.Collections.singletonMap;
 
 class StaticAddressPicker implements AddressPicker {
 
@@ -32,15 +36,29 @@ class StaticAddressPicker implements AddressPicker {
     public void pickAddress() {
     }
 
-    public Address getBindAddress() {
+    @Override
+    public Address getBindAddress(EndpointQualifier qualifier) {
         return thisAddress;
     }
 
-    public Address getPublicAddress() {
+    @Override
+    public Address getPublicAddress(EndpointQualifier qualifier) {
         return thisAddress;
     }
 
-    public ServerSocketChannel getServerSocketChannel() {
+    @Override
+    public Map<EndpointQualifier, Address> getPublicAddressMap() {
+        return singletonMap(EndpointQualifier.MEMBER, thisAddress);
+    }
+
+    @Override
+    public ServerSocketChannel getServerSocketChannel(EndpointQualifier qualifier) {
         return null;
     }
+
+    @Override
+    public Map<EndpointQualifier, ServerSocketChannel> getServerSocketChannels() {
+        return null;
+    }
+
 }

@@ -16,7 +16,7 @@
 
 package com.hazelcast.map.impl.query;
 
-import com.hazelcast.util.HashUtil;
+import com.hazelcast.internal.util.HashUtil;
 
 import java.io.Serializable;
 import java.util.UUID;

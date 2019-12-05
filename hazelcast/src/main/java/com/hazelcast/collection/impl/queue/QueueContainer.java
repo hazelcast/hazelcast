@@ -21,15 +21,15 @@ import com.hazelcast.config.QueueConfig;
 import com.hazelcast.config.QueueStoreConfig;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.monitor.impl.LocalQueueStatsImpl;
+import com.hazelcast.internal.monitor.impl.LocalQueueStatsImpl;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.serialization.SerializationService;
+import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.transaction.TransactionException;
-import com.hazelcast.util.Clock;
+import com.hazelcast.internal.util.Clock;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -44,12 +44,13 @@ import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.collection.impl.collection.CollectionContainer.ID_PROMOTION_OFFSET;
-import static com.hazelcast.util.MapUtil.createHashMap;
-import static com.hazelcast.util.MapUtil.createLinkedHashMap;
-import static com.hazelcast.util.SetUtil.createHashSet;
+import static com.hazelcast.internal.util.MapUtil.createHashMap;
+import static com.hazelcast.internal.util.MapUtil.createLinkedHashMap;
+import static com.hazelcast.internal.util.SetUtil.createHashSet;
 
 /**
  * The {@code QueueContainer} contains the actual queue and provides functionalities such as :
@@ -155,7 +156,7 @@ public class QueueContainer implements IdentifiedDataSerializable {
         return true;
     }
 
-    public void txnEnsureBackupReserve(long itemId, String transactionId, boolean pollOperation) {
+    public void txnEnsureBackupReserve(long itemId, UUID transactionId, boolean pollOperation) {
         if (txMap.get(itemId) == null) {
             if (pollOperation) {
                 txnPollBackupReserve(itemId, transactionId);
@@ -170,7 +171,7 @@ public class QueueContainer implements IdentifiedDataSerializable {
     /**
      * Tries to obtain an item by removing the head of the
      * queue or removing an item previously reserved by invoking
-     * {@link #txnOfferReserve(String)} with {@code reservedOfferId}.
+     * {@link #txnOfferReserve(UUID)} with {@code reservedOfferId}.
      * <p>
      * If the queue item does not have data in-memory it will load the
      * data from the queue store if the queue store is configured and enabled.
@@ -179,7 +180,7 @@ public class QueueContainer implements IdentifiedDataSerializable {
      * @param transactionId   the transaction ID for which this poll is invoked
      * @return the head of the queue or a reserved item with the {@code reservedOfferId} if there is any
      */
-    public QueueItem txnPollReserve(long reservedOfferId, String transactionId) {
+    public QueueItem txnPollReserve(long reservedOfferId, UUID transactionId) {
         QueueItem item = getItemQueue().peek();
         if (item == null) {
             TxQueueItem txItem = txMap.remove(reservedOfferId);
@@ -210,10 +211,10 @@ public class QueueContainer implements IdentifiedDataSerializable {
      *
      * @param itemId        the ID of the reserved item to be polled
      * @param transactionId the transaction ID
-     * @see #txnPollReserve(long, String)
+     * @see #txnPollReserve(long, UUID)
      * @see com.hazelcast.collection.impl.txnqueue.operations.TxnReservePollOperation
      */
-    public void txnPollBackupReserve(long itemId, String transactionId) {
+    public void txnPollBackupReserve(long itemId, UUID transactionId) {
         QueueItem item = getBackupMap().remove(itemId);
         if (item != null) {
             txMap.put(itemId, new TxQueueItem(item).setPollOperation(true).setTransactionId(transactionId));
@@ -231,7 +232,7 @@ public class QueueContainer implements IdentifiedDataSerializable {
     }
 
     /**
-     * Commits the effects of the {@link #txnPollReserve(long, String)}}. Also deletes the item data from the queue
+     * Commits the effects of the {@link #txnPollReserve(long, UUID)}}. Also deletes the item data from the queue
      * data store if it is configured and enabled.
      *
      * @param itemId the ID of the item which was polled inside a transaction
@@ -255,7 +256,7 @@ public class QueueContainer implements IdentifiedDataSerializable {
     }
 
     /**
-     * Rolls back the effects of the {@link #txnPollReserve(long, String)}.
+     * Rolls back the effects of the {@link #txnPollReserve(long, UUID)}.
      * The {@code backup} parameter defines whether this item was stored
      * on a backup queue or a primary queue.
      * It will return the item to the queue or backup map if it wasn't
@@ -303,7 +304,7 @@ public class QueueContainer implements IdentifiedDataSerializable {
      * @param transactionId the ID of the transaction offering this item
      * @return the ID of the reserved item
      */
-    public long txnOfferReserve(String transactionId) {
+    public long txnOfferReserve(UUID transactionId) {
         long itemId = nextId();
         txnOfferReserveInternal(itemId, transactionId);
         return itemId;
@@ -316,7 +317,7 @@ public class QueueContainer implements IdentifiedDataSerializable {
      * @param transactionId the ID of the transaction offering this item
      * @param itemId        the ID of the item being reserved
      */
-    public void txnOfferBackupReserve(long itemId, String transactionId) {
+    public void txnOfferBackupReserve(long itemId, UUID transactionId) {
         TxQueueItem o = txnOfferReserveInternal(itemId, transactionId);
         if (o != null) {
             logger.severe("txnOfferBackupReserve operation-> Item exists already at txMap for itemId: " + itemId);
@@ -326,7 +327,7 @@ public class QueueContainer implements IdentifiedDataSerializable {
     /**
      * Add a reservation for an item with {@code itemId} offered in transaction with {@code transactionId}
      */
-    private TxQueueItem txnOfferReserveInternal(long itemId, String transactionId) {
+    private TxQueueItem txnOfferReserveInternal(long itemId, UUID transactionId) {
         TxQueueItem item = new TxQueueItem(this, itemId, null)
                 .setTransactionId(transactionId)
                 .setPollOperation(false);
@@ -410,7 +411,7 @@ public class QueueContainer implements IdentifiedDataSerializable {
      * @return the head of the queue or a reserved item associated with the {@code offerId} if the queue is empty
      * @throws HazelcastException if there is an exception while loading the data from the queue store
      */
-    public QueueItem txnPeek(long offerId, String transactionId) {
+    public QueueItem txnPeek(long offerId, UUID transactionId) {
         QueueItem item = getItemQueue().peek();
         if (item == null) {
             if (offerId == -1) {
@@ -682,8 +683,10 @@ public class QueueContainer implements IdentifiedDataSerializable {
     }
 
     /**
-     * iterates all items, checks equality with data
+     * Iterates all items, checks equality with data
      * This method does not trigger store load.
+     * @param data the data to remove.
+     * @return the item ID of the removed item or {@code -1} if no matching item was found.
      */
     public long remove(Data data) {
         Iterator<QueueItem> iterator = getItemQueue().iterator();
@@ -905,6 +908,13 @@ public class QueueContainer implements IdentifiedDataSerializable {
                 backupMap.clear();
                 backupMap = null;
             }
+            if (!txMap.isEmpty()) {
+                long maxItemId = Long.MIN_VALUE;
+                for (TxQueueItem item : txMap.values()) {
+                    maxItemId = Math.max(maxItemId, item.itemId);
+                }
+                setId(maxItemId + ID_PROMOTION_OFFSET);
+            }
         }
         return itemQueue;
     }
@@ -1023,7 +1033,7 @@ public class QueueContainer implements IdentifiedDataSerializable {
         return getItemQueue().isEmpty() && txMap.isEmpty();
     }
 
-    public void rollbackTransaction(String transactionId) {
+    public void rollbackTransaction(UUID transactionId) {
         Iterator<TxQueueItem> iterator = txMap.values().iterator();
 
         while (iterator.hasNext()) {
@@ -1088,7 +1098,7 @@ public class QueueContainer implements IdentifiedDataSerializable {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return QueueDataSerializerHook.QUEUE_CONTAINER;
     }
 

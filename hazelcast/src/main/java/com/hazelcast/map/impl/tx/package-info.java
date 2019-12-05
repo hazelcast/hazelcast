@@ -15,6 +15,6 @@
  */
 
 /**
- * Contains implementation classes for {@link com.hazelcast.core.TransactionalMap}
+ * Contains implementation classes for {@link com.hazelcast.transaction.TransactionalMap}
  */
 package com.hazelcast.map.impl.tx;

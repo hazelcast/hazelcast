@@ -17,11 +17,11 @@
 package com.hazelcast.replicatedmap.impl.operation;
 
 import com.hazelcast.cluster.memberselector.MemberSelectors;
-import com.hazelcast.core.Member;
-import com.hazelcast.nio.Address;
+import com.hazelcast.cluster.Member;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.OperationService;
+import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.spi.impl.operationservice.OperationService;
 import com.hazelcast.spi.impl.operationservice.impl.responses.NormalResponse;
 
 import java.util.ArrayList;
@@ -49,7 +49,7 @@ public abstract class AbstractReplicatedMapOperation extends AbstractNamedSerial
     protected Collection<Address> getMemberAddresses() {
         Address thisAddress = getNodeEngine().getThisAddress();
         Collection<Member> members = getNodeEngine().getClusterService().getMembers(MemberSelectors.DATA_MEMBER_SELECTOR);
-        Collection<Address> addresses = new ArrayList<Address>();
+        Collection<Address> addresses = new ArrayList<>();
         for (Member member : members) {
             Address address = member.getAddress();
             if (address.equals(getCallerAddress()) || address.equals(thisAddress)) {

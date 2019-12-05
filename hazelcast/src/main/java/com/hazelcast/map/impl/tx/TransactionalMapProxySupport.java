@@ -17,26 +17,27 @@
 package com.hazelcast.map.impl.tx;
 
 import com.hazelcast.config.MapConfig;
-import com.hazelcast.core.PartitioningStrategy;
 import com.hazelcast.internal.nearcache.NearCache;
 import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.internal.util.ThreadUtil;
 import com.hazelcast.internal.util.comparators.ValueComparator;
+import com.hazelcast.map.impl.InterceptorRegistry;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.nearcache.MapNearCacheManager;
 import com.hazelcast.map.impl.operation.MapOperation;
 import com.hazelcast.map.impl.operation.MapOperationProvider;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.OperationFactory;
-import com.hazelcast.spi.OperationService;
-import com.hazelcast.spi.TransactionalDistributedObject;
-import com.hazelcast.spi.partition.IPartitionService;
+import com.hazelcast.partition.PartitioningStrategy;
+import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.spi.impl.TransactionalDistributedObject;
+import com.hazelcast.spi.impl.operationservice.OperationFactory;
+import com.hazelcast.spi.impl.operationservice.OperationService;
+import com.hazelcast.internal.partition.IPartitionService;
 import com.hazelcast.transaction.TransactionNotActiveException;
 import com.hazelcast.transaction.TransactionOptions.TransactionType;
 import com.hazelcast.transaction.TransactionTimedOutException;
 import com.hazelcast.transaction.impl.Transaction;
-import com.hazelcast.util.ThreadUtil;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -45,15 +46,16 @@ import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.internal.nearcache.NearCache.CACHED_AS_NULL;
 import static com.hazelcast.internal.nearcache.NearCache.NOT_CACHED;
+import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
-import static com.hazelcast.util.ExceptionUtil.rethrow;
+import static com.hazelcast.map.impl.record.Record.UNSET;
 
 /**
  * Base class contains proxy helper methods for {@link com.hazelcast.map.impl.tx.TransactionalMapProxy}
  */
 public abstract class TransactionalMapProxySupport extends TransactionalDistributedObject<MapService> {
 
-    protected final Map<Data, VersionedValue> valueMap = new HashMap<Data, VersionedValue>();
+    protected final Map<Data, VersionedValue> valueMap = new HashMap<>();
 
     protected final String name;
     protected final MapServiceContext mapServiceContext;
@@ -68,15 +70,17 @@ public abstract class TransactionalMapProxySupport extends TransactionalDistribu
     private final boolean nearCacheEnabled;
     private final ValueComparator valueComparator;
 
-    TransactionalMapProxySupport(String name, MapService mapService, NodeEngine nodeEngine, Transaction transaction) {
+    TransactionalMapProxySupport(String name, MapService mapService,
+                                 NodeEngine nodeEngine, Transaction transaction) {
         super(nodeEngine, mapService, transaction);
 
         this.name = name;
         this.mapServiceContext = mapService.getMapServiceContext();
         this.mapNearCacheManager = mapServiceContext.getMapNearCacheManager();
         MapConfig mapConfig = nodeEngine.getConfig().findMapConfig(name);
-        this.operationProvider = mapServiceContext.getMapOperationProvider(mapConfig);
-        this.partitionStrategy = mapServiceContext.getPartitioningStrategy(name, mapConfig.getPartitioningStrategyConfig());
+        this.operationProvider = mapServiceContext.getMapOperationProvider(name);
+        this.partitionStrategy = mapServiceContext.getPartitioningStrategy(name,
+                mapConfig.getPartitioningStrategyConfig());
         this.partitionService = nodeEngine.getPartitionService();
         this.operationService = nodeEngine.getOperationService();
         this.ss = ((InternalSerializationService) nodeEngine.getSerializationService());
@@ -183,7 +187,8 @@ public abstract class TransactionalMapProxySupport extends TransactionalDistribu
             return null;
         }
 
-        mapServiceContext.interceptAfterGet(name, value);
+        InterceptorRegistry interceptorRegistry = mapServiceContext.getMapContainer(name).getInterceptorRegistry();
+        mapServiceContext.interceptAfterGet(interceptorRegistry, value);
         return deserializeValue ? ss.toObject(value) : value;
     }
 
@@ -211,9 +216,11 @@ public abstract class TransactionalMapProxySupport extends TransactionalDistribu
     Data putInternal(Data key, Data value, long ttl, TimeUnit timeUnit) {
         VersionedValue versionedValue = lockAndGet(key, tx.getTimeoutMillis());
         long timeInMillis = getTimeInMillis(ttl, timeUnit);
-        MapOperation operation = operationProvider.createTxnSetOperation(name, key, value, versionedValue.version,
-                timeInMillis);
-        tx.add(new MapTransactionLogRecord(name, key, getPartitionId(key), operation, versionedValue.version, tx.getOwnerUuid()));
+        MapOperation operation
+                = operationProvider.createTxnSetOperation(name, key, value,
+                versionedValue.version, timeInMillis);
+        tx.add(new MapTransactionLogRecord(name, key, getPartitionId(key), operation,
+                tx.getOwnerUuid(), tx.getTxnId()));
         return versionedValue.value;
     }
 
@@ -229,8 +236,10 @@ public abstract class TransactionalMapProxySupport extends TransactionalDistribu
             return versionedValue.value;
         }
 
-        MapOperation operation = operationProvider.createTxnSetOperation(name, key, value, versionedValue.version, -1);
-        tx.add(new MapTransactionLogRecord(name, key, getPartitionId(key), operation, versionedValue.version, tx.getOwnerUuid()));
+        MapOperation operation = operationProvider.createTxnSetOperation(name, key, value,
+                versionedValue.version, UNSET);
+        tx.add(new MapTransactionLogRecord(name, key, getPartitionId(key),
+                operation, tx.getOwnerUuid(), tx.getTxnId()));
         return versionedValue.value;
     }
 
@@ -245,8 +254,10 @@ public abstract class TransactionalMapProxySupport extends TransactionalDistribu
             addUnlockTransactionRecord(key, versionedValue.version);
             return null;
         }
-        MapOperation operation = operationProvider.createTxnSetOperation(name, key, value, versionedValue.version, -1);
-        tx.add(new MapTransactionLogRecord(name, key, getPartitionId(key), operation, versionedValue.version, tx.getOwnerUuid()));
+        MapOperation operation = operationProvider.createTxnSetOperation(name, key, value,
+                versionedValue.version, UNSET);
+        tx.add(new MapTransactionLogRecord(name, key, getPartitionId(key), operation,
+                tx.getOwnerUuid(), tx.getTxnId()));
         return versionedValue.value;
     }
 
@@ -261,8 +272,10 @@ public abstract class TransactionalMapProxySupport extends TransactionalDistribu
             addUnlockTransactionRecord(key, versionedValue.version);
             return false;
         }
-        MapOperation operation = operationProvider.createTxnSetOperation(name, key, newValue, versionedValue.version, -1);
-        tx.add(new MapTransactionLogRecord(name, key, getPartitionId(key), operation, versionedValue.version, tx.getOwnerUuid()));
+        MapOperation operation = operationProvider.createTxnSetOperation(name, key, newValue,
+                versionedValue.version, UNSET);
+        tx.add(new MapTransactionLogRecord(name, key, getPartitionId(key), operation,
+                tx.getOwnerUuid(), tx.getTxnId()));
         return true;
     }
 
@@ -270,7 +283,7 @@ public abstract class TransactionalMapProxySupport extends TransactionalDistribu
         VersionedValue versionedValue = lockAndGet(key, tx.getTimeoutMillis());
         tx.add(new MapTransactionLogRecord(name, key, getPartitionId(key),
                 operationProvider.createTxnDeleteOperation(name, key, versionedValue.version),
-                versionedValue.version, tx.getOwnerUuid()));
+                tx.getOwnerUuid(), tx.getTxnId()));
         return versionedValue.value;
     }
 
@@ -287,7 +300,7 @@ public abstract class TransactionalMapProxySupport extends TransactionalDistribu
         }
         tx.add(new MapTransactionLogRecord(name, key, getPartitionId(key),
                 operationProvider.createTxnDeleteOperation(name, key, versionedValue.version),
-                versionedValue.version, tx.getOwnerUuid()));
+                tx.getOwnerUuid(), tx.getTxnId()));
         return true;
     }
 
@@ -297,7 +310,8 @@ public abstract class TransactionalMapProxySupport extends TransactionalDistribu
             unlockOperation.setThreadId(ThreadUtil.getThreadId());
             unlockOperation.setOwnerUuid(tx.getOwnerUuid());
             int partitionId = partitionService.getPartitionId(key);
-            Future<VersionedValue> future = operationService.invokeOnPartition(SERVICE_NAME, unlockOperation, partitionId);
+            Future<VersionedValue> future
+                    = operationService.invokeOnPartition(SERVICE_NAME, unlockOperation, partitionId);
             future.get();
             valueMap.remove(key);
         } catch (Throwable t) {
@@ -307,7 +321,8 @@ public abstract class TransactionalMapProxySupport extends TransactionalDistribu
 
     private void addUnlockTransactionRecord(Data key, long version) {
         TxnUnlockOperation operation = new TxnUnlockOperation(name, key, version);
-        tx.add(new MapTransactionLogRecord(name, key, getPartitionId(key), operation, version, tx.getOwnerUuid()));
+        tx.add(new MapTransactionLogRecord(name, key, getPartitionId(key),
+                operation, tx.getOwnerUuid(), tx.getTxnId()));
     }
 
     /**

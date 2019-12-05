@@ -19,18 +19,19 @@ package com.hazelcast.internal.management;
 import com.hazelcast.internal.json.JsonArray;
 import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.internal.json.JsonValue;
-import com.hazelcast.monitor.MemberState;
-import com.hazelcast.monitor.impl.MemberStateImpl;
+import com.hazelcast.internal.monitor.MemberState;
+import com.hazelcast.internal.monitor.impl.MemberStateImpl;
+import com.hazelcast.json.internal.JsonSerializable;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import static com.hazelcast.util.JsonUtil.getArray;
-import static com.hazelcast.util.JsonUtil.getBoolean;
-import static com.hazelcast.util.JsonUtil.getLong;
-import static com.hazelcast.util.JsonUtil.getObject;
-import static com.hazelcast.util.JsonUtil.getString;
-import static com.hazelcast.util.StringUtil.LINE_SEPARATOR;
+import static com.hazelcast.internal.util.JsonUtil.getArray;
+import static com.hazelcast.internal.util.JsonUtil.getBoolean;
+import static com.hazelcast.internal.util.JsonUtil.getLong;
+import static com.hazelcast.internal.util.JsonUtil.getObject;
+import static com.hazelcast.internal.util.JsonUtil.getString;
+import static com.hazelcast.internal.util.StringUtil.LINE_SEPARATOR;
 
 /**
  * Container for a {@link MemberState} with a timestamp.

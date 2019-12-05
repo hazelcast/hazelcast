@@ -18,13 +18,15 @@ package com.hazelcast.client.impl.protocol.task.map;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.MapContainsKeyCodec;
-import com.hazelcast.instance.Node;
+import com.hazelcast.instance.impl.Node;
+import com.hazelcast.internal.nio.Connection;
+import com.hazelcast.map.impl.LocalMapStatsProvider;
+import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.operation.MapOperation;
-import com.hazelcast.nio.Connection;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MapPermission;
-import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.impl.operationservice.Operation;
 
 import java.security.Permission;
 
@@ -41,6 +43,17 @@ public class MapContainsKeyMessageTask
                 .createContainsKeyOperation(parameters.name, parameters.key);
         operation.setThreadId(parameters.threadId);
         return operation;
+    }
+
+    @Override
+    protected Object processResponseBeforeSending(Object response) {
+        MapService mapService = getService(MapService.SERVICE_NAME);
+        MapContainer mapContainer = mapService.getMapServiceContext().getMapContainer(parameters.name);
+        if (mapContainer.getMapConfig().isStatisticsEnabled()) {
+            LocalMapStatsProvider localMapStatsProvider = mapService.getMapServiceContext().getLocalMapStatsProvider();
+            localMapStatsProvider.getLocalMapStatsImpl(parameters.name).incrementOtherOperations();
+        }
+        return super.processResponseBeforeSending(response);
     }
 
     @Override

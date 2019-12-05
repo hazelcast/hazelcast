@@ -18,14 +18,14 @@ package com.hazelcast.cache.impl;
 
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.util.ExceptionUtil;
+import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.internal.util.ExceptionUtil;
 
 import java.util.Map;
 import java.util.Set;
 
-import static com.hazelcast.util.EmptyStatement.ignore;
-import static com.hazelcast.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.EmptyStatement.ignore;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 /**
  * Static util methods for {@linkplain com.hazelcast.cache.ICache} implementations.

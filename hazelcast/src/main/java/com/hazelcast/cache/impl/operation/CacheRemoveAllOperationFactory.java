@@ -17,27 +17,28 @@
 package com.hazelcast.cache.impl.operation;
 
 import com.hazelcast.cache.impl.CacheDataSerializerHook;
+import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.OperationFactory;
+import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.spi.impl.operationservice.OperationFactory;
 
 import java.io.IOException;
 import java.util.Set;
 
-import static com.hazelcast.util.SetUtil.createHashSet;
+import static com.hazelcast.internal.util.SetUtil.createHashSet;
 
 /**
- * {@link com.hazelcast.spi.OperationFactory} implementation for RemoveAll Operations.
+ * {@link OperationFactory} implementation for RemoveAll Operations.
  * <p>RemoveAll operation has two main purposes;
  * <ul>
  * <li>Remove all internal data
  * <li>Remove the entries of the provided keys.</li>
- * </ul></p>
+ * </ul>
  *
- * @see com.hazelcast.spi.OperationFactory
+ * @see OperationFactory
  */
 public class CacheRemoveAllOperationFactory implements OperationFactory, IdentifiedDataSerializable {
 
@@ -68,7 +69,7 @@ public class CacheRemoveAllOperationFactory implements OperationFactory, Identif
         out.writeInt(keys == null ? -1 : keys.size());
         if (keys != null) {
             for (Data key : keys) {
-                out.writeData(key);
+                IOUtil.writeData(out, key);
             }
         }
     }
@@ -83,7 +84,7 @@ public class CacheRemoveAllOperationFactory implements OperationFactory, Identif
         }
         keys = createHashSet(size);
         for (int i = 0; i < size; i++) {
-            keys.add(in.readData());
+            keys.add(IOUtil.readData(in));
         }
     }
 
@@ -93,7 +94,7 @@ public class CacheRemoveAllOperationFactory implements OperationFactory, Identif
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return CacheDataSerializerHook.REMOVE_ALL_FACTORY;
     }
 }

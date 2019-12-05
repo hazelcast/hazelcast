@@ -20,17 +20,17 @@ import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.LifecycleEvent;
 import com.hazelcast.core.LifecycleListener;
-import com.hazelcast.instance.HazelcastInstanceImpl;
-import com.hazelcast.instance.HazelcastInstanceProxy;
-import com.hazelcast.instance.Node;
-import com.hazelcast.instance.NodeState;
-import com.hazelcast.nio.Address;
+import com.hazelcast.instance.impl.HazelcastInstanceImpl;
+import com.hazelcast.instance.impl.HazelcastInstanceProxy;
+import com.hazelcast.instance.impl.Node;
+import com.hazelcast.instance.impl.NodeState;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.tcp.FirewallingConnectionManager;
+import com.hazelcast.internal.nio.tcp.FirewallingNetworkingService;
 import com.hazelcast.spi.merge.MergingValue;
 import com.hazelcast.spi.merge.SplitBrainMergePolicy;
-import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.spi.properties.ClusterProperty;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -43,6 +43,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 
+import static com.hazelcast.instance.EndpointQualifier.MEMBER;
 import static com.hazelcast.test.starter.ReflectionUtils.getFieldValueReflectively;
 import static com.hazelcast.test.starter.ReflectionUtils.isInstanceOf;
 import static org.junit.Assert.assertEquals;
@@ -154,8 +155,8 @@ public abstract class SplitBrainTestSupport extends HazelcastTestSupport {
      */
     protected Config config() {
         return smallInstanceConfig()
-                .setProperty(GroupProperty.MERGE_FIRST_RUN_DELAY_SECONDS.getName(), "5")
-                .setProperty(GroupProperty.MERGE_NEXT_RUN_DELAY_SECONDS.getName(), "5");
+                .setProperty(ClusterProperty.MERGE_FIRST_RUN_DELAY_SECONDS.getName(), "5")
+                .setProperty(ClusterProperty.MERGE_NEXT_RUN_DELAY_SECONDS.getName(), "5");
     }
 
     protected final Config getConfig() {
@@ -255,9 +256,11 @@ public abstract class SplitBrainTestSupport extends HazelcastTestSupport {
             if (isInstanceActive(hz)) {
                 addressesToBlock.add(getAddress(hz));
                 // block communication from these instances to the new address
-                FirewallingConnectionManager connectionManager = getFireWalledConnectionManager(hz);
-                connectionManager.blockNewConnection(newMemberAddress);
-                connectionManager.closeActiveConnection(newMemberAddress);
+                FirewallingNetworkingService networkingService = getFireWalledNetworkingService(hz);
+                FirewallingNetworkingService.FirewallingEndpointManager endpointManager =
+                        (FirewallingNetworkingService.FirewallingEndpointManager) networkingService.getEndpointManager(MEMBER);
+                endpointManager.blockNewConnection(newMemberAddress);
+                endpointManager.closeActiveConnection(newMemberAddress);
             }
         }
         // indicate that we need to unblacklist addresses from the joiner when split-brain will be healed
@@ -333,9 +336,15 @@ public abstract class SplitBrainTestSupport extends HazelcastTestSupport {
         applyOnBrains(UNBLACKLIST_MEMBERS);
     }
 
-    private static FirewallingConnectionManager getFireWalledConnectionManager(HazelcastInstance hz) {
+    private static FirewallingNetworkingService getFireWalledNetworkingService(HazelcastInstance hz) {
         Node node = getNode(hz);
-        return (FirewallingConnectionManager) node.getConnectionManager();
+        return (FirewallingNetworkingService) node.getNetworkingService();
+    }
+
+    private static FirewallingNetworkingService.FirewallingEndpointManager getFireWalledEndpointManager(HazelcastInstance hz) {
+        Node node = getNode(hz);
+        return (FirewallingNetworkingService.FirewallingEndpointManager)
+                ((FirewallingNetworkingService) node.getNetworkingService()).getEndpointManager(MEMBER);
     }
 
     protected Brains getBrains() {
@@ -385,8 +394,8 @@ public abstract class SplitBrainTestSupport extends HazelcastTestSupport {
     }
 
     public static void blockCommunicationBetween(HazelcastInstance h1, HazelcastInstance h2) {
-        FirewallingConnectionManager cm1 = getFireWalledConnectionManager(h1);
-        FirewallingConnectionManager cm2 = getFireWalledConnectionManager(h2);
+        FirewallingNetworkingService.FirewallingEndpointManager cm1 = getFireWalledEndpointManager(h1);
+        FirewallingNetworkingService.FirewallingEndpointManager cm2 = getFireWalledEndpointManager(h2);
         Node node1 = getNode(h1);
         Node node2 = getNode(h2);
         cm1.blockNewConnection(node2.getThisAddress());
@@ -396,8 +405,8 @@ public abstract class SplitBrainTestSupport extends HazelcastTestSupport {
     }
 
     public static void unblockCommunicationBetween(HazelcastInstance h1, HazelcastInstance h2) {
-        FirewallingConnectionManager cm1 = getFireWalledConnectionManager(h1);
-        FirewallingConnectionManager cm2 = getFireWalledConnectionManager(h2);
+        FirewallingNetworkingService.FirewallingEndpointManager cm1 = getFireWalledEndpointManager(h1);
+        FirewallingNetworkingService.FirewallingEndpointManager cm2 = getFireWalledEndpointManager(h2);
         Node node1 = getNode(h1);
         Node node2 = getNode(h2);
         cm1.unblock(node2.getThisAddress());

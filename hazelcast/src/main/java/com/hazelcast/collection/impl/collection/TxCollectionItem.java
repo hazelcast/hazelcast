@@ -16,15 +16,17 @@
 
 package com.hazelcast.collection.impl.collection;
 
+import com.hazelcast.internal.util.UUIDSerializationUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 
 import java.io.IOException;
+import java.util.UUID;
 
 public class TxCollectionItem extends CollectionItem {
 
-    private String transactionId;
+    private UUID transactionId;
     private boolean removeOperation;
 
     public TxCollectionItem() {
@@ -34,13 +36,13 @@ public class TxCollectionItem extends CollectionItem {
         super(item.itemId, item.value);
     }
 
-    public TxCollectionItem(long itemId, Data value, String transactionId, boolean removeOperation) {
+    public TxCollectionItem(long itemId, Data value, UUID transactionId, boolean removeOperation) {
         super(itemId, value);
         this.transactionId = transactionId;
         this.removeOperation = removeOperation;
     }
 
-    public String getTransactionId() {
+    public UUID getTransactionId() {
         return transactionId;
     }
 
@@ -48,7 +50,7 @@ public class TxCollectionItem extends CollectionItem {
         return removeOperation;
     }
 
-    public TxCollectionItem setTransactionId(String transactionId) {
+    public TxCollectionItem setTransactionId(UUID transactionId) {
         this.transactionId = transactionId;
         return this;
     }
@@ -59,21 +61,21 @@ public class TxCollectionItem extends CollectionItem {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return CollectionDataSerializerHook.TX_COLLECTION_ITEM;
     }
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         super.writeData(out);
-        out.writeUTF(transactionId);
+        UUIDSerializationUtil.writeUUID(out, transactionId);
         out.writeBoolean(removeOperation);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         super.readData(in);
-        transactionId = in.readUTF();
+        transactionId = UUIDSerializationUtil.readUUID(in);
         removeOperation = in.readBoolean();
     }
 

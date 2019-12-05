@@ -20,24 +20,23 @@ import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.NearCacheConfig;
-import com.hazelcast.core.IFunction;
 import com.hazelcast.internal.eviction.EvictionChecker;
 import com.hazelcast.internal.eviction.EvictionListener;
 import com.hazelcast.internal.eviction.impl.evaluator.EvictionPolicyEvaluator;
 import com.hazelcast.internal.eviction.impl.strategy.sampling.SamplingEvictionStrategy;
+import com.hazelcast.internal.monitor.impl.NearCacheStatsImpl;
 import com.hazelcast.internal.nearcache.NearCacheRecord;
 import com.hazelcast.internal.nearcache.NearCacheRecordStore;
 import com.hazelcast.internal.nearcache.impl.SampleableNearCacheRecordMap;
 import com.hazelcast.internal.nearcache.impl.invalidation.MetaDataContainer;
 import com.hazelcast.internal.nearcache.impl.invalidation.StaleReadDetector;
-import com.hazelcast.monitor.NearCacheStats;
-import com.hazelcast.monitor.impl.NearCacheStatsImpl;
+import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.util.Clock;
+import com.hazelcast.nearcache.NearCacheStats;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.SerializableByConvention;
-import com.hazelcast.spi.serialization.SerializationService;
-import com.hazelcast.util.Clock;
 
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
+import java.util.function.Function;
 
 import static com.hazelcast.internal.eviction.EvictionPolicyEvaluatorProvider.getEvictionPolicyEvaluator;
 import static com.hazelcast.internal.memory.GlobalMemoryAccessorRegistry.MEM;
@@ -48,7 +47,7 @@ import static com.hazelcast.internal.nearcache.NearCacheRecord.READ_PERMITTED;
 import static com.hazelcast.internal.nearcache.NearCacheRecord.RESERVED;
 import static com.hazelcast.internal.nearcache.NearCacheRecord.UPDATE_STARTED;
 import static com.hazelcast.internal.nearcache.impl.invalidation.StaleReadDetector.ALWAYS_FRESH;
-import static com.hazelcast.util.ExceptionUtil.rethrow;
+import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 import static java.lang.String.format;
 import static java.util.concurrent.atomic.AtomicLongFieldUpdater.newUpdater;
 
@@ -77,7 +76,8 @@ public abstract class AbstractNearCacheRecordStore<K, V, KS, R extends NearCache
      * we assume 32 bit JVM or compressed-references enabled 64 bit JVM
      * by ignoring compressed-references disable mode on 64 bit JVM.
      */
-    protected static final long REFERENCE_SIZE = MEM_AVAILABLE ? MEM.arrayIndexScale(Object[].class) : (Integer.SIZE / Byte.SIZE);
+    protected static final long REFERENCE_SIZE = MEM_AVAILABLE
+            ? MEM.arrayIndexScale(Object[].class) : (Integer.SIZE / Byte.SIZE);
     protected static final long MILLI_SECONDS_IN_A_SECOND = 1000;
 
     protected final long timeToLiveMillis;
@@ -97,7 +97,8 @@ public abstract class AbstractNearCacheRecordStore<K, V, KS, R extends NearCache
     protected volatile long reservationId;
     protected volatile StaleReadDetector staleReadDetector = ALWAYS_FRESH;
 
-    public AbstractNearCacheRecordStore(NearCacheConfig nearCacheConfig, SerializationService serializationService,
+    public AbstractNearCacheRecordStore(NearCacheConfig nearCacheConfig,
+                                        SerializationService serializationService,
                                         ClassLoader classLoader) {
         this(nearCacheConfig, new NearCacheStatsImpl(), serializationService, classLoader);
     }
@@ -178,6 +179,12 @@ public abstract class AbstractNearCacheRecordStore<K, V, KS, R extends NearCache
     }
 
     protected boolean isRecordExpired(R record) {
+        if (!canUpdateStats(record)) {
+            // A record can only be checked for expiry if its record state is
+            // READ_PERMITTED. We can't check reserved records for expiry.
+            return false;
+        }
+
         long now = Clock.currentTimeMillis();
         if (record.isExpiredAt(now)) {
             return true;
@@ -351,7 +358,6 @@ public abstract class AbstractNearCacheRecordStore<K, V, KS, R extends NearCache
         return null;
     }
 
-
     protected boolean canUpdateStats(R record) {
         return record != null && record.getRecordState() == READ_PERMITTED;
     }
@@ -446,7 +452,7 @@ public abstract class AbstractNearCacheRecordStore<K, V, KS, R extends NearCache
 
     private void onRecordAccess(R record) {
         record.setAccessTime(Clock.currentTimeMillis());
-        record.incrementAccessHit();
+        record.incrementHits();
     }
 
     private void initInvalidationMetaData(R record, K key, Data keyData) {
@@ -466,9 +472,8 @@ public abstract class AbstractNearCacheRecordStore<K, V, KS, R extends NearCache
         return RESERVATION_ID.incrementAndGet(this);
     }
 
-    @SerializableByConvention
     @SuppressWarnings("WeakerAccess")
-    protected class ReserveForUpdateFunction implements IFunction<K, R> {
+    protected class ReserveForUpdateFunction implements Function<K, R> {
 
         private final Data keyData;
 

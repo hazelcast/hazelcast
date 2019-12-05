@@ -22,12 +22,11 @@ import com.hazelcast.cache.impl.HazelcastServerCachingProvider;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.config.CacheConfiguration;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.ICompletableFuture;
-import com.hazelcast.query.TruePredicate;
+import com.hazelcast.query.Predicates;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
 import org.junit.Test;
@@ -46,7 +45,7 @@ import java.util.Set;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
-import static com.hazelcast.cache.impl.HazelcastServerCachingProvider.createCachingProvider;
+import static com.hazelcast.cache.CacheTestSupport.createServerCachingProvider;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singleton;
 import static org.junit.Assert.assertEquals;
@@ -55,7 +54,7 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class ICacheDataStructureAdapterTest extends HazelcastTestSupport {
 
     private ICache<Integer, String> cache;
@@ -68,7 +67,7 @@ public class ICacheDataStructureAdapterTest extends HazelcastTestSupport {
     public void setUp() {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
         HazelcastInstance hazelcastInstance = factory.newHazelcastInstance();
-        HazelcastServerCachingProvider cachingProvider = createCachingProvider(hazelcastInstance);
+        HazelcastServerCachingProvider cachingProvider = createServerCachingProvider(hazelcastInstance);
         CacheManager cacheManager = cachingProvider.getCacheManager();
 
         CacheConfig<Integer, String> cacheConfig = new CacheConfig<Integer, String>();
@@ -105,7 +104,7 @@ public class ICacheDataStructureAdapterTest extends HazelcastTestSupport {
     public void testGetAsync() throws Exception {
         cache.put(42, "foobar");
 
-        Future<String> future = adapter.getAsync(42);
+        Future<String> future = adapter.getAsync(42).toCompletableFuture();
         String result = future.get();
         assertEquals("foobar", result);
     }
@@ -121,7 +120,7 @@ public class ICacheDataStructureAdapterTest extends HazelcastTestSupport {
     public void testSetAsync() throws Exception {
         cache.put(42, "oldValue");
 
-        ICompletableFuture<Void> future = adapter.setAsync(42, "newValue");
+        Future<Void> future = adapter.setAsync(42, "newValue").toCompletableFuture();
         Void oldValue = future.get();
 
         assertNull(oldValue);
@@ -136,7 +135,7 @@ public class ICacheDataStructureAdapterTest extends HazelcastTestSupport {
     @Test
     public void testSetAsyncWithExpiryPolicy() throws Exception {
         ExpiryPolicy expiryPolicy = new HazelcastExpiryPolicy(1000, 1, 1, TimeUnit.MILLISECONDS);
-        adapter.setAsync(42, "value", expiryPolicy).get();
+        adapter.setAsync(42, "value", expiryPolicy).toCompletableFuture().get();
         String value = cache.get(42);
         if (value != null) {
             assertEquals("value", value);
@@ -160,7 +159,7 @@ public class ICacheDataStructureAdapterTest extends HazelcastTestSupport {
     public void testPutAsync() throws Exception {
         cache.put(42, "oldValue");
 
-        ICompletableFuture<String> future = adapter.putAsync(42, "newValue");
+        Future<String> future = adapter.putAsync(42, "newValue").toCompletableFuture();
         String oldValue = future.get();
 
         assertEquals("oldValue", oldValue);
@@ -177,7 +176,7 @@ public class ICacheDataStructureAdapterTest extends HazelcastTestSupport {
         cache.put(42, "oldValue");
 
         ExpiryPolicy expiryPolicy = new HazelcastExpiryPolicy(1000, 1, 1, TimeUnit.MILLISECONDS);
-        ICompletableFuture<String> future = adapter.putAsync(42, "newValue", expiryPolicy);
+        Future<String> future = adapter.putAsync(42, "newValue", expiryPolicy).toCompletableFuture();
         String oldValue = future.get();
         String newValue = cache.get(42);
 
@@ -210,8 +209,8 @@ public class ICacheDataStructureAdapterTest extends HazelcastTestSupport {
     public void testPutIfAbsentAsync() throws Exception {
         cache.put(42, "oldValue");
 
-        assertTrue(adapter.putIfAbsentAsync(23, "newValue").get());
-        assertFalse(adapter.putIfAbsentAsync(42, "newValue").get());
+        assertTrue(adapter.putIfAbsentAsync(23, "newValue").toCompletableFuture().get());
+        assertFalse(adapter.putIfAbsentAsync(42, "newValue").toCompletableFuture().get());
 
         assertEquals("newValue", cache.get(23));
         assertEquals("oldValue", cache.get(42));
@@ -261,7 +260,7 @@ public class ICacheDataStructureAdapterTest extends HazelcastTestSupport {
         cache.put(23, "value-23");
         assertTrue(cache.containsKey(23));
 
-        String value = adapter.removeAsync(23).get();
+        String value = adapter.removeAsync(23).toCompletableFuture().get();
         assertEquals("value-23", value);
 
         assertFalse(cache.containsKey(23));
@@ -281,7 +280,7 @@ public class ICacheDataStructureAdapterTest extends HazelcastTestSupport {
         cache.put(23, "value-23");
         assertTrue(cache.containsKey(23));
 
-        adapter.deleteAsync(23).get();
+        adapter.deleteAsync(23).toCompletableFuture().get();
 
         assertFalse(cache.containsKey(23));
     }
@@ -321,7 +320,7 @@ public class ICacheDataStructureAdapterTest extends HazelcastTestSupport {
 
     @Test(expected = MethodNotAvailableException.class)
     public void testExecuteOnEntriesWithPredicate() {
-        adapter.executeOnEntries(new IMapReplaceEntryProcessor("value", "newValue"), TruePredicate.INSTANCE);
+        adapter.executeOnEntries(new IMapReplaceEntryProcessor("value", "newValue"), Predicates.alwaysTrue());
     }
 
     @Test

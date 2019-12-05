@@ -21,10 +21,13 @@ import com.hazelcast.query.impl.OrResultSet;
 import com.hazelcast.query.impl.QueryableEntry;
 
 import java.util.Collection;
+import java.util.Optional;
+
+import static com.hazelcast.query.impl.AbstractIndex.NULL;
 
 public final class PredicateUtils {
-
     private PredicateUtils() {
+        // No-op.
     }
 
     /**
@@ -33,7 +36,6 @@ public final class PredicateUtils {
      *
      * @param result result of a predicated search
      * @return size or estimated size
-     *
      * @see AndResultSet#estimatedSize()
      * @see OrResultSet#estimatedSize()
      */
@@ -44,5 +46,25 @@ public final class PredicateUtils {
             return ((OrResultSet) result).estimatedSize();
         }
         return result.size();
+    }
+
+    /**
+     * @return {@code true} if the given value is considered as a null-like by
+     * predicates and indexes, {@code false} otherwise.
+     */
+    public static boolean isNull(Comparable value) {
+        return value == null || value == NULL;
+    }
+
+    /**
+     * Unwraps the given potentially {@link Optional optional} value.
+     *
+     * @param value the potentially optional value to unwrap.
+     * @return an unwrapped value, if the given value is optional; the
+     * original given value, if it's not optional.
+     */
+    @SuppressWarnings("unchecked")
+    public static <T> T unwrapIfOptional(Object value) {
+        return value instanceof Optional ? ((Optional<T>) value).orElse(null) : (T) value;
     }
 }

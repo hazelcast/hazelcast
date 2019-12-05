@@ -17,7 +17,7 @@
 package com.hazelcast.internal.nearcache;
 
 import com.hazelcast.config.EvictionConfig;
-import com.hazelcast.config.EvictionConfig.MaxSizePolicy;
+import com.hazelcast.config.MaxSizePolicy;
 import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.NearCacheConfig;
@@ -49,10 +49,10 @@ import static com.hazelcast.internal.nearcache.NearCacheTestUtils.createNearCach
 import static com.hazelcast.internal.nearcache.NearCacheTestUtils.getNearCacheKey;
 import static com.hazelcast.internal.nearcache.NearCacheTestUtils.getRecordFromNearCache;
 import static com.hazelcast.internal.nearcache.NearCacheTestUtils.getValueFromNearCache;
-import static com.hazelcast.nio.IOUtil.copy;
-import static com.hazelcast.nio.IOUtil.deleteQuietly;
-import static com.hazelcast.nio.IOUtil.getFileFromResources;
-import static com.hazelcast.nio.IOUtil.touch;
+import static com.hazelcast.internal.nio.IOUtil.copy;
+import static com.hazelcast.internal.nio.IOUtil.deleteQuietly;
+import static com.hazelcast.internal.nio.IOUtil.getFileFromResources;
+import static com.hazelcast.internal.nio.IOUtil.touch;
 import static com.hazelcast.test.TimeConstants.MINUTE;
 import static java.lang.String.format;
 import static java.lang.Thread.currentThread;
@@ -370,7 +370,7 @@ public abstract class AbstractNearCachePreloaderTest<NK, NV> extends HazelcastTe
     protected final NearCacheConfig getNearCacheConfig(InMemoryFormat inMemoryFormat, boolean serializeKeys,
                                                        boolean invalidationOnChange, int maxSize, String preloaderDir) {
         EvictionConfig evictionConfig = new EvictionConfig()
-                .setMaximumSizePolicy(MaxSizePolicy.ENTRY_COUNT)
+                .setMaxSizePolicy(MaxSizePolicy.ENTRY_COUNT)
                 .setSize(maxSize)
                 .setEvictionPolicy(EvictionPolicy.LRU);
 

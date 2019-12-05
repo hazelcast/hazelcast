@@ -17,16 +17,16 @@
 package com.hazelcast.internal.jmx;
 
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.instance.Node;
-import com.hazelcast.nio.Address;
+import com.hazelcast.instance.impl.Node;
+import com.hazelcast.cluster.Address;
 
 import java.util.Map;
 
 import static com.hazelcast.internal.jmx.ManagementService.quote;
-import static com.hazelcast.util.MapUtil.createHashMap;
+import static com.hazelcast.internal.util.MapUtil.createHashMap;
 
 /**
- * Management bean for {@link com.hazelcast.instance.Node}
+ * Management bean for {@link Node}
  */
 @ManagedDescription("HazelcastInstance.Node")
 public class NodeMBean extends HazelcastMBean<Node> {

@@ -18,10 +18,9 @@ package com.hazelcast.query.impl.predicates;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.BinaryInterface;
+import com.hazelcast.internal.serialization.BinaryInterface;
 
 import java.io.IOException;
-import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -45,7 +44,7 @@ public class RegexPredicate extends AbstractPredicate {
     }
 
     @Override
-    protected boolean applyForSingleAttributeValue(Map.Entry mapEntry, Comparable attributeValue) {
+    protected boolean applyForSingleAttributeValue(Comparable attributeValue) {
         String stringAttributeValue = (String) attributeValue;
         if (stringAttributeValue == null) {
             return (regex == null);
@@ -78,7 +77,7 @@ public class RegexPredicate extends AbstractPredicate {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return PredicateDataSerializerHook.REGEX_PREDICATE;
     }
 

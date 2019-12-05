@@ -21,10 +21,9 @@
  ******************************************************************************/
 package com.hazelcast.internal.json;
 
-import com.hazelcast.nio.serialization.SerializableByConvention;
+import com.hazelcast.internal.serialization.SerializableByConvention;
 
 import java.io.IOException;
-import java.io.Reader;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
@@ -92,47 +91,6 @@ public class JsonArray extends JsonValue implements Iterable<JsonValue> {
     } else {
       values = new ArrayList<JsonValue>(array.values);
     }
-  }
-
-  /**
-   * Reads a JSON array from the given reader.
-   * <p>
-   * Characters are read in chunks and buffered internally, therefore wrapping an existing reader in
-   * an additional <code>BufferedReader</code> does <strong>not</strong> improve reading
-   * performance.
-   * </p>
-   *
-   * @param reader
-   *          the reader to read the JSON array from
-   * @return the JSON array that has been read
-   * @throws IOException
-   *           if an I/O error occurs in the reader
-   * @throws ParseException
-   *           if the input is not valid JSON
-   * @throws UnsupportedOperationException
-   *           if the input does not contain a JSON array
-   * @deprecated Use {@link Json#parse(Reader)}{@link JsonValue#asArray() .asArray()} instead
-   */
-  @Deprecated
-  public static JsonArray readFrom(Reader reader) throws IOException {
-    return JsonValue.readFrom(reader).asArray();
-  }
-
-  /**
-   * Reads a JSON array from the given string.
-   *
-   * @param string
-   *          the string that contains the JSON array
-   * @return the JSON array that has been read
-   * @throws ParseException
-   *           if the input is not valid JSON
-   * @throws UnsupportedOperationException
-   *           if the input does not contain a JSON array
-   * @deprecated Use {@link Json#parse(String)}{@link JsonValue#asArray() .asArray()} instead
-   */
-  @Deprecated
-  public static JsonArray readFrom(String string) {
-    return JsonValue.readFrom(string).asArray();
   }
 
   /**

@@ -18,17 +18,17 @@ package com.hazelcast.query.impl.predicates;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.BinaryInterface;
+import com.hazelcast.internal.serialization.BinaryInterface;
+import com.hazelcast.query.impl.Comparables;
 import com.hazelcast.query.impl.Index;
 import com.hazelcast.query.impl.QueryContext;
 import com.hazelcast.query.impl.QueryableEntry;
 
 import java.io.IOException;
 import java.util.Arrays;
-import java.util.Map;
 import java.util.Set;
 
-import static com.hazelcast.util.SetUtil.createHashSet;
+import static com.hazelcast.internal.util.SetUtil.createHashSet;
 
 /**
  * In Predicate
@@ -54,7 +54,7 @@ public class InPredicate extends AbstractIndexAwarePredicate {
     }
 
     @Override
-    protected boolean applyForSingleAttributeValue(Map.Entry entry, Comparable attributeValue) {
+    protected boolean applyForSingleAttributeValue(Comparable attributeValue) {
         if (attributeValue == null) {
             return false;
         }
@@ -63,16 +63,17 @@ public class InPredicate extends AbstractIndexAwarePredicate {
         if (set == null) {
             set = createHashSet(values.length);
             for (Comparable value : values) {
-                set.add(convert(attributeValue, value));
+                Comparable converted = convert(attributeValue, value);
+                set.add(Comparables.canonicalizeForHashLookup(converted));
             }
             convertedInValues = set;
         }
-        return set.contains(attributeValue);
+        return set.contains(Comparables.canonicalizeForHashLookup(attributeValue));
     }
 
     @Override
     public Set<QueryableEntry> filter(QueryContext queryContext) {
-        Index index = getIndex(queryContext);
+        Index index = matchIndex(queryContext, QueryContext.IndexMatchHint.PREFER_UNORDERED);
         if (index != null) {
             return index.getRecords(values);
         } else {
@@ -115,7 +116,7 @@ public class InPredicate extends AbstractIndexAwarePredicate {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return PredicateDataSerializerHook.IN_PREDICATE;
     }
 
@@ -150,4 +151,5 @@ public class InPredicate extends AbstractIndexAwarePredicate {
         result = 31 * result + (Arrays.hashCode(values));
         return result;
     }
+
 }

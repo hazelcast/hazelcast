@@ -17,15 +17,15 @@
 package com.hazelcast.internal.usercodedeployment;
 
 import com.hazelcast.config.UserCodeDeploymentConfig;
-import com.hazelcast.core.Member;
+import com.hazelcast.cluster.Member;
 import com.hazelcast.internal.usercodedeployment.impl.ClassData;
 import com.hazelcast.internal.usercodedeployment.impl.ClassDataProvider;
 import com.hazelcast.internal.usercodedeployment.impl.ClassLocator;
 import com.hazelcast.internal.usercodedeployment.impl.ClassSource;
 import com.hazelcast.internal.util.filter.Filter;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.spi.ManagedService;
-import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.internal.services.ManagedService;
+import com.hazelcast.spi.impl.NodeEngine;
 
 import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;

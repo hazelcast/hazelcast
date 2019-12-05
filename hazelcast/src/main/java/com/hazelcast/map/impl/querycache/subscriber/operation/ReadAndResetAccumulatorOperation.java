@@ -23,7 +23,7 @@ import com.hazelcast.map.impl.querycache.accumulator.Accumulator;
 import com.hazelcast.map.impl.querycache.event.sequence.Sequenced;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.spi.PartitionAwareOperation;
+import com.hazelcast.spi.impl.operationservice.PartitionAwareOperation;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -33,13 +33,14 @@ import java.util.Map;
 import static com.hazelcast.map.impl.querycache.utils.QueryCacheUtil.getAccumulators;
 
 /**
- * Reads all available items from the accumulator of the partition and resets it.
- * This operation is used to retrieve the events which are buffered during the initial
- * snapshot taking phase.
+ * Reads all available items from the accumulator of the partition
+ * and resets it. This operation is used to retrieve the events
+ * which are buffered during the initial snapshot taking phase.
  *
  * @see com.hazelcast.map.impl.querycache.subscriber.operation.PublisherCreateOperation
  */
-public class ReadAndResetAccumulatorOperation extends MapOperation implements PartitionAwareOperation {
+public class ReadAndResetAccumulatorOperation
+        extends MapOperation implements PartitionAwareOperation {
 
     private String cacheId;
     private List<Sequenced> eventDataList;
@@ -53,7 +54,7 @@ public class ReadAndResetAccumulatorOperation extends MapOperation implements Pa
     }
 
     @Override
-    public void run() throws Exception {
+    protected void runInternal() {
         QueryCacheContext context = getQueryCacheContext();
         Map<Integer, Accumulator> accumulators = getAccumulators(context, name, cacheId);
         Accumulator<Sequenced> accumulator = accumulators.get(getPartitionId());
@@ -61,7 +62,7 @@ public class ReadAndResetAccumulatorOperation extends MapOperation implements Pa
             return;
         }
 
-        eventDataList = new ArrayList<Sequenced>(accumulator.size());
+        eventDataList = new ArrayList<>(accumulator.size());
         for (Sequenced sequenced : accumulator) {
             eventDataList.add(sequenced);
         }
@@ -101,7 +102,7 @@ public class ReadAndResetAccumulatorOperation extends MapOperation implements Pa
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MapDataSerializerHook.READ_AND_RESET_ACCUMULATOR;
     }
 }

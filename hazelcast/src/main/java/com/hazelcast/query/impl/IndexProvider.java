@@ -16,8 +16,10 @@
 
 package com.hazelcast.query.impl;
 
+import com.hazelcast.config.IndexConfig;
 import com.hazelcast.internal.serialization.InternalSerializationService;
-import com.hazelcast.monitor.impl.PerIndexStats;
+import com.hazelcast.map.impl.StoreAdapter;
+import com.hazelcast.internal.monitor.impl.PerIndexStats;
 import com.hazelcast.query.impl.getters.Extractors;
 
 /**
@@ -27,22 +29,25 @@ import com.hazelcast.query.impl.getters.Extractors;
 public interface IndexProvider {
 
     /**
-     * Creates a new index for the given attribute name.
+     * Creates a new index with the given name.
      *
-     * @param attributeName the attribute name to create the index for.
-     * @param ordered       {@code true} to create an ordered index supporting
-     *                      fast range queries, {@code false} to create an
-     *                      unordered index supporting fast point queries only.
-     * @param extractors    the extractors to extract values of the given
-     *                      attribute.
-     * @param ss            the serialization service to perform the
-     *                      deserialization of entries while extracting values
-     *                      from them.
-     * @param copyBehavior  the desired index copy behaviour.
-     * @param stats         the index stats instance to report the statistics to.
+     * @param config       Index configuration.
+     * @param extractors   the extractors to extract values of the given
+     *                     name.
+     * @param ss           the serialization service to perform the
+     *                     deserialization of entries while extracting values
+     *                     from them.
+     * @param copyBehavior the desired index copy behaviour.
+     * @param stats        the index stats instance to report the statistics to.
+     * @param storeAdapter the reference to the store adapter. {@code null} if the index is global.
      * @return the created index instance.
      */
-    InternalIndex createIndex(String attributeName, boolean ordered, Extractors extractors, InternalSerializationService ss,
-                              IndexCopyBehavior copyBehavior, PerIndexStats stats);
-
+    InternalIndex createIndex(
+        IndexConfig config,
+        Extractors extractors,
+        InternalSerializationService ss,
+        IndexCopyBehavior copyBehavior,
+        PerIndexStats stats,
+        StoreAdapter storeAdapter
+    );
 }

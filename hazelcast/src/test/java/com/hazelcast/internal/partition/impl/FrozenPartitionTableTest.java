@@ -17,27 +17,28 @@
 package com.hazelcast.internal.partition.impl;
 
 import com.hazelcast.cluster.ClusterState;
+import com.hazelcast.cluster.Member;
+import com.hazelcast.cluster.impl.MemberImpl;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.Member;
-import com.hazelcast.instance.MemberImpl;
-import com.hazelcast.internal.cluster.impl.MembershipUpdateTest.StaticMemberNodeContext;
+import com.hazelcast.instance.StaticMemberNodeContext;
 import com.hazelcast.internal.partition.InternalPartition;
 import com.hazelcast.internal.partition.PartitionReplica;
 import com.hazelcast.internal.partition.PartitionTableView;
-import com.hazelcast.nio.Address;
-import com.hazelcast.spi.ExceptionAction;
-import com.hazelcast.spi.Operation;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.spi.exception.TargetNotMemberException;
 import com.hazelcast.spi.exception.WrongTargetException;
-import com.hazelcast.spi.impl.operationservice.InternalOperationService;
-import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.spi.impl.operationservice.ExceptionAction;
+import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
+import com.hazelcast.test.OverridePropertyRule;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -46,11 +47,13 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import static com.hazelcast.instance.HazelcastInstanceFactory.newHazelcastInstance;
-import static com.hazelcast.instance.TestUtil.terminateInstance;
+import static com.hazelcast.instance.impl.HazelcastInstanceFactory.newHazelcastInstance;
+import static com.hazelcast.instance.impl.TestUtil.terminateInstance;
 import static com.hazelcast.internal.cluster.impl.AdvancedClusterStateTest.changeClusterStateEventually;
+import static com.hazelcast.internal.cluster.impl.ClusterJoinManager.STALE_JOIN_PREVENTION_DURATION_PROP;
+import static com.hazelcast.test.OverridePropertyRule.clear;
 import static com.hazelcast.test.TestHazelcastInstanceFactory.initOrCreateConfig;
-import static com.hazelcast.util.UuidUtil.newUnsecureUuidString;
+import static com.hazelcast.internal.util.UuidUtil.newUnsecureUUID;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
@@ -58,8 +61,11 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.fail;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class FrozenPartitionTableTest extends HazelcastTestSupport {
+
+    @Rule
+    public final OverridePropertyRule ruleStaleJoinPreventionDuration = clear(STALE_JOIN_PREVENTION_DURATION_PROP);
 
     @Test
     public void partitionTable_isFrozen_whenNodesLeave_duringClusterStateIsFrozen() {
@@ -196,11 +202,10 @@ public class FrozenPartitionTableTest extends HazelcastTestSupport {
 
     @Test
     public void partitionTable_shouldBeFixed_whenMemberRestarts_usingNewUuid() {
-        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
-        Config configMaster = new Config();
-        configMaster.setProperty(GroupProperty.MAX_JOIN_SECONDS.getName(), "5");
+        ruleStaleJoinPreventionDuration.setOrClearProperty("5");
 
-        HazelcastInstance hz1 = factory.newHazelcastInstance(configMaster);
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
+        HazelcastInstance hz1 = factory.newHazelcastInstance();
         HazelcastInstance hz2 = factory.newHazelcastInstance();
         HazelcastInstance hz3 = factory.newHazelcastInstance();
 
@@ -215,20 +220,19 @@ public class FrozenPartitionTableTest extends HazelcastTestSupport {
         assertClusterSizeEventually(2, hz1, hz2);
 
         newHazelcastInstance(initOrCreateConfig(new Config()),
-                randomName(), new StaticMemberNodeContext(factory, newUnsecureUuidString(), member3.getAddress()));
+                randomName(), new StaticMemberNodeContext(factory, newUnsecureUUID(), member3.getAddress()));
         assertClusterSizeEventually(3, hz1, hz2);
 
-        InternalOperationService operationService = getOperationService(hz1);
+        OperationServiceImpl operationService = getOperationService(hz1);
         operationService.invokeOnPartition(null, new NonRetryablePartitionOperation(), member3PartitionId).join();
     }
 
     @Test
     public void partitionTable_shouldBeFixed_whenMemberRestarts_usingUuidOfAnotherMissingMember() {
-        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
-        Config configMaster = new Config();
-        configMaster.setProperty(GroupProperty.MAX_JOIN_SECONDS.getName(), "5");
+        ruleStaleJoinPreventionDuration.setOrClearProperty("5");
 
-        HazelcastInstance hz1 = factory.newHazelcastInstance(configMaster);
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
+        HazelcastInstance hz1 = factory.newHazelcastInstance();
         HazelcastInstance hz2 = factory.newHazelcastInstance();
         HazelcastInstance hz3 = factory.newHazelcastInstance();
         HazelcastInstance hz4 = factory.newHazelcastInstance();
@@ -250,11 +254,11 @@ public class FrozenPartitionTableTest extends HazelcastTestSupport {
                 randomName(), new StaticMemberNodeContext(factory, member4.getUuid(), member3.getAddress()));
         assertClusterSizeEventually(3, hz1, hz2);
 
-        InternalOperationService operationService = getOperationService(hz1);
+        OperationServiceImpl operationService = getOperationService(hz1);
         operationService.invokeOnPartition(null, new NonRetryablePartitionOperation(), member3PartitionId).join();
 
         try {
-            operationService.invokeOnPartition(null, new NonRetryablePartitionOperation(), member4PartitionId).join();
+            operationService.invokeOnPartition(null, new NonRetryablePartitionOperation(), member4PartitionId).joinInternal();
             fail("Invocation to missing member should have failed!");
         } catch (TargetNotMemberException ignored) {
         }

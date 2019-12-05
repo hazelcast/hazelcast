@@ -19,9 +19,9 @@ package com.hazelcast.internal.networking.nio;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.networking.ChannelErrorHandler;
 import com.hazelcast.internal.networking.ChannelHandler;
+import com.hazelcast.internal.networking.HandlerStatus;
 import com.hazelcast.internal.networking.InboundHandler;
 import com.hazelcast.internal.networking.InboundPipeline;
-import com.hazelcast.internal.networking.HandlerStatus;
 import com.hazelcast.internal.networking.nio.iobalancer.IOBalancer;
 import com.hazelcast.internal.util.counters.SwCounter;
 import com.hazelcast.logging.ILogger;
@@ -33,9 +33,9 @@ import java.nio.channels.Selector;
 import java.util.Arrays;
 
 import static com.hazelcast.internal.util.counters.SwCounter.newSwCounter;
-import static com.hazelcast.util.Preconditions.checkNotNull;
-import static com.hazelcast.util.collection.ArrayUtils.append;
-import static com.hazelcast.util.collection.ArrayUtils.replaceFirst;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.collection.ArrayUtils.append;
+import static com.hazelcast.internal.util.collection.ArrayUtils.replaceFirst;
 import static java.lang.System.currentTimeMillis;
 import static java.lang.Thread.currentThread;
 import static java.nio.channels.SelectionKey.OP_READ;
@@ -116,10 +116,6 @@ public final class NioInboundPipeline extends NioPipeline implements InboundPipe
             throw new EOFException("Remote socket closed!");
         }
 
-        //System.out.println(channel + " bytes read:" + readBytes);
-
-        // even if no bytes are read; it is still important that we process the pipeline.
-
         bytesRead.inc(readBytes);
 
         // currently the whole pipeline is retried when one of the handlers is dirty; but only the dirty handler
@@ -133,8 +129,8 @@ public final class NioInboundPipeline extends NioPipeline implements InboundPipe
             for (int handlerIndex = 0; handlerIndex < localHandlers.length; handlerIndex++) {
                 InboundHandler handler = localHandlers[handlerIndex];
                 HandlerStatus handlerStatus = handler.onRead();
-
                 if (localHandlers != handlers) {
+                    // change in the pipeline detected, restarting loop
                     handlerIndex = -1;
                     localHandlers = handlers;
                     continue;
@@ -157,9 +153,18 @@ public final class NioInboundPipeline extends NioPipeline implements InboundPipe
             }
         } while (!cleanPipeline);
 
+        if (migrationRequested()) {
+            startMigration();
+            return;
+        }
+
         if (unregisterRead) {
             unregisterOp(OP_READ);
         }
+    }
+
+    long bytesRead() {
+        return bytesRead.get();
     }
 
     @Override
@@ -266,7 +271,7 @@ public final class NioInboundPipeline extends NioPipeline implements InboundPipe
 
     @Override
     public NioInboundPipeline wakeup() {
-        addTaskAndWakeup(new NioPipelineTask(this) {
+        ownerAddTaskAndWakeup(new NioPipelineTask(this) {
             @Override
             protected void run0() throws IOException {
                 registerOp(OP_READ);

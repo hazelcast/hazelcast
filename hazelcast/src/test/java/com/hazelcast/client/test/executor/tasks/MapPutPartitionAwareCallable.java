@@ -17,16 +17,17 @@
 package com.hazelcast.client.test.executor.tasks;
 
 import com.hazelcast.client.test.IdentifiedFactory;
+import com.hazelcast.cluster.Member;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceAware;
-import com.hazelcast.core.IMap;
-import com.hazelcast.core.Member;
-import com.hazelcast.core.PartitionAware;
+import com.hazelcast.map.IMap;
+import com.hazelcast.partition.PartitionAware;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import java.io.IOException;
+import java.util.UUID;
 import java.util.concurrent.Callable;
 
 /**
@@ -58,7 +59,7 @@ public class MapPutPartitionAwareCallable<T, P>
             throws Exception {
         Member member = instance.getCluster().getLocalMember();
 
-        IMap<String, String> map = instance.getMap(mapName);
+        IMap<UUID, String> map = instance.getMap(mapName);
         map.put(member.getUuid(), member.getUuid() + "value");
 
         return (T) member.getUuid();
@@ -102,7 +103,7 @@ public class MapPutPartitionAwareCallable<T, P>
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return CLASS_ID;
     }
 }

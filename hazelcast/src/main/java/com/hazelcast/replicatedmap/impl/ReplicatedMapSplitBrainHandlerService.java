@@ -17,6 +17,7 @@
 package com.hazelcast.replicatedmap.impl;
 
 import com.hazelcast.config.ReplicatedMapConfig;
+import com.hazelcast.replicatedmap.ReplicatedMap;
 import com.hazelcast.replicatedmap.impl.record.ReplicatedRecordStore;
 import com.hazelcast.spi.impl.merge.AbstractSplitBrainHandlerService;
 import com.hazelcast.spi.merge.DiscardMergePolicy;
@@ -26,10 +27,10 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.concurrent.ConcurrentMap;
 
-import static com.hazelcast.util.ThreadUtil.assertRunningOnPartitionThread;
+import static com.hazelcast.internal.util.ThreadUtil.assertRunningOnPartitionThread;
 
 /**
- * Contains split-brain handling logic for {@link com.hazelcast.core.ReplicatedMap}.
+ * Contains split-brain handling logic for {@link ReplicatedMap}.
  */
 class ReplicatedMapSplitBrainHandlerService extends AbstractSplitBrainHandlerService<ReplicatedRecordStore> {
 
@@ -53,7 +54,7 @@ class ReplicatedMapSplitBrainHandlerService extends AbstractSplitBrainHandlerSer
     protected Iterator<ReplicatedRecordStore> storeIterator(int partitionId) {
         PartitionContainer partitionContainer = service.getPartitionContainer(partitionId);
         if (partitionContainer == null) {
-            return Collections.<ReplicatedRecordStore>emptyList().iterator();
+            return Collections.emptyIterator();
         }
         ConcurrentMap<String, ReplicatedRecordStore> stores = partitionContainer.getStores();
         return stores.values().iterator();

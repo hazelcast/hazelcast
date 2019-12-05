@@ -16,26 +16,26 @@
 
 package com.hazelcast.map.impl.querycache.subscriber;
 
-import com.hazelcast.core.Member;
+import com.hazelcast.cluster.Member;
 import com.hazelcast.map.impl.query.QueryResult;
 import com.hazelcast.map.impl.query.QueryResultRow;
 import com.hazelcast.map.impl.querycache.InvokerWrapper;
 import com.hazelcast.map.impl.querycache.accumulator.AccumulatorInfo;
 import com.hazelcast.map.impl.querycache.subscriber.operation.MadePublishableOperation;
 import com.hazelcast.map.impl.querycache.subscriber.operation.PublisherCreateOperation;
-import com.hazelcast.nio.Address;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.util.ExceptionUtil;
+import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.internal.util.ExceptionUtil;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.Future;
 
-import static com.hazelcast.util.CollectionUtil.isEmpty;
-import static com.hazelcast.util.FutureUtil.returnWithDeadline;
-import static com.hazelcast.util.FutureUtil.waitWithDeadline;
+import static com.hazelcast.internal.util.CollectionUtil.isEmpty;
+import static com.hazelcast.internal.util.FutureUtil.returnWithDeadline;
+import static com.hazelcast.internal.util.FutureUtil.waitWithDeadline;
 import static java.lang.String.format;
 import static java.util.concurrent.TimeUnit.MINUTES;
 
@@ -51,7 +51,7 @@ public class NodeQueryCacheEndToEndConstructor extends AbstractQueryCacheEndToEn
     }
 
     @Override
-    public void createPublisherAccumulator(AccumulatorInfo info) {
+    public void createPublisherAccumulator(AccumulatorInfo info, boolean urgent) {
         // create publishers and execute initial population query in one go
         Collection<QueryResult> results = createPublishersAndGetQueryResults(info);
         if (!isEmpty(results)) {
@@ -72,7 +72,8 @@ public class NodeQueryCacheEndToEndConstructor extends AbstractQueryCacheEndToEn
     private Collection<QueryResult> createPublishersAndGetQueryResults(AccumulatorInfo info) {
         InvokerWrapper invokerWrapper = context.getInvokerWrapper();
         Collection<Member> members = context.getMemberList();
-        List<Future<QueryResult>> futures = new ArrayList<Future<QueryResult>>(members.size());
+
+        List<Future<QueryResult>> futures = new ArrayList<>(members.size());
         for (Member member : members) {
             Address address = member.getAddress();
             Future future = invokerWrapper.invokeOnTarget(new PublisherCreateOperation(info), address);
@@ -85,7 +86,7 @@ public class NodeQueryCacheEndToEndConstructor extends AbstractQueryCacheEndToEn
         InvokerWrapper invokerWrapper = context.getInvokerWrapper();
 
         Collection<Member> memberList = context.getMemberList();
-        List<Future> futures = new ArrayList<Future>(memberList.size());
+        List<Future> futures = new ArrayList<>(memberList.size());
         for (Member member : memberList) {
             Operation operation = new MadePublishableOperation(mapName, cacheId);
             Future future = invokerWrapper.invokeOnTarget(operation, member.getAddress());

@@ -26,16 +26,16 @@ import com.hazelcast.config.RingbufferConfig;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.DataType;
+import com.hazelcast.internal.serialization.DataType;
 import com.hazelcast.ringbuffer.impl.ReadResultSetImpl;
 import com.hazelcast.ringbuffer.impl.RingbufferContainer;
 import com.hazelcast.ringbuffer.impl.RingbufferService;
 import com.hazelcast.ringbuffer.impl.RingbufferWaitNotifyKey;
-import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.ObjectNamespace;
-import com.hazelcast.spi.WaitNotifyKey;
+import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.internal.services.ObjectNamespace;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationparker.OperationParker;
+import com.hazelcast.spi.impl.operationservice.WaitNotifyKey;
 
 import static com.hazelcast.cache.CacheEventType.CREATED;
 import static com.hazelcast.cache.CacheEventType.EVICTED;
@@ -173,8 +173,7 @@ public class RingbufferCacheEventJournalImpl implements CacheEventJournal {
             throw new CacheNotExistsException("Cache " + name + " is already destroyed or not created yet, on "
                     + nodeEngine.getLocalMember());
         }
-        String cacheSimpleName = cacheConfig.getName();
-        EventJournalConfig config = nodeEngine.getConfig().findCacheEventJournalConfig(cacheSimpleName);
+        EventJournalConfig config = cacheConfig.getEventJournalConfig();
         if (config == null || !config.isEnabled()) {
             return null;
         }

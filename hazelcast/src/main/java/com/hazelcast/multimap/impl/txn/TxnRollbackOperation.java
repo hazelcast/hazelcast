@@ -20,9 +20,9 @@ import com.hazelcast.multimap.impl.MultiMapContainer;
 import com.hazelcast.multimap.impl.MultiMapDataSerializerHook;
 import com.hazelcast.multimap.impl.operations.AbstractBackupAwareMultiMapOperation;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.Notifier;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.WaitNotifyKey;
+import com.hazelcast.spi.impl.operationservice.Notifier;
+import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.spi.impl.operationservice.WaitNotifyKey;
 import com.hazelcast.transaction.TransactionException;
 
 public class TxnRollbackOperation extends AbstractBackupAwareMultiMapOperation implements Notifier {
@@ -61,7 +61,7 @@ public class TxnRollbackOperation extends AbstractBackupAwareMultiMapOperation i
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MultiMapDataSerializerHook.TXN_ROLLBACK;
     }
 }

@@ -16,6 +16,8 @@
 
 package com.hazelcast.core;
 
+import com.hazelcast.cluster.Member;
+
 import java.util.Map;
 
 /**

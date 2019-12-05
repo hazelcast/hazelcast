@@ -16,14 +16,14 @@
 
 package com.hazelcast.internal.serialization.impl;
 
-import com.hazelcast.nio.Bits;
+import com.hazelcast.internal.nio.Bits;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.util.HashUtil;
+import com.hazelcast.internal.util.HashUtil;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.util.Arrays;
 
-import static com.hazelcast.util.JVMUtil.REFERENCE_COST_IN_BYTES;
+import static com.hazelcast.internal.util.JVMUtil.REFERENCE_COST_IN_BYTES;
 
 /**
  * A {@link Data} implementation where the content lives on the heap.

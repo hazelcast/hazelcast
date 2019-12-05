@@ -16,11 +16,11 @@
 
 package com.hazelcast.internal.management.dto;
 
-import com.hazelcast.internal.management.JsonSerializable;
+import com.hazelcast.json.internal.JsonSerializable;
 import com.hazelcast.internal.json.JsonObject;
-import com.hazelcast.spi.EventService;
+import com.hazelcast.spi.impl.eventservice.EventService;
 
-import static com.hazelcast.util.JsonUtil.getInt;
+import static com.hazelcast.internal.util.JsonUtil.getInt;
 
 /**
  * A Serializable DTO for {@link com.hazelcast.internal.jmx.EventServiceMBean}.

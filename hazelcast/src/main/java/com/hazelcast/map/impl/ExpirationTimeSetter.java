@@ -17,9 +17,10 @@
 package com.hazelcast.map.impl;
 
 import com.hazelcast.config.MapConfig;
+import com.hazelcast.map.IMap;
 import com.hazelcast.map.impl.record.Record;
 
-import static com.hazelcast.util.Preconditions.checkNotNegative;
+import static com.hazelcast.internal.util.Preconditions.checkNotNegative;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
@@ -53,7 +54,7 @@ public final class ExpirationTimeSetter {
     /**
      * Returns last-access-time of an entry if it was accessed before, otherwise it returns creation-time of the entry.
      * This calculation is required for max-idle-seconds expiration, because after first creation of an entry via
-     * {@link com.hazelcast.core.IMap#put}, the {@code lastAccessTime} is zero till the first access.
+     * {@link IMap#put}, the {@code lastAccessTime} is zero till the first access.
      * Any subsequent get or update operation after first put will increase the {@code lastAccessTime}.
      */
     public static long getIdlenessStartTime(Record record) {
@@ -64,7 +65,7 @@ public final class ExpirationTimeSetter {
     /**
      * Returns last-update-time of an entry if it was updated before, otherwise it returns creation-time of the entry.
      * This calculation is required for time-to-live expiration, because after first creation of an entry via
-     * {@link com.hazelcast.core.IMap#put}, the {@code lastUpdateTime} is zero till the first update.
+     * {@link IMap#put}, the {@code lastUpdateTime} is zero till the first update.
      */
     public static long getLifeStartTime(Record record) {
         long lastUpdateTime = record.getLastUpdateTime();
@@ -101,8 +102,8 @@ public final class ExpirationTimeSetter {
      */
     public static void setExpirationTimes(long operationTTLMillis, long operationMaxIdleMillis, Record record,
                                           MapConfig mapConfig, boolean consultMapConfig) {
-        long ttlMillis = pickTTLMillis(operationTTLMillis, record.getTtl(), mapConfig, consultMapConfig);
-        long maxIdleMillis = pickMaxIdleMillis(operationMaxIdleMillis, record.getMaxIdle(), mapConfig, consultMapConfig);
+        long ttlMillis = pickTTLMillis(operationTTLMillis, mapConfig, consultMapConfig);
+        long maxIdleMillis = pickMaxIdleMillis(operationMaxIdleMillis, mapConfig, consultMapConfig);
 
         record.setTtl(ttlMillis);
         record.setMaxIdle(maxIdleMillis);
@@ -112,14 +113,13 @@ public final class ExpirationTimeSetter {
     /**
      * Decides if TTL millis should to be set on record.
      *
-     * @param existingTTLMillis  existing TTL on record
      * @param operationTTLMillis user provided TTL during operation call like put with TTL
      * @param mapConfig          used to get configured TTL
      * @param consultMapConfig   give {@code true} if this update should consult map ttl configuration,
      *                           otherwise give {@code false}
      * @return TTL value in millis to set to record
      */
-    private static long pickTTLMillis(long operationTTLMillis, long existingTTLMillis, MapConfig mapConfig,
+    private static long pickTTLMillis(long operationTTLMillis, MapConfig mapConfig,
                                       boolean consultMapConfig) {
         // if user set operationTTLMillis when calling operation, use it
         if (operationTTLMillis > 0) {
@@ -131,17 +131,12 @@ public final class ExpirationTimeSetter {
             return checkedTime(SECONDS.toMillis(mapConfig.getTimeToLiveSeconds()));
         }
 
-        // if operationTTLMillis < 0, keep previously set TTL on record
-        if (operationTTLMillis < 0) {
-            return checkedTime(existingTTLMillis);
-        }
-
         // if we are here, entry should live forever
         return Long.MAX_VALUE;
     }
 
-    private static long pickMaxIdleMillis(long operationMaxIdleMillis, long existingMaxIdleMillis, MapConfig mapConfig,
-                                      boolean entryCreated) {
+    private static long pickMaxIdleMillis(long operationMaxIdleMillis, MapConfig mapConfig,
+                                          boolean entryCreated) {
         // if user set operationMaxIdleMillis when calling operation, use it
         if (operationMaxIdleMillis > 0) {
             return checkedTime(operationMaxIdleMillis);
@@ -150,11 +145,6 @@ public final class ExpirationTimeSetter {
         // if this is the first creation of entry, try to get MaxIdle from mapConfig
         if (entryCreated && operationMaxIdleMillis < 0 && mapConfig.getMaxIdleSeconds() > 0) {
             return checkedTime(SECONDS.toMillis(mapConfig.getMaxIdleSeconds()));
-        }
-
-        // if operationMaxIdleMillis < 0, keep previously set MaxIdle on record
-        if (operationMaxIdleMillis < 0) {
-            return checkedTime(existingMaxIdleMillis);
         }
 
         // if we are here, entry should live forever

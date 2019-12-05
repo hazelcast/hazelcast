@@ -17,25 +17,27 @@
 package com.hazelcast.transaction.impl.operations;
 
 import com.hazelcast.core.MemberLeftException;
+import com.hazelcast.internal.util.UUIDSerializationUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.spi.ExceptionAction;
+import com.hazelcast.spi.impl.operationservice.ExceptionAction;
 import com.hazelcast.spi.exception.TargetNotMemberException;
 import com.hazelcast.transaction.impl.TransactionManagerServiceImpl;
 
 import java.io.IOException;
+import java.util.UUID;
 
-import static com.hazelcast.spi.ExceptionAction.THROW_EXCEPTION;
+import static com.hazelcast.spi.impl.operationservice.ExceptionAction.THROW_EXCEPTION;
 import static com.hazelcast.transaction.impl.TransactionDataSerializerHook.PURGE_TX_BACKUP_LOG;
 
 public class PurgeTxBackupLogOperation extends AbstractTxOperation {
 
-    private String txnId;
+    private UUID txnId;
 
     public PurgeTxBackupLogOperation() {
     }
 
-    public PurgeTxBackupLogOperation(String txnId) {
+    public PurgeTxBackupLogOperation(UUID txnId) {
         this.txnId = txnId;
     }
 
@@ -54,17 +56,17 @@ public class PurgeTxBackupLogOperation extends AbstractTxOperation {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return PURGE_TX_BACKUP_LOG;
     }
 
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
-        out.writeUTF(txnId);
+        UUIDSerializationUtil.writeUUID(out, txnId);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
-        txnId = in.readUTF();
+        txnId = UUIDSerializationUtil.readUUID(in);
     }
 }

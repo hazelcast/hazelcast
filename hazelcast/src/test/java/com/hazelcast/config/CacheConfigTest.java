@@ -27,7 +27,7 @@ import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.TimedExp
 import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.TimedExpiryPolicyFactoryConfig.ExpiryPolicyType;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.instance.HazelcastInstanceFactory;
+import com.hazelcast.instance.impl.HazelcastInstanceFactory;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -63,6 +63,7 @@ import java.util.Properties;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
+import static com.hazelcast.cache.CacheTestSupport.createServerCachingProvider;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -123,8 +124,7 @@ public class CacheConfigTest extends HazelcastTestSupport {
     public void cacheConfigXmlTest() throws IOException {
         Config config1 = new XmlConfigBuilder(configUrl1).build();
 
-        assertEquals("test-group1", config1.getGroupConfig().getName());
-        assertEquals("test-pass1", config1.getGroupConfig().getPassword());
+        assertEquals("test-cluster1", config1.getClusterName());
 
         CacheSimpleConfig cacheConfig1 = config1.getCacheConfig("cache1");
         assertEquals("com.hazelcast.config.CacheConfigTest$MyCacheLoaderFactory",
@@ -142,7 +142,7 @@ public class CacheConfigTest extends HazelcastTestSupport {
         assertNotNull(evictionConfig);
         assertEquals(EvictionPolicy.LFU, evictionConfig.getEvictionPolicy());
         assertEquals(50, evictionConfig.getSize());
-        assertEquals(EvictionConfig.MaxSizePolicy.ENTRY_COUNT, evictionConfig.getMaximumSizePolicy());
+        assertEquals(MaxSizePolicy.ENTRY_COUNT, evictionConfig.getMaxSizePolicy());
 
         List<CacheSimpleEntryListenerConfig> cacheEntryListeners = cacheConfig1.getCacheEntryListeners();
         assertEquals(2, cacheEntryListeners.size());
@@ -185,7 +185,7 @@ public class CacheConfigTest extends HazelcastTestSupport {
         EvictionConfig evictionConfig = cacheConfig.getEvictionConfig();
         assertNotNull(evictionConfig);
         assertEquals(50, evictionConfig.getSize());
-        assertEquals(EvictionConfig.MaxSizePolicy.ENTRY_COUNT, evictionConfig.getMaximumSizePolicy());
+        assertEquals(MaxSizePolicy.ENTRY_COUNT, evictionConfig.getMaxSizePolicy());
         assertEquals("my-custom-eviction-policy-comparator", evictionConfig.getComparatorClassName());
     }
 
@@ -304,7 +304,8 @@ public class CacheConfigTest extends HazelcastTestSupport {
         CacheSimpleConfig cacheWithDefaultMergePolicyConfig = config.getCacheConfig("cacheWithDefaultMergePolicy");
 
         assertNotNull(cacheWithDefaultMergePolicyConfig);
-        assertEquals(CacheSimpleConfig.DEFAULT_CACHE_MERGE_POLICY, cacheWithDefaultMergePolicyConfig.getMergePolicy());
+        assertEquals(MergePolicyConfig.DEFAULT_MERGE_POLICY,
+                cacheWithDefaultMergePolicyConfig.getMergePolicyConfig().getPolicy());
     }
 
     @Test
@@ -314,15 +315,14 @@ public class CacheConfigTest extends HazelcastTestSupport {
         CacheSimpleConfig cacheWithCustomMergePolicyConfig = config.getCacheConfig("cacheWithCustomMergePolicy");
 
         assertNotNull(cacheWithCustomMergePolicyConfig);
-        assertEquals("MyDummyMergePolicy", cacheWithCustomMergePolicyConfig.getMergePolicy());
+        assertEquals("MyDummyMergePolicy", cacheWithCustomMergePolicyConfig.getMergePolicyConfig().getPolicy());
     }
 
     @Test
     public void cacheConfigXmlTest_constructingToCacheConfig() throws Exception {
         Config config1 = new XmlConfigBuilder(configUrl1).build();
 
-        assertEquals("test-group1", config1.getGroupConfig().getName());
-        assertEquals("test-pass1", config1.getGroupConfig().getPassword());
+        assertEquals("test-cluster1", config1.getClusterName());
 
         CacheSimpleConfig cacheSimpleConfig1 = config1.getCacheConfig("cache1");
         CacheConfig cacheConfig1 = new CacheConfig(cacheSimpleConfig1);
@@ -336,7 +336,7 @@ public class CacheConfigTest extends HazelcastTestSupport {
 
         assertNotNull(cacheConfig1.getEvictionConfig());
         assertEquals(50, cacheConfig1.getEvictionConfig().getSize());
-        assertEquals(EvictionConfig.MaxSizePolicy.ENTRY_COUNT, cacheConfig1.getEvictionConfig().getMaximumSizePolicy());
+        assertEquals(MaxSizePolicy.ENTRY_COUNT, cacheConfig1.getEvictionConfig().getMaxSizePolicy());
         assertEquals(EvictionPolicy.LFU, cacheConfig1.getEvictionConfig().getEvictionPolicy());
 
         assertTrue(cacheConfig1.isDisablePerEntryInvalidationEvents());
@@ -515,7 +515,7 @@ public class CacheConfigTest extends HazelcastTestSupport {
         TestHazelcastInstanceFactory factory = new TestHazelcastInstanceFactory(count);
         for (int i = 0; i < count; i++) {
             HazelcastInstance instance = factory.newHazelcastInstance(config);
-            CachingProvider provider = HazelcastServerCachingProvider.createCachingProvider(instance);
+            CachingProvider provider = createServerCachingProvider(instance);
             CacheManager cacheManager = provider.getCacheManager();
 
             Cache<Object, Object> cache = cacheManager.getCache("test");
@@ -528,7 +528,7 @@ public class CacheConfigTest extends HazelcastTestSupport {
         String cacheName = randomString();
         Config config = createConfig(cacheName);
         HazelcastInstance instance = createHazelcastInstance(config);
-        HazelcastServerCachingProvider cachingProvider = HazelcastServerCachingProvider.createCachingProvider(instance);
+        HazelcastServerCachingProvider cachingProvider = createServerCachingProvider(instance);
         CacheManager cacheManager = cachingProvider.getCacheManager();
         Cache<Object, Object> cache = cacheManager.getCache(cacheName);
         EntryListener.latch = new CountDownLatch(1);

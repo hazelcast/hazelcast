@@ -16,22 +16,23 @@
 
 package com.hazelcast.durableexecutor;
 
+import com.hazelcast.cluster.Member;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.DurableExecutorConfig;
-import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceAware;
-import com.hazelcast.core.IAtomicLong;
-import com.hazelcast.core.ICompletableFuture;
-import com.hazelcast.core.ICountDownLatch;
 import com.hazelcast.core.ManagedContext;
-import com.hazelcast.core.Member;
-import com.hazelcast.core.PartitionAware;
+import com.hazelcast.cp.IAtomicLong;
+import com.hazelcast.cp.ICountDownLatch;
+import com.hazelcast.durableexecutor.impl.DistributedDurableExecutorService;
+import com.hazelcast.durableexecutor.impl.DurableExecutorContainer;
 import com.hazelcast.executor.ExecutorServiceTestSupport;
-import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.partition.PartitionAware;
+import com.hazelcast.spi.properties.ClusterProperty;
+import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -42,6 +43,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Random;
+import java.util.UUID;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
@@ -51,7 +53,10 @@ import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Consumer;
 
+import static com.hazelcast.durableexecutor.impl.DurableExecutorServiceHelper.getDurableExecutorContainer;
+import static com.hazelcast.spi.properties.ClusterProperty.PARTITION_COUNT;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -60,7 +65,7 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class DurableExecutorServiceTest extends ExecutorServiceTestSupport {
 
     private static final int NODE_COUNT = 3;
@@ -99,6 +104,42 @@ public class DurableExecutorServiceTest extends ExecutorServiceTestSupport {
     }
 
     @Test
+    public void testDestroyCleansAllContainers() throws Exception {
+        final String executorName = randomMapName();
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(NODE_COUNT);
+        final HazelcastInstance[] instances = factory.newInstances();
+
+        DurableExecutorService service = instances[0].getDurableExecutorService(executorName);
+
+        List<Future<String>> futures = new ArrayList<Future<String>>(TASK_COUNT);
+        for (int i = 0; i < TASK_COUNT; i++) {
+            futures.add(service.submit(new DummyCallable()));
+        }
+        for (Future<String> future: futures) {
+            future.get();
+        }
+        service.destroy();
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() {
+                for (int i = 0; i < NODE_COUNT; i++) {
+                    DistributedDurableExecutorService internalService = getNodeEngineImpl(instances[i]).getService(DistributedDurableExecutorService.SERVICE_NAME);
+                    boolean allEmpty = true;
+                    StringBuilder failMessage = new StringBuilder();
+                    for (int partitionId = 0; partitionId < getNode(instances[i]).getProperties().getInteger(PARTITION_COUNT); partitionId++) {
+                        DurableExecutorContainer container = getDurableExecutorContainer(internalService, partitionId, executorName);
+                        if (container != null) {
+                            failMessage.append(String.format("Partition %d\n", partitionId));
+                            allEmpty = false;
+                        }
+                    }
+                    assertTrue(String.format("Some partitions has non-null containers for executor %s:\n%s", executorName, failMessage.toString()), allEmpty);
+                }
+            }
+        }, 30);
+    }
+
+    @Test
     public void testAwaitTermination() throws Exception {
         HazelcastInstance instance = createHazelcastInstance();
         DurableExecutorService service = instance.getDurableExecutorService(randomString());
@@ -129,17 +170,17 @@ public class DurableExecutorServiceTest extends ExecutorServiceTestSupport {
         HazelcastInstance instance1 = factory.newHazelcastInstance();
         HazelcastInstance instance2 = factory.newHazelcastInstance();
 
-        assertTrue(instance1.getCountDownLatch("latch").trySetCount(1));
+        assertTrue(instance1.getCPSubsystem().getCountDownLatch("latch").trySetCount(1));
 
         String name = randomString();
         DurableExecutorService executorService = instance2.getDurableExecutorService(name);
         ICountDownLatchAwaitCallable task = new ICountDownLatchAwaitCallable("latch");
         String key = generateKeyOwnedBy(instance1);
-        ICompletableFuture<Boolean> future = executorService.submitToKeyOwner(task, key);
+        DurableExecutorServiceFuture<Boolean> future = executorService.submitToKeyOwner(task, key);
 
         CountingDownExecutionCallback<Boolean> callback = new CountingDownExecutionCallback<Boolean>(1);
-        future.andThen(callback);
-        instance1.getCountDownLatch("latch").countDown();
+        future.whenCompleteAsync(callback);
+        instance1.getCPSubsystem().getCountDownLatch("latch").countDown();
 
         assertTrue(future.get());
         assertOpenEventually(callback.getLatch());
@@ -154,11 +195,11 @@ public class DurableExecutorServiceTest extends ExecutorServiceTestSupport {
         DurableExecutorService executorService = instance2.getDurableExecutorService(name);
         BasicTestCallable task = new BasicTestCallable();
         String key = generateKeyOwnedBy(instance1);
-        ICompletableFuture<String> future = executorService.submitToKeyOwner(task, key);
+        DurableExecutorServiceFuture<String> future = executorService.submitToKeyOwner(task, key);
         assertEquals(BasicTestCallable.RESULT, future.get());
 
         CountingDownExecutionCallback<String> callback = new CountingDownExecutionCallback<String>(1);
-        future.andThen(callback);
+        future.whenCompleteAsync(callback);
 
         assertOpenEventually(callback.getLatch(), 10);
     }
@@ -169,19 +210,19 @@ public class DurableExecutorServiceTest extends ExecutorServiceTestSupport {
         HazelcastInstance instance1 = factory.newHazelcastInstance();
         HazelcastInstance instance2 = factory.newHazelcastInstance();
 
-        assertTrue(instance1.getCountDownLatch("latch").trySetCount(1));
+        assertTrue(instance1.getCPSubsystem().getCountDownLatch("latch").trySetCount(1));
 
         String name = randomString();
         DurableExecutorService executorService = instance2.getDurableExecutorService(name);
         ICountDownLatchAwaitCallable task = new ICountDownLatchAwaitCallable("latch");
         String key = generateKeyOwnedBy(instance1);
-        ICompletableFuture<Boolean> future = executorService.submitToKeyOwner(task, key);
+        DurableExecutorServiceFuture<Boolean> future = executorService.submitToKeyOwner(task, key);
 
         CountDownLatch latch = new CountDownLatch(2);
         CountingDownExecutionCallback<Boolean> callback = new CountingDownExecutionCallback<Boolean>(latch);
-        future.andThen(callback);
-        future.andThen(callback);
-        instance1.getCountDownLatch("latch").countDown();
+        future.whenCompleteAsync(callback);
+        future.whenCompleteAsync(callback);
+        instance1.getCPSubsystem().getCountDownLatch("latch").countDown();
 
         assertTrue(future.get());
         assertOpenEventually(latch, 10);
@@ -194,7 +235,7 @@ public class DurableExecutorServiceTest extends ExecutorServiceTestSupport {
         DurableExecutorService service = instance.getDurableExecutorService(randomString());
 
         CountingDownExecutionCallback<String> callback = new CountingDownExecutionCallback<String>(1);
-        service.submit(new FailingTestTask()).andThen(callback);
+        service.submit(new FailingTestTask()).whenCompleteAsync(callback);
 
         assertOpenEventually(callback.getLatch());
         assertTrue(callback.getResult() instanceof Throwable);
@@ -232,7 +273,7 @@ public class DurableExecutorServiceTest extends ExecutorServiceTestSupport {
         HazelcastInstance instance2 = factory.newHazelcastInstance();
         String key = generateKeyOwnedBy(instance2);
         String instanceName = instance2.getName();
-        ICountDownLatch latch = instance2.getCountDownLatch(instanceName);
+        ICountDownLatch latch = instance2.getCPSubsystem().getCountDownLatch(instanceName);
         latch.trySetCount(1);
 
         DurableExecutorService durableExecutorService = instance1.getDurableExecutorService(randomString());
@@ -264,7 +305,7 @@ public class DurableExecutorServiceTest extends ExecutorServiceTestSupport {
             assertEquals(Integer.valueOf(rand), future.get(10, TimeUnit.SECONDS));
         }
 
-        IAtomicLong count = instances[0].getAtomicLong("count");
+        IAtomicLong count = instances[0].getCPSubsystem().getAtomicLong("count");
         assertEquals(NODE_COUNT, count.get());
     }
 
@@ -274,28 +315,23 @@ public class DurableExecutorServiceTest extends ExecutorServiceTestSupport {
         HazelcastInstance[] instances = factory.newInstances();
         final AtomicInteger nullResponseCount = new AtomicInteger(0);
         final CountDownLatch responseLatch = new CountDownLatch(NODE_COUNT);
-        ExecutionCallback callback = new ExecutionCallback() {
-            public void onResponse(Object response) {
-                if (response == null) {
-                    nullResponseCount.incrementAndGet();
-                }
-                responseLatch.countDown();
+        Consumer callback = response -> {
+            if (response == null) {
+                nullResponseCount.incrementAndGet();
             }
-
-            public void onFailure(Throwable t) {
-            }
+            responseLatch.countDown();
         };
         for (int i = 0; i < NODE_COUNT; i++) {
             HazelcastInstance instance = instances[i];
             DurableExecutorService service = instance.getDurableExecutorService("testSubmitToKeyOwnerRunnable");
             Member localMember = instance.getCluster().getLocalMember();
-            String uuid = localMember.getUuid();
+            UUID uuid = localMember.getUuid();
             Runnable runnable = new IncrementAtomicLongIfMemberUUIDNotMatchRunnable(uuid, "testSubmitToKeyOwnerRunnable");
             int key = findNextKeyForMember(instance, localMember);
-            service.submitToKeyOwner(runnable, key).andThen(callback);
+            service.submitToKeyOwner(runnable, key).thenAccept(callback);
         }
         assertOpenEventually(responseLatch);
-        assertEquals(0, instances[0].getAtomicLong("testSubmitToKeyOwnerRunnable").get());
+        assertEquals(0, instances[0].getCPSubsystem().getAtomicLong("testSubmitToKeyOwnerRunnable").get());
         assertEquals(NODE_COUNT, nullResponseCount.get());
     }
 
@@ -365,7 +401,7 @@ public class DurableExecutorServiceTest extends ExecutorServiceTestSupport {
             DurableExecutorService service = instance.getDurableExecutorService("testSubmitToKeyOwnerCallable");
             Member localMember = instance.getCluster().getLocalMember();
             int key = findNextKeyForMember(instance, localMember);
-            service.submitToKeyOwner(new MemberUUIDCheckCallable(localMember.getUuid()), key).andThen(callback);
+            service.submitToKeyOwner(new MemberUUIDCheckCallable(localMember.getUuid()), key).thenAccept(callback);
         }
 
         assertOpenEventually(callback.getResponseLatch());
@@ -418,7 +454,7 @@ public class DurableExecutorServiceTest extends ExecutorServiceTestSupport {
     @Test
     public void testIssue292() {
         CountingDownExecutionCallback<Member> callback = new CountingDownExecutionCallback<Member>(1);
-        createSingleNodeDurableExecutorService("testIssue292").submit(new MemberCheck()).andThen(callback);
+        createSingleNodeDurableExecutorService("testIssue292").submit(new MemberCheck()).whenCompleteAsync(callback);
         assertOpenEventually(callback.getLatch());
         assertTrue(callback.getResult() instanceof Member);
     }
@@ -484,8 +520,7 @@ public class DurableExecutorServiceTest extends ExecutorServiceTestSupport {
     }
 
     @Test
-//    @Repeat(100)
-    public void testStatsIssue2039() throws Exception {
+    public void testStatsIssue2039() {
         Config config = new Config();
         String name = "testStatsIssue2039";
         config.addDurableExecutorConfig(new DurableExecutorConfig(name).setPoolSize(1).setCapacity(1));
@@ -520,7 +555,7 @@ public class DurableExecutorServiceTest extends ExecutorServiceTestSupport {
 
         Config config = new Config();
         long callTimeoutMillis = 3000;
-        config.setProperty(GroupProperty.OPERATION_CALL_TIMEOUT_MILLIS.getName(), String.valueOf(callTimeoutMillis));
+        config.setProperty(ClusterProperty.OPERATION_CALL_TIMEOUT_MILLIS.getName(), String.valueOf(callTimeoutMillis));
 
         HazelcastInstance hz1 = factory.newHazelcastInstance(config);
         HazelcastInstance hz2 = factory.newHazelcastInstance(config);
@@ -539,17 +574,17 @@ public class DurableExecutorServiceTest extends ExecutorServiceTestSupport {
 
         String instanceName;
 
-        public InstanceAsserterRunnable() {
+        InstanceAsserterRunnable() {
         }
 
-        public InstanceAsserterRunnable(String instanceName) {
+        InstanceAsserterRunnable(String instanceName) {
             this.instanceName = instanceName;
         }
 
         @Override
         public void run() {
             if (instanceName.equals(instance.getName())) {
-                instance.getCountDownLatch(instanceName).countDown();
+                instance.getCPSubsystem().getCountDownLatch(instanceName).countDown();
             }
         }
 
@@ -604,14 +639,14 @@ public class DurableExecutorServiceTest extends ExecutorServiceTestSupport {
 
         private HazelcastInstance instance;
 
-        public ICountDownLatchAwaitCallable(String name) {
+        ICountDownLatchAwaitCallable(String name) {
             this.name = name;
         }
 
         @Override
         public Boolean call()
                 throws Exception {
-            return instance.getCountDownLatch(name).await(100, TimeUnit.SECONDS);
+            return instance.getCPSubsystem().getCountDownLatch(name).await(100, TimeUnit.SECONDS);
         }
 
         @Override
@@ -625,7 +660,7 @@ public class DurableExecutorServiceTest extends ExecutorServiceTestSupport {
         static CountDownLatch startLatch;
         static CountDownLatch sleepLatch;
 
-        public SleepLatchRunnable() {
+        SleepLatchRunnable() {
             startLatch = new CountDownLatch(1);
             sleepLatch = new CountDownLatch(1);
         }

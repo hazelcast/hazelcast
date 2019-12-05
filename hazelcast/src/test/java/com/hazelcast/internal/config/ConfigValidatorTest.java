@@ -16,19 +16,21 @@
 
 package com.hazelcast.internal.config;
 
-import com.hazelcast.cache.impl.merge.policy.CacheMergePolicyProvider;
 import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.InMemoryFormat;
+import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.config.MapConfig;
+import com.hazelcast.config.MaxSizePolicy;
 import com.hazelcast.config.NativeMemoryConfig;
-import com.hazelcast.map.merge.MergePolicyProvider;
-import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.config.cp.CPSubsystemConfig;
+import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.merge.SplitBrainMergePolicyProvider;
+import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
 import org.junit.Test;
@@ -39,29 +41,31 @@ import org.mockito.Mockito;
 import static com.hazelcast.config.InMemoryFormat.BINARY;
 import static com.hazelcast.config.InMemoryFormat.NATIVE;
 import static com.hazelcast.config.InMemoryFormat.OBJECT;
+import static com.hazelcast.internal.config.ConfigValidator.checkCPSubsystemConfig;
 import static com.hazelcast.internal.config.ConfigValidator.checkCacheConfig;
 import static com.hazelcast.internal.config.ConfigValidator.checkMapConfig;
 import static com.hazelcast.internal.config.ConfigValidator.checkNearCacheNativeMemoryConfig;
 import static org.mockito.Mockito.when;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class ConfigValidatorTest extends HazelcastTestSupport {
 
-    private MergePolicyProvider mapMergePolicyProvider;
-    private CacheMergePolicyProvider cacheMergePolicyProvider;
+    private HazelcastProperties properties;
+    private NativeMemoryConfig nativeMemoryConfig;
+    private SplitBrainMergePolicyProvider splitBrainMergePolicyProvider;
 
     @Before
     public void setUp() {
         Config config = new Config();
+        nativeMemoryConfig = config.getNativeMemoryConfig();
         NodeEngine nodeEngine = Mockito.mock(NodeEngine.class);
         when(nodeEngine.getConfigClassLoader()).thenReturn(config.getClassLoader());
 
-        SplitBrainMergePolicyProvider splitBrainMergePolicyProvider = new SplitBrainMergePolicyProvider(nodeEngine);
+        splitBrainMergePolicyProvider = new SplitBrainMergePolicyProvider(nodeEngine);
         when(nodeEngine.getSplitBrainMergePolicyProvider()).thenReturn(splitBrainMergePolicyProvider);
 
-        mapMergePolicyProvider = new MergePolicyProvider(nodeEngine);
-        cacheMergePolicyProvider = new CacheMergePolicyProvider(nodeEngine);
+        properties = nodeEngine.getProperties();
     }
 
     @Test
@@ -71,38 +75,20 @@ public class ConfigValidatorTest extends HazelcastTestSupport {
 
     @Test
     public void checkMapConfig_BINARY() {
-        checkMapConfig(getMapConfig(BINARY), mapMergePolicyProvider);
+        checkMapConfig(getMapConfig(BINARY), nativeMemoryConfig, splitBrainMergePolicyProvider, properties);
     }
 
     @Test
     public void checkMapConfig_OBJECT() {
-        checkMapConfig(getMapConfig(OBJECT), mapMergePolicyProvider);
+        checkMapConfig(getMapConfig(OBJECT), nativeMemoryConfig, splitBrainMergePolicyProvider, properties);
     }
 
     /**
      * Not supported in open source version, so test is expected to throw exception.
      */
-    @Test(expected = IllegalArgumentException.class)
+    @Test(expected = InvalidConfigurationException.class)
     public void checkMapConfig_NATIVE() {
-        checkMapConfig(getMapConfig(NATIVE), mapMergePolicyProvider);
-    }
-
-    @Test
-    @SuppressWarnings("deprecation")
-    public void checkMapConfig_withIgnoredConfigMinEvictionCheckMillis() {
-        MapConfig mapConfig = getMapConfig(BINARY)
-                .setMinEvictionCheckMillis(100);
-
-        checkMapConfig(mapConfig, mapMergePolicyProvider);
-    }
-
-    @Test
-    @SuppressWarnings("deprecation")
-    public void checkMapConfig_withIgnoredConfigEvictionPercentage() {
-        MapConfig mapConfig = getMapConfig(BINARY)
-                .setEvictionPercentage(50);
-
-        checkMapConfig(mapConfig, mapMergePolicyProvider);
+        checkMapConfig(getMapConfig(NATIVE), nativeMemoryConfig, splitBrainMergePolicyProvider, properties);
     }
 
     private MapConfig getMapConfig(InMemoryFormat inMemoryFormat) {
@@ -113,23 +99,23 @@ public class ConfigValidatorTest extends HazelcastTestSupport {
     @Test
     public void checkCacheConfig_withEntryCountMaxSizePolicy_OBJECT() {
         EvictionConfig evictionConfig = new EvictionConfig()
-                .setMaximumSizePolicy(EvictionConfig.MaxSizePolicy.ENTRY_COUNT);
+                .setMaxSizePolicy(MaxSizePolicy.ENTRY_COUNT);
         CacheSimpleConfig cacheSimpleConfig = new CacheSimpleConfig()
                 .setInMemoryFormat(OBJECT)
                 .setEvictionConfig(evictionConfig);
 
-        checkCacheConfig(cacheSimpleConfig, cacheMergePolicyProvider);
+        checkCacheConfig(cacheSimpleConfig, splitBrainMergePolicyProvider);
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void checkCacheConfig_withEntryCountMaxSizePolicy_NATIVE() {
         EvictionConfig evictionConfig = new EvictionConfig()
-                .setMaximumSizePolicy(EvictionConfig.MaxSizePolicy.ENTRY_COUNT);
+                .setMaxSizePolicy(MaxSizePolicy.ENTRY_COUNT);
         CacheSimpleConfig cacheSimpleConfig = new CacheSimpleConfig()
                 .setInMemoryFormat(NATIVE)
                 .setEvictionConfig(evictionConfig);
 
-        checkCacheConfig(cacheSimpleConfig, cacheMergePolicyProvider);
+        checkCacheConfig(cacheSimpleConfig, splitBrainMergePolicyProvider);
     }
 
     @Test
@@ -155,8 +141,43 @@ public class ConfigValidatorTest extends HazelcastTestSupport {
         checkNearCacheNativeMemoryConfig(NATIVE, nativeMemoryConfig, true);
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test(expected = InvalidConfigurationException.class)
     public void checkNearCacheNativeMemoryConfig_shouldThrowExceptionWithoutNativeMemoryConfig_NATIVE_onEE() {
         checkNearCacheNativeMemoryConfig(NATIVE, null, true);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testValidationFails_whenGroupSizeSetCPMemberCountNotSet() {
+        CPSubsystemConfig config = new CPSubsystemConfig();
+        config.setGroupSize(3);
+
+        checkCPSubsystemConfig(config);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testValidationFails_whenGroupSizeGreaterThanCPMemberCount() {
+        CPSubsystemConfig config = new CPSubsystemConfig();
+        config.setGroupSize(5);
+        config.setCPMemberCount(3);
+
+        checkCPSubsystemConfig(config);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testValidationFails_whenSessionHeartbeatIntervalGreaterThanSessionTTL() {
+        CPSubsystemConfig config = new CPSubsystemConfig();
+        config.setSessionTimeToLiveSeconds(5);
+        config.setSessionHeartbeatIntervalSeconds(10);
+
+        checkCPSubsystemConfig(config);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testValidationFails_whenSessionTTLGreaterThanMissingCPMemberAutoRemovalSeconds() {
+        CPSubsystemConfig config = new CPSubsystemConfig();
+        config.setMissingCPMemberAutoRemovalSeconds(5);
+        config.setSessionTimeToLiveSeconds(10);
+
+        checkCPSubsystemConfig(config);
     }
 }

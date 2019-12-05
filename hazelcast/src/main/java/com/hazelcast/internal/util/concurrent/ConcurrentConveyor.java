@@ -16,13 +16,11 @@
 
 package com.hazelcast.internal.util.concurrent;
 
-import com.hazelcast.util.concurrent.BackoffIdleStrategy;
-import com.hazelcast.util.concurrent.IdleStrategy;
-import com.hazelcast.util.function.Predicate;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.util.Collection;
 import java.util.Queue;
+import java.util.function.Predicate;
 
 import static java.lang.Thread.currentThread;
 import static java.util.concurrent.TimeUnit.MICROSECONDS;
@@ -34,12 +32,12 @@ import static java.util.concurrent.locks.LockSupport.unpark;
  * one-to-one concurrent queues. Queues are numbered from 0 to N-1 and the queue
  * at index 0 is the <i>default</i> queue. There are some convenience methods
  * which assume the usage of the default queue.
- * <p/>
+ * <p>
  * Allows the drainer thread to signal completion and failure to the submitters
  * and make their blocking {@code submit()} calls fail with an exception. This
  * mechanism supports building an implementation which is both starvation-safe
  * and uses bounded queues with blocking queue submission.
- * <p/>
+ * <p>
  * There is a further option for the drainer to apply immediate backpressure to
  * the submitter by invoking {@link #backpressureOn()}. This will make the
  * {@code submit()} invocations block after having successfully submitted their
@@ -48,33 +46,33 @@ import static java.util.concurrent.locks.LockSupport.unpark;
  * thus letting all submitters progress until after submitting their item. Such an
  * arrangement eliminates a class of deadlock patterns where the submitter blocks
  * to submit the item that would have made the drainer remove backpressure.
- * <p/>
+ * <p>
  * Does not manage drainer threads. There should be only one drainer thread at a
  * time.
- * <p/>
+ * <p>
  * <h3>Usage example</h3>
- * <pre>{@code
+ * <pre>
  * // 1. Set up the concurrent conveyor
  *
  * final int queueCapacity = 128;
  * final Runnable doneItem = new Runnable() { public void run() {} };
- * final QueuedPipe<Runnable>[] qs = new QueuedPipe[2];
- * qs[0] = new OneToOneConcurrentArrayQueue<Runnable>(queueCapacity);
- * qs[1] = new OneToOneConcurrentArrayQueue<Runnable>(queueCapacity);
- * final ConcurrentConveyor<Runnable> conveyor = concurrentConveyor(doneItem, qs);
+ * final QueuedPipe&lt;Runnable&gt;[] qs = new QueuedPipe[2];
+ * qs[0] = new OneToOneConcurrentArrayQueue&lt;Runnable&gt;(queueCapacity);
+ * qs[1] = new OneToOneConcurrentArrayQueue&lt;Runnable&gt;(queueCapacity);
+ * final ConcurrentConveyor&lt;Runnable&gt; conveyor = concurrentConveyor(doneItem, qs);
  *
  * // 2. Set up the drainer thread
  *
  * final Thread drainer = new Thread(new Runnable() {
  *     private int submitterGoneCount;
  *
- *     @Override
+ *     &#64;Override
  *     public void run() {
  *         conveyor.drainerArrived();
  *         try {
- *             final List<Runnable> batch = new ArrayList<Runnable>(queueCapacity);
- *             while (submitterGoneCount < conveyor.queueCount()) {
- *                 for (int i = 0; i < conveyor.queueCount(); i++) {
+ *             final List&lt;Runnable&gt; batch = new ArrayList&lt;Runnable&gt;(queueCapacity);
+ *             while (submitterGoneCount &lt; conveyor.queueCount()) {
+ *                 for (int i = 0; i &lt; conveyor.queueCount(); i++) {
  *                     batch.clear();
  *                     conveyor.drainTo(i, batch);
  *                     // process(batch) should increment submitterGoneCount
@@ -94,9 +92,9 @@ import static java.util.concurrent.locks.LockSupport.unpark;
  *
  * for (final int submitterIndex : new int[] { 0, 1, 2, 3 }) {
  *     new Thread(new Runnable() {
- *         @Override
+ *         &#64;Override
  *         public void run() {
- *             final QueuedPipe<Runnable> q = conveyor.queue(submitterIndex);
+ *             final QueuedPipe&lt;Runnable&gt; q = conveyor.queue(submitterIndex);
  *             try {
  *                 while (!askedToStop) {
  *                     conveyor.submit(q, new Item());
@@ -111,7 +109,7 @@ import static java.util.concurrent.locks.LockSupport.unpark;
  *         }
  *     }).start();
  * }
- * }</pre>
+ * </pre>
  */
 @SuppressWarnings("checkstyle:interfaceistype")
 public class ConcurrentConveyor<E> {

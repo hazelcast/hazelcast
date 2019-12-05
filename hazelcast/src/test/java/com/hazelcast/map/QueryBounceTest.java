@@ -17,19 +17,18 @@
 package com.hazelcast.map;
 
 import com.hazelcast.config.Config;
+import com.hazelcast.config.IndexType;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IMap;
+import com.hazelcast.query.Predicate;
+import com.hazelcast.query.Predicates;
 import com.hazelcast.query.SampleTestObjects;
-import com.hazelcast.query.SqlPredicate;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.SlowTest;
 import com.hazelcast.test.bounce.BounceMemberRule;
 import com.hazelcast.test.jitter.JitterRule;
-import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.rules.TestName;
 import org.junit.runner.RunWith;
 
 import java.util.Collection;
@@ -47,63 +46,53 @@ import static org.junit.Assert.assertEquals;
 public class QueryBounceTest {
 
     private static final String TEST_MAP_NAME = "employees";
-    private static final int COUNT_ENTRIES = 100000;
+    private static final int COUNT_ENTRIES = 10000;
     private static final int CONCURRENCY = 10;
 
     @Rule
-    public BounceMemberRule bounceMemberRule = BounceMemberRule.with(getConfig())
-            .clusterSize(4)
-            .driverCount(4).build();
+    public BounceMemberRule bounceMemberRule =
+            BounceMemberRule.with(getConfig())
+                    .clusterSize(4)
+                    .driverCount(4)
+                    .useTerminate(useTerminate())
+                    .build();
 
     @Rule
     public JitterRule jitterRule = new JitterRule();
 
-    @Rule
-    public TestName testName = new TestName();
-
-    @Before
-    public void setup() {
-        IMap<String, SampleTestObjects.Employee> map;
-        if (testName.getMethodName().contains("Indexes")) {
-            map = getMapWithIndexes();
-        } else {
-            map = getMap();
-        }
-        populateMap(map);
-    }
-
     @Test
     public void testQuery() {
-        prepareAndRunQueryTasks();
+        prepareAndRunQueryTasks(false);
     }
 
     @Test
     public void testQueryWithIndexes() {
-        prepareAndRunQueryTasks();
+        prepareAndRunQueryTasks(true);
     }
 
     protected Config getConfig() {
         return smallInstanceConfig();
     }
 
-    private void prepareAndRunQueryTasks() {
+    // XXX: It's better to use parametrized test here, but parameters don't play
+    // nice with rules: parameters are injected after rules instantiation.
+    protected boolean useTerminate() {
+        return false;
+    }
+
+    private void prepareAndRunQueryTasks(boolean withIndexes) {
+        IMap<String, SampleTestObjects.Employee> map = bounceMemberRule.getSteadyMember().getMap(TEST_MAP_NAME);
+        if (withIndexes) {
+            map.addIndex(IndexType.HASH, "id");
+            map.addIndex(IndexType.SORTED, "age");
+        }
+        populateMap(map);
+
         QueryRunnable[] testTasks = new QueryRunnable[CONCURRENCY];
         for (int i = 0; i < CONCURRENCY; i++) {
-            testTasks[i] = new QueryRunnable(bounceMemberRule.getNextTestDriver());
+            testTasks[i] = new QueryRunnable(bounceMemberRule.getNextTestDriver(), withIndexes);
         }
         bounceMemberRule.testRepeatedly(testTasks, MINUTES.toSeconds(3));
-    }
-
-    private IMap<String, SampleTestObjects.Employee> getMap() {
-        return bounceMemberRule.getSteadyMember().getMap(TEST_MAP_NAME);
-    }
-
-    // obtain a reference to test map from 0-th member with indexes created for Employee attributes
-    private IMap<String, SampleTestObjects.Employee> getMapWithIndexes() {
-        IMap<String, SampleTestObjects.Employee> map = bounceMemberRule.getSteadyMember().getMap(TEST_MAP_NAME);
-        map.addIndex("id", false);
-        map.addIndex("age", true);
-        return map;
     }
 
     private void populateMap(IMap<String, SampleTestObjects.Employee> map) {
@@ -113,16 +102,22 @@ public class QueryBounceTest {
         }
     }
 
-    public static class QueryRunnable implements Runnable {
+    protected Predicate makePredicate(String attribute, int min, int max, boolean withIndexes) {
+        return Predicates.sql(attribute + " >= " + min + " AND " + attribute + " < " + max);
+    }
+
+    public class QueryRunnable implements Runnable {
 
         private final HazelcastInstance hazelcastInstance;
+        private final boolean withIndexes;
         // query age min-max range, min is randomized, max = min+1000
         private final Random random = new Random();
         private final int numberOfResults = 1000;
         private IMap<String, SampleTestObjects.Employee> map;
 
-        public QueryRunnable(HazelcastInstance hazelcastInstance) {
+        public QueryRunnable(HazelcastInstance hazelcastInstance, boolean withIndexes) {
             this.hazelcastInstance = hazelcastInstance;
+            this.withIndexes = withIndexes;
         }
 
         @Override
@@ -132,13 +127,14 @@ public class QueryBounceTest {
             }
             int min = random.nextInt(COUNT_ENTRIES - numberOfResults);
             int max = min + numberOfResults;
-            String sql = (min % 2 == 0)
-                    ? "age >= " + min + " AND age < " + max // may use sorted index
-                    : "id >= " + min + " AND id < " + max;  // may use unsorted index
-            Collection<SampleTestObjects.Employee> employees = map.values(new SqlPredicate(sql));
+            String attribute = min % 2 == 0 ? "age" : "id";
+            Predicate predicate = makePredicate(attribute, min, max, withIndexes);
+            Collection<SampleTestObjects.Employee> employees = map.values(predicate);
             assertEquals("There is data loss", COUNT_ENTRIES, map.size());
-            assertEquals("Obtained " + employees.size() + " results for query '" + sql + "'",
+            assertEquals("Obtained " + employees.size() + " results for query '" + predicate + "'",
                     numberOfResults, employees.size());
         }
+
     }
+
 }

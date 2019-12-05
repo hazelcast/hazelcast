@@ -16,7 +16,7 @@
 
 package com.hazelcast.internal.management.dto;
 
-import com.hazelcast.internal.management.JsonSerializable;
+import com.hazelcast.json.internal.JsonSerializable;
 import com.hazelcast.internal.json.JsonArray;
 import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.internal.json.JsonValue;
@@ -24,9 +24,9 @@ import com.hazelcast.internal.json.JsonValue;
 import java.util.ArrayList;
 import java.util.List;
 
-import static com.hazelcast.util.JsonUtil.getArray;
-import static com.hazelcast.util.JsonUtil.getInt;
-import static com.hazelcast.util.JsonUtil.getString;
+import static com.hazelcast.internal.util.JsonUtil.getArray;
+import static com.hazelcast.internal.util.JsonUtil.getInt;
+import static com.hazelcast.internal.util.JsonUtil.getString;
 
 /**
  * A Serializable DTO for {@link com.hazelcast.spi.impl.operationexecutor.slowoperationdetector.SlowOperationLog}.

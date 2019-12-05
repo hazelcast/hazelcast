@@ -16,33 +16,38 @@
 
 package com.hazelcast.spi.impl.operationservice.impl.operations;
 
+import com.hazelcast.client.impl.ClientEngine;
+import com.hazelcast.cluster.Address;
+import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.internal.partition.InternalPartition;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.partition.PartitionReplica;
 import com.hazelcast.internal.partition.PartitionReplicaVersionManager;
 import com.hazelcast.internal.partition.ReplicaErrorLogger;
+import com.hazelcast.internal.services.ServiceNamespace;
+import com.hazelcast.internal.util.Clock;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.spi.BackupOperation;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.OperationAccessor;
-import com.hazelcast.spi.ServiceNamespace;
 import com.hazelcast.spi.impl.AllowedDuringPassiveState;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.SpiDataSerializerHook;
+import com.hazelcast.spi.impl.operationservice.BackupOperation;
+import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.spi.impl.operationservice.OperationAccessor;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
-import com.hazelcast.util.Clock;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.UUID;
 
-import static com.hazelcast.spi.impl.OperationResponseHandlerFactory.createEmptyResponseHandler;
-import static com.hazelcast.spi.partition.IPartition.MAX_BACKUP_COUNT;
+import static com.hazelcast.internal.nio.IOUtil.readDataAsObject;
+import static com.hazelcast.spi.impl.operationexecutor.OperationRunner.runDirect;
+import static com.hazelcast.spi.impl.operationservice.OperationResponseHandlerFactory.createEmptyResponseHandler;
+import static com.hazelcast.internal.partition.IPartition.MAX_BACKUP_COUNT;
 
 public final class Backup extends Operation implements BackupOperation, AllowedDuringPassiveState,
         IdentifiedDataSerializable {
@@ -57,12 +62,17 @@ public final class Backup extends Operation implements BackupOperation, AllowedD
 
     private transient Throwable validationFailure;
     private transient boolean backupOperationInitialized;
+    private long clientCorrelationId;
 
     public Backup() {
     }
 
-    @SuppressFBWarnings("EI_EXPOSE_REP")
     public Backup(Operation backupOp, Address originalCaller, long[] replicaVersions, boolean sync) {
+        this(backupOp, originalCaller, replicaVersions, sync, -1);
+    }
+
+    @SuppressFBWarnings("EI_EXPOSE_REP")
+    public Backup(Operation backupOp, Address originalCaller, long[] replicaVersions, boolean sync, long clientCorrelationId) {
         this.backupOp = backupOp;
         this.originalCaller = originalCaller;
         this.sync = sync;
@@ -71,10 +81,16 @@ public final class Backup extends Operation implements BackupOperation, AllowedD
             throw new IllegalArgumentException("Sync backup requires original caller address, Backup operation: "
                     + backupOp);
         }
+        this.clientCorrelationId = clientCorrelationId;
     }
 
     @SuppressFBWarnings("EI_EXPOSE_REP")
     public Backup(Data backupOpData, Address originalCaller, long[] replicaVersions, boolean sync) {
+        this(backupOpData, originalCaller, replicaVersions, sync, -1);
+    }
+
+    @SuppressFBWarnings("EI_EXPOSE_REP")
+    public Backup(Data backupOpData, Address originalCaller, long[] replicaVersions, boolean sync, long clientCorrelationId) {
         this.backupOpData = backupOpData;
         this.originalCaller = originalCaller;
         this.sync = sync;
@@ -83,6 +99,7 @@ public final class Backup extends Operation implements BackupOperation, AllowedD
             throw new IllegalArgumentException("Sync backup requires original caller address, Backup operation data: "
                     + backupOpData);
         }
+        this.clientCorrelationId = clientCorrelationId;
     }
 
     public Operation getBackupOp() {
@@ -154,10 +171,7 @@ public final class Backup extends Operation implements BackupOperation, AllowedD
         }
 
         ensureBackupOperationInitialized();
-
-        backupOp.beforeRun();
-        backupOp.run();
-        backupOp.afterRun();
+        runDirect(backupOp);
 
         NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
         PartitionReplicaVersionManager versionManager = nodeEngine.getPartitionService().getPartitionReplicaVersionManager();
@@ -172,13 +186,23 @@ public final class Backup extends Operation implements BackupOperation, AllowedD
 
         NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
         long callId = getCallId();
-        OperationServiceImpl operationService = (OperationServiceImpl) nodeEngine.getOperationService();
+        OperationServiceImpl operationService = nodeEngine.getOperationService();
 
-        if (nodeEngine.getThisAddress().equals(originalCaller)) {
+        if (isCallerClient()) {
+            ClientEngine clientEngine = ((NodeEngineImpl) getNodeEngine()).getNode().getClientEngine();
+            UUID clientUUID = getCallerUuid();
+            clientEngine.dispatchBackupEvent(clientUUID, clientCorrelationId);
+        } else if (nodeEngine.getThisAddress().equals(originalCaller)) {
             operationService.getBackupHandler().notifyBackupComplete(callId);
         } else {
-            operationService.getOutboundResponseHandler().sendBackupAck(originalCaller, callId, backupOp.isUrgent());
+            operationService.getOutboundResponseHandler()
+                    .sendBackupAck(getConnection().getEndpointManager(),
+                            originalCaller, callId, backupOp.isUrgent());
         }
+    }
+
+    private boolean isCallerClient() {
+        return clientCorrelationId != -1;
     }
 
     @Override
@@ -225,7 +249,7 @@ public final class Backup extends Operation implements BackupOperation, AllowedD
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return SpiDataSerializerHook.BACKUP;
     }
 
@@ -236,7 +260,7 @@ public final class Backup extends Operation implements BackupOperation, AllowedD
             out.writeObject(backupOp);
         } else {
             out.writeBoolean(true);
-            out.writeData(backupOpData);
+            IOUtil.writeData(out, backupOpData);
         }
 
         if (originalCaller == null) {
@@ -259,12 +283,13 @@ public final class Backup extends Operation implements BackupOperation, AllowedD
         }
 
         out.writeBoolean(sync);
+        out.writeLong(clientCorrelationId);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         if (in.readBoolean()) {
-            backupOp = in.readDataAsObject();
+            backupOp = readDataAsObject(in);
         } else {
             backupOp = in.readObject();
         }
@@ -281,6 +306,7 @@ public final class Backup extends Operation implements BackupOperation, AllowedD
         }
 
         sync = in.readBoolean();
+        clientCorrelationId = in.readLong();
     }
 
     @Override

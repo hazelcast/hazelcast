@@ -17,7 +17,8 @@
 package com.hazelcast.query;
 
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IMap;
+import com.hazelcast.map.IMap;
+import com.hazelcast.query.PredicateBuilder.EntryObject;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
@@ -38,7 +39,7 @@ public class PredicateBuilderTest extends HazelcastTestSupport {
     public void get_keyAttribute() {
         HazelcastInstance hz = createHazelcastInstance();
 
-        EntryObject entryObject = new PredicateBuilder().getEntryObject();
+        EntryObject entryObject = Predicates.newPredicateBuilder().getEntryObject();
         Predicate predicate = entryObject.key().get("id").equal("10").and(entryObject.get("name").equal("value1"));
 
         IMap<Id, Value> hazelcastLookupMap = hz.getMap("someMap");
@@ -56,7 +57,7 @@ public class PredicateBuilderTest extends HazelcastTestSupport {
     public void get_key() {
         HazelcastInstance hz = createHazelcastInstance();
 
-        EntryObject entryObject = new PredicateBuilder().getEntryObject();
+        EntryObject entryObject = Predicates.newPredicateBuilder().getEntryObject();
         Predicate predicate = entryObject.key().equal(10L);
 
         IMap<Integer, Integer> hazelcastLookupMap = hz.getMap("someMap");
@@ -73,7 +74,7 @@ public class PredicateBuilderTest extends HazelcastTestSupport {
     public void get_this() {
         HazelcastInstance hz = createHazelcastInstance();
 
-        EntryObject entryObject = new PredicateBuilder().getEntryObject();
+        EntryObject entryObject = Predicates.newPredicateBuilder().getEntryObject();
         Predicate predicate = entryObject.get("this").equal(1L);
 
         IMap<Integer, Integer> hazelcastLookupMap = hz.getMap("someMap");
@@ -90,7 +91,7 @@ public class PredicateBuilderTest extends HazelcastTestSupport {
     public void get_attribute() {
         HazelcastInstance hz = createHazelcastInstance();
 
-        EntryObject entryObject = new PredicateBuilder().getEntryObject();
+        EntryObject entryObject = Predicates.newPredicateBuilder().getEntryObject();
         Predicate predicate = entryObject.get("id").equal("10");
 
         IMap<Integer, Id> hazelcastLookupMap = hz.getMap("someMap");

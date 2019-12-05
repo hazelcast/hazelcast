@@ -19,11 +19,11 @@ package com.hazelcast.internal.partition.operation;
 import com.hazelcast.internal.partition.NonFragmentedServiceNamespace;
 import com.hazelcast.internal.partition.impl.PartitionDataSerializerHook;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.spi.FragmentedMigrationAwareService;
-import com.hazelcast.spi.MigrationAwareService;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.PartitionReplicationEvent;
-import com.hazelcast.spi.ServiceNamespace;
+import com.hazelcast.internal.partition.FragmentedMigrationAwareService;
+import com.hazelcast.internal.partition.MigrationAwareService;
+import com.hazelcast.internal.partition.PartitionReplicationEvent;
+import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.internal.services.ServiceNamespace;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.servicemanager.ServiceInfo;
 
@@ -49,7 +49,7 @@ abstract class AbstractPartitionOperation extends Operation implements Identifie
     }
 
     private Collection<Operation> createReplicationOperations(PartitionReplicationEvent event, boolean nonFragmentedOnly) {
-        Collection<Operation> operations = new ArrayList<Operation>();
+        Collection<Operation> operations = new ArrayList<>();
         NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
         Collection<ServiceInfo> services = nodeEngine.getServiceInfos(MigrationAwareService.class);
 
@@ -117,7 +117,7 @@ abstract class AbstractPartitionOperation extends Operation implements Identifie
             // generally a namespace belongs to a single service only
             operations = singleton(op);
         } else if (operations.size() == 1) {
-            operations = new ArrayList<Operation>(operations);
+            operations = new ArrayList<>(operations);
             operations.add(op);
         } else {
             operations.add(op);

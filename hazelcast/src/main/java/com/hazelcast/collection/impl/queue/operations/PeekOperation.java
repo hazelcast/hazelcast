@@ -19,9 +19,9 @@ package com.hazelcast.collection.impl.queue.operations;
 import com.hazelcast.collection.impl.queue.QueueContainer;
 import com.hazelcast.collection.impl.queue.QueueDataSerializerHook;
 import com.hazelcast.collection.impl.queue.QueueItem;
-import com.hazelcast.monitor.impl.LocalQueueStatsImpl;
+import com.hazelcast.internal.monitor.impl.LocalQueueStatsImpl;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.spi.ReadonlyOperation;
+import com.hazelcast.spi.impl.operationservice.ReadonlyOperation;
 
 /**
  * Peek operation for Queue.
@@ -54,7 +54,7 @@ public final class PeekOperation extends QueueOperation implements IdentifiedDat
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return QueueDataSerializerHook.PEEK;
     }
 }

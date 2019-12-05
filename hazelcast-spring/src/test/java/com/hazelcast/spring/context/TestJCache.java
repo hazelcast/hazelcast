@@ -26,6 +26,8 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.InMemoryFormat;
+import com.hazelcast.config.MaxSizePolicy;
+import com.hazelcast.config.MergePolicyConfig;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.spring.CustomSpringJUnit4ClassRunner;
@@ -96,8 +98,8 @@ public class TestJCache {
         assertEquals(InMemoryFormat.OBJECT, simpleConfig.getInMemoryFormat());
         assertNotNull(simpleConfig.getEvictionConfig());
         assertEquals(50, simpleConfig.getEvictionConfig().getSize());
-        assertEquals(EvictionConfig.MaxSizePolicy.ENTRY_COUNT,
-                simpleConfig.getEvictionConfig().getMaximumSizePolicy());
+        assertEquals(MaxSizePolicy.ENTRY_COUNT,
+                simpleConfig.getEvictionConfig().getMaxSizePolicy());
         assertEquals(EvictionPolicy.LRU, simpleConfig.getEvictionConfig().getEvictionPolicy());
     }
 
@@ -227,14 +229,14 @@ public class TestJCache {
     }
 
     @Test
-    public void cacheConfigXmlTest_ClusterQuorum() {
+    public void cacheConfigXmlTest_ClusterSplitBrainProtection() {
         assertNotNull(instance1);
 
-        CacheSimpleConfig simpleConfig = instance1.getConfig().getCacheConfig("cacheWithQuorumRef");
+        CacheSimpleConfig simpleConfig = instance1.getConfig().getCacheConfig("cacheWithSplitBrainProtectionRef");
 
         assertNotNull(simpleConfig);
 
-        assertEquals("cacheQuorumRefString", simpleConfig.getQuorumName());
+        assertEquals("cacheSplitBrainProtectionRefString", simpleConfig.getSplitBrainProtectionName());
     }
 
     @Test
@@ -245,7 +247,8 @@ public class TestJCache {
                 instance1.getConfig().getCacheConfig("cacheWithDefaultMergePolicy");
 
         assertNotNull(cacheWithDefaultMergePolicyConfig);
-        assertEquals(CacheSimpleConfig.DEFAULT_CACHE_MERGE_POLICY, cacheWithDefaultMergePolicyConfig.getMergePolicy());
+        assertEquals(MergePolicyConfig.DEFAULT_MERGE_POLICY,
+                cacheWithDefaultMergePolicyConfig.getMergePolicyConfig().getPolicy());
     }
 
     @Test
@@ -256,7 +259,7 @@ public class TestJCache {
                 instance1.getConfig().getCacheConfig("cacheWithCustomMergePolicy");
 
         assertNotNull(cacheWithCustomMergePolicyConfig);
-        assertEquals("MyDummyMergePolicy", cacheWithCustomMergePolicyConfig.getMergePolicy());
+        assertEquals("MyDummyMergePolicy", cacheWithCustomMergePolicyConfig.getMergePolicyConfig().getPolicy());
     }
 
     @Test

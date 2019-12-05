@@ -20,9 +20,9 @@ import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.internal.networking.nio.MigratablePipeline;
 import com.hazelcast.internal.networking.nio.NioThread;
 import com.hazelcast.logging.LoggingService;
-import com.hazelcast.logging.LoggingServiceImpl;
+import com.hazelcast.logging.impl.LoggingServiceImpl;
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -32,7 +32,7 @@ import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class IOBalancerTest {
     private final LoggingService loggingService = new LoggingServiceImpl("somegroup", "log4j2", BuildInfoProvider.getBuildInfo());
 

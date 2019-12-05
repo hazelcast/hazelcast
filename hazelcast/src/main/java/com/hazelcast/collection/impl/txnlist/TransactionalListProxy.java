@@ -19,8 +19,8 @@ package com.hazelcast.collection.impl.txnlist;
 import com.hazelcast.collection.impl.collection.CollectionItem;
 import com.hazelcast.collection.impl.list.ListService;
 import com.hazelcast.collection.impl.txncollection.AbstractTransactionalCollectionProxy;
-import com.hazelcast.core.TransactionalList;
-import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.transaction.TransactionalList;
+import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.transaction.impl.Transaction;
 
 import java.util.Collection;

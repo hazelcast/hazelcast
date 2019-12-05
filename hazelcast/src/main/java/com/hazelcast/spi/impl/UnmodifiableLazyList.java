@@ -20,8 +20,8 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.spi.serialization.SerializationService;
-import com.hazelcast.util.UnmodifiableListIterator;
+import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.util.UnmodifiableListIterator;
 
 import java.io.IOException;
 import java.util.AbstractList;
@@ -30,8 +30,9 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
+import java.util.function.Predicate;
 
-import static com.hazelcast.util.EmptyStatement.ignore;
+import static com.hazelcast.internal.util.EmptyStatement.ignore;
 
 public class UnmodifiableLazyList<E> extends AbstractList<E> implements IdentifiedDataSerializable {
 
@@ -53,6 +54,16 @@ public class UnmodifiableLazyList<E> extends AbstractList<E> implements Identifi
     }
 
     @Override
+    public boolean add(E t) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public boolean addAll(Collection<? extends E> c) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
     public boolean remove(Object o) {
         throw new UnsupportedOperationException();
     }
@@ -63,12 +74,17 @@ public class UnmodifiableLazyList<E> extends AbstractList<E> implements Identifi
     }
 
     @Override
-    public boolean retainAll(Collection<?> c) {
+    public boolean removeIf(Predicate<? super E> filter) {
         throw new UnsupportedOperationException();
     }
 
     @Override
     public void clear() {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public boolean retainAll(Collection<?> coll) {
         throw new UnsupportedOperationException();
     }
 
@@ -128,7 +144,7 @@ public class UnmodifiableLazyList<E> extends AbstractList<E> implements Identifi
 
         ListIterator listIterator;
 
-        public UnmodifiableLazyListIterator(ListIterator listIterator) {
+        UnmodifiableLazyListIterator(ListIterator listIterator) {
             this.listIterator = listIterator;
         }
 
@@ -183,7 +199,7 @@ public class UnmodifiableLazyList<E> extends AbstractList<E> implements Identifi
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return SpiDataSerializerHook.UNMODIFIABLE_LAZY_LIST;
     }
 }

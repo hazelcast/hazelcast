@@ -19,7 +19,7 @@ package com.hazelcast.spi.impl.executionservice.impl;
 import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import static com.hazelcast.util.ExceptionUtil.rethrow;
+import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 
 /**
  * Decorator to delegate task to an executor and prevent concurrent task execution.

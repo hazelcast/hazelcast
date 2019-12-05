@@ -16,7 +16,7 @@
 
 package com.hazelcast.cache.jsr;
 
-import com.hazelcast.test.HazelcastParametersRunnerFactory;
+import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -28,7 +28,7 @@ import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 // this test overrides the entry event filter used in filtered listener tests
 // to avoid NPE when old value is not available
 @RunWith(Parameterized.class)
-@UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
+@UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
 @Category(QuickTest.class)
 public class CacheListenerTest extends AbstractCacheListenerTest {
 

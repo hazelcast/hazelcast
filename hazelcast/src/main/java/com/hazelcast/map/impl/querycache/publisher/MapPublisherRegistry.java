@@ -18,14 +18,14 @@ package com.hazelcast.map.impl.querycache.publisher;
 
 import com.hazelcast.map.impl.querycache.QueryCacheContext;
 import com.hazelcast.map.impl.querycache.Registry;
-import com.hazelcast.util.ConstructorFunction;
+import com.hazelcast.internal.util.ConstructorFunction;
 
 import java.util.Collections;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
-import static com.hazelcast.util.ConcurrencyUtil.getOrPutIfAbsent;
+import static com.hazelcast.internal.util.ConcurrencyUtil.getOrPutIfAbsent;
 
 /**
  * Registry of mappings like {@code mapName} to {@code PublisherRegistry}.
@@ -35,19 +35,14 @@ import static com.hazelcast.util.ConcurrencyUtil.getOrPutIfAbsent;
 public class MapPublisherRegistry implements Registry<String, PublisherRegistry> {
 
     private final ConstructorFunction<String, PublisherRegistry> registryConstructorFunction =
-            new ConstructorFunction<String, PublisherRegistry>() {
-                @Override
-                public PublisherRegistry createNew(String mapName) {
-                    return createPublisherRegistry(mapName);
-                }
-            };
+            this::createPublisherRegistry;
 
     private final QueryCacheContext context;
     private final ConcurrentMap<String, PublisherRegistry> cachePublishersPerIMap;
 
     public MapPublisherRegistry(QueryCacheContext context) {
         this.context = context;
-        this.cachePublishersPerIMap = new ConcurrentHashMap<String, PublisherRegistry>();
+        this.cachePublishersPerIMap = new ConcurrentHashMap<>();
     }
 
     @Override

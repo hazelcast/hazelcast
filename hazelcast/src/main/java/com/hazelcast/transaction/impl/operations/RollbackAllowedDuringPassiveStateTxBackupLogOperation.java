@@ -18,6 +18,8 @@ package com.hazelcast.transaction.impl.operations;
 
 import com.hazelcast.spi.impl.AllowedDuringPassiveState;
 
+import java.util.UUID;
+
 import static com.hazelcast.transaction.impl.TransactionDataSerializerHook.ROLLBACK_ALLOWED_DURING_PASSIVE_STATE_TX_BACKUP_LOG;
 
 public class RollbackAllowedDuringPassiveStateTxBackupLogOperation
@@ -27,12 +29,12 @@ public class RollbackAllowedDuringPassiveStateTxBackupLogOperation
     public RollbackAllowedDuringPassiveStateTxBackupLogOperation() {
     }
 
-    public RollbackAllowedDuringPassiveStateTxBackupLogOperation(String txnId) {
+    public RollbackAllowedDuringPassiveStateTxBackupLogOperation(UUID txnId) {
         super(txnId);
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ROLLBACK_ALLOWED_DURING_PASSIVE_STATE_TX_BACKUP_LOG;
     }
 

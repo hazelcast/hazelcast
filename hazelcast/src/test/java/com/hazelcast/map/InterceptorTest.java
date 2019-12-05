@@ -20,19 +20,21 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IMap;
-import com.hazelcast.core.MapLoader;
-import com.hazelcast.core.TransactionalMap;
+import com.hazelcast.map.impl.MapService;
+import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.map.listener.EntryAddedListener;
+import com.hazelcast.map.listener.EntryLoadedListener;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.transaction.TransactionException;
+import com.hazelcast.transaction.TransactionalMap;
 import com.hazelcast.transaction.TransactionalTask;
 import com.hazelcast.transaction.TransactionalTaskContext;
+import com.hazelcast.internal.util.UuidUtil;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -44,14 +46,43 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static com.hazelcast.spi.properties.GroupProperty.MAP_LOAD_ALL_PUBLISHES_ADDED_EVENT;
-import static com.hazelcast.util.StringUtil.LOCALE_INTERNAL;
+import static com.hazelcast.internal.util.StringUtil.LOCALE_INTERNAL;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class InterceptorTest extends HazelcastTestSupport {
+
+    @Test
+    public void removeInterceptor_returns_true_when_interceptor_removed() {
+        HazelcastInstance node = createHazelcastInstance();
+
+        String mapName = "mapWithInterceptor";
+        IMap map = node.getMap(mapName);
+        String id = map.addInterceptor(new SimpleInterceptor());
+
+        assertTrue(map.removeInterceptor(id));
+        assertNoRegisteredInterceptorExists(map);
+    }
+
+    private static void assertNoRegisteredInterceptorExists(IMap map) {
+        String mapName = map.getName();
+        MapService mapservice = (MapService) (((MapProxyImpl) map).getService());
+        mapservice.getMapServiceContext().getMapContainer(mapName).getInterceptorRegistry().getInterceptors();
+    }
+
+    @Test
+    public void removeInterceptor_returns_false_when_there_is_no_interceptor() {
+        HazelcastInstance node = createHazelcastInstance();
+
+        IMap map = node.getMap("mapWithNoInterceptor");
+
+        assertFalse(map.removeInterceptor(UuidUtil.newUnsecureUuidString()));
+        assertNoRegisteredInterceptorExists(map);
+    }
 
     @Test
     public void testMapInterceptor() {
@@ -210,7 +241,6 @@ public class InterceptorTest extends HazelcastTestSupport {
     public void testPutEvent_withInterceptor_withLoadAll() {
         String name = randomString();
         Config config = getConfig();
-        config.setProperty(MAP_LOAD_ALL_PUBLISHES_ADDED_EVENT.getName(), "true");
         MapStoreConfig mapStoreConfig = new MapStoreConfig()
                 .setEnabled(true)
                 .setImplementation(new DummyLoader());
@@ -219,7 +249,7 @@ public class InterceptorTest extends HazelcastTestSupport {
         HazelcastInstance instance = createHazelcastInstance(config);
         IMap<Integer, String> map = instance.getMap(name);
         map.addInterceptor(new SimpleInterceptor());
-        final EntryAddedLatch listener = new EntryAddedLatch();
+        final EntryLoadedLatch listener = new EntryLoadedLatch();
         map.addEntryListener(listener, true);
 
         Set<Integer> keys = new HashSet<Integer>();
@@ -229,7 +259,7 @@ public class InterceptorTest extends HazelcastTestSupport {
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() {
-                assertEquals("FOO-1", listener.getAddedValue());
+                assertEquals("FOO-1", listener.getLoadedValue());
             }
         }, 15);
     }
@@ -313,7 +343,7 @@ public class InterceptorTest extends HazelcastTestSupport {
         }
     }
 
-    static class EntryPutProcessor extends AbstractEntryProcessor<Integer, String> {
+    static class EntryPutProcessor implements EntryProcessor<Integer, String, String> {
 
         String value;
 
@@ -322,7 +352,7 @@ public class InterceptorTest extends HazelcastTestSupport {
         }
 
         @Override
-        public Object process(Map.Entry<Integer, String> entry) {
+        public String process(Map.Entry<Integer, String> entry) {
             return entry.setValue(value);
         }
     }
@@ -337,6 +367,20 @@ public class InterceptorTest extends HazelcastTestSupport {
         }
 
         String getAddedValue() {
+            return value.get();
+        }
+    }
+
+    static class EntryLoadedLatch implements EntryLoadedListener<Integer, String> {
+
+        AtomicReference<String> value = new AtomicReference<String>();
+
+        @Override
+        public void entryLoaded(EntryEvent<Integer, String> event) {
+            value.compareAndSet(null, event.getValue());
+        }
+
+        String getLoadedValue() {
             return value.get();
         }
     }

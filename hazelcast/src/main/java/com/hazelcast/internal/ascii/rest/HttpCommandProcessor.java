@@ -16,8 +16,15 @@
 
 package com.hazelcast.internal.ascii.rest;
 
+import com.hazelcast.core.HazelcastJsonValue;
 import com.hazelcast.internal.ascii.AbstractTextCommandProcessor;
 import com.hazelcast.internal.ascii.TextCommandService;
+import com.hazelcast.internal.json.JsonValue;
+
+import static com.hazelcast.internal.ascii.rest.HttpCommand.CONTENT_TYPE_BINARY;
+import static com.hazelcast.internal.ascii.rest.HttpCommand.CONTENT_TYPE_JSON;
+import static com.hazelcast.internal.ascii.rest.HttpCommand.CONTENT_TYPE_PLAIN_TEXT;
+import static com.hazelcast.internal.util.StringUtil.stringToBytes;
 
 
 public abstract class HttpCommandProcessor<T> extends AbstractTextCommandProcessor<T> {
@@ -27,6 +34,10 @@ public abstract class HttpCommandProcessor<T> extends AbstractTextCommandProcess
     public static final String URI_MANCENTER_CHANGE_URL = URI_MANCENTER_BASE_URL + "/changeurl";
     public static final String URI_UPDATE_PERMISSIONS = URI_MANCENTER_BASE_URL + "/security/permissions";
     public static final String URI_HEALTH_URL = "/hazelcast/health";
+    public static final String URI_HEALTH_READY = URI_HEALTH_URL + "/ready";
+
+    // Instance
+    public static final String URI_INSTANCE = "/hazelcast/rest/instance";
 
     // Cluster
     public static final String URI_CLUSTER = "/hazelcast/rest/cluster";
@@ -34,13 +45,13 @@ public abstract class HttpCommandProcessor<T> extends AbstractTextCommandProcess
     public static final String URI_CLUSTER_STATE_URL = URI_CLUSTER_MANAGEMENT_BASE_URL + "/state";
     public static final String URI_CHANGE_CLUSTER_STATE_URL = URI_CLUSTER_MANAGEMENT_BASE_URL + "/changeState";
     public static final String URI_CLUSTER_VERSION_URL = URI_CLUSTER_MANAGEMENT_BASE_URL + "/version";
-    public static final String URI_SHUTDOWN_CLUSTER_URL =  URI_CLUSTER_MANAGEMENT_BASE_URL + "/clusterShutdown";
+    public static final String URI_SHUTDOWN_CLUSTER_URL = URI_CLUSTER_MANAGEMENT_BASE_URL + "/clusterShutdown";
     public static final String URI_SHUTDOWN_NODE_CLUSTER_URL = URI_CLUSTER_MANAGEMENT_BASE_URL + "/memberShutdown";
     public static final String URI_CLUSTER_NODES_URL = URI_CLUSTER_MANAGEMENT_BASE_URL + "/nodes";
 
     // Hot restart
-    public static final String URI_FORCESTART_CLUSTER_URL =  URI_CLUSTER_MANAGEMENT_BASE_URL + "/forceStart";
-    public static final String URI_PARTIALSTART_CLUSTER_URL =  URI_CLUSTER_MANAGEMENT_BASE_URL + "/partialStart";
+    public static final String URI_FORCESTART_CLUSTER_URL = URI_CLUSTER_MANAGEMENT_BASE_URL + "/forceStart";
+    public static final String URI_PARTIALSTART_CLUSTER_URL = URI_CLUSTER_MANAGEMENT_BASE_URL + "/partialStart";
     public static final String URI_HOT_RESTART_BACKUP_CLUSTER_URL = URI_CLUSTER_MANAGEMENT_BASE_URL + "/hotBackup";
     public static final String URI_HOT_RESTART_BACKUP_INTERRUPT_CLUSTER_URL
             = URI_CLUSTER_MANAGEMENT_BASE_URL + "/hotBackupInterrupt";
@@ -60,7 +71,36 @@ public abstract class HttpCommandProcessor<T> extends AbstractTextCommandProcess
     public static final String LEGACY_URI_MANCENTER_WAN_CLEAR_QUEUES = "/hazelcast/rest/mancenter/clearWanQueues";
     public static final String LEGACY_URI_ADD_WAN_CONFIG = "/hazelcast/rest/wan/addWanConfig";
 
+    // License info
+    public static final String URI_LICENSE_INFO = "/hazelcast/rest/license";
+
+    // CP Subsystem
+    public static final String URI_CP_SUBSYSTEM_BASE_URL = "/hazelcast/rest/cp-subsystem";
+    public static final String URI_RESET_CP_SUBSYSTEM_URL = URI_CP_SUBSYSTEM_BASE_URL + "/reset";
+    public static final String URI_CP_GROUPS_URL = URI_CP_SUBSYSTEM_BASE_URL + "/groups";
+    public static final String URI_CP_SESSIONS_SUFFIX = "/sessions";
+    public static final String URI_REMOVE_SUFFIX = "/remove";
+    public static final String URI_CP_MEMBERS_URL = URI_CP_SUBSYSTEM_BASE_URL + "/members";
+    public static final String URI_LOCAL_CP_MEMBER_URL = URI_CP_MEMBERS_URL + "/local";
+
     protected HttpCommandProcessor(TextCommandService textCommandService) {
         super(textCommandService);
+    }
+
+    protected void prepareResponse(HttpCommand command, Object value) {
+        if (value == null) {
+            command.send204();
+        } else if (value instanceof byte[]) {
+            command.setResponse(CONTENT_TYPE_BINARY, (byte[]) value);
+        } else if (value instanceof RestValue) {
+            RestValue restValue = (RestValue) value;
+            command.setResponse(restValue.getContentType(), restValue.getValue());
+        } else if (value instanceof HazelcastJsonValue || value instanceof JsonValue) {
+            command.setResponse(CONTENT_TYPE_JSON, stringToBytes(value.toString()));
+        } else if (value instanceof String) {
+            command.setResponse(CONTENT_TYPE_PLAIN_TEXT, stringToBytes((String) value));
+        } else {
+            command.setResponse(CONTENT_TYPE_BINARY, textCommandService.toByteArray(value));
+        }
     }
 }

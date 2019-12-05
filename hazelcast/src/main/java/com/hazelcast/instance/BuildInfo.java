@@ -18,7 +18,7 @@ package com.hazelcast.instance;
 
 import com.hazelcast.logging.Logger;
 
-import static com.hazelcast.util.StringUtil.tokenizeVersionString;
+import static com.hazelcast.internal.util.StringUtil.tokenizeVersionString;
 import static java.lang.Integer.parseInt;
 
 public class BuildInfo {
@@ -38,34 +38,36 @@ public class BuildInfo {
     private final byte serializationVersion;
     private final BuildInfo upstreamBuildInfo;
     private final JetBuildInfo jetBuildInfo;
+    private final String commitId;
 
     public BuildInfo(String version, String build, String revision, int buildNumber, boolean enterprise,
-                     byte serializationVersion) {
-        this(version, build, revision, buildNumber, enterprise, serializationVersion, null);
+                     byte serializationVersion, String commitId) {
+        this(version, build, revision, buildNumber, enterprise, serializationVersion, commitId, null);
     }
 
     public BuildInfo(String version, String build, String revision, int buildNumber, boolean enterprise,
-                     byte serializationVersion, BuildInfo upstreamBuildInfo) {
-        this(version, build, revision, buildNumber, enterprise, serializationVersion, upstreamBuildInfo,
-                null);
+                     byte serializationVersion, String commitId, BuildInfo upstreamBuildInfo) {
+        this(version, build, revision, buildNumber, enterprise, serializationVersion, commitId,
+                upstreamBuildInfo, null);
     }
 
     private BuildInfo(String version, String build, String revision, int buildNumber, boolean enterprise,
-                     byte serializationVersion, BuildInfo upstreamBuildInfo, JetBuildInfo jetBuildInfo) {
+                     byte serializationVersion, String commitId, BuildInfo upstreamBuildInfo, JetBuildInfo jetBuildInfo) {
         this.version = version;
         this.build = build;
         this.revision = revision;
         this.buildNumber = buildNumber;
         this.enterprise = enterprise;
         this.serializationVersion = serializationVersion;
+        this.commitId = commitId;
         this.upstreamBuildInfo = upstreamBuildInfo;
         this.jetBuildInfo = jetBuildInfo;
     }
 
     private BuildInfo(BuildInfo buildInfo, JetBuildInfo jetBuildInfo) {
         this(buildInfo.getVersion(), buildInfo.getBuild(), buildInfo.getRevision(), buildInfo.getBuildNumber(),
-                buildInfo.isEnterprise(), buildInfo.getSerializationVersion(), buildInfo.getUpstreamBuildInfo(),
-                jetBuildInfo);
+                buildInfo.isEnterprise(), buildInfo.getSerializationVersion(), buildInfo.getCommitId(),
+                buildInfo.getUpstreamBuildInfo(), jetBuildInfo);
     }
 
     public String getRevision() {
@@ -94,6 +96,10 @@ public class BuildInfo {
 
     public BuildInfo getUpstreamBuildInfo() {
         return upstreamBuildInfo;
+    }
+
+    public String getCommitId() {
+        return commitId;
     }
 
     /**

@@ -18,14 +18,14 @@ package com.hazelcast.map.impl.query;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IMap;
+import com.hazelcast.map.IMap;
 import com.hazelcast.map.QueryResultSizeExceededException;
 import com.hazelcast.map.impl.MapService;
-import com.hazelcast.query.TruePredicate;
-import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.query.Predicates;
+import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.SlowTest;
 import org.junit.Before;
 import org.junit.Ignore;
@@ -33,11 +33,11 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import static com.hazelcast.util.IterationType.ENTRY;
+import static com.hazelcast.internal.util.IterationType.ENTRY;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({SlowTest.class, ParallelTest.class})
+@Category({SlowTest.class, ParallelJVMTest.class})
 public class QueryEngineImpl_queryLocalPartition_resultSizeLimitTest extends HazelcastTestSupport {
 
     private static final int RESULT_SIZE_LIMIT = QueryResultSizeLimiter.MINIMUM_MAX_RESULT_LIMIT + 2342;
@@ -53,8 +53,8 @@ public class QueryEngineImpl_queryLocalPartition_resultSizeLimitTest extends Haz
     public void setup() {
         Config config = new Config();
         // we reduce the number of partitions to speed up content generation
-        config.setProperty(GroupProperty.PARTITION_COUNT.getName(), "" + PARTITION_COUNT);
-        config.setProperty(GroupProperty.QUERY_RESULT_SIZE_LIMIT.getName(), "" + RESULT_SIZE_LIMIT);
+        config.setProperty(ClusterProperty.PARTITION_COUNT.getName(), "" + PARTITION_COUNT);
+        config.setProperty(ClusterProperty.QUERY_RESULT_SIZE_LIMIT.getName(), "" + RESULT_SIZE_LIMIT);
 
         hz = createHazelcastInstance(config);
         map = hz.getMap(randomName());
@@ -71,7 +71,7 @@ public class QueryEngineImpl_queryLocalPartition_resultSizeLimitTest extends Haz
     public void checkResultSize_limitNotExceeded() {
         fillPartition(limit - 1);
 
-        Query query = Query.of().mapName(map.getName()).predicate(TruePredicate.INSTANCE).iterationType(ENTRY).build();
+        Query query = Query.of().mapName(map.getName()).predicate(Predicates.alwaysTrue()).iterationType(ENTRY).build();
         QueryResult result = (QueryResult) queryEngine.execute(query, Target.LOCAL_NODE);
 
         assertEquals(limit - 1, result.size());
@@ -81,7 +81,7 @@ public class QueryEngineImpl_queryLocalPartition_resultSizeLimitTest extends Haz
     public void checkResultSize_limitNotEquals() {
         fillPartition(limit);
 
-        Query query = Query.of().mapName(map.getName()).predicate(TruePredicate.INSTANCE).iterationType(ENTRY).build();
+        Query query = Query.of().mapName(map.getName()).predicate(Predicates.alwaysTrue()).iterationType(ENTRY).build();
         QueryResult result = (QueryResult) queryEngine.execute(query, Target.LOCAL_NODE);
 
         assertEquals(limit, result.size());
@@ -92,7 +92,7 @@ public class QueryEngineImpl_queryLocalPartition_resultSizeLimitTest extends Haz
     public void checkResultSize_limitExceeded() {
         fillPartition(limit + 1);
 
-        Query query = Query.of().mapName(map.getName()).predicate(TruePredicate.INSTANCE).iterationType(ENTRY).build();
+        Query query = Query.of().mapName(map.getName()).predicate(Predicates.alwaysTrue()).iterationType(ENTRY).build();
         queryEngine.execute(query, Target.LOCAL_NODE);
     }
 

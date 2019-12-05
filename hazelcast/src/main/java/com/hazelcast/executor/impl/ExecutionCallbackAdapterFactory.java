@@ -16,19 +16,21 @@
 
 package com.hazelcast.executor.impl;
 
+import com.hazelcast.cluster.Member;
 import com.hazelcast.core.ExecutionCallback;
-import com.hazelcast.core.Member;
 import com.hazelcast.core.MultiExecutionCallback;
 import com.hazelcast.logging.ILogger;
 
+import javax.annotation.Nonnull;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 
-import static com.hazelcast.util.MapUtil.createConcurrentHashMap;
-import static com.hazelcast.util.MapUtil.createHashMap;
+import static com.hazelcast.internal.util.MapUtil.createConcurrentHashMap;
+import static com.hazelcast.internal.util.MapUtil.createHashMap;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static java.lang.Boolean.FALSE;
 import static java.lang.Boolean.TRUE;
 
@@ -46,11 +48,15 @@ class ExecutionCallbackAdapterFactory {
     @SuppressWarnings("CanBeFinal")
     private volatile Boolean done = FALSE;
 
-    ExecutionCallbackAdapterFactory(ILogger logger, Collection<Member> members,
-                                    MultiExecutionCallback multiExecutionCallback) {
+    ExecutionCallbackAdapterFactory(@Nonnull ILogger logger,
+                                    @Nonnull Collection<Member> members,
+                                    @Nonnull MultiExecutionCallback multiExecutionCallback) {
+        checkNotNull(logger, "logger must not be null");
+        checkNotNull(members, "members must not be null");
+        checkNotNull(multiExecutionCallback, "multiExecutionCallback must not be null");
         this.multiExecutionCallback = multiExecutionCallback;
         this.responses = createConcurrentHashMap(members.size());
-        this.members = new HashSet<Member>(members);
+        this.members = new HashSet<>(members);
         this.logger = logger;
     }
 

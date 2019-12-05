@@ -18,12 +18,9 @@
 <hazelcast xmlns="http://www.hazelcast.com/schema/config"
            xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
            xsi:schemaLocation="http://www.hazelcast.com/schema/config
-           http://www.hazelcast.com/schema/config/hazelcast-config-3.11.xsd">
+           http://www.hazelcast.com/schema/config/hazelcast-config-4.0.xsd">
 
-    <group>
-        <name>F4D03AC8-B5F7-4542-9BAD-0A94BA48E95D</name>
-        <password>6E282022-3BAD-4F5F-8122-CCBE85BD057E</password>
-    </group>
+    <cluster-name>F4D03AC8-B5F7-4542-9BAD-0A94BA48E95D</cluster-name>
     <network>
         <join>
             <multicast enabled="false"/>

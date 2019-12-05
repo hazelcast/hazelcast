@@ -19,7 +19,7 @@ package com.hazelcast.map.impl.mapstore.writebehind;
 import java.util.Collection;
 import java.util.List;
 
-import static com.hazelcast.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 /**
  * Wrapper for a not thread safe {@link WriteBehindQueue},
@@ -50,9 +50,9 @@ class SynchronizedWriteBehindQueue<E> implements WriteBehindQueue<E> {
     }
 
     @Override
-    public void addLast(E e) {
+    public void addLast(E e, boolean addWithoutCapacityCheck) {
         synchronized (mutex) {
-            queue.addLast(e);
+            queue.addLast(e, addWithoutCapacityCheck);
         }
     }
 
@@ -119,4 +119,10 @@ class SynchronizedWriteBehindQueue<E> implements WriteBehindQueue<E> {
         }
     }
 
+    @Override
+    public <T> T unwrap(Class<T> clazz) {
+        synchronized (mutex) {
+            return queue.unwrap(clazz);
+        }
+    }
 }

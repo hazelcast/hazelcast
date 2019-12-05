@@ -16,6 +16,8 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.internal.config.ConfigDataSerializerHook;
+
 /**
  * Configuration for the Eureka Discovery Strategy.
  */
@@ -25,8 +27,12 @@ public class EurekaConfig
         super("eureka");
     }
 
+    public EurekaConfig(EurekaConfig eurekaConfig) {
+        super(eurekaConfig);
+    }
+
     @Override
-    public int getId() {
+    public int getClassId() {
         return ConfigDataSerializerHook.EUREKA_CONFIG;
     }
 }

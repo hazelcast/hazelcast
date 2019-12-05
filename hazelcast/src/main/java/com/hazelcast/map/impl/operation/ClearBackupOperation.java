@@ -17,7 +17,7 @@
 package com.hazelcast.map.impl.operation;
 
 import com.hazelcast.map.impl.MapDataSerializerHook;
-import com.hazelcast.spi.BackupOperation;
+import com.hazelcast.spi.impl.operationservice.BackupOperation;
 
 public class ClearBackupOperation extends MapOperation implements BackupOperation {
 
@@ -31,14 +31,14 @@ public class ClearBackupOperation extends MapOperation implements BackupOperatio
     }
 
     @Override
-    public void run() {
+    protected void runInternal() {
         if (recordStore != null) {
             recordStore.clear();
         }
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MapDataSerializerHook.CLEAR_BACKUP;
     }
 }

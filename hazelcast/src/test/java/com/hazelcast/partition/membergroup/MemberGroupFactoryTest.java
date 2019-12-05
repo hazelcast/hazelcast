@@ -17,10 +17,10 @@
 package com.hazelcast.partition.membergroup;
 
 import com.hazelcast.config.MemberGroupConfig;
-import com.hazelcast.core.Member;
+import com.hazelcast.cluster.Member;
 import com.hazelcast.instance.BuildInfoProvider;
-import com.hazelcast.instance.MemberImpl;
-import com.hazelcast.nio.Address;
+import com.hazelcast.cluster.impl.MemberImpl;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.spi.partitiongroup.PartitionGroupMetaData;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
@@ -96,13 +96,13 @@ public class MemberGroupFactoryTest {
     private Collection<Member> createMembersWithZoneAwareMetadata() {
         Collection<Member> members = new HashSet<Member>();
         MemberImpl member1 = new MemberImpl(new Address("192.192.0.1", fakeAddress, 5701), VERSION, true);
-        member1.setStringAttribute(PartitionGroupMetaData.PARTITION_GROUP_ZONE, "us-east-1");
+        member1.setAttribute(PartitionGroupMetaData.PARTITION_GROUP_ZONE, "us-east-1");
 
         MemberImpl member2 = new MemberImpl(new Address("192.192.0.2", fakeAddress, 5701), VERSION, true);
-        member2.setStringAttribute(PartitionGroupMetaData.PARTITION_GROUP_ZONE, "us-west-1");
+        member2.setAttribute(PartitionGroupMetaData.PARTITION_GROUP_ZONE, "us-west-1");
 
         MemberImpl member3 = new MemberImpl(new Address("192.192.0.3", fakeAddress, 5701), VERSION, true);
-        member3.setStringAttribute(PartitionGroupMetaData.PARTITION_GROUP_ZONE, "eu-central-1");
+        member3.setAttribute(PartitionGroupMetaData.PARTITION_GROUP_ZONE, "eu-central-1");
 
         members.add(member1);
         members.add(member2);
@@ -125,13 +125,13 @@ public class MemberGroupFactoryTest {
     private Collection<Member> createMembersWithRackAwareMetadata() {
         Collection<Member> members = new HashSet<Member>();
         MemberImpl member1 = new MemberImpl(new Address("192.192.0.1", fakeAddress, 5701), VERSION, true);
-        member1.setStringAttribute(PartitionGroupMetaData.PARTITION_GROUP_RACK, "rack-1");
+        member1.setAttribute(PartitionGroupMetaData.PARTITION_GROUP_RACK, "rack-1");
 
         MemberImpl member2 = new MemberImpl(new Address("192.192.0.2", fakeAddress, 5701), VERSION, true);
-        member2.setStringAttribute(PartitionGroupMetaData.PARTITION_GROUP_RACK, "rack-2");
+        member2.setAttribute(PartitionGroupMetaData.PARTITION_GROUP_RACK, "rack-2");
 
         MemberImpl member3 = new MemberImpl(new Address("192.192.0.3", fakeAddress, 5701), VERSION, true);
-        member3.setStringAttribute(PartitionGroupMetaData.PARTITION_GROUP_RACK, "rack-3");
+        member3.setAttribute(PartitionGroupMetaData.PARTITION_GROUP_RACK, "rack-3");
 
         members.add(member1);
         members.add(member2);
@@ -154,13 +154,13 @@ public class MemberGroupFactoryTest {
     private Collection<Member> createMembersWithHostAwareMetadata() {
         Collection<Member> members = new HashSet<Member>();
         MemberImpl member1 = new MemberImpl(new Address("192.192.0.1", fakeAddress, 5701), VERSION, true);
-        member1.setStringAttribute(PartitionGroupMetaData.PARTITION_GROUP_HOST, "host-1");
+        member1.setAttribute(PartitionGroupMetaData.PARTITION_GROUP_HOST, "host-1");
 
         MemberImpl member2 = new MemberImpl(new Address("192.192.0.2", fakeAddress, 5701), VERSION, true);
-        member2.setStringAttribute(PartitionGroupMetaData.PARTITION_GROUP_HOST, "host-2");
+        member2.setAttribute(PartitionGroupMetaData.PARTITION_GROUP_HOST, "host-2");
 
         MemberImpl member3 = new MemberImpl(new Address("192.192.0.3", fakeAddress, 5701), VERSION, true);
-        member3.setStringAttribute(PartitionGroupMetaData.PARTITION_GROUP_HOST, "host-3");
+        member3.setAttribute(PartitionGroupMetaData.PARTITION_GROUP_HOST, "host-3");
 
         members.add(member1);
         members.add(member2);

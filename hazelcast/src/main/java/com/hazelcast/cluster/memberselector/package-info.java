@@ -15,6 +15,6 @@
  */
 
 /**
- * <p>This package contains several {@link com.hazelcast.core.MemberSelector} implementations.<br/>
+ * <p>This package contains several {@link com.hazelcast.cluster.MemberSelector} implementations.<br>
  */
 package com.hazelcast.cluster.memberselector;

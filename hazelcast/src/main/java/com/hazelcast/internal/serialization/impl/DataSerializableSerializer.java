@@ -19,7 +19,7 @@ package com.hazelcast.internal.serialization.impl;
 import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.internal.serialization.DataSerializerHook;
 import com.hazelcast.logging.Logger;
-import com.hazelcast.nio.ClassLoaderUtil;
+import com.hazelcast.internal.nio.ClassLoaderUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
@@ -29,9 +29,9 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.nio.serialization.StreamSerializer;
 import com.hazelcast.nio.serialization.TypedDataSerializable;
 import com.hazelcast.nio.serialization.TypedStreamDeserializer;
-import com.hazelcast.util.ExceptionUtil;
-import com.hazelcast.util.ServiceLoader;
-import com.hazelcast.util.collection.Int2ObjectHashMap;
+import com.hazelcast.internal.util.ExceptionUtil;
+import com.hazelcast.internal.util.ServiceLoader;
+import com.hazelcast.internal.util.collection.Int2ObjectHashMap;
 import com.hazelcast.version.Version;
 
 import java.io.IOException;
@@ -57,7 +57,7 @@ final class DataSerializableSerializer implements StreamSerializer<DataSerializa
     private static final String FACTORY_ID = "com.hazelcast.DataSerializerHook";
 
     private final Version version = Version.of(BuildInfoProvider.getBuildInfo().getVersion());
-    private final Int2ObjectHashMap<DataSerializableFactory> factories = new Int2ObjectHashMap<DataSerializableFactory>();
+    private final Int2ObjectHashMap<DataSerializableFactory> factories = new Int2ObjectHashMap<>();
 
     DataSerializableSerializer(Map<Integer, ? extends DataSerializableFactory> dataSerializableFactories,
                                ClassLoader classLoader) {
@@ -233,7 +233,7 @@ final class DataSerializableSerializer implements StreamSerializer<DataSerializa
         if (identified) {
             final IdentifiedDataSerializable ds = (IdentifiedDataSerializable) obj;
             out.writeInt(ds.getFactoryId());
-            out.writeInt(ds.getId());
+            out.writeInt(ds.getClassId());
         } else {
             if (obj instanceof TypedDataSerializable) {
                 out.writeUTF(((TypedDataSerializable) obj).getClassType().getName());

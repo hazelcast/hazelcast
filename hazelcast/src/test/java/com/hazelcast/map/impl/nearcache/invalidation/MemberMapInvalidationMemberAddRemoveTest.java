@@ -22,7 +22,7 @@ import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IMap;
+import com.hazelcast.map.IMap;
 import com.hazelcast.map.impl.nearcache.NearCacheTestSupport;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -39,10 +39,10 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.hazelcast.internal.nearcache.impl.invalidation.RepairingTask.MAX_TOLERATED_MISS_COUNT;
 import static com.hazelcast.internal.nearcache.impl.invalidation.RepairingTask.RECONCILIATION_INTERVAL_SECONDS;
-import static com.hazelcast.spi.properties.GroupProperty.MAP_INVALIDATION_MESSAGE_BATCH_ENABLED;
-import static com.hazelcast.spi.properties.GroupProperty.MAP_INVALIDATION_MESSAGE_BATCH_SIZE;
-import static com.hazelcast.spi.properties.GroupProperty.PARTITION_COUNT;
-import static com.hazelcast.util.RandomPicker.getInt;
+import static com.hazelcast.spi.properties.ClusterProperty.MAP_INVALIDATION_MESSAGE_BATCH_ENABLED;
+import static com.hazelcast.spi.properties.ClusterProperty.MAP_INVALIDATION_MESSAGE_BATCH_SIZE;
+import static com.hazelcast.spi.properties.ClusterProperty.PARTITION_COUNT;
+import static com.hazelcast.internal.util.RandomPicker.getInt;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -105,9 +105,11 @@ public class MemberMapInvalidationMemberAddRemoveTest extends NearCacheTestSuppo
         // populates client Near Cache
         Thread populateClientNearCache = new Thread(new Runnable() {
             public void run() {
+                int i = 0;
                 while (!stopTest.get()) {
-                    for (int i = 0; i < KEY_COUNT; i++) {
-                        nearCachedMap.get(i);
+                    nearCachedMap.get(i++);
+                    if (i == KEY_COUNT) {
+                        i = 0;
                     }
                 }
             }

@@ -19,7 +19,10 @@ package com.hazelcast.executor.impl.operations;
 import com.hazelcast.executor.impl.ExecutorDataSerializerHook;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.spi.impl.MutatingOperation;
+import com.hazelcast.spi.impl.operationservice.MutatingOperation;
+
+import javax.annotation.Nonnull;
+import java.util.UUID;
 
 public final class CallableTaskOperation extends AbstractCallableTaskOperation
         implements IdentifiedDataSerializable, MutatingOperation {
@@ -27,12 +30,14 @@ public final class CallableTaskOperation extends AbstractCallableTaskOperation
     public CallableTaskOperation() {
     }
 
-    public CallableTaskOperation(String name, String uuid, Data callableData) {
+    public CallableTaskOperation(String name,
+                                 UUID uuid,
+                                 @Nonnull Data callableData) {
         super(name, uuid, callableData);
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ExecutorDataSerializerHook.CALLABLE_TASK;
     }
 }

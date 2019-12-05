@@ -19,7 +19,7 @@ package com.hazelcast.multimap.impl.operations;
 import com.hazelcast.multimap.impl.MultiMapContainer;
 import com.hazelcast.multimap.impl.MultiMapDataSerializerHook;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.impl.operationservice.Operation;
 
 
 public class DeleteOperation extends AbstractBackupAwareMultiMapOperation {
@@ -67,7 +67,7 @@ public class DeleteOperation extends AbstractBackupAwareMultiMapOperation {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MultiMapDataSerializerHook.DELETE;
     }
 }

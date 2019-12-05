@@ -21,17 +21,17 @@ import com.hazelcast.collection.impl.collection.CollectionDataSerializerHook;
 import com.hazelcast.collection.impl.collection.CollectionItem;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.RemoteService;
+import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.internal.services.RemoteService;
 import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 import com.hazelcast.spi.merge.SplitBrainMergeTypes.CollectionMergeTypes;
-import com.hazelcast.spi.serialization.SerializationService;
+import com.hazelcast.internal.serialization.SerializationService;
 
 import java.io.IOException;
 import java.util.Collection;
 
 import static com.hazelcast.spi.impl.merge.MergingValueFactory.createMergingValue;
-import static com.hazelcast.util.CollectionUtil.isEmpty;
+import static com.hazelcast.internal.util.CollectionUtil.isEmpty;
 
 /**
  * Merges a {@link CollectionMergeTypes} for split-brain healing with a {@link SplitBrainMergePolicy}.
@@ -127,7 +127,7 @@ public class CollectionMergeOperation extends CollectionBackupAwareOperation {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return CollectionDataSerializerHook.COLLECTION_MERGE;
     }
 }

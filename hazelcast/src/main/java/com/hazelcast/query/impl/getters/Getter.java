@@ -23,7 +23,7 @@ package com.hazelcast.query.impl.getters;
 abstract class Getter {
     protected final Getter parent;
 
-    public Getter(final Getter parent) {
+    Getter(final Getter parent) {
         this.parent = parent;
     }
 
@@ -38,6 +38,14 @@ abstract class Getter {
      */
     Object getValue(Object obj, String attributePath) throws Exception {
         return getValue(obj);
+    }
+
+    /**
+     * Method for generic getters that can make use of metadata if available. These getters must
+     * gracefully fallback to not using metadata if unavailable.
+     */
+    Object getValue(Object obj, String attributePath, Object metadata) throws Exception {
+        return getValue(obj, attributePath);
     }
 
     /**

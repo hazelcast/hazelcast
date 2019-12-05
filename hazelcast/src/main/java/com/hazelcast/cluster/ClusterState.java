@@ -16,8 +16,7 @@
 
 package com.hazelcast.cluster;
 
-import com.hazelcast.core.Cluster;
-import com.hazelcast.instance.NodeState;
+import com.hazelcast.instance.impl.NodeState;
 import com.hazelcast.spi.impl.AllowedDuringPassiveState;
 
 /**
@@ -51,10 +50,10 @@ import com.hazelcast.spi.impl.AllowedDuringPassiveState;
  * <li>
  * {@link #IN_TRANSITION}:
  * Shows that {@code ClusterState} is in transition.
- * This is a temporary & intermediate state, not allowed to be set explicitly.
+ * This is a temporary &amp; intermediate state, not allowed to be set explicitly.
  * </li>
  * </ol>
- * <p/>
+ * <p>
  * By default, cluster will be in {@code ACTIVE} state. During split-brain merge process,
  * state of the cluster, that is going to join to the major side,
  * will be changed to {@code FROZEN} automatically before merge
@@ -71,7 +70,7 @@ public enum ClusterState {
      * In {@code ACTIVE} state, cluster will continue to operate without any restriction.
      * All operations are allowed. This is the default state of a cluster.
      */
-    ACTIVE(true, true, true),
+    ACTIVE(true, true, true, 0),
 
     /**
      * In {@code NO_MIGRATION} state of the cluster, migrations (partition rebalancing) and backup replications
@@ -90,7 +89,7 @@ public enum ClusterState {
      *
      * @since 3.9
      */
-    NO_MIGRATION(true, false, true),
+    NO_MIGRATION(true, false, true, 1),
 
     /**
      * In {@code FROZEN} state of the cluster:
@@ -119,7 +118,7 @@ public enum ClusterState {
      * </li>
      * </ul>
      */
-    FROZEN(false, false, false),
+    FROZEN(false, false, false, 2),
 
     /**
      * In {@code PASSIVE} state of the cluster:
@@ -144,16 +143,15 @@ public enum ClusterState {
      * </li>
      * </ul>
      */
-    PASSIVE(false, false, false),
+    PASSIVE(false, false, false, 3),
 
     /**
      * Shows that ClusterState is in transition. When a state change transaction is started,
      * ClusterState will be shown as {@code IN_TRANSITION} while the transaction is in progress.
      * After the transaction completes, cluster will be either in the new state or in the previous state,
      * depending on transaction result.
-     * <p/>
-     * This is a temporary & intermediate state, not allowed to be set explicitly.
-     * <p/>
+     * <p>
+     * This is a temporary &amp; intermediate state, not allowed to be set explicitly.
      * <ul>
      * <li>
      * Similarly to the {@code FROZEN} state, new members are not allowed
@@ -165,20 +163,27 @@ public enum ClusterState {
      * </li>
      * </ul>
      */
-    IN_TRANSITION(false, false, false);
+    IN_TRANSITION(false, false, false, 4);
 
     private final boolean joinAllowed;
     private final boolean migrationAllowed;
     private final boolean partitionPromotionAllowed;
+    private final byte id;
 
-    ClusterState(boolean joinAllowed, boolean migrationAllowed, boolean partitionPromotionAllowed) {
+    ClusterState(boolean joinAllowed,
+                 boolean migrationAllowed,
+                 boolean partitionPromotionAllowed,
+                 int id) {
+
         this.joinAllowed = joinAllowed;
         this.migrationAllowed = migrationAllowed;
         this.partitionPromotionAllowed = partitionPromotionAllowed;
+        this.id = (byte) id;
     }
 
     /**
      * Returns {@code true}, if joining of a new member is allowed in this state.
+     * @return {@code true} if joining of a new member is allowed in this state.
      */
     public boolean isJoinAllowed() {
         return joinAllowed;
@@ -186,6 +191,7 @@ public enum ClusterState {
 
     /**
      * Returns {@code true}, if migrations and replications are allowed in this state.
+     * @return {@code true} if migrations and replications are allowed in this state.
      */
     public boolean isMigrationAllowed() {
         return migrationAllowed;
@@ -193,8 +199,22 @@ public enum ClusterState {
 
     /**
      * Returns {@code true}, if partition promotions are allowed in this state.
+     * @return {@code true} if partition promotions are allowed in this state.
      */
     public boolean isPartitionPromotionAllowed() {
         return partitionPromotionAllowed;
+    }
+
+    public byte getId() {
+        return id;
+    }
+
+    public static ClusterState getById(int id) {
+        for (ClusterState cs : values()) {
+            if (cs.getId() == id) {
+                return cs;
+            }
+        }
+        throw new IllegalArgumentException("Unsupported ID value");
     }
 }

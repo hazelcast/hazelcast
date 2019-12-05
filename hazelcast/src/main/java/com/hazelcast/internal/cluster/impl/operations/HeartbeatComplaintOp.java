@@ -48,7 +48,7 @@ public class HeartbeatComplaintOp extends AbstractClusterOperation {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return HEARTBEAT_COMPLAINT;
     }
 

@@ -27,7 +27,7 @@
         http://www.springframework.org/schema/tx
         http://www.springframework.org/schema/tx/spring-tx.xsd
         http://www.hazelcast.com/schema/spring
-        http://www.hazelcast.com/schema/spring/hazelcast-spring-3.11.xsd">
+        http://www.hazelcast.com/schema/spring/hazelcast-spring-4.0.xsd">
 
     <tx:annotation-driven transaction-manager="dummyTransactionManager"/>
 
@@ -36,7 +36,7 @@
 
     <hz:hazelcast id="instance1">
         <hz:config>
-            <hz:group name="test" password="test-pass"/>
+            <hz:cluster-name>test</hz:cluster-name>
             <hz:network port="5701" port-auto-increment="false">
                 <hz:join>
                     <hz:multicast enabled="false"/>

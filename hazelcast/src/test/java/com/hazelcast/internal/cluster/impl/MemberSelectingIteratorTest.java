@@ -17,11 +17,11 @@
 package com.hazelcast.internal.cluster.impl;
 
 import com.hazelcast.instance.BuildInfoProvider;
-import com.hazelcast.instance.MemberImpl;
-import com.hazelcast.nio.Address;
+import com.hazelcast.cluster.impl.MemberImpl;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.version.MemberVersion;
 import org.junit.Before;
@@ -39,11 +39,11 @@ import static com.hazelcast.cluster.memberselector.MemberSelectors.DATA_MEMBER_S
 import static com.hazelcast.cluster.memberselector.MemberSelectors.LITE_MEMBER_SELECTOR;
 import static com.hazelcast.cluster.memberselector.MemberSelectors.NON_LOCAL_MEMBER_SELECTOR;
 import static com.hazelcast.cluster.memberselector.MemberSelectors.and;
-import static com.hazelcast.util.UuidUtil.newUnsecureUuidString;
+import static com.hazelcast.internal.util.UuidUtil.newUnsecureUUID;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class MemberSelectingIteratorTest extends HazelcastTestSupport {
 
     private MemberImpl thisMember;
@@ -58,10 +58,14 @@ public class MemberSelectingIteratorTest extends HazelcastTestSupport {
     public void before()
             throws Exception {
         MemberVersion version = new MemberVersion(BuildInfoProvider.getBuildInfo().getVersion());
-        thisMember = new MemberImpl(new Address("localhost", 5701), version, true, newUnsecureUuidString(), null, true);
-        matchingMember = new MemberImpl(new Address("localhost", 5702), version, false, newUnsecureUuidString(), null, true);
-        matchingMember2 = new MemberImpl(new Address("localhost", 5703), version, false, newUnsecureUuidString(), null, true);
-        nonMatchingMember = new MemberImpl(new Address("localhost", 5704), version, false, newUnsecureUuidString(), null, false);
+        thisMember = new MemberImpl.Builder(new Address("localhost", 5701)).version(version).localMember(true)
+                .uuid(newUnsecureUUID()).liteMember(true).build();
+        matchingMember = new MemberImpl.Builder(new Address("localhost", 5702)).version(version).uuid(newUnsecureUUID())
+                .liteMember(true).build();
+        matchingMember2 = new MemberImpl.Builder(new Address("localhost", 5703)).version(version).uuid(newUnsecureUUID())
+                .liteMember(true).build();
+        nonMatchingMember = new MemberImpl.Builder(new Address("localhost", 5704)).version(version).uuid(newUnsecureUUID())
+                .build();
     }
 
     private Set<MemberImpl> createMembers() {

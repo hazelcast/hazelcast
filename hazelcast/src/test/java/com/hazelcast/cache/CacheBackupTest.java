@@ -16,19 +16,18 @@
 
 package com.hazelcast.cache;
 
-import com.hazelcast.cache.impl.HazelcastServerCachingProvider;
 import com.hazelcast.cache.impl.ICacheRecordStore;
 import com.hazelcast.cache.impl.ICacheService;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.instance.Node;
+import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.partition.InternalPartitionService;
-import com.hazelcast.spi.serialization.SerializationService;
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -38,11 +37,12 @@ import javax.cache.Cache;
 import javax.cache.CacheManager;
 import javax.cache.spi.CachingProvider;
 
+import static com.hazelcast.cache.CacheTestSupport.createServerCachingProvider;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class CacheBackupTest extends HazelcastTestSupport {
 
     private void entrySuccessfullyRetrievedFromBackup(int backupCount, boolean sync) {
@@ -57,7 +57,7 @@ public class CacheBackupTest extends HazelcastTestSupport {
         }
         final HazelcastInstance hz = instances[0];
 
-        final CachingProvider cachingProvider = HazelcastServerCachingProvider.createCachingProvider(hz);
+        final CachingProvider cachingProvider = createServerCachingProvider(hz);
         final CacheManager cacheManager = cachingProvider.getCacheManager();
         final String cacheName = randomName();
         final CacheConfig cacheConfig = new CacheConfig().setName(cacheName);

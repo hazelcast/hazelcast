@@ -16,7 +16,7 @@
 
 package com.hazelcast.spi.impl.executionservice.impl;
 
-import com.hazelcast.util.ExceptionUtil;
+import com.hazelcast.internal.util.ExceptionUtil;
 
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
@@ -38,7 +38,7 @@ class DelegatingCallableTaskDecorator<V>
      * @param callable Task to be executed
      * @param executor ExecutorService the task to be delegated to
      */
-    public DelegatingCallableTaskDecorator(Callable<V> callable, ExecutorService executor) {
+    DelegatingCallableTaskDecorator(Callable<V> callable, ExecutorService executor) {
         this.executor = executor;
         this.callable = callable;
     }

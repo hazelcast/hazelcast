@@ -16,6 +16,8 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.internal.config.ConfigDataSerializerHook;
+
 /**
  * Configuration for the GCP Discovery Strategy.
  */
@@ -25,8 +27,12 @@ public class GcpConfig
         super("gcp");
     }
 
+    public GcpConfig(GcpConfig gcpConfig) {
+        super(gcpConfig);
+    }
+
     @Override
-    public int getId() {
+    public int getClassId() {
         return ConfigDataSerializerHook.GCP_CONFIG;
     }
 }

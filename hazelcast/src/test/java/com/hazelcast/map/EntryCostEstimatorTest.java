@@ -20,31 +20,30 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IMap;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import static com.hazelcast.util.JVMUtil.REFERENCE_COST_IN_BYTES;
+import static com.hazelcast.internal.util.JVMUtil.REFERENCE_COST_IN_BYTES;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class EntryCostEstimatorTest
         extends HazelcastTestSupport {
 
     protected TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
     // the JVM-independent portion of the cost of Integer key + Long value record is 104 bytes
     // (without taking into account 8 references to key, record and value objects)
-    private static final int JVM_INDEPENDENT_ENTRY_COST_IN_BYTES = 104;
+    private static final int JVM_INDEPENDENT_ENTRY_COST_IN_BYTES = 100;
     // JVM-dependent total cost of entry
-    private static final int ENTRY_COST_IN_BYTES = JVM_INDEPENDENT_ENTRY_COST_IN_BYTES + 9 * REFERENCE_COST_IN_BYTES;
+    private static final int ENTRY_COST_IN_BYTES = JVM_INDEPENDENT_ENTRY_COST_IN_BYTES + 8 * REFERENCE_COST_IN_BYTES;
 
     @Test
     public void smoke() {

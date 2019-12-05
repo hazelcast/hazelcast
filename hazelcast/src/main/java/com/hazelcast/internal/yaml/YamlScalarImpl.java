@@ -16,10 +16,10 @@
 
 package com.hazelcast.internal.yaml;
 
-class YamlScalarImpl extends AbstractYamlNode implements YamlScalar {
-    private final Object value;
+public class YamlScalarImpl extends AbstractYamlNode implements MutableYamlScalar {
+    private Object value;
 
-    YamlScalarImpl(YamlNode parent, String nodeName, Object value) {
+    public YamlScalarImpl(YamlNode parent, String nodeName, Object value) {
         super(parent, nodeName);
         this.value = value;
     }
@@ -45,10 +45,15 @@ class YamlScalarImpl extends AbstractYamlNode implements YamlScalar {
     }
 
     @Override
+    public void setValue(Object newValue) {
+        value = newValue;
+    }
+
+    @Override
     public String toString() {
         return "YamlScalarImpl{"
                 + "nodeName=" + nodeName()
-                + "value=" + value
+                + ", value=" + value
                 + '}';
     }
 }

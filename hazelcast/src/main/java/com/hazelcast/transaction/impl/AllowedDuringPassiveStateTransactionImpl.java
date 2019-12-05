@@ -16,7 +16,7 @@
 
 package com.hazelcast.transaction.impl;
 
-import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.transaction.TransactionOptions;
 import com.hazelcast.transaction.impl.operations.CreateAllowedDuringPassiveStateTxBackupLogOperation;
 import com.hazelcast.transaction.impl.operations.CreateTxBackupLogOperation;
@@ -28,19 +28,20 @@ import com.hazelcast.transaction.impl.operations.RollbackAllowedDuringPassiveSta
 import com.hazelcast.transaction.impl.operations.RollbackTxBackupLogOperation;
 
 import java.util.List;
+import java.util.UUID;
 
 public class AllowedDuringPassiveStateTransactionImpl
         extends TransactionImpl {
 
     public AllowedDuringPassiveStateTransactionImpl(TransactionManagerServiceImpl transactionManagerService,
-                                                    NodeEngine nodeEngine, TransactionOptions options, String txOwnerUuid) {
+                                                    NodeEngine nodeEngine, TransactionOptions options, UUID txOwnerUuid) {
         super(transactionManagerService, nodeEngine, options, txOwnerUuid);
     }
 
     // used by tx backups
     AllowedDuringPassiveStateTransactionImpl(TransactionManagerServiceImpl transactionManagerService, NodeEngine nodeEngine,
-                                             String txnId, List<TransactionLogRecord> transactionLog, long timeoutMillis,
-                                             long startTime, String txOwnerUuid) {
+                                             UUID txnId, List<TransactionLogRecord> transactionLog, long timeoutMillis,
+                                             long startTime, UUID txOwnerUuid) {
         super(transactionManagerService, nodeEngine, txnId, transactionLog, timeoutMillis, startTime, txOwnerUuid);
     }
 
@@ -50,7 +51,7 @@ public class AllowedDuringPassiveStateTransactionImpl
 
     protected ReplicateTxBackupLogOperation createReplicateTxBackupLogOperation() {
         return new ReplicateAllowedDuringPassiveStateTxBackupLogOperation(
-                getTransactionLog().getRecordList(), getOwnerUuid(), getTxnId(), getTimeoutMillis(), getStartTime());
+                getTransactionLog().getRecords(), getOwnerUuid(), getTxnId(), getTimeoutMillis(), getStartTime());
     }
 
     protected RollbackTxBackupLogOperation createRollbackTxBackupLogOperation() {

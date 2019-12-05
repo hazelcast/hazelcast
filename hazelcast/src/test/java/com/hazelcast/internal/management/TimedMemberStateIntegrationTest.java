@@ -21,7 +21,7 @@ import com.hazelcast.config.SSLConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -31,12 +31,12 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class TimedMemberStateIntegrationTest extends HazelcastTestSupport {
 
     @Test
     public void testServices() {
-        HazelcastInstance hz = createHazelcastInstance();
+        HazelcastInstance hz = createHazelcastInstance(smallInstanceConfig());
         TimedMemberStateFactory factory = new TimedMemberStateFactory(getHazelcastInstanceImpl(hz));
 
         hz.getMap("trial").put(1, 1);
@@ -53,7 +53,7 @@ public class TimedMemberStateIntegrationTest extends HazelcastTestSupport {
 
     @Test
     public void testSSL_defaultConfig() {
-        HazelcastInstance hz = createHazelcastInstance();
+        HazelcastInstance hz = createHazelcastInstance(smallInstanceConfig());
         TimedMemberStateFactory factory = new TimedMemberStateFactory(getHazelcastInstanceImpl(hz));
 
         TimedMemberState timedMemberState = factory.createTimedMemberState();
@@ -74,7 +74,7 @@ public class TimedMemberStateIntegrationTest extends HazelcastTestSupport {
         SSLConfig sslConfig = new SSLConfig();
         sslConfig.setEnabled(enabled);
 
-        Config config = getConfig();
+        Config config = smallInstanceConfig();
         config.getNetworkConfig().setSSLConfig(sslConfig);
 
         HazelcastInstance hz = createHazelcastInstance(config);
@@ -100,7 +100,7 @@ public class TimedMemberStateIntegrationTest extends HazelcastTestSupport {
     }
 
     private void testScripting(Boolean enabled) {
-        Config config = getConfig();
+        Config config = smallInstanceConfig();
         if (enabled != null) {
             config.getManagementCenterConfig().setScriptingEnabled(enabled);
         }

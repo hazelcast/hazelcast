@@ -46,22 +46,6 @@ public class MetricsRegistryImplTest extends HazelcastTestSupport {
         metricsRegistry = new MetricsRegistryImpl(Logger.getLogger(MetricsRegistryImpl.class), INFO);
     }
 
-    @Test
-    public void modCount() {
-        long modCount = metricsRegistry.modCount();
-        metricsRegistry.register(this, "foo", ProbeLevel.MANDATORY,
-                new LongProbeFunction() {
-                    @Override
-                    public long get(Object obj) throws Exception {
-                        return 1;
-                    }
-                });
-        assertEquals(modCount + 1, metricsRegistry.modCount());
-
-        metricsRegistry.deregister(this);
-        assertEquals(modCount + 2, metricsRegistry.modCount());
-    }
-
     // ================ newLongGauge ======================
 
     @Test(expected = NullPointerException.class)
@@ -90,19 +74,19 @@ public class MetricsRegistryImplTest extends HazelcastTestSupport {
 
     @Test
     public void getNames() {
-        Set<String> expected = new HashSet<String>();
-        expected.add("first");
-        expected.add("second");
-        expected.add("third");
+        Set<String> metrics = new HashSet<>();
+        metrics.add("first");
+        metrics.add("second");
+        metrics.add("third");
 
-        for (String name : expected) {
-            metricsRegistry.register(this, name, ProbeLevel.MANDATORY,
-                    new LongProbeFunction() {
-                        @Override
-                        public long get(Object obj) throws Exception {
-                            return 0;
-                        }
-                    });
+        Set<String> expected = new HashSet<>();
+        expected.add("[metric=first]");
+        expected.add("[metric=second]");
+        expected.add("[metric=third]");
+
+        for (String name : metrics) {
+            metricsRegistry.registerStaticProbe(this, name, ProbeLevel.MANDATORY,
+                    (LongProbeFunction<Object>) obj -> 0);
         }
 
         Set<String> names = metricsRegistry.getNames();

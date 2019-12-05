@@ -32,9 +32,12 @@ import static java.util.Collections.unmodifiableMap;
 /**
  * Registry for {@code IMap} interceptors
  *
- * Interceptors are read mostly and this registry keeps all registered interceptor in an array to easily iterate on them.
- * Other than that, synchronized blocks are used to prevent leaks when concurrently registering/de-registering interceptors.
- * Keep in mind that all registration/de-registration operations are done in generic-operation-threads, in other words,
+ * Interceptors are read mostly and this registry keeps all
+ * registered interceptor in an array to easily iterate on them.
+ * Other than that, synchronized blocks are used to prevent leaks
+ * when concurrently registering/de-registering interceptors.
+ * Keep in mind that all registration/de-registration operations
+ * are done in generic-operation-threads, in other words,
  * synchronized methods are not used in partition-threads.
  *
  * This registry is created per map.
@@ -80,12 +83,12 @@ public class InterceptorRegistry {
             return;
         }
 
-        Map<String, MapInterceptor> tmpMap = new HashMap<String, MapInterceptor>(id2InterceptorMap);
+        Map<String, MapInterceptor> tmpMap = new HashMap<>(id2InterceptorMap);
         tmpMap.put(id, interceptor);
 
         id2InterceptorMap = unmodifiableMap(tmpMap);
 
-        List<MapInterceptor> tmpInterceptors = new ArrayList<MapInterceptor>(interceptors);
+        List<MapInterceptor> tmpInterceptors = new ArrayList<>(interceptors);
         tmpInterceptors.add(interceptor);
 
         interceptors = unmodifiableList(tmpInterceptors);
@@ -98,22 +101,27 @@ public class InterceptorRegistry {
      * when de-registering via {@link com.hazelcast.map.impl.operation.RemoveInterceptorOperation}
      *
      * @param id ID of the interceptor
+     * @return {@code true} when de-registration is successful
+     * otherwise returns {@code false} to indicate there is no
+     * matching registration for the provided registration id
      */
-    public synchronized void deregister(String id) {
+    public synchronized boolean deregister(String id) {
         assert !(Thread.currentThread() instanceof PartitionOperationThread);
 
         if (!id2InterceptorMap.containsKey(id)) {
-            return;
+            return false;
         }
 
-        Map<String, MapInterceptor> tmpMap = new HashMap<String, MapInterceptor>(id2InterceptorMap);
+        Map<String, MapInterceptor> tmpMap = new HashMap<>(id2InterceptorMap);
         MapInterceptor removedInterceptor = tmpMap.remove(id);
 
         id2InterceptorMap = unmodifiableMap(tmpMap);
 
-        List<MapInterceptor> tmpInterceptors = new ArrayList<MapInterceptor>(interceptors);
+        List<MapInterceptor> tmpInterceptors = new ArrayList<>(interceptors);
         tmpInterceptors.remove(removedInterceptor);
 
         interceptors = unmodifiableList(tmpInterceptors);
+
+        return true;
     }
 }

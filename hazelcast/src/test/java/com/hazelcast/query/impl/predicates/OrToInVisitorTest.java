@@ -16,12 +16,10 @@
 
 package com.hazelcast.query.impl.predicates;
 
-import com.hazelcast.core.TypeConverter;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.impl.Indexes;
-import com.hazelcast.query.impl.InternalIndex;
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.hamcrest.Matchers;
 import org.junit.Before;
@@ -32,36 +30,29 @@ import org.junit.runner.RunWith;
 import static com.hazelcast.query.Predicates.equal;
 import static com.hazelcast.query.Predicates.notEqual;
 import static com.hazelcast.query.Predicates.or;
-import static com.hazelcast.query.impl.TypeConverters.INTEGER_CONVERTER;
 import static org.hamcrest.Matchers.arrayWithSize;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.junit.Assert.assertThat;
-import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class OrToInVisitorTest {
 
     private OrToInVisitor visitor;
-    private Indexes mockIndexes;
-    private InternalIndex mockIndex;
+    private Indexes indexes;
 
     @Before
     public void setUp() {
-        mockIndexes = mock(Indexes.class);
-        mockIndex = mock(InternalIndex.class);
-        when(mockIndexes.getIndex(anyString())).thenReturn(mockIndex);
+        indexes = mock(Indexes.class);
         visitor = new OrToInVisitor();
-        useConverter(INTEGER_CONVERTER);
     }
 
     @Test
     public void whenEmptyPredicate_thenReturnItself() {
         OrPredicate or = new OrPredicate(null);
-        OrPredicate result = (OrPredicate) visitor.visit(or, mockIndexes);
+        OrPredicate result = (OrPredicate) visitor.visit(or, indexes);
         assertThat(or, equalTo(result));
     }
 
@@ -70,7 +61,7 @@ public class OrToInVisitorTest {
         Predicate p1 = equal("age", 1);
         Predicate p2 = equal("age", 2);
         OrPredicate or = (OrPredicate) or(p1, p2);
-        OrPredicate result = (OrPredicate) visitor.visit(or, mockIndexes);
+        OrPredicate result = (OrPredicate) visitor.visit(or, indexes);
         assertThat(or, equalTo(result));
     }
 
@@ -83,7 +74,7 @@ public class OrToInVisitorTest {
         Predicate p4 = notEqual("age", 4);
         Predicate p5 = notEqual("age", 5);
         OrPredicate or = (OrPredicate) or(p1, p2, p3, p4, p5);
-        OrPredicate result = (OrPredicate) visitor.visit(or, mockIndexes);
+        OrPredicate result = (OrPredicate) visitor.visit(or, indexes);
         assertThat(or, equalTo(result));
     }
 
@@ -96,7 +87,7 @@ public class OrToInVisitorTest {
         Predicate p4 = equal("age", 4);
         Predicate p5 = notEqual("age", 5);
         OrPredicate or = (OrPredicate) or(p1, p2, p3, p4, p5);
-        OrPredicate result = (OrPredicate) visitor.visit(or, mockIndexes);
+        OrPredicate result = (OrPredicate) visitor.visit(or, indexes);
         assertThat(or, equalTo(result));
     }
 
@@ -109,7 +100,7 @@ public class OrToInVisitorTest {
         Predicate p4 = equal("age", 4);
         Predicate p5 = equal("age", 5);
         OrPredicate or = (OrPredicate) or(p1, p2, p3, p4, p5);
-        InPredicate result = (InPredicate) visitor.visit(or, mockIndexes);
+        InPredicate result = (InPredicate) visitor.visit(or, indexes);
         Comparable[] values = result.values;
         assertThat(values, arrayWithSize(5));
         assertThat(values, Matchers.is(Matchers.<Comparable>arrayContainingInAnyOrder(1, 2, 3, 4, 5)));
@@ -125,7 +116,7 @@ public class OrToInVisitorTest {
         Predicate p5 = equal("age", 5);
         Predicate p6 = notEqual("age", 6);
         OrPredicate or = (OrPredicate) or(p1, p2, p3, p4, p5, p6);
-        OrPredicate result = (OrPredicate) visitor.visit(or, mockIndexes);
+        OrPredicate result = (OrPredicate) visitor.visit(or, indexes);
         Predicate[] predicates = result.predicates;
         for (Predicate predicate : predicates) {
             if (predicate instanceof InPredicate) {
@@ -138,7 +129,4 @@ public class OrToInVisitorTest {
         }
     }
 
-    private void useConverter(TypeConverter converter) {
-        when(mockIndex.getConverter()).thenReturn(converter);
-    }
 }

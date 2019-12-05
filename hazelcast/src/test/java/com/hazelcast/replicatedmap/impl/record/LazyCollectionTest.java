@@ -17,7 +17,7 @@
 package com.hazelcast.replicatedmap.impl.record;
 
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
 import org.junit.Test;
@@ -29,7 +29,7 @@ import java.util.Collections;
 import static org.mockito.Mockito.mock;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 @SuppressWarnings("MismatchedQueryAndUpdateOfCollection")
 public class LazyCollectionTest {
 

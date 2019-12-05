@@ -16,12 +16,13 @@
 
 package com.hazelcast.internal.metrics.impl;
 
-import com.hazelcast.internal.metrics.LongGauge;
+import com.hazelcast.internal.metrics.DoubleProbeFunction;
+import com.hazelcast.internal.metrics.LongProbeFunction;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
 import org.junit.Test;
@@ -33,13 +34,14 @@ import java.util.LinkedList;
 import java.util.Set;
 
 import static com.hazelcast.internal.metrics.ProbeLevel.INFO;
-import static org.junit.Assert.assertEquals;
+import static com.hazelcast.internal.metrics.ProbeUnit.BYTES;
 import static org.junit.Assert.assertFalse;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class RegisterMetricTest extends HazelcastTestSupport {
 
+    public static final int IGNORED = 42;
     private MetricsRegistryImpl metricsRegistry;
 
     @Before
@@ -49,26 +51,96 @@ public class RegisterMetricTest extends HazelcastTestSupport {
 
     @Test(expected = NullPointerException.class)
     public void whenNamePrefixNull() {
-        metricsRegistry.scanAndRegister(new SomeField(), null);
+        metricsRegistry.registerStaticMetrics(new SomeField(), null);
     }
 
     @Test(expected = NullPointerException.class)
     public void whenObjectNull() {
-        metricsRegistry.scanAndRegister(null, "bar");
+        metricsRegistry.registerStaticMetrics((Object) null, "bar");
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void whenUnrecognizedField() {
-        metricsRegistry.scanAndRegister(new SomeUnrecognizedField(), "bar");
+        metricsRegistry.registerStaticMetrics(new SomeUnrecognizedField(), "bar");
     }
 
     @Test
     public void whenNoGauges_thenIgnore() {
-        metricsRegistry.scanAndRegister(new LinkedList(), "bar");
+        metricsRegistry.registerStaticMetrics(new LinkedList(), "bar");
 
         for (String name : metricsRegistry.getNames()) {
             assertFalse(name.startsWith("bar"));
         }
+    }
+
+    @Test
+    public void testRegisterStaticMetrics() {
+        MultiFieldAndMethod source = new MultiFieldAndMethod();
+        metricsRegistry.registerStaticMetrics(metricsRegistry.newMetricDescriptor().withPrefix("test"), source);
+        Set<String> metricNames = metricsRegistry.getNames();
+
+        assertContains(metricNames, "[unit=count,metric=test.method1]");
+        assertContains(metricNames, "[unit=count,metric=test.method2]");
+        assertContains(metricNames, "[unit=count,metric=test.field1]");
+        assertContains(metricNames, "[unit=count,metric=test.field2]");
+    }
+
+    // long functions
+
+    @Test
+    public void testRegisterStaticProbeLong_withTagger() {
+        metricsRegistry.registerStaticProbe(new MultiFieldAndMethod(), metricsRegistry.newMetricDescriptor().withPrefix("test"),
+                "someMetric", INFO, BYTES, (LongProbeFunction<MultiFieldAndMethod>) source -> IGNORED);
+        Set<String> metricNames = metricsRegistry.getNames();
+
+        assertContains(metricNames, "[unit=bytes,metric=test.someMetric]");
+    }
+
+    @Test
+    public void testRegisterStaticProbeLong_withoutTagger() {
+        metricsRegistry.registerStaticProbe(new MultiFieldAndMethod(), "someMetric", INFO, BYTES,
+                (LongProbeFunction<MultiFieldAndMethod>) source -> IGNORED);
+        Set<String> metricNames = metricsRegistry.getNames();
+
+        assertContains(metricNames, "[unit=bytes,metric=someMetric]");
+    }
+
+    @Test
+    public void testRegisterStaticProbeLong_withoutTagger_withoutUnit() {
+        metricsRegistry.registerStaticProbe(new MultiFieldAndMethod(), "someMetric", INFO,
+                (LongProbeFunction<MultiFieldAndMethod>) source -> IGNORED);
+        Set<String> metricNames = metricsRegistry.getNames();
+
+        assertContains(metricNames, "[metric=someMetric]");
+    }
+
+    // double functions
+
+    @Test
+    public void testRegisterStaticProbeDouble_withTagger() {
+        metricsRegistry.registerStaticProbe(new MultiFieldAndMethod(), metricsRegistry.newMetricDescriptor().withPrefix("test"),
+                "someMetric", INFO, BYTES, (DoubleProbeFunction<MultiFieldAndMethod>) source -> IGNORED);
+        Set<String> metricNames = metricsRegistry.getNames();
+
+        assertContains(metricNames, "[unit=bytes,metric=test.someMetric]");
+    }
+
+    @Test
+    public void testRegisterStaticProbeDouble_withoutTagger() {
+        metricsRegistry.registerStaticProbe(new MultiFieldAndMethod(), "someMetric", INFO, BYTES,
+                (DoubleProbeFunction<MultiFieldAndMethod>) source -> IGNORED);
+        Set<String> metricNames = metricsRegistry.getNames();
+
+        assertContains(metricNames, "[unit=bytes,metric=someMetric]");
+    }
+
+    @Test
+    public void testRegisterStaticProbeDouble_withoutTagger_withoutUnit() {
+        metricsRegistry.registerStaticProbe(new MultiFieldAndMethod(), "someMetric", INFO,
+                (DoubleProbeFunction<MultiFieldAndMethod>) source -> IGNORED);
+        Set<String> metricNames = metricsRegistry.getNames();
+
+        assertContains(metricNames, "[metric=someMetric]");
     }
 
     public class SomeField {
@@ -81,26 +153,11 @@ public class RegisterMetricTest extends HazelcastTestSupport {
         OutputStream field;
     }
 
-    @Test
-    public void deregister_whenNotRegistered() {
-        MultiFieldAndMethod multiFieldAndMethod = new MultiFieldAndMethod();
-        multiFieldAndMethod.field1 = 1;
-        multiFieldAndMethod.field2 = 2;
-        metricsRegistry.deregister(multiFieldAndMethod);
-
-        // make sure that the the metrics have been removed
-        Set<String> names = metricsRegistry.getNames();
-        assertFalse(names.contains("foo.field1"));
-        assertFalse(names.contains("foo.field2"));
-        assertFalse(names.contains("foo.method1"));
-        assertFalse(names.contains("foo.method2"));
-    }
-
     public class MultiFieldAndMethod {
         @Probe
         long field1;
         @Probe
-        long field2;
+        double field2;
 
         @Probe
         int method1() {
@@ -108,53 +165,8 @@ public class RegisterMetricTest extends HazelcastTestSupport {
         }
 
         @Probe
-        int method2() {
+        double method2() {
             return 2;
         }
-    }
-
-    @Test
-    public void deregister_whenRegistered() {
-        MultiFieldAndMethod multiFieldAndMethod = new MultiFieldAndMethod();
-        multiFieldAndMethod.field1 = 1;
-        multiFieldAndMethod.field2 = 2;
-        metricsRegistry.scanAndRegister(multiFieldAndMethod, "foo");
-
-        LongGauge field1 = metricsRegistry.newLongGauge("foo.field1");
-        LongGauge field2 = metricsRegistry.newLongGauge("foo.field2");
-        LongGauge method1 = metricsRegistry.newLongGauge("foo.method1");
-        LongGauge method2 = metricsRegistry.newLongGauge("foo.method2");
-
-        metricsRegistry.deregister(multiFieldAndMethod);
-
-        // make sure that the the metrics have been removed
-        Set<String> names = metricsRegistry.getNames();
-        assertFalse(names.contains("foo.field1"));
-        assertFalse(names.contains("foo.field2"));
-        assertFalse(names.contains("foo.method1"));
-        assertFalse(names.contains("foo.method2"));
-
-        // make sure that the metric input has been disconnected
-        assertEquals(0, field1.read());
-        assertEquals(0, field2.read());
-        assertEquals(0, method1.read());
-        assertEquals(0, method2.read());
-    }
-
-    @Test
-    public void deregister_whenAlreadyDeregistered() {
-        MultiFieldAndMethod multiFieldAndMethod = new MultiFieldAndMethod();
-        multiFieldAndMethod.field1 = 1;
-        multiFieldAndMethod.field2 = 2;
-        metricsRegistry.scanAndRegister(multiFieldAndMethod, "foo");
-        metricsRegistry.deregister(multiFieldAndMethod);
-        metricsRegistry.deregister(multiFieldAndMethod);
-
-        // make sure that the the metrics have been removed
-        Set<String> names = metricsRegistry.getNames();
-        assertFalse(names.contains("foo.field1"));
-        assertFalse(names.contains("foo.field2"));
-        assertFalse(names.contains("foo.method1"));
-        assertFalse(names.contains("foo.method2"));
     }
 }

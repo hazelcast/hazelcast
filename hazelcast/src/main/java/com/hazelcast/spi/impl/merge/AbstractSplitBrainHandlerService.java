@@ -16,12 +16,12 @@
 
 package com.hazelcast.spi.impl.merge;
 
-import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.SplitBrainHandlerService;
+import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.internal.services.SplitBrainHandlerService;
 import com.hazelcast.spi.impl.PartitionSpecificRunnable;
 import com.hazelcast.spi.impl.operationexecutor.OperationExecutor;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
-import com.hazelcast.spi.partition.IPartitionService;
+import com.hazelcast.internal.partition.IPartitionService;
 
 import java.util.Collection;
 import java.util.Iterator;

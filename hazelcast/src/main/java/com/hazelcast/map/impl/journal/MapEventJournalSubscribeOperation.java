@@ -19,9 +19,9 @@ package com.hazelcast.map.impl.journal;
 import com.hazelcast.internal.journal.EventJournalInitialSubscriberState;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.operation.MapOperation;
-import com.hazelcast.spi.ObjectNamespace;
-import com.hazelcast.spi.PartitionAwareOperation;
-import com.hazelcast.spi.ReadonlyOperation;
+import com.hazelcast.internal.services.ObjectNamespace;
+import com.hazelcast.spi.impl.operationservice.PartitionAwareOperation;
+import com.hazelcast.spi.impl.operationservice.ReadonlyOperation;
 
 /**
  * Performs the initial subscription to the map event journal.
@@ -30,7 +30,9 @@ import com.hazelcast.spi.ReadonlyOperation;
  *
  * @since 3.9
  */
-public class MapEventJournalSubscribeOperation extends MapOperation implements PartitionAwareOperation, ReadonlyOperation {
+public class MapEventJournalSubscribeOperation extends MapOperation
+        implements PartitionAwareOperation, ReadonlyOperation {
+
     private EventJournalInitialSubscriberState response;
     private ObjectNamespace namespace;
 
@@ -42,8 +44,8 @@ public class MapEventJournalSubscribeOperation extends MapOperation implements P
     }
 
     @Override
-    public void beforeRun() throws Exception {
-        super.beforeRun();
+    protected void innerBeforeRun() throws Exception {
+        super.innerBeforeRun();
 
         namespace = getServiceNamespace();
         if (!mapServiceContext.getEventJournal().hasEventJournal(namespace)) {
@@ -53,7 +55,7 @@ public class MapEventJournalSubscribeOperation extends MapOperation implements P
     }
 
     @Override
-    public void run() {
+    protected void runInternal() {
         final MapEventJournal eventJournal = mapServiceContext.getEventJournal();
         final long newestSequence = eventJournal.newestSequence(namespace, getPartitionId());
         final long oldestSequence = eventJournal.oldestSequence(namespace, getPartitionId());
@@ -66,7 +68,7 @@ public class MapEventJournalSubscribeOperation extends MapOperation implements P
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MapDataSerializerHook.EVENT_JOURNAL_SUBSCRIBE_OPERATION;
     }
 }

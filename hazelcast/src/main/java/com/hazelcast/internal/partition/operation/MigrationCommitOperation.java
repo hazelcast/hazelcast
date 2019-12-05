@@ -16,39 +16,40 @@
 
 package com.hazelcast.internal.partition.operation;
 
-import com.hazelcast.core.Member;
+import com.hazelcast.cluster.Member;
 import com.hazelcast.core.MemberLeftException;
+import com.hazelcast.internal.util.UUIDSerializationUtil;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.partition.MigrationCycleOperation;
-import com.hazelcast.internal.partition.PartitionRuntimeState;
+import com.hazelcast.internal.partition.MigrationInfo;
 import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
 import com.hazelcast.internal.partition.impl.PartitionDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.impl.Versioned;
-import com.hazelcast.spi.ExceptionAction;
-import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.impl.operationservice.ExceptionAction;
+import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.exception.TargetNotMemberException;
 
 import java.io.IOException;
+import java.util.UUID;
 
 /**
  * Sent by the master node to commit a migration on the migration destination.
  * It updates the partition table on the migration destination and finalizes the migration.
  */
-public class MigrationCommitOperation extends AbstractPartitionOperation implements MigrationCycleOperation, Versioned {
+public class MigrationCommitOperation extends AbstractPartitionOperation implements MigrationCycleOperation {
 
-    private PartitionRuntimeState partitionState;
+    private MigrationInfo migration;
 
-    private String expectedMemberUuid;
+    private UUID expectedMemberUuid;
 
-    private boolean success;
+    private transient boolean success;
 
     public MigrationCommitOperation() {
     }
 
-    public MigrationCommitOperation(PartitionRuntimeState partitionState, String expectedMemberUuid) {
-        this.partitionState = partitionState;
+    public MigrationCommitOperation(MigrationInfo migration, UUID expectedMemberUuid) {
+        this.migration = migration;
         this.expectedMemberUuid = expectedMemberUuid;
     }
 
@@ -62,9 +63,8 @@ public class MigrationCommitOperation extends AbstractPartitionOperation impleme
                     + "and not the expected target.");
         }
 
-        partitionState.setMaster(getCallerAddress());
-        InternalPartitionServiceImpl partitionService = getService();
-        success = partitionService.processPartitionRuntimeState(partitionState);
+        InternalPartitionServiceImpl service = getService();
+        success = service.commitMigrationOnDestination(migration, getCallerAddress());
     }
 
     @Override
@@ -89,20 +89,19 @@ public class MigrationCommitOperation extends AbstractPartitionOperation impleme
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        expectedMemberUuid = in.readUTF();
-        partitionState = new PartitionRuntimeState();
-        partitionState.readData(in);
+        expectedMemberUuid = UUIDSerializationUtil.readUUID(in);
+        migration = in.readObject();
     }
 
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        out.writeUTF(expectedMemberUuid);
-        partitionState.writeData(out);
+        UUIDSerializationUtil.writeUUID(out, expectedMemberUuid);
+        out.writeObject(migration);
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return PartitionDataSerializerHook.MIGRATION_COMMIT;
     }
 }

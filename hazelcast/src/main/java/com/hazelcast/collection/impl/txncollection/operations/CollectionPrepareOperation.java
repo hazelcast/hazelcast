@@ -19,23 +19,25 @@ package com.hazelcast.collection.impl.txncollection.operations;
 import com.hazelcast.collection.impl.collection.CollectionContainer;
 import com.hazelcast.collection.impl.collection.CollectionDataSerializerHook;
 import com.hazelcast.collection.impl.collection.operations.CollectionBackupAwareOperation;
+import com.hazelcast.internal.util.UUIDSerializationUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.impl.operationservice.Operation;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
+import java.util.UUID;
 
 public class CollectionPrepareOperation extends CollectionBackupAwareOperation {
 
-    private String transactionId;
+    private UUID transactionId;
     private long[] itemIds;
 
     public CollectionPrepareOperation() {
     }
 
     @SuppressFBWarnings("EI_EXPOSE_REP")
-    public CollectionPrepareOperation(int partitionId, String name, String serviceName, long[] itemIds, String transactionId) {
+    public CollectionPrepareOperation(int partitionId, String name, String serviceName, long[] itemIds, UUID transactionId) {
         super(name);
         setPartitionId(partitionId);
         setServiceName(serviceName);
@@ -62,21 +64,21 @@ public class CollectionPrepareOperation extends CollectionBackupAwareOperation {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return CollectionDataSerializerHook.COLLECTION_PREPARE;
     }
 
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        out.writeUTF(transactionId);
+        UUIDSerializationUtil.writeUUID(out, transactionId);
         out.writeLongArray(itemIds);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        transactionId = in.readUTF();
+        transactionId = UUIDSerializationUtil.readUUID(in);
         itemIds = in.readLongArray();
     }
 }

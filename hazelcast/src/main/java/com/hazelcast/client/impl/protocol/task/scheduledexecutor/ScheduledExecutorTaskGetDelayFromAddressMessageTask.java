@@ -19,16 +19,16 @@ package com.hazelcast.client.impl.protocol.task.scheduledexecutor;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ScheduledExecutorGetDelayFromAddressCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractAddressMessageTask;
-import com.hazelcast.instance.Node;
-import com.hazelcast.nio.Address;
-import com.hazelcast.nio.Connection;
+import com.hazelcast.instance.impl.Node;
+import com.hazelcast.cluster.Address;
+import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.scheduledexecutor.ScheduledTaskHandler;
 import com.hazelcast.scheduledexecutor.impl.DistributedScheduledExecutorService;
 import com.hazelcast.scheduledexecutor.impl.ScheduledTaskHandlerImpl;
 import com.hazelcast.scheduledexecutor.impl.operations.GetDelayOperation;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.ScheduledExecutorPermission;
-import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.impl.operationservice.Operation;
 
 import java.security.Permission;
 import java.util.concurrent.TimeUnit;
@@ -55,7 +55,9 @@ public class ScheduledExecutorTaskGetDelayFromAddressMessageTask
 
     @Override
     protected ScheduledExecutorGetDelayFromAddressCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
-        return ScheduledExecutorGetDelayFromAddressCodec.decodeRequest(clientMessage);
+        parameters = ScheduledExecutorGetDelayFromAddressCodec.decodeRequest(clientMessage);
+        parameters.address = clientEngine.memberAddressOf(parameters.address);
+        return parameters;
     }
 
     @Override

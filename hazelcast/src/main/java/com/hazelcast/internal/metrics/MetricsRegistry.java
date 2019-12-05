@@ -16,9 +16,10 @@
 
 package com.hazelcast.internal.metrics;
 
-import com.hazelcast.internal.metrics.renderers.ProbeRenderer;
+import com.hazelcast.internal.metrics.collectors.MetricsCollector;
 
 import java.util.Set;
+import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -29,12 +30,6 @@ import java.util.concurrent.TimeUnit;
  * A MetricsRegistry can contain many {@link Probe} instances. A probe is
  * registered under a name, and can be read by creating a {@link Gauge}, see
  * {@link #newLongGauge(String)}.
- * <p>
- * The name has this form:<pre>
- *     [tag1=foo,tag2=bar,...]
- * </pre>
- * Special characters in values must be escaped, use {@link ProbeBuilder} to
- * register metrics with properly escaped values.
  * <p>
  * The metrics registry doesn't interpret the name in any way, it is treated as
  * is. For example, {@code [tag1=foo,tag2=bar]} and {@code [tag2=bar,tag1=foo]}
@@ -55,6 +50,24 @@ import java.util.concurrent.TimeUnit;
  * frequently read out this field, the MetricRegistry is perfectly happy with
  * such low overhead probes. So it is up to the provider of the probe how much
  * overhead is required.
+ *
+ * <h3>Static and dynamic metrics</h3> The MetricRegistry collects metrics
+ * from static and dynamic metrics sources, these metrics are referred to as
+ * static and dynamic metrics.
+ * <p/>
+ * The static metrics are the ones that are registered once and cannot be
+ * removed during the lifetime of the given Hazelcast instance. These are
+ * typically system metrics either Hazelcast or JVM/OS ones.
+ * <p/>
+ * The dynamic metrics are collected dynamically during each collection cycle
+ * via the {@link DynamicMetricsProvider} interface. Typical examples for the
+ * dynamic metrics are the metrics exposed by the distributed data structures
+ * that can be created and destroyed dynamically.
+ * <p/>
+ * The MetricsRegistry doesn't cache the dynamic metrics, therefore the dynamic
+ * metrics don't increase the heap live set. In exchange, they may allocate
+ * during the collection cycle. It is therefore the responsibility of the
+ * dynamic metric sources to keep allocation low.
  */
 public interface MetricsRegistry {
 
@@ -107,7 +120,7 @@ public interface MetricsRegistry {
     /**
      * Scans the source object for any fields/methods that have been annotated
      * with {@link Probe} annotation, and registers these fields/methods as
-     * probe instances.
+     * static probe instances.
      * <p>
      * If a probe is called 'queueSize' and the namePrefix is 'operations',
      * then the name of the probe instance is 'operations.queueSize'.
@@ -122,42 +135,143 @@ public interface MetricsRegistry {
      * @throws IllegalArgumentException if the source contains a Probe
      *      annotation on a field/method of unsupported type.
      */
-    <S> void scanAndRegister(S source, String namePrefix);
+    <S> void registerStaticMetrics(S source, String namePrefix);
+
+    /**
+     * Scans the source object for any fields/methods that have been annotated
+     * with {@link Probe} annotation, and registers these fields/methods as
+     * static probe instances.
+     * <p>
+     * If a probe is called 'queueSize' and the namePrefix is 'operations',
+     * then the name of the probe instance is 'operations.queueSize'.
+     * <p>
+     * If a probe with the same name already exists, then the probe is replaced.
+     * <p>
+     * If an object has no @Probe annotations, the call is ignored.
+     *
+     * @param descriptor the metric descriptor.
+     * @param source the object to scan.
+     * @throws NullPointerException     if namePrefix or source is null.
+     * @throws IllegalArgumentException if the source contains a Probe
+     *                                  annotation on a field/method of unsupported type.
+     */
+    <S> void registerStaticMetrics(MetricDescriptor descriptor, S source);
+
+    /**
+     * Registers dynamic metrics sources that collect metrics in each metrics
+     * collection cycle.
+     *
+     * @param metricsProvider The object that provides dynamic metrics
+     */
+    void registerDynamicMetricsProvider(DynamicMetricsProvider metricsProvider);
+
+    /**
+     * Deregisters the given dynamic metrics provider. The metrics collection
+     * cycles after this call will not call the given metrics provider until
+     * it is registered again.
+     *
+     * @param metricsProvider The metrics provider to deregister
+     */
+    void deregisterDynamicMetricsProvider(DynamicMetricsProvider metricsProvider);
 
     /**
      * Registers a probe.
      *
      * If a probe for the given name exists, it will be overwritten.
      *
-     * @param name  the name of the probe.
-     * @param level the ProbeLevel
-     * @param probe the probe
+     * @param source   the object that the probe function to be used with
+     * @param name     the name of the probe
+     * @param level    the ProbeLevel
+     * @param unit     the unit
+     * @param function the probe function
      * @throws NullPointerException if source, name, level or probe is null.
      */
-    <S> void register(S source, String name, ProbeLevel level, LongProbeFunction<S> probe);
+    <S> void registerStaticProbe(S source, MetricDescriptor descriptor, String name, ProbeLevel level, ProbeUnit unit,
+                                 ProbeFunction function);
 
     /**
      * Registers a probe.
      *
      * If a probe for the given name exists, it will be overwritten.
      *
+     * @param source   the object that the probe function to be used with
+     * @param name     the name of the probe.
+     * @param level    the ProbeLevel
+     * @param function the probe
+     * @throws NullPointerException if source, name, level or probe is null.
+     */
+    <S> void registerStaticProbe(S source, String name, ProbeLevel level, LongProbeFunction<S> function);
+
+    /**
+     * Registers a probe.
+     *
+     * If a probe for the given name exists, it will be overwritten.
+     *
+     * @param source the object that the probe function to be used with
+     * @param name   the name of the probe.
+     * @param level  the ProbeLevel
+     * @param unit   the unit
+     * @param probe  the probe
+     * @throws NullPointerException if source, name, level or probe is null.
+     */
+    <S> void registerStaticProbe(S source, String name, ProbeLevel level, ProbeUnit unit, LongProbeFunction<S> probe);
+
+    /**
+     * Registers a probe.
+     *
+     * If a probe for the given name exists, it will be overwritten.
+     *
+     * @param source the object that the probe function to be used with
+     * @param name   the name of the probe.
+     * @param level  the ProbeLevel
+     * @param unit   the unit
+     * @param probe  the probe
+     * @throws NullPointerException if source, name, level or probe is null.
+     */
+    <S> void registerStaticProbe(S source, MetricDescriptor descriptor, String name, ProbeLevel level, ProbeUnit unit,
+                                 LongProbeFunction<S> probe);
+
+    /**
+     * Registers a probe.
+     *
+     * If a probe for the given name exists, it will be overwritten.
+     *
+     * @param source   the object that the probe function to be used with
      * @param name  the name of the probe
      * @param level the ProbeLevel
      * @param probe the probe
      * @throws NullPointerException if source, name, level or probe is null.
      */
-    <S> void register(S source, String name, ProbeLevel level, DoubleProbeFunction<S> probe);
+    <S> void registerStaticProbe(S source, String name, ProbeLevel level, DoubleProbeFunction<S> probe);
 
     /**
-     * Deregisters all probes for a given source object.
+     * Registers a probe.
      *
-     * If the object already is deregistered, the call is ignored.
+     * If a probe for the given name exists, it will be overwritten.
      *
-     * If the object was never registered, the call is ignored.
-     *
-     * @param source the object to deregister. If called with null, then ignored.
+     * @param source the object that the probe function to be used with
+     * @param name   the name of the probe
+     * @param level  the ProbeLevel
+     * @param unit   the unit
+     * @param probe  the probe
+     * @throws NullPointerException if source, name, level or probe is null.
      */
-    <S> void deregister(S source);
+    <S> void registerStaticProbe(S source, String name, ProbeLevel level, ProbeUnit unit, DoubleProbeFunction<S> probe);
+
+    /**
+     * Registers a probe.
+     *
+     * If a probe for the given name exists, it will be overwritten.
+     *
+     * @param source the object that the probe function to be used with
+     * @param name   the name of the probe
+     * @param level  the ProbeLevel
+     * @param unit   the unit
+     * @param probe  the probe
+     * @throws NullPointerException if source, name, level or probe is null.
+     */
+    <S> void registerStaticProbe(S source, MetricDescriptor descriptor, String name, ProbeLevel level, ProbeUnit unit,
+                                 DoubleProbeFunction<S> probe);
 
     /**
      * Schedules a publisher to be executed at a fixed rate.
@@ -171,35 +285,29 @@ public interface MetricsRegistry {
      * @param probeLevel the ProbeLevel publisher it publishing on. This is needed to prevent scheduling
      *                   publishers if their probe level isn't sufficient.
      * @throws NullPointerException if publisher or timeUnit is null.
+     * @return the ScheduledFuture that can be used to cancel the task, or null if nothing got scheduled.
      */
-    void scheduleAtFixedRate(Runnable publisher, long period, TimeUnit timeUnit, ProbeLevel probeLevel);
+    ScheduledFuture<?> scheduleAtFixedRate(Runnable publisher, long period, TimeUnit timeUnit, ProbeLevel probeLevel);
 
     /**
-     * Renders the content of the MetricsRegistry.
+     * Collects the content of the MetricsRegistry.
      *
-     * @param renderer the ProbeRenderer
-     * @throws NullPointerException if renderer is null.
+     * @param collector the collector that consumes the metrics collected
+     * @throws NullPointerException if collector is null.
      */
-    void render(ProbeRenderer renderer);
+    void collect(MetricsCollector collector);
 
     /**
-     * For each object that implements {@link MetricsProvider} the
-     * {@link MetricsProvider#provideMetrics(MetricsRegistry)} is called.
+     * For each object that implements {@link StaticMetricsProvider} the
+     * {@link StaticMetricsProvider#provideStaticMetrics(MetricsRegistry)} is called.
      *
-     * @param objects the array of objects to initialize.
+     * @param providers the array of objects to initialize.
      */
-    void collectMetrics(Object... objects);
+    void provideMetrics(Object... providers);
 
     /**
-     * For each object that implements {@link DiscardableMetricsProvider} the
-     * {@link DiscardableMetricsProvider#discardMetrics(MetricsRegistry)} is called.
-     *
-     * @param objects the array of objects to check.
+     * Creates a new {@link MetricDescriptor}.
      */
-    void discardMetrics(Object... objects);
+    MetricDescriptor newMetricDescriptor();
 
-    /**
-     * Creates a new {@link ProbeBuilder}.
-     */
-    ProbeBuilder newProbeBuilder();
 }

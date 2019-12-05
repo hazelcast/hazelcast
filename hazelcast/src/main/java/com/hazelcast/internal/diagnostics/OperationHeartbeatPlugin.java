@@ -16,7 +16,7 @@
 
 package com.hazelcast.internal.diagnostics;
 
-import com.hazelcast.nio.Address;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationservice.impl.InvocationMonitor;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
@@ -27,7 +27,6 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicLong;
 
-import static com.hazelcast.internal.diagnostics.Diagnostics.PREFIX;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 
@@ -53,7 +52,7 @@ public class OperationHeartbeatPlugin extends DiagnosticsPlugin {
      * If set to 0, the plugin is disabled.
      */
     public static final HazelcastProperty PERIOD_SECONDS
-            = new HazelcastProperty(PREFIX + ".operation-heartbeat.seconds", 10, SECONDS);
+            = new HazelcastProperty("hazelcast.diagnostics.operation-heartbeat.seconds", 10, SECONDS);
 
     /**
      * The maximum allowed deviation. E.g. with a default 60 call timeout and operation-heartbeat interval being 15 seconds,
@@ -61,7 +60,7 @@ public class OperationHeartbeatPlugin extends DiagnosticsPlugin {
      * problem; but if it arrives after 21 seconds, then the plugin will render.
      */
     public static final HazelcastProperty MAX_DEVIATION_PERCENTAGE
-            = new HazelcastProperty(PREFIX + ".operation-heartbeat.max-deviation-percentage", 33);
+            = new HazelcastProperty("hazelcast.diagnostics.operation-heartbeat.max-deviation-percentage", 33);
 
     private static final float HUNDRED = 100f;
 

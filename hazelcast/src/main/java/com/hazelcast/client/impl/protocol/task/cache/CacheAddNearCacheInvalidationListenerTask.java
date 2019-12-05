@@ -21,55 +21,55 @@ import com.hazelcast.cache.impl.CacheService;
 import com.hazelcast.client.impl.ClientEndpoint;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.CacheAddNearCacheInvalidationListenerCodec;
-import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
-import com.hazelcast.client.impl.protocol.task.ListenerMessageTask;
-import com.hazelcast.instance.Node;
+import com.hazelcast.client.impl.protocol.task.AbstractAddListenerMessageTask;
+import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nearcache.impl.invalidation.Invalidation;
-import com.hazelcast.nio.Connection;
+import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.nio.serialization.Data;
 
 import java.security.Permission;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
+
+import static com.hazelcast.spi.impl.InternalCompletableFuture.newCompletedFuture;
 
 public class CacheAddNearCacheInvalidationListenerTask
-        extends AbstractCallableMessageTask<CacheAddNearCacheInvalidationListenerCodec.RequestParameters>
-        implements ListenerMessageTask {
+        extends AbstractAddListenerMessageTask<CacheAddNearCacheInvalidationListenerCodec.RequestParameters> {
 
     public CacheAddNearCacheInvalidationListenerTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
     @Override
-    protected Object call() {
+    protected CompletableFuture<UUID> processInternal() {
         CacheService cacheService = getService(CacheService.SERVICE_NAME);
         CacheContext cacheContext = cacheService.getOrCreateCacheContext(parameters.name);
         NearCacheInvalidationListener listener
                 = new NearCacheInvalidationListener(endpoint, cacheContext,
                 nodeEngine.getLocalMember().getUuid(), clientMessage.getCorrelationId());
 
-        String registrationId =
-                cacheService.addInvalidationListener(parameters.name, listener, parameters.localOnly);
-        endpoint.addListenerDestroyAction(CacheService.SERVICE_NAME, parameters.name, registrationId);
-        return registrationId;
+        return parameters.localOnly ? newCompletedFuture(
+                cacheService.registerLocalListener(parameters.name, listener)) : (CompletableFuture<UUID>) cacheService
+                .registerListenerAsync(parameters.name, listener);
     }
 
     private final class NearCacheInvalidationListener extends AbstractCacheClientNearCacheInvalidationListener {
 
         NearCacheInvalidationListener(ClientEndpoint endpoint, CacheContext cacheContext,
-                                      String localMemberUuid, long correlationId) {
+                                      UUID localMemberUuid, long correlationId) {
             super(endpoint, cacheContext, localMemberUuid, correlationId);
         }
 
         @Override
-        protected ClientMessage encodeBatchInvalidation(String name, List<Data> keys, List<String> sourceUuids,
+        protected ClientMessage encodeBatchInvalidation(String name, List<Data> keys, List<UUID> sourceUuids,
                                                         List<UUID> partitionUuids, List<Long> sequences) {
             return CacheAddNearCacheInvalidationListenerCodec.encodeCacheBatchInvalidationEvent(name, keys,
                     sourceUuids, partitionUuids, sequences);
         }
 
         @Override
-        protected ClientMessage encodeSingleInvalidation(String name, Data key, String sourceUuid,
+        protected ClientMessage encodeSingleInvalidation(String name, Data key, UUID sourceUuid,
                                                          UUID partitionUuid, long sequence) {
             return CacheAddNearCacheInvalidationListenerCodec.encodeCacheInvalidationEvent(name, key,
                     sourceUuid, partitionUuid, sequence);
@@ -93,7 +93,7 @@ public class CacheAddNearCacheInvalidationListenerTask
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return CacheAddNearCacheInvalidationListenerCodec.encodeResponse((String) response);
+        return CacheAddNearCacheInvalidationListenerCodec.encodeResponse((UUID) response);
     }
 
     @Override

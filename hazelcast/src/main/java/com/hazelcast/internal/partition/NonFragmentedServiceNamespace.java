@@ -20,17 +20,15 @@ import com.hazelcast.internal.partition.impl.PartitionDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.spi.ServiceNamespace;
-
-import java.io.IOException;
+import com.hazelcast.internal.services.ServiceNamespace;
 
 /**
  * Internal {@link ServiceNamespace} implementation used by partitioning system to identify
  * non-fragmented service structures. All partition replica data belonging to service which do not implement
- * {@link com.hazelcast.spi.FragmentedMigrationAwareService} will be registered with
+ * {@link FragmentedMigrationAwareService} will be registered with
  * {@code NonFragmentedServiceNamespace}.
  *
- * @see com.hazelcast.spi.FragmentedMigrationAwareService
+ * @see FragmentedMigrationAwareService
  * @since 3.9
  */
 public final class NonFragmentedServiceNamespace implements ServiceNamespace, IdentifiedDataSerializable {
@@ -56,11 +54,11 @@ public final class NonFragmentedServiceNamespace implements ServiceNamespace, Id
     }
 
     @Override
-    public void writeData(ObjectDataOutput out) throws IOException {
+    public void writeData(ObjectDataOutput out) {
     }
 
     @Override
-    public void readData(ObjectDataInput in) throws IOException {
+    public void readData(ObjectDataInput in) {
     }
 
     @Override
@@ -74,7 +72,7 @@ public final class NonFragmentedServiceNamespace implements ServiceNamespace, Id
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return PartitionDataSerializerHook.NON_FRAGMENTED_SERVICE_NAMESPACE;
     }
 }

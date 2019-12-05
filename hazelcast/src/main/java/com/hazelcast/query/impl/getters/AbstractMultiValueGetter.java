@@ -16,16 +16,18 @@
 
 package com.hazelcast.query.impl.getters;
 
-import com.hazelcast.util.CollectionUtil;
-import com.hazelcast.util.collection.ArrayUtils;
+import com.hazelcast.internal.util.CollectionUtil;
+import com.hazelcast.internal.util.collection.ArrayUtils;
 
 import java.lang.reflect.Array;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Member;
 import java.util.Collection;
 
+import static com.hazelcast.query.impl.predicates.PredicateUtils.unwrapIfOptional;
 
 public abstract class AbstractMultiValueGetter extends Getter {
+
     public static final String REDUCER_ANY_TOKEN = "any";
 
     public static final int DO_NOT_REDUCE = -1;
@@ -63,12 +65,12 @@ public abstract class AbstractMultiValueGetter extends Getter {
             return extractFromMultiResult((MultiResult) parentObject);
         }
 
-        Object o = extractFrom(parentObject);
+        Object o = unwrapIfOptional(extractFrom(parentObject));
         if (modifier == DO_NOT_REDUCE) {
             return o;
         }
         if (modifier == REDUCE_EVERYTHING) {
-            MultiResult collector = new MultiResult();
+            MultiResult<Object> collector = new MultiResult<>();
             reduceInto(collector, o);
             return collector;
         }
@@ -94,21 +96,21 @@ public abstract class AbstractMultiValueGetter extends Getter {
         }
 
         if (!inputType.isArray()) {
-            throw new IllegalArgumentException("Cannot infer a return type with modifier "
-                    + modifier + " on type " + inputType.getName());
+            throw new IllegalArgumentException(
+                    "Cannot infer a return type with modifier " + modifier + " on type " + inputType.getName());
         }
 
         //ok, it must be an array. let's return array type
         return inputType.getComponentType();
     }
 
-    private void collectResult(MultiResult collector, Object parentObject)
-            throws IllegalAccessException, InvocationTargetException {
+    private void collectResult(MultiResult<Object> collector, Object parentObject) throws IllegalAccessException,
+            InvocationTargetException {
         // re-add nulls from parent extraction without extracting further down the path
         if (parentObject == null) {
             collector.add(null);
         } else {
-            Object currentObject = extractFrom(parentObject);
+            Object currentObject = unwrapIfOptional(extractFrom(parentObject));
             if (shouldReduce()) {
                 reduceInto(collector, currentObject);
             } else {
@@ -119,11 +121,10 @@ public abstract class AbstractMultiValueGetter extends Getter {
 
     private Object extractFromMultiResult(MultiResult parentMultiResult) throws IllegalAccessException,
             InvocationTargetException {
-        MultiResult collector = new MultiResult();
+        MultiResult<Object> collector = new MultiResult<>();
         collector.setNullOrEmptyTarget(parentMultiResult.isNullEmptyTarget());
-        int size = parentMultiResult.getResults().size();
-        for (int i = 0; i < size; i++) {
-            collectResult(collector, parentMultiResult.getResults().get(i));
+        for (Object result : parentMultiResult.getResults()) {
+            collectResult(collector, result);
         }
 
         return collector;
@@ -140,12 +141,11 @@ public abstract class AbstractMultiValueGetter extends Getter {
         return parseModifier(modifierSuffix);
     }
 
-
     private Object getItemAtPositionOrNull(Object object, int position) {
         if (object == null) {
             return null;
         } else if (object instanceof Collection) {
-            return CollectionUtil.getItemAtPositionOrNull((Collection) object, position);
+            return CollectionUtil.getItemAtPositionOrNull((Collection<?>) object, position);
         } else if (object instanceof Object[]) {
             return ArrayUtils.getItemAtPositionOrNull((Object[]) object, position);
         } else if (object.getClass().isArray()) {
@@ -155,23 +155,21 @@ public abstract class AbstractMultiValueGetter extends Getter {
                 + " Collections and Arrays are supported only");
     }
 
-
     private Object getParentObject(Object obj) throws Exception {
         return parent != null ? parent.getValue(obj) : obj;
     }
 
-    private void reduceArrayInto(MultiResult collector, Object[] currentObject) {
-        Object[] array = currentObject;
+    private void reduceArrayInto(MultiResult<Object> collector, Object[] array) {
         if (array.length == 0) {
             collector.addNullOrEmptyTarget();
         } else {
-            for (int i = 0; i < array.length; i++) {
-                collector.add(array[i]);
+            for (Object o : array) {
+                collector.add(o);
             }
         }
     }
 
-    private void reducePrimitiveArrayInto(MultiResult collector, Object primitiveArray) {
+    private void reducePrimitiveArrayInto(MultiResult<Object> collector, Object primitiveArray) {
         int length = Array.getLength(primitiveArray);
         if (length == 0) {
             collector.addNullOrEmptyTarget();
@@ -182,8 +180,7 @@ public abstract class AbstractMultiValueGetter extends Getter {
         }
     }
 
-    protected void reduceCollectionInto(MultiResult collector, Collection currentObject) {
-        Collection collection = currentObject;
+    protected void reduceCollectionInto(MultiResult<Object> collector, Collection collection) {
         if (collection.isEmpty()) {
             collector.addNullOrEmptyTarget();
         } else {
@@ -193,7 +190,7 @@ public abstract class AbstractMultiValueGetter extends Getter {
         }
     }
 
-    protected void reduceInto(MultiResult collector, Object currentObject) {
+    protected void reduceInto(MultiResult<Object> collector, Object currentObject) {
         if (modifier != REDUCE_EVERYTHING) {
             Object item = getItemAtPositionOrNull(currentObject, modifier);
             collector.add(item);
@@ -213,7 +210,6 @@ public abstract class AbstractMultiValueGetter extends Getter {
                     + " Only Collections and Arrays are supported.");
         }
     }
-
 
     private static int parseModifier(String modifier) {
         String stringValue = modifier.substring(1, modifier.length() - 1);

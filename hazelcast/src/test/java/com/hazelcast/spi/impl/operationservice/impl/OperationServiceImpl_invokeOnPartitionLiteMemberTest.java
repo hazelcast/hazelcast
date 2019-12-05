@@ -17,19 +17,17 @@
 package com.hazelcast.spi.impl.operationservice.impl;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.partition.NoDataMemberInClusterException;
-import com.hazelcast.spi.InternalCompletableFuture;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.OperationFactory;
-import com.hazelcast.spi.impl.operationservice.InternalOperationService;
+import com.hazelcast.spi.impl.InternalCompletableFuture;
+import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.spi.impl.operationservice.OperationFactory;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
 import org.junit.Test;
@@ -40,6 +38,7 @@ import java.io.IOException;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
+import java.util.function.BiConsumer;
 
 import static com.hazelcast.internal.partition.InternalPartitionService.SERVICE_NAME;
 import static java.util.Collections.singletonList;
@@ -49,7 +48,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class OperationServiceImpl_invokeOnPartitionLiteMemberTest
         extends HazelcastTestSupport {
 
@@ -68,7 +67,7 @@ public class OperationServiceImpl_invokeOnPartitionLiteMemberTest
         final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
         final HazelcastInstance instance = factory.newHazelcastInstance(liteMemberConfig);
 
-        final InternalOperationService operationService = getOperationService(instance);
+        final OperationServiceImpl operationService = getOperationService(instance);
         final InternalCompletableFuture<Object> future = operationService.invokeOnPartition(null, operation, 0);
 
         try {
@@ -86,20 +85,20 @@ public class OperationServiceImpl_invokeOnPartitionLiteMemberTest
         final HazelcastInstance lite = factory.newHazelcastInstance(liteMemberConfig);
         factory.newHazelcastInstance();
 
-        final InternalOperationService operationService = getOperationService(lite);
+        final OperationServiceImpl operationService = getOperationService(lite);
         final InternalCompletableFuture<Object> future = operationService.invokeOnPartition(null, operation, 0);
 
         assertEquals("foobar", future.get());
     }
 
     @Test
-    public void test_asyncInvokeOnPartition_onLiteMember() {
+    public void test_invokeOnPartitionAsync_onLiteMember() {
         final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
         final HazelcastInstance instance = factory.newHazelcastInstance(liteMemberConfig);
 
-        final InternalOperationService operationService = getOperationService(instance);
+        final OperationServiceImpl operationService = getOperationService(instance);
         final DummyExecutionCallback callback = new DummyExecutionCallback();
-        operationService.asyncInvokeOnPartition(null, operation, 0, callback);
+        operationService.<String>invokeOnPartitionAsync(null, operation, 0).whenComplete(callback);
 
         assertOpenEventually(callback.responseLatch);
         assertTrue(callback.response instanceof NoDataMemberInClusterException);
@@ -111,9 +110,9 @@ public class OperationServiceImpl_invokeOnPartitionLiteMemberTest
         final HazelcastInstance instance = factory.newHazelcastInstance(liteMemberConfig);
         factory.newHazelcastInstance();
 
-        final InternalOperationService operationService = getOperationService(instance);
+        final OperationServiceImpl operationService = getOperationService(instance);
         final DummyExecutionCallback callback = new DummyExecutionCallback();
-        operationService.asyncInvokeOnPartition(null, operation, 0, callback);
+        operationService.<String>invokeOnPartitionAsync(null, operation, 0).whenComplete(callback);
 
         assertOpenEventually(callback.responseLatch);
         assertEquals("foobar", callback.response);
@@ -125,7 +124,7 @@ public class OperationServiceImpl_invokeOnPartitionLiteMemberTest
         final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
         final HazelcastInstance instance = factory.newHazelcastInstance(liteMemberConfig);
 
-        final InternalOperationService operationService = getOperationService(instance);
+        final OperationServiceImpl operationService = getOperationService(instance);
         operationService.invokeOnPartitions(SERVICE_NAME, new DummyOperationFactory(), singletonList(0));
     }
 
@@ -136,7 +135,7 @@ public class OperationServiceImpl_invokeOnPartitionLiteMemberTest
         final HazelcastInstance instance = factory.newHazelcastInstance(liteMemberConfig);
         factory.newHazelcastInstance();
 
-        final InternalOperationService operationService = getOperationService(instance);
+        final OperationServiceImpl operationService = getOperationService(instance);
         final Map<Integer, Object> resultMap = operationService
                 .invokeOnPartitions(SERVICE_NAME, new DummyOperationFactory(), singletonList(0));
 
@@ -150,7 +149,7 @@ public class OperationServiceImpl_invokeOnPartitionLiteMemberTest
         final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
         final HazelcastInstance instance = factory.newHazelcastInstance(liteMemberConfig);
 
-        final InternalOperationService operationService = getOperationService(instance);
+        final OperationServiceImpl operationService = getOperationService(instance);
         operationService.invokeOnAllPartitions(SERVICE_NAME, new DummyOperationFactory());
     }
 
@@ -161,7 +160,7 @@ public class OperationServiceImpl_invokeOnPartitionLiteMemberTest
         final HazelcastInstance instance = factory.newHazelcastInstance(liteMemberConfig);
         factory.newHazelcastInstance();
 
-        final InternalOperationService operationService = getOperationService(instance);
+        final OperationServiceImpl operationService = getOperationService(instance);
         final Map<Integer, Object> resultMap = operationService.invokeOnAllPartitions(SERVICE_NAME, new DummyOperationFactory());
 
         assertFalse(resultMap.isEmpty());
@@ -192,26 +191,24 @@ public class OperationServiceImpl_invokeOnPartitionLiteMemberTest
         }
 
         @Override
-        public int getId() {
+        public int getClassId() {
             return 0;
         }
     }
 
-    static class DummyExecutionCallback
-            implements ExecutionCallback<String> {
+    static class DummyExecutionCallback implements BiConsumer<String, Throwable> {
 
         private final CountDownLatch responseLatch = new CountDownLatch(1);
 
         private volatile Object response;
 
         @Override
-        public void onResponse(String response) {
-            setResponse(response);
-        }
-
-        @Override
-        public void onFailure(Throwable t) {
-            setResponse(t);
+        public void accept(String response, Throwable t) {
+            if (t == null) {
+                setResponse(response);
+            } else {
+                setResponse(t);
+            }
         }
 
         private void setResponse(Object response) {

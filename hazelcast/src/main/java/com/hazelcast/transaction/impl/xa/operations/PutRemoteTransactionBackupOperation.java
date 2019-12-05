@@ -16,10 +16,11 @@
 
 package com.hazelcast.transaction.impl.xa.operations;
 
+import com.hazelcast.internal.util.UUIDSerializationUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.spi.BackupOperation;
-import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.impl.operationservice.BackupOperation;
+import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.transaction.impl.TransactionDataSerializerHook;
 import com.hazelcast.transaction.impl.TransactionLogRecord;
 import com.hazelcast.transaction.impl.xa.SerializableXID;
@@ -29,22 +30,23 @@ import com.hazelcast.transaction.impl.xa.XATransaction;
 import java.io.IOException;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.UUID;
 
 public class PutRemoteTransactionBackupOperation extends AbstractXAOperation implements BackupOperation {
 
     private final List<TransactionLogRecord> records = new LinkedList<TransactionLogRecord>();
 
     private SerializableXID xid;
-    private String txnId;
-    private String txOwnerUuid;
+    private UUID txnId;
+    private UUID txOwnerUuid;
     private long timeoutMillis;
     private long startTime;
 
     public PutRemoteTransactionBackupOperation() {
     }
 
-    public PutRemoteTransactionBackupOperation(List<TransactionLogRecord> logs, String txnId, SerializableXID xid,
-                                               String txOwnerUuid, long timeoutMillis, long startTime) {
+    public PutRemoteTransactionBackupOperation(List<TransactionLogRecord> logs, UUID txnId, SerializableXID xid,
+                                               UUID txOwnerUuid, long timeoutMillis, long startTime) {
         records.addAll(logs);
         this.txnId = txnId;
         this.xid = xid;
@@ -69,9 +71,9 @@ public class PutRemoteTransactionBackupOperation extends AbstractXAOperation imp
 
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
-        out.writeUTF(txnId);
+        UUIDSerializationUtil.writeUUID(out, txnId);
         out.writeObject(xid);
-        out.writeUTF(txOwnerUuid);
+        UUIDSerializationUtil.writeUUID(out, txOwnerUuid);
         out.writeLong(timeoutMillis);
         out.writeLong(startTime);
         int len = records.size();
@@ -85,9 +87,9 @@ public class PutRemoteTransactionBackupOperation extends AbstractXAOperation imp
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
-        txnId = in.readUTF();
+        txnId = UUIDSerializationUtil.readUUID(in);
         xid = in.readObject();
-        txOwnerUuid = in.readUTF();
+        txOwnerUuid = UUIDSerializationUtil.readUUID(in);
         timeoutMillis = in.readLong();
         startTime = in.readLong();
         int len = in.readInt();
@@ -100,7 +102,7 @@ public class PutRemoteTransactionBackupOperation extends AbstractXAOperation imp
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return TransactionDataSerializerHook.PUT_REMOTE_TX_BACKUP;
     }
 }

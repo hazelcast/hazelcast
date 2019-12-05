@@ -81,4 +81,10 @@ public interface SubscriberContext {
      * @see SubscriberContextSupport
      */
     SubscriberContextSupport getSubscriberContextSupport();
+
+    /**
+     * @param request see {@link QueryCacheRequest}
+     * @return a new instance of {@link QueryCacheEndToEndConstructor}
+     */
+    QueryCacheEndToEndConstructor newEndToEndConstructor(QueryCacheRequest request);
 }

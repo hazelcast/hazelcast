@@ -16,37 +16,65 @@
 
 package com.hazelcast.internal.cluster.impl;
 
-import com.hazelcast.nio.Address;
+import com.hazelcast.cluster.Address;
+import com.hazelcast.instance.ProtocolType;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import java.io.IOException;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.EnumMap;
+import java.util.Map;
 
-public class BindMessage implements IdentifiedDataSerializable {
+import static com.hazelcast.internal.serialization.impl.SerializationUtil.readCollection;
+import static com.hazelcast.internal.serialization.impl.SerializationUtil.writeCollection;
 
-    private Address localAddress;
+/**
+ * Bind message, conveying information about all kinds of public
+ * addresses per protocol type.
+ * It is the first message exchanged on a new connection
+ * so {@link com.hazelcast.nio.serialization.impl.Versioned Versioned}
+ * serialization cannot be used as there may be no cluster version
+ * established yet. The {@code BindMessage} itself includes a
+ * schema version so it can be extended in future versions without having
+ * to use another packet type.
+ *
+ * @since 3.12
+ */
+public class BindMessage
+        implements IdentifiedDataSerializable {
+
+    private byte schemaVersion;
+    private Map<ProtocolType, Collection<Address>> localAddresses;
     private Address targetAddress;
     private boolean reply;
 
     public BindMessage() {
     }
 
-    public BindMessage(Address localAddress, Address targetAddress, boolean reply) {
-        this.localAddress = localAddress;
+    public BindMessage(byte schemaVersion, Map<ProtocolType, Collection<Address>> localAddresses,
+                       Address targetAddress, boolean reply) {
+        this.schemaVersion = schemaVersion;
+        this.localAddresses = new EnumMap<>(localAddresses);
         this.targetAddress = targetAddress;
         this.reply = reply;
     }
 
-    public Address getLocalAddress() {
-        return localAddress;
+    byte getSchemaVersion() {
+        return schemaVersion;
+    }
+
+    public Map<ProtocolType, Collection<Address>> getLocalAddresses() {
+        return localAddresses;
     }
 
     public Address getTargetAddress() {
         return targetAddress;
     }
 
-    public boolean shouldReply() {
+    public boolean isReply() {
         return reply;
     }
 
@@ -56,35 +84,48 @@ public class BindMessage implements IdentifiedDataSerializable {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ClusterDataSerializerHook.BIND_MESSAGE;
     }
 
     @Override
-    public void readData(final ObjectDataInput in) throws IOException {
-        localAddress = new Address();
-        localAddress.readData(in);
-        boolean hasTarget = in.readBoolean();
-        if (hasTarget) {
-            targetAddress = new Address();
-            targetAddress.readData(in);
+    public void writeData(ObjectDataOutput out) throws IOException {
+        out.writeByte(schemaVersion);
+        out.writeObject(targetAddress);
+        out.writeBoolean(reply);
+        int size = (localAddresses == null) ? 0 : localAddresses.size();
+        out.writeInt(size);
+        if (size == 0) {
+            return;
         }
-        reply = in.readBoolean();
+        for (Map.Entry<ProtocolType, Collection<Address>> addressEntry : localAddresses.entrySet()) {
+            out.writeInt(addressEntry.getKey().ordinal());
+            writeCollection(addressEntry.getValue(), out);
+        }
     }
 
     @Override
-    public void writeData(final ObjectDataOutput out) throws IOException {
-        localAddress.writeData(out);
-        boolean hasTarget = targetAddress != null;
-        out.writeBoolean(hasTarget);
-        if (hasTarget) {
-            targetAddress.writeData(out);
+    public void readData(ObjectDataInput in) throws IOException {
+        schemaVersion = in.readByte();
+        targetAddress = in.readObject();
+        reply = in.readBoolean();
+        int size = in.readInt();
+        if (size == 0) {
+            localAddresses = Collections.emptyMap();
+            return;
         }
-        out.writeBoolean(reply);
+        Map<ProtocolType, Collection<Address>> addressesPerProtocolType = new EnumMap<>(ProtocolType.class);
+        for (int i = 0; i < size; i++) {
+            ProtocolType protocolType = ProtocolType.valueOf(in.readInt());
+            Collection<Address> addresses = readCollection(in);
+            addressesPerProtocolType.put(protocolType, addresses);
+        }
+        this.localAddresses = addressesPerProtocolType;
     }
 
     @Override
     public String toString() {
-        return "Bind " + localAddress;
+        return "BindMessage{" + "schemaVersion=" + schemaVersion + ", localAddresses=" + localAddresses
+                + ", targetAddress=" + targetAddress + ", reply=" + reply + '}';
     }
 }

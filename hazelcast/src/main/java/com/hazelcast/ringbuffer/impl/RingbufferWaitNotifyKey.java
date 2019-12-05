@@ -16,13 +16,14 @@
 
 package com.hazelcast.ringbuffer.impl;
 
-import com.hazelcast.spi.ObjectNamespace;
-import com.hazelcast.spi.WaitNotifyKey;
+import com.hazelcast.internal.services.ObjectNamespace;
+import com.hazelcast.spi.impl.operationservice.AbstractWaitNotifyKey;
+import com.hazelcast.spi.impl.operationservice.WaitNotifyKey;
 
-import static com.hazelcast.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 /**
- * A {@link com.hazelcast.spi.AbstractWaitNotifyKey} to make it possible to wait
+ * A {@link AbstractWaitNotifyKey} to make it possible to wait
  * for an item to be published in the ringbuffer.
  * The exact ringbuffer is specified by the partition ID and namespace as those
  * two parameters uniquely identify a single ringbuffer inside the ringbuffer service.

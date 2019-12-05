@@ -22,14 +22,14 @@ import com.hazelcast.config.CacheConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.instance.HazelcastInstanceImpl;
-import com.hazelcast.instance.TestUtil;
+import com.hazelcast.instance.impl.HazelcastInstanceImpl;
+import com.hazelcast.instance.impl.TestUtil;
 import com.hazelcast.spi.merge.PassThroughMergePolicy;
 import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.SplitBrainTestSupport;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -48,7 +48,8 @@ import java.io.Serializable;
 import java.util.Collection;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static com.hazelcast.config.EvictionConfig.MaxSizePolicy.USED_NATIVE_MEMORY_SIZE;
+import static com.hazelcast.cache.CacheTestSupport.createServerCachingProvider;
+import static com.hazelcast.config.MaxSizePolicy.USED_NATIVE_MEMORY_SIZE;
 import static com.hazelcast.config.InMemoryFormat.BINARY;
 import static com.hazelcast.config.InMemoryFormat.NATIVE;
 import static com.hazelcast.config.InMemoryFormat.OBJECT;
@@ -57,7 +58,7 @@ import static org.junit.Assert.assertEquals;
 
 @RunWith(Parameterized.class)
 @UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 @SuppressWarnings("WeakerAccess")
 public class CacheEventListenerSplitBrainTest extends SplitBrainTestSupport {
 
@@ -94,10 +95,10 @@ public class CacheEventListenerSplitBrainTest extends SplitBrainTestSupport {
         CacheConfig cacheConfig = new CacheConfig();
         cacheConfig.setInMemoryFormat(inMemoryFormat);
         if (inMemoryFormat == NATIVE) {
-            cacheConfig.getEvictionConfig().setMaximumSizePolicy(USED_NATIVE_MEMORY_SIZE);
+            cacheConfig.getEvictionConfig().setMaxSizePolicy(USED_NATIVE_MEMORY_SIZE);
         }
         cacheConfig.setStatisticsEnabled(true);
-        cacheConfig.setMergePolicy(mergePolicyClass.getName());
+        cacheConfig.getMergePolicyConfig().setPolicy(mergePolicyClass.getName());
 
         if (updatedListener != null) {
             MutableCacheEntryListenerConfiguration listenerConfiguration =
@@ -112,7 +113,7 @@ public class CacheEventListenerSplitBrainTest extends SplitBrainTestSupport {
 
     protected CacheManager getCacheManager(HazelcastInstance instance) {
         HazelcastInstanceImpl hazelcastInstanceImpl = TestUtil.getHazelcastInstanceImpl(instance);
-        HazelcastServerCachingProvider cachingProvider = HazelcastServerCachingProvider.createCachingProvider(hazelcastInstanceImpl);
+        HazelcastServerCachingProvider cachingProvider = createServerCachingProvider(hazelcastInstanceImpl);
         return cachingProvider.getCacheManager();
     }
 
@@ -181,7 +182,7 @@ public class CacheEventListenerSplitBrainTest extends SplitBrainTestSupport {
 
         public AtomicInteger updated = new AtomicInteger();
 
-        public TestCacheEntryUpdatedListener() {
+        TestCacheEntryUpdatedListener() {
         }
 
         @Override

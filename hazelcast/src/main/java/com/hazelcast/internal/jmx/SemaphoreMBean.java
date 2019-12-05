@@ -16,10 +16,10 @@
 
 package com.hazelcast.internal.jmx;
 
-import com.hazelcast.core.ISemaphore;
+import com.hazelcast.cp.ISemaphore;
 
 /**
- * Management bean for {@link com.hazelcast.core.ISemaphore}
+ * Management bean for {@link ISemaphore}
  */
 @ManagedDescription("ISemaphore")
 public class SemaphoreMBean extends HazelcastMBean<ISemaphore> {

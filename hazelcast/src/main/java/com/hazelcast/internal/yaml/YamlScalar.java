@@ -18,7 +18,7 @@ package com.hazelcast.internal.yaml;
 
 /**
  * Interface for YAML scalar nodes
- * <p/>
+ * <p>
  * The following types are supported:
  * <ul>
  * <li>String</li>
@@ -39,7 +39,7 @@ public interface YamlScalar extends YamlNode {
 
     /**
      * Gets the value of the node
-     * <p/>
+     * <p>
      * Please note that if the scalar's type is not the expected type T,
      * a {@link ClassCastException} is thrown <strong>at the call site</strong>.
      *

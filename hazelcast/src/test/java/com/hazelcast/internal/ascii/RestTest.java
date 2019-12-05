@@ -16,23 +16,27 @@
 
 package com.hazelcast.internal.ascii;
 
+import com.hazelcast.collection.IQueue;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.PermissionConfig;
+import com.hazelcast.config.RestApiConfig;
 import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IMap;
-import com.hazelcast.core.IQueue;
+import com.hazelcast.core.HazelcastJsonValue;
+import com.hazelcast.instance.EndpointQualifier;
+import com.hazelcast.internal.ascii.HTTPCommunicator.ConnectionResponse;
+import com.hazelcast.internal.json.Json;
+import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.internal.management.dto.WanReplicationConfigDTO;
 import com.hazelcast.internal.management.request.UpdatePermissionConfigRequest;
-import com.hazelcast.nio.Address;
-import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.map.IMap;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestAwareInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
-
 import org.junit.After;
+import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -40,17 +44,22 @@ import org.junit.runner.RunWith;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.net.HttpURLConnection;
+import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.util.HashSet;
 import java.util.Set;
 
-import static com.hazelcast.nio.IOUtil.readFully;
+import static com.hazelcast.internal.ascii.rest.HttpCommand.CONTENT_TYPE_JSON;
+import static com.hazelcast.internal.nio.IOUtil.readFully;
+import static com.hazelcast.internal.util.StringUtil.bytesToString;
+import static com.hazelcast.internal.util.StringUtil.stringToBytes;
+import static com.hazelcast.test.HazelcastTestSupport.assertContains;
+import static com.hazelcast.test.HazelcastTestSupport.getNode;
 import static com.hazelcast.test.HazelcastTestSupport.randomMapName;
 import static com.hazelcast.test.HazelcastTestSupport.randomName;
 import static com.hazelcast.test.HazelcastTestSupport.randomString;
 import static com.hazelcast.test.HazelcastTestSupport.sleepAtLeastSeconds;
-import static com.hazelcast.util.StringUtil.bytesToString;
-import static com.hazelcast.util.StringUtil.stringToBytes;
 import static java.net.HttpURLConnection.HTTP_BAD_REQUEST;
 import static java.net.HttpURLConnection.HTTP_NOT_FOUND;
 import static java.net.HttpURLConnection.HTTP_OK;
@@ -65,23 +74,30 @@ import static org.junit.Assert.assertTrue;
 @Category(QuickTest.class)
 public class RestTest {
 
-    private final TestAwareInstanceFactory factory = new TestAwareInstanceFactory();
+    private static final String MAP_WITH_TTL = "mapWithTtl";
 
-    private HazelcastInstance instance;
-    private HTTPCommunicator communicator;
+    protected final TestAwareInstanceFactory factory = new TestAwareInstanceFactory();
+
+    protected HazelcastInstance instance;
+    protected HazelcastInstance remoteInstance;
+    protected HTTPCommunicator communicator;
 
     @BeforeClass
     public static void beforeClass() {
         Hazelcast.shutdownAll();
     }
 
-    private Config setup() {
-        Config config = new Config();
-        config.setProperty(GroupProperty.REST_ENABLED.getName(), "true");
-
-        instance = factory.newHazelcastInstance(config);
-
+    @Before
+    public void setup() {
+        instance = factory.newHazelcastInstance(getConfig());
         communicator = new HTTPCommunicator(instance);
+    }
+
+    public Config getConfig() {
+        Config config = new Config();
+        RestApiConfig restApiConfig = new RestApiConfig().setEnabled(true).enableAllGroups();
+        config.getNetworkConfig().setRestApiConfig(restApiConfig);
+        config.getMapConfig(MAP_WITH_TTL).setTimeToLiveSeconds(2);
         return config;
     }
 
@@ -92,13 +108,11 @@ public class RestTest {
 
     @Test
     public void testMapPutGet() throws Exception {
-        setup();
         testMapPutGet0();
     }
 
     @Test
     public void testMapPutGet_chunked() throws Exception {
-        setup();
         communicator.enableChunkedStreaming();
         testMapPutGet0();
     }
@@ -110,13 +124,24 @@ public class RestTest {
         String value = "value";
 
         assertEquals(HTTP_OK, communicator.mapPut(name, key, value));
-        assertEquals(value, communicator.mapGet(name, key));
+        assertEquals(value, communicator.mapGetAndResponse(name, key));
         assertTrue(instance.getMap(name).containsKey(key));
     }
 
     @Test
+    public void testMapGetWithJson() throws IOException {
+        final String mapName = "mapName";
+        final String key = "key";
+        String jsonValue = Json.object().add("arbitrary-attribute", "arbitrary-value").toString();
+        instance.getMap(mapName).put(key, new HazelcastJsonValue(jsonValue));
+        HTTPCommunicator.ConnectionResponse response = communicator.mapGet(mapName, key);
+
+        assertContains(response.responseHeaders.get("Content-Type").iterator().next(), bytesToString(CONTENT_TYPE_JSON));
+        assertEquals(jsonValue, response.response);
+    }
+
+    @Test
     public void testMapPutDelete() throws Exception {
-        setup();
         String name = randomMapName();
 
         String key = "key";
@@ -129,7 +154,6 @@ public class RestTest {
 
     @Test
     public void testMapDeleteAll() throws Exception {
-        setup();
         String name = randomMapName();
 
         int count = 10;
@@ -147,26 +171,20 @@ public class RestTest {
     // issue #1783
     @Test
     public void testMapTtl() throws Exception {
-        Config config = setup();
-        String name = randomMapName();
-        config.getMapConfig(name)
-                .setTimeToLiveSeconds(2);
-
         String key = "key";
-        communicator.mapPut(name, key, "value");
+        communicator.mapPut(MAP_WITH_TTL, key, "value");
 
         sleepAtLeastSeconds(3);
 
-        String value = communicator.mapGet(name, key);
+        String value = communicator.mapGetAndResponse(MAP_WITH_TTL, key);
         assertTrue(value.isEmpty());
     }
 
     @Test
     public void testQueueOfferPoll() throws Exception {
-        setup();
         String name = randomName();
 
-        String item = communicator.queuePoll(name, 1);
+        String item = communicator.queuePollAndResponse(name, 1);
         assertTrue(item.isEmpty());
 
         String value = "value";
@@ -175,13 +193,12 @@ public class RestTest {
         IQueue<Object> queue = instance.getQueue(name);
         assertEquals(1, queue.size());
 
-        assertEquals(value, communicator.queuePoll(name, 10));
+        assertEquals(value, communicator.queuePollAndResponse(name, 10));
         assertTrue(queue.isEmpty());
     }
 
     @Test
     public void testQueueSize() throws Exception {
-        setup();
         String name = randomName();
         IQueue<Integer> queue = instance.getQueue(name);
         for (int i = 0; i < 10; i++) {
@@ -192,56 +209,65 @@ public class RestTest {
     }
 
     @Test
+    public void testQueuePollWithJson() throws Exception {
+        final String queueName = "mapName";
+        String jsonValue = Json.object().add("arbitrary-attribute", "arbitrary-value").toString();
+        instance.getQueue(queueName).offer(new HazelcastJsonValue(jsonValue));
+        HTTPCommunicator.ConnectionResponse response = communicator.queuePoll(queueName, 10);
+
+        assertContains(response.responseHeaders.get("Content-Type").iterator().next(), bytesToString(CONTENT_TYPE_JSON));
+        assertEquals(jsonValue, response.response);
+    }
+
+    @Test
     public void syncMapOverWAN() throws Exception {
-        setup();
-        String result = communicator.syncMapOverWAN("atob", "b", "default");
+        Config config = instance.getConfig();
+        String result = communicator.syncMapOverWAN(config.getClusterName(), "", "atob", "b", "default");
         assertEquals("{\"status\":\"fail\",\"message\":\"WAN sync for map is not supported.\"}", result);
     }
 
     @Test
     public void syncAllMapsOverWAN() throws Exception {
-        setup();
-        String result = communicator.syncMapsOverWAN("atob", "b");
+        Config config = instance.getConfig();
+        String result = communicator.syncMapsOverWAN(config.getClusterName(), "", "atob", "b");
         assertEquals("{\"status\":\"fail\",\"message\":\"WAN sync is not supported.\"}", result);
     }
 
     @Test
     public void wanClearQueues() throws Exception {
-        setup();
-        String result = communicator.wanClearQueues("atob", "b");
+        Config config = instance.getConfig();
+        String result = communicator.wanClearQueues(config.getClusterName(), "", "atob", "b");
         assertEquals("{\"status\":\"fail\",\"message\":\"Clearing WAN replication queues is not supported.\"}", result);
     }
 
     @Test
     public void addWanConfig() throws Exception {
-        setup();
+        Config config = instance.getConfig();
         WanReplicationConfig wanConfig = new WanReplicationConfig();
         wanConfig.setName("test");
         WanReplicationConfigDTO dto = new WanReplicationConfigDTO(wanConfig);
-        String result = communicator.addWanConfig(dto.toJson().toString());
+        String result = communicator.addWanConfig(config.getClusterName(), "", dto.toJson().toString());
         assertEquals("{\"status\":\"fail\",\"message\":\"Adding new WAN config is not supported.\"}", result);
     }
 
     @Test
     public void updatePermissions() throws Exception {
-        Config config = setup();
+        Config config = instance.getConfig();
         Set<PermissionConfig> permissionConfigs = new HashSet<PermissionConfig>();
         permissionConfigs.add(new PermissionConfig(PermissionConfig.PermissionType.MAP, "test", "*"));
         UpdatePermissionConfigRequest request = new UpdatePermissionConfigRequest(permissionConfigs);
-        String result = communicator.updatePermissions(config.getGroupConfig().getName(),
-                config.getGroupConfig().getPassword(), request.toJson().toString());
-        assertEquals("{\"status\":\"forbidden\"}", result);
+        ConnectionResponse resp =
+                communicator.updatePermissions(config.getClusterName(), "", request.toJson().toString());
+        assertEquals(HttpURLConnection.HTTP_FORBIDDEN, resp.responseCode);
     }
 
     @Test
     public void testMap_PutGet_withLargeValue() throws IOException {
-        setup();
         testMap_PutGet_withLargeValue0();
     }
 
     @Test
     public void testMap_PutGet_withLargeValue_chunked() throws IOException {
-        setup();
         communicator.enableChunkedStreaming();
         testMap_PutGet_withLargeValue0();
     }
@@ -259,19 +285,17 @@ public class RestTest {
         int response = communicator.mapPut(mapName, key, valueStr);
         assertEquals(HTTP_OK, response);
 
-        String actual = communicator.mapGet(mapName, key);
+        String actual = communicator.mapGetAndResponse(mapName, key);
         assertEquals(valueStr, actual);
     }
 
     @Test
     public void testMap_PutGet_withLargeKey() throws IOException {
-        setup();
         testMap_PutGet_withLargeKey0();
     }
 
     @Test
     public void testMap_PutGet_withLargeKey_chunked() throws IOException {
-        setup();
         communicator.enableChunkedStreaming();
         testMap_PutGet_withLargeKey0();
     }
@@ -287,68 +311,59 @@ public class RestTest {
         String value = "value";
         int response = communicator.mapPut(mapName, key.toString(), value);
         assertEquals(HTTP_OK, response);
-        assertEquals(value, communicator.mapGet(mapName, key.toString()));
+        assertEquals(value, communicator.mapGetAndResponse(mapName, key.toString()));
     }
 
     @Test
     public void testMap_HeadRequest() throws IOException {
-        setup();
         int response = communicator.headRequestToMapURI().responseCode;
         assertEquals(HTTP_OK, response);
     }
 
     @Test
     public void testQueue_HeadRequest() throws IOException {
-        setup();
         int response = communicator.headRequestToQueueURI().responseCode;
         assertEquals(HTTP_OK, response);
     }
 
     @Test
     public void testUndefined_HeadRequest() throws IOException {
-        setup();
         int response = communicator.headRequestToUndefinedURI().responseCode;
         assertEquals(HTTP_NOT_FOUND, response);
     }
 
     @Test
     public void testUndefined_GetRequest() throws IOException {
-        setup();
         int response = communicator.getRequestToUndefinedURI().responseCode;
         assertEquals(HTTP_NOT_FOUND, response);
     }
 
     @Test
     public void testUndefined_PostRequest() throws IOException {
-        setup();
         int response = communicator.postRequestToUndefinedURI().responseCode;
         assertEquals(HTTP_NOT_FOUND, response);
     }
 
     @Test
     public void testUndefined_DeleteRequest() throws IOException {
-        setup();
         int response = communicator.deleteRequestToUndefinedURI().responseCode;
         assertEquals(HTTP_NOT_FOUND, response);
     }
 
     @Test
     public void testBad_GetRequest() throws IOException {
-        setup();
         int response = communicator.getBadRequestURI().responseCode;
         assertEquals(HTTP_BAD_REQUEST, response);
     }
 
     @Test
     public void testBad_PostRequest() throws IOException {
-        setup();
-        int response = communicator.postBadRequestURI().responseCode;
-        assertEquals(HTTP_BAD_REQUEST, response);
+        ConnectionResponse resp = communicator.postBadRequestURI();
+        assertEquals(HTTP_BAD_REQUEST, resp.responseCode);
     }
 
     @Test
     public void testBad_DeleteRequest() throws IOException {
-        setup();
         int response = communicator.deleteBadRequestURI().responseCode;
         assertEquals(HTTP_BAD_REQUEST, response);
     }
@@ -358,9 +373,10 @@ public class RestTest {
      */
     @Test
     public void testNoHeaders() throws IOException {
-        setup();
-        Address address = HazelcastTestSupport.getAddress(instance);
-        Socket socket = new Socket(address.getInetAddress(), address.getPort());
+        InetSocketAddress address = getNode(instance).getLocalMember().getSocketAddress(EndpointQualifier.REST);
+
+        HazelcastTestSupport.getAddress(instance);
+        Socket socket = new Socket(address.getAddress(), address.getPort());
         socket.setSoTimeout(5000);
         try {
             OutputStream os = socket.getOutputStream();
@@ -373,6 +389,16 @@ public class RestTest {
         } finally {
             socket.close();
         }
+    }
+
+    private JsonObject assertJsonContains(String json, String... attributesAndValues) {
+        JsonObject object = Json.parse(json).asObject();
+        for (int i = 0; i < attributesAndValues.length; ) {
+            String key = attributesAndValues[i++];
+            String expectedValue = attributesAndValues[i++];
+            assertEquals(expectedValue, object.getString(key, null));
+        }
+        return object;
     }
 
 }

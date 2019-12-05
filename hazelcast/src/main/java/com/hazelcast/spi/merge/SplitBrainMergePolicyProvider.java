@@ -17,17 +17,16 @@
 package com.hazelcast.spi.merge;
 
 import com.hazelcast.config.InvalidConfigurationException;
-import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.annotation.Beta;
-import com.hazelcast.util.ConstructorFunction;
+import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.internal.util.ConstructorFunction;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
-import static com.hazelcast.nio.ClassLoaderUtil.newInstance;
-import static com.hazelcast.util.ConcurrencyUtil.getOrPutIfAbsent;
+import static com.hazelcast.internal.nio.ClassLoaderUtil.newInstance;
+import static com.hazelcast.internal.util.ConcurrencyUtil.getOrPutIfAbsent;
 
 /**
  * A provider for {@link SplitBrainMergePolicy} instances.
@@ -36,13 +35,12 @@ import static com.hazelcast.util.ConcurrencyUtil.getOrPutIfAbsent;
  *
  * @since 3.10
  */
-@Beta
 public final class SplitBrainMergePolicyProvider {
 
     private static final Map<String, SplitBrainMergePolicy> OUT_OF_THE_BOX_MERGE_POLICIES;
 
     static {
-        OUT_OF_THE_BOX_MERGE_POLICIES = new HashMap<String, SplitBrainMergePolicy>();
+        OUT_OF_THE_BOX_MERGE_POLICIES = new HashMap<>();
         addPolicy(DiscardMergePolicy.class, new DiscardMergePolicy());
         addPolicy(ExpirationTimeMergePolicy.class, new ExpirationTimeMergePolicy());
         addPolicy(HigherHitsMergePolicy.class, new HigherHitsMergePolicy());

@@ -16,7 +16,7 @@
 
 package com.hazelcast.test;
 
-import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.impl.operationservice.Operation;
 
 public abstract class AbstractTestOperation extends Operation {
 

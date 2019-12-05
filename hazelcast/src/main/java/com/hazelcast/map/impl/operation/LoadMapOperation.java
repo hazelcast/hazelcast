@@ -19,7 +19,7 @@ package com.hazelcast.map.impl.operation;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.spi.impl.MutatingOperation;
+import com.hazelcast.spi.impl.operationservice.MutatingOperation;
 
 import java.io.IOException;
 
@@ -41,7 +41,7 @@ public class LoadMapOperation extends MapOperation implements MutatingOperation 
     }
 
     @Override
-    public void run() throws Exception {
+    protected void runInternal() {
         recordStore.loadAll(replaceExistingValues);
     }
 
@@ -58,7 +58,7 @@ public class LoadMapOperation extends MapOperation implements MutatingOperation 
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MapDataSerializerHook.LOAD_MAP;
     }
 }

@@ -16,24 +16,22 @@
 
 package com.hazelcast.spi.impl.operationservice.impl;
 
+import com.hazelcast.collection.IQueue;
 import com.hazelcast.config.Config;
-import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.ICompletableFuture;
-import com.hazelcast.core.IQueue;
 import com.hazelcast.core.OperationTimeoutException;
-import com.hazelcast.nio.Address;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.spi.BackupAwareOperation;
-import com.hazelcast.spi.InternalCompletableFuture;
-import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.OperationService;
+import com.hazelcast.spi.impl.InternalCompletableFuture;
+import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.spi.impl.operationservice.BackupAwareOperation;
+import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.spi.impl.operationservice.OperationService;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -44,13 +42,13 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.LockSupport;
 
-import static com.hazelcast.spi.properties.GroupProperty.OPERATION_CALL_TIMEOUT_MILLIS;
+import static com.hazelcast.spi.properties.ClusterProperty.OPERATION_CALL_TIMEOUT_MILLIS;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class OperationServiceImpl_timeoutTest extends HazelcastTestSupport {
 
     //there was a memory leak caused by the invocation not releasing the backup registration when there is a timeout.
@@ -123,21 +121,15 @@ public class OperationServiceImpl_timeoutTest extends HazelcastTestSupport {
 
         final CountDownLatch latch = new CountDownLatch(1);
         if (async) {
-            future.andThen(new ExecutionCallback<Object>() {
-                @Override
-                public void onResponse(Object response) {
+            future.exceptionally((throwable) -> {
+                if (throwable instanceof OperationTimeoutException) {
+                    latch.countDown();
                 }
-
-                @Override
-                public void onFailure(Throwable t) {
-                    if (t instanceof OperationTimeoutException) {
-                        latch.countDown();
-                    }
-                }
+                return null;
             });
         } else {
             try {
-                future.join();
+                future.joinInternal();
                 fail("Should throw OperationTimeoutException!");
             } catch (OperationTimeoutException ignored) {
                 latch.countDown();
@@ -197,7 +189,7 @@ public class OperationServiceImpl_timeoutTest extends HazelcastTestSupport {
         // invoke on the "local" member
         Address localAddress = getNode(hz1).getThisAddress();
         OperationService operationService = getNode(hz1).getNodeEngine().getOperationService();
-        ICompletableFuture<Boolean> future = operationService
+        InternalCompletableFuture<Boolean> future = operationService
                 .invokeOnTarget(null, new SleepingOperation(callTimeoutMillis * 5), localAddress);
 
         // wait more than operation timeout

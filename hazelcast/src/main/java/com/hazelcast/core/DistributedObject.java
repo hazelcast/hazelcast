@@ -16,6 +16,15 @@
 
 package com.hazelcast.core;
 
+import com.hazelcast.cp.IAtomicLong;
+import com.hazelcast.map.IMap;
+import com.hazelcast.topic.ITopic;
+import com.hazelcast.collection.IQueue;
+import com.hazelcast.transaction.TransactionalMap;
+import com.hazelcast.transaction.TransactionalMultiMap;
+import com.hazelcast.transaction.TransactionalQueue;
+import com.hazelcast.multimap.MultiMap;
+
 /**
  * Base interface for all distributed objects.
  *
@@ -26,7 +35,6 @@ package com.hazelcast.core;
  * @see IQueue
  * @see MultiMap
  * @see ITopic
- * @see ILock
  * @see IExecutorService
  * @see TransactionalMap
  * @see TransactionalQueue

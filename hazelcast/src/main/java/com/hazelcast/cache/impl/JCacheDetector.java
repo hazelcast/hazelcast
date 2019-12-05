@@ -17,7 +17,7 @@
 package com.hazelcast.cache.impl;
 
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.nio.ClassLoaderUtil;
+import com.hazelcast.internal.nio.ClassLoaderUtil;
 
 import java.security.AccessController;
 import java.security.PrivilegedAction;
@@ -31,7 +31,6 @@ import java.security.PrivilegedAction;
  * <li>https://github.com/hazelcast/hazelcast/issues/7810</li>
  * <li>https://github.com/hazelcast/hazelcast/issues/7854</li>
  * </ul>
- * </p>
  */
 public final class JCacheDetector {
 

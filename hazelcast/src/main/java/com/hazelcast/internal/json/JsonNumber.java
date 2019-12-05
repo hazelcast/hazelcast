@@ -21,7 +21,7 @@
  ******************************************************************************/
 package com.hazelcast.internal.json;
 
-import com.hazelcast.nio.serialization.SerializableByConvention;
+import com.hazelcast.internal.serialization.SerializableByConvention;
 
 import java.io.IOException;
 

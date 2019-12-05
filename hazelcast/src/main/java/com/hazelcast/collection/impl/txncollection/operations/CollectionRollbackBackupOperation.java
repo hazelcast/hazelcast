@@ -22,7 +22,7 @@ import com.hazelcast.collection.impl.collection.CollectionDataSerializerHook;
 import com.hazelcast.collection.impl.collection.operations.CollectionOperation;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.spi.BackupOperation;
+import com.hazelcast.spi.impl.operationservice.BackupOperation;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
@@ -53,7 +53,7 @@ public class CollectionRollbackBackupOperation extends CollectionOperation imple
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return CollectionDataSerializerHook.COLLECTION_ROLLBACK_BACKUP;
     }
 

@@ -24,6 +24,4 @@ package com.hazelcast.map.impl.record;
 public interface RecordFactory<T> {
 
     Record<T> newRecord(Object value);
-
-    void setValue(Record<T> record, Object value);
 }

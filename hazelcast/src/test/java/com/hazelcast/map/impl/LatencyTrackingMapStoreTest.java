@@ -17,11 +17,11 @@
 package com.hazelcast.map.impl;
 
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.MapStore;
+import com.hazelcast.map.MapStore;
 import com.hazelcast.internal.diagnostics.StoreLatencyPlugin;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
 import org.junit.Test;
@@ -39,7 +39,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class LatencyTrackingMapStoreTest extends HazelcastTestSupport {
 
     private static final String NAME = "somemap";

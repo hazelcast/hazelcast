@@ -25,7 +25,7 @@ import java.util.Map;
 public class ResultProcessorRegistry {
 
     private final Map<Class<? extends Result>, ResultProcessor> processors
-            = new HashMap<Class<? extends Result>, ResultProcessor>();
+            = new HashMap<>();
 
     public void registerProcessor(Class<? extends Result> clazz, ResultProcessor processor) {
         processors.put(clazz, processor);

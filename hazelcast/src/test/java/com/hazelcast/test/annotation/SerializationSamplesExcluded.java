@@ -18,7 +18,7 @@ package com.hazelcast.test.annotation;
 
 /**
  * Annotates tests which should not be used for generating serialization samples used in compatibility checks.
- * <p/>
+ * <p>
  * See {@code generate-compatibility-samples} Maven profile in root {@code pom.xml}.
  */
 public final class SerializationSamplesExcluded {

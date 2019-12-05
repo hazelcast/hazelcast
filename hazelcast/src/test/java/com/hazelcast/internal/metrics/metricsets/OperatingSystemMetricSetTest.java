@@ -22,9 +22,8 @@ import com.hazelcast.internal.metrics.impl.MetricsRegistryImpl;
 import com.hazelcast.internal.metrics.impl.TestMetricsReader;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-
 import org.junit.AssumptionViolatedException;
 import org.junit.Before;
 import org.junit.Test;
@@ -44,7 +43,7 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assume.assumeTrue;
 
 @RunWith(HazelcastSerialClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class OperatingSystemMetricSetTest extends HazelcastTestSupport {
 
     private MetricsRegistryImpl metricsRegistry;
@@ -91,7 +90,8 @@ public class OperatingSystemMetricSetTest extends HazelcastTestSupport {
     }
 
     private void assertContainsSensor(String parameter) {
-        boolean contains = metricsRegistry.getNames().contains(parameter);
+        String metricName = "[metric=" + parameter + "]";
+        boolean contains = metricsRegistry.getNames().contains(metricName);
         assertTrue("sensor: " + parameter + " is not found", contains);
         TestMetricsReader reader = new TestMetricsReader(metricsRegistry, parameter);
         try {

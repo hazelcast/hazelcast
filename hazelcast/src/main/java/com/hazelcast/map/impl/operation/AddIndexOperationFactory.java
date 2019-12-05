@@ -16,49 +16,46 @@
 
 package com.hazelcast.map.impl.operation;
 
+import com.hazelcast.config.IndexConfig;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.impl.operationservice.Operation;
 
 import java.io.IOException;
 
 public class AddIndexOperationFactory extends AbstractMapOperationFactory {
 
     private String name;
-    private String attributeName;
-    private boolean ordered;
+    private IndexConfig config;
 
     public AddIndexOperationFactory() {
     }
 
-    public AddIndexOperationFactory(String name, String attributeName, boolean ordered) {
+    public AddIndexOperationFactory(String name, IndexConfig config) {
         this.name = name;
-        this.attributeName = attributeName;
-        this.ordered = ordered;
+        this.config = config;
     }
 
     @Override
     public Operation createOperation() {
-        return new AddIndexOperation(name, attributeName, ordered);
+        return new AddIndexOperation(name, config);
     }
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeUTF(name);
-        out.writeUTF(attributeName);
-        out.writeBoolean(ordered);
+        out.writeObject(config);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         name = in.readUTF();
-        attributeName = in.readUTF();
-        ordered = in.readBoolean();
+        config = in.readObject();
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MapDataSerializerHook.ADD_INDEX_FACTORY;
     }
 }

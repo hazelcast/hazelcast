@@ -67,7 +67,7 @@ public class UpdateManagementCenterUrlOperation extends AbstractManagementOperat
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ManagementDataSerializerHook.UPDATE_MANAGEMENT_CENTER_URL;
     }
 }

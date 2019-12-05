@@ -20,8 +20,8 @@ import com.hazelcast.collection.impl.collection.CollectionContainer;
 import com.hazelcast.collection.impl.collection.CollectionDataSerializerHook;
 import com.hazelcast.core.ItemEventType;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.impl.MutatingOperation;
+import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.spi.impl.operationservice.MutatingOperation;
 
 import java.util.Map;
 
@@ -60,7 +60,7 @@ public class CollectionClearOperation extends CollectionBackupAwareOperation imp
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return CollectionDataSerializerHook.COLLECTION_CLEAR;
     }
 }

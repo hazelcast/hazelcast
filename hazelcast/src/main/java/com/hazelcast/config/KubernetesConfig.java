@@ -16,6 +16,8 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.internal.config.ConfigDataSerializerHook;
+
 /**
  * Configuration for the Kubernetes Discovery Strategy.
  */
@@ -25,8 +27,12 @@ public class KubernetesConfig
         super("kubernetes");
     }
 
+    public KubernetesConfig(KubernetesConfig kubernetesConfig) {
+        super(kubernetesConfig);
+    }
+
     @Override
-    public int getId() {
+    public int getClassId() {
         return ConfigDataSerializerHook.KUBERNETES_CONFIG;
     }
 }

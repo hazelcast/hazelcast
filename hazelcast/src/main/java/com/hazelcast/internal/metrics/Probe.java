@@ -28,7 +28,7 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 /**
  * Annotation that can be placed on a field or a method of an object to indicate
  * that it should be tracked by the MetricsRegistry when the
- * {@link MetricsRegistry#scanAndRegister(Object, String)} is called.
+ * {@link MetricsRegistry#registerStaticMetrics(Object, String)} is called.
  * <p>
  * The MetricsRegistry will automatically scan all interfaces and super classes
  * of an object (recursively). So it is possible to define a Probe on e.g. an
@@ -90,4 +90,18 @@ public @interface Probe {
      * Measurement unit of a Probe. Not used on member, becomes a part of the key.
      */
     ProbeUnit unit() default COUNT;
+
+    /**
+     * Returns the targets excluded for this Probe. Used for filtering in
+     * {@link MetricsPublisher}s.
+     * <p/>
+     * The final excluded targets for a metric will be the union of the
+     * exclusions defined with this annotation and the exclusions defined
+     * on the {@link ExcludedMetricTargets}s annotation of the class
+     * containing the given Probe.
+     *
+     * @return the targets excluded for this Probe
+     * @see ExcludedMetricTargets
+     */
+    MetricTarget[] excludedTargets() default {};
 }

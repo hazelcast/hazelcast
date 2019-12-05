@@ -16,7 +16,7 @@
 
 package com.hazelcast.internal.partition.service;
 
-import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.impl.operationservice.Operation;
 
 public class TestGetOperation extends Operation {
 

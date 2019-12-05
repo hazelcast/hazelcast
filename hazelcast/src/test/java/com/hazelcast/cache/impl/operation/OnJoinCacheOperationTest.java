@@ -22,8 +22,8 @@ import com.hazelcast.cache.impl.JCacheDetector;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
 import org.junit.Rule;
@@ -48,7 +48,7 @@ import static org.mockito.Mockito.when;
  */
 @RunWith(PowerMockRunner.class)
 @PrepareForTest(JCacheDetector.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class OnJoinCacheOperationTest {
 
     @Rule

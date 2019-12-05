@@ -20,7 +20,7 @@ import com.hazelcast.cache.impl.CacheDataSerializerHook;
 import com.hazelcast.internal.serialization.impl.HeapData;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.spi.ReadonlyOperation;
+import com.hazelcast.spi.impl.operationservice.ReadonlyOperation;
 
 import java.io.IOException;
 
@@ -48,7 +48,7 @@ public class CacheEntryIteratorOperation extends KeyBasedCacheOperation implemen
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return CacheDataSerializerHook.ENTRY_ITERATOR;
     }
 

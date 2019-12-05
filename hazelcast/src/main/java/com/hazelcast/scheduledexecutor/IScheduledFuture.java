@@ -67,7 +67,8 @@ public interface IScheduledFuture<V>
      * {@link #isCancelled} will always return {@code true} if this method returned {@code true}.
      *
      * @param mayInterruptIfRunning is throwing {@link UnsupportedOperationException}
-     * @return {@code false} if the task could not be cancelled, typically because it has already completed normally; {@code true
+     * @return {@code false} if the task could not be cancelled, typically because it has already completed normally;
+     * {@code true} otherwise
      */
     boolean cancel(boolean mayInterruptIfRunning);
 

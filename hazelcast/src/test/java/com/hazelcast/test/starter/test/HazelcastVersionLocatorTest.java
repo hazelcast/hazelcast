@@ -20,7 +20,7 @@ import com.google.common.hash.HashCode;
 import com.google.common.hash.HashFunction;
 import com.google.common.hash.Hashing;
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.SlowTest;
 import com.hazelcast.test.starter.HazelcastVersionLocator;
 import org.junit.Rule;
@@ -35,7 +35,7 @@ import static com.google.common.io.Files.toByteArray;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({SlowTest.class, ParallelTest.class})
+@Category({SlowTest.class, ParallelJVMTest.class})
 public class HazelcastVersionLocatorTest {
 
     @Rule

@@ -19,12 +19,14 @@ package com.hazelcast.collection.impl.txnqueue.operations;
 import com.hazelcast.collection.impl.queue.QueueContainer;
 import com.hazelcast.collection.impl.queue.QueueDataSerializerHook;
 import com.hazelcast.collection.impl.queue.operations.QueueBackupAwareOperation;
+import com.hazelcast.internal.util.UUIDSerializationUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.impl.operationservice.Operation;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
+import java.util.UUID;
 
 /**
  * Prepare operation for the transactional queue.
@@ -32,13 +34,13 @@ import java.io.IOException;
 public class TxnPrepareOperation extends QueueBackupAwareOperation {
 
     private long[] itemIds;
-    private String transactionId;
+    private UUID transactionId;
 
     public TxnPrepareOperation() {
     }
 
     @SuppressFBWarnings("EI_EXPOSE_REP")
-    public TxnPrepareOperation(int partitionId, String name, long[] itemIds, String transactionId) {
+    public TxnPrepareOperation(int partitionId, String name, long[] itemIds, UUID transactionId) {
         super(name);
         setPartitionId(partitionId);
         this.itemIds = itemIds;
@@ -64,21 +66,21 @@ public class TxnPrepareOperation extends QueueBackupAwareOperation {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return QueueDataSerializerHook.TXN_PREPARE;
     }
 
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        out.writeUTF(transactionId);
+        UUIDSerializationUtil.writeUUID(out, transactionId);
         out.writeLongArray(itemIds);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        transactionId = in.readUTF();
+        transactionId = UUIDSerializationUtil.readUUID(in);
         itemIds = in.readLongArray();
     }
 }

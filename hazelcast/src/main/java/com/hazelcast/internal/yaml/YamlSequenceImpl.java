@@ -24,7 +24,7 @@ import static com.hazelcast.internal.yaml.YamlUtil.asMapping;
 import static com.hazelcast.internal.yaml.YamlUtil.asScalar;
 import static com.hazelcast.internal.yaml.YamlUtil.asSequence;
 
-class YamlSequenceImpl extends AbstractYamlNode implements YamlSequence {
+class YamlSequenceImpl extends AbstractYamlNode implements MutableYamlSequence {
     private List<YamlNode> children = Collections.emptyList();
 
     YamlSequenceImpl(YamlNode parent, String nodeName) {
@@ -69,7 +69,8 @@ class YamlSequenceImpl extends AbstractYamlNode implements YamlSequence {
         return childAsScalar(index).nodeValue(type);
     }
 
-    void addChild(YamlNode child) {
+    @Override
+    public void addChild(YamlNode child) {
         getOrCreateChildren().add(child);
     }
 

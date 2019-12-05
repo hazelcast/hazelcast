@@ -17,10 +17,9 @@
 
 package com.hazelcast.internal.util.concurrent;
 
-import com.hazelcast.util.function.Predicate;
-
 import java.util.Collection;
 import java.util.concurrent.atomic.AtomicReferenceArray;
+import java.util.function.Predicate;
 
 /**
  * Single producer to single consumer concurrent queue backed by an array.

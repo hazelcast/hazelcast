@@ -17,7 +17,8 @@
 package com.hazelcast.config;
 
 import com.hazelcast.flakeidgen.FlakeIdGenerator;
-import com.hazelcast.monitor.LocalFlakeIdGeneratorStats;
+import com.hazelcast.internal.config.ConfigDataSerializerHook;
+import com.hazelcast.internal.monitor.LocalFlakeIdGeneratorStats;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
@@ -25,8 +26,8 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import java.io.IOException;
 import java.util.Arrays;
 
-import static com.hazelcast.util.Preconditions.checkNotNegative;
-import static com.hazelcast.util.Preconditions.checkTrue;
+import static com.hazelcast.internal.util.Preconditions.checkNotNegative;
+import static com.hazelcast.internal.util.Preconditions.checkTrue;
 
 /**
  * The {@code FlakeIdGeneratorConfig} contains the configuration for the member
@@ -35,7 +36,7 @@ import static com.hazelcast.util.Preconditions.checkTrue;
  *
  * @since 3.10
  */
-public class FlakeIdGeneratorConfig implements IdentifiedDataSerializable {
+public class FlakeIdGeneratorConfig implements IdentifiedDataSerializable, NamedConfig {
 
     /**
      * Default value for {@link #getPrefetchCount()}.
@@ -64,10 +65,8 @@ public class FlakeIdGeneratorConfig implements IdentifiedDataSerializable {
     private long nodeIdOffset;
     private boolean statisticsEnabled = true;
 
-    private transient FlakeIdGeneratorConfigReadOnly readOnly;
-
     // for deserialization
-    FlakeIdGeneratorConfig() {
+    public FlakeIdGeneratorConfig() {
     }
 
     public FlakeIdGeneratorConfig(String name) {
@@ -87,19 +86,6 @@ public class FlakeIdGeneratorConfig implements IdentifiedDataSerializable {
     }
 
     /**
-     * Gets immutable version of this configuration.
-     *
-     * @return immutable version of this configuration
-     * @deprecated this method will be removed in 4.0; it is meant for internal usage only
-     */
-    public FlakeIdGeneratorConfigReadOnly getAsReadOnly() {
-        if (readOnly == null) {
-            readOnly = new FlakeIdGeneratorConfigReadOnly(this);
-        }
-        return readOnly;
-    }
-
-    /**
      * Returns the configuration name. This can be actual object name or pattern.
      */
     public String getName() {
@@ -110,8 +96,9 @@ public class FlakeIdGeneratorConfig implements IdentifiedDataSerializable {
      * Sets the name or name pattern for this config. Must not be modified after this
      * instance is added to {@link Config}.
      */
-    public void setName(String name) {
+    public FlakeIdGeneratorConfig setName(String name) {
         this.name = name;
+        return this;
     }
 
     /**
@@ -278,7 +265,7 @@ public class FlakeIdGeneratorConfig implements IdentifiedDataSerializable {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ConfigDataSerializerHook.FLAKE_ID_GENERATOR_CONFIG;
     }
 

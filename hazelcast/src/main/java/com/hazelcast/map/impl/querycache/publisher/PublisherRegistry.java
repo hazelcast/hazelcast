@@ -22,15 +22,15 @@ import com.hazelcast.map.impl.querycache.accumulator.Accumulator;
 import com.hazelcast.map.impl.querycache.accumulator.AccumulatorFactory;
 import com.hazelcast.map.impl.querycache.accumulator.AccumulatorInfo;
 import com.hazelcast.map.impl.querycache.accumulator.AccumulatorInfoSupplier;
-import com.hazelcast.util.ConstructorFunction;
+import com.hazelcast.internal.util.ConstructorFunction;
 
 import java.util.Collections;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
-import static com.hazelcast.util.ConcurrencyUtil.getOrPutIfAbsent;
-import static com.hazelcast.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.ConcurrencyUtil.getOrPutIfAbsent;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 /**
  * Registry of mappings like {@code cacheId} to {@code PartitionAccumulatorRegistry}.
@@ -40,17 +40,14 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
 public class PublisherRegistry implements Registry<String, PartitionAccumulatorRegistry> {
 
     private final ConstructorFunction<String, PartitionAccumulatorRegistry> partitionAccumulatorRegistryConstructor =
-            new ConstructorFunction<String, PartitionAccumulatorRegistry>() {
-                @Override
-                public PartitionAccumulatorRegistry createNew(String cacheId) {
-                    AccumulatorInfo info = getAccumulatorInfo(cacheId);
-                    checkNotNull(info, "info cannot be null");
+            cacheId -> {
+                AccumulatorInfo info = getAccumulatorInfo(cacheId);
+                checkNotNull(info, "info cannot be null");
 
-                    AccumulatorFactory accumulatorFactory = createPublisherAccumulatorFactory();
-                    ConstructorFunction<Integer, Accumulator> constructor
-                            = new PublisherAccumulatorConstructor(info, accumulatorFactory);
-                    return new PartitionAccumulatorRegistry(info, constructor);
-                }
+                AccumulatorFactory accumulatorFactory = createPublisherAccumulatorFactory();
+                ConstructorFunction<Integer, Accumulator> constructor
+                        = new PublisherAccumulatorConstructor(info, accumulatorFactory);
+                return new PartitionAccumulatorRegistry(info, constructor);
             };
 
     private final String mapName;
@@ -60,7 +57,7 @@ public class PublisherRegistry implements Registry<String, PartitionAccumulatorR
     public PublisherRegistry(QueryCacheContext context, String mapName) {
         this.context = context;
         this.mapName = mapName;
-        this.partitionAccumulators = new ConcurrentHashMap<String, PartitionAccumulatorRegistry>();
+        this.partitionAccumulators = new ConcurrentHashMap<>();
     }
 
     @Override

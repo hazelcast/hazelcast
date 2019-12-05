@@ -16,6 +16,8 @@
 
 package com.hazelcast.map.impl.mapstore.writebehind.entry;
 
+import java.util.UUID;
+
 /**
  * Mainly contains static factory methods to create various {@link DelayedEntry} instances.
  */
@@ -26,22 +28,34 @@ public final class DelayedEntries {
     private DelayedEntries() {
     }
 
-    public static <K, V> DelayedEntry<K, V> createDefault(K key, V value, long storeTime, int partitionId) {
-        return new AddedDelayedEntry<K, V>(key, value, storeTime, partitionId);
+    public static <K, V> DelayedEntry<K, V> newAddedDelayedEntry(K key, V value,
+                                                                 long expirationTime,
+                                                                 long storeTime, int partitionId, UUID txnId) {
+        if (txnId != null) {
+            return new TxnAddedDelayedEntry<>(key, value, expirationTime, storeTime, partitionId, txnId);
+        }
+        return new AddedDelayedEntry<>(key, value, expirationTime, storeTime, partitionId);
     }
 
-    public static <K, V> DelayedEntry<K, V> createWithoutValue(K key) {
-        return new NullValueDelayedEntry<K, V>(key);
+    public static <K, V> DelayedEntry<K, V> newAddedDelayedEntry(K key) {
+        return new AddedDelayedEntry<>(key, null, Long.MAX_VALUE, -1, -1);
     }
 
-    public static <K, V> DelayedEntry<K, V> createWithoutValue(K key, long storeTime, int partitionId) {
-        return new DeletedDelayedEntry<K, V>(key, storeTime, partitionId);
+    public static <K, V> DelayedEntry<K, V> newNullEntry(K key) {
+        return new NullValueDelayedEntry<>(key);
+    }
+
+    public static <K, V> DelayedEntry<K, V> newDeletedEntry(K key,
+                                                            long storeTime, int partitionId, UUID txnId) {
+        if (txnId != null) {
+            return new TxnDeletedDelayedEntry<>(key, storeTime, partitionId, txnId);
+        }
+        return new DeletedDelayedEntry<>(key, storeTime, partitionId);
     }
 
     public static <K, V> DelayedEntry<K, V> emptyDelayedEntry() {
         return EMPTY_DELAYED_ENTRY;
     }
-
 
     private static class EmptyDelayedEntry implements DelayedEntry {
 
@@ -53,6 +67,11 @@ public final class DelayedEntries {
         @Override
         public Object getValue() {
             return null;
+        }
+
+        @Override
+        public long getExpirationTime() {
+            return Long.MAX_VALUE;
         }
 
         @Override
@@ -78,6 +97,16 @@ public final class DelayedEntries {
         @Override
         public long getSequence() {
             return -1L;
+        }
+
+        @Override
+        public void setTxnId(UUID txnId) {
+
+        }
+
+        @Override
+        public UUID getTxnId() {
+            return null;
         }
     }
 

@@ -21,10 +21,10 @@ import com.hazelcast.cache.impl.CacheOperationProvider;
 import com.hazelcast.cache.impl.operation.CacheKeyIteratorOperation;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.CacheIterateCodec;
-import com.hazelcast.instance.Node;
-import com.hazelcast.nio.Connection;
+import com.hazelcast.instance.impl.Node;
+import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.impl.operationservice.Operation;
 
 import java.util.Collections;
 

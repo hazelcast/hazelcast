@@ -19,11 +19,11 @@ package com.hazelcast.ringbuffer.impl;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.RingbufferConfig;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
 import org.junit.Test;
@@ -33,7 +33,7 @@ import org.junit.runner.RunWith;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class RingbufferMigrationTest extends HazelcastTestSupport {
 
     public static final int CAPACITY = 100;
@@ -50,7 +50,7 @@ public class RingbufferMigrationTest extends HazelcastTestSupport {
         final String ringbufferName = "ringbuffer";
         final Config config = new Config()
                 .addRingBufferConfig(new RingbufferConfig(ringbufferName).setTimeToLiveSeconds(0));
-        config.setProperty(GroupProperty.PARTITION_COUNT.getName(), BOUNCING_TEST_PARTITION_COUNT);
+        config.setProperty(ClusterProperty.PARTITION_COUNT.getName(), BOUNCING_TEST_PARTITION_COUNT);
         HazelcastInstance hz1 = instanceFactory.newHazelcastInstance(config);
 
         for (int k = 0; k < 10 * CAPACITY; k++) {

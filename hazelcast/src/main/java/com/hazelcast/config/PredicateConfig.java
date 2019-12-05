@@ -16,6 +16,7 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.internal.config.ConfigDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
@@ -23,8 +24,8 @@ import com.hazelcast.query.Predicate;
 
 import java.io.IOException;
 
-import static com.hazelcast.util.Preconditions.checkHasText;
-import static com.hazelcast.util.Preconditions.isNotNull;
+import static com.hazelcast.internal.util.Preconditions.checkHasText;
+import static com.hazelcast.internal.util.Preconditions.isNotNull;
 
 /**
  * Contains the configuration for an {@link Predicate}. The configuration contains either the class name
@@ -39,8 +40,6 @@ public class PredicateConfig implements IdentifiedDataSerializable {
     protected String sql;
 
     protected Predicate implementation;
-
-    private transient PredicateConfigReadOnly readOnly;
 
     /**
      * Creates a PredicateConfig without className/implementation.
@@ -72,19 +71,6 @@ public class PredicateConfig implements IdentifiedDataSerializable {
      */
     public PredicateConfig(Predicate implementation) {
         this.implementation = isNotNull(implementation, "implementation");
-    }
-
-    /**
-     * Gets immutable version of this configuration.
-     *
-     * @return immutable version of this configuration
-     * @deprecated this method will be removed in 4.0; it is meant for internal usage only
-     */
-    public PredicateConfig getAsReadOnly() {
-        if (readOnly == null) {
-            readOnly = new PredicateConfigReadOnly(this);
-        }
-        return readOnly;
     }
 
     /**
@@ -158,11 +144,13 @@ public class PredicateConfig implements IdentifiedDataSerializable {
      * If a className or implementation was set, it will be removed.
      *
      * @param sql sql string for this config
+     * @return this configuration
      */
-    public void setSql(String sql) {
+    public PredicateConfig setSql(String sql) {
         this.sql = sql;
         this.className = null;
         this.implementation = null;
+        return this;
     }
 
     @Override
@@ -208,7 +196,7 @@ public class PredicateConfig implements IdentifiedDataSerializable {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ConfigDataSerializerHook.PREDICATE_CONFIG;
     }
 

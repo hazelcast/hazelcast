@@ -16,7 +16,8 @@
 
 package com.hazelcast.test;
 
-public abstract class AssertTask {
+@FunctionalInterface
+public interface AssertTask {
 
-    public abstract void run() throws Exception;
+    void run() throws Exception;
 }

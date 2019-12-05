@@ -18,13 +18,13 @@ package com.hazelcast.internal.jmx;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.QueueConfig;
-import com.hazelcast.core.IQueue;
+import com.hazelcast.collection.IQueue;
 import com.hazelcast.internal.jmx.suppliers.LocalQueueStatsSupplier;
 import com.hazelcast.internal.jmx.suppliers.StatsSupplier;
-import com.hazelcast.monitor.LocalQueueStats;
+import com.hazelcast.collection.LocalQueueStats;
 
 /**
- * Management bean for {@link com.hazelcast.core.IQueue}
+ * Management bean for {@link IQueue}
  */
 @ManagedDescription("IQueue")
 public class QueueMBean extends HazelcastMBean<IQueue> {

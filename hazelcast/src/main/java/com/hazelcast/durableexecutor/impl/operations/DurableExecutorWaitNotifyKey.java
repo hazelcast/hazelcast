@@ -17,7 +17,7 @@
 package com.hazelcast.durableexecutor.impl.operations;
 
 import com.hazelcast.durableexecutor.impl.DistributedDurableExecutorService;
-import com.hazelcast.spi.AbstractWaitNotifyKey;
+import com.hazelcast.spi.impl.operationservice.AbstractWaitNotifyKey;
 
 public class DurableExecutorWaitNotifyKey extends AbstractWaitNotifyKey {
 

@@ -16,13 +16,14 @@
 
 package com.hazelcast.internal.serialization.impl;
 
+import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -33,7 +34,7 @@ import java.io.IOException;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class ByteArrayObjectDataInputIntegrationTest {
     private final InternalSerializationService serializationService = new DefaultSerializationServiceBuilder().build();
 
@@ -60,21 +61,21 @@ public class ByteArrayObjectDataInputIntegrationTest {
         private Data data;
         private Object o;
 
-        public MyObject() {
+        MyObject() {
         }
 
-        public MyObject(Data data) {
+        MyObject(Data data) {
             this.data = data;
         }
 
         @Override
         public void writeData(ObjectDataOutput out) throws IOException {
-            out.writeData(data);
+            IOUtil.writeData(out, data);
         }
 
         @Override
         public void readData(ObjectDataInput in) throws IOException {
-            o = in.readDataAsObject();
+            o = IOUtil.readDataAsObject(in);
         }
     }
 }

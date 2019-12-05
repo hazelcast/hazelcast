@@ -16,36 +16,36 @@
 
 package com.hazelcast.client.impl;
 
-import com.hazelcast.core.Client;
-import com.hazelcast.core.ClientType;
+import com.hazelcast.client.Client;
 
 import java.net.InetSocketAddress;
-import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
 
 /**
  * Event used for notification of client connection and disconnection
  */
 public class ClientEvent implements Client {
 
-    private final String uuid;
+    private final UUID uuid;
     private final ClientEventType eventType;
     private final InetSocketAddress address;
-    private final ClientType clientType;
+    private final String clientType;
     private final String name;
-    private final Map<String, String> attributes;
+    private final Set<String> labels;
 
-    public ClientEvent(String uuid, ClientEventType eventType, InetSocketAddress address,
-                       ClientType clientType, String name, Map<String, String> attributes) {
+    public ClientEvent(UUID uuid, ClientEventType eventType, InetSocketAddress address, String clientType, String name,
+                       Set<String> labels) {
         this.uuid = uuid;
         this.eventType = eventType;
         this.address = address;
         this.clientType = clientType;
         this.name = name;
-        this.attributes = attributes;
+        this.labels = labels;
     }
 
     @Override
-    public String getUuid() {
+    public UUID getUuid() {
         return uuid;
     }
 
@@ -55,7 +55,7 @@ public class ClientEvent implements Client {
     }
 
     @Override
-    public ClientType getClientType() {
+    public String getClientType() {
         return clientType;
     }
 
@@ -65,8 +65,8 @@ public class ClientEvent implements Client {
     }
 
     @Override
-    public Map<String, String> getAttributes() {
-        return attributes;
+    public Set<String> getLabels() {
+        return labels;
     }
 
     public ClientEventType getEventType() {
@@ -79,9 +79,7 @@ public class ClientEvent implements Client {
                 + "uuid='" + uuid + '\''
                 + ", eventType=" + eventType
                 + ", address=" + address
-                + ", clientType=" + clientType
-                + ", name='" + name + '\''
-                + ", attributes=" + attributes
+                + ", clientType=" + clientType + ", name='" + name + '\'' + ", attributes=" + labels
                 + '}';
     }
 }

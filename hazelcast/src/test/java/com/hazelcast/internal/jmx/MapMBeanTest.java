@@ -16,11 +16,11 @@
 
 package com.hazelcast.internal.jmx;
 
-import com.hazelcast.core.IMap;
+import com.hazelcast.map.IMap;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Before;
@@ -32,7 +32,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class MapMBeanTest extends HazelcastTestSupport {
 
     private static final String TYPE_NAME = "IMap";
@@ -78,6 +78,8 @@ public class MapMBeanTest extends HazelcastTestSupport {
         map.put("firstKey", "firstValue");
         map.put("secondKey", "secondValue");
         map.remove("secondKey");
+        map.set("thirdKey", "thirdValue");
+        map.remove("thirdKey");
         String value = map.get("firstKey");
         String values = invokeMethod("values", EMPTY_STRING_PARAMETER);
         String entries = invokeMethod("entrySet", EMPTY_STRING_PARAMETER);
@@ -96,13 +98,16 @@ public class MapMBeanTest extends HazelcastTestSupport {
         long localDirtyEntryCount = getLongAttribute("localDirtyEntryCount");
 
         long localPutOperationCount = getLongAttribute("localPutOperationCount");
+        long localSetOperationCount = getLongAttribute("localSetOperationCount");
         long localGetOperationCount = getLongAttribute("localGetOperationCount");
         long localRemoveOperationCount = getLongAttribute("localRemoveOperationCount");
 
         long localTotalPutLatency = getLongAttribute("localTotalPutLatency");
+        long localTotalSetLatency = getLongAttribute("localTotalSetLatency");
         long localTotalGetLatency = getLongAttribute("localTotalGetLatency");
         long localTotalRemoveLatency = getLongAttribute("localTotalRemoveLatency");
         long localMaxPutLatency = getLongAttribute("localMaxPutLatency");
+        long localMaxSetLatency = getLongAttribute("localMaxSetLatency");
         long localMaxGetLatency = getLongAttribute("localMaxGetLatency");
         long localMaxRemoveLatency = getLongAttribute("localMaxRemoveLatency");
 
@@ -130,13 +135,16 @@ public class MapMBeanTest extends HazelcastTestSupport {
         assertEquals(0, localDirtyEntryCount);
 
         assertEquals(2, localPutOperationCount);
+        assertEquals(1, localSetOperationCount);
         assertEquals(1, localGetOperationCount);
-        assertEquals(1, localRemoveOperationCount);
+        assertEquals(2, localRemoveOperationCount);
 
         assertTrue("localTotalPutLatency should be >= 0", localTotalPutLatency >= 0);
+        assertTrue("localTotalSetLatency should be >= 0", localTotalSetLatency >= 0);
         assertTrue("localTotalGetLatency should be >= 0", localTotalGetLatency >= 0);
         assertTrue("localTotalRemoveLatency should be >= 0", localTotalRemoveLatency >= 0);
         assertTrue("localMaxPutLatency should be >= 0", localMaxPutLatency >= 0);
+        assertTrue("localMaxSetLatency should be >= 0", localMaxSetLatency >= 0);
         assertTrue("localMaxGetLatency should be >= 0", localMaxGetLatency >= 0);
         assertTrue("localMaxRemoveLatency should be >= 0", localMaxRemoveLatency >= 0);
 

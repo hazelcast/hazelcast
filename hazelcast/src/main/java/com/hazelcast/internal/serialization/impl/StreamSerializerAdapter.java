@@ -32,7 +32,7 @@ class StreamSerializerAdapter implements SerializerAdapter {
     protected final InternalSerializationService service;
     protected final StreamSerializer serializer;
 
-    public StreamSerializerAdapter(InternalSerializationService service, StreamSerializer serializer) {
+    StreamSerializerAdapter(InternalSerializationService service, StreamSerializer serializer) {
         this.service = service;
         this.serializer = serializer;
     }

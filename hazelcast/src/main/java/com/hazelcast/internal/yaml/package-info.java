@@ -17,7 +17,7 @@
 /**
  * Contains classes for loading, parsing YAML documents and building a
  * YAML specific DOM of {@link com.hazelcast.internal.yaml.YamlNode} instances
- * <p/>
+ * <p>
  * The YAML documents are loaded and parsed with the external SnakeYaml
  * parser, which supports YAML 1.2 documents, and the JSON schema.
  */

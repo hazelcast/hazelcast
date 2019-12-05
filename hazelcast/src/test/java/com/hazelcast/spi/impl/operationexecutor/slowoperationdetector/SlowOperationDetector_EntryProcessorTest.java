@@ -17,8 +17,7 @@
 package com.hazelcast.spi.impl.operationexecutor.slowoperationdetector;
 
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IMap;
-import com.hazelcast.map.EntryBackupProcessor;
+import com.hazelcast.map.IMap;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.SlowTest;
@@ -38,7 +37,7 @@ import static org.junit.Assert.assertTrue;
 public class SlowOperationDetector_EntryProcessorTest extends SlowOperationDetectorAbstractTest {
 
     @Test
-    public void testSlowEntryProcessor() throws InterruptedException {
+    public void testSlowEntryProcessor() {
         HazelcastInstance instance = getSingleNodeCluster(1000);
         IMap<String, String> map = getMapWithSingleElement(instance);
 
@@ -63,7 +62,7 @@ public class SlowOperationDetector_EntryProcessorTest extends SlowOperationDetec
     }
 
     @Test
-    public void testMultipleSlowEntryProcessorClasses() throws InterruptedException {
+    public void testMultipleSlowEntryProcessorClasses() {
         HazelcastInstance instance = getSingleNodeCluster(1000);
         IMap<String, String> map = getMapWithSingleElement(instance);
 
@@ -118,7 +117,7 @@ public class SlowOperationDetector_EntryProcessorTest extends SlowOperationDetec
         assertStackTraceContainsClassName(firstLog, "SlowEntryProcessor");
     }
 
-    private static class NestedSlowEntryProcessor implements EntryProcessor<String, String> {
+    private static class NestedSlowEntryProcessor implements EntryProcessor<String, String, Object> {
 
         private final IMap<String, String> map;
         private final SlowEntryProcessor entryProcessor;
@@ -135,7 +134,7 @@ public class SlowOperationDetector_EntryProcessorTest extends SlowOperationDetec
         }
 
         @Override
-        public EntryBackupProcessor<String, String> getBackupProcessor() {
+        public EntryProcessor<String, String, Object> getBackupProcessor() {
             return null;
         }
 

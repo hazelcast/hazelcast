@@ -16,6 +16,7 @@
 
 package com.hazelcast.test.starter.answer;
 
+import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.test.starter.HazelcastAPIDelegatingClassloader;
 import com.hazelcast.test.starter.ReflectionUtils;
 import org.mockito.invocation.InvocationOnMock;
@@ -34,10 +35,10 @@ import java.util.concurrent.ConcurrentHashMap;
 import static com.hazelcast.test.starter.HazelcastProxyFactory.proxyArgumentsIfNeeded;
 import static com.hazelcast.test.starter.HazelcastProxyFactory.proxyObjectForStarter;
 import static com.hazelcast.test.starter.ReflectionUtils.getMethod;
-import static com.hazelcast.util.Preconditions.checkInstanceOf;
-import static com.hazelcast.util.Preconditions.checkNotInstanceOf;
-import static com.hazelcast.util.Preconditions.checkNotNull;
-import static com.hazelcast.util.RootCauseMatcher.getRootCause;
+import static com.hazelcast.internal.util.Preconditions.checkInstanceOf;
+import static com.hazelcast.internal.util.Preconditions.checkNotInstanceOf;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.RootCauseMatcher.getRootCause;
 import static java.lang.reflect.Modifier.isFinal;
 import static java.lang.reflect.Modifier.isPrivate;
 import static java.lang.reflect.Modifier.isProtected;
@@ -335,7 +336,7 @@ abstract class AbstractAnswer implements Answer {
      * <p>
      * Can be used if the target class is not constant, but depends on the
      * given delegate instance (e.g. to create the correct mock for
-     * {@link com.hazelcast.spi.NodeEngine#getService(String)}).
+     * {@link NodeEngine#getService(String)}).
      *
      * @param delegate the delegate to retrieve the class from
      * @param answer   the default {@link Answer} to create the mock with

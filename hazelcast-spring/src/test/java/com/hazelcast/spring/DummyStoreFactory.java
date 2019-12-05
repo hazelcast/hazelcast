@@ -16,8 +16,8 @@
 
 package com.hazelcast.spring;
 
-import com.hazelcast.core.MapLoader;
-import com.hazelcast.core.MapStoreFactory;
+import com.hazelcast.map.MapLoader;
+import com.hazelcast.map.MapStoreFactory;
 
 import java.util.Properties;
 

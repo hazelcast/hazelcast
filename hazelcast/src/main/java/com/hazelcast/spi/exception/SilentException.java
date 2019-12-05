@@ -16,7 +16,7 @@
 
 package com.hazelcast.spi.exception;
 
-import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.impl.operationservice.Operation;
 
 /**
  * Marked interface for exceptions.

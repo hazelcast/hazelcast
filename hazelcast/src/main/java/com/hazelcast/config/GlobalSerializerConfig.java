@@ -31,6 +31,12 @@ public class GlobalSerializerConfig {
     public GlobalSerializerConfig() {
     }
 
+    public GlobalSerializerConfig(GlobalSerializerConfig globalSerializerConfig) {
+        className = globalSerializerConfig.className;
+        implementation = globalSerializerConfig.implementation;
+        overrideJavaSerialization = globalSerializerConfig.overrideJavaSerialization;
+    }
+
     public String getClassName() {
         return className;
     }

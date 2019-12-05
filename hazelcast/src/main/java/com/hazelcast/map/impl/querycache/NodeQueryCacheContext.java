@@ -16,14 +16,12 @@
 
 package com.hazelcast.map.impl.querycache;
 
-import com.hazelcast.core.IFunction;
-import com.hazelcast.core.IMapEvent;
-import com.hazelcast.core.LifecycleEvent;
-import com.hazelcast.core.LifecycleListener;
-import com.hazelcast.core.Member;
-import com.hazelcast.instance.LifecycleServiceImpl;
-import com.hazelcast.instance.MemberImpl;
-import com.hazelcast.instance.Node;
+import com.hazelcast.cluster.Member;
+import com.hazelcast.cluster.impl.MemberImpl;
+import com.hazelcast.spi.impl.eventservice.EventService;
+import com.hazelcast.map.IMapEvent;
+import com.hazelcast.instance.impl.LifecycleServiceImpl;
+import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.map.impl.ListenerAdapter;
 import com.hazelcast.map.impl.MapServiceContext;
@@ -34,16 +32,17 @@ import com.hazelcast.map.impl.querycache.subscriber.NodeQueryCacheEventService;
 import com.hazelcast.map.impl.querycache.subscriber.NodeQueryCacheScheduler;
 import com.hazelcast.map.impl.querycache.subscriber.NodeSubscriberContext;
 import com.hazelcast.map.impl.querycache.subscriber.SubscriberContext;
-import com.hazelcast.nio.Address;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.SerializableByConvention;
-import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.util.ContextMutexFactory;
+import com.hazelcast.internal.util.ContextMutexFactory;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.UUID;
+import java.util.function.Function;
 
 import static com.hazelcast.core.LifecycleEvent.LifecycleState.SHUTTING_DOWN;
 
@@ -82,17 +81,14 @@ public class NodeQueryCacheContext implements QueryCacheContext {
 
     /**
      * This is a best effort approach; there is no guarantee that events in publishers internal buffers will be fired,
-     * {@link com.hazelcast.spi.EventService} can drop them.
+     * {@link EventService} can drop them.
      */
     private void flushPublishersOnNodeShutdown() {
         Node node = ((NodeEngineImpl) this.nodeEngine).getNode();
         LifecycleServiceImpl lifecycleService = node.hazelcastInstance.getLifecycleService();
-        lifecycleService.addLifecycleListener(new LifecycleListener() {
-            @Override
-            public void stateChanged(LifecycleEvent event) {
-                if (SHUTTING_DOWN == event.getState()) {
-                    publisherContext.flush();
-                }
+        lifecycleService.addLifecycleListener(event -> {
+            if (SHUTTING_DOWN == event.getState()) {
+                publisherContext.flush();
             }
         });
     }
@@ -145,7 +141,7 @@ public class NodeQueryCacheContext implements QueryCacheContext {
     @Override
     public Collection<Member> getMemberList() {
         Collection<MemberImpl> memberList = nodeEngine.getClusterService().getMemberImpls();
-        List<Member> members = new ArrayList<Member>(memberList.size());
+        List<Member> members = new ArrayList<>(memberList.size());
         members.addAll(memberList);
         return members;
     }
@@ -180,7 +176,7 @@ public class NodeQueryCacheContext implements QueryCacheContext {
         return lifecycleMutexFactory;
     }
 
-    private String registerLocalIMapListener(final String name) {
+    private UUID registerLocalIMapListener(final String name) {
         return mapServiceContext.addLocalListenerAdapter(new ListenerAdapter<IMapEvent>() {
             @Override
             public void onEvent(IMapEvent event) {
@@ -194,10 +190,9 @@ public class NodeQueryCacheContext implements QueryCacheContext {
         }, name);
     }
 
-    @SerializableByConvention
-    private class RegisterMapListenerFunction implements IFunction<String, String> {
+    private class RegisterMapListenerFunction implements Function<String, UUID> {
         @Override
-        public String apply(String name) {
+        public UUID apply(String name) {
             return registerLocalIMapListener(name);
         }
     }

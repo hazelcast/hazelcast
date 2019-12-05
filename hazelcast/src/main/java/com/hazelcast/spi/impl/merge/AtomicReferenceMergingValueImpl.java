@@ -17,7 +17,7 @@
 package com.hazelcast.spi.impl.merge;
 
 import com.hazelcast.spi.merge.SplitBrainMergeTypes.AtomicReferenceMergeTypes;
-import com.hazelcast.spi.serialization.SerializationService;
+import com.hazelcast.internal.serialization.SerializationService;
 
 /**
  * Implementation of {@link AtomicReferenceMergeTypes}.
@@ -37,7 +37,7 @@ public class AtomicReferenceMergingValueImpl
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return SplitBrainDataSerializerHook.ATOMIC_REFERENCE_MERGING_VALUE;
     }
 }

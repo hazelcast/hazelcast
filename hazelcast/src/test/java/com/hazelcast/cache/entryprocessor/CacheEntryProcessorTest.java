@@ -19,16 +19,15 @@ package com.hazelcast.cache.entryprocessor;
 import com.hazelcast.cache.BackupAwareEntryProcessor;
 import com.hazelcast.cache.ICache;
 import com.hazelcast.cache.impl.CacheService;
-import com.hazelcast.cache.impl.HazelcastServerCachingProvider;
 import com.hazelcast.cache.impl.ICacheRecordStore;
 import com.hazelcast.cache.impl.record.CacheRecord;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.Partition;
-import com.hazelcast.core.PartitionService;
-import com.hazelcast.instance.HazelcastInstanceImpl;
-import com.hazelcast.instance.HazelcastInstanceProxy;
+import com.hazelcast.instance.impl.HazelcastInstanceImpl;
+import com.hazelcast.instance.impl.HazelcastInstanceProxy;
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.serialization.SerializationService;
+import com.hazelcast.partition.Partition;
+import com.hazelcast.partition.PartitionService;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -51,6 +50,7 @@ import javax.cache.spi.CachingProvider;
 import java.io.Serializable;
 import java.lang.reflect.Field;
 
+import static com.hazelcast.cache.CacheTestSupport.createServerCachingProvider;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
@@ -113,7 +113,7 @@ public class CacheEntryProcessorTest extends HazelcastTestSupport {
     public void removeRecordWithEntryProcessor() {
         final int ENTRY_COUNT = 10;
 
-        CachingProvider cachingProvider = HazelcastServerCachingProvider.createCachingProvider(node1);
+        CachingProvider cachingProvider = createServerCachingProvider(node1);
         CacheManager cacheManager = cachingProvider.getCacheManager();
         CompleteConfiguration<Integer, String> cacheConfig =
                 new MutableConfiguration<Integer, String>()
@@ -140,7 +140,7 @@ public class CacheEntryProcessorTest extends HazelcastTestSupport {
         String cacheName = randomName();
         int key = 1;
 
-        CachingProvider cachingProvider = HazelcastServerCachingProvider.createCachingProvider(node1);
+        CachingProvider cachingProvider = createServerCachingProvider(node1);
         CacheManager cacheManager = cachingProvider.getCacheManager();
         CompleteConfiguration<Integer, String> config =
                 new MutableConfiguration<Integer, String>()
@@ -283,7 +283,7 @@ public class CacheEntryProcessorTest extends HazelcastTestSupport {
     }
 
     private void executeEntryProcessor(Integer key, EntryProcessor<Integer, String, Void> entryProcessor, String cacheName) {
-        CachingProvider cachingProvider = HazelcastServerCachingProvider.createCachingProvider(node1);
+        CachingProvider cachingProvider = createServerCachingProvider(node1);
         CacheManager cacheManager = cachingProvider.getCacheManager();
 
         CompleteConfiguration<Integer, String> config =

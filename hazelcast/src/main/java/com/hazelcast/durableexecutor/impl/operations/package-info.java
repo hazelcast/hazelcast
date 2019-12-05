@@ -15,6 +15,6 @@
  */
 
 /**
- * <p>This package contains operations for the DurableExecutorService.<br/>
+ * <p>This package contains operations for the DurableExecutorService.<br>
  */
 package com.hazelcast.durableexecutor.impl.operations;

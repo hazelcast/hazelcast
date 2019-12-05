@@ -16,15 +16,19 @@
 
 package com.hazelcast.query.impl;
 
+import com.hazelcast.config.IndexConfig;
+import com.hazelcast.config.IndexType;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
-import com.hazelcast.query.EntryObject;
+import com.hazelcast.query.Predicate;
 import com.hazelcast.query.PredicateBuilder;
+import com.hazelcast.query.PredicateBuilder.EntryObject;
+import com.hazelcast.query.Predicates;
 import com.hazelcast.query.SampleTestObjects.Employee;
 import com.hazelcast.query.SampleTestObjects.Value;
-import com.hazelcast.query.SqlPredicate;
 import com.hazelcast.query.impl.getters.Extractors;
-import com.hazelcast.test.HazelcastParametersRunnerFactory;
+import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -38,14 +42,16 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 
-import static com.hazelcast.instance.TestUtil.toData;
+import static com.hazelcast.instance.impl.TestUtil.toData;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertSame;
 
 @RunWith(Parameterized.class)
-@UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
-@Category(QuickTest.class)
+@UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class IndexesTest {
 
     private final InternalSerializationService serializationService = new DefaultSerializationServiceBuilder().build();
@@ -58,30 +64,29 @@ public class IndexesTest {
         return asList(new Object[][]{
                 {IndexCopyBehavior.COPY_ON_READ},
                 {IndexCopyBehavior.COPY_ON_WRITE},
-                {IndexCopyBehavior.NEVER},
+                {IndexCopyBehavior.NEVER}
         });
     }
 
     @Test
     public void testAndWithSingleEntry() {
         Indexes indexes = Indexes.newBuilder(serializationService, copyBehavior).build();
-        indexes.addOrGetIndex("name", false);
-        indexes.addOrGetIndex("age", true);
-        indexes.addOrGetIndex("salary", true);
+        indexes.addOrGetIndex(IndexUtils.createTestIndexConfig(IndexType.HASH, "name"), null);
+        indexes.addOrGetIndex(IndexUtils.createTestIndexConfig(IndexType.SORTED, "age"), null);
+        indexes.addOrGetIndex(IndexUtils.createTestIndexConfig(IndexType.SORTED, "salary"), null);
         for (int i = 0; i < 100; i++) {
             Employee employee = new Employee(i + "Name", i % 80, (i % 2 == 0), 100 + (i % 1000));
-            indexes.saveEntryIndex(new QueryEntry(serializationService, toData(i), employee,
-                            newExtractor()), null,
+            indexes.putEntry(new QueryEntry(serializationService, toData(i), employee, newExtractor()), null,
                     Index.OperationSource.USER);
         }
         int count = 10;
-        Set<String> ages = new HashSet<String>(count);
+        Set<String> ages = new HashSet<>(count);
         for (int i = 0; i < count; i++) {
             ages.add(String.valueOf(i));
         }
-        EntryObject entryObject = new PredicateBuilder().getEntryObject();
-        PredicateBuilder predicate = entryObject.get("name").equal("0Name")
-                .and(entryObject.get("age").in(ages.toArray(new String[0])));
+        EntryObject entryObject = Predicates.newPredicateBuilder().getEntryObject();
+        PredicateBuilder predicate =
+                entryObject.get("name").equal("0Name").and(entryObject.get("age").in(ages.toArray(new String[0])));
         Set<QueryableEntry> results = indexes.query(predicate);
         assertEquals(1, results.size());
     }
@@ -89,19 +94,18 @@ public class IndexesTest {
     @Test
     public void testIndex() {
         Indexes indexes = Indexes.newBuilder(serializationService, copyBehavior).build();
-        indexes.addOrGetIndex("name", false);
-        indexes.addOrGetIndex("age", true);
-        indexes.addOrGetIndex("salary", true);
+        indexes.addOrGetIndex(IndexUtils.createTestIndexConfig(IndexType.HASH, "name"), null);
+        indexes.addOrGetIndex(IndexUtils.createTestIndexConfig(IndexType.SORTED, "age"), null);
+        indexes.addOrGetIndex(IndexUtils.createTestIndexConfig(IndexType.SORTED, "salary"), null);
         for (int i = 0; i < 2000; i++) {
             Employee employee = new Employee(i + "Name", i % 80, (i % 2 == 0), 100 + (i % 100));
-            indexes.saveEntryIndex(new QueryEntry(serializationService, toData(i), employee,
-                            newExtractor()), null,
+            indexes.putEntry(new QueryEntry(serializationService, toData(i), employee, newExtractor()), null,
                     Index.OperationSource.USER);
         }
 
         for (int i = 0; i < 10; i++) {
-            SqlPredicate predicate = new SqlPredicate("salary=161 and age >20 and age <23");
-            Set<QueryableEntry> results = new HashSet<QueryableEntry>(indexes.query(predicate));
+            Predicate predicate = Predicates.sql("salary=161 and age >20 and age <23");
+            Set<QueryableEntry> results = new HashSet<>(indexes.query(predicate));
             assertEquals(5, results.size());
         }
     }
@@ -109,26 +113,26 @@ public class IndexesTest {
     @Test
     public void testIndex2() {
         Indexes indexes = Indexes.newBuilder(serializationService, copyBehavior).build();
-        indexes.addOrGetIndex("name", false);
-        indexes.saveEntryIndex(new QueryEntry(serializationService, toData(1), new Value("abc"), newExtractor()), null,
+        indexes.addOrGetIndex(IndexUtils.createTestIndexConfig(IndexType.HASH, "name"), null);
+        indexes.putEntry(new QueryEntry(serializationService, toData(1), new Value("abc"), newExtractor()), null,
                 Index.OperationSource.USER);
-        indexes.saveEntryIndex(new QueryEntry(serializationService, toData(2), new Value("xyz"), newExtractor()), null,
+        indexes.putEntry(new QueryEntry(serializationService, toData(2), new Value("xyz"), newExtractor()), null,
                 Index.OperationSource.USER);
-        indexes.saveEntryIndex(new QueryEntry(serializationService, toData(3), new Value("aaa"), newExtractor()), null,
+        indexes.putEntry(new QueryEntry(serializationService, toData(3), new Value("aaa"), newExtractor()), null,
                 Index.OperationSource.USER);
-        indexes.saveEntryIndex(new QueryEntry(serializationService, toData(4), new Value("zzz"), newExtractor()), null,
+        indexes.putEntry(new QueryEntry(serializationService, toData(4), new Value("zzz"), newExtractor()), null,
                 Index.OperationSource.USER);
-        indexes.saveEntryIndex(new QueryEntry(serializationService, toData(5), new Value("klm"), newExtractor()), null,
+        indexes.putEntry(new QueryEntry(serializationService, toData(5), new Value("klm"), newExtractor()), null,
                 Index.OperationSource.USER);
-        indexes.saveEntryIndex(new QueryEntry(serializationService, toData(6), new Value("prs"), newExtractor()), null,
+        indexes.putEntry(new QueryEntry(serializationService, toData(6), new Value("prs"), newExtractor()), null,
                 Index.OperationSource.USER);
-        indexes.saveEntryIndex(new QueryEntry(serializationService, toData(7), new Value("prs"), newExtractor()), null,
+        indexes.putEntry(new QueryEntry(serializationService, toData(7), new Value("prs"), newExtractor()), null,
                 Index.OperationSource.USER);
-        indexes.saveEntryIndex(new QueryEntry(serializationService, toData(8), new Value("def"), newExtractor()), null,
+        indexes.putEntry(new QueryEntry(serializationService, toData(8), new Value("def"), newExtractor()), null,
                 Index.OperationSource.USER);
-        indexes.saveEntryIndex(new QueryEntry(serializationService, toData(9), new Value("qwx"), newExtractor()), null,
+        indexes.putEntry(new QueryEntry(serializationService, toData(9), new Value("qwx"), newExtractor()), null,
                 Index.OperationSource.USER);
-        assertEquals(8, new HashSet<QueryableEntry>(indexes.query(new SqlPredicate("name > 'aac'"))).size());
+        assertEquals(8, new HashSet<>(indexes.query(Predicates.sql("name > 'aac'"))).size());
     }
 
     protected Extractors newExtractor() {
@@ -143,7 +147,7 @@ public class IndexesTest {
     @Test
     public void shouldNotThrowException_withNullValues_whenIndexAddedForValueField() {
         Indexes indexes = Indexes.newBuilder(serializationService, copyBehavior).build();
-        indexes.addOrGetIndex("name", false);
+        indexes.addOrGetIndex(IndexUtils.createTestIndexConfig(IndexType.HASH, "name"), null);
 
         shouldReturnNull_whenQueryingOnKeys(indexes);
     }
@@ -158,11 +162,11 @@ public class IndexesTest {
     private void shouldReturnNull_whenQueryingOnKeys(Indexes indexes) {
         for (int i = 0; i < 50; i++) {
             // passing null value to QueryEntry
-            indexes.saveEntryIndex(new QueryEntry(serializationService, toData(i), null, newExtractor()), null,
+            indexes.putEntry(new QueryEntry(serializationService, toData(i), null, newExtractor()), null,
                     Index.OperationSource.USER);
         }
 
-        Set<QueryableEntry> query = indexes.query(new SqlPredicate("__key > 10 "));
+        Set<QueryableEntry> query = indexes.query(Predicates.sql("__key > 10 "));
 
         assertNull("There should be no result", query);
     }
@@ -170,16 +174,33 @@ public class IndexesTest {
     @Test
     public void shouldNotThrowException_withNullValue_whenIndexAddedForKeyField() {
         Indexes indexes = Indexes.newBuilder(serializationService, copyBehavior).build();
-        indexes.addOrGetIndex("__key", false);
+        indexes.addOrGetIndex(IndexUtils.createTestIndexConfig(IndexType.HASH, "__key"), null);
 
         for (int i = 0; i < 100; i++) {
             // passing null value to QueryEntry
-            indexes.saveEntryIndex(new QueryEntry(serializationService, toData(i), null, newExtractor()), null,
+            indexes.putEntry(new QueryEntry(serializationService, toData(i), null, newExtractor()), null,
                     Index.OperationSource.USER);
         }
 
-        Set<QueryableEntry> query = indexes.query(new SqlPredicate("__key > 10 "));
+        Set<QueryableEntry> query = indexes.query(Predicates.sql("__key > 10 "));
 
         assertEquals(89, query.size());
+    }
+
+    @Test
+    public void testNoDuplicateIndexes() {
+        Indexes indexes = Indexes.newBuilder(serializationService, copyBehavior).build();
+
+        IndexConfig config1 = IndexUtils.createTestIndexConfig(IndexType.HASH, "a");
+
+        InternalIndex index = indexes.addOrGetIndex(config1, null);
+        assertNotNull(index);
+        assertSame(index, indexes.addOrGetIndex(config1, null));
+
+        IndexConfig config2 = IndexUtils.createTestIndexConfig(IndexType.HASH, "a", "b");
+
+        index = indexes.addOrGetIndex(config2, null);
+        assertNotNull(index);
+        assertSame(index, indexes.addOrGetIndex(config2, null));
     }
 }

@@ -18,8 +18,8 @@ package com.hazelcast.xa;
 
 import com.atomikos.icatch.jta.UserTransactionManager;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IMap;
-import com.hazelcast.core.TransactionalMap;
+import com.hazelcast.map.IMap;
+import com.hazelcast.transaction.TransactionalMap;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.test.HazelcastSerialClassRunner;

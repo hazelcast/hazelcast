@@ -17,21 +17,20 @@
 package com.hazelcast.map;
 
 import com.hazelcast.config.Config;
+import com.hazelcast.config.IndexConfig;
+import com.hazelcast.config.IndexType;
 import com.hazelcast.config.MapConfig;
-import com.hazelcast.config.MapIndexConfig;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IMap;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
-import com.hazelcast.query.EntryObject;
 import com.hazelcast.query.Predicate;
-import com.hazelcast.query.PredicateBuilder;
-import com.hazelcast.test.AssertTask;
+import com.hazelcast.query.PredicateBuilder.EntryObject;
+import com.hazelcast.query.Predicates;
 import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.annotation.ParallelTest;
-import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
+import com.hazelcast.test.annotation.SlowTest;
 import com.hazelcast.test.bounce.BounceMemberRule;
 import com.hazelcast.test.bounce.BounceTestConfiguration;
 import org.junit.Before;
@@ -61,7 +60,7 @@ import static org.junit.Assert.assertEquals;
  */
 @RunWith(Parameterized.class)
 @UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({SlowTest.class, ParallelJVMTest.class})
 public class EntryProcessorBouncingNodesTest extends HazelcastTestSupport {
 
     private static final int ENTRIES = 50;
@@ -114,7 +113,7 @@ public class EntryProcessorBouncingNodesTest extends HazelcastTestSupport {
             expected.add(iteration);
             for (int i = 0; i < ENTRIES; ++i) {
                 if (withPredicate) {
-                    EntryObject eo = new PredicateBuilder().getEntryObject();
+                    EntryObject eo = Predicates.newPredicateBuilder().getEntryObject();
                     Predicate keyPredicate = eo.key().equal(i);
                     map.executeOnEntries(processor, keyPredicate);
                 } else {
@@ -126,16 +125,13 @@ public class EntryProcessorBouncingNodesTest extends HazelcastTestSupport {
 
         for (int i = 0; i < ENTRIES; i++) {
             final int index = i;
-            assertTrueEventually(new AssertTask() {
-                @Override
-                public void run() {
+            assertTrueEventually(() -> {
                     ListHolder holder = map.get(index);
                     String errorText = String.format("Each ListHolder should contain %d entries.\nInvalid list holder content:\n%s\n", ITERATIONS, holder.toString());
                     assertEquals(errorText, ITERATIONS, holder.size());
-                    for (int i = 0; i < ITERATIONS; i++) {
-                        assertEquals(i, holder.get(i));
+                    for (int it = 0; it < ITERATIONS; it++) {
+                        assertEquals(it, holder.get(it));
                     }
-                }
             });
         }
     }
@@ -146,12 +142,12 @@ public class EntryProcessorBouncingNodesTest extends HazelcastTestSupport {
         MapConfig mapConfig = config.getMapConfig(MAP_NAME);
         mapConfig.setBackupCount(2);
         if (withIndex) {
-            mapConfig.addMapIndexConfig(new MapIndexConfig("__key", true));
+            mapConfig.addIndexConfig(new IndexConfig(IndexType.SORTED, "__key"));
         }
         return config;
     }
 
-    private static class InitMapProcessor extends AbstractEntryProcessor<Integer, ListHolder> {
+    private static class InitMapProcessor implements EntryProcessor<Integer, ListHolder, Object> {
 
         @Override
         public Object process(Map.Entry<Integer, ListHolder> entry) {
@@ -160,7 +156,7 @@ public class EntryProcessorBouncingNodesTest extends HazelcastTestSupport {
         }
     }
 
-    private static class IncrementProcessor extends AbstractEntryProcessor<Integer, ListHolder> {
+    private static class IncrementProcessor implements EntryProcessor<Integer, ListHolder, Object> {
 
         private final int nextVal;
 
@@ -179,10 +175,10 @@ public class EntryProcessorBouncingNodesTest extends HazelcastTestSupport {
 
     private static class ListHolder implements DataSerializable {
 
-        private List<Integer> list = new ArrayList<Integer>();
+        private List<Integer> list = new ArrayList<>();
         private int size;
 
-        public ListHolder() {
+        ListHolder() {
         }
 
         @Override
@@ -196,7 +192,7 @@ public class EntryProcessorBouncingNodesTest extends HazelcastTestSupport {
         @Override
         public void readData(ObjectDataInput in) throws IOException {
             size = in.readInt();
-            list = new ArrayList<Integer>(size);
+            list = new ArrayList<>(size);
             for (int i = 0; i < size; i++) {
                 list.add(in.readInt());
             }

@@ -18,18 +18,18 @@ package com.hazelcast.map.impl.querycache.event;
 
 import com.hazelcast.map.impl.event.EventData;
 import com.hazelcast.map.impl.querycache.event.sequence.Sequenced;
-import com.hazelcast.nio.Address;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.BinaryInterface;
+import com.hazelcast.internal.serialization.BinaryInterface;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 
 import static com.hazelcast.map.impl.querycache.event.QueryCacheEventDataBuilder.newQueryCacheEventDataBuilder;
-import static com.hazelcast.util.Preconditions.checkNotNegative;
-import static com.hazelcast.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.Preconditions.checkNotNegative;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 /**
  * Holder for a collection of {@link QueryCacheEventData}.
@@ -118,7 +118,7 @@ public class BatchEventData implements Sequenced, EventData {
         source = in.readUTF();
         int size = in.readInt();
         if (size > 0) {
-            this.events = new ArrayList<QueryCacheEventData>(size);
+            this.events = new ArrayList<>(size);
         }
         Collection<QueryCacheEventData> events = this.events;
         for (int i = 0; i < size; i++) {

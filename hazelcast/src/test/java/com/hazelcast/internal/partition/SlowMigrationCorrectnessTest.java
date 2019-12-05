@@ -18,12 +18,12 @@ package com.hazelcast.internal.partition;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.instance.TestUtil;
-import com.hazelcast.nio.Address;
-import com.hazelcast.spi.properties.GroupProperty;
-import com.hazelcast.test.HazelcastParametersRunnerFactory;
+import com.hazelcast.instance.impl.TestUtil;
+import com.hazelcast.cluster.Address;
+import com.hazelcast.spi.properties.ClusterProperty;
+import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
 import com.hazelcast.test.annotation.SlowTest;
-import com.hazelcast.util.RandomPicker;
+import com.hazelcast.internal.util.RandomPicker;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -44,7 +44,7 @@ import static org.junit.Assert.assertTrue;
  * https://github.com/hazelcast/hazelcast/issues/5444
  */
 @RunWith(Parameterized.class)
-@UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
+@UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
 @Category({SlowTest.class})
 @Ignore(value = "https://github.com/hazelcast/hazelcast/issues/9828")
 public class SlowMigrationCorrectnessTest extends AbstractMigrationCorrectnessTest {
@@ -68,7 +68,7 @@ public class SlowMigrationCorrectnessTest extends AbstractMigrationCorrectnessTe
         partitionCount = 14;
 
         Config config = getConfig(true, false);
-        config.setProperty(GroupProperty.PARTITION_MIGRATION_INTERVAL.getName(), "1");
+        config.setProperty(ClusterProperty.PARTITION_MIGRATION_INTERVAL.getName(), "1");
 
         HazelcastInstance[] instances = factory.newInstances(config, nodeCount);
         warmUpPartitions(instances);

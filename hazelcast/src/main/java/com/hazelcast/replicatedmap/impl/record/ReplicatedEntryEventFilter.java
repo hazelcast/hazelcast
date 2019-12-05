@@ -17,7 +17,7 @@
 package com.hazelcast.replicatedmap.impl.record;
 
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.EventFilter;
+import com.hazelcast.spi.impl.eventservice.EventFilter;
 
 /**
  * Basic filter implementation for selecting interesting events on the server

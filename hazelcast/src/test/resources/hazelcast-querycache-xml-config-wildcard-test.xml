@@ -18,11 +18,11 @@
 <hazelcast xmlns="http://www.hazelcast.com/schema/config"
            xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
            xsi:schemaLocation="http://www.hazelcast.com/schema/config
-           http://www.hazelcast.com/schema/config/hazelcast-config-3.11.xsd">
+           http://www.hazelcast.com/schema/config/hazelcast-config-4.0.xsd">
 
     <map name="testQueryCacheXmlConfigWithWildCardMap*">
         <backup-count>1</backup-count>
-        <eviction-policy>LRU</eviction-policy>
+        <eviction eviction-policy="LRU"/>
 
         <query-caches>
             <query-cache name="queryCacheName*">
@@ -33,7 +33,7 @@
                 <coalesce>true</coalesce>
                 <include-value>true</include-value>
                 <populate>true</populate>
-                <predicate type="class-name">com.hazelcast.query.TruePredicate</predicate>
+                <predicate type="class-name">com.hazelcast.query.impl.predicates.TruePredicate</predicate>
             </query-cache>
         </query-caches>
     </map>

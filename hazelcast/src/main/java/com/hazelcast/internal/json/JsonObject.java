@@ -22,11 +22,10 @@
 package com.hazelcast.internal.json;
 
 import com.hazelcast.internal.json.JsonObject.Member;
-import com.hazelcast.nio.serialization.SerializableByConvention;
+import com.hazelcast.internal.serialization.SerializableByConvention;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
-import java.io.Reader;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
@@ -111,47 +110,6 @@ public class JsonObject extends JsonValue implements Iterable<Member> {
     }
     table = new HashIndexTable();
     updateHashIndex();
-  }
-
-  /**
-   * Reads a JSON object from the given reader.
-   * <p>
-   * Characters are read in chunks and buffered internally, therefore wrapping an existing reader in
-   * an additional <code>BufferedReader</code> does <strong>not</strong> improve reading
-   * performance.
-   * </p>
-   *
-   * @param reader
-   *          the reader to read the JSON object from
-   * @return the JSON object that has been read
-   * @throws IOException
-   *           if an I/O error occurs in the reader
-   * @throws ParseException
-   *           if the input is not valid JSON
-   * @throws UnsupportedOperationException
-   *           if the input does not contain a JSON object
-   * @deprecated Use {@link Json#parse(Reader)}{@link JsonValue#asObject() .asObject()} instead
-   */
-  @Deprecated
-  public static JsonObject readFrom(Reader reader) throws IOException {
-    return JsonValue.readFrom(reader).asObject();
-  }
-
-  /**
-   * Reads a JSON object from the given string.
-   *
-   * @param string
-   *          the string that contains the JSON object
-   * @return the JSON object that has been read
-   * @throws ParseException
-   *           if the input is not valid JSON
-   * @throws UnsupportedOperationException
-   *           if the input does not contain a JSON object
-   * @deprecated Use {@link Json#parse(String)}{@link JsonValue#asObject() .asObject()} instead
-   */
-  @Deprecated
-  public static JsonObject readFrom(String string) {
-    return JsonValue.readFrom(string).asObject();
   }
 
   /**

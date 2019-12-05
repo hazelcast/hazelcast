@@ -33,7 +33,7 @@ class DelegatingTaskDecorator implements Runnable {
      * @param runnable Task to be executed
      * @param executor Executor the task to be delegated to
      */
-    public DelegatingTaskDecorator(Runnable runnable, Executor executor) {
+    DelegatingTaskDecorator(Runnable runnable, Executor executor) {
         this.executor = executor;
         this.runnable = runnable;
     }

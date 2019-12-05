@@ -20,14 +20,15 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.impl.SpiDataSerializerHook;
+import com.hazelcast.spi.impl.operationservice.Operation;
 
 import java.io.IOException;
 
-import static com.hazelcast.nio.Bits.INT_SIZE_IN_BYTES;
-import static com.hazelcast.nio.Bits.LONG_SIZE_IN_BYTES;
+import static com.hazelcast.internal.nio.Bits.INT_SIZE_IN_BYTES;
+import static com.hazelcast.internal.nio.Bits.LONG_SIZE_IN_BYTES;
 
 /**
- * A {@link Response} is a result of an {@link com.hazelcast.spi.Operation} being executed.
+ * A {@link Response} is a result of an {@link Operation} being executed.
  * There are different types of responses:
  * <ol>
  * <li>{@link NormalResponse} the result of a regular Operation result, e.g. Map.put()</li>

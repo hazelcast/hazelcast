@@ -16,15 +16,15 @@
 
 package com.hazelcast.spi.impl.operationexecutor;
 
-import com.hazelcast.nio.Packet;
-import com.hazelcast.spi.LiveOperationsTracker;
-import com.hazelcast.spi.Operation;
+import com.hazelcast.internal.nio.Packet;
+import com.hazelcast.spi.impl.operationservice.LiveOperationsTracker;
+import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.PartitionSpecificRunnable;
 import com.hazelcast.spi.impl.operationexecutor.impl.OperationExecutorImpl;
 import com.hazelcast.spi.impl.operationservice.PartitionTaskFactory;
-import com.hazelcast.util.function.Consumer;
 
 import java.util.BitSet;
+import java.util.function.Consumer;
 
 /**
  * The OperationExecutor is responsible for scheduling work (packets/operations)
@@ -42,15 +42,12 @@ import java.util.BitSet;
 public interface OperationExecutor extends Consumer<Packet>, LiveOperationsTracker {
 
     // Will be replaced by metrics
-    @Deprecated
     int getRunningOperationCount();
 
     // Will be replaced by metrics
-    @Deprecated
     int getQueueSize();
 
     // Will be replaced by metrics
-    @Deprecated
     int getPriorityQueueSize();
 
     /**
@@ -76,7 +73,7 @@ public interface OperationExecutor extends Consumer<Packet>, LiveOperationsTrack
      * Gets all the operation handlers for the partitions. Each partition will
      * have its own operation handler. So if there are 271 partitions, then the
      * size of the array will be 271.
-     * <p/>
+     * <p>
      * Don't modify the content of the array!
      *
      * @return the operation handlers.
@@ -86,7 +83,7 @@ public interface OperationExecutor extends Consumer<Packet>, LiveOperationsTrack
     /**
      * Gets all the generic operation handlers. The number of generic operation
      * handlers depends on the number of generic threads.
-     * <p/>
+     * <p>
      * Don't modify the content of the array!
      *
      * @return the generic operation handlers.

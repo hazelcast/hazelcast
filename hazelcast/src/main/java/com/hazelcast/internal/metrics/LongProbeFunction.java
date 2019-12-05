@@ -18,7 +18,7 @@ package com.hazelcast.internal.metrics;
 
 /**
  * A {@link ProbeFunction} that provides a long value and can be used to create
- * a probe using {@link MetricsRegistry#register(Object, String, ProbeLevel, LongProbeFunction)}
+ * a probe using {@link MetricsRegistry#registerStaticProbe(Object, String, ProbeLevel, LongProbeFunction)}
  *
  * @param <S> the type of the source object.
  * @see DoubleProbeFunction

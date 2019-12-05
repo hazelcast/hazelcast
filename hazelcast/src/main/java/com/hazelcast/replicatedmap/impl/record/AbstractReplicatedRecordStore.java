@@ -16,19 +16,18 @@
 
 package com.hazelcast.replicatedmap.impl.record;
 
+import com.hazelcast.cluster.Member;
 import com.hazelcast.cluster.memberselector.MemberSelectors;
-import com.hazelcast.core.Member;
-import com.hazelcast.nio.Address;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapEventPublishingService;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
 import com.hazelcast.replicatedmap.impl.operation.ReplicateUpdateOperation;
 import com.hazelcast.replicatedmap.impl.operation.VersionResponsePair;
-import com.hazelcast.replicatedmap.merge.ReplicatedMapMergePolicy;
-import com.hazelcast.spi.OperationService;
+import com.hazelcast.spi.impl.operationservice.OperationService;
 import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 import com.hazelcast.spi.merge.SplitBrainMergeTypes.ReplicatedMapMergeTypes;
-import com.hazelcast.util.Clock;
+import com.hazelcast.internal.util.Clock;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -43,7 +42,7 @@ import java.util.concurrent.TimeUnit;
 import static com.hazelcast.core.EntryEventType.EVICTED;
 import static com.hazelcast.replicatedmap.impl.ReplicatedMapService.SERVICE_NAME;
 import static com.hazelcast.spi.impl.merge.MergingValueFactory.createMergingEntry;
-import static com.hazelcast.util.Preconditions.isNotNull;
+import static com.hazelcast.internal.util.Preconditions.isNotNull;
 
 /**
  * This is the base class for all {@link ReplicatedRecordStore} implementations
@@ -231,7 +230,7 @@ public abstract class AbstractReplicatedRecordStore<K, V> extends AbstractBaseRe
 
         if (lazy) {
             // Lazy evaluation to prevent to much copying
-            return new LazySet<K, V, K>(new KeySetIteratorFactory<K, V>(this), getStorage());
+            return new LazySet<>(new KeySetIteratorFactory<>(this), getStorage());
         }
         return getStorage().keySet();
     }
@@ -242,7 +241,7 @@ public abstract class AbstractReplicatedRecordStore<K, V> extends AbstractBaseRe
 
         if (lazy) {
             // Lazy evaluation to prevent to much copying
-            return new LazyCollection<K, V>(new ValuesIteratorFactory<K, V>(this), getStorage());
+            return new LazyCollection<>(new ValuesIteratorFactory<>(this), getStorage());
         }
         return getStorage().values();
     }
@@ -250,7 +249,7 @@ public abstract class AbstractReplicatedRecordStore<K, V> extends AbstractBaseRe
     @Override
     public Collection values(Comparator comparator) {
         InternalReplicatedMapStorage<K, V> storage = getStorage();
-        List<Object> values = new ArrayList<Object>(storage.size());
+        List<Object> values = new ArrayList<>(storage.size());
         for (ReplicatedRecord record : storage.values()) {
             values.add(unmarshall(record.getValue()));
         }
@@ -264,7 +263,7 @@ public abstract class AbstractReplicatedRecordStore<K, V> extends AbstractBaseRe
 
         if (lazy) {
             // Lazy evaluation to prevent to much copying
-            return new LazySet<K, V, Map.Entry<K, V>>(new EntrySetIteratorFactory<K, V>(this), getStorage());
+            return new LazySet<>(new EntrySetIteratorFactory<>(this), getStorage());
         }
         return getStorage().entrySet();
     }
@@ -331,7 +330,7 @@ public abstract class AbstractReplicatedRecordStore<K, V> extends AbstractBaseRe
     }
 
     private ReplicatedRecord<K, V> buildReplicatedRecord(K key, V value, long ttlMillis) {
-        return new ReplicatedRecord<K, V>(key, value, ttlMillis);
+        return new ReplicatedRecord<>(key, value, ttlMillis);
     }
 
     @Override
@@ -373,54 +372,6 @@ public abstract class AbstractReplicatedRecordStore<K, V> extends AbstractBaseRe
             Data dataValue = serializationService.toData(newValue);
             VersionResponsePair responsePair = new VersionResponsePair(mergingEntry.getValue(), getVersion());
             sendReplicationOperation(false, name, dataKey, dataValue, record.getTtlMillis(), responsePair);
-        }
-        return true;
-    }
-
-    @Override
-    @SuppressWarnings("unchecked")
-    public boolean merge(Object key, ReplicatedMapEntryView mergingEntry, ReplicatedMapMergePolicy mergePolicy) {
-        K marshalledKey = (K) marshall(key);
-        InternalReplicatedMapStorage<K, V> storage = getStorage();
-        ReplicatedRecord<K, V> existingRecord = storage.get(marshalledKey);
-        if (existingRecord == null) {
-            ReplicatedMapEntryView nullEntryView
-                    = new ReplicatedMapEntryView<Object, V>(serializationService).setKey(key);
-            V newValue = (V) mergePolicy.merge(name, mergingEntry, nullEntryView);
-            if (newValue == null) {
-                return false;
-            }
-            existingRecord = buildReplicatedRecord(marshalledKey, newValue, 0);
-            storage.put(marshalledKey, existingRecord);
-            storage.incrementVersion();
-            Data dataKey = serializationService.toData(marshalledKey);
-            Data dataValue = serializationService.toData(newValue);
-            VersionResponsePair responsePair = new VersionResponsePair(mergingEntry.getValue(), getVersion());
-            sendReplicationOperation(false, name, dataKey, dataValue, existingRecord.getTtlMillis(), responsePair);
-        } else {
-            ReplicatedMapEntryView existingEntry = new ReplicatedMapEntryView<Object, Object>(serializationService)
-                    .setKey(key)
-                    .setValue(existingRecord.getValueInternal())
-                    .setCreationTime(existingRecord.getCreationTime())
-                    .setLastUpdateTime(existingRecord.getUpdateTime())
-                    .setLastAccessTime(existingRecord.getLastAccessTime())
-                    .setHits(existingRecord.getHits())
-                    .setTtl(existingRecord.getTtlMillis());
-            V newValue = (V) mergePolicy.merge(name, mergingEntry, existingEntry);
-            if (newValue == null) {
-                storage.remove(marshalledKey, existingRecord);
-                storage.incrementVersion();
-                Data dataKey = serializationService.toData(marshalledKey);
-                VersionResponsePair responsePair = new VersionResponsePair(mergingEntry.getValue(), getVersion());
-                sendReplicationOperation(true, name, dataKey, null, existingRecord.getTtlMillis(), responsePair);
-                return false;
-            }
-            existingRecord.setValueInternal(newValue, existingRecord.getTtlMillis());
-            storage.incrementVersion();
-            Data dataKey = serializationService.toData(marshalledKey);
-            Data dataValue = serializationService.toData(newValue);
-            VersionResponsePair responsePair = new VersionResponsePair(mergingEntry.getValue(), getVersion());
-            sendReplicationOperation(false, name, dataKey, dataValue, existingRecord.getTtlMillis(), responsePair);
         }
         return true;
     }

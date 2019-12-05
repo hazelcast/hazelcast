@@ -105,7 +105,7 @@ public class ClusterStateChange<T> implements IdentifiedDataSerializable {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ClusterDataSerializerHook.CLUSTER_STATE_CHANGE;
     }
 

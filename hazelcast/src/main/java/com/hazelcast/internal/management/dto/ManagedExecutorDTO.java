@@ -16,14 +16,14 @@
 
 package com.hazelcast.internal.management.dto;
 
-import com.hazelcast.internal.management.JsonSerializable;
+import com.hazelcast.json.internal.JsonSerializable;
 import com.hazelcast.internal.json.JsonObject;
-import com.hazelcast.util.executor.ManagedExecutorService;
+import com.hazelcast.internal.util.executor.ManagedExecutorService;
 
-import static com.hazelcast.util.JsonUtil.getBoolean;
-import static com.hazelcast.util.JsonUtil.getInt;
-import static com.hazelcast.util.JsonUtil.getLong;
-import static com.hazelcast.util.JsonUtil.getString;
+import static com.hazelcast.internal.util.JsonUtil.getBoolean;
+import static com.hazelcast.internal.util.JsonUtil.getInt;
+import static com.hazelcast.internal.util.JsonUtil.getLong;
+import static com.hazelcast.internal.util.JsonUtil.getString;
 
 /**
  * A Serializable DTO for {@link com.hazelcast.internal.jmx.ManagedExecutorServiceMBean}.

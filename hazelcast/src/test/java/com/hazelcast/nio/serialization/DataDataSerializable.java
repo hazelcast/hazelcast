@@ -16,6 +16,7 @@
 
 package com.hazelcast.nio.serialization;
 
+import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 
@@ -35,12 +36,12 @@ class DataDataSerializable implements DataSerializable {
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeData(data);
+        IOUtil.writeData(out, data);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        data = in.readData();
+        data = IOUtil.readData(in);
     }
 
     @Override

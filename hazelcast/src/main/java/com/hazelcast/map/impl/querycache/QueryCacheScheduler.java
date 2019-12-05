@@ -24,7 +24,7 @@ import java.util.concurrent.ScheduledFuture;
 /**
  * Scheduler abstraction to allow different type of implementations
  * on query cache subscriber and query cache publisher sides.
- * <p/>
+ * <p>
  * Mainly used for offloading indexing-process and scheduling {@link AccumulatorProcessor}.
  */
 public interface QueryCacheScheduler {

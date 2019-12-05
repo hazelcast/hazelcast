@@ -18,9 +18,9 @@ package com.hazelcast.map.impl.querycache.subscriber.operation;
 
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.MapService;
-import com.hazelcast.map.impl.operation.MapOperation;
-import com.hazelcast.map.impl.query.QueryEngine;
+import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.query.Query;
+import com.hazelcast.map.impl.query.QueryEngine;
 import com.hazelcast.map.impl.query.QueryResult;
 import com.hazelcast.map.impl.query.QueryResultRow;
 import com.hazelcast.map.impl.query.Target;
@@ -38,28 +38,30 @@ import com.hazelcast.map.impl.querycache.utils.QueryCacheUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.OperationService;
-import com.hazelcast.util.FutureUtil;
-import com.hazelcast.util.IterationType;
-import com.hazelcast.util.collection.Int2ObjectHashMap;
+import com.hazelcast.spi.impl.operationservice.AbstractNamedOperation;
+import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.spi.impl.operationservice.OperationService;
+import com.hazelcast.internal.util.ExceptionUtil;
+import com.hazelcast.internal.util.FutureUtil;
+import com.hazelcast.internal.util.IterationType;
+import com.hazelcast.internal.util.collection.Int2ObjectHashMap;
 
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
-import static com.hazelcast.util.FutureUtil.returnWithDeadline;
+import static com.hazelcast.internal.util.FutureUtil.returnWithDeadline;
 
 /**
- * An idempotent create operation which creates publisher side functionality.
- * And also responsible for running initial snapshot creation phase.
+ * An idempotent create operation which creates
+ * publisher side functionality. And also responsible
+ * for running initial snapshot creation phase.
  */
-public class PublisherCreateOperation extends MapOperation {
+public class PublisherCreateOperation extends AbstractNamedOperation {
 
     private static final long ACCUMULATOR_READ_OPERATION_TIMEOUT_MINUTES = 5;
 
@@ -76,7 +78,7 @@ public class PublisherCreateOperation extends MapOperation {
     }
 
     @Override
-    public void run() throws Exception {
+    public void run() {
         boolean populate = info.isPopulate();
         if (populate) {
             info.setPublishable(false);
@@ -135,7 +137,11 @@ public class PublisherCreateOperation extends MapOperation {
         PublisherContext publisherContext = getPublisherContext();
         MapPublisherRegistry mapPublisherRegistry = publisherContext.getMapPublisherRegistry();
         PublisherRegistry publisherRegistry = mapPublisherRegistry.getOrCreate(mapName);
+        // If InternalQueryCache#recreate is called, we forcibly
+        // remove and recreate registration matching with cacheId
+        publisherRegistry.remove(cacheId);
         PartitionAccumulatorRegistry partitionAccumulatorRegistry = publisherRegistry.getOrCreate(cacheId);
+
         partitionAccumulatorRegistry.setUuid(getCallerUuid());
     }
 
@@ -145,17 +151,26 @@ public class PublisherCreateOperation extends MapOperation {
     }
 
     private QueryCacheContext getContext() {
-        return mapServiceContext.getQueryCacheContext();
+        return getMapServiceContext().getQueryCacheContext();
     }
 
-    private QueryResult createSnapshot() throws Exception {
-        QueryResult queryResult = runInitialQuery();
-        replayEventsOverResultSet(queryResult);
-        return queryResult;
+    private MapServiceContext getMapServiceContext() {
+        MapService mapService = getService();
+        return mapService.getMapServiceContext();
+    }
+
+    private QueryResult createSnapshot() {
+        try {
+            QueryResult queryResult = runInitialQuery();
+            replayEventsOverResultSet(queryResult);
+            return queryResult;
+        } catch (Throwable t) {
+            throw ExceptionUtil.rethrow(t);
+        }
     }
 
     private QueryResult runInitialQuery() {
-        QueryEngine queryEngine = mapServiceContext.getQueryEngine(name);
+        QueryEngine queryEngine = getMapServiceContext().getQueryEngine(name);
         IterationType iterationType = info.isIncludeValue() ? IterationType.ENTRY : IterationType.KEY;
         Query query = Query.of().mapName(name).predicate(info.getPredicate()).iterationType(iterationType).build();
         return queryEngine.execute(query, Target.LOCAL_NODE);
@@ -173,7 +188,7 @@ public class PublisherCreateOperation extends MapOperation {
             if (eventsInOneAcc == null) {
                 continue;
             }
-            eventsInOneAcc = mapServiceContext.toObject(eventsInOneAcc);
+            eventsInOneAcc = getContext().toObject(eventsInOneAcc);
             List<QueryCacheEventData> eventDataList = (List<QueryCacheEventData>) eventsInOneAcc;
             for (QueryCacheEventData eventData : eventDataList) {
                 if (eventData.getDataKey() == null) {
@@ -193,13 +208,7 @@ public class PublisherCreateOperation extends MapOperation {
      */
     private void removePartitionResults(QueryResult queryResult, int partitionId) {
         List<QueryResultRow> rows = queryResult.getRows();
-        Iterator<QueryResultRow> iterator = rows.iterator();
-        while (iterator.hasNext()) {
-            QueryResultRow resultRow = iterator.next();
-            if (getPartitionId(resultRow) == partitionId) {
-                iterator.remove();
-            }
-        }
+        rows.removeIf(resultRow -> getPartitionId(resultRow) == partitionId);
     }
 
     private int getPartitionId(QueryResultRow resultRow) {
@@ -216,7 +225,7 @@ public class PublisherCreateOperation extends MapOperation {
         }
 
         Map<Integer, Future<Object>> futuresByPartitionId
-                = new Int2ObjectHashMap<Future<Object>>(partitionIds.size());
+                = new Int2ObjectHashMap<>(partitionIds.size());
         for (Integer partitionId : partitionIds) {
             futuresByPartitionId.put(partitionId,
                     readAndResetAccumulator(mapName, cacheId, partitionId));
@@ -240,7 +249,7 @@ public class PublisherCreateOperation extends MapOperation {
         // values of the entries may be different if keyData-s are equal
         // so this `if` checks the existence of keyData in the set. If it is there, just removing it and adding
         // `the new row with the same keyData but possibly with the new value`.
-        // TODO
+        // TODO can cause duplicate event receive on client side
         //if (queryResultSet.contains(row)) {
         //    queryResultSet.remove(row);
         //}
@@ -271,7 +280,7 @@ public class PublisherCreateOperation extends MapOperation {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MapDataSerializerHook.PUBLISHER_CREATE;
     }
 }

@@ -19,8 +19,11 @@ package com.hazelcast.test.starter.answer.test;
 import com.hazelcast.cache.HazelcastCacheManager;
 import com.hazelcast.cache.impl.CacheService;
 import com.hazelcast.cache.impl.HazelcastServerCacheManager;
-import com.hazelcast.cache.impl.HazelcastServerCachingProvider;
 import com.hazelcast.cache.impl.ICacheRecordStore;
+import com.hazelcast.cluster.Address;
+import com.hazelcast.cluster.impl.MemberImpl;
+import com.hazelcast.collection.IQueue;
+import com.hazelcast.collection.ISet;
 import com.hazelcast.collection.impl.collection.CollectionContainer;
 import com.hazelcast.collection.impl.collection.CollectionItem;
 import com.hazelcast.collection.impl.collection.CollectionService;
@@ -32,41 +35,38 @@ import com.hazelcast.collection.impl.set.SetService;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IMap;
-import com.hazelcast.core.IQueue;
-import com.hazelcast.core.ISet;
 import com.hazelcast.core.LifecycleService;
-import com.hazelcast.core.MultiMap;
-import com.hazelcast.instance.HazelcastInstanceImpl;
-import com.hazelcast.instance.MemberImpl;
-import com.hazelcast.instance.Node;
-import com.hazelcast.instance.NodeState;
+import com.hazelcast.instance.impl.HazelcastInstanceImpl;
+import com.hazelcast.instance.impl.Node;
+import com.hazelcast.instance.impl.NodeState;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.internal.partition.InternalPartition;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.partition.impl.PartitionServiceState;
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
+import com.hazelcast.map.IMap;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.PartitionContainer;
 import com.hazelcast.map.impl.recordstore.RecordStore;
+import com.hazelcast.multimap.MultiMap;
 import com.hazelcast.multimap.impl.MultiMapContainer;
 import com.hazelcast.multimap.impl.MultiMapPartitionContainer;
 import com.hazelcast.multimap.impl.MultiMapRecord;
 import com.hazelcast.multimap.impl.MultiMapService;
 import com.hazelcast.multimap.impl.MultiMapValue;
-import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.spi.impl.operationservice.InternalOperationService;
-import com.hazelcast.spi.partition.IPartition;
-import com.hazelcast.spi.properties.GroupProperty;
-import com.hazelcast.spi.serialization.SerializationService;
+import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
+import com.hazelcast.internal.partition.IPartition;
+import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.SlowTest;
 import com.hazelcast.test.starter.HazelcastStarter;
 import org.junit.After;
+import org.junit.Assume;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -86,6 +86,8 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.ConcurrentMap;
 
+import static com.hazelcast.cache.CacheTestSupport.createServerCachingProvider;
+import static com.hazelcast.internal.cluster.Versions.CURRENT_CLUSTER_VERSION;
 import static com.hazelcast.internal.cluster.Versions.PREVIOUS_CLUSTER_VERSION;
 import static com.hazelcast.internal.partition.TestPartitionUtils.getPartitionServiceState;
 import static java.lang.reflect.Proxy.isProxyClass;
@@ -103,6 +105,8 @@ public class AnswerTest extends HazelcastTestSupport {
 
     @Before
     public void setUp() {
+        Assume.assumeTrue("This test ensures access to internals works with a previous minor version. "
+                + "Test execution is skipped for new major versions.", CURRENT_CLUSTER_VERSION.getMinor() > 0);
         Config config = smallInstanceConfig()
                 .setInstanceName("test-name");
 
@@ -152,7 +156,7 @@ public class AnswerTest extends HazelcastTestSupport {
         SerializationService serializationService = nodeEngine.getSerializationService();
         assertNotNull("SerializationService should not be null", serializationService);
 
-        InternalOperationService operationService = nodeEngine.getOperationService();
+        OperationServiceImpl operationService = nodeEngine.getOperationService();
         assertNotNull("InternalOperationService should not be null", operationService);
 
         CollectionService collectionService = nodeEngine.getService(SetService.SERVICE_NAME);
@@ -184,7 +188,7 @@ public class AnswerTest extends HazelcastTestSupport {
     public void testPartitionService() {
         Node node = HazelcastStarter.getNode(hz);
         InternalPartitionService partitionService = node.getPartitionService();
-        int expectedPartitionCount = Integer.parseInt(hz.getConfig().getProperty(GroupProperty.PARTITION_COUNT.getName()));
+        int expectedPartitionCount = Integer.parseInt(hz.getConfig().getProperty(ClusterProperty.PARTITION_COUNT.getName()));
 
         IPartition[] partitions = partitionService.getPartitions();
         assertNotNull("partitions should not be null", partitions);
@@ -217,7 +221,8 @@ public class AnswerTest extends HazelcastTestSupport {
         Data data = serializationService.toData(original);
         assertNotNull("data should not be null", data);
         assertFalse("data should be no proxy class", isProxyClass(data.getClass()));
-        assertEquals("toObject() should return original value", original, serializationService.toObject(data));
+        assertEquals("toObject() should return original value", original,
+                ((Integer) serializationService.toObject(data)).intValue());
 
         SerializationService localSerializationService = new DefaultSerializationServiceBuilder().build();
         Data localData = localSerializationService.toData(original);
@@ -313,7 +318,7 @@ public class AnswerTest extends HazelcastTestSupport {
         Data keyData = serializationService.toData(key);
         int partitionId = hz.getPartitionService().getPartition(key).getPartitionId();
 
-        CachingProvider provider = HazelcastServerCachingProvider.createCachingProvider(hazelcastInstance);
+        CachingProvider provider = createServerCachingProvider(hazelcastInstance);
         HazelcastCacheManager cacheManager = (HazelcastServerCacheManager) provider.getCacheManager();
 
         Cache<String, Integer> cache = cacheManager.getCache("myCache");
@@ -422,7 +427,7 @@ public class AnswerTest extends HazelcastTestSupport {
         multiMap.put(key, "value2");
 
         MultiMapPartitionContainer partitionContainer = multiMapService.getPartitionContainer(partitionId);
-        MultiMapContainer multiMapContainer = partitionContainer.getMultiMapContainer("myMultiMap");
+        MultiMapContainer multiMapContainer = partitionContainer.getMultiMapContainer("myMultiMap", false);
 
         ConcurrentMap<Data, MultiMapValue> multiMapValues = multiMapContainer.getMultiMapValues();
         for (Map.Entry<Data, MultiMapValue> entry : multiMapValues.entrySet()) {

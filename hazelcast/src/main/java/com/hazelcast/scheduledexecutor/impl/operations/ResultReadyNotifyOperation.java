@@ -21,8 +21,8 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.scheduledexecutor.ScheduledTaskHandler;
 import com.hazelcast.scheduledexecutor.impl.ScheduledExecutorDataSerializerHook;
 import com.hazelcast.scheduledexecutor.impl.ScheduledExecutorWaitNotifyKey;
-import com.hazelcast.spi.Notifier;
-import com.hazelcast.spi.WaitNotifyKey;
+import com.hazelcast.spi.impl.operationservice.Notifier;
+import com.hazelcast.spi.impl.operationservice.WaitNotifyKey;
 
 import java.io.IOException;
 
@@ -57,7 +57,7 @@ public class ResultReadyNotifyOperation<V>
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ScheduledExecutorDataSerializerHook.PUBLISH_RESULT;
     }
 

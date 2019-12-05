@@ -15,6 +15,6 @@
  */
 
 /**
- * <p>This package contains the IQueue operations<br/>
+ * <p>This package contains the IQueue operations<br>
  */
 package com.hazelcast.collection.impl.queue.operations;

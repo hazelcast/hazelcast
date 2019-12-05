@@ -27,7 +27,7 @@ import com.hazelcast.scheduledexecutor.impl.ScheduledTaskDescriptor;
 import java.io.IOException;
 import java.util.Map;
 
-import static com.hazelcast.util.MapUtil.createHashMap;
+import static com.hazelcast.internal.util.MapUtil.createHashMap;
 
 public class ReplicationOperation
         extends AbstractSchedulerOperation {
@@ -95,7 +95,7 @@ public class ReplicationOperation
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ScheduledExecutorDataSerializerHook.REPLICATION;
     }
 

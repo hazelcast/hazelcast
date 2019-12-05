@@ -16,57 +16,68 @@
 
 package com.hazelcast.query.impl.predicates;
 
-import com.hazelcast.nio.serialization.BinaryInterface;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.internal.serialization.BinaryInterface;
 import com.hazelcast.query.Predicate;
-import com.hazelcast.query.impl.QueryContext;
-import com.hazelcast.query.impl.QueryableEntry;
+import com.hazelcast.query.impl.Comparables;
 
+import java.io.IOException;
 import java.util.Map;
-import java.util.Set;
+import java.util.Objects;
+
+import static com.hazelcast.query.impl.predicates.PredicateUtils.isNull;
 
 /**
  * Not Equal Predicate
  */
 @BinaryInterface
-public final class NotEqualPredicate extends EqualPredicate {
+public class NotEqualPredicate extends AbstractPredicate implements NegatablePredicate {
 
     private static final long serialVersionUID = 1L;
+
+    Comparable value;
 
     public NotEqualPredicate() {
     }
 
     public NotEqualPredicate(String attribute, Comparable value) {
-        super(attribute, value);
+        super(attribute);
+        this.value = value;
+    }
+
+    @SuppressWarnings("unchecked")
+    @Override
+    public boolean apply(Map.Entry mapEntry) {
+        return !super.apply(mapEntry);
+    }
+
+    protected boolean applyForSingleAttributeValue(Comparable attributeValue) {
+        // XXX: The code below performs equality check, instead of inequality.
+        // The result of this check is negated in NotEqualPredicate.apply method.
+        // This is required to make multi-value attribute inequality queries to
+        // work properly: if something has two names A and B, that something
+        // should be excluded if we are searching for things not named A, even
+        // if its another name is B.
+
+        if (attributeValue == null) {
+            return isNull(value);
+        }
+        value = convert(attributeValue, value);
+        attributeValue = (Comparable) convertEnumValue(attributeValue);
+        return Comparables.equal(attributeValue, value);
     }
 
     @Override
-    public boolean apply(Map.Entry entry) {
-        return !super.apply(entry);
+    public void writeData(ObjectDataOutput out) throws IOException {
+        super.writeData(out);
+        out.writeObject(value);
     }
 
     @Override
-    public boolean isIndexed(QueryContext queryContext) {
-        return false;
-    }
-
-    @Override
-    public Set<QueryableEntry> filter(QueryContext queryContext) {
-        return null;
-    }
-
-    @Override
-    public String toString() {
-        return attributeName + " != " + value;
-    }
-
-    @Override
-    public Predicate negate() {
-        return new EqualPredicate(attributeName, value);
-    }
-
-    @Override
-    public int getId() {
-        return PredicateDataSerializerHook.NOTEQUAL_PREDICATE;
+    public void readData(ObjectDataInput in) throws IOException {
+        super.readData(in);
+        value = in.readObject();
     }
 
     @Override
@@ -86,16 +97,34 @@ public final class NotEqualPredicate extends EqualPredicate {
             return false;
         }
 
-        return true;
+        return Objects.equals(value, that.value);
     }
 
     @Override
     public boolean canEqual(Object other) {
-        return (other instanceof NotEqualPredicate);
+        return other instanceof NotEqualPredicate;
     }
 
     @Override
     public int hashCode() {
-        return super.hashCode();
+        int result = super.hashCode();
+        result = 31 * result + (value != null ? value.hashCode() : 0);
+        return result;
     }
+
+    @Override
+    public String toString() {
+        return attributeName + " != " + value;
+    }
+
+    @Override
+    public Predicate negate() {
+        return new EqualPredicate(attributeName, value);
+    }
+
+    @Override
+    public int getClassId() {
+        return PredicateDataSerializerHook.NOTEQUAL_PREDICATE;
+    }
+
 }

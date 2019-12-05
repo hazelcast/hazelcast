@@ -16,12 +16,12 @@
 
 package com.hazelcast.spi.discovery.impl;
 
-import com.hazelcast.nio.Address;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.spi.discovery.AbstractDiscoveryStrategy;
 import com.hazelcast.spi.discovery.DiscoveryNode;
 import com.hazelcast.spi.discovery.SimpleDiscoveryNode;
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -37,7 +37,7 @@ import static com.hazelcast.test.HazelcastTestSupport.assertOpenEventually;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class SimplePredefinedDiscoveryServiceTest {
 
     @Test
@@ -68,12 +68,12 @@ public class SimplePredefinedDiscoveryServiceTest {
 
     @Test
     public void discoverLocalMetadata() {
-        final Map<String, Object> metadata = new HashMap<String, Object>();
-        metadata.put("a", 1);
-        metadata.put("b", 2);
+        final Map<String, String> metadata = new HashMap<>();
+        metadata.put("a", "1");
+        metadata.put("b", "2");
         final PredefinedDiscoveryService service = new PredefinedDiscoveryService(new ExtendableDiscoveryStrategy() {
             @Override
-            public Map<String, Object> discoverLocalMetadata() {
+            public Map<String, String> discoverLocalMetadata() {
                 return metadata;
             }
         });

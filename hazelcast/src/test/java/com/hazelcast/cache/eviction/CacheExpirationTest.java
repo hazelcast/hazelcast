@@ -20,11 +20,12 @@ import com.hazelcast.cache.CacheTestSupport;
 import com.hazelcast.cache.HazelcastExpiryPolicy;
 import com.hazelcast.cache.ICache;
 import com.hazelcast.config.CacheConfig;
+import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.test.HazelcastParametersRunnerFactory;
+import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.OverridePropertyRule;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.test.backup.BackupAccessor;
 import com.hazelcast.test.backup.TestBackupUtils;
@@ -51,6 +52,8 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static com.hazelcast.cache.impl.eviction.CacheClearExpiredRecordsTask.PROP_CLEANUP_OPERATION_COUNT;
+import static com.hazelcast.cache.impl.eviction.CacheClearExpiredRecordsTask.PROP_CLEANUP_PERCENTAGE;
 import static com.hazelcast.cache.impl.eviction.CacheClearExpiredRecordsTask.PROP_TASK_PERIOD_SECONDS;
 import static com.hazelcast.test.OverridePropertyRule.set;
 import static com.hazelcast.test.backup.TestBackupUtils.assertBackupSizeEventually;
@@ -59,12 +62,18 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(Parameterized.class)
-@Parameterized.UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Parameterized.UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class CacheExpirationTest extends CacheTestSupport {
 
     @Rule
     public final OverridePropertyRule overrideTaskSecondsRule = set(PROP_TASK_PERIOD_SECONDS, "1");
+
+    @Rule
+    public final OverridePropertyRule overrideCleanupPercentage = set(PROP_CLEANUP_PERCENTAGE, "100");
+
+    @Rule
+    public final OverridePropertyRule overrideCleanupOperationCount = set(PROP_CLEANUP_OPERATION_COUNT, "1000");
 
     @Parameterized.Parameters(name = "useSyncBackups:{0}")
     public static Collection<Object[]> parameters() {
@@ -77,10 +86,10 @@ public class CacheExpirationTest extends CacheTestSupport {
     @Parameterized.Parameter(0)
     public boolean useSyncBackups;
 
-    private final Duration FIVE_SECONDS = new Duration(TimeUnit.SECONDS, 5);
+    private final Duration THREE_SECONDS = new Duration(TimeUnit.SECONDS, 3);
 
     private static final int CLUSTER_SIZE = 3;
-    private static final int KEY_RANGE = 10000;
+    private static final int KEY_RANGE = 1000;
 
     private HazelcastInstance[] instances = new HazelcastInstance[3];
     private TestHazelcastInstanceFactory factory;
@@ -96,6 +105,11 @@ public class CacheExpirationTest extends CacheTestSupport {
         for (int i = 0; i < CLUSTER_SIZE; i++) {
             instances[i] = factory.newHazelcastInstance(getConfig());
         }
+    }
+
+    @Override
+    protected Config getConfig() {
+        return smallInstanceConfig();
     }
 
     @Override
@@ -245,7 +259,7 @@ public class CacheExpirationTest extends CacheTestSupport {
 
     @Test
     public void test_whenEntryIsAccessedBackupIsNotCleaned() {
-        CacheConfig<Integer, Integer> cacheConfig = createCacheConfig(new HazelcastExpiryPolicy(FIVE_SECONDS, Duration.ETERNAL, FIVE_SECONDS));
+        CacheConfig<Integer, Integer> cacheConfig = createCacheConfig(new HazelcastExpiryPolicy(THREE_SECONDS, Duration.ETERNAL, THREE_SECONDS));
         Cache<Integer, Integer> cache = createCache(cacheConfig);
 
         for (int i = 0; i < KEY_RANGE; i++) {
@@ -253,7 +267,7 @@ public class CacheExpirationTest extends CacheTestSupport {
             cache.get(i);
         }
 
-        sleepAtLeastSeconds(5);
+        sleepAtLeastSeconds(3);
 
         for (int i = 1; i < CLUSTER_SIZE; i++) {
             BackupAccessor backupAccessor = TestBackupUtils.newCacheAccessor(instances, cache.getName(), i);
@@ -265,7 +279,7 @@ public class CacheExpirationTest extends CacheTestSupport {
 
     @Test
     public void test_whenEntryIsUpdatedBackupIsNotCleaned() {
-        CacheConfig<Integer, Integer> cacheConfig = createCacheConfig(new HazelcastExpiryPolicy(FIVE_SECONDS, FIVE_SECONDS, Duration.ETERNAL));
+        CacheConfig<Integer, Integer> cacheConfig = createCacheConfig(new HazelcastExpiryPolicy(THREE_SECONDS, THREE_SECONDS, Duration.ETERNAL));
         Cache<Integer, Integer> cache = createCache(cacheConfig);
 
         for (int i = 0; i < KEY_RANGE; i++) {
@@ -274,7 +288,7 @@ public class CacheExpirationTest extends CacheTestSupport {
         }
 
         cache.put(1, 1);
-        sleepAtLeastSeconds(5);
+        sleepAtLeastSeconds(3);
 
         for (int i = 1; i < CLUSTER_SIZE; i++) {
             BackupAccessor backupAccessor = TestBackupUtils.newCacheAccessor(instances, cache.getName(), i);
@@ -286,10 +300,9 @@ public class CacheExpirationTest extends CacheTestSupport {
 
     @Test
     public void test_backupOperationAppliesDefaultExpiryPolicy() {
-        SimpleExpiryListener listener = new SimpleExpiryListener();
-        HazelcastExpiryPolicy defaultExpiryPolicy = new HazelcastExpiryPolicy(FIVE_SECONDS, FIVE_SECONDS, FIVE_SECONDS);
+        HazelcastExpiryPolicy defaultExpiryPolicy = new HazelcastExpiryPolicy(THREE_SECONDS, THREE_SECONDS, THREE_SECONDS);
 
-        CacheConfig cacheConfig = createCacheConfig(defaultExpiryPolicy, listener);
+        CacheConfig cacheConfig = createCacheConfig(defaultExpiryPolicy);
         ICache cache = createCache(cacheConfig);
 
         for (int i = 0; i < 100; i++) {
@@ -309,7 +322,7 @@ public class CacheExpirationTest extends CacheTestSupport {
         getNode(instances[2]).shutdown(true);
 
         // expiration time is over.
-        sleepAtLeastSeconds(5);
+        sleepAtLeastSeconds(3);
 
         // Check if there are unexpired entries after backup promotion
         int unExpiredCount = 0;
@@ -321,13 +334,12 @@ public class CacheExpirationTest extends CacheTestSupport {
         }
 
         assertEquals(0, unExpiredCount);
-        assertEqualsEventually(100, listener.expirationCount);
     }
 
     @Test
     public void test_whenEntryIsRemovedBackupIsCleaned() {
         SimpleExpiryListener listener = new SimpleExpiryListener();
-        int ttlSeconds = 10;
+        int ttlSeconds = 3;
         Duration duration = new Duration(TimeUnit.SECONDS, ttlSeconds);
         HazelcastExpiryPolicy expiryPolicy = new HazelcastExpiryPolicy(duration, duration, duration);
         CacheConfig<Integer, Integer> cacheConfig = createCacheConfig(expiryPolicy, listener);

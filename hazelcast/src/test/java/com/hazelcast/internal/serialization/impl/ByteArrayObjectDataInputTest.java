@@ -17,11 +17,11 @@
 package com.hazelcast.internal.serialization.impl;
 
 import com.hazelcast.internal.serialization.InternalSerializationService;
-import com.hazelcast.nio.Bits;
+import com.hazelcast.internal.nio.Bits;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Before;
@@ -33,6 +33,7 @@ import java.io.EOFException;
 import java.nio.ByteOrder;
 import java.util.Arrays;
 
+import static com.hazelcast.internal.nio.IOUtil.readData;
 import static java.nio.ByteOrder.BIG_ENDIAN;
 import static java.nio.ByteOrder.LITTLE_ENDIAN;
 import static org.junit.Assert.assertArrayEquals;
@@ -48,7 +49,7 @@ import static org.mockito.Mockito.verify;
  * ByteArrayObjectDataInput Tester.
  */
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class ByteArrayObjectDataInputTest extends HazelcastTestSupport {
 
     static final byte[] INIT_DATA = new byte[]{0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
@@ -609,11 +610,11 @@ public class ByteArrayObjectDataInputTest extends HazelcastTestSupport {
         in.init((byteOrder == BIG_ENDIAN ? bytesBE : bytesLE), 0);
 
         in.position(bytesLE.length - 4);
-        Data nullData = in.readData();
+        Data nullData = readData(in);
         in.position(0);
-        Data theZeroLenghtArray = in.readData();
+        Data theZeroLenghtArray = readData(in);
         in.position(4);
-        Data data = in.readData();
+        Data data = readData(in);
 
         assertNull(nullData);
         assertEquals(0, theZeroLenghtArray.getType());

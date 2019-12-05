@@ -17,7 +17,7 @@
 package com.hazelcast.cardinality.impl.operations;
 
 import com.hazelcast.cardinality.impl.CardinalityEstimatorDataSerializerHook;
-import com.hazelcast.spi.ReadonlyOperation;
+import com.hazelcast.spi.impl.operationservice.ReadonlyOperation;
 
 public class EstimateOperation
         extends AbstractCardinalityEstimatorOperation
@@ -33,7 +33,7 @@ public class EstimateOperation
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return CardinalityEstimatorDataSerializerHook.ESTIMATE;
     }
 

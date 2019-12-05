@@ -17,14 +17,14 @@
 package com.hazelcast.internal.partition.impl;
 
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.instance.Node;
+import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.partition.InternalPartition;
-import com.hazelcast.spi.ServiceNamespace;
+import com.hazelcast.internal.services.ServiceNamespace;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Before;
@@ -39,7 +39,7 @@ import static com.hazelcast.internal.partition.NonFragmentedServiceNamespace.INS
 import static org.junit.Assert.assertNull;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class PartitionReplicaManagerTest extends HazelcastTestSupport {
 
     private static final int PARTITION_ID = 23;

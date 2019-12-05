@@ -16,8 +16,9 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.internal.config.ExecutorConfigReadOnly;
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import nl.jqno.equalsverifier.EqualsVerifier;
 import nl.jqno.equalsverifier.Warning;
@@ -29,7 +30,7 @@ import static com.hazelcast.test.HazelcastTestSupport.assumeDifferentHashCodes;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class ExecutorConfigTest {
 
     @Test
@@ -58,7 +59,6 @@ public class ExecutorConfigTest {
     public void testEqualsAndHashCode() {
         assumeDifferentHashCodes();
         EqualsVerifier.forClass(ExecutorConfig.class)
-                .allFieldsShouldBeUsedExcept("readOnly")
                 .suppress(Warning.NULL_FIELDS, Warning.NONFINAL_FIELDS)
                 .withPrefabValues(ExecutorConfigReadOnly.class,
                         new ExecutorConfigReadOnly(new ExecutorConfig("red")),

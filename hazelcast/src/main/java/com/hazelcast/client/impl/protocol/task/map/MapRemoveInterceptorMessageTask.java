@@ -16,22 +16,22 @@
 
 package com.hazelcast.client.impl.protocol.task.map;
 
-import com.hazelcast.client.impl.RemoveInterceptorOperationSupplier;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.MapRemoveInterceptorCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractMultiTargetMessageTask;
-import com.hazelcast.core.Member;
-import com.hazelcast.instance.Node;
+import com.hazelcast.cluster.Member;
+import com.hazelcast.instance.impl.Node;
 import com.hazelcast.map.impl.MapService;
-import com.hazelcast.nio.Connection;
+import com.hazelcast.map.impl.operation.RemoveInterceptorOperationSupplier;
+import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MapPermission;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.util.function.Supplier;
+import com.hazelcast.spi.impl.operationservice.Operation;
 
 import java.security.Permission;
 import java.util.Collection;
 import java.util.Map;
+import java.util.function.Supplier;
 
 public class MapRemoveInterceptorMessageTask
         extends AbstractMultiTargetMessageTask<MapRemoveInterceptorCodec.RequestParameters> {
@@ -42,17 +42,23 @@ public class MapRemoveInterceptorMessageTask
 
     @Override
     protected Supplier<Operation> createOperationSupplier() {
-        return new RemoveInterceptorOperationSupplier(parameters.id, parameters.name);
+        return new RemoveInterceptorOperationSupplier(parameters.name, parameters.id);
     }
 
     @Override
     protected Object reduce(Map<Member, Object> map) throws Throwable {
+        boolean interceptorRemoved = false;
         for (Object result : map.values()) {
             if (result instanceof Throwable) {
                 throw (Throwable) result;
             }
+
+            if ((Boolean) result) {
+                interceptorRemoved = true;
+            }
+
         }
-        return true;
+        return interceptorRemoved;
     }
 
     @Override

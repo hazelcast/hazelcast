@@ -16,49 +16,171 @@
 
 package com.hazelcast.spi.impl.operationservice.impl;
 
+import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.spi.InternalCompletableFuture;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.OperationService;
-import com.hazelcast.test.ExpectedRuntimeException;
-import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.core.OperationTimeoutException;
+import com.hazelcast.internal.util.RootCauseMatcher;
+import com.hazelcast.spi.impl.InternalCompletableFuture;
+import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.spi.impl.operationservice.OperationService;
+import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
+import org.hamcrest.Matcher;
+import org.hamcrest.core.IsNull;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 
-@RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+import java.util.concurrent.CancellationException;
+import java.util.concurrent.CompletionException;
+import java.util.concurrent.ExecutionException;
+
+@RunWith(Parameterized.class)
+@Parameterized.UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class Invocation_ExceptionTest extends HazelcastTestSupport {
+
+    private static final int GET = 0;
+    private static final int JOIN = 1;
+    private static final int JOIN_INTERNAL = 2;
+
+    @Parameterized.Parameters(name = "{0} - {1}")
+    public static Object[] parameters() {
+        return new Object[] {
+                // params: synchronization type, exception thrown, class of expected exception, cause matcher
+
+                //// joinInternal()
+                // RuntimeException with a constructor accepting a Throwable cause
+                new Object[] {JOIN_INTERNAL, new IllegalStateException("message"), IllegalStateException.class,
+                              new RootCauseMatcher(IllegalStateException.class, "message")},
+                // RuntimeException with no constructor accepting a Throwable cause
+                new Object[] {JOIN_INTERNAL, new IllegalThreadStateException("message"), IllegalThreadStateException.class,
+                              new RootCauseMatcher(IllegalThreadStateException.class, "message")},
+                // OperationTimeoutException: OperationTimeoutException is only expected to be
+                // thrown with a local stack trace; this test is about verifying the exception remains unwrapped
+                new Object[] {JOIN_INTERNAL, new OperationTimeoutException("message"), OperationTimeoutException.class,
+                              IsNull.nullValue(Throwable.class)},
+                // CancellationException: CancellationException is only expected to be
+                // thrown with a local stack trace; this test is about verifying the exception remains unwrapped
+                new Object[] {JOIN_INTERNAL, new CancellationException("message"), CancellationException.class,
+                              IsNull.nullValue(Throwable.class)},
+                // Checked exception is wrapped in HazelcastException
+                new Object[] {JOIN_INTERNAL, new Exception("message"), HazelcastException.class,
+                              new RootCauseMatcher(Exception.class, "message")},
+                // Error subclass is wrapped in instance of same class
+                new Object[] {JOIN_INTERNAL, new ExceptionInInitializerError("message"), ExceptionInInitializerError.class,
+                              new RootCauseMatcher(ExceptionInInitializerError.class, "message")},
+
+                //// join()
+                // RuntimeException with a constructor accepting a Throwable cause
+                new Object[] {JOIN, new IllegalStateException("message"), CompletionException.class,
+                              new RootCauseMatcher(IllegalStateException.class, "message")},
+                // RuntimeException with no constructor accepting a Throwable cause
+                new Object[] {JOIN, new IllegalThreadStateException("message"), CompletionException.class,
+                              new RootCauseMatcher(IllegalThreadStateException.class, "message")},
+                // OperationTimeoutException is wrapped in CompletionException
+                new Object[] {JOIN, new OperationTimeoutException("message"), CompletionException.class,
+                              new RootCauseMatcher(OperationTimeoutException.class, "message")},
+                // CancellationException is expected to be thrown from join() unwrapped
+                new Object[] {JOIN, new CancellationException("message"), CancellationException.class,
+                              IsNull.nullValue(Throwable.class)},
+                // Checked exception is wrapped in CompletionException
+                new Object[] {JOIN, new Exception("message"), CompletionException.class,
+                              new RootCauseMatcher(Exception.class, "message")},
+                // Error subclass is wrapped in CompletionException
+                new Object[] {JOIN, new ExceptionInInitializerError("message"), CompletionException.class,
+                              new RootCauseMatcher(ExceptionInInitializerError.class, "message")},
+
+                //// get()
+                // RuntimeException with a constructor accepting a Throwable cause
+                new Object[] {GET, new IllegalStateException("message"), ExecutionException.class,
+                              new RootCauseMatcher(IllegalStateException.class, "message")},
+                // RuntimeException with no constructor accepting a Throwable cause
+                new Object[] {GET, new IllegalThreadStateException("message"), ExecutionException.class,
+                              new RootCauseMatcher(IllegalThreadStateException.class, "message")},
+                // OperationTimeoutException is wrapped in ExecutionException
+                new Object[] {GET, new OperationTimeoutException("message"), ExecutionException.class,
+                              new RootCauseMatcher(OperationTimeoutException.class, "message")},
+                // CancellationException is expected to be thrown from get() unwrapped
+                new Object[] {GET, new CancellationException("message"), CancellationException.class,
+                              IsNull.nullValue(Throwable.class)},
+                // Checked exception is wrapped in HazelcastException
+                new Object[] {GET, new Exception("message"), ExecutionException.class,
+                              new RootCauseMatcher(Exception.class, "message")},
+                // Error subclass is wrapped in ExecutionException
+                new Object[] {GET, new ExceptionInInitializerError("message"), ExecutionException.class,
+                              new RootCauseMatcher(ExceptionInInitializerError.class, "message")},
+
+        };
+    }
+
+    @Parameterized.Parameter
+    public int futureSyncMethod;
+
+    @Parameterized.Parameter(1)
+    public Throwable exception;
+
+    @Parameterized.Parameter(2)
+    public Class<? extends Throwable> expectedExceptionClass;
+
+    @Parameterized.Parameter(3)
+    public Matcher<? extends Throwable> exceptionCauseMatcher;
 
     @Rule
     public ExpectedException expected = ExpectedException.none();
 
-    /**
-     * When an operation indicates it returns no response, it can very well mean that it doesn't have a response yet e.g.
-     * an IExecutorService.submit operation since that will rely on the completion of the task; not the operation. But if
-     * an exception is thrown, then this is the response of that operation since it is very likely that a real response is
-     * going to follow.
-     */
     @Test
-    public void whenOperationReturnsNoResponse() throws Exception {
+    public void test() throws Exception {
         HazelcastInstance local = createHazelcastInstance();
         OperationService operationService = getOperationService(local);
-        InternalCompletableFuture f = operationService.invokeOnPartition(null, new OperationsReturnsNoResponse(), 0);
+        InternalCompletableFuture f = operationService.invokeOnPartition(null, new OperationsReturnsNoResponse(
+                exception), 0);
         assertCompletesEventually(f);
 
-        expected.expect(ExpectedRuntimeException.class);
-        f.join();
+        expected.expect(expectedExceptionClass);
+        expected.expectCause(exceptionCauseMatcher);
+        waitForFuture(f, futureSyncMethod);
+    }
+
+    private void waitForFuture(InternalCompletableFuture f, int synchronizationType) throws Exception {
+        switch (synchronizationType) {
+            case GET:
+                f.get();
+                break;
+            case JOIN:
+                f.join();
+                break;
+            case JOIN_INTERNAL:
+                f.joinInternal();
+                break;
+            default:
+                throw new AssertionError("Unknown synchronization type " + synchronizationType);
+        }
     }
 
     public class OperationsReturnsNoResponse extends Operation {
+
+        private final Throwable t;
+
+        public OperationsReturnsNoResponse(Throwable t) {
+            this.t = t;
+        }
+
         @Override
         public void run() throws Exception {
-            throw new ExpectedRuntimeException();
+            if (t instanceof Error) {
+                throw (Error) t;
+            } else if (t instanceof RuntimeException) {
+                throw (RuntimeException) t;
+            } else if (t instanceof Exception) {
+                throw (Exception) t;
+            }
+            throw new AssertionError("Unknown exception type " + t);
         }
 
         @Override

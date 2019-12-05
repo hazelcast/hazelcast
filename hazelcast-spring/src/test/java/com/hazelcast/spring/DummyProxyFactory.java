@@ -16,13 +16,14 @@
 
 package com.hazelcast.spring;
 
-import com.hazelcast.client.spi.ClientProxy;
-import com.hazelcast.client.spi.ClientProxyFactory;
+import com.hazelcast.client.impl.spi.ClientContext;
+import com.hazelcast.client.impl.spi.ClientProxy;
+import com.hazelcast.client.impl.spi.ClientProxyFactory;
 
 public class DummyProxyFactory implements ClientProxyFactory {
 
     @Override
-    public ClientProxy create(String id) {
+    public ClientProxy create(String id, ClientContext context) {
         throw new UnsupportedOperationException("not implemented yet");
     }
 }

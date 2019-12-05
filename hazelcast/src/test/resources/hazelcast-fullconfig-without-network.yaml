@@ -1,0 +1,807 @@
+# Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# A comprehensive example of Hazelcast configuration without network configuration.
+# This file is complete if included into either of the following:
+#   - hazelcast-fullconfig.xml
+#   - hazelcast-fullconfig-advanced-network-config.xml
+#
+# Hazelcast resolves configuration using the following approach:
+#
+# 1. First is checks to see if the ’hazelcast.config’ system property is set. If it is, then the value is used as the path.
+#
+#    The config option can be set by adding the following to the java command: -Dhazelcast.config=path_to_the_hazelcast.yaml.
+#
+#    The value can be a normal file path, but can also be a classpath reference if it is prefixed with ’classpath:’.
+#
+# 2. Otherwise it checks if there is a ’hazelcast.yaml’ in the working directory.
+#
+# 3. After that it checks if there is a ’hazelcast.yaml’ in the root of the classpath.
+#
+# 4. If a configuration cannot be found, Hazelcast will use the default hazelcast configuration
+#    ’hazelcast-default.yaml’, which is included in the the Hazelcast jar
+
+hazelcast:
+  cluster-name: my-cluster
+  license-key: HAZELCAST_ENTERPRISE_LICENSE_KEY
+  instance-name: dummy
+
+  management-center:
+    enabled: true
+    update-interval: 5
+    scripting-enabled: false
+    url: http://mywebserver:8080
+    mutual-auth:
+      enabled: true
+      factory-class-name: com.hazelcast.examples.MySSLContextFactory
+      properties:
+        foo: bar
+
+  properties:
+    foo: bar
+
+  wan-replication:
+    my-wan-cluster:
+      batch-publisher:
+        tokyoPublisherId:
+          cluster-name: tokyo
+          class-name: com.hazelcast.enterprise.wan.impl.replication.WanBatchReplication
+          queue-capacity: 1000
+          queue-full-behavior: THROW_EXCEPTION
+          initial-publisher-state: STOPPED
+          batch-size: 50
+          batch-max-delay-millis: 3000
+          response-timeout-millis: 5000
+          acknowledge-type: ACK_ON_RECEIPT
+          target-endpoints: "10.3.5.1:5701, 10.3.5.2:5701"
+          snapshot-enabled: true
+          wan-sync:
+            consistency-check-strategy: MERKLE_TREES
+
+        istanbul:
+          class-name: com.hazelcast.wan.custom.WanPublisher
+          queue-full-behavior: THROW_EXCEPTION_ONLY_IF_REPLICATION_ACTIVE
+          initial-publisher-state: STOPPED
+          queue-capacity: 12345
+          discovery-period-seconds: 5
+          max-target-endpoints: 2
+          aws:
+            enabled: false
+            connection-timeout-seconds: 10
+            access-key: sample-access-key
+            secret-key: sample-secret-key
+            iam-role: sample-role
+            region: sample-region
+            host-header: sample-header
+            security-group-name: sample-group
+            tag-key: sample-tag-key
+            tag-value: sample-tag-value
+          gcp:
+            enabled: false
+            zones: us-east1-b,us-east1-c
+          azure:
+            enabled: false
+            client-id: CLIENT_ID
+            client-secret: CLIENT_SECRET
+            tenant-id: TENANT_ID
+            subscription-id: SUB_ID
+            cluster-id: HZLCAST001
+            group-name: RESOURCE-GROUP-NAME
+          kubernetes:
+            enabled: false
+            namespace: MY-KUBERNETES-NAMESPACE
+            service-name: MY-SERVICE-NAME
+            service-label-name: MY-SERVICE-LABEL-NAME
+            service-label-value: MY-SERVICE-LABEL-VALUE
+          eureka:
+            enabled: false
+            self-registration: true
+            namespace: hazelcast
+          discovery-strategies:
+            node-filter:
+              class: DummyFilterClass
+            discovery-strategies:
+              - class: DummyDiscoveryStrategy1
+                enabled: true
+                properties:
+                  key-string: foo
+                  key-int: 123
+                  key-boolean: true
+          properties:
+            custom.prop.publisher: prop.publisher
+      consumer:
+        class-name: com.hazelcast.wan.custom.WanConsumer
+        properties:
+          custom.prop.consumer: prop.consumer
+        persist-wan-replicated-data: true
+
+  partition-group:
+    enabled: true
+    group-type: CUSTOM
+    member-group:
+      -
+        - 10.10.0.*
+        - 10.10.3.*
+        - 10.10.5.*
+      -
+        - 10.10.10.10-100
+        - 10.10.1.*
+        - 10.10.2.*
+
+  executor-service:
+    default:
+      statistics-enabled: false
+      pool-size: 16
+      queue-capacity: 1000
+      split-brain-protection-ref: splitBrainProtectionRuleWithThreeMembers
+
+  durable-executor-service:
+    dummy:
+      pool-size: 10
+      durability: 2
+      capacity: 10
+      split-brain-protection-ref: splitBrainProtectionRuleWithThreeMembers
+
+  scheduled-executor-service:
+    dummy:
+      pool-size: 10
+      durability: 2
+      capacity: 50
+      split-brain-protection-ref: splitBrainProtectionRuleWithThreeMembers
+      merge-policy:
+        batch-size: 10
+        class-name: PutIfAbsentMergePolicy
+
+  cardinality-estimator:
+    dummy:
+      backup-count: 1
+      async-backup-count: 0
+      split-brain-protection-ref: splitBrainProtectionRuleWithThreeNodes
+      merge-policy:
+        batch-size: 50
+        class-name: HyperLogLogMergePolicy
+
+  queue:
+    default:
+      statistics-enabled: false
+        # Maximum size of the queue. When a JVM's local queue size reaches the maximum,
+        # all put/offer operations will get blocked until the queue size
+        # of the JVM goes down below the maximum.
+        # Any integer between 0 and Integer.MAX_VALUE. 0 means
+        # Integer.MAX_VALUE. Default is 0.
+      max-size: 10
+
+      backup-count: 2
+      async-backup-count: 2
+      empty-queue-ttl: 12
+
+      item-listeners:
+         - include-value: true
+           class-name: com.hazelcast.examples.ItemListener
+      queue-store:
+         enabled: true
+         # class-name: DummyClass
+         factory-class-name: DummyFactoryClass
+         properties:
+           foo: bar
+
+      split-brain-protection-ref: splitBrainProtectionRuleWithThreeMembers
+      merge-policy:
+        batch-size: 100
+        class-name: PutIfAbsentMergePolicy
+
+  map:
+    default:
+      # Data type that will be used for storing recordMap.
+      # Possible values:
+      # BINARY (default): keys and values will be stored as binary data
+      # OBJECT : values will be stored in their object forms
+      # NATIVE : values will be stored in non-heap region of JVM
+      in-memory-format: OBJECT
+
+      # Metadata creation policy for this map. Hazelcast may process
+      # objects of supported types ahead of time to create additional
+      # metadata about them. This metadata then is used to make querying
+      # and indexing faster. Metadata creation may decrease put
+      # throughput. Valid values are:
+      # CREATE_ON_UPDATE (default): Objects of supported types are
+      # pre-processed when they are created and updated.
+      # OFF: No metadata is created.
+      metadata-policy: CREATE_ON_UPDATE
+
+      # Whether statistical information (hits, creation time, last access time etc.) should be gathered and stored.
+      # You can disable if you do not plan to use eviction on your entries.
+      statistics-enabled: false
+
+      cache-deserialized-values: ALWAYS
+
+      # Number of backups. If 1 is set as the backup-count for example,
+      # then all entries of the map will be copied to another JVM for
+      # fail-safety. 0 means no backup.
+      backup-count: 2
+
+      # Number of async backups. 0 means no backup.
+      async-backup-count: 2
+
+      # Maximum number of seconds for each item to live.
+      # Any integer between 0 and Integer.MAX_VALUE. 0 means infinite. Default is 0.
+      time-to-live-seconds: 2
+
+      # Maximum number of seconds for each item to stay idle (untouched).
+      # Any integer between 0 and Integer.MAX_VALUE. 0 means infinite. Default is 0.
+      max-idle-seconds: 2
+
+      eviction:
+        eviction-policy: LRU
+        max-size-policy: PER_NODE
+        size: 20
+
+      # While recovering from split-brain (network partitioning), data structure entries in the small cluster
+      # merge into the bigger cluster based on the policy set here. When an entry merges into the cluster,
+      # an entry with the same key (or value) might already exist in the cluster.
+      # The merge policy resolves these conflicts with different out-of-the-box or custom strategies.
+      # The out-of-the-box merge polices can be references by their simple class name.
+      # For custom merge policies you have to provide a fully qualified class name.
+      #
+      # The out-of-the-box policies are:
+      #  * DiscardMergePolicy: the entry from the smaller cluster will be discarded.
+      #  * HigherHitsMergePolicy: the entry with the higher number of hits wins.
+      #  * LatestAccessMergePolicy: the entry with the latest access wins.
+      #  * LatestUpdateMergePolicy: the entry with the latest update wins.
+      #  * PassThroughMergePolicy: the entry from the smaller cluster wins.
+      #  * PutIfAbsentMergePolicy: the entry from the smaller cluster wins if it doesn't exist in the cluster.
+      #  * The default policy is: PutIfAbsentMergePolicy
+      # Beware that `merge-policy` is not supported for NATIVE in-memory format.
+      merge-policy:
+        batch-size: 100
+        class-name: PutIfAbsentMergePolicy
+
+      read-backup-data: true
+
+      merkle-tree:
+        enabled: true
+        depth: 5
+
+      hot-restart:
+        fsync: true
+
+      event-journal:
+        enabled: true
+        capacity: 10
+        time-to-live-seconds: 10
+
+      # Used to store Map entries in a backing store. If configured entries will be loaded from this store on startup.
+      #
+      # On startup, may be loaded in two ways, controlled by the initial-mode attribute:
+      #     - LAZY. Asynchronously loads the entries. This is the default.
+      #     - EAGER. Synchronously loads the entries. Calls to getMap() are blocked while this happens.
+      map-store:
+        enabled: true
+        initial-mode: LAZY
+        class-name: com.hazelcast.examples.DummyStore
+        # factory-class-name: com.hazelcast.examples.DummyStoreFactory
+        write-delay-seconds: 0
+        write-batch-size: 1
+        write-coalescing: true
+        properties:
+          dummy.property: value
+
+      # Note that the Near Cache eviction configuration is different for NATIVE in-memory format.
+      # Proper eviction configuration example for NATIVE in-memory format :
+      #    `<eviction max-size-policy="USED_NATIVE_MEMORY_SIZE" eviction-policy="LFU" size="60"/>`
+      near-cache:
+        max-size: 10000
+        time-to-live-seconds: 0
+        max-idle-seconds: 0
+        eviction-policy: LFU
+        invalidate-on-change: true
+        cache-local-entries: false
+
+      wan-replication-ref:
+        my-wan-cluster:
+          merge-policy: hz.PASS_THROUGH
+          filters:
+            - com.example.WanTestFilter1
+            - com.example.WanTestFilter2
+          republishing-enabled: false
+
+      indexes:
+        - type: HASH
+          attributes:
+            - "name"
+        - attributes:
+          - "age"
+
+      attributes:
+        currency:
+          extractor-class-name: com.example.CurrencyExtractor
+        age:
+          extractor-class-name: com.example.AgeExtractor
+
+      entry-listeners:
+        - include-value: true
+          local: false
+          class-name: com.hazelcast.examples.EntryListener
+
+      partition-lost-listeners:
+        - com.hazelcast.examples.MapPartitionLostListener
+
+      query-caches:
+        query-cache-name:
+          predicate:
+            class-name: com.hazelcast.examples.ExamplePredicate
+          entry-listeners:
+            - include-value: true
+              local: false
+              class-name: com.hazelcast.examples.EntryListener
+          include-value: true
+          batch-size: 1
+          buffer-size: 16
+          delay-seconds: 0
+          in-memory-format: BINARY
+          coalesce: false
+          populate: true
+          eviction:
+            eviction-policy: LRU
+            max-size-policy: ENTRY_COUNT
+            size: 10000
+          indexes:
+            - type: HASH
+              attributes:
+                - "name"
+            - attributes:
+              - "age"
+
+  multimap:
+    default:
+      backup-count: 1
+      async-backup-count: 0
+      statistics-enabled: false
+      binary: false
+      value-collection-type: SET
+      entry-listeners:
+        - include-value: true
+          local: true
+          class-name: com.hazelcast.examples.EntryListener
+      split-brain-protection-ref: splitBrainProtectionRuleWithThreeMembers
+      merge-policy:
+        batch-size: 100
+        class-name: PutIfAbsentMergePolicy
+
+  replicatedmap:
+    dummy:
+      in-memory-format: BINARY
+      async-fillup: false
+      statistics-enabled: false
+      split-brain-protection-ref: splitBrainProtectionRuleWithThreeMembers
+      merge-policy:
+        batch-size: 100
+        class-name: PutIfAbsentMergePolicy
+      entry-listeners:
+        - include-value: false
+          local: true
+          class-name: DummyListener
+
+  list:
+    default:
+      statistics-enabled: false
+      max-size: 5
+      backup-count: 2
+      async-backup-count: 2
+      item-listeners:
+        - include-value: true
+          class-name: com.hazelcast.examples.ItemListener
+      split-brain-protection-ref: splitBrainProtectionRuleWithThreeMembers
+      merge-policy:
+        batch-size: 100
+        class-name: PutIfAbsentMergePolicy
+
+  set:
+    default:
+      statistics-enabled: false
+      max-size: 0
+      backup-count: 1
+      async-backup-count: 0
+      item-listeners:
+        - include-value: true
+          class-name: com.hazelcast.examples.ItemListener
+      split-brain-protection-ref: splitBrainProtectionRuleWithThreeMembers
+      merge-policy:
+        batch-size: 100
+        class-name: PutIfAbsentMergePolicy
+
+  topic:
+    default:
+      statistics-enabled: false
+      global-ordering-enabled: true
+      message-listeners:
+        - com.hazelcast.examples.MessageListener
+      multi-threading-enabled: false
+
+  reliable-topic:
+    default:
+      statistics-enabled: true
+      topic-overload-policy: ERROR
+      read-batch-size: 10
+      message-listeners:
+        - com.hazelcast.examples.MessageListener
+
+  ringbuffer:
+    default:
+      capacity: 25311
+      backup-count: 2
+      async-backup-count: 1
+      time-to-live-seconds: 29
+      in-memory-format: OBJECT
+      split-brain-protection-ref: splitBrainProtectionRuleWithThreeMembers
+      merge-policy:
+        batch-size: 100
+        class-name: PutIfAbsentMergePolicy
+
+  cache:
+    default:
+      key-type:
+        class-name: java.lang.Object
+      value-type:
+        class-name: java.lang.String
+      statistics-enabled: false
+      management-enabled: false
+
+      read-through: true
+      write-through: true
+      cache-loader-factory:
+        class-name: com.example.cache.MyCacheLoaderFactory
+      cache-writer-factory:
+        class-name: com.example.cache.MyCacheWriterFactory
+      expiry-policy-factory:
+        class-name: com.example.cache.MyExpirePolicyFactory
+        timed-expiry-policy-factory:
+          expiry-policy-type: ETERNAL
+          duration-amount: 123
+          time-unit: MICROSECONDS
+
+      cache-entry-listeners:
+        - old-value-required: true
+          synchronous: true
+          cache-entry-listener-factory:
+            class-name: com.example.cache.MyEntryListenerFactory
+          cache-entry-event-filter-factory:
+            class-name: com.example.cache.MyEntryEventFilterFactory
+        - cache-entry-listener-factory:
+            class-name: com.example.cache.MyEntryListenerFactory2
+          cache-entry-event-filter-factory:
+            class-name: com.example.cache.MyEntryEventFilterFactory2
+      in-memory-format: OBJECT
+      backup-count: 2
+      async-backup-count: 2
+      eviction:
+        comparator-class-name: DummyClass
+        eviction-policy: LRU
+        max-size-policy: ENTRY_COUNT
+        size: 50
+      wan-replication-ref:
+        name: my-wan-cluster
+        merge-policy: hz.PASS_THROUGH
+        filters:
+          - com.example.WanTestFilter1
+          - com.example.WanTestFilter2
+      split-brain-protection-ref: DummySplitBrainProtection
+      merge-policy:
+        batch-size: 100
+        class-name: DummyMergePolicy
+      partition-lost-listeners:
+        - DummyListener
+      hot-restart:
+        fsync: true
+      event-journal:
+        enabled: true
+        capacity: 100
+        time-to-live-seconds: 100
+
+  flake-id-generator:
+    default:
+      prefetch-count: 100
+      prefetch-validity-millis: 600000
+      id-offset: 0
+      node-id-offset: 0
+      statistics-enabled: false
+
+  listeners:
+    - com.hazelcast.examples.MembershipListener
+    - com.hazelcast.examples.InstanceListener
+    - com.hazelcast.examples.MigrationListener
+    - com.hazelcast.examples.PartitionLostListener
+
+  serialization:
+    portable-version: 0
+    use-native-byte-order: true
+    byte-order: LITTLE_ENDIAN
+    enable-compression: true
+    enable-shared-object: true
+    allow-unsafe: true
+    data-serializable-factories:
+      - factory-id: 1
+        class-name: com.hazelcast.examples.DataSerializableFactory
+    portable-factories:
+      - factory-id: 1
+        class-name: com.hazelcast.examples.PortableFactory
+    global-serializer:
+       override-java-serialization: true
+       class-name: com.hazelcast.examples.GlobalSerializerFactory
+    serializers:
+       - type-class: com.hazelcast.examples.DummyType
+         class-name: com.hazelcast.examples.SerializerFactory
+    check-class-def-errors: false
+    java-serialization-filter:
+      defaults-disabled: true
+      blacklist:
+        class:
+          - com.acme.app.BeanComparator
+      whitelist:
+        class:
+          - java.lang.String
+          - example.Foo
+        package:
+          - com.acme.app
+          - com.acme.app.subpkg
+        prefix:
+          - java
+          - "["
+          - com.
+
+  native-memory:
+    allocator-type: STANDARD
+    enabled: true
+    size:
+      unit: MEGABYTES
+      value: 256
+    min-block-size: 123
+    page-size: 123
+    metadata-space-percentage: 12.5
+
+  security:
+    enabled: false
+    realms:
+      - name: mr
+        authentication:
+          jaas:
+            - class-name: com.hazelcast.examples.MyRequiredLoginModule
+              usage: REQUIRED
+              properties:
+                property: value
+        identity:
+          credentials-factory:
+            class-name: com.hazelcast.examples.MyCredentialsFactory
+            properties:
+              property: value
+      - name: cr
+        authentication:
+          jaas:
+            - class-name: com.hazelcast.examples.MyOptionalLoginModule
+              usage: OPTIONAL
+              properties:
+                property: value
+            - class-name: com.hazelcast.examples.MyRequiredLoginModule
+              usage: REQUIRED
+              properties:
+                property: value
+    member-authentication:
+      realm: mr
+    client-authentication:
+      realm: cr
+    client-permission-policy:
+      class-name: com.hazelcast.examples.MyPermissionPolicy
+      properties:
+        property: value
+    client-permissions:
+      on-join-operation: SEND
+      all:
+        principal: admin
+        endpoints:
+          - 127.0.0.1
+      config:
+        principal: deployer
+      countdown-latch:
+        - name: "*"
+          actions:
+            - all
+      set:
+        - name: "*"
+          principal: "*"
+          actions:
+            - all
+      cardinality-estimator:
+        - name: "*"
+          principal: "*"
+          actions:
+            - all
+      scheduled-executor:
+        - name: "*"
+          principal: "*"
+          actions:
+            - all
+      atomic-long:
+        - name: "*"
+          principal: "*"
+          actions:
+            - all
+      atomic-reference:
+        - name: "*"
+          principal: "*"
+          actions:
+            - all
+      transaction:
+        principal: deployer
+      pn-counter:
+        - name: "*"
+          principal: "*"
+          actions:
+            - all
+      semaphore:
+        - name: "*"
+          principal: "*"
+          actions:
+            - all
+      user-code-deployment:
+        - name: "*"
+          principal: "*"
+          actions:
+            - all
+      durable-executor-service:
+        - name: "*"
+          principal: "*"
+          actions:
+            - all
+      map:
+        - name: custom
+          principal: dev
+          endpoints:
+            - 127.0.0.1
+          actions:
+            - create
+            - destroy
+            - put
+            - read
+      flake-id-generator:
+        - name: "*"
+          principal: "*"
+          actions:
+            - all
+      topic:
+        - name: "*"
+          principal: "*"
+          actions:
+            - all
+      multimap:
+        - name: "*"
+          principal: "*"
+          actions:
+            - all
+      cache:
+        - name: "*"
+          principal: "*"
+          actions:
+            - all
+      lock:
+        - name: "*"
+          principal: "*"
+          actions:
+            - all
+      queue:
+        - name: "*"
+          actions:
+            - all
+      list:
+        - name: "*"
+          principal: "*"
+          actions:
+            - all
+      executor-service:
+        - name: "*"
+          principal: "*"
+          actions:
+            - all
+    client-block-unmapped-actions: true
+
+  member-attributes:
+    attribute.string:
+      value: hazelcast
+
+  crdt-replication:
+    replication-period-millis: 1000
+    max-concurrent-replication-targets: 1
+
+  pn-counter:
+    pn-counter-1:
+      replica-count: 100
+      split-brain-protection-ref: splitBrainProtectionRuleWithThreeMembers
+      statistics-enabled: false
+
+  split-brain-protection:
+    splitBrainProtectionRuleWithThreeMembers:
+      enabled: true
+      minimum-cluster-size: 3
+      protect-on: READ_WRITE
+
+    member-count-split-brain-protection:
+      enabled: true
+      protect-on: READ_WRITE
+      minimum-cluster-size: 3
+      member-count-split-brain-protection: {}
+
+    probabilistic-split-brain-protection:
+      enabled: true
+      minimum-cluster-size: 3
+      protect-on: READ_WRITE
+      probabilistic-split-brain-protection:
+        acceptable-heartbeat-pause-millis: 100
+        max-sample-size: 20
+        suspicion-threshold: 10
+
+    recently-active-split-brain-protection:
+      enabled: true
+      minimum-cluster-size: 4
+      protect-on: READ_WRITE
+      recently-active-split-brain-protection:
+        heartbeat-tolerance-millis: 60000
+
+  hot-restart-persistence:
+    enabled: false
+    backup-dir: backup-dir
+    base-dir: base-dir
+    cluster-data-recovery-policy: FULL_RECOVERY_ONLY
+    data-load-timeout-seconds: 42
+    parallelism: 3
+    validation-timeout-seconds: 10
+
+  lite-member:
+    enabled: true
+
+  cp-subsystem:
+    cp-member-count: 10
+    group-size: 3
+    session-time-to-live-seconds: 60
+    session-heartbeat-interval-seconds: 5
+    missing-cp-member-auto-removal-seconds: 120
+    fail-on-indeterminate-operation-state: false
+    persistence-enabled: false
+    base-dir: data
+    data-load-timeout-seconds: 30
+    raft-algorithm:
+      leader-election-timeout-in-millis: 2000
+      leader-heartbeat-period-in-millis: 5000
+      max-missed-leader-heartbeat-count: 5
+      append-request-max-entry-count: 50
+      commit-index-advance-count-to-snapshot: 1000
+      uncommitted-entry-count-to-reject-new-appends: 100
+      append-request-backoff-timeout-in-millis: 100
+    semaphores:
+      sem1:
+        jdk-compatible: true
+      sem2:
+        jdk-compatible: false
+    locks:
+      lock1:
+        lock-acquire-limit: 1
+      lock2:
+        lock-acquire-limit: 2
+
+  metrics:
+    enabled: false
+    management-center:
+      enabled: false
+      retention-seconds: 42
+    jmx:
+      enabled: false
+    collection-frequency-seconds: 24

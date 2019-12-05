@@ -16,26 +16,34 @@
 
 package com.hazelcast.map.impl.operation;
 
+import com.hazelcast.config.InMemoryFormat;
+import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.ManagedContext;
-import com.hazelcast.map.EntryBackupProcessor;
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.MapEntries;
-import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.Predicate;
-import com.hazelcast.spi.BackupAwareOperation;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.PartitionAwareOperation;
-import com.hazelcast.spi.impl.MutatingOperation;
-import com.hazelcast.spi.serialization.SerializationService;
-import com.hazelcast.util.Clock;
+import com.hazelcast.query.impl.Indexes;
+import com.hazelcast.query.impl.QueryableEntry;
+import com.hazelcast.query.impl.predicates.QueryOptimizer;
+import com.hazelcast.spi.impl.operationservice.BackupAwareOperation;
+import com.hazelcast.spi.impl.operationservice.MutatingOperation;
+import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.spi.impl.operationservice.PartitionAwareOperation;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
-import java.util.Iterator;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.Queue;
+import java.util.Set;
 
+import static com.hazelcast.internal.util.CollectionUtil.isEmpty;
+import static com.hazelcast.internal.util.ToHeapDataConverter.toHeapData;
 import static com.hazelcast.map.impl.operation.EntryOperator.operator;
 
 /**
@@ -49,6 +57,8 @@ public class PartitionWideEntryOperation extends MapOperation
     protected EntryProcessor entryProcessor;
 
     protected transient EntryOperator operator;
+    protected transient Set<Data> keysFromIndex;
+    protected transient QueryOptimizer queryOptimizer;
 
     public PartitionWideEntryOperation() {
     }
@@ -65,6 +75,9 @@ public class PartitionWideEntryOperation extends MapOperation
         SerializationService serializationService = getNodeEngine().getSerializationService();
         ManagedContext managedContext = serializationService.getManagedContext();
         managedContext.initialize(entryProcessor);
+
+        keysFromIndex = null;
+        queryOptimizer = mapServiceContext.getQueryOptimizer();
     }
 
     protected Predicate getPredicate() {
@@ -72,20 +85,109 @@ public class PartitionWideEntryOperation extends MapOperation
     }
 
     @Override
-    public void run() {
+    protected void runInternal() {
+        if (mapContainer.getMapConfig().getInMemoryFormat() == InMemoryFormat.NATIVE) {
+            runForNative();
+        } else {
+            runWithPartitionScan();
+        }
+    }
+
+    private void runForNative() {
+        if (runWithIndex()) {
+            return;
+        }
+        runWithPartitionScanForNative();
+    }
+
+    /**
+     * @return {@code true} if index has been used and the EP
+     * has been executed on its keys, {@code false} otherwise
+     */
+    private boolean runWithIndex() {
+        // here we try to query the partitioned-index
+        Predicate predicate = getPredicate();
+        if (predicate == null) {
+            return false;
+        }
+
+        // we use the partitioned-index to operate on the selected keys only
+        Indexes indexes = mapContainer.getIndexes(getPartitionId());
+        Set<QueryableEntry> entries = indexes.query(queryOptimizer.optimize(predicate, indexes));
+        if (entries == null) {
+            return false;
+        }
+
+        responses = new MapEntries(entries.size());
+
+        // when NATIVE we can pass null as predicate since it's all
+        // happening on partition thread so no data-changes may occur
+        operator = operator(this, entryProcessor, null);
+        keysFromIndex = new HashSet<>(entries.size());
+        for (QueryableEntry entry : entries) {
+            keysFromIndex.add(entry.getKeyData());
+            Data response = operator.operateOnKey(entry.getKeyData()).doPostOperateOps().getResult();
+            if (response != null) {
+                responses.add(entry.getKeyData(), response);
+            }
+        }
+
+        return true;
+    }
+
+    private void runWithPartitionScan() {
         responses = new MapEntries(recordStore.size());
         operator = operator(this, entryProcessor, getPredicate());
-        Iterator<Record> iterator = recordStore.iterator(Clock.currentTimeMillis(), false);
-        while (iterator.hasNext()) {
-            Record record = iterator.next();
-            Data dataKey = record.getKey();
-
+        recordStore.forEach((dataKey, record) -> {
             Data response = operator.operateOnKey(dataKey).doPostOperateOps().getResult();
             if (response != null) {
                 responses.add(dataKey, response);
             }
+        }, false);
+    }
+
+    // TODO unify this method with `runWithPartitionScan`
+    private void runWithPartitionScanForNative() {
+        // if we reach here, it means we didn't manage to leverage index and we fall-back to full-partition scan
+        int totalEntryCount = recordStore.size();
+        responses = new MapEntries(totalEntryCount);
+        Queue<Object> outComes = new LinkedList<>();
+        operator = operator(this, entryProcessor, getPredicate());
+
+        recordStore.forEach((key, record) -> {
+            Data dataKey = toHeapData(key);
+
+            Data response = operator.operateOnKey(dataKey).getResult();
+            if (response != null) {
+                responses.add(dataKey, response);
+            }
+
+            EntryEventType eventType = operator.getEventType();
+            if (eventType != null) {
+                outComes.add(dataKey);
+                outComes.add(operator.getOldValue());
+                outComes.add(operator.getNewValue());
+                outComes.add(eventType);
+            }
+        }, false);
+
+        if (!isEmpty(outComes)) {
+            // This iteration is needed to work around an issue related with binary elastic hash map (BEHM).
+            // Removal via map#remove() while iterating on BEHM distorts it and we can see some entries remain
+            // in the map even we know that iteration is finished. Because in this case, iteration can miss some entries.
+            do {
+                Data dataKey = (Data) outComes.poll();
+                Object oldValue = outComes.poll();
+                Object newValue = outComes.poll();
+                EntryEventType eventType = (EntryEventType) outComes.poll();
+
+                operator.init(dataKey, oldValue, newValue, null, eventType)
+                        .doPostOperateOps();
+
+            } while (!outComes.isEmpty());
         }
     }
+
 
     @Override
     public Object getResponse() {
@@ -108,15 +210,22 @@ public class PartitionWideEntryOperation extends MapOperation
     }
 
     @Override
+    @SuppressFBWarnings(
+            value = {"RCN_REDUNDANT_NULLCHECK_OF_NONNULL_VALUE"},
+            justification = "backupProcessor can indeed be null so check is not redundant")
     public Operation getBackupOperation() {
-        EntryBackupProcessor backupProcessor = entryProcessor.getBackupProcessor();
-        PartitionWideEntryBackupOperation backupOperation = null;
-        if (backupProcessor != null) {
-            backupOperation = new PartitionWideEntryBackupOperation(name, backupProcessor);
+        EntryProcessor backupProcessor = entryProcessor.getBackupProcessor();
+        if (backupProcessor == null) {
+            return null;
         }
-        return backupOperation;
+        if (keysFromIndex != null) {
+            // if we used index we leverage it for the backup too
+            return new MultipleEntryBackupOperation(name, keysFromIndex, backupProcessor);
+        } else {
+            // if no index used we will do a full partition-scan on backup too
+            return new PartitionWideEntryBackupOperation(name, backupProcessor);
+        }
     }
-
 
     @Override
     protected void toString(StringBuilder sb) {
@@ -138,7 +247,7 @@ public class PartitionWideEntryOperation extends MapOperation
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MapDataSerializerHook.PARTITION_WIDE_ENTRY;
     }
 

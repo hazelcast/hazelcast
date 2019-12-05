@@ -16,12 +16,12 @@
 
 package com.hazelcast.internal.cluster.fd;
 
-import com.hazelcast.core.Member;
+import com.hazelcast.cluster.Member;
 import com.hazelcast.instance.BuildInfoProvider;
-import com.hazelcast.instance.MemberImpl;
-import com.hazelcast.nio.Address;
+import com.hazelcast.cluster.impl.MemberImpl;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.version.MemberVersion;
 import org.junit.Before;
@@ -32,13 +32,13 @@ import org.junit.runner.RunWith;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 
-import static com.hazelcast.util.UuidUtil.newUnsecureUuidString;
+import static com.hazelcast.internal.util.UuidUtil.newUnsecureUUID;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class PingFailureDetectorTest {
 
     private PingFailureDetector failureDetector;
@@ -121,7 +121,10 @@ public class PingFailureDetectorTest {
 
     private static Member newMember(int port) {
         MemberVersion memberVersion = MemberVersion.of(BuildInfoProvider.getBuildInfo().getVersion());
-        return new MemberImpl(newAddress(port), memberVersion, false, newUnsecureUuidString());
+        return new MemberImpl.Builder(newAddress(port))
+                .version(memberVersion)
+                .uuid(newUnsecureUUID())
+                .build();
     }
 
     private static Address newAddress(int port) {

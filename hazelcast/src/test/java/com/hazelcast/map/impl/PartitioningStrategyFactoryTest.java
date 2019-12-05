@@ -20,16 +20,15 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.PartitioningStrategyConfig;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IMap;
-import com.hazelcast.core.PartitioningStrategy;
+import com.hazelcast.map.IMap;
 import com.hazelcast.map.impl.proxy.MapProxyImpl;
+import com.hazelcast.partition.PartitioningStrategy;
 import com.hazelcast.partition.strategy.StringPartitioningStrategy;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.util.RootCauseMatcher;
+import com.hazelcast.internal.util.RootCauseMatcher;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -47,7 +46,7 @@ import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class PartitioningStrategyFactoryTest extends HazelcastTestSupport {
 
     @Rule
@@ -68,7 +67,7 @@ public class PartitioningStrategyFactoryTest extends HazelcastTestSupport {
         MapProxyImpl mapProxy = (MapProxyImpl) map;
         MapService mapService = (MapService) mapProxy.getService();
         MapServiceContextImpl mapServiceContext = (MapServiceContextImpl) mapService.getMapServiceContext();
-        partitioningStrategyFactory = mapServiceContext.partitioningStrategyFactory;
+        partitioningStrategyFactory = mapServiceContext.getPartitioningStrategyFactory();
     }
 
     @Test
@@ -137,13 +136,8 @@ public class PartitioningStrategyFactoryTest extends HazelcastTestSupport {
 
         map.destroy();
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run()
-                    throws Exception {
-                assertFalse("Key should have been removed from cache", partitioningStrategyFactory.cache.containsKey(mapName));
-            }
-        }, 20);
+        assertTrueEventually(() -> assertFalse("Key should have been removed from cache",
+                partitioningStrategyFactory.cache.containsKey(mapName)), 20);
     }
 
     @Override

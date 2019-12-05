@@ -16,16 +16,16 @@
 
 package com.hazelcast.query.impl;
 
+import com.hazelcast.config.IndexType;
+import com.hazelcast.core.HazelcastJsonValue;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
-import com.hazelcast.json.HazelcastJson;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.Predicates;
-import com.hazelcast.query.SqlPredicate;
 import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.query.impl.predicates.AndPredicate;
 import com.hazelcast.query.impl.predicates.EqualPredicate;
-import com.hazelcast.test.HazelcastParametersRunnerFactory;
+import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -41,7 +41,7 @@ import java.util.Collection;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(Parameterized.class)
-@UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
+@UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
 @Category(QuickTest.class)
 public class IndexJsonTest {
 
@@ -62,15 +62,16 @@ public class IndexJsonTest {
     @Test
     public void testJsonIndex() {
         InternalSerializationService ss = new DefaultSerializationServiceBuilder().build();
-        Indexes is = new Indexes(ss, copyBehavior, Extractors.newBuilder(ss).build(), new DefaultIndexProvider(), true, true, true);
-        Index numberIndex = is.addOrGetIndex("age", false);
-        Index boolIndex = is.addOrGetIndex("active", false);
-        Index stringIndex = is.addOrGetIndex("name", false);
+        Indexes is = Indexes.newBuilder(ss, copyBehavior).extractors(Extractors.newBuilder(ss).build()).indexProvider(
+                new DefaultIndexProvider()).usesCachedQueryableEntries(true).statsEnabled(true).global(true).build();
+        Index numberIndex = is.addOrGetIndex(IndexUtils.createTestIndexConfig(IndexType.HASH, "age"), null);
+        Index boolIndex = is.addOrGetIndex(IndexUtils.createTestIndexConfig(IndexType.HASH, "active"), null);
+        Index stringIndex = is.addOrGetIndex(IndexUtils.createTestIndexConfig(IndexType.HASH, "name"), null);
 
         for (int i = 0; i < 1001; i++) {
             Data key = ss.toData(i);
             String jsonString = "{\"age\" : " + i + "  , \"name\" : \"sancar\" , \"active\" :  " + (i % 2 == 0) + " } ";
-            is.saveEntryIndex(new QueryEntry(ss, key, HazelcastJson.fromString(jsonString), Extractors.newBuilder(ss).build()), null, Index.OperationSource.USER);
+            is.putEntry(new QueryEntry(ss, key, new HazelcastJsonValue(jsonString), Extractors.newBuilder(ss).build()), null, Index.OperationSource.USER);
         }
 
         assertEquals(1, numberIndex.getRecords(10).size());
@@ -79,7 +80,7 @@ public class IndexJsonTest {
         assertEquals(501, boolIndex.getRecords(true).size());
         assertEquals(501, is.query(new AndPredicate(new EqualPredicate("name", "sancar"), new EqualPredicate("active", "true"))).size());
         assertEquals(300, is.query(Predicates.and(Predicates.greaterThan("age", 400), Predicates.equal("active", true))).size());
-        assertEquals(1001, is.query(new SqlPredicate("name == sancar")).size());
+        assertEquals(1001, is.query(Predicates.sql("name == sancar")).size());
     }
 
 }

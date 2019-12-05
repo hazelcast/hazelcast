@@ -16,7 +16,7 @@
 
 package com.hazelcast.map.impl.operation;
 
-import com.hazelcast.core.IMap;
+import com.hazelcast.map.IMap;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.mapstore.MapDataStore;
 import com.hazelcast.map.impl.mapstore.writebehind.WriteBehindQueue;
@@ -24,10 +24,10 @@ import com.hazelcast.map.impl.mapstore.writebehind.WriteBehindStore;
 import com.hazelcast.map.impl.mapstore.writebehind.entry.DelayedEntry;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.spi.BlockingOperation;
-import com.hazelcast.spi.PartitionAwareOperation;
-import com.hazelcast.spi.ReadonlyOperation;
-import com.hazelcast.spi.WaitNotifyKey;
+import com.hazelcast.spi.impl.operationservice.BlockingOperation;
+import com.hazelcast.spi.impl.operationservice.PartitionAwareOperation;
+import com.hazelcast.spi.impl.operationservice.ReadonlyOperation;
+import com.hazelcast.spi.impl.operationservice.WaitNotifyKey;
 
 import java.io.IOException;
 
@@ -67,7 +67,7 @@ public class AwaitMapFlushOperation
     }
 
     @Override
-    public void run() {
+    protected void runInternal() {
         // NOP
     }
 
@@ -112,7 +112,7 @@ public class AwaitMapFlushOperation
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MapDataSerializerHook.AWAIT_MAP_FLUSH;
     }
 }

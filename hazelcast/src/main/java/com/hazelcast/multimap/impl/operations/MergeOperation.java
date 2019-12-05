@@ -24,8 +24,8 @@ import com.hazelcast.multimap.impl.MultiMapValue;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.BackupAwareOperation;
-import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.impl.operationservice.BackupAwareOperation;
+import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 import com.hazelcast.spi.merge.SplitBrainMergeTypes.MultiMapMergeTypes;
 
@@ -35,7 +35,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
-import static com.hazelcast.util.MapUtil.createHashMap;
+import static com.hazelcast.internal.util.MapUtil.createHashMap;
 
 /**
  * Merges multiple {@link MultiMapMergeContainer} for split-brain healing with a {@link SplitBrainMergePolicy}.
@@ -103,7 +103,7 @@ public class MergeOperation extends AbstractMultiMapOperation implements BackupA
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         int size = in.readInt();
-        mergeContainers = new ArrayList<MultiMapMergeContainer>(size);
+        mergeContainers = new ArrayList<>(size);
         for (int i = 0; i < size; i++) {
             MultiMapMergeContainer container = in.readObject();
             mergeContainers.add(container);
@@ -112,7 +112,7 @@ public class MergeOperation extends AbstractMultiMapOperation implements BackupA
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MultiMapDataSerializerHook.MERGE_OPERATION;
     }
 }

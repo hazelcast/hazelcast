@@ -20,14 +20,15 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.MapConfig;
+import com.hazelcast.config.MaxSizePolicy;
 import com.hazelcast.config.QueryCacheConfig;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IMap;
+import com.hazelcast.map.IMap;
 import com.hazelcast.map.EventLostEvent;
 import com.hazelcast.map.QueryCache;
 import com.hazelcast.map.listener.EventLostListener;
 import com.hazelcast.query.Predicate;
-import com.hazelcast.query.TruePredicate;
+import com.hazelcast.query.Predicates;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -45,7 +46,7 @@ import static org.junit.Assert.assertEquals;
 public class QueryCacheSimpleStressTest extends HazelcastTestSupport {
 
     @SuppressWarnings("unchecked")
-    private static final Predicate<Integer, Integer> TRUE_PREDICATE = TruePredicate.INSTANCE;
+    private static final Predicate<Integer, Integer> TRUE_PREDICATE = Predicates.alwaysTrue();
 
     private final String mapName = randomString();
     private final String cacheName = randomString();
@@ -55,7 +56,7 @@ public class QueryCacheSimpleStressTest extends HazelcastTestSupport {
     @Before
     public void setUp() {
         EvictionConfig evictionConfig = new EvictionConfig();
-        evictionConfig.setMaximumSizePolicy(EvictionConfig.MaxSizePolicy.ENTRY_COUNT);
+        evictionConfig.setMaxSizePolicy(MaxSizePolicy.ENTRY_COUNT);
         evictionConfig.setSize(Integer.MAX_VALUE);
         evictionConfig.setEvictionPolicy(EvictionPolicy.LRU);
 
@@ -65,7 +66,7 @@ public class QueryCacheSimpleStressTest extends HazelcastTestSupport {
                 .setDelaySeconds(2)
                 .setBatchSize(2)
                 .setPopulate(true)
-                .getPredicateConfig().setImplementation(TruePredicate.INSTANCE);
+                .getPredicateConfig().setImplementation(Predicates.alwaysTrue());
         queryCacheConfig.setEvictionConfig(evictionConfig);
 
         MapConfig mapConfig = new MapConfig(mapName);

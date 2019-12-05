@@ -26,7 +26,7 @@
         http://www.springframework.org/schema/context
         http://www.springframework.org/schema/context/spring-context.xsd
         http://www.hazelcast.com/schema/spring
-        http://www.hazelcast.com/schema/spring/hazelcast-spring-3.11.xsd">
+        http://www.hazelcast.com/schema/spring/hazelcast-spring-4.0.xsd">
 
     <context:property-placeholder location="classpath:timeout.properties"/>
 
@@ -34,7 +34,7 @@
 
     <hz:hazelcast id="instance">
         <hz:config>
-            <hz:group name="dev" password="dev-pass"/>
+            <hz:cluster-name>dev</hz:cluster-name>
             <hz:properties>
                 <hz:property name="hazelcast.wait.seconds.before.join">0</hz:property>
                 <hz:property name="hazelcast.graceful.shutdown.max.wait">120</hz:property>

@@ -20,10 +20,9 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.PartitionGroupConfig;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.Member;
-import com.hazelcast.core.Partition;
+import com.hazelcast.cluster.Member;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -40,7 +39,7 @@ import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
 
-import static com.hazelcast.util.ExceptionUtil.rethrow;
+import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 import static java.lang.String.format;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -159,7 +158,7 @@ public class PartitionDistributionTest extends HazelcastTestSupport {
 
     private void testPartitionDistribution(int partitionCount, int dataNodeCount, int liteNodeCount, Config config,
                                            Config liteConfig) {
-        config.setProperty(GroupProperty.PARTITION_COUNT.getName(), String.valueOf(partitionCount));
+        config.setProperty(ClusterProperty.PARTITION_COUNT.getName(), String.valueOf(partitionCount));
         int nodeCount = dataNodeCount + liteNodeCount;
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(nodeCount);
         final BlockingQueue<Integer> counts = new ArrayBlockingQueue<Integer>(nodeCount);
@@ -169,7 +168,7 @@ public class PartitionDistributionTest extends HazelcastTestSupport {
             instances[i] = factory.newHazelcastInstance(config);
         }
 
-        liteConfig.setProperty(GroupProperty.PARTITION_COUNT.getName(), String.valueOf(partitionCount));
+        liteConfig.setProperty(ClusterProperty.PARTITION_COUNT.getName(), String.valueOf(partitionCount));
         liteConfig.setLiteMember(true);
         for (int i = dataNodeCount; i < nodeCount; i++) {
             instances[i] = factory.newHazelcastInstance(liteConfig);

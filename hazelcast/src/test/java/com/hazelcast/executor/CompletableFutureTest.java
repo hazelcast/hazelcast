@@ -16,14 +16,12 @@
 
 package com.hazelcast.executor;
 
-import com.hazelcast.core.ExecutionCallback;
-import com.hazelcast.core.ICompletableFuture;
-import com.hazelcast.spi.ExecutionService;
-import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.test.AssertTask;
+import com.hazelcast.spi.impl.InternalCompletableFuture;
+import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.spi.impl.executionservice.ExecutionService;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.hamcrest.Matchers;
 import org.junit.Before;
@@ -35,20 +33,21 @@ import org.junit.runner.RunWith;
 
 import java.util.concurrent.Callable;
 import java.util.concurrent.CancellationException;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.BiConsumer;
 
-import static org.hamcrest.Matchers.instanceOf;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class CompletableFutureTest extends HazelcastTestSupport {
 
     private static final RuntimeException THROW_TEST_EXCEPTION = new RuntimeException("Test exception");
@@ -78,8 +77,8 @@ public class CompletableFutureTest extends HazelcastTestSupport {
 
     @Test
     public void preregisterCallback() {
-        ICompletableFuture<String> f = submitAwaitingTask(expectedNumberOfCallbacks(1), NO_EXCEPTION);
-        f.andThen(storeTaskResponseToReference(reference1));
+        InternalCompletableFuture<String> f = submitAwaitingTask(expectedNumberOfCallbacks(1), NO_EXCEPTION);
+        f.whenCompleteAsync(storeTaskResponseToReference(reference1));
 
         releaseAwaitingTask();
 
@@ -89,9 +88,9 @@ public class CompletableFutureTest extends HazelcastTestSupport {
 
     @Test
     public void preregisterTwoCallbacks() {
-        ICompletableFuture<String> f = submitAwaitingTask(expectedNumberOfCallbacks(2), NO_EXCEPTION);
-        f.andThen(storeTaskResponseToReference(reference1));
-        f.andThen(storeTaskResponseToReference(reference2));
+        InternalCompletableFuture<String> f = submitAwaitingTask(expectedNumberOfCallbacks(2), NO_EXCEPTION);
+        f.whenCompleteAsync(storeTaskResponseToReference(reference1));
+        f.whenCompleteAsync(storeTaskResponseToReference(reference2));
 
         releaseAwaitingTask();
 
@@ -102,9 +101,9 @@ public class CompletableFutureTest extends HazelcastTestSupport {
 
     @Test
     public void preregisterTwoCallbacks_taskThrowsException() {
-        ICompletableFuture<String> f = submitAwaitingTask(expectedNumberOfCallbacks(2), THROW_TEST_EXCEPTION);
-        f.andThen(storeTaskResponseToReference(reference1));
-        f.andThen(storeTaskResponseToReference(reference2));
+        InternalCompletableFuture<String> f = submitAwaitingTask(expectedNumberOfCallbacks(2), THROW_TEST_EXCEPTION);
+        f.whenCompleteAsync(storeTaskResponseToReference(reference1));
+        f.whenCompleteAsync(storeTaskResponseToReference(reference2));
 
         releaseAwaitingTask();
 
@@ -115,11 +114,11 @@ public class CompletableFutureTest extends HazelcastTestSupport {
     @Test
     // https://github.com/hazelcast/hazelcast/issues/6020
     public void postregisterCallback() {
-        ICompletableFuture<String> f = submitAwaitingTask(expectedNumberOfCallbacks(1), NO_EXCEPTION);
+        InternalCompletableFuture<String> f = submitAwaitingTask(expectedNumberOfCallbacks(1), NO_EXCEPTION);
         releaseAwaitingTask();
         assertTaskFinishedEventually(f);
 
-        f.andThen(storeTaskResponseToReference(reference1));
+        f.whenCompleteAsync(storeTaskResponseToReference(reference1));
 
         assertCallbacksExecutedEventually();
         assertEquals("success", reference1.get());
@@ -127,12 +126,12 @@ public class CompletableFutureTest extends HazelcastTestSupport {
 
     @Test
     public void postregisterTwoCallbacks() {
-        ICompletableFuture<String> f = submitAwaitingTask(expectedNumberOfCallbacks(2), NO_EXCEPTION);
+        InternalCompletableFuture<String> f = submitAwaitingTask(expectedNumberOfCallbacks(2), NO_EXCEPTION);
         releaseAwaitingTask();
         assertTaskFinishedEventually(f);
 
-        f.andThen(storeTaskResponseToReference(reference1));
-        f.andThen(storeTaskResponseToReference(reference2));
+        f.whenCompleteAsync(storeTaskResponseToReference(reference1));
+        f.whenCompleteAsync(storeTaskResponseToReference(reference2));
 
         assertCallbacksExecutedEventually();
         assertEquals("success", reference1.get());
@@ -141,12 +140,12 @@ public class CompletableFutureTest extends HazelcastTestSupport {
 
     @Test
     public void postregisterTwoCallbacks_taskThrowsException() {
-        ICompletableFuture<String> f = submitAwaitingTask(expectedNumberOfCallbacks(2), THROW_TEST_EXCEPTION);
+        InternalCompletableFuture<String> f = submitAwaitingTask(expectedNumberOfCallbacks(2), THROW_TEST_EXCEPTION);
         releaseAwaitingTask();
         assertTaskFinishedEventually(f);
 
-        f.andThen(storeTaskResponseToReference(reference1));
-        f.andThen(storeTaskResponseToReference(reference2));
+        f.whenCompleteAsync(storeTaskResponseToReference(reference1));
+        f.whenCompleteAsync(storeTaskResponseToReference(reference2));
 
         assertCallbacksExecutedEventually();
         assertTestExceptionThrown(reference1, reference2);
@@ -154,7 +153,7 @@ public class CompletableFutureTest extends HazelcastTestSupport {
 
     @Test(timeout = 60000)
     public void get_taskThrowsException() throws Exception {
-        ICompletableFuture<String> f = submitAwaitingTaskNoCallbacks(THROW_TEST_EXCEPTION);
+        InternalCompletableFuture<String> f = submitAwaitingTaskNoCallbacks(THROW_TEST_EXCEPTION);
         submitReleasingTask(100);
 
         expected.expect(ExecutionException.class);
@@ -163,7 +162,7 @@ public class CompletableFutureTest extends HazelcastTestSupport {
 
     @Test(timeout = 60000)
     public void getWithTimeout_taskThrowsException() throws Exception {
-        ICompletableFuture<String> f = submitAwaitingTaskNoCallbacks(THROW_TEST_EXCEPTION);
+        InternalCompletableFuture<String> f = submitAwaitingTaskNoCallbacks(THROW_TEST_EXCEPTION);
         submitReleasingTask(200);
 
         expected.expect(ExecutionException.class);
@@ -172,7 +171,7 @@ public class CompletableFutureTest extends HazelcastTestSupport {
 
     @Test(timeout = 60000)
     public void getWithTimeout_finishesWithinTime() throws Exception {
-        ICompletableFuture<String> f = submitAwaitingTaskNoCallbacks(NO_EXCEPTION);
+        InternalCompletableFuture<String> f = submitAwaitingTaskNoCallbacks(NO_EXCEPTION);
         submitReleasingTask(200);
         String result = f.get(30000, TimeUnit.MILLISECONDS);
 
@@ -181,7 +180,7 @@ public class CompletableFutureTest extends HazelcastTestSupport {
 
     @Test(timeout = 60000)
     public void getWithTimeout_timesOut() throws Exception {
-        ICompletableFuture<String> f = submitAwaitingTaskNoCallbacks(NO_EXCEPTION);
+        InternalCompletableFuture<String> f = submitAwaitingTaskNoCallbacks(NO_EXCEPTION);
 
         expected.expect(TimeoutException.class);
         f.get(1, TimeUnit.MILLISECONDS);
@@ -189,7 +188,7 @@ public class CompletableFutureTest extends HazelcastTestSupport {
 
     @Test
     public void singleCancellation_beforeDone_succeeds() {
-        ICompletableFuture<String> f = submitAwaitingTaskNoCallbacks(NO_EXCEPTION);
+        InternalCompletableFuture<String> f = submitAwaitingTaskNoCallbacks(NO_EXCEPTION);
         assertTaskInExecution();
 
         boolean cancelResult = f.cancel(false);
@@ -198,20 +197,8 @@ public class CompletableFutureTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void doubleCancellation_beforeDone_firstSucceeds_secondFails() {
-        ICompletableFuture<String> f = submitAwaitingTaskNoCallbacks(NO_EXCEPTION);
-        assertTaskInExecution(); // but never released to execute logic
-
-        boolean firstCancelResult = f.cancel(false);
-        boolean secondCancelResult = f.cancel(false);
-
-        assertTrue("First task cancellation should succeed", firstCancelResult);
-        assertFalse("Second task cancellation should failed", secondCancelResult);
-    }
-
-    @Test
     public void cancellation_afterDone_taskNotCancelled_flagsSetCorrectly() throws Exception {
-        final ICompletableFuture<String> f = submitAwaitingTaskNoCallbacks(NO_EXCEPTION);
+        final InternalCompletableFuture<String> f = submitAwaitingTaskNoCallbacks(NO_EXCEPTION);
         assertTaskInExecution();
         releaseAwaitingTask();
         assertTaskExecutedItsLogic();
@@ -229,7 +216,7 @@ public class CompletableFutureTest extends HazelcastTestSupport {
 
     @Test
     public void noCancellation_afterDone_flagsSetCorrectly() throws Exception {
-        ICompletableFuture<String> f = submitAwaitingTaskNoCallbacks(NO_EXCEPTION);
+        InternalCompletableFuture<String> f = submitAwaitingTaskNoCallbacks(NO_EXCEPTION);
         assertTaskInExecution();
         releaseAwaitingTask();
         assertTaskExecutedItsLogic();
@@ -242,7 +229,7 @@ public class CompletableFutureTest extends HazelcastTestSupport {
 
     @Test(timeout = 60000)
     public void cancelAndGet_taskCancelled_withoutInterruption_logicExecuted() throws Exception {
-        ICompletableFuture<String> f = submitAwaitingTaskNoCallbacks(NO_EXCEPTION);
+        InternalCompletableFuture<String> f = submitAwaitingTaskNoCallbacks(NO_EXCEPTION);
         assertTaskInExecution();
 
         boolean cancelResult = f.cancel(false);
@@ -259,7 +246,7 @@ public class CompletableFutureTest extends HazelcastTestSupport {
 
     @Test(timeout = 60000)
     public void cancelAndGet_taskCancelled_withInterruption_noLogicExecuted() throws Exception {
-        ICompletableFuture<String> f = submitAwaitingTaskNoCallbacks(NO_EXCEPTION);
+        InternalCompletableFuture<String> f = submitAwaitingTaskNoCallbacks(NO_EXCEPTION);
         assertTaskInExecution();
 
         boolean cancelResult = f.cancel(true);
@@ -276,45 +263,36 @@ public class CompletableFutureTest extends HazelcastTestSupport {
 
     private static void assertTestExceptionThrown(AtomicReference<?>... refs) {
         for (AtomicReference<?> ref : refs) {
-            assertThat("ExecutionException expected", ref.get(), instanceOf(ExecutionException.class));
-        }
-        for (AtomicReference<?> ref : refs) {
-            assertThat("TEST_EXCEPTION expected as cause", ((Throwable) ref.get()).getCause(),
-                    Matchers.<Throwable>sameInstance(THROW_TEST_EXCEPTION));
+            assertThat("TEST_EXCEPTION expected", ref.get(),
+                    Matchers.sameInstance(THROW_TEST_EXCEPTION));
         }
     }
 
-    private ICompletableFuture<String> submitAwaitingTaskNoCallbacks(final Exception exception) {
+    private InternalCompletableFuture<String> submitAwaitingTaskNoCallbacks(final Exception exception) {
         return submitAwaitingTask(0, exception);
     }
 
-    private ICompletableFuture<String> submitAwaitingTask(Integer numberOfCallbacks, final Exception exception) {
+    private InternalCompletableFuture<String> submitAwaitingTask(Integer numberOfCallbacks, final Exception exception) {
         callbacksDoneLatch = new CountDownLatch(numberOfCallbacks);
-        return submit(new Callable<String>() {
-            @Override
-            public String call() throws Exception {
-                inExecutionLatch.countDown();
-                assertOpenEventually(startLogicLatch);
-                executedLogic.countDown();
-                if (exception != null) {
-                    throw exception;
-                }
-                return "success";
+        return submit(() -> {
+            inExecutionLatch.countDown();
+            assertOpenEventually(startLogicLatch);
+            executedLogic.countDown();
+            if (exception != null) {
+                throw exception;
             }
+            return "success";
         });
     }
 
     private void submitReleasingTask(final long millisToAwaitBeforeRelease) {
-        submit(new Runnable() {
-            @Override
-            public void run() {
-                sleepAtLeastMillis(millisToAwaitBeforeRelease);
-                releaseAwaitingTask();
-            }
+        submit(() -> {
+            sleepAtLeastMillis(millisToAwaitBeforeRelease);
+            releaseAwaitingTask();
         });
     }
 
-    private ICompletableFuture<String> submit(final Callable<String> callable) {
+    private InternalCompletableFuture<String> submit(final Callable<String> callable) {
         return executionService.asCompletableFuture(executionService.submit("default", callable));
     }
 
@@ -342,29 +320,23 @@ public class CompletableFutureTest extends HazelcastTestSupport {
         assertEquals(1, executedLogic.getCount());
     }
 
-    private void assertTaskFinishedEventually(final ICompletableFuture future) {
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertTrue(future.isDone());
-            }
-        });
+    private void assertTaskFinishedEventually(final CompletableFuture future) {
+        assertTrueEventually(() -> assertTrue(future.isDone()));
     }
 
     private void assertTaskInExecution() {
         assertOpenEventually(inExecutionLatch);
     }
 
-    private ExecutionCallback<String> storeTaskResponseToReference(final AtomicReference<Object> ref) {
-        return new ExecutionCallback<String>() {
+    private BiConsumer<String, Throwable> storeTaskResponseToReference(final AtomicReference<Object> ref) {
+        return new BiConsumer<String, Throwable>() {
             @Override
-            public void onResponse(String response) {
-                doit(response);
-            }
-
-            @Override
-            public void onFailure(Throwable t) {
-                doit(t);
+            public void accept(String s, Throwable throwable) {
+                if (throwable == null) {
+                    doit(s);
+                } else {
+                    doit(throwable);
+                }
             }
 
             private void doit(Object response) {

@@ -17,10 +17,9 @@
 package com.hazelcast.query.impl.predicates;
 
 import com.hazelcast.query.Predicate;
-import com.hazelcast.query.VisitablePredicate;
 import com.hazelcast.query.impl.Indexes;
 
-import static com.hazelcast.util.collection.ArrayUtils.createCopy;
+import static com.hazelcast.internal.util.collection.ArrayUtils.createCopy;
 
 public final class VisitorUtils {
 

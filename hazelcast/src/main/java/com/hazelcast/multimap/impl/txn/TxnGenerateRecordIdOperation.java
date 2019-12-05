@@ -35,7 +35,7 @@ public class TxnGenerateRecordIdOperation extends AbstractKeyBasedMultiMapOperat
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MultiMapDataSerializerHook.TXN_GENERATE_RECORD_ID;
     }
 }

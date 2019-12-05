@@ -17,10 +17,11 @@
 package com.hazelcast.map.impl.event;
 
 import com.hazelcast.core.EntryEvent;
-import com.hazelcast.core.IMapEvent;
-import com.hazelcast.core.MapEvent;
-import com.hazelcast.core.Member;
-import com.hazelcast.instance.MemberImpl;
+import com.hazelcast.spi.impl.eventservice.EventPublishingService;
+import com.hazelcast.map.IMapEvent;
+import com.hazelcast.map.MapEvent;
+import com.hazelcast.cluster.Member;
+import com.hazelcast.cluster.impl.MemberImpl;
 import com.hazelcast.internal.nearcache.impl.invalidation.Invalidation;
 import com.hazelcast.map.MapPartitionLostEvent;
 import com.hazelcast.map.impl.DataAwareEntryEvent;
@@ -33,16 +34,15 @@ import com.hazelcast.map.impl.querycache.event.LocalCacheWideEventData;
 import com.hazelcast.map.impl.querycache.event.LocalEntryEventData;
 import com.hazelcast.map.impl.querycache.event.QueryCacheEventData;
 import com.hazelcast.map.impl.querycache.event.SingleIMapEvent;
-import com.hazelcast.spi.EventPublishingService;
-import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.serialization.SerializationService;
+import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.internal.serialization.SerializationService;
 
 import static com.hazelcast.map.impl.querycache.subscriber.EventPublisherHelper.createIMapEvent;
 
 /**
  * Contains map service event publishing service functionality.
  *
- * @see com.hazelcast.spi.EventPublishingService
+ * @see EventPublishingService
  */
 public class MapEventPublishingService implements EventPublishingService<Object, ListenerAdapter> {
 
@@ -187,7 +187,9 @@ public class MapEventPublishingService implements EventPublishingService<Object,
     private Member getMember(EventData eventData) {
         Member member = nodeEngine.getClusterService().getMember(eventData.getCaller());
         if (member == null) {
-            member = new MemberImpl(eventData.getCaller(), nodeEngine.getVersion(), false);
+            member = new MemberImpl.Builder(eventData.getCaller())
+                    .version(nodeEngine.getVersion())
+                    .build();
         }
         return member;
     }

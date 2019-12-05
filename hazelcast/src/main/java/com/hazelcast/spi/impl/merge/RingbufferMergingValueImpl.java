@@ -21,13 +21,13 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.merge.RingbufferMergeData;
 import com.hazelcast.spi.merge.SplitBrainMergeTypes.RingbufferMergeTypes;
-import com.hazelcast.spi.serialization.SerializationService;
-import com.hazelcast.spi.serialization.SerializationServiceAware;
+import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.serialization.SerializationServiceAware;
 
 import java.io.IOException;
 
-import static com.hazelcast.nio.IOUtil.readObject;
-import static com.hazelcast.nio.IOUtil.writeObject;
+import static com.hazelcast.internal.nio.IOUtil.readObject;
+import static com.hazelcast.internal.nio.IOUtil.writeObject;
 
 /**
  * Implementation of {@link RingbufferMergeTypes}.
@@ -109,7 +109,7 @@ public class RingbufferMergingValueImpl
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return SplitBrainDataSerializerHook.RINGBUFFER_MERGING_ENTRY;
     }
 

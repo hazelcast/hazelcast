@@ -19,13 +19,13 @@ package com.hazelcast.client.impl.protocol.task.map;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.MapFetchNearCacheInvalidationMetadataCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractInvocationMessageTask;
-import com.hazelcast.instance.Node;
+import com.hazelcast.instance.impl.Node;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.operation.MapGetInvalidationMetaDataOperation;
-import com.hazelcast.nio.Connection;
-import com.hazelcast.spi.InvocationBuilder;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.impl.operationservice.InternalOperationService;
+import com.hazelcast.internal.nio.Connection;
+import com.hazelcast.spi.impl.operationservice.InvocationBuilder;
+import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 
 import java.security.Permission;
 
@@ -38,7 +38,7 @@ public class MapFetchNearCacheInvalidationMetadataTask
 
     @Override
     protected InvocationBuilder getInvocationBuilder(Operation op) {
-        InternalOperationService operationService = nodeEngine.getOperationService();
+        OperationServiceImpl operationService = nodeEngine.getOperationService();
         return operationService.createInvocationBuilder(getServiceName(), op, parameters.address);
     }
 
@@ -49,7 +49,9 @@ public class MapFetchNearCacheInvalidationMetadataTask
 
     @Override
     protected MapFetchNearCacheInvalidationMetadataCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
-        return MapFetchNearCacheInvalidationMetadataCodec.decodeRequest(clientMessage);
+        parameters = MapFetchNearCacheInvalidationMetadataCodec.decodeRequest(clientMessage);
+        parameters.address = clientEngine.memberAddressOf(parameters.address);
+        return parameters;
     }
 
     @Override

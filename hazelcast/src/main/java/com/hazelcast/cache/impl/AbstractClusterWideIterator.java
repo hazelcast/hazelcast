@@ -35,7 +35,6 @@ import java.util.NoSuchElementException;
  * <li>Each partition may have a lot of entries, so we use a second parameter to track the iteration of the
  * partition.</li>
  * </ul>
- * </p>
  * <p>
  * Iteration steps:
  * <ul>
@@ -45,14 +44,12 @@ import java.util.NoSuchElementException;
  * <li>when fetched keys are all used by calling {@link #next()}, more keys are fetched from the cluster.</li>
  * </ul>
  * This implementation iterates over partitions and for each partition it iterates over the internal map using the
- * internal table index of the map {@link com.hazelcast.util.SampleableConcurrentHashMap}.
- * </p>
+ * internal table index of the map {@link com.hazelcast.internal.util.SampleableConcurrentHashMap}.
  * <p>
  * <h2>Fetching data from cluster:</h2>
  * Fetching is getting a fixed size of keys from the internal table of records of a partition defined by
  * partitionId. Table index is also provided as a table index locator. Fetch response is the keys and
  * last table index. The last table index is included in the result to be used in the next fetch.
- * </p>
  * <p>
  * <h2>Notes:</h2>
  * <ul>
@@ -65,7 +62,6 @@ import java.util.NoSuchElementException;
  * <li>This implementation does not affected by value updates as each value is got from the cluster
  * when {@link #next()} called.</li>
  * </ul>
- * </p>
  *
  * @param <K> the type of key.
  * @param <V> the type of value.

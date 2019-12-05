@@ -17,7 +17,7 @@
 package com.hazelcast.map.impl.querycache.subscriber.record;
 
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.serialization.SerializationService;
+import com.hazelcast.internal.serialization.SerializationService;
 
 /**
  * Represents a record with {@link Data} key and value.
@@ -28,7 +28,7 @@ class DataQueryCacheRecord extends AbstractQueryCacheRecord {
 
     private final SerializationService serializationService;
 
-    public DataQueryCacheRecord(Data valueData, SerializationService serializationService) {
+    DataQueryCacheRecord(Data valueData, SerializationService serializationService) {
         this.valueData = valueData;
         this.serializationService = serializationService;
     }

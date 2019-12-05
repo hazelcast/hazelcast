@@ -16,10 +16,9 @@
 
 package com.hazelcast.cache;
 
-import com.hazelcast.cache.impl.HazelcastServerCachingProvider;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.test.HazelcastParametersRunnerFactory;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -27,15 +26,17 @@ import org.junit.runners.Parameterized;
 
 import javax.cache.spi.CachingProvider;
 
+import static com.hazelcast.cache.CacheTestSupport.createServerCachingProvider;
+
 @RunWith(Parameterized.class)
-@Parameterized.UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Parameterized.UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class CacheIteratorTest extends CacheIteratorAbstractTest {
 
     @Override
     protected CachingProvider createCachingProvider() {
         HazelcastInstance hazelcastInstance = createHazelcastInstance();
-        return HazelcastServerCachingProvider.createCachingProvider(hazelcastInstance);
+        return createServerCachingProvider(hazelcastInstance);
     }
 
 }

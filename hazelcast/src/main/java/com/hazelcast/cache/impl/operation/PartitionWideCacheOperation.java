@@ -19,8 +19,8 @@ package com.hazelcast.cache.impl.operation;
 import com.hazelcast.cache.impl.CacheDataSerializerHook;
 import com.hazelcast.cache.impl.ICacheService;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.spi.PartitionAwareOperation;
-import com.hazelcast.spi.impl.AbstractNamedOperation;
+import com.hazelcast.spi.impl.operationservice.PartitionAwareOperation;
+import com.hazelcast.spi.impl.operationservice.AbstractNamedOperation;
 
 /**
  * Abstract cache operation that implements {@link PartitionAwareOperation} serving a base class to provide

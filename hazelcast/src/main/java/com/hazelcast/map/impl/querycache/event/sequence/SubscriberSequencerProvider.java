@@ -29,7 +29,8 @@ public interface SubscriberSequencerProvider {
      * @param expect      the expected sequence.
      * @param update      the new sequence.
      * @param partitionId ID of the partition.
-     * @return {@code true} if Compare-and-Set operation is successful, otherwise returns {@code false}.
+     * @return {@code true} if Compare-and-Set operation
+     * is successful, otherwise returns {@code false}.
      */
     boolean compareAndSetSequence(long expect, long update, int partitionId);
 
@@ -47,4 +48,9 @@ public interface SubscriberSequencerProvider {
      * @param partitionId ID of the partition.
      */
     void reset(int partitionId);
+
+    /**
+     * Like {@link #reset(int)} but this method resets all partition sequences.
+     */
+    void resetAll();
 }

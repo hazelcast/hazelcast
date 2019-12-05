@@ -28,11 +28,11 @@ import com.hazelcast.core.HazelcastOverloadException;
  * <p>
  * When backpressure is enabled and there are too many concurrent invocations, calls of {@link #next()}
  * will block using a spin-loop with exponential backoff.
- * <p/>
+ * <p>
  * Currently a single CallIdSequence is used for all partitions, so there is contention. Also one partition
  * can cause problems in other partition if a lot of invocations are created for that partition. Then other
  * partitions can't make as many invocations because a single callIdSequence is being used.
- * <p/>
+ * <p>
  * In the future we could add a CallIdSequence per partition or using some 'concurrency level'
  * and do a mod based on the partition-id. The advantage is that you reduce contention and improve isolation,
  * at the expense of:
@@ -75,11 +75,4 @@ public interface CallIdSequence {
      * <strong>ONLY FOR TESTING. Must not be used for production code.</strong>
      */
     long getLastCallId();
-
-    /**
-     * Returns the number of concurrent invocations.
-     *
-     * @return the number of concurrent invocations. Returns -1 if not known.
-     */
-    long concurrentInvocations();
 }

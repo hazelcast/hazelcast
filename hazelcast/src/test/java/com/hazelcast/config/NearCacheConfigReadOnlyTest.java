@@ -16,19 +16,20 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.internal.config.NearCacheConfigReadOnly;
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class NearCacheConfigReadOnlyTest {
 
     private NearCacheConfig getReadOnlyConfig() {
-        return new NearCacheConfig().getAsReadOnly();
+        return new NearCacheConfigReadOnly(new NearCacheConfig());
     }
 
     @Test(expected = UnsupportedOperationException.class)
@@ -39,16 +40,6 @@ public class NearCacheConfigReadOnlyTest {
     @Test(expected = UnsupportedOperationException.class)
     public void setTimeToLiveSecondsOnReadOnlyNearCacheConfigShouldFail() {
         getReadOnlyConfig().setTimeToLiveSeconds(1512);
-    }
-
-    @Test(expected = UnsupportedOperationException.class)
-    public void setMaxSizeOnReadOnlyNearCacheConfigShouldFail() {
-        getReadOnlyConfig().setMaxSize(125124);
-    }
-
-    @Test(expected = UnsupportedOperationException.class)
-    public void setEvictionPolicyOnReadOnlyNearCacheConfigShouldFail() {
-        getReadOnlyConfig().setEvictionPolicy(EvictionPolicy.NONE.name());
     }
 
     @Test(expected = UnsupportedOperationException.class)

@@ -17,70 +17,60 @@
 
 package com.hazelcast.internal.util.futures;
 
-import com.hazelcast.core.ExecutionCallback;
-import com.hazelcast.core.ICompletableFuture;
-import com.hazelcast.logging.ILogger;
-import com.hazelcast.spi.impl.AbstractCompletableFuture;
+import com.hazelcast.spi.impl.InternalCompletableFuture;
 
 import java.util.Iterator;
-import java.util.concurrent.Executor;
 
 /**
- * Iterates over supplied {@link ICompletableFuture} serially.
+ * Iterates over supplied {@link InternalCompletableFuture} serially.
  * It advances to the next future only when the previous future is completed.
  *
  * It completes when there is no other future available.
  *
  * @param <T>
  */
-public class ChainingFuture<T> extends AbstractCompletableFuture<T> {
+public class ChainingFuture<T> extends InternalCompletableFuture<T> {
 
     private final ExceptionHandler exceptionHandler;
 
-    public ChainingFuture(Iterator<ICompletableFuture<T>> futuresToChain, Executor executor,
-                          ExceptionHandler exceptionHandler, ILogger logger) {
-        super(executor, logger);
+    public ChainingFuture(Iterator<InternalCompletableFuture<T>> futuresToChain,
+                          ExceptionHandler exceptionHandler) {
         this.exceptionHandler = exceptionHandler;
-
-
         if (!futuresToChain.hasNext()) {
-            setResult(null);
+            complete(null);
         } else {
-            ICompletableFuture<T> future = futuresToChain.next();
+            InternalCompletableFuture<T> future = futuresToChain.next();
             registerCallback(future, futuresToChain);
         }
     }
 
-    private void registerCallback(ICompletableFuture<T> future, final Iterator<ICompletableFuture<T>> invocationIterator) {
-        future.andThen(new ExecutionCallback<T>() {
-            @Override
-            public void onResponse(T response) {
+    private void registerCallback(InternalCompletableFuture<T> future,
+                                  final Iterator<InternalCompletableFuture<T>> invocationIterator) {
+        future.whenCompleteAsync((response, t) -> {
+            if (t == null) {
                 advanceOrComplete(response, invocationIterator);
-            }
-
-            @Override
-            public void onFailure(Throwable t) {
+            } else {
                 try {
                     exceptionHandler.handle(t);
                     advanceOrComplete(null, invocationIterator);
                 } catch (Throwable throwable) {
-                    setResult(t);
+                    completeExceptionally(t);
                 }
             }
         });
     }
 
-    private void advanceOrComplete(T response, Iterator<ICompletableFuture<T>> invocationIterator) {
+    private void advanceOrComplete(T response, Iterator<InternalCompletableFuture<T>> invocationIterator) {
         try {
             boolean hasNext = invocationIterator.hasNext();
             if (!hasNext) {
-                setResult(response);
+                complete(response);
             } else {
-                ICompletableFuture<T> future = invocationIterator.next();
+                InternalCompletableFuture<T> future = invocationIterator.next();
                 registerCallback(future, invocationIterator);
             }
         } catch (Throwable t) {
-            setResult(t);
+            completeExceptionally(t);
         }
     }
 

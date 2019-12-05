@@ -22,7 +22,7 @@ import java.lang.reflect.Field;
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 
 import static com.hazelcast.internal.memory.GlobalMemoryAccessorRegistry.MEM;
-import static com.hazelcast.util.EmptyStatement.ignore;
+import static com.hazelcast.internal.util.EmptyStatement.ignore;
 import static java.util.concurrent.atomic.AtomicLongFieldUpdater.newUpdater;
 
 /**
@@ -92,7 +92,7 @@ public abstract class SwCounter implements Counter {
         private long localValue;
         private volatile long value;
 
-        protected UnsafeSwCounter(long initialValue) {
+        UnsafeSwCounter(long initialValue) {
             this.value = initialValue;
         }
 
@@ -118,6 +118,12 @@ public abstract class SwCounter implements Counter {
         }
 
         @Override
+        public void set(long newValue) {
+            localValue = newValue;
+            MEM.putOrderedLong(this, OFFSET, newValue);
+        }
+
+        @Override
         public String toString() {
             return "Counter{value=" + value + '}';
         }
@@ -132,7 +138,7 @@ public abstract class SwCounter implements Counter {
 
         private volatile long value;
 
-        protected SafeSwCounter(long initialValue) {
+        SafeSwCounter(long initialValue) {
             this.value = initialValue;
         }
 
@@ -153,6 +159,11 @@ public abstract class SwCounter implements Counter {
         @Override
         public long get() {
             return value;
+        }
+
+        @Override
+        public void set(long newValue) {
+            COUNTER.lazySet(this, newValue);
         }
 
         @Override

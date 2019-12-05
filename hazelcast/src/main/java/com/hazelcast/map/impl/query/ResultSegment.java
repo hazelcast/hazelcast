@@ -62,7 +62,7 @@ public class ResultSegment implements IdentifiedDataSerializable {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MapDataSerializerHook.RESULT_SEGMENT;
     }
 

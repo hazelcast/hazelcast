@@ -21,8 +21,8 @@ import com.hazelcast.collection.impl.queue.QueueDataSerializerHook;
 import com.hazelcast.collection.impl.queue.operations.QueueOperation;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.spi.BackupOperation;
-import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.impl.operationservice.BackupOperation;
+import com.hazelcast.spi.impl.operationservice.Operation;
 
 import java.io.IOException;
 import java.util.List;
@@ -60,7 +60,7 @@ public class TxnCommitBackupOperation extends QueueOperation implements BackupOp
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return QueueDataSerializerHook.TXN_COMMIT_BACKUP;
     }
 

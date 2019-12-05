@@ -16,25 +16,27 @@
 
 package com.hazelcast.multimap.impl.txn;
 
+import com.hazelcast.internal.util.UUIDSerializationUtil;
 import com.hazelcast.multimap.impl.MultiMapContainer;
 import com.hazelcast.multimap.impl.MultiMapDataSerializerHook;
 import com.hazelcast.multimap.impl.operations.AbstractKeyBasedMultiMapOperation;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.BackupOperation;
+import com.hazelcast.spi.impl.operationservice.BackupOperation;
 import com.hazelcast.transaction.TransactionException;
 
 import java.io.IOException;
+import java.util.UUID;
 
 public class TxnRollbackBackupOperation extends AbstractKeyBasedMultiMapOperation implements BackupOperation {
 
-    private String caller;
+    private UUID caller;
 
     public TxnRollbackBackupOperation() {
     }
 
-    public TxnRollbackBackupOperation(String name, Data dataKey, String caller, long threadId) {
+    public TxnRollbackBackupOperation(String name, Data dataKey, UUID caller, long threadId) {
         super(name, dataKey);
         this.caller = caller;
         this.threadId = threadId;
@@ -51,17 +53,17 @@ public class TxnRollbackBackupOperation extends AbstractKeyBasedMultiMapOperatio
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        out.writeUTF(caller);
+        UUIDSerializationUtil.writeUUID(out, caller);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        caller = in.readUTF();
+        caller = UUIDSerializationUtil.readUUID(in);
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MultiMapDataSerializerHook.TXN_ROLLBACK_BACKUP;
     }
 }

@@ -21,7 +21,7 @@ import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.nio.serialization.Serializer;
 import com.hazelcast.nio.serialization.VersionedPortable;
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Assert;
 import org.junit.Test;
@@ -31,7 +31,7 @@ import org.junit.runner.RunWith;
 import java.io.IOException;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class SerializationUtilTest {
 
     @Test

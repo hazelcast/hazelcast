@@ -22,8 +22,8 @@ import com.hazelcast.internal.usercodedeployment.impl.UserCodeDeploymentSerializ
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.UrgentSystemOperation;
+import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.spi.impl.operationservice.UrgentSystemOperation;
 
 import java.io.IOException;
 
@@ -71,7 +71,7 @@ public final class ClassDataFinderOperation extends Operation implements UrgentS
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return UserCodeDeploymentSerializerHook.CLASS_DATA_FINDER_OP;
     }
 }

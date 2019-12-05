@@ -18,17 +18,13 @@ package com.hazelcast.cache.impl.operation;
 
 import com.hazelcast.cache.impl.CacheDataSerializerHook;
 import com.hazelcast.cache.impl.record.CacheRecord;
-import com.hazelcast.core.Member;
-import com.hazelcast.internal.cluster.Versions;
-import com.hazelcast.nio.Address;
+import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.BackupAwareOperation;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.impl.MutatingOperation;
-import com.hazelcast.spi.impl.operationservice.TargetAware;
-import com.hazelcast.version.Version;
+import com.hazelcast.spi.impl.operationservice.BackupAwareOperation;
+import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.spi.impl.operationservice.MutatingOperation;
 
 import javax.cache.expiry.ExpiryPolicy;
 import java.io.IOException;
@@ -36,18 +32,18 @@ import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
-import static com.hazelcast.util.MapUtil.createHashMap;
+import static com.hazelcast.internal.util.MapUtil.createHashMap;
 
 public class CachePutAllOperation extends CacheOperation
-        implements BackupAwareOperation, MutableOperation, MutatingOperation, TargetAware {
+        implements BackupAwareOperation, MutableOperation, MutatingOperation {
 
     private List<Map.Entry<Data, Data>> entries;
     private ExpiryPolicy expiryPolicy;
     private int completionId;
 
     private transient Map<Data, CacheRecord> backupRecords;
-    private transient Address target;
 
     public CachePutAllOperation() {
     }
@@ -72,7 +68,7 @@ public class CachePutAllOperation extends CacheOperation
 
     @Override
     public void run() throws Exception {
-        String callerUuid = getCallerUuid();
+        UUID callerUuid = getCallerUuid();
         backupRecords = createHashMap(entries.size());
 
         for (Map.Entry<Data, Data> entry : entries) {
@@ -100,24 +96,8 @@ public class CachePutAllOperation extends CacheOperation
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return CacheDataSerializerHook.PUT_ALL;
-    }
-
-    @Override
-    public void setTarget(Address address) {
-        this.target = address;
-    }
-
-    @Override
-    protected boolean requiresExplicitServiceName() {
-        // RU_COMPAT_3_10
-        Member member = getNodeEngine().getClusterService().getMember(target);
-        if (member == null) {
-            return false;
-        }
-        Version memberVersion = member.getVersion().asVersion();
-        return memberVersion.isLessThan(Versions.V3_11);
     }
 
     @Override
@@ -127,8 +107,8 @@ public class CachePutAllOperation extends CacheOperation
         out.writeInt(completionId);
         out.writeInt(entries.size());
         for (Map.Entry<Data, Data> entry : entries) {
-            out.writeData(entry.getKey());
-            out.writeData(entry.getValue());
+            IOUtil.writeData(out, entry.getKey());
+            IOUtil.writeData(out, entry.getValue());
         }
     }
 
@@ -140,8 +120,8 @@ public class CachePutAllOperation extends CacheOperation
         int size = in.readInt();
         entries = new ArrayList<Map.Entry<Data, Data>>(size);
         for (int i = 0; i < size; i++) {
-            Data key = in.readData();
-            Data value = in.readData();
+            Data key = IOUtil.readData(in);
+            Data value = IOUtil.readData(in);
             entries.add(new AbstractMap.SimpleImmutableEntry<Data, Data>(key, value));
         }
     }

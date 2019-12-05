@@ -18,134 +18,97 @@ package com.hazelcast.internal.metrics.impl;
 
 import com.hazelcast.internal.metrics.DoubleProbeFunction;
 import com.hazelcast.internal.metrics.LongProbeFunction;
+import com.hazelcast.internal.metrics.MetricDescriptor;
 import com.hazelcast.internal.metrics.ProbeLevel;
-import com.hazelcast.internal.metrics.renderers.ProbeRenderer;
+import com.hazelcast.internal.metrics.collectors.MetricsCollector;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.test.ExpectedRuntimeException;
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.util.List;
-
-import static org.junit.Assert.assertSame;
+import static com.hazelcast.internal.metrics.impl.DefaultMetricDescriptorSupplier.DEFAULT_DESCRIPTOR_SUPPLIER;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class RenderTest {
     private MetricsRegistryImpl metricsRegistry;
 
     @Before
     public void setup() {
         metricsRegistry = new MetricsRegistryImpl(Logger.getLogger(MetricsRegistryImpl.class), ProbeLevel.INFO);
-
-        for (String name : metricsRegistry.getNames()) {
-            ProbeInstance probeInstance = metricsRegistry.getProbeInstance(name);
-            if (probeInstance != null && probeInstance.source != null) {
-                metricsRegistry.deregister(probeInstance.source);
-            }
-        }
     }
 
     private void registerLongMetric(String name, final int value) {
-        metricsRegistry.register(this, name, ProbeLevel.INFO,
-                new LongProbeFunction<RenderTest>() {
-                    @Override
-                    public long get(RenderTest source) throws Exception {
-                        return value;
-                    }
-                });
+        metricsRegistry.registerStaticProbe(this, name, ProbeLevel.INFO,
+                (LongProbeFunction<RenderTest>) source -> value);
     }
 
 
     private void registerDoubleMetric(String name, final int value) {
-        metricsRegistry.register(this, name, ProbeLevel.INFO,
-                new DoubleProbeFunction<RenderTest>() {
-                    @Override
-                    public double get(RenderTest source) throws Exception {
-                        return value;
-                    }
-                });
+        metricsRegistry.registerStaticProbe(this, name, ProbeLevel.INFO,
+                (DoubleProbeFunction<RenderTest>) source -> value);
     }
 
     @Test(expected = NullPointerException.class)
     public void whenCalledWithNullRenderer() {
-        metricsRegistry.render(null);
+        metricsRegistry.collect(null);
     }
 
     @Test
     public void whenLongProbeFunctions() {
-        ProbeRenderer renderer = mock(ProbeRenderer.class);
+        MetricsCollector renderer = mock(MetricsCollector.class);
 
         registerLongMetric("foo", 10);
         registerLongMetric("bar", 20);
 
-        metricsRegistry.render(renderer);
+        metricsRegistry.collect(renderer);
 
-        verify(renderer).renderLong("foo", 10);
-        verify(renderer).renderLong("bar", 20);
+        verify(renderer).collectLong(metricDescriptor("foo"), 10);
+        verify(renderer).collectLong(metricDescriptor("bar"), 20);
         verifyNoMoreInteractions(renderer);
+    }
+
+    private MetricDescriptor metricDescriptor(String metric) {
+        return DEFAULT_DESCRIPTOR_SUPPLIER.get()
+                                          .withMetric(metric);
     }
 
     @Test
     public void whenDoubleProbeFunctions() {
-        ProbeRenderer renderer = mock(ProbeRenderer.class);
+        MetricsCollector renderer = mock(MetricsCollector.class);
 
         registerDoubleMetric("foo", 10);
         registerDoubleMetric("bar", 20);
 
-        metricsRegistry.render(renderer);
+        metricsRegistry.collect(renderer);
 
-        verify(renderer).renderDouble("foo", 10);
-        verify(renderer).renderDouble("bar", 20);
+        verify(renderer).collectDouble(metricDescriptor("foo"), 10);
+        verify(renderer).collectDouble(metricDescriptor("bar"), 20);
         verifyNoMoreInteractions(renderer);
     }
 
     @Test
     public void whenException() {
-        ProbeRenderer renderer = mock(ProbeRenderer.class);
+        MetricsCollector renderer = mock(MetricsCollector.class);
 
         final ExpectedRuntimeException ex = new ExpectedRuntimeException();
 
-        metricsRegistry.register(this, "foo", ProbeLevel.MANDATORY,
-                new LongProbeFunction<RenderTest>() {
-                    @Override
-                    public long get(RenderTest source) throws Exception {
-                        throw ex;
-                    }
+        metricsRegistry.registerStaticProbe(this, "foo", ProbeLevel.MANDATORY,
+                (LongProbeFunction<RenderTest>) source -> {
+                    throw ex;
                 });
 
-        metricsRegistry.render(renderer);
+        metricsRegistry.collect(renderer);
 
-        verify(renderer).renderException("foo", ex);
+        verify(renderer).collectException(metricDescriptor("foo"), ex);
         verifyNoMoreInteractions(renderer);
-    }
-
-    @Test
-    public void getSortedProbes_whenProbeAdded() {
-        List<ProbeInstance> instances1 = metricsRegistry.getSortedProbeInstances();
-
-        registerLongMetric("foo", 10);
-
-        List<ProbeInstance> instances2 = metricsRegistry.getSortedProbeInstances();
-
-        Assert.assertNotSame(instances1, instances2);
-    }
-
-    @Test
-    public void getSortedProbes_whenNoChange() {
-        List<ProbeInstance> instances1 = metricsRegistry.getSortedProbeInstances();
-
-        List<ProbeInstance> instances2 = metricsRegistry.getSortedProbeInstances();
-
-        assertSame(instances1, instances2);
     }
 }

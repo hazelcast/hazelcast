@@ -17,8 +17,12 @@
 package com.hazelcast.client.impl.protocol.task;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.instance.Node;
-import com.hazelcast.nio.Connection;
+import com.hazelcast.instance.impl.Node;
+import com.hazelcast.internal.nio.Connection;
+
+import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Future;
 
 /**
  * Base class for remove listener message tasks that removes a client listener registration
@@ -26,24 +30,25 @@ import com.hazelcast.nio.Connection;
  *
  * @param <P> listener registration request parameters type
  */
-public abstract class AbstractRemoveListenerMessageTask<P> extends AbstractCallableMessageTask<P>
-        implements ListenerMessageTask {
+public abstract class AbstractRemoveListenerMessageTask<P>
+        extends AbstractAsyncMessageTask<P, Boolean> {
 
     protected AbstractRemoveListenerMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
-    public final Object call() {
+    public final CompletableFuture<Boolean> processInternal() {
         endpoint.removeDestroyAction(getRegistrationId());
-        return deRegisterListener();
+        return (CompletableFuture<Boolean>) deRegisterListener();
     }
 
-    protected abstract boolean deRegisterListener();
+    protected abstract Future<Boolean> deRegisterListener();
 
-    protected abstract String getRegistrationId();
+    protected abstract UUID getRegistrationId();
 
     @Override
     public Object[] getParameters() {
         return new Object[]{getRegistrationId()};
     }
+
 }

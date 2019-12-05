@@ -19,12 +19,12 @@ package com.hazelcast.transaction;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
-import com.hazelcast.nio.serialization.SerializableByConvention;
+import com.hazelcast.internal.serialization.SerializableByConvention;
 
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 
-import static com.hazelcast.nio.serialization.SerializableByConvention.Reason.PUBLIC_API;
+import static com.hazelcast.internal.serialization.SerializableByConvention.Reason.PUBLIC_API;
 
 /**
  * Contains the configuration for a Hazelcast transaction.
@@ -46,7 +46,7 @@ public final class TransactionOptions implements DataSerializable {
 
     /**
      * Creates a new default configured TransactionsOptions.
-     * <p/>
+     * <p>
      * It will be configured with a timeout of 2 minutes, durability of 1 and a TransactionType.TWO_PHASE.
      */
     public TransactionOptions() {
@@ -64,7 +64,7 @@ public final class TransactionOptions implements DataSerializable {
 
     /**
      * Sets the {@link TransactionType}.
-     * <p/>
+     * <p>
      * A local transaction is less safe than a two phase transaction; when a member fails during the commit
      * of a local transaction, it could be that some of the changes are committed, while others are not and this
      * can leave your system in an inconsistent state.
@@ -94,7 +94,7 @@ public final class TransactionOptions implements DataSerializable {
 
     /**
      * Sets the timeout.
-     * <p/>
+     * <p>
      * The timeout determines the maximum lifespan of a transaction. So if a transaction is configured with a
      * timeout of 2 minutes, then it will automatically rollback if it hasn't committed yet.
      *
@@ -131,7 +131,7 @@ public final class TransactionOptions implements DataSerializable {
 
     /**
      * Sets the transaction durability.
-     * <p/>
+     * <p>
      * The durability is the number of machines that can take over if a member fails during a transaction
      * commit or rollback. This value only has meaning when {@link TransactionType#TWO_PHASE} is selected.
      *
@@ -165,14 +165,14 @@ public final class TransactionOptions implements DataSerializable {
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeLong(timeoutMillis);
         out.writeInt(durability);
-        out.writeInt(transactionType.value);
+        out.writeInt(transactionType.id);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         timeoutMillis = in.readLong();
         durability = in.readInt();
-        transactionType = TransactionType.getByValue(in.readInt());
+        transactionType = TransactionType.getById(in.readInt());
     }
 
 
@@ -186,53 +186,53 @@ public final class TransactionOptions implements DataSerializable {
     }
 
     /**
-     * The type of transaction. With the type you have influence on how much guarantee you get
-     * when a member crashes when a transaction is committing.
+     * The type of transaction. With the type you have
+     * influence on how much guarantee you get when a
+     * member crashes when a transaction is committing.
      */
     public enum TransactionType {
 
         /**
-         * The two phase commit is separated in 2 parts. First it tries to execute the prepare; if there are any conflicts,
-         * the prepare will fail. Once the prepare has succeeded, the commit (writing the changes) can be executed.
+         * The one phase transaction executes a transaction using a single
+         * step at the end; committing the changes. There is no prepare
+         * of the transactions, so conflicts are not detected. If there
+         * is a conflict, then when the transaction commits the changes,
+         * some of the changes are written and others are not; leaving
+         * the system in a potentially permanent inconsistent state.
+         */
+        ONE_PHASE(1),
+
+        /**
+         * The two phase commit is separated in 2 parts. First it tries to execute
+         * the prepare; if there are any conflicts, the prepare will fail. Once the
+         * prepare has succeeded, the commit (writing the changes) can be executed.
          *
-         * Hazelcast also provides three phase transaction by automatically copying the backlog to another member so that in case
-         * of failure during a commit, another member can continue the commit from backup. For more information see the
-         * {@link TransactionOptions#setDurability(int)}
+         * Hazelcast also provides three phase transaction by
+         * automatically copying the backlog to another member so
+         * that in case of failure during a commit, another member
+         * can continue the commit from backup. For more information
+         * see the {@link TransactionOptions#setDurability(int)}
          */
-        TWO_PHASE(1),
+        TWO_PHASE(2);
 
-        /**
-         * @deprecated since 3.6 use ONE_PHASE
-         */
-        @Deprecated
-        LOCAL(2),
+        private final int id;
 
-        /**
-         * The one phase transaction executes a transaction using a single step at the end; committing the changes. There
-         * is no prepare of the transactions, so conflicts are not detected. If there is a conflict, then when the transaction
-         * commits the changes, some of the changes are written and others are not; leaving the system in a potentially permanent
-         * inconsistent state.
-         */
-        ONE_PHASE(2);
-
-        private final int value;
-
-        TransactionType(int value) {
-            this.value = value;
+        TransactionType(int id) {
+            this.id = id;
         }
 
         public int id() {
-            return value;
+            return id;
         }
 
-        public static TransactionType getByValue(int value) {
-            switch (value) {
+        public static TransactionType getById(int id) {
+            switch (id) {
                 case 1:
-                    return TWO_PHASE;
-                case 2:
                     return ONE_PHASE;
+                case 2:
+                    return TWO_PHASE;
                 default:
-                    throw new IllegalArgumentException("Unrecognized value:" + value);
+                    throw new IllegalArgumentException("Unrecognized id:" + id);
             }
         }
     }

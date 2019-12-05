@@ -16,12 +16,12 @@
 
 package com.hazelcast.spring.cache;
 
-import com.hazelcast.core.IMap;
+import com.hazelcast.map.IMap;
 import com.hazelcast.core.OperationTimeoutException;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
-import com.hazelcast.util.ExceptionUtil;
+import com.hazelcast.internal.util.ExceptionUtil;
 import org.springframework.cache.Cache;
 import org.springframework.cache.support.SimpleValueWrapper;
 
@@ -149,7 +149,7 @@ public class HazelcastCache implements Cache {
     private Object lookup(Object key) {
         if (readTimeout > 0) {
             try {
-                return this.map.getAsync(key).get(readTimeout, TimeUnit.MILLISECONDS);
+                return this.map.getAsync(key).toCompletableFuture().get(readTimeout, TimeUnit.MILLISECONDS);
             } catch (TimeoutException te) {
                 throw new OperationTimeoutException(te.getMessage());
             } catch (InterruptedException e) {

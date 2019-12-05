@@ -19,11 +19,11 @@ package com.hazelcast.internal.partition;
 import com.hazelcast.internal.partition.impl.DummyInternalPartition;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
-import com.hazelcast.nio.Address;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -31,10 +31,16 @@ import org.junit.runner.RunWith;
 
 import java.net.UnknownHostException;
 import java.util.Collections;
+import java.util.UUID;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class PartitionRuntimeStateTest extends HazelcastTestSupport {
+
+    private UUID[] uuids = {
+            new UUID(57, 2),
+            new UUID(57, 1)
+    };
 
     @Test
     public void toString_whenConstructed() throws UnknownHostException {
@@ -84,10 +90,10 @@ public class PartitionRuntimeStateTest extends HazelcastTestSupport {
 
     private PartitionRuntimeState createPartitionState(int partitionId, PartitionReplica... replicas) {
         DummyInternalPartition partition = new DummyInternalPartition(replicas, partitionId);
-        return new PartitionRuntimeState(new InternalPartition[]{partition}, Collections.<MigrationInfo>emptyList(), partitionId);
+        return new PartitionRuntimeState(new InternalPartition[]{partition}, Collections.emptyList(), partitionId);
     }
 
     private PartitionReplica replica(String host, int port) throws UnknownHostException {
-        return new PartitionReplica(new Address(host, port), host + port);
+        return new PartitionReplica(new Address(host, port),  uuids[port % 2]);
     }
 }

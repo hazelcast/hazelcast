@@ -16,30 +16,31 @@
 
 package com.hazelcast.map;
 
-import com.hazelcast.nio.serialization.BinaryInterface;
+import com.hazelcast.internal.serialization.BinaryInterface;
 
+import javax.annotation.Nullable;
 import java.io.Serializable;
 import java.util.Map;
+import java.util.Map.Entry;
 
 /**
  * An EntryProcessor passes you a {@link java.util.Map.Entry}. At the time you receive it
  * the entry is locked and not released until the EntryProcessor completes.
  * This obviates the need to explicitly lock as would be required with a {@link java.util.concurrent.ExecutorService}.
- * <p/>
+ * <p>
  * Performance can be very high as the data is not moved off the Member partition. This avoids network cost and, if
  * the storage format is {@link com.hazelcast.config.InMemoryFormat#OBJECT}, then there is no de-serialization or serialization
  * cost.
- * <p/>
+ * <p>
  * EntryProcessors execute on the partition thread in a member. Multiple operations on the same partition are queued.
- * <p/>
+ * <p>
  * While executing partition migrations are not allowed. Any migrations are queued on the partition thread.
- * <p/>
+ * <p>
  * An EntryProcessor may not be re-entrant i.e. it may not access the same {@link Map}. Limitation: you can only access
  * data on the same partition.
- * <p/>
+ * <p>
  * Note that to modify an entry by using EntryProcessors you should explicitly call the
  * {@link java.util.Map.Entry#setValue} method of {@link java.util.Map.Entry} such as:
- * <p/>
  * <pre>
  * <code>
  * {@literal}Override
@@ -53,25 +54,23 @@ import java.util.Map;
  * </code>
  * </pre>
  * otherwise EntryProcessor does not guarantee that it will modify the entry.
- *<p/>
+ *<p>
  * EntryProcessor instances can be shared between threads. If an EntryProcessor instance contains mutable state, proper
  * concurrency control needs to be provided to coordinate access to mutable state. Another option is to rely on threadlocals.
  *
- * Serialized instances of this interface are used in client-member communication, so changing an implementation's binary format
- * will render it incompatible with its previous versions.
- *
- * @param <K> Type of key of a {@link java.util.Map.Entry}
- * @param <V> Type of value of a {@link java.util.Map.Entry}
- * @see AbstractEntryProcessor
+ * @param <K> map entry key type
+ * @param <V> map entry value type
+ * @param <R> return type
  */
 @BinaryInterface
-public interface EntryProcessor<K, V> extends Serializable {
+@FunctionalInterface
+public interface EntryProcessor<K, V, R> extends Serializable {
 
     /**
      * Process the entry without worrying about concurrency.
      * <p>
-     * Note that to modify an entry by using an EntryProcessor you should explicitly call
-     * {@link java.util.Map.Entry#setValue setValue()} method of {@link java.util.Map.Entry},
+     * Note that to modify an entry by using an EntryProcessor you should
+     * explicitly call {@link Entry#setValue setValue()} method of {@link Entry},
      * for example:
      * <pre>
      *       {@literal @}Override
@@ -85,22 +84,35 @@ public interface EntryProcessor<K, V> extends Serializable {
      * </pre>
      * otherwise the {@code EntryProcessor} does not guarantee to modify the entry.
      * <p>
-     * The entry's value will be {@code null}, if the entry for the key doesn't exist. You
-     * can create new mapping by setting a non-null value or remove existing mapping
-     * entry by setting the value to null.
+     * The entry's value will be {@code null}, if the entry for the key doesn't
+     * exist. You can create new mapping by setting a non-null value or remove
+     * existing mapping entry by setting the value to {@code null}.
      *
      * @param entry entry to be processed
-     * @return a result that will be returned from the method taking the {@link EntryProcessor}, such as
-     * {@link com.hazelcast.core.IMap#executeOnKey(Object, EntryProcessor) IMap.executeOnKey()}
+     * @return a result that will be returned from the method taking the
+     * {@link EntryProcessor}, such as
+     * {@link IMap#executeOnKey(Object, EntryProcessor) IMap.executeOnKey()}
      */
-    Object process(Map.Entry<K, V> entry);
+    R process(Entry<K, V> entry);
 
     /**
      * Get the entry processor to be applied to backup entries.
+     * <p>
+     * In case of a readonly execution, {@code null} can be returned to indicate
+     * that no backups should be made.
+     * <p>
+     * Note that there is a possibility which an {@code EntryProcessor} can see
+     * that a key exists but its backup processor may not find it at run time due
+     * to an unsent backup of a previous operation (e.g. a previous put). In
+     * those situations, Hazelcast internally/eventually will sync those owner
+     * and backup partitions so you will not lose any data.
+     * When coding an backup entry processor, you should take that case into
+     * account, otherwise {@link java.lang.NullPointerException}s can be seen
+     * since {@link java.util.Map.Entry#getValue()} may return null.
      *
-     * In case of a readonly execution, {@code null} can be returned to indicate that no backups should be made.
-     *
-     * @return the back up processor
+     * @return the backup entry processor
      */
-    EntryBackupProcessor<K, V> getBackupProcessor();
+    default @Nullable EntryProcessor<K, V, R> getBackupProcessor() {
+        return this;
+    }
 }

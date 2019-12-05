@@ -20,18 +20,17 @@ import classloading.domain.Person;
 import classloading.domain.PersonCacheLoaderFactory;
 import classloading.domain.PersonEntryProcessor;
 import classloading.domain.PersonExpiryPolicyFactory;
-import com.hazelcast.cache.impl.HazelcastServerCachingProvider;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.UserCodeDeploymentConfig;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.internal.util.FilteringClassLoader;
+import com.hazelcast.internal.util.RootCauseMatcher;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.util.FilteringClassLoader;
-import com.hazelcast.util.RootCauseMatcher;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -45,6 +44,7 @@ import java.util.Arrays;
 import java.util.List;
 
 import static com.hazelcast.cache.HazelcastCachingProvider.propertiesByInstanceItself;
+import static com.hazelcast.cache.CacheTestSupport.createServerCachingProvider;
 import static com.hazelcast.config.UserCodeDeploymentConfig.ClassCacheMode.OFF;
 import static org.junit.Assert.assertNotNull;
 
@@ -52,7 +52,7 @@ import static org.junit.Assert.assertNotNull;
  * Test transfer of CacheConfig's of typed Caches to a joining member
  */
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class CacheTypesConfigTest extends HazelcastTestSupport {
 
     @Rule
@@ -73,7 +73,7 @@ public class CacheTypesConfigTest extends HazelcastTestSupport {
     public void cacheConfigShouldBeAddedOnJoiningMember_whenClassNotResolvable() {
         // create a HazelcastInstance with a CacheConfig referring to a Class not resolvable on the joining member
         HazelcastInstance hz1 = factory.newHazelcastInstance(getConfig());
-        CachingProvider cachingProvider = HazelcastServerCachingProvider.createCachingProvider(hz1);
+        CachingProvider cachingProvider = createServerCachingProvider(hz1);
         cachingProvider.getCacheManager().createCache(cacheName, createCacheConfig());
 
         // joining member cannot resolve Person class
@@ -102,7 +102,7 @@ public class CacheTypesConfigTest extends HazelcastTestSupport {
                 .setWhitelistedPrefixes("classloading");
         config.setUserCodeDeploymentConfig(codeDeploymentConfig);
         HazelcastInstance hz1 = factory.newHazelcastInstance(config);
-        CachingProvider cachingProvider = HazelcastServerCachingProvider.createCachingProvider(hz1);
+        CachingProvider cachingProvider = createServerCachingProvider(hz1);
         cachingProvider.getCacheManager().createCache(cacheName, createCacheConfig());
 
         // joining member cannot resolve Person class but it is resolvable on other member via user code deployment
@@ -122,7 +122,7 @@ public class CacheTypesConfigTest extends HazelcastTestSupport {
     @Test
     public void cacheConfigShouldBeAddedOnJoiningMember_whenCacheLoaderFactoryNotResolvable() throws InterruptedException {
         HazelcastInstance hz1 = factory.newHazelcastInstance(getConfig());
-        CachingProvider cachingProvider = HazelcastServerCachingProvider.createCachingProvider(hz1);
+        CachingProvider cachingProvider = createServerCachingProvider(hz1);
         CacheManager cacheManager1 = cachingProvider.getCacheManager(null, null, propertiesByInstanceItself(hz1));
         CacheConfig cacheConfig = createCacheConfig();
         cacheConfig.setCacheLoaderFactory(new PersonCacheLoaderFactory());
@@ -143,7 +143,7 @@ public class CacheTypesConfigTest extends HazelcastTestSupport {
     @Test
     public void cacheConfigShouldBeAddedOnJoiningMember_whenExpiryPolicyFactoryNotResolvable() throws InterruptedException {
         HazelcastInstance hz1 = factory.newHazelcastInstance(getConfig());
-        CachingProvider cachingProvider = HazelcastServerCachingProvider.createCachingProvider(hz1);
+        CachingProvider cachingProvider = createServerCachingProvider(hz1);
         cachingProvider.getCacheManager().createCache(cacheName, createCacheConfig()
                 .setExpiryPolicyFactory(new PersonExpiryPolicyFactory()));
 

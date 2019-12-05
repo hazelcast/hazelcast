@@ -17,7 +17,7 @@
 package com.hazelcast.osgi;
 
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.nio.IOUtil;
+import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
@@ -55,6 +55,7 @@ public class CheckDependenciesIT extends HazelcastTestSupport {
             "javax.security.auth",
             "javax.transaction.xa",
             "javax.xml",
+            "javax.naming",
 
             // these 2 XML-related packages are part of the platform since Java SE 6
             "org.xml.sax",
@@ -133,6 +134,6 @@ public class CheckDependenciesIT extends HazelcastTestSupport {
     }
 
     protected boolean isMatching(String urlString) {
-        return urlString.contains("hazelcast-3.") && urlString.contains("target");
+        return urlString.contains("hazelcast-4.") && urlString.contains("target");
     }
 }

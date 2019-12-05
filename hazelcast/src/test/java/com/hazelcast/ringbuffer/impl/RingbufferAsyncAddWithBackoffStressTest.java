@@ -107,7 +107,7 @@ public class RingbufferAsyncAddWithBackoffStressTest extends HazelcastTestSuppor
     class ProduceThread extends TestThread {
         private volatile long produced;
 
-        public ProduceThread() {
+        ProduceThread() {
             super("ProduceThread");
         }
 
@@ -122,7 +122,7 @@ public class RingbufferAsyncAddWithBackoffStressTest extends HazelcastTestSuppor
             while (!stop.get()) {
                 long sleepMs = 100;
                 for (; ; ) {
-                    long result = ringbuffer.addAsync(produced, FAIL).get();
+                    long result = ringbuffer.addAsync(produced, FAIL).toCompletableFuture().get();
                     if (result != -1) {
                         break;
                     }
@@ -149,7 +149,7 @@ public class RingbufferAsyncAddWithBackoffStressTest extends HazelcastTestSuppor
     class ConsumeThread extends TestThread {
         volatile long seq;
 
-        public ConsumeThread(int id) {
+        ConsumeThread(int id) {
             super("ConsumeThread-" + id);
         }
 

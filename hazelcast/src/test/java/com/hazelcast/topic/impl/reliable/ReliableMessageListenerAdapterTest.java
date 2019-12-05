@@ -17,18 +17,19 @@
 package com.hazelcast.topic.impl.reliable;
 
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.Message;
-import com.hazelcast.core.MessageListener;
+import com.hazelcast.topic.Message;
+import com.hazelcast.topic.MessageListener;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 import static java.util.Collections.singletonList;
@@ -45,7 +46,7 @@ import static org.mockito.Mockito.when;
  * provided.
  */
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class ReliableMessageListenerAdapterTest extends HazelcastTestSupport {
 
     @Test
@@ -53,7 +54,7 @@ public class ReliableMessageListenerAdapterTest extends HazelcastTestSupport {
         HazelcastInstance hz = createHazelcastInstance();
         ReliableTopicProxy<String> topic = (ReliableTopicProxy<String>) hz.<String>getReliableTopic("topic");
         MessageListenerMock listener = new MessageListenerMock();
-        String id = topic.addMessageListener(listener);
+        UUID id = topic.addMessageListener(listener);
 
         MessageRunner runner = topic.runnersMap.get(id);
         assertNotNull(runner);

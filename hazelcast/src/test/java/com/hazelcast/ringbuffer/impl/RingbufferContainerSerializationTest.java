@@ -20,13 +20,13 @@ import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.RingbufferConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.serialization.InternalSerializationService;
-import com.hazelcast.nio.BufferObjectDataInput;
-import com.hazelcast.nio.BufferObjectDataOutput;
+import com.hazelcast.internal.nio.BufferObjectDataInput;
+import com.hazelcast.internal.nio.BufferObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
 import org.junit.Test;
@@ -37,7 +37,7 @@ import java.io.IOException;
 
 import static com.hazelcast.config.InMemoryFormat.BINARY;
 import static com.hazelcast.config.InMemoryFormat.OBJECT;
-import static com.hazelcast.nio.IOUtil.closeResource;
+import static com.hazelcast.internal.nio.IOUtil.closeResource;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -48,14 +48,14 @@ import static org.junit.Assert.assertTrue;
  * This test verifies that the RingbufferContainer can serialize itself
  * correctly using different in memory formats and using enabling/disabling
  * TTL.
- * <p/>
+ * <p>
  * This test also forces a delay between the serialization and deserialization. If a ringbuffer is configured
  * with a ttl, we don't want to send over the actual expiration time, because on a different member in the
  * cluster, there could be a big time difference which can lead to the ringbuffer immediately cleaning or cleaning
  * very very late.
  */
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class RingbufferContainerSerializationTest extends HazelcastTestSupport {
 
     private static final int CLOCK_DIFFERENCE_MS = 2000;

@@ -16,18 +16,18 @@
 
 package com.hazelcast.internal.networking.nio;
 
+import com.hazelcast.internal.metrics.ExcludedMetricTargets;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.metrics.ProbeLevel;
 import com.hazelcast.internal.networking.ChannelErrorHandler;
+import com.hazelcast.internal.util.concurrent.IdleStrategy;
 import com.hazelcast.internal.util.counters.SwCounter;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.operationexecutor.OperationHostileThread;
-import com.hazelcast.util.concurrent.IdleStrategy;
 
 import java.io.IOException;
 import java.nio.channels.CancelledKeyException;
 import java.nio.channels.ClosedChannelException;
-import java.nio.channels.SelectableChannel;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.util.Iterator;
@@ -35,14 +35,16 @@ import java.util.Queue;
 import java.util.Random;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
+import static com.hazelcast.internal.metrics.MetricTarget.MANAGEMENT_CENTER;
 import static com.hazelcast.internal.metrics.ProbeLevel.INFO;
 import static com.hazelcast.internal.networking.nio.SelectorMode.SELECT_NOW;
 import static com.hazelcast.internal.networking.nio.SelectorOptimizer.newSelector;
+import static com.hazelcast.internal.util.EmptyStatement.ignore;
 import static com.hazelcast.internal.util.counters.SwCounter.newSwCounter;
-import static com.hazelcast.util.EmptyStatement.ignore;
 import static java.lang.Math.max;
 import static java.lang.System.currentTimeMillis;
 
+@ExcludedMetricTargets(MANAGEMENT_CENTER)
 public class NioThread extends Thread implements OperationHostileThread {
 
     // WARNING: This value has significant effect on idle CPU usage!
@@ -74,7 +76,7 @@ public class NioThread extends Thread implements OperationHostileThread {
     volatile long processCount;
 
     @Probe(name = "taskQueueSize")
-    private final Queue<Runnable> taskQueue = new ConcurrentLinkedQueue<Runnable>();
+    private final Queue<Runnable> taskQueue = new ConcurrentLinkedQueue<>();
     @Probe
     private final SwCounter eventCount = newSwCounter();
     @Probe
@@ -400,11 +402,10 @@ public class NioThread extends Thread implements OperationHostileThread {
         // reset each pipeline's selectionKey, cancel the old keys
         for (SelectionKey key : oldSelector.keys()) {
             NioPipeline pipeline = (NioPipeline) key.attachment();
-            SelectableChannel channel = key.channel();
+
             try {
                 int ops = key.interestOps();
-                SelectionKey newSelectionKey = channel.register(newSelector, ops, pipeline);
-                pipeline.setSelectionKey(newSelectionKey);
+                pipeline.initSelectionKey(newSelector, ops);
             } catch (ClosedChannelException e) {
                 logger.info("Channel was closed while trying to register with new selector.");
             } catch (CancelledKeyException e) {

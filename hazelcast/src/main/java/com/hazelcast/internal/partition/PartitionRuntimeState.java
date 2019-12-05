@@ -16,17 +16,13 @@
 
 package com.hazelcast.internal.partition;
 
-import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.partition.impl.PartitionDataSerializerHook;
-import com.hazelcast.nio.Address;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.nio.serialization.impl.Versioned;
-import com.hazelcast.version.Version;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -34,9 +30,11 @@ import java.util.HashMap;
 import java.util.Map;
 
 import static com.hazelcast.internal.partition.InternalPartition.MAX_REPLICA_COUNT;
-import static com.hazelcast.util.StringUtil.LINE_SEPARATOR;
+import static com.hazelcast.internal.serialization.impl.SerializationUtil.readNullableCollection;
+import static com.hazelcast.internal.serialization.impl.SerializationUtil.writeNullableCollection;
+import static com.hazelcast.internal.util.StringUtil.LINE_SEPARATOR;
 
-public final class PartitionRuntimeState implements IdentifiedDataSerializable, Versioned {
+public final class PartitionRuntimeState implements IdentifiedDataSerializable {
 
     private PartitionReplica[] replicas;
     private int[][] minimizedPartitionTable;
@@ -53,7 +51,7 @@ public final class PartitionRuntimeState implements IdentifiedDataSerializable, 
 
     public PartitionRuntimeState(InternalPartition[] partitions, Collection<MigrationInfo> completedMigrations, int version) {
         this.version = version;
-        this.completedMigrations = completedMigrations != null ? completedMigrations : Collections.<MigrationInfo>emptyList();
+        this.completedMigrations = completedMigrations != null ? completedMigrations : Collections.emptyList();
         Map<PartitionReplica, Integer> replicaToIndexes = createPartitionReplicaToIndexMap(partitions);
         replicas = toPartitionReplicaArray(replicaToIndexes);
         minimizedPartitionTable = createMinimizedPartitionTable(partitions, replicaToIndexes);
@@ -87,7 +85,7 @@ public final class PartitionRuntimeState implements IdentifiedDataSerializable, 
     }
 
     private Map<PartitionReplica, Integer> createPartitionReplicaToIndexMap(InternalPartition[] partitions) {
-        Map<PartitionReplica, Integer> map = new HashMap<PartitionReplica, Integer>();
+        Map<PartitionReplica, Integer> map = new HashMap<>();
         int addressIndex = 0;
         for (InternalPartition partition : partitions) {
             for (int i = 0; i < MAX_REPLICA_COUNT; i++) {
@@ -130,7 +128,7 @@ public final class PartitionRuntimeState implements IdentifiedDataSerializable, 
     }
 
     public Collection<MigrationInfo> getCompletedMigrations() {
-        return completedMigrations != null ? completedMigrations : Collections.<MigrationInfo>emptyList();
+        return completedMigrations != null ? completedMigrations : Collections.emptyList();
     }
 
     public MigrationInfo getActiveMigration() {
@@ -142,21 +140,12 @@ public final class PartitionRuntimeState implements IdentifiedDataSerializable, 
     }
 
     @Override
-    @SuppressWarnings("checkstyle:npathcomplexity")
     public void readData(ObjectDataInput in) throws IOException {
         version = in.readInt();
         int memberCount = in.readInt();
         replicas = new PartitionReplica[memberCount];
-        Version version = in.getVersion();
         for (int i = 0; i < memberCount; i++) {
-            PartitionReplica replica;
-            if (version.isGreaterOrEqual(Versions.V3_12)) {
-                replica = in.readObject();
-            } else {
-                Address address = new Address();
-                address.readData(in);
-                replica = new PartitionReplica(address, PartitionReplica.UNKNOWN_UID);
-            }
+            PartitionReplica replica = in.readObject();
             int index = in.readInt();
             assert replicas[index] == null : "Duplicate replica! Member: " + replica + ", index: " + index
                     + ", addresses: " + Arrays.toString(replicas);
@@ -172,35 +161,17 @@ public final class PartitionRuntimeState implements IdentifiedDataSerializable, 
             }
         }
 
-        if (in.readBoolean()) {
-            activeMigration = new MigrationInfo();
-            activeMigration.readData(in);
-        }
-
-        int k = in.readInt();
-        if (k > 0) {
-            completedMigrations = new ArrayList<MigrationInfo>(k);
-            for (int i = 0; i < k; i++) {
-                MigrationInfo migrationInfo = new MigrationInfo();
-                migrationInfo.readData(in);
-                completedMigrations.add(migrationInfo);
-            }
-        }
+        activeMigration = in.readObject();
+        completedMigrations = readNullableCollection(in);
     }
 
-    @SuppressWarnings("checkstyle:npathcomplexity")
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeInt(version);
-        Version version = out.getVersion();
         out.writeInt(replicas.length);
         for (int index = 0; index < replicas.length; index++) {
             PartitionReplica replica = replicas[index];
-            if (version.isGreaterOrEqual(Versions.V3_12)) {
-                out.writeObject(replica);
-            } else {
-                replica.address().writeData(out);
-            }
+            out.writeObject(replica);
             out.writeInt(index);
         }
 
@@ -211,22 +182,8 @@ public final class PartitionRuntimeState implements IdentifiedDataSerializable, 
             }
         }
 
-        if (activeMigration != null) {
-            out.writeBoolean(true);
-            activeMigration.writeData(out);
-        } else {
-            out.writeBoolean(false);
-        }
-
-        if (completedMigrations != null) {
-            int k = completedMigrations.size();
-            out.writeInt(k);
-            for (MigrationInfo migrationInfo : completedMigrations) {
-                migrationInfo.writeData(out);
-            }
-        } else {
-            out.writeInt(0);
-        }
+        out.writeObject(activeMigration);
+        writeNullableCollection(completedMigrations, out);
     }
 
     @Override
@@ -250,7 +207,7 @@ public final class PartitionRuntimeState implements IdentifiedDataSerializable, 
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return PartitionDataSerializerHook.PARTITION_RUNTIME_STATE;
     }
 

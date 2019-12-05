@@ -17,7 +17,7 @@
 package com.hazelcast.test;
 
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -26,7 +26,7 @@ import org.junit.runner.RunWith;
  * Tests that a node can be added to one of two brains in a {@link SplitBrainTestSupport} test.
  */
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class SplitBrainAddMemberTest extends SplitBrainTestSupport {
 
     private static final int FIRST_HALF = 1;

@@ -16,7 +16,8 @@
 
 package com.hazelcast.spring;
 
-import com.hazelcast.nio.Address;
+import com.hazelcast.instance.EndpointQualifier;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.spi.MemberAddressProvider;
 
 import java.net.InetSocketAddress;
@@ -47,6 +48,16 @@ public class DummyMemberAddressProvider implements MemberAddressProvider {
         } catch (UnknownHostException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    @Override
+    public InetSocketAddress getBindAddress(EndpointQualifier qualifier) {
+        return getBindAddress();
+    }
+
+    @Override
+    public InetSocketAddress getPublicAddress(EndpointQualifier qualifier) {
+        return getPublicAddress();
     }
 
     public Properties getProperties() {

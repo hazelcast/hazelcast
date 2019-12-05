@@ -21,13 +21,13 @@ import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.adapter.DataStructureAdapter;
 import com.hazelcast.internal.nearcache.impl.invalidation.StaleReadDetector;
-import com.hazelcast.monitor.NearCacheStats;
-import com.hazelcast.monitor.impl.NearCacheStatsImpl;
+import com.hazelcast.nearcache.NearCacheStats;
+import com.hazelcast.internal.monitor.impl.NearCacheStatsImpl;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.ExecutionService;
+import com.hazelcast.spi.impl.executionservice.ExecutionService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.properties.HazelcastProperties;
-import com.hazelcast.spi.serialization.SerializationService;
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.test.AssertTask;
 import org.junit.Before;
 

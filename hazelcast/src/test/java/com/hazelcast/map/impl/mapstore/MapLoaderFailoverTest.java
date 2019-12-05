@@ -17,16 +17,15 @@
 package com.hazelcast.map.impl.mapstore;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.config.GroupConfig;
 import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IMap;
-import com.hazelcast.core.MapLoader;
-import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.map.IMap;
+import com.hazelcast.map.MapLoader;
+import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
 import org.junit.Test;
@@ -41,7 +40,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class MapLoaderFailoverTest extends HazelcastTestSupport {
 
     private static final int MAP_STORE_ENTRY_COUNT = 10000;
@@ -128,7 +127,7 @@ public class MapLoaderFailoverTest extends HazelcastTestSupport {
         IMap<Object, Object> map = nodes[0].getMap(mapName);
 
         // trigger loading and pause half way through
-        Future<Object> asyncVal = map.getAsync(1);
+        Future<Object> asyncVal = map.getAsync(1).toCompletableFuture();
         pausingLoader.awaitPause();
 
         hz3.getLifecycleService().terminate();
@@ -195,10 +194,9 @@ public class MapLoaderFailoverTest extends HazelcastTestSupport {
     }
 
     private Config newConfig(String mapName, MapStoreConfig.InitialLoadMode loadMode, int backups, MapLoader loader) {
-        Config config = new Config()
-                .setGroupConfig(new GroupConfig(getClass().getSimpleName()))
-                .setProperty(GroupProperty.MAP_LOAD_CHUNK_SIZE.getName(), Integer.toString(BATCH_SIZE))
-                .setProperty(GroupProperty.PARTITION_COUNT.getName(), "13");
+        Config config = new Config().setClusterName(getClass().getSimpleName())
+                .setProperty(ClusterProperty.MAP_LOAD_CHUNK_SIZE.getName(), Integer.toString(BATCH_SIZE))
+                .setProperty(ClusterProperty.PARTITION_COUNT.getName(), "13");
 
         MapStoreConfig mapStoreConfig = new MapStoreConfig()
                 .setInitialLoadMode(loadMode)

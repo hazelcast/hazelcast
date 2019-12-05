@@ -22,7 +22,7 @@ import com.hazelcast.internal.metrics.impl.FieldProbe.LongFieldProbe;
 import com.hazelcast.internal.util.counters.Counter;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -41,7 +41,7 @@ import static com.hazelcast.internal.util.counters.SwCounter.newSwCounter;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class FieldProbeTest extends HazelcastTestSupport {
 
     @Test(expected = IllegalArgumentException.class)
@@ -49,8 +49,9 @@ public class FieldProbeTest extends HazelcastTestSupport {
         UnknownFieldType unknownFieldType = new UnknownFieldType();
         Field field = unknownFieldType.getClass().getDeclaredField("field");
         Probe probe = field.getAnnotation(Probe.class);
+        SourceMetadata ignoredSourceMetadata = new SourceMetadata(Object.class);
 
-        createFieldProbe(field, probe);
+        createFieldProbe(field, probe, ignoredSourceMetadata);
     }
 
     private class UnknownFieldType {
@@ -92,7 +93,7 @@ public class FieldProbeTest extends HazelcastTestSupport {
         SomeSource source = new SomeSource();
         Field field = source.getClass().getDeclaredField(fieldName);
         Probe probe = field.getAnnotation(Probe.class);
-        FieldProbe fieldProbe = createFieldProbe(field, probe);
+        FieldProbe fieldProbe = createFieldProbe(field, probe, new SourceMetadata(SomeSource.class));
 
         LongFieldProbe longFieldProbe = assertInstanceOf(LongFieldProbe.class, fieldProbe);
 
@@ -116,7 +117,7 @@ public class FieldProbeTest extends HazelcastTestSupport {
         Field field = source.getClass().getDeclaredField(fieldName);
         Probe probe = field.getAnnotation(Probe.class);
 
-        FieldProbe fieldProbe = createFieldProbe(field, probe);
+        FieldProbe fieldProbe = createFieldProbe(field, probe, new SourceMetadata(SomeSource.class));
         assertInstanceOf(DoubleFieldProbe.class, fieldProbe);
 
         DoubleFieldProbe doubleFieldProbe = (DoubleFieldProbe) fieldProbe;

@@ -19,7 +19,6 @@ package com.hazelcast.internal.eviction;
 import com.hazelcast.cache.HazelcastCacheManager;
 import com.hazelcast.cache.ICache;
 import com.hazelcast.cache.impl.HazelcastServerCacheManager;
-import com.hazelcast.cache.impl.HazelcastServerCachingProvider;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.test.AssertTask;
@@ -27,7 +26,7 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.OverridePropertyRule;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.test.backup.BackupAccessor;
 import com.hazelcast.test.backup.TestBackupUtils;
@@ -42,13 +41,14 @@ import javax.cache.expiry.Duration;
 import javax.cache.spi.CachingProvider;
 import java.util.concurrent.TimeUnit;
 
+import static com.hazelcast.cache.CacheTestSupport.createServerCachingProvider;
 import static com.hazelcast.cache.impl.eviction.CacheClearExpiredRecordsTask.PROP_TASK_PERIOD_SECONDS;
 import static com.hazelcast.test.OverridePropertyRule.set;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({ParallelTest.class, QuickTest.class})
+@Category({ParallelJVMTest.class, QuickTest.class})
 public class CacheExpirationPromotionTest extends HazelcastTestSupport {
 
     @Rule
@@ -77,7 +77,7 @@ public class CacheExpirationPromotionTest extends HazelcastTestSupport {
 
     @Test
     public void promoted_replica_should_send_eviction_to_other_backup() {
-        final CachingProvider provider = HazelcastServerCachingProvider.createCachingProvider(instances[0]);
+        final CachingProvider provider = createServerCachingProvider(instances[0]);
         provider.getCacheManager().createCache(cacheName, getCacheConfig());
         HazelcastCacheManager cacheManager = (HazelcastServerCacheManager) provider.getCacheManager();
 

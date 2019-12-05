@@ -23,9 +23,9 @@ package com.hazelcast.internal.networking;
  * ChannelHandlers are not expected to be thread-safe.
  *
  * @param <S> the type of the source. E.g. a ByteBuffer or
- *            a {@link com.hazelcast.util.function.Supplier}.
+ *            a {@link java.util.function.Supplier}.
  * @param <D> the type of the destination. E.g. a ByteBuffer
- *            or a {@link com.hazelcast.util.function.Consumer}.
+ *            or a {@link java.util.function.Consumer}.
  */
 public abstract class ChannelHandler<H extends ChannelHandler, S, D> {
 

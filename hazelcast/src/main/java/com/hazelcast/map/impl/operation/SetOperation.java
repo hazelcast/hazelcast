@@ -18,41 +18,46 @@ package com.hazelcast.map.impl.operation;
 
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.impl.MutatingOperation;
+import com.hazelcast.spi.impl.operationservice.MutatingOperation;
 
 import static com.hazelcast.core.EntryEventType.ADDED;
 import static com.hazelcast.core.EntryEventType.UPDATED;
+import static com.hazelcast.map.impl.record.Record.UNSET;
 
 public class SetOperation extends BasePutOperation implements MutatingOperation {
 
-    private boolean newRecord;
+    private transient boolean newRecord;
 
     public SetOperation() {
     }
 
-    public SetOperation(String name, Data dataKey, Data value, long ttl, long maxIdle) {
-        super(name, dataKey, value, ttl, maxIdle);
+    public SetOperation(String name, Data dataKey, Data value) {
+        super(name, dataKey, value);
     }
 
     @Override
-    public void run() {
-        Object oldValue = recordStore.set(dataKey, dataValue, ttl, maxIdle);
+    protected void runInternal() {
+        oldValue = recordStore.set(dataKey, dataValue, getTtl(), getMaxIdle());
         newRecord = oldValue == null;
+    }
 
-        if (recordStore.hasQueryCache()) {
-            dataOldValue = mapServiceContext.toData(oldValue);
-        }
+    protected long getTtl() {
+        return UNSET;
+    }
+
+    protected long getMaxIdle() {
+        return UNSET;
     }
 
     @Override
-    public void afterRun() {
+    protected void afterRunInternal() {
         eventType = newRecord ? ADDED : UPDATED;
 
-        super.afterRun();
+        super.afterRunInternal();
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MapDataSerializerHook.SET;
     }
 }

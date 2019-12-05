@@ -1,0 +1,2 @@
+com.hazelcast.serviceprovider.TestServiceDescriptorProvider
+com.hazelcast.cp.internal.RaftDataServiceDescriptorProvider

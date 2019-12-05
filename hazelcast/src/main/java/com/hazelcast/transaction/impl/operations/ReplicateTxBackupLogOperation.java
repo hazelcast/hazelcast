@@ -17,38 +17,41 @@
 package com.hazelcast.transaction.impl.operations;
 
 import com.hazelcast.core.MemberLeftException;
+import com.hazelcast.internal.util.UUIDSerializationUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.spi.ExceptionAction;
+import com.hazelcast.spi.impl.operationservice.ExceptionAction;
 import com.hazelcast.spi.exception.TargetNotMemberException;
 import com.hazelcast.transaction.impl.TransactionLogRecord;
 import com.hazelcast.transaction.impl.TransactionManagerServiceImpl;
 
 import java.io.IOException;
+import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.UUID;
 
-import static com.hazelcast.spi.ExceptionAction.THROW_EXCEPTION;
+import static com.hazelcast.spi.impl.operationservice.ExceptionAction.THROW_EXCEPTION;
 import static com.hazelcast.transaction.impl.TransactionDataSerializerHook.REPLICATE_TX_BACKUP_LOG;
 
 /**
  * Replicates the transactionlog to a remote system.
  *
- * This operation is only executed when durability > 0
+ * This operation is only executed when durability &gt; 0
  */
 public class ReplicateTxBackupLogOperation extends AbstractTxOperation {
 
     // todo: probably we don't want to use linked list.
     private final List<TransactionLogRecord> records = new LinkedList<TransactionLogRecord>();
-    private String callerUuid;
-    private String txnId;
+    private UUID callerUuid;
+    private UUID txnId;
     private long timeoutMillis;
     private long startTime;
 
     public ReplicateTxBackupLogOperation() {
     }
 
-    public ReplicateTxBackupLogOperation(List<TransactionLogRecord> logs, String callerUuid, String txnId,
+    public ReplicateTxBackupLogOperation(Collection<TransactionLogRecord> logs, UUID callerUuid, UUID txnId,
                                          long timeoutMillis, long startTime) {
         records.addAll(logs);
         this.callerUuid = callerUuid;
@@ -77,14 +80,14 @@ public class ReplicateTxBackupLogOperation extends AbstractTxOperation {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return REPLICATE_TX_BACKUP_LOG;
     }
 
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
-        out.writeUTF(callerUuid);
-        out.writeUTF(txnId);
+        UUIDSerializationUtil.writeUUID(out, callerUuid);
+        UUIDSerializationUtil.writeUUID(out, txnId);
         out.writeLong(timeoutMillis);
         out.writeLong(startTime);
         int len = records.size();
@@ -98,8 +101,8 @@ public class ReplicateTxBackupLogOperation extends AbstractTxOperation {
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
-        callerUuid = in.readUTF();
-        txnId = in.readUTF();
+        callerUuid = UUIDSerializationUtil.readUUID(in);
+        txnId = UUIDSerializationUtil.readUUID(in);
         timeoutMillis = in.readLong();
         startTime = in.readLong();
         int len = in.readInt();

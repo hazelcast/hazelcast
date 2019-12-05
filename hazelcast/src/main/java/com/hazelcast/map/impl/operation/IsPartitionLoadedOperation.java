@@ -17,10 +17,11 @@
 package com.hazelcast.map.impl.operation;
 
 import com.hazelcast.map.impl.MapDataSerializerHook;
-import com.hazelcast.spi.PartitionAwareOperation;
-import com.hazelcast.spi.ReadonlyOperation;
+import com.hazelcast.spi.impl.operationservice.PartitionAwareOperation;
+import com.hazelcast.spi.impl.operationservice.ReadonlyOperation;
 
-public class IsPartitionLoadedOperation extends MapOperation implements PartitionAwareOperation, ReadonlyOperation {
+public class IsPartitionLoadedOperation extends MapOperation
+        implements PartitionAwareOperation, ReadonlyOperation {
 
     private boolean isFinished;
 
@@ -32,7 +33,7 @@ public class IsPartitionLoadedOperation extends MapOperation implements Partitio
     }
 
     @Override
-    public void run() {
+    protected void runInternal() {
         isFinished = recordStore.isLoaded();
     }
 
@@ -47,7 +48,7 @@ public class IsPartitionLoadedOperation extends MapOperation implements Partitio
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MapDataSerializerHook.IS_PARTITION_LOADED;
     }
 }

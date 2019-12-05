@@ -20,7 +20,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IMap;
+import com.hazelcast.map.IMap;
 import com.hazelcast.internal.nearcache.NearCacheRecord;
 import com.hazelcast.internal.nearcache.NearCacheRecordStore;
 import com.hazelcast.internal.nearcache.impl.DefaultNearCache;
@@ -42,7 +42,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.hazelcast.internal.nearcache.NearCacheRecord.READ_PERMITTED;
 import static com.hazelcast.internal.nearcache.NearCacheTestUtils.getBaseConfig;
-import static com.hazelcast.util.RandomPicker.getInt;
+import static com.hazelcast.internal.util.RandomPicker.getInt;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 

@@ -21,7 +21,7 @@ import com.hazelcast.collection.impl.collection.CollectionDataSerializerHook;
 import com.hazelcast.collection.impl.collection.operations.CollectionBackupAwareOperation;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.impl.operationservice.Operation;
 
 import java.io.IOException;
 import java.util.List;
@@ -74,7 +74,7 @@ public class CollectionCommitOperation extends CollectionBackupAwareOperation {
 
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return CollectionDataSerializerHook.TXN_COMMIT;
     }
 

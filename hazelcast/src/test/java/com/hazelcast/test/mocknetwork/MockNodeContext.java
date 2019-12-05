@@ -16,28 +16,28 @@
 
 package com.hazelcast.test.mocknetwork;
 
-import com.hazelcast.cluster.Joiner;
+import com.hazelcast.internal.cluster.Joiner;
 import com.hazelcast.instance.AddressPicker;
 import com.hazelcast.instance.BuildInfoProvider;
-import com.hazelcast.instance.DefaultNodeContext;
-import com.hazelcast.instance.Node;
-import com.hazelcast.instance.NodeContext;
-import com.hazelcast.instance.NodeExtension;
-import com.hazelcast.instance.NodeExtensionFactory;
-import com.hazelcast.nio.Address;
-import com.hazelcast.nio.ConnectionManager;
-import com.hazelcast.nio.NodeIOService;
-import com.hazelcast.nio.tcp.FirewallingConnectionManager;
+import com.hazelcast.instance.impl.DefaultNodeContext;
+import com.hazelcast.instance.impl.Node;
+import com.hazelcast.instance.impl.NodeContext;
+import com.hazelcast.instance.impl.NodeExtension;
+import com.hazelcast.instance.impl.NodeExtensionFactory;
+import com.hazelcast.internal.networking.ServerSocketRegistry;
+import com.hazelcast.cluster.Address;
+import com.hazelcast.internal.nio.NetworkingService;
+import com.hazelcast.internal.nio.NodeIOService;
+import com.hazelcast.internal.nio.tcp.FirewallingNetworkingService;
 import com.hazelcast.test.TestEnvironment;
 import com.hazelcast.test.compatibility.SamplingNodeExtension;
 
 import java.lang.reflect.Constructor;
-import java.nio.channels.ServerSocketChannel;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
-import static com.hazelcast.util.ExceptionUtil.rethrow;
+import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 
 public class MockNodeContext implements NodeContext {
 
@@ -46,7 +46,7 @@ public class MockNodeContext implements NodeContext {
     private final Set<Address> initiallyBlockedAddresses;
     private final List<String> nodeExtensionPriorityList;
 
-    protected MockNodeContext(TestNodeRegistry registry, Address thisAddress) {
+    public MockNodeContext(TestNodeRegistry registry, Address thisAddress) {
         this(registry, thisAddress, Collections.<Address>emptySet(), DefaultNodeContext.EXTENSION_PRIORITY_LIST);
     }
 
@@ -78,10 +78,10 @@ public class MockNodeContext implements NodeContext {
     }
 
     @Override
-    public ConnectionManager createConnectionManager(Node node, ServerSocketChannel serverSocketChannel) {
+    public NetworkingService createNetworkingService(Node node, ServerSocketRegistry serverSocketRegistry) {
         NodeIOService ioService = new NodeIOService(node, node.nodeEngine);
-        ConnectionManager delegate = new MockConnectionManager(ioService, node, registry);
-        return new FirewallingConnectionManager(delegate, initiallyBlockedAddresses);
+        MockNetworkingService mockNetworkingService = new MockNetworkingService(ioService, node, registry);
+        return new FirewallingNetworkingService(mockNetworkingService, initiallyBlockedAddresses);
     }
 
     /**

@@ -25,18 +25,21 @@ import com.hazelcast.collection.impl.list.operations.ListRemoveOperation;
 import com.hazelcast.collection.impl.list.operations.ListSetOperation;
 import com.hazelcast.collection.impl.list.operations.ListSubOperation;
 import com.hazelcast.config.CollectionConfig;
-import com.hazelcast.core.IList;
+import com.hazelcast.collection.IList;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.SerializableList;
 import com.hazelcast.spi.impl.UnmodifiableLazyList;
-import com.hazelcast.spi.serialization.SerializationService;
+import com.hazelcast.internal.serialization.SerializationService;
 
+import javax.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
+
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 public class ListProxyImpl<E> extends AbstractCollectionProxyImpl<ListService, E> implements IList<E> {
 
@@ -50,8 +53,8 @@ public class ListProxyImpl<E> extends AbstractCollectionProxyImpl<ListService, E
     }
 
     @Override
-    public void add(int index, E e) {
-        checkObjectNotNull(e);
+    public void add(int index, @Nonnull E e) {
+        checkNotNull(e, "Null item is not allowed");
         checkIndexNotNegative(index);
 
         final Data value = getNodeEngine().toData(e);
@@ -68,8 +71,8 @@ public class ListProxyImpl<E> extends AbstractCollectionProxyImpl<ListService, E
     }
 
     @Override
-    public E set(int index, E element) {
-        checkObjectNotNull(element);
+    public E set(int index, @Nonnull E element) {
+        checkNotNull(element, "Null item is not allowed");
         checkIndexNotNegative(index);
 
         final Data value = getNodeEngine().toData(element);
@@ -86,17 +89,17 @@ public class ListProxyImpl<E> extends AbstractCollectionProxyImpl<ListService, E
     }
 
     @Override
-    public int indexOf(Object o) {
+    public int indexOf(@Nonnull Object o) {
         return indexOfInternal(false, o);
     }
 
     @Override
-    public int lastIndexOf(Object o) {
+    public int lastIndexOf(@Nonnull Object o) {
         return indexOfInternal(true, o);
     }
 
-    private int indexOfInternal(boolean last, Object o) {
-        checkObjectNotNull(o);
+    private int indexOfInternal(boolean last, @Nonnull Object o) {
+        checkNotNull(o, "Null item is not allowed");
 
         final Data value = getNodeEngine().toData(o);
         final ListIndexOfOperation operation = new ListIndexOfOperation(name, last, value);
@@ -105,14 +108,14 @@ public class ListProxyImpl<E> extends AbstractCollectionProxyImpl<ListService, E
     }
 
     @Override
-    public boolean addAll(int index, Collection<? extends E> c) {
-        checkObjectNotNull(c);
+    public boolean addAll(int index, @Nonnull Collection<? extends E> c) {
+        checkNotNull(c, "Null collection is not allowed");
         checkIndexNotNegative(index);
 
         List<Data> valueList = new ArrayList<Data>(c.size());
         final NodeEngine nodeEngine = getNodeEngine();
         for (E e : c) {
-            checkObjectNotNull(e);
+            checkNotNull(e, "Null collection element is not allowed");
             valueList.add(nodeEngine.toData(e));
         }
         final ListAddAllOperation operation = new ListAddAllOperation(name, index, valueList);
@@ -151,8 +154,8 @@ public class ListProxyImpl<E> extends AbstractCollectionProxyImpl<ListService, E
     }
 
     @Override
-    public <T> T[] toArray(T[] a) {
-        checkObjectNotNull(a);
+    public <T> T[] toArray(@Nonnull T[] a) {
+        checkNotNull(a, "Null array parameter is not allowed!");
         return subList(-1, -1).toArray(a);
     }
 

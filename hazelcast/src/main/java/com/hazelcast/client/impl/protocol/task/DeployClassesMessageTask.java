@@ -18,20 +18,20 @@ package com.hazelcast.client.impl.protocol.task;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ClientDeployClassesCodec;
-import com.hazelcast.core.Member;
+import com.hazelcast.cluster.Member;
 import com.hazelcast.core.MemberLeftException;
-import com.hazelcast.instance.Node;
+import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.usercodedeployment.UserCodeDeploymentService;
 import com.hazelcast.internal.usercodedeployment.impl.operation.DeployClassesOperation;
-import com.hazelcast.nio.Connection;
+import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.UserCodeDeploymentPermission;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.util.function.Supplier;
+import com.hazelcast.spi.impl.operationservice.Operation;
 
 import java.security.Permission;
 import java.util.Collection;
 import java.util.Map;
+import java.util.function.Supplier;
 
 /**
  * Message task handling user code deployment from client to cluster

@@ -15,6 +15,6 @@
  */
 
 /**
- * Contains the API for the {@link com.hazelcast.core.ITopic}.
+ * Contains the API for the {@link com.hazelcast.topic.ITopic}.
  */
 package com.hazelcast.topic;

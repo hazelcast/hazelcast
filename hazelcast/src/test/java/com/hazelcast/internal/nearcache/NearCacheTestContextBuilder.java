@@ -22,12 +22,12 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.adapter.DataStructureAdapter;
 import com.hazelcast.internal.adapter.DataStructureLoader;
 import com.hazelcast.internal.nearcache.impl.invalidation.RepairingTask;
-import com.hazelcast.spi.serialization.SerializationService;
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.test.HazelcastTestSupport;
 
 import javax.cache.CacheManager;
 
-import static com.hazelcast.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static org.junit.Assert.assertNotEquals;
 
 /**

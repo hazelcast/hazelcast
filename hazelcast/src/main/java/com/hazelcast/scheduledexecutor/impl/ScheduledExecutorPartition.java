@@ -17,56 +17,56 @@
 package com.hazelcast.scheduledexecutor.impl;
 
 import com.hazelcast.config.ScheduledExecutorConfig;
+import com.hazelcast.internal.util.ConstructorFunction;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.scheduledexecutor.impl.operations.ReplicationOperation;
-import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.util.ConstructorFunction;
+import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.spi.impl.operationservice.Operation;
 
 import java.util.Iterator;
 import java.util.Map;
 
-import static com.hazelcast.util.MapUtil.createHashMap;
+import static com.hazelcast.internal.util.MapUtil.createHashMap;
 
-public class ScheduledExecutorPartition
-        extends AbstractScheduledExecutorContainerHolder {
+public class ScheduledExecutorPartition extends AbstractScheduledExecutorContainerHolder {
 
     private final ILogger logger;
     private final int partitionId;
+    private final ConstructorFunction<String, ScheduledExecutorContainer> containerConstructorFunction;
 
-    private final ConstructorFunction<String, ScheduledExecutorContainer> containerConstructorFunction =
-            new ConstructorFunction<String, ScheduledExecutorContainer>() {
-                @Override
-                public ScheduledExecutorContainer createNew(String name) {
-                    if (logger.isFinestEnabled()) {
-                        logger.finest("[Partition:" + partitionId + "]Create new scheduled executor container with name:" + name);
-                    }
-
-                    ScheduledExecutorConfig config = nodeEngine.getConfig().findScheduledExecutorConfig(name);
-                    return new ScheduledExecutorContainer(name, partitionId, nodeEngine, config.getDurability(),
-                            config.getCapacity());
-                }
-            };
 
     ScheduledExecutorPartition(NodeEngine nodeEngine, int partitionId) {
         super(nodeEngine);
         this.logger = nodeEngine.getLogger(getClass());
         this.partitionId = partitionId;
+        this.containerConstructorFunction = name -> {
+            if (logger.isFinestEnabled()) {
+                logger.finest("[Partition:" + partitionId + "]Create new scheduled executor container with name:" + name);
+            }
+            ScheduledExecutorConfig config = nodeEngine.getConfig().findScheduledExecutorConfig(name);
+            return new ScheduledExecutorContainer(name, partitionId, nodeEngine, config.getDurability(),
+                    config.getCapacity());
+        };
     }
 
-    public Operation prepareReplicationOperation(int replicaIndex, boolean migrationMode) {
+    /**
+     * Collects all tasks for replication for all schedulers on this partition.
+     *
+     * @param replicaIndex the replica index of the member which will receive the returned operation
+     * @return the
+     */
+    public Operation prepareReplicationOperation(int replicaIndex) {
         Map<String, Map<String, ScheduledTaskDescriptor>> map = createHashMap(containers.size());
 
         if (logger.isFinestEnabled()) {
-            logger.finest("[Partition: " + partitionId + "] Prepare replication(migration: " + migrationMode + ") "
-                    + "for index: " + replicaIndex);
+            logger.finest("[Partition: " + partitionId + "] Preparing replication for index: " + replicaIndex);
         }
 
         for (ScheduledExecutorContainer container : containers.values()) {
             if (replicaIndex > container.getDurability()) {
                 continue;
             }
-            map.put(container.getName(), container.prepareForReplication(migrationMode));
+            map.put(container.getName(), container.prepareForReplication());
         }
 
         return new ReplicationOperation(map);
@@ -101,6 +101,11 @@ public class ScheduledExecutorPartition
         }
     }
 
+    /**
+     * Attempts to promote and schedule all suspended tasks on this partition.
+     * Exceptions throw during rescheduling will be rethrown and will prevent
+     * further suspended tasks from being scheduled.
+     */
     void promoteSuspended() {
         if (logger.isFinestEnabled()) {
             logger.finest("[Partition: " + partitionId + "] " + "Promote suspended");
@@ -108,6 +113,21 @@ public class ScheduledExecutorPartition
 
         for (ScheduledExecutorContainer container : containers.values()) {
             container.promoteSuspended();
+        }
+    }
+
+    /**
+     * Attempts to cancel and interrupt all tasks on all containers. Exceptions
+     * thrown during task cancellation will be rethrown and prevent further
+     * tasks from being cancelled.
+     */
+    void suspendTasks() {
+        if (logger.isFinestEnabled()) {
+            logger.finest("[Partition: " + partitionId + "] Suspending tasks");
+        }
+
+        for (ScheduledExecutorContainer container : containers.values()) {
+            container.suspendTasks();
         }
     }
 }

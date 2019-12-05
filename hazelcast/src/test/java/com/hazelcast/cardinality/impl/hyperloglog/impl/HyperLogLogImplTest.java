@@ -17,10 +17,10 @@
 package com.hazelcast.cardinality.impl.hyperloglog.impl;
 
 import com.hazelcast.cardinality.impl.hyperloglog.HyperLogLog;
-import com.hazelcast.test.HazelcastParametersRunnerFactory;
+import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
 import com.hazelcast.test.annotation.SlowTest;
-import com.hazelcast.util.HashUtil;
-import com.hazelcast.util.collection.IntHashSet;
+import com.hazelcast.internal.util.HashUtil;
+import com.hazelcast.internal.util.collection.IntHashSet;
 import org.HdrHistogram.Histogram;
 import org.junit.Before;
 import org.junit.Test;
@@ -40,7 +40,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
 @RunWith(Parameterized.class)
-@UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
+@UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
 @Category(SlowTest.class)
 public class HyperLogLogImplTest {
 

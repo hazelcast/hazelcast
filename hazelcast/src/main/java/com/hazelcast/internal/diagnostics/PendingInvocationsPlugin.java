@@ -17,15 +17,13 @@
 package com.hazelcast.internal.diagnostics;
 
 import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.spi.impl.operationservice.InternalOperationService;
 import com.hazelcast.spi.impl.operationservice.impl.Invocation;
 import com.hazelcast.spi.impl.operationservice.impl.InvocationRegistry;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.spi.properties.HazelcastProperty;
-import com.hazelcast.util.ItemCounter;
+import com.hazelcast.internal.util.ItemCounter;
 
-import static com.hazelcast.internal.diagnostics.Diagnostics.PREFIX;
 import static com.hazelcast.internal.diagnostics.OperationDescriptors.toOperationDesc;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
@@ -46,13 +44,13 @@ public final class PendingInvocationsPlugin extends DiagnosticsPlugin {
      * If set to 0, the plugin is disabled.
      */
     public static final HazelcastProperty PERIOD_SECONDS
-            = new HazelcastProperty(PREFIX + ".pending.invocations.period.seconds", 0, SECONDS);
+            = new HazelcastProperty("hazelcast.diagnostics.pending.invocations.period.seconds", 0, SECONDS);
 
     /**
      * The minimum number of invocations per type of operation before it start logging this particular operation.
      */
     public static final HazelcastProperty THRESHOLD
-            = new HazelcastProperty(PREFIX + ".pending.invocations.threshold", 1);
+            = new HazelcastProperty("hazelcast.diagnostics.pending.invocations.threshold", 1);
 
     private final InvocationRegistry invocationRegistry;
     private final ItemCounter<String> occurrenceMap = new ItemCounter<String>();
@@ -61,7 +59,7 @@ public final class PendingInvocationsPlugin extends DiagnosticsPlugin {
 
     public PendingInvocationsPlugin(NodeEngineImpl nodeEngine) {
         super(nodeEngine.getLogger(PendingInvocationsPlugin.class));
-        InternalOperationService operationService = nodeEngine.getOperationService();
+        OperationServiceImpl operationService = nodeEngine.getOperationService();
         this.invocationRegistry = ((OperationServiceImpl) operationService).getInvocationRegistry();
         HazelcastProperties props = nodeEngine.getProperties();
         this.periodMillis = props.getMillis(PERIOD_SECONDS);

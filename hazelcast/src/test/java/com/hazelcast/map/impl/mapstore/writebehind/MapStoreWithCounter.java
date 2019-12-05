@@ -16,7 +16,7 @@
 
 package com.hazelcast.map.impl.mapstore.writebehind;
 
-import com.hazelcast.core.MapStore;
+import com.hazelcast.map.MapStore;
 
 import java.util.Collection;
 import java.util.HashMap;

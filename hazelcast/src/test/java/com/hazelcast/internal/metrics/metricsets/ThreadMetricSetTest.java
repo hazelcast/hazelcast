@@ -19,7 +19,6 @@ package com.hazelcast.internal.metrics.metricsets;
 import com.hazelcast.internal.metrics.LongGauge;
 import com.hazelcast.internal.metrics.impl.MetricsRegistryImpl;
 import com.hazelcast.logging.Logger;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
@@ -57,47 +56,27 @@ public class ThreadMetricSetTest extends HazelcastTestSupport {
     public void threadCount() {
         final LongGauge gauge = metricsRegistry.newLongGauge("thread.threadCount");
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertEquals(MX_BEAN.getThreadCount(), gauge.read(), 10);
-            }
-        });
+        assertTrueEventually(() -> assertEquals(MX_BEAN.getThreadCount(), gauge.read(), 10));
     }
 
     @Test
     public void peakThreadCount() {
         final LongGauge gauge = metricsRegistry.newLongGauge("thread.peakThreadCount");
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertEquals(MX_BEAN.getPeakThreadCount(), gauge.read(), 10);
-            }
-        });
+        assertTrueEventually(() -> assertEquals(MX_BEAN.getPeakThreadCount(), gauge.read(), 10));
     }
 
     @Test
     public void daemonThreadCount() {
         final LongGauge gauge = metricsRegistry.newLongGauge("thread.daemonThreadCount");
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertEquals(MX_BEAN.getDaemonThreadCount(), gauge.read(), 10);
-            }
-        });
+        assertTrueEventually(() -> assertEquals(MX_BEAN.getDaemonThreadCount(), gauge.read(), 10));
     }
 
     @Test
     public void totalStartedThreadCount() {
         final LongGauge gauge = metricsRegistry.newLongGauge("thread.totalStartedThreadCount");
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertEquals(MX_BEAN.getTotalStartedThreadCount(), gauge.read(), 10);
-            }
-        });
+        assertTrueEventually(() -> assertEquals(MX_BEAN.getTotalStartedThreadCount(), gauge.read(), 10));
     }
 }

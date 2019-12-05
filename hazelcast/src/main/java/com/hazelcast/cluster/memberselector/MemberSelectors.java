@@ -16,16 +16,18 @@
 
 package com.hazelcast.cluster.memberselector;
 
-import com.hazelcast.core.Member;
-import com.hazelcast.core.MemberSelector;
+import com.hazelcast.cluster.Member;
+import com.hazelcast.cluster.MemberSelector;
+import com.hazelcast.cluster.memberselector.impl.AndMemberSelector;
+import com.hazelcast.cluster.memberselector.impl.OrMemberSelector;
 
 /**
- * A utility class to get {@link com.hazelcast.core.MemberSelector} instances.
+ * A utility class to get {@link MemberSelector} instances.
  */
 public final class MemberSelectors {
 
     /**
-     * A {@link com.hazelcast.core.MemberSelector} instance that selects only lite members that own no partition
+     * A {@link MemberSelector} instance that selects only lite members that own no partition
      */
 
     public static final MemberSelector LITE_MEMBER_SELECTOR = new MemberSelector() {
@@ -36,7 +38,7 @@ public final class MemberSelectors {
     };
 
     /**
-     * A {@link com.hazelcast.core.MemberSelector} instance that selects only data members that own a partition
+     * A {@link MemberSelector} instance that selects only data members that own a partition
      */
 
     public static final MemberSelector DATA_MEMBER_SELECTOR = new MemberSelector() {
@@ -47,7 +49,7 @@ public final class MemberSelectors {
     };
 
     /**
-     * A {@link com.hazelcast.core.MemberSelector} instance that selects only local members
+     * A {@link MemberSelector} instance that selects only local members
      */
 
     public static final MemberSelector LOCAL_MEMBER_SELECTOR = new MemberSelector() {
@@ -58,7 +60,7 @@ public final class MemberSelectors {
     };
 
     /**
-     * A {@link com.hazelcast.core.MemberSelector} instance that selects only remote members
+     * A {@link MemberSelector} instance that selects only remote members
      */
 
     public static final MemberSelector NON_LOCAL_MEMBER_SELECTOR = new MemberSelector() {
@@ -73,8 +75,8 @@ public final class MemberSelectors {
 
     /**
      * Selects a member when one of the selectors succeed
-     * @param selectors {@link com.hazelcast.core.MemberSelector} instances to iterate
-     * @return a {@link com.hazelcast.core.MemberSelector} that selects a member when one of the sub-selectors succeed
+     * @param selectors {@link MemberSelector} instances to iterate
+     * @return a {@link MemberSelector} that selects a member when one of the sub-selectors succeed
      */
     public static MemberSelector or(MemberSelector... selectors) {
         return new OrMemberSelector(selectors);
@@ -82,8 +84,8 @@ public final class MemberSelectors {
 
     /**
      * Selects a member when all of the selectors succeed
-     * @param selectors {@link com.hazelcast.core.MemberSelector} instances to iterate
-     * @return a {@link com.hazelcast.core.MemberSelector} that selects a member when all of the sub-selectors succeed
+     * @param selectors {@link MemberSelector} instances to iterate
+     * @return a {@link MemberSelector} that selects a member when all of the sub-selectors succeed
      */
     public static MemberSelector and(MemberSelector... selectors) {
         return new AndMemberSelector(selectors);

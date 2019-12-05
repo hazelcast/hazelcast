@@ -16,22 +16,18 @@
 
 package com.hazelcast.query.impl.predicates;
 
+import com.hazelcast.config.IndexType;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IMap;
+import com.hazelcast.map.IMap;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
-import com.hazelcast.monitor.impl.PerIndexStats;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.query.EntryObject;
-import com.hazelcast.query.IndexAwarePredicate;
 import com.hazelcast.query.Predicate;
-import com.hazelcast.query.PredicateBuilder;
+import com.hazelcast.query.PredicateBuilder.EntryObject;
 import com.hazelcast.query.Predicates;
 import com.hazelcast.query.QueryException;
 import com.hazelcast.query.SampleTestObjects.Employee;
 import com.hazelcast.query.SampleTestObjects.Value;
-import com.hazelcast.query.impl.Index;
-import com.hazelcast.query.impl.IndexImpl;
 import com.hazelcast.query.impl.QueryContext;
 import com.hazelcast.query.impl.QueryEntry;
 import com.hazelcast.query.impl.QueryableEntry;
@@ -49,7 +45,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
-import static com.hazelcast.instance.TestUtil.toData;
+import static com.hazelcast.instance.impl.TestUtil.toData;
 import static com.hazelcast.query.Predicates.and;
 import static com.hazelcast.query.Predicates.between;
 import static com.hazelcast.query.Predicates.equal;
@@ -64,7 +60,6 @@ import static com.hazelcast.query.Predicates.like;
 import static com.hazelcast.query.Predicates.notEqual;
 import static com.hazelcast.query.Predicates.or;
 import static com.hazelcast.query.Predicates.regex;
-import static com.hazelcast.query.impl.IndexCopyBehavior.COPY_ON_READ;
 import static java.lang.Boolean.FALSE;
 import static java.lang.Boolean.TRUE;
 import static org.hamcrest.Matchers.allOf;
@@ -72,9 +67,6 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
@@ -86,14 +78,14 @@ public class PredicatesTest extends HazelcastTestSupport {
 
     @Test
     @Ignore("now will execute partition number of times")
-    public void testAndPredicate_whenFirstIndexAwarePredicateIsNotIndexed() throws Exception {
+    public void testAndPredicate_whenFirstIndexAwarePredicateIsNotIndexed() {
         final HazelcastInstance instance = createHazelcastInstance();
         final IMap<Object, Object> map = instance.getMap("map");
-        map.addIndex("name", false);
+        map.addIndex(IndexType.HASH, "name");
         String name = randomString();
         map.put("key", new Value(name));
 
-        final ShouldExecuteOncePredicate<?, ?> indexAwareNotIndexedPredicate = new ShouldExecuteOncePredicate<Object, Object>();
+        final ShouldExecuteOncePredicate<?, ?> indexAwareNotIndexedPredicate = new ShouldExecuteOncePredicate<>();
         final EqualPredicate equalPredicate = new EqualPredicate("name", name);
         final AndPredicate andPredicate = new AndPredicate(indexAwareNotIndexedPredicate, equalPredicate);
         map.values(andPredicate);
@@ -243,6 +235,7 @@ public class PredicatesTest extends HazelcastTestSupport {
         assertPredicateTrue(like(ATTRIBUTE, "J.-*.*\\%"), "J.-*.*%");
         assertPredicateTrue(like(ATTRIBUTE, "J\\_"), "J_");
         assertPredicateTrue(like(ATTRIBUTE, "J%"), "Java");
+        assertPredicateTrue(like(ATTRIBUTE, "J%"), "Java\n");
     }
 
     @Test
@@ -252,13 +245,14 @@ public class PredicatesTest extends HazelcastTestSupport {
         assertPredicateTrue(ilike(ATTRIBUTE, "java%ld"), "Java World");
         assertPredicateTrue(ilike(ATTRIBUTE, "%world"), "Java World");
         assertPredicateFalse(ilike(ATTRIBUTE, "Java_World"), "gava World");
+        assertPredicateTrue(ilike(ATTRIBUTE, "J%"), "java\nworld");
     }
 
     @Test
     public void testILike_Id() {
         ILikePredicate predicate = (ILikePredicate) ilike(ATTRIBUTE, "Java_World");
 
-        assertThat(predicate.getId(), allOf(equalTo(6), equalTo(PredicateDataSerializerHook.ILIKE_PREDICATE)));
+        assertThat(predicate.getClassId(), allOf(equalTo(6), equalTo(PredicateDataSerializerHook.ILIKE_PREDICATE)));
     }
 
     @Test
@@ -271,11 +265,11 @@ public class PredicatesTest extends HazelcastTestSupport {
     @Test
     public void testCriteriaAPI() {
         Object value = new Employee(12, "abc-123-xvz", 34, true, 10D);
-        EntryObject e = new PredicateBuilder().getEntryObject();
+        EntryObject e = Predicates.newPredicateBuilder().getEntryObject();
         EntryObject e2 = e.get("age");
         Predicate predicate = e2.greaterEqual(29).and(e2.lessEqual(36));
         assertTrue(predicate.apply(createEntry("1", value)));
-        e = new PredicateBuilder().getEntryObject();
+        e = Predicates.newPredicateBuilder().getEntryObject();
         assertTrue(e.get("id").equal(12).apply(createEntry("1", value)));
     }
 
@@ -307,19 +301,6 @@ public class PredicatesTest extends HazelcastTestSupport {
     @Test(expected = NullPointerException.class)
     public void testInNullWithNullArray() {
         Predicates.in(ATTRIBUTE, null);
-    }
-
-    @Test
-    public void testNotEqualsPredicateDoesNotUseIndex() {
-        Index dummyIndex = new IndexImpl("foo", false, ss,
-                Extractors.newBuilder(ss).build(), COPY_ON_READ, PerIndexStats.EMPTY);
-        QueryContext mockQueryContext = mock(QueryContext.class);
-        when(mockQueryContext.getIndex(anyString())).thenReturn(dummyIndex);
-
-        NotEqualPredicate p = new NotEqualPredicate("foo", "bar");
-
-        boolean indexed = p.isIndexed(mockQueryContext);
-        assertFalse(indexed);
     }
 
     private class DummyEntry extends QueryEntry {

@@ -17,17 +17,16 @@
 package com.hazelcast.map.impl.mapstore;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.config.GroupConfig;
 import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.config.MapStoreConfig.InitialLoadMode;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IMap;
-import com.hazelcast.core.MapLoader;
-import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.map.IMap;
+import com.hazelcast.map.MapLoader;
+import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
 import org.junit.Test;
@@ -39,7 +38,7 @@ import static com.hazelcast.config.MapStoreConfig.InitialLoadMode.LAZY;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class MapLoaderMultiNodeTest extends HazelcastTestSupport {
 
     private static final int MAP_STORE_ENTRY_COUNT = 10000;
@@ -174,9 +173,9 @@ public class MapLoaderMultiNodeTest extends HazelcastTestSupport {
 
     protected Config newConfig(String mapName, MapStoreConfig.InitialLoadMode loadMode, int backups, MapLoader loader) {
         Config cfg = getConfig();
-        cfg.setGroupConfig(new GroupConfig(getClass().getSimpleName()));
-        cfg.setProperty(GroupProperty.MAP_LOAD_CHUNK_SIZE.getName(), Integer.toString(BATCH_SIZE));
-        cfg.setProperty(GroupProperty.PARTITION_COUNT.getName(), "31");
+        cfg.setClusterName(getClass().getSimpleName());
+        cfg.setProperty(ClusterProperty.MAP_LOAD_CHUNK_SIZE.getName(), Integer.toString(BATCH_SIZE));
+        cfg.setProperty(ClusterProperty.PARTITION_COUNT.getName(), "31");
 
         MapStoreConfig mapStoreConfig = new MapStoreConfig().setImplementation(loader).setInitialLoadMode(loadMode);
 

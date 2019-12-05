@@ -19,25 +19,27 @@ package com.hazelcast.map.impl.mapstore;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapStoreConfig;
-import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IMap;
-import com.hazelcast.core.MapStore;
-import com.hazelcast.core.PostProcessingMapStore;
-import com.hazelcast.map.EntryBackupProcessor;
+import com.hazelcast.map.IMap;
+import com.hazelcast.map.MapStore;
+import com.hazelcast.map.PostProcessingMapStore;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.listener.EntryAddedListener;
 import com.hazelcast.map.listener.EntryUpdatedListener;
-import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
+import org.junit.runners.Parameterized.Parameter;
+import org.junit.runners.Parameterized.Parameters;
+import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
 import java.io.Serializable;
 import java.util.Collection;
@@ -47,11 +49,24 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 
+import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 
-@RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@RunWith(Parameterized.class)
+@UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class PostProcessingMapStoreTest extends HazelcastTestSupport {
+
+    @Parameters(name = "mapStore: {0}")
+    public static Collection<Object[]> parameters() {
+        return asList(new Object[][]{
+                {SamplePPMapStore.class},
+                {SamplePPEntryStore.class}
+        });
+    }
+
+    @Parameter
+    public Class<MapStore> mapStore;
 
     private TestHazelcastInstanceFactory factory;
 
@@ -72,7 +87,7 @@ public class PostProcessingMapStoreTest extends HazelcastTestSupport {
         MapConfig mapConfig = config.getMapConfig(name);
         mapConfig.setReadBackupData(true);
         MapStoreConfig mapStoreConfig = new MapStoreConfig();
-        mapStoreConfig.setEnabled(true).setClassName(IncrementerPostProcessingMapStore.class.getName());
+        mapStoreConfig.setEnabled(true).setClassName(mapStore.getName());
         mapConfig.setMapStoreConfig(mapStoreConfig);
 
         HazelcastInstance instance1 = factory.newHazelcastInstance(config);
@@ -101,12 +116,9 @@ public class PostProcessingMapStoreTest extends HazelcastTestSupport {
         IMap<Integer, SampleObject> map = createInstanceAndGetMap();
         int count = 10;
         final CountDownLatch latch = new CountDownLatch(count);
-        map.addEntryListener(new EntryAddedListener<Integer, SampleObject>() {
-            @Override
-            public void entryAdded(EntryEvent<Integer, SampleObject> event) {
-                assertEquals(event.getKey() + 1, event.getValue().version);
-                latch.countDown();
-            }
+        map.addEntryListener((EntryAddedListener<Integer, SampleObject>) event -> {
+            assertEquals(event.getKey() + 1, event.getValue().version);
+            latch.countDown();
         }, true);
         for (int i = 0; i < count; i++) {
             map.put(i, new SampleObject(i));
@@ -119,14 +131,11 @@ public class PostProcessingMapStoreTest extends HazelcastTestSupport {
         IMap<Integer, SampleObject> map = createInstanceAndGetMap();
         int count = 10;
         final CountDownLatch latch = new CountDownLatch(count);
-        map.addEntryListener(new EntryAddedListener<Integer, SampleObject>() {
-            @Override
-            public void entryAdded(EntryEvent<Integer, SampleObject> event) {
-                assertEquals(event.getKey() + 1, event.getValue().version);
-                latch.countDown();
-            }
+        map.addEntryListener((EntryAddedListener<Integer, SampleObject>) event -> {
+            assertEquals(event.getKey() + 1, event.getValue().version);
+            latch.countDown();
         }, true);
-        Map<Integer, SampleObject> localMap = new HashMap<Integer, SampleObject>();
+        Map<Integer, SampleObject> localMap = new HashMap<>();
         for (int i = 0; i < count; i++) {
             localMap.put(i, new SampleObject(i));
         }
@@ -139,20 +148,17 @@ public class PostProcessingMapStoreTest extends HazelcastTestSupport {
         IMap<Integer, SampleObject> map = createInstanceAndGetMap();
         int count = 10;
         final CountDownLatch latch = new CountDownLatch(count);
-        map.addEntryListener(new EntryUpdatedListener<Integer, SampleObject>() {
-            @Override
-            public void entryUpdated(EntryEvent<Integer, SampleObject> event) {
-                // value is incremented three times :
-                // +1 -> post processing map store
-                // +1 -> entry processor
-                // +1 -> post processing map store
-                assertEquals(event.getKey() + 3, event.getValue().version);
-                latch.countDown();
-            }
+        map.addEntryListener((EntryUpdatedListener<Integer, SampleObject>) event -> {
+            // value is incremented three times :
+            // +1 -> post processing map store
+            // +1 -> entry processor
+            // +1 -> post processing map store
+            assertEquals(event.getKey() + 3, event.getValue().version);
+            latch.countDown();
         }, true);
         for (int i = 0; i < count; i++) {
             map.put(i, new SampleObject(i));
-            map.executeOnKey(i, new EntryProcessor<Integer, SampleObject>() {
+            map.executeOnKey(i, new EntryProcessor<Integer, SampleObject, Object>() {
                 @Override
                 public Object process(Map.Entry<Integer, SampleObject> entry) {
                     SampleObject value = entry.getValue();
@@ -162,7 +168,7 @@ public class PostProcessingMapStoreTest extends HazelcastTestSupport {
                 }
 
                 @Override
-                public EntryBackupProcessor<Integer, SampleObject> getBackupProcessor() {
+                public EntryProcessor<Integer, SampleObject, Object> getBackupProcessor() {
                     return null;
                 }
             });
@@ -175,14 +181,14 @@ public class PostProcessingMapStoreTest extends HazelcastTestSupport {
         Config config = new Config();
         MapConfig mapConfig = config.getMapConfig(name);
         MapStoreConfig mapStoreConfig = new MapStoreConfig();
-        mapStoreConfig.setEnabled(true).setClassName(IncrementerPostProcessingMapStore.class.getName());
+        mapStoreConfig.setEnabled(true).setClassName(mapStore.getName());
         mapConfig.setMapStoreConfig(mapStoreConfig);
         HazelcastInstance instance = factory.newHazelcastInstance(config);
         warmUpPartitions(instance);
         return instance.getMap(name);
     }
 
-    public static class IncrementerPostProcessingMapStore implements MapStore<Integer, SampleObject>, PostProcessingMapStore {
+    public static class SamplePPMapStore implements MapStore<Integer, SampleObject>, PostProcessingMapStore {
 
         Map<Integer, SampleObject> map = new ConcurrentHashMap<Integer, SampleObject>();
 
@@ -228,6 +234,14 @@ public class PostProcessingMapStoreTest extends HazelcastTestSupport {
         @Override
         public Set<Integer> loadAllKeys() {
             return map.keySet();
+        }
+    }
+
+    public static class SamplePPEntryStore extends TestEntryStore<Integer, SampleObject> implements PostProcessingMapStore {
+        @Override
+        public void store(Integer key, MetadataAwareValue<SampleObject> value) {
+            value.getValue().version++;
+            super.store(key, value);
         }
     }
 

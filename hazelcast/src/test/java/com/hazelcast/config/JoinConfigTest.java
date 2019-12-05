@@ -17,29 +17,42 @@
 package com.hazelcast.config;
 
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class JoinConfigTest {
 
     @Test
     public void joinConfigTest() {
-        assertOk(false, false, false);
-        assertOk(true, false, false);
-        assertOk(false, true, false);
-        assertOk(false, false, true);
+        assertOk(false, false, false, false, false, false, false, false);
+        assertOk(true, false, false, false, false, false, false, false);
+        assertOk(false, true, false, false, false, false, false, false);
+        assertOk(false, false, true, false, false, false, false, false);
+        assertOk(false, false, false, true, false, false, false, false);
+        assertOk(false, false, false, false, true, false, false, false);
+        assertOk(false, false, false, false, false, true, false, false);
+        assertOk(false, false, false, false, false, false, true, false);
+        assertOk(false, false, false, false, false, false, false, true);
     }
 
-    private static void assertOk(boolean tcp, boolean multicast, boolean aws) {
+    private static void assertOk(boolean tcp, boolean multicast, boolean aws, boolean gcp, boolean azure,
+                                 boolean kubernetes, boolean eureka, boolean discoveryConfig) {
         JoinConfig config = new JoinConfig();
         config.getMulticastConfig().setEnabled(multicast);
         config.getTcpIpConfig().setEnabled(tcp);
         config.getAwsConfig().setEnabled(aws);
+        config.getGcpConfig().setEnabled(gcp);
+        config.getAzureConfig().setEnabled(azure);
+        config.getKubernetesConfig().setEnabled(kubernetes);
+        config.getEurekaConfig().setEnabled(eureka);
+        if (discoveryConfig) {
+            config.getDiscoveryConfig().getDiscoveryStrategyConfigs().add(new DiscoveryStrategyConfig());
+        }
 
         config.verify();
     }
@@ -56,9 +69,44 @@ public class JoinConfigTest {
     @Test(expected = InvalidConfigurationException.class)
     public void joinConfigTestWhenGcpAndAwsEnabled() {
         JoinConfig config = new JoinConfig();
+        // Multicast enabled by default
+        config.getMulticastConfig().setEnabled(false);
         config.getAwsConfig().setEnabled(true);
         config.getGcpConfig().setEnabled(true);
 
         config.verify();
     }
+
+    @Test(expected = InvalidConfigurationException.class)
+    public void joinConfigTestWhenMulticastAndDiscoveryStrategyEnabled() {
+        JoinConfig config = new JoinConfig();
+        config.getMulticastConfig().setEnabled(true);
+        config.getDiscoveryConfig().getDiscoveryStrategyConfigs().add(new DiscoveryStrategyConfig());
+
+        config.verify();
+    }
+
+    @Test(expected = InvalidConfigurationException.class)
+    public void joinConfigTestWhenTcpIpAndDiscoveryStrategyEnabled() {
+        JoinConfig config = new JoinConfig();
+        // Multicast enabled by default
+        config.getMulticastConfig().setEnabled(false);
+        config.getTcpIpConfig().setEnabled(true);
+        config.getDiscoveryConfig().getDiscoveryStrategyConfigs().add(new DiscoveryStrategyConfig());
+
+        config.verify();
+    }
+
+    @Test(expected = InvalidConfigurationException.class)
+    public void joinConfigTestWhenEurekaAndDiscoveryStrategyEnabled() {
+        JoinConfig config = new JoinConfig();
+        // Multicast enabled by default
+        config.getMulticastConfig().setEnabled(false);
+        config.getEurekaConfig().setEnabled(true);
+        config.getDiscoveryConfig().getDiscoveryStrategyConfigs().add(new DiscoveryStrategyConfig());
+
+        config.verify();
+    }
+
+
 }

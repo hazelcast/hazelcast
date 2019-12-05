@@ -16,14 +16,16 @@
 
 package com.hazelcast.internal.partition;
 
-import com.hazelcast.core.Member;
+import com.hazelcast.cluster.Member;
+import com.hazelcast.internal.util.UUIDSerializationUtil;
 import com.hazelcast.internal.partition.impl.PartitionDataSerializerHook;
-import com.hazelcast.nio.Address;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import java.io.IOException;
+import java.util.UUID;
 
 /**
  * PartitionReplica represents owner of a partition replica
@@ -42,17 +44,14 @@ import java.io.IOException;
  */
 public final class PartitionReplica implements IdentifiedDataSerializable {
 
-    // RU_COMPAT_3_11
-    public static final String UNKNOWN_UID = "<unknown-uuid>";
-
     private Address address;
 
-    private String uuid;
+    private UUID uuid;
 
     public PartitionReplica() {
     }
 
-    public PartitionReplica(Address address, String uuid) {
+    public PartitionReplica(Address address, UUID uuid) {
         assert address != null;
         assert uuid != null;
         this.address = address;
@@ -63,7 +62,7 @@ public final class PartitionReplica implements IdentifiedDataSerializable {
         return address;
     }
 
-    public String uuid() {
+    public UUID uuid() {
         return uuid;
     }
 
@@ -106,19 +105,19 @@ public final class PartitionReplica implements IdentifiedDataSerializable {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return PartitionDataSerializerHook.PARTITION_REPLICA;
     }
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeObject(address);
-        out.writeUTF(uuid);
+        UUIDSerializationUtil.writeUUID(out, uuid);
     }
 
     public void readData(ObjectDataInput in) throws IOException {
         address = in.readObject();
-        uuid = in.readUTF();
+        uuid = UUIDSerializationUtil.readUUID(in);
     }
 
     public static PartitionReplica from(Member member) {

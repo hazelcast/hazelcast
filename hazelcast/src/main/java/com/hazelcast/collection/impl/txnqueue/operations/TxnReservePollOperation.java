@@ -20,15 +20,17 @@ import com.hazelcast.collection.impl.queue.QueueContainer;
 import com.hazelcast.collection.impl.queue.QueueDataSerializerHook;
 import com.hazelcast.collection.impl.queue.QueueItem;
 import com.hazelcast.collection.impl.queue.operations.QueueBackupAwareOperation;
-import com.hazelcast.core.TransactionalQueue;
+import com.hazelcast.internal.util.UUIDSerializationUtil;
+import com.hazelcast.transaction.TransactionalQueue;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.spi.BlockingOperation;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.WaitNotifyKey;
-import com.hazelcast.spi.impl.MutatingOperation;
+import com.hazelcast.spi.impl.operationservice.BlockingOperation;
+import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.spi.impl.operationservice.WaitNotifyKey;
+import com.hazelcast.spi.impl.operationservice.MutatingOperation;
 
 import java.io.IOException;
+import java.util.UUID;
 
 /**
  * Transaction prepare operation for a queue poll, executed on the primary replica.
@@ -42,12 +44,12 @@ import java.io.IOException;
 public class TxnReservePollOperation extends QueueBackupAwareOperation implements BlockingOperation, MutatingOperation {
 
     private long reservedOfferId;
-    private String transactionId;
+    private UUID transactionId;
 
     public TxnReservePollOperation() {
     }
 
-    public TxnReservePollOperation(String name, long timeoutMillis, long reservedOfferId, String transactionId) {
+    public TxnReservePollOperation(String name, long timeoutMillis, long reservedOfferId, UUID transactionId) {
         super(name, timeoutMillis);
         this.reservedOfferId = reservedOfferId;
         this.transactionId = transactionId;
@@ -89,7 +91,7 @@ public class TxnReservePollOperation extends QueueBackupAwareOperation implement
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return QueueDataSerializerHook.TXN_RESERVE_POLL;
     }
 
@@ -97,14 +99,14 @@ public class TxnReservePollOperation extends QueueBackupAwareOperation implement
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeLong(reservedOfferId);
-        out.writeUTF(transactionId);
+        UUIDSerializationUtil.writeUUID(out, transactionId);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         reservedOfferId = in.readLong();
-        transactionId = in.readUTF();
+        transactionId = UUIDSerializationUtil.readUUID(in);
     }
 
 }

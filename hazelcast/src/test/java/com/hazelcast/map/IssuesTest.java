@@ -23,14 +23,13 @@ import com.hazelcast.core.EntryAdapter;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceAware;
-import com.hazelcast.core.IMap;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.StreamSerializer;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -53,7 +52,7 @@ import static org.junit.Assert.assertTrue;
 
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class IssuesTest extends HazelcastTestSupport {
 
     @Test
@@ -180,7 +179,7 @@ public class IssuesTest extends HazelcastTestSupport {
         int n = 1;
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(n);
         Config config = getConfig();
-        config.getGroupConfig().setName("testIssue174NearCacheContainsKeySingleNode");
+        config.setClusterName("testIssue174NearCacheContainsKeySingleNode");
         NearCacheConfig nearCacheConfig = new NearCacheConfig();
         config.getMapConfig("default").setNearCacheConfig(nearCacheConfig);
         HazelcastInstance h = factory.newHazelcastInstance(config);

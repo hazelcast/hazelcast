@@ -28,7 +28,7 @@ final class PortableGetter extends Getter {
 
     private final InternalSerializationService serializationService;
 
-    public PortableGetter(InternalSerializationService serializationService) {
+    PortableGetter(InternalSerializationService serializationService) {
         super(null);
         this.serializationService = serializationService;
     }

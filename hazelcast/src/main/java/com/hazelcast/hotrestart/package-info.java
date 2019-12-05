@@ -15,6 +15,6 @@
  */
 
 /**
- * <p>This package contains Hot Restart classes needed for open source Hazelcast code<br/>
+ * <p>This package contains Hot Restart classes needed for open source Hazelcast code<br>
  */
 package com.hazelcast.hotrestart;

@@ -16,13 +16,13 @@
 
 package com.hazelcast.map.impl.querycache.subscriber;
 
-import com.hazelcast.core.IMapEvent;
+import com.hazelcast.map.IMapEvent;
 import com.hazelcast.map.EventLostEvent;
 import com.hazelcast.map.impl.ListenerAdapter;
 import com.hazelcast.map.impl.MapListenerAdaptors;
 import com.hazelcast.map.listener.EventLostListener;
 import com.hazelcast.map.listener.MapListener;
-import com.hazelcast.util.ConstructorFunction;
+import com.hazelcast.internal.util.ConstructorFunction;
 
 /**
  * Responsible for creating {@link com.hazelcast.map.QueryCache QueryCache}
@@ -34,20 +34,12 @@ public final class QueryCacheEventListenerAdapters {
      * Converts an {@link com.hazelcast.map.listener.EventLostListener} to a {@link com.hazelcast.map.impl.ListenerAdapter}.
      */
     private static final ConstructorFunction<MapListener, ListenerAdapter> EVENT_LOST_LISTENER_ADAPTER =
-            new ConstructorFunction<MapListener, ListenerAdapter>() {
-                @Override
-                public ListenerAdapter createNew(MapListener mapListener) {
-                    if (!(mapListener instanceof EventLostListener)) {
-                        return null;
-                    }
-                    final EventLostListener listener = (EventLostListener) mapListener;
-                    return new ListenerAdapter<IMapEvent>() {
-                        @Override
-                        public void onEvent(IMapEvent iMapEvent) {
-                            listener.eventLost((EventLostEvent) iMapEvent);
-                        }
-                    };
+            mapListener -> {
+                if (!(mapListener instanceof EventLostListener)) {
+                    return null;
                 }
+                final EventLostListener listener = (EventLostListener) mapListener;
+                return (ListenerAdapter<IMapEvent>) iMapEvent -> listener.eventLost((EventLostEvent) iMapEvent);
             };
 
     private QueryCacheEventListenerAdapters() {

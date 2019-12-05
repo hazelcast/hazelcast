@@ -18,7 +18,7 @@ package com.hazelcast.internal.cluster.impl.operations;
 
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.internal.cluster.impl.MembersViewMetadata;
-import com.hazelcast.nio.Address;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 
@@ -54,7 +54,7 @@ public class ExplicitSuspicionOp extends AbstractClusterOperation {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return EXPLICIT_SUSPICION;
     }
 

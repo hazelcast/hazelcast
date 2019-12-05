@@ -82,7 +82,7 @@ class EntrySetIteratorFactory<K, V> implements IteratorFactory<K, V, Map.Entry<K
 
             key = recordStore.unmarshall(key);
             value = recordStore.unmarshall(value);
-            return new AbstractMap.SimpleEntry<K, V>((K) key, (V) value);
+            return new AbstractMap.SimpleEntry<>((K) key, (V) value);
         }
 
         @Override

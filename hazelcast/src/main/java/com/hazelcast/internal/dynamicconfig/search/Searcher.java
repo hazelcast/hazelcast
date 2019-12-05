@@ -36,5 +36,5 @@ public interface Searcher<T extends IdentifiedDataSerializable> {
      * @return configuration for <code>name</code> or fallback config for <code>fallbackName</code>. If neither is
      * found, <code>null</code> is returned.
      */
-    T getConfig(@Nonnull final String name, final String fallbackName, @Nonnull final ConfigSupplier<T> configSupplier);
+    T getConfig(@Nonnull String name, String fallbackName, @Nonnull ConfigSupplier<T> configSupplier);
 }

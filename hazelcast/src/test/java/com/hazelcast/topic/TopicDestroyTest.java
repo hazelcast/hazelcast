@@ -17,11 +17,8 @@
 package com.hazelcast.topic;
 
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.ITopic;
-import com.hazelcast.core.Message;
-import com.hazelcast.core.MessageListener;
-import com.hazelcast.spi.EventRegistration;
-import com.hazelcast.spi.EventService;
+import com.hazelcast.spi.impl.eventservice.EventRegistration;
+import com.hazelcast.spi.impl.eventservice.EventService;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
@@ -32,6 +29,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.util.Collection;
+import java.util.UUID;
 
 import static org.junit.Assert.assertEquals;
 
@@ -60,7 +58,7 @@ public class TopicDestroyTest extends HazelcastTestSupport {
 
     @Test
     public void testRemovingListenersRemovesRegistrations() {
-        String registrationId = topic.addMessageListener(new EmptyListener());
+        UUID registrationId = topic.addMessageListener(new EmptyListener());
         topic.removeMessageListener(registrationId);
 
         assertRegistrationSize(0);

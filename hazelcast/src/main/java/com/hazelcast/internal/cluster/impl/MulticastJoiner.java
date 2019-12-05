@@ -17,17 +17,18 @@
 package com.hazelcast.internal.cluster.impl;
 
 import com.hazelcast.config.NetworkConfig;
-import com.hazelcast.instance.Node;
+import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.cluster.impl.SplitBrainJoinMessage.SplitBrainMergeCheckResult;
-import com.hazelcast.nio.Address;
-import com.hazelcast.util.Clock;
-import com.hazelcast.util.RandomPicker;
+import com.hazelcast.cluster.Address;
+import com.hazelcast.internal.util.Clock;
+import com.hazelcast.internal.util.RandomPicker;
 
 import java.util.concurrent.BlockingDeque;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static com.hazelcast.config.ConfigAccessor.getActiveMemberNetworkConfig;
 import static java.lang.Thread.currentThread;
 
 public class MulticastJoiner extends AbstractJoiner {
@@ -43,7 +44,7 @@ public class MulticastJoiner extends AbstractJoiner {
 
     // this deque is used as a stack, the SplitBrainMulticastListener adds to its head and the periodic split brain handler job
     // also polls from its head.
-    private final BlockingDeque<SplitBrainJoinMessage> splitBrainJoinMessages = new LinkedBlockingDeque<SplitBrainJoinMessage>();
+    private final BlockingDeque<SplitBrainJoinMessage> splitBrainJoinMessages = new LinkedBlockingDeque<>();
 
     public MulticastJoiner(Node node) {
         super(node);
@@ -196,7 +197,7 @@ public class MulticastJoiner extends AbstractJoiner {
     }
 
     private int calculateTryCount() {
-        final NetworkConfig networkConfig = config.getNetworkConfig();
+        final NetworkConfig networkConfig = getActiveMemberNetworkConfig(config);
         long timeoutMillis = TimeUnit.SECONDS.toMillis(networkConfig.getJoin().getMulticastConfig().getMulticastTimeoutSeconds());
         int avgPublishInterval = (PUBLISH_INTERVAL_MAX + PUBLISH_INTERVAL_MIN) / 2;
         int tryCount = (int) timeoutMillis / avgPublishInterval;

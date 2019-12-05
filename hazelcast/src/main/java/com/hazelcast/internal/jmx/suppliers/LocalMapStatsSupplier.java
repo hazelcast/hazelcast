@@ -16,9 +16,9 @@
 
 package com.hazelcast.internal.jmx.suppliers;
 
-import com.hazelcast.core.IMap;
-import com.hazelcast.monitor.LocalMapStats;
-import com.hazelcast.monitor.impl.LocalMapStatsImpl;
+import com.hazelcast.map.IMap;
+import com.hazelcast.map.LocalMapStats;
+import com.hazelcast.internal.monitor.impl.LocalMapStatsImpl;
 
 /**
  * Implementation of {@link StatsSupplier} for {@link LocalMapStats}

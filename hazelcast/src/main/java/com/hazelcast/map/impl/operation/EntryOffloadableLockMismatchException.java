@@ -19,7 +19,7 @@ package com.hazelcast.map.impl.operation;
 import com.hazelcast.core.HazelcastException;
 
 /**
- * Actor of the EntryOffloadableOperation -> EntryOffloadableSetUnlockOperation combined operations flow.
+ * Actor of the EntryOffloadableOperation -&gt; EntryOffloadableSetUnlockOperation combined operations flow.
  * If returned from the EntryOffloadableSetUnlockOperation, the preceding EntryOffloadableOperation will be retried.
  */
 public class EntryOffloadableLockMismatchException extends HazelcastException {

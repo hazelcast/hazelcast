@@ -17,19 +17,19 @@
 package com.hazelcast.client.impl.protocol.task.dynamicconfig;
 
 import com.hazelcast.cache.impl.event.CachePartitionLostListener;
+import com.hazelcast.collection.ItemListener;
 import com.hazelcast.config.CachePartitionLostListenerConfig;
 import com.hazelcast.config.EntryListenerConfig;
 import com.hazelcast.config.ItemListenerConfig;
 import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.config.MapPartitionLostListenerConfig;
-import com.hazelcast.config.QuorumListenerConfig;
-import com.hazelcast.core.EntryListener;
-import com.hazelcast.core.ItemListener;
+import com.hazelcast.config.SplitBrainProtectionListenerConfig;
+import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.map.listener.MapListener;
 import com.hazelcast.map.listener.MapPartitionLostListener;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
-import com.hazelcast.quorum.QuorumListener;
-import com.hazelcast.spi.serialization.SerializationService;
+import com.hazelcast.splitbrainprotection.SplitBrainProtectionListener;
 
 import java.util.EventListener;
 
@@ -39,7 +39,7 @@ public class ListenerConfigHolder {
     public static final int TYPE_LISTENER_CONFIG = 0;
     public static final int TYPE_ITEM_LISTENER_CONFIG = 1;
     public static final int TYPE_ENTRY_LISTENER_CONFIG = 2;
-    public static final int TYPE_QUORUM_LISTENER_CONFIG = 3;
+    public static final int TYPE_SPLIT_BRAIN_PROTECTION_LISTENER_CONFIG = 3;
     public static final int TYPE_CACHE_PARTITION_LOST_LISTENER_CONFIG = 4;
     public static final int TYPE_MAP_PARTITION_LOST_LISTENER_CONFIG = 5;
 
@@ -50,24 +50,17 @@ public class ListenerConfigHolder {
     private final int listenerType;
 
     public ListenerConfigHolder(int listenerType, String className) {
-        this(listenerType, className, true, false);
+        this(listenerType, null, className, true, false);
     }
 
     public ListenerConfigHolder(int listenerType, Data listenerImplementation) {
-        this(listenerType, listenerImplementation, true, false);
+        this(listenerType, listenerImplementation, null, true, false);
     }
 
-    public ListenerConfigHolder(int listenerType, String className, boolean includeValue, boolean local) {
+    public ListenerConfigHolder(int listenerType, Data listenerImplementation, String className,
+                                boolean includeValue, boolean local) {
         this.listenerType = listenerType;
         this.className = className;
-        this.listenerImplementation = null;
-        this.includeValue = includeValue;
-        this.local = local;
-    }
-
-    public ListenerConfigHolder(int listenerType, Data listenerImplementation, boolean includeValue, boolean local) {
-        this.listenerType = listenerType;
-        this.className = null;
         this.listenerImplementation = listenerImplementation;
         this.includeValue = includeValue;
         this.local = local;
@@ -107,8 +100,8 @@ public class ListenerConfigHolder {
                 case TYPE_ENTRY_LISTENER_CONFIG:
                     listenerConfig = new EntryListenerConfig(className, local, includeValue);
                     break;
-                case TYPE_QUORUM_LISTENER_CONFIG:
-                    listenerConfig = new QuorumListenerConfig(className);
+                case TYPE_SPLIT_BRAIN_PROTECTION_LISTENER_CONFIG:
+                    listenerConfig = new SplitBrainProtectionListenerConfig(className);
                     break;
                 case TYPE_CACHE_PARTITION_LOST_LISTENER_CONFIG:
                     listenerConfig = new CachePartitionLostListenerConfig(className);
@@ -129,10 +122,10 @@ public class ListenerConfigHolder {
                     listenerConfig = new ItemListenerConfig((ItemListener) eventListener, includeValue);
                     break;
                 case TYPE_ENTRY_LISTENER_CONFIG:
-                    listenerConfig = new EntryListenerConfig((EntryListener) eventListener, local, includeValue);
+                    listenerConfig = new EntryListenerConfig((MapListener) eventListener, local, includeValue);
                     break;
-                case TYPE_QUORUM_LISTENER_CONFIG:
-                    listenerConfig = new QuorumListenerConfig((QuorumListener) eventListener);
+                case TYPE_SPLIT_BRAIN_PROTECTION_LISTENER_CONFIG:
+                    listenerConfig = new SplitBrainProtectionListenerConfig((SplitBrainProtectionListener) eventListener);
                     break;
                 case TYPE_CACHE_PARTITION_LOST_LISTENER_CONFIG:
                     listenerConfig = new CachePartitionLostListenerConfig((CachePartitionLostListener) eventListener);
@@ -155,14 +148,12 @@ public class ListenerConfigHolder {
 
     public static ListenerConfigHolder of(ListenerConfig config, SerializationService serializationService) {
         int listenerType = listenerTypeOf(config);
-        if (config.getClassName() != null) {
-            return new ListenerConfigHolder(listenerType, config.getClassName(), config.isIncludeValue(),
-                    config.isLocal());
-        } else {
-            Data implementationData = serializationService.toData(config.getImplementation());
-            return  new ListenerConfigHolder(listenerType, implementationData, config.isIncludeValue(),
-                    config.isLocal());
+        Data implementationData = null;
+        if (config.getImplementation() != null) {
+            implementationData = serializationService.toData(config.getImplementation());
         }
+        return new ListenerConfigHolder(listenerType, implementationData, config.getClassName(), config.isIncludeValue(),
+                config.isLocal());
     }
 
     private static int listenerTypeOf(ListenerConfig config) {
@@ -170,8 +161,8 @@ public class ListenerConfigHolder {
             return TYPE_ITEM_LISTENER_CONFIG;
         } else if (config instanceof CachePartitionLostListenerConfig) {
             return TYPE_CACHE_PARTITION_LOST_LISTENER_CONFIG;
-        } else if (config instanceof QuorumListenerConfig) {
-            return TYPE_QUORUM_LISTENER_CONFIG;
+        } else if (config instanceof SplitBrainProtectionListenerConfig) {
+            return TYPE_SPLIT_BRAIN_PROTECTION_LISTENER_CONFIG;
         } else if (config instanceof EntryListenerConfig) {
             return TYPE_ENTRY_LISTENER_CONFIG;
         } else if (config instanceof MapPartitionLostListenerConfig) {

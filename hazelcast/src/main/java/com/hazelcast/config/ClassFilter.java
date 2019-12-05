@@ -16,8 +16,8 @@
 
 package com.hazelcast.config;
 
-import static com.hazelcast.util.Preconditions.checkNotNull;
-import static java.util.Collections.unmodifiableSet;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -25,8 +25,8 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import com.hazelcast.logging.ILogger;
-import com.hazelcast.logging.Logger;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
+import static java.util.Collections.unmodifiableSet;
 
 /**
  * Holds blacklist and whitelist configuration in java deserialization configuration.
@@ -37,11 +37,27 @@ public class ClassFilter {
     private static final int CLASSNAME_LIMIT = Integer.getInteger(PROPERTY_CLASSNAME_LIMIT, 10000);
     private static final ILogger LOGGER = Logger.getLogger(ClassFilter.class);
 
-    private final Set<String> classes = Collections.newSetFromMap(new ConcurrentHashMap<String, Boolean>());
-    private final Set<String> packages = Collections.newSetFromMap(new ConcurrentHashMap<String, Boolean>());
-    private final Set<String> prefixes = Collections.newSetFromMap(new ConcurrentHashMap<String, Boolean>());
+    private final Set<String> classes;
+    private final Set<String> packages;
+    private final Set<String> prefixes;
 
     private AtomicBoolean warningLogged = new AtomicBoolean();
+
+    public ClassFilter() {
+        classes = Collections.newSetFromMap(new ConcurrentHashMap<String, Boolean>());
+        packages = Collections.newSetFromMap(new ConcurrentHashMap<String, Boolean>());
+        prefixes = Collections.newSetFromMap(new ConcurrentHashMap<String, Boolean>());
+    }
+
+    public ClassFilter(ClassFilter filter) {
+        classes = Collections.newSetFromMap(new ConcurrentHashMap<String, Boolean>());
+        classes.addAll(filter.classes);
+        packages = Collections.newSetFromMap(new ConcurrentHashMap<String, Boolean>());
+        packages.addAll(filter.packages);
+        prefixes = Collections.newSetFromMap(new ConcurrentHashMap<String, Boolean>());
+        prefixes.addAll(filter.prefixes);
+        warningLogged = new AtomicBoolean(filter.warningLogged.get());
+    }
 
     /**
      * Returns unmodifiable set of class names.
@@ -130,7 +146,7 @@ public class ClassFilter {
      * Checks if given class name is listed by package. If it's listed, then performance optimization is used and classname is
      * added directly to {@code classes} collection.
      *
-     * @param className Class name to be checked.
+     * @param className   Class name to be checked.
      * @param packageName Package name of the checked class.
      * @return {@code true} iff class is listed by-package
      */
@@ -185,11 +201,10 @@ public class ClassFilter {
             return false;
         }
         ClassFilter other = (ClassFilter) obj;
-       boolean result = classes.equals(other.classes)
-               && packages.equals(other.packages)
-               && prefixes.equals(other.prefixes)
-               && warningLogged.get() == other.warningLogged.get();
-       return result;
+        return classes.equals(other.classes)
+                && packages.equals(other.packages)
+                && prefixes.equals(other.prefixes)
+                && warningLogged.get() == other.warningLogged.get();
     }
 
     @Override

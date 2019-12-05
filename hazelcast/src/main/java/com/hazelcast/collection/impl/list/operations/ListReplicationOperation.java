@@ -25,7 +25,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import java.io.IOException;
 import java.util.Map;
 
-import static com.hazelcast.util.MapUtil.createHashMap;
+import static com.hazelcast.internal.util.MapUtil.createHashMap;
 
 public class ListReplicationOperation extends CollectionReplicationOperation {
 
@@ -37,7 +37,7 @@ public class ListReplicationOperation extends CollectionReplicationOperation {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return CollectionDataSerializerHook.LIST_REPLICATION;
     }
 

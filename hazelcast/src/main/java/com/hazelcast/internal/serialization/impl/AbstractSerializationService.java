@@ -18,7 +18,7 @@ package com.hazelcast.internal.serialization.impl;
 
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.ManagedContext;
-import com.hazelcast.core.PartitioningStrategy;
+import com.hazelcast.partition.PartitioningStrategy;
 import com.hazelcast.internal.serialization.InputOutputFactory;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.bufferpool.BufferPool;
@@ -27,8 +27,8 @@ import com.hazelcast.internal.serialization.impl.bufferpool.BufferPoolThreadLoca
 import com.hazelcast.internal.usercodedeployment.impl.ClassLocator;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
-import com.hazelcast.nio.BufferObjectDataInput;
-import com.hazelcast.nio.BufferObjectDataOutput;
+import com.hazelcast.internal.nio.BufferObjectDataInput;
+import com.hazelcast.internal.nio.BufferObjectDataOutput;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -36,7 +36,6 @@ import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.Serializer;
-import com.hazelcast.util.function.Supplier;
 
 import java.io.Externalizable;
 import java.io.Serializable;
@@ -47,6 +46,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Supplier;
 
 import static com.hazelcast.internal.serialization.impl.SerializationConstants.CONSTANT_SERIALIZERS_LENGTH;
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.EMPTY_PARTITIONING_STRATEGY;
@@ -56,7 +56,7 @@ import static com.hazelcast.internal.serialization.impl.SerializationUtil.handle
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.handleSerializeException;
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.indexForDefaultType;
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.isNullData;
-import static com.hazelcast.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static java.nio.ByteOrder.BIG_ENDIAN;
 
 public abstract class AbstractSerializationService implements InternalSerializationService {

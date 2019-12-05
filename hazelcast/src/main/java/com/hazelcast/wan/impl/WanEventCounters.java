@@ -18,11 +18,12 @@ package com.hazelcast.wan.impl;
 
 import com.hazelcast.cache.impl.CacheService;
 import com.hazelcast.map.impl.MapService;
-import com.hazelcast.util.ConstructorFunction;
+import com.hazelcast.internal.util.ConstructorFunction;
+import com.hazelcast.wan.DistributedServiceWanEventCounters;
 
 import java.util.concurrent.ConcurrentHashMap;
 
-import static com.hazelcast.util.ConcurrencyUtil.getOrPutIfAbsent;
+import static com.hazelcast.internal.util.ConcurrencyUtil.getOrPutIfAbsent;
 
 /**
  * Thread safe container for {@link DistributedServiceWanEventCounters}
@@ -33,26 +34,20 @@ import static com.hazelcast.util.ConcurrencyUtil.getOrPutIfAbsent;
  */
 public class WanEventCounters {
     private static final ConstructorFunction<String, WanPublisherEventCounters> WAN_EVENT_COUNTER_CONSTRUCTOR_FN
-            = new ConstructorFunction<String, WanPublisherEventCounters>() {
-        @Override
-        public WanPublisherEventCounters createNew(String ignored) {
-            return new WanPublisherEventCounters();
-        }
-    };
+            = ignored -> new WanPublisherEventCounters();
 
-    private final ConcurrentHashMap<String, WanPublisherEventCounters> eventCounterMap =
-            new ConcurrentHashMap<String, WanPublisherEventCounters>();
+    private final ConcurrentHashMap<String, WanPublisherEventCounters> eventCounterMap = new ConcurrentHashMap<>();
 
 
     /**
      * Returns the {@link DistributedServiceWanEventCounters} for the given {@code serviceName}
      */
     public DistributedServiceWanEventCounters getWanEventCounter(String wanReplicationName,
-                                                                 String targetGroupName,
+                                                                 String wanPublisherId,
                                                                  String serviceName) {
-        final String wanPublisherId = wanReplicationName + ":" + targetGroupName;
+        final String counterId = wanReplicationName + ":" + wanPublisherId;
         final WanPublisherEventCounters serviceWanEventCounters
-                = getOrPutIfAbsent(eventCounterMap, wanPublisherId, WAN_EVENT_COUNTER_CONSTRUCTOR_FN);
+                = getOrPutIfAbsent(eventCounterMap, counterId, WAN_EVENT_COUNTER_CONSTRUCTOR_FN);
 
         return serviceWanEventCounters.getWanEventCounter(serviceName);
     }

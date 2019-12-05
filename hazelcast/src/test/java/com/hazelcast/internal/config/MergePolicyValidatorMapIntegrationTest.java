@@ -22,12 +22,11 @@ import com.hazelcast.config.MergePolicyConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.config.mergepolicies.ComplexCustomMergePolicy;
 import com.hazelcast.internal.config.mergepolicies.CustomMapMergePolicy;
-import com.hazelcast.map.merge.PutIfAbsentMapMergePolicy;
 import com.hazelcast.spi.merge.MergingCosts;
 import com.hazelcast.spi.merge.MergingExpirationTime;
 import com.hazelcast.spi.merge.MergingLastStoredTime;
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -38,7 +37,7 @@ import org.junit.runner.RunWith;
  * into the proxy creation of split-brain capable data structures.
  */
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class MergePolicyValidatorMapIntegrationTest extends AbstractMergePolicyValidatorIntegrationTest {
 
     private boolean isStatisticsEnabled = false;
@@ -197,15 +196,5 @@ public class MergePolicyValidatorMapIntegrationTest extends AbstractMergePolicyV
         HazelcastInstance hz = getHazelcastInstance("customMapNoTypeVariable", customMapMergePolicyNoTypeVariable);
 
         hz.getMap("customMapNoTypeVariable");
-    }
-
-    @Test
-    public void testMap_withLegacyPutIfAbsentMergePolicy() {
-        MergePolicyConfig legacyMergePolicyConfig = new MergePolicyConfig()
-                .setPolicy(PutIfAbsentMapMergePolicy.class.getName());
-
-        HazelcastInstance hz = getHazelcastInstance("legacyPutIfAbsent", legacyMergePolicyConfig);
-
-        hz.getMap("legacyPutIfAbsent");
     }
 }

@@ -18,16 +18,16 @@ package com.hazelcast.client.impl.protocol.task.map;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.MapSetWithMaxIdleCodec;
-import com.hazelcast.instance.Node;
+import com.hazelcast.instance.impl.Node;
 import com.hazelcast.map.impl.operation.MapOperation;
 import com.hazelcast.map.impl.operation.MapOperationProvider;
-import com.hazelcast.nio.Connection;
-import com.hazelcast.spi.Operation;
+import com.hazelcast.internal.nio.Connection;
+import com.hazelcast.spi.impl.operationservice.Operation;
 
 import java.util.concurrent.TimeUnit;
 
 public class MapSetWithMaxIdleMessageTask
-        extends AbstractMapPutWithMaxIdleMessageTask<MapSetWithMaxIdleCodec.RequestParameters> {
+        extends AbstractMapSetMessageTask<MapSetWithMaxIdleCodec.RequestParameters> {
 
     public MapSetWithMaxIdleMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);

@@ -16,6 +16,7 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.internal.config.ConfigDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
@@ -23,10 +24,9 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import java.io.IOException;
 import java.io.Serializable;
 
-import static com.hazelcast.config.EvictionConfig.MaxSizePolicy.ENTRY_COUNT;
-import static com.hazelcast.util.Preconditions.checkNotNegative;
-import static com.hazelcast.util.Preconditions.checkNotNull;
-import static com.hazelcast.util.Preconditions.isNotNull;
+import static com.hazelcast.internal.util.Preconditions.checkNotNegative;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.Preconditions.isNotNull;
 
 /**
  * Contains the configuration for a Near Cache.
@@ -65,22 +65,6 @@ public class NearCacheConfig implements IdentifiedDataSerializable, Serializable
     public static final int DEFAULT_MAX_IDLE_SECONDS = 0;
 
     /**
-     * Default value of the maximum size.
-     *
-     * @deprecated since 3.8, please use {@link EvictionConfig#DEFAULT_MAX_ENTRY_COUNT_FOR_ON_HEAP_MAP}
-     */
-    @Deprecated
-    public static final int DEFAULT_MAX_SIZE = EvictionConfig.DEFAULT_MAX_ENTRY_COUNT_FOR_ON_HEAP_MAP;
-
-    /**
-     * Default value for the eviction policy.
-     *
-     * @deprecated since 3.8, please use {@link EvictionConfig#DEFAULT_EVICTION_POLICY}
-     */
-    @Deprecated
-    public static final String DEFAULT_EVICTION_POLICY = EvictionConfig.DEFAULT_EVICTION_POLICY.name();
-
-    /**
      * Defines how to reflect local updates to the Near Cache.
      */
     public enum LocalUpdatePolicy {
@@ -93,89 +77,25 @@ public class NearCacheConfig implements IdentifiedDataSerializable, Serializable
          * A local put immediately adds the new value to the Near Cache.
          * A local remove works as in INVALIDATE mode.
          */
-        CACHE_ON_UPDATE,
-
-        /**
-         * A local put immediately adds the new value to the Near Cache.
-         * A local remove works as in INVALIDATE mode.
-         *
-         * @deprecated since 3.8, please use {@link LocalUpdatePolicy#CACHE_ON_UPDATE}
-         */
-        @Deprecated
-        CACHE
+        CACHE_ON_UPDATE
     }
 
-    private String name = "default";
-    private InMemoryFormat inMemoryFormat = DEFAULT_MEMORY_FORMAT;
+    private boolean cacheLocalEntries;
     private boolean serializeKeys = DEFAULT_SERIALIZE_KEYS;
     private boolean invalidateOnChange = DEFAULT_INVALIDATE_ON_CHANGE;
     private int timeToLiveSeconds = DEFAULT_TTL_SECONDS;
     private int maxIdleSeconds = DEFAULT_MAX_IDLE_SECONDS;
-    private int maxSize = EvictionConfig.DEFAULT_MAX_ENTRY_COUNT_FOR_ON_HEAP_MAP;
-    private String evictionPolicy = EvictionConfig.DEFAULT_EVICTION_POLICY.name();
+    private String name = "default";
     private EvictionConfig evictionConfig = new EvictionConfig();
-    private boolean cacheLocalEntries;
+    private InMemoryFormat inMemoryFormat = DEFAULT_MEMORY_FORMAT;
     private LocalUpdatePolicy localUpdatePolicy = DEFAULT_LOCAL_UPDATE_POLICY;
     private NearCachePreloaderConfig preloaderConfig = new NearCachePreloaderConfig();
-
-    private NearCacheConfigReadOnly readOnly;
 
     public NearCacheConfig() {
     }
 
     public NearCacheConfig(String name) {
-        this.name = name;
-    }
-
-    public NearCacheConfig(int timeToLiveSeconds, int maxIdleSeconds, boolean invalidateOnChange, InMemoryFormat inMemoryFormat) {
-        this(timeToLiveSeconds, maxIdleSeconds, invalidateOnChange, inMemoryFormat, null);
-    }
-
-    public NearCacheConfig(int timeToLiveSeconds, int maxIdleSeconds, boolean invalidateOnChange, InMemoryFormat inMemoryFormat,
-                           EvictionConfig evictionConfig) {
-        this.inMemoryFormat = inMemoryFormat;
-        this.invalidateOnChange = invalidateOnChange;
-        this.timeToLiveSeconds = timeToLiveSeconds;
-        this.maxIdleSeconds = maxIdleSeconds;
-        this.maxSize = calculateMaxSize(maxSize);
-        // EvictionConfig is not allowed to be null
-        if (evictionConfig != null) {
-            this.maxSize = evictionConfig.getSize();
-            this.evictionPolicy = evictionConfig.getEvictionPolicy().toString();
-            this.evictionConfig = evictionConfig;
-        }
-    }
-
-    /**
-     * @deprecated since 3.8, please use {@link NearCacheConfig#NearCacheConfig(int, int, boolean, InMemoryFormat)}
-     */
-    @Deprecated
-    public NearCacheConfig(int timeToLiveSeconds, int maxSize, String evictionPolicy, int maxIdleSeconds,
-                           boolean invalidateOnChange, InMemoryFormat inMemoryFormat) {
-        this(timeToLiveSeconds, maxSize, evictionPolicy, maxIdleSeconds, invalidateOnChange, inMemoryFormat, null);
-    }
-
-    /**
-     * @deprecated since 3.8, please use
-     * {@link NearCacheConfig#NearCacheConfig(int, int, boolean, InMemoryFormat, EvictionConfig)}
-     */
-    @Deprecated
-    public NearCacheConfig(int timeToLiveSeconds, int maxSize, String evictionPolicy, int maxIdleSeconds,
-                           boolean invalidateOnChange, InMemoryFormat inMemoryFormat, EvictionConfig evictionConfig) {
-        this.inMemoryFormat = inMemoryFormat;
-        this.invalidateOnChange = invalidateOnChange;
-        this.timeToLiveSeconds = timeToLiveSeconds;
-        this.maxIdleSeconds = maxIdleSeconds;
-        this.maxSize = calculateMaxSize(maxSize);
-        this.evictionPolicy = evictionPolicy;
-        // EvictionConfig is not allowed to be null
-        if (evictionConfig != null) {
-            this.evictionConfig = evictionConfig;
-        } else {
-            this.evictionConfig.setSize(calculateMaxSize(maxSize));
-            this.evictionConfig.setEvictionPolicy(EvictionPolicy.valueOf(evictionPolicy));
-            this.evictionConfig.setMaximumSizePolicy(ENTRY_COUNT);
-        }
+        setName(name);
     }
 
     public NearCacheConfig(NearCacheConfig config) {
@@ -185,32 +105,10 @@ public class NearCacheConfig implements IdentifiedDataSerializable, Serializable
         this.invalidateOnChange = config.invalidateOnChange;
         this.timeToLiveSeconds = config.timeToLiveSeconds;
         this.maxIdleSeconds = config.maxIdleSeconds;
-        this.maxSize = config.maxSize;
-        this.evictionPolicy = config.evictionPolicy;
-        // EvictionConfig is not allowed to be null
-        if (config.evictionConfig != null) {
-            this.evictionConfig = config.evictionConfig;
-        }
+        this.evictionConfig = config.evictionConfig;
         this.cacheLocalEntries = config.cacheLocalEntries;
         this.localUpdatePolicy = config.localUpdatePolicy;
-        // NearCachePreloaderConfig is not allowed to be null
-        if (config.preloaderConfig != null) {
-            this.preloaderConfig = config.preloaderConfig;
-        }
-    }
-
-    /**
-     * Returns an immutable version of this configuration.
-     *
-     * @return immutable version of this configuration
-     * @deprecated this method will be removed in 4.0; it is meant for internal usage only
-     */
-    @Deprecated
-    public NearCacheConfigReadOnly getAsReadOnly() {
-        if (readOnly == null) {
-            readOnly = new NearCacheConfigReadOnly(this);
-        }
-        return readOnly;
+        this.preloaderConfig = config.preloaderConfig;
     }
 
     /**
@@ -390,78 +288,6 @@ public class NearCacheConfig implements IdentifiedDataSerializable, Serializable
     }
 
     /**
-     * Returns the maximum size of the Near Cache.
-     * <p>
-     * When the maxSize is reached, the Near Cache is evicted based on the policy defined.
-     *
-     * @return the maximum size of the Near Cache
-     * @deprecated since 3.8, please use {@link #getEvictionConfig()} and {@link EvictionConfig#getSize()}
-     */
-    @Deprecated
-    public int getMaxSize() {
-        return maxSize;
-    }
-
-    /**
-     * Sets the maximum size of the Near Cache.
-     * <p>
-     * When the maxSize is reached, the Near Cache is evicted based on the policy defined.
-     * <p>
-     * Accepts any integer between {@code 0} and {@link Integer#MAX_VALUE}.
-     * The value {@code 0} means {@link Integer#MAX_VALUE}.
-     * The default is {@code 0}.
-     *
-     * @param maxSize the maximum size of the Near Cache
-     * @return this Near Cache config instance
-     * @deprecated since 3.8, please use {@link #setEvictionConfig(EvictionConfig)} and {@link EvictionConfig#setSize(int)}
-     */
-    @Deprecated
-    public NearCacheConfig setMaxSize(int maxSize) {
-        checkNotNegative(maxSize, "maxSize cannot be a negative number!");
-        this.maxSize = calculateMaxSize(maxSize);
-        this.evictionConfig.setSize(this.maxSize);
-        this.evictionConfig.setMaximumSizePolicy(ENTRY_COUNT);
-        return this;
-    }
-
-    /**
-     * Returns the eviction policy for the Near Cache.
-     *
-     * @return the eviction policy for the Near Cache
-     * @deprecated since 3.8, please use {@link #getEvictionConfig()} and {@link EvictionConfig#getEvictionPolicy()}
-     */
-    @Deprecated
-    public String getEvictionPolicy() {
-        return evictionPolicy;
-    }
-
-    /**
-     * Sets the eviction policy.
-     * <p>
-     * Valid values are:
-     * <ul>
-     * <li>{@code LRU} (Least Recently Used)</li>
-     * <li>{@code LFU} (Least Frequently Used)</li>
-     * <li>{@code NONE} (no extra eviction, time-to-live-seconds or max-idle-seconds may still apply)</li>
-     * <li>{@code RANDOM} (random entry)</li>
-     * </ul>
-     * <p>
-     * {@code LRU} is the default.
-     * Regardless of the eviction policy used, time-to-live-seconds and max-idle-seconds will still apply.
-     *
-     * @param evictionPolicy the eviction policy for the Near Cache
-     * @return this Near Cache config instance
-     * @deprecated since 3.8, please use {@link #getEvictionConfig()} and {@link EvictionConfig#setEvictionPolicy(EvictionPolicy)}
-     */
-    @Deprecated
-    public NearCacheConfig setEvictionPolicy(String evictionPolicy) {
-        this.evictionPolicy = checkNotNull(evictionPolicy, "Eviction policy cannot be null!");
-        this.evictionConfig.setEvictionPolicy(EvictionPolicy.valueOf(evictionPolicy));
-        this.evictionConfig.setMaximumSizePolicy(ENTRY_COUNT);
-        return this;
-    }
-
-    /**
      * Returns the eviction configuration for this Near Cache.
      *
      * @return the eviction configuration
@@ -555,17 +381,15 @@ public class NearCacheConfig implements IdentifiedDataSerializable, Serializable
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ConfigDataSerializerHook.NEAR_CACHE_CONFIG;
     }
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeUTF(name);
-        out.writeUTF(evictionPolicy);
         out.writeInt(timeToLiveSeconds);
         out.writeInt(maxIdleSeconds);
-        out.writeInt(maxSize);
         out.writeBoolean(invalidateOnChange);
         out.writeBoolean(cacheLocalEntries);
         out.writeInt(inMemoryFormat.ordinal());
@@ -577,10 +401,8 @@ public class NearCacheConfig implements IdentifiedDataSerializable, Serializable
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         name = in.readUTF();
-        evictionPolicy = in.readUTF();
         timeToLiveSeconds = in.readInt();
         maxIdleSeconds = in.readInt();
-        maxSize = in.readInt();
         invalidateOnChange = in.readBoolean();
         cacheLocalEntries = in.readBoolean();
         inMemoryFormat = InMemoryFormat.values()[in.readInt()];
@@ -597,8 +419,6 @@ public class NearCacheConfig implements IdentifiedDataSerializable, Serializable
                 + ", invalidateOnChange=" + invalidateOnChange
                 + ", timeToLiveSeconds=" + timeToLiveSeconds
                 + ", maxIdleSeconds=" + maxIdleSeconds
-                + ", maxSize=" + maxSize
-                + ", evictionPolicy='" + evictionPolicy + '\''
                 + ", evictionConfig=" + evictionConfig
                 + ", cacheLocalEntries=" + cacheLocalEntries
                 + ", localUpdatePolicy=" + localUpdatePolicy
@@ -634,9 +454,6 @@ public class NearCacheConfig implements IdentifiedDataSerializable, Serializable
         if (maxIdleSeconds != that.maxIdleSeconds) {
             return false;
         }
-        if (maxSize != that.maxSize) {
-            return false;
-        }
         if (cacheLocalEntries != that.cacheLocalEntries) {
             return false;
         }
@@ -644,9 +461,6 @@ public class NearCacheConfig implements IdentifiedDataSerializable, Serializable
             return false;
         }
         if (inMemoryFormat != that.inMemoryFormat) {
-            return false;
-        }
-        if (evictionPolicy != null ? !evictionPolicy.equals(that.evictionPolicy) : that.evictionPolicy != null) {
             return false;
         }
         if (evictionConfig != null ? !evictionConfig.equals(that.evictionConfig) : that.evictionConfig != null) {
@@ -667,8 +481,6 @@ public class NearCacheConfig implements IdentifiedDataSerializable, Serializable
         result = 31 * result + (invalidateOnChange ? 1 : 0);
         result = 31 * result + timeToLiveSeconds;
         result = 31 * result + maxIdleSeconds;
-        result = 31 * result + maxSize;
-        result = 31 * result + (evictionPolicy != null ? evictionPolicy.hashCode() : 0);
         result = 31 * result + (evictionConfig != null ? evictionConfig.hashCode() : 0);
         result = 31 * result + (cacheLocalEntries ? 1 : 0);
         result = 31 * result + (localUpdatePolicy != null ? localUpdatePolicy.hashCode() : 0);

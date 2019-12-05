@@ -17,23 +17,23 @@
 package com.hazelcast.map.impl.query;
 
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IMap;
+import com.hazelcast.map.IMap;
 import com.hazelcast.map.impl.MapService;
-import com.hazelcast.query.TruePredicate;
+import com.hazelcast.query.Predicates;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import static com.hazelcast.util.IterationType.ENTRY;
+import static com.hazelcast.internal.util.IterationType.ENTRY;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class QueryEngineImpl_queryLocalPartitions_resultSizeNoLimitTest extends HazelcastTestSupport {
 
     private IMap<Object, Object> map;
@@ -52,7 +52,7 @@ public class QueryEngineImpl_queryLocalPartitions_resultSizeNoLimitTest extends 
     public void checkResultSize() {
         fillMap(10000);
 
-        Query query = Query.of().mapName(map.getName()).predicate(TruePredicate.INSTANCE).iterationType(ENTRY).build();
+        Query query = Query.of().mapName(map.getName()).predicate(Predicates.alwaysTrue()).iterationType(ENTRY).build();
         QueryResult result = (QueryResult) queryEngine.execute(query, Target.LOCAL_NODE);
 
         assertEquals(10000, result.size());

@@ -16,7 +16,7 @@
 
 package com.hazelcast.spi.impl.operationexecutor.impl;
 
-import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
@@ -28,11 +28,11 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.TimeUnit;
 
-import static com.hazelcast.spi.Operation.GENERIC_PARTITION_ID;
-import static com.hazelcast.spi.properties.GroupProperty.GENERIC_OPERATION_THREAD_COUNT;
-import static com.hazelcast.spi.properties.GroupProperty.PARTITION_COUNT;
-import static com.hazelcast.spi.properties.GroupProperty.PARTITION_OPERATION_THREAD_COUNT;
-import static com.hazelcast.spi.properties.GroupProperty.PRIORITY_GENERIC_OPERATION_THREAD_COUNT;
+import static com.hazelcast.spi.impl.operationservice.Operation.GENERIC_PARTITION_ID;
+import static com.hazelcast.spi.properties.ClusterProperty.GENERIC_OPERATION_THREAD_COUNT;
+import static com.hazelcast.spi.properties.ClusterProperty.PARTITION_COUNT;
+import static com.hazelcast.spi.properties.ClusterProperty.PARTITION_OPERATION_THREAD_COUNT;
+import static com.hazelcast.spi.properties.ClusterProperty.PRIORITY_GENERIC_OPERATION_THREAD_COUNT;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastSerialClassRunner.class)
@@ -78,7 +78,7 @@ public class OperationExecutorImpl_BasicTest extends OperationExecutorImpl_Abstr
     class LongRunningOperation extends Operation {
         private CountDownLatch completionLatch;
 
-        public LongRunningOperation(int partitionId, CountDownLatch completionLatch) {
+        LongRunningOperation(int partitionId, CountDownLatch completionLatch) {
             this.completionLatch = completionLatch;
             setPartitionId(partitionId);
         }

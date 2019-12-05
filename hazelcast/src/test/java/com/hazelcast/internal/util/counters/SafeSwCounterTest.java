@@ -51,6 +51,12 @@ public class SafeSwCounterTest {
     }
 
     @Test
+    public void set() {
+        counter.set(100_000);
+        assertEquals(100_000, counter.get());
+    }
+
+    @Test
     public void test_toString() {
         String s = counter.toString();
         assertEquals("Counter{value=0}", s);

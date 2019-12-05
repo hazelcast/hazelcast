@@ -40,4 +40,9 @@ public abstract class AbstractVisitor implements Visitor {
         return predicate;
     }
 
+    @Override
+    public Predicate visit(BetweenPredicate predicate, Indexes indexes) {
+        return predicate;
+    }
+
 }

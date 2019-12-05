@@ -18,20 +18,21 @@ package com.hazelcast.wan;
 
 import com.hazelcast.config.WanAcknowledgeType;
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.wan.impl.WanSyncStatus;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import static com.hazelcast.wan.WanSyncStatus.FAILED;
-import static com.hazelcast.wan.WanSyncStatus.IN_PROGRESS;
-import static com.hazelcast.wan.WanSyncStatus.READY;
+import static com.hazelcast.wan.impl.WanSyncStatus.FAILED;
+import static com.hazelcast.wan.impl.WanSyncStatus.IN_PROGRESS;
+import static com.hazelcast.wan.impl.WanSyncStatus.READY;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class WanSyncStatusTest {
 
     @Test

@@ -16,7 +16,7 @@
 
 package com.hazelcast.internal.networking.nio;
 
-import com.hazelcast.util.StringUtil;
+import com.hazelcast.internal.util.StringUtil;
 
 import static java.lang.String.format;
 

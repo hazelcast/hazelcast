@@ -18,8 +18,8 @@ package com.hazelcast.collection.impl.set;
 
 import com.hazelcast.collection.impl.collection.AbstractCollectionProxyImpl;
 import com.hazelcast.config.CollectionConfig;
-import com.hazelcast.core.ISet;
-import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.collection.ISet;
+import com.hazelcast.spi.impl.NodeEngine;
 
 public class SetProxyImpl<E> extends AbstractCollectionProxyImpl<SetService, E> implements ISet<E> {
 

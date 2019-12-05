@@ -18,8 +18,8 @@ package com.hazelcast.internal.serialization.impl;
 
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.internal.serialization.InternalSerializationService;
-import com.hazelcast.nio.BufferObjectDataInput;
-import com.hazelcast.nio.BufferObjectDataOutput;
+import com.hazelcast.internal.nio.BufferObjectDataInput;
+import com.hazelcast.internal.nio.BufferObjectDataOutput;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.CustomSerializationTest;
@@ -29,7 +29,7 @@ import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.nio.serialization.StreamSerializer;
 import com.hazelcast.nio.serialization.TypedDataSerializable;
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.hamcrest.core.Is;
 import org.hamcrest.core.IsInstanceOf;
@@ -50,7 +50,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class AbstractSerializationServiceTest {
 
     private AbstractSerializationService abstractSerializationService;
@@ -419,7 +419,7 @@ public class AbstractSerializationServiceTest {
         int typeId = 100000;
         private boolean fail;
 
-        public StringBufferSerializer(boolean fail) {
+        StringBufferSerializer(boolean fail) {
             this.fail = fail;
         }
 
@@ -453,7 +453,7 @@ public class AbstractSerializationServiceTest {
 
     private class TheOtherGlobalSerializer extends StringBufferSerializer {
 
-        public TheOtherGlobalSerializer(boolean fail) {
+        TheOtherGlobalSerializer(boolean fail) {
             super(fail);
         }
     }

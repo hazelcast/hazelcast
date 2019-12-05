@@ -19,10 +19,11 @@ package com.hazelcast.collection.impl.list.operations;
 import com.hazelcast.collection.impl.collection.CollectionDataSerializerHook;
 import com.hazelcast.collection.impl.collection.operations.CollectionOperation;
 import com.hazelcast.collection.impl.list.ListContainer;
+import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.ReadonlyOperation;
+import com.hazelcast.spi.impl.operationservice.ReadonlyOperation;
 
 import java.io.IOException;
 
@@ -47,7 +48,7 @@ public class ListIndexOfOperation extends CollectionOperation implements Readonl
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return CollectionDataSerializerHook.LIST_INDEX_OF;
     }
 
@@ -55,13 +56,13 @@ public class ListIndexOfOperation extends CollectionOperation implements Readonl
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeBoolean(last);
-        out.writeData(value);
+        IOUtil.writeData(out, value);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         last = in.readBoolean();
-        value = in.readData();
+        value = IOUtil.readData(in);
     }
 }

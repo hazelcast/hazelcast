@@ -19,7 +19,7 @@ package com.hazelcast.internal.ascii.memcache;
 import com.hazelcast.internal.ascii.TextCommand;
 import com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType;
 import com.hazelcast.internal.ascii.TypeAwareCommandParser;
-import com.hazelcast.nio.ascii.TextDecoder;
+import com.hazelcast.internal.nio.ascii.TextDecoder;
 
 import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.QUIT;
 import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.STATS;

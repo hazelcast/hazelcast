@@ -23,33 +23,47 @@ import com.hazelcast.version.Version;
 import java.io.OutputStream;
 
 /**
- * Base class for ObjectDataInput that is VersionAware and allows mutating the version.
+ * Base class for ObjectDataInput that is {@link VersionAware} and allows
+ * mutating the version.
  * What the version means it's up to the Serializer/Deserializer.
- * If the serializer supports versioning it may set the version to use for the serialization on this object.
+ * If the serializer supports versioning it may set the version to use for
+ * the serialization on this object.
  */
 abstract class VersionedObjectDataOutput extends OutputStream implements ObjectDataOutput, VersionAware {
-
     protected Version version = Version.UNKNOWN;
+    protected Version wanProtocolVersion = Version.UNKNOWN;
 
     /**
-     * If the serializer supports versioning it may set the version to use for the serialization on this object.
+     * {@inheritDoc}
+     * If the serializer supports versioning it may set the version to use for
+     * the intra-cluster message serialization on this object.
      *
-     * @param version version to set
-     */
-    public void setVersion(Version version) {
-        this.version = version;
-    }
-
-
-    /**
-     * If the serializer supports versioning it may set the version to use for the serialization on this object.
-     * This method makes the version available for the user.
-     *
-     * @return the version of Version.UNKNOWN if the version is unknown to the object.
+     * @return the version of {@link Version#UNKNOWN} if the version is unknown to the object.
      */
     @Override
     public Version getVersion() {
         return version;
     }
 
+    /**
+     * {@inheritDoc}
+     * If the serializer supports versioning it may set the version to use for
+     * the intra-cluster message serialization on this object.
+     *
+     * @param version version to set
+     */
+    @Override
+    public void setVersion(Version version) {
+        this.version = version;
+    }
+
+    @Override
+    public void setWanProtocolVersion(Version version) {
+        this.wanProtocolVersion = version;
+    }
+
+    @Override
+    public Version getWanProtocolVersion() {
+        return wanProtocolVersion;
+    }
 }

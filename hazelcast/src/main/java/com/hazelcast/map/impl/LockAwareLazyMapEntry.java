@@ -53,7 +53,7 @@ public class LockAwareLazyMapEntry extends LazyMapEntry implements LockAware {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MapDataSerializerHook.LOCK_AWARE_LAZY_MAP_ENTRY;
     }
 

@@ -21,10 +21,10 @@ import com.hazelcast.cache.impl.CacheService;
 import com.hazelcast.cache.impl.ICacheService;
 import com.hazelcast.internal.journal.EventJournalInitialSubscriberState;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.spi.ObjectNamespace;
-import com.hazelcast.spi.PartitionAwareOperation;
-import com.hazelcast.spi.ReadonlyOperation;
-import com.hazelcast.spi.impl.AbstractNamedOperation;
+import com.hazelcast.internal.services.ObjectNamespace;
+import com.hazelcast.spi.impl.operationservice.PartitionAwareOperation;
+import com.hazelcast.spi.impl.operationservice.ReadonlyOperation;
+import com.hazelcast.spi.impl.operationservice.AbstractNamedOperation;
 
 /**
  * Performs the initial subscription to the cache event journal.
@@ -73,7 +73,7 @@ public class CacheEventJournalSubscribeOperation
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return CacheDataSerializerHook.EVENT_JOURNAL_SUBSCRIBE_OPERATION;
     }
 

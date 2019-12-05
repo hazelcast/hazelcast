@@ -18,22 +18,22 @@ package com.hazelcast.client.impl.protocol.task.map;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.MapEventJournalReadCodec;
-import com.hazelcast.instance.Node;
+import com.hazelcast.instance.impl.Node;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.journal.MapEventJournalReadOperation;
-import com.hazelcast.map.journal.EventJournalMapEvent;
-import com.hazelcast.nio.Connection;
+import com.hazelcast.map.EventJournalMapEvent;
+import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.projection.Projection;
 import com.hazelcast.ringbuffer.impl.ReadResultSetImpl;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MapPermission;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.util.function.Predicate;
+import com.hazelcast.spi.impl.operationservice.Operation;
 
 import java.security.Permission;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Function;
+import java.util.function.Predicate;
 
 /**
  * Reads from the map event journal in batches. You may specify the start
@@ -60,7 +60,7 @@ public class MapEventJournalReadTask<K, V, T>
 
     @Override
     protected Operation prepareOperation() {
-        final Projection<? super EventJournalMapEvent<K, V>, T> projection = serializationService.toObject(parameters.projection);
+        final Function<? super EventJournalMapEvent<K, V>, T> projection = serializationService.toObject(parameters.projection);
         final Predicate<? super EventJournalMapEvent<K, V>> predicate = serializationService.toObject(parameters.predicate);
         return new MapEventJournalReadOperation<K, V, T>(
                 parameters.name, parameters.startSequence, parameters.minSize,

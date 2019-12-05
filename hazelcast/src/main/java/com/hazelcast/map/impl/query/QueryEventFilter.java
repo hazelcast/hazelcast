@@ -55,7 +55,7 @@ public class QueryEventFilter extends EntryEventFilter {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MapDataSerializerHook.QUERY_EVENT_FILTER;
     }
 

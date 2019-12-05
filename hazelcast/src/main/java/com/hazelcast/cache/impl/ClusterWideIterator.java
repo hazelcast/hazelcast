@@ -17,10 +17,10 @@
 package com.hazelcast.cache.impl;
 
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.InternalCompletableFuture;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.OperationService;
-import com.hazelcast.spi.serialization.SerializationService;
+import com.hazelcast.spi.impl.InternalCompletableFuture;
+import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.spi.impl.operationservice.OperationService;
+import com.hazelcast.internal.serialization.SerializationService;
 
 import javax.cache.Cache;
 import java.util.Iterator;
@@ -28,7 +28,7 @@ import java.util.List;
 
 /**
  * Cluster-wide iterator for {@link com.hazelcast.cache.ICache}.
- * <p/>
+ * <p>
  * <p>
  * This implementation is used for server or embedded mode.
  * </p>
@@ -70,7 +70,7 @@ public class ClusterWideIterator<K, V>
             Operation operation = cacheProxy.operationProvider.createEntryIteratorOperation(lastTableIndex, fetchSize);
             final InternalCompletableFuture<CacheEntryIterationResult> f = operationService
                     .invokeOnPartition(CacheService.SERVICE_NAME, operation, partitionIndex);
-            CacheEntryIterationResult iteratorResult = f.join();
+            CacheEntryIterationResult iteratorResult = f.joinInternal();
             if (iteratorResult != null) {
                 setLastTableIndex(iteratorResult.getEntries(), iteratorResult.getTableIndex());
                 return iteratorResult.getEntries();
@@ -79,7 +79,7 @@ public class ClusterWideIterator<K, V>
             Operation operation = cacheProxy.operationProvider.createKeyIteratorOperation(lastTableIndex, fetchSize);
             final InternalCompletableFuture<CacheKeyIterationResult> f = operationService
                     .invokeOnPartition(CacheService.SERVICE_NAME, operation, partitionIndex);
-            CacheKeyIterationResult iteratorResult = f.join();
+            CacheKeyIterationResult iteratorResult = f.joinInternal();
             if (iteratorResult != null) {
                 setLastTableIndex(iteratorResult.getKeys(), iteratorResult.getTableIndex());
                 return iteratorResult.getKeys();

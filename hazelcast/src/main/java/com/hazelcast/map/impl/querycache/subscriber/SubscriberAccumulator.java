@@ -34,27 +34,30 @@ import static com.hazelcast.map.impl.querycache.subscriber.EventPublisherHelper.
 import static java.lang.String.format;
 
 /**
- * If all incoming events are in the correct sequence order, this accumulator applies those events to
- * {@link com.hazelcast.map.QueryCache QueryCache}.
- * Otherwise, it informs registered callback if there is any.
- * <p>
+ * If all incoming events are in the correct sequence order, this
+ * accumulator applies those events to {@link com.hazelcast.map.QueryCache
+ * QueryCache}. Otherwise, it informs registered callback if there is
+ * any.
+ *
  * This class can be accessed by multiple-threads at a time.
  */
 public class SubscriberAccumulator extends BasicAccumulator<QueryCacheEventData> {
 
-    /**
-     * When a partition's sequence order is broken, it will be registered here.
-     */
-    private final ConcurrentMap<Integer, Long> brokenSequences = new ConcurrentHashMap<Integer, Long>();
-
-    private final AccumulatorHandler handler;
     private final SubscriberSequencerProvider sequenceProvider;
+    /** When a partition's sequence order is broken, it will be registered here.*/
+    private final ConcurrentMap<Integer, Long> brokenSequences = new ConcurrentHashMap<>();
 
     protected SubscriberAccumulator(QueryCacheContext context, AccumulatorInfo info) {
         super(context, info);
+        this.sequenceProvider = new DefaultSubscriberSequencerProvider();
+    }
 
-        this.handler = createAccumulatorHandler();
-        this.sequenceProvider = createSequencerProvider();
+    @Override
+    public void reset() {
+        brokenSequences.clear();
+        sequenceProvider.resetAll();
+
+        super.reset();
     }
 
     ConcurrentMap<Integer, Long> getBrokenSequences() {
@@ -97,28 +100,6 @@ public class SubscriberAccumulator extends BasicAccumulator<QueryCacheEventData>
         return false;
     }
 
-    private void removeFromBrokenSequences(QueryCacheEventData event) {
-        if (brokenSequences.isEmpty()) {
-            return;
-        }
-
-        int partitionId = event.getPartitionId();
-        long sequence = event.getSequence();
-
-        if (sequence == END_SEQUENCE) {
-            brokenSequences.remove(partitionId);
-        } else {
-            Long expected = brokenSequences.get(partitionId);
-            if (expected != null && expected == event.getSequence()) {
-                brokenSequences.remove(partitionId);
-            }
-        }
-
-        if (logger.isFinestEnabled()) {
-            logger.finest(format("Size of broken sequences=%d", brokenSequences.size()));
-        }
-    }
-
     private void handleUnexpectedEvent(QueryCacheEventData event) {
         // first add sequence of this unexpected event to broken-sequences
         int partitionId = event.getPartitionId();
@@ -147,6 +128,28 @@ public class SubscriberAccumulator extends BasicAccumulator<QueryCacheEventData>
         }
     }
 
+    private void removeFromBrokenSequences(QueryCacheEventData event) {
+        if (brokenSequences.isEmpty()) {
+            return;
+        }
+
+        int partitionId = event.getPartitionId();
+        long sequence = event.getSequence();
+
+        if (sequence == END_SEQUENCE) {
+            brokenSequences.remove(partitionId);
+        } else {
+            Long expected = brokenSequences.get(partitionId);
+            if (expected != null && expected == event.getSequence()) {
+                brokenSequences.remove(partitionId);
+            }
+        }
+
+        if (logger.isFinestEnabled()) {
+            logger.finest(format("Size of broken sequences=%d", brokenSequences.size()));
+        }
+    }
+
     protected boolean isNextEvent(Sequenced event) {
         int partitionId = event.getPartitionId();
         long currentSequence = sequenceProvider.getSequence(partitionId);
@@ -165,8 +168,9 @@ public class SubscriberAccumulator extends BasicAccumulator<QueryCacheEventData>
         return queryCacheFactory.getOrNull(cacheId);
     }
 
-    private SubscriberAccumulatorHandler createAccumulatorHandler() {
-        AccumulatorInfo info = getInfo();
+    @Override
+    protected AccumulatorHandler<QueryCacheEventData> createAccumulatorHandler(QueryCacheContext context,
+                                                                               AccumulatorInfo info) {
         boolean includeValue = info.isIncludeValue();
         InternalQueryCache queryCache = getQueryCache();
         InternalSerializationService serializationService = context.getSerializationService();
@@ -175,10 +179,6 @@ public class SubscriberAccumulator extends BasicAccumulator<QueryCacheEventData>
 
     private void addQueryCache(QueryCacheEventData eventData) {
         handler.handle(eventData, false);
-    }
-
-    private SubscriberSequencerProvider createSequencerProvider() {
-        return new DefaultSubscriberSequencerProvider();
     }
 
     private boolean isEndEvent(QueryCacheEventData event) {

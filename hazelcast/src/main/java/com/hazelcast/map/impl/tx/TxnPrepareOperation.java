@@ -16,44 +16,59 @@
 
 package com.hazelcast.map.impl.tx;
 
+import com.hazelcast.internal.util.UUIDSerializationUtil;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.map.ReachedMaxSizeException;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.operation.KeyBasedMapOperation;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.BackupAwareOperation;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.impl.MutatingOperation;
+import com.hazelcast.spi.impl.operationservice.BackupAwareOperation;
+import com.hazelcast.spi.impl.operationservice.MutatingOperation;
+import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.transaction.TransactionException;
 
 import java.io.IOException;
+import java.util.UUID;
 
 /**
  * An operation to prepare transaction by locking the key on the key owner.
  */
-public class TxnPrepareOperation extends KeyBasedMapOperation implements BackupAwareOperation, MutatingOperation {
+public class TxnPrepareOperation extends KeyBasedMapOperation
+        implements BackupAwareOperation, MutatingOperation {
 
     private static final long LOCK_TTL_MILLIS = 10000L;
 
-    private String ownerUuid;
+    private UUID ownerUuid;
+    private UUID transactionId;
 
-    protected TxnPrepareOperation(int partitionId, String name, Data dataKey, String ownerUuid) {
+    protected TxnPrepareOperation(int partitionId, String name, Data dataKey,
+                                  UUID ownerUuid, UUID transactionId) {
         super(name, dataKey);
         setPartitionId(partitionId);
         this.ownerUuid = ownerUuid;
+        this.transactionId = transactionId;
     }
 
     public TxnPrepareOperation() {
     }
 
     @Override
-    public void run() throws Exception {
+    protected void runInternal() {
+        try {
+            wbqCapacityCounter().increment(transactionId, false);
+        } catch (ReachedMaxSizeException e) {
+            throw new TransactionException(e);
+        }
+
         if (!recordStore.extendLock(getKey(), ownerUuid, getThreadId(), LOCK_TTL_MILLIS)) {
             ILogger logger = getLogger();
             if (logger.isFinestEnabled()) {
                 logger.finest("Locked: [" + recordStore.isLocked(getKey()) + "], key: [" + getKey() + ']');
             }
+
+            wbqCapacityCounter().decrement(transactionId);
             throw new TransactionException("Lock is not owned by the transaction! ["
                     + recordStore.getLockOwnerInfo(getKey()) + ']');
         }
@@ -83,7 +98,7 @@ public class TxnPrepareOperation extends KeyBasedMapOperation implements BackupA
 
     @Override
     public final Operation getBackupOperation() {
-        return new TxnPrepareBackupOperation(name, dataKey, ownerUuid, getThreadId());
+        return new TxnPrepareBackupOperation(name, dataKey, ownerUuid, getThreadId(), transactionId);
     }
 
     @Override
@@ -99,24 +114,29 @@ public class TxnPrepareOperation extends KeyBasedMapOperation implements BackupA
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        out.writeUTF(ownerUuid);
+        UUIDSerializationUtil.writeUUID(out, ownerUuid);
+        UUIDSerializationUtil.writeUUID(out, transactionId);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        ownerUuid = in.readUTF();
+        ownerUuid = UUIDSerializationUtil.readUUID(in);
+        transactionId = UUIDSerializationUtil.readUUID(in);
     }
 
     @Override
     protected void toString(StringBuilder sb) {
         super.toString(sb);
 
-        sb.append(", ownerUuid=").append(ownerUuid);
+        sb.append(", ownerUuid=")
+                .append(ownerUuid)
+                .append(", transactionId=")
+                .append(transactionId);
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MapDataSerializerHook.TXN_PREPARE;
     }
 }

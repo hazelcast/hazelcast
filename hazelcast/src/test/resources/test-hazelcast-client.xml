@@ -18,12 +18,9 @@
 <hazelcast-client xmlns="http://www.hazelcast.com/schema/client-config"
                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
                   xsi:schemaLocation="http://www.hazelcast.com/schema/client-config
-                  http://www.hazelcast.com/schema/client-config/hazelcast-client-config-3.11.xsd">
+                  http://www.hazelcast.com/schema/client-config/hazelcast-client-config-4.0.xsd">
 
-    <group>
-        <name>foobar</name>
-        <password>dev-pass</password>
-    </group>
+    <cluster-name>foobar-xml</cluster-name>
     <network>
         <ssl enabled="true">
             <factory-class-name>com.hazelcast.nio.ssl.BasicSSLContextFactory</factory-class-name>

@@ -39,7 +39,7 @@ public class CallTimeoutResponse extends Response implements IdentifiedDataSeria
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return CALL_TIMEOUT_RESPONSE;
     }
 

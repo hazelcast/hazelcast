@@ -16,11 +16,17 @@
 
 package com.hazelcast.ringbuffer;
 
+import com.hazelcast.collection.BaseQueue;
+import com.hazelcast.collection.IQueue;
+import com.hazelcast.config.SplitBrainProtectionConfig;
 import com.hazelcast.core.DistributedObject;
-import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.IFunction;
+import com.hazelcast.topic.ITopic;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.Collection;
+import java.util.concurrent.CompletionStage;
 
 /**
  * A Ringbuffer is a data structure where the content is stored in a ring-like
@@ -48,7 +54,7 @@ import java.util.Collection;
  * <p>
  * A Ringbuffer currently is a replicated, but not partitioned data structure.
  * So all data is stored in a single partition, similarly to the {@link
- * com.hazelcast.core.IQueue} implementation.
+ * IQueue} implementation.
  * <p>
  * A Ringbuffer can be used in a way similar to the IQueue, but one of the key
  * differences is that a {@code queue.take} is destructive, meaning that only 1
@@ -57,11 +63,11 @@ import java.util.Collection;
  * times.
  * <p>
  * The Ringbuffer is the backing data structure for the reliable
- * {@link com.hazelcast.core.ITopic} implementation. See
+ * {@link ITopic} implementation. See
  * {@link com.hazelcast.config.ReliableTopicConfig}.
  * <p>
  * A Ringbuffer can be configured to be backed by a
- * {@link com.hazelcast.core.RingbufferStore}. All write methods will delegate
+ * {@link RingbufferStore}. All write methods will delegate
  * to the store to persist the items, while reader methods will try to read
  * items from the store if not found in the in-memory Ringbuffer.
  * <p>
@@ -74,7 +80,7 @@ import java.util.Collection;
  * where {@code lastStoreSequence} is the sequence of the previously last
  * stored item.
  * <p>
- * Supports Quorum {@link com.hazelcast.config.QuorumConfig} since 3.10 in
+ * Supports split brain protection {@link SplitBrainProtectionConfig} since 3.10 in
  * cluster versions 3.10 and higher.
  *
  * @param <E> The type of the elements that the Ringbuffer contains
@@ -92,9 +98,9 @@ public interface Ringbuffer<E> extends DistributedObject {
     /**
      * Returns number of items in the Ringbuffer.
      * <p>
-     * If no ttl is set, the size will always be equal to capacity after the
+     * If no TTL is set, the size will always be equal to capacity after the
      * head completed the first loop around the ring. This is because no items
-     * are getting retired.
+     * are being removed.
      *
      * @return the size.
      */
@@ -128,25 +134,31 @@ public interface Ringbuffer<E> extends DistributedObject {
     long headSequence();
 
     /**
-     * Returns the remaining capacity of the ringbuffer.
+     * Returns the remaining capacity of the ringbuffer. If TTL is enabled,
+     * then the returned capacity is equal to the total capacity of the
+     * ringbuffer minus the number of used slots in the ringbuffer which have
+     * not yet been marked as expired and cleaned up. Keep in mind that some
+     * slots could have expired items that have not yet been cleaned up and
+     * that the returned value could be stale as soon as it is returned.
      * <p>
-     * The returned value could be stale as soon as it is returned.
-     * <p>
-     * If ttl is not set, the remaining capacity will always be the capacity.
+     * If TTL is disabled, the remaining capacity is equal to the total
+     * ringbuffer capacity.
      *
-     * @return the remaining capacity.
+     * @return the remaining capacity
+     * @see com.hazelcast.config.RingbufferConfig#DEFAULT_TTL_SECONDS
+     * @see #capacity()
      */
     long remainingCapacity();
 
     /**
      * Adds an item to the tail of the Ringbuffer. If there is no space in the
      * Ringbuffer, the add will overwrite the oldest item in the ringbuffer no
-     * matter what the ttl is. For more control on this behavior, check the
+     * matter what the TTL is. For more control on this behavior, check the
      * {@link #addAsync(Object, OverflowPolicy)} and the {@link OverflowPolicy}.
      * <p>
      * The returned value is the sequence of the added item. Using this sequence
      * you can read the added item.
-     * <p>
+     *
      * <h3>Using the sequence as ID</h3>
      * This sequence will always be unique for this Ringbuffer instance so it
      * can be used as a unique ID generator if you are publishing items on this
@@ -158,9 +170,9 @@ public interface Ringbuffer<E> extends DistributedObject {
      * sequence of the item you are about to publish but from a previously
      * published item. So it can't be used to find that item.
      * <p>
-     * If the Ringbuffer is backed by a {@link com.hazelcast.core.RingbufferStore},
+     * If the Ringbuffer is backed by a {@link RingbufferStore},
      * the item gets persisted by the underlying store via
-     * {@link com.hazelcast.core.RingbufferStore#store(long, Object)}. Note that
+     * {@link RingbufferStore#store(long, Object)}. Note that
      * in case an exception is thrown by the store, it prevents the item from being
      * added to the Ringbuffer, keeping the store, primary and the backups
      * consistent.
@@ -170,7 +182,7 @@ public interface Ringbuffer<E> extends DistributedObject {
      * @throws NullPointerException if item is null.
      * @see #addAsync(Object, OverflowPolicy)
      */
-    long add(E item);
+    long add(@Nonnull E item);
 
     /**
      * Asynchronously writes an item with a configurable {@link OverflowPolicy}.
@@ -180,11 +192,11 @@ public interface Ringbuffer<E> extends DistributedObject {
      * policy what happens:
      * <ol>
      * <li>{@link OverflowPolicy#OVERWRITE}: we just overwrite the oldest item
-     * in the Ringbuffer and we violate the ttl</li>
+     * in the Ringbuffer and we violate the TTL</li>
      * <li>{@link OverflowPolicy#FAIL}: we return -1 </li>
      * </ol>
      * <p>
-     * The reason that FAIL exist is to give the opportunity to obey the ttl.
+     * The reason that FAIL exist is to give the opportunity to obey the TTL.
      * If blocking behavior is required, this can be implemented using retrying
      * in combination with an exponential backoff. Example:
      * <pre>{@code
@@ -199,9 +211,9 @@ public interface Ringbuffer<E> extends DistributedObject {
      * }
      * }</pre>
      * <p>
-     * If the Ringbuffer is backed by a {@link com.hazelcast.core.RingbufferStore},
+     * If the Ringbuffer is backed by a {@link RingbufferStore},
      * the item gets persisted by the underlying store via
-     * {@link com.hazelcast.core.RingbufferStore#store(long, Object)}. Note
+     * {@link RingbufferStore#store(long, Object)}. Note
      * that in case an exception is thrown by the store, it prevents the item
      * from being added to the Ringbuffer, keeping the store, primary and the
      * backups consistent.
@@ -211,7 +223,7 @@ public interface Ringbuffer<E> extends DistributedObject {
      * @return the sequenceId of the added item, or -1 if the add failed.
      * @throws NullPointerException if item or overflowPolicy is null.
      */
-    ICompletableFuture<Long> addAsync(E item, OverflowPolicy overflowPolicy);
+    CompletionStage<Long> addAsync(@Nonnull E item, @Nonnull OverflowPolicy overflowPolicy);
 
     /**
      * Reads one item from the Ringbuffer.
@@ -229,17 +241,17 @@ public interface Ringbuffer<E> extends DistributedObject {
      * }
      * }</pre>
      * <p>
-     * This method is not destructive unlike e.g. a queue.take. So the same
-     * item can be read by multiple readers or it can be read multiple times by
-     * the same reader.
+     * This method is not destructive unlike e.g. a {@link BaseQueue#take()}.
+     * So the same item can be read by multiple readers or it can be read
+     * multiple times by the same reader.
      * <p>
      * Currently it isn't possible to control how long this call is going to
      * block. In the future we could add e.g.
      * {@code tryReadOne(long sequence, long timeout, TimeUnit unit)}.
      * <p>
      * If the item is not in the Ringbuffer an attempt is made to read it from
-     * the underlying {@link com.hazelcast.core.RingbufferStore} via
-     * {@link com.hazelcast.core.RingbufferStore#load(long)} if store is
+     * the underlying {@link RingbufferStore} via
+     * {@link RingbufferStore#load(long)} if store is
      * configured for the Ringbuffer. These cases may increase the execution time
      * significantly depending on the implementation of the store. Note that
      * exceptions thrown by the store are propagated to the caller.
@@ -289,21 +301,22 @@ public interface Ringbuffer<E> extends DistributedObject {
      * The result of the future contains the sequenceId of the last written
      * item.
      * <p>
-     * If the Ringbuffer is backed by a {@link com.hazelcast.core.RingbufferStore},
+     * If the Ringbuffer is backed by a {@link RingbufferStore},
      * the items are persisted by the underlying store via
-     * {@link com.hazelcast.core.RingbufferStore#storeAll(long, Object[])}.
+     * {@link RingbufferStore#storeAll(long, Object[])}.
      * Note that in case an exception is thrown by the store, it makes the
      * Ringbuffer not adding any of the items to the primary and the backups.
      * Keeping the store consistent with the primary and the backups is the
      * responsibility of the store.
      *
      * @param collection the batch of items to add.
-     * @return the ICompletableFuture to synchronize on completion.
+     * @return the CompletionStage to synchronize on completion.
      * @throws NullPointerException     if batch is null, or if an item in this
      *                                  batch is null or if overflowPolicy is null
      * @throws IllegalArgumentException if collection is empty
      */
-    ICompletableFuture<Long> addAllAsync(Collection<? extends E> collection, OverflowPolicy overflowPolicy);
+    CompletionStage<Long> addAllAsync(@Nonnull Collection<? extends E> collection,
+                                         @Nonnull OverflowPolicy overflowPolicy);
 
     /**
      * Reads a batch of items from the Ringbuffer. If the number of available
@@ -325,8 +338,8 @@ public interface Ringbuffer<E> extends DistributedObject {
      * and can result in a significant performance improvement.
      * <p>
      * For each item not available in the Ringbuffer an attempt is made to read
-     * it from the underlying {@link com.hazelcast.core.RingbufferStore} via
-     * multiple invocations of {@link com.hazelcast.core.RingbufferStore#load(long)},
+     * it from the underlying {@link RingbufferStore} via
+     * multiple invocations of {@link RingbufferStore#load(long)},
      * if store is configured for the Ringbuffer. These cases may increase the
      * execution time significantly depending on the implementation of the store.
      * Note that exceptions thrown by the store are propagated to the caller.
@@ -344,6 +357,6 @@ public interface Ringbuffer<E> extends DistributedObject {
      *                                  or if maxCount larger than the capacity of the ringbuffer
      *                                  or if maxCount larger than 1000 (to prevent overload)
      */
-    ICompletableFuture<ReadResultSet<E>> readManyAsync(long startSequence, int minCount,
-                                                       int maxCount, IFunction<E, Boolean> filter);
+    CompletionStage<ReadResultSet<E>> readManyAsync(long startSequence, int minCount, int maxCount,
+                                                       @Nullable IFunction<E, Boolean> filter);
 }

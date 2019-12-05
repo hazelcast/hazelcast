@@ -16,26 +16,20 @@
 
 package com.hazelcast.map.impl.operation;
 
+import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.impl.Versioned;
-import com.hazelcast.spi.PartitionAwareOperation;
+import com.hazelcast.spi.impl.operationservice.PartitionAwareOperation;
 
 import java.io.IOException;
 
-import static com.hazelcast.internal.cluster.Versions.V3_11;
-import static com.hazelcast.map.impl.recordstore.RecordStore.DEFAULT_MAX_IDLE;
-import static com.hazelcast.map.impl.recordstore.RecordStore.DEFAULT_TTL;
-
 public abstract class KeyBasedMapOperation extends MapOperation
-        implements PartitionAwareOperation, Versioned {
+        implements PartitionAwareOperation {
 
-    protected Data dataKey;
     protected long threadId;
+    protected Data dataKey;
     protected Data dataValue;
-    protected long ttl = DEFAULT_TTL;
-    protected long maxIdle = DEFAULT_MAX_IDLE;
 
     public KeyBasedMapOperation() {
     }
@@ -49,21 +43,6 @@ public abstract class KeyBasedMapOperation extends MapOperation
         super(name);
         this.dataKey = dataKey;
         this.dataValue = dataValue;
-    }
-
-    protected KeyBasedMapOperation(String name, Data dataKey, long ttl, long maxIdle) {
-        super(name);
-        this.dataKey = dataKey;
-        this.ttl = ttl;
-        this.maxIdle = maxIdle;
-    }
-
-    protected KeyBasedMapOperation(String name, Data dataKey, Data dataValue, long ttl, long maxIdle) {
-        super(name);
-        this.dataKey = dataKey;
-        this.dataValue = dataValue;
-        this.ttl = ttl;
-        this.maxIdle = maxIdle;
     }
 
     public final Data getKey() {
@@ -84,33 +63,19 @@ public abstract class KeyBasedMapOperation extends MapOperation
         return dataValue;
     }
 
-    public final long getTtl() {
-        return ttl;
-    }
-
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
-        out.writeUTF(name);
-        out.writeData(dataKey);
+        super.writeInternal(out);
+        IOUtil.writeData(out, dataKey);
+        IOUtil.writeData(out, dataValue);
         out.writeLong(threadId);
-        out.writeData(dataValue);
-        out.writeLong(ttl);
-        //RU_COMPAT_3_10
-        if (out.getVersion().isGreaterOrEqual(V3_11)) {
-            out.writeLong(maxIdle);
-        }
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
-        name = in.readUTF();
-        dataKey = in.readData();
+        super.readInternal(in);
+        dataKey = IOUtil.readData(in);
+        dataValue = IOUtil.readData(in);
         threadId = in.readLong();
-        dataValue = in.readData();
-        ttl = in.readLong();
-        //RU_COMPAT_3_10
-        if (in.getVersion().isGreaterOrEqual(V3_11)) {
-            maxIdle = in.readLong();
-        }
     }
 }

@@ -16,10 +16,13 @@
 
 package com.hazelcast.map.impl.mapstore.writethrough;
 
-import com.hazelcast.internal.serialization.InternalSerializationService;
-import com.hazelcast.map.impl.MapStoreWrapper;
+import com.hazelcast.map.EntryLoader.MetadataAwareValue;
 import com.hazelcast.map.impl.mapstore.AbstractMapDataStore;
+import com.hazelcast.map.impl.mapstore.MapStoreContext;
+import com.hazelcast.map.impl.mapstore.writebehind.entry.DelayedEntry;
 import com.hazelcast.nio.serialization.Data;
+
+import java.util.UUID;
 
 /**
  * Write through map data store implementation.
@@ -27,18 +30,29 @@ import com.hazelcast.nio.serialization.Data;
  */
 public class WriteThroughStore extends AbstractMapDataStore<Data, Object> {
 
-    public WriteThroughStore(MapStoreWrapper store, InternalSerializationService serializationService) {
-        super(store, serializationService);
+    public WriteThroughStore(MapStoreContext mapStoreContext) {
+        super(mapStoreContext);
     }
 
     @Override
-    public Object add(Data key, Object value, long time) {
+    public Object add(Data key, Object value,
+                      long expirationTime, long time, UUID transactionId) {
         Object objectKey = toObject(key);
         Object objectValue = toObject(value);
 
-        getStore().store(objectKey, objectValue);
+        if (getStore().isWithExpirationTime()) {
+            expirationTime = getUserExpirationTime(expirationTime);
+            getStore().store(objectKey, new MetadataAwareValue(objectValue, expirationTime));
+        } else {
+            getStore().store(objectKey, objectValue);
+        }
         // if store is not a post-processing map-store, then avoid extra de-serialization phase.
         return getStore().isPostProcessingMapStore() ? objectValue : value;
+    }
+
+    @Override
+    public void addForcibly(DelayedEntry delayedEntry) {
+        throw new IllegalStateException("No addForcibly call is expected from a write-through store!");
     }
 
     @Override
@@ -47,18 +61,20 @@ public class WriteThroughStore extends AbstractMapDataStore<Data, Object> {
     }
 
     @Override
-    public Object addBackup(Data key, Object value, long time) {
+    public Object addBackup(Data key, Object value, long expirationTime,
+                            long time, UUID transactionId) {
         return value;
     }
 
     @Override
-    public void remove(Data key, long time) {
+    public void remove(Data key, long time, UUID transactionId) {
         getStore().delete(toObject(key));
 
     }
 
     @Override
-    public void removeBackup(Data key, long time) {
+    public void removeBackup(Data key, long time, UUID
+            transactionId) {
 
     }
 
@@ -97,6 +113,5 @@ public class WriteThroughStore extends AbstractMapDataStore<Data, Object> {
     public int notFinishedOperationsCount() {
         return 0;
     }
-
 }
 

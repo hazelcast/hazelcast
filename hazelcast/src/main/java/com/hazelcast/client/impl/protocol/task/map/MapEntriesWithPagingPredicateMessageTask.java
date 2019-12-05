@@ -18,12 +18,12 @@ package com.hazelcast.client.impl.protocol.task.map;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.MapEntriesWithPagingPredicateCodec;
-import com.hazelcast.instance.Node;
+import com.hazelcast.instance.impl.Node;
 import com.hazelcast.map.impl.query.QueryResultRow;
-import com.hazelcast.nio.Connection;
+import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.Predicate;
-import com.hazelcast.util.IterationType;
+import com.hazelcast.internal.util.IterationType;
 
 import java.util.ArrayList;
 import java.util.Collection;

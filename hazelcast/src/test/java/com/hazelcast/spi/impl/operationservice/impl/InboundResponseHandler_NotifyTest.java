@@ -19,12 +19,12 @@ package com.hazelcast.spi.impl.operationservice.impl;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.OperationTimeoutException;
-import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.ExpectedRuntimeException;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
 import org.junit.Ignore;
@@ -34,15 +34,15 @@ import org.junit.runner.RunWith;
 
 import java.util.concurrent.TimeUnit;
 
-import static com.hazelcast.spi.properties.GroupProperty.BACKPRESSURE_ENABLED;
-import static com.hazelcast.spi.properties.GroupProperty.OPERATION_CALL_TIMEOUT_MILLIS;
+import static com.hazelcast.spi.properties.ClusterProperty.BACKPRESSURE_ENABLED;
+import static com.hazelcast.spi.properties.ClusterProperty.OPERATION_CALL_TIMEOUT_MILLIS;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.fail;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class InboundResponseHandler_NotifyTest extends HazelcastTestSupport {
 
     private InvocationRegistry invocationRegistry;
@@ -182,7 +182,7 @@ public class InboundResponseHandler_NotifyTest extends HazelcastTestSupport {
         inboundResponseHandler.notifyErrorResponse(callId, new ExpectedRuntimeException(), null);
 
         try {
-            invocation.future.join();
+            invocation.future.joinInternal();
             fail();
         } catch (ExpectedRuntimeException expected) {
         }
@@ -213,7 +213,7 @@ public class InboundResponseHandler_NotifyTest extends HazelcastTestSupport {
         inboundResponseHandler.notifyCallTimeout(callId, null);
 
         try {
-            assertNull(invocation.future.join());
+            assertNull(invocation.future.joinInternal());
             fail();
         } catch (OperationTimeoutException expected) {
         }

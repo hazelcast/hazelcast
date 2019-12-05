@@ -16,17 +16,12 @@
 
 package com.hazelcast.spi.impl;
 
-import com.hazelcast.core.ExecutionCallback;
-import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.logging.ILogger;
-import com.hazelcast.logging.Logger;
-import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.internal.util.RootCauseMatcher;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -34,22 +29,26 @@ import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
 import java.util.concurrent.CancellationException;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.function.BiConsumer;
 
+import static com.hazelcast.internal.util.ConcurrencyUtil.CALLER_RUNS;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.ArgumentMatchers.isA;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyZeroInteractions;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class AbstractCompletableFutureTest extends HazelcastTestSupport {
 
     private static final Object RESULT = "foobar";
@@ -57,24 +56,14 @@ public class AbstractCompletableFutureTest extends HazelcastTestSupport {
     private static final String EXCEPTION_MESSAGE = "You screwed buddy!";
     private static final Exception EXCEPTION = new RuntimeException(EXCEPTION_MESSAGE);
 
-    private ILogger logger;
-    private NodeEngineImpl nodeEngine;
-    private Executor executor;
+    private Executor executor = CALLER_RUNS;
 
     @Rule
     public ExpectedException expected = ExpectedException.none();
 
-    @Before
-    public void setup() {
-        HazelcastInstance hz = createHazelcastInstance();
-        nodeEngine = getNodeEngineImpl(hz);
-        logger = Logger.getLogger(AbstractCompletableFutureTest.class);
-        executor = Executors.newFixedThreadPool(1);
-    }
-
     @Test
     public void future_notExecuted_notDoneNotCancelled() {
-        TestFutureImpl future = new TestFutureImpl(nodeEngine, logger);
+        TestFutureImpl future = new TestFutureImpl();
 
         assertFalse("New future should not be done", future.isDone());
         assertFalse("New future should not be cancelled", future.isCancelled());
@@ -82,8 +71,8 @@ public class AbstractCompletableFutureTest extends HazelcastTestSupport {
 
     @Test
     public void future_notExecuted_callbackRegistered_notDoneNotCancelled() {
-        TestFutureImpl future = new TestFutureImpl(nodeEngine, logger);
-        future.andThen(mock(ExecutionCallback.class));
+        TestFutureImpl future = new TestFutureImpl();
+        future.whenCompleteAsync(mock(BiConsumer.class));
 
         assertFalse("New future should not be done", future.isDone());
         assertFalse("New future should not be cancelled", future.isCancelled());
@@ -105,8 +94,8 @@ public class AbstractCompletableFutureTest extends HazelcastTestSupport {
     }
 
     private void future_resultSet_doneNotCancelled(Object result) {
-        TestFutureImpl future = new TestFutureImpl(nodeEngine, logger);
-        future.setResult(result);
+        TestFutureImpl future = new TestFutureImpl();
+        future.complete(result);
 
         assertTrue("Future with result should be done", future.isDone());
         assertFalse("Done future should not be cancelled", future.isCancelled());
@@ -114,7 +103,7 @@ public class AbstractCompletableFutureTest extends HazelcastTestSupport {
 
     @Test
     public void future_resultNotSet_cancelled() {
-        TestFutureImpl future = new TestFutureImpl(nodeEngine, logger);
+        TestFutureImpl future = new TestFutureImpl();
         boolean cancelled = future.cancel(false);
 
         assertTrue(cancelled);
@@ -124,8 +113,8 @@ public class AbstractCompletableFutureTest extends HazelcastTestSupport {
 
     @Test
     public void future_resultSetAndCancelled() {
-        TestFutureImpl future = new TestFutureImpl(nodeEngine, logger);
-        future.setResult(RESULT);
+        TestFutureImpl future = new TestFutureImpl();
+        future.complete(RESULT);
         boolean cancelled = future.cancel(false);
 
         assertFalse(cancelled);
@@ -135,19 +124,18 @@ public class AbstractCompletableFutureTest extends HazelcastTestSupport {
 
     @Test
     public void future_cancelledAndResultSet() {
-        TestFutureImpl future = new TestFutureImpl(nodeEngine, logger);
+        TestFutureImpl future = new TestFutureImpl();
         boolean cancelled = future.cancel(false);
-        future.setResult(RESULT);
+        future.complete(RESULT);
 
         assertTrue(cancelled);
         assertTrue("Cancelled future should be done", future.isDone());
         assertTrue("Cancelled future should be cancelled", future.isCancelled());
-        assertNull("Internal result should be null", future.getResult());
     }
 
     @Test(expected = CancellationException.class)
     public void get_cancelledFuture_exceptionThrown() throws Exception {
-        TestFutureImpl future = new TestFutureImpl(nodeEngine, logger);
+        TestFutureImpl future = new TestFutureImpl();
 
         future.cancel(false);
 
@@ -156,7 +144,7 @@ public class AbstractCompletableFutureTest extends HazelcastTestSupport {
 
     @Test(expected = CancellationException.class)
     public void getWithTimeout_cancelledFuture_exceptionThrown() throws Exception {
-        TestFutureImpl future = new TestFutureImpl(nodeEngine, logger);
+        TestFutureImpl future = new TestFutureImpl();
 
         future.cancel(false);
 
@@ -165,8 +153,8 @@ public class AbstractCompletableFutureTest extends HazelcastTestSupport {
 
     @Test
     public void get_ordinaryResultSet_returnsResult() throws Exception {
-        TestFutureImpl future = new TestFutureImpl(nodeEngine, logger);
-        future.setResult(RESULT);
+        TestFutureImpl future = new TestFutureImpl();
+        future.complete(RESULT);
 
         Object result = future.get();
 
@@ -175,8 +163,8 @@ public class AbstractCompletableFutureTest extends HazelcastTestSupport {
 
     @Test
     public void getWithTimeout_ordinaryResultSet_returnsResult() throws Exception {
-        TestFutureImpl future = new TestFutureImpl(nodeEngine, logger);
-        future.setResult(RESULT);
+        TestFutureImpl future = new TestFutureImpl();
+        future.complete(RESULT);
 
         Object result = future.get(10, TimeUnit.MILLISECONDS);
 
@@ -185,30 +173,28 @@ public class AbstractCompletableFutureTest extends HazelcastTestSupport {
 
     @Test
     public void get_exceptionResultSet_exceptionThrown() throws Exception {
-        TestFutureImpl future = new TestFutureImpl(nodeEngine, logger);
-        future.setResult(EXCEPTION);
+        TestFutureImpl future = new TestFutureImpl();
+        future.completeExceptionally(EXCEPTION);
 
-        expected.expect(EXCEPTION.getClass());
-        expected.expectMessage(EXCEPTION_MESSAGE);
-
+        expected.expect(ExecutionException.class);
+        expected.expectCause(new RootCauseMatcher(EXCEPTION.getClass(), EXCEPTION_MESSAGE));
         future.get();
     }
 
     @Test
     public void getWithTimeout_exceptionResultSet_exceptionThrown_noTimeout() throws Exception {
-        TestFutureImpl future = new TestFutureImpl(nodeEngine, logger);
-        future.setResult(EXCEPTION);
+        TestFutureImpl future = new TestFutureImpl();
+        future.completeExceptionally(EXCEPTION);
 
-        expected.expect(EXCEPTION.getClass());
-        expected.expectMessage(EXCEPTION_MESSAGE);
-
+        expected.expect(ExecutionException.class);
+        expected.expectCause(new RootCauseMatcher(EXCEPTION.getClass(), EXCEPTION_MESSAGE));
         future.get(1, TimeUnit.NANOSECONDS);
     }
 
     @Test
     public void get_nullResultSet_returnsResult() throws Exception {
-        TestFutureImpl future = new TestFutureImpl(nodeEngine, logger);
-        future.setResult(null);
+        TestFutureImpl future = new TestFutureImpl();
+        future.complete(null);
 
         Object result = future.get();
 
@@ -217,8 +203,8 @@ public class AbstractCompletableFutureTest extends HazelcastTestSupport {
 
     @Test
     public void getWithTimeout_nullResultSet_returnsResult() throws Exception {
-        TestFutureImpl future = new TestFutureImpl(nodeEngine, logger);
-        future.setResult(null);
+        TestFutureImpl future = new TestFutureImpl();
+        future.complete(null);
 
         Object result = future.get(10, TimeUnit.MILLISECONDS);
 
@@ -227,35 +213,35 @@ public class AbstractCompletableFutureTest extends HazelcastTestSupport {
 
     @Test(expected = TimeoutException.class, timeout = 120000)
     public void getWithTimeout_resultNotSet_timesOut() throws Exception {
-        TestFutureImpl future = new TestFutureImpl(nodeEngine, logger);
+        TestFutureImpl future = new TestFutureImpl();
 
         future.get(10, TimeUnit.MILLISECONDS);
     }
 
     @Test(expected = TimeoutException.class, timeout = 60000)
     public void getWithTimeout_zeroTimeout_resultNotSet_timesOut() throws Exception {
-        TestFutureImpl future = new TestFutureImpl(nodeEngine, logger);
+        TestFutureImpl future = new TestFutureImpl();
 
         future.get(0, TimeUnit.MILLISECONDS);
     }
 
     @Test(expected = TimeoutException.class, timeout = 60000)
     public void getWithTimeout_negativeTimeout_resultNotSet_timesOut() throws Exception {
-        TestFutureImpl future = new TestFutureImpl(nodeEngine, logger);
+        TestFutureImpl future = new TestFutureImpl();
 
         future.get(-1, TimeUnit.MILLISECONDS);
     }
 
     @Test(expected = TimeoutException.class, timeout = 60000)
     public void getWithTimeout_lowerThanOneMilliTimeout_resultNotSet_timesOut() throws Exception {
-        TestFutureImpl future = new TestFutureImpl(nodeEngine, logger);
+        TestFutureImpl future = new TestFutureImpl();
 
         future.get(1, TimeUnit.NANOSECONDS);
     }
 
     @Test
     public void getWithTimeout_threadInterrupted_exceptionThrown() throws Exception {
-        TestFutureImpl future = new TestFutureImpl(nodeEngine, logger);
+        TestFutureImpl future = new TestFutureImpl();
 
         Thread.currentThread().interrupt();
 
@@ -265,7 +251,7 @@ public class AbstractCompletableFutureTest extends HazelcastTestSupport {
 
     @Test(timeout = 60000)
     public void getWithTimeout_waited_notifiedOnSet() throws Exception {
-        TestFutureImpl future = new TestFutureImpl(nodeEngine, logger);
+        TestFutureImpl future = new TestFutureImpl();
 
         submitSetResultAfterTimeInMillis(future, RESULT, 200);
         Object result = future.get(30000, TimeUnit.MILLISECONDS);
@@ -275,7 +261,7 @@ public class AbstractCompletableFutureTest extends HazelcastTestSupport {
 
     @Test(timeout = 60000)
     public void getWithTimeout_waited_waited_notifiedOnCancel() throws Exception {
-        TestFutureImpl future = new TestFutureImpl(nodeEngine, logger);
+        TestFutureImpl future = new TestFutureImpl();
 
         submitCancelAfterTimeInMillis(future, 200);
 
@@ -299,21 +285,21 @@ public class AbstractCompletableFutureTest extends HazelcastTestSupport {
     }
 
     private void setResult_resultSet_futureDone(Object result) {
-        TestFutureImpl future = new TestFutureImpl(nodeEngine, logger);
+        TestFutureImpl future = new TestFutureImpl();
 
-        future.setResult(result);
+        future.complete(result);
 
         assertTrue("Future should be done after result has been set", future.isDone());
     }
 
     @Test
     public void setResult_whenResultAlreadySet_secondResultDiscarded() throws Exception {
-        TestFutureImpl future = new TestFutureImpl(nodeEngine, logger);
+        TestFutureImpl future = new TestFutureImpl();
         Object initialResult = "firstresult";
         Object secondResult = "secondresult";
 
-        future.setResult(initialResult);
-        future.setResult(secondResult);
+        future.complete(initialResult);
+        future.complete(secondResult);
 
         assertSame(initialResult, future.get());
     }
@@ -334,21 +320,25 @@ public class AbstractCompletableFutureTest extends HazelcastTestSupport {
     }
 
     public void setResult_whenPendingCallback_callbacksExecutedCorrectly(final Object result) {
-        TestFutureImpl future = new TestFutureImpl(nodeEngine, logger);
-        final ExecutionCallback callback1 = mock(ExecutionCallback.class);
-        final ExecutionCallback callback2 = mock(ExecutionCallback.class);
-        future.andThen(callback1);
-        future.andThen(callback2);
+        TestFutureImpl future = new TestFutureImpl();
+        final BiConsumer callback1 = mock(BiConsumer.class);
+        final BiConsumer callback2 = mock(BiConsumer.class);
+        future.whenCompleteAsync(callback1);
+        future.whenCompleteAsync(callback2);
 
-        future.setResult(result);
+        if (result instanceof Throwable) {
+            future.completeExceptionally((Throwable) result);
+        } else {
+            future.complete(result);
+        }
 
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() {
                 if (result instanceof Throwable) {
-                    verify(callback1).onFailure((Throwable) result);
+                    verify(callback1).accept(null, result);
                 } else {
-                    verify(callback1).onResponse(result);
+                    verify(callback1).accept(result, null);
                 }
             }
         });
@@ -356,85 +346,55 @@ public class AbstractCompletableFutureTest extends HazelcastTestSupport {
             @Override
             public void run() {
                 if (result instanceof Throwable) {
-                    verify(callback2).onFailure((Throwable) result);
+                    verify(callback2).accept(null, result);
                 } else {
-                    verify(callback2).onResponse(result);
+                    verify(callback2).accept(result, null);
                 }
             }
         });
     }
 
-    @Test
-    public void getResult_whenInitialState() {
-        TestFutureImpl future = new TestFutureImpl(nodeEngine, logger);
-
-        Object result = future.getResult();
-
-        assertNull("Internal result should be null initially", result);
-    }
-
-    @Test
-    public void getResult_whenPendingCallback() {
-        TestFutureImpl future = new TestFutureImpl(nodeEngine, logger);
-        future.andThen(mock(ExecutionCallback.class));
-
-        Object result = future.getResult();
-
-        assertNull("Internal result should be null initially", result);
-    }
-
-    @Test
-    public void getResult_whenNullResult() {
-        TestFutureImpl future = new TestFutureImpl(nodeEngine, logger);
-        future.setResult(null);
-
-        Object result = future.getResult();
-
-        assertNull("Internal result should be null when set to null", result);
-    }
-
-
-    @Test(expected = IllegalArgumentException.class)
+    @Test(expected = NullPointerException.class)
     public void andThen_whenNullCallback_exceptionThrown() {
-        TestFutureImpl future = new TestFutureImpl(nodeEngine, logger);
-        future.andThen(null, executor);
+        TestFutureImpl future = new TestFutureImpl();
+        future.whenCompleteAsync(null, executor);
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test(expected = NullPointerException.class)
     public void andThen_whenNullExecutor_exceptionThrown() {
-        TestFutureImpl future = new TestFutureImpl(nodeEngine, logger);
-        future.andThen(mock(ExecutionCallback.class), null);
+        TestFutureImpl future = new TestFutureImpl();
+        future.whenCompleteAsync(mock(BiConsumer.class), null);
     }
 
     @Test
     public void andThen_whenInitialState() {
-        TestFutureImpl future = new TestFutureImpl(nodeEngine, logger);
-        ExecutionCallback callback = mock(ExecutionCallback.class);
+        TestFutureImpl future = new TestFutureImpl();
+        BiConsumer callback = mock(BiConsumer.class);
 
-        future.andThen(callback, executor);
+        future.whenCompleteAsync(callback, executor);
 
         verifyZeroInteractions(callback);
     }
 
     @Test
     public void andThen_whenCancelled() {
-        TestFutureImpl future = new TestFutureImpl(nodeEngine, logger);
-        ExecutionCallback callback = mock(ExecutionCallback.class);
+        TestFutureImpl future = new TestFutureImpl();
+        BiConsumer callback = mock(BiConsumer.class);
 
         future.cancel(false);
-        future.andThen(callback, executor);
+        future.whenCompleteAsync(callback, executor);
 
-        verifyZeroInteractions(callback);
+        verify(callback).accept(isNull(), isA(CancellationException.class));
     }
 
     @Test
     public void andThen_whenPendingCallback() {
-        TestFutureImpl future = new TestFutureImpl(nodeEngine, logger);
-        ExecutionCallback callback1 = mock(ExecutionCallback.class);
-        ExecutionCallback callback2 = mock(ExecutionCallback.class);
+        TestFutureImpl future = new TestFutureImpl();
+        BiConsumer callback1 = mock(BiConsumer.class);
+        BiConsumer callback2 = mock(BiConsumer.class);
 
-        future.andThen(callback1, executor);
-        future.andThen(callback2, executor);
+        future.whenCompleteAsync(callback1, executor);
+        future.whenCompleteAsync(callback2, executor);
 
         verifyZeroInteractions(callback1);
         verifyZeroInteractions(callback2);
@@ -442,32 +402,32 @@ public class AbstractCompletableFutureTest extends HazelcastTestSupport {
 
     @Test
     public void andThen_whenPendingCallback_andCancelled() {
-        TestFutureImpl future = new TestFutureImpl(nodeEngine, logger);
-        ExecutionCallback callback1 = mock(ExecutionCallback.class);
-        ExecutionCallback callback2 = mock(ExecutionCallback.class);
+        TestFutureImpl future = new TestFutureImpl();
+        BiConsumer callback1 = mock(BiConsumer.class);
+        BiConsumer callback2 = mock(BiConsumer.class);
 
-        future.andThen(callback1, executor);
+        future.whenCompleteAsync(callback1, executor);
         future.cancel(false);
-        future.andThen(callback2, executor);
+        future.whenCompleteAsync(callback2, executor);
 
-        verifyZeroInteractions(callback1);
-        verifyZeroInteractions(callback2);
+        verify(callback1).accept(isNull(), isA(CancellationException.class));
+        verify(callback2).accept(isNull(), isA(CancellationException.class));
     }
 
     @Test
     public void andThen_whenResultAvailable() throws Exception {
-        TestFutureImpl future = new TestFutureImpl(nodeEngine, logger);
+        TestFutureImpl future = new TestFutureImpl();
         final Object result = "result";
-        final ExecutionCallback callback = mock(ExecutionCallback.class);
+        final BiConsumer callback = mock(BiConsumer.class);
 
-        future.setResult(result);
-        future.andThen(callback, executor);
+        future.complete(result);
+        future.whenCompleteAsync(callback, executor);
 
         assertSame(result, future.get());
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() {
-                verify(callback).onResponse(result);
+                verify(callback).accept(result, null);
             }
         });
     }
@@ -492,7 +452,7 @@ public class AbstractCompletableFutureTest extends HazelcastTestSupport {
                 try {
                     sleepMillis(timeInMillis);
                 } finally {
-                    future.setResult(result);
+                    future.complete(result);
                 }
             }
         });
@@ -502,9 +462,6 @@ public class AbstractCompletableFutureTest extends HazelcastTestSupport {
         new Thread(runnable).start();
     }
 
-    private class TestFutureImpl extends AbstractCompletableFuture<Object> {
-        protected TestFutureImpl(NodeEngine nodeEngine, ILogger logger) {
-            super(nodeEngine, logger);
-        }
+    private class TestFutureImpl extends InternalCompletableFuture<Object> {
     }
 }

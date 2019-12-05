@@ -17,54 +17,55 @@
 package com.hazelcast.map.impl.wan;
 
 import com.hazelcast.core.EntryView;
+import com.hazelcast.map.impl.MapService;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.wan.ReplicationEventObject;
-import com.hazelcast.wan.impl.DistributedServiceWanEventCounters;
+import com.hazelcast.spi.merge.SplitBrainMergePolicy;
+import com.hazelcast.wan.DistributedServiceWanEventCounters;
+import com.hazelcast.wan.impl.InternalWanReplicationEvent;
 import com.hazelcast.wan.impl.WanDataSerializerHook;
 
+import javax.annotation.Nonnull;
 import java.io.IOException;
+import java.util.Collections;
+import java.util.Set;
 
 /**
  * WAN replication object for map update operations.
  */
-public class MapReplicationUpdate implements ReplicationEventObject, IdentifiedDataSerializable {
+public class MapReplicationUpdate implements InternalWanReplicationEvent, IdentifiedDataSerializable {
     private String mapName;
-    /** The policy how to merge the entry on the receiving cluster */
-    private Object mergePolicy;
-    /** The updated entry */
+    /**
+     * The policy how to merge the entry on the receiving cluster
+     */
+    private SplitBrainMergePolicy mergePolicy;
+    /**
+     * The updated entry
+     */
     private WanMapEntryView<Data, Data> entryView;
 
     public MapReplicationUpdate() {
     }
 
     public MapReplicationUpdate(String mapName,
-                                Object mergePolicy,
+                                SplitBrainMergePolicy mergePolicy,
                                 EntryView<Data, Data> entryView) {
         this.mergePolicy = mergePolicy;
         this.mapName = mapName;
         if (entryView instanceof WanMapEntryView) {
             this.entryView = (WanMapEntryView<Data, Data>) entryView;
         } else {
-            this.entryView = new WanMapEntryView<Data, Data>(entryView);
+            this.entryView = new WanMapEntryView<>(entryView);
         }
     }
 
-    public String getMapName() {
-        return mapName;
-    }
-
-    public void setMapName(String mapName) {
-        this.mapName = mapName;
-    }
-
-    public Object getMergePolicy() {
+    public SplitBrainMergePolicy getMergePolicy() {
         return mergePolicy;
     }
 
-    public void setMergePolicy(Object mergePolicy) {
+    public void setMergePolicy(SplitBrainMergePolicy mergePolicy) {
         this.mergePolicy = mergePolicy;
     }
 
@@ -87,13 +88,7 @@ public class MapReplicationUpdate implements ReplicationEventObject, IdentifiedD
     public void readData(ObjectDataInput in) throws IOException {
         mapName = in.readUTF();
         mergePolicy = in.readObject();
-        EntryView<Data, Data> entryView = in.readObject();
-
-        if (entryView instanceof WanMapEntryView) {
-            this.entryView = (WanMapEntryView<Data, Data>) entryView;
-        } else {
-            this.entryView = new WanMapEntryView<Data, Data>(entryView);
-        }
+        entryView = in.readObject();
     }
 
     @Override
@@ -102,7 +97,7 @@ public class MapReplicationUpdate implements ReplicationEventObject, IdentifiedD
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return WanDataSerializerHook.MAP_REPLICATION_UPDATE;
     }
 
@@ -111,8 +106,38 @@ public class MapReplicationUpdate implements ReplicationEventObject, IdentifiedD
         counters.incrementUpdate(mapName);
     }
 
+    @Nonnull
     @Override
     public Data getKey() {
         return entryView.getKey();
+    }
+
+    @Nonnull
+    @Override
+    public Set<String> getClusterNames() {
+        // called only in EE
+        return Collections.emptySet();
+    }
+
+    @Override
+    public int getBackupCount() {
+        // called only in EE
+        return 0;
+    }
+
+    @Override
+    public long getCreationTime() {
+        // called only in EE
+        return 0;
+    }
+
+    @Override
+    public String getServiceName() {
+        return MapService.SERVICE_NAME;
+    }
+
+    @Override
+    public String getObjectName() {
+        return mapName;
     }
 }

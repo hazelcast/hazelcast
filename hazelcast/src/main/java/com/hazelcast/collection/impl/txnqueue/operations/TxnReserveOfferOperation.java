@@ -19,14 +19,17 @@ package com.hazelcast.collection.impl.txnqueue.operations;
 import com.hazelcast.collection.impl.queue.QueueContainer;
 import com.hazelcast.collection.impl.queue.QueueDataSerializerHook;
 import com.hazelcast.collection.impl.queue.operations.QueueBackupAwareOperation;
+import com.hazelcast.internal.util.UUIDSerializationUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.spi.BlockingOperation;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.WaitNotifyKey;
-import com.hazelcast.spi.impl.MutatingOperation;
+import com.hazelcast.spi.impl.operationservice.BlockingOperation;
+import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.spi.impl.operationservice.WaitNotifyKey;
+import com.hazelcast.spi.impl.operationservice.MutatingOperation;
+import com.hazelcast.transaction.TransactionalQueue;
 
 import java.io.IOException;
+import java.util.UUID;
 
 /**
  * Transaction prepare operation for a queue offer, executed on the primary replica.
@@ -39,18 +42,18 @@ import java.io.IOException;
  * <p>
  * The operation can also wait until there is enough room or the wait timeout has elapsed.
  *
- * @see com.hazelcast.core.TransactionalQueue#offer(Object)
+ * @see TransactionalQueue#offer(Object)
  * @see TxnOfferOperation
  */
 public class TxnReserveOfferOperation extends QueueBackupAwareOperation implements BlockingOperation, MutatingOperation {
     /** The number of items already offered in this transactional queue */
     private int txSize;
-    private String transactionId;
+    private UUID transactionId;
 
     public TxnReserveOfferOperation() {
     }
 
-    public TxnReserveOfferOperation(String name, long timeoutMillis, int txSize, String transactionId) {
+    public TxnReserveOfferOperation(String name, long timeoutMillis, int txSize, UUID transactionId) {
         super(name, timeoutMillis);
         this.txSize = txSize;
         this.transactionId = transactionId;
@@ -59,9 +62,7 @@ public class TxnReserveOfferOperation extends QueueBackupAwareOperation implemen
     /**
      * {@inheritDoc}
      * Sets the response to the next item ID if the queue can
-     * accomodate {@code txSize + 1} items.
-     *
-     * @throws Exception
+     * accommodate {@code txSize + 1} items.
      */
     @Override
     public void run() throws Exception {
@@ -99,7 +100,7 @@ public class TxnReserveOfferOperation extends QueueBackupAwareOperation implemen
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return QueueDataSerializerHook.TXN_RESERVE_OFFER;
     }
 
@@ -107,13 +108,13 @@ public class TxnReserveOfferOperation extends QueueBackupAwareOperation implemen
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeInt(txSize);
-        out.writeUTF(transactionId);
+        UUIDSerializationUtil.writeUUID(out, transactionId);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         txSize = in.readInt();
-        transactionId = in.readUTF();
+        transactionId = UUIDSerializationUtil.readUUID(in);
     }
 }

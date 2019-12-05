@@ -38,7 +38,7 @@ public final class StoreEvent<E> extends EventObject {
     }
 
     public static <E> StoreEvent<E> createStoreEvent(E source) {
-        return new StoreEvent<E>(source);
+        return new StoreEvent<>(source);
     }
 
     @Override

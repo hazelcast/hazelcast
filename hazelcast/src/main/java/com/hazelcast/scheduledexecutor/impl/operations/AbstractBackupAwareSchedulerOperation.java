@@ -16,7 +16,7 @@
 
 package com.hazelcast.scheduledexecutor.impl.operations;
 
-import com.hazelcast.spi.BackupAwareOperation;
+import com.hazelcast.spi.impl.operationservice.BackupAwareOperation;
 
 public abstract class AbstractBackupAwareSchedulerOperation
         extends AbstractSchedulerOperation

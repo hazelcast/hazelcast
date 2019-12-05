@@ -17,7 +17,7 @@
 package com.hazelcast.client.impl.protocol;
 
 import com.hazelcast.client.impl.protocol.task.MessageTask;
-import com.hazelcast.nio.Connection;
+import com.hazelcast.internal.nio.Connection;
 
 /**
  * Message task factory interface

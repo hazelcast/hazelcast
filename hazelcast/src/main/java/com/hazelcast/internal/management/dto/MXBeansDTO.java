@@ -16,14 +16,14 @@
 
 package com.hazelcast.internal.management.dto;
 
-import com.hazelcast.internal.management.JsonSerializable;
+import com.hazelcast.json.internal.JsonSerializable;
 import com.hazelcast.internal.json.JsonObject;
 
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
-import static com.hazelcast.util.JsonUtil.getObject;
+import static com.hazelcast.internal.util.JsonUtil.getObject;
 
 /**
  * Holder class for serializable service beans.

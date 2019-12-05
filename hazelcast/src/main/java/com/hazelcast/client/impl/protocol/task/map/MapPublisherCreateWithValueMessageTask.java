@@ -20,22 +20,22 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ContinuousQueryPublisherCreateWithValueCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
 import com.hazelcast.client.impl.protocol.task.BlockingMessageTask;
-import com.hazelcast.instance.MemberImpl;
-import com.hazelcast.instance.Node;
+import com.hazelcast.cluster.impl.MemberImpl;
+import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.cluster.ClusterService;
+import com.hazelcast.internal.util.collection.InflatableSet;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.query.QueryResult;
 import com.hazelcast.map.impl.query.QueryResultRow;
 import com.hazelcast.map.impl.querycache.accumulator.AccumulatorInfo;
 import com.hazelcast.map.impl.querycache.subscriber.operation.PublisherCreateOperation;
-import com.hazelcast.nio.Address;
-import com.hazelcast.nio.Connection;
+import com.hazelcast.cluster.Address;
+import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.Predicate;
-import com.hazelcast.spi.InvocationBuilder;
-import com.hazelcast.spi.impl.operationservice.InternalOperationService;
-import com.hazelcast.util.ExceptionUtil;
-import com.hazelcast.util.collection.InflatableSet;
+import com.hazelcast.spi.impl.operationservice.InvocationBuilder;
+import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
+import com.hazelcast.internal.util.ExceptionUtil;
 
 import java.security.Permission;
 import java.util.AbstractMap;
@@ -70,11 +70,11 @@ public class MapPublisherCreateWithValueMessageTask
 
     private List<Future> createPublishersAndGetSnapshotOf(Collection<MemberImpl> members) {
         List<Future> futures = new ArrayList<Future>(members.size());
-        InternalOperationService operationService = nodeEngine.getOperationService();
+        OperationServiceImpl operationService = nodeEngine.getOperationService();
         for (MemberImpl member : members) {
             Predicate predicate = serializationService.toObject(parameters.predicate);
             AccumulatorInfo accumulatorInfo =
-                    AccumulatorInfo.createAccumulatorInfo(parameters.mapName, parameters.cacheName, predicate,
+                    AccumulatorInfo.toAccumulatorInfo(parameters.mapName, parameters.cacheName, predicate,
                             parameters.batchSize, parameters.bufferSize, parameters.delaySeconds,
                             true, parameters.populate, parameters.coalesce);
 

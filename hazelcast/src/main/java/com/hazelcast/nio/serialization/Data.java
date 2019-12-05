@@ -16,7 +16,8 @@
 
 package com.hazelcast.nio.serialization;
 
-import com.hazelcast.spi.serialization.SerializationService;
+import com.hazelcast.partition.PartitioningStrategy;
+import com.hazelcast.internal.serialization.SerializationService;
 
 /**
  * Data is basic unit of serialization. It stores binary form of an object serialized
@@ -80,14 +81,14 @@ public interface Data {
     /**
      * Returns partition hash calculated for serialized object.
      * Partition hash is used to determine partition of a Data and is calculated using
-     * {@link com.hazelcast.core.PartitioningStrategy} during serialization.
-     * <p/>
-     * If partition hash is not set then standard <tt>hashCode()</tt> is used.
+     * {@link PartitioningStrategy} during serialization.
+     * <p>
+     * If partition hash is not set then standard <code>hashCode()</code> is used.
      *
      * @return partition hash
-     * @see com.hazelcast.core.PartitionAware
-     * @see com.hazelcast.core.PartitioningStrategy
-     * @see SerializationService#toData(Object, com.hazelcast.core.PartitioningStrategy)
+     * @see com.hazelcast.partition.PartitionAware
+     * @see PartitioningStrategy
+     * @see SerializationService#toData(Object, PartitioningStrategy)
      */
     int getPartitionHash();
 
@@ -109,15 +110,15 @@ public interface Data {
      * Returns true if this Data is created from a {@link com.hazelcast.nio.serialization.Portable} object,
      * false otherwise.
      *
-     * @return true if source object is <tt>Portable</tt>, false otherwise.
+     * @return true if source object is <code>Portable</code>, false otherwise.
      */
     boolean isPortable();
 
     /**
-     * Returns true if this Data is created from a {@link com.hazelcast.json.HazelcastJson} object,
+     * Returns true if this Data is created from a {@link com.hazelcast.core.HazelcastJsonValue} object,
      * false otherwise
      *
-     * @return true if source object is <tt>HazelcastJson</tt>, false otherwise.
+     * @return true if source object is <code>HazelcastJsonValue</code>, false otherwise.
      */
     boolean isJson();
 

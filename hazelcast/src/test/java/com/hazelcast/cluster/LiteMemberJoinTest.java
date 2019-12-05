@@ -22,14 +22,15 @@ import com.hazelcast.config.NetworkConfig;
 import com.hazelcast.config.TcpIpConfig;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.Member;
-import com.hazelcast.instance.HazelcastInstanceFactory;
-import com.hazelcast.instance.Node;
+import com.hazelcast.instance.impl.HazelcastInstanceFactory;
+import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.OverridePropertyRule;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -42,11 +43,15 @@ import static com.hazelcast.test.HazelcastTestSupport.assertClusterSizeEventuall
 import static com.hazelcast.test.HazelcastTestSupport.closeConnectionBetween;
 import static com.hazelcast.test.HazelcastTestSupport.getNode;
 import static com.hazelcast.test.HazelcastTestSupport.randomString;
+import static com.hazelcast.test.OverridePropertyRule.clear;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
 public class LiteMemberJoinTest {
+
+    @Rule
+    public final OverridePropertyRule ruleSysPropHazelcastLocalAddress = clear("hazelcast.local.localAddress");
 
     private final String name = randomString();
 
@@ -203,8 +208,7 @@ public class LiteMemberJoinTest {
             @Override
             public Config create(String name, String pw, boolean liteMember) {
                 Config config = new Config();
-                config.getGroupConfig().setName(name);
-                config.getGroupConfig().setPassword(pw);
+                config.setClusterName(name);
 
                 config.setLiteMember(liteMember);
 
@@ -223,8 +227,7 @@ public class LiteMemberJoinTest {
             @Override
             public Config create(String name, String pw, boolean liteMember) {
                 Config config = new Config();
-                config.getGroupConfig().setName(name);
-                config.getGroupConfig().setPassword(pw);
+                config.setClusterName(name);
 
                 config.setLiteMember(liteMember);
 

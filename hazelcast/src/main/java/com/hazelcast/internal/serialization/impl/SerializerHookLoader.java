@@ -19,12 +19,12 @@ package com.hazelcast.internal.serialization.impl;
 import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.config.SerializerConfig;
 import com.hazelcast.logging.Logger;
-import com.hazelcast.nio.ClassLoaderUtil;
+import com.hazelcast.internal.nio.ClassLoaderUtil;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.nio.serialization.Serializer;
 import com.hazelcast.nio.serialization.SerializerHook;
-import com.hazelcast.util.ExceptionUtil;
-import com.hazelcast.util.ServiceLoader;
+import com.hazelcast.internal.util.ExceptionUtil;
+import com.hazelcast.internal.util.ServiceLoader;
 
 import java.lang.reflect.Constructor;
 import java.util.Collection;
@@ -35,7 +35,7 @@ import java.util.Map;
 /**
  * Loads auto registered serializers using {@link com.hazelcast.nio.serialization.SerializerHook}
  * by reading in the file "META-INF/services/com.hazelcast.SerializerHook" and instantiating
- * the defined SerializerHooks.<br/>
+ * the defined SerializerHooks.<br>
  * This system is meant to be internal code and is subject to change at any time.
  */
 final class SerializerHookLoader {

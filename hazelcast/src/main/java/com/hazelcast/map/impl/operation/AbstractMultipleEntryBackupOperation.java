@@ -16,22 +16,21 @@
 
 package com.hazelcast.map.impl.operation;
 
-import com.hazelcast.map.EntryBackupProcessor;
-import com.hazelcast.nio.serialization.impl.Versioned;
+import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.query.Predicate;
 
 /**
  * Provides common backup operation functionality for {@link com.hazelcast.map.EntryProcessor}
  * that can run on multiple entries.
  */
-abstract class AbstractMultipleEntryBackupOperation extends MapOperation implements Versioned {
+abstract class AbstractMultipleEntryBackupOperation extends MapOperation {
 
-    EntryBackupProcessor backupProcessor;
+    EntryProcessor backupProcessor;
 
-    public AbstractMultipleEntryBackupOperation() {
+    AbstractMultipleEntryBackupOperation() {
     }
 
-    public AbstractMultipleEntryBackupOperation(String name, EntryBackupProcessor backupProcessor) {
+    AbstractMultipleEntryBackupOperation(String name, EntryProcessor backupProcessor) {
         super(name);
         this.backupProcessor = backupProcessor;
     }

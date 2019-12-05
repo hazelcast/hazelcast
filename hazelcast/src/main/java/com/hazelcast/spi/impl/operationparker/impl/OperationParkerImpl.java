@@ -16,25 +16,26 @@
 
 package com.hazelcast.spi.impl.operationparker.impl;
 
-import com.hazelcast.instance.MemberImpl;
-import com.hazelcast.instance.Node;
-import com.hazelcast.internal.metrics.MetricsProvider;
+import com.hazelcast.cluster.impl.MemberImpl;
+import com.hazelcast.instance.impl.Node;
+import com.hazelcast.internal.metrics.StaticMetricsProvider;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.partition.MigrationInfo;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.spi.BlockingOperation;
-import com.hazelcast.spi.LiveOperations;
-import com.hazelcast.spi.LiveOperationsTracker;
-import com.hazelcast.spi.Notifier;
-import com.hazelcast.spi.WaitNotifyKey;
+import com.hazelcast.spi.impl.operationservice.BlockingOperation;
+import com.hazelcast.spi.impl.operationservice.LiveOperations;
+import com.hazelcast.spi.impl.operationservice.LiveOperationsTracker;
+import com.hazelcast.spi.impl.operationservice.Notifier;
+import com.hazelcast.spi.impl.operationservice.WaitNotifyKey;
 import com.hazelcast.spi.exception.PartitionMigratingException;
 import com.hazelcast.spi.exception.TargetDisconnectedException;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationparker.OperationParker;
-import com.hazelcast.util.ConstructorFunction;
-import com.hazelcast.util.executor.SingleExecutorThreadFactory;
+import com.hazelcast.internal.util.ConstructorFunction;
+import com.hazelcast.internal.util.executor.SingleExecutorThreadFactory;
 
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.DelayQueue;
@@ -42,11 +43,11 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
-import static com.hazelcast.util.ConcurrencyUtil.getOrPutIfAbsent;
-import static com.hazelcast.util.ThreadUtil.createThreadName;
+import static com.hazelcast.internal.util.ConcurrencyUtil.getOrPutIfAbsent;
+import static com.hazelcast.internal.util.ThreadUtil.createThreadName;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
-public class OperationParkerImpl implements OperationParker, LiveOperationsTracker, MetricsProvider {
+public class OperationParkerImpl implements OperationParker, LiveOperationsTracker, StaticMetricsProvider {
 
     private static final long FIRST_WAIT_TIME = 1000;
 
@@ -75,8 +76,8 @@ public class OperationParkerImpl implements OperationParker, LiveOperationsTrack
     }
 
     @Override
-    public void provideMetrics(MetricsRegistry registry) {
-        registry.scanAndRegister(this, "operation-parker");
+    public void provideStaticMetrics(MetricsRegistry registry) {
+        registry.registerStaticMetrics(this, "operation-parker");
     }
 
     @Override
@@ -137,7 +138,7 @@ public class OperationParkerImpl implements OperationParker, LiveOperationsTrack
         }
     }
 
-    public void onClientDisconnected(String clientUuid) {
+    public void onClientDisconnected(UUID clientUuid) {
         for (WaitSet waitSet : waitSetMap.values()) {
             waitSet.cancelAll(clientUuid, new TargetDisconnectedException("Client disconnected: " + clientUuid));
         }

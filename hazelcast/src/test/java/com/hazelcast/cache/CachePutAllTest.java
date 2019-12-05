@@ -21,16 +21,16 @@ import com.hazelcast.cache.impl.ICacheService;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.instance.Node;
+import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.OperationService;
+import com.hazelcast.spi.impl.operationservice.OperationService;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceAccessor;
-import com.hazelcast.spi.serialization.SerializationService;
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -50,7 +50,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class CachePutAllTest extends CacheTestSupport {
 
     private static final int INSTANCE_COUNT = 2;
@@ -191,7 +191,7 @@ public class CachePutAllTest extends CacheTestSupport {
 
         assertNull(cache.get(key));
         // force collect metrics
-        metricsRegistry.collectMetrics(operationService);
+        metricsRegistry.provideMetrics(operationService);
         assertEquals(0L, OperationServiceAccessor.getFailedBackupsCount(hazelcastInstances[1]).get());
     }
 }

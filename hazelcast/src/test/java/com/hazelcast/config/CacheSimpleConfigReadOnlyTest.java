@@ -16,19 +16,20 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.internal.config.CacheSimpleConfigReadOnly;
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class CacheSimpleConfigReadOnlyTest {
 
     private CacheSimpleConfig getReadOnlyConfig() {
-        return new CacheSimpleConfig().getAsReadOnly();
+        return new CacheSimpleConfigReadOnly(new CacheSimpleConfig());
     }
 
     @Test(expected = UnsupportedOperationException.class)
@@ -82,13 +83,13 @@ public class CacheSimpleConfigReadOnlyTest {
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void setQuorumNameOfReadOnlyCacheSimpleConfigShouldFail() {
-        getReadOnlyConfig().setQuorumName("my-quorum");
+    public void setSplitBrainProtectionNameOfReadOnlyCacheSimpleConfigShouldFail() {
+        getReadOnlyConfig().setSplitBrainProtectionName("my-splitbrainprotection");
     }
 
     @Test(expected = UnsupportedOperationException.class)
     public void setMergePolicyOfReadOnlyCacheSimpleConfigShouldFail() {
-        getReadOnlyConfig().setMergePolicy("my-merge-policy");
+        getReadOnlyConfig().setMergePolicyConfig(new MergePolicyConfig());
     }
 
     @Test(expected = UnsupportedOperationException.class)

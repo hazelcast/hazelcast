@@ -18,7 +18,7 @@ package com.hazelcast.test;
 
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -27,7 +27,7 @@ import org.junit.runner.RunWith;
 import static com.hazelcast.test.JenkinsDetector.isOnJenkins;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class JenkinsDetectorTest {
 
     private static final ILogger LOGGER = Logger.getLogger("JenkinsDetector");

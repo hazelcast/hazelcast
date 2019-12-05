@@ -16,14 +16,12 @@
 
 package com.hazelcast.query.impl;
 
-import com.hazelcast.query.extractor.ArgumentParser;
-
 /**
  * ArgumentParser that's used by default. It simply passes the given object through - without doing any parsing.
  *
  * @see ArgumentParser
  */
-public class DefaultArgumentParser extends ArgumentParser<Object, Object> {
+public class DefaultArgumentParser implements ArgumentParser<Object, Object> {
 
     @Override
     public Object parse(Object input) {

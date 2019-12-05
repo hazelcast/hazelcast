@@ -16,10 +16,11 @@
 
 package com.hazelcast.map.impl.event;
 
-import com.hazelcast.nio.Address;
+import com.hazelcast.cluster.Address;
+import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.BinaryInterface;
+import com.hazelcast.internal.serialization.BinaryInterface;
 import com.hazelcast.nio.serialization.Data;
 
 import java.io.IOException;
@@ -74,19 +75,19 @@ public class EntryEventData extends AbstractEventData {
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         super.writeData(out);
-        out.writeData(dataKey);
-        out.writeData(dataNewValue);
-        out.writeData(dataOldValue);
-        out.writeData(dataMergingValue);
+        IOUtil.writeData(out, dataKey);
+        IOUtil.writeData(out, dataNewValue);
+        IOUtil.writeData(out, dataOldValue);
+        IOUtil.writeData(out, dataMergingValue);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         super.readData(in);
-        dataKey = in.readData();
-        dataNewValue = in.readData();
-        dataOldValue = in.readData();
-        dataMergingValue = in.readData();
+        dataKey = IOUtil.readData(in);
+        dataNewValue = IOUtil.readData(in);
+        dataOldValue = IOUtil.readData(in);
+        dataMergingValue = IOUtil.readData(in);
     }
 
     @Override

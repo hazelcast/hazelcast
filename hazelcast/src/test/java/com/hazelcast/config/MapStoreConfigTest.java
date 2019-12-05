@@ -16,9 +16,10 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.internal.config.MapStoreConfigReadOnly;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import nl.jqno.equalsverifier.EqualsVerifier;
 import nl.jqno.equalsverifier.Warning;
@@ -39,7 +40,7 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class MapStoreConfigTest extends HazelcastTestSupport {
 
     MapStoreConfig defaultCfg = new MapStoreConfig();
@@ -63,11 +64,11 @@ public class MapStoreConfigTest extends HazelcastTestSupport {
 
     @Test
     public void getAsReadOnly() {
-        MapStoreConfigReadOnly readOnlyCfg = cfgNonNullClassName.getAsReadOnly();
+        MapStoreConfigReadOnly readOnlyCfg = new MapStoreConfigReadOnly(cfgNonNullClassName);
         assertEquals("some.class", readOnlyCfg.getClassName());
         assertEquals(cfgNonNullClassName, readOnlyCfg);
         // also test returning cached read only instance
-        assertEquals(readOnlyCfg, cfgNonNullClassName.getAsReadOnly());
+        assertEquals(readOnlyCfg, new MapStoreConfigReadOnly(cfgNonNullClassName));
     }
 
     @Test
@@ -284,7 +285,6 @@ public class MapStoreConfigTest extends HazelcastTestSupport {
     public void testEqualsAndHashCode() {
         assumeDifferentHashCodes();
         EqualsVerifier.forClass(MapStoreConfig.class)
-                .allFieldsShouldBeUsedExcept("readOnly")
                 .suppress(Warning.NONFINAL_FIELDS, Warning.NULL_FIELDS)
                 .withPrefabValues(MapStoreConfigReadOnly.class,
                         new MapStoreConfigReadOnly(cfgNotEnabled),

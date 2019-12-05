@@ -18,14 +18,13 @@ package com.hazelcast.map.impl;
 
 import com.hazelcast.map.impl.recordstore.DefaultRecordStore;
 import com.hazelcast.map.impl.recordstore.RecordStore;
-import com.hazelcast.map.merge.IgnoreMergingEntryMapMergePolicy;
 import com.hazelcast.spi.impl.merge.AbstractSplitBrainHandlerService;
 import com.hazelcast.spi.merge.DiscardMergePolicy;
 
 import java.util.Collection;
 import java.util.Iterator;
 
-import static com.hazelcast.util.ThreadUtil.assertRunningOnPartitionThread;
+import static com.hazelcast.internal.util.ThreadUtil.assertRunningOnPartitionThread;
 
 class MapSplitBrainHandlerService extends AbstractSplitBrainHandlerService<RecordStore> {
 
@@ -58,7 +57,9 @@ class MapSplitBrainHandlerService extends AbstractSplitBrainHandlerService<Recor
     protected void onStoreCollection(RecordStore recordStore) {
         assertRunningOnPartitionThread();
 
-        ((DefaultRecordStore) recordStore).clearOtherDataThanStorage(true);
+        DefaultRecordStore defaultRecordStore = (DefaultRecordStore) recordStore;
+        defaultRecordStore.getMapDataStore().reset();
+        defaultRecordStore.getIndexingObserver().onDestroy(false, true);
     }
 
     @Override
@@ -77,7 +78,8 @@ class MapSplitBrainHandlerService extends AbstractSplitBrainHandlerService<Recor
 
     @Override
     protected boolean hasMergeablePolicy(RecordStore store) {
-        Object mergePolicy = mapServiceContext.getMergePolicy(store.getName());
-        return !(mergePolicy instanceof DiscardMergePolicy || mergePolicy instanceof IgnoreMergingEntryMapMergePolicy);
+        String policy = store.getMapContainer().getMapConfig().getMergePolicyConfig().getPolicy();
+        Object mergePolicy = mapServiceContext.getNodeEngine().getSplitBrainMergePolicyProvider().getMergePolicy(policy);
+        return !(mergePolicy instanceof DiscardMergePolicy);
     }
 }

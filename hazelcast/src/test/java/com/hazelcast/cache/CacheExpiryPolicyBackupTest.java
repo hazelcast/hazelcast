@@ -22,7 +22,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.test.backup.BackupAccessor;
 import com.hazelcast.test.backup.TestBackupUtils;
@@ -40,7 +40,7 @@ import java.util.Set;
 
 import static com.hazelcast.test.backup.TestBackupUtils.assertExpiryPolicyEventually;
 
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 @RunWith(HazelcastSerialClassRunner.class)
 public class CacheExpiryPolicyBackupTest extends HazelcastTestSupport {
 

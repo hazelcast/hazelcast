@@ -16,19 +16,18 @@
 
 package com.hazelcast.map;
 
-import com.hazelcast.concurrent.lock.LockService;
-import com.hazelcast.concurrent.lock.LockServiceImpl;
-import com.hazelcast.concurrent.lock.LockStoreContainer;
+import com.hazelcast.internal.locksupport.LockSupportService;
+import com.hazelcast.internal.locksupport.LockSupportServiceImpl;
+import com.hazelcast.internal.locksupport.LockStoreContainer;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IMap;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.NightlyTest;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.transaction.TransactionException;
 import org.junit.Test;
@@ -44,7 +43,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class MapLockTest extends HazelcastTestSupport {
 
     @Test
@@ -273,8 +272,8 @@ public class MapLockTest extends HazelcastTestSupport {
         final String val = "val";
 
         final int TTL_SEC = 1;
-        map.put(key, val, TTL_SEC, TimeUnit.SECONDS);
         map.lock(key);
+        map.put(key, val, TTL_SEC, TimeUnit.SECONDS);
 
         sleepSeconds(TTL_SEC * 2);
 
@@ -386,7 +385,7 @@ public class MapLockTest extends HazelcastTestSupport {
         map.destroy();
 
         NodeEngineImpl nodeEngine = getNodeEngineImpl(instance);
-        LockServiceImpl lockService = nodeEngine.getService(LockService.SERVICE_NAME);
+        LockSupportServiceImpl lockService = nodeEngine.getService(LockSupportService.SERVICE_NAME);
         int partitionCount = nodeEngine.getPartitionService().getPartitionCount();
         for (int i = 0; i < partitionCount; i++) {
             LockStoreContainer lockContainer = lockService.getLockContainer(i);

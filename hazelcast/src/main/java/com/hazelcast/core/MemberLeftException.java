@@ -16,20 +16,23 @@
 
 package com.hazelcast.core;
 
-import com.hazelcast.instance.MemberImpl;
-import com.hazelcast.nio.Address;
+import com.hazelcast.cluster.Member;
+import com.hazelcast.cluster.impl.MemberImpl;
+import com.hazelcast.internal.util.UUIDSerializationUtil;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.spi.exception.RetryableException;
 import com.hazelcast.version.MemberVersion;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 
 /**
  * A {@link ExecutionException} thrown when a member left during an invocation or execution.
  */
-public class MemberLeftException extends ExecutionException implements RetryableException {
+public class MemberLeftException extends ExecutionException implements RetryableException, IndeterminateOperationState {
 
     private transient Member member;
 
@@ -65,7 +68,7 @@ public class MemberLeftException extends ExecutionException implements Retryable
         String host = address.getHost();
         int port = address.getPort();
 
-        out.writeUTF(member.getUuid());
+        UUIDSerializationUtil.writeUUID(out, member.getUuid());
         out.writeUTF(host);
         out.writeInt(port);
         out.writeBoolean(member.isLiteMember());
@@ -75,12 +78,16 @@ public class MemberLeftException extends ExecutionException implements Retryable
     private void readObject(ObjectInputStream in) throws IOException, ClassNotFoundException {
         in.defaultReadObject();
 
-        String uuid = in.readUTF();
+        UUID uuid = UUIDSerializationUtil.readUUID(in);
         String host = in.readUTF();
         int port = in.readInt();
         boolean liteMember = in.readBoolean();
         MemberVersion version = (MemberVersion) in.readObject();
 
-        member = new MemberImpl(new Address(host, port), version, false, uuid, null, liteMember);
+        member = new MemberImpl.Builder(new Address(host, port))
+                .version(version)
+                .uuid(uuid)
+                .liteMember(liteMember)
+                .build();
     }
 }

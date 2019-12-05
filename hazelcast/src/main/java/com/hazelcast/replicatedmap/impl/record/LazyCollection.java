@@ -31,7 +31,7 @@ class LazyCollection<K, V> implements Collection<V> {
     private final IteratorFactory<K, V, V> iteratorFactory;
     private final Collection<ReplicatedRecord<K, V>> values;
 
-    public LazyCollection(IteratorFactory<K, V, V> iteratorFactory, InternalReplicatedMapStorage<K, V> storage) {
+    LazyCollection(IteratorFactory<K, V, V> iteratorFactory, InternalReplicatedMapStorage<K, V> storage) {
         this.iteratorFactory = iteratorFactory;
         this.values = storage.values();
         this.storage = storage;
@@ -60,7 +60,7 @@ class LazyCollection<K, V> implements Collection<V> {
 
     @Override
     public Object[] toArray() {
-        List<Object> result = new ArrayList<Object>(storage.values().size());
+        List<Object> result = new ArrayList<>(storage.values().size());
         Iterator<V> iterator = iterator();
         while (iterator.hasNext()) {
             result.add(iterator.next());
@@ -70,7 +70,7 @@ class LazyCollection<K, V> implements Collection<V> {
 
     @Override
     public <T> T[] toArray(T[] a) {
-        List<Object> result = new ArrayList<Object>(storage.values().size());
+        List<Object> result = new ArrayList<>(storage.values().size());
         Iterator<V> iterator = iterator();
         while (iterator.hasNext()) {
             result.add(iterator.next());

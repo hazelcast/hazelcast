@@ -17,9 +17,11 @@
 package com.hazelcast.map.impl.eviction;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.config.MaxSizeConfig;
+import com.hazelcast.config.EvictionConfig;
+import com.hazelcast.config.MapConfig;
+import com.hazelcast.config.MaxSizePolicy;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IMap;
+import com.hazelcast.map.IMap;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.OverridePropertyRule;
@@ -30,7 +32,6 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import static com.hazelcast.config.EvictionPolicy.LFU;
-import static com.hazelcast.config.MaxSizeConfig.MaxSizePolicy.FREE_HEAP_PERCENTAGE;
 import static com.hazelcast.test.OverridePropertyRule.set;
 import static org.junit.Assert.assertEquals;
 
@@ -51,12 +52,13 @@ public class PluggableMemoryInfoAccessorTest extends HazelcastTestSupport {
      */
     @Test
     public void testPluggedMemoryInfoAccessorUsed() throws Exception {
-        MaxSizeConfig maxSizeConfig = new MaxSizeConfig();
-        maxSizeConfig.setMaxSizePolicy(FREE_HEAP_PERCENTAGE);
-        maxSizeConfig.setSize(50);
-
         Config config = getConfig();
-        config.getMapConfig("test").setEvictionPolicy(LFU).setMaxSizeConfig(maxSizeConfig);
+        MapConfig mapConfig = config.getMapConfig("test");
+        EvictionConfig evictionConfig = mapConfig.getEvictionConfig();
+        evictionConfig
+                .setEvictionPolicy(LFU)
+                .setMaxSizePolicy(MaxSizePolicy.FREE_HEAP_PERCENTAGE)
+                .setSize(50);
 
         HazelcastInstance node = createHazelcastInstance(config);
         IMap map = node.getMap("test");

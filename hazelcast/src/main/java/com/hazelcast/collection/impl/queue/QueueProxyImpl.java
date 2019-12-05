@@ -16,13 +16,14 @@
 
 package com.hazelcast.collection.impl.queue;
 
+import com.hazelcast.collection.IQueue;
 import com.hazelcast.config.QueueConfig;
-import com.hazelcast.core.IQueue;
-import com.hazelcast.monitor.LocalQueueStats;
+import com.hazelcast.collection.LocalQueueStats;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.InitializingObject;
-import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.impl.InitializingObject;
+import com.hazelcast.spi.impl.NodeEngine;
 
+import javax.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
@@ -30,8 +31,8 @@ import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.concurrent.TimeUnit;
 
-import static com.hazelcast.util.Preconditions.checkFalse;
-import static com.hazelcast.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.Preconditions.checkFalse;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static java.lang.Thread.currentThread;
 
 /**
@@ -39,7 +40,7 @@ import static java.lang.Thread.currentThread;
  *
  * @param <E>
  */
-public class QueueProxyImpl<E> extends QueueProxySupport implements IQueue<E>, InitializingObject {
+public class QueueProxyImpl<E> extends QueueProxySupport<E> implements IQueue<E>, InitializingObject {
 
     public QueueProxyImpl(String name, QueueService queueService, NodeEngine nodeEngine, QueueConfig config) {
         super(name, queueService, nodeEngine, config);
@@ -51,7 +52,7 @@ public class QueueProxyImpl<E> extends QueueProxySupport implements IQueue<E>, I
     }
 
     @Override
-    public boolean add(E e) {
+    public boolean add(@Nonnull E e) {
         if (offer(e)) {
             return true;
         }
@@ -59,7 +60,7 @@ public class QueueProxyImpl<E> extends QueueProxySupport implements IQueue<E>, I
     }
 
     @Override
-    public boolean offer(E e) {
+    public boolean offer(@Nonnull E e) {
         try {
             return offer(e, 0, TimeUnit.SECONDS);
         } catch (InterruptedException ex) {
@@ -69,53 +70,62 @@ public class QueueProxyImpl<E> extends QueueProxySupport implements IQueue<E>, I
     }
 
     @Override
-    public void put(E e) throws InterruptedException {
+    public void put(@Nonnull E e) throws InterruptedException {
         offer(e, -1, TimeUnit.MILLISECONDS);
     }
 
     @Override
-    public boolean offer(E e, long timeout, TimeUnit timeUnit) throws InterruptedException {
+    public boolean offer(@Nonnull E e,
+                         long timeout, @Nonnull TimeUnit timeUnit) throws InterruptedException {
+        checkNotNull(e, "Null item is not allowed!");
+        checkNotNull(timeUnit, "Null timeUnit is not allowed!");
+
         final NodeEngine nodeEngine = getNodeEngine();
         final Data data = nodeEngine.toData(e);
         return offerInternal(data, timeUnit.toMillis(timeout));
     }
 
+    @Nonnull
     @Override
     public E take() throws InterruptedException {
         return poll(-1, TimeUnit.MILLISECONDS);
     }
 
     @Override
-    public E poll(long timeout, TimeUnit timeUnit) throws InterruptedException {
+    public E poll(long timeout, @Nonnull TimeUnit timeUnit) throws InterruptedException {
+        checkNotNull(timeUnit, "Null timeUnit is not allowed!");
+
         final NodeEngine nodeEngine = getNodeEngine();
         final Object data = pollInternal(timeUnit.toMillis(timeout));
         return nodeEngine.toObject(data);
     }
 
     @Override
-    public boolean remove(Object o) {
+    public boolean remove(@Nonnull Object o) {
+        checkNotNull(o, "Null item is not allowed!");
         final NodeEngine nodeEngine = getNodeEngine();
         final Data data = nodeEngine.toData(o);
         return removeInternal(data);
     }
 
     @Override
-    public boolean contains(Object o) {
+    public boolean contains(@Nonnull Object o) {
+        checkNotNull(o, "Null item is not allowed!");
         final NodeEngine nodeEngine = getNodeEngine();
         final Data data = nodeEngine.toData(o);
-        List<Data> dataSet = new ArrayList<Data>(1);
+        List<Data> dataSet = new ArrayList<>(1);
         dataSet.add(data);
         return containsInternal(dataSet);
     }
 
     @Override
-    public int drainTo(Collection<? super E> objects) {
+    public int drainTo(@Nonnull Collection<? super E> objects) {
         return drainTo(objects, -1);
     }
 
     @Override
-    public int drainTo(Collection<? super E> objects, int i) {
-        checkNotNull(objects, "Collection is null");
+    public int drainTo(@Nonnull Collection<? super E> objects, int i) {
+        checkNotNull(objects, "Null objects parameter is not allowed!");
         checkFalse(this.equals(objects), "Can not drain to same Queue");
 
         final NodeEngine nodeEngine = getNodeEngine();
@@ -180,8 +190,11 @@ public class QueueProxyImpl<E> extends QueueProxySupport implements IQueue<E>, I
         return array;
     }
 
+    @Nonnull
     @Override
-    public <T> T[] toArray(T[] ts) {
+    public <T> T[] toArray(@Nonnull T[] ts) {
+        checkNotNull(ts, "Null array parameter is not allowed!");
+
         T[] tsParam = ts;
         final NodeEngine nodeEngine = getNodeEngine();
         List<Data> list = listInternal();
@@ -196,22 +209,30 @@ public class QueueProxyImpl<E> extends QueueProxySupport implements IQueue<E>, I
     }
 
     @Override
-    public boolean containsAll(Collection<?> objects) {
+    public boolean containsAll(@Nonnull Collection<?> objects) {
+        checkNotNull(objects, "Null collection is not allowed!");
+
         return containsInternal(getDataList(objects));
     }
 
     @Override
-    public boolean addAll(Collection<? extends E> es) {
+    public boolean addAll(@Nonnull Collection<? extends E> es) {
+        checkNotNull(es, "Null collection is not allowed!");
+
         return addAllInternal(toDataList(es));
     }
 
     @Override
-    public boolean removeAll(Collection<?> objects) {
+    public boolean removeAll(@Nonnull Collection<?> objects) {
+        checkNotNull(objects, "Null collection is not allowed!");
+
         return compareAndRemove(getDataList(objects), false);
     }
 
     @Override
-    public boolean retainAll(Collection<?> objects) {
+    public boolean retainAll(@Nonnull Collection<?> objects) {
+        checkNotNull(objects, "Null collection is not allowed!");
+
         return compareAndRemove(getDataList(objects), true);
     }
 

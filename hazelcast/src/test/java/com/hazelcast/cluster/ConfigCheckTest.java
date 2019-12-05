@@ -18,40 +18,31 @@ package com.hazelcast.cluster;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.PartitionGroupConfig;
+import com.hazelcast.config.security.RealmConfig;
 import com.hazelcast.internal.cluster.impl.ConfigCheck;
 import com.hazelcast.internal.cluster.impl.ConfigMismatchException;
-import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
-import org.mockito.ArgumentCaptor;
 
-import java.io.IOException;
-import java.util.List;
-import java.util.concurrent.atomic.AtomicBoolean;
-
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class ConfigCheckTest {
 
     @Test
-    public void whenGroupNameDifferent_thenFalse() {
+    public void whenClusterNameDifferent_thenFalse() {
         Config config1 = new Config();
-        config1.getGroupConfig().setName("foo");
+        config1.setClusterName("foo");
 
         Config config2 = new Config();
-        config2.getGroupConfig().setName("bar");
+        config2.setClusterName("bar");
 
         ConfigCheck configCheck1 = new ConfigCheck(config1, "joiner");
         ConfigCheck configCheck2 = new ConfigCheck(config2, "joiner");
@@ -62,49 +53,19 @@ public class ConfigCheckTest {
     @Test
     public void whenGroupPasswordDifferent_thenJoin() {
         Config config1 = new Config();
-        config1.getGroupConfig().setName("foo");
-        config1.getGroupConfig().setPassword("Here");
+        config1.setClusterName("c1");
+        config1.getSecurityConfig().setMemberRealmConfig("m1",
+                new RealmConfig().setUsernamePasswordIdentityConfig("foo", "Here"));
 
         Config config2 = new Config();
-        config2.getGroupConfig().setName("foo");
-        config2.getGroupConfig().setPassword("There");
+        config2.setClusterName("c1");
+        config2.getSecurityConfig().setMemberRealmConfig("m2",
+                new RealmConfig().setUsernamePasswordIdentityConfig("foo", "There"));
 
         ConfigCheck configCheck1 = new ConfigCheck(config1, "joiner");
         ConfigCheck configCheck2 = new ConfigCheck(config2, "joiner");
 
         assertIsCompatibleTrue(configCheck1, configCheck2);
-    }
-
-    @Test
-    public void testGroupPasswordNotLeak_whenVersionAboveThreeNine() {
-        final Config config = new Config();
-        config.getNetworkConfig().getJoin().getMulticastConfig()
-                .setEnabled(true).setMulticastTimeoutSeconds(3);
-        config.getNetworkConfig().getJoin().getTcpIpConfig().setEnabled(false);
-
-        final AtomicBoolean leaked = new AtomicBoolean(false);
-
-        ObjectDataOutput odo = mock(ObjectDataOutput.class);
-
-        try {
-            ConfigCheck configCheck = new ConfigCheck(config, "multicast");
-            configCheck.writeData(odo);
-        } catch (IOException e) {
-            fail(e.getMessage());
-        }
-
-        try {
-            ArgumentCaptor<String> captor = ArgumentCaptor.forClass(String.class);
-            verify(odo, times(7)).writeUTF(captor.capture());
-            List<String> values = captor.getAllValues();
-            if (values.contains(config.getGroupConfig().getPassword())) {
-                leaked.set(true);
-            }
-        } catch (IOException e) {
-            fail(e.getMessage());
-        }
-
-        assertEquals("Password leaked in output stream.", false, leaked.get());
     }
 
     @Test
@@ -121,24 +82,10 @@ public class ConfigCheckTest {
     @Test
     public void whenDifferentPartitionCount_thenConfigurationMismatchException() {
         Config config1 = new Config();
-        config1.setProperty(GroupProperty.PARTITION_COUNT.getName(), "100");
+        config1.setProperty(ClusterProperty.PARTITION_COUNT.getName(), "100");
 
         Config config2 = new Config();
-        config2.setProperty(GroupProperty.PARTITION_COUNT.getName(), "200");
-
-        ConfigCheck configCheck1 = new ConfigCheck(config1, "joiner");
-        ConfigCheck configCheck2 = new ConfigCheck(config2, "joiner");
-
-        assertIsCompatibleThrowsConfigMismatchException(configCheck1, configCheck2);
-    }
-
-    @Test
-    public void whenDifferentApplicationValidationToken_thenConfigurationMismatchException() {
-        Config config1 = new Config();
-        config1.setProperty(GroupProperty.APPLICATION_VALIDATION_TOKEN.getName(), "foo");
-
-        Config config2 = new Config();
-        config2.setProperty(GroupProperty.APPLICATION_VALIDATION_TOKEN.getName(), "bar");
+        config2.setProperty(ClusterProperty.PARTITION_COUNT.getName(), "200");
 
         ConfigCheck configCheck1 = new ConfigCheck(config1, "joiner");
         ConfigCheck configCheck2 = new ConfigCheck(config2, "joiner");
@@ -180,7 +127,15 @@ public class ConfigCheckTest {
     public void assertIsCompatibleFalse(ConfigCheck c1, ConfigCheck c2) {
         Assert.assertFalse(c1.isCompatible(c2));
         Assert.assertFalse(c2.isCompatible(c1));
-        assertIsCompatibleTrue(c1, c2);
+        assertIsCompatibleSelf(c1);
+        assertIsCompatibleSelf(c2);
+    }
+
+    public void assertIsCompatibleTrue(ConfigCheck c1, ConfigCheck c2) {
+        Assert.assertTrue(c1.isCompatible(c2));
+        Assert.assertTrue(c2.isCompatible(c1));
+        assertIsCompatibleSelf(c1);
+        assertIsCompatibleSelf(c2);
     }
 
     public void assertIsCompatibleThrowsConfigMismatchException(ConfigCheck c1, ConfigCheck c2) {
@@ -198,11 +153,11 @@ public class ConfigCheckTest {
 
         }
 
-        assertIsCompatibleTrue(c1, c2);
+        assertIsCompatibleSelf(c1);
+        assertIsCompatibleSelf(c2);
     }
 
-    private void assertIsCompatibleTrue(ConfigCheck c1, ConfigCheck c2) {
+    private void assertIsCompatibleSelf(ConfigCheck c1) {
         Assert.assertTrue(c1.isCompatible(c1));
-        Assert.assertTrue(c2.isCompatible(c2));
     }
 }

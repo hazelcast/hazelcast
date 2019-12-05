@@ -38,8 +38,8 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
-import static com.hazelcast.util.Preconditions.checkHasText;
-import static com.hazelcast.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.Preconditions.checkHasText;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static java.lang.reflect.Proxy.getInvocationHandler;
 import static java.lang.reflect.Proxy.isProxyClass;
 import static java.net.URLClassLoader.newInstance;
@@ -129,7 +129,7 @@ public final class ReflectionUtils {
         return clazz.getName().equals(arg.getClass().getName());
     }
 
-    public static Object getFieldValueReflectively(Object arg, String fieldName) throws IllegalAccessException {
+    public static <T> T getFieldValueReflectively(Object arg, String fieldName) throws IllegalAccessException {
         checkNotNull(arg, "Argument cannot be null");
         checkHasText(fieldName, "Field name cannot be null");
 
@@ -141,7 +141,7 @@ public final class ReflectionUtils {
         }
 
         field.setAccessible(true);
-        return field.get(arg);
+        return (T) field.get(arg);
     }
 
     public static void setFieldValueReflectively(Object arg, String fieldName, Object newValue) throws IllegalAccessException {

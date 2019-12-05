@@ -16,20 +16,11 @@
 
 package com.hazelcast.cluster;
 
-import com.hazelcast.config.Config;
-import com.hazelcast.config.JavaSerializationFilterConfig;
-import com.hazelcast.config.JoinConfig;
-import com.hazelcast.core.Hazelcast;
-import com.hazelcast.instance.HazelcastInstanceFactory;
-import com.hazelcast.internal.serialization.impl.SerializationConstants;
-import com.hazelcast.nio.Packet;
-import com.hazelcast.test.HazelcastSerialClassRunner;
-import com.hazelcast.test.annotation.QuickTest;
-import example.serialization.TestDeserialized;
-import org.junit.After;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
+import static com.hazelcast.internal.nio.IOUtil.closeResource;
+import static com.hazelcast.test.HazelcastTestSupport.assertTrueEventually;
+import static com.hazelcast.test.HazelcastTestSupport.smallInstanceConfig;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -39,8 +30,26 @@ import java.net.InetAddress;
 import java.net.MulticastSocket;
 import java.nio.ByteBuffer;
 
-import static com.hazelcast.nio.IOUtil.closeResource;
-import static org.junit.Assert.assertFalse;
+import org.junit.AfterClass;
+import org.junit.Before;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
+
+import com.hazelcast.config.Config;
+import com.hazelcast.config.JavaSerializationFilterConfig;
+import com.hazelcast.config.JoinConfig;
+import com.hazelcast.core.Hazelcast;
+import com.hazelcast.instance.impl.HazelcastInstanceFactory;
+import com.hazelcast.internal.cluster.impl.MulticastService;
+import com.hazelcast.internal.serialization.impl.SerializationConstants;
+import com.hazelcast.internal.nio.Packet;
+import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.OverridePropertyRule;
+import com.hazelcast.test.annotation.QuickTest;
+
+import example.serialization.TestDeserialized;
 
 /**
  * Tests if deserialization blacklisting works for MulticastService.
@@ -54,8 +63,17 @@ public class MulticastDeserializationTest {
     // TTL = 0 : restricted to the same host, won't be output by any interface
     private static final int MULTICAST_TTL = 0;
 
-    @After
-    public void tearDown() {
+    @Rule
+    public OverridePropertyRule multicastGroupOverride = OverridePropertyRule
+            .clear(MulticastService.SYSTEM_PROPERTY_MULTICAST_GROUP);
+
+    @Before
+    public void before() {
+        cleanup();
+    }
+
+    @AfterClass
+    public static void cleanup() {
         TestDeserialized.isDeserialized = false;
         HazelcastInstanceFactory.terminateAll();
     }
@@ -68,7 +86,7 @@ public class MulticastDeserializationTest {
      */
     @Test
     public void test() throws Exception {
-        Config config = getConfig();
+        Config config = createConfig(true);
         Hazelcast.newHazelcastInstance(config);
 
         sendJoinDatagram(new TestDeserialized());
@@ -76,15 +94,25 @@ public class MulticastDeserializationTest {
         assertFalse("Untrusted deserialization is possible", TestDeserialized.isDeserialized);
     }
 
-    private Config getConfig() {
-        JavaSerializationFilterConfig javaSerializationFilterConfig = new JavaSerializationFilterConfig()
-                .setDefaultsDisabled(true);
-        javaSerializationFilterConfig.getBlacklist()
-                .addClasses(TestDeserialized.class.getName());
+    @Test
+    public void testWithoutFilter() throws Exception {
+        Config config = createConfig(false);
+        Hazelcast.newHazelcastInstance(config);
 
-        Config config = new Config();
-        config.getSerializationConfig()
-                .setJavaSerializationFilterConfig(javaSerializationFilterConfig);
+        sendJoinDatagram(new TestDeserialized());
+        assertTrueEventually(() -> assertTrue("Object was not deserialized", TestDeserialized.isDeserialized));
+    }
+
+    private Config createConfig(boolean withFilter) {
+        Config config = smallInstanceConfig();
+        if (withFilter) {
+            JavaSerializationFilterConfig javaSerializationFilterConfig = new JavaSerializationFilterConfig()
+                    .setDefaultsDisabled(true);
+            javaSerializationFilterConfig.getBlacklist()
+                    .addClasses(TestDeserialized.class.getName());
+            config.getSerializationConfig()
+                    .setJavaSerializationFilterConfig(javaSerializationFilterConfig);
+        }
         JoinConfig join = config.getNetworkConfig().getJoin();
         join.getTcpIpConfig()
                 .setEnabled(false);

@@ -19,7 +19,7 @@ package com.hazelcast.internal.eviction;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IFunction;
-import com.hazelcast.core.IMap;
+import com.hazelcast.map.IMap;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
@@ -109,7 +109,7 @@ public class MapExpirationBouncingMemberTest extends AbstractExpirationBouncingM
 
         private final IMap map;
 
-        public Get(IMap map) {
+        Get(IMap map) {
             this.map = map;
         }
 
@@ -125,7 +125,7 @@ public class MapExpirationBouncingMemberTest extends AbstractExpirationBouncingM
 
         private final IMap map;
 
-        public Set(IMap map) {
+        Set(IMap map) {
             this.map = map;
         }
 

@@ -19,7 +19,7 @@ package com.hazelcast.map.impl.journal;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.EventJournalConfig;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IMap;
+import com.hazelcast.map.IMap;
 import com.hazelcast.internal.journal.EventJournalReader;
 import com.hazelcast.journal.AbstractEventJournalBounceTest;
 import com.hazelcast.test.HazelcastSerialClassRunner;
@@ -52,9 +52,10 @@ public class MapEventJournalBounceTest extends AbstractEventJournalBounceTest {
 
     @Override
     protected Config getConfig() {
-        return super.getConfig()
-                    .addEventJournalConfig(new EventJournalConfig().setEnabled(true)
-                                                                   .setCapacity(10000)
-                                                                   .setMapName(TEST_MAP_NAME));
+        Config config = super.getConfig();
+        config.getMapConfig(TEST_MAP_NAME)
+              .setEventJournalConfig(new EventJournalConfig().setEnabled(true)
+                                                             .setCapacity(10000));
+        return config;
     }
 }

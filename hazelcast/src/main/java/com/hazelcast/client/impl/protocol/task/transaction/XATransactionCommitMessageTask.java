@@ -20,8 +20,8 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.XATransactionCommitCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
 import com.hazelcast.client.impl.protocol.task.TransactionalMessageTask;
-import com.hazelcast.instance.Node;
-import com.hazelcast.nio.Connection;
+import com.hazelcast.instance.impl.Node;
+import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.security.permission.TransactionPermission;
 import com.hazelcast.transaction.TransactionContext;
 import com.hazelcast.transaction.TransactionException;
@@ -30,6 +30,7 @@ import com.hazelcast.transaction.impl.xa.TransactionAccessor;
 import com.hazelcast.transaction.impl.xa.XAService;
 
 import java.security.Permission;
+import java.util.UUID;
 
 public class XATransactionCommitMessageTask
         extends AbstractCallableMessageTask<XATransactionCommitCodec.RequestParameters>
@@ -50,7 +51,7 @@ public class XATransactionCommitMessageTask
 
     @Override
     protected Object call() throws Exception {
-        String transactionId = parameters.transactionId;
+        UUID transactionId = parameters.transactionId;
         TransactionContext transactionContext = endpoint.getTransactionContext(transactionId);
         if (transactionContext == null) {
             throw new TransactionException("No transaction context with given transactionId: " + transactionId);

@@ -17,10 +17,9 @@
 package com.hazelcast.internal.adapter;
 
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.ICompletableFuture;
-import com.hazelcast.core.IMap;
-import com.hazelcast.core.TransactionalMap;
-import com.hazelcast.monitor.LocalMapStats;
+import com.hazelcast.map.IMap;
+import com.hazelcast.transaction.TransactionalMap;
+import com.hazelcast.map.LocalMapStats;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.transaction.TransactionContext;
 
@@ -31,6 +30,7 @@ import javax.cache.processor.EntryProcessorException;
 import javax.cache.processor.EntryProcessorResult;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.CompletionStage;
 import java.util.concurrent.TimeUnit;
 
 @SuppressWarnings("checkstyle:methodcount")
@@ -65,7 +65,7 @@ public class TransactionalMapDataStructureAdapter<K, V> implements DataStructure
 
     @Override
     @MethodNotAvailable
-    public ICompletableFuture<V> getAsync(K key) {
+    public CompletionStage<V> getAsync(K key) {
         throw new MethodNotAvailableException();
     }
 
@@ -78,19 +78,19 @@ public class TransactionalMapDataStructureAdapter<K, V> implements DataStructure
 
     @Override
     @MethodNotAvailable
-    public ICompletableFuture<Void> setAsync(K key, V value) {
+    public CompletionStage<Void> setAsync(K key, V value) {
         throw new MethodNotAvailableException();
     }
 
     @Override
     @MethodNotAvailable
-    public ICompletableFuture<Void> setAsync(K key, V value, long ttl, TimeUnit timeunit) {
+    public CompletionStage<Void> setAsync(K key, V value, long ttl, TimeUnit timeunit) {
         throw new MethodNotAvailableException();
     }
 
     @Override
     @MethodNotAvailable
-    public ICompletableFuture<Void> setAsync(K key, V value, ExpiryPolicy expiryPolicy) {
+    public CompletionStage<Void> setAsync(K key, V value, ExpiryPolicy expiryPolicy) {
         throw new MethodNotAvailableException();
     }
 
@@ -104,19 +104,19 @@ public class TransactionalMapDataStructureAdapter<K, V> implements DataStructure
 
     @Override
     @MethodNotAvailable
-    public ICompletableFuture<V> putAsync(K key, V value) {
+    public CompletionStage<V> putAsync(K key, V value) {
         throw new MethodNotAvailableException();
     }
 
     @Override
     @MethodNotAvailable
-    public ICompletableFuture<V> putAsync(K key, V value, long ttl, TimeUnit timeunit) {
+    public CompletionStage<V> putAsync(K key, V value, long ttl, TimeUnit timeunit) {
         throw new MethodNotAvailableException();
     }
 
     @Override
     @MethodNotAvailable
-    public ICompletableFuture<V> putAsync(K key, V value, ExpiryPolicy expiryPolicy) {
+    public CompletionStage<V> putAsync(K key, V value, ExpiryPolicy expiryPolicy) {
         throw new MethodNotAvailableException();
     }
 
@@ -136,7 +136,7 @@ public class TransactionalMapDataStructureAdapter<K, V> implements DataStructure
 
     @Override
     @MethodNotAvailable
-    public ICompletableFuture<Boolean> putIfAbsentAsync(K key, V value) {
+    public CompletionStage<Boolean> putIfAbsentAsync(K key, V value) {
         throw new MethodNotAvailableException();
     }
 
@@ -180,7 +180,7 @@ public class TransactionalMapDataStructureAdapter<K, V> implements DataStructure
 
     @Override
     @MethodNotAvailable
-    public ICompletableFuture<V> removeAsync(K key) {
+    public CompletionStage<V> removeAsync(K key) {
         throw new MethodNotAvailableException();
     }
 
@@ -193,7 +193,7 @@ public class TransactionalMapDataStructureAdapter<K, V> implements DataStructure
 
     @Override
     @MethodNotAvailable
-    public ICompletableFuture<Boolean> deleteAsync(K key) {
+    public CompletionStage<Boolean> deleteAsync(K key) {
         throw new MethodNotAvailableException();
     }
 

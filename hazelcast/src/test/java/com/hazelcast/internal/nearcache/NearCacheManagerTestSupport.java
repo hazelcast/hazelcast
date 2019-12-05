@@ -16,19 +16,20 @@
 
 package com.hazelcast.internal.nearcache;
 
+import com.hazelcast.config.Config;
+import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.spi.ExecutionService;
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.spi.impl.executionservice.ExecutionService;
 import com.hazelcast.spi.properties.HazelcastProperties;
-import com.hazelcast.spi.serialization.SerializationService;
 import org.junit.Before;
 
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 
-import static com.hazelcast.config.NearCacheConfig.DEFAULT_MEMORY_FORMAT;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -47,7 +48,8 @@ public abstract class NearCacheManagerTestSupport extends CommonNearCacheTestSup
 
     @Before
     public void setUp() {
-        HazelcastInstance instance = createHazelcastInstance();
+        Config config = getConfig();
+        HazelcastInstance instance = createHazelcastInstance(config);
         NodeEngineImpl nodeEngineImpl = getNodeEngineImpl(instance);
         properties = nodeEngineImpl.getProperties();
         ss = nodeEngineImpl.getSerializationService();
@@ -151,8 +153,13 @@ public abstract class NearCacheManagerTestSupport extends CommonNearCacheTestSup
         assertEquals(0, nearCaches4.size());
     }
 
-    private NearCache createNearCache(NearCacheManager nearCacheManager, String name) {
-        NearCacheConfig nearCacheConfig = createNearCacheConfig(DEFAULT_NEAR_CACHE_NAME, DEFAULT_MEMORY_FORMAT);
+    // overridden in EE test
+    protected NearCache createNearCache(NearCacheManager nearCacheManager, String name, InMemoryFormat inMemoryFormat) {
+        NearCacheConfig nearCacheConfig = createNearCacheConfig(name, inMemoryFormat);
         return nearCacheManager.getOrCreateNearCache(name, nearCacheConfig);
+    }
+
+    protected NearCache createNearCache(NearCacheManager nearCacheManager, String name) {
+        return createNearCache(nearCacheManager, name, NearCacheConfig.DEFAULT_MEMORY_FORMAT);
     }
 }

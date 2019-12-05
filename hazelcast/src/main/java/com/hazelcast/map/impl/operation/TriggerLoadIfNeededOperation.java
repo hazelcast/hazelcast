@@ -17,8 +17,8 @@
 package com.hazelcast.map.impl.operation;
 
 import com.hazelcast.map.impl.MapDataSerializerHook;
-import com.hazelcast.spi.PartitionAwareOperation;
-import com.hazelcast.spi.ReadonlyOperation;
+import com.hazelcast.spi.impl.operationservice.PartitionAwareOperation;
+import com.hazelcast.spi.impl.operationservice.ReadonlyOperation;
 
 /**
  * Triggers key loading on member with {@link com.hazelcast.map.impl.MapKeyLoader.Role#SENDER}
@@ -27,7 +27,8 @@ import com.hazelcast.spi.ReadonlyOperation;
  * <p>
  * Returns the previous state of the key loading and dispatching future.
  */
-public class TriggerLoadIfNeededOperation extends MapOperation implements PartitionAwareOperation, ReadonlyOperation {
+public class TriggerLoadIfNeededOperation extends MapOperation
+        implements PartitionAwareOperation, ReadonlyOperation {
 
     private Boolean isLoaded;
 
@@ -39,7 +40,7 @@ public class TriggerLoadIfNeededOperation extends MapOperation implements Partit
     }
 
     @Override
-    public void run() {
+    protected void runInternal() {
         isLoaded = recordStore.isKeyLoadFinished();
         recordStore.maybeDoInitialLoad();
     }
@@ -54,7 +55,7 @@ public class TriggerLoadIfNeededOperation extends MapOperation implements Partit
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MapDataSerializerHook.TRIGGER_LOAD_IF_NEEDED;
     }
 

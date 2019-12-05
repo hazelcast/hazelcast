@@ -23,16 +23,15 @@ import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.nearcache.MapNearCacheManager;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.PartitionAwareOperation;
-import com.hazelcast.spi.impl.AllowedDuringPassiveState;
+import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.spi.impl.operationservice.PartitionAwareOperation;
 
 import java.util.UUID;
 
 import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
 
 public class MapAssignAndGetUuidsOperation extends Operation
-        implements PartitionAwareOperation, IdentifiedDataSerializable, AllowedDuringPassiveState {
+        implements PartitionAwareOperation, IdentifiedDataSerializable {
 
     private UUID partitionUuid;
 
@@ -65,7 +64,7 @@ public class MapAssignAndGetUuidsOperation extends Operation
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MapDataSerializerHook.MAP_ASSIGN_AND_GET_UUIDS;
     }
 }

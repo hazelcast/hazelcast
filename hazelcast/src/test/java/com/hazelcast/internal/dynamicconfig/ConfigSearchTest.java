@@ -16,17 +16,13 @@
 
 package com.hazelcast.internal.dynamicconfig;
 
-import com.hazelcast.config.AtomicLongConfig;
-import com.hazelcast.config.AtomicReferenceConfig;
 import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.CardinalityEstimatorConfig;
 import com.hazelcast.config.Config;
-import com.hazelcast.config.CountDownLatchConfig;
 import com.hazelcast.config.DurableExecutorConfig;
 import com.hazelcast.config.ExecutorConfig;
 import com.hazelcast.config.FlakeIdGeneratorConfig;
 import com.hazelcast.config.ListConfig;
-import com.hazelcast.config.LockConfig;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MultiMapConfig;
 import com.hazelcast.config.PNCounterConfig;
@@ -35,13 +31,12 @@ import com.hazelcast.config.ReliableTopicConfig;
 import com.hazelcast.config.ReplicatedMapConfig;
 import com.hazelcast.config.RingbufferConfig;
 import com.hazelcast.config.ScheduledExecutorConfig;
-import com.hazelcast.config.SemaphoreConfig;
 import com.hazelcast.config.SetConfig;
 import com.hazelcast.config.TopicConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -49,12 +44,12 @@ import org.junit.runner.RunWith;
 
 import java.util.UUID;
 
-import static com.hazelcast.spi.properties.GroupProperty.SEARCH_DYNAMIC_CONFIG_FIRST;
+import static com.hazelcast.spi.properties.ClusterProperty.SEARCH_DYNAMIC_CONFIG_FIRST;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class ConfigSearchTest extends HazelcastTestSupport {
 
     private static final String STATIC_NAME = "my.custom.data.*";
@@ -69,7 +64,7 @@ public class ConfigSearchTest extends HazelcastTestSupport {
         }
         String uuid = UUID.randomUUID().toString();
         staticHazelcastConfig.setInstanceName(uuid);
-        staticHazelcastConfig.setGroupConfig(staticHazelcastConfig.getGroupConfig().setName(uuid));
+        staticHazelcastConfig.setClusterName(uuid);
         testCase.addStaticConfig(staticHazelcastConfig);
 
         hazelcastInstance = createHazelcastInstance(staticHazelcastConfig);
@@ -208,52 +203,6 @@ public class ConfigSearchTest extends HazelcastTestSupport {
             @Override
             void asserts() {
                 QueueConfig dataConfig = hazelcastInstance.getConfig().findQueueConfig(DYNAMIC_NAME);
-                assertThat(dataConfig.getName(), equalTo(DYNAMIC_NAME));
-            }
-        };
-        testTemplate(testCase);
-    }
-
-    @Test
-    public void testLockConfig_Static() {
-        TestCase<LockConfig> testCase = new TestCase<LockConfig>(new LockConfig().setName(STATIC_NAME),
-                new LockConfig().setName(DYNAMIC_NAME), false) {
-            @Override
-            void addStaticConfig(Config config) {
-                config.addLockConfig(this.staticConfig);
-            }
-
-            @Override
-            void addDynamicConfig(HazelcastInstance hazelcastInstance) {
-                hazelcastInstance.getConfig().addLockConfig(this.dynamicConfig);
-            }
-
-            @Override
-            void asserts() {
-                LockConfig dataConfig = hazelcastInstance.getConfig().findLockConfig(DYNAMIC_NAME);
-                assertThat(dataConfig.getName(), equalTo(STATIC_NAME));
-            }
-        };
-        testTemplate(testCase);
-    }
-
-    @Test
-    public void testLockConfig_Dynamic() {
-        TestCase<LockConfig> testCase = new TestCase<LockConfig>(new LockConfig().setName(STATIC_NAME),
-                new LockConfig().setName(DYNAMIC_NAME), true) {
-            @Override
-            void addStaticConfig(Config config) {
-                config.addLockConfig(this.staticConfig);
-            }
-
-            @Override
-            void addDynamicConfig(HazelcastInstance hazelcastInstance) {
-                hazelcastInstance.getConfig().addLockConfig(this.dynamicConfig);
-            }
-
-            @Override
-            void asserts() {
-                LockConfig dataConfig = hazelcastInstance.getConfig().findLockConfig(DYNAMIC_NAME);
                 assertThat(dataConfig.getName(), equalTo(DYNAMIC_NAME));
             }
         };
@@ -484,145 +433,6 @@ public class ConfigSearchTest extends HazelcastTestSupport {
             @Override
             void asserts() {
                 RingbufferConfig dataConfig = hazelcastInstance.getConfig().findRingbufferConfig(DYNAMIC_NAME);
-                assertThat(dataConfig.getName(), equalTo(DYNAMIC_NAME));
-            }
-        };
-        testTemplate(testCase);
-    }
-
-    @Test
-    public void testAtomicLongConfig_Static() {
-        TestCase<AtomicLongConfig> testCase = new TestCase<AtomicLongConfig>(new AtomicLongConfig(STATIC_NAME),
-                new AtomicLongConfig(DYNAMIC_NAME), false) {
-            @Override
-            void addStaticConfig(Config config) {
-                config.addAtomicLongConfig(this.staticConfig);
-            }
-
-            @Override
-            void addDynamicConfig(HazelcastInstance hazelcastInstance) {
-                hazelcastInstance.getConfig().addAtomicLongConfig(this.dynamicConfig);
-            }
-
-            @Override
-            void asserts() {
-                AtomicLongConfig dataConfig = hazelcastInstance.getConfig().findAtomicLongConfig(DYNAMIC_NAME);
-                assertThat(dataConfig.getName(), equalTo(STATIC_NAME));
-            }
-        };
-        testTemplate(testCase);
-    }
-
-    @Test
-    public void testAtomicLongConfig_Dynamic() {
-        TestCase<AtomicLongConfig> testCase = new TestCase<AtomicLongConfig>(new AtomicLongConfig(STATIC_NAME),
-                new AtomicLongConfig(DYNAMIC_NAME), true) {
-            @Override
-            void addStaticConfig(Config config) {
-                config.addAtomicLongConfig(this.staticConfig);
-            }
-
-            @Override
-            void addDynamicConfig(HazelcastInstance hazelcastInstance) {
-                hazelcastInstance.getConfig().addAtomicLongConfig(this.dynamicConfig);
-            }
-
-            @Override
-            void asserts() {
-                AtomicLongConfig dataConfig = hazelcastInstance.getConfig().findAtomicLongConfig(DYNAMIC_NAME);
-                assertThat(dataConfig.getName(), equalTo(DYNAMIC_NAME));
-            }
-        };
-        testTemplate(testCase);
-    }
-
-    @Test
-    public void testAtomicReferenceConfig_Static() {
-        TestCase<AtomicReferenceConfig> testCase = new TestCase<AtomicReferenceConfig>(new AtomicReferenceConfig(STATIC_NAME),
-                new AtomicReferenceConfig(DYNAMIC_NAME), false) {
-            @Override
-            void addStaticConfig(Config config) {
-                config.addAtomicReferenceConfig(this.staticConfig);
-            }
-
-            @Override
-            void addDynamicConfig(HazelcastInstance hazelcastInstance) {
-                hazelcastInstance.getConfig().addAtomicReferenceConfig(this.dynamicConfig);
-            }
-
-            @Override
-            void asserts() {
-                AtomicReferenceConfig dataConfig = hazelcastInstance.getConfig().findAtomicReferenceConfig(DYNAMIC_NAME);
-                assertThat(dataConfig.getName(), equalTo(STATIC_NAME));
-            }
-        };
-        testTemplate(testCase);
-    }
-
-    @Test
-    public void testAtomicReferenceConfig_Dynamic() {
-        TestCase<AtomicReferenceConfig> testCase = new TestCase<AtomicReferenceConfig>(new AtomicReferenceConfig(STATIC_NAME),
-                new AtomicReferenceConfig(DYNAMIC_NAME), true) {
-            @Override
-            void addStaticConfig(Config config) {
-                config.addAtomicReferenceConfig(this.staticConfig);
-            }
-
-            @Override
-            void addDynamicConfig(HazelcastInstance hazelcastInstance) {
-                hazelcastInstance.getConfig().addAtomicReferenceConfig(this.dynamicConfig);
-            }
-
-            @Override
-            void asserts() {
-                AtomicReferenceConfig dataConfig = hazelcastInstance.getConfig().findAtomicReferenceConfig(DYNAMIC_NAME);
-                assertThat(dataConfig.getName(), equalTo(DYNAMIC_NAME));
-            }
-        };
-        testTemplate(testCase);
-    }
-
-    @Test
-    public void testCountDownLatchConfig_Static() {
-        TestCase<CountDownLatchConfig> testCase = new TestCase<CountDownLatchConfig>(
-                new CountDownLatchConfig().setName(STATIC_NAME),
-                new CountDownLatchConfig().setName(DYNAMIC_NAME), false) {
-            @Override
-            void addStaticConfig(Config config) {
-                config.addCountDownLatchConfig(this.staticConfig);
-            }
-
-            @Override
-            void addDynamicConfig(HazelcastInstance hazelcastInstance) {
-                hazelcastInstance.getConfig().addCountDownLatchConfig(this.dynamicConfig);
-            }
-
-            @Override
-            void asserts() {
-                CountDownLatchConfig dataConfig = hazelcastInstance.getConfig().findCountDownLatchConfig(DYNAMIC_NAME);
-                assertThat(dataConfig.getName(), equalTo(STATIC_NAME));
-            }
-        };
-        testTemplate(testCase);
-    }
-
-    @Test
-    public void testCountDownLatchConfig_Dynamic() {
-        TestCase<CountDownLatchConfig> testCase = new TestCase<CountDownLatchConfig>(new CountDownLatchConfig(STATIC_NAME),
-                new CountDownLatchConfig(DYNAMIC_NAME), true) {
-            @Override
-            void addStaticConfig(Config config) {
-                config.addCountDownLatchConfig(this.staticConfig);
-            }
-
-            @Override
-            void addDynamicConfig(HazelcastInstance hazelcastInstance) {
-                hazelcastInstance.getConfig().addCountDownLatchConfig(this.dynamicConfig);
-            }
-
-            @Override
-            void asserts() {
-                CountDownLatchConfig dataConfig = hazelcastInstance.getConfig().findCountDownLatchConfig(DYNAMIC_NAME);
                 assertThat(dataConfig.getName(), equalTo(DYNAMIC_NAME));
             }
         };
@@ -904,52 +714,6 @@ public class ConfigSearchTest extends HazelcastTestSupport {
             void asserts() {
                 CardinalityEstimatorConfig dataConfig
                         = hazelcastInstance.getConfig().findCardinalityEstimatorConfig(DYNAMIC_NAME);
-                assertThat(dataConfig.getName(), equalTo(DYNAMIC_NAME));
-            }
-        };
-        testTemplate(testCase);
-    }
-
-    @Test
-    public void testSemaphoreConfig_Static() {
-        TestCase<SemaphoreConfig> testCase = new TestCase<SemaphoreConfig>(new SemaphoreConfig().setName(STATIC_NAME),
-                new SemaphoreConfig().setName(DYNAMIC_NAME), false) {
-            @Override
-            void addStaticConfig(Config config) {
-                config.addSemaphoreConfig(this.staticConfig);
-            }
-
-            @Override
-            void addDynamicConfig(HazelcastInstance hazelcastInstance) {
-                hazelcastInstance.getConfig().addSemaphoreConfig(this.dynamicConfig);
-            }
-
-            @Override
-            void asserts() {
-                SemaphoreConfig dataConfig = hazelcastInstance.getConfig().findSemaphoreConfig(DYNAMIC_NAME);
-                assertThat(dataConfig.getName(), equalTo(STATIC_NAME));
-            }
-        };
-        testTemplate(testCase);
-    }
-
-    @Test
-    public void testSemaphoreConfig_Dynamic() {
-        TestCase<SemaphoreConfig> testCase = new TestCase<SemaphoreConfig>(new SemaphoreConfig().setName(STATIC_NAME),
-                new SemaphoreConfig().setName(DYNAMIC_NAME), true) {
-            @Override
-            void addStaticConfig(Config config) {
-                config.addSemaphoreConfig(this.staticConfig);
-            }
-
-            @Override
-            void addDynamicConfig(HazelcastInstance hazelcastInstance) {
-                hazelcastInstance.getConfig().addSemaphoreConfig(this.dynamicConfig);
-            }
-
-            @Override
-            void asserts() {
-                SemaphoreConfig dataConfig = hazelcastInstance.getConfig().findSemaphoreConfig(DYNAMIC_NAME);
                 assertThat(dataConfig.getName(), equalTo(DYNAMIC_NAME));
             }
         };

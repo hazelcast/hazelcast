@@ -17,6 +17,7 @@
 package com.hazelcast.config;
 
 import com.hazelcast.config.properties.PropertyDefinition;
+import com.hazelcast.internal.config.DiscoveryConfigReadOnly;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.discovery.DiscoveryNode;
 import com.hazelcast.spi.discovery.DiscoveryStrategy;
@@ -26,7 +27,7 @@ import com.hazelcast.spi.discovery.integration.DiscoveryService;
 import com.hazelcast.spi.discovery.integration.DiscoveryServiceProvider;
 import com.hazelcast.spi.discovery.integration.DiscoveryServiceSettings;
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -39,7 +40,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertSame;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class DiscoveryTest {
 
     @Test
@@ -53,7 +54,7 @@ public class DiscoveryTest {
     @Test(expected = UnsupportedOperationException.class)
     public void test_DiscoveryConfigReadOnly_setDiscoveryServiceProvider_thenUnsupportedOperationException() {
         DiscoveryConfig discoveryConfig = new DiscoveryConfig();
-        DiscoveryConfig readOnly = discoveryConfig.getAsReadOnly();
+        DiscoveryConfig readOnly = new DiscoveryConfigReadOnly(discoveryConfig);
         readOnly.setDiscoveryServiceProvider(new TestDiscoveryServiceProvider());
     }
 
@@ -68,7 +69,7 @@ public class DiscoveryTest {
     @Test(expected = UnsupportedOperationException.class)
     public void test_DiscoveryConfigReadOnly_setNodeFilter_thenUnsupportedOperationException() {
         DiscoveryConfig discoveryConfig = new DiscoveryConfig();
-        DiscoveryConfig readOnly = discoveryConfig.getAsReadOnly();
+        DiscoveryConfig readOnly = new DiscoveryConfigReadOnly(discoveryConfig);
         readOnly.setNodeFilter(new TestNodeFilter());
     }
 
@@ -83,7 +84,7 @@ public class DiscoveryTest {
     @Test(expected = UnsupportedOperationException.class)
     public void test_DiscoveryConfigReadOnly_setNodeFilterClass_thenUnsupportedOperationException() {
         DiscoveryConfig discoveryConfig = new DiscoveryConfig();
-        DiscoveryConfig readOnly = discoveryConfig.getAsReadOnly();
+        DiscoveryConfig readOnly = new DiscoveryConfigReadOnly(discoveryConfig);
         readOnly.setNodeFilterClass(TestNodeFilter.class.getName());
     }
 
@@ -101,7 +102,7 @@ public class DiscoveryTest {
     @Test(expected = UnsupportedOperationException.class)
     public void test_DiscoveryConfigReadOnly_addDiscoveryStrategyConfig_thenUnsupportedOperationException() {
         DiscoveryConfig discoveryConfig = new DiscoveryConfig();
-        DiscoveryConfig readOnly = discoveryConfig.getAsReadOnly();
+        DiscoveryConfig readOnly = new DiscoveryConfigReadOnly(discoveryConfig);
 
         DiscoveryStrategyFactory discoveryStrategyFactory = new TestDiscoveryStrategyFactory();
         DiscoveryStrategyConfig discoveryStrategyConfig = new DiscoveryStrategyConfig(discoveryStrategyFactory);

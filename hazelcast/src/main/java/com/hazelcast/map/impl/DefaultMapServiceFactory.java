@@ -17,19 +17,19 @@
 package com.hazelcast.map.impl;
 
 import com.hazelcast.map.impl.event.MapEventPublishingService;
-import com.hazelcast.spi.ClientAwareService;
-import com.hazelcast.spi.EventPublishingService;
-import com.hazelcast.spi.ManagedService;
-import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.PostJoinAwareService;
-import com.hazelcast.spi.RemoteService;
-import com.hazelcast.spi.ReplicationSupportingService;
-import com.hazelcast.spi.SplitBrainHandlerService;
-import com.hazelcast.spi.StatisticsAwareService;
-import com.hazelcast.spi.TransactionalService;
+import com.hazelcast.internal.services.ClientAwareService;
+import com.hazelcast.spi.impl.eventservice.EventPublishingService;
+import com.hazelcast.internal.services.ManagedService;
+import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.internal.services.PostJoinAwareService;
+import com.hazelcast.internal.services.RemoteService;
+import com.hazelcast.internal.services.ReplicationSupportingService;
+import com.hazelcast.internal.services.SplitBrainHandlerService;
+import com.hazelcast.internal.services.StatisticsAwareService;
+import com.hazelcast.internal.services.TransactionalService;
 import com.hazelcast.spi.impl.CountingMigrationAwareService;
 
-import static com.hazelcast.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 /**
  * Default implementation of {@link MapServiceFactory}
@@ -41,7 +41,7 @@ class DefaultMapServiceFactory extends AbstractMapServiceFactory {
     private final NodeEngine nodeEngine;
     private final MapServiceContext mapServiceContext;
 
-    public DefaultMapServiceFactory(NodeEngine nodeEngine, MapServiceContext mapServiceContext) {
+    DefaultMapServiceFactory(NodeEngine nodeEngine, MapServiceContext mapServiceContext) {
         this.nodeEngine = checkNotNull(nodeEngine, "nodeEngine should not be null");
         this.mapServiceContext = checkNotNull(mapServiceContext, "mapServiceContext should not be null");
     }
@@ -107,8 +107,8 @@ class DefaultMapServiceFactory extends AbstractMapServiceFactory {
     }
 
     @Override
-    MapQuorumAwareService createQuorumAwareService() {
-        return new MapQuorumAwareService(getMapServiceContext());
+    MapSplitBrainProtectionAwareService createSplitBrainProtectionAwareService() {
+        return new MapSplitBrainProtectionAwareService(getMapServiceContext());
     }
 
     @Override

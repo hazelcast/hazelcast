@@ -16,21 +16,19 @@
 
 package com.hazelcast.spi.impl.operationservice.impl;
 
-import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceAware;
-import com.hazelcast.core.IMap;
-import com.hazelcast.instance.Node;
+import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.partition.InternalPartitionService;
-import com.hazelcast.map.EntryBackupProcessor;
 import com.hazelcast.map.EntryProcessor;
+import com.hazelcast.map.IMap;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.operation.PutOperation;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -40,7 +38,7 @@ import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class OperationServiceImpl_asyncInvokeOnPartitionTest extends HazelcastTestSupport {
 
     @Test
@@ -68,20 +66,10 @@ public class OperationServiceImpl_asyncInvokeOnPartitionTest extends HazelcastTe
             Data sourceKey = nodeEngine.toData(entry.getKey());
             Data key = generateKey_FallsToSamePartitionThread_ButDifferentPartition(nodeEngine, sourceKey);
             Data val = nodeEngine.toData(randomString());
-            PutOperation op = new PutOperation((String) entry.getValue(), key, val, -1, -1);
+            PutOperation op = new PutOperation((String) entry.getValue(), key, val);
             int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
-            operationService.asyncInvokeOnPartition(MapService.SERVICE_NAME, op, partitionId,
-                    new ExecutionCallback<Object>() {
-                        @Override
-                        public void onResponse(Object response) {
-                            latch.countDown();
-                        }
-
-                        @Override
-                        public void onFailure(Throwable t) {
-
-                        }
-                    });
+            operationService.invokeOnPartitionAsync(MapService.SERVICE_NAME, op, partitionId)
+                    .thenRun(() -> latch.countDown());
             return null;
         }
 
@@ -103,7 +91,7 @@ public class OperationServiceImpl_asyncInvokeOnPartitionTest extends HazelcastTe
         }
 
         @Override
-        public EntryBackupProcessor getBackupProcessor() {
+        public EntryProcessor getBackupProcessor() {
             return null;
         }
 

@@ -18,16 +18,16 @@ package com.hazelcast.cache.impl.journal;
 
 import com.hazelcast.cache.impl.CacheDataSerializerHook;
 import com.hazelcast.cache.impl.CacheService;
-import com.hazelcast.cache.journal.EventJournalCacheEvent;
+import com.hazelcast.cache.EventJournalCacheEvent;
 import com.hazelcast.internal.journal.EventJournal;
 import com.hazelcast.internal.journal.EventJournalReadOperation;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.projection.Projection;
 import com.hazelcast.ringbuffer.impl.ReadResultSetImpl;
-import com.hazelcast.util.function.Predicate;
 
 import java.io.IOException;
+import java.util.function.Function;
+import java.util.function.Predicate;
 
 /**
  * Reads from the cache event journal in batches. You may specify the start sequence,
@@ -46,7 +46,7 @@ import java.io.IOException;
 public class CacheEventJournalReadOperation<K, V, T>
         extends EventJournalReadOperation<T, InternalEventJournalCacheEvent> {
     protected Predicate<? super EventJournalCacheEvent<K, V>> predicate;
-    protected Projection<? super EventJournalCacheEvent<K, V>, ? extends T> projection;
+    protected Function<? super EventJournalCacheEvent<K, V>, ? extends T> projection;
 
     public CacheEventJournalReadOperation() {
     }
@@ -54,7 +54,7 @@ public class CacheEventJournalReadOperation<K, V, T>
     public CacheEventJournalReadOperation(
             String cacheName, long startSequence, int minSize, int maxSize,
             Predicate<? super EventJournalCacheEvent<K, V>> predicate,
-            Projection<? super EventJournalCacheEvent<K, V>, ? extends T> projection
+            Function<? super EventJournalCacheEvent<K, V>, ? extends T> projection
     ) {
         super(cacheName, startSequence, minSize, maxSize);
         this.predicate = predicate;
@@ -74,7 +74,7 @@ public class CacheEventJournalReadOperation<K, V, T>
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return CacheDataSerializerHook.EVENT_JOURNAL_READ_OPERATION;
     }
 

@@ -16,7 +16,7 @@
 
 package com.hazelcast.spi.impl.executionservice.impl;
 
-import com.hazelcast.spi.TaskScheduler;
+import com.hazelcast.spi.impl.executionservice.TaskScheduler;
 
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
@@ -25,7 +25,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
-import static com.hazelcast.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 public final class DelegatingTaskScheduler implements TaskScheduler {
 

@@ -19,25 +19,24 @@ package com.hazelcast.nio.serialization;
 import com.hazelcast.config.GlobalSerializerConfig;
 import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.config.SerializerConfig;
-import com.hazelcast.core.Member;
+import com.hazelcast.cluster.Member;
 import com.hazelcast.core.MemberLeftException;
-import com.hazelcast.core.PartitioningStrategy;
+import com.hazelcast.partition.PartitioningStrategy;
 import com.hazelcast.instance.BuildInfoProvider;
-import com.hazelcast.instance.MemberImpl;
+import com.hazelcast.cluster.impl.MemberImpl;
 import com.hazelcast.instance.SimpleMemberImpl;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.internal.serialization.impl.HeapData;
 import com.hazelcast.internal.serialization.impl.JavaDefaultSerializers.JavaSerializer;
-import com.hazelcast.nio.Address;
-import com.hazelcast.nio.IOUtil;
+import com.hazelcast.cluster.Address;
+import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.SerializationConcurrencyTest.Person;
-import com.hazelcast.spi.serialization.SerializationService;
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.util.UuidUtil;
+import com.hazelcast.internal.util.UuidUtil;
 import com.hazelcast.version.MemberVersion;
 import com.hazelcast.version.Version;
 import org.junit.Assert;
@@ -61,10 +60,11 @@ import java.lang.reflect.Proxy;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.LinkedList;
 import java.util.Properties;
 import java.util.Random;
 import java.util.Set;
+import java.util.UUID;
+import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static java.util.Arrays.asList;
@@ -284,25 +284,14 @@ public class SerializationTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testLinkedListSerialization() {
+    public void testSynchronousQueueSerialization() {
         SerializationService ss = new DefaultSerializationServiceBuilder().build();
-        LinkedList<Person> linkedList = new LinkedList<Person>();
-        linkedList.add(new Person(35, 180, 100, "Orhan", null));
-        linkedList.add(new Person(12, 120, 60, "Osman", null));
-        Data data = ss.toData(linkedList);
-        LinkedList deserialized = ss.toObject(data);
-        assertTrue("Objects are not identical!", linkedList.equals(deserialized));
-    }
-
-    @Test
-    public void testArrayListSerialization() {
-        SerializationService ss = new DefaultSerializationServiceBuilder().build();
-        ArrayList<Person> arrayList = new ArrayList<Person>();
-        arrayList.add(new Person(35, 180, 100, "Orhan", null));
-        arrayList.add(new Person(12, 120, 60, "Osman", null));
-        Data data = ss.toData(arrayList);
-        ArrayList deserialized = ss.toObject(data);
-        assertTrue("Objects are not identical!", arrayList.equals(deserialized));
+        SynchronousQueue q = new SynchronousQueue();
+        Data data = ss.toData(q);
+        SynchronousQueue deserialized = ss.toObject(data);
+        assertTrue("Collections are not identical!", q.containsAll(deserialized));
+        assertTrue("Collections are not identical!", deserialized.containsAll(q));
+        assertEquals("Collection classes are not identical!", q.getClass(), deserialized.getClass());
     }
 
     @Test
@@ -352,7 +341,7 @@ public class SerializationTest extends HazelcastTestSupport {
     private static class Foo implements Serializable {
         public Bar bar;
 
-        public Foo() {
+         Foo() {
             this.bar = new Bar();
         }
 
@@ -407,10 +396,10 @@ public class SerializationTest extends HazelcastTestSupport {
 
         String value;
 
-        public ExternalizableString() {
+        ExternalizableString() {
         }
 
-        public ExternalizableString(String value) {
+        ExternalizableString(String value) {
             this.value = value;
         }
 
@@ -427,18 +416,20 @@ public class SerializationTest extends HazelcastTestSupport {
 
     @Test
     public void testMemberLeftException_usingMemberImpl() throws Exception {
-        String uuid = UuidUtil.newUnsecureUuidString();
+        UUID uuid = UuidUtil.newUnsecureUUID();
         String host = "127.0.0.1";
         int port = 5000;
 
-        Member member = new MemberImpl(new Address(host, port), MemberVersion.of("3.8.0"), false, uuid);
+        Member member = new MemberImpl.Builder(new Address(host, port))
+                .version(MemberVersion.of("3.8.0"))
+                .uuid(uuid).build();
 
         testMemberLeftException(uuid, host, port, member);
     }
 
     @Test
     public void testMemberLeftException_usingSimpleMember() throws Exception {
-        String uuid = UuidUtil.newUnsecureUuidString();
+        UUID uuid = UuidUtil.newUnsecureUUID();
         String host = "127.0.0.1";
         int port = 5000;
 
@@ -448,18 +439,22 @@ public class SerializationTest extends HazelcastTestSupport {
 
     @Test
     public void testMemberLeftException_withLiteMemberImpl() throws Exception {
-        String uuid = UuidUtil.newUnsecureUuidString();
+        UUID uuid = UuidUtil.newUnsecureUUID();
         String host = "127.0.0.1";
         int port = 5000;
 
-        Member member = new MemberImpl(new Address(host, port), MemberVersion.of("3.8.0"), false, uuid, null, true);
+        Member member = new MemberImpl.Builder(new Address(host, port))
+                .version(MemberVersion.of("3.8.0"))
+                .liteMember(true)
+                .uuid(uuid)
+                .build();
 
         testMemberLeftException(uuid, host, port, member);
     }
 
     @Test
     public void testMemberLeftException_withLiteSimpleMemberImpl() throws Exception {
-        String uuid = UuidUtil.newUnsecureUuidString();
+        UUID uuid = UuidUtil.newUnsecureUUID();
         String host = "127.0.0.1";
         int port = 5000;
 
@@ -467,7 +462,7 @@ public class SerializationTest extends HazelcastTestSupport {
         testMemberLeftException(uuid, host, port, member);
     }
 
-    private void testMemberLeftException(String uuid, String host, int port, Member member) throws Exception {
+    private void testMemberLeftException(UUID uuid, String host, int port, Member member) throws Exception {
 
         MemberLeftException exception = new MemberLeftException(member);
 
@@ -590,6 +585,14 @@ public class SerializationTest extends HazelcastTestSupport {
         VersionedDataSerializable otherObject = ss.toObject(ss.toData(object));
         assertEquals("ObjectDataInput.getVersion should be equal to member version",
                 Version.of(BuildInfoProvider.getBuildInfo().getVersion()), otherObject.getVersion());
+    }
+
+    @Test
+    public void testUuidSerializer() {
+        SerializationService ss = new DefaultSerializationServiceBuilder().build();
+        Random random = new Random();
+        UUID uuid = new UUID(random.nextLong(), random.nextLong());
+        assertEquals(uuid, ss.toObject(ss.toData(uuid)));
     }
 
     private static final class DynamicProxyTestClassLoader extends ClassLoader {

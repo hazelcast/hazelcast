@@ -19,14 +19,14 @@ package com.hazelcast.client.impl.protocol.task.transaction;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.XATransactionClearRemoteCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
-import com.hazelcast.instance.Node;
+import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.partition.InternalPartitionService;
-import com.hazelcast.nio.Connection;
+import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.security.permission.TransactionPermission;
-import com.hazelcast.spi.InvocationBuilder;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.impl.operationservice.InternalOperationService;
+import com.hazelcast.spi.impl.operationservice.InvocationBuilder;
+import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 import com.hazelcast.transaction.impl.xa.XAService;
 import com.hazelcast.transaction.impl.xa.operations.ClearRemoteTransactionOperation;
 
@@ -53,7 +53,7 @@ public class XAClearRemoteTransactionMessageTask
 
     @Override
     protected Object call() throws Exception {
-        InternalOperationService operationService = nodeEngine.getOperationService();
+        OperationServiceImpl operationService = nodeEngine.getOperationService();
         InternalPartitionService partitionService = nodeEngine.getPartitionService();
 
         Data xidData = serializationService.toData(parameters.xid);

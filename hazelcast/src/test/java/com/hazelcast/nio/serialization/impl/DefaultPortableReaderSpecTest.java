@@ -17,19 +17,19 @@
 package com.hazelcast.nio.serialization.impl;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.core.IMap;
-import com.hazelcast.instance.HazelcastInstanceProxy;
+import com.hazelcast.map.IMap;
+import com.hazelcast.instance.impl.HazelcastInstanceProxy;
 import com.hazelcast.internal.serialization.InternalSerializationService;
-import com.hazelcast.map.AbstractEntryProcessor;
+import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.impl.LazyMapEntry;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.query.impl.getters.MultiResult;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.SlowTest;
-import com.hazelcast.util.ExceptionUtil;
+import com.hazelcast.internal.util.ExceptionUtil;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -96,7 +96,7 @@ import static org.junit.Assert.assertThat;
  * - check in which method the scenario is generated - narrow down the scope of the tests run
  */
 @RunWith(Parameterized.class)
-@Category({SlowTest.class, ParallelTest.class})
+@Category({SlowTest.class, ParallelJVMTest.class})
 public class DefaultPortableReaderSpecTest extends HazelcastTestSupport {
 
     private static final PrimitivePortable P_NON_EMPTY = new PrimitivePortable(0, PrimitivePortable.Init.FULL);
@@ -119,7 +119,7 @@ public class DefaultPortableReaderSpecTest extends HazelcastTestSupport {
 
     @Parameters(name = "{index}: {0}, read{2}, {3}")
     public static Collection<Object[]> parametrisationData() {
-        List<Object[]> result = new ArrayList<Object[]>();
+        List<Object[]> result = new ArrayList<>();
 
         directPrimitiveScenarios(result);
         directPrimitiveScenariosWrongMethodType(result);
@@ -207,7 +207,7 @@ public class DefaultPortableReaderSpecTest extends HazelcastTestSupport {
      */
     private static Collection<Object[]> expandPrimitiveScenario(Portable input, Object result, String pathToExplode,
                                                                 String parent) {
-        List<Object[]> scenarios = new ArrayList<Object[]>();
+        List<Object[]> scenarios = new ArrayList<>();
         Object adjustedResult;
         String tokenToReplace = "primitive_";
         if (pathToExplode.contains("primitiveUTF_")) {
@@ -246,7 +246,7 @@ public class DefaultPortableReaderSpecTest extends HazelcastTestSupport {
     @SuppressWarnings("SameParameterValue")
     private static Collection<Object[]> expandPrimitiveScenarioWrongMethodType(Portable input, String pathToExplode,
                                                                                String parent) {
-        List<Object[]> scenarios = new ArrayList<Object[]>();
+        List<Object[]> scenarios = new ArrayList<>();
         String tokenToReplace = "primitive_";
 
         for (Method fieldMethod : getPrimitives(true)) {
@@ -277,7 +277,7 @@ public class DefaultPortableReaderSpecTest extends HazelcastTestSupport {
      */
     @SuppressWarnings("SameParameterValue")
     private static Collection<Object[]> expandPrimitiveArrayScenarioWrongMethodType(Portable input, String pathToExplode, String parent) {
-        List<Object[]> scenarios = new ArrayList<Object[]>();
+        List<Object[]> scenarios = new ArrayList<>();
         String tokenToReplace = "primitiveArray";
 
         for (Method fieldMethod : getPrimitiveArrays()) {
@@ -328,7 +328,7 @@ public class DefaultPortableReaderSpecTest extends HazelcastTestSupport {
      */
     private static Collection<Object[]> expandPrimitiveArrayScenario(Portable input, PrimitivePortable result,
                                                                      String pathToExplode, String parent) {
-        List<Object[]> scenarios = new ArrayList<Object[]>();
+        List<Object[]> scenarios = new ArrayList<>();
         // group A:
         for (Method method : getPrimitiveArrays()) {
             String path = pathToExplode.replace("primitiveArray", method.field);
@@ -408,7 +408,7 @@ public class DefaultPortableReaderSpecTest extends HazelcastTestSupport {
     @SuppressWarnings({"unchecked", "ConstantConditions"})
     private static Collection<Object[]> expandPortableArrayPrimitiveScenario(Portable input, GroupPortable result,
                                                                              String pathToExplode, String parent) {
-        List<Object[]> scenarios = new ArrayList<Object[]>();
+        List<Object[]> scenarios = new ArrayList<>();
         // expansion of the portable array using the following quantifiers
         for (String token : asList("0", "1", "2", "any")) {
 
@@ -1249,7 +1249,7 @@ public class DefaultPortableReaderSpecTest extends HazelcastTestSupport {
      */
     @SuppressWarnings("unchecked")
     private static <T> List<T> list(T... objects) {
-        List<T> result = new ArrayList<T>();
+        List<T> result = new ArrayList<>();
         for (T object : objects) {
             if (object == null) {
                 //noinspection ConstantConditions
@@ -1304,14 +1304,18 @@ public class DefaultPortableReaderSpecTest extends HazelcastTestSupport {
     /**
      * Steals a "real" serialised Data of a PortableObject to be as close as possible to real use-case.
      */
-    public static class EntryStealingProcessor extends AbstractEntryProcessor {
+    public static class EntryStealingProcessor implements EntryProcessor {
 
         private final Object key;
         private Data stolenEntryData;
 
         EntryStealingProcessor(String key) {
-            super(false);
             this.key = key;
+        }
+
+        @Override
+        public EntryProcessor getBackupProcessor() {
+            return null;
         }
 
         @Override
@@ -1319,7 +1323,7 @@ public class DefaultPortableReaderSpecTest extends HazelcastTestSupport {
             // hack to get rid of de-serialization cost (assuming in-memory-format is BINARY, if it is OBJECT you can replace
             // the null check below with entry.getValue() != null), but works only for versions >= 3.6
             if (key.equals(entry.getKey())) {
-                stolenEntryData = (Data) ((LazyMapEntry) entry).getValueData();
+                stolenEntryData = ((LazyMapEntry) entry).getValueData();
             }
             return null;
         }

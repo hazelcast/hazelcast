@@ -30,10 +30,10 @@ import java.nio.channels.FileChannel;
 import java.util.List;
 import java.util.Map;
 
-import static com.hazelcast.nio.IOUtil.closeResource;
+import static com.hazelcast.internal.nio.IOUtil.closeResource;
 import static com.hazelcast.test.HazelcastTestSupport.randomString;
 import static com.hazelcast.test.compatibility.SamplingSerializationService.SERIALIZED_SAMPLES_PER_CLASS_NAME;
-import static com.hazelcast.util.StringUtil.LINE_SEPARATOR;
+import static com.hazelcast.internal.util.StringUtil.LINE_SEPARATOR;
 
 /**
  * When tests run is done, dump serialized object samples to output file

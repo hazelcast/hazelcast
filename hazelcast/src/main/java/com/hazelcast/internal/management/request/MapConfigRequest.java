@@ -16,20 +16,20 @@
 
 package com.hazelcast.internal.management.request;
 
+import com.hazelcast.cluster.Member;
 import com.hazelcast.config.MapConfig;
-import com.hazelcast.core.Member;
+import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.internal.management.ManagementCenterService;
 import com.hazelcast.internal.management.dto.MapConfigDTO;
 import com.hazelcast.internal.management.operation.GetMapConfigOperation;
 import com.hazelcast.internal.management.operation.UpdateMapConfigOperation;
-import com.hazelcast.internal.json.JsonObject;
 
 import java.util.Set;
 
 import static com.hazelcast.internal.management.ManagementCenterService.resolveFuture;
-import static com.hazelcast.util.JsonUtil.getBoolean;
-import static com.hazelcast.util.JsonUtil.getObject;
-import static com.hazelcast.util.JsonUtil.getString;
+import static com.hazelcast.internal.util.JsonUtil.getBoolean;
+import static com.hazelcast.internal.util.JsonUtil.getObject;
+import static com.hazelcast.internal.util.JsonUtil.getString;
 
 /**
  * Request for updating map configuration from Management Center.
@@ -37,15 +37,15 @@ import static com.hazelcast.util.JsonUtil.getString;
 public class MapConfigRequest implements ConsoleRequest {
 
     private String mapName;
-    private MapConfigDTO config;
+    private MapConfigDTO mapConfigDTO;
     private boolean update;
 
     public MapConfigRequest() {
     }
 
-    public MapConfigRequest(String mapName, MapConfigDTO config, boolean update) {
+    public MapConfigRequest(String mapName, MapConfigDTO mapConfigDTO, boolean update) {
         this.mapName = mapName;
-        this.config = config;
+        this.mapConfigDTO = mapConfigDTO;
         this.update = update;
     }
 
@@ -61,7 +61,15 @@ public class MapConfigRequest implements ConsoleRequest {
         if (update) {
             final Set<Member> members = mcs.getHazelcastInstance().getCluster().getMembers();
             for (Member member : members) {
-                resolveFuture(mcs.callOnMember(member, new UpdateMapConfigOperation(mapName, config.getMapConfig())));
+                UpdateMapConfigOperation operation = new UpdateMapConfigOperation(
+                        mapName,
+                        mapConfigDTO.getConfig().getTimeToLiveSeconds(),
+                        mapConfigDTO.getConfig().getMaxIdleSeconds(),
+                        mapConfigDTO.getConfig().getEvictionConfig().getSize(),
+                        mapConfigDTO.getConfig().getEvictionConfig().getMaxSizePolicy().getId(),
+                        mapConfigDTO.getConfig().isReadBackupData(),
+                        mapConfigDTO.getConfig().getEvictionConfig().getEvictionPolicy().getId());
+                resolveFuture(mcs.callOnMember(member, operation));
             }
             result.add("updateResult", "success");
         } else {
@@ -80,7 +88,7 @@ public class MapConfigRequest implements ConsoleRequest {
     public void fromJson(JsonObject json) {
         mapName = getString(json, "mapName");
         update = getBoolean(json, "update");
-        config = new MapConfigDTO();
-        config.fromJson(getObject(json, "config"));
+        mapConfigDTO = new MapConfigDTO();
+        mapConfigDTO.fromJson(getObject(json, "config"));
     }
 }

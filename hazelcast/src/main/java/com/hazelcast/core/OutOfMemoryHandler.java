@@ -16,7 +16,7 @@
 
 package com.hazelcast.core;
 
-import com.hazelcast.instance.OutOfMemoryHandlerHelper;
+import com.hazelcast.instance.impl.OutOfMemoryHandlerHelper;
 
 /**
  * Handler for <code>OutOfMemoryError</code>.
@@ -27,10 +27,10 @@ import com.hazelcast.instance.OutOfMemoryHandlerHelper;
  * </p>
  *
  * <p>
- * <b>Warning: </b> <tt>OutOfMemoryHandler</tt> may not be called even if JVM throws
- * <tt>OutOfMemoryError</tt>
+ * <b>Warning: </b> <code>OutOfMemoryHandler</code> may not be called even if JVM throws
+ * <code>OutOfMemoryError</code>
  * because the error may be thrown from an external (user) thread, so
- * Hazelcast may not be informed about <tt>OutOfMemoryError</tt>.
+ * Hazelcast may not be informed about <code>OutOfMemoryError</code>.
  * </p>
  *
  * @see OutOfMemoryError
@@ -45,17 +45,17 @@ public abstract class OutOfMemoryHandler {
      * knows by current JVM (actually ClassLoader).
      *
      * <p>
-     * User can shutdown the <tt>HazelcastInstance</tt>, call <code>System.exit()</code>,
+     * User can shutdown the <code>HazelcastInstance</code>, call <code>System.exit()</code>,
      * just log the error, etc.
      * The default handler tries to close socket connections to other nodes and shutdown the
-     * <tt>HazelcastInstance</tt>.
+     * <code>HazelcastInstance</code>.
      * </p>
      *
      * <p>
-     * <b>Warning: </b> <tt>OutOfMemoryHandler</tt> may not be called even if JVM throws
-     * <tt>OutOfMemoryError</tt>
+     * <b>Warning: </b> <code>OutOfMemoryHandler</code> may not be called even if JVM throws
+     * <code>OutOfMemoryError</code>
      * because the error may be thrown from an external (user) thread
-     * and Hazelcast may not be informed about <tt>OutOfMemoryError</tt>.
+     * and Hazelcast may not be informed about <code>OutOfMemoryError</code>.
      * </p>
      *
      * @see OutOfMemoryHandler#tryCloseConnections(HazelcastInstance)
@@ -69,7 +69,7 @@ public abstract class OutOfMemoryHandler {
 
     /**
      * Decides if the OutOfMemoryError thrown will be handled by this OutOfMemoryHandler or not.
-     * If <tt>true</tt> is return, {@link #onOutOfMemory(OutOfMemoryError, HazelcastInstance[])} will be called
+     * If <code>true</code> is return, {@link #onOutOfMemory(OutOfMemoryError, HazelcastInstance[])} will be called
      * to handle error, otherwise OutOfMemoryError will be ignored.
      *
      * @param oome OutOfMemoryError thrown by JVM
@@ -80,7 +80,7 @@ public abstract class OutOfMemoryHandler {
     }
 
     /**
-     * Tries to close the server socket and connections to other <tt>HazelcastInstance</tt>s.
+     * Tries to close the server socket and connections to other <code>HazelcastInstance</code>s.
      *
      * @param hazelcastInstance the Hazelcast instance to close server socket
      */
@@ -89,7 +89,7 @@ public abstract class OutOfMemoryHandler {
     }
 
     /**
-     * Tries to shutdown <tt>HazelcastInstance</tt> forcefully;
+     * Tries to shutdown <code>HazelcastInstance</code> forcefully;
      * including closing sockets and connections, stopping threads, etc.
      *
      * @param hazelcastInstance the Hazelcast instance to shutdown

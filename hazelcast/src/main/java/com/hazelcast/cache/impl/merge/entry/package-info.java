@@ -15,6 +15,6 @@
  */
 
 /**
- * <p>This package contains merge entry internal interfaces and functionality for Hazelcast cache.<br/>
+ * <p>This package contains merge entry internal interfaces and functionality for Hazelcast cache.<br>
  */
 package com.hazelcast.cache.impl.merge.entry;

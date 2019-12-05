@@ -17,13 +17,13 @@
 package com.hazelcast.map.impl.query;
 
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IMap;
+import com.hazelcast.map.IMap;
 import com.hazelcast.query.Predicate;
-import com.hazelcast.query.TruePredicate;
-import com.hazelcast.spi.serialization.SerializationService;
+import com.hazelcast.query.Predicates;
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
 import org.junit.Test;
@@ -38,7 +38,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class MapEntrySetTest extends HazelcastTestSupport {
 
     private IMap<String, String> map;
@@ -59,7 +59,7 @@ public class MapEntrySetTest extends HazelcastTestSupport {
 
     @Test
     public void whenMapEmpty() {
-        Set<Map.Entry<String, String>> result = map.entrySet(TruePredicate.INSTANCE);
+        Set<Map.Entry<String, String>> result = map.entrySet(Predicates.alwaysTrue());
         assertTrue(result.isEmpty());
     }
 
@@ -83,7 +83,7 @@ public class MapEntrySetTest extends HazelcastTestSupport {
         map.put("2", "b");
         map.put("3", "c");
 
-        Set<Map.Entry<String, String>> result = map.entrySet(TruePredicate.INSTANCE);
+        Set<Map.Entry<String, String>> result = map.entrySet(Predicates.alwaysTrue());
 
         assertEquals(3, result.size());
         assertResultContains(result, "1", "a");
@@ -107,7 +107,7 @@ public class MapEntrySetTest extends HazelcastTestSupport {
     @Test
     public void testResultType() {
         map.put("1", "a");
-        Set<Map.Entry<String, String>> result = map.entrySet(TruePredicate.INSTANCE);
+        Set<Map.Entry<String, String>> result = map.entrySet(Predicates.alwaysTrue());
 
         QueryResultCollection collection = assertInstanceOf(QueryResultCollection.class, result);
         QueryResultRow row = (QueryResultRow) collection.getRows().iterator().next();

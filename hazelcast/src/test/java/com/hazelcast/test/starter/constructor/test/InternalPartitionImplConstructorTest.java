@@ -19,12 +19,12 @@ package com.hazelcast.test.starter.constructor.test;
 import com.hazelcast.internal.partition.InternalPartition;
 import com.hazelcast.internal.partition.PartitionReplica;
 import com.hazelcast.internal.partition.impl.InternalPartitionImpl;
-import com.hazelcast.nio.Address;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.test.starter.constructor.InternalPartitionImplConstructor;
-import com.hazelcast.util.UuidUtil;
+import com.hazelcast.internal.util.UuidUtil;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -32,13 +32,13 @@ import org.junit.runner.RunWith;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class InternalPartitionImplConstructorTest {
 
     @Test
     public void testConstructor() throws Exception {
-        PartitionReplica local = new PartitionReplica(new Address("172.16.16.1", 4223), UuidUtil.newUnsecureUuidString());
-        PartitionReplica[] replicas = new PartitionReplica[]{new PartitionReplica(new Address("127.0.0.1", 2342), UuidUtil.newUnsecureUuidString())};
+        PartitionReplica local = new PartitionReplica(new Address("172.16.16.1", 4223), UuidUtil.newUnsecureUUID());
+        PartitionReplica[] replicas = new PartitionReplica[]{new PartitionReplica(new Address("127.0.0.1", 2342), UuidUtil.newUnsecureUUID())};
         InternalPartition partition = new InternalPartitionImpl(42, null, local, replicas);
 
         InternalPartitionImplConstructor constructor = new InternalPartitionImplConstructor(InternalPartitionImpl.class);

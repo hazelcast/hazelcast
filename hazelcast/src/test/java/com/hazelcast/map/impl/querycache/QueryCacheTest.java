@@ -17,26 +17,24 @@
 package com.hazelcast.map.impl.querycache;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.config.MapAttributeConfig;
+import com.hazelcast.config.AttributeConfig;
 import com.hazelcast.config.PredicateConfig;
 import com.hazelcast.config.QueryCacheConfig;
 import com.hazelcast.core.EntryAdapter;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.IFunction;
-import com.hazelcast.core.IMap;
+import com.hazelcast.map.IMap;
 import com.hazelcast.map.QueryCache;
+import com.hazelcast.map.impl.querycache.utils.Employee;
 import com.hazelcast.map.listener.EntryAddedListener;
-import com.hazelcast.mapreduce.helpers.Employee;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.Predicates;
-import com.hazelcast.query.SqlPredicate;
-import com.hazelcast.query.TruePredicate;
 import com.hazelcast.query.extractor.ValueCollector;
 import com.hazelcast.query.extractor.ValueExtractor;
-import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -50,13 +48,13 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class QueryCacheTest extends AbstractQueryCacheTestSupport {
 
     @SuppressWarnings("unchecked")
-    private static final Predicate<Integer, Employee> TRUE_PREDICATE = TruePredicate.INSTANCE;
+    private static final Predicate<Integer, Employee> TRUE_PREDICATE = Predicates.alwaysTrue();
     @SuppressWarnings("unchecked")
-    private static final Predicate<Integer, Integer> SQL_PREDICATE = new SqlPredicate("this > 20");
+    private static final Predicate<Integer, Integer> SQL_PREDICATE = Predicates.sql("this > 20");
 
     @Test
     @SuppressWarnings("ConstantConditions")
@@ -84,7 +82,7 @@ public class QueryCacheTest extends AbstractQueryCacheTestSupport {
 
     @Test
     @SuppressWarnings("ConstantConditions")
-    public void testQueryCache_whenInitialPopulation_disabled() throws Exception {
+    public void testQueryCache_whenInitialPopulation_disabled() {
         boolean enableInitialPopulation = false;
         int numberOfElementsToBePutToIMap = 1000;
         int expectedSizeOfQueryCache = 0;
@@ -94,7 +92,7 @@ public class QueryCacheTest extends AbstractQueryCacheTestSupport {
 
     @Test
     public void testQueryCache_withLocalListener() {
-        Config config = new Config().setProperty(GroupProperty.PARTITION_COUNT.getName(), "1");
+        Config config = new Config().setProperty(ClusterProperty.PARTITION_COUNT.getName(), "1");
 
         QueryCacheConfig queryCacheConfig = new QueryCacheConfig(cacheName);
         config.getMapConfig(mapName).addQueryCacheConfig(queryCacheConfig);
@@ -123,24 +121,9 @@ public class QueryCacheTest extends AbstractQueryCacheTestSupport {
             map.remove(i);
         }
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertEquals(0, queryCache.size());
-            }
-        });
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertEquals("Count of add events wrong!", 9, countAddEvent.get());
-            }
-        });
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertEquals("Count of remove events wrong!", 9, countRemoveEvent.get());
-            }
-        });
+        assertTrueEventually(() -> assertEquals(0, queryCache.size()));
+        assertTrueEventually(() -> assertEquals("Count of add events wrong!", 9, countAddEvent.get()));
+        assertTrueEventually(() -> assertEquals("Count of remove events wrong!", 9, countRemoveEvent.get()));
     }
 
     @Test
@@ -150,12 +133,9 @@ public class QueryCacheTest extends AbstractQueryCacheTestSupport {
 
         populateMap(map, 1000);
 
-        IFunction evictAll = new IFunction() {
-            @Override
-            public Object apply(Object ignored) {
-                map.evictAll();
-                return null;
-            }
+        IFunction evictAll = (ignored) -> {
+            map.evictAll();
+            return null;
         };
 
         assertQueryCacheSizeEventually(0, evictAll, queryCache);
@@ -168,13 +148,9 @@ public class QueryCacheTest extends AbstractQueryCacheTestSupport {
 
         populateMap(map, 1000);
 
-        IFunction clear = new IFunction() {
-
-            @Override
-            public Object apply(Object ignored) {
-                map.clear();
-                return null;
-            }
+        IFunction clear = (ignored) -> {
+            map.clear();
+            return null;
         };
 
         assertQueryCacheSizeEventually(0, clear, queryCache);
@@ -193,13 +169,9 @@ public class QueryCacheTest extends AbstractQueryCacheTestSupport {
         int entryCount = 1000;
         final CountDownLatch numberOfAddEvents = new CountDownLatch(entryCount);
         IMap<Integer, Employee> map = getIMapWithDefaultConfig(TRUE_PREDICATE);
-        QueryCache<Integer, Employee> queryCache
-                = map.getQueryCache(cacheName, new EntryAddedListener<Integer, Employee>() {
-            @Override
-            public void entryAdded(EntryEvent<Integer, Employee> event) {
-                numberOfAddEvents.countDown();
-            }
-        }, TRUE_PREDICATE, false);
+        QueryCache<Integer, Employee> queryCache = map
+                .getQueryCache(cacheName, (EntryAddedListener<Integer, Employee>) (event) -> numberOfAddEvents.countDown(),
+                        TRUE_PREDICATE, false);
 
         populateMap(map, entryCount);
 
@@ -215,7 +187,7 @@ public class QueryCacheTest extends AbstractQueryCacheTestSupport {
         IMap<Integer, Employee> map = getIMapWithDefaultConfig(TRUE_PREDICATE);
         QueryCache<Integer, Employee> queryCache = map.getQueryCache(cacheName);
 
-        Set<Integer> keySet = new HashSet<Integer>();
+        Set<Integer> keySet = new HashSet<>();
         keySet.add(1);
         keySet.add(2);
         keySet.add(null);
@@ -228,7 +200,7 @@ public class QueryCacheTest extends AbstractQueryCacheTestSupport {
         IMap<Integer, Employee> map = getIMapWithDefaultConfig(TRUE_PREDICATE);
         QueryCache<Integer, Employee> queryCache = map.getQueryCache(cacheName);
 
-        Set<Integer> keySet = new HashSet<Integer>();
+        Set<Integer> keySet = new HashSet<>();
         keySet.add(1);
         keySet.add(2);
 
@@ -236,9 +208,9 @@ public class QueryCacheTest extends AbstractQueryCacheTestSupport {
     }
 
     @Test
-    public void testQueryCache_with_mapAttribute_inPredicate() {
+    public void testQueryCache_with_attribute_inPredicate() {
 
-        String MAP_ATTRIBUTE_NAME = "booleanMapAttribute";
+        String ATTRIBUTE_NAME = "booleanAttribute";
 
         Config config = new Config();
         config.getMapConfig(mapName)
@@ -246,12 +218,12 @@ public class QueryCacheTest extends AbstractQueryCacheTestSupport {
                         new QueryCacheConfig(cacheName)
                                 .setIncludeValue(true)
                                 .setPredicateConfig(// use map attribute in a predicate
-                                        new PredicateConfig(Predicates.equal(MAP_ATTRIBUTE_NAME, true))
+                                        new PredicateConfig(Predicates.equal(ATTRIBUTE_NAME, true))
                                 ))
-                .addMapAttributeConfig(
-                        new MapAttributeConfig()
-                                .setExtractor(EvenNumberEmployeeValueExtractor.class.getName())
-                                .setName(MAP_ATTRIBUTE_NAME));
+                .addAttributeConfig(
+                        new AttributeConfig()
+                                .setExtractorClassName(EvenNumberEmployeeValueExtractor.class.getName())
+                                .setName(ATTRIBUTE_NAME));
 
         IMap<Integer, Employee> map = getIMap(config);
         QueryCache<Integer, Employee> queryCache = map.getQueryCache(cacheName);
@@ -261,7 +233,7 @@ public class QueryCacheTest extends AbstractQueryCacheTestSupport {
         assertQueryCacheSizeEventually(50, queryCache);
     }
 
-    public static class EvenNumberEmployeeValueExtractor extends ValueExtractor<Employee, Integer> {
+    public static class EvenNumberEmployeeValueExtractor implements ValueExtractor<Employee, Integer> {
         @Override
         public void extract(Employee target, Integer argument, ValueCollector collector) {
             collector.addObject(target.getId() % 2 == 0);
@@ -283,7 +255,7 @@ public class QueryCacheTest extends AbstractQueryCacheTestSupport {
         for (int i = 0; i < 50; i++) {
             map.put(i, i);
         }
-        Predicate<Integer, Integer> predicate = new SqlPredicate("this > 5 AND this < 100");
+        Predicate<Integer, Integer> predicate = Predicates.sql("this > 5 AND this < 100");
         QueryCache<Integer, Integer> cache = map.getQueryCache(cacheName, predicate, includeValue);
 
         for (int i = 50; i < 100; i++) {
@@ -314,23 +286,15 @@ public class QueryCacheTest extends AbstractQueryCacheTestSupport {
     @SuppressWarnings("SameParameterValue")
     private static void assertQueryCacheSizeEventually(final int expected, final IFunction<?, ?> function,
                                                        final QueryCache queryCache) {
-        AssertTask task = new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                function.apply(null);
-                assertEquals(expected, queryCache.size());
-            }
+        AssertTask task = () -> {
+            function.apply(null);
+            assertEquals(expected, queryCache.size());
         };
 
         assertTrueEventually(task);
     }
 
     private static void assertQueryCacheSizeEventually(final int expected, final QueryCache cache) {
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertEquals(expected, cache.size());
-            }
-        });
+        assertTrueEventually(() -> assertEquals(expected, cache.size()));
     }
 }

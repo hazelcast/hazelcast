@@ -19,12 +19,12 @@ package com.hazelcast.internal.nearcache.impl.store;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.internal.nearcache.impl.record.NearCacheDataRecord;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.serialization.SerializationService;
+import com.hazelcast.internal.serialization.SerializationService;
 
 import static com.hazelcast.internal.nearcache.NearCacheRecord.TIME_NOT_SET;
 import static com.hazelcast.internal.nearcache.impl.record.AbstractNearCacheRecord.NUMBER_OF_INTEGER_FIELD_TYPES;
 import static com.hazelcast.internal.nearcache.impl.record.AbstractNearCacheRecord.NUMBER_OF_LONG_FIELD_TYPES;
-import static com.hazelcast.util.Clock.currentTimeMillis;
+import static com.hazelcast.internal.util.Clock.currentTimeMillis;
 
 /**
  * {@link com.hazelcast.internal.nearcache.NearCacheRecordStore} implementation for Near Caches

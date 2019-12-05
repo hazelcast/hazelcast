@@ -16,19 +16,26 @@
 
 package com.hazelcast.internal.networking.nio;
 
+import com.hazelcast.instance.EndpointQualifier;
+import com.hazelcast.internal.metrics.DynamicMetricsProvider;
+import com.hazelcast.internal.metrics.MetricsCollectionContext;
 import com.hazelcast.internal.metrics.MetricsRegistry;
+import com.hazelcast.internal.metrics.MetricDescriptor;
+import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.metrics.ProbeLevel;
 import com.hazelcast.internal.networking.Channel;
 import com.hazelcast.internal.networking.ChannelCloseListener;
 import com.hazelcast.internal.networking.ChannelErrorHandler;
 import com.hazelcast.internal.networking.ChannelInitializer;
-import com.hazelcast.internal.networking.Networking;
+import com.hazelcast.internal.networking.ChannelInitializerProvider;
 import com.hazelcast.internal.networking.InboundHandler;
+import com.hazelcast.internal.networking.Networking;
 import com.hazelcast.internal.networking.OutboundHandler;
 import com.hazelcast.internal.networking.nio.iobalancer.IOBalancer;
+import com.hazelcast.internal.util.ConcurrencyDetection;
+import com.hazelcast.internal.util.concurrent.BackoffIdleStrategy;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
-import com.hazelcast.util.concurrent.BackoffIdleStrategy;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
@@ -36,20 +43,22 @@ import java.nio.channels.SocketChannel;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.logging.Level;
 
-import static com.hazelcast.internal.metrics.ProbeLevel.DEBUG;
 import static com.hazelcast.internal.networking.nio.SelectorMode.SELECT;
 import static com.hazelcast.internal.networking.nio.SelectorMode.SELECT_NOW_STRING;
-import static com.hazelcast.util.HashUtil.hashToIndex;
-import static com.hazelcast.util.ThreadUtil.createThreadPoolName;
-import static com.hazelcast.util.concurrent.BackoffIdleStrategy.createBackoffIdleStrategy;
+import static com.hazelcast.internal.networking.nio.SelectorMode.SELECT_WITH_FIX;
+import static com.hazelcast.internal.nio.IOUtil.closeResource;
+import static com.hazelcast.internal.util.HashUtil.hashToIndex;
+import static com.hazelcast.internal.util.ThreadUtil.createThreadPoolName;
+import static com.hazelcast.internal.util.concurrent.BackoffIdleStrategy.createBackoffIdleStrategy;
 import static java.util.Collections.newSetFromMap;
 import static java.util.concurrent.Executors.newSingleThreadExecutor;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static java.util.logging.Level.FINE;
-import static java.util.logging.Level.INFO;
 
 /**
  * A non blocking {@link Networking} implementation that makes use of
@@ -76,8 +85,9 @@ import static java.util.logging.Level.INFO;
  * feature and will cause the io threads to run hot. For this reason, when this feature
  * is enabled, the number of io threads should be reduced (preferably 1).
  */
-public final class NioNetworking implements Networking {
+public final class NioNetworking implements Networking, DynamicMetricsProvider {
 
+    private final AtomicBoolean started = new AtomicBoolean();
     private final AtomicInteger nextInputThreadIndex = new AtomicInteger();
     private final AtomicInteger nextOutputThreadIndex = new AtomicInteger();
     private final ILogger logger;
@@ -86,18 +96,33 @@ public final class NioNetworking implements Networking {
     private final String threadNamePrefix;
     private final ChannelErrorHandler errorHandler;
     private final int balancerIntervalSeconds;
-    private final ChannelInitializer channelInitializer;
     private final int inputThreadCount;
     private final int outputThreadCount;
-    private final Set<NioChannel> channels = newSetFromMap(new ConcurrentHashMap<NioChannel, Boolean>());
+    private final Set<NioChannel> channels = newSetFromMap(new ConcurrentHashMap<>());
     private final ChannelCloseListener channelCloseListener = new ChannelCloseListenerImpl();
     private final SelectorMode selectorMode;
     private final BackoffIdleStrategy idleStrategy;
     private final boolean selectorWorkaroundTest;
-    private final ExecutorService closeListenerExecutor;
+    private final boolean selectionKeyWakeupEnabled;
+    private volatile ExecutorService closeListenerExecutor;
+    private final ConcurrencyDetection concurrencyDetection;
+    private final boolean writeThroughEnabled;
     private volatile IOBalancer ioBalancer;
     private volatile NioThread[] inputThreads;
     private volatile NioThread[] outputThreads;
+    private volatile ScheduledFuture publishFuture;
+
+    // Currently this is a coarse grained aggregation of the bytes/send received.
+    // In the future you probably want to split this up in member and client and potentially
+    // wan specific.
+    @Probe
+    private volatile long bytesSend;
+    @Probe
+    private volatile long bytesReceived;
+    @Probe
+    private volatile long packetsSend;
+    @Probe
+    private volatile long packetsReceived;
 
     public NioNetworking(Context ctx) {
         this.threadNamePrefix = ctx.threadNamePrefix;
@@ -108,18 +133,24 @@ public final class NioNetworking implements Networking {
         this.logger = loggingService.getLogger(NioNetworking.class);
         this.errorHandler = ctx.errorHandler;
         this.balancerIntervalSeconds = ctx.balancerIntervalSeconds;
-        this.channelInitializer = ctx.channelInitializer;
         this.selectorMode = ctx.selectorMode;
         this.selectorWorkaroundTest = ctx.selectorWorkaroundTest;
         this.idleStrategy = ctx.idleStrategy;
-        this.closeListenerExecutor = newSingleThreadExecutor(new ThreadFactory() {
-            @Override
-            public Thread newThread(Runnable r) {
-                Thread t = new Thread(r);
-                t.setName(threadNamePrefix + "-NioNetworking-closeListenerExecutor");
-                return t;
-            }
-        });
+        this.concurrencyDetection = ctx.concurrencyDetection;
+        // selector mode SELECT_WITH_FIX requires that a single thread
+        // accesses a selector & its selectionKeys. Selection key wake-up
+        // and write through break this requirement, therefore must be
+        // disabled with SELECT_WITH_FIX.
+        this.writeThroughEnabled = ctx.writeThroughEnabled && selectorMode != SELECT_WITH_FIX;
+        this.selectionKeyWakeupEnabled = ctx.selectionKeyWakeupEnabled && selectorMode != SELECT_WITH_FIX;
+        if (selectorMode == SELECT_WITH_FIX
+                && (ctx.writeThroughEnabled || ctx.selectionKeyWakeupEnabled)) {
+            logger.warning("Selector mode SELECT_WITH_FIX is incompatible with write-through and selection key wakeup "
+                    + "optimizations and they have been disabled. Start Hazelcast with options "
+                    + "\"-Dhazelcast.io.selectionKeyWakeupEnabled=false -Dhazelcast.io.write.through=false\" to "
+                    + "explicitly disable selection key wakeup and write-through optimizations and avoid logging this "
+                    + "warning.");
+        }
     }
 
     @SuppressFBWarnings(value = "EI_EXPOSE_REP", justification = "used only for testing")
@@ -142,17 +173,30 @@ public final class NioNetworking implements Networking {
     }
 
     @Override
-    public void start() {
+    public void restart() {
+        if (!started.compareAndSet(false, true)) {
+            throw new IllegalStateException("Can't (re)start an already running NioNetworking");
+        }
+
         if (logger.isFineEnabled()) {
             logger.fine("TcpIpConnectionManager configured with Non Blocking IO-threading model: "
                     + inputThreadCount + " input threads and "
                     + outputThreadCount + " output threads");
+            logger.fine("write through enabled:" + writeThroughEnabled);
         }
 
-        logger.log(selectorMode != SELECT ? INFO : FINE, "IO threads selector mode is " + selectorMode);
+        logger.log(selectorMode != SELECT ? Level.INFO : FINE, "IO threads selector mode is " + selectorMode);
 
-        this.inputThreads = new NioThread[inputThreadCount];
-        for (int i = 0; i < inputThreads.length; i++) {
+        publishFuture = metricsRegistry.scheduleAtFixedRate(new PublishAllTask(), 1, SECONDS, ProbeLevel.INFO);
+
+        this.closeListenerExecutor = newSingleThreadExecutor(r -> {
+            Thread t = new Thread(r);
+            t.setName(threadNamePrefix + "-NioNetworking-closeListenerExecutor");
+            return t;
+        });
+
+        NioThread[] inThreads = new NioThread[inputThreadCount];
+        for (int i = 0; i < inThreads.length; i++) {
             NioThread thread = new NioThread(
                     createThreadPoolName(threadNamePrefix, "IO") + "in-" + i,
                     loggingService.getLogger(NioThread.class),
@@ -161,13 +205,13 @@ public final class NioNetworking implements Networking {
                     idleStrategy);
             thread.id = i;
             thread.setSelectorWorkaroundTest(selectorWorkaroundTest);
-            inputThreads[i] = thread;
-            metricsRegistry.scanAndRegister(thread, "tcp.inputThread[" + thread.getName() + "]");
+            inThreads[i] = thread;
             thread.start();
         }
+        this.inputThreads = inThreads;
 
-        this.outputThreads = new NioThread[outputThreadCount];
-        for (int i = 0; i < outputThreads.length; i++) {
+        NioThread[] outThreads = new NioThread[outputThreadCount];
+        for (int i = 0; i < outThreads.length; i++) {
             NioThread thread = new NioThread(
                     createThreadPoolName(threadNamePrefix, "IO") + "out-" + i,
                     loggingService.getLogger(NioThread.class),
@@ -176,26 +220,43 @@ public final class NioNetworking implements Networking {
                     idleStrategy);
             thread.id = i;
             thread.setSelectorWorkaroundTest(selectorWorkaroundTest);
-            outputThreads[i] = thread;
-            metricsRegistry.scanAndRegister(thread, "tcp.outputThread[" + thread.getName() + "]");
+            outThreads[i] = thread;
             thread.start();
         }
+        this.outputThreads = outThreads;
 
         startIOBalancer();
 
-        if (metricsRegistry.minimumLevel().isEnabled(DEBUG)) {
-            metricsRegistry.scheduleAtFixedRate(new PublishAllTask(), 1, SECONDS, ProbeLevel.INFO);
-        }
+        metricsRegistry.registerDynamicMetricsProvider(this);
     }
 
     private void startIOBalancer() {
         ioBalancer = new IOBalancer(inputThreads, outputThreads, threadNamePrefix, balancerIntervalSeconds, loggingService);
         ioBalancer.start();
-        metricsRegistry.scanAndRegister(ioBalancer, "tcp.balancer");
     }
 
     @Override
     public void shutdown() {
+        if (!started.compareAndSet(true, false)) {
+            return;
+        }
+
+        metricsRegistry.deregisterDynamicMetricsProvider(this);
+
+        // if there are any channels left, we close them.
+        for (Channel channel : channels) {
+            if (!channel.isClosed()) {
+                closeResource(channel);
+            }
+        }
+        //and clear them to prevent memory leaks.
+        channels.clear();
+
+        // we unregister the publish future to prevent memory leaks.
+        if (publishFuture != null) {
+            publishFuture.cancel(false);
+            publishFuture = null;
+        }
         ioBalancer.stop();
 
         if (logger.isFinestEnabled()) {
@@ -207,6 +268,7 @@ public final class NioNetworking implements Networking {
         shutdown(outputThreads);
         outputThreads = null;
         closeListenerExecutor.shutdown();
+        closeListenerExecutor = null;
     }
 
     private void shutdown(NioThread[] threads) {
@@ -219,22 +281,26 @@ public final class NioNetworking implements Networking {
     }
 
     @Override
-    public Channel register(SocketChannel socketChannel, boolean clientMode) throws IOException {
-        NioChannel channel = new NioChannel(
-                socketChannel, clientMode, channelInitializer, metricsRegistry, closeListenerExecutor);
+    public Channel register(EndpointQualifier endpointQualifier,
+                            ChannelInitializerProvider channelInitializerProvider,
+                            SocketChannel socketChannel,
+                            boolean clientMode) throws IOException {
+        if (!started.get()) {
+            throw new IllegalArgumentException("Can't register a channel when networking isn't started");
+        }
+
+        ChannelInitializer initializer = channelInitializerProvider.provide(endpointQualifier);
+        assert initializer != null : "Found NULL channel initializer for endpoint-qualifier " + endpointQualifier;
+        NioChannel channel = new NioChannel(socketChannel, clientMode, initializer, closeListenerExecutor);
 
         socketChannel.configureBlocking(false);
 
         NioInboundPipeline inboundPipeline = newInboundPipeline(channel);
         NioOutboundPipeline outboundPipeline = newOutboundPipeline(channel);
-
-        channels.add(channel);
-
         channel.init(inboundPipeline, outboundPipeline);
-
         ioBalancer.channelAdded(inboundPipeline, outboundPipeline);
-
         channel.addCloseListener(channelCloseListener);
+        channels.add(channel);
         return channel;
     }
 
@@ -250,7 +316,10 @@ public final class NioNetworking implements Networking {
                 threads[index],
                 errorHandler,
                 loggingService.getLogger(NioOutboundPipeline.class),
-                ioBalancer);
+                ioBalancer,
+                concurrencyDetection,
+                writeThroughEnabled,
+                selectionKeyWakeupEnabled);
     }
 
     private NioInboundPipeline newInboundPipeline(NioChannel channel) {
@@ -268,46 +337,119 @@ public final class NioNetworking implements Networking {
                 ioBalancer);
     }
 
+    @Override
+    public void provideDynamicMetrics(MetricDescriptor descriptor,
+                                      MetricsCollectionContext context) {
+        for (Channel channel : channels) {
+            String pipelineId = channel.localSocketAddress() + "->" + channel.remoteSocketAddress();
+
+            MetricDescriptor descriptorIn = descriptor
+                    .copy()
+                    .withPrefix("tcp.connection.in")
+                    .withDiscriminator("pipelineId", pipelineId);
+            context.collect(descriptorIn, channel.inboundPipeline());
+
+            MetricDescriptor descriptorOut = descriptor
+                    .copy()
+                    .withPrefix("tcp.connection.out")
+                    .withDiscriminator("pipelineId", pipelineId);
+            context.collect(descriptorOut, channel.outboundPipeline());
+        }
+
+        for (NioThread nioThread : inputThreads) {
+            MetricDescriptor descriptorInThread = descriptor
+                    .copy()
+                    .withPrefix("tcp.inputThread")
+                    .withDiscriminator("thread", nioThread.getName());
+            context.collect(descriptorInThread, nioThread);
+        }
+
+        for (NioThread nioThread : outputThreads) {
+            MetricDescriptor descriptorOutThread = descriptor
+                    .copy()
+                    .withPrefix("tcp.outputThread")
+                    .withDiscriminator("thread", nioThread.getName());
+            context.collect(descriptorOutThread, nioThread);
+        }
+
+        IOBalancer ioBalancer = this.ioBalancer;
+        if (ioBalancer != null) {
+            MetricDescriptor descriptorBalancer = descriptor
+                    .copy()
+                    .withPrefix("tcp.balancer");
+            context.collect(descriptorBalancer, ioBalancer);
+        }
+
+        MetricDescriptor descriptorTcp = descriptor
+                .copy()
+                .withPrefix("tcp");
+        context.collect(descriptorTcp, this);
+    }
+
+    // package private accessors for testing
+    boolean isWriteThroughEnabled() {
+        return writeThroughEnabled;
+    }
+
+    boolean isSelectionKeyWakeupEnabled() {
+        return selectionKeyWakeupEnabled;
+    }
+
     private class ChannelCloseListenerImpl implements ChannelCloseListener {
         @Override
         public void onClose(Channel channel) {
             NioChannel nioChannel = (NioChannel) channel;
-
             channels.remove(channel);
-
             ioBalancer.channelRemoved(nioChannel.inboundPipeline(), nioChannel.outboundPipeline());
-
-            metricsRegistry.deregister(nioChannel.inboundPipeline());
-            metricsRegistry.deregister(nioChannel.outboundPipeline());
         }
     }
 
     private class PublishAllTask implements Runnable {
+
         @Override
         public void run() {
             for (NioChannel channel : channels) {
-                final NioInboundPipeline inboundPipeline = channel.inboundPipeline;
+                NioInboundPipeline inboundPipeline = channel.inboundPipeline;
                 NioThread inputThread = inboundPipeline.owner();
                 if (inputThread != null) {
-                    inputThread.addTaskAndWakeup(new Runnable() {
-                        @Override
-                        public void run() {
-                            inboundPipeline.publishMetrics();
-                        }
-                    });
+                    inputThread.addTaskAndWakeup(inboundPipeline::publishMetrics);
                 }
 
-                final NioOutboundPipeline outboundPipeline = channel.outboundPipeline;
+                NioOutboundPipeline outboundPipeline = channel.outboundPipeline;
                 NioThread outputThread = outboundPipeline.owner();
                 if (outputThread != null) {
-                    outputThread.addTaskAndWakeup(new Runnable() {
-                        @Override
-                        public void run() {
-                            outboundPipeline.publishMetrics();
-                        }
-                    });
+                    outputThread.addTaskAndWakeup(outboundPipeline::publishMetrics);
                 }
             }
+
+            bytesSend = bytesTransceived(outputThreads);
+            bytesReceived = bytesTransceived(inputThreads);
+            packetsSend = packetsTransceived(outputThreads);
+            packetsReceived = packetsTransceived(inputThreads);
+        }
+
+        private long bytesTransceived(NioThread[] threads) {
+            if (threads == null) {
+                return 0;
+            }
+
+            long result = 0;
+            for (NioThread nioThread : threads) {
+                result += nioThread.bytesTransceived;
+            }
+            return result;
+        }
+
+        private long packetsTransceived(NioThread[] threads) {
+            if (threads == null) {
+                return 0;
+            }
+
+            long result = 0;
+            for (NioThread nioThread : threads) {
+                result += nioThread.framesTransceived + nioThread.priorityFramesTransceived;
+            }
+            return result;
         }
     }
 
@@ -330,13 +472,34 @@ public final class NioNetworking implements Networking {
         // In Hazelcast 3.8, selector mode must be set via HazelcastProperties
         private SelectorMode selectorMode = SelectorMode.getConfiguredValue();
         private boolean selectorWorkaroundTest = Boolean.getBoolean("hazelcast.io.selector.workaround.test");
-        private ChannelInitializer channelInitializer;
+        private boolean selectionKeyWakeupEnabled
+                = Boolean.parseBoolean(System.getProperty("hazelcast.io.selectionKeyWakeupEnabled", "true"));
+        private ConcurrencyDetection concurrencyDetection;
+
+        // if the calling thread is allowed to write through to the socket if that is possible.
+        // this is an optimization that can speed up low threaded setups
+        private boolean writeThroughEnabled;
 
         public Context() {
             String selectorModeString = SelectorMode.getConfiguredString();
             if (selectorModeString.startsWith(SELECT_NOW_STRING + ",")) {
                 idleStrategy = createBackoffIdleStrategy(selectorModeString);
             }
+        }
+
+        public Context selectionKeyWakeupEnabled(boolean selectionKeyWakeupEnabled) {
+            this.selectionKeyWakeupEnabled = selectionKeyWakeupEnabled;
+            return this;
+        }
+
+        public Context writeThroughEnabled(boolean writeThroughEnabled) {
+            this.writeThroughEnabled = writeThroughEnabled;
+            return this;
+        }
+
+        public Context concurrencyDetection(ConcurrencyDetection concurrencyDetection) {
+            this.concurrencyDetection = concurrencyDetection;
+            return this;
         }
 
         public Context selectorWorkaroundTest(boolean selectorWorkaroundTest) {
@@ -381,11 +544,6 @@ public final class NioNetworking implements Networking {
 
         public Context balancerIntervalSeconds(int balancerIntervalSeconds) {
             this.balancerIntervalSeconds = balancerIntervalSeconds;
-            return this;
-        }
-
-        public Context channelInitializer(ChannelInitializer channelInitializer) {
-            this.channelInitializer = channelInitializer;
             return this;
         }
     }

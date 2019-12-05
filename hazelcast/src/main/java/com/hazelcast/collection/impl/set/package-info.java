@@ -15,6 +15,6 @@
  */
 
 /**
- * <p>This package contains ISet functionality for Hazelcast.<br/>
+ * <p>This package contains ISet functionality for Hazelcast.<br>
  */
 package com.hazelcast.collection.impl.set;

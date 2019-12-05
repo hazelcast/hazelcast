@@ -19,19 +19,20 @@ package com.hazelcast.partition;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.PartitionService;
-import com.hazelcast.spi.EventRegistration;
-import com.hazelcast.spi.impl.eventservice.InternalEventService;
+import com.hazelcast.internal.util.UuidUtil;
+import com.hazelcast.spi.impl.eventservice.EventRegistration;
+import com.hazelcast.spi.impl.eventservice.EventService;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.util.Collection;
+import java.util.UUID;
 
 import static com.hazelcast.internal.partition.InternalPartitionService.PARTITION_LOST_EVENT_TOPIC;
 import static com.hazelcast.internal.partition.InternalPartitionService.SERVICE_NAME;
@@ -43,7 +44,7 @@ import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class PartitionLostListenerRegistrationTest extends HazelcastTestSupport {
 
     @Test(expected = NullPointerException.class)
@@ -58,7 +59,7 @@ public class PartitionLostListenerRegistrationTest extends HazelcastTestSupport 
     public void test_addPartitionLostListener_whenListenerRegisteredProgrammatically() {
         final HazelcastInstance instance = createHazelcastInstance();
 
-        final String id = instance.getPartitionService().addPartitionLostListener(mock(PartitionLostListener.class));
+        final UUID id = instance.getPartitionService().addPartitionLostListener(mock(PartitionLostListener.class));
         assertNotNull(id);
 
         // Expected = 4 -> 1 added + 1 from {@link com.hazelcast.scheduledexecutor.impl.DistributedScheduledExecutorService}
@@ -84,8 +85,8 @@ public class PartitionLostListenerRegistrationTest extends HazelcastTestSupport 
 
         PartitionLostListener listener = mock(PartitionLostListener.class);
 
-        String id1 = partitionService.addPartitionLostListener(listener);
-        String id2 = partitionService.addPartitionLostListener(listener);
+        UUID id1 = partitionService.addPartitionLostListener(listener);
+        UUID id2 = partitionService.addPartitionLostListener(listener);
 
         assertNotEquals(id1, id2);
         // Expected = 5 -> 2 added + 1 from {@link com.hazelcast.scheduledexecutor.impl.DistributedScheduledExecutorService}
@@ -100,7 +101,7 @@ public class PartitionLostListenerRegistrationTest extends HazelcastTestSupport 
 
         PartitionLostListener listener = mock(PartitionLostListener.class);
 
-        String id1 = partitionService.addPartitionLostListener(listener);
+        UUID id1 = partitionService.addPartitionLostListener(listener);
         boolean result = partitionService.removePartitionLostListener(id1);
 
         assertTrue(result);
@@ -114,7 +115,7 @@ public class PartitionLostListenerRegistrationTest extends HazelcastTestSupport 
         HazelcastInstance instance = createHazelcastInstance();
         PartitionService partitionService = instance.getPartitionService();
 
-        boolean result = partitionService.removePartitionLostListener("notExist");
+        boolean result = partitionService.removePartitionLostListener(UuidUtil.newUnsecureUUID());
         assertFalse(result);
     }
 
@@ -133,7 +134,7 @@ public class PartitionLostListenerRegistrationTest extends HazelcastTestSupport 
                 assertTrueEventually(new AssertTask() {
                     @Override
                     public void run() {
-                        InternalEventService eventService = getNode(instance).getNodeEngine().getEventService();
+                        EventService eventService = getNode(instance).getNodeEngine().getEventService();
                         Collection<EventRegistration> registrations = eventService.getRegistrations(SERVICE_NAME,
                                 PARTITION_LOST_EVENT_TOPIC);
                         assertEquals(expectedSize, registrations.size());

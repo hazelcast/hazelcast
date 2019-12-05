@@ -16,8 +16,9 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.internal.config.CacheSimpleEntryListenerConfigReadOnly;
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import nl.jqno.equalsverifier.EqualsVerifier;
 import nl.jqno.equalsverifier.Warning;
@@ -28,7 +29,7 @@ import org.junit.runner.RunWith;
 import static com.hazelcast.test.HazelcastTestSupport.assumeDifferentHashCodes;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class CacheSimpleEntryListenerConfigTest {
 
     @Test
@@ -39,7 +40,6 @@ public class CacheSimpleEntryListenerConfigTest {
         CacheSimpleEntryListenerConfig blackEntryListenerConfig = new CacheSimpleEntryListenerConfig();
         blackEntryListenerConfig.setCacheEntryListenerFactory("black");
         EqualsVerifier.forClass(CacheSimpleEntryListenerConfig.class)
-                .allFieldsShouldBeUsedExcept("readOnly")
                 .suppress(Warning.NONFINAL_FIELDS)
                 .withPrefabValues(CacheSimpleEntryListenerConfigReadOnly.class,
                         new CacheSimpleEntryListenerConfigReadOnly(redEntryListenerConfig),

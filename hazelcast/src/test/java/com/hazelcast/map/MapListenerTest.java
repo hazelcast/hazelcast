@@ -20,14 +20,13 @@ import com.hazelcast.config.Config;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceAware;
-import com.hazelcast.core.IMap;
 import com.hazelcast.map.listener.EntryAddedListener;
 import com.hazelcast.map.listener.EntryRemovedListener;
 import com.hazelcast.map.listener.EntryUpdatedListener;
-import com.hazelcast.query.SqlPredicate;
+import com.hazelcast.query.Predicates;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -45,7 +44,7 @@ import static com.hazelcast.map.impl.event.MapEventPublisherImpl.LISTENER_WITH_P
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class MapListenerTest extends HazelcastTestSupport {
 
     private static final int AGE_THRESHOLD = 50;
@@ -58,7 +57,7 @@ public class MapListenerTest extends HazelcastTestSupport {
         // GIVEN MAP & LISTENER
         IMap<String, Person> map = hz.getMap("map");
         AllListener listener = new AllListener();
-        map.addEntryListener(listener, new SqlPredicate("age > " + AGE_THRESHOLD), true);
+        map.addEntryListener(listener, Predicates.sql("age > " + AGE_THRESHOLD), true);
 
         // GIVEN MAP EVENTS
         generateMapEvents(map, listener);
@@ -76,7 +75,7 @@ public class MapListenerTest extends HazelcastTestSupport {
         // GIVEN MAP & LISTENER
         IMap<String, Person> map = instances[0].getMap("map");
         MyEntryListener listener = new MyEntryListener();
-        map.addEntryListener(listener, new SqlPredicate("age > " + AGE_THRESHOLD), true);
+        map.addEntryListener(listener, Predicates.sql("age > " + AGE_THRESHOLD), true);
 
         // GIVEN MAP EVENTS
         generateMapEvents(map, null);
@@ -134,7 +133,7 @@ public class MapListenerTest extends HazelcastTestSupport {
         final AtomicInteger entriesObserved;
         final AtomicInteger exitsObserved;
 
-        public AllListener() {
+        AllListener() {
             entries = new AtomicInteger();
             exits = new AtomicInteger();
             entriesObserved = new AtomicInteger();
@@ -168,12 +167,12 @@ public class MapListenerTest extends HazelcastTestSupport {
         private int age;
         private String name;
 
-        public Person(int age, String name) {
+        Person(int age, String name) {
             this.age = age;
             this.name = name;
         }
 
-        public Person(Person p) {
+        Person(Person p) {
             this.name = p.name;
             this.age = p.age;
         }

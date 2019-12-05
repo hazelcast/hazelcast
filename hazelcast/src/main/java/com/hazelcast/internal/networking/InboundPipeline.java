@@ -86,8 +86,8 @@ public interface InboundPipeline {
      * network.
      *
      * Even if there is no data to be read, it will cause at least one processing
-     * of the inbound pipeline. This will force any buffered data to be pushed
-     * through the inbound pipeline.
+     * of the InboundPipeline. This will force any buffered data to be pushed
+     * through the InboundPipeline.
      *
      * This method is threadsafe and can safely be called from any thread.
      *

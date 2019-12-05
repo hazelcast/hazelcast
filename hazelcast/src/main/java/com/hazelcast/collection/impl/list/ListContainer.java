@@ -22,7 +22,7 @@ import com.hazelcast.collection.impl.collection.CollectionItem;
 import com.hazelcast.collection.impl.collection.TxCollectionItem;
 import com.hazelcast.config.ListConfig;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.impl.NodeEngine;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -30,7 +30,7 @@ import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
 
-import static com.hazelcast.util.MapUtil.createHashMap;
+import static com.hazelcast.internal.util.MapUtil.createHashMap;
 import static java.util.Collections.sort;
 
 public class ListContainer extends CollectionContainer {
@@ -203,7 +203,7 @@ public class ListContainer extends CollectionContainer {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return CollectionDataSerializerHook.LIST_CONTAINER;
     }
 }

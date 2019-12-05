@@ -159,7 +159,7 @@ public class SerializersHazelcastInstanceAwareTest extends HazelcastTestSupport 
         }
 
         @Override
-        public int getId() {
+        public int getClassId() {
             return 1;
         }
 

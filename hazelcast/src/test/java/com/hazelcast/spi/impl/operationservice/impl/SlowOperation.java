@@ -18,7 +18,7 @@ package com.hazelcast.spi.impl.operationservice.impl;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.impl.operationservice.Operation;
 
 import java.io.IOException;
 
@@ -28,14 +28,14 @@ class SlowOperation extends Operation {
     long durationMs;
 
     @SuppressWarnings("unused")
-    public SlowOperation() {
+    SlowOperation() {
     }
 
-    public SlowOperation(long durationMs) {
+    SlowOperation(long durationMs) {
         this.durationMs = durationMs;
     }
 
-    public SlowOperation(long durationMs, Object response) {
+    SlowOperation(long durationMs, Object response) {
         this.durationMs = durationMs;
         this.response = response;
     }

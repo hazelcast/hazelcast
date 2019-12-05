@@ -18,12 +18,11 @@ package com.hazelcast.map;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IMap;
-import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Before;
@@ -39,7 +38,7 @@ import static java.lang.String.valueOf;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class MapPutAllWithBatchingTest extends HazelcastTestSupport {
 
     private static final int INSTANCE_COUNT = 2;
@@ -51,8 +50,8 @@ public class MapPutAllWithBatchingTest extends HazelcastTestSupport {
     @Before
     public void setUp() {
         Config config = getConfig()
-                .setProperty(GroupProperty.PARTITION_COUNT.getName(), valueOf(INSTANCE_COUNT * 2))
-                .setProperty(GroupProperty.OPERATION_CALL_TIMEOUT_MILLIS.getName(), "3000")
+                .setProperty(ClusterProperty.PARTITION_COUNT.getName(), valueOf(INSTANCE_COUNT * 2))
+                .setProperty(ClusterProperty.OPERATION_CALL_TIMEOUT_MILLIS.getName(), "3000")
                 .setProperty("hazelcast.map.put.all.batch.size", valueOf(BATCH_SIZE));
 
         config.getMapConfig("default")

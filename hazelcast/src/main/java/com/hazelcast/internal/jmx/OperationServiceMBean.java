@@ -17,22 +17,23 @@
 package com.hazelcast.internal.jmx;
 
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.spi.impl.operationservice.InternalOperationService;
+import com.hazelcast.spi.impl.operationservice.OperationService;
+import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 
 import java.util.Map;
 
 import static com.hazelcast.internal.jmx.ManagementService.quote;
-import static com.hazelcast.util.MapUtil.createHashMap;
+import static com.hazelcast.internal.util.MapUtil.createHashMap;
 
 /**
- * Management bean for {@link com.hazelcast.spi.OperationService}
+ * Management bean for {@link OperationService}
  */
 @ManagedDescription("HazelcastInstance.OperationService")
-public class OperationServiceMBean extends HazelcastMBean<InternalOperationService> {
+public class OperationServiceMBean extends HazelcastMBean<OperationServiceImpl> {
 
     private static final int INITIAL_CAPACITY = 3;
 
-    public OperationServiceMBean(HazelcastInstance hazelcastInstance, InternalOperationService operationService,
+    public OperationServiceMBean(HazelcastInstance hazelcastInstance, OperationServiceImpl operationService,
                                  ManagementService service) {
         super(operationService, service);
 
@@ -52,7 +53,7 @@ public class OperationServiceMBean extends HazelcastMBean<InternalOperationServi
 
     @ManagedAnnotation("operationExecutorQueueSize")
     @ManagedDescription("The size of the operation executor queue")
-    int getOperationExecutorQueueSize() {
+    public int getOperationExecutorQueueSize() {
         return managedObject.getOperationExecutorQueueSize();
     }
 

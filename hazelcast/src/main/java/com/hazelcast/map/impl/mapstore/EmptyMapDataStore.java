@@ -16,9 +16,13 @@
 
 package com.hazelcast.map.impl.mapstore;
 
+import com.hazelcast.map.impl.mapstore.writebehind.TxnReservedCapacityCounter;
+import com.hazelcast.map.impl.mapstore.writebehind.entry.DelayedEntry;
+
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
+import java.util.UUID;
 
 /**
  * Empty map data store for providing neutral null behaviour.
@@ -26,8 +30,13 @@ import java.util.Map;
 class EmptyMapDataStore implements MapDataStore {
 
     @Override
-    public Object add(Object key, Object value, long now) {
+    public Object add(Object key, Object value, long expirationTime, long now, UUID transactionId) {
         return value;
+    }
+
+    @Override
+    public void addForcibly(DelayedEntry delayedEntry) {
+
     }
 
     @Override
@@ -35,16 +44,16 @@ class EmptyMapDataStore implements MapDataStore {
     }
 
     @Override
-    public Object addBackup(Object key, Object value, long now) {
+    public Object addBackup(Object key, Object value, long expirationTime, long now, UUID transactionId) {
         return value;
     }
 
     @Override
-    public void remove(Object key, long now) {
+    public void remove(Object key, long now, UUID transactionId) {
     }
 
     @Override
-    public void removeBackup(Object key, long now) {
+    public void removeBackup(Object key, long now, UUID transactionId) {
     }
 
     @Override
@@ -82,6 +91,16 @@ class EmptyMapDataStore implements MapDataStore {
     @Override
     public Object flush(Object key, Object value, boolean backup) {
         return value;
+    }
+
+    @Override
+    public boolean isWithExpirationTime() {
+        return false;
+    }
+
+    @Override
+    public TxnReservedCapacityCounter getTxnReservedCapacityCounter() {
+        return TxnReservedCapacityCounter.EMPTY_COUNTER;
     }
 
     @Override

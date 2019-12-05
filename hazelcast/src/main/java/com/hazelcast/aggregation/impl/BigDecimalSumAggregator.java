@@ -23,6 +23,7 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.util.Objects;
 
 public final class BigDecimalSumAggregator<I> extends AbstractAggregator<I, BigDecimal, BigDecimal>
         implements IdentifiedDataSerializable {
@@ -59,7 +60,7 @@ public final class BigDecimalSumAggregator<I> extends AbstractAggregator<I, BigD
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return AggregatorDataSerializerHook.BIG_DECIMAL_SUM;
     }
 
@@ -75,4 +76,23 @@ public final class BigDecimalSumAggregator<I> extends AbstractAggregator<I, BigD
         this.sum = in.readObject();
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        if (!super.equals(o)) {
+            return false;
+        }
+        BigDecimalSumAggregator<?> that = (BigDecimalSumAggregator<?>) o;
+        return Objects.equals(sum, that.sum);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), sum);
+    }
 }

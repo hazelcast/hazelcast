@@ -24,13 +24,13 @@
         http://www.springframework.org/schema/cache
         http://www.springframework.org/schema/cache/spring-cache.xsd
         http://www.hazelcast.com/schema/spring
-        http://www.hazelcast.com/schema/spring/hazelcast-spring-3.11.xsd">
+        http://www.hazelcast.com/schema/spring/hazelcast-spring-4.0.xsd">
 
     <cache:annotation-driven cache-manager="cacheManager"/>
 
     <hz:hazelcast id="instance">
         <hz:config>
-            <hz:group name="dev" password="dev-pass"/>
+            <hz:cluster-name>dev</hz:cluster-name>
             <hz:network port="5101" port-auto-increment="true">
                 <hz:join>
                     <hz:multicast enabled="false"/>

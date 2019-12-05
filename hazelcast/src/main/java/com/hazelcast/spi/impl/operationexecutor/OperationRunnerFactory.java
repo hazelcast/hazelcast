@@ -16,6 +16,9 @@
 
 package com.hazelcast.spi.impl.operationexecutor;
 
+import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.spi.impl.operationservice.OperationService;
+
 /**
  * A Factory for creating {@link OperationRunner} instances.
  */
@@ -53,7 +56,7 @@ public interface OperationRunnerFactory {
      * problems.
      *
      * @return the created ad hoc OperationRunner.
-     * @see com.hazelcast.spi.OperationService#run(com.hazelcast.spi.Operation)
+     * @see OperationService#run(Operation)
      */
     OperationRunner createAdHocRunner();
 }

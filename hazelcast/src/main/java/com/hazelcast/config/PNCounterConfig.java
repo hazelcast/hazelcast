@@ -16,21 +16,21 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.crdt.pncounter.PNCounter;
+import com.hazelcast.internal.config.ConfigDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.spi.annotation.Beta;
 
 import java.io.IOException;
 
-import static com.hazelcast.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 /**
- * Configuration for a {@link com.hazelcast.crdt.pncounter.PNCounter}
+ * Configuration for a {@link PNCounter}
  *
  * @since 3.10
  */
-@Beta
 public class PNCounterConfig implements IdentifiedDataSerializable, NamedConfig {
     /**
      * The default number of replicas on which state for this CRDT is kept
@@ -44,18 +44,16 @@ public class PNCounterConfig implements IdentifiedDataSerializable, NamedConfig 
 
     private String name = "default";
     private int replicaCount = DEFAULT_REPLICA_COUNT;
-    private String quorumName;
+    private String splitBrainProtectionName;
     private boolean statisticsEnabled = DEFAULT_STATISTICS_ENABLED;
-
-    private transient PNCounterConfigReadOnly readOnly;
 
     public PNCounterConfig() {
     }
 
-    public PNCounterConfig(String name, int replicaCount, String quorumName, boolean statisticsEnabled) {
+    public PNCounterConfig(String name, int replicaCount, String splitBrainProtectionName, boolean statisticsEnabled) {
         this.name = name;
         this.replicaCount = replicaCount;
-        this.quorumName = quorumName;
+        this.splitBrainProtectionName = splitBrainProtectionName;
         this.statisticsEnabled = statisticsEnabled;
     }
 
@@ -64,7 +62,7 @@ public class PNCounterConfig implements IdentifiedDataSerializable, NamedConfig 
     }
 
     public PNCounterConfig(PNCounterConfig config) {
-        this(config.getName(), config.getReplicaCount(), config.getQuorumName(), config.isStatisticsEnabled());
+        this(config.getName(), config.getReplicaCount(), config.getSplitBrainProtectionName(), config.isStatisticsEnabled());
     }
 
     /** Gets the name of the PN counter. */
@@ -127,42 +125,34 @@ public class PNCounterConfig implements IdentifiedDataSerializable, NamedConfig 
      *
      * @param replicaCount the number of replicas for the CRDT state
      * @return the updated PN counter config
-     * @throws ConfigurationException if the {@code replicaCount} is less than 1
+     * @throws InvalidConfigurationException if the {@code replicaCount} is less than 1
      */
     public PNCounterConfig setReplicaCount(int replicaCount) {
         if (replicaCount < 1) {
-            throw new ConfigurationException("Replica count must be greater or equal to 1");
+            throw new InvalidConfigurationException("Replica count must be greater or equal to 1");
         }
         this.replicaCount = replicaCount;
         return this;
     }
 
     /**
-     * Returns the quorum name for operations.
+     * Returns the split brain protection name for operations.
      *
-     * @return the quorum name
+     * @return the split brain protection name
      */
-    public String getQuorumName() {
-        return quorumName;
+    public String getSplitBrainProtectionName() {
+        return splitBrainProtectionName;
     }
 
     /**
-     * Sets the quorum name for operations.
+     * Sets the split brain protection name for operations.
      *
-     * @param quorumName the quorum name
+     * @param splitBrainProtectionName the split brain protection name
      * @return the updated PN counter config
      */
-    public PNCounterConfig setQuorumName(String quorumName) {
-        this.quorumName = quorumName;
+    public PNCounterConfig setSplitBrainProtectionName(String splitBrainProtectionName) {
+        this.splitBrainProtectionName = splitBrainProtectionName;
         return this;
-    }
-
-    /** Returns a read only instance of this config */
-    PNCounterConfig getAsReadOnly() {
-        if (readOnly == null) {
-            readOnly = new PNCounterConfigReadOnly(this);
-        }
-        return readOnly;
     }
 
     @Override
@@ -171,7 +161,7 @@ public class PNCounterConfig implements IdentifiedDataSerializable, NamedConfig 
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ConfigDataSerializerHook.PN_COUNTER_CONFIG;
     }
 
@@ -180,7 +170,7 @@ public class PNCounterConfig implements IdentifiedDataSerializable, NamedConfig 
         out.writeUTF(name);
         out.writeInt(replicaCount);
         out.writeBoolean(statisticsEnabled);
-        out.writeUTF(quorumName);
+        out.writeUTF(splitBrainProtectionName);
     }
 
     @Override
@@ -188,7 +178,7 @@ public class PNCounterConfig implements IdentifiedDataSerializable, NamedConfig 
         name = in.readUTF();
         replicaCount = in.readInt();
         statisticsEnabled = in.readBoolean();
-        quorumName = in.readUTF();
+        splitBrainProtectionName = in.readUTF();
     }
 
     @Override
@@ -212,44 +202,16 @@ public class PNCounterConfig implements IdentifiedDataSerializable, NamedConfig 
         if (!name.equals(that.name)) {
             return false;
         }
-        return quorumName != null ? quorumName.equals(that.quorumName) : that.quorumName == null;
+        return splitBrainProtectionName != null ? splitBrainProtectionName.equals(that.splitBrainProtectionName)
+                : that.splitBrainProtectionName == null;
     }
 
     @Override
     public int hashCode() {
         int result = name.hashCode();
         result = 31 * result + replicaCount;
-        result = 31 * result + (quorumName != null ? quorumName.hashCode() : 0);
+        result = 31 * result + (splitBrainProtectionName != null ? splitBrainProtectionName.hashCode() : 0);
         result = 31 * result + (statisticsEnabled ? 1 : 0);
         return result;
     }
-
-    // not private for testing
-    static class PNCounterConfigReadOnly extends PNCounterConfig {
-
-        PNCounterConfigReadOnly(PNCounterConfig config) {
-            super(config);
-        }
-
-        @Override
-        public PNCounterConfig setName(String name) {
-            throw new UnsupportedOperationException("This config is read-only PN counter: " + getName());
-        }
-
-        @Override
-        public PNCounterConfig setReplicaCount(int replicaCount) {
-            throw new UnsupportedOperationException("This config is read-only PN counter: " + getName());
-        }
-
-        @Override
-        public PNCounterConfig setQuorumName(String quorumName) {
-            throw new UnsupportedOperationException("This config is read-only PN counter: " + getName());
-        }
-
-        @Override
-        public PNCounterConfig setStatisticsEnabled(boolean statisticsEnabled) {
-            throw new UnsupportedOperationException("This config is read-only PN counter: " + getName());
-        }
-    }
-
 }

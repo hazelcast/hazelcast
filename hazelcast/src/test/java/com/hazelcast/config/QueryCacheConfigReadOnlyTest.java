@@ -16,8 +16,11 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.internal.config.EvictionConfigReadOnly;
+import com.hazelcast.internal.config.PredicateConfigReadOnly;
+import com.hazelcast.internal.config.QueryCacheConfigReadOnly;
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -29,21 +32,21 @@ import static java.util.Collections.singletonList;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class QueryCacheConfigReadOnlyTest {
 
     private QueryCacheConfig getReadOnlyConfig() {
-        return new QueryCacheConfig().getAsReadOnly();
+        return new QueryCacheConfigReadOnly(new QueryCacheConfig());
     }
 
     @Test(expected = UnsupportedOperationException.class)
     public void getIndexConfigsOfReadOnlyQueryCacheConfigShouldReturnUnmodifiable() {
         QueryCacheConfig config = new QueryCacheConfig()
-                .addIndexConfig(new MapIndexConfig())
-                .addIndexConfig(new MapIndexConfig());
+                .addIndexConfig(new IndexConfig())
+                .addIndexConfig(new IndexConfig());
 
-        List<MapIndexConfig> indexConfigs = config.getAsReadOnly().getIndexConfigs();
-        indexConfigs.add(new MapIndexConfig());
+        List<IndexConfig> indexConfigs = new QueryCacheConfigReadOnly(config).getIndexConfigs();
+        indexConfigs.add(new IndexConfig());
     }
 
     @Test(expected = UnsupportedOperationException.class)
@@ -52,7 +55,8 @@ public class QueryCacheConfigReadOnlyTest {
                 .addEntryListenerConfig(new EntryListenerConfig())
                 .addEntryListenerConfig(new EntryListenerConfig());
 
-        List<EntryListenerConfig> entryListenerConfigs = config.getAsReadOnly().getEntryListenerConfigs();
+        List<EntryListenerConfig> entryListenerConfigs = new QueryCacheConfigReadOnly(config)
+                .getEntryListenerConfigs();
         entryListenerConfigs.add(new EntryListenerConfig());
     }
 
@@ -98,7 +102,7 @@ public class QueryCacheConfigReadOnlyTest {
 
     @Test(expected = UnsupportedOperationException.class)
     public void setIndexConfigsOfReadOnlyMapStoreConfigShouldFail() {
-        getReadOnlyConfig().setIndexConfigs(singletonList(new MapIndexConfig()));
+        getReadOnlyConfig().setIndexConfigs(singletonList(new IndexConfig()));
     }
 
     @Test(expected = UnsupportedOperationException.class)

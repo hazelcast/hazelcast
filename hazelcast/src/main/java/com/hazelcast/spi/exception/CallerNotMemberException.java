@@ -16,7 +16,7 @@
 
 package com.hazelcast.spi.exception;
 
-import com.hazelcast.nio.Address;
+import com.hazelcast.cluster.Address;
 
 /**
  * A {@link RetryableHazelcastException} that indicates that an operation was sent by a machine which isn't member

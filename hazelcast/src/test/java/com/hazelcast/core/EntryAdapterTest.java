@@ -17,10 +17,12 @@
 package com.hazelcast.core;
 
 import com.hazelcast.config.Config;
+import com.hazelcast.map.IMap;
+import com.hazelcast.map.MapEvent;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -29,7 +31,7 @@ import org.junit.runner.RunWith;
 import java.util.concurrent.CountDownLatch;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class EntryAdapterTest extends HazelcastTestSupport {
     @Test
     public void testEntryAdapterMapEvicted() {

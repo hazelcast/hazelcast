@@ -16,10 +16,10 @@
 
 package com.hazelcast.map.impl.operation;
 
-import com.hazelcast.concurrent.lock.LockWaitNotifyKey;
+import com.hazelcast.internal.locksupport.LockWaitNotifyKey;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.BlockingOperation;
-import com.hazelcast.spi.WaitNotifyKey;
+import com.hazelcast.spi.impl.operationservice.BlockingOperation;
+import com.hazelcast.spi.impl.operationservice.WaitNotifyKey;
 
 public abstract class LockAwareOperation extends KeyBasedMapOperation implements BlockingOperation {
 
@@ -30,12 +30,8 @@ public abstract class LockAwareOperation extends KeyBasedMapOperation implements
         super(name, dataKey);
     }
 
-    protected LockAwareOperation(String name, Data dataKey, long ttl, long maxIdle) {
-        super(name, dataKey, ttl, maxIdle);
-    }
-
-    protected LockAwareOperation(String name, Data dataKey, Data dataValue, long ttl, long maxIdle) {
-        super(name, dataKey, dataValue, ttl, maxIdle);
+    public LockAwareOperation(String name, Data dataKey, Data dataValue) {
+        super(name, dataKey, dataValue);
     }
 
     @Override

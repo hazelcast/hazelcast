@@ -27,7 +27,7 @@ public interface HazelcastOSGiInstance
     /**
      * Gets the delegated (underlying) {@link com.hazelcast.core.HazelcastInstance}.
      *
-     * @return the delegated (underlying) {@link com.hazelcast.core.HazelcastInstance
+     * @return the delegated (underlying) {@link com.hazelcast.core.HazelcastInstance}
      */
     HazelcastInstance getDelegatedInstance();
 

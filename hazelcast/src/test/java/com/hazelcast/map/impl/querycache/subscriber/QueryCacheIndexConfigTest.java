@@ -17,16 +17,18 @@
 package com.hazelcast.map.impl.querycache.subscriber;
 
 import com.hazelcast.config.Config;
+import com.hazelcast.config.IndexConfig;
+import com.hazelcast.config.IndexType;
 import com.hazelcast.config.MapConfig;
-import com.hazelcast.config.MapIndexConfig;
 import com.hazelcast.config.PredicateConfig;
 import com.hazelcast.config.QueryCacheConfig;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IMap;
-import com.hazelcast.query.TruePredicate;
+import com.hazelcast.map.IMap;
+import com.hazelcast.query.Predicates;
+import com.hazelcast.query.impl.IndexUtils;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -36,23 +38,25 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class QueryCacheIndexConfigTest extends HazelcastTestSupport {
 
     @Test
     public void testIndexConfigIsRespected() {
+        IndexConfig indexConfig = IndexUtils.createTestIndexConfig(IndexType.SORTED, "field");
+
         final Config config = new Config();
         final MapConfig mapConfig = new MapConfig("map").addQueryCacheConfig(
-                new QueryCacheConfig().setName("query-cache").setPredicateConfig(new PredicateConfig(TruePredicate.INSTANCE))
-                                      .addIndexConfig(new MapIndexConfig("field", true)));
+                new QueryCacheConfig().setName("query-cache").setPredicateConfig(new PredicateConfig(Predicates.alwaysTrue()))
+                                      .addIndexConfig(indexConfig));
         config.addMapConfig(mapConfig);
 
         final HazelcastInstance instance = createHazelcastInstance(config);
         final IMap<Object, Object> map = instance.getMap("map");
         final DefaultQueryCache<Object, Object> cache = (DefaultQueryCache<Object, Object>) map.getQueryCache("query-cache");
 
-        assertNotNull(cache.indexes.getIndex("field"));
-        assertTrue(cache.indexes.getIndex("field").isOrdered());
+        assertNotNull(cache.indexes.getIndex(indexConfig.getName()));
+        assertTrue(cache.indexes.getIndex(indexConfig.getName()).isOrdered());
     }
 
 }

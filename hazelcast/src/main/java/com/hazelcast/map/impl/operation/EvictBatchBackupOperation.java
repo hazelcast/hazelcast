@@ -17,23 +17,21 @@
 package com.hazelcast.map.impl.operation;
 
 import com.hazelcast.internal.eviction.ExpiredKey;
+import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.map.impl.MapDataSerializerHook;
-import com.hazelcast.map.impl.eviction.Evictor;
 import com.hazelcast.map.impl.record.Record;
-import com.hazelcast.map.impl.recordstore.LazyEntryViewFromRecord;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.BackupOperation;
-import com.hazelcast.spi.ExceptionAction;
 import com.hazelcast.spi.exception.WrongTargetException;
+import com.hazelcast.spi.impl.operationservice.BackupOperation;
+import com.hazelcast.spi.impl.operationservice.ExceptionAction;
 
 import java.io.IOException;
 import java.util.Collection;
 import java.util.LinkedList;
-import java.util.Queue;
 
-import static com.hazelcast.util.TimeUtil.zeroOutMs;
+import static com.hazelcast.internal.util.TimeUtil.zeroOutMs;
 
 /**
  * Used to transfer expired keys from owner replica to backup replicas.
@@ -59,28 +57,20 @@ public class EvictBatchBackupOperation extends MapOperation implements BackupOpe
     }
 
     @Override
-    public void run() {
+    protected void runInternal() {
         if (recordStore == null) {
             return;
         }
 
         for (ExpiredKey expiredKey : expiredKeys) {
-            Record existingRecord = recordStore.getRecord(expiredKey.getKey());
+            Data key = expiredKey.getKey();
+            Record existingRecord = recordStore.getRecord(key);
             if (canEvictRecord(existingRecord, expiredKey)) {
-                recordStore.evict(existingRecord.getKey(), true);
+                recordStore.evict(key, true);
             }
         }
 
         equalizeEntryCountWithPrimary();
-    }
-
-    @Override
-    public void afterRun() throws Exception {
-        try {
-            super.afterRun();
-        } finally {
-            recordStore.disposeDeferredBlocks();
-        }
     }
 
     /**
@@ -97,24 +87,7 @@ public class EvictBatchBackupOperation extends MapOperation implements BackupOpe
             return;
         }
 
-        Evictor evictor = mapContainer.getEvictor();
-        if (evictor != Evictor.NULL_EVICTOR) {
-            for (int i = 0; i < diff; i++) {
-                evictor.evict(recordStore, null);
-            }
-        } else {
-            Queue<Data> keysToRemove = new LinkedList<Data>();
-            Iterable<LazyEntryViewFromRecord> sample = recordStore.getStorage().getRandomSamples(diff);
-            for (LazyEntryViewFromRecord entryViewFromRecord : sample) {
-                Data dataKey = entryViewFromRecord.getRecord().getKey();
-                keysToRemove.add(dataKey);
-            }
-
-            Data dataKey;
-            while ((dataKey = keysToRemove.poll()) != null) {
-                recordStore.evict(dataKey, true);
-            }
-        }
+        recordStore.sampleAndForceRemoveEntries(diff);
 
         assert recordStore.size() == primaryEntryCount : String.format("Failed"
                         + " to remove %d entries while attempting to match"
@@ -151,7 +124,7 @@ public class EvictBatchBackupOperation extends MapOperation implements BackupOpe
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MapDataSerializerHook.EVICT_BATCH_BACKUP;
     }
 
@@ -162,7 +135,7 @@ public class EvictBatchBackupOperation extends MapOperation implements BackupOpe
         out.writeUTF(name);
         out.writeInt(expiredKeys.size());
         for (ExpiredKey expiredKey : expiredKeys) {
-            out.writeData(expiredKey.getKey());
+            IOUtil.writeData(out, expiredKey.getKey());
             out.writeLong(expiredKey.getCreationTime());
         }
         out.writeInt(primaryEntryCount);
@@ -174,9 +147,9 @@ public class EvictBatchBackupOperation extends MapOperation implements BackupOpe
 
         name = in.readUTF();
         int size = in.readInt();
-        expiredKeys = new LinkedList<ExpiredKey>();
+        expiredKeys = new LinkedList<>();
         for (int i = 0; i < size; i++) {
-            expiredKeys.add(new ExpiredKey(in.readData(), in.readLong()));
+            expiredKeys.add(new ExpiredKey(IOUtil.readData(in), in.readLong()));
         }
         primaryEntryCount = in.readInt();
     }

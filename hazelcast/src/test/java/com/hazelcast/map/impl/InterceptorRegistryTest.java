@@ -16,7 +16,7 @@
 
 package com.hazelcast.map.impl;
 
-import com.hazelcast.instance.NodeExtension;
+import com.hazelcast.instance.impl.NodeExtension;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.map.MapInterceptor;
@@ -28,7 +28,7 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.RequireAssertEnabled;
 import com.hazelcast.test.annotation.NightlyTest;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -45,7 +45,7 @@ import static junit.framework.TestCase.assertTrue;
 import static org.mockito.Mockito.mock;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class InterceptorRegistryTest extends HazelcastTestSupport {
 
     private static final ILogger LOGGER = Logger.getLogger(InterceptorRegistryTest.class);

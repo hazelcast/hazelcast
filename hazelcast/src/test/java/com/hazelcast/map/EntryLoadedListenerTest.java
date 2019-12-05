@@ -20,8 +20,6 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IMap;
-import com.hazelcast.core.MapLoader;
 import com.hazelcast.map.listener.EntryAddedListener;
 import com.hazelcast.map.listener.EntryLoadedListener;
 import com.hazelcast.map.listener.EntryUpdatedListener;
@@ -30,7 +28,7 @@ import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -54,7 +52,7 @@ import static org.junit.Assert.assertEquals;
 
 @SuppressWarnings("deprecation")
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class EntryLoadedListenerTest extends HazelcastTestSupport {
 
     private static final TestHazelcastInstanceFactory FACTORY = new TestHazelcastInstanceFactory();
@@ -315,7 +313,7 @@ public class EntryLoadedListenerTest extends HazelcastTestSupport {
         private final AtomicInteger loadEventCount;
         private final AtomicInteger addEventCount;
 
-        public LoadAndAddListener(AtomicInteger loadEventCount, AtomicInteger addEventCount) {
+        LoadAndAddListener(AtomicInteger loadEventCount, AtomicInteger addEventCount) {
             this.loadEventCount = loadEventCount;
             this.addEventCount = addEventCount;
         }
@@ -337,7 +335,7 @@ public class EntryLoadedListenerTest extends HazelcastTestSupport {
         private final AtomicInteger loadEventCount;
         private final AtomicInteger updateEventCount;
 
-        public LoadAndUpdateListener(AtomicInteger loadEventCount, AtomicInteger updateEventCount) {
+        LoadAndUpdateListener(AtomicInteger loadEventCount, AtomicInteger updateEventCount) {
             this.loadEventCount = loadEventCount;
             this.updateEventCount = updateEventCount;
         }
@@ -357,7 +355,7 @@ public class EntryLoadedListenerTest extends HazelcastTestSupport {
 
         private final AtomicInteger addEventCount;
 
-        public AddListener(AtomicInteger addEventCount) {
+        AddListener(AtomicInteger addEventCount) {
             this.addEventCount = addEventCount;
         }
 
@@ -405,17 +403,17 @@ public class EntryLoadedListenerTest extends HazelcastTestSupport {
         }
     }
 
-    public static class Updater extends AbstractEntryProcessor<Integer, Integer> {
+    public static class Updater implements EntryProcessor<Integer, Integer, Integer> {
         @Override
-        public Object process(Map.Entry<Integer, Integer> entry) {
+        public Integer process(Map.Entry<Integer, Integer> entry) {
             entry.setValue(entry.getValue() + 1);
             return entry.getValue();
         }
     }
 
-    public static class Reader extends AbstractEntryProcessor<Integer, Integer> {
+    public static class Reader implements EntryProcessor<Integer, Integer, Integer> {
         @Override
-        public Object process(Map.Entry<Integer, Integer> entry) {
+        public Integer process(Map.Entry<Integer, Integer> entry) {
             return entry.getValue();
         }
     }

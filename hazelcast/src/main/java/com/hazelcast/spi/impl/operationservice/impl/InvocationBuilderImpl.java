@@ -16,13 +16,13 @@
 
 package com.hazelcast.spi.impl.operationservice.impl;
 
-import com.hazelcast.nio.Address;
-import com.hazelcast.spi.InternalCompletableFuture;
-import com.hazelcast.spi.InvocationBuilder;
-import com.hazelcast.spi.Operation;
+import com.hazelcast.executor.impl.ExecutionCallbackAdapter;
+import com.hazelcast.cluster.Address;
+import com.hazelcast.spi.impl.operationservice.InvocationBuilder;
+import com.hazelcast.spi.impl.operationservice.Operation;
 
 /**
- * An {@link com.hazelcast.spi.InvocationBuilder} that is tied to the {@link OperationServiceImpl}.
+ * An {@link InvocationBuilder} that is tied to the {@link OperationServiceImpl}.
  */
 class InvocationBuilderImpl extends InvocationBuilder {
 
@@ -43,23 +43,23 @@ class InvocationBuilderImpl extends InvocationBuilder {
     }
 
     @Override
-    public InternalCompletableFuture invoke() {
+    public InvocationFuture invoke() {
         op.setServiceName(serviceName);
-
         Invocation invocation;
         if (target == null) {
             op.setPartitionId(partitionId).setReplicaIndex(replicaIndex);
             invocation = new PartitionInvocation(
                     context, op, doneCallback, tryCount, tryPauseMillis, callTimeout, resultDeserialized,
-                    failOnIndeterminateOperationState);
+                    failOnIndeterminateOperationState, endpointManager);
         } else {
             invocation = new TargetInvocation(
-                    context, op, target, doneCallback, tryCount, tryPauseMillis, callTimeout, resultDeserialized);
+                    context, op, target, doneCallback, tryCount, tryPauseMillis,
+                    callTimeout, resultDeserialized, endpointManager);
         }
 
-        InternalCompletableFuture future = invocation.invoke();
+        InvocationFuture future = invocation.invoke();
         if (executionCallback != null) {
-            future.andThen(executionCallback);
+            future.whenCompleteAsync(new ExecutionCallbackAdapter(executionCallback));
         }
 
         return future;

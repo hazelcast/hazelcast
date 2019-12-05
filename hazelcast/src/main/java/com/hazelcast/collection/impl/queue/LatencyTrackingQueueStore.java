@@ -16,7 +16,7 @@
 
 package com.hazelcast.collection.impl.queue;
 
-import com.hazelcast.core.QueueStore;
+import com.hazelcast.collection.QueueStore;
 import com.hazelcast.internal.diagnostics.StoreLatencyPlugin;
 import com.hazelcast.internal.diagnostics.StoreLatencyPlugin.LatencyProbe;
 

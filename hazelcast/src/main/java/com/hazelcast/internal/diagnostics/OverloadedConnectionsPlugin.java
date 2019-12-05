@@ -19,27 +19,25 @@ package com.hazelcast.internal.diagnostics;
 import com.hazelcast.internal.networking.OutboundFrame;
 import com.hazelcast.internal.networking.nio.NioChannel;
 import com.hazelcast.internal.networking.nio.NioOutboundPipeline;
-import com.hazelcast.nio.ConnectionManager;
-import com.hazelcast.nio.Packet;
-import com.hazelcast.nio.tcp.TcpIpConnection;
-import com.hazelcast.nio.tcp.TcpIpConnectionManager;
-import com.hazelcast.spi.Operation;
+import com.hazelcast.internal.nio.AggregateEndpointManager;
+import com.hazelcast.internal.nio.NetworkingService;
+import com.hazelcast.internal.nio.Packet;
+import com.hazelcast.internal.nio.tcp.TcpIpConnection;
+import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.spi.properties.HazelcastProperty;
-import com.hazelcast.spi.serialization.SerializationService;
-import com.hazelcast.util.ItemCounter;
+import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.util.ItemCounter;
 
 import java.text.NumberFormat;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.LinkedList;
 import java.util.Queue;
 import java.util.Random;
-import java.util.Set;
 
-import static com.hazelcast.internal.diagnostics.Diagnostics.PREFIX;
 import static java.lang.Math.min;
-import static java.util.Collections.emptySet;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
@@ -65,20 +63,20 @@ public class OverloadedConnectionsPlugin extends DiagnosticsPlugin {
      * If set to 0, the plugin is disabled.
      */
     public static final HazelcastProperty PERIOD_SECONDS
-            = new HazelcastProperty(PREFIX + ".overloaded.connections.period.seconds", 0, SECONDS);
+            = new HazelcastProperty("hazelcast.diagnostics.overloaded.connections.period.seconds", 0, SECONDS);
 
     /**
      * The minimum number of packets in the connection before it is considered to be overloaded.
      */
     public static final HazelcastProperty THRESHOLD
-            = new HazelcastProperty(PREFIX + ".overloaded.connections.threshold", 10000);
+            = new HazelcastProperty("hazelcast.diagnostics.overloaded.connections.threshold", 10000);
 
     /**
      * The number of samples to take from a single overloaded connection. Increasing the number of packages gives
      * more accuracy of the content, but it will come at greater price.
      */
     public static final HazelcastProperty SAMPLES
-            = new HazelcastProperty(PREFIX + ".overloaded.connections.samples", 1000);
+            = new HazelcastProperty("hazelcast.diagnostics.overloaded.connections.samples", 1000);
 
     private static final Queue<OutboundFrame> EMPTY_QUEUE = new LinkedList<OutboundFrame>();
 
@@ -118,7 +116,7 @@ public class OverloadedConnectionsPlugin extends DiagnosticsPlugin {
     public void run(DiagnosticsLogWriter writer) {
         writer.startSection("OverloadedConnections");
 
-        Set<TcpIpConnection> connections = getTcpIpConnections();
+        Collection<TcpIpConnection> connections = getTcpIpConnections();
         for (TcpIpConnection connection : connections) {
             clear();
             scan(writer, connection, false);
@@ -130,13 +128,10 @@ public class OverloadedConnectionsPlugin extends DiagnosticsPlugin {
         writer.endSection();
     }
 
-    private Set<TcpIpConnection> getTcpIpConnections() {
-        ConnectionManager connectionManager = nodeEngine.getNode().getConnectionManager();
-        if (connectionManager instanceof TcpIpConnectionManager) {
-            return ((TcpIpConnectionManager) connectionManager).getActiveConnections();
-        } else {
-            return emptySet();
-        }
+    private Collection<TcpIpConnection> getTcpIpConnections() {
+        NetworkingService networkingService = nodeEngine.getNode().getNetworkingService();
+        AggregateEndpointManager endpointManager = networkingService.getAggregateEndpointManager();
+        return endpointManager.getActiveConnections();
     }
 
     private void scan(DiagnosticsLogWriter writer, TcpIpConnection connection, boolean priority) {

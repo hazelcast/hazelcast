@@ -18,6 +18,8 @@ package com.hazelcast.internal.management.events;
 
 import com.hazelcast.internal.json.JsonObject;
 
+import java.util.UUID;
+
 import static com.hazelcast.internal.management.events.EventMetadata.EventType.WAN_SYNC_FINISHED_MERKLE;
 
 public class WanMerkleSyncFinishedEvent extends AbstractWanSyncFinishedEvent {
@@ -28,10 +30,11 @@ public class WanMerkleSyncFinishedEvent extends AbstractWanSyncFinishedEvent {
     private final double stdDevEntriesPerLeaf;
 
     @SuppressWarnings("checkstyle:parameternumber")
-    public WanMerkleSyncFinishedEvent(String wanReplicationName, String targetGroupName, String mapName, long durationSecs,
+    public WanMerkleSyncFinishedEvent(UUID uuid, String wanReplicationName, String wanPublisherId, String mapName,
+                                      long durationSecs,
                                       int partitionsSynced, int nodesSynced, long recordsSynced, int minLeafEntryCount,
                                       int maxLeafEntryCount, double avgEntriesPerLeaf, double stdDevEntriesPerLeaf) {
-        super(wanReplicationName, targetGroupName, mapName, durationSecs, recordsSynced, partitionsSynced);
+        super(uuid, wanReplicationName, wanPublisherId, mapName, durationSecs, recordsSynced, partitionsSynced);
         this.nodesSynced = nodesSynced;
         this.minLeafEntryCount = minLeafEntryCount;
         this.maxLeafEntryCount = maxLeafEntryCount;

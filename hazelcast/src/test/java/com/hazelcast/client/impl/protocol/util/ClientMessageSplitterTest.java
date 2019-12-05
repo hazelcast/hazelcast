@@ -17,34 +17,48 @@
 package com.hazelcast.client.impl.protocol.util;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.codec.ClientAuthenticationCodec;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.RequireAssertEnabled;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.util.LinkedList;
 import java.util.List;
+import java.util.UUID;
 
-import static com.hazelcast.client.impl.protocol.util.ClientMessageSplitter.getNumberOfSubFrames;
-import static com.hazelcast.client.impl.protocol.util.ClientMessageSplitter.getSubFrame;
-import static com.hazelcast.client.impl.protocol.util.ClientMessageSplitter.getSubFrames;
-import static org.junit.Assert.assertEquals;
+import static com.hazelcast.client.impl.protocol.util.ClientMessageSplitter.getFragments;
+import static groovy.util.GroovyTestCase.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class ClientMessageSplitterTest extends HazelcastTestSupport {
 
     private ClientMessage clientMessage;
 
     @Before
     public void setUp() throws Exception {
-        SafeBuffer byteBuffer = new SafeBuffer(new byte[1024]);
-        clientMessage = ClientMessage.createForEncode(byteBuffer, 0);
-        clientMessage.setFrameLength(1024);
+        String clientName = generateRandomString(1000);
+        String username = generateRandomString(1000);
+        String password = generateRandomString(1000);
+        UUID uuid = UUID.randomUUID();
+        String clientType = generateRandomString(1000);
+        String clientSerializationVersion = generateRandomString(1000);
+        String clusterName = generateRandomString(1000);
+        UUID clusterId = UUID.randomUUID();
+        LinkedList<String> labels = new LinkedList<>();
+        for (int i = 0; i < 10; i++) {
+            labels.add(generateRandomString(1000));
+        }
+
+        clientMessage = ClientAuthenticationCodec.encodeRequest(clientName, username, password, uuid,
+                clientType, (byte) 1, clientSerializationVersion, clusterName, labels);
     }
 
     @Test
@@ -53,55 +67,36 @@ public class ClientMessageSplitterTest extends HazelcastTestSupport {
     }
 
     @Test
-    @RequireAssertEnabled
     public void testGetSubFrames() {
-        List<ClientMessage> frames = getSubFrames(128, clientMessage);
+        List<ClientMessage> fragments = getFragments(128, clientMessage);
+        ClientMessage.ForwardFrameIterator originalIterator = clientMessage.frameIterator();
+        assertEquals(19, fragments.size());
 
-        assertEquals(10, frames.size());
+        assertFragments(fragments, originalIterator);
     }
 
     @Test
     @RequireAssertEnabled
     public void testGetSubFrame_whenFrameSizeGreaterThanFrameLength_thenReturnOriginalMessage() {
-        List<ClientMessage> frame = getSubFrames(1025, clientMessage);
+        List<ClientMessage> fragments = getFragments(4000, clientMessage);
+        ClientMessage.ForwardFrameIterator originalIterator = clientMessage.frameIterator();
 
-        assertEquals(1, frame.size());
-        assertEquals(clientMessage, frame.get(0));
+        assertFragments(fragments, originalIterator);
     }
 
-    @Test(expected = AssertionError.class)
-    @RequireAssertEnabled
-    public void testGetSubFrames_whenInvalidFrameSize_thenThrowAssertionError() {
-        getSubFrames(ClientMessage.HEADER_SIZE - 1, clientMessage);
+    private void assertFragments(List<ClientMessage> fragments, ClientMessage.ForwardFrameIterator originalIterator) {
+        for (ClientMessage fragment : fragments) {
+            ClientMessage.ForwardFrameIterator iterator = fragment.frameIterator();
+            //skip fragmentation header
+            iterator.next();
+            while (iterator.hasNext()) {
+                ClientMessage.Frame actualFrame = iterator.next();
+                ClientMessage.Frame expectedFrame = originalIterator.next();
+                assertEquals(actualFrame.getSize(), expectedFrame.getSize());
+                assertEquals(actualFrame.flags, expectedFrame.flags);
+                Assert.assertArrayEquals(actualFrame.content, expectedFrame.content);
+            }
+        }
     }
 
-    @Test(expected = AssertionError.class)
-    @RequireAssertEnabled
-    public void testGetNumberOfSubFrames_whenInvalidFrameSize_thenThrowAssertionError() {
-        getNumberOfSubFrames(ClientMessage.HEADER_SIZE - 1, clientMessage);
-    }
-
-    @Test(expected = AssertionError.class)
-    @RequireAssertEnabled
-    public void testGetSubFrame_whenNegativeFrameIndex_thenThrowAssertionError() {
-        getSubFrame(ClientMessage.HEADER_SIZE + 1, -1, 10, clientMessage);
-    }
-
-    @Test(expected = AssertionError.class)
-    @RequireAssertEnabled
-    public void testGetSubFrame_whenFrameIndexGreaterNumberOfFrames_thenThrowAssertionError() {
-        getSubFrame(ClientMessage.HEADER_SIZE + 1, 10, 5, clientMessage);
-    }
-
-    @Test(expected = AssertionError.class)
-    @RequireAssertEnabled
-    public void testGetSubFrame_whenInvalidFrameSize_thenThrowAssertionError() {
-        getSubFrame(ClientMessage.HEADER_SIZE - 1, 0, 5, clientMessage);
-    }
-
-    @Test(expected = AssertionError.class)
-    @RequireAssertEnabled
-    public void testGetSubFrame_whenFrameSizeGreaterThanFrameLength_withInvalidFrameIndex_thenThrowAssertionError() {
-        getSubFrame(1025, 1, 5, clientMessage);
-    }
 }

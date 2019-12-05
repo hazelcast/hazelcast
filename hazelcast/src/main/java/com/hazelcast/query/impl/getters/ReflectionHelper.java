@@ -18,8 +18,7 @@ package com.hazelcast.query.impl.getters;
 
 import com.hazelcast.query.QueryException;
 import com.hazelcast.query.impl.AttributeType;
-import com.hazelcast.query.impl.IndexImpl;
-import com.hazelcast.util.ExceptionUtil;
+import com.hazelcast.internal.util.ExceptionUtil;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
@@ -32,11 +31,12 @@ import java.util.List;
 import java.util.UUID;
 
 import static com.hazelcast.query.QueryConstants.THIS_ATTRIBUTE_NAME;
+import static com.hazelcast.query.impl.AbstractIndex.NULL;
 import static com.hazelcast.query.impl.getters.NullGetter.NULL_GETTER;
 import static com.hazelcast.query.impl.getters.NullMultiValueGetter.NULL_MULTIVALUE_GETTER;
 import static com.hazelcast.query.impl.getters.SuffixModifierUtils.getModifierSuffix;
 import static com.hazelcast.query.impl.getters.SuffixModifierUtils.removeModifierSuffix;
-import static com.hazelcast.util.EmptyStatement.ignore;
+import static com.hazelcast.internal.util.EmptyStatement.ignore;
 
 /**
  * Scans your classpath, indexes the metadata, allows you to query it on runtime.
@@ -49,31 +49,27 @@ public final class ReflectionHelper {
     }
 
     public static AttributeType getAttributeType(Class klass) {
-        if (klass == null) {
-            return null;
-        }
-
         if (klass == String.class) {
             return AttributeType.STRING;
-        } else if (klass == int.class || klass == Integer.class) {
+        } else if (klass == Integer.class) {
             return AttributeType.INTEGER;
-        } else if (klass == short.class || klass == Short.class) {
+        } else if (klass == Short.class) {
             return AttributeType.SHORT;
-        } else if (klass == long.class || klass == Long.class) {
+        } else if (klass == Long.class) {
             return AttributeType.LONG;
-        } else if (klass == boolean.class || klass == Boolean.class) {
+        } else if (klass == Boolean.class) {
             return AttributeType.BOOLEAN;
-        } else if (klass == double.class || klass == Double.class) {
+        } else if (klass == Double.class) {
             return AttributeType.DOUBLE;
         } else if (klass == BigDecimal.class) {
             return AttributeType.BIG_DECIMAL;
         } else if (klass == BigInteger.class) {
             return AttributeType.BIG_INTEGER;
-        } else if (klass == float.class || klass == Float.class) {
+        } else if (klass == Float.class) {
             return AttributeType.FLOAT;
-        } else if (klass == byte.class || klass == Byte.class) {
+        } else if (klass == Byte.class) {
             return AttributeType.BYTE;
-        } else if (klass == char.class || klass == Character.class) {
+        } else if (klass == Character.class) {
             return AttributeType.CHAR;
         } else if (klass == Timestamp.class) {
             return AttributeType.SQL_TIMESTAMP;
@@ -90,7 +86,7 @@ public final class ReflectionHelper {
     }
 
     public static Getter createGetter(Object obj, String attribute) {
-        if (obj == null || obj == IndexImpl.NULL) {
+        if (obj == null || obj == NULL) {
             return NULL_GETTER;
         }
 

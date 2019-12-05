@@ -16,12 +16,12 @@
 
 package com.hazelcast.spi.discovery;
 
-import com.hazelcast.nio.Address;
+import com.hazelcast.cluster.Address;
 
 import java.util.Collections;
 import java.util.Map;
 
-import static com.hazelcast.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static java.util.Collections.unmodifiableMap;
 
 /**
@@ -44,7 +44,7 @@ public final class SimpleDiscoveryNode
      * @param privateAddress the discovered node's private address
      */
     public SimpleDiscoveryNode(Address privateAddress) {
-        this(privateAddress, privateAddress, Collections.<String, Object>emptyMap());
+        this(privateAddress, privateAddress, Collections.emptyMap());
     }
 
     /**
@@ -53,7 +53,7 @@ public final class SimpleDiscoveryNode
      * @param privateAddress the discovered node's private address
      * @param properties     the discovered node's additional properties
      */
-    public SimpleDiscoveryNode(Address privateAddress, Map<String, Object> properties) {
+    public SimpleDiscoveryNode(Address privateAddress, Map<String, String> properties) {
         this(privateAddress, privateAddress, properties);
     }
 
@@ -67,7 +67,7 @@ public final class SimpleDiscoveryNode
      * @param publicAddress  the discovered node's public address
      */
     public SimpleDiscoveryNode(Address privateAddress, Address publicAddress) {
-        this(privateAddress, publicAddress, Collections.<String, Object>emptyMap());
+        this(privateAddress, publicAddress, Collections.emptyMap());
     }
 
     /**
@@ -79,7 +79,7 @@ public final class SimpleDiscoveryNode
      * @param publicAddress  the discovered node's public address
      * @param properties     the discovered node's additional properties
      */
-    public SimpleDiscoveryNode(Address privateAddress, Address publicAddress, Map<String, Object> properties) {
+    public SimpleDiscoveryNode(Address privateAddress, Address publicAddress, Map<String, String> properties) {
         checkNotNull(privateAddress, "The private address cannot be null");
         checkNotNull(properties, "The properties cannot be null");
         this.privateAddress = privateAddress;

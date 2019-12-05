@@ -16,10 +16,10 @@
 
 package com.hazelcast.internal.jmx;
 
-import com.hazelcast.core.IList;
+import com.hazelcast.collection.IList;
 
 /**
- * Management bean for {@link com.hazelcast.core.IList}
+ * Management bean for {@link IList}
  */
 @ManagedDescription("IList")
 public class ListMBean extends HazelcastMBean<IList<?>> {

@@ -17,6 +17,7 @@
 package com.hazelcast.internal.eviction;
 
 import com.hazelcast.config.EvictionPolicy;
+import com.hazelcast.spi.eviction.EvictionPolicyComparator;
 
 /**
  * Interface for configuration information about eviction.
@@ -36,15 +37,6 @@ public interface EvictionConfiguration {
      * @return the eviction policy
      */
     EvictionPolicy getEvictionPolicy();
-
-    /**
-     * Gets the type of eviction policy.
-     *
-     * @return the type of eviction policy
-     * @deprecated since 3.9, use {@link #getEvictionPolicy()} instead
-     */
-    @Deprecated
-    EvictionPolicyType getEvictionPolicyType();
 
     /**
      * Gets the class name of the configured {@link EvictionPolicyComparator} implementation.

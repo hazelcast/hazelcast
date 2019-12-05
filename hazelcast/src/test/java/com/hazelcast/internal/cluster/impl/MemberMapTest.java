@@ -17,11 +17,11 @@
 package com.hazelcast.internal.cluster.impl;
 
 import com.hazelcast.instance.BuildInfoProvider;
-import com.hazelcast.instance.MemberImpl;
-import com.hazelcast.nio.Address;
+import com.hazelcast.cluster.impl.MemberImpl;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.RequireAssertEnabled;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.version.MemberVersion;
 import org.junit.Test;
@@ -33,8 +33,9 @@ import java.net.UnknownHostException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 
-import static com.hazelcast.util.UuidUtil.newUnsecureUuidString;
+import static com.hazelcast.internal.util.UuidUtil.newUnsecureUUID;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
@@ -43,7 +44,7 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class MemberMapTest {
 
     private static final MemberVersion VERSION = MemberVersion.of(BuildInfoProvider.getBuildInfo().getVersion());
@@ -51,8 +52,8 @@ public class MemberMapTest {
     @Test(expected = AssertionError.class)
     @RequireAssertEnabled
     public void testConstructor_whenMapsHaveDifferentMembers_thenThrowAssertionError() {
-        Map<Address, MemberImpl> addressMap = new HashMap<Address, MemberImpl>();
-        Map<String, MemberImpl> uuidMap = new HashMap<String, MemberImpl>();
+        Map<Address, MemberImpl> addressMap = new HashMap<>();
+        Map<UUID, MemberImpl> uuidMap = new HashMap<>();
 
         MemberImpl addressMember = newMember(5701);
         MemberImpl uuidMember = newMember(5702);
@@ -115,7 +116,9 @@ public class MemberMapTest {
     @Test(expected = IllegalArgumentException.class)
     public void create_failsWithDuplicateUuid() {
         MemberImpl member1 = newMember(5000);
-        MemberImpl member2 = new MemberImpl(newAddress(5001), VERSION, false, member1.getUuid());
+        MemberImpl member2 = new MemberImpl.Builder(newAddress(5001))
+                .version(VERSION)
+                .uuid(member1.getUuid()).build();
         MemberMap.createNew(member1, member2);
     }
 
@@ -124,8 +127,14 @@ public class MemberMapTest {
         MemberImpl[] members = newMembers(6);
 
         MemberImpl exclude0 = members[0];
-        MemberImpl exclude1 = new MemberImpl(newAddress(6000), VERSION, false, members[1].getUuid());
-        MemberImpl exclude2 = new MemberImpl(members[2].getAddress(), VERSION, false, newUnsecureUuidString());
+        MemberImpl exclude1 = new MemberImpl.Builder(newAddress(6000))
+                .version(VERSION)
+                .uuid(members[1].getUuid())
+                .build();
+        MemberImpl exclude2 = new MemberImpl.Builder(members[2].getAddress())
+                .version(VERSION)
+                .uuid(newUnsecureUUID())
+                .build();
 
         MemberMap map = MemberMap.cloneExcluding(MemberMap.createNew(members), exclude0, exclude1, exclude2);
 
@@ -193,7 +202,10 @@ public class MemberMapTest {
     public void cloneAdding_failsWithDuplicateUuid() {
         MemberImpl[] members = newMembers(3);
 
-        MemberImpl member = new MemberImpl(newAddress(6000), VERSION, false, members[1].getUuid());
+        MemberImpl member = new MemberImpl.Builder(newAddress(6000))
+                .version(VERSION)
+                .uuid(members[1].getUuid())
+                .build();
         MemberMap.cloneAdding(MemberMap.createNew(members), member);
     }
 
@@ -240,7 +252,7 @@ public class MemberMapTest {
         MemberImpl[] members = newMembers(3);
         MemberMap map = MemberMap.createNew(members);
 
-        assertNull(map.getMember(members[0].getAddress(), newUnsecureUuidString()));
+        assertNull(map.getMember(members[0].getAddress(), newUnsecureUUID()));
     }
 
     @Test
@@ -256,7 +268,7 @@ public class MemberMapTest {
         MemberImpl[] members = newMembers(3);
         MemberMap map = MemberMap.createNew(members);
 
-        assertNull(map.getMember(newAddress(6000), newUnsecureUuidString()));
+        assertNull(map.getMember(newAddress(6000), newUnsecureUUID()));
     }
 
     @Test
@@ -368,7 +380,10 @@ public class MemberMapTest {
     }
 
     static MemberImpl newMember(int port) {
-        return new MemberImpl(newAddress(port), VERSION, false, newUnsecureUuidString());
+        return new MemberImpl.Builder(newAddress(port))
+                .version(VERSION)
+                .uuid(newUnsecureUUID())
+                .build();
     }
 
     private static Address newAddress(int port) {
@@ -393,7 +408,7 @@ public class MemberMapTest {
         assertTrue("MemberMap doesn't contain expected " + address, map.contains(address));
     }
 
-    private static void assertContains(MemberMap map, String uuid) {
+    private static void assertContains(MemberMap map, UUID uuid) {
         assertTrue("MemberMap doesn't contain expected " + uuid, map.contains(uuid));
     }
 
@@ -401,7 +416,7 @@ public class MemberMapTest {
         assertFalse("MemberMap contains unexpected " + address, map.contains(address));
     }
 
-    private static void assertNotContains(MemberMap map, String uuid) {
+    private static void assertNotContains(MemberMap map, UUID uuid) {
         assertFalse("MemberMap contains unexpected " + uuid, map.contains(uuid));
     }
 }

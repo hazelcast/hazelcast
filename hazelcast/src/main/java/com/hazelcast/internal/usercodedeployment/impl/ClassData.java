@@ -19,7 +19,6 @@ package com.hazelcast.internal.usercodedeployment.impl;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.nio.serialization.impl.Versioned;
 
 import java.io.IOException;
 import java.util.Collections;
@@ -33,7 +32,7 @@ import java.util.Map;
  * It's wrapped inside own object as it allows to add additional metadata and maintain compatibility
  * with Hazelcast Rolling Upgrade.
  */
-public class ClassData implements IdentifiedDataSerializable, Versioned {
+public class ClassData implements IdentifiedDataSerializable {
 
     private Map<String, byte[]> innerClassDefinitions = Collections.emptyMap();
 
@@ -67,7 +66,7 @@ public class ClassData implements IdentifiedDataSerializable, Versioned {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return UserCodeDeploymentSerializerHook.CLASS_DATA;
     }
 

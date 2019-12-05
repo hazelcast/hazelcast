@@ -21,34 +21,32 @@ import java.util.List;
 
 /**
  * Represents multiple results from a single attribute extraction.
- * <p/>
+ * <p>
  * MultiResult is an aggregate of results that is returned if the ValueExtractor returns multiple results due to a
  * reduce operation executed on a hierarchy of values.
- * <p/>
+ * <p>
  * It sounds counter-intuitive, but a single extraction may return multiple values when arrays or collections are
  * involved.
- * <p/>
+ * <p>
  * Let's have a look at the following data structure:
- * <code>
+ * <pre>
  * class Swap {
- * Leg legs[2];
+ *     Leg legs[2];
  * }
- * <p/>
  * class Leg {
- * String currency;
+ *     String currency;
  * }
- * </code>
- * <p/>
+ * </pre>
+ * <p>
  * The following extraction of the currency attribute <code>legs[any].currency</code> results in two currencies for each
  * Leg. In order to return both values in one result of the extract operation both currencies are returned in a
  * single MultiResult object where each result contains a name of the currency.
  * It allows the user to operate on multiple "reduced" values as if they were single-values.
- * <p/>
+ * <p>
  * Let's have a look at the following queries:
  * <ul>
  * <li>leg[1].currency   = 'EUR'</li>
  * <li>leg[any].currency = 'EUR'</li>
- * <p/>
  * </ul>
  * In the first query, the extraction will return just one currency, whereas the extraction in the second query will
  * return a MultiResult containing two currencies.
@@ -56,14 +54,15 @@ import java.util.List;
  * evaluated against all currencies from the MultiResult. If there is "any" currency that matches the condition the
  * whole predicate will be evaluated to "true" and the matching Swap will be returned.
  * As a result all Swaps will be returned where there's at lease one Leg with EUR currency.
- * <p/>
+ * <p>
  * Other examples:
- * legs -> returns one 'single-value' result -> a collection of values
- * legs[0] -> returns one 'single result' - a Leg object
- * legs[0].currency -> returns one 'multi value' result - an array of Legs
- * legs[any] -> returns a MultiResult - that contains a collection of Leg objects
- * legs[any].currency -> returns a MultiResult - that contains a collection of String objects
- *
+ * <ul>
+ * <li>legs -&gt; returns one 'single-value' result -&gt; a collection of values</li>
+ * <li>legs[0] -&gt; returns one 'single result' - a Leg object</li>
+ * <li>legs[0].currency -&gt; returns one 'multi value' result - an array of Legs</li>
+ * <li>legs[any] -&gt; returns a MultiResult - that contains a collection of Leg objects</li>
+ * <li>legs[any].currency -&gt; returns a MultiResult - that contains a collection of String objects</li>
+ * </ul>
  * @param <T> type of the underlying result store in the MultiResult
  */
 public class MultiResult<T> {

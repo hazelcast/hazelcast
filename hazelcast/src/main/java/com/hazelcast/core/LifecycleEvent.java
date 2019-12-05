@@ -84,7 +84,12 @@ public final class LifecycleEvent {
         /**
          * Fired when a client is disconnected from the member.
          */
-        CLIENT_DISCONNECTED
+        CLIENT_DISCONNECTED,
+
+        /**
+         * Fired when a client is connected to a new cluster.
+         */
+        CLIENT_CHANGED_CLUSTER
     }
 
     final LifecycleState state;

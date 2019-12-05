@@ -17,14 +17,11 @@
 package com.hazelcast.cache.impl.record;
 
 import com.hazelcast.cache.impl.CacheDataSerializerHook;
-import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.version.Version;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
-import javax.cache.expiry.ExpiryPolicy;
 import java.io.IOException;
 
 /**
@@ -36,16 +33,11 @@ import java.io.IOException;
  */
 public abstract class AbstractCacheRecord<V, E> implements CacheRecord<V, E>, IdentifiedDataSerializable {
 
-    /**
-     * Represents when {@link com.hazelcast.cache.ICache#setExpiryPolicy(Object, ExpiryPolicy)} is added.
-     * The constant is used in selective serialization of {@link CacheRecord}s.
-     */
-    public static final Version EXPIRY_POLICY_VERSION = Versions.V3_11;
-
     protected long creationTime = TIME_NOT_AVAILABLE;
+
+    protected volatile int hits;
     protected volatile long expirationTime = TIME_NOT_AVAILABLE;
-    protected volatile long accessTime = TIME_NOT_AVAILABLE;
-    protected volatile int accessHit;
+    protected volatile long lastAccessTime = TIME_NOT_AVAILABLE;
 
     protected AbstractCacheRecord() {
     }
@@ -76,34 +68,30 @@ public abstract class AbstractCacheRecord<V, E> implements CacheRecord<V, E>, Id
 
     @Override
     public long getLastAccessTime() {
-        return accessTime;
+        return lastAccessTime;
     }
 
     @Override
-    public void setAccessTime(long accessTime) {
-        this.accessTime = accessTime;
+    public void setLastAccessTime(long lastAccessTime) {
+        this.lastAccessTime = lastAccessTime;
     }
 
     @Override
-    public int getAccessHit() {
-        return accessHit;
+    public long getHits() {
+        return hits;
     }
 
     @Override
-    public void setAccessHit(int accessHit) {
-        this.accessHit = accessHit;
+    public void setHits(long accessHit) {
+        this.hits = accessHit > Integer.MAX_VALUE
+                ? Integer.MAX_VALUE : (int) accessHit;
     }
 
     @Override
     @SuppressFBWarnings(value = "VO_VOLATILE_INCREMENT",
             justification = "CacheRecord can be accessed by only its own partition thread.")
-    public void incrementAccessHit() {
-        accessHit++;
-    }
-
-    @Override
-    public void resetAccessHit() {
-        accessHit = 0;
+    public void incrementHits() {
+        hits++;
     }
 
     @Override
@@ -115,16 +103,16 @@ public abstract class AbstractCacheRecord<V, E> implements CacheRecord<V, E>, Id
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeLong(creationTime);
         out.writeLong(expirationTime);
-        out.writeLong(accessTime);
-        out.writeInt(accessHit);
+        out.writeLong(lastAccessTime);
+        out.writeInt(hits);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         creationTime = in.readLong();
         expirationTime = in.readLong();
-        accessTime = in.readLong();
-        accessHit = in.readInt();
+        lastAccessTime = in.readLong();
+        hits = in.readInt();
     }
 
     @Override

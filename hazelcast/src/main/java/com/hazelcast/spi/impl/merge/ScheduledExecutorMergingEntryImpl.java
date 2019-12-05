@@ -18,7 +18,7 @@ package com.hazelcast.spi.impl.merge;
 
 import com.hazelcast.scheduledexecutor.impl.ScheduledTaskDescriptor;
 import com.hazelcast.spi.merge.SplitBrainMergeTypes.ScheduledExecutorMergeTypes;
-import com.hazelcast.spi.serialization.SerializationService;
+import com.hazelcast.internal.serialization.SerializationService;
 
 /**
  * Implementation of {@link ScheduledExecutorMergeTypes}.
@@ -38,7 +38,7 @@ public class ScheduledExecutorMergingEntryImpl
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return SplitBrainDataSerializerHook.SCHEDULED_EXECUTOR_MERGING_ENTRY;
     }
 }

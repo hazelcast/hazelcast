@@ -17,47 +17,47 @@
 package com.hazelcast.client.impl.protocol.task.map;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
-import com.hazelcast.client.impl.protocol.task.ListenerMessageTask;
+import com.hazelcast.client.impl.protocol.task.AbstractAddListenerMessageTask;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryEventType;
-import com.hazelcast.core.MapEvent;
-import com.hazelcast.instance.Node;
+import com.hazelcast.instance.impl.Node;
+import com.hazelcast.internal.nio.Connection;
+import com.hazelcast.map.MapEvent;
 import com.hazelcast.map.impl.DataAwareEntryEvent;
 import com.hazelcast.map.impl.MapListenerAdapter;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
-import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MapPermission;
-import com.hazelcast.spi.EventFilter;
+import com.hazelcast.spi.impl.eventservice.EventFilter;
 
 import java.security.Permission;
+import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
+
+import static com.hazelcast.spi.impl.InternalCompletableFuture.newCompletedFuture;
 
 public abstract class AbstractMapAddEntryListenerMessageTask<Parameter>
-        extends AbstractCallableMessageTask<Parameter> implements ListenerMessageTask {
+        extends AbstractAddListenerMessageTask<Parameter> {
 
     public AbstractMapAddEntryListenerMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
     @Override
-    protected Object call() {
+    protected CompletableFuture<UUID> processInternal() {
         final MapService mapService = getService(MapService.SERVICE_NAME);
 
         Object listener = newMapListener();
         MapServiceContext mapServiceContext = mapService.getMapServiceContext();
         String name = getDistributedObjectName();
         EventFilter eventFilter = getEventFilter();
-        String registrationId;
         if (isLocalOnly()) {
-            registrationId = mapServiceContext.addLocalEventListener(listener, eventFilter, name);
-        } else {
-            registrationId = mapServiceContext.addEventListener(listener, eventFilter, name);
+            return newCompletedFuture(mapServiceContext.addLocalEventListener(listener, eventFilter, name));
         }
-        endpoint.addListenerDestroyAction(MapService.SERVICE_NAME, name, registrationId);
-        return registrationId;
+
+        return mapServiceContext.addEventListenerAsync(listener, eventFilter, name);
     }
 
     protected Object newMapListener() {
@@ -111,7 +111,7 @@ public abstract class AbstractMapAddEntryListenerMessageTask<Parameter>
                 return;
             }
             EntryEventType type = event.getEventType();
-            String uuid = event.getMember().getUuid();
+            UUID uuid = event.getMember().getUuid();
             int numberOfEntriesAffected = event.getNumberOfEntriesAffected();
             sendClientMessage(null, encodeEvent(null,
                     null, null, null, type.getType(), uuid, numberOfEntriesAffected));
@@ -120,5 +120,5 @@ public abstract class AbstractMapAddEntryListenerMessageTask<Parameter>
 
     protected abstract ClientMessage encodeEvent(Data keyData, Data newValueData,
                                                  Data oldValueData, Data meringValueData,
-                                                 int type, String uuid, int numberOfEntriesAffected);
+                                                 int type, UUID uuid, int numberOfEntriesAffected);
 }

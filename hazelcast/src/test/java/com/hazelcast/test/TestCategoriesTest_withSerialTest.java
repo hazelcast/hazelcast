@@ -27,7 +27,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-@RunWith(HazelcastParallelClassRunner.class)
+@RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
 public class TestCategoriesTest_withSerialTest extends HazelcastTestSupport {
 
@@ -39,11 +39,12 @@ public class TestCategoriesTest_withSerialTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testAssertThatIsNoParallelTest() {
+    public void testAssertThatNotMultithreadedTest() {
         try {
-            assertThatIsNoParallelTest();
+            assertThatIsNotMultithreadedTest();
+            fail("Expected an exception on this serial test");
         } catch (AssertionError e) {
-            fail("Expected no exception on this non ParallelTest");
+            ignore(e);
         }
     }
 }

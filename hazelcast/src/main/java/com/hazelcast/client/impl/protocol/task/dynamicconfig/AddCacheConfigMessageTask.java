@@ -22,8 +22,8 @@ import com.hazelcast.config.CachePartitionLostListenerConfig;
 import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig;
 import com.hazelcast.config.InMemoryFormat;
-import com.hazelcast.instance.Node;
-import com.hazelcast.nio.Connection;
+import com.hazelcast.instance.impl.Node;
+import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import java.util.ArrayList;
@@ -69,16 +69,16 @@ public class AddCacheConfigMessageTask
         config.setInMemoryFormat(InMemoryFormat.valueOf(parameters.inMemoryFormat));
         config.setKeyType(parameters.keyType);
         config.setManagementEnabled(parameters.managementEnabled);
-        config.setMergePolicy(parameters.mergePolicy);
+        config.setMergePolicyConfig(mergePolicyConfig(parameters.mergePolicy, parameters.mergeBatchSize));
         config.setName(parameters.name);
         if (parameters.partitionLostListenerConfigs != null && !parameters.partitionLostListenerConfigs.isEmpty()) {
             List<CachePartitionLostListenerConfig> listenerConfigs = (List<CachePartitionLostListenerConfig>)
                     adaptListenerConfigs(parameters.partitionLostListenerConfigs);
             config.setPartitionLostListenerConfigs(listenerConfigs);
         } else {
-            config.setPartitionLostListenerConfigs(new ArrayList<CachePartitionLostListenerConfig>());
+            config.setPartitionLostListenerConfigs(new ArrayList<>());
         }
-        config.setQuorumName(parameters.quorumName);
+        config.setSplitBrainProtectionName(parameters.splitBrainProtectionName);
         config.setReadThrough(parameters.readThrough);
         config.setStatisticsEnabled(parameters.statisticsEnabled);
         config.setValueType(parameters.valueType);

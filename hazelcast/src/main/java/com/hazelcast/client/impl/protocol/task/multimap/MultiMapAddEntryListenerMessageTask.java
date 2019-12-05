@@ -18,13 +18,15 @@ package com.hazelcast.client.impl.protocol.task.multimap;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.MultiMapAddEntryListenerCodec;
-import com.hazelcast.instance.Node;
-import com.hazelcast.nio.Connection;
+import com.hazelcast.instance.impl.Node;
+import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.nio.serialization.Data;
+
+import java.util.UUID;
 
 /**
  * Client Protocol Task for handling messages with type ID:
- * {@link com.hazelcast.client.impl.protocol.codec.MultiMapMessageType#MULTIMAP_ADDENTRYLISTENER}
+ * {@link com.hazelcast.client.impl.protocol.codec.MultiMapAddEntryListenerCodec#REQUEST_MESSAGE_TYPE}
  */
 public class MultiMapAddEntryListenerMessageTask
         extends AbstractMultiMapAddEntryListenerMessageTask<MultiMapAddEntryListenerCodec.RequestParameters> {
@@ -44,7 +46,7 @@ public class MultiMapAddEntryListenerMessageTask
     }
 
     @Override
-    protected ClientMessage encodeEvent(Data key, Data value, Data oldValue, int type, String uuid, int numberOfEntriesAffected) {
+    protected ClientMessage encodeEvent(Data key, Data value, Data oldValue, int type, UUID uuid, int numberOfEntriesAffected) {
         return MultiMapAddEntryListenerCodec.encodeEntryEvent(key, value, oldValue,
                 null, type, uuid, numberOfEntriesAffected);
     }
@@ -56,7 +58,7 @@ public class MultiMapAddEntryListenerMessageTask
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return MultiMapAddEntryListenerCodec.encodeResponse((String) response);
+        return MultiMapAddEntryListenerCodec.encodeResponse((UUID) response);
     }
 
     @Override

@@ -18,12 +18,12 @@ package com.hazelcast.cluster;
 
 
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.instance.Node;
+import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Before;
@@ -31,13 +31,15 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.util.UUID;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class ClusterInfoTest extends HazelcastTestSupport {
 
 
@@ -77,7 +79,7 @@ public class ClusterInfoTest extends HazelcastTestSupport {
         final ClusterServiceImpl clusterService = node1.getClusterService();
         long node1ClusterStartTime = clusterService.getClusterClock().getClusterStartTime();
         long clusterUpTime = clusterService.getClusterClock().getClusterUpTime();
-        String node1ClusterId = clusterService.getClusterId();
+        UUID node1ClusterId = clusterService.getClusterId();
 
         assertTrue(clusterUpTime > 0);
         assertNotEquals(node1ClusterStartTime, Long.MIN_VALUE);
@@ -103,7 +105,7 @@ public class ClusterInfoTest extends HazelcastTestSupport {
         final ClusterServiceImpl clusterService = node1.getClusterService();
         long node1ClusterStartTime = clusterService.getClusterClock().getClusterStartTime();
         long clusterUpTime = clusterService.getClusterClock().getClusterUpTime();
-        String node1ClusterId = clusterService.getClusterId();
+        UUID node1ClusterId = clusterService.getClusterId();
 
         assertTrue(clusterUpTime > 0);
         assertTrue(node1.isMaster());

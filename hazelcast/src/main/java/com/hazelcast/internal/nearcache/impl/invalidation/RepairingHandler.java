@@ -19,7 +19,7 @@ package com.hazelcast.internal.nearcache.impl.invalidation;
 import com.hazelcast.internal.nearcache.NearCache;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.serialization.SerializationService;
+import com.hazelcast.internal.serialization.SerializationService;
 
 import java.util.Collection;
 import java.util.Iterator;
@@ -44,14 +44,14 @@ public final class RepairingHandler {
     private final int partitionCount;
     private final boolean serializeKeys;
     private final ILogger logger;
-    private final String localUuid;
+    private final UUID localUuid;
     private final String name;
     private final NearCache nearCache;
     private final SerializationService serializationService;
     private final MinimalPartitionService partitionService;
     private final MetaDataContainer[] metaDataContainers;
 
-    public RepairingHandler(ILogger logger, String localUuid, String name, NearCache nearCache,
+    public RepairingHandler(ILogger logger, UUID localUuid, String name, NearCache nearCache,
                             SerializationService serializationService, MinimalPartitionService partitionService) {
         this.logger = logger;
         this.localUuid = localUuid;
@@ -79,7 +79,7 @@ public final class RepairingHandler {
     /**
      * Handles a single invalidation
      */
-    public void handle(Data key, String sourceUuid, UUID partitionUuid, long sequence) {
+    public void handle(Data key, UUID sourceUuid, UUID partitionUuid, long sequence) {
         // apply invalidation if it's not originated by local member/client (because local
         // Near Caches are invalidated immediately there is no need to invalidate them twice)
         if (!localUuid.equals(sourceUuid)) {
@@ -108,12 +108,12 @@ public final class RepairingHandler {
     /**
      * Handles batch invalidations
      */
-    public void handle(Collection<Data> keys, Collection<String> sourceUuids,
+    public void handle(Collection<Data> keys, Collection<UUID> sourceUuids,
                        Collection<UUID> partitionUuids, Collection<Long> sequences) {
         Iterator<Data> keyIterator = keys.iterator();
         Iterator<Long> sequenceIterator = sequences.iterator();
         Iterator<UUID> partitionUuidIterator = partitionUuids.iterator();
-        Iterator<String> sourceUuidsIterator = sourceUuids.iterator();
+        Iterator<UUID> sourceUuidsIterator = sourceUuids.iterator();
 
         while (keyIterator.hasNext() && sourceUuidsIterator.hasNext()
                 && partitionUuidIterator.hasNext() && sequenceIterator.hasNext()) {

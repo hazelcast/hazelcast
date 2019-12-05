@@ -16,19 +16,19 @@
 
 package com.hazelcast.multimap.impl;
 
-import com.hazelcast.concurrent.lock.LockService;
+import com.hazelcast.internal.locksupport.LockSupportService;
 import com.hazelcast.config.MultiMapConfig;
-import com.hazelcast.spi.DistributedObjectNamespace;
-import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.ServiceNamespace;
-import com.hazelcast.util.ConcurrencyUtil;
-import com.hazelcast.util.ConstructorFunction;
+import com.hazelcast.internal.services.DistributedObjectNamespace;
+import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.internal.services.ServiceNamespace;
+import com.hazelcast.internal.util.ConcurrencyUtil;
+import com.hazelcast.internal.util.ConstructorFunction;
 
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.concurrent.ConcurrentMap;
 
-import static com.hazelcast.util.MapUtil.createConcurrentHashMap;
+import static com.hazelcast.internal.util.MapUtil.createConcurrentHashMap;
 
 public class MultiMapPartitionContainer {
 
@@ -61,9 +61,20 @@ public class MultiMapPartitionContainer {
         return container;
     }
 
-    public MultiMapContainer getMultiMapContainer(String name) {
+    /**
+     * Returns the {@link MultiMapContainer} with the given {@code name}
+     * if exists or {@code null otherwise}. Depending on the {@code isAccess}
+     * parameter this call updates the {@code lastAccessTime} field of the
+     * container.
+     *
+     * @param name     The name of the container to retrieve
+     * @param isAccess Indicates whether or not this call should be treated
+     *                 as an access
+     * @return the container or {@code null} if doesn't exist
+     */
+    public MultiMapContainer getMultiMapContainer(String name, boolean isAccess) {
         MultiMapContainer container = containerMap.get(name);
-        if (container != null) {
+        if (container != null && isAccess) {
             container.access();
         }
         return container;
@@ -96,7 +107,7 @@ public class MultiMapPartitionContainer {
 
     private void clearLockStore(String name) {
         NodeEngine nodeEngine = service.getNodeEngine();
-        LockService lockService = nodeEngine.getSharedService(LockService.SERVICE_NAME);
+        LockSupportService lockService = nodeEngine.getServiceOrNull(LockSupportService.SERVICE_NAME);
         if (lockService != null) {
             DistributedObjectNamespace namespace = new DistributedObjectNamespace(MultiMapService.SERVICE_NAME, name);
             lockService.clearLockStore(partitionId, namespace);

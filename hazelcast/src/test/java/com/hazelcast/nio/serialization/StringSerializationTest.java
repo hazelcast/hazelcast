@@ -20,9 +20,9 @@ import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.internal.serialization.impl.HeapData;
 import com.hazelcast.internal.serialization.impl.SerializationConstants;
-import com.hazelcast.nio.Bits;
-import com.hazelcast.nio.BufferObjectDataInput;
-import com.hazelcast.nio.BufferObjectDataOutput;
+import com.hazelcast.internal.nio.Bits;
+import com.hazelcast.internal.nio.BufferObjectDataInput;
+import com.hazelcast.internal.nio.BufferObjectDataOutput;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
@@ -49,7 +49,9 @@ public class StringSerializationTest {
     private static final String TEST_DATA_TURKISH = "Pijamalı hasta, yağız şoföre çabucak güvendi.";
     private static final String TEST_DATA_JAPANESE = "イロハニホヘト チリヌルヲ ワカヨタレソ ツネナラム";
     private static final String TEST_DATA_ASCII = "The quick brown fox jumps over the lazy dog";
-    private static final String TEST_DATA_ALL = TEST_DATA_TURKISH + TEST_DATA_JAPANESE + TEST_DATA_ASCII;
+    private static final String TEST_DATA_UTF_4_BYTE_EMOJIS = "loudly crying face:\uD83D\uDE2D nerd face: \uD83E\uDD13";
+    private static final String TEST_DATA_ALL =
+            TEST_DATA_TURKISH + TEST_DATA_JAPANESE + TEST_DATA_ASCII + TEST_DATA_UTF_4_BYTE_EMOJIS;
     private static final int TEST_STR_SIZE = 1 << 20;
 
     private static final byte[] TEST_DATA_BYTES_ALL = TEST_DATA_ALL.getBytes(Charset.forName("utf8"));
@@ -80,14 +82,14 @@ public class StringSerializationTest {
 
     @Test
     public void testStringEncode() {
-        byte[] expected = toDataByte(TEST_DATA_BYTES_ALL, TEST_DATA_ALL.length());
+        byte[] expected = toDataByte(TEST_DATA_BYTES_ALL);
         byte[] actual = serializationService.toBytes(TEST_DATA_ALL);
         assertArrayEquals(expected, actual);
     }
 
     @Test
     public void testStringDecode() {
-        Data data = new HeapData(toDataByte(TEST_DATA_BYTES_ALL, TEST_DATA_ALL.length()));
+        Data data = new HeapData(toDataByte(TEST_DATA_BYTES_ALL));
         String actualStr = serializationService.toObject(data);
         assertEquals(TEST_DATA_ALL, actualStr);
     }
@@ -116,7 +118,7 @@ public class StringSerializationTest {
         String actualStr = sb.toString();
         byte[] strBytes = actualStr.getBytes(Charset.forName("utf8"));
         byte[] actualDataBytes = serializationService.toBytes(actualStr);
-        byte[] expectedDataByte = toDataByte(strBytes, actualStr.length());
+        byte[] expectedDataByte = toDataByte(strBytes);
         String decodedStr = serializationService.toObject(new HeapData(expectedDataByte));
         assertArrayEquals("Deserialized byte array do not match utf-8 encoding", expectedDataByte, actualDataBytes);
         assertEquals(decodedStr, actualStr);
@@ -148,7 +150,7 @@ public class StringSerializationTest {
     public void testStringAllCharLetterDecode() {
         String allStr = new String(allChars);
         byte[] expected = allStr.getBytes(Charset.forName("utf8"));
-        Data data = new HeapData(toDataByte(expected, allStr.length()));
+        Data data = new HeapData(toDataByte(expected));
         String actualStr = serializationService.toObject(data);
         assertEquals(allStr, actualStr);
     }
@@ -166,25 +168,25 @@ public class StringSerializationTest {
         assertArrayEquals(stringArray, actualStr);
     }
 
-    private byte[] toDataByte(byte[] input, int length) {
+    private byte[] toDataByte(byte[] input) {
         // the first 4 byte of type id, 4 byte string length and last 4 byte of partition hashCode
         if (serializationService.getByteOrder() == BIG_ENDIAN) {
-            return toDataByteBigEndian(input, length);
+            return toDataByteBigEndian(input);
         } else {
-            return toDataByteLittleEndian(input, length);
+            return toDataByteLittleEndian(input);
         }
     }
 
-    private byte[] toDataByteBigEndian(byte[] input, int length) {
+    private byte[] toDataByteBigEndian(byte[] input) {
         ByteBuffer bf = ByteBuffer.allocate(input.length + 12);
         bf.putInt(0);
         bf.putInt(SerializationConstants.CONSTANT_TYPE_STRING);
-        bf.putInt(length);
+        bf.putInt(input.length);
         bf.put(input);
         return bf.array();
     }
 
-    private byte[] toDataByteLittleEndian(byte[] input, int length) {
+    private byte[] toDataByteLittleEndian(byte[] input) {
         ByteBuffer bf = ByteBuffer.allocate(input.length + 12);
         bf.order(LITTLE_ENDIAN);
         bf.putInt(0);
@@ -194,7 +196,7 @@ public class StringSerializationTest {
         bf.put((byte) 0xFF);
         bf.put((byte) 0xFF);
         bf.put((byte) 0xF5);
-        bf.putInt(length);
+        bf.putInt(input.length);
         bf.put(input);
         return bf.array();
     }

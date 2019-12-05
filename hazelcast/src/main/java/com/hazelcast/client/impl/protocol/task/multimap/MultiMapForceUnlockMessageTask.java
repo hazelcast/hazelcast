@@ -19,15 +19,15 @@ package com.hazelcast.client.impl.protocol.task.multimap;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.MultiMapForceUnlockCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractPartitionMessageTask;
-import com.hazelcast.concurrent.lock.LockService;
-import com.hazelcast.concurrent.lock.operations.UnlockOperation;
-import com.hazelcast.instance.Node;
+import com.hazelcast.internal.locksupport.LockSupportService;
+import com.hazelcast.internal.locksupport.operations.UnlockOperation;
+import com.hazelcast.instance.impl.Node;
 import com.hazelcast.multimap.impl.MultiMapService;
-import com.hazelcast.nio.Connection;
+import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MultiMapPermission;
-import com.hazelcast.spi.DistributedObjectNamespace;
-import com.hazelcast.spi.Operation;
+import com.hazelcast.internal.services.DistributedObjectNamespace;
+import com.hazelcast.spi.impl.operationservice.Operation;
 
 import java.security.Permission;
 
@@ -60,7 +60,7 @@ public class MultiMapForceUnlockMessageTask
 
     @Override
     public String getServiceName() {
-        return LockService.SERVICE_NAME;
+        return LockSupportService.SERVICE_NAME;
     }
 
     @Override

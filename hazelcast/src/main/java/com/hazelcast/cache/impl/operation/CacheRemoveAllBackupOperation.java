@@ -20,19 +20,20 @@ import com.hazelcast.cache.CacheNotExistsException;
 import com.hazelcast.cache.impl.CacheDataSerializerHook;
 import com.hazelcast.cache.impl.ICacheRecordStore;
 import com.hazelcast.cache.impl.ICacheService;
+import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.spi.BackupOperation;
-import com.hazelcast.spi.ObjectNamespace;
-import com.hazelcast.spi.ServiceNamespaceAware;
-import com.hazelcast.spi.impl.AbstractNamedOperation;
+import com.hazelcast.spi.impl.operationservice.BackupOperation;
+import com.hazelcast.internal.services.ObjectNamespace;
+import com.hazelcast.internal.services.ServiceNamespaceAware;
+import com.hazelcast.spi.impl.operationservice.AbstractNamedOperation;
 
 import java.io.IOException;
 import java.util.Set;
 
-import static com.hazelcast.util.SetUtil.createHashSet;
+import static com.hazelcast.internal.util.SetUtil.createHashSet;
 
 /**
  * Backup operation of {@link com.hazelcast.cache.impl.operation.CacheRemoveAllOperation}.
@@ -65,7 +66,7 @@ public class CacheRemoveAllBackupOperation
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return CacheDataSerializerHook.REMOVE_ALL_BACKUP;
     }
 
@@ -111,7 +112,7 @@ public class CacheRemoveAllBackupOperation
         if (keys != null) {
             out.writeInt(keys.size());
             for (Data key : keys) {
-                out.writeData(key);
+                IOUtil.writeData(out, key);
             }
         }
     }
@@ -125,7 +126,7 @@ public class CacheRemoveAllBackupOperation
             int size = in.readInt();
             keys = createHashSet(size);
             for (int i = 0; i < size; i++) {
-                Data key = in.readData();
+                Data key = IOUtil.readData(in);
                 keys.add(key);
             }
         }

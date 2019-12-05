@@ -17,40 +17,45 @@
 package com.hazelcast.client.impl.protocol.task.multimap;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
-import com.hazelcast.client.impl.protocol.task.ListenerMessageTask;
+import com.hazelcast.client.impl.protocol.task.AbstractAddListenerMessageTask;
 import com.hazelcast.core.EntryAdapter;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryEventType;
-import com.hazelcast.core.MapEvent;
-import com.hazelcast.instance.Node;
+import com.hazelcast.instance.impl.Node;
+import com.hazelcast.internal.nio.Connection;
+import com.hazelcast.map.MapEvent;
 import com.hazelcast.map.impl.DataAwareEntryEvent;
 import com.hazelcast.multimap.impl.MultiMapService;
-import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MultiMapPermission;
 
 import java.security.Permission;
+import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 
-public abstract class AbstractMultiMapAddEntryListenerMessageTask<P> extends AbstractCallableMessageTask<P>
-        implements ListenerMessageTask {
+import static com.hazelcast.spi.impl.InternalCompletableFuture.newCompletedFuture;
+
+public abstract class AbstractMultiMapAddEntryListenerMessageTask<P>
+        extends AbstractAddListenerMessageTask<P> {
 
     public AbstractMultiMapAddEntryListenerMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
     @Override
-    protected Object call() throws Exception {
+    protected CompletableFuture<UUID> processInternal() {
         final MultiMapService service = getService(MultiMapService.SERVICE_NAME);
         EntryAdapter listener = new MultiMapListener();
 
         final String name = getDistributedObjectName();
         Data key = getKey();
         boolean includeValue = shouldIncludeValue();
-        String registrationId = service.addListener(name, listener, key, includeValue, isLocalOnly());
-        endpoint.addListenerDestroyAction(MultiMapService.SERVICE_NAME, name, registrationId);
-        return registrationId;
+        if (isLocalOnly()) {
+            return newCompletedFuture(service.addLocalListener(name, listener, key, includeValue));
+        }
+
+        return service.addListenerAsync(name, listener, key, includeValue);
     }
 
     protected abstract boolean shouldIncludeValue();
@@ -92,7 +97,7 @@ public abstract class AbstractMultiMapAddEntryListenerMessageTask<P> extends Abs
                 Data oldValue = dataAwareEntryEvent.getOldValueData();
 
                 final EntryEventType type = event.getEventType();
-                final String uuid = event.getMember().getUuid();
+                final UUID uuid = event.getMember().getUuid();
 
                 sendClientMessage(key, encodeEvent(key, value, oldValue, type.getType(), uuid, 1));
             }
@@ -102,7 +107,7 @@ public abstract class AbstractMultiMapAddEntryListenerMessageTask<P> extends Abs
         public void onMapEvent(MapEvent event) {
             if (endpoint.isAlive()) {
                 final EntryEventType type = event.getEventType();
-                final String uuid = event.getMember().getUuid();
+                final UUID uuid = event.getMember().getUuid();
                 sendClientMessage(null, encodeEvent(null,
                         null, null, type.getType(),
                         uuid, event.getNumberOfEntriesAffected()));
@@ -111,5 +116,5 @@ public abstract class AbstractMultiMapAddEntryListenerMessageTask<P> extends Abs
     }
 
     protected abstract ClientMessage encodeEvent(Data key, Data value, Data oldValue,
-                                                 int type, String uuid, int numberOfEntriesAffected);
+                                                 int type, UUID uuid, int numberOfEntriesAffected);
 }

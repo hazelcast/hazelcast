@@ -17,7 +17,7 @@
 package com.hazelcast.spi.impl.merge;
 
 import com.hazelcast.core.HazelcastException;
-import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.impl.operationservice.Operation;
 
 import java.util.concurrent.CountDownLatch;
 

@@ -23,9 +23,10 @@ import com.hazelcast.projection.Projection;
 import com.hazelcast.query.impl.Extractable;
 
 import java.io.IOException;
+import java.util.Arrays;
 
-import static com.hazelcast.util.Preconditions.checkFalse;
-import static com.hazelcast.util.Preconditions.checkHasText;
+import static com.hazelcast.internal.util.Preconditions.checkFalse;
+import static com.hazelcast.internal.util.Preconditions.checkHasText;
 
 /**
  * Projection that extracts the values of the given attributes and returns them in an Object[] array.
@@ -35,7 +36,7 @@ import static com.hazelcast.util.Preconditions.checkHasText;
  *
  * @param <I> type of the input
  */
-public final class MultiAttributeProjection<I> extends Projection<I, Object[]> implements IdentifiedDataSerializable {
+public final class MultiAttributeProjection<I> implements Projection<I, Object[]>, IdentifiedDataSerializable {
 
     private String[] attributePaths;
 
@@ -73,7 +74,7 @@ public final class MultiAttributeProjection<I> extends Projection<I, Object[]> i
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ProjectionDataSerializerHook.MULTI_ATTRIBUTE;
     }
 
@@ -87,4 +88,20 @@ public final class MultiAttributeProjection<I> extends Projection<I, Object[]> i
         this.attributePaths = in.readUTFArray();
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        MultiAttributeProjection<?> that = (MultiAttributeProjection<?>) o;
+        return Arrays.equals(attributePaths, that.attributePaths);
+    }
+
+    @Override
+    public int hashCode() {
+        return Arrays.hashCode(attributePaths);
+    }
 }

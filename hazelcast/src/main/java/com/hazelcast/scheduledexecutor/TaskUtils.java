@@ -44,6 +44,7 @@ public final class TaskUtils {
      *
      * @param name     The name that the task will have
      * @param callable The callable task to be named
+     * @param <V>      The return type of callable task
      * @return A new Callable implementing the {@link NamedTask} interface
      */
     public static <V> Callable<V> named(final String name, final Callable<V> callable) {

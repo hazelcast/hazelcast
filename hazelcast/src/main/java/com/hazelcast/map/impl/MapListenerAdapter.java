@@ -18,7 +18,7 @@ package com.hazelcast.map.impl;
 
 import com.hazelcast.core.EntryAdapter;
 import com.hazelcast.core.EntryEvent;
-import com.hazelcast.core.MapEvent;
+import com.hazelcast.map.MapEvent;
 import com.hazelcast.map.listener.EntryAddedListener;
 import com.hazelcast.map.listener.EntryEvictedListener;
 import com.hazelcast.map.listener.EntryExpiredListener;
@@ -34,7 +34,7 @@ import com.hazelcast.map.listener.MapEvictedListener;
  * com.hazelcast.map.listener.MapListener}.
  *
  * The difference between this adapter and {@link EntryAdapter} is,
- * {@link EntryAdapter} is deprecated form of this one and it doesn't
+ * {@link EntryAdapter} is more limited form of this one and it doesn't
  * implement newly added listener interfaces.
  *
  * @param <K> key of the map entry

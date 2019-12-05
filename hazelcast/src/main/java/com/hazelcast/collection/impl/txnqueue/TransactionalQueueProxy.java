@@ -18,18 +18,19 @@ package com.hazelcast.collection.impl.txnqueue;
 
 import com.hazelcast.collection.impl.queue.QueueService;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.transaction.impl.Transaction;
 
+import javax.annotation.Nonnull;
 import java.util.concurrent.TimeUnit;
 
-import static com.hazelcast.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static java.lang.Thread.currentThread;
 
 /**
  * Provides proxy for the Transactional Queue.
  *
- * @param <E>
+ * @param <E> the type of elements in the queue.
  */
 public class TransactionalQueueProxy<E> extends TransactionalQueueProxySupport<E> {
 
@@ -38,7 +39,7 @@ public class TransactionalQueueProxy<E> extends TransactionalQueueProxySupport<E
     }
 
     @Override
-    public boolean offer(E e) {
+    public boolean offer(@Nonnull E e) {
         try {
             return offer(e, 0, TimeUnit.MILLISECONDS);
         } catch (InterruptedException ignored) {
@@ -48,7 +49,7 @@ public class TransactionalQueueProxy<E> extends TransactionalQueueProxySupport<E
     }
 
     @Override
-    public boolean offer(E e, long timeout, TimeUnit unit) throws InterruptedException {
+    public boolean offer(@Nonnull E e, long timeout, @Nonnull TimeUnit unit) throws InterruptedException {
         checkNotNull(e, "Offered item should not be null.");
         checkNotNull(unit, "TimeUnit should not be null.");
 
@@ -57,6 +58,7 @@ public class TransactionalQueueProxy<E> extends TransactionalQueueProxySupport<E
         return offerInternal(data, unit.toMillis(timeout));
     }
 
+    @Nonnull
     @Override
     public E take() throws InterruptedException {
         return poll(-1, TimeUnit.MILLISECONDS);
@@ -73,7 +75,7 @@ public class TransactionalQueueProxy<E> extends TransactionalQueueProxySupport<E
     }
 
     @Override
-    public E poll(long timeout, TimeUnit unit) throws InterruptedException {
+    public E poll(long timeout, @Nonnull TimeUnit unit) throws InterruptedException {
         checkNotNull(unit, "TimeUnit should not be null.");
 
         checkTransactionState();

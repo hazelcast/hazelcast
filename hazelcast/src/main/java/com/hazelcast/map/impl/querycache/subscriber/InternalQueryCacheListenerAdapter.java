@@ -17,13 +17,13 @@
 package com.hazelcast.map.impl.querycache.subscriber;
 
 import com.hazelcast.core.EntryEventType;
-import com.hazelcast.core.IMapEvent;
+import com.hazelcast.map.IMapEvent;
 import com.hazelcast.map.EventLostEvent;
 import com.hazelcast.map.impl.ListenerAdapter;
 import com.hazelcast.map.listener.MapListener;
 
 import static com.hazelcast.map.impl.querycache.subscriber.QueryCacheEventListenerAdapters.createQueryCacheListenerAdapters;
-import static com.hazelcast.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 /**
  * Internal listener adapter for the listener of a {@code QueryCache}.

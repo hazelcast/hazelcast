@@ -16,16 +16,18 @@
 
 package com.hazelcast.internal.cluster.impl;
 
+import com.hazelcast.cluster.Cluster;
 import com.hazelcast.cluster.ClusterState;
+import com.hazelcast.cluster.Member;
 import com.hazelcast.config.Config;
-import com.hazelcast.core.Cluster;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.Member;
 import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.internal.cluster.impl.operations.PromoteLiteMemberOp;
 import com.hazelcast.internal.partition.InternalPartition;
-import com.hazelcast.nio.Address;
-import com.hazelcast.spi.InternalCompletableFuture;
+import com.hazelcast.internal.util.RootCauseMatcher;
+import com.hazelcast.internal.util.UuidUtil;
+import com.hazelcast.cluster.Address;
+import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.operationservice.impl.Invocation;
 import com.hazelcast.spi.impl.operationservice.impl.InvocationRegistry;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
@@ -33,10 +35,9 @@ import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.test.annotation.SerializationSamplesExcluded;
-import com.hazelcast.util.UuidUtil;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -45,6 +46,7 @@ import org.junit.runner.RunWith;
 
 import java.util.Map;
 import java.util.concurrent.Callable;
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
@@ -67,7 +69,7 @@ import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class, SerializationSamplesExcluded.class})
+@Category({QuickTest.class, ParallelJVMTest.class, SerializationSamplesExcluded.class})
 public class PromoteLiteMemberTest extends HazelcastTestSupport {
 
     @Rule
@@ -129,7 +131,8 @@ public class PromoteLiteMemberTest extends HazelcastTestSupport {
 
         InternalCompletableFuture<MembersView> future =
                 getOperationService(hz2).invokeOnTarget(ClusterServiceImpl.SERVICE_NAME, op, getAddress(hz3));
-        exception.expect(IllegalStateException.class);
+        exception.expect(CompletionException.class);
+        exception.expect(new RootCauseMatcher(IllegalStateException.class));
         future.join();
     }
 
@@ -156,11 +159,12 @@ public class PromoteLiteMemberTest extends HazelcastTestSupport {
         HazelcastInstance hz2 = factory.newHazelcastInstance(new Config());
 
         PromoteLiteMemberOp op = new PromoteLiteMemberOp();
-        op.setCallerUuid(UuidUtil.newUnsecureUuidString());
+        op.setCallerUuid(UuidUtil.newUnsecureUUID());
 
         InternalCompletableFuture<MembersView> future =
                 getOperationService(hz2).invokeOnTarget(ClusterServiceImpl.SERVICE_NAME, op, getAddress(hz1));
-        exception.expect(IllegalStateException.class);
+        exception.expect(CompletionException.class);
+        exception.expect(new RootCauseMatcher(IllegalStateException.class));
         future.join();
     }
 
@@ -350,25 +354,25 @@ public class PromoteLiteMemberTest extends HazelcastTestSupport {
 
         // Get local member and SET attribute BEFORE promotion
         Member localMember = hz.getCluster().getLocalMember();
-        localMember.setStringAttribute(attribute1, attributeValue);
-        assertEquals(attributeValue, localMember.getStringAttribute(attribute1));
+        localMember.setAttribute(attribute1, attributeValue);
+        assertEquals(attributeValue, localMember.getAttribute(attribute1));
 
         // Promote local Lite member
         hz.getCluster().promoteLocalLiteMember();
 
         // Get local member and SET attribute AFTER promotion
         localMember = hz.getCluster().getLocalMember();
-        localMember.setStringAttribute(attribute2, attributeValue);
+        localMember.setAttribute(attribute2, attributeValue);
 
         // Check attributes from localMember
-        assertEquals(attributeValue, localMember.getStringAttribute(attribute1));
-        assertEquals(attributeValue, localMember.getStringAttribute(attribute2));
+        assertEquals(attributeValue, localMember.getAttribute(attribute1));
+        assertEquals(attributeValue, localMember.getAttribute(attribute2));
 
         // Check attributes from member list
         for (Member member : hz.getCluster().getMembers()) {
             if (member.localMember()) {
-                assertEquals(attributeValue, member.getStringAttribute(attribute1));
-                assertEquals(attributeValue, member.getStringAttribute(attribute2));
+                assertEquals(attributeValue, member.getAttribute(attribute1));
+                assertEquals(attributeValue, member.getAttribute(attribute2));
                 break;
             }
         }

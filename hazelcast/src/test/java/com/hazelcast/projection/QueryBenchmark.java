@@ -17,12 +17,13 @@
 package com.hazelcast.projection;
 
 import com.hazelcast.config.Config;
+import com.hazelcast.config.IndexConfig;
+import com.hazelcast.config.IndexType;
 import com.hazelcast.config.MapConfig;
-import com.hazelcast.config.MapIndexConfig;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IMap;
-import com.hazelcast.query.SqlPredicate;
+import com.hazelcast.map.IMap;
+import com.hazelcast.query.Predicates;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.Fork;
@@ -52,8 +53,8 @@ public class QueryBenchmark {
         Config config = new Config();
         MapConfig mapConfig = new MapConfig("persons");
         config.addMapConfig(mapConfig);
-        mapConfig.addMapIndexConfig(new MapIndexConfig("age", false));
-        mapConfig.addMapIndexConfig(new MapIndexConfig("iq", false));
+        mapConfig.addIndexConfig(new IndexConfig(IndexType.HASH, "age"));
+        mapConfig.addIndexConfig(new IndexConfig(IndexType.HASH, "iq"));
 
         HazelcastInstance hz = Hazelcast.newHazelcastInstance(config);
         map = hz.getMap("persons");
@@ -70,12 +71,12 @@ public class QueryBenchmark {
 
     @Benchmark
     public void testAllIndices() {
-        map.keySet(new SqlPredicate("age=10 and iq=100"));
+        map.keySet(Predicates.sql("age=10 and iq=100"));
     }
 
     @Benchmark
     public void testSuppression() {
-        map.keySet(new SqlPredicate("age=10 and %iq=100"));
+        map.keySet(Predicates.sql("age=10 and %iq=100"));
     }
 
     public static class Person implements Serializable {

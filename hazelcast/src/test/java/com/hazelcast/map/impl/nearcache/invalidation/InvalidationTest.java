@@ -22,10 +22,10 @@ import com.hazelcast.internal.nearcache.impl.invalidation.BatchNearCacheInvalida
 import com.hazelcast.internal.nearcache.impl.invalidation.Invalidation;
 import com.hazelcast.internal.nearcache.impl.invalidation.SingleNearCacheInvalidation;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.serialization.SerializationService;
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
 import org.junit.Test;
@@ -40,7 +40,7 @@ import static com.hazelcast.internal.nearcache.NearCacheTestUtils.getBaseConfig;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastSerialClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class InvalidationTest extends HazelcastTestSupport {
 
     private SerializationService serializationService;
@@ -56,11 +56,11 @@ public class InvalidationTest extends HazelcastTestSupport {
 
         Data key = serializationService.toData("key");
         String mapName = "mapName";
-        String sourceUuid = "sourceUuid";
+        UUID sourceUuid = UUID.randomUUID();
         UUID partitionUuid = UUID.randomUUID();
         singleInvalidation = new SingleNearCacheInvalidation(key, mapName, sourceUuid, partitionUuid, 1);
 
-        List<Invalidation> invalidations = Collections.<Invalidation>singletonList(singleInvalidation);
+        List<Invalidation> invalidations = Collections.singletonList(singleInvalidation);
         batchInvalidation = new BatchNearCacheInvalidation(mapName, invalidations);
     }
 

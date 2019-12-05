@@ -18,17 +18,33 @@ package com.hazelcast.internal.management.events;
 
 import com.hazelcast.internal.json.JsonObject;
 
+import java.util.UUID;
+
 import static com.hazelcast.internal.management.events.EventMetadata.EventType.WAN_SYNC_PROGRESS_UPDATE;
 
-public class WanSyncProgressUpdateEvent extends AbstractWanEventBase {
+public class WanSyncProgressUpdateEvent extends AbstractWanAntiEntropyEventBase {
     private final int partitionsToSync;
     private final int partitionsSynced;
+    private final int recordsSynced;
 
-    public WanSyncProgressUpdateEvent(String wanReplicationName, String targetGroupName, String mapName, int partitionsToSync,
-                                      int partitionsSynced) {
-        super(wanReplicationName, targetGroupName, mapName);
+    public WanSyncProgressUpdateEvent(UUID uuid, String wanReplicationName, String wanPublisherId, String mapName,
+                                      int partitionsToSync, int partitionsSynced, int recordsSynced) {
+        super(uuid, wanReplicationName, wanPublisherId, mapName);
         this.partitionsToSync = partitionsToSync;
         this.partitionsSynced = partitionsSynced;
+        this.recordsSynced = recordsSynced;
+    }
+
+    public int getPartitionsToSync() {
+        return partitionsToSync;
+    }
+
+    public int getPartitionsSynced() {
+        return partitionsSynced;
+    }
+
+    public int getRecordsSynced() {
+        return recordsSynced;
     }
 
     @Override
@@ -41,6 +57,7 @@ public class WanSyncProgressUpdateEvent extends AbstractWanEventBase {
         JsonObject json = super.toJson();
         json.add("partitionsToSync", partitionsToSync);
         json.add("partitionsSynced", partitionsSynced);
+        json.add("recordsSynced", recordsSynced);
         return json;
     }
 }

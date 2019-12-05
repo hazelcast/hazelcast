@@ -27,7 +27,7 @@ import com.hazelcast.spi.discovery.DiscoveryStrategyFactory;
 import com.hazelcast.spi.discovery.NodeFilter;
 import com.hazelcast.spi.discovery.integration.DiscoveryService;
 import com.hazelcast.spi.discovery.integration.DiscoveryServiceSettings;
-import com.hazelcast.util.ServiceLoader;
+import com.hazelcast.internal.util.ServiceLoader;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -38,7 +38,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import static com.hazelcast.util.CollectionUtil.nullToEmpty;
+import static com.hazelcast.internal.util.CollectionUtil.nullToEmpty;
 
 public class DefaultDiscoveryService
         implements DiscoveryService {
@@ -82,8 +82,8 @@ public class DefaultDiscoveryService
     }
 
     @Override
-    public Map<String, Object> discoverLocalMetadata() {
-        Map<String, Object> metadata = new HashMap<String, Object>();
+    public Map<String, String> discoverLocalMetadata() {
+        Map<String, String> metadata = new HashMap<>();
         for (DiscoveryStrategy discoveryStrategy : discoveryStrategies) {
             metadata.putAll(discoveryStrategy.discoverLocalMetadata());
         }

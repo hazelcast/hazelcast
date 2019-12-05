@@ -16,8 +16,8 @@
 
 package com.hazelcast.internal.management.request;
 
-import com.hazelcast.hotrestart.InternalHotRestartService;
-import com.hazelcast.instance.Node;
+import com.hazelcast.internal.hotrestart.InternalHotRestartService;
+import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.management.ManagementCenterService;
 import com.hazelcast.internal.json.JsonObject;
 

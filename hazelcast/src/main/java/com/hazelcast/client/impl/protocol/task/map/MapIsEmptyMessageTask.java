@@ -19,16 +19,19 @@ package com.hazelcast.client.impl.protocol.task.map;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.MapIsEmptyCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractAllPartitionsMessageTask;
-import com.hazelcast.instance.Node;
+import com.hazelcast.instance.impl.Node;
 import com.hazelcast.map.impl.MapService;
+import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.operation.IsEmptyOperationFactory;
-import com.hazelcast.nio.Connection;
+import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MapPermission;
-import com.hazelcast.spi.OperationFactory;
+import com.hazelcast.spi.impl.operationservice.OperationFactory;
 
 import java.security.Permission;
 import java.util.Map;
+
+import static com.hazelcast.map.impl.LocalMapStatsUtil.incrementOtherOperationsCount;
 
 public class MapIsEmptyMessageTask
         extends AbstractAllPartitionsMessageTask<MapIsEmptyCodec.RequestParameters> {
@@ -45,14 +48,15 @@ public class MapIsEmptyMessageTask
     @Override
     protected Object reduce(Map<Integer, Object> map) {
         MapService mapService = getService(MapService.SERVICE_NAME);
+        MapServiceContext mapServiceContext = mapService.getMapServiceContext();
         boolean response = true;
         for (Object result : map.values()) {
-            boolean isEmpty = (Boolean) mapService.getMapServiceContext().toObject(result);
+            boolean isEmpty = (Boolean) mapServiceContext.toObject(result);
             if (!isEmpty) {
                 response = false;
             }
         }
-
+        incrementOtherOperationsCount(mapService, parameters.name);
         return response;
     }
 

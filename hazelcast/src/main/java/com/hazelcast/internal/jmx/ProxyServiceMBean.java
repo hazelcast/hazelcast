@@ -17,15 +17,15 @@
 package com.hazelcast.internal.jmx;
 
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.spi.ProxyService;
+import com.hazelcast.spi.impl.proxyservice.ProxyService;
 
 import java.util.Map;
 
 import static com.hazelcast.internal.jmx.ManagementService.quote;
-import static com.hazelcast.util.MapUtil.createHashMap;
+import static com.hazelcast.internal.util.MapUtil.createHashMap;
 
 /**
- * Management bean for {@link com.hazelcast.spi.ProxyService}
+ * Management bean for {@link ProxyService}
  */
 @ManagedDescription("HazelcastInstance.ProxyService")
 public class ProxyServiceMBean extends HazelcastMBean<ProxyService> {

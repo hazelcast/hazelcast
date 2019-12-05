@@ -27,6 +27,9 @@ import com.hazelcast.nio.serialization.PortableWriter;
 import java.io.IOException;
 import java.util.Arrays;
 
+import static com.hazelcast.internal.nio.IOUtil.readData;
+import static com.hazelcast.internal.nio.IOUtil.writeData;
+
 public class APortable implements Portable {
 
     private boolean bool;
@@ -218,7 +221,7 @@ public class APortable implements Portable {
         dataOutput.writeObject(customByteArraySerializableObject);
         dataOutput.writeObject(customStreamSerializableObject);
 
-        dataOutput.writeData(data);
+        writeData(dataOutput, data);
     }
 
     public void readPortable(PortableReader reader) throws IOException {
@@ -306,7 +309,7 @@ public class APortable implements Portable {
         customByteArraySerializableObject = dataInput.readObject();
         customStreamSerializableObject = dataInput.readObject();
 
-        data = dataInput.readData();
+        data = readData(dataInput);
     }
 
     @Override

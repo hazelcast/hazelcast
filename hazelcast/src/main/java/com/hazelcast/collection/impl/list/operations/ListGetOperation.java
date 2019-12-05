@@ -22,7 +22,7 @@ import com.hazelcast.collection.impl.collection.operations.CollectionOperation;
 import com.hazelcast.collection.impl.list.ListContainer;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.spi.ReadonlyOperation;
+import com.hazelcast.spi.impl.operationservice.ReadonlyOperation;
 
 import java.io.IOException;
 
@@ -46,7 +46,7 @@ public class ListGetOperation extends CollectionOperation implements ReadonlyOpe
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return CollectionDataSerializerHook.LIST_GET;
     }
 

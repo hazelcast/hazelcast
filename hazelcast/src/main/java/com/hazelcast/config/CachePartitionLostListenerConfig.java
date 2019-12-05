@@ -17,7 +17,7 @@
 package com.hazelcast.config;
 
 import com.hazelcast.cache.impl.event.CachePartitionLostListener;
-import com.hazelcast.nio.serialization.BinaryInterface;
+import com.hazelcast.internal.config.ConfigDataSerializerHook;
 
 import java.io.Serializable;
 
@@ -26,10 +26,7 @@ import java.io.Serializable;
  *
  * @see CachePartitionLostListener
  */
-@BinaryInterface
 public class CachePartitionLostListenerConfig extends ListenerConfig implements Serializable {
-
-    private CachePartitionLostListenerConfigReadOnly readOnly;
 
     public CachePartitionLostListenerConfig() {
     }
@@ -45,20 +42,6 @@ public class CachePartitionLostListenerConfig extends ListenerConfig implements 
     public CachePartitionLostListenerConfig(CachePartitionLostListenerConfig config) {
         implementation = config.getImplementation();
         className = config.getClassName();
-    }
-
-    /**
-     * Gets immutable version of this configuration.
-     *
-     * @return immutable version of this configuration
-     * @deprecated this method will be removed in 4.0; it is meant for internal usage only
-     */
-    @Override
-    public CachePartitionLostListenerConfigReadOnly getAsReadOnly() {
-        if (readOnly == null) {
-            readOnly = new CachePartitionLostListenerConfigReadOnly(this);
-        }
-        return readOnly;
     }
 
     @Override
@@ -96,7 +79,7 @@ public class CachePartitionLostListenerConfig extends ListenerConfig implements 
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ConfigDataSerializerHook.CACHE_PARTITION_LOST_LISTENER_CONFIG;
     }
 }

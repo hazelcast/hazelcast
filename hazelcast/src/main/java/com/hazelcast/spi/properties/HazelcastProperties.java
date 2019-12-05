@@ -21,12 +21,13 @@ import com.hazelcast.config.Config;
 import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
 
 import static java.lang.String.format;
 import static java.util.Collections.unmodifiableSet;
 
 /**
- * Container for configured Hazelcast properties ({@see HazelcastProperty}).
+ * Container for configured Hazelcast properties (see {@link HazelcastProperty}).
  * <p>
  * A {@link HazelcastProperty} can be set as:
  * <ul>
@@ -42,6 +43,7 @@ public class HazelcastProperties {
 
     private final Set<String> keys;
     private final Properties properties = new Properties();
+    private Config config;
 
     /**
      * Creates a container with configured Hazelcast properties.
@@ -54,6 +56,7 @@ public class HazelcastProperties {
      */
     public HazelcastProperties(Config config) {
         this(config.getProperties());
+        this.config = config;
     }
 
     /**
@@ -72,6 +75,10 @@ public class HazelcastProperties {
         }
 
         this.keys = unmodifiableSet((Set) properties.keySet());
+    }
+
+    protected Config getConfig() {
+        return config;
     }
 
     /**
@@ -133,7 +140,35 @@ public class HazelcastProperties {
             }
         }
 
+        Function<HazelcastProperties, ?> function = property.getFunction();
+        if (function != null) {
+            return "" + function.apply(this);
+        }
         return property.getDefaultValue();
+    }
+
+    /**
+     * Returns true if value for given key is provided (either as a HazelcastProperty or a System property). Default values are
+     * not taken into account.
+     *
+     * @param property the {@link HazelcastProperty} to check
+     * @return {@code true} if the value was explicitly provided
+     */
+    public boolean containsKey(HazelcastProperty property) {
+        if (property == null) {
+            return false;
+        }
+        return containsKey(property.getName())
+                || containsKey(property.getParent())
+                || containsKey(property.getDeprecatedName());
+    }
+
+    private boolean containsKey(String propertyName) {
+        if (propertyName == null) {
+            return false;
+        }
+        return properties.containsKey(propertyName)
+                || System.getProperty(propertyName) != null;
     }
 
     /**
@@ -230,7 +265,7 @@ public class HazelcastProperties {
      * Returns the configured value of a {@link HazelcastProperty} converted to milliseconds if
      * it is positive, otherwise returns the passed default value.
      *
-     * @param property the {@link HazelcastProperty} to get the value from
+     * @param property     the {@link HazelcastProperty} to get the value from
      * @param defaultValue the default value to return if property has non positive value.
      * @return the value in milliseconds if it is positive, otherwise the passed default value.
      * @throws IllegalArgumentException if the {@link HazelcastProperty} has no {@link TimeUnit}
@@ -254,11 +289,12 @@ public class HazelcastProperties {
     }
 
     /**
-     * Returns the configured enum value of a {@link GroupProperty}.
+     * Returns the configured enum value of a {@link ClusterProperty}.
      * <p>
      * The case of the enum is ignored.
      *
-     * @param property the {@link GroupProperty} to get the value from
+     * @param property the {@link ClusterProperty} to get the value from
+     * @param <E> the enum type
      * @return the enum
      * @throws IllegalArgumentException if the enum value can't be found
      */

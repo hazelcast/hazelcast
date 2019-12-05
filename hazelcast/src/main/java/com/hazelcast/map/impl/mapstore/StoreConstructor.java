@@ -17,13 +17,13 @@
 package com.hazelcast.map.impl.mapstore;
 
 import com.hazelcast.config.MapStoreConfig;
-import com.hazelcast.core.MapStoreFactory;
-import com.hazelcast.nio.ClassLoaderUtil;
-import com.hazelcast.util.ExceptionUtil;
+import com.hazelcast.map.MapStoreFactory;
+import com.hazelcast.internal.nio.ClassLoaderUtil;
+import com.hazelcast.internal.util.ExceptionUtil;
 
 import java.util.Properties;
 
-import static com.hazelcast.util.StringUtil.isNullOrEmpty;
+import static com.hazelcast.internal.util.StringUtil.isNullOrEmpty;
 
 /**
  * Creates a map-store object from one of store-factory, store-class or store impl.

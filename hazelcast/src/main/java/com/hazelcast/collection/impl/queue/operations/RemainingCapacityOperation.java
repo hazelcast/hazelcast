@@ -18,8 +18,8 @@ package com.hazelcast.collection.impl.queue.operations;
 
 import com.hazelcast.collection.impl.queue.QueueContainer;
 import com.hazelcast.collection.impl.queue.QueueDataSerializerHook;
-import com.hazelcast.monitor.impl.LocalQueueStatsImpl;
-import com.hazelcast.spi.ReadonlyOperation;
+import com.hazelcast.internal.monitor.impl.LocalQueueStatsImpl;
+import com.hazelcast.spi.impl.operationservice.ReadonlyOperation;
 
 /**
  * Returns the remaining capacity of the queue based on config max-size
@@ -46,7 +46,7 @@ public class RemainingCapacityOperation extends QueueOperation implements Readon
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return QueueDataSerializerHook.REMAINING_CAPACITY;
     }
 }

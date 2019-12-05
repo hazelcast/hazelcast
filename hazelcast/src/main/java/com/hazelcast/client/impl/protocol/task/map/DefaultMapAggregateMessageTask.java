@@ -17,20 +17,18 @@
 package com.hazelcast.client.impl.protocol.task.map;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.instance.Node;
+import com.hazelcast.instance.impl.Node;
 import com.hazelcast.map.impl.query.AggregationResult;
-import com.hazelcast.nio.Connection;
+import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.projection.Projection;
 import com.hazelcast.query.Predicate;
-import com.hazelcast.query.TruePredicate;
-import com.hazelcast.util.IterationType;
+import com.hazelcast.query.Predicates;
+import com.hazelcast.internal.util.IterationType;
 
 import java.util.Collection;
 
 public abstract class DefaultMapAggregateMessageTask<P>
-        extends AbstractMapQueryMessageTask<P,
-        AggregationResult, AggregationResult, Object> {
-
+        extends AbstractMapQueryMessageTask<P, AggregationResult, AggregationResult, Object> {
 
     public DefaultMapAggregateMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -48,7 +46,7 @@ public abstract class DefaultMapAggregateMessageTask<P>
 
     @Override
     protected Predicate getPredicate() {
-        return TruePredicate.INSTANCE;
+        return Predicates.alwaysTrue();
     }
 
     @Override
@@ -56,6 +54,7 @@ public abstract class DefaultMapAggregateMessageTask<P>
         results.add(aggregationResult);
     }
 
+    @SuppressWarnings({"unchecked", "checkstyle:npathcomplexity"})
     @Override
     protected Object reduce(Collection<AggregationResult> results) {
         if (results.isEmpty()) {
@@ -76,6 +75,12 @@ public abstract class DefaultMapAggregateMessageTask<P>
                 combinedResult.onCombineFinished();
             }
         }
-        return combinedResult != null ? combinedResult.getAggregator().aggregate() : null;
+
+        if (combinedResult == null) {
+            return null;
+        }
+
+        return combinedResult.getAggregator().aggregate();
     }
+
 }

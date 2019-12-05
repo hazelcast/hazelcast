@@ -16,7 +16,7 @@
 
 package com.hazelcast.internal.cluster.fd;
 
-import com.hazelcast.core.Member;
+import com.hazelcast.cluster.Member;
 
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -28,7 +28,7 @@ import java.util.concurrent.ConcurrentMap;
 public class DeadlineClusterFailureDetector implements ClusterFailureDetector {
 
     private final long maxNoHeartbeatMillis;
-    private final ConcurrentMap<Member, Long> heartbeatTimes = new ConcurrentHashMap<Member, Long>();
+    private final ConcurrentMap<Member, Long> heartbeatTimes = new ConcurrentHashMap<>();
 
     public DeadlineClusterFailureDetector(long maxNoHeartbeatMillis) {
         this.maxNoHeartbeatMillis = maxNoHeartbeatMillis;

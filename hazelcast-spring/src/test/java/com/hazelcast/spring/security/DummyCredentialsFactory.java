@@ -16,25 +16,27 @@
 
 package com.hazelcast.spring.security;
 
-import com.hazelcast.config.GroupConfig;
+import javax.security.auth.callback.CallbackHandler;
+
 import com.hazelcast.security.Credentials;
 import com.hazelcast.security.ICredentialsFactory;
 import com.hazelcast.security.UsernamePasswordCredentials;
 
-import java.util.Properties;
-
 public class DummyCredentialsFactory implements ICredentialsFactory {
 
-    private GroupConfig groupConfig;
+    private final Credentials credentials;
+
+    public DummyCredentialsFactory(String username, String password) {
+        credentials = new UsernamePasswordCredentials(username, password);
+    }
 
     @Override
-    public void configure(GroupConfig groupConfig, Properties properties) {
-        this.groupConfig = groupConfig;
+    public void configure(CallbackHandler callbackHandler) {
     }
 
     @Override
     public Credentials newCredentials() {
-        return new UsernamePasswordCredentials(groupConfig.getName(), groupConfig.getPassword());
+        return credentials;
     }
 
     @Override

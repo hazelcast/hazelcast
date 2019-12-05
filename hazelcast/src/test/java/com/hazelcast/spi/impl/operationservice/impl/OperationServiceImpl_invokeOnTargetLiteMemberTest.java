@@ -18,9 +18,8 @@ package com.hazelcast.spi.impl.operationservice.impl;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.spi.InternalCompletableFuture;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.impl.operationservice.InternalOperationService;
+import com.hazelcast.spi.impl.InternalCompletableFuture;
+import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -54,7 +53,7 @@ public class OperationServiceImpl_invokeOnTargetLiteMemberTest
         final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
         final HazelcastInstance instance = factory.newHazelcastInstance(liteMemberConfig);
 
-        final InternalOperationService operationService = getOperationService(instance);
+        final OperationServiceImpl operationService = getOperationService(instance);
         final InternalCompletableFuture<Object> future = operationService.invokeOnTarget(null, operation, getAddress(instance));
 
         assertEquals("foobar", future.get());

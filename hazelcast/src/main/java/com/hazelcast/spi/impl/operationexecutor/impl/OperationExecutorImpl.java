@@ -16,29 +16,28 @@
 
 package com.hazelcast.spi.impl.operationexecutor.impl;
 
-import com.hazelcast.instance.NodeExtension;
-import com.hazelcast.internal.metrics.MetricsProvider;
+import com.hazelcast.cluster.Address;
+import com.hazelcast.instance.impl.NodeExtension;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
-import com.hazelcast.internal.util.RuntimeAvailableProcessors;
+import com.hazelcast.internal.metrics.StaticMetricsProvider;
+import com.hazelcast.internal.nio.Packet;
+import com.hazelcast.internal.util.concurrent.IdleStrategy;
 import com.hazelcast.internal.util.concurrent.MPSCQueue;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
-import com.hazelcast.nio.Address;
-import com.hazelcast.nio.Packet;
-import com.hazelcast.spi.LiveOperations;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.UrgentSystemOperation;
 import com.hazelcast.spi.impl.PartitionSpecificRunnable;
 import com.hazelcast.spi.impl.operationexecutor.OperationExecutor;
 import com.hazelcast.spi.impl.operationexecutor.OperationHostileThread;
 import com.hazelcast.spi.impl.operationexecutor.OperationRunner;
 import com.hazelcast.spi.impl.operationexecutor.OperationRunnerFactory;
+import com.hazelcast.spi.impl.operationservice.LiveOperations;
+import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.PartitionTaskFactory;
+import com.hazelcast.spi.impl.operationservice.UrgentSystemOperation;
 import com.hazelcast.spi.impl.operationservice.impl.operations.Backup;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.spi.properties.HazelcastProperty;
-import com.hazelcast.util.concurrent.IdleStrategy;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.util.BitSet;
@@ -46,13 +45,13 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
 import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.ThreadUtil.createThreadPoolName;
 import static com.hazelcast.spi.impl.operationservice.impl.InboundResponseHandlerSupplier.getIdleStrategy;
-import static com.hazelcast.spi.properties.GroupProperty.GENERIC_OPERATION_THREAD_COUNT;
-import static com.hazelcast.spi.properties.GroupProperty.PARTITION_COUNT;
-import static com.hazelcast.spi.properties.GroupProperty.PARTITION_OPERATION_THREAD_COUNT;
-import static com.hazelcast.spi.properties.GroupProperty.PRIORITY_GENERIC_OPERATION_THREAD_COUNT;
-import static com.hazelcast.util.Preconditions.checkNotNull;
-import static com.hazelcast.util.ThreadUtil.createThreadPoolName;
+import static com.hazelcast.spi.properties.ClusterProperty.GENERIC_OPERATION_THREAD_COUNT;
+import static com.hazelcast.spi.properties.ClusterProperty.PARTITION_COUNT;
+import static com.hazelcast.spi.properties.ClusterProperty.PARTITION_OPERATION_THREAD_COUNT;
+import static com.hazelcast.spi.properties.ClusterProperty.PRIORITY_GENERIC_OPERATION_THREAD_COUNT;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
@@ -77,10 +76,9 @@ import static java.util.concurrent.TimeUnit.SECONDS;
  * </ol>
  */
 @SuppressWarnings("checkstyle:methodcount")
-public final class OperationExecutorImpl implements OperationExecutor, MetricsProvider {
-    public static final HazelcastProperty IDLE_STRATEGY
+public final class OperationExecutorImpl implements OperationExecutor, StaticMetricsProvider {
+    private static final HazelcastProperty IDLE_STRATEGY
             = new HazelcastProperty("hazelcast.operation.partitionthread.idlestrategy", "block");
-
     private static final int TERMINATION_TIMEOUT_SECONDS = 3;
 
     private final ILogger logger;
@@ -131,12 +129,6 @@ public final class OperationExecutorImpl implements OperationExecutor, MetricsPr
 
     private OperationRunner[] initGenericOperationRunners(HazelcastProperties properties, OperationRunnerFactory runnerFactory) {
         int threadCount = properties.getInteger(GENERIC_OPERATION_THREAD_COUNT);
-        if (threadCount <= 0) {
-            // default generic operation thread count
-            int coreSize = RuntimeAvailableProcessors.get();
-            threadCount = Math.max(2, coreSize / 2);
-        }
-
         OperationRunner[] operationRunners = new OperationRunner[threadCount + priorityThreadCount];
         for (int partitionId = 0; partitionId < operationRunners.length; partitionId++) {
             operationRunners[partitionId] = runnerFactory.createGenericRunner();
@@ -149,11 +141,6 @@ public final class OperationExecutorImpl implements OperationExecutor, MetricsPr
                                                             NodeExtension nodeExtension, ClassLoader configClassLoader) {
 
         int threadCount = properties.getInteger(PARTITION_OPERATION_THREAD_COUNT);
-        if (threadCount <= 0) {
-            // default partition operation thread count
-            int coreSize = RuntimeAvailableProcessors.get();
-            threadCount = Math.max(2, coreSize);
-        }
 
         IdleStrategy idleStrategy = getIdleStrategy(properties, IDLE_STRATEGY);
         PartitionOperationThread[] threads = new PartitionOperationThread[threadCount];
@@ -217,14 +204,14 @@ public final class OperationExecutorImpl implements OperationExecutor, MetricsPr
     }
 
     @Override
-    public void provideMetrics(MetricsRegistry registry) {
-        registry.scanAndRegister(this, "operation");
+    public void provideStaticMetrics(MetricsRegistry registry) {
+        registry.registerStaticMetrics(this, "operation");
 
-        registry.collectMetrics((Object[]) genericThreads);
-        registry.collectMetrics((Object[]) partitionThreads);
-        registry.collectMetrics(adHocOperationRunner);
-        registry.collectMetrics((Object[]) genericOperationRunners);
-        registry.collectMetrics((Object[]) partitionOperationRunners);
+        registry.provideMetrics((Object[]) genericThreads);
+        registry.provideMetrics((Object[]) partitionThreads);
+        registry.provideMetrics(adHocOperationRunner);
+        registry.provideMetrics((Object[]) genericOperationRunners);
+        registry.provideMetrics((Object[]) partitionOperationRunners);
     }
 
     @SuppressFBWarnings("EI_EXPOSE_REP")

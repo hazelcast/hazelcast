@@ -18,7 +18,7 @@ package com.hazelcast.spi.impl;
 
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -32,14 +32,14 @@ import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static com.hazelcast.spi.impl.AbstractInvocationFuture.VOID;
+import static com.hazelcast.spi.impl.AbstractInvocationFuture.UNRESOLVED;
 import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class AbstractInvocationFuture_GetTest extends AbstractInvocationFuture_AbstractTest {
 
     @Test
@@ -93,7 +93,7 @@ public class AbstractInvocationFuture_GetTest extends AbstractInvocationFuture_A
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
-                assertNotSame(VOID, future.getState());
+                assertNotSame(UNRESOLVED, future.getState());
             }
         });
 
@@ -120,12 +120,7 @@ public class AbstractInvocationFuture_GetTest extends AbstractInvocationFuture_A
             }
         });
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertNotSame(VOID, future.getState());
-            }
-        });
+        assertTrueEventually(() -> assertNotSame(UNRESOLVED, future.getState()));
 
         sleepSeconds(5);
         thread.get().interrupt();
@@ -155,7 +150,7 @@ public class AbstractInvocationFuture_GetTest extends AbstractInvocationFuture_A
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
-                assertNotSame(VOID, future.getState());
+                assertNotSame(UNRESOLVED, future.getState());
             }
         });
 

@@ -16,12 +16,10 @@
 
 package com.hazelcast.query.impl.predicates;
 
-import com.hazelcast.core.TypeConverter;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.impl.Indexes;
-import com.hazelcast.query.impl.InternalIndex;
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
 import org.junit.Test;
@@ -32,28 +30,22 @@ import static com.hazelcast.query.Predicates.and;
 import static com.hazelcast.query.Predicates.equal;
 import static com.hazelcast.query.Predicates.not;
 import static com.hazelcast.query.Predicates.or;
-import static com.hazelcast.query.impl.TypeConverters.INTEGER_CONVERTER;
 import static org.junit.Assert.assertEquals;
-import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.withSettings;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class FlatteningVisitorTest {
 
     private FlatteningVisitor visitor;
-    private Indexes mockIndexes;
-    private InternalIndex mockIndex;
+    private Indexes indexes;
 
     @Before
     public void setUp() {
-        mockIndexes = mock(Indexes.class);
-        mockIndex = mock(InternalIndex.class);
-        when(mockIndexes.getIndex(anyString())).thenReturn(mockIndex);
+        indexes = mock(Indexes.class);
         visitor = new FlatteningVisitor();
-        useConverter(INTEGER_CONVERTER);
     }
 
     @Test
@@ -67,7 +59,7 @@ public class FlatteningVisitorTest {
         AndPredicate innerAnd = (AndPredicate) and(a2, a3);
         AndPredicate outerAnd = (AndPredicate) and(a1, innerAnd);
 
-        AndPredicate result = (AndPredicate) visitor.visit(outerAnd, mockIndexes);
+        AndPredicate result = (AndPredicate) visitor.visit(outerAnd, indexes);
         Predicate[] inners = result.predicates;
         assertEquals(3, inners.length);
     }
@@ -83,7 +75,7 @@ public class FlatteningVisitorTest {
         OrPredicate innerOr = (OrPredicate) or(a2, a3);
         OrPredicate outerOr = (OrPredicate) or(a1, innerOr);
 
-        OrPredicate result = (OrPredicate) visitor.visit(outerOr, mockIndexes);
+        OrPredicate result = (OrPredicate) visitor.visit(outerOr, indexes);
         Predicate[] inners = result.predicates;
         assertEquals(3, inners.length);
     }
@@ -98,15 +90,8 @@ public class FlatteningVisitorTest {
 
         NotPredicate outerPredicate = (NotPredicate) not((Predicate) negatablePredicate);
 
-        Predicate result = visitor.visit(outerPredicate, mockIndexes);
+        Predicate result = visitor.visit(outerPredicate, indexes);
         assertEquals(negated, result);
     }
 
-    private void useConverter(TypeConverter converter) {
-        when(mockIndex.getConverter()).thenReturn(converter);
-    }
-
-    private void disbledConverter() {
-        when(mockIndex.getConverter()).thenReturn(null);
-    }
 }

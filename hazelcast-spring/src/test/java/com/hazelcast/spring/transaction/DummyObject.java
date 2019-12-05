@@ -20,11 +20,8 @@ import java.io.Serializable;
 
 public class DummyObject implements Serializable {
 
-    private Long id;
-    private String string;
-
-    public DummyObject() {
-    }
+    private final Long id;
+    private final String string;
 
     public DummyObject(long id, String string) {
         this.id = id;
@@ -35,15 +32,31 @@ public class DummyObject implements Serializable {
         return id;
     }
 
-    public void setId(Long id) {
-        this.id = id;
-    }
-
     public String getString() {
         return string;
     }
 
-    public void setString(String string) {
-        this.string = string;
+    @Override
+    public int hashCode() {
+        if (id == null) {
+            return super.hashCode();
+        }
+
+        return id.hashCode();
     }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (!(obj instanceof DummyObject)) {
+            return false;
+        }
+
+        DummyObject other = (DummyObject) obj;
+        if (id == other.id) {
+            return true;
+        }
+
+        return id != null && id.equals(other.id);
+    }
+
 }

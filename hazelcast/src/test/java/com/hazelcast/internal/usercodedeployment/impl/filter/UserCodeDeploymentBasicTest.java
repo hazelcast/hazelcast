@@ -19,12 +19,12 @@ package com.hazelcast.internal.usercodedeployment.impl.filter;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.UserCodeDeploymentConfig;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IMap;
-import com.hazelcast.test.HazelcastParametersRunnerFactory;
+import com.hazelcast.map.IMap;
+import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.util.FilteringClassLoader;
+import com.hazelcast.internal.util.FilteringClassLoader;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -37,8 +37,8 @@ import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(Parameterized.class)
-@Parameterized.UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Parameterized.UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class UserCodeDeploymentBasicTest extends UserCodeDeploymentAbstractTest {
 
     @Parameterized.Parameter
@@ -69,8 +69,8 @@ public class UserCodeDeploymentBasicTest extends UserCodeDeploymentAbstractTest 
         configWithoutEnclosingClass.getUserCodeDeploymentConfig()
                 .setEnabled(true);
 
-        ClassWithTwoInnerClasses.StaticNestedIncrementingEntryProcessor ep =
-                new ClassWithTwoInnerClasses.StaticNestedIncrementingEntryProcessor();
+        ClassWithTwoInnerClasses.StaticNestedIncrementingEntryProcessor<String> ep =
+                new ClassWithTwoInnerClasses.StaticNestedIncrementingEntryProcessor<String>();
 
         factory = newFactory();
         HazelcastInstance instance1WithoutEp = factory.newHazelcastInstance(configWithoutEnclosingClass);

@@ -20,13 +20,12 @@ import com.hazelcast.multimap.impl.MultiMapContainer;
 import com.hazelcast.multimap.impl.MultiMapDataSerializerHook;
 import com.hazelcast.multimap.impl.operations.AbstractBackupAwareMultiMapOperation;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.impl.Versioned;
-import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.transaction.TransactionException;
 
 import java.util.concurrent.TimeUnit;
 
-public class TxnPrepareOperation extends AbstractBackupAwareMultiMapOperation implements Versioned {
+public class TxnPrepareOperation extends AbstractBackupAwareMultiMapOperation {
 
     static final long LOCK_EXTENSION_TIME_IN_MILLIS = TimeUnit.SECONDS.toMillis(10);
 
@@ -66,7 +65,7 @@ public class TxnPrepareOperation extends AbstractBackupAwareMultiMapOperation im
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MultiMapDataSerializerHook.TXN_PREPARE;
     }
 }

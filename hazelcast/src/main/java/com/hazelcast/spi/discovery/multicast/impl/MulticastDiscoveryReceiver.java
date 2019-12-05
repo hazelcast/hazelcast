@@ -17,7 +17,7 @@
 package com.hazelcast.spi.discovery.multicast.impl;
 
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.nio.IOUtil;
+import com.hazelcast.internal.nio.IOUtil;
 
 import java.io.ByteArrayInputStream;
 import java.io.ObjectInputStream;

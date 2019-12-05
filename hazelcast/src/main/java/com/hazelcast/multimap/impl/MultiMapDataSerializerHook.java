@@ -59,7 +59,7 @@ import com.hazelcast.multimap.impl.txn.TxnRollbackBackupOperation;
 import com.hazelcast.multimap.impl.txn.TxnRollbackOperation;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.util.ConstructorFunction;
+import com.hazelcast.internal.util.ConstructorFunction;
 
 import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.MULTIMAP_DS_FACTORY;
 import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.MULTIMAP_DS_FACTORY_ID;
@@ -131,215 +131,47 @@ public class MultiMapDataSerializerHook implements DataSerializerHook {
     public DataSerializableFactory createFactory() {
         ConstructorFunction<Integer, IdentifiedDataSerializable>[] constructors
                 = new ConstructorFunction[DELETE_BACKUP + 1];
-        constructors[CLEAR_BACKUP] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new ClearBackupOperation();
-            }
-        };
-        constructors[CLEAR] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new ClearOperation();
-            }
-        };
-        constructors[CONTAINS_ENTRY] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new ContainsEntryOperation();
-            }
-        };
-        constructors[COUNT] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new CountOperation();
-            }
-        };
-        constructors[ENTRY_SET] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new EntrySetOperation();
-            }
-        };
-        constructors[GET_ALL] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new GetAllOperation();
-            }
-        };
-        constructors[KEY_SET] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new KeySetOperation();
-            }
-        };
-        constructors[PUT_BACKUP] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new PutBackupOperation();
-            }
-        };
-        constructors[PUT] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new PutOperation();
-            }
-        };
-        constructors[REMOVE_ALL_BACKUP] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new RemoveAllBackupOperation();
-            }
-        };
-        constructors[REMOVE_ALL] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new RemoveAllOperation();
-            }
-        };
-        constructors[REMOVE_BACKUP] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new RemoveBackupOperation();
-            }
-        };
-        constructors[REMOVE] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new RemoveOperation();
-            }
-        };
-        constructors[SIZE] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new SizeOperation();
-            }
-        };
-        constructors[VALUES] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new ValuesOperation();
-            }
-        };
-
-
-        constructors[TXN_COMMIT_BACKUP] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new TxnCommitBackupOperation();
-            }
-        };
-        constructors[TXN_COMMIT] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new TxnCommitOperation();
-            }
-        };
-        constructors[TXN_GENERATE_RECORD_ID] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new TxnGenerateRecordIdOperation();
-            }
-        };
-        constructors[TXN_LOCK_AND_GET] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new TxnLockAndGetOperation();
-            }
-        };
-        constructors[TXN_PREPARE_BACKUP] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new TxnPrepareBackupOperation();
-            }
-        };
-        constructors[TXN_PREPARE] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new TxnPrepareOperation();
-            }
-        };
-        constructors[TXN_PUT] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new TxnPutOperation();
-            }
-        };
-        constructors[TXN_PUT_BACKUP] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new TxnPutBackupOperation();
-            }
-        };
-        constructors[TXN_REMOVE] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new TxnRemoveOperation();
-            }
-        };
-        constructors[TXN_REMOVE_BACKUP] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new TxnRemoveBackupOperation();
-            }
-        };
-        constructors[TXN_REMOVE_ALL] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new TxnRemoveAllOperation();
-            }
-        };
-        constructors[TXN_REMOVE_ALL_BACKUP] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new TxnRemoveAllBackupOperation();
-            }
-        };
-        constructors[TXN_ROLLBACK_BACKUP] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new TxnRollbackBackupOperation();
-            }
-        };
-        constructors[TXN_ROLLBACK] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new TxnRollbackOperation();
-            }
-        };
-        constructors[MULTIMAP_OP_FACTORY] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new MultiMapOperationFactory();
-            }
-        };
-        constructors[MULTIMAP_TRANSACTION_LOG_RECORD] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new MultiMapTransactionLogRecord();
-            }
-        };
-        constructors[MULTIMAP_EVENT_FILTER] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new MultiMapEventFilter();
-            }
-        };
-        constructors[MULTIMAP_RECORD] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new MultiMapRecord();
-            }
-        };
-        constructors[MULTIMAP_REPLICATION_OPERATION] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new MultiMapReplicationOperation();
-            }
-        };
-        constructors[MULTIMAP_RESPONSE] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new MultiMapResponse();
-            }
-        };
-        constructors[ENTRY_SET_RESPONSE] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new EntrySetResponse();
-            }
-        };
-        constructors[MERGE_CONTAINER] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new MultiMapMergeContainer();
-            }
-        };
-        constructors[MERGE_OPERATION] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new MergeOperation();
-            }
-        };
-        constructors[MERGE_BACKUP_OPERATION] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new MergeBackupOperation();
-            }
-        };
-        constructors[DELETE] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            @Override
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new DeleteOperation();
-            }
-        };
-       constructors[DELETE_BACKUP] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            @Override
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new DeleteBackupOperation();
-            }
-        };
+        constructors[CLEAR_BACKUP] = arg -> new ClearBackupOperation();
+        constructors[CLEAR] = arg -> new ClearOperation();
+        constructors[CONTAINS_ENTRY] = arg -> new ContainsEntryOperation();
+        constructors[COUNT] = arg -> new CountOperation();
+        constructors[ENTRY_SET] = arg -> new EntrySetOperation();
+        constructors[GET_ALL] = arg -> new GetAllOperation();
+        constructors[KEY_SET] = arg -> new KeySetOperation();
+        constructors[PUT_BACKUP] = arg -> new PutBackupOperation();
+        constructors[PUT] = arg -> new PutOperation();
+        constructors[REMOVE_ALL_BACKUP] = arg -> new RemoveAllBackupOperation();
+        constructors[REMOVE_ALL] = arg -> new RemoveAllOperation();
+        constructors[REMOVE_BACKUP] = arg -> new RemoveBackupOperation();
+        constructors[REMOVE] = arg -> new RemoveOperation();
+        constructors[SIZE] = arg -> new SizeOperation();
+        constructors[VALUES] = arg -> new ValuesOperation();
+        constructors[TXN_COMMIT_BACKUP] = arg -> new TxnCommitBackupOperation();
+        constructors[TXN_COMMIT] = arg -> new TxnCommitOperation();
+        constructors[TXN_GENERATE_RECORD_ID] = arg -> new TxnGenerateRecordIdOperation();
+        constructors[TXN_LOCK_AND_GET] = arg -> new TxnLockAndGetOperation();
+        constructors[TXN_PREPARE_BACKUP] = arg -> new TxnPrepareBackupOperation();
+        constructors[TXN_PREPARE] = arg -> new TxnPrepareOperation();
+        constructors[TXN_PUT] = arg -> new TxnPutOperation();
+        constructors[TXN_PUT_BACKUP] = arg -> new TxnPutBackupOperation();
+        constructors[TXN_REMOVE] = arg -> new TxnRemoveOperation();
+        constructors[TXN_REMOVE_BACKUP] = arg -> new TxnRemoveBackupOperation();
+        constructors[TXN_REMOVE_ALL] = arg -> new TxnRemoveAllOperation();
+        constructors[TXN_REMOVE_ALL_BACKUP] = arg -> new TxnRemoveAllBackupOperation();
+        constructors[TXN_ROLLBACK_BACKUP] = arg -> new TxnRollbackBackupOperation();
+        constructors[TXN_ROLLBACK] = arg -> new TxnRollbackOperation();
+        constructors[MULTIMAP_OP_FACTORY] = arg -> new MultiMapOperationFactory();
+        constructors[MULTIMAP_TRANSACTION_LOG_RECORD] = arg -> new MultiMapTransactionLogRecord();
+        constructors[MULTIMAP_EVENT_FILTER] = arg -> new MultiMapEventFilter();
+        constructors[MULTIMAP_RECORD] = arg -> new MultiMapRecord();
+        constructors[MULTIMAP_REPLICATION_OPERATION] = arg -> new MultiMapReplicationOperation();
+        constructors[MULTIMAP_RESPONSE] = arg -> new MultiMapResponse();
+        constructors[ENTRY_SET_RESPONSE] = arg -> new EntrySetResponse();
+        constructors[MERGE_CONTAINER] = arg -> new MultiMapMergeContainer();
+        constructors[MERGE_OPERATION] = arg -> new MergeOperation();
+        constructors[MERGE_BACKUP_OPERATION] = arg -> new MergeBackupOperation();
+        constructors[DELETE] = arg -> new DeleteOperation();
+        constructors[DELETE_BACKUP] = arg -> new DeleteBackupOperation();
 
         return new ArrayDataSerializableFactory(constructors);
     }

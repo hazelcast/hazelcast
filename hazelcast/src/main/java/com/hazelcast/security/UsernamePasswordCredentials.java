@@ -16,96 +16,124 @@
 
 package com.hazelcast.security;
 
-import com.hazelcast.nio.serialization.BinaryInterface;
-import com.hazelcast.nio.serialization.PortableReader;
-import com.hazelcast.nio.serialization.PortableWriter;
-import com.hazelcast.spi.impl.SpiPortableHook;
+import com.hazelcast.internal.serialization.BinaryInterface;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.spi.impl.SpiDataSerializerHook;
 
 import java.io.IOException;
 
-import static com.hazelcast.util.Preconditions.checkNotNull;
-import static com.hazelcast.util.StringUtil.bytesToString;
-import static com.hazelcast.util.StringUtil.stringToBytes;
-
 /**
- * Simple implementation of {@link Credentials} using
- * username and password as security attributes.
+ * Simple implementation of {@link PasswordCredentials} using
+ * name and password as security attributes.
  */
 @BinaryInterface
-public class UsernamePasswordCredentials extends AbstractCredentials {
+public class UsernamePasswordCredentials implements PasswordCredentials, IdentifiedDataSerializable {
 
     private static final long serialVersionUID = -1508314631354255039L;
 
-    private byte[] password;
+    private String name;
+    private String password;
 
     public UsernamePasswordCredentials() {
     }
 
     public UsernamePasswordCredentials(String username, String password) {
-        super(username);
-        checkNotNull(password);
-        this.password = stringToBytes(password);
-    }
-
-    /**
-     * Gets the user name.
-     *
-     * @return the user name
-     */
-    public String getUsername() {
-        return getPrincipal();
+        this.name = username;
+        this.password = password;
     }
 
     /**
      * Gets the password.
-     *
-     * @return the password
      */
+    @Override
     public String getPassword() {
-        checkNotNull(password);
-        return bytesToString(password);
+        return password;
     }
 
     /**
-     * Sets the user name.
-     *
-     * @param username the user name to set
-     */
-    public void setUsername(String username) {
-        setPrincipal(username);
-    }
-
-    /**
-     * Sets the password.
-     *
      * @param password the password to set
      */
     public void setPassword(String password) {
-        checkNotNull(password);
-        this.password = stringToBytes(password);
+        this.password = password;
     }
 
     @Override
-    protected void writePortableInternal(PortableWriter writer) throws IOException {
-        writer.writeByteArray("pwd", password);
+    public String getName() {
+        return name;
+    }
+
+    /**
+     * @param name the name to set
+     */
+    public void setName(String name) {
+        this.name = name;
     }
 
     @Override
-    protected void readPortableInternal(PortableReader reader) throws IOException {
-        password = reader.readByteArray("pwd");
-    }
-
     public int getFactoryId() {
-        return SpiPortableHook.ID;
+        return SpiDataSerializerHook.F_ID;
     }
 
     @Override
     public int getClassId() {
-        return SpiPortableHook.USERNAME_PWD_CRED;
+        return SpiDataSerializerHook.USERNAME_PWD_CRED;
     }
 
     @Override
     public String toString() {
-        return "UsernamePasswordCredentials [username=" + getUsername() + "]";
+        return "UsernamePasswordCredentials{name=" + name + "}";
     }
+
+    @Override
+    public void writeData(ObjectDataOutput out) throws IOException {
+        out.writeUTF(name);
+        out.writeUTF(password);
+    }
+
+    @Override
+    public void readData(ObjectDataInput in) throws IOException {
+        name = in.readUTF();
+        password = in.readUTF();
+    }
+
+    @Override
+    public int hashCode() {
+        final int prime = 31;
+        int result = 1;
+        result = prime * result + ((name == null) ? 0 : name.hashCode());
+        result = prime * result + ((password == null) ? 0 : password.hashCode());
+        return result;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (obj == null) {
+            return false;
+        }
+        if (getClass() != obj.getClass()) {
+            return false;
+        }
+        UsernamePasswordCredentials other = (UsernamePasswordCredentials) obj;
+        if (name == null) {
+            if (other.name != null) {
+                return false;
+            }
+        } else if (!name.equals(other.name)) {
+            return false;
+        }
+        if (password == null) {
+            if (other.password != null) {
+                return false;
+            }
+        } else if (!password.equals(other.password)) {
+            return false;
+        }
+        return true;
+    }
+
 }

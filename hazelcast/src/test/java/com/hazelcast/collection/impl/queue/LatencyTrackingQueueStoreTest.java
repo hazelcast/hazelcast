@@ -17,12 +17,12 @@
 package com.hazelcast.collection.impl.queue;
 
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.QueueStore;
+import com.hazelcast.collection.QueueStore;
 import com.hazelcast.internal.diagnostics.StoreLatencyPlugin;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestCollectionUtils;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
 import org.junit.Test;
@@ -42,7 +42,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class LatencyTrackingQueueStoreTest extends HazelcastTestSupport {
 
     private static final String NAME = "someQueue";

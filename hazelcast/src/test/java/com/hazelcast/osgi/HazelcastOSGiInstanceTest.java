@@ -16,36 +16,36 @@
 
 package com.hazelcast.osgi;
 
+import com.hazelcast.client.ClientService;
+import com.hazelcast.cluster.Cluster;
+import com.hazelcast.cluster.Endpoint;
+import com.hazelcast.collection.IList;
+import com.hazelcast.collection.IQueue;
+import com.hazelcast.collection.ISet;
 import com.hazelcast.config.Config;
-import com.hazelcast.core.ClientService;
-import com.hazelcast.core.Cluster;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.DistributedObjectListener;
-import com.hazelcast.core.Endpoint;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IAtomicLong;
-import com.hazelcast.core.IAtomicReference;
-import com.hazelcast.core.ICountDownLatch;
 import com.hazelcast.core.IExecutorService;
-import com.hazelcast.core.IList;
-import com.hazelcast.core.ILock;
-import com.hazelcast.core.IMap;
-import com.hazelcast.core.IQueue;
-import com.hazelcast.core.ISemaphore;
-import com.hazelcast.core.ISet;
-import com.hazelcast.core.ITopic;
-import com.hazelcast.core.IdGenerator;
 import com.hazelcast.core.LifecycleService;
-import com.hazelcast.core.MultiMap;
-import com.hazelcast.core.PartitionService;
-import com.hazelcast.core.ReplicatedMap;
+import com.hazelcast.cp.CPSubsystem;
+import com.hazelcast.cp.IAtomicLong;
+import com.hazelcast.cp.IAtomicReference;
+import com.hazelcast.cp.ICountDownLatch;
+import com.hazelcast.cp.ISemaphore;
+import com.hazelcast.cp.lock.FencedLock;
+import com.hazelcast.internal.util.UuidUtil;
 import com.hazelcast.logging.LoggingService;
-import com.hazelcast.mapreduce.JobTracker;
-import com.hazelcast.quorum.QuorumService;
+import com.hazelcast.map.IMap;
+import com.hazelcast.multimap.MultiMap;
+import com.hazelcast.partition.PartitionService;
+import com.hazelcast.replicatedmap.ReplicatedMap;
 import com.hazelcast.ringbuffer.Ringbuffer;
+import com.hazelcast.splitbrainprotection.SplitBrainProtectionService;
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.topic.ITopic;
 import com.hazelcast.transaction.HazelcastXAResource;
 import com.hazelcast.transaction.TransactionContext;
 import com.hazelcast.transaction.TransactionOptions;
@@ -55,6 +55,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.util.Collection;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentMap;
 
 import static com.hazelcast.osgi.impl.HazelcastOSGiTestUtil.createHazelcastOSGiInstance;
@@ -66,7 +67,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class HazelcastOSGiInstanceTest {
 
     @Test
@@ -246,19 +247,6 @@ public class HazelcastOSGiInstanceTest {
     }
 
     @Test
-    public void getJobTrackerMapCalledSuccessfullyOverOSGiInstance() {
-        JobTracker mockJobTracker = mock(JobTracker.class);
-        HazelcastInstance mockHazelcastInstance = mock(HazelcastInstance.class);
-        HazelcastOSGiInstance hazelcastOSGiInstance = createHazelcastOSGiInstance(mockHazelcastInstance);
-
-        when(mockHazelcastInstance.getJobTracker("my-jobtracker")).thenReturn(mockJobTracker);
-
-        assertEquals(mockJobTracker, hazelcastOSGiInstance.getJobTracker("my-jobtracker"));
-
-        verify(mockHazelcastInstance).getJobTracker("my-jobtracker");
-    }
-
-    @Test
     public void getMultiMapCalledSuccessfullyOverOSGiInstance() {
         MultiMap<Object, Object> mockMultiMap = mock(MultiMap.class);
         HazelcastInstance mockHazelcastInstance = mock(HazelcastInstance.class);
@@ -273,15 +261,18 @@ public class HazelcastOSGiInstanceTest {
 
     @Test
     public void getLockCalledSuccessfullyOverOSGiInstance() {
-        ILock mockLock = mock(ILock.class);
+        FencedLock mockLock = mock(FencedLock.class);
         HazelcastInstance mockHazelcastInstance = mock(HazelcastInstance.class);
         HazelcastOSGiInstance hazelcastOSGiInstance = createHazelcastOSGiInstance(mockHazelcastInstance);
 
-        when(mockHazelcastInstance.getLock("my-lock")).thenReturn(mockLock);
+        CPSubsystem cpSubsystem = mock(CPSubsystem.class);
+        when(mockHazelcastInstance.getCPSubsystem()).thenReturn(cpSubsystem);
 
-        assertEquals(mockLock, hazelcastOSGiInstance.getLock("my-lock"));
+        when(cpSubsystem.getLock("my-lock")).thenReturn(mockLock);
 
-        verify(mockHazelcastInstance).getLock("my-lock");
+        assertEquals(mockLock, hazelcastOSGiInstance.getCPSubsystem().getLock("my-lock"));
+
+        verify(cpSubsystem).getLock("my-lock");
     }
 
     @Test
@@ -406,29 +397,18 @@ public class HazelcastOSGiInstanceTest {
     }
 
     @Test
-    public void getIdGeneratorCalledSuccessfullyOverOSGiInstance() {
-        IdGenerator mockIdGenerator = mock(IdGenerator.class);
-        HazelcastInstance mockHazelcastInstance = mock(HazelcastInstance.class);
-        HazelcastOSGiInstance hazelcastOSGiInstance = createHazelcastOSGiInstance(mockHazelcastInstance);
-
-        when(mockHazelcastInstance.getIdGenerator("my-idgenerator")).thenReturn(mockIdGenerator);
-
-        assertEquals(mockIdGenerator, hazelcastOSGiInstance.getIdGenerator("my-idgenerator"));
-
-        verify(mockHazelcastInstance).getIdGenerator("my-idgenerator");
-    }
-
-    @Test
     public void getAtomicLongCalledSuccessfullyOverOSGiInstance() {
         IAtomicLong mockAtomicLong = mock(IAtomicLong.class);
         HazelcastInstance mockHazelcastInstance = mock(HazelcastInstance.class);
         HazelcastOSGiInstance hazelcastOSGiInstance = createHazelcastOSGiInstance(mockHazelcastInstance);
 
-        when(mockHazelcastInstance.getAtomicLong("my-atomiclong")).thenReturn(mockAtomicLong);
+        CPSubsystem cpSubsystem = mock(CPSubsystem.class);
+        when(mockHazelcastInstance.getCPSubsystem()).thenReturn(cpSubsystem);
+        when(mockHazelcastInstance.getCPSubsystem().getAtomicLong("my-atomiclong")).thenReturn(mockAtomicLong);
 
-        assertEquals(mockAtomicLong, hazelcastOSGiInstance.getAtomicLong("my-atomiclong"));
+        assertEquals(mockAtomicLong, hazelcastOSGiInstance.getCPSubsystem().getAtomicLong("my-atomiclong"));
 
-        verify(mockHazelcastInstance).getAtomicLong("my-atomiclong");
+        verify(cpSubsystem).getAtomicLong("my-atomiclong");
     }
 
     @Test
@@ -437,11 +417,13 @@ public class HazelcastOSGiInstanceTest {
         HazelcastInstance mockHazelcastInstance = mock(HazelcastInstance.class);
         HazelcastOSGiInstance hazelcastOSGiInstance = createHazelcastOSGiInstance(mockHazelcastInstance);
 
-        when(mockHazelcastInstance.getAtomicReference("my-atomicreference")).thenReturn(mockAtomicReference);
+        CPSubsystem cpSubsystem = mock(CPSubsystem.class);
+        when(mockHazelcastInstance.getCPSubsystem()).thenReturn(cpSubsystem);
+        when(cpSubsystem.getAtomicReference("my-atomicreference")).thenReturn(mockAtomicReference);
 
-        assertEquals(mockAtomicReference, hazelcastOSGiInstance.getAtomicReference("my-atomicreference"));
+        assertEquals(mockAtomicReference, hazelcastOSGiInstance.getCPSubsystem().getAtomicReference("my-atomicreference"));
 
-        verify(mockHazelcastInstance).getAtomicReference("my-atomicreference");
+        verify(cpSubsystem).getAtomicReference("my-atomicreference");
     }
 
     @Test
@@ -450,11 +432,13 @@ public class HazelcastOSGiInstanceTest {
         HazelcastInstance mockHazelcastInstance = mock(HazelcastInstance.class);
         HazelcastOSGiInstance hazelcastOSGiInstance = createHazelcastOSGiInstance(mockHazelcastInstance);
 
-        when(mockHazelcastInstance.getCountDownLatch("my-countdownlatch")).thenReturn(mockCountDownLatch);
+        CPSubsystem cpSubsystem = mock(CPSubsystem.class);
+        when(mockHazelcastInstance.getCPSubsystem()).thenReturn(cpSubsystem);
+        when(cpSubsystem.getCountDownLatch("my-countdownlatch")).thenReturn(mockCountDownLatch);
 
-        assertEquals(mockCountDownLatch, hazelcastOSGiInstance.getCountDownLatch("my-countdownlatch"));
+        assertEquals(mockCountDownLatch, hazelcastOSGiInstance.getCPSubsystem().getCountDownLatch("my-countdownlatch"));
 
-        verify(mockHazelcastInstance).getCountDownLatch("my-countdownlatch");
+        verify(cpSubsystem).getCountDownLatch("my-countdownlatch");
     }
 
     @Test
@@ -463,11 +447,13 @@ public class HazelcastOSGiInstanceTest {
         HazelcastInstance mockHazelcastInstance = mock(HazelcastInstance.class);
         HazelcastOSGiInstance hazelcastOSGiInstance = createHazelcastOSGiInstance(mockHazelcastInstance);
 
-        when(mockHazelcastInstance.getSemaphore("my-semaphore")).thenReturn(mockSemaphore);
+        CPSubsystem cpSubsystem = mock(CPSubsystem.class);
+        when(mockHazelcastInstance.getCPSubsystem()).thenReturn(cpSubsystem);
+        when(cpSubsystem.getSemaphore("my-semaphore")).thenReturn(mockSemaphore);
 
-        assertEquals(mockSemaphore, hazelcastOSGiInstance.getSemaphore("my-semaphore"));
+        assertEquals(mockSemaphore, hazelcastOSGiInstance.getCPSubsystem().getSemaphore("my-semaphore"));
 
-        verify(mockHazelcastInstance).getSemaphore("my-semaphore");
+        verify(cpSubsystem).getSemaphore("my-semaphore");
     }
 
     @Test
@@ -504,9 +490,10 @@ public class HazelcastOSGiInstanceTest {
         HazelcastOSGiInstance hazelcastOSGiInstance =
                 createHazelcastOSGiInstance(mockHazelcastInstance);
 
-        when(mockHazelcastInstance.addDistributedObjectListener(mockDistributedObjectListener)).thenReturn("my-registration-id");
+        UUID registrationId = UuidUtil.newUnsecureUUID();
+        when(mockHazelcastInstance.addDistributedObjectListener(mockDistributedObjectListener)).thenReturn(registrationId);
 
-        assertEquals("my-registration-id", hazelcastOSGiInstance.addDistributedObjectListener(mockDistributedObjectListener));
+        assertEquals(registrationId, hazelcastOSGiInstance.addDistributedObjectListener(mockDistributedObjectListener));
 
         verify(mockHazelcastInstance).addDistributedObjectListener(mockDistributedObjectListener);
     }
@@ -516,11 +503,13 @@ public class HazelcastOSGiInstanceTest {
         HazelcastInstance mockHazelcastInstance = mock(HazelcastInstance.class);
         HazelcastOSGiInstance hazelcastOSGiInstance = createHazelcastOSGiInstance(mockHazelcastInstance);
 
-        when(mockHazelcastInstance.removeDistributedObjectListener("my-registration-id")).thenReturn(true);
+        UUID registrationId = UuidUtil.newUnsecureUUID();
 
-        assertTrue(hazelcastOSGiInstance.removeDistributedObjectListener("my-registration-id"));
+        when(mockHazelcastInstance.removeDistributedObjectListener(registrationId)).thenReturn(true);
 
-        verify(mockHazelcastInstance).removeDistributedObjectListener("my-registration-id");
+        assertTrue(hazelcastOSGiInstance.removeDistributedObjectListener(registrationId));
+
+        verify(mockHazelcastInstance).removeDistributedObjectListener(registrationId);
     }
 
     @Test
@@ -537,16 +526,16 @@ public class HazelcastOSGiInstanceTest {
     }
 
     @Test
-    public void getQuorumServiceCalledSuccessfullyOverOSGiInstance() {
-        QuorumService mockQuorumService = mock(QuorumService.class);
+    public void getSplitBrainProtectionServiceCalledSuccessfullyOverOSGiInstance() {
+        SplitBrainProtectionService mockSplitBrainProtectionService = mock(SplitBrainProtectionService.class);
         HazelcastInstance mockHazelcastInstance = mock(HazelcastInstance.class);
         HazelcastOSGiInstance hazelcastOSGiInstance = createHazelcastOSGiInstance(mockHazelcastInstance);
 
-        when(mockHazelcastInstance.getQuorumService()).thenReturn(mockQuorumService);
+        when(mockHazelcastInstance.getSplitBrainProtectionService()).thenReturn(mockSplitBrainProtectionService);
 
-        assertEquals(mockQuorumService, hazelcastOSGiInstance.getQuorumService());
+        assertEquals(mockSplitBrainProtectionService, hazelcastOSGiInstance.getSplitBrainProtectionService());
 
-        verify(mockHazelcastInstance).getQuorumService();
+        verify(mockHazelcastInstance).getSplitBrainProtectionService();
     }
 
     @Test

@@ -21,19 +21,19 @@ import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.util.counters.MwCounter;
 import com.hazelcast.internal.util.counters.SwCounter;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.nio.Address;
-import com.hazelcast.nio.Bits;
-import com.hazelcast.nio.Packet;
-import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.cluster.Address;
+import com.hazelcast.internal.nio.Bits;
+import com.hazelcast.internal.nio.Packet;
+import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.operationservice.impl.responses.ErrorResponse;
-import com.hazelcast.util.function.Consumer;
 
 import java.nio.ByteOrder;
+import java.util.function.Consumer;
 
 import static com.hazelcast.internal.util.counters.MwCounter.newMwCounter;
 import static com.hazelcast.internal.util.counters.SwCounter.newSwCounter;
-import static com.hazelcast.nio.Packet.FLAG_OP_RESPONSE;
-import static com.hazelcast.nio.Packet.Type.OPERATION;
+import static com.hazelcast.internal.nio.Packet.FLAG_OP_RESPONSE;
+import static com.hazelcast.internal.nio.Packet.Type.OPERATION;
 import static com.hazelcast.spi.impl.SpiDataSerializerHook.BACKUP_ACK_RESPONSE;
 import static com.hazelcast.spi.impl.SpiDataSerializerHook.CALL_TIMEOUT_RESPONSE;
 import static com.hazelcast.spi.impl.SpiDataSerializerHook.ERROR_RESPONSE;
@@ -41,8 +41,8 @@ import static com.hazelcast.spi.impl.SpiDataSerializerHook.NORMAL_RESPONSE;
 import static com.hazelcast.spi.impl.operationservice.impl.responses.NormalResponse.OFFSET_BACKUP_ACKS;
 import static com.hazelcast.spi.impl.operationservice.impl.responses.Response.OFFSET_CALL_ID;
 import static com.hazelcast.spi.impl.operationservice.impl.responses.Response.OFFSET_TYPE_ID;
-import static com.hazelcast.util.Preconditions.checkNotNull;
-import static com.hazelcast.util.Preconditions.checkTrue;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.Preconditions.checkTrue;
 
 /**
  * Responsible for handling responses for invocations. Based on the content of the

@@ -16,23 +16,19 @@
 
 package com.hazelcast.internal.jmx;
 
+import com.hazelcast.collection.IList;
+import com.hazelcast.collection.IQueue;
+import com.hazelcast.collection.ISet;
 import com.hazelcast.core.DistributedObject;
-import com.hazelcast.core.IAtomicLong;
-import com.hazelcast.core.IAtomicReference;
-import com.hazelcast.core.ICountDownLatch;
 import com.hazelcast.core.IExecutorService;
-import com.hazelcast.core.IList;
-import com.hazelcast.core.IMap;
-import com.hazelcast.core.IQueue;
-import com.hazelcast.core.ISemaphore;
-import com.hazelcast.core.ISet;
-import com.hazelcast.core.ITopic;
-import com.hazelcast.core.MultiMap;
-import com.hazelcast.core.ReplicatedMap;
+import com.hazelcast.map.IMap;
+import com.hazelcast.multimap.MultiMap;
+import com.hazelcast.replicatedmap.ReplicatedMap;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.topic.ITopic;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -41,7 +37,7 @@ import org.junit.runner.RunWith;
 import java.io.Serializable;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class MBeanDestroyTest extends HazelcastTestSupport {
 
     private MBeanDataHolder holder;
@@ -49,43 +45,6 @@ public class MBeanDestroyTest extends HazelcastTestSupport {
     @Before
     public void setUp() throws Exception {
         holder = new MBeanDataHolder(createHazelcastInstanceFactory(1));
-    }
-
-    @Test
-    public void testAtomicLong() throws Exception {
-        IAtomicLong atomicLong = holder.getHz().getAtomicLong("atomiclong");
-        atomicLong.incrementAndGet();
-        holder.assertMBeanExistEventually("IAtomicLong", atomicLong.getName());
-
-
-        destroyObjectAndAssert(atomicLong, "IAtomicLong");
-    }
-
-    @Test
-    public void testAtomicReference() throws Exception {
-        IAtomicReference<String> atomicReference = holder.getHz().getAtomicReference("atomicreference");
-        atomicReference.set(null);
-        holder.assertMBeanExistEventually("IAtomicReference", atomicReference.getName());
-
-        destroyObjectAndAssert(atomicReference, "IAtomicReference");
-    }
-
-    @Test
-    public void testSemaphore() throws Exception {
-        ISemaphore semaphore = holder.getHz().getSemaphore("semaphore");
-        semaphore.availablePermits();
-        holder.assertMBeanExistEventually("ISemaphore", semaphore.getName());
-
-        destroyObjectAndAssert(semaphore, "ISemaphore");
-    }
-
-    @Test
-    public void testCountDownLatch() throws Exception {
-        ICountDownLatch countDownLatch = holder.getHz().getCountDownLatch("semaphore");
-        countDownLatch.getCount();
-        holder.assertMBeanExistEventually("ICountDownLatch", countDownLatch.getName());
-
-        destroyObjectAndAssert(countDownLatch, "ICountDownLatch");
     }
 
     @Test

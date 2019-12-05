@@ -16,28 +16,28 @@
 
 package com.hazelcast.flakeidgen.impl;
 
+import com.hazelcast.cluster.Member;
 import com.hazelcast.config.FlakeIdGeneratorConfig;
 import com.hazelcast.core.HazelcastException;
-import com.hazelcast.core.Member;
 import com.hazelcast.flakeidgen.FlakeIdGenerator;
+import com.hazelcast.internal.util.Clock;
 import com.hazelcast.internal.util.ThreadLocalRandomProvider;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.spi.AbstractDistributedObject;
-import com.hazelcast.spi.InternalCompletableFuture;
-import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.util.Clock;
+import com.hazelcast.spi.impl.AbstractDistributedObject;
+import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.spi.impl.operationservice.impl.InvocationFuture;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 
-import static com.hazelcast.util.ExceptionUtil.rethrow;
-import static com.hazelcast.util.Preconditions.checkPositive;
+import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
+import static com.hazelcast.internal.util.Preconditions.checkPositive;
 import static java.lang.Thread.currentThread;
 import static java.util.Collections.newSetFromMap;
-import static java.util.concurrent.TimeUnit.HOURS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 public class FlakeIdGeneratorProxy
@@ -83,7 +83,7 @@ public class FlakeIdGeneratorProxy
      * Set of member UUIDs of which we know have node IDs out of range. These members are never again used
      * to generate unique IDs, because this error is unrecoverable.
      */
-    private final Set<String> outOfRangeMembers = newSetFromMap(new ConcurrentHashMap<String, Boolean>());
+    private final Set<UUID> outOfRangeMembers = newSetFromMap(new ConcurrentHashMap<>());
 
     FlakeIdGeneratorProxy(String name, NodeEngine nodeEngine, FlakeIdGeneratorService service) {
         super(nodeEngine, service);
@@ -122,18 +122,6 @@ public class FlakeIdGeneratorProxy
         return batcher.newId();
     }
 
-    @Override
-    public boolean init(long id) {
-        // Add 1 hour worth of IDs as a reserve: due to long batch validity some clients might be still getting
-        // older IDs. 1 hour is just a safe enough value, not a real guarantee: some clients might have longer
-        // validity.
-        // The init method should normally be called before any client generated IDs: in this case no reserve is
-        // needed, so we don't want to increase the reserve excessively.
-        long reserve = HOURS.toMillis(1)
-                << (FlakeIdGeneratorProxy.BITS_NODE_ID + FlakeIdGeneratorProxy.BITS_SEQUENCE);
-        return newId() >= id + reserve;
-    }
-
     public IdBatchAndWaitTime newIdBatch(int batchSize) {
         int nodeId = getNodeId();
 
@@ -146,10 +134,10 @@ public class FlakeIdGeneratorProxy
         while (true) {
             NewIdBatchOperation op = new NewIdBatchOperation(name, batchSize);
             Member target = getRandomMember();
-            InternalCompletableFuture<Long> future = getNodeEngine().getOperationService()
-                                                                    .invokeOnTarget(getServiceName(), op, target.getAddress());
+            InvocationFuture<Long> future = getNodeEngine().getOperationService()
+                                                           .invokeOnTarget(getServiceName(), op, target.getAddress());
             try {
-                long base = future.join();
+                long base = future.joinInternal();
                 return new IdBatchAndWaitTime(new IdBatch(base, INCREMENT, batchSize), 0);
             } catch (NodeIdOutOfRangeException e) {
                 outOfRangeMembers.add(target.getUuid());
@@ -250,7 +238,7 @@ public class FlakeIdGeneratorProxy
         if (member == null) {
             // if local member is in outOfRangeMembers, use random member
             Set<Member> members = getNodeEngine().getClusterService().getMembers();
-            List<Member> filteredMembers = new ArrayList<Member>(members.size());
+            List<Member> filteredMembers = new ArrayList<>(members.size());
             for (Member m : members) {
                 if (!outOfRangeMembers.contains(m.getUuid())) {
                     filteredMembers.add(m);

@@ -16,6 +16,7 @@
 
 package com.hazelcast.query.impl;
 
+import com.hazelcast.config.IndexConfig;
 import com.hazelcast.core.TypeConverter;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.QueryException;
@@ -28,9 +29,19 @@ import java.util.Set;
 public interface Index {
 
     /**
-     * @return the name of the attribute for which this index is built.
+     * @return Index name.
      */
-    String getAttributeName();
+    String getName();
+
+    /**
+     * @return the components of this index.
+     */
+    String[] getComponents();
+
+    /**
+     * @return Configuration of the index.
+     */
+    IndexConfig getConfig();
 
     /**
      * Tells whether this index is ordered or not.
@@ -40,10 +51,17 @@ public interface Index {
      * would be about the same as the full scan performance.
      *
      * @return {@code true} if this index is ordered, {@code false} otherwise.
-     * @see #getSubRecords
-     * @see #getSubRecordsBetween
+     * @see #getRecords(Comparison, Comparable)
+     * @see #getRecords(Comparable, boolean, Comparable, boolean)
      */
     boolean isOrdered();
+
+    /**
+     * @return the converter associated with this index; or {@code null} if the
+     * converter is not known because there were no saves to this index and
+     * the attribute type is not inferred yet.
+     */
+    TypeConverter getConverter();
 
     /**
      * Saves the given entry into this index.
@@ -55,7 +73,7 @@ public interface Index {
      * @throws QueryException if there were errors while extracting the
      *                        attribute value from the entry.
      */
-    void saveEntryIndex(QueryableEntry entry, Object oldValue, OperationSource operationSource);
+    void putEntry(QueryableEntry entry, Object oldValue, OperationSource operationSource);
 
     /**
      * Removes the entry having the given key and the value from this index.
@@ -66,14 +84,7 @@ public interface Index {
      * @throws QueryException if there were errors while extracting the
      *                        attribute value from the entry.
      */
-    void removeEntryIndex(Data key, Object value, OperationSource operationSource);
-
-    /**
-     * @return the converter associated with this index; or {@code null} if the
-     * converter is not known because there were no saves to this index and
-     * the attribute type is not inferred yet.
-     */
-    TypeConverter getConverter();
+    void removeEntry(Data key, Object value, OperationSource operationSource);
 
     /**
      * Produces a result set containing entries whose attribute values are equal
@@ -94,27 +105,28 @@ public interface Index {
     Set<QueryableEntry> getRecords(Comparable[] values);
 
     /**
-     * Produces a result set by performing a range query on this index.
-     * <p>
-     * More precisely, this method produces a result set containing entries
-     * whose attribute values are greater than or equal to the given
-     * {@code from} value and less than or equal to the given {@code to} value.
+     * Produces a result set by performing a range query on this index with the
+     * range defined by the passed arguments.
      *
-     * @param from the beginning of the range (inclusive).
-     * @param to   the end of the range (inclusive).
+     * @param from          the beginning of the range.
+     * @param fromInclusive {@code true} if the beginning of the range is
+     *                      inclusive, {@code false} otherwise.
+     * @param to            the end of the range.
+     * @param toInclusive   {@code true} if the end of the range is inclusive,
+     *                      {@code false} otherwise.
      * @return the produced result set.
      */
-    Set<QueryableEntry> getSubRecordsBetween(Comparable from, Comparable to);
+    Set<QueryableEntry> getRecords(Comparable from, boolean fromInclusive, Comparable to, boolean toInclusive);
 
     /**
      * Produces a result set containing entries whose attribute values are
      * satisfy the comparison of the given type with the given value.
      *
-     * @param comparisonType the type of the comparison to perform.
-     * @param searchedValue  the value to compare against.
+     * @param comparison the type of the comparison to perform.
+     * @param value      the value to compare against.
      * @return the produced result set.
      */
-    Set<QueryableEntry> getSubRecords(ComparisonType comparisonType, Comparable searchedValue);
+    Set<QueryableEntry> getRecords(Comparison comparison, Comparable value);
 
     /**
      * Clears out all entries from this index.
@@ -137,6 +149,7 @@ public interface Index {
      * partitions.
      */
     enum OperationSource {
+
         /**
          * Indicates that an index operation was initiated by a user; for
          * instance, as a result of a new map entry insertion.
@@ -148,6 +161,7 @@ public interface Index {
          * Hazelcast; for instance, as a result of a partition migration.
          */
         SYSTEM
+
     }
 
 }

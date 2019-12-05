@@ -16,19 +16,20 @@
 
 package com.hazelcast.map.impl.operation;
 
+import com.hazelcast.internal.nio.IOUtil;
+import com.hazelcast.map.IMap;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.recordstore.Storage;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.PartitionAwareOperation;
-import com.hazelcast.spi.impl.MutatingOperation;
+import com.hazelcast.spi.impl.operationservice.PartitionAwareOperation;
+import com.hazelcast.spi.impl.operationservice.MutatingOperation;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.List;
 
 /**
@@ -38,7 +39,7 @@ import java.util.List;
  * This operation is expected to be invoked locally as the key collection is mutated
  * when running the operation and the operation does not have a response object.
  *
- * @see com.hazelcast.core.IMap#loadAll(java.util.Set, boolean)
+ * @see IMap#loadAll(java.util.Set, boolean)
  */
 public class RemoveFromLoadAllOperation extends MapOperation implements PartitionAwareOperation, MutatingOperation {
 
@@ -54,7 +55,7 @@ public class RemoveFromLoadAllOperation extends MapOperation implements Partitio
     }
 
     @Override
-    public void run() throws Exception {
+    protected void runInternal() {
         removeExistingKeys(keys);
     }
 
@@ -69,13 +70,7 @@ public class RemoveFromLoadAllOperation extends MapOperation implements Partitio
             return;
         }
         Storage storage = recordStore.getStorage();
-        Iterator<Data> iterator = keys.iterator();
-        while (iterator.hasNext()) {
-            Data key = iterator.next();
-            if (storage.containsKey(key)) {
-                iterator.remove();
-            }
-        }
+        keys.removeIf(storage::containsKey);
     }
 
     @Override
@@ -84,7 +79,7 @@ public class RemoveFromLoadAllOperation extends MapOperation implements Partitio
         final int size = keys.size();
         out.writeInt(size);
         for (Data key : keys) {
-            out.writeData(key);
+            IOUtil.writeData(out, key);
         }
     }
 
@@ -93,16 +88,16 @@ public class RemoveFromLoadAllOperation extends MapOperation implements Partitio
         super.readInternal(in);
         final int size = in.readInt();
         if (size > 0) {
-            keys = new ArrayList<Data>(size);
+            keys = new ArrayList<>(size);
         }
         for (int i = 0; i < size; i++) {
-            Data data = in.readData();
+            Data data = IOUtil.readData(in);
             keys.add(data);
         }
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MapDataSerializerHook.REMOVE_FROM_LOAD_ALL;
     }
 }

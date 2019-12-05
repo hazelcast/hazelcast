@@ -23,7 +23,7 @@ import com.hazelcast.config.CacheConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.partition.AbstractPartitionLostListenerTest;
 import com.hazelcast.test.AssertTask;
-import com.hazelcast.test.HazelcastParametersRunnerFactory;
+import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
 import com.hazelcast.test.annotation.SlowTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -40,13 +40,13 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
-import static com.hazelcast.cache.impl.HazelcastServerCachingProvider.createCachingProvider;
+import static com.hazelcast.cache.CacheTestSupport.createServerCachingProvider;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(Parameterized.class)
-@UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
+@UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
 @Category(SlowTest.class)
 public class CachePartitionLostListenerStressTest extends AbstractPartitionLostListenerTest {
 
@@ -97,7 +97,7 @@ public class CachePartitionLostListenerStressTest extends AbstractPartitionLostL
         survivingInstances = survivingInstances.subList(numberOfNodesToCrash, instances.size());
 
         HazelcastInstance instance = survivingInstances.get(0);
-        HazelcastServerCachingProvider cachingProvider = createCachingProvider(instance);
+        HazelcastServerCachingProvider cachingProvider = createServerCachingProvider(instance);
         CacheManager cacheManager = cachingProvider.getCacheManager();
         List<EventCollectingCachePartitionLostListener> listeners = registerListeners(cacheManager);
 

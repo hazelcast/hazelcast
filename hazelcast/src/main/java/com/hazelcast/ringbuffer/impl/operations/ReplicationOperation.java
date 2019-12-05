@@ -26,11 +26,10 @@ import com.hazelcast.map.impl.journal.MapEventJournal;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.nio.serialization.impl.Versioned;
 import com.hazelcast.ringbuffer.impl.RingbufferContainer;
 import com.hazelcast.ringbuffer.impl.RingbufferService;
-import com.hazelcast.spi.ObjectNamespace;
-import com.hazelcast.spi.Operation;
+import com.hazelcast.internal.services.ObjectNamespace;
+import com.hazelcast.spi.impl.operationservice.Operation;
 
 import java.io.IOException;
 import java.util.Map;
@@ -39,9 +38,9 @@ import java.util.Map.Entry;
 import static com.hazelcast.ringbuffer.impl.RingbufferDataSerializerHook.F_ID;
 import static com.hazelcast.ringbuffer.impl.RingbufferDataSerializerHook.REPLICATION_OPERATION;
 import static com.hazelcast.ringbuffer.impl.RingbufferService.SERVICE_NAME;
-import static com.hazelcast.util.MapUtil.createHashMap;
+import static com.hazelcast.internal.util.MapUtil.createHashMap;
 
-public class ReplicationOperation extends Operation implements IdentifiedDataSerializable, Versioned {
+public class ReplicationOperation extends Operation implements IdentifiedDataSerializable {
 
     private Map<ObjectNamespace, RingbufferContainer> migrationData;
 
@@ -109,7 +108,7 @@ public class ReplicationOperation extends Operation implements IdentifiedDataSer
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return REPLICATION_OPERATION;
     }
 

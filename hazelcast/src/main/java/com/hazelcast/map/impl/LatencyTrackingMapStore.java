@@ -16,7 +16,7 @@
 
 package com.hazelcast.map.impl;
 
-import com.hazelcast.core.MapStore;
+import com.hazelcast.map.MapStore;
 import com.hazelcast.internal.diagnostics.StoreLatencyPlugin;
 import com.hazelcast.internal.diagnostics.StoreLatencyPlugin.LatencyProbe;
 

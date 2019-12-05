@@ -16,9 +16,9 @@
 
 package com.hazelcast.spi.impl.eventservice.impl;
 
-import com.hazelcast.spi.EventPublishingService;
-import com.hazelcast.util.executor.StripedRunnable;
-import com.hazelcast.util.executor.TimeoutRunnable;
+import com.hazelcast.spi.impl.eventservice.EventPublishingService;
+import com.hazelcast.internal.util.executor.StripedRunnable;
+import com.hazelcast.internal.util.executor.TimeoutRunnable;
 
 import java.util.concurrent.TimeUnit;
 

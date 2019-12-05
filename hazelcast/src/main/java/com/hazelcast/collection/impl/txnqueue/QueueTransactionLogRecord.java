@@ -22,7 +22,9 @@ import com.hazelcast.collection.impl.txncollection.CollectionTransactionLogRecor
 import com.hazelcast.collection.impl.txnqueue.operations.TxnCommitOperation;
 import com.hazelcast.collection.impl.txnqueue.operations.TxnPrepareOperation;
 import com.hazelcast.collection.impl.txnqueue.operations.TxnRollbackOperation;
-import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.impl.operationservice.Operation;
+
+import java.util.UUID;
 
 /**
  * This class contains Transaction log for the Queue.
@@ -32,7 +34,7 @@ public class QueueTransactionLogRecord extends CollectionTransactionLogRecord {
     public QueueTransactionLogRecord() {
     }
 
-    public QueueTransactionLogRecord(String transactionId, String name, int partitionId) {
+    public QueueTransactionLogRecord(UUID transactionId, String name, int partitionId) {
         super(QueueService.SERVICE_NAME, transactionId, name, partitionId);
     }
 
@@ -54,7 +56,7 @@ public class QueueTransactionLogRecord extends CollectionTransactionLogRecord {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return CollectionDataSerializerHook.QUEUE_TRANSACTION_LOG_RECORD;
     }
 }

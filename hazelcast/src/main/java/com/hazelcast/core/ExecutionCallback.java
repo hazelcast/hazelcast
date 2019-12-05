@@ -16,6 +16,8 @@
 
 package com.hazelcast.core;
 
+import com.hazelcast.cluster.Member;
+
 /**
  * ExecutionCallback allows to asynchronously get notified when the execution is completed,
  * either successfully or with error.

@@ -16,12 +16,11 @@
 
 package com.hazelcast.cache;
 
-import com.hazelcast.cache.impl.HazelcastServerCachingProvider;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Before;
@@ -49,11 +48,12 @@ import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.locks.LockSupport;
 
+import static com.hazelcast.cache.CacheTestSupport.createServerCachingProvider;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class CacheResourceTest
         extends HazelcastTestSupport {
 
@@ -72,7 +72,7 @@ public class CacheResourceTest
     @Test
     public void testCloseableCacheLoader() throws InterruptedException {
         CachingProvider provider =
-                HazelcastServerCachingProvider.createCachingProvider(factory.newHazelcastInstance());
+                createServerCachingProvider(factory.newHazelcastInstance());
 
         CacheManager cacheManager = provider.getCacheManager();
 
@@ -129,7 +129,7 @@ public class CacheResourceTest
     @Test
     public void testCloseableCacheWriter() throws InterruptedException {
         CachingProvider provider =
-                HazelcastServerCachingProvider.createCachingProvider(factory.newHazelcastInstance());
+                createServerCachingProvider(factory.newHazelcastInstance());
 
         CacheManager cacheManager = provider.getCacheManager();
 
@@ -197,9 +197,7 @@ public class CacheResourceTest
 
     @Test
     public void testCloseableCacheListener() {
-        CachingProvider provider =
-                HazelcastServerCachingProvider
-                        .createCachingProvider(factory.newHazelcastInstance());
+        CachingProvider provider = createServerCachingProvider(factory.newHazelcastInstance());
 
         CacheManager cacheManager = provider.getCacheManager();
 

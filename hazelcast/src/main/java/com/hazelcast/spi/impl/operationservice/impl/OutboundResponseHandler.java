@@ -16,15 +16,14 @@
 
 package com.hazelcast.spi.impl.operationservice.impl;
 
-import com.hazelcast.instance.Node;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.nio.Address;
-import com.hazelcast.nio.ConnectionManager;
-import com.hazelcast.nio.Packet;
+import com.hazelcast.cluster.Address;
+import com.hazelcast.internal.nio.EndpointManager;
+import com.hazelcast.internal.nio.Packet;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.OperationResponseHandler;
+import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.spi.impl.operationservice.OperationResponseHandler;
 import com.hazelcast.spi.impl.SpiDataSerializerHook;
 import com.hazelcast.spi.impl.operationservice.impl.responses.CallTimeoutResponse;
 import com.hazelcast.spi.impl.operationservice.impl.responses.ErrorResponse;
@@ -33,13 +32,13 @@ import com.hazelcast.spi.impl.operationservice.impl.responses.Response;
 
 import static com.hazelcast.internal.serialization.impl.SerializationConstants.CONSTANT_TYPE_DATA_SERIALIZABLE;
 import static com.hazelcast.internal.serialization.impl.SerializationConstants.CONSTANT_TYPE_NULL;
-import static com.hazelcast.nio.Bits.INT_SIZE_IN_BYTES;
-import static com.hazelcast.nio.Bits.writeInt;
-import static com.hazelcast.nio.Bits.writeIntB;
-import static com.hazelcast.nio.Bits.writeLong;
-import static com.hazelcast.nio.Packet.FLAG_OP_RESPONSE;
-import static com.hazelcast.nio.Packet.FLAG_URGENT;
-import static com.hazelcast.nio.Packet.Type.OPERATION;
+import static com.hazelcast.internal.nio.Bits.INT_SIZE_IN_BYTES;
+import static com.hazelcast.internal.nio.Bits.writeInt;
+import static com.hazelcast.internal.nio.Bits.writeIntB;
+import static com.hazelcast.internal.nio.Bits.writeLong;
+import static com.hazelcast.internal.nio.Packet.FLAG_OP_RESPONSE;
+import static com.hazelcast.internal.nio.Packet.FLAG_URGENT;
+import static com.hazelcast.internal.nio.Packet.Type.OPERATION;
 import static com.hazelcast.spi.impl.SpiDataSerializerHook.BACKUP_ACK_RESPONSE;
 import static com.hazelcast.spi.impl.SpiDataSerializerHook.NORMAL_RESPONSE;
 import static com.hazelcast.spi.impl.operationservice.impl.responses.BackupAckResponse.BACKUP_RESPONSE_SIZE_IN_BYTES;
@@ -54,7 +53,7 @@ import static com.hazelcast.spi.impl.operationservice.impl.responses.Response.OF
 import static com.hazelcast.spi.impl.operationservice.impl.responses.Response.OFFSET_TYPE_FACTORY_ID;
 import static com.hazelcast.spi.impl.operationservice.impl.responses.Response.OFFSET_TYPE_ID;
 import static com.hazelcast.spi.impl.operationservice.impl.responses.Response.OFFSET_URGENT;
-import static com.hazelcast.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static java.nio.ByteOrder.BIG_ENDIAN;
 
 /**
@@ -68,39 +67,36 @@ public final class OutboundResponseHandler implements OperationResponseHandler {
     private final InternalSerializationService serializationService;
     private final boolean useBigEndian;
     private final ILogger logger;
-    // it sucks we need to pass in Node as argument; but this is due to the ConnectionManager which is created after
-    // the OperationService is created.
-    private final Node node;
 
     OutboundResponseHandler(Address thisAddress,
                             InternalSerializationService serializationService,
-                            Node node,
                             ILogger logger) {
         this.thisAddress = thisAddress;
         this.serializationService = serializationService;
         this.useBigEndian = serializationService.getByteOrder() == BIG_ENDIAN;
-        this.node = node;
         this.logger = logger;
     }
 
     @Override
     public void sendResponse(Operation operation, Object obj) {
         Address target = operation.getCallerAddress();
+        EndpointManager endpointManager = operation.getConnection().getEndpointManager();
         boolean send;
         if (obj == null) {
-            send = sendNormalResponse(target, operation.getCallId(), 0, operation.isUrgent(), null);
+            send = sendNormalResponse(endpointManager, target, operation.getCallId(), 0, operation.isUrgent(), null);
         } else if (obj.getClass() == NormalResponse.class) {
             NormalResponse response = (NormalResponse) obj;
-            send = sendNormalResponse(
-                    target, response.getCallId(), response.getBackupAcks(), response.isUrgent(), response.getValue());
+            send = sendNormalResponse(endpointManager, target, response.getCallId(),
+                    response.getBackupAcks(), response.isUrgent(), response.getValue());
         } else if (obj.getClass() == ErrorResponse.class || obj.getClass() == CallTimeoutResponse.class) {
-            send = send(target, (Response) obj);
+            send = send(endpointManager, target, (Response) obj);
         } else if (obj instanceof Throwable) {
-            send = send(target, new ErrorResponse((Throwable) obj, operation.getCallId(), operation.isUrgent()));
+            send = send(endpointManager, target, new ErrorResponse((Throwable) obj,
+                    operation.getCallId(), operation.isUrgent()));
         } else {
             // most regular responses not wrapped in a NormalResponse. So we are now completely skipping the
             // NormalResponse instance
-            send = sendNormalResponse(target, operation.getCallId(), 0, operation.isUrgent(), obj);
+            send = sendNormalResponse(endpointManager, target, operation.getCallId(), 0, operation.isUrgent(), obj);
         }
 
         if (!send) {
@@ -108,7 +104,7 @@ public final class OutboundResponseHandler implements OperationResponseHandler {
         }
     }
 
-    public boolean send(Address target, Response response) {
+    public boolean send(EndpointManager endpointManager, Address target, Response response) {
         checkNotNull(target, "Target is required!");
 
         if (thisAddress.equals(target)) {
@@ -119,15 +115,16 @@ public final class OutboundResponseHandler implements OperationResponseHandler {
 
         Packet packet = newResponsePacket(bytes, response.isUrgent());
 
-        return transmit(target, packet);
+        return transmit(target, packet, endpointManager);
     }
 
-    private boolean sendNormalResponse(Address target, long callId, int backupAcks, boolean urgent, Object value) {
+    private boolean sendNormalResponse(EndpointManager endpointManager, Address target, long callId,
+                                       int backupAcks, boolean urgent, Object value) {
         checkTarget(target);
 
         Packet packet = toNormalResponsePacket(callId, (byte) backupAcks, urgent, value);
 
-        return transmit(target, packet);
+        return transmit(target, packet, endpointManager);
     }
 
     Packet toNormalResponsePacket(long callId, int backupAcks, boolean urgent, Object value) {
@@ -167,12 +164,12 @@ public final class OutboundResponseHandler implements OperationResponseHandler {
         return newResponsePacket(bytes, urgent);
     }
 
-    public void sendBackupAck(Address target, long callId, boolean urgent) {
+    public void sendBackupAck(EndpointManager endpointManager, Address target, long callId, boolean urgent) {
         checkTarget(target);
 
         Packet packet = toBackupAckPacket(callId, urgent);
 
-        transmit(target, packet);
+        transmit(target, packet, endpointManager);
     }
 
     Packet toBackupAckPacket(long callId, boolean urgent) {
@@ -211,9 +208,8 @@ public final class OutboundResponseHandler implements OperationResponseHandler {
         return packet;
     }
 
-    private boolean transmit(Address target, Packet packet) {
-        ConnectionManager connectionManager = node.getConnectionManager();
-        return connectionManager.transmit(packet, target);
+    private boolean transmit(Address target, Packet packet, EndpointManager endpointManager) {
+        return endpointManager.transmit(packet, target);
     }
 
     private void checkTarget(Address target) {

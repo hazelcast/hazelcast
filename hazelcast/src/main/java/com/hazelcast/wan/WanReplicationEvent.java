@@ -16,100 +16,29 @@
 
 package com.hazelcast.wan;
 
-import com.hazelcast.config.WanAcknowledgeType;
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.wan.impl.WanDataSerializerHook;
-
-import java.io.IOException;
-
 /**
- * Event class used to transmit the actual event object
+ * Interface for all WAN replication messages
  */
-public class WanReplicationEvent
-        implements IdentifiedDataSerializable {
-
-    private String serviceName;
-    private ReplicationEventObject eventObject;
+public interface WanReplicationEvent {
     /**
-     * Acknowledge type doesn't need to be serialized as it's not transferred between nodes.
-     */
-    private transient WanAcknowledgeType acknowledgeType;
-
-    public WanReplicationEvent() {
-    }
-
-    public WanReplicationEvent(String serviceName, ReplicationEventObject eventObject) {
-        this.serviceName = serviceName;
-        this.eventObject = eventObject;
-    }
-
-    /**
-     * Returns the service name for this event object.
+     * Increments the count for the related event in the {@code counters}
      *
-     * @return the service name for this event object.
+     * @param counters the WAN event counter
      */
-    public String getServiceName() {
-        return serviceName;
-    }
+    void incrementEventCount(DistributedServiceWanEventCounters counters);
 
     /**
-     * Sets the service name for this event object.
+     * Returns the service name on which this event occurred.
      *
-     * @param serviceName the service name for this event object.
+     * @return the service name
      */
-    public void setServiceName(String serviceName) {
-        this.serviceName = serviceName;
-    }
+    String getServiceName();
 
     /**
-     * Gets the event object.
+     * Returns the name of the distributed object (map or cache) on which this
+     * event occurred.
      *
-     * @return the event object.
+     * @return the distributed object name
      */
-    public ReplicationEventObject getEventObject() {
-        return eventObject;
-    }
-
-    /**
-     * Sets the event object.
-     *
-     * @param eventObject the event object.
-     */
-    public void setEventObject(ReplicationEventObject eventObject) {
-        this.eventObject = eventObject;
-    }
-
-    public WanAcknowledgeType getAcknowledgeType() {
-        return acknowledgeType;
-    }
-
-    public void setAcknowledgeType(WanAcknowledgeType acknowledgeType) {
-        this.acknowledgeType = acknowledgeType;
-    }
-
-    @Override
-    public void writeData(ObjectDataOutput out)
-            throws IOException {
-        out.writeUTF(serviceName);
-        out.writeObject(eventObject);
-    }
-
-    @Override
-    public void readData(ObjectDataInput in)
-            throws IOException {
-        serviceName = in.readUTF();
-        eventObject = in.readObject();
-    }
-
-    @Override
-    public int getFactoryId() {
-        return WanDataSerializerHook.F_ID;
-    }
-
-    @Override
-    public int getId() {
-        return WanDataSerializerHook.WAN_REPLICATION_EVENT;
-    }
+    String getObjectName();
 }

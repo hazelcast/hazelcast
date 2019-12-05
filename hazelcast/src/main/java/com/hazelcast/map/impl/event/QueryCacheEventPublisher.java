@@ -26,21 +26,20 @@ import com.hazelcast.map.impl.querycache.publisher.MapPublisherRegistry;
 import com.hazelcast.map.impl.querycache.publisher.PartitionAccumulatorRegistry;
 import com.hazelcast.map.impl.querycache.publisher.PublisherContext;
 import com.hazelcast.map.impl.querycache.publisher.PublisherRegistry;
-import com.hazelcast.nio.Address;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.EventFilter;
+import com.hazelcast.spi.impl.eventservice.EventFilter;
 
 import java.util.Collection;
 import java.util.Collections;
 
 import static com.hazelcast.core.EntryEventType.ADDED;
-import static com.hazelcast.core.EntryEventType.EXPIRED;
 import static com.hazelcast.core.EntryEventType.REMOVED;
 import static com.hazelcast.core.EntryEventType.UPDATED;
 import static com.hazelcast.map.impl.event.MapEventPublisherImpl.isIncludeValue;
 import static com.hazelcast.map.impl.querycache.event.QueryCacheEventDataBuilder.newQueryCacheEventDataBuilder;
-import static com.hazelcast.util.CollectionUtil.isEmpty;
-import static com.hazelcast.util.Preconditions.checkInstanceOf;
+import static com.hazelcast.internal.util.CollectionUtil.isEmpty;
+import static com.hazelcast.internal.util.Preconditions.checkInstanceOf;
 
 /**
  * Handles publishing of map events to continuous query caches
@@ -65,12 +64,6 @@ public class QueryCacheEventPublisher {
 
         String mapName = ((EventData) eventData).getMapName();
         int eventType = ((EventData) eventData).getEventType();
-
-        // in case of expiration, IMap publishes both EVICTED and EXPIRED events for a key
-        // only handling EVICTED event for that key is sufficient
-        if (EXPIRED.getType() == eventType) {
-            return;
-        }
 
         // this collection contains all defined query-caches on an IMap
         Collection<PartitionAccumulatorRegistry> partitionAccumulatorRegistries = getPartitionAccumulatorRegistries(mapName);
@@ -111,7 +104,7 @@ public class QueryCacheEventPublisher {
             Accumulator accumulator = accumulatorRegistry.getOrCreate(partitionId);
 
             QueryCacheEventData singleEventData = newQueryCacheEventDataBuilder(false).withPartitionId(partitionId)
-                                                                                      .withEventType(eventType.getType()).build();
+                    .withEventType(eventType.getType()).build();
 
             accumulator.accumulate(singleEventData);
         }

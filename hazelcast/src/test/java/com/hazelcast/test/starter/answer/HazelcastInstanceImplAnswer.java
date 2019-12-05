@@ -16,15 +16,16 @@
 
 package com.hazelcast.test.starter.answer;
 
-import com.hazelcast.instance.HazelcastInstanceCacheManager;
-import com.hazelcast.instance.LifecycleServiceImpl;
+import com.hazelcast.cache.impl.HazelcastInstanceCacheManager;
+import com.hazelcast.instance.impl.LifecycleServiceImpl;
+import com.hazelcast.instance.impl.HazelcastInstanceImpl;
 import org.mockito.invocation.InvocationOnMock;
 
 import static org.mockito.Mockito.mock;
 
 /**
  * Default {@link org.mockito.stubbing.Answer} to create a mock for a proxied
- * {@link com.hazelcast.instance.HazelcastInstanceImpl}.
+ * {@link HazelcastInstanceImpl}.
  * <p>
  * Usage:
  * <pre><code>

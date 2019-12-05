@@ -18,8 +18,9 @@ package com.hazelcast.spi.impl.operationservice.impl;
 
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.MemberLeftException;
+import com.hazelcast.internal.util.ConcurrencyDetection;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.impl.Invocation.Context;
 import com.hazelcast.spi.impl.sequence.CallIdSequenceWithBackpressure;
 import com.hazelcast.test.HazelcastSerialClassRunner;
@@ -49,8 +50,9 @@ public class InvocationRegistryTest extends HazelcastTestSupport {
     @Before
     public void setup() {
         logger = Mockito.mock(ILogger.class);
-        final int capacity = 2;
-        invocationRegistry = new InvocationRegistry(logger, new CallIdSequenceWithBackpressure(capacity, 1000));
+        int capacity = 2;
+        invocationRegistry = new InvocationRegistry(logger,
+                new CallIdSequenceWithBackpressure(capacity, 1000,  ConcurrencyDetection.createDisabled()));
     }
 
     private Invocation newInvocation() {
@@ -59,7 +61,7 @@ public class InvocationRegistryTest extends HazelcastTestSupport {
 
     private Invocation newInvocation(Operation op) {
         Invocation.Context context = new Context(null, null, null, null, null,
-                1000, invocationRegistry, null, logger, null, null, null, null, null, null, null, null, null);
+                1000, invocationRegistry, null, logger, null, null, null, null, null, null, null, null, null, null);
         return new PartitionInvocation(context, op, 0, 0, 0, false, false);
     }
 
@@ -172,7 +174,7 @@ public class InvocationRegistryTest extends HazelcastTestSupport {
     // ===================== shutdown ============================
 
     @Test
-    public void shutdown_thenAllInvocationsAborted() throws ExecutionException, InterruptedException {
+    public void shutdown_thenAllInvocationsAborted() {
         Invocation invocation = newInvocation(new DummyBackupAwareOperation());
         invocationRegistry.register(invocation);
         long callId = invocation.op.getCallId();
@@ -180,7 +182,7 @@ public class InvocationRegistryTest extends HazelcastTestSupport {
 
         InvocationFuture f = invocation.future;
         try {
-            f.join();
+            f.joinInternal();
             fail();
         } catch (HazelcastInstanceNotActiveException expected) {
         }

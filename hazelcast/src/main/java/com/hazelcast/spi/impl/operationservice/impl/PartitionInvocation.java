@@ -16,16 +16,20 @@
 
 package com.hazelcast.spi.impl.operationservice.impl;
 
-import com.hazelcast.core.Member;
+import com.hazelcast.cluster.ClusterState;
+import com.hazelcast.cluster.Member;
 import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.internal.partition.InternalPartition;
 import com.hazelcast.internal.partition.PartitionReplica;
-import com.hazelcast.nio.Address;
-import com.hazelcast.spi.ExceptionAction;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.ReadonlyOperation;
+import com.hazelcast.cluster.Address;
+import com.hazelcast.internal.nio.EndpointManager;
+import com.hazelcast.partition.NoDataMemberInClusterException;
+import com.hazelcast.spi.impl.operationservice.ExceptionAction;
+import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.spi.impl.operationservice.ReadonlyOperation;
 
-import static com.hazelcast.spi.ExceptionAction.THROW_EXCEPTION;
+import static com.hazelcast.cluster.memberselector.MemberSelectors.DATA_MEMBER_SELECTOR;
+import static com.hazelcast.spi.impl.operationservice.ExceptionAction.THROW_EXCEPTION;
 
 /**
  * A {@link Invocation} evaluates a Operation Invocation for a particular partition running on top of the
@@ -42,8 +46,9 @@ final class PartitionInvocation extends Invocation<PartitionReplica> {
                         long tryPauseMillis,
                         long callTimeoutMillis,
                         boolean deserialize,
-                        boolean failOnIndeterminateOperationState) {
-        super(context, op, doneCallback, tryCount, tryPauseMillis, callTimeoutMillis, deserialize);
+                        boolean failOnIndeterminateOperationState,
+                        EndpointManager endpointManager) {
+        super(context, op, doneCallback, tryCount, tryPauseMillis, callTimeoutMillis, deserialize, endpointManager);
         this.failOnIndeterminateOperationState = failOnIndeterminateOperationState && !(op instanceof ReadonlyOperation);
     }
 
@@ -55,7 +60,7 @@ final class PartitionInvocation extends Invocation<PartitionReplica> {
                         boolean deserialize,
                         boolean failOnIndeterminateOperationState) {
         this(context, op, null, tryCount, tryPauseMillis, callTimeoutMillis, deserialize,
-                failOnIndeterminateOperationState);
+                failOnIndeterminateOperationState, null);
     }
 
     @Override
@@ -72,6 +77,21 @@ final class PartitionInvocation extends Invocation<PartitionReplica> {
     @Override
     Member toTargetMember(PartitionReplica replica) {
         return context.clusterService.getMember(replica.address(), replica.uuid());
+    }
+
+    @Override
+    Exception newTargetNullException() {
+        ClusterState clusterState = context.clusterService.getClusterState();
+        if (!clusterState.isMigrationAllowed()) {
+            return new IllegalStateException("Target of invocation cannot be found! Partition owner is null "
+                    + "but partitions can't be assigned in cluster-state: " + clusterState);
+        }
+        if (context.clusterService.getSize(DATA_MEMBER_SELECTOR) == 0) {
+            return new NoDataMemberInClusterException(
+                    "Target of invocation cannot be found! Partition owner is null "
+                            + "but partitions can't be assigned since all nodes in the cluster are lite members.");
+        }
+        return super.newTargetNullException();
     }
 
     @Override

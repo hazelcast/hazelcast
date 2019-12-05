@@ -18,12 +18,12 @@ package com.hazelcast.map;
 
 import java.util.Map;
 
-public class TestLoggingEntryProcessor extends AbstractEntryProcessor<String, TestData> {
+public class TestLoggingEntryProcessor implements EntryProcessor<String, TestData, Boolean> {
 
     private static final long serialVersionUID = 1L;
 
     @Override
-    public Object process(Map.Entry<String, TestData> entry) {
+    public Boolean process(Map.Entry<String, TestData> entry) {
         return true;
     }
 }

@@ -17,25 +17,36 @@
 package com.hazelcast.internal.metrics.impl;
 
 import com.hazelcast.internal.metrics.DoubleProbeFunction;
+import com.hazelcast.internal.metrics.DynamicMetricsProvider;
 import com.hazelcast.internal.metrics.LongGauge;
 import com.hazelcast.internal.metrics.LongProbeFunction;
+import com.hazelcast.internal.metrics.MetricsCollectionContext;
+import com.hazelcast.internal.metrics.MetricDescriptor;
 import com.hazelcast.internal.metrics.Probe;
+import com.hazelcast.internal.metrics.collectors.MetricsCollector;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.lang.ref.WeakReference;
+
 import static com.hazelcast.internal.metrics.ProbeLevel.INFO;
 import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
+import static com.hazelcast.internal.metrics.ProbeUnit.BYTES;
+import static com.hazelcast.internal.metrics.ProbeUnit.COUNT;
 import static java.lang.Math.round;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
+import static org.mockito.Mockito.mock;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
-public class LongGaugeImplTest {
+public class LongGaugeImplTest extends HazelcastTestSupport {
 
     private MetricsRegistryImpl metricsRegistry;
 
@@ -44,20 +55,40 @@ public class LongGaugeImplTest {
         metricsRegistry = new MetricsRegistryImpl(Logger.getLogger(MetricsRegistryImpl.class), INFO);
     }
 
-    class SomeObject {
+    class SomeObject implements DynamicMetricsProvider {
         @Probe
         long longField = 10;
         @Probe
         double doubleField = 10.8;
+
+        @Override
+        public void provideDynamicMetrics(MetricDescriptor descriptor, MetricsCollectionContext context) {
+            context.collect(descriptor.withPrefix("foo"), this);
+        }
+    }
+
+    class NullableDynamicMetricsProvider implements DynamicMetricsProvider {
+        SomeObject someObject = new SomeObject();
+
+        @Override
+        public void provideDynamicMetrics(MetricDescriptor descriptor, MetricsCollectionContext context) {
+            descriptor.withPrefix("foo");
+            if (someObject != null) {
+                context.collect(descriptor, someObject);
+            } else {
+                context.collect(descriptor, "longField", INFO, COUNT, 142);
+                context.collect(descriptor, "doubleField", INFO, COUNT, 142.42D);
+            }
+        }
     }
 
     @Test
     public void getName() {
-        LongGauge gauge = metricsRegistry.newLongGauge("foo");
+        LongGauge gauge = metricsRegistry.newLongGauge("foo[id].bar");
 
         String actual = gauge.getName();
 
-        assertEquals("foo", actual);
+        assertEquals("foo[id].bar", actual);
     }
 
     //  ============ getLong ===========================
@@ -73,13 +104,8 @@ public class LongGaugeImplTest {
 
     @Test
     public void whenDoubleProbe() {
-        metricsRegistry.register(this, "foo", MANDATORY,
-                new DoubleProbeFunction<LongGaugeImplTest>() {
-                    @Override
-                    public double get(LongGaugeImplTest source) throws Exception {
-                        return 10;
-                    }
-                });
+        metricsRegistry.registerStaticProbe(this, "foo", MANDATORY,
+                (DoubleProbeFunction<LongGaugeImplTest>) source -> 10);
 
         LongGauge gauge = metricsRegistry.newLongGauge("foo");
 
@@ -90,13 +116,7 @@ public class LongGaugeImplTest {
 
     @Test
     public void whenLongProbe() {
-        metricsRegistry.register(this, "foo", MANDATORY,
-                new LongProbeFunction() {
-                    @Override
-                    public long get(Object o) throws Exception {
-                        return 10;
-                    }
-                });
+        metricsRegistry.registerStaticProbe(this, "foo", MANDATORY, (LongProbeFunction) o -> 10);
 
         LongGauge gauge = metricsRegistry.newLongGauge("foo");
         assertEquals(10, gauge.read());
@@ -104,12 +124,9 @@ public class LongGaugeImplTest {
 
     @Test
     public void whenProbeThrowsException() {
-        metricsRegistry.register(this, "foo", MANDATORY,
-                new LongProbeFunction() {
-                    @Override
-                    public long get(Object o) {
-                        throw new RuntimeException();
-                    }
+        metricsRegistry.registerStaticProbe(this, "foo", MANDATORY,
+                (LongProbeFunction) o -> {
+                    throw new RuntimeException();
                 });
 
         LongGauge gauge = metricsRegistry.newLongGauge("foo");
@@ -122,7 +139,7 @@ public class LongGaugeImplTest {
     @Test
     public void whenLongProbeField() {
         SomeObject someObject = new SomeObject();
-        metricsRegistry.scanAndRegister(someObject, "foo");
+        metricsRegistry.registerStaticMetrics(someObject, "foo");
 
         LongGauge gauge = metricsRegistry.newLongGauge("foo.longField");
         assertEquals(10, gauge.read());
@@ -131,7 +148,7 @@ public class LongGaugeImplTest {
     @Test
     public void whenDoubleProbeField() {
         SomeObject someObject = new SomeObject();
-        metricsRegistry.scanAndRegister(someObject, "foo");
+        metricsRegistry.registerStaticMetrics(someObject, "foo");
 
         LongGauge gauge = metricsRegistry.newLongGauge("foo.doubleField");
         assertEquals(round(someObject.doubleField), gauge.read());
@@ -139,26 +156,188 @@ public class LongGaugeImplTest {
 
     @Test
     public void whenReregister() {
-        metricsRegistry.register(this, "foo", MANDATORY,
-                new LongProbeFunction() {
-                    @Override
-                    public long get(Object o) throws Exception {
-                        return 10;
-                    }
-                });
+        metricsRegistry.registerStaticProbe(this, "foo", MANDATORY,
+                (LongProbeFunction) o -> 10);
 
         LongGauge gauge = metricsRegistry.newLongGauge("foo");
 
         gauge.read();
 
-        metricsRegistry.register(this, "foo", MANDATORY,
-                new LongProbeFunction() {
-                    @Override
-                    public long get(Object o) throws Exception {
-                        return 11;
-                    }
-                });
+        metricsRegistry.registerStaticProbe(this, "foo", MANDATORY,
+                (LongProbeFunction) o -> 11);
 
         assertEquals(11, gauge.read());
+    }
+
+    @Test
+    public void whenCreatedForDynamicLongMetricWithExtractedValue() {
+        SomeObject someObject = new SomeObject();
+        someObject.longField = 42;
+        metricsRegistry.registerDynamicMetricsProvider(someObject);
+        LongGaugeImpl longGauge = metricsRegistry.newLongGauge("foo.longField");
+
+        // needed to collect dynamic metrics and update the gauge created from them
+        metricsRegistry.collect(mock(MetricsCollector.class));
+
+        assertEquals(42, longGauge.read());
+
+        someObject.longField = 43;
+        assertEquals(43, longGauge.read());
+    }
+
+    @Test
+    public void whenCreatedForDynamicDoubleMetricWithExtractedValue() {
+        SomeObject someObject = new SomeObject();
+        someObject.doubleField = 41.65D;
+        metricsRegistry.registerDynamicMetricsProvider(someObject);
+        LongGaugeImpl longGauge = metricsRegistry.newLongGauge("foo.doubleField");
+
+        // needed to collect dynamic metrics and update the gauge created from them
+        metricsRegistry.collect(mock(MetricsCollector.class));
+
+        assertEquals(42, longGauge.read());
+
+        someObject.doubleField = 42.65D;
+        assertEquals(43, longGauge.read());
+    }
+
+    @Test
+    public void whenCreatedForDynamicLongMetricWithProvidedValue() {
+        SomeObject someObject = new SomeObject();
+        someObject.longField = 42;
+        metricsRegistry.registerDynamicMetricsProvider((descriptor, context) -> context
+                .collect(descriptor.withPrefix("foo"), "longField", INFO, BYTES, 42));
+        LongGaugeImpl longGauge = metricsRegistry.newLongGauge("foo.longField");
+
+        // needed to collect dynamic metrics and update the gauge created from them
+        metricsRegistry.collect(mock(MetricsCollector.class));
+
+        assertEquals(42, longGauge.read());
+    }
+
+    @Test
+    public void whenCreatedForDynamicDoubleMetricWithProvidedValue() {
+        SomeObject someObject = new SomeObject();
+        someObject.longField = 42;
+        metricsRegistry.registerDynamicMetricsProvider((tagger, context) -> context
+                .collect(tagger.withPrefix("foo"), "doubleField", INFO, BYTES, 41.65D));
+        LongGaugeImpl longGauge = metricsRegistry.newLongGauge("foo.doubleField");
+
+        // needed to collect dynamic metrics and update the gauge created from them
+        metricsRegistry.collect(mock(MetricsCollector.class));
+
+        assertEquals(42, longGauge.read());
+    }
+
+    @Test
+    public void whenCacheDynamicMetricSourceGcdReadsDefault() {
+        NullableDynamicMetricsProvider metricsProvider = new NullableDynamicMetricsProvider();
+        WeakReference<SomeObject> someObjectWeakRef = new WeakReference<>(metricsProvider.someObject);
+        metricsProvider.someObject.longField = 42;
+        metricsRegistry.registerDynamicMetricsProvider(metricsProvider);
+        LongGaugeImpl longGauge = metricsRegistry.newLongGauge("foo.longField");
+
+        // needed to collect dynamic metrics and update the gauge created from them
+        metricsRegistry.collect(mock(MetricsCollector.class));
+        assertEquals(42, longGauge.read());
+
+        metricsProvider.someObject = null;
+        System.gc();
+        // wait for someObject to get GCd - should have already happened
+        assertTrueEventually(() -> assertNull(someObjectWeakRef.get()));
+
+        assertEquals(LongGaugeImpl.DEFAULT_VALUE, longGauge.read());
+    }
+
+    @Test
+    public void whenCacheDynamicMetricSourceReplacedWithConcreteValue() {
+        SomeObject someObject = new SomeObject();
+        someObject.longField = 42;
+        metricsRegistry.registerDynamicMetricsProvider(someObject);
+        LongGaugeImpl longGauge = metricsRegistry.newLongGauge("foo.longField");
+
+        // needed to collect dynamic metrics and update the gauge created from them
+        metricsRegistry.collect(mock(MetricsCollector.class));
+        assertEquals(42, longGauge.read());
+
+        metricsRegistry.deregisterDynamicMetricsProvider(someObject);
+
+        metricsRegistry.registerDynamicMetricsProvider((descriptor, context) ->
+                context.collect(descriptor.withPrefix("foo"), "longField", INFO, COUNT, 142));
+        // needed to collect dynamic metrics and update the gauge created from them
+        metricsRegistry.collect(mock(MetricsCollector.class));
+
+        assertEquals(142, longGauge.read());
+    }
+
+    @Test
+    public void whenCacheDynamicMetricValueReplacedWithCachedMetricSource() {
+        LongGaugeImpl longGauge = metricsRegistry.newLongGauge("foo.longField");
+
+        // provide concrete value
+        DynamicMetricsProvider concreteProvider = (descriptor, context) ->
+                context.collect(descriptor.withPrefix("foo"), "longField", INFO, COUNT, 142);
+        metricsRegistry.registerDynamicMetricsProvider(concreteProvider);
+        // needed to collect dynamic metrics and update the gauge created from them
+        metricsRegistry.collect(mock(MetricsCollector.class));
+
+        assertEquals(142, longGauge.read());
+
+        metricsRegistry.deregisterDynamicMetricsProvider(concreteProvider);
+
+        // provide metric source to be cached
+        SomeObject someObject = new SomeObject();
+        someObject.longField = 42;
+        metricsRegistry.registerDynamicMetricsProvider(someObject);
+
+        // needed to collect dynamic metrics and update the gauge created from them
+        metricsRegistry.collect(mock(MetricsCollector.class));
+        assertEquals(42, longGauge.read());
+    }
+
+    @Test
+    public void whenNotVisitedWithCachedMetricSourceReadsDefault() {
+        SomeObject someObject = new SomeObject();
+        someObject.longField = 42;
+        metricsRegistry.registerDynamicMetricsProvider(someObject);
+        LongGaugeImpl longGauge = metricsRegistry.newLongGauge("foo.longField");
+
+        // needed to collect dynamic metrics and update the gauge created from them
+        metricsRegistry.collect(mock(MetricsCollector.class));
+        assertEquals(42, longGauge.read());
+
+        // clears the cached metric source
+        metricsRegistry.deregisterDynamicMetricsProvider(someObject);
+        metricsRegistry.collect(mock(MetricsCollector.class));
+
+        assertEquals(LongGaugeImpl.DEFAULT_VALUE, longGauge.read());
+    }
+
+    @Test
+    public void whenNotVisitedWithCachedValueReadsDefault() {
+        DynamicMetricsProvider concreteProvider = (descriptor, context) ->
+                context.collect(descriptor.withPrefix("foo"), "longField", INFO, COUNT, 42);
+        metricsRegistry.registerDynamicMetricsProvider(concreteProvider);
+        LongGaugeImpl longGauge = metricsRegistry.newLongGauge("foo.longField");
+
+        // needed to collect dynamic metrics and update the gauge created from them
+        metricsRegistry.collect(mock(MetricsCollector.class));
+        assertEquals(42, longGauge.read());
+
+        // clears the cached metric source
+        metricsRegistry.deregisterDynamicMetricsProvider(concreteProvider);
+        metricsRegistry.collect(mock(MetricsCollector.class));
+
+        assertEquals(LongGaugeImpl.DEFAULT_VALUE, longGauge.read());
+    }
+
+    @Test
+    public void whenProbeRegisteredAfterGauge() {
+        LongGauge gauge = metricsRegistry.newLongGauge("foo.longField");
+
+        SomeObject someObject = new SomeObject();
+        metricsRegistry.registerStaticMetrics(someObject, "foo");
+
+        assertEquals(someObject.longField, gauge.read());
     }
 }

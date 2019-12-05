@@ -22,13 +22,12 @@ import com.hazelcast.config.MultiMapConfig;
 import com.hazelcast.core.EntryAdapter;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.MapEvent;
-import com.hazelcast.core.MultiMap;
+import com.hazelcast.map.MapEvent;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -37,6 +36,7 @@ import org.junit.runner.RunWith;
 import java.util.Collection;
 import java.util.Random;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.CountDownLatch;
@@ -48,16 +48,16 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class MultiMapListenerTest extends HazelcastTestSupport {
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test(expected = NullPointerException.class)
     public void testAddLocalEntryListener_whenNull() {
         MultiMap<String, String> multiMap = createHazelcastInstance().getMultiMap(randomString());
         multiMap.addLocalEntryListener(null);
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test(expected = NullPointerException.class)
     public void testAddListener_whenListenerNull() {
         MultiMap<String, String> multiMap = createHazelcastInstance().getMultiMap(randomString());
         multiMap.addEntryListener(null, true);
@@ -67,14 +67,14 @@ public class MultiMapListenerTest extends HazelcastTestSupport {
     public void testRemoveListener() {
         MultiMap<Object, Object> multiMap = createHazelcastInstance().getMultiMap(randomString());
         MyEntryListener listener = new CountDownValueNotNullListener(1);
-        String id = multiMap.addEntryListener(listener, true);
+        UUID id = multiMap.addEntryListener(listener, true);
         assertTrue(multiMap.removeEntryListener(id));
     }
 
     @Test
     public void testRemoveListener_whenNotExist() {
         MultiMap<String, String> multiMap = createHazelcastInstance().getMultiMap(randomString());
-        assertFalse(multiMap.removeEntryListener("NOT_THERE"));
+        assertFalse(multiMap.removeEntryListener(UUID.randomUUID()));
     }
 
     @Test
@@ -416,7 +416,7 @@ public class MultiMapListenerTest extends HazelcastTestSupport {
         MultiMap<String, String> multiMap = instances[0].getMultiMap(name);
 
         KeyCollectingListener<String> listener = new KeyCollectingListener<String>();
-        String id2 = multiMap.addEntryListener(listener, true);
+        UUID id2 = multiMap.addEntryListener(listener, true);
         getMultiMap(instances, name).put("key3", "val3");
         getMultiMap(instances, name).put("key3", "val33");
         getMultiMap(instances, name).put("key4", "val4");

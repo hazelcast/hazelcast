@@ -17,8 +17,8 @@
 package com.hazelcast.internal.ascii.rest;
 
 import com.hazelcast.cluster.ClusterState;
-import com.hazelcast.instance.Node;
-import com.hazelcast.instance.NodeState;
+import com.hazelcast.instance.impl.Node;
+import com.hazelcast.instance.impl.NodeState;
 import com.hazelcast.internal.ascii.TextCommandService;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.internal.partition.InternalPartitionService;
@@ -38,6 +38,8 @@ public class HttpHeadCommandProcessor extends HttpCommandProcessor<HttpHeadComma
         if (uri.startsWith(URI_MAPS)) {
             command.send200();
         } else if (uri.startsWith(URI_QUEUES)) {
+            command.send200();
+        } else if (uri.startsWith(URI_INSTANCE)) {
             command.send200();
         } else if (uri.startsWith(URI_CLUSTER)) {
             command.send200();
@@ -62,7 +64,7 @@ public class HttpHeadCommandProcessor extends HttpCommandProcessor<HttpHeadComma
         InternalPartitionService partitionService = node.getPartitionService();
         long migrationQueueSize = partitionService.getMigrationQueueSize();
 
-        Map<String, Object> headervals = new LinkedHashMap<String, Object>();
+        Map<String, Object> headervals = new LinkedHashMap<>();
         headervals.put("NodeState", nodeState);
         headervals.put("ClusterState", clusterState);
         headervals.put("MigrationQueueSize", migrationQueueSize);

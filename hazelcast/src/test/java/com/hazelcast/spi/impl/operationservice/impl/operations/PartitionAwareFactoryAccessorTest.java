@@ -18,11 +18,11 @@ package com.hazelcast.spi.impl.operationservice.impl.operations;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.OperationFactory;
+import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.spi.impl.operationservice.OperationFactory;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -34,7 +34,7 @@ import static com.hazelcast.spi.impl.operationservice.impl.operations.PartitionA
 import static org.junit.Assert.assertNull;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class PartitionAwareFactoryAccessorTest extends HazelcastTestSupport {
 
     @Test
@@ -43,17 +43,17 @@ public class PartitionAwareFactoryAccessorTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void returns_null_when_supplied_factory_null() throws Exception {
+    public void returns_null_when_supplied_factory_null() {
         assertNull(extractPartitionAware(null));
     }
 
     @Test
-    public void returns_null_when_supplied_factory_is_not_partition_aware() throws Exception {
+    public void returns_null_when_supplied_factory_is_not_partition_aware() {
         assertNull(extractPartitionAware(new RawOpFactory()));
     }
 
     @Test
-    public void returns_partition_aware_factory_when_supplied_factory_is_partition_aware() throws Exception {
+    public void returns_partition_aware_factory_when_supplied_factory_is_partition_aware() {
         PartitionAwareOpFactory factory = new PartitionAwareOpFactory();
         PartitionAwareOperationFactory extractedFactory = extractPartitionAware(factory);
 
@@ -77,7 +77,7 @@ public class PartitionAwareFactoryAccessorTest extends HazelcastTestSupport {
         }
 
         @Override
-        public int getId() {
+        public int getClassId() {
             return 0;
         }
 
@@ -108,7 +108,7 @@ public class PartitionAwareFactoryAccessorTest extends HazelcastTestSupport {
         }
 
         @Override
-        public int getId() {
+        public int getClassId() {
             return 0;
         }
 

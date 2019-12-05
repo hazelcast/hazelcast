@@ -16,19 +16,17 @@
 
 package com.hazelcast.internal.diagnostics;
 
-import com.hazelcast.spi.NamedOperation;
+import com.hazelcast.spi.impl.operationservice.NamedOperation;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationexecutor.OperationExecutor;
 import com.hazelcast.spi.impl.operationexecutor.OperationRunner;
-import com.hazelcast.spi.impl.operationservice.InternalOperationService;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.spi.properties.HazelcastProperty;
-import com.hazelcast.util.ItemCounter;
+import com.hazelcast.internal.util.ItemCounter;
 
 import java.util.concurrent.locks.LockSupport;
 
-import static com.hazelcast.internal.diagnostics.Diagnostics.PREFIX;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
@@ -53,7 +51,7 @@ public class OperationThreadSamplerPlugin extends DiagnosticsPlugin {
      * If set to 0, the plugin is disabled.
      */
     public static final HazelcastProperty PERIOD_SECONDS
-            = new HazelcastProperty(PREFIX + ".operationthreadsamples.period.seconds", 0, SECONDS);
+            = new HazelcastProperty("hazelcast.diagnostics.operationthreadsamples.period.seconds", 0, SECONDS);
 
     /**
      * The period in milliseconds between taking samples.
@@ -62,7 +60,7 @@ public class OperationThreadSamplerPlugin extends DiagnosticsPlugin {
      * precision.
      */
     public static final HazelcastProperty SAMPLER_PERIOD_MILLIS
-            = new HazelcastProperty(PREFIX + ".operationthreadsamples.sampler.period.millis", 100, MILLISECONDS);
+            = new HazelcastProperty("hazelcast.diagnostics.operationthreadsamples.sampler.period.millis", 100, MILLISECONDS);
 
     /**
      * If the name the data-structure the operation operates on should be included.
@@ -76,7 +74,7 @@ public class OperationThreadSamplerPlugin extends DiagnosticsPlugin {
      * it gets, the more litter is created.
      */
     public static final HazelcastProperty INCLUDE_NAME
-            = new HazelcastProperty(PREFIX + ".operationthreadsamples.includeName", false);
+            = new HazelcastProperty("hazelcast.diagnostics.operationthreadsamples.includeName", false);
     public static final float HUNDRED = 100f;
 
 
@@ -91,7 +89,7 @@ public class OperationThreadSamplerPlugin extends DiagnosticsPlugin {
     public OperationThreadSamplerPlugin(NodeEngineImpl nodeEngine) {
         super(nodeEngine.getLogger(OperationThreadSamplerPlugin.class));
         this.nodeEngine = nodeEngine;
-        InternalOperationService operationService = nodeEngine.getOperationService();
+        OperationServiceImpl operationService = nodeEngine.getOperationService();
         this.executor = ((OperationServiceImpl) operationService).getOperationExecutor();
         HazelcastProperties props = nodeEngine.getProperties();
         this.periodMillis = props.getMillis(PERIOD_SECONDS);
@@ -135,7 +133,7 @@ public class OperationThreadSamplerPlugin extends DiagnosticsPlugin {
         public void run() {
             long nextRunMillis = System.currentTimeMillis();
 
-            while (nodeEngine.isActive()) {
+            while (nodeEngine.isRunning()) {
                 LockSupport.parkUntil(nextRunMillis);
                 nextRunMillis = samplerPeriodMillis;
                 sample(executor.getPartitionOperationRunners(), partitionSpecificSamples);

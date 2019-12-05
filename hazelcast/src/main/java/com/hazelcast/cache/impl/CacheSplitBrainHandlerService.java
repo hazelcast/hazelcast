@@ -16,15 +16,16 @@
 
 package com.hazelcast.cache.impl;
 
-import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.merge.AbstractSplitBrainHandlerService;
 import com.hazelcast.spi.merge.DiscardMergePolicy;
+import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 
 import java.util.Collection;
 import java.util.Iterator;
 
 import static com.hazelcast.cache.impl.ICacheService.SERVICE_NAME;
-import static com.hazelcast.util.ThreadUtil.assertRunningOnPartitionThread;
+import static com.hazelcast.internal.util.ThreadUtil.assertRunningOnPartitionThread;
 
 /**
  * Handles split-brain functionality for cache.
@@ -66,7 +67,7 @@ class CacheSplitBrainHandlerService extends AbstractSplitBrainHandlerService<ICa
 
     @Override
     protected boolean hasMergeablePolicy(ICacheRecordStore store) {
-        Object mergePolicy = cacheService.getMergePolicy(store.getName());
+        SplitBrainMergePolicy mergePolicy = cacheService.getMergePolicy(store.getName());
         return !(mergePolicy instanceof DiscardMergePolicy);
     }
 }

@@ -19,14 +19,17 @@ package com.hazelcast.topic.impl;
 import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.config.TopicConfig;
 import com.hazelcast.core.HazelcastInstanceAware;
-import com.hazelcast.core.MessageListener;
-import com.hazelcast.monitor.LocalTopicStats;
-import com.hazelcast.monitor.impl.LocalTopicStatsImpl;
-import com.hazelcast.nio.ClassLoaderUtil;
-import com.hazelcast.spi.AbstractDistributedObject;
-import com.hazelcast.spi.InitializingObject;
-import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.util.ExceptionUtil;
+import com.hazelcast.topic.LocalTopicStats;
+import com.hazelcast.internal.monitor.impl.LocalTopicStatsImpl;
+import com.hazelcast.internal.nio.ClassLoaderUtil;
+import com.hazelcast.spi.impl.AbstractDistributedObject;
+import com.hazelcast.spi.impl.InitializingObject;
+import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.topic.MessageListener;
+import com.hazelcast.internal.util.ExceptionUtil;
+
+import javax.annotation.Nonnull;
+import java.util.UUID;
 
 public abstract class TopicProxySupport extends AbstractDistributedObject<TopicService> implements InitializingObject {
 
@@ -92,16 +95,17 @@ public abstract class TopicProxySupport extends AbstractDistributedObject<TopicS
      *
      * @param message the message to be published
      */
-    public void publishInternal(Object message) {
+    public void publishInternal(@Nonnull Object message) {
         topicStats.incrementPublishes();
         topicService.publishMessage(name, message, multithreaded);
     }
 
-    public String addMessageListenerInternal(MessageListener listener) {
-        return topicService.addMessageListener(name, listener, false);
+    public @Nonnull
+    UUID addMessageListenerInternal(@Nonnull MessageListener listener) {
+        return topicService.addMessageListener(name, listener);
     }
 
-    public boolean removeMessageListenerInternal(final String registrationId) {
+    public boolean removeMessageListenerInternal(@Nonnull UUID registrationId) {
         return topicService.removeMessageListener(name, registrationId);
     }
 

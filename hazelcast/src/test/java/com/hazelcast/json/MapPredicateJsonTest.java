@@ -18,30 +18,28 @@ package com.hazelcast.json;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.InMemoryFormat;
+import com.hazelcast.config.MetadataPolicy;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastJsonValue;
-import com.hazelcast.core.IMap;
 import com.hazelcast.internal.json.Json;
 import com.hazelcast.internal.json.JsonArray;
 import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.internal.json.JsonValue;
-import com.hazelcast.nio.serialization.Portable;
-import com.hazelcast.nio.serialization.PortableFactory;
-import com.hazelcast.nio.serialization.PortableReader;
-import com.hazelcast.nio.serialization.PortableWriter;
+import com.hazelcast.map.IMap;
 import com.hazelcast.query.Predicates;
-import com.hazelcast.test.HazelcastParametersRunnerFactory;
+import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
+import org.junit.runners.Parameterized.Parameter;
+import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
-import java.io.IOException;
 import java.util.Collection;
 import java.util.Map;
 
@@ -50,19 +48,27 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(Parameterized.class)
-@Parameterized.UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
-@Category({QuickTest.class, ParallelTest.class})
+@UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class MapPredicateJsonTest extends HazelcastTestSupport {
 
     TestHazelcastInstanceFactory factory;
     HazelcastInstance instance;
 
-    @Parameterized.Parameter
+    @Parameter(0)
     public InMemoryFormat inMemoryFormat;
 
-    @Parameterized.Parameters(name = "inMemoryFormat: {0}")
+    @Parameter(1)
+    public MetadataPolicy metadataPolicy;
+
+    @Parameterized.Parameters(name = "inMemoryFormat: {0}, metadataPolicy: {1}")
     public static Collection<Object[]> parameters() {
-        return asList(new Object[][] {{InMemoryFormat.BINARY}, {InMemoryFormat.OBJECT}});
+        return asList(new Object[][]{
+                {InMemoryFormat.BINARY, MetadataPolicy.OFF},
+                {InMemoryFormat.BINARY, MetadataPolicy.CREATE_ON_UPDATE},
+                {InMemoryFormat.OBJECT, MetadataPolicy.OFF},
+                {InMemoryFormat.OBJECT, MetadataPolicy.CREATE_ON_UPDATE},
+        });
     }
 
     @Before
@@ -75,22 +81,13 @@ public class MapPredicateJsonTest extends HazelcastTestSupport {
     @Override
     protected Config getConfig() {
         Config config = super.getConfig();
-        config.getMapConfig("default").setInMemoryFormat(inMemoryFormat);
-        config.getSerializationConfig().addPortableFactory(1, new PortableFactory() {
-            @Override
-            public Portable create(int classId) {
-                if (classId == 1) {
-                    return new MyPortable();
-                } else if (classId == 2) {
-                    return new LittlePortable();
-                }
-                return null;
-            }
-        });
+        config.getMapConfig("default")
+                .setInMemoryFormat(inMemoryFormat)
+                .setMetadataPolicy(metadataPolicy);
         return config;
     }
 
-    private JsonObject createNameAgeOnDuty(String name, int age, boolean onDuty) {
+    private static JsonObject createNameAgeOnDuty(String name, int age, boolean onDuty) {
         JsonObject object = Json.object();
         object.add("name", name);
         object.add("age", age);
@@ -98,28 +95,28 @@ public class MapPredicateJsonTest extends HazelcastTestSupport {
         return object;
     }
 
-    private HazelcastJsonValue putJsonString(Map map, String name, int age, boolean onDuty) {
+    private static HazelcastJsonValue putJsonString(Map map, String name, int age, boolean onDuty) {
         String f = createNameAgeOnDuty(name, age, onDuty).toString();
-        HazelcastJsonValue json = HazelcastJson.fromString(f);
+        HazelcastJsonValue json = new HazelcastJsonValue(f);
         map.put(name, json);
         return json;
     }
 
-    private String putWithJsonStringKey(Map map, String name, int age, boolean onDuty) {
+    private static String putWithJsonStringKey(Map map, String name, int age, boolean onDuty) {
         String f = createNameAgeOnDuty(name, age, onDuty).toString();
-        HazelcastJsonValue json = HazelcastJson.fromString(f);
+        HazelcastJsonValue json = new HazelcastJsonValue(f);
         map.put(json, name);
         return name;
     }
 
     private HazelcastJsonValue putJsonString(Map map, String key, JsonValue value) {
-        HazelcastJsonValue hazelcastJson = HazelcastJson.fromString(value.toString());
+        HazelcastJsonValue hazelcastJson = new HazelcastJsonValue(value.toString());
         map.put(key, hazelcastJson);
         return hazelcastJson;
     }
 
-    private String putWithJsonStringKey(Map map, JsonValue key, String value) {
-        HazelcastJsonValue lazyKey = HazelcastJson.fromString(key.toString());
+    private static String putWithJsonStringKey(Map map, JsonValue key, String value) {
+        HazelcastJsonValue lazyKey = new HazelcastJsonValue(key.toString());
         map.put(lazyKey, value);
         return value;
     }
@@ -384,9 +381,9 @@ public class MapPredicateJsonTest extends HazelcastTestSupport {
         JsonObject obj3 = Json.object();
         obj3.add("arr", array3);
 
-        HazelcastJsonValue p1 = HazelcastJson.fromString(obj1.toString());
-        HazelcastJsonValue p2 = HazelcastJson.fromString(obj2.toString());
-        HazelcastJsonValue p3 = HazelcastJson.fromString(obj3.toString());
+        HazelcastJsonValue p1 = new HazelcastJsonValue(obj1.toString());
+        HazelcastJsonValue p2 = new HazelcastJsonValue(obj2.toString());
+        HazelcastJsonValue p3 = new HazelcastJsonValue(obj3.toString());
 
         IMap<String, HazelcastJsonValue> map = instance.getMap(randomMapName());
         map.put("one", p1);
@@ -500,7 +497,7 @@ public class MapPredicateJsonTest extends HazelcastTestSupport {
     public void testJsonValueIsJustANumber() {
         IMap<Integer, HazelcastJsonValue> map = instance.getMap(randomMapName());
         for (int i = 0; i < 10; i++) {
-            map.put(i, HazelcastJson.fromString(Json.value(i).toString()));
+            map.put(i, new HazelcastJsonValue(Json.value(i).toString()));
         }
         Collection<HazelcastJsonValue> vals = map.values(Predicates.greaterEqual("this", 3));
         assertEquals(7, vals.size());
@@ -515,7 +512,7 @@ public class MapPredicateJsonTest extends HazelcastTestSupport {
     public void testJsonValueIsJustAString() {
         IMap<Integer, HazelcastJsonValue> map = instance.getMap(randomMapName());
         for (int i = 0; i < 10; i++) {
-            map.put(i, HazelcastJson.fromString(Json.value("s" + i).toString()));
+            map.put(i, new HazelcastJsonValue(Json.value("s" + i).toString()));
         }
         Collection<HazelcastJsonValue> vals = map.values(Predicates.greaterEqual("this", "s3"));
         assertEquals(7, vals.size());
@@ -529,7 +526,7 @@ public class MapPredicateJsonTest extends HazelcastTestSupport {
     public void testJsonValueIsJustABoolean() {
         IMap<Integer, HazelcastJsonValue> map = instance.getMap(randomMapName());
         for (int i = 0; i < 10; i++) {
-            map.put(i, HazelcastJson.fromString(Json.value(i < 7).toString()));
+            map.put(i, new HazelcastJsonValue(Json.value(i < 7).toString()));
         }
         Collection<Map.Entry<Integer, HazelcastJsonValue>> vals = map.entrySet(Predicates.equal("this", true));
         assertEquals(7, vals.size());
@@ -593,6 +590,27 @@ public class MapPredicateJsonTest extends HazelcastTestSupport {
     }
 
     @Test
+    public void testSecondTimeKnownPatternIsUsed() {
+        IMap<String, JsonValue> map = instance.getMap(randomMapName());
+
+        HazelcastJsonValue p1 = putJsonString(map, "a", 30, true);
+        HazelcastJsonValue p2 = putJsonString(map, "b", 20, false);
+        HazelcastJsonValue p3 = putJsonString(map, "c", 10, true);
+
+        Collection<JsonValue> vals = map.values(Predicates.greaterEqual("name", "b"));
+
+        assertEquals(2, vals.size());
+        assertTrue(vals.contains(p2));
+        assertTrue(vals.contains(p3));
+
+        vals = map.values(Predicates.greaterEqual("name", "b"));
+
+        assertEquals(2, vals.size());
+        assertTrue(vals.contains(p2));
+        assertTrue(vals.contains(p3));
+    }
+
+    @Test
     public void testJsonPredicateOnKey() {
         JsonValue array1 = Json.array();
         array1.asArray().add(createNameAgeOnDuty("a", 50, false))
@@ -616,9 +634,9 @@ public class MapPredicateJsonTest extends HazelcastTestSupport {
         JsonObject obj3 = Json.object();
         obj3.add("arr", array3);
 
-        HazelcastJsonValue p1 = HazelcastJson.fromString(obj1.toString());
-        HazelcastJsonValue p2 = HazelcastJson.fromString(obj2.toString());
-        HazelcastJsonValue p3 = HazelcastJson.fromString(obj3.toString());
+        HazelcastJsonValue p1 = new HazelcastJsonValue(obj1.toString());
+        HazelcastJsonValue p2 = new HazelcastJsonValue(obj2.toString());
+        HazelcastJsonValue p3 = new HazelcastJsonValue(obj3.toString());
 
         IMap<HazelcastJsonValue, String> map = instance.getMap(randomMapName());
         map.put(p1, "one");
@@ -631,73 +649,110 @@ public class MapPredicateJsonTest extends HazelcastTestSupport {
         assertTrue(vals.contains("two"));
     }
 
-    public static class MyPortable implements Portable {
-
-        private LittlePortable[] littlePortables;
-
-        public MyPortable() {
-
-        }
-
-        public MyPortable(LittlePortable[] littlePortables) {
-            this.littlePortables = littlePortables;
-        }
-
-        @Override
-        public int getFactoryId() {
-            return 1;
-        }
-
-        @Override
-        public int getClassId() {
-            return 1;
-        }
-
-        @Override
-        public void writePortable(PortableWriter writer) throws IOException {
-            writer.writePortableArray("littlePortables", this.littlePortables);
-        }
-
-        @Override
-        public void readPortable(PortableReader reader) throws IOException {
-            this.littlePortables = (LittlePortable[]) reader.readPortableArray("littlePortables");
-        }
+    @Test
+    public void testInvalidJsonDoesNotThrowException() {
+        IMap<HazelcastJsonValue, HazelcastJsonValue> map = instance.getMap(randomMapName());
+        String invalidJsonString = "{ \"a: 1 }";
+        HazelcastJsonValue invalidHazelcastJsonValue = new HazelcastJsonValue(invalidJsonString);
+        map.put(invalidHazelcastJsonValue, invalidHazelcastJsonValue);
+        assertEquals(invalidJsonString, map.get(invalidHazelcastJsonValue).toString());
     }
 
-    public static class LittlePortable implements Portable {
+    @Test
+    public void testInvalidJsonValueDoesNotAffectQueryResultForOthers_value() {
+        IMap<Integer, HazelcastJsonValue> map = instance.getMap(randomMapName());
+        String invalidJsonString = "{ \"a: 1 }";
+        String validString1 = "{ \"a\": 2 }";
+        String validString2 = "{ \"a\": 3 }";
 
-        private int real;
-        private int[] tempReals;
+        HazelcastJsonValue invalidJson = new HazelcastJsonValue(invalidJsonString);
+        HazelcastJsonValue valid1 = new HazelcastJsonValue(validString1);
+        HazelcastJsonValue valid2 = new HazelcastJsonValue(validString2);
 
-        public LittlePortable() {
+        map.put(1, invalidJson);
+        map.put(2, valid1);
+        map.put(3, valid2);
 
-        }
+        Collection<HazelcastJsonValue> values = map.values(Predicates.greaterThan("a", 0));
 
-        public LittlePortable(int real, int[] tempReals) {
-            this.real = real;
-            this.tempReals = tempReals;
-        }
+        // values should contain all values except invalidJson
+        assertEquals(2, values.size());
+        assertTrue(values.contains(valid1));
+        assertTrue(values.contains(valid2));
+    }
 
-        @Override
-        public int getFactoryId() {
-            return 1;
-        }
+    @Test
+    public void testInvalidJsonValueDoesNotAffectQueryResultForOthers_key() {
+        IMap<HazelcastJsonValue, Integer> map = instance.getMap(randomMapName());
+        String invalidJsonString = "{ \"a: 1 }";
+        String validString1 = "{ \"a\": 2 }";
+        String validString2 = "{ \"a\": 3 }";
 
-        @Override
-        public int getClassId() {
-            return 2;
-        }
+        HazelcastJsonValue invalidJson = new HazelcastJsonValue(invalidJsonString);
+        HazelcastJsonValue valid1 = new HazelcastJsonValue(validString1);
+        HazelcastJsonValue valid2 = new HazelcastJsonValue(validString2);
 
-        @Override
-        public void writePortable(PortableWriter writer) throws IOException {
-            writer.writeInt("real", this.real);
-            writer.writeIntArray("tempReals", this.tempReals);
-        }
+        map.put(invalidJson, 1);
+        map.put(valid1, 2);
+        map.put(valid2, 3);
 
-        @Override
-        public void readPortable(PortableReader reader) throws IOException {
-            this.real = reader.readInt("real");
-            this.tempReals = reader.readIntArray("tempReals");
-        }
+        Collection<Integer> values = map.values(Predicates.greaterThan("__key.a", 0));
+
+        // values should contain all values except invalidJson
+        assertEquals(2, values.size());
+        assertTrue(values.contains(2));
+        assertTrue(values.contains(3));
+    }
+
+    @Test
+    public void testNonTerminalAttributeIs_queriedWithEqualsNull_shouldNotReturn() {
+        String jsonWithNonTerminalQueryField = Json.object()
+                .add("user", Json.object()
+                        .add("name", "abc")
+                        .add("age", 23))
+                .toString();
+        IMap<Integer, HazelcastJsonValue> map = instance.getMap(randomMapName());
+        map.put(1, new HazelcastJsonValue(jsonWithNonTerminalQueryField));
+
+        Collection<Integer> keys = map.keySet(Predicates.equal("user", null));
+        assertEquals(0, keys.size());
+    }
+
+    @Test
+    public void testNonTerminalAttributeIs_queriedWithNotEqualsNull_shouldReturn() {
+        String jsonWithNonTerminalQueryField = Json.object()
+                .add("user", Json.object()
+                        .add("name", "abc")
+                        .add("age", 23))
+                .toString();
+        IMap<Integer, HazelcastJsonValue> map = instance.getMap(randomMapName());
+        map.put(1, new HazelcastJsonValue(jsonWithNonTerminalQueryField));
+
+        Collection<Integer> keys = map.keySet(Predicates.notEqual("user", null));
+        assertEquals(1, keys.size());
+    }
+
+    @Test
+    public void testNullAttribute_queriedWithNotEqualsNull_shouldNotReturn() {
+        String jsonWithNonTerminalQueryField = Json.object()
+                .add("user", Json.NULL)
+                .toString();
+        IMap<Integer, HazelcastJsonValue> map = instance.getMap(randomMapName());
+        map.put(1, new HazelcastJsonValue(jsonWithNonTerminalQueryField));
+
+        Collection<Integer> keys = map.keySet(Predicates.notEqual("user", null));
+        assertEquals(0, keys.size());
+    }
+
+    @Test
+    public void testNullAttribute_queriedWithEqualsNull_shouldReturn() {
+        String jsonWithNonTerminalQueryField = Json.object()
+                .add("user", Json.NULL)
+                .toString();
+        IMap<Integer, HazelcastJsonValue> map = instance.getMap(randomMapName());
+        map.put(1, new HazelcastJsonValue(jsonWithNonTerminalQueryField));
+
+        Collection<Integer> keys = map.keySet(Predicates.equal("user", null));
+        assertEquals(1, keys.size());
     }
 }

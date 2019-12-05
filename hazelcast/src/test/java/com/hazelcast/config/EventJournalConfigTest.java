@@ -16,9 +16,9 @@
 
 package com.hazelcast.config;
 
-import com.hazelcast.config.EventJournalConfig.EventJournalConfigReadOnly;
+import com.hazelcast.internal.config.EventJournalConfigReadOnly;
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import nl.jqno.equalsverifier.EqualsVerifier;
 import nl.jqno.equalsverifier.Warning;
@@ -29,13 +29,8 @@ import org.junit.runner.RunWith;
 import static com.hazelcast.test.HazelcastTestSupport.assumeDifferentHashCodes;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class EventJournalConfigTest {
-
-    @Test(expected = UnsupportedOperationException.class)
-    public void testReadOnlyClass_setCacheName_throwsException() {
-        getReadOnlyConfig().setCacheName("cache-other");
-    }
 
     @Test(expected = UnsupportedOperationException.class)
     public void testReadOnlyClass_setCapacity_throwsException() {
@@ -48,11 +43,6 @@ public class EventJournalConfigTest {
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void testReadOnlyClass_setMapName_throwsException() {
-        getReadOnlyConfig().setMapName("map-other");
-    }
-
-    @Test(expected = UnsupportedOperationException.class)
     public void testReadOnlyClass_setTTL_throwsException() {
         getReadOnlyConfig().setTimeToLiveSeconds(20);
     }
@@ -61,13 +51,13 @@ public class EventJournalConfigTest {
     public void testEqualsAndHashCode() {
         assumeDifferentHashCodes();
         EqualsVerifier.forClass(EventJournalConfig.class)
-                .suppress(Warning.NONFINAL_FIELDS)
-                .verify();
+                      .suppress(Warning.NONFINAL_FIELDS)
+                      .verify();
     }
 
     private EventJournalConfigReadOnly getReadOnlyConfig() {
         EventJournalConfig config = new EventJournalConfig();
-        config.setEnabled(true).setCacheName("cache").setMapName("map").setCapacity(33).setTimeToLiveSeconds(15);
+        config.setEnabled(true).setCapacity(33).setTimeToLiveSeconds(15);
         return new EventJournalConfigReadOnly(config);
     }
 }

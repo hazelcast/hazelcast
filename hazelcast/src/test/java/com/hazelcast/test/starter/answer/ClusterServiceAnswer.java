@@ -16,7 +16,7 @@
 
 package com.hazelcast.test.starter.answer;
 
-import com.hazelcast.core.Member;
+import com.hazelcast.cluster.Member;
 import org.mockito.invocation.InvocationOnMock;
 
 import java.lang.reflect.Method;

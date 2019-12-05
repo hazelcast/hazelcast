@@ -16,13 +16,14 @@
 
 package com.hazelcast.internal.diagnostics;
 
-import com.hazelcast.core.Member;
-import com.hazelcast.instance.NodeState;
-import com.hazelcast.nio.Address;
+import com.hazelcast.cluster.Member;
+import com.hazelcast.instance.impl.NodeState;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.properties.HazelcastProperty;
 
-import static com.hazelcast.internal.diagnostics.Diagnostics.PREFIX;
+import java.util.UUID;
+
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
@@ -40,7 +41,7 @@ public class MemberHazelcastInstanceInfoPlugin extends DiagnosticsPlugin {
      * If set to 0, the plugin is disabled.
      */
     public static final HazelcastProperty PERIOD_SECONDS = new HazelcastProperty(
-            PREFIX + ".memberinfo.period.seconds", 60, SECONDS);
+            "hazelcast.diagnostics.memberinfo.period.seconds", 60, SECONDS);
 
     private final long periodMillis;
     private final NodeEngineImpl nodeEngine;
@@ -72,7 +73,8 @@ public class MemberHazelcastInstanceInfoPlugin extends DiagnosticsPlugin {
         NodeState state = nodeEngine.getNode().getState();
         writer.writeKeyValueEntry("nodeState", state == null ? "null" : state.toString());
 
-        writer.writeKeyValueEntry("clusterId", nodeEngine.getClusterService().getClusterId());
+        UUID clusterId = nodeEngine.getClusterService().getClusterId();
+        writer.writeKeyValueEntry("clusterId", clusterId != null ? clusterId.toString() : "null");
         writer.writeKeyValueEntry("clusterSize", nodeEngine.getClusterService().getSize());
         writer.writeKeyValueEntry("isMaster", nodeEngine.getClusterService().isMaster());
         Address masterAddress = nodeEngine.getClusterService().getMasterAddress();

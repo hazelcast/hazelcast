@@ -18,6 +18,7 @@ package com.hazelcast.internal.metrics.impl;
 
 import com.hazelcast.internal.metrics.DoubleProbeFunction;
 import com.hazelcast.internal.metrics.LongProbeFunction;
+import com.hazelcast.internal.metrics.MetricDescriptor;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.metrics.ProbeFunction;
 import com.hazelcast.internal.util.counters.Counter;
@@ -37,7 +38,7 @@ import static com.hazelcast.internal.metrics.impl.ProbeUtils.TYPE_PRIMITIVE_LONG
 import static com.hazelcast.internal.metrics.impl.ProbeUtils.TYPE_SEMAPHORE;
 import static com.hazelcast.internal.metrics.impl.ProbeUtils.getType;
 import static com.hazelcast.internal.metrics.impl.ProbeUtils.isDouble;
-import static com.hazelcast.util.StringUtil.getterIntoProperty;
+import static com.hazelcast.internal.util.StringUtil.getterIntoProperty;
 import static java.lang.String.format;
 
 /**
@@ -48,34 +49,40 @@ abstract class MethodProbe implements ProbeFunction {
     private static final Object[] EMPTY_ARGS = new Object[0];
 
     final Method method;
-    final Probe probe;
+    final CachedProbe probe;
     final int type;
+    final SourceMetadata sourceMetadata;
+    final String methodOrProbeName;
 
-    MethodProbe(Method method, Probe probe, int type) {
+    MethodProbe(Method method, Probe probe, int type, SourceMetadata sourceMetadata) {
         this.method = method;
-        this.probe = probe;
+        this.probe = new CachedProbe(probe);
         this.type = type;
+        this.sourceMetadata = sourceMetadata;
+        this.methodOrProbeName = probe.name().length() != 0
+                ? probe.name()
+                : getterIntoProperty(method.getName());
         method.setAccessible(true);
+
     }
 
     void register(MetricsRegistryImpl metricsRegistry, Object source, String namePrefix) {
-        String name = namePrefix + '.' + getProbeOrMethodName();
-        metricsRegistry.registerInternal(source, name, probe.level(), this);
+        MetricDescriptor descriptor = metricsRegistry
+                .newMetricDescriptor()
+                .withPrefix(namePrefix)
+                .withMetric(getProbeOrMethodName());
+        metricsRegistry.registerInternal(source, descriptor, probe.level(), this);
     }
 
-    void register(ProbeBuilderImpl builder, Object source) {
-        builder
-                .withTag("unit", probe.unit().name().toLowerCase())
-                .register(source, getProbeOrMethodName(), probe.level(), this);
+    void register(MetricsRegistryImpl metricsRegistry, MetricDescriptor descriptor, Object source) {
+        metricsRegistry.registerStaticProbe(source, descriptor, getProbeOrMethodName(), probe.level(), probe.unit(), this);
     }
 
-    private String getProbeOrMethodName() {
-        return probe.name().length() != 0
-                ? probe.name()
-                : getterIntoProperty(method.getName());
+    String getProbeOrMethodName() {
+        return methodOrProbeName;
     }
 
-    static <S> MethodProbe createMethodProbe(Method method, Probe probe) {
+    static <S> MethodProbe createMethodProbe(Method method, Probe probe, SourceMetadata sourceMetadata) {
         int type = getType(method.getReturnType());
         if (type == -1) {
             throw new IllegalArgumentException(format("@Probe method '%s.%s() has an unsupported return type'",
@@ -88,16 +95,16 @@ abstract class MethodProbe implements ProbeFunction {
         }
 
         if (isDouble(type)) {
-            return new DoubleMethodProbe<S>(method, probe, type);
+            return new DoubleMethodProbe<S>(method, probe, type, sourceMetadata);
         } else {
-            return new LongMethodProbe<S>(method, probe, type);
+            return new LongMethodProbe<S>(method, probe, type, sourceMetadata);
         }
     }
 
     static class LongMethodProbe<S> extends MethodProbe implements LongProbeFunction<S> {
 
-        public LongMethodProbe(Method method, Probe probe, int type) {
-            super(method, probe, type);
+        LongMethodProbe(Method method, Probe probe, int type, SourceMetadata sourceMetadata) {
+            super(method, probe, type, sourceMetadata);
         }
 
         @Override
@@ -128,8 +135,8 @@ abstract class MethodProbe implements ProbeFunction {
 
     static class DoubleMethodProbe<S> extends MethodProbe implements DoubleProbeFunction<S> {
 
-        public DoubleMethodProbe(Method method, Probe probe, int type) {
-            super(method, probe, type);
+        DoubleMethodProbe(Method method, Probe probe, int type, SourceMetadata sourceMetadata) {
+            super(method, probe, type, sourceMetadata);
         }
 
         @Override

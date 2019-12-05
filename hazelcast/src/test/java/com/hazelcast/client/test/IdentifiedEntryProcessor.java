@@ -16,7 +16,7 @@
 
 package com.hazelcast.client.test;
 
-import com.hazelcast.map.AbstractEntryProcessor;
+import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
@@ -28,7 +28,7 @@ import java.util.Map;
  * Entry processor to test non java clients.
  * This class is for Non-java clients. Please do not remove or modify.
  */
-public class IdentifiedEntryProcessor extends AbstractEntryProcessor<String, String> implements IdentifiedDataSerializable {
+public class IdentifiedEntryProcessor implements EntryProcessor<String, String, String>, IdentifiedDataSerializable {
 
     static final int CLASS_ID = 1;
 
@@ -43,7 +43,7 @@ public class IdentifiedEntryProcessor extends AbstractEntryProcessor<String, Str
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return CLASS_ID;
     }
 
@@ -58,7 +58,7 @@ public class IdentifiedEntryProcessor extends AbstractEntryProcessor<String, Str
     }
 
     @Override
-    public Object process(Map.Entry<String, String> entry) {
+    public String process(Map.Entry<String, String> entry) {
         entry.setValue(value);
         return value;
     }

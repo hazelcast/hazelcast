@@ -22,7 +22,6 @@ import com.hazelcast.internal.management.ManagementDataSerializerHook;
 import com.hazelcast.internal.management.ScriptEngineManagerContext;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.impl.Versioned;
 
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
@@ -30,12 +29,12 @@ import javax.script.ScriptException;
 import java.io.IOException;
 import java.security.AccessControlException;
 
-import static com.hazelcast.internal.cluster.Versions.V3_10;
-
 /**
  * Operation to execute script on the node.
+ * <p>
+ * Note: Once MC migrates to client comms, this class can be merged into {@link RunScriptOperation}.
  */
-public class ScriptExecutorOperation extends AbstractManagementOperation implements Versioned {
+public class ScriptExecutorOperation extends AbstractManagementOperation {
 
     private String engineName;
     private String script;
@@ -81,22 +80,16 @@ public class ScriptExecutorOperation extends AbstractManagementOperation impleme
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         out.writeUTF(engineName);
         out.writeUTF(script);
-        if (out.getVersion().isUnknownOrLessThan(V3_10)) {
-            out.writeInt(0);
-        }
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         engineName = in.readUTF();
         script = in.readUTF();
-        if (in.getVersion().isUnknownOrLessThan(V3_10)) {
-            in.readInt();
-        }
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ManagementDataSerializerHook.SCRIPT_EXECUTOR;
     }
 }

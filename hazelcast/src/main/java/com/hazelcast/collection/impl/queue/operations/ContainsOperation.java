@@ -18,11 +18,12 @@ package com.hazelcast.collection.impl.queue.operations;
 
 import com.hazelcast.collection.impl.queue.QueueContainer;
 import com.hazelcast.collection.impl.queue.QueueDataSerializerHook;
-import com.hazelcast.monitor.impl.LocalQueueStatsImpl;
+import com.hazelcast.internal.monitor.impl.LocalQueueStatsImpl;
+import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.ReadonlyOperation;
+import com.hazelcast.spi.impl.operationservice.ReadonlyOperation;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -56,7 +57,7 @@ public class ContainsOperation extends QueueOperation implements ReadonlyOperati
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return QueueDataSerializerHook.CONTAINS;
     }
 
@@ -65,7 +66,7 @@ public class ContainsOperation extends QueueOperation implements ReadonlyOperati
         super.writeInternal(out);
         out.writeInt(dataList.size());
         for (Data data : dataList) {
-            out.writeData(data);
+            IOUtil.writeData(out, data);
         }
     }
 
@@ -75,7 +76,7 @@ public class ContainsOperation extends QueueOperation implements ReadonlyOperati
         int size = in.readInt();
         dataList = new ArrayList<Data>(size);
         for (int i = 0; i < size; i++) {
-            dataList.add(in.readData());
+            dataList.add(IOUtil.readData(in));
         }
     }
 }

@@ -18,12 +18,9 @@
 <hazelcast xmlns="http://www.hazelcast.com/schema/config"
            xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
            xsi:schemaLocation="http://www.hazelcast.com/schema/config
-           http://www.hazelcast.com/schema/config/hazelcast-config-3.11.xsd">
+           http://www.hazelcast.com/schema/config/hazelcast-config-4.0.xsd">
 
-    <group>
-        <name>dev</name>
-        <password>dev-pass</password>
-    </group>
+    <cluster-name>dev</cluster-name>
     <network>
         <port auto-increment="true">5701</port>
         <join>

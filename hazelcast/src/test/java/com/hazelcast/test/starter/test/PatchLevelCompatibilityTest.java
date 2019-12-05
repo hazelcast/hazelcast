@@ -18,11 +18,12 @@ package com.hazelcast.test.starter.test;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IMap;
+import com.hazelcast.map.IMap;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.NightlyTest;
 import com.hazelcast.test.starter.HazelcastStarter;
 import org.junit.After;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -31,6 +32,7 @@ import static com.hazelcast.test.HazelcastTestSupport.assertClusterSizeEventuall
 import static com.hazelcast.test.HazelcastTestSupport.smallInstanceConfig;
 import static org.junit.Assert.assertEquals;
 
+@Ignore("https://github.com/hazelcast/hazelcast/issues/15021")
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(NightlyTest.class)
 public class PatchLevelCompatibilityTest {

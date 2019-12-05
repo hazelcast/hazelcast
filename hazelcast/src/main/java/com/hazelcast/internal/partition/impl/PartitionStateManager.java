@@ -16,19 +16,20 @@
 
 package com.hazelcast.internal.partition.impl;
 
+import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.cluster.memberselector.MemberSelectors;
 import com.hazelcast.core.HazelcastException;
-import com.hazelcast.core.Member;
-import com.hazelcast.core.MemberSelector;
-import com.hazelcast.instance.Node;
-import com.hazelcast.instance.NodeExtension;
+import com.hazelcast.cluster.Member;
+import com.hazelcast.cluster.MemberSelector;
+import com.hazelcast.instance.impl.Node;
+import com.hazelcast.instance.impl.NodeExtension;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.partition.InternalPartition;
-import com.hazelcast.internal.partition.PartitionListener;
 import com.hazelcast.internal.partition.PartitionReplica;
+import com.hazelcast.internal.partition.PartitionReplicaInterceptor;
 import com.hazelcast.internal.partition.PartitionStateGenerator;
 import com.hazelcast.internal.partition.PartitionTableView;
 import com.hazelcast.logging.ILogger;
@@ -68,7 +69,7 @@ public class PartitionStateManager {
     // can be read and written concurrently...
     private volatile int memberGroupsSize;
 
-    public PartitionStateManager(Node node, InternalPartitionServiceImpl partitionService, PartitionListener listener) {
+    public PartitionStateManager(Node node, InternalPartitionServiceImpl partitionService) {
         this.node = node;
         this.logger = node.getLogger(getClass());
 
@@ -76,9 +77,10 @@ public class PartitionStateManager {
         this.partitionCount = partitionService.getPartitionCount();
         this.partitions = new InternalPartitionImpl[partitionCount];
 
+        PartitionReplicaInterceptor interceptor = new DefaultPartitionReplicaInterceptor(partitionService);
         PartitionReplica localReplica = PartitionReplica.from(node.getLocalMember());
         for (int i = 0; i < partitionCount; i++) {
-            this.partitions[i] = new InternalPartitionImpl(i, listener, localReplica);
+            this.partitions[i] = new InternalPartitionImpl(i, interceptor, localReplica);
         }
 
         memberGroupFactory = MemberGroupFactoryFactory.newMemberGroupFactory(node.getConfig().getPartitionGroupConfig(),
@@ -98,12 +100,7 @@ public class PartitionStateManager {
     }
 
     private Collection<MemberGroup> createMemberGroups(final Set<Member> excludedMembers) {
-        MemberSelector exclude = new MemberSelector() {
-            @Override
-            public boolean select(Member member) {
-                return !excludedMembers.contains(member);
-            }
-        };
+        MemberSelector exclude = member -> !excludedMembers.contains(member);
         final MemberSelector selector = MemberSelectors.and(DATA_MEMBER_SELECTOR, exclude);
         final Collection<Member> members = node.getClusterService().getMembers(selector);
         return memberGroupFactory.createMemberGroups(members);
@@ -121,7 +118,7 @@ public class PartitionStateManager {
      * <li>the cluster state allows migrations. See {@link ClusterState#isMigrationAllowed()}</li>
      * </ul>
      * This will also set the manager state to initialized (if not already) and invoke the
-     * {@link PartitionListener#replicaChanged(PartitionReplicaChangeEvent)} for all changed replicas which
+     * {@link DefaultPartitionReplicaInterceptor} for all changed replicas which
      * will cancel replica synchronizations and increase the partition state version.
      *
      * @param excludedMembers members which are to be excluded from the new layout
@@ -246,7 +243,7 @@ public class PartitionStateManager {
      * Checks all replicas for all partitions. If the cluster service does not contain the member for any
      * address in the partition table, it will remove the address from the partition.
      *
-     * @see ClusterService#getMember(com.hazelcast.nio.Address, String)
+     * @see ClusterService#getMember(Address, String)
      */
     void removeUnknownMembers() {
         ClusterServiceImpl clusterService = node.getClusterService();
@@ -285,10 +282,10 @@ public class PartitionStateManager {
 
     /** Returns a copy of the current partition table. */
     public InternalPartition[] getPartitionsCopy() {
-        NopPartitionListener listener = new NopPartitionListener();
+        NopPartitionReplicaInterceptor interceptor = new NopPartitionReplicaInterceptor();
         InternalPartition[] result = new InternalPartition[partitions.length];
         for (int i = 0; i < partitionCount; i++) {
-            result[i] = partitions[i].copy(listener);
+            result[i] = partitions[i].copy(interceptor);
         }
         return result;
     }
@@ -313,18 +310,22 @@ public class PartitionStateManager {
         return newState;
     }
 
-    public void setMigratingFlag(int partitionId) {
+    public boolean trySetMigratingFlag(int partitionId) {
         if (logger.isFinestEnabled()) {
             logger.finest("Setting partition-migrating flag. partitionId=" + partitionId);
         }
-        partitions[partitionId].setMigrating(true);
+        return partitions[partitionId].setMigrating();
     }
 
     public void clearMigratingFlag(int partitionId) {
         if (logger.isFinestEnabled()) {
             logger.finest("Clearing partition-migrating flag. partitionId=" + partitionId);
         }
-        partitions[partitionId].setMigrating(false);
+        partitions[partitionId].resetMigrating();
+    }
+
+    public boolean isMigrating(int partitionId) {
+        return partitions[partitionId].isMigrating();
     }
 
     /** Sets the replica members for the {@code partitionId}. */
@@ -343,14 +344,11 @@ public class PartitionStateManager {
     }
 
     void incrementVersion(int delta) {
-        if (delta >= 0) {
-            stateVersion.addAndGet(delta);
-        } else {
-            logger.warning("partition table version not incremented by " + delta);
-        }
+        assert delta > 0 : "Delta: " + delta;
+        stateVersion.addAndGet(delta);
     }
 
-    public void incrementVersion() {
+    void incrementVersion() {
         stateVersion.incrementAndGet();
     }
 

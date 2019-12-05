@@ -17,7 +17,7 @@
 package com.hazelcast.spring.cache;
 
 import com.hazelcast.core.Hazelcast;
-import com.hazelcast.core.IMap;
+import com.hazelcast.map.IMap;
 import com.hazelcast.map.MapInterceptor;
 import com.hazelcast.spring.CustomSpringJUnit4ClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -89,7 +89,7 @@ public class HazelcastCacheNoReadTimeoutTest extends HazelcastTestSupport {
 
         private final int delay;
 
-        public DelayIMapGetInterceptor(int delay) {
+        DelayIMapGetInterceptor(int delay) {
             this.delay = delay;
         }
 

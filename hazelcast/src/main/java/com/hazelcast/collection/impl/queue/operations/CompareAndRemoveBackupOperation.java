@@ -20,12 +20,12 @@ import com.hazelcast.collection.impl.queue.QueueContainer;
 import com.hazelcast.collection.impl.queue.QueueDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.spi.BackupOperation;
+import com.hazelcast.spi.impl.operationservice.BackupOperation;
 
 import java.io.IOException;
 import java.util.Set;
 
-import static com.hazelcast.util.SetUtil.createHashSet;
+import static com.hazelcast.internal.util.SetUtil.createHashSet;
 
 /**
  * This class triggers backup method for items' ID.
@@ -50,7 +50,7 @@ public class CompareAndRemoveBackupOperation extends QueueOperation implements B
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return QueueDataSerializerHook.COMPARE_AND_REMOVE_BACKUP;
     }
 

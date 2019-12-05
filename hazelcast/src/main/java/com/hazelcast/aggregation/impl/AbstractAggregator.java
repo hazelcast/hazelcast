@@ -17,11 +17,13 @@
 package com.hazelcast.aggregation.impl;
 
 import com.hazelcast.aggregation.Aggregator;
+import com.hazelcast.internal.json.NonTerminalJsonValue;
 import com.hazelcast.query.impl.Extractable;
 import com.hazelcast.query.impl.getters.MultiResult;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * Abstract class providing convenience for concrete implementations of an {@link Aggregator}
@@ -41,7 +43,7 @@ import java.util.Map;
  * @param <E> extracted value type
  * @param <R> result type
  */
-public abstract class AbstractAggregator<I, E, R> extends Aggregator<I, R> {
+public abstract class AbstractAggregator<I, E, R> implements Aggregator<I, R> {
 
     protected String attributePath;
 
@@ -73,7 +75,7 @@ public abstract class AbstractAggregator<I, E, R> extends Aggregator<I, R> {
                 }
                 accumulateExtracted(entry, results.get(i));
             }
-        } else {
+        } else if (extractedValue != NonTerminalJsonValue.INSTANCE) {
             accumulateExtracted(entry, extractedValue);
         }
     }
@@ -103,4 +105,20 @@ public abstract class AbstractAggregator<I, E, R> extends Aggregator<I, R> {
      */
     protected abstract void accumulateExtracted(I entry, E value);
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        AbstractAggregator<?, ?, ?> that = (AbstractAggregator<?, ?, ?>) o;
+        return attributePath.equals(that.attributePath);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(attributePath);
+    }
 }

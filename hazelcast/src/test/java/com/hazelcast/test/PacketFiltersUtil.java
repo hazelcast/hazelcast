@@ -17,14 +17,14 @@
 package com.hazelcast.test;
 
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.instance.Node;
+import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.serialization.InternalSerializationService;
-import com.hazelcast.nio.Address;
-import com.hazelcast.nio.tcp.FirewallingConnectionManager;
-import com.hazelcast.nio.tcp.OperationPacketFilter;
-import com.hazelcast.nio.tcp.PacketFilter;
-import com.hazelcast.util.Preconditions;
-import com.hazelcast.util.collection.IntHashSet;
+import com.hazelcast.cluster.Address;
+import com.hazelcast.internal.nio.tcp.FirewallingNetworkingService.FirewallingEndpointManager;
+import com.hazelcast.internal.nio.tcp.OperationPacketFilter;
+import com.hazelcast.internal.nio.tcp.PacketFilter;
+import com.hazelcast.internal.util.Preconditions;
+import com.hazelcast.internal.util.collection.IntHashSet;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -42,9 +42,13 @@ public final class PacketFiltersUtil {
     private PacketFiltersUtil() {
     }
 
-    public static void resetPacketFiltersFrom(HazelcastInstance instance) {
+    public static FirewallingEndpointManager getEndpointManager(HazelcastInstance instance) {
         Node node = getNode(instance);
-        FirewallingConnectionManager cm = (FirewallingConnectionManager) node.getConnectionManager();
+        return (FirewallingEndpointManager) node.getEndpointManager();
+    }
+
+    public static void resetPacketFiltersFrom(HazelcastInstance instance) {
+        FirewallingEndpointManager cm = getEndpointManager(instance);
         cm.removePacketFilter();
     }
 
@@ -53,11 +57,11 @@ public final class PacketFiltersUtil {
     }
 
     public static void delayOperationsBetween(HazelcastInstance from, HazelcastInstance to, int factory, List<Integer> opTypes) {
-        filterOperationsBetween(from, singleton(to), factory, opTypes, PacketFilter.Action.DELAY);
+        filterOperationsBetween(from, getAddresses(singleton(to)), factory, opTypes, PacketFilter.Action.DELAY);
     }
 
     public static void delayOperationsBetween(HazelcastInstance from, Collection<HazelcastInstance> to, int factory, List<Integer> opTypes) {
-        filterOperationsBetween(from, to, factory, opTypes, PacketFilter.Action.DELAY);
+        filterOperationsBetween(from, getAddresses(to), factory, opTypes, PacketFilter.Action.DELAY);
     }
 
     public static void dropOperationsFrom(HazelcastInstance instance, int factory, List<Integer> opTypes) {
@@ -65,11 +69,15 @@ public final class PacketFiltersUtil {
     }
 
     public static void dropOperationsBetween(HazelcastInstance from, HazelcastInstance to, int factory, List<Integer> opTypes) {
-        filterOperationsBetween(from, singleton(to), factory, opTypes, PacketFilter.Action.DROP);
+        filterOperationsBetween(from, getAddresses(singleton(to)), factory, opTypes, PacketFilter.Action.DROP);
     }
 
     public static void dropOperationsBetween(HazelcastInstance from, Collection<HazelcastInstance> to, int factory, List<Integer> opTypes) {
-        filterOperationsBetween(from, to, factory, opTypes, PacketFilter.Action.DROP);
+        filterOperationsBetween(from, getAddresses(to), factory, opTypes, PacketFilter.Action.DROP);
+    }
+
+    public static void dropOperationsToAddresses(HazelcastInstance instance, Collection<Address> addresses, int factory, List<Integer> opTypes) {
+        filterOperationsBetween(instance, addresses, factory, opTypes, PacketFilter.Action.DROP);
     }
 
     public static void rejectOperationsFrom(HazelcastInstance instance, int factory, List<Integer> opTypes) {
@@ -77,29 +85,28 @@ public final class PacketFiltersUtil {
     }
 
     public static void rejectOperationsBetween(HazelcastInstance from, HazelcastInstance to, int factory, List<Integer> opTypes) {
-        filterOperationsBetween(from, singleton(to), factory, opTypes, PacketFilter.Action.REJECT);
+        filterOperationsBetween(from, getAddresses(singleton(to)), factory, opTypes, PacketFilter.Action.REJECT);
     }
 
     public static void rejectOperationsBetween(HazelcastInstance from, Collection<HazelcastInstance> to, int factory, List<Integer> opTypes) {
-        filterOperationsBetween(from, to, factory, opTypes, PacketFilter.Action.REJECT);
+        filterOperationsBetween(from, getAddresses(to), factory, opTypes, PacketFilter.Action.REJECT);
     }
 
     private static void filterOperationsFrom(HazelcastInstance instance, int factory, List<Integer> opTypes,
             PacketFilter.Action action) {
         Node node = getNode(instance);
-        FirewallingConnectionManager cm = (FirewallingConnectionManager) node.getConnectionManager();
+        FirewallingEndpointManager em = (FirewallingEndpointManager) node.getEndpointManager();
         PacketFilter packetFilter = new EndpointAgnosticPacketFilter(node.getSerializationService(), factory, opTypes, action);
-        cm.setPacketFilter(packetFilter);
+        em.setPacketFilter(packetFilter);
     }
 
-    private static void filterOperationsBetween(HazelcastInstance from, Collection<HazelcastInstance> to, int factory,
-            List<Integer> opTypes, PacketFilter.Action action) {
+    private static void filterOperationsBetween(HazelcastInstance from, Collection<Address> addresses, int factory, List<Integer> opTypes,
+                                                PacketFilter.Action action) {
         Node node = getNode(from);
-        FirewallingConnectionManager cm = (FirewallingConnectionManager) node.getConnectionManager();
-        Collection<Address> blacklist = getAddresses(to);
-        PacketFilter packetFilter = new EndpointAwarePacketFilter(node.getSerializationService(), blacklist, factory,
+        FirewallingEndpointManager em = (FirewallingEndpointManager) node.getEndpointManager();
+        PacketFilter packetFilter = new EndpointAwarePacketFilter(node.getSerializationService(), addresses, factory,
                 opTypes, action);
-        cm.setPacketFilter(packetFilter);
+        em.setPacketFilter(packetFilter);
     }
 
     private static Collection<Address> getAddresses(Collection<HazelcastInstance> instances) {

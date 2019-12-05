@@ -24,11 +24,11 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.ringbuffer.StaleSequenceException;
 import com.hazelcast.ringbuffer.impl.RingbufferContainer;
 import com.hazelcast.ringbuffer.impl.RingbufferService;
-import com.hazelcast.spi.NamedOperation;
-import com.hazelcast.spi.ObjectNamespace;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.PartitionAwareOperation;
-import com.hazelcast.spi.ServiceNamespaceAware;
+import com.hazelcast.spi.impl.operationservice.NamedOperation;
+import com.hazelcast.internal.services.ObjectNamespace;
+import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.spi.impl.operationservice.PartitionAwareOperation;
+import com.hazelcast.internal.services.ServiceNamespaceAware;
 
 import java.io.IOException;
 

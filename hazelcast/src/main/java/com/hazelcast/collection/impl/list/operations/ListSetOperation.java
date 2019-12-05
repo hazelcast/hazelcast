@@ -21,11 +21,12 @@ import com.hazelcast.collection.impl.collection.CollectionItem;
 import com.hazelcast.collection.impl.collection.operations.CollectionBackupAwareOperation;
 import com.hazelcast.collection.impl.list.ListContainer;
 import com.hazelcast.core.ItemEventType;
+import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.impl.MutatingOperation;
+import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.spi.impl.operationservice.MutatingOperation;
 
 import java.io.IOException;
 
@@ -73,7 +74,7 @@ public class ListSetOperation extends CollectionBackupAwareOperation implements 
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return CollectionDataSerializerHook.LIST_SET;
     }
 
@@ -81,13 +82,13 @@ public class ListSetOperation extends CollectionBackupAwareOperation implements 
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeInt(index);
-        out.writeData(value);
+        IOUtil.writeData(out, value);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         index = in.readInt();
-        value = in.readData();
+        value = IOUtil.readData(in);
     }
 }

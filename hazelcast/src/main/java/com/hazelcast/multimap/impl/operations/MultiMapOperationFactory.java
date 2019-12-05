@@ -16,12 +16,13 @@
 
 package com.hazelcast.multimap.impl.operations;
 
+import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.multimap.impl.MultiMapDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.OperationFactory;
+import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.spi.impl.operationservice.OperationFactory;
 
 import java.io.IOException;
 
@@ -79,8 +80,8 @@ public class MultiMapOperationFactory implements OperationFactory {
         out.writeUTF(name);
         out.writeInt(operationFactoryType.type);
         out.writeLong(threadId);
-        out.writeData(key);
-        out.writeData(value);
+        IOUtil.writeData(out, key);
+        IOUtil.writeData(out, value);
     }
 
     @Override
@@ -88,8 +89,8 @@ public class MultiMapOperationFactory implements OperationFactory {
         name = in.readUTF();
         operationFactoryType = OperationFactoryType.getByType(in.readInt());
         threadId = in.readLong();
-        key = in.readData();
-        value = in.readData();
+        key = IOUtil.readData(in);
+        value = IOUtil.readData(in);
     }
 
     @Override
@@ -98,7 +99,7 @@ public class MultiMapOperationFactory implements OperationFactory {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MultiMapDataSerializerHook.MULTIMAP_OP_FACTORY;
     }
 

@@ -24,14 +24,13 @@ import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.CacheSimpleEntryListenerConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.EvictionConfig;
-import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.NativeMemoryConfig;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.memory.MemorySize;
 import com.hazelcast.memory.MemoryUnit;
-import com.hazelcast.test.HazelcastParametersRunnerFactory;
+import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
@@ -60,7 +59,8 @@ import java.util.Collection;
 import java.util.Collections;
 
 import static com.hazelcast.cache.HazelcastCachingProvider.propertiesByInstanceItself;
-import static com.hazelcast.config.EvictionConfig.MaxSizePolicy.USED_NATIVE_MEMORY_PERCENTAGE;
+import static com.hazelcast.config.MaxSizePolicy.USED_NATIVE_MEMORY_PERCENTAGE;
+import static com.hazelcast.config.EvictionPolicy.LFU;
 import static com.hazelcast.config.InMemoryFormat.BINARY;
 import static com.hazelcast.config.InMemoryFormat.NATIVE;
 import static com.hazelcast.config.InMemoryFormat.OBJECT;
@@ -72,7 +72,7 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assume.assumeThat;
 
 @RunWith(Parameterized.class)
-@UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
+@UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
 @Category(QuickTest.class)
 public class CacheCreateUseDestroyTest extends HazelcastTestSupport {
 
@@ -133,7 +133,8 @@ public class CacheCreateUseDestroyTest extends HazelcastTestSupport {
                 .setCacheEntryListeners(Collections.singletonList(entryListenerConfig));
 
         if (inMemoryFormat == NATIVE) {
-            EvictionConfig evictionConfig = new EvictionConfig(90, USED_NATIVE_MEMORY_PERCENTAGE, EvictionPolicy.LFU);
+            EvictionConfig evictionConfig = new EvictionConfig().setSize(90)
+                    .setMaxSizePolicy(USED_NATIVE_MEMORY_PERCENTAGE).setEvictionPolicy(LFU);
             cacheSimpleConfig.setEvictionConfig(evictionConfig);
 
             NativeMemoryConfig memoryConfig = new NativeMemoryConfig()

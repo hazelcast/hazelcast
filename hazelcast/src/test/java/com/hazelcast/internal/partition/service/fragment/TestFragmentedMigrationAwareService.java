@@ -18,12 +18,12 @@ package com.hazelcast.internal.partition.service.fragment;
 
 import com.hazelcast.config.ServiceConfig;
 import com.hazelcast.internal.partition.service.TestAbstractMigrationAwareService;
-import com.hazelcast.spi.FragmentedMigrationAwareService;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.PartitionMigrationEvent;
-import com.hazelcast.spi.PartitionReplicationEvent;
-import com.hazelcast.spi.ServiceNamespace;
-import com.hazelcast.spi.partition.MigrationEndpoint;
+import com.hazelcast.internal.partition.FragmentedMigrationAwareService;
+import com.hazelcast.internal.partition.PartitionMigrationEvent;
+import com.hazelcast.internal.partition.PartitionReplicationEvent;
+import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.internal.services.ServiceNamespace;
+import com.hazelcast.internal.partition.MigrationEndpoint;
 
 import java.util.Collection;
 import java.util.Collections;

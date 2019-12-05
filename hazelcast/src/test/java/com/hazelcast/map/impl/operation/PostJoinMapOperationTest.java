@@ -16,21 +16,22 @@
 
 package com.hazelcast.map.impl.operation;
 
+import com.hazelcast.config.IndexType;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IMap;
+import com.hazelcast.map.IMap;
 import com.hazelcast.map.MapInterceptor;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapService;
-import com.hazelcast.query.IndexAwarePredicate;
-import com.hazelcast.query.impl.ComparisonType;
+import com.hazelcast.query.impl.Comparison;
 import com.hazelcast.query.impl.Index;
 import com.hazelcast.query.impl.QueryContext;
 import com.hazelcast.query.impl.QueryableEntry;
+import com.hazelcast.query.impl.predicates.IndexAwarePredicate;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -49,14 +50,14 @@ import static org.junit.Assert.assertEquals;
  * as expected through execution of PostJoinMapOperation on the joining member.
  */
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class PostJoinMapOperationTest extends HazelcastTestSupport {
 
     private static class Person implements Serializable {
         private final int age;
         private final String name;
 
-        public Person(String name, int age) {
+        Person(String name, int age) {
             this.age = age;
             this.name = name;
         }
@@ -143,7 +144,7 @@ public class PostJoinMapOperationTest extends HazelcastTestSupport {
         public Set<QueryableEntry> filter(QueryContext queryContext) {
             Index ix = queryContext.getIndex("age");
             if (ix != null) {
-                return ix.getSubRecords(ComparisonType.GREATER, 50);
+                return ix.getRecords(Comparison.GREATER, 50);
             } else {
                 return null;
             }
@@ -210,7 +211,7 @@ public class PostJoinMapOperationTest extends HazelcastTestSupport {
         IMap<String, Person> map = hz1.getMap("map");
         map.put("foo", new Person("foo", 32));
         map.put("bar", new Person("bar", 70));
-        map.addIndex("age", true);
+        map.addIndex(IndexType.SORTED, "age");
 
         // when: new node joins and original node is terminated
         HazelcastInstance hz2 = hzFactory.newHazelcastInstance();
@@ -242,7 +243,7 @@ public class PostJoinMapOperationTest extends HazelcastTestSupport {
         // given: a single node HazelcastInstance with a map configured with index and interceptor
         HazelcastInstance hz1 = hzFactory.newHazelcastInstance();
         IMap<String, Person> map = hz1.getMap("map");
-        map.addIndex("age", true);
+        map.addIndex(IndexType.SORTED, "age");
         map.addInterceptor(new FixedReturnInterceptor());
 
         assertEquals(RETURNED_FROM_INTERCEPTOR, map.get("foo"));

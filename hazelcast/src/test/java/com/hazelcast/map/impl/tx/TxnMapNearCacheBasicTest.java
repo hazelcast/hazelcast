@@ -19,7 +19,7 @@ package com.hazelcast.map.impl.tx;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IMap;
+import com.hazelcast.map.IMap;
 import com.hazelcast.internal.adapter.DataStructureAdapter.DataStructureMethods;
 import com.hazelcast.internal.adapter.DataStructureAdapterMethod;
 import com.hazelcast.internal.adapter.TransactionalMapDataStructureAdapter;
@@ -32,8 +32,9 @@ import com.hazelcast.internal.nearcache.NearCacheTestUtils;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.transaction.TransactionalMap;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Ignore;
@@ -55,11 +56,11 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 
 /**
- * Basic Near Cache tests for {@link com.hazelcast.core.TransactionalMap} on Hazelcast members.
+ * Basic Near Cache tests for {@link TransactionalMap} on Hazelcast members.
  */
 @RunWith(Parameterized.class)
 @UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class TxnMapNearCacheBasicTest extends AbstractNearCacheBasicTest<Data, String> {
 
     @Parameter
@@ -151,7 +152,7 @@ public class TxnMapNearCacheBasicTest extends AbstractNearCacheBasicTest<Data, S
     }
 
     /**
-     * The {@link com.hazelcast.core.TransactionalMap} doesn't populate the Near Cache, so we override this method.
+     * The {@link TransactionalMap} doesn't populate the Near Cache, so we override this method.
      */
     @Override
     protected void populateNearCache(NearCacheTestContext<Integer, String, ?, ?> context, DataStructureMethods method,

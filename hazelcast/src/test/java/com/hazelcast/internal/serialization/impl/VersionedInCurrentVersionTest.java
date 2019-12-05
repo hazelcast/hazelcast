@@ -19,11 +19,11 @@ package com.hazelcast.internal.serialization.impl;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.nio.serialization.impl.Versioned;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.test.starter.GuardianException;
 import com.hazelcast.test.starter.HazelcastVersionLocator;
-import com.hazelcast.util.StringUtil;
+import com.hazelcast.internal.util.StringUtil;
 import com.hazelcast.version.Version;
 import org.junit.Before;
 import org.junit.Rule;
@@ -53,7 +53,7 @@ import static com.hazelcast.test.HazelcastTestSupport.assumeThatNoJDK7;
 import static com.hazelcast.test.ReflectionsHelper.REFLECTIONS;
 import static com.hazelcast.test.ReflectionsHelper.filterNonConcreteClasses;
 import static com.hazelcast.test.starter.HazelcastStarterUtils.rethrowGuardianException;
-import static com.hazelcast.util.EmptyStatement.ignore;
+import static com.hazelcast.internal.util.EmptyStatement.ignore;
 import static org.junit.Assert.fail;
 import static org.junit.Assume.assumeNoException;
 import static org.mockito.Mockito.spy;
@@ -68,7 +68,7 @@ import static org.mockito.Mockito.when;
 @RunWith(PowerMockRunner.class)
 @PowerMockIgnore({"javax.net.ssl.*", "javax.security.*", "javax.management.*"})
 @PrepareForTest(Version.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class VersionedInCurrentVersionTest {
 
     @Rule

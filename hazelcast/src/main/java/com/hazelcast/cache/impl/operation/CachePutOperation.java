@@ -17,21 +17,22 @@
 package com.hazelcast.cache.impl.operation;
 
 import com.hazelcast.cache.impl.CacheDataSerializerHook;
+import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.impl.operationservice.Operation;
 
 import javax.cache.expiry.ExpiryPolicy;
 import java.io.IOException;
 
 /**
  * Operation implementation for
- * {@link com.hazelcast.cache.impl.ICacheRecordStore#put(Data, Object, ExpiryPolicy, String, int)} and
- * {@link com.hazelcast.cache.impl.ICacheRecordStore#getAndPut(Data, Object, ExpiryPolicy, String, int)}.
+ * {@link com.hazelcast.cache.impl.ICacheRecordStore#put(Data, Object, ExpiryPolicy, java.util.UUID, int)} and
+ * {@link com.hazelcast.cache.impl.ICacheRecordStore#getAndPut(Data, Object, ExpiryPolicy, java.util.UUID, int)}.
  *
- * @see com.hazelcast.cache.impl.ICacheRecordStore#put(Data, Object, ExpiryPolicy, String, int)
- * @see com.hazelcast.cache.impl.ICacheRecordStore#getAndPut(Data, Object, ExpiryPolicy, String, int)
+ * @see com.hazelcast.cache.impl.ICacheRecordStore#put(Data, Object, ExpiryPolicy, java.util.UUID, int)
+ * @see com.hazelcast.cache.impl.ICacheRecordStore#getAndPut(Data, Object, ExpiryPolicy, java.util.UUID, int)
  */
 public class CachePutOperation extends MutatingCacheOperation {
 
@@ -88,7 +89,7 @@ public class CachePutOperation extends MutatingCacheOperation {
         super.writeInternal(out);
         out.writeBoolean(get);
         out.writeObject(expiryPolicy);
-        out.writeData(value);
+        IOUtil.writeData(out, value);
     }
 
     @Override
@@ -97,11 +98,11 @@ public class CachePutOperation extends MutatingCacheOperation {
         super.readInternal(in);
         get = in.readBoolean();
         expiryPolicy = in.readObject();
-        value = in.readData();
+        value = IOUtil.readData(in);
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return CacheDataSerializerHook.PUT;
     }
 

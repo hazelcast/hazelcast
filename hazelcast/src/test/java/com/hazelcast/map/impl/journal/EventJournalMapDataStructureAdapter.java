@@ -16,20 +16,19 @@
 
 package com.hazelcast.map.impl.journal;
 
-import com.hazelcast.core.ICompletableFuture;
-import com.hazelcast.core.IMap;
 import com.hazelcast.internal.journal.EventJournalInitialSubscriberState;
 import com.hazelcast.internal.journal.EventJournalReader;
+import com.hazelcast.internal.services.ObjectNamespace;
 import com.hazelcast.journal.EventJournalDataStructureAdapter;
+import com.hazelcast.map.IMap;
 import com.hazelcast.map.impl.MapService;
-import com.hazelcast.map.journal.EventJournalMapEvent;
-import com.hazelcast.projection.Projection;
+import com.hazelcast.map.EventJournalMapEvent;
 import com.hazelcast.ringbuffer.ReadResultSet;
-import com.hazelcast.spi.ObjectNamespace;
 
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.concurrent.CompletionStage;
 import java.util.concurrent.TimeUnit;
 
 public class EventJournalMapDataStructureAdapter<K, V>
@@ -93,16 +92,16 @@ public class EventJournalMapDataStructureAdapter<K, V>
 
     @Override
     @SuppressWarnings("unchecked")
-    public ICompletableFuture<EventJournalInitialSubscriberState> subscribeToEventJournal(int partitionId) {
+    public CompletionStage<EventJournalInitialSubscriberState> subscribeToEventJournal(int partitionId) {
         return ((EventJournalReader<?>) map).subscribeToEventJournal(partitionId);
     }
 
     @Override
     @SuppressWarnings("unchecked")
-    public <T> ICompletableFuture<ReadResultSet<T>> readFromEventJournal(
+    public <T> CompletionStage<ReadResultSet<T>> readFromEventJournal(
             long startSequence, int minSize, int maxSize, int partitionId,
-            com.hazelcast.util.function.Predicate<? super EventJournalMapEvent<K, V>> predicate,
-            Projection<? super EventJournalMapEvent<K, V>, ? extends T> projection) {
+            java.util.function.Predicate<? super EventJournalMapEvent<K, V>> predicate,
+            java.util.function.Function<? super EventJournalMapEvent<K, V>, ? extends T> projection) {
         return ((EventJournalReader<EventJournalMapEvent<K, V>>) map)
                 .readFromEventJournal(startSequence, minSize, maxSize, partitionId, predicate, projection);
     }

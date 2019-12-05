@@ -16,11 +16,9 @@
 
 package com.hazelcast.query.impl.predicates;
 
-import com.hazelcast.query.impl.Index;
-import com.hazelcast.query.impl.QueryContext;
 import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import nl.jqno.equalsverifier.EqualsVerifier;
 import nl.jqno.equalsverifier.Warning;
@@ -28,21 +26,17 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.util.Set;
-
 import static org.hamcrest.Matchers.containsString;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verifyZeroInteractions;
 import static org.mockito.Mockito.when;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class NotEqualPredicateTest {
 
     @Test
@@ -91,18 +85,6 @@ public class NotEqualPredicateTest {
     }
 
     @Test
-    public void isIndexed_givenAttributeNameIsFoo_whenTheFooFieldIsIndexed_returnFalse() {
-        // see https://github.com/hazelcast/hazelcast/pull/5847
-        String fieldName = "name";
-
-        NotEqualPredicate name = new NotEqualPredicate(fieldName, "foo");
-        QueryContext queryContext = newMockContextWithIndex(fieldName);
-
-        boolean indexed = name.isIndexed(queryContext);
-        assertFalse(indexed);
-    }
-
-    @Test
     public void toString_containsAttributeName() {
         String fieldName = "name";
         NotEqualPredicate predicate = new NotEqualPredicate(fieldName, "foo");
@@ -114,23 +96,10 @@ public class NotEqualPredicateTest {
     @Test
     public void getId_isConstant() {
         NotEqualPredicate predicate = new NotEqualPredicate("bar", "foo");
-        int id = predicate.getId();
+        int id = predicate.getClassId();
 
         // make sure the ID has not been changed by accident
         assertEquals(id, 9);
-    }
-
-    @Test
-    public void filter_givenAttributeNameIsFoo_whenTheFooFieldIsIndex_thenReturnsNullAndDoesNotTouchQueryContext() {
-        /** see {@link #isIndexed_givenAttributeNameIsFoo_whenTheFooFieldIsIndexed_returnFalse()} */
-        String fieldName = "foo";
-        NotEqualPredicate predicate = new NotEqualPredicate(fieldName, "foo");
-
-        QueryContext queryContext = newMockContextWithIndex(fieldName);
-        Set<QueryableEntry> filter = predicate.filter(queryContext);
-
-        assertNull(filter);
-        verifyZeroInteractions(queryContext);
     }
 
     @Test
@@ -140,14 +109,6 @@ public class NotEqualPredicateTest {
             .withRedefinedSuperclass()
             .allFieldsShouldBeUsed()
             .verify();
-    }
-
-    private QueryContext newMockContextWithIndex(String indexedFieldName) {
-        QueryContext queryContext = mock(QueryContext.class);
-        Index mockIndex = mock(Index.class);
-        when(queryContext.getIndex(indexedFieldName)).thenReturn(mockIndex);
-
-        return queryContext;
     }
 
     private QueryableEntry newMockEntry(Object attributeValue) {

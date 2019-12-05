@@ -24,6 +24,7 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.util.Objects;
 
 public final class BigIntegerAverageAggregator<I> extends AbstractAggregator<I, BigInteger, BigDecimal>
         implements IdentifiedDataSerializable {
@@ -67,7 +68,7 @@ public final class BigIntegerAverageAggregator<I> extends AbstractAggregator<I, 
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return AggregatorDataSerializerHook.BIG_INT_AVG;
     }
 
@@ -85,4 +86,23 @@ public final class BigIntegerAverageAggregator<I> extends AbstractAggregator<I, 
         this.count = in.readLong();
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        if (!super.equals(o)) {
+            return false;
+        }
+        BigIntegerAverageAggregator<?> that = (BigIntegerAverageAggregator<?>) o;
+        return count == that.count && Objects.equals(sum, that.sum);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), sum, count);
+    }
 }

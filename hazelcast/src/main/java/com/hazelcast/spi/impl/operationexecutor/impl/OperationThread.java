@@ -16,34 +16,38 @@
 
 package com.hazelcast.spi.impl.operationexecutor.impl;
 
-import com.hazelcast.instance.NodeExtension;
-import com.hazelcast.internal.metrics.MetricsProvider;
+import com.hazelcast.instance.impl.NodeExtension;
+import com.hazelcast.internal.metrics.ExcludedMetricTargets;
+import com.hazelcast.internal.metrics.MetricDescriptor;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
+import com.hazelcast.internal.metrics.StaticMetricsProvider;
+import com.hazelcast.internal.nio.Packet;
 import com.hazelcast.internal.util.counters.SwCounter;
+import com.hazelcast.internal.util.executor.HazelcastManagedThread;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.nio.Packet;
-import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.impl.PartitionSpecificRunnable;
 import com.hazelcast.spi.impl.operationexecutor.OperationRunner;
-import com.hazelcast.util.executor.HazelcastManagedThread;
+import com.hazelcast.spi.impl.operationservice.Operation;
 
 import java.util.concurrent.TimeUnit;
 
-import static com.hazelcast.instance.OutOfMemoryErrorDispatcher.inspectOutOfMemoryError;
+import static com.hazelcast.instance.impl.OutOfMemoryErrorDispatcher.inspectOutOfMemoryError;
+import static com.hazelcast.internal.metrics.MetricTarget.MANAGEMENT_CENTER;
 import static com.hazelcast.internal.util.counters.SwCounter.newSwCounter;
 
 /**
  * The OperationThread is responsible for processing operations, packets
  * containing operations and runnable's.
- * <p/>
+ * <p>
  * There are 2 flavors of OperationThread:
  * - threads that deal with operations for a specific partition
  * - threads that deal with non partition specific tasks
- * <p/>
+ * <p>
  * The actual processing of an operation is forwarded to the {@link OperationRunner}.
  */
-public abstract class OperationThread extends HazelcastManagedThread implements MetricsProvider {
+@ExcludedMetricTargets(MANAGEMENT_CENTER)
+public abstract class OperationThread extends HazelcastManagedThread implements StaticMetricsProvider {
 
     final int threadId;
     final OperationQueue queue;
@@ -186,8 +190,12 @@ public abstract class OperationThread extends HazelcastManagedThread implements 
     }
 
     @Override
-    public void provideMetrics(MetricsRegistry registry) {
-        registry.scanAndRegister(this, "operation.thread[" + getName() + "]");
+    public void provideStaticMetrics(MetricsRegistry registry) {
+        MetricDescriptor descriptor = registry
+                .newMetricDescriptor()
+                .withPrefix("operation.thread")
+                .withDiscriminator("thread", getName());
+        registry.registerStaticMetrics(descriptor, this);
     }
 
     public final void shutdown() {

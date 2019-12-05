@@ -43,7 +43,7 @@ public class MergeBackupOperation
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return CardinalityEstimatorDataSerializerHook.MERGE_BACKUP;
     }
 

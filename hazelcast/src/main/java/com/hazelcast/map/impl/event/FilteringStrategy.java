@@ -18,7 +18,7 @@ package com.hazelcast.map.impl.event;
 
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.EventFilter;
+import com.hazelcast.spi.impl.eventservice.EventFilter;
 
 /**
  * A filtering strategy determines whether an event must be published based on a specific filter
@@ -41,7 +41,7 @@ public interface FilteringStrategy {
      *
      * @param filter        the event filter
      * @param dataKey       the event entry key
-     * @param dataOldValue  the old value of the event entry
+     * @param oldValue  the old value of the event entry
      * @param dataValue     the new value of the event entry
      * @param eventType     the event type
      * @param mapNameOrNull the map name. May be null if this is not a map event (e.g. cache event)
@@ -50,7 +50,7 @@ public interface FilteringStrategy {
      * to alter the type of event that is actually published, depending on the attributes of the
      * individual event registration.
      */
-    int doFilter(EventFilter filter, Data dataKey, Object dataOldValue, Object dataValue, EntryEventType eventType,
+    int doFilter(EventFilter filter, Data dataKey, Object oldValue, Object dataValue, EntryEventType eventType,
                  String mapNameOrNull);
 
     /**

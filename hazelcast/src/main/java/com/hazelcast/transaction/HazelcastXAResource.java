@@ -18,6 +18,7 @@ package com.hazelcast.transaction;
 
 import com.hazelcast.core.DistributedObject;
 
+import javax.annotation.Nonnull;
 import javax.transaction.xa.XAResource;
 
 /**
@@ -31,7 +32,7 @@ public interface HazelcastXAResource extends XAResource, DistributedObject {
      * @return TransactionContext associated with the current thread
      * @throws IllegalStateException if no context found
      */
-    TransactionContext getTransactionContext();
+    @Nonnull TransactionContext getTransactionContext();
 
 
 }

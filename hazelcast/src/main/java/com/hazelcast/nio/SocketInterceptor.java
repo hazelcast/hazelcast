@@ -24,7 +24,7 @@ import java.util.Properties;
  * An interface that provides the ability to intercept the creation of sockets.
  * It can be registered from client via config.
  *
- * For members see {@link com.hazelcast.nio.MemberSocketInterceptor}
+ * For members see {@link MemberSocketInterceptor}
  *
  * Warning: a SocketInterceptor provides access to the socket and will bypass
  * any TLS encryption. So be warned that any data send using the SocketInterceptor
@@ -46,7 +46,7 @@ public interface SocketInterceptor {
      * Called when a connection is established.
      *
      * @param connectedSocket related socket
-     * @throws IOException
+     * @throws IOException in case of any exceptional case
      */
     void onConnect(Socket connectedSocket) throws IOException;
 }

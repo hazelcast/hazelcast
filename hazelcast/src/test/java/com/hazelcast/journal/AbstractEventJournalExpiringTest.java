@@ -18,21 +18,19 @@ package com.hazelcast.journal;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.EventJournalConfig;
-import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.ICompletableFuture;
-import com.hazelcast.projection.Projection;
-import com.hazelcast.projection.Projections;
 import com.hazelcast.ringbuffer.ReadResultSet;
-import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.util.function.Predicate;
 import org.junit.Test;
 
 import java.util.Random;
+import java.util.concurrent.CompletionStage;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.LockSupport;
+import java.util.function.Function;
+import java.util.function.Predicate;
 
 /**
  * Base class for implementing data-structure specific event journal test where the journal is expiring.
@@ -45,8 +43,8 @@ public abstract class AbstractEventJournalExpiringTest<EJ_TYPE> extends Hazelcas
     protected HazelcastInstance[] instances;
 
     private int partitionId;
-    private TruePredicate<EJ_TYPE> TRUE_PREDICATE = new TruePredicate<EJ_TYPE>();
-    private Projection<EJ_TYPE, EJ_TYPE> IDENTITY_PROJECTION = Projections.identity();
+    private TruePredicate<EJ_TYPE> TRUE_PREDICATE = new TruePredicate<>();
+    private Function<EJ_TYPE, EJ_TYPE> IDENTITY_FUNCTION = new IdentityFunction<>();
 
     private void init() {
         instances = createInstances();
@@ -56,16 +54,16 @@ public abstract class AbstractEventJournalExpiringTest<EJ_TYPE> extends Hazelcas
 
     @Override
     protected Config getConfig() {
-        int defaultPartitionCount = Integer.parseInt(GroupProperty.PARTITION_COUNT.getDefaultValue());
+        int defaultPartitionCount = Integer.parseInt(ClusterProperty.PARTITION_COUNT.getDefaultValue());
+        Config config = smallInstanceConfig();
         EventJournalConfig eventJournalConfig = new EventJournalConfig()
                 .setEnabled(true)
-                .setMapName("default")
-                .setCacheName("default")
                 .setTimeToLiveSeconds(1)
                 .setCapacity(500 * defaultPartitionCount);
 
-        return smallInstanceConfig()
-                .addEventJournalConfig(eventJournalConfig);
+        config.getMapConfig("default").setEventJournalConfig(eventJournalConfig);
+        config.getCacheConfig("default").setEventJournalConfig(eventJournalConfig);
+        return config;
     }
 
     @Test
@@ -75,7 +73,7 @@ public abstract class AbstractEventJournalExpiringTest<EJ_TYPE> extends Hazelcas
         final EventJournalTestContext<String, Integer, EJ_TYPE> context = createContext();
 
         String key = randomPartitionKey();
-        final AtomicReference<Throwable> exception = new AtomicReference<Throwable>();
+        final AtomicReference<Throwable> exception = new AtomicReference<>();
 
         readFromJournal(context, exception, 0);
 
@@ -92,16 +90,12 @@ public abstract class AbstractEventJournalExpiringTest<EJ_TYPE> extends Hazelcas
                                  final AtomicReference<Throwable> exception,
                                  long seq) {
         readFromEventJournal(context.dataAdapter, seq, 128, partitionId, TRUE_PREDICATE,
-                IDENTITY_PROJECTION).andThen(new ExecutionCallback<ReadResultSet<EJ_TYPE>>() {
-            @Override
-            public void onResponse(ReadResultSet<EJ_TYPE> response) {
+                IDENTITY_FUNCTION).whenCompleteAsync((response, t) -> {
+            if (t == null) {
                 readFromJournal(context, exception, response.getNextSequenceToReadFrom());
                 // ignore response
                 LockSupport.parkNanos(TimeUnit.SECONDS.toNanos(2));
-            }
-
-            @Override
-            public void onFailure(Throwable t) {
+            } else {
                 exception.set(t);
             }
         });
@@ -137,18 +131,18 @@ public abstract class AbstractEventJournalExpiringTest<EJ_TYPE> extends Hazelcas
      *                      May be {@code null} in which case the event is returned without being
      *                      projected
      * @param <K>           the data structure entry key type
-     * @param <V>the        data structure entry value type
+     * @param <V>           the data structure entry value type
      * @param <PROJ_TYPE>   the return type of the projection. It is equal to the journal event type
      *                      if the projection is {@code null} or it is the identity projection
      * @return the future with the filtered and projected journal items
      */
-    private <K, V, PROJ_TYPE> ICompletableFuture<ReadResultSet<PROJ_TYPE>> readFromEventJournal(
+    private <K, V, PROJ_TYPE> CompletionStage<ReadResultSet<PROJ_TYPE>> readFromEventJournal(
             EventJournalDataStructureAdapter<K, V, EJ_TYPE> adapter,
             long startSequence,
             int maxSize,
             int partitionId,
             Predicate<EJ_TYPE> predicate,
-            Projection<EJ_TYPE, PROJ_TYPE> projection) {
+            Function<EJ_TYPE, PROJ_TYPE> projection) {
         return adapter.readFromEventJournal(startSequence, 1, maxSize, partitionId, predicate, projection);
     }
 

@@ -1,5 +1,27 @@
 You can also see the Release Notes document at http://docs.hazelcast.org/docs/release-notes/.
 
+Release 3.12
+
+- Support for JDK 6 and 7 has been dropped. The minimum Java version that Hazelcast supports now is Java 8.
+- Introduced the new CP Subsystem which offers linearizable implementations of Hazelcast's concurrency APIs.
+- Added support for multiple endpoints when configuring member’s networking.
+- Added the new Blue-Green and Disaster Recovery for Java Clients feature.
+- Added the support for querying JSON strings.
+- Introduced pipelining mechanism using which you can send multiple requests in parallel to Hazelcast members or clients, and read the responses in a single step.
+- Introduced REST Endpoint Groups.
+- Introduced the ability to share the Hot Restart `base-dir` among multiple members.
+- Redesigned WAN Replication for more lower latencies and higher throughput.
+- Added the support for adding/removing WAN publishers in a running cluster.
+- Added the ability to automatically remove the stale Hot Restart data.
+- Introduced a mechanism which allows to choose whether a new member joining to a cluster will apply the client permissions stored in its own configuration, or will use the ones defined in the cluster.
+- Introduced the ability to automatically change the cluster version after a rolling upgrade.
+- Added the ability to retrieve the names of client instances on the member side.
+- Introduced client attributes.
+- Added support for configuration in YAML.
+- Introduced composite indexes.
+- Deprecated the original `ILock`, `IAtomicLong`, `IAtomicReference`, `ISemaphore` and `ICountDownLatch` implementations and introduced their implementations provided by CP Subsystem.
+
+
 Release 3.11
 
 - Added fine-grained control over WAN replication events by Introducing the new event type LOADED and the class EntryLoadedListener.

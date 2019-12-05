@@ -16,20 +16,20 @@
 
 package com.hazelcast.map.impl.iterator;
 
-import com.hazelcast.core.IMap;
+import com.hazelcast.map.IMap;
 import com.hazelcast.map.impl.query.Query;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.projection.Projection;
 import com.hazelcast.query.Predicate;
-import com.hazelcast.spi.serialization.SerializationService;
-import com.hazelcast.util.IterationType;
+import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.util.IterationType;
 
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.NoSuchElementException;
 
-import static com.hazelcast.util.CollectionUtil.isNotEmpty;
+import static com.hazelcast.internal.util.CollectionUtil.isNotEmpty;
 
 /**
  * Base class for iterating a partition with a {@link Predicate} and a {@link Projection}.
@@ -65,8 +65,11 @@ public abstract class AbstractMapQueryPartitionIterator<K, V, R> implements Iter
 
     protected List<Data> segment;
 
-    public AbstractMapQueryPartitionIterator(IMap<K, V> map, int fetchSize, int partitionId,
-                                             Predicate<K, V> predicate, Projection<Entry<K, V>, R> projection) {
+    public AbstractMapQueryPartitionIterator(IMap<K, V> map,
+                                             int fetchSize,
+                                             int partitionId,
+                                             Predicate<K, V> predicate,
+                                             Projection<? super Entry<K, V>, R> projection) {
         this.map = map;
         this.fetchSize = fetchSize;
         this.partitionId = partitionId;

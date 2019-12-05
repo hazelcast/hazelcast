@@ -19,10 +19,10 @@ package com.hazelcast.internal.jmx;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.DistributedObjectEvent;
 import com.hazelcast.core.DistributedObjectListener;
-import com.hazelcast.instance.HazelcastInstanceImpl;
-import com.hazelcast.instance.HazelcastInstanceProxy;
+import com.hazelcast.instance.impl.HazelcastInstanceImpl;
+import com.hazelcast.instance.impl.HazelcastInstanceProxy;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.spi.properties.ClusterProperty;
 
 import javax.management.MBeanServer;
 import javax.management.MalformedObjectNameException;
@@ -31,6 +31,7 @@ import java.lang.management.ManagementFactory;
 import java.util.Hashtable;
 import java.util.List;
 import java.util.Set;
+import java.util.UUID;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
@@ -49,13 +50,13 @@ public class ManagementService implements DistributedObjectListener {
     final HazelcastInstanceImpl instance;
     private final boolean enabled;
     private final ILogger logger;
-    private final String registrationId;
+    private final UUID registrationId;
     private final InstanceMBean instanceMBean;
 
     public ManagementService(HazelcastInstanceImpl instance) {
         this.instance = instance;
         this.logger = instance.getLoggingService().getLogger(getClass());
-        this.enabled = instance.node.getProperties().getBoolean(GroupProperty.ENABLE_JMX);
+        this.enabled = instance.node.getProperties().getBoolean(ClusterProperty.ENABLE_JMX);
         if (!enabled) {
             this.instanceMBean = null;
             this.registrationId = null;

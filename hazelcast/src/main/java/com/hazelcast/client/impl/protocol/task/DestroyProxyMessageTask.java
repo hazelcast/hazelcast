@@ -18,27 +18,61 @@ package com.hazelcast.client.impl.protocol.task;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ClientDestroyProxyCodec;
-import com.hazelcast.instance.Node;
-import com.hazelcast.nio.Connection;
+import com.hazelcast.cluster.Member;
+import com.hazelcast.core.HazelcastInstanceNotActiveException;
+import com.hazelcast.instance.impl.Node;
+import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.security.permission.ActionConstants;
-import com.hazelcast.spi.ProxyService;
+import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.spi.impl.proxyservice.impl.operations.DistributedObjectDestroyOperation;
 
 import java.security.Permission;
+import java.util.Collection;
+import java.util.Map;
+import java.util.function.Supplier;
+import java.util.logging.Level;
 
+import static com.hazelcast.internal.util.ExceptionUtil.peel;
 import static com.hazelcast.security.permission.ActionConstants.getPermission;
+import static java.util.logging.Level.FINEST;
+import static java.util.logging.Level.WARNING;
 
-public class DestroyProxyMessageTask extends AbstractCallableMessageTask<ClientDestroyProxyCodec.RequestParameters>
-        implements BlockingMessageTask {
+public class DestroyProxyMessageTask extends AbstractMultiTargetMessageTask<ClientDestroyProxyCodec.RequestParameters>
+        implements Supplier<Operation> {
 
     public DestroyProxyMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
     @Override
-    protected Object call() throws Exception {
-        ProxyService proxyService = nodeEngine.getProxyService();
-        proxyService.destroyDistributedObject(parameters.serviceName, parameters.name);
+    public Operation get() {
+        return new DistributedObjectDestroyOperation(parameters.serviceName, parameters.name);
+    }
+
+    @Override
+    protected Supplier<Operation> createOperationSupplier() {
+        return this;
+    }
+
+    @Override
+    protected Object reduce(Map<Member, Object> map) throws Throwable {
+        for (Object result : map.values()) {
+            if (result instanceof Throwable) {
+                handleException((Throwable) result);
+            }
+        }
         return null;
+    }
+
+    @Override
+    public Collection<Member> getTargets() {
+        return nodeEngine.getClusterService().getMembers();
+    }
+
+    private void handleException(Throwable throwable) {
+        boolean causedByInactiveInstance = peel(throwable) instanceof HazelcastInstanceNotActiveException;
+        Level level = causedByInactiveInstance ? FINEST : WARNING;
+        logger.log(level, "Error while destroying a proxy.", throwable);
     }
 
     @Override

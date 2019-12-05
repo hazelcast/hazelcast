@@ -16,12 +16,13 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.collection.ISet;
+import com.hazelcast.internal.config.ConfigDataSerializerHook;
+
 /**
- * Contains the configuration for an {@link com.hazelcast.core.ISet}.
+ * Contains the configuration for an {@link ISet}.
  */
 public class SetConfig extends CollectionConfig<SetConfig> {
-
-    private transient SetConfigReadOnly readOnly;
 
     public SetConfig() {
     }
@@ -34,22 +35,8 @@ public class SetConfig extends CollectionConfig<SetConfig> {
         super(config);
     }
 
-    /**
-     * Gets immutable version of this configuration.
-     *
-     * @return immutable version of this configuration
-     * @deprecated this method will be removed in 4.0; it is meant for internal usage only
-     */
     @Override
-    public SetConfigReadOnly getAsReadOnly() {
-        if (readOnly == null) {
-            readOnly = new SetConfigReadOnly(this);
-        }
-        return readOnly;
-    }
-
-    @Override
-    public int getId() {
+    public int getClassId() {
         return ConfigDataSerializerHook.SET_CONFIG;
     }
 

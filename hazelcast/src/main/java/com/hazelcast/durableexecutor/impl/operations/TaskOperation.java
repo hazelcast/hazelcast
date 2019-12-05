@@ -18,12 +18,13 @@ package com.hazelcast.durableexecutor.impl.operations;
 
 import com.hazelcast.durableexecutor.impl.DurableExecutorContainer;
 import com.hazelcast.durableexecutor.impl.DurableExecutorDataSerializerHook;
+import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.BackupAwareOperation;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.impl.MutatingOperation;
+import com.hazelcast.spi.impl.operationservice.BackupAwareOperation;
+import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.spi.impl.operationservice.MutatingOperation;
 
 import java.io.IOException;
 import java.util.concurrent.Callable;
@@ -62,17 +63,17 @@ public class TaskOperation extends AbstractDurableExecutorOperation implements B
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        out.writeData(callableData);
+        IOUtil.writeData(out, callableData);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        callableData = in.readData();
+        callableData = IOUtil.readData(in);
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return DurableExecutorDataSerializerHook.TASK;
     }
 }

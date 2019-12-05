@@ -16,16 +16,17 @@
 
 package com.hazelcast.config;
 
-import com.hazelcast.core.RingbufferStore;
-import com.hazelcast.core.RingbufferStoreFactory;
+import com.hazelcast.internal.config.ConfigDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.ringbuffer.RingbufferStore;
+import com.hazelcast.ringbuffer.RingbufferStoreFactory;
 
 import java.io.IOException;
 import java.util.Properties;
 
-import static com.hazelcast.util.Preconditions.isNotNull;
+import static com.hazelcast.internal.util.Preconditions.isNotNull;
 
 /**
  * Configuration for the {@link RingbufferStore}.
@@ -38,7 +39,6 @@ public class RingbufferStoreConfig implements IdentifiedDataSerializable {
     private Properties properties = new Properties();
     private RingbufferStore storeImplementation;
     private RingbufferStoreFactory factoryImplementation;
-    private transient RingbufferStoreConfigReadOnly readOnly;
 
     public RingbufferStoreConfig() {
     }
@@ -123,26 +123,13 @@ public class RingbufferStoreConfig implements IdentifiedDataSerializable {
                 + '}';
     }
 
-    /**
-     * Gets immutable version of this configuration.
-     *
-     * @return immutable version of this configuration
-     * @deprecated this method will be removed in 4.0; it is meant for internal usage only
-     */
-    public RingbufferStoreConfigReadOnly getAsReadOnly() {
-        if (readOnly == null) {
-            readOnly = new RingbufferStoreConfigReadOnly(this);
-        }
-        return readOnly;
-    }
-
     @Override
     public int getFactoryId() {
         return ConfigDataSerializerHook.F_ID;
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ConfigDataSerializerHook.RINGBUFFER_STORE_CONFIG;
     }
 
@@ -209,50 +196,5 @@ public class RingbufferStoreConfig implements IdentifiedDataSerializable {
         result = 31 * result + (storeImplementation != null ? storeImplementation.hashCode() : 0);
         result = 31 * result + (factoryImplementation != null ? factoryImplementation.hashCode() : 0);
         return result;
-    }
-
-    /**
-     * A readonly version of the {@link RingbufferStoreConfig}. Non-private for testing.
-     */
-    static class RingbufferStoreConfigReadOnly extends RingbufferStoreConfig {
-
-        RingbufferStoreConfigReadOnly(RingbufferStoreConfig config) {
-            super(config);
-        }
-
-        @Override
-        public RingbufferStoreConfig setStoreImplementation(RingbufferStore storeImplementation) {
-            throw new UnsupportedOperationException("This config is read-only.");
-        }
-
-        @Override
-        public RingbufferStoreConfig setEnabled(boolean enabled) {
-            throw new UnsupportedOperationException("This config is read-only.");
-        }
-
-        @Override
-        public RingbufferStoreConfig setClassName(String className) {
-            throw new UnsupportedOperationException("This config is read-only.");
-        }
-
-        @Override
-        public RingbufferStoreConfig setProperties(Properties properties) {
-            throw new UnsupportedOperationException("This config is read-only.");
-        }
-
-        @Override
-        public RingbufferStoreConfig setProperty(String name, String value) {
-            throw new UnsupportedOperationException("This config is read-only.");
-        }
-
-        @Override
-        public RingbufferStoreConfig setFactoryClassName(String factoryClassName) {
-            throw new UnsupportedOperationException("This config is read-only.");
-        }
-
-        @Override
-        public RingbufferStoreConfig setFactoryImplementation(RingbufferStoreFactory factoryImplementation) {
-            throw new UnsupportedOperationException("This config is read-only.");
-        }
     }
 }

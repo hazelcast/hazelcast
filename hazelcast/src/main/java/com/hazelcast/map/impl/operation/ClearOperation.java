@@ -18,14 +18,15 @@ package com.hazelcast.map.impl.operation;
 
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.map.impl.MapDataSerializerHook;
-import com.hazelcast.spi.BackupAwareOperation;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.PartitionAwareOperation;
-import com.hazelcast.spi.impl.MutatingOperation;
+import com.hazelcast.spi.impl.operationservice.BackupAwareOperation;
+import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.spi.impl.operationservice.PartitionAwareOperation;
+import com.hazelcast.spi.impl.operationservice.MutatingOperation;
 
 import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
 
-public class ClearOperation extends MapOperation implements BackupAwareOperation, PartitionAwareOperation, MutatingOperation {
+public class ClearOperation extends MapOperation
+        implements BackupAwareOperation, PartitionAwareOperation, MutatingOperation {
 
     private boolean shouldBackup;
     private int numberOfClearedEntries;
@@ -40,7 +41,7 @@ public class ClearOperation extends MapOperation implements BackupAwareOperation
     }
 
     @Override
-    public void run() {
+    protected void runInternal() {
         if (recordStore == null) {
             return;
         }
@@ -50,8 +51,7 @@ public class ClearOperation extends MapOperation implements BackupAwareOperation
     }
 
     @Override
-    public void afterRun() throws Exception {
-        super.afterRun();
+    protected void afterRunInternal() {
         invalidateAllKeysInNearCaches();
         hintMapEvent();
     }
@@ -88,7 +88,7 @@ public class ClearOperation extends MapOperation implements BackupAwareOperation
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MapDataSerializerHook.CLEAR;
     }
 }

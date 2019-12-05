@@ -22,14 +22,13 @@ import com.hazelcast.cache.impl.CacheDataSerializerHook;
 import com.hazelcast.cache.impl.CacheEntryProcessorEntry;
 import com.hazelcast.cache.impl.record.CacheRecord;
 import com.hazelcast.core.ReadOnly;
-import com.hazelcast.instance.HazelcastInstanceCacheManager;
+import com.hazelcast.cache.impl.HazelcastInstanceCacheManager;
+import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.internal.management.ManagementCenterService;
 import com.hazelcast.internal.serialization.InternalSerializationService;
-import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.nio.serialization.impl.Versioned;
 
 import javax.cache.expiry.ExpiryPolicy;
 import javax.cache.processor.EntryProcessor;
@@ -37,8 +36,7 @@ import javax.cache.processor.EntryProcessorException;
 import javax.cache.processor.MutableEntry;
 import java.io.IOException;
 
-import static com.hazelcast.cache.impl.record.AbstractCacheRecord.EXPIRY_POLICY_VERSION;
-import static com.hazelcast.util.JsonUtil.getString;
+import static com.hazelcast.internal.util.JsonUtil.getString;
 
 /**
  * Request for fetching cache entries.
@@ -85,7 +83,7 @@ public class GetCacheEntryRequest implements ConsoleRequest {
             result.add("cacheBrowse_class", value != null ? value.getClass().getName() : "null");
             result.add("date_cache_creation_time", Long.toString(cacheEntry.getCreationTime()));
             result.add("date_cache_expiration_time", Long.toString(cacheEntry.getExpirationTime()));
-            result.add("cacheBrowse_hits", Long.toString(cacheEntry.getAccessHit()));
+            result.add("cacheBrowse_hits", Long.toString(cacheEntry.getHits()));
             result.add("date_cache_access_time", Long.toString(cacheEntry.getLastAccessTime()));
         }
         root.add("result", result);
@@ -116,7 +114,7 @@ public class GetCacheEntryRequest implements ConsoleRequest {
         }
 
         @Override
-        public int getId() {
+        public int getClassId() {
             return CacheDataSerializerHook.GET_CACHE_ENTRY_VIEW_PROCESSOR;
         }
 
@@ -129,7 +127,7 @@ public class GetCacheEntryRequest implements ConsoleRequest {
         }
     }
 
-    public static class CacheBrowserEntryView implements CacheEntryView<Object, Object>, IdentifiedDataSerializable, Versioned {
+    public static class CacheBrowserEntryView implements CacheEntryView<Object, Object>, IdentifiedDataSerializable {
         private Object value;
         private long expirationTime;
         private long creationTime;
@@ -147,7 +145,7 @@ public class GetCacheEntryRequest implements ConsoleRequest {
             this.expirationTime = record.getExpirationTime();
             this.creationTime = record.getCreationTime();
             this.lastAccessTime = record.getLastAccessTime();
-            this.accessHit = record.getAccessHit();
+            this.accessHit = record.getHits();
             this.expiryPolicy = record.getExpiryPolicy();
         }
 
@@ -177,7 +175,7 @@ public class GetCacheEntryRequest implements ConsoleRequest {
         }
 
         @Override
-        public long getAccessHit() {
+        public long getHits() {
             return accessHit;
         }
 
@@ -192,7 +190,7 @@ public class GetCacheEntryRequest implements ConsoleRequest {
         }
 
         @Override
-        public int getId() {
+        public int getClassId() {
             return CacheDataSerializerHook.CACHE_BROWSER_ENTRY_VIEW;
         }
 
@@ -203,9 +201,7 @@ public class GetCacheEntryRequest implements ConsoleRequest {
             out.writeLong(creationTime);
             out.writeLong(lastAccessTime);
             out.writeLong(accessHit);
-            if (out.getVersion().isGreaterOrEqual(EXPIRY_POLICY_VERSION)) {
-                out.writeObject(expiryPolicy);
-            }
+            out.writeObject(expiryPolicy);
         }
 
         @Override
@@ -215,9 +211,7 @@ public class GetCacheEntryRequest implements ConsoleRequest {
             creationTime = in.readLong();
             lastAccessTime = in.readLong();
             accessHit = in.readLong();
-            if (in.getVersion().isGreaterOrEqual(EXPIRY_POLICY_VERSION)) {
-                expiryPolicy = in.readObject();
-            }
+            expiryPolicy = in.readObject();
         }
     }
 }

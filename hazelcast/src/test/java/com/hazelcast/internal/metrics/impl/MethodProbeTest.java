@@ -23,7 +23,7 @@ import com.hazelcast.internal.util.counters.Counter;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -39,13 +39,13 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
 import static com.hazelcast.internal.metrics.impl.MethodProbe.createMethodProbe;
+import static com.hazelcast.internal.util.CollectionUtil.getItemAtPositionOrNull;
 import static com.hazelcast.internal.util.counters.SwCounter.newSwCounter;
-import static com.hazelcast.util.CollectionUtil.getItemAtPositionOrNull;
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.mock;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class MethodProbeTest extends HazelcastTestSupport {
 
     @Test
@@ -83,7 +83,7 @@ public class MethodProbeTest extends HazelcastTestSupport {
         SomeSource source = new SomeSource();
         Method method = source.getClass().getDeclaredMethod("getSomeIntegerMethod");
         Probe probe = method.getAnnotation(Probe.class);
-        MethodProbe methodProbe = createMethodProbe(method, probe);
+        MethodProbe methodProbe = createMethodProbe(method, probe, new SourceMetadata(SomeSource.class));
 
         MetricsRegistryImpl metricsRegistry = new MetricsRegistryImpl(mock(ILogger.class), ProbeLevel.DEBUG);
         methodProbe.register(metricsRegistry, source, "prefix");
@@ -91,14 +91,14 @@ public class MethodProbeTest extends HazelcastTestSupport {
         Set<String> names = metricsRegistry.getNames();
         assertEquals(1, names.size());
         String probeName = getItemAtPositionOrNull(names, 0);
-        assertEquals("prefix.someIntegerMethod", probeName);
+        assertEquals("[metric=prefix.someIntegerMethod]", probeName);
     }
 
     public void getLong(String methodName, int expectedValue) throws Exception {
         SomeSource source = new SomeSource();
         Method method = source.getClass().getDeclaredMethod(methodName);
         Probe probe = method.getAnnotation(Probe.class);
-        MethodProbe methodProbe = createMethodProbe(method, probe);
+        MethodProbe methodProbe = createMethodProbe(method, probe, new SourceMetadata(SomeSource.class));
 
         LongMethodProbe longMethodProbe = assertInstanceOf(LongMethodProbe.class, methodProbe);
 
@@ -122,7 +122,7 @@ public class MethodProbeTest extends HazelcastTestSupport {
         SomeSource source = new SomeSource();
         Method method = source.getClass().getDeclaredMethod(fieldName);
         Probe probe = method.getAnnotation(Probe.class);
-        MethodProbe methodProbe = createMethodProbe(method, probe);
+        MethodProbe methodProbe = createMethodProbe(method, probe, new SourceMetadata(SomeSource.class));
 
         MethodProbe.DoubleMethodProbe doubleMethodProbe = assertInstanceOf(MethodProbe.DoubleMethodProbe.class, methodProbe);
         double value = doubleMethodProbe.get(source);

@@ -18,22 +18,22 @@ package com.hazelcast.query.impl.predicates;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.BinaryInterface;
+import com.hazelcast.internal.serialization.BinaryInterface;
 import com.hazelcast.query.Predicate;
-import com.hazelcast.query.impl.ComparisonType;
+import com.hazelcast.query.impl.Comparables;
+import com.hazelcast.query.impl.Comparison;
 import com.hazelcast.query.impl.Index;
 import com.hazelcast.query.impl.QueryContext;
 import com.hazelcast.query.impl.QueryableEntry;
 
 import java.io.IOException;
-import java.util.Map;
 import java.util.Set;
 
 /**
  * Greater Less Predicate
  */
 @BinaryInterface
-public final class GreaterLessPredicate extends AbstractIndexAwarePredicate implements NegatablePredicate {
+public final class GreaterLessPredicate extends AbstractIndexAwarePredicate implements NegatablePredicate, RangePredicate {
 
     private static final long serialVersionUID = 1L;
 
@@ -57,26 +57,26 @@ public final class GreaterLessPredicate extends AbstractIndexAwarePredicate impl
     }
 
     @Override
-    protected boolean applyForSingleAttributeValue(Map.Entry mapEntry, Comparable attributeValue) {
+    protected boolean applyForSingleAttributeValue(Comparable attributeValue) {
         if (attributeValue == null) {
             return false;
         }
         Comparable givenValue = convert(attributeValue, value);
         attributeValue = (Comparable) convertEnumValue(attributeValue);
-        int result = attributeValue.compareTo(givenValue);
+        int result = Comparables.compare(attributeValue, givenValue);
         return equal && result == 0 || (less ? (result < 0) : (result > 0));
     }
 
     @Override
     public Set<QueryableEntry> filter(QueryContext queryContext) {
-        Index index = getIndex(queryContext);
-        final ComparisonType comparisonType;
+        Index index = matchIndex(queryContext, QueryContext.IndexMatchHint.PREFER_ORDERED);
+        final Comparison comparison;
         if (less) {
-            comparisonType = equal ? ComparisonType.LESSER_EQUAL : ComparisonType.LESSER;
+            comparison = equal ? Comparison.LESS_OR_EQUAL : Comparison.LESS;
         } else {
-            comparisonType = equal ? ComparisonType.GREATER_EQUAL : ComparisonType.GREATER;
+            comparison = equal ? Comparison.GREATER_OR_EQUAL : Comparison.GREATER;
         }
-        return index.getSubRecords(comparisonType, value);
+        return index.getRecords(comparison, value);
     }
 
     @Override
@@ -113,7 +113,7 @@ public final class GreaterLessPredicate extends AbstractIndexAwarePredicate impl
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return PredicateDataSerializerHook.GREATERLESS_PREDICATE;
     }
 
@@ -157,4 +157,30 @@ public final class GreaterLessPredicate extends AbstractIndexAwarePredicate impl
         result = 31 * result + (less ? 1 : 0);
         return result;
     }
+
+    @Override
+    public String getAttribute() {
+        return attributeName;
+    }
+
+    @Override
+    public Comparable getFrom() {
+        return less ? null : value;
+    }
+
+    @Override
+    public boolean isFromInclusive() {
+        return !less && equal;
+    }
+
+    @Override
+    public Comparable getTo() {
+        return less ? value : null;
+    }
+
+    @Override
+    public boolean isToInclusive() {
+        return less && equal;
+    }
+
 }

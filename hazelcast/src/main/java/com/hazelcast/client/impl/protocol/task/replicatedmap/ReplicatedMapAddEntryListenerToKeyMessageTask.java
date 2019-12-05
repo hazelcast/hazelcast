@@ -19,10 +19,12 @@ package com.hazelcast.client.impl.protocol.task.replicatedmap;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ReplicatedMapAddEntryListenerToKeyCodec;
-import com.hazelcast.instance.Node;
-import com.hazelcast.nio.Connection;
+import com.hazelcast.instance.impl.Node;
+import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.Predicate;
+
+import java.util.UUID;
 
 public class ReplicatedMapAddEntryListenerToKeyMessageTask
         extends AbstractReplicatedMapAddEntryListenerMessageTask<ReplicatedMapAddEntryListenerToKeyCodec.RequestParameters> {
@@ -48,7 +50,7 @@ public class ReplicatedMapAddEntryListenerToKeyMessageTask
 
     @Override
     protected ClientMessage encodeEvent(Data key, Data newValue, Data oldValue, Data mergingValue,
-                                        int type, String uuid, int numberOfAffectedEntries) {
+                                        int type, UUID uuid, int numberOfAffectedEntries) {
         return ReplicatedMapAddEntryListenerToKeyCodec.encodeEntryEvent(key, newValue,
                 oldValue, mergingValue, type, uuid, numberOfAffectedEntries);
     }
@@ -60,7 +62,7 @@ public class ReplicatedMapAddEntryListenerToKeyMessageTask
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return ReplicatedMapAddEntryListenerToKeyCodec.encodeResponse((String) response);
+        return ReplicatedMapAddEntryListenerToKeyCodec.encodeResponse((UUID) response);
     }
 
     @Override

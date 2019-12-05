@@ -16,23 +16,32 @@
 
 package com.hazelcast.config;
 
-import com.hazelcast.internal.cluster.Versions;
+import com.hazelcast.internal.config.ConfigDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.nio.serialization.impl.Versioned;
 
+import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import static com.hazelcast.internal.serialization.impl.SerializationUtil.readList;
+import static com.hazelcast.internal.serialization.impl.SerializationUtil.writeCollection;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
+
 /**
- * Configuration for WAN replication. This configuration is referenced from an
+ * Configuration for WAN replication. This configuration is referenced from a
  * IMap or ICache configuration to determine the receivers for the WAN events.
- * Each receiver is defined with a {@link WanPublisherConfig}.
+ * Each receiver is defined with a either a
+ * {@link WanBatchReplicationPublisherConfig} or a {@link CustomWanPublisherConfig}.
  * <p>
- * A single WAN replication configuration may consist of several
- * {@link WanPublisherConfig WAN publisher configurations}.
+ * A single WAN replication configuration may consist of several WAN publisher
+ * configurations. The built-in WAN publisher implementation should be
+ * configured using {@link WanBatchReplicationPublisherConfig} and custom
+ * WAN publisher implementations can be configured using
+ * {@link CustomWanPublisherConfig}.
+ * <p>
  * You may consider each WAN publisher configuration as a single target cluster
  * or a single external system. The WAN subsystem will track replication for
  * each publisher separately. Having multiple publishers in a single WAN
@@ -43,20 +52,16 @@ import java.util.List;
  * consumer. The WAN consumer is in charge of consuming (processing) incoming
  * WAN events. Usually when defining a custom consumer you need to define a
  * custom WAN publisher as well.
- * <p>
- * NOTE:
- * Implements Versioned since it serialized WanConsumerConfig directly by
- * invoking writeData. This means that, even though WanConsumerConfig is
- * Versioned, the version will not be injected.
  *
  * @see MapConfig#setWanReplicationRef
  * @see CacheConfig#setWanReplicationRef
  */
-public class WanReplicationConfig implements IdentifiedDataSerializable, Versioned {
+public class WanReplicationConfig implements IdentifiedDataSerializable {
 
     private String name;
     private WanConsumerConfig wanConsumerConfig;
-    private List<WanPublisherConfig> wanPublisherConfigs = new ArrayList<WanPublisherConfig>(2);
+    private List<CustomWanPublisherConfig> customPublisherConfigs = new ArrayList<>(0);
+    private List<WanBatchReplicationPublisherConfig> batchPublisherConfigs = new ArrayList<>(1);
 
     public String getName() {
         return name;
@@ -70,8 +75,8 @@ public class WanReplicationConfig implements IdentifiedDataSerializable, Version
      * @return this config
      * @see WanReplicationRef#getName()
      */
-    public WanReplicationConfig setName(String name) {
-        this.name = name;
+    public WanReplicationConfig setName(@Nonnull String name) {
+        this.name = checkNotNull(name, "Name must not be null");
         return this;
     }
 
@@ -98,40 +103,81 @@ public class WanReplicationConfig implements IdentifiedDataSerializable, Version
     }
 
     /**
-     * Returns the list of configured WAN publisher targets for this WAN
+     * Returns the list of custom WAN publisher implementations for this WAN
      * replication.
      */
-    public List<WanPublisherConfig> getWanPublisherConfigs() {
-        return wanPublisherConfigs;
+    public @Nonnull
+    List<CustomWanPublisherConfig> getCustomPublisherConfigs() {
+        return customPublisherConfigs;
     }
 
     /**
-     * Sets the list of configured WAN publisher targets for this WAN replication.
+     * Sets the list of custom WAN publisher implementations for this WAN
+     * replication.
      *
-     * @param wanPublisherConfigs WAN publisher list
-     */
-    public void setWanPublisherConfigs(List<WanPublisherConfig> wanPublisherConfigs) {
-        if (wanPublisherConfigs != null && !wanPublisherConfigs.isEmpty()) {
-            this.wanPublisherConfigs = wanPublisherConfigs;
-        }
-    }
-
-    /**
-     * Adds a WAN publisher configuration to this WAN replication.
-     *
-     * @param wanPublisherConfig the WAN publisher configuration
+     * @param customPublisherConfigs publisher configurations
      * @return this config
      */
-    public WanReplicationConfig addWanPublisherConfig(WanPublisherConfig wanPublisherConfig) {
-        wanPublisherConfigs.add(wanPublisherConfig);
+    public WanReplicationConfig setCustomPublisherConfigs(
+            @Nonnull List<CustomWanPublisherConfig> customPublisherConfigs) {
+        this.customPublisherConfigs = checkNotNull(customPublisherConfigs, "Publisher configurations must not be null");
+        return this;
+    }
+
+
+    /**
+     * Returns the list of WAN publisher configurations using the built-in
+     * batching WAN implementation for this WAN replication.
+     */
+    public @Nonnull
+    List<WanBatchReplicationPublisherConfig> getBatchPublisherConfigs() {
+        return batchPublisherConfigs;
+    }
+
+    /**
+     * Sets the list of WAN publisher configurations using the built-in
+     * batching WAN implementation for this WAN replication.
+     *
+     * @param batchPublisherConfigs configurations for the built-in WAN publisher implementation
+     * @return this config
+     */
+    public WanReplicationConfig setBatchPublisherConfigs(
+            @Nonnull List<WanBatchReplicationPublisherConfig> batchPublisherConfigs) {
+        this.batchPublisherConfigs = checkNotNull(batchPublisherConfigs, "Publisher configurations must not be null");
+        return this;
+    }
+
+    /**
+     * Adds a WAN publisher configuration using the built-in batching WAN
+     * implementation to this WAN replication.
+     *
+     * @param config the WAN publisher configuration
+     * @return this config
+     */
+    public WanReplicationConfig addWanBatchReplicationPublisherConfig(WanBatchReplicationPublisherConfig config) {
+        this.batchPublisherConfigs.add(config);
+        return this;
+    }
+
+    /**
+     * Adds a custom WAN publisher implementation configuration to this WAN
+     * replication.
+     *
+     * @param config the WAN publisher configuration
+     * @return this config
+     */
+    public WanReplicationConfig addCustomPublisherConfig(CustomWanPublisherConfig config) {
+        this.customPublisherConfigs.add(config);
         return this;
     }
 
     @Override
     public String toString() {
-        return "WanReplicationConfig"
-                + "{name='" + name + '\''
-                + ", wanPublisherConfigs=" + wanPublisherConfigs
+        return "WanReplicationConfig{"
+                + "name='" + name + '\''
+                + ", wanConsumerConfig=" + wanConsumerConfig
+                + ", customPublisherConfigs=" + customPublisherConfigs
+                + ", batchPublisherConfigs=" + batchPublisherConfigs
                 + '}';
     }
 
@@ -141,71 +187,25 @@ public class WanReplicationConfig implements IdentifiedDataSerializable, Version
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ConfigDataSerializerHook.WAN_REPLICATION_CONFIG;
     }
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeUTF(name);
-
-        // RU_COMPAT_3_11
-        if (out.getVersion().isGreaterOrEqual(Versions.V3_12)) {
-            // using this method is nicer since the object
-            // can implement Versioned and have a version injected
-            out.writeObject(wanConsumerConfig);
-        } else {
-            if (wanConsumerConfig != null) {
-                out.writeBoolean(true);
-                wanConsumerConfig.writeData(out);
-            } else {
-                out.writeBoolean(false);
-            }
-        }
-
-        int publisherCount = wanPublisherConfigs.size();
-        out.writeInt(publisherCount);
-        for (WanPublisherConfig wanPublisherConfig : wanPublisherConfigs) {
-            // RU_COMPAT_3_11
-            if (out.getVersion().isGreaterOrEqual(Versions.V3_12)) {
-                // using this method is nicer since the object
-                // can implement Versioned and have a version injected
-                out.writeObject(wanPublisherConfig);
-            } else {
-                wanPublisherConfig.writeData(out);
-            }
-        }
+        out.writeObject(wanConsumerConfig);
+        writeCollection(batchPublisherConfigs, out);
+        writeCollection(customPublisherConfigs, out);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         name = in.readUTF();
+        wanConsumerConfig = in.readObject();
 
-        // RU_COMPAT_3_11
-        if (in.getVersion().isGreaterOrEqual(Versions.V3_12)) {
-            wanConsumerConfig = in.readObject();
-        } else {
-            boolean consumerConfigExists = in.readBoolean();
-            if (consumerConfigExists) {
-                WanConsumerConfig consumerConfig = new WanConsumerConfig();
-                consumerConfig.readData(in);
-                wanConsumerConfig = consumerConfig;
-            }
-        }
-
-        int publisherCount = in.readInt();
-        for (int i = 0; i < publisherCount; i++) {
-            WanPublisherConfig publisherConfig;
-
-            // RU_COMPAT_3_11
-            if (in.getVersion().isGreaterOrEqual(Versions.V3_12)) {
-                publisherConfig = in.readObject();
-            } else {
-                publisherConfig = new WanPublisherConfig();
-                publisherConfig.readData(in);
-            }
-            wanPublisherConfigs.add(publisherConfig);
-        }
+        batchPublisherConfigs = readList(in);
+        customPublisherConfigs = readList(in);
     }
 
     @Override
@@ -219,22 +219,24 @@ public class WanReplicationConfig implements IdentifiedDataSerializable, Version
 
         WanReplicationConfig that = (WanReplicationConfig) o;
 
-        if (!name.equals(that.name)) {
+        if (name != null ? !name.equals(that.name) : that.name != null) {
             return false;
         }
-        if (wanConsumerConfig != null
-                ? !wanConsumerConfig.equals(that.wanConsumerConfig)
-                : that.wanConsumerConfig != null) {
+        if (wanConsumerConfig != null ? !wanConsumerConfig.equals(that.wanConsumerConfig) : that.wanConsumerConfig != null) {
             return false;
         }
-        return wanPublisherConfigs.equals(that.wanPublisherConfigs);
+        if (!customPublisherConfigs.equals(that.customPublisherConfigs)) {
+            return false;
+        }
+        return batchPublisherConfigs.equals(that.batchPublisherConfigs);
     }
 
     @Override
     public int hashCode() {
-        int result = name.hashCode();
+        int result = name != null ? name.hashCode() : 0;
         result = 31 * result + (wanConsumerConfig != null ? wanConsumerConfig.hashCode() : 0);
-        result = 31 * result + wanPublisherConfigs.hashCode();
+        result = 31 * result + customPublisherConfigs.hashCode();
+        result = 31 * result + batchPublisherConfigs.hashCode();
         return result;
     }
 }

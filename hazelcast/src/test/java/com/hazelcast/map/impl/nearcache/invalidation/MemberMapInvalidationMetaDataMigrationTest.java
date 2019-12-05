@@ -20,7 +20,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IMap;
+import com.hazelcast.map.IMap;
 import com.hazelcast.internal.nearcache.impl.invalidation.Invalidator;
 import com.hazelcast.internal.nearcache.impl.invalidation.MetaDataGenerator;
 import com.hazelcast.internal.partition.InternalPartitionService;
@@ -32,8 +32,9 @@ import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.test.annotation.SlowTest;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -47,12 +48,12 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import static com.hazelcast.config.InMemoryFormat.BINARY;
 import static com.hazelcast.internal.nearcache.NearCacheTestUtils.getBaseConfig;
 import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
-import static com.hazelcast.util.MapUtil.createHashMap;
+import static com.hazelcast.internal.util.MapUtil.createHashMap;
 import static java.lang.String.format;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class MemberMapInvalidationMetaDataMigrationTest extends HazelcastTestSupport {
 
     private static final int MAP_SIZE = 10000;
@@ -72,7 +73,7 @@ public class MemberMapInvalidationMetaDataMigrationTest extends HazelcastTestSup
     }
 
     @Test
-    public void sequences_migrated_whenNewlyJoinedNodesShutdown() {
+    public void sequences_migrated_when_newly_joined_nodes_shutdown() {
         HazelcastInstance instance1 = factory.newHazelcastInstance(config);
         IMap<Object, Object> map = instance1.getMap(MAP_NAME);
         for (int i = 0; i < MAP_SIZE; i++) {
@@ -84,21 +85,21 @@ public class MemberMapInvalidationMetaDataMigrationTest extends HazelcastTestSup
         Map<Integer, Long> source = getPartitionToSequenceMap(MAP_NAME, instance1);
 
         HazelcastInstance instance2 = factory.newHazelcastInstance(config);
-        waitAllForSafeState(instance2);
+
         instance1.shutdown();
 
         HazelcastInstance instance3 = factory.newHazelcastInstance(config);
-        waitAllForSafeState(instance3);
         instance2.shutdown();
-        waitAllForSafeState(instance3);
+
+        waitAllForSafeState(factory.getAllHazelcastInstances());
 
         Map<Integer, Long> destination = getPartitionToSequenceMap(MAP_NAME, instance3);
 
-        assertEqualsSequenceNumbers(source, destination);
+        assertSequenceNumbersEqual(source, destination);
     }
 
     @Test
-    public void sequences_migrated_whenSourceNodeShutdown() {
+    public void sequences_migrated_when_source_node_shutdown() {
         HazelcastInstance instance1 = factory.newHazelcastInstance(config);
         IMap<Object, Object> map = instance1.getMap(MAP_NAME);
         for (int i = 0; i < MAP_SIZE; i++) {
@@ -111,12 +112,14 @@ public class MemberMapInvalidationMetaDataMigrationTest extends HazelcastTestSup
 
         HazelcastInstance instance2 = factory.newHazelcastInstance(config);
         HazelcastInstance instance3 = factory.newHazelcastInstance(config);
-        waitAllForSafeState(instance2, instance3);
 
         instance1.shutdown();
 
+        waitAllForSafeState(factory.getAllHazelcastInstances());
+
         Map<Integer, Long> destination2 = getPartitionToSequenceMap(MAP_NAME, instance2);
         Map<Integer, Long> destination3 = getPartitionToSequenceMap(MAP_NAME, instance3);
+
         for (Map.Entry<Integer, Long> entry : destination2.entrySet()) {
             Integer key = entry.getKey();
             Long value = entry.getValue();
@@ -125,11 +128,12 @@ public class MemberMapInvalidationMetaDataMigrationTest extends HazelcastTestSup
             }
         }
 
-        assertEqualsSequenceNumbers(source, destination3);
+        assertSequenceNumbersEqual(source, destination3);
     }
 
     @Test
-    public void sequences_migrated_whenOneNodeContinuouslyStartsAndStops() {
+    @Category(SlowTest.class)
+    public void sequences_migrated_when_one_node_continuously_starts_and_stops() {
         HazelcastInstance instance1 = factory.newHazelcastInstance(config);
         IMap<Object, Object> map = instance1.getMap(MAP_NAME);
         for (int i = 0; i < MAP_SIZE; i++) {
@@ -162,13 +166,15 @@ public class MemberMapInvalidationMetaDataMigrationTest extends HazelcastTestSup
 
         instance2.shutdown();
 
+        waitAllForSafeState(factory.getAllHazelcastInstances());
+
         Map<Integer, Long> destination = getPartitionToSequenceMap(MAP_NAME, instance1);
 
-        assertEqualsSequenceNumbers(source, destination);
+        assertSequenceNumbersEqual(source, destination);
     }
 
     @Test
-    public void uuids_migrated_whenNewlyJoinedNodesShutdown() {
+    public void uuids_migrated_when_newly_joined_nodes_shutdown() {
         HazelcastInstance instance1 = factory.newHazelcastInstance(config);
         IMap<Object, Object> map = instance1.getMap(MAP_NAME);
         for (int i = 0; i < MAP_SIZE; i++) {
@@ -180,19 +186,20 @@ public class MemberMapInvalidationMetaDataMigrationTest extends HazelcastTestSup
         Map<Integer, UUID> source = getPartitionToUuidMap(instance1);
 
         HazelcastInstance instance2 = factory.newHazelcastInstance(config);
-        waitAllForSafeState(instance2);
+
         instance1.shutdown();
 
         HazelcastInstance instance3 = factory.newHazelcastInstance(config);
-        waitAllForSafeState(instance3);
+
         instance2.shutdown();
 
+        waitAllForSafeState(factory.getAllHazelcastInstances());
         Map<Integer, UUID> destination = getPartitionToUuidMap(instance3);
-        assertEqualsPartitionUUIDs(source, destination);
+        assertPartitionUUIDsEqual(source, destination);
     }
 
     @Test
-    public void uuids_migrated_whenSourceNodeShutdown() {
+    public void uuids_migrated_when_source_node_shutdown() {
         final HazelcastInstance instance1 = factory.newHazelcastInstance(config);
         IMap<Object, Object> map = instance1.getMap(MAP_NAME);
         for (int i = 0; i < MAP_SIZE; i++) {
@@ -205,15 +212,17 @@ public class MemberMapInvalidationMetaDataMigrationTest extends HazelcastTestSup
 
         HazelcastInstance instance2 = factory.newHazelcastInstance(config);
         HazelcastInstance instance3 = factory.newHazelcastInstance(config);
-        waitAllForSafeState(instance1, instance2, instance3);
+
         instance1.shutdown();
+
+        waitAllForSafeState(factory.getAllHazelcastInstances());
 
         Map<Integer, UUID> destination2 = getPartitionToUuidMap(instance2);
         Map<Integer, UUID> destination3 = getPartitionToUuidMap(instance3);
 
         InternalPartitionService partitionService2 = getNodeEngineImpl(instance2).getPartitionService();
         Map<Integer, UUID> merged = mergeOwnedPartitionUuids(partitionService2, destination2, destination3);
-        assertEqualsPartitionUUIDs(source, merged);
+        assertPartitionUUIDsEqual(source, merged);
     }
 
     private void assertInvalidationCountEventually(final String mapName, final int expectedInvalidationCount,
@@ -245,9 +254,9 @@ public class MemberMapInvalidationMetaDataMigrationTest extends HazelcastTestSup
 
     protected NearCacheConfig getNearCacheConfig(String mapName) {
         return new NearCacheConfig(mapName)
-                    .setInMemoryFormat(BINARY)
-                    .setInvalidateOnChange(true)
-                    .setCacheLocalEntries(true);
+                .setInMemoryFormat(BINARY)
+                .setInvalidateOnChange(true)
+                .setCacheLocalEntries(true);
     }
 
     private static long calculateNumberOfInvalidationsSoFar(String mapName, HazelcastInstance instance) {
@@ -308,7 +317,7 @@ public class MemberMapInvalidationMetaDataMigrationTest extends HazelcastTestSup
         return merged;
     }
 
-    private static void assertEqualsSequenceNumbers(Map<Integer, Long> source, Map<Integer, Long> destination) {
+    private static void assertSequenceNumbersEqual(Map<Integer, Long> source, Map<Integer, Long> destination) {
         for (Map.Entry<Integer, Long> entry : source.entrySet()) {
             Integer key = entry.getKey();
             Long first = entry.getValue();
@@ -321,7 +330,7 @@ public class MemberMapInvalidationMetaDataMigrationTest extends HazelcastTestSup
         }
     }
 
-    private static void assertEqualsPartitionUUIDs(Map<Integer, UUID> source, Map<Integer, UUID> destination) {
+    private static void assertPartitionUUIDsEqual(Map<Integer, UUID> source, Map<Integer, UUID> destination) {
         for (Map.Entry<Integer, UUID> entry : source.entrySet()) {
             Integer key = entry.getKey();
             UUID first = entry.getValue();

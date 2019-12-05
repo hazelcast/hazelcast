@@ -17,18 +17,17 @@
 package com.hazelcast.map;
 
 import com.hazelcast.config.Config;
+import com.hazelcast.config.IndexConfig;
+import com.hazelcast.config.IndexType;
 import com.hazelcast.config.MapConfig;
-import com.hazelcast.config.MapIndexConfig;
 import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IMap;
-import com.hazelcast.core.MapLoader;
-import com.hazelcast.core.Member;
+import com.hazelcast.cluster.Member;
 import com.hazelcast.query.Predicates;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -50,7 +49,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class MapIndexBackupTest extends HazelcastTestSupport {
 
     // Issue: https://github.com/hazelcast/hazelcast/issues/6840
@@ -106,8 +105,8 @@ public class MapIndexBackupTest extends HazelcastTestSupport {
     private HazelcastInstance createNode(TestHazelcastInstanceFactory instanceFactory) {
         Config config = getConfig();
         MapConfig mapConfig = config.getMapConfig("book");
-        mapConfig.addMapIndexConfig(new MapIndexConfig("author", false));
-        mapConfig.addMapIndexConfig(new MapIndexConfig("year", true));
+        mapConfig.addIndexConfig(new IndexConfig(IndexType.HASH, "author"));
+        mapConfig.addIndexConfig(new IndexConfig(IndexType.SORTED, "year"));
         mapConfig.setMapStoreConfig(new MapStoreConfig().setImplementation(new BookMapLoader()));
         mapConfig.setBackupCount(1);
         return instanceFactory.newHazelcastInstance(config);

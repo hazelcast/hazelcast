@@ -21,7 +21,7 @@ import com.hazelcast.map.impl.querycache.event.QueryCacheEventData;
 import com.hazelcast.map.impl.querycache.event.sequence.DefaultPartitionSequencer;
 import com.hazelcast.map.impl.querycache.event.sequence.PartitionSequencer;
 import com.hazelcast.map.impl.querycache.event.sequence.Sequenced;
-import com.hazelcast.util.Clock;
+import com.hazelcast.internal.util.Clock;
 
 /**
  * Contains helpers for an {@code Accumulator} implementation.
@@ -35,11 +35,11 @@ abstract class AbstractAccumulator<E extends Sequenced> implements Accumulator<E
     protected final CyclicBuffer<E> buffer;
     protected final PartitionSequencer partitionSequencer;
 
-    public AbstractAccumulator(QueryCacheContext context, AccumulatorInfo info) {
+    AbstractAccumulator(QueryCacheContext context, AccumulatorInfo info) {
         this.context = context;
         this.info = info;
         this.partitionSequencer = new DefaultPartitionSequencer();
-        this.buffer = new DefaultCyclicBuffer<E>(info.getBufferSize());
+        this.buffer = new DefaultCyclicBuffer<>(info.getBufferSize());
     }
 
     public CyclicBuffer<E> getBuffer() {
@@ -57,5 +57,11 @@ abstract class AbstractAccumulator<E extends Sequenced> implements Accumulator<E
     protected boolean isExpired(QueryCacheEventData entry, long delayMillis, long now) {
         return entry != null
                 && (now - entry.getCreationTime()) >= delayMillis;
+    }
+
+    @Override
+    public void reset() {
+        buffer.reset();
+        partitionSequencer.reset();
     }
 }

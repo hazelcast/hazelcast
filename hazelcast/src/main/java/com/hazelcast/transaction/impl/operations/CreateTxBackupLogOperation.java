@@ -17,26 +17,28 @@
 package com.hazelcast.transaction.impl.operations;
 
 import com.hazelcast.core.MemberLeftException;
+import com.hazelcast.internal.util.UUIDSerializationUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.spi.ExceptionAction;
+import com.hazelcast.spi.impl.operationservice.ExceptionAction;
 import com.hazelcast.spi.exception.TargetNotMemberException;
 import com.hazelcast.transaction.impl.TransactionManagerServiceImpl;
 
 import java.io.IOException;
+import java.util.UUID;
 
-import static com.hazelcast.spi.ExceptionAction.THROW_EXCEPTION;
+import static com.hazelcast.spi.impl.operationservice.ExceptionAction.THROW_EXCEPTION;
 import static com.hazelcast.transaction.impl.TransactionDataSerializerHook.CREATE_TX_BACKUP_LOG;
 
 public class CreateTxBackupLogOperation extends AbstractTxOperation {
 
-    private String callerUuid;
-    private String txnId;
+    private UUID callerUuid;
+    private UUID txnId;
 
     public CreateTxBackupLogOperation() {
     }
 
-    public CreateTxBackupLogOperation(String callerUuid, String txnId) {
+    public CreateTxBackupLogOperation(UUID callerUuid, UUID txnId) {
         this.callerUuid = callerUuid;
         this.txnId = txnId;
     }
@@ -61,28 +63,28 @@ public class CreateTxBackupLogOperation extends AbstractTxOperation {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return CREATE_TX_BACKUP_LOG;
     }
 
     @Override
-    public String getCallerUuid() {
+    public UUID getCallerUuid() {
         return callerUuid;
     }
 
-    public String getTxnId() {
+    public UUID getTxnId() {
         return txnId;
     }
 
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
-        out.writeUTF(callerUuid);
-        out.writeUTF(txnId);
+        UUIDSerializationUtil.writeUUID(out, callerUuid);
+        UUIDSerializationUtil.writeUUID(out, txnId);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
-        callerUuid = in.readUTF();
-        txnId = in.readUTF();
+        callerUuid = UUIDSerializationUtil.readUUID(in);
+        txnId = UUIDSerializationUtil.readUUID(in);
     }
 }

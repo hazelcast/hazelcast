@@ -16,29 +16,29 @@
 
 package com.hazelcast.client.impl.operations;
 
+import com.hazelcast.client.Client;
 import com.hazelcast.client.impl.ClientDataSerializerHook;
 import com.hazelcast.client.impl.ClientEndpointImpl;
-import com.hazelcast.client.impl.ClientEngineImpl;
-import com.hazelcast.core.Client;
-import com.hazelcast.core.ClientType;
-import com.hazelcast.spi.ReadonlyOperation;
+import com.hazelcast.client.impl.ClientEngine;
+import com.hazelcast.spi.impl.operationservice.ReadonlyOperation;
 
 import java.util.Collection;
 import java.util.Map;
+import java.util.UUID;
 
-import static com.hazelcast.util.MapUtil.createHashMap;
+import static com.hazelcast.internal.util.MapUtil.createHashMap;
 
 
 public class GetConnectedClientsOperation extends AbstractClientOperation implements ReadonlyOperation {
 
-    private Map<String, ClientType> clients;
+    private Map<UUID, String> clients;
 
     public GetConnectedClientsOperation() {
     }
 
     @Override
     public void run() throws Exception {
-        ClientEngineImpl service = getService();
+        ClientEngine service = getService();
         final Collection<Client> serviceClients = service.getClients();
         this.clients = createHashMap(serviceClients.size());
         for (Client clientEndpoint : serviceClients) {
@@ -53,7 +53,7 @@ public class GetConnectedClientsOperation extends AbstractClientOperation implem
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ClientDataSerializerHook.GET_CONNECTED_CLIENTS;
     }
 

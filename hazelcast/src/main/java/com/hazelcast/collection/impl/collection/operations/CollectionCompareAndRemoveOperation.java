@@ -19,17 +19,18 @@ package com.hazelcast.collection.impl.collection.operations;
 import com.hazelcast.collection.impl.collection.CollectionContainer;
 import com.hazelcast.collection.impl.collection.CollectionDataSerializerHook;
 import com.hazelcast.core.ItemEventType;
+import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.impl.MutatingOperation;
+import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.spi.impl.operationservice.MutatingOperation;
 
 import java.io.IOException;
 import java.util.Map;
 import java.util.Set;
 
-import static com.hazelcast.util.SetUtil.createHashSet;
+import static com.hazelcast.internal.util.SetUtil.createHashSet;
 
 public class CollectionCompareAndRemoveOperation extends CollectionBackupAwareOperation implements MutatingOperation {
 
@@ -71,7 +72,7 @@ public class CollectionCompareAndRemoveOperation extends CollectionBackupAwareOp
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return CollectionDataSerializerHook.COLLECTION_COMPARE_AND_REMOVE;
     }
 
@@ -81,7 +82,7 @@ public class CollectionCompareAndRemoveOperation extends CollectionBackupAwareOp
         out.writeBoolean(retain);
         out.writeInt(valueSet.size());
         for (Data value : valueSet) {
-            out.writeData(value);
+            IOUtil.writeData(out, value);
         }
     }
 
@@ -92,7 +93,7 @@ public class CollectionCompareAndRemoveOperation extends CollectionBackupAwareOp
         final int size = in.readInt();
         valueSet = createHashSet(size);
         for (int i = 0; i < size; i++) {
-            Data value = in.readData();
+            Data value = IOUtil.readData(in);
             valueSet.add(value);
         }
     }

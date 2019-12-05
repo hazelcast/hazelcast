@@ -17,23 +17,25 @@
 package com.hazelcast.config;
 
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import static com.hazelcast.instance.ProtocolType.WAN;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertEquals;
 
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class ConfigTest extends HazelcastTestSupport {
 
     private Config config;
@@ -100,14 +102,28 @@ public class ConfigTest extends HazelcastTestSupport {
         assertEquals("default", queueConfig.getName());
     }
 
-    @Test
-    public void testLockConfigReturnDefault_whenThereIsNoMatch() {
-        LockConfig lockConfig = config.findLockConfig("test");
-        assertEquals("default", lockConfig.getName());
-    }
-
     @Test(expected = IllegalArgumentException.class)
     public void testConfigThrow_whenConfigPatternMatcherIsNull() {
         config.setConfigPatternMatcher(null);
+    }
+
+    @Test
+    public void testEndpointConfig() {
+        String name = randomName();
+        EndpointQualifier qualifier = EndpointQualifier.resolve(WAN, name);
+        ServerSocketEndpointConfig endpointConfig = new ServerSocketEndpointConfig();
+        endpointConfig.setName(name);
+        endpointConfig.setProtocolType(WAN);
+        config.getAdvancedNetworkConfig().addWanEndpointConfig(endpointConfig);
+
+        assertEquals(endpointConfig,
+                config.getAdvancedNetworkConfig().getEndpointConfigs().get(qualifier));
+    }
+
+    @Test
+    public void testProgrammaticConfigGetUrlAndGetFileReturnNull() {
+        Config config = new Config();
+        assertNull(config.getConfigurationUrl());
+        assertNull(config.getConfigurationFile());
     }
 }

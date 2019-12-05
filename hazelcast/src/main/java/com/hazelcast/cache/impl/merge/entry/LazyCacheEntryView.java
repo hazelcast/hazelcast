@@ -17,7 +17,7 @@
 package com.hazelcast.cache.impl.merge.entry;
 
 import com.hazelcast.cache.CacheEntryView;
-import com.hazelcast.spi.serialization.SerializationService;
+import com.hazelcast.internal.serialization.SerializationService;
 
 /**
  * An implementation of {@link com.hazelcast.cache.CacheEntryView}
@@ -96,7 +96,7 @@ public class LazyCacheEntryView<K, V>
     }
 
     @Override
-    public long getAccessHit() {
+    public long getHits() {
         return accessHit;
     }
 

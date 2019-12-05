@@ -22,7 +22,7 @@ import com.hazelcast.spi.discovery.integration.DiscoveryService;
 
 import java.util.Map;
 
-import static com.hazelcast.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 /**
  * Discovery service with a predefined and supplied discovery strategy. All methods delegate to the provided strategy.
@@ -45,7 +45,7 @@ public class PredefinedDiscoveryService implements DiscoveryService {
     }
 
     @Override
-    public Map<String, Object> discoverLocalMetadata() {
+    public Map<String, String> discoverLocalMetadata() {
         return strategy.discoverLocalMetadata();
     }
 

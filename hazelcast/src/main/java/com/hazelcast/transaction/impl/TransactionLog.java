@@ -16,75 +16,64 @@
 
 package com.hazelcast.transaction.impl;
 
-import com.hazelcast.core.ExecutionCallback;
-import com.hazelcast.nio.Address;
-import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.OperationService;
-import com.hazelcast.spi.impl.operationservice.InternalOperationService;
+import com.hazelcast.cluster.Address;
+import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.spi.impl.operationservice.OperationService;
+import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
-import java.util.LinkedList;
 import java.util.List;
-import java.util.ListIterator;
 import java.util.Map;
 import java.util.concurrent.Future;
+import java.util.function.BiConsumer;
 
 /**
- * The transaction log contains all {@link TransactionLogRecord} for a given transaction.
+ * The transaction log contains all {@link
+ * TransactionLogRecord} for a given transaction.
  *
- * If within a transaction 3 map.puts would be done on different keys and 1 queue.take would be done, than
- * the TransactionLog will contains 4 {@link TransactionLogRecord} instances.
+ * If within a transaction 3 map.puts would be done on different
+ * keys and 1 queue.take would be done, than the TransactionLog
+ * will contains 4 {@link TransactionLogRecord} instances.
  *
- * planned optimization:
- * Most transaction will be small, but an linkedlist + hashmap is created. Instead use an array and do a
- * linear search in that array. When there are too many items added, then enable the hashmap.
+ * Planned optimization:
+ * Most transaction will be small, but an HashMap is created.
+ * Instead use an array and do a linear search in that array.
+ * When there are too many items added, then enable the hashmap.
  */
 public class TransactionLog {
 
-    private final List<TransactionLogRecord> recordList = new LinkedList<TransactionLogRecord>();
-    private final Map<Object, TransactionLogRecord> recordMap = new HashMap<Object, TransactionLogRecord>();
+    private final Map<Object, TransactionLogRecord> recordMap = new HashMap<>();
 
     public TransactionLog() {
     }
 
-    public TransactionLog(List<TransactionLogRecord> transactionLog) {
-        //
-        recordList.addAll(transactionLog);
+    public TransactionLog(Collection<TransactionLogRecord> transactionLog) {
+        for (TransactionLogRecord record : transactionLog) {
+            add(record);
+        }
     }
 
     public void add(TransactionLogRecord record) {
         Object key = record.getKey();
-
-        // there should be just one tx log for the same key. so if there is older we are removing it
-        if (key != null) {
-            TransactionLogRecord removed = recordMap.remove(key);
-            if (removed != null) {
-                recordList.remove(removed);
-            }
+        if (key == null) {
+            key = new Object();
         }
-
-        recordList.add(record);
-
-        if (key != null) {
-            recordMap.put(key, record);
-        }
+        recordMap.put(key, record);
     }
 
     public TransactionLogRecord get(Object key) {
         return recordMap.get(key);
     }
 
-    public List<TransactionLogRecord> getRecordList() {
-        return recordList;
+    public Collection<TransactionLogRecord> getRecords() {
+        return recordMap.values();
     }
 
     public void remove(Object key) {
-        TransactionLogRecord removed = recordMap.remove(key);
-        if (removed != null) {
-            recordList.remove(removed);
-        }
+        recordMap.remove(key);
     }
 
     /**
@@ -93,12 +82,12 @@ public class TransactionLog {
      * @return the number of TransactionRecords.
      */
     public int size() {
-        return recordList.size();
+        return recordMap.size();
     }
 
     public List<Future> commit(NodeEngine nodeEngine) {
         List<Future> futures = new ArrayList<Future>(size());
-        for (TransactionLogRecord record : recordList) {
+        for (TransactionLogRecord record : recordMap.values()) {
             Future future = invoke(nodeEngine, record, record.newCommitOperation());
             futures.add(future);
         }
@@ -107,7 +96,7 @@ public class TransactionLog {
 
     public List<Future> prepare(NodeEngine nodeEngine) {
         List<Future> futures = new ArrayList<Future>(size());
-        for (TransactionLogRecord record : recordList) {
+        for (TransactionLogRecord record : recordMap.values()) {
             Future future = invoke(nodeEngine, record, record.newPrepareOperation());
             futures.add(future);
         }
@@ -116,9 +105,7 @@ public class TransactionLog {
 
     public List<Future> rollback(NodeEngine nodeEngine) {
         List<Future> futures = new ArrayList<Future>(size());
-        ListIterator<TransactionLogRecord> iterator = recordList.listIterator(size());
-        while (iterator.hasPrevious()) {
-            TransactionLogRecord record = iterator.previous();
+        for (TransactionLogRecord record : recordMap.values()) {
             Future future = invoke(nodeEngine, record, record.newRollbackOperation());
             futures.add(future);
         }
@@ -134,28 +121,29 @@ public class TransactionLog {
         return operationService.invokeOnPartition(op.getServiceName(), op, op.getPartitionId());
     }
 
-    public void commitAsync(NodeEngine nodeEngine, ExecutionCallback callback) {
-        for (TransactionLogRecord record : recordList) {
+    public void commitAsync(NodeEngine nodeEngine, BiConsumer callback) {
+        for (TransactionLogRecord record : recordMap.values()) {
             invokeAsync(nodeEngine, callback, record, record.newCommitOperation());
         }
     }
 
-    public void rollbackAsync(NodeEngine nodeEngine, ExecutionCallback callback) {
-        for (TransactionLogRecord record : recordList) {
+    public void rollbackAsync(NodeEngine nodeEngine, BiConsumer callback) {
+        for (TransactionLogRecord record : recordMap.values()) {
             invokeAsync(nodeEngine, callback, record, record.newRollbackOperation());
         }
     }
 
-    private void invokeAsync(NodeEngine nodeEngine, ExecutionCallback callback,
-            TransactionLogRecord record, Operation op) {
+    private void invokeAsync(NodeEngine nodeEngine, BiConsumer callback,
+                             TransactionLogRecord record, Operation op) {
 
-        InternalOperationService operationService = (InternalOperationService) nodeEngine.getOperationService();
+        OperationServiceImpl operationService = (OperationServiceImpl) nodeEngine.getOperationService();
 
         if (record instanceof TargetAwareTransactionLogRecord) {
             Address target = ((TargetAwareTransactionLogRecord) record).getTarget();
             operationService.invokeOnTarget(op.getServiceName(), op, target);
         } else {
-            operationService.asyncInvokeOnPartition(op.getServiceName(), op, op.getPartitionId(), callback);
+            operationService.invokeOnPartitionAsync(op.getServiceName(), op, op.getPartitionId())
+                            .whenCompleteAsync(callback);
         }
     }
 }

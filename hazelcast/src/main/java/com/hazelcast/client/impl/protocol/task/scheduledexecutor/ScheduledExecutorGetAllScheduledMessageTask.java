@@ -20,35 +20,42 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ScheduledExecutorGetAllScheduledFuturesCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractMessageTask;
 import com.hazelcast.client.impl.protocol.task.BlockingMessageTask;
-import com.hazelcast.core.Member;
-import com.hazelcast.instance.Node;
+import com.hazelcast.cluster.Member;
+import com.hazelcast.cluster.impl.MemberImpl;
+import com.hazelcast.instance.EndpointQualifier;
+import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.cluster.ClusterService;
-import com.hazelcast.nio.Connection;
+import com.hazelcast.cluster.Address;
+import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.scheduledexecutor.ScheduledTaskHandler;
 import com.hazelcast.scheduledexecutor.impl.DistributedScheduledExecutorService;
 import com.hazelcast.scheduledexecutor.impl.InvokeOnMembers;
+import com.hazelcast.scheduledexecutor.impl.ScheduledTaskHandlerAccessor;
 import com.hazelcast.scheduledexecutor.impl.operations.GetAllScheduledOnMemberOperation;
 import com.hazelcast.scheduledexecutor.impl.operations.GetAllScheduledOnPartitionOperationFactory;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.ScheduledExecutorPermission;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.partition.IPartitionService;
-import com.hazelcast.util.function.Supplier;
+import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.internal.partition.IPartitionService;
 
 import java.security.Permission;
 import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Supplier;
 
-import static com.hazelcast.util.ExceptionUtil.rethrow;
+import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 
 public class ScheduledExecutorGetAllScheduledMessageTask
         extends AbstractMessageTask<ScheduledExecutorGetAllScheduledFuturesCodec.RequestParameters>
         implements BlockingMessageTask {
 
+    private final boolean advancedNetworkEnabled;
+
     public ScheduledExecutorGetAllScheduledMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
+        this.advancedNetworkEnabled = isAdvancedNetworkEnabled();
     }
 
     @Override
@@ -124,21 +131,55 @@ public class ScheduledExecutorGetAllScheduledMessageTask
         IPartitionService partitionService = nodeEngine.getPartitionService();
 
         for (Map.Entry<?, ?> entry : taskHandlersMap.entrySet()) {
-            Member owner;
+            MemberImpl owner;
             Object key = entry.getKey();
             if (key instanceof Number) {
                 owner = clusterService.getMember(partitionService.getPartitionOwner((Integer) key));
             } else {
-                owner = (Member) key;
+                owner = (MemberImpl) key;
             }
 
+            owner = translateMemberAddress(owner);
+
             List<ScheduledTaskHandler> handlers = (List<ScheduledTaskHandler>) entry.getValue();
+            translateTaskHandlerAddresses(handlers);
 
             if (accumulator.containsKey(owner)) {
                 List<ScheduledTaskHandler> memberUrns = accumulator.get(owner);
                 memberUrns.addAll(handlers);
             } else {
                 accumulator.put(owner, handlers);
+            }
+        }
+    }
+
+    private MemberImpl translateMemberAddress(MemberImpl member) {
+        if (!advancedNetworkEnabled) {
+            return member;
+        }
+
+        Address clientAddress = member.getAddressMap().get(EndpointQualifier.CLIENT);
+
+        MemberImpl result = new MemberImpl.Builder(clientAddress)
+                .version(member.getVersion())
+                .uuid(member.getUuid())
+                .localMember(member.localMember())
+                .liteMember(member.isLiteMember())
+                .memberListJoinVersion(member.getMemberListJoinVersion())
+                .attributes(member.getAttributes())
+                .build();
+        return result;
+    }
+
+    private void translateTaskHandlerAddresses(List<ScheduledTaskHandler> handlers) {
+        if (!advancedNetworkEnabled) {
+            return;
+        }
+
+        for (ScheduledTaskHandler handler : handlers) {
+            if (handler.getAddress() != null) {
+                ScheduledTaskHandlerAccessor.setAddress(handler,
+                        clientEngine.clientAddressOf(handler.getAddress()));
             }
         }
     }

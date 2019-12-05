@@ -16,22 +16,23 @@
 
 package com.hazelcast.map.impl;
 
-import com.hazelcast.concurrent.lock.LockService;
+import com.hazelcast.internal.locksupport.LockSupportService;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.internal.eviction.ExpirationManager;
+import com.hazelcast.map.impl.operation.MapClearExpiredOperation;
 import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.query.impl.Indexes;
-import com.hazelcast.spi.ExecutionService;
-import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.ObjectNamespace;
-import com.hazelcast.spi.OperationService;
-import com.hazelcast.spi.ServiceNamespace;
-import com.hazelcast.spi.partition.IPartitionService;
-import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.spi.impl.executionservice.ExecutionService;
+import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.internal.services.ObjectNamespace;
+import com.hazelcast.spi.impl.operationservice.OperationService;
+import com.hazelcast.internal.services.ServiceNamespace;
+import com.hazelcast.internal.partition.IPartitionService;
+import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.spi.properties.HazelcastProperties;
-import com.hazelcast.util.ConcurrencyUtil;
-import com.hazelcast.util.ConstructorFunction;
-import com.hazelcast.util.ContextMutexFactory;
+import com.hazelcast.internal.util.ConcurrencyUtil;
+import com.hazelcast.internal.util.ConstructorFunction;
+import com.hazelcast.internal.util.ContextMutexFactory;
 
 import javax.annotation.Nullable;
 import java.util.Collection;
@@ -46,37 +47,21 @@ public class PartitionContainer {
     private final int partitionId;
     private final MapService mapService;
     private final ContextMutexFactory contextMutexFactory = new ContextMutexFactory();
-    private final ConcurrentMap<String, RecordStore> maps = new ConcurrentHashMap<String, RecordStore>(1000);
-    private final ConcurrentMap<String, Indexes> indexes = new ConcurrentHashMap<String, Indexes>(10);
+    private final ConcurrentMap<String, RecordStore> maps = new ConcurrentHashMap<>(1000);
+    private final ConcurrentMap<String, Indexes> indexes = new ConcurrentHashMap<>(10);
     private final ConstructorFunction<String, RecordStore> recordStoreConstructor
-            = new ConstructorFunction<String, RecordStore>() {
-
-        @Override
-        public RecordStore createNew(String name) {
-            RecordStore recordStore = createRecordStore(name);
-            recordStore.startLoading();
-            return recordStore;
-        }
-    };
+            = name -> {
+                RecordStore recordStore = createRecordStore(name);
+                recordStore.startLoading();
+                return recordStore;
+            };
     private final ConstructorFunction<String, RecordStore> recordStoreConstructorSkipLoading
-            = new ConstructorFunction<String, RecordStore>() {
-
-        @Override
-        public RecordStore createNew(String name) {
-            return createRecordStore(name);
-        }
-    };
+            = this::createRecordStore;
 
     private final ConstructorFunction<String, RecordStore> recordStoreConstructorForHotRestart
-            = new ConstructorFunction<String, RecordStore>() {
-
-        @Override
-        public RecordStore createNew(String name) {
-            return createRecordStore(name);
-        }
-    };
+            = this::createRecordStore;
     /**
-     * Flag to check if there is a {@link com.hazelcast.map.impl.operation.ClearExpiredOperation}
+     * Flag to check if there is a {@link MapClearExpiredOperation}
      * running on this partition at this moment or not.
      */
     private volatile boolean hasRunningCleanup;
@@ -85,7 +70,7 @@ public class PartitionContainer {
     /**
      * Used when sorting partition containers in {@link ExpirationManager}
      * A non-volatile copy of lastCleanupTime is used with two reasons.
-     * <p/>
+     * <p>
      * 1. We need an un-modified field during sorting.
      * 2. Decrease number of volatile reads.
      */
@@ -108,8 +93,8 @@ public class PartitionContainer {
 
         MapKeyLoader keyLoader = new MapKeyLoader(name, opService, ps, nodeEngine.getClusterService(),
                 execService, mapContainer.toData());
-        keyLoader.setMaxBatch(hazelcastProperties.getInteger(GroupProperty.MAP_LOAD_CHUNK_SIZE));
-        keyLoader.setMaxSize(getMaxSizePerNode(mapConfig.getMaxSizeConfig()));
+        keyLoader.setMaxBatch(hazelcastProperties.getInteger(ClusterProperty.MAP_LOAD_CHUNK_SIZE));
+        keyLoader.setMaxSize(getMaxSizePerNode(mapConfig.getEvictionConfig()));
         keyLoader.setHasBackup(mapConfig.getTotalBackupCount() > 0);
         keyLoader.setMapOperationProvider(serviceContext.getMapOperationProvider(name));
 
@@ -135,7 +120,7 @@ public class PartitionContainer {
     }
 
     public Collection<ServiceNamespace> getAllNamespaces(int replicaIndex) {
-        Collection<ServiceNamespace> namespaces = new HashSet<ServiceNamespace>();
+        Collection<ServiceNamespace> namespaces = new HashSet<>();
 
         for (RecordStore recordStore : maps.values()) {
             MapContainer mapContainer = recordStore.getMapContainer();
@@ -201,7 +186,7 @@ public class PartitionContainer {
 
     private void clearLockStore(String name) {
         final NodeEngine nodeEngine = mapService.getMapServiceContext().getNodeEngine();
-        final LockService lockService = nodeEngine.getSharedService(LockService.SERVICE_NAME);
+        final LockSupportService lockService = nodeEngine.getServiceOrNull(LockSupportService.SERVICE_NAME);
         if (lockService != null) {
             final ObjectNamespace namespace = MapService.getObjectNamespace(name);
             lockService.clearLockStore(partitionId, namespace);

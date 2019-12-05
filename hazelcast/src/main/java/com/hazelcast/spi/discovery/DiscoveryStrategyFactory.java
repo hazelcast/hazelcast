@@ -24,12 +24,12 @@ import java.util.Collection;
 import java.util.Map;
 
 /**
- * The <tt>DiscoveryStrategyFactory</tt> is the entry point for strategy vendors. Every
+ * The <code>DiscoveryStrategyFactory</code> is the entry point for strategy vendors. Every
  * {@link DiscoveryStrategy} should have its own factory building it. In rare cases (like
  * multiple version support or similar) one factory might return different provider
- * implementations based on certain criteria. It is also up to the <tt>DiscoveryStrategyFactory</tt>
+ * implementations based on certain criteria. It is also up to the <code>DiscoveryStrategyFactory</code>
  * to cache instances and return them in some kind of a Singleton-like fashion.
- * <p/>
+ * <p>
  * The defined set of configuration properties describes the existing properties inside
  * of the Hazelcast configuration. It will be used for automatic conversion,
  * type-checking and validation before handing them to the {@link DiscoveryStrategy}.
@@ -56,9 +56,9 @@ public interface DiscoveryStrategyFactory {
      * properties. The provided {@link HazelcastInstance} can be used to register instances in
      * a service registry whenever the discovery strategy is started.
      *
-     * @param discoveryNode the current local <tt>DiscoveryNode</tt>, representing the local
+     * @param discoveryNode the current local <code>DiscoveryNode</code>, representing the local
      *                      connection information if running on a Hazelcast member, otherwise on
-     *                      Hazelcast clients always <tt>null</tt>
+     *                      Hazelcast clients always <code>null</code>
      * @param logger        the logger instance
      * @param properties    the properties parsed from the configuration
      * @return a new instance of the discovery strategy

@@ -23,9 +23,9 @@ import com.hazelcast.map.impl.EventListenerFilter;
 import com.hazelcast.map.impl.MapPartitionLostEventFilter;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.query.QueryEventFilter;
-import com.hazelcast.nio.Address;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.EventFilter;
+import com.hazelcast.spi.impl.eventservice.EventFilter;
 import com.hazelcast.spi.impl.eventservice.impl.TrueEventFilter;
 
 import java.util.Collection;
@@ -63,32 +63,32 @@ public class DefaultEntryEventFilteringStrategy extends AbstractFilteringStrateg
     // provides the default backwards compatible filtering strategy implementation.
     @SuppressWarnings("checkstyle:npathcomplexity")
     @Override
-    public int doFilter(EventFilter filter, Data dataKey, Object dataOldValue, Object dataValue, EntryEventType eventType,
+    public int doFilter(EventFilter filter, Data dataKey, Object oldValue, Object dataValue, EntryEventType eventType,
                         String mapNameOrNull) {
-            if (filter instanceof MapPartitionLostEventFilter) {
-                return FILTER_DOES_NOT_MATCH;
-            }
+        if (filter instanceof MapPartitionLostEventFilter) {
+            return FILTER_DOES_NOT_MATCH;
+        }
 
-            // the order of the following ifs is important!
-            // QueryEventFilter is instance of EntryEventFilter
-            if (filter instanceof EventListenerFilter) {
-                if (!filter.eval(eventType.getType())) {
-                    return FILTER_DOES_NOT_MATCH;
-                } else {
-                    filter = ((EventListenerFilter) filter).getEventFilter();
-                }
+        // the order of the following ifs is important!
+        // QueryEventFilter is instance of EntryEventFilter
+        if (filter instanceof EventListenerFilter) {
+            if (!filter.eval(eventType.getType())) {
+                return FILTER_DOES_NOT_MATCH;
+            } else {
+                filter = ((EventListenerFilter) filter).getEventFilter();
             }
-            if (filter instanceof TrueEventFilter) {
-                return eventType.getType();
-            }
-            if (filter instanceof QueryEventFilter) {
-                return processQueryEventFilter(filter, eventType, dataKey, dataOldValue, dataValue, mapNameOrNull)
-                        ? eventType.getType() : FILTER_DOES_NOT_MATCH;
-            }
-            if (filter instanceof EntryEventFilter) {
-                return processEntryEventFilter(filter, dataKey) ? eventType.getType() : FILTER_DOES_NOT_MATCH;
-            }
-            throw new IllegalArgumentException("Unknown EventFilter type = [" + filter.getClass().getCanonicalName() + "]");
+        }
+        if (filter instanceof TrueEventFilter) {
+            return eventType.getType();
+        }
+        if (filter instanceof QueryEventFilter) {
+            return processQueryEventFilter(filter, eventType, dataKey, oldValue, dataValue, mapNameOrNull)
+                    ? eventType.getType() : FILTER_DOES_NOT_MATCH;
+        }
+        if (filter instanceof EntryEventFilter) {
+            return processEntryEventFilter(filter, dataKey) ? eventType.getType() : FILTER_DOES_NOT_MATCH;
+        }
+        throw new IllegalArgumentException("Unknown EventFilter type = [" + filter.getClass().getCanonicalName() + "]");
     }
 
     @Override
@@ -109,16 +109,16 @@ public class DefaultEntryEventFilteringStrategy extends AbstractFilteringStrateg
      * @param filter        a {@link QueryEventFilter} filter
      * @param eventType     the event type
      * @param dataKey       the entry key
-     * @param dataOldValue  the entry value before the event
+     * @param oldValue      the entry value before the event
      * @param dataValue     the entry value after the event
      * @param mapNameOrNull the map name. May be null if this is not a map event (e.g. cache event)
      * @return {@code true} if the entry matches the query event filter
      */
     private boolean processQueryEventFilter(EventFilter filter, EntryEventType eventType,
-                                            Data dataKey, Object dataOldValue, Object dataValue, String mapNameOrNull) {
+                                            Data dataKey, Object oldValue, Object dataValue, String mapNameOrNull) {
         Object testValue;
         if (eventType == REMOVED || eventType == EVICTED || eventType == EXPIRED) {
-            testValue = dataOldValue;
+            testValue = oldValue;
         } else {
             testValue = dataValue;
         }
@@ -135,7 +135,7 @@ public class DefaultEntryEventFilteringStrategy extends AbstractFilteringStrateg
 
         @Override
         public EntryEventData getOrCreateEventData(String mapName, Address caller, Data dataKey, Object newValue, Object oldValue,
-                Object mergingValue, int eventType, boolean includingValues) {
+                                                   Object mergingValue, int eventType, boolean includingValues) {
 
             if (includingValues && eventDataIncludingValues != null) {
                 return eventDataIncludingValues;

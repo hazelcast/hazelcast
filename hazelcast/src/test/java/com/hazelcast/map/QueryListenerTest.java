@@ -21,14 +21,12 @@ import com.hazelcast.core.EntryAdapter;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IMap;
-import com.hazelcast.core.MapEvent;
 import com.hazelcast.query.Predicate;
-import com.hazelcast.query.SqlPredicate;
+import com.hazelcast.query.Predicates;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -41,7 +39,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class QueryListenerTest extends HazelcastTestSupport {
 
     @Test
@@ -124,7 +122,7 @@ public class QueryListenerTest extends HazelcastTestSupport {
             }
         };
 
-        Predicate<Object, Object> predicate = new SqlPredicate("age >= 50");
+        Predicate<Object, Object> predicate = Predicates.sql("age >= 50");
         map.addEntryListener(listener, predicate, null, false);
         int size = 100;
         for (int i = 0; i < size; i++) {

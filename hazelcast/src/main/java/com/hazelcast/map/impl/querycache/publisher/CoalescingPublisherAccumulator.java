@@ -41,7 +41,7 @@ class CoalescingPublisherAccumulator extends BasicAccumulator<QueryCacheEventDat
     /**
      * Index map to hold last unpublished event sequence per key.
      */
-    private final Map<Data, Long> index = new HashMap<Data, Long>();
+    private final Map<Data, Long> index = new HashMap<>();
 
     CoalescingPublisherAccumulator(QueryCacheContext context, AccumulatorInfo info) {
         super(context, info);
@@ -59,6 +59,12 @@ class CoalescingPublisherAccumulator extends BasicAccumulator<QueryCacheEventDat
 
         poll(handler, info.getBatchSize());
         poll(handler, info.getDelaySeconds(), SECONDS);
+    }
+
+    @Override
+    public void reset() {
+        index.clear();
+        super.reset();
     }
 
     private void setSequence(QueryCacheEventData eventData) {

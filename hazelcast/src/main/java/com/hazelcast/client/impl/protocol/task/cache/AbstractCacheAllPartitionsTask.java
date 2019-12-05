@@ -23,8 +23,8 @@ import com.hazelcast.cache.impl.ICacheService;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.task.AbstractAllPartitionsMessageTask;
 import com.hazelcast.config.CacheConfig;
-import com.hazelcast.instance.Node;
-import com.hazelcast.nio.Connection;
+import com.hazelcast.instance.impl.Node;
+import com.hazelcast.internal.nio.Connection;
 
 import java.security.Permission;
 
@@ -34,7 +34,7 @@ import java.security.Permission;
 abstract class AbstractCacheAllPartitionsTask<P>
         extends AbstractAllPartitionsMessageTask<P> {
 
-    public AbstractCacheAllPartitionsTask(ClientMessage clientMessage, Node node, Connection connection) {
+    AbstractCacheAllPartitionsTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 

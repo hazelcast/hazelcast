@@ -20,7 +20,7 @@ import java.io.Closeable;
 
 /**
  * This is used in Java 6 only. It implements the {@link Closeable} to have a consistent usage with
- * fine grained mutexes provided by {@link com.hazelcast.util.ContextMutexFactory}
+ * fine grained mutexes provided by {@link com.hazelcast.internal.util.ContextMutexFactory}
  */
 public final class GlobalMutex implements Closeable {
 

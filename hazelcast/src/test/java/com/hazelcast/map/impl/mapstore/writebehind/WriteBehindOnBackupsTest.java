@@ -16,22 +16,22 @@
 
 package com.hazelcast.map.impl.mapstore.writebehind;
 
+import com.hazelcast.cluster.Member;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IMap;
-import com.hazelcast.core.Member;
-import com.hazelcast.core.Partition;
-import com.hazelcast.core.PartitionService;
+import com.hazelcast.map.IMap;
+import com.hazelcast.partition.Partition;
+import com.hazelcast.partition.PartitionService;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.mapstore.MapDataStore;
 import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.test.annotation.SlowTest;
 import org.junit.Test;
@@ -44,12 +44,12 @@ import java.util.concurrent.TimeUnit;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class WriteBehindOnBackupsTest extends HazelcastTestSupport {
 
     /**
      * {@link com.hazelcast.map.impl.mapstore.writebehind.StoreWorker} delays processing of write-behind queues (wbq) by adding
-     * delay with {@link GroupProperty#MAP_REPLICA_SCHEDULED_TASK_DELAY_SECONDS} property.
+     * delay with {@link ClusterProperty#MAP_REPLICA_SCHEDULED_TASK_DELAY_SECONDS} property.
      * This is used to provide some extra robustness against node disaster scenarios by trying to prevent lost of entries in wbq-s.
      * Normally backup nodes don't store entries only remove them from wbq-s. Here, we are testing removal of entries occurred or not.
      */
@@ -152,14 +152,11 @@ public class WriteBehindOnBackupsTest extends HazelcastTestSupport {
                                                                  final long numberOfItems,
                                                                  final MapStoreWithCounter mapStore,
                                                                  final HazelcastInstance[] nodes) {
-        AssertTask assertTask = new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertEquals(0, writeBehindQueueSize(nodes[0], mapName));
-                assertEquals(0, writeBehindQueueSize(nodes[1], mapName));
+        AssertTask assertTask = () -> {
+            assertEquals(0, writeBehindQueueSize(nodes[0], mapName));
+            assertEquals(0, writeBehindQueueSize(nodes[1], mapName));
 
-                assertEquals(numberOfItems, mapStore.size());
-            }
+            assertEquals(numberOfItems, mapStore.size());
         };
 
         assertTrueEventually(assertTask);

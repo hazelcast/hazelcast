@@ -17,10 +17,10 @@
 package com.hazelcast.internal.usercodedeployment.impl.filter;
 
 import com.hazelcast.internal.util.filter.Filter;
-import com.hazelcast.util.collection.ArrayUtils;
+import com.hazelcast.internal.util.collection.ArrayUtils;
 
 /**
- * Match only classes in the whitelist. No other classes matches
+ * Only classes in the whitelist match. No other classes match.
  */
 public class ClassWhitelistFilter implements Filter<String> {
 

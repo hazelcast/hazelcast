@@ -16,11 +16,10 @@
 
 package com.hazelcast.map.impl.mapstore.writebehind;
 
-import com.hazelcast.core.IMap;
-import com.hazelcast.test.AssertTask;
+import com.hazelcast.map.IMap;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -34,7 +33,7 @@ import static org.junit.Assert.assertTrue;
  * When it is false, this means we are trying to store all updates on an entry in contrast with write-coalescing.
  */
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class WriteBehindStoreAllUpdatesTest extends HazelcastTestSupport {
 
     @Test
@@ -58,15 +57,12 @@ public class WriteBehindStoreAllUpdatesTest extends HazelcastTestSupport {
             map.remove(i);
         }
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                final int storeCount = mapStore.countStore.get();
-                final int deleteCount = mapStore.countDelete.get();
+        assertTrueEventually(() -> {
+            final int storeCount = mapStore.countStore.get();
+            final int deleteCount = mapStore.countDelete.get();
 
-                assertEquals(1000, storeCount + deleteCount);
-                assertTrue(mapStore.store.isEmpty());
-            }
+            assertEquals(1000, storeCount + deleteCount);
+            assertTrue(mapStore.store.isEmpty());
         });
     }
 }

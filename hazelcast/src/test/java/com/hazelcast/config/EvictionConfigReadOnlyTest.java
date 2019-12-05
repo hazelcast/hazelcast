@@ -16,6 +16,7 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.internal.config.EvictionConfigReadOnly;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
@@ -27,7 +28,7 @@ import org.junit.runner.RunWith;
 public class EvictionConfigReadOnlyTest {
 
     private EvictionConfig getReadOnlyConfig() {
-        return new EvictionConfig().getAsReadOnly();
+        return new EvictionConfigReadOnly(new EvictionConfig());
     }
 
     @Test(expected = UnsupportedOperationException.class)
@@ -37,7 +38,7 @@ public class EvictionConfigReadOnlyTest {
 
     @Test(expected = UnsupportedOperationException.class)
     public void setMaxSizePolicyOnReadOnlyEvictionConfigShouldFail() {
-        getReadOnlyConfig().setMaximumSizePolicy(null);
+        getReadOnlyConfig().setMaxSizePolicy(null);
     }
 
     @Test(expected = UnsupportedOperationException.class)

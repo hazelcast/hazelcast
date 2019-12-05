@@ -19,13 +19,13 @@ package com.hazelcast.internal.util;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.partition.impl.InternalPartitionImpl;
-import com.hazelcast.spi.AbstractLocalOperation;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.OperationResponseHandler;
+import com.hazelcast.spi.impl.operationservice.AbstractLocalOperation;
+import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.spi.impl.operationservice.OperationResponseHandler;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -38,7 +38,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class InvocationUtilTest extends HazelcastTestSupport {
 
     @Test
@@ -89,7 +89,7 @@ public class InvocationUtilTest extends HazelcastTestSupport {
         final InternalPartitionService partitionService = nodeEngineImpl.getPartitionService();
         final int randomPartitionId = (int) (Math.random() * partitionService.getPartitionCount());
         final InternalPartitionImpl partition = (InternalPartitionImpl) partitionService.getPartition(randomPartitionId);
-        partition.setMigrating(true);
+        partition.setMigrating();
 
         final String operationResponse = "operationResponse";
         final Operation operation = new LocalOperation(operationResponse)
@@ -104,7 +104,7 @@ public class InvocationUtilTest extends HazelcastTestSupport {
                 } catch (InterruptedException e) {
 
                 }
-                partition.setMigrating(false);
+                partition.resetMigrating();
             }
         });
 

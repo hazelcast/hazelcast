@@ -16,8 +16,9 @@
 
 package com.hazelcast.replicatedmap.impl.record;
 
-import com.hazelcast.util.Clock;
+import com.hazelcast.internal.util.Clock;
 
+import java.util.Objects;
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 
 /**
@@ -140,14 +141,10 @@ public class ReplicatedRecord<K, V> {
         if (ttlMillis != that.ttlMillis) {
             return false;
         }
-        if (key != null ? !key.equals(that.key) : that.key != null) {
+        if (!Objects.equals(key, that.key)) {
             return false;
         }
-        if (value != null ? !value.equals(that.value) : that.value != null) {
-            return false;
-        }
-
-        return true;
+        return Objects.equals(value, that.value);
     }
 
     @Override

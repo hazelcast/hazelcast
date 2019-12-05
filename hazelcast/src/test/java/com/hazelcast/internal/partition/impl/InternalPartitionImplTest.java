@@ -17,12 +17,12 @@
 package com.hazelcast.internal.partition.impl;
 
 import com.hazelcast.internal.partition.PartitionReplica;
-import com.hazelcast.internal.partition.PartitionListener;
-import com.hazelcast.nio.Address;
+import com.hazelcast.internal.partition.PartitionReplicaInterceptor;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.util.UuidUtil;
+import com.hazelcast.internal.util.UuidUtil;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -38,7 +38,7 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class InternalPartitionImplTest {
 
     private static final InetAddress LOCALHOST;
@@ -51,9 +51,9 @@ public class InternalPartitionImplTest {
         }
     }
 
-    private final PartitionReplica localReplica = new PartitionReplica(newAddress(5000), UuidUtil.newUnsecureUuidString());
+    private final PartitionReplica localReplica = new PartitionReplica(newAddress(5000), UuidUtil.newUnsecureUUID());
     private final PartitionReplica[] replicaOwners = new PartitionReplica[MAX_REPLICA_COUNT];
-    private final TestPartitionListener partitionListener = new TestPartitionListener();
+    private final TestPartitionReplicaInterceptor partitionListener = new TestPartitionReplicaInterceptor();
     private InternalPartitionImpl partition;
 
     @Before
@@ -70,7 +70,7 @@ public class InternalPartitionImplTest {
 
     @Test
     public void testIsLocal_whenNOTOwnedByThis() {
-        replicaOwners[0] = new PartitionReplica(newAddress(6000), UuidUtil.newUnsecureUuidString());
+        replicaOwners[0] = new PartitionReplica(newAddress(6000), UuidUtil.newUnsecureUUID());
         partition.setInitialReplicas(replicaOwners);
         assertFalse(partition.isLocal());
     }
@@ -104,7 +104,7 @@ public class InternalPartitionImplTest {
     @Test
     public void testSetInitialReplicaAddresses() {
         for (int i = 0; i < replicaOwners.length; i++) {
-            replicaOwners[i] = new PartitionReplica(newAddress(5000 + i), UuidUtil.newUnsecureUuidString());
+            replicaOwners[i] = new PartitionReplica(newAddress(5000 + i), UuidUtil.newUnsecureUUID());
         }
         partition.setInitialReplicas(replicaOwners);
 
@@ -130,7 +130,7 @@ public class InternalPartitionImplTest {
     @Test
     public void testSetReplicaAddresses() {
         for (int i = 0; i < replicaOwners.length; i++) {
-            replicaOwners[i] = new PartitionReplica(newAddress(5000 + i), UuidUtil.newUnsecureUuidString());
+            replicaOwners[i] = new PartitionReplica(newAddress(5000 + i), UuidUtil.newUnsecureUUID());
         }
         partition.setReplicas(replicaOwners);
 
@@ -156,7 +156,7 @@ public class InternalPartitionImplTest {
     @Test
     public void testSetReplicaAddresses_ListenerShouldBeCalled() {
         replicaOwners[0] = localReplica;
-        replicaOwners[1] = new PartitionReplica(newAddress(5001), UuidUtil.newUnsecureUuidString());
+        replicaOwners[1] = new PartitionReplica(newAddress(5001), UuidUtil.newUnsecureUUID());
         partition.setReplicas(replicaOwners);
         assertEquals(2, partitionListener.eventCount);
     }
@@ -175,32 +175,32 @@ public class InternalPartitionImplTest {
     public void testIsOwnerOrBackup() {
         replicaOwners[0] = localReplica;
         Address otherAddress = newAddress(5001);
-        replicaOwners[1] = new PartitionReplica(otherAddress, UuidUtil.newUnsecureUuidString());
+        replicaOwners[1] = new PartitionReplica(otherAddress, UuidUtil.newUnsecureUUID());
         partition.setReplicas(replicaOwners);
 
         assertTrue(partition.isOwnerOrBackup(replicaOwners[0]));
         assertTrue(partition.isOwnerOrBackup(localReplica));
         assertTrue(partition.isOwnerOrBackup(replicaOwners[1]));
         assertTrue(partition.isOwnerOrBackup(otherAddress));
-        assertFalse(partition.isOwnerOrBackup(new PartitionReplica(newAddress(6000), UuidUtil.newUnsecureUuidString())));
+        assertFalse(partition.isOwnerOrBackup(new PartitionReplica(newAddress(6000), UuidUtil.newUnsecureUUID())));
         assertFalse(partition.isOwnerOrBackup(newAddress(6000)));
     }
 
     @Test
     public void testGetReplicaIndex() {
         replicaOwners[0] = localReplica;
-        replicaOwners[1] = new PartitionReplica(newAddress(5001), UuidUtil.newUnsecureUuidString());
+        replicaOwners[1] = new PartitionReplica(newAddress(5001), UuidUtil.newUnsecureUUID());
         partition.setReplicas(replicaOwners);
 
         assertEquals(0, partition.getReplicaIndex(replicaOwners[0]));
         assertEquals(1, partition.getReplicaIndex(replicaOwners[1]));
-        assertEquals(-1, partition.getReplicaIndex(new PartitionReplica(newAddress(6000), UuidUtil.newUnsecureUuidString())));
+        assertEquals(-1, partition.getReplicaIndex(new PartitionReplica(newAddress(6000), UuidUtil.newUnsecureUUID())));
     }
 
     @Test
     public void testReset() {
         for (int i = 0; i < MAX_REPLICA_COUNT; i++) {
-            replicaOwners[i] = new PartitionReplica(newAddress(5000 + i), UuidUtil.newUnsecureUuidString());
+            replicaOwners[i] = new PartitionReplica(newAddress(5000 + i), UuidUtil.newUnsecureUUID());
         }
         partition.setReplicas(replicaOwners);
 
@@ -215,11 +215,11 @@ public class InternalPartitionImplTest {
         return new Address("127.0.0.1", LOCALHOST, 5000 + port);
     }
 
-    private static class TestPartitionListener implements PartitionListener {
+    private static class TestPartitionReplicaInterceptor implements PartitionReplicaInterceptor {
         private int eventCount;
 
         @Override
-        public void replicaChanged(PartitionReplicaChangeEvent event) {
+        public void replicaChanged(int partitionId, int replicaIndex, PartitionReplica oldReplica, PartitionReplica newReplica) {
             eventCount++;
         }
 

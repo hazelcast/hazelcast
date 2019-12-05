@@ -17,22 +17,24 @@
 package com.hazelcast.map.impl.querycache;
 
 import com.hazelcast.config.Config;
+import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.QueryCacheConfig;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IMap;
-import com.hazelcast.core.MapStoreAdapter;
+import com.hazelcast.map.IMap;
+import com.hazelcast.map.MapLoader;
+import com.hazelcast.map.MapStoreAdapter;
 import com.hazelcast.map.QueryCache;
 import com.hazelcast.query.Predicate;
-import com.hazelcast.query.TruePredicate;
-import com.hazelcast.test.AssertTask;
-import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.query.Predicates;
+import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -42,16 +44,35 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
+import static com.hazelcast.config.InMemoryFormat.BINARY;
+import static com.hazelcast.config.InMemoryFormat.OBJECT;
 import static com.hazelcast.map.impl.querycache.AbstractQueryCacheTestSupport.getMap;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 
-@RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@RunWith(Parameterized.class)
+@Parameterized.UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class QueryCacheMapLoaderTest extends HazelcastTestSupport {
 
+    @Parameterized.Parameter(0)
+    public MapLoader mapLoader;
+
+    @Parameterized.Parameter(1)
+    public InMemoryFormat inMemoryFormat;
+
+    @Parameterized.Parameters(name = "{0}, inMemoryFormat {1}")
+    public static Collection<Object[]> parameters() {
+        return asList(new Object[][]{
+                {new DefaultMapLoader(), BINARY},
+                {new SlowMapLoader(1), BINARY},
+                {new DefaultMapLoader(), OBJECT},
+                {new SlowMapLoader(1), OBJECT}
+        });
+    }
+
     @SuppressWarnings("unchecked")
-    private static final Predicate<Integer, Integer> TRUE_PREDICATE = TruePredicate.INSTANCE;
+    private static final Predicate<Integer, Integer> TRUE_PREDICATE = Predicates.alwaysTrue();
 
     @Test
     public void testQueryCache_includesLoadedEntries_after_get() {
@@ -68,12 +89,7 @@ public class QueryCacheMapLoaderTest extends HazelcastTestSupport {
         map.get(2);
         map.get(3);
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertEquals(3, cache.size());
-            }
-        });
+        assertTrueEventually(() -> assertEquals(3, cache.size()));
     }
 
     @Test
@@ -87,34 +103,30 @@ public class QueryCacheMapLoaderTest extends HazelcastTestSupport {
 
         final QueryCache<Integer, Integer> cache = map.getQueryCache(cacheName, TRUE_PREDICATE, true);
 
-        map.getAll(new HashSet<Integer>(asList(1, 2, 3)));
+        map.getAll(new HashSet<>(asList(1, 2, 3)));
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertEquals(3, cache.size());
-            }
-        });
+        assertTrueEventually(() -> assertEquals(3, cache.size()));
     }
 
     private Config getConfig(String mapName, String cacheName) {
-        Config config = new Config();
+        Config config = getConfig();
 
         MapConfig mapConfig = config.getMapConfig(mapName);
+        mapConfig.setInMemoryFormat(inMemoryFormat);
         mapConfig.getMapStoreConfig()
                 .setEnabled(true)
-                .setImplementation(new TestMapLoader());
+                .setImplementation(mapLoader);
 
         QueryCacheConfig cacheConfig = new QueryCacheConfig(cacheName);
         mapConfig.addQueryCacheConfig(cacheConfig);
         return config;
     }
 
-    private static class TestMapLoader extends MapStoreAdapter<Integer, Integer> {
+    static class DefaultMapLoader extends MapStoreAdapter<Integer, Integer> {
 
         private final ConcurrentMap<Integer, Integer> map = new ConcurrentHashMap<Integer, Integer>();
 
-        public TestMapLoader() {
+        DefaultMapLoader() {
             map.put(1, 1);
             map.put(2, 2);
             map.put(3, 4);
@@ -137,6 +149,49 @@ public class QueryCacheMapLoaderTest extends HazelcastTestSupport {
         @Override
         public Iterable<Integer> loadAllKeys() {
             return Collections.emptySet();
+        }
+
+        @Override
+        public String toString() {
+            return "TestMapLoader";
+        }
+    }
+
+    /**
+     * for every method call, first sleep then do method call.
+     */
+    static class SlowMapLoader extends DefaultMapLoader {
+
+        private final int sleepSeconds;
+
+        SlowMapLoader(int sleepSeconds) {
+            this.sleepSeconds = sleepSeconds;
+        }
+
+        @Override
+        public Integer load(Integer key) {
+            sleepSeconds(sleepSeconds);
+
+            return super.load(key);
+        }
+
+        @Override
+        public Map<Integer, Integer> loadAll(Collection<Integer> keys) {
+            sleepSeconds(sleepSeconds);
+
+            return super.loadAll(keys);
+        }
+
+        @Override
+        public Iterable<Integer> loadAllKeys() {
+            sleepSeconds(sleepSeconds);
+
+            return super.loadAllKeys();
+        }
+
+        @Override
+        public String toString() {
+            return "SlowMapLoader";
         }
     }
 }

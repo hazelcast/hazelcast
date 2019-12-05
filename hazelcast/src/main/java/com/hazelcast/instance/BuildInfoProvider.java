@@ -24,8 +24,8 @@ import java.io.InputStream;
 import java.lang.reflect.Field;
 import java.util.Properties;
 
-import static com.hazelcast.nio.IOUtil.closeResource;
-import static com.hazelcast.util.EmptyStatement.ignore;
+import static com.hazelcast.internal.nio.IOUtil.closeResource;
+import static com.hazelcast.internal.util.EmptyStatement.ignore;
 
 /**
  * Provides information about current Hazelcast build.
@@ -120,16 +120,17 @@ public final class BuildInfoProvider {
         String build = readStaticStringField(clazz, "BUILD");
         String revision = readStaticStringField(clazz, "REVISION");
         String distribution = readStaticStringField(clazz, "DISTRIBUTION");
+        String commitId = readStaticStringField(clazz, "COMMIT_ID");
 
-        if (!revision.isEmpty() && revision.equals("${git.commit.id.abbrev}")) {
-            revision = "";
-        }
+        revision = checkMissingExpressionValue(revision, "${git.commit.id.abbrev}");
+        commitId = checkMissingExpressionValue(commitId, "${git.commit.id}");
+
         int buildNumber = Integer.parseInt(build);
         boolean enterprise = !"Hazelcast".equals(distribution);
 
         String serialVersionString = readStaticStringField(clazz, "SERIALIZATION_VERSION");
         byte serialVersion = Byte.parseByte(serialVersionString);
-        return overrides.apply(version, build, revision, buildNumber, enterprise, serialVersion, upstreamBuildInfo);
+        return overrides.apply(version, build, revision, buildNumber, enterprise, serialVersion, commitId, upstreamBuildInfo);
     }
 
     //todo: move elsewhere
@@ -141,6 +142,14 @@ public final class BuildInfoProvider {
             throw new HazelcastException(e);
         } catch (IllegalAccessException e) {
             throw new HazelcastException(e);
+        }
+    }
+
+    private static String checkMissingExpressionValue(String value, String expression) {
+        if (!value.isEmpty() && value.equals(expression)) {
+            return "";
+        } else {
+            return value;
         }
     }
 
@@ -158,7 +167,7 @@ public final class BuildInfoProvider {
         }
 
         private BuildInfo apply(String version, String build, String revision, int buildNumber,
-                                boolean enterprise, byte serialVersion, BuildInfo upstreamBuildInfo) {
+                                boolean enterprise, byte serialVersion, String commitId, BuildInfo upstreamBuildInfo) {
             if (buildNo != -1) {
                 build = String.valueOf(buildNo);
                 buildNumber = buildNo;
@@ -171,7 +180,8 @@ public final class BuildInfoProvider {
                 LOGGER.info("Overriding hazelcast enterprise flag with system property value " + this.enterprise);
                 enterprise = this.enterprise;
             }
-            return new BuildInfo(version, build, revision, buildNumber, enterprise, serialVersion, upstreamBuildInfo);
+            return new BuildInfo(version, build, revision, buildNumber, enterprise, serialVersion,
+                    commitId, upstreamBuildInfo);
 
         }
 

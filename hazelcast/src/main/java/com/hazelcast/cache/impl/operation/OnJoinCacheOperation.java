@@ -23,7 +23,7 @@ import com.hazelcast.core.HazelcastException;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.exception.ServiceNotFoundException;
 
 import javax.cache.configuration.Configuration;
@@ -37,7 +37,7 @@ import static com.hazelcast.cache.impl.JCacheDetector.isJCacheAvailable;
 /**
  * Operation executed on joining members so they become aware of {@link CacheConfig}s dynamically created via
  * {@link javax.cache.CacheManager#createCache(String, Configuration)}. Depending on the cluster version, this operation
- * is executed either as a post-join operation (when cluster version is < 3.9) or as a pre-join operation (since 3.9), to
+ * is executed either as a post-join operation (when cluster version is &lt; 3.9) or as a pre-join operation (since 3.9), to
  * resolve a race between the {@link CacheConfig} becoming available in the joining member and creation of a
  * {@link com.hazelcast.cache.ICache} proxy.
  */
@@ -104,7 +104,7 @@ public class OnJoinCacheOperation extends Operation implements IdentifiedDataSer
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return CacheDataSerializerHook.CACHE_POST_JOIN;
     }
 }

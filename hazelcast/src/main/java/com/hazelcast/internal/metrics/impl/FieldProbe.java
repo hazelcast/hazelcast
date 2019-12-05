@@ -18,6 +18,7 @@ package com.hazelcast.internal.metrics.impl;
 
 import com.hazelcast.internal.metrics.DoubleProbeFunction;
 import com.hazelcast.internal.metrics.LongProbeFunction;
+import com.hazelcast.internal.metrics.MetricDescriptor;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.metrics.ProbeFunction;
 import com.hazelcast.internal.util.counters.Counter;
@@ -44,49 +45,54 @@ import static java.lang.String.format;
  */
 abstract class FieldProbe implements ProbeFunction {
 
-    final Probe probe;
+    final CachedProbe probe;
     final Field field;
     final int type;
+    final SourceMetadata sourceMetadata;
+    final String probeOrFieldName;
 
-    FieldProbe(Field field, Probe probe, int type) {
+    FieldProbe(Field field, Probe probe, int type, SourceMetadata sourceMetadata) {
         this.field = field;
-        this.probe = probe;
+        this.probe = new CachedProbe(probe);
         this.type = type;
+        this.sourceMetadata = sourceMetadata;
+        this.probeOrFieldName = probe.name().length() != 0 ? probe.name() : field.getName();
         field.setAccessible(true);
     }
 
     void register(MetricsRegistryImpl metricsRegistry, Object source, String namePrefix) {
-        String name = namePrefix + '.' + getProbeOrFieldName();
-        metricsRegistry.registerInternal(source, name, probe.level(), this);
+        MetricDescriptor descriptor = metricsRegistry
+                .newMetricDescriptor()
+                .withPrefix(namePrefix)
+                .withMetric(getProbeOrFieldName());
+        metricsRegistry.registerInternal(source, descriptor, probe.level(), this);
     }
 
-    void register(ProbeBuilderImpl builder, Object source) {
-        builder
-                .withTag("unit", probe.unit().name().toLowerCase())
-                .register(source, getProbeOrFieldName(), probe.level(), this);
+    void register(MetricsRegistryImpl metricsRegistry, MetricDescriptor descriptor, Object source) {
+        metricsRegistry.registerStaticProbe(source, descriptor, getProbeOrFieldName(), probe.level(), probe.unit(), this);
     }
 
-    private String getProbeOrFieldName() {
-        return probe.name().length() != 0 ? probe.name() : field.getName();
+    String getProbeOrFieldName() {
+        return probeOrFieldName;
     }
 
-    static <S> FieldProbe createFieldProbe(Field field, Probe probe) {
+    static <S> FieldProbe createFieldProbe(Field field, Probe probe, SourceMetadata sourceMetadata) {
         int type = getType(field.getType());
         if (type == -1) {
             throw new IllegalArgumentException(format("@Probe field '%s' is of an unhandled type", field));
         }
 
         if (isDouble(type)) {
-            return new DoubleFieldProbe<S>(field, probe, type);
+            return new DoubleFieldProbe<S>(field, probe, type, sourceMetadata);
         } else {
-            return new LongFieldProbe<S>(field, probe, type);
+            return new LongFieldProbe<S>(field, probe, type, sourceMetadata);
         }
     }
 
     static class LongFieldProbe<S> extends FieldProbe implements LongProbeFunction<S> {
 
-        public LongFieldProbe(Field field, Probe probe, int type) {
-            super(field, probe, type);
+        LongFieldProbe(Field field, Probe probe, int type, SourceMetadata sourceMetadata) {
+            super(field, probe, type, sourceMetadata);
         }
 
         @Override
@@ -117,8 +123,8 @@ abstract class FieldProbe implements ProbeFunction {
 
     static class DoubleFieldProbe<S> extends FieldProbe implements DoubleProbeFunction<S> {
 
-        public DoubleFieldProbe(Field field, Probe probe, int type) {
-            super(field, probe, type);
+        DoubleFieldProbe(Field field, Probe probe, int type, SourceMetadata sourceMetadata) {
+            super(field, probe, type, sourceMetadata);
         }
 
         @Override

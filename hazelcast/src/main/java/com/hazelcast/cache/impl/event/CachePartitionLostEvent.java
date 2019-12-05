@@ -16,7 +16,7 @@
 
 package com.hazelcast.cache.impl.event;
 
-import com.hazelcast.core.Member;
+import com.hazelcast.cluster.Member;
 
 /**
  * Used to provide information about the lost partition of a cache.

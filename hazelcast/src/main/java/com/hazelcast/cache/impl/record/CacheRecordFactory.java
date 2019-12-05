@@ -18,7 +18,7 @@ package com.hazelcast.cache.impl.record;
 
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.serialization.SerializationService;
+import com.hazelcast.internal.serialization.SerializationService;
 
 /**
  * Provides factory for {@link com.hazelcast.cache.impl.record.CacheRecord}.

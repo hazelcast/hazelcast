@@ -19,6 +19,7 @@ package com.hazelcast.internal.metrics.metricsets;
 import com.hazelcast.internal.metrics.DoubleProbeFunction;
 import com.hazelcast.internal.metrics.LongProbeFunction;
 import com.hazelcast.internal.metrics.MetricsRegistry;
+import com.hazelcast.internal.util.OperatingSystemMXBeanSupport;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 
@@ -28,7 +29,7 @@ import java.lang.reflect.Method;
 import java.util.logging.Level;
 
 import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
-import static com.hazelcast.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 /**
  * A Metric set for exposing {@link java.lang.management.OperatingSystemMXBean} metrics.
@@ -67,18 +68,18 @@ public final class OperatingSystemMetricSet {
         // value will be between 0.0 and 1.0 or a negative value, if not available
         registerMethod(metricsRegistry, mxBean, "getSystemCpuLoad", "os.systemCpuLoad", PERCENTAGE_MULTIPLIER);
 
-        metricsRegistry.register(mxBean, "os.systemLoadAverage", MANDATORY,
-                new DoubleProbeFunction<OperatingSystemMXBean>() {
-                    @Override
-                    public double get(OperatingSystemMXBean bean) {
-                        return bean.getSystemLoadAverage();
-                    }
-                }
+        metricsRegistry.registerStaticProbe(mxBean, "os.systemLoadAverage", MANDATORY,
+                OperatingSystemMXBean::getSystemLoadAverage
         );
     }
 
     static void registerMethod(MetricsRegistry metricsRegistry, Object osBean, String methodName, String name) {
-        registerMethod(metricsRegistry, osBean, methodName, name, 1);
+        if (OperatingSystemMXBeanSupport.GET_FREE_PHYSICAL_MEMORY_SIZE_DISABLED
+                && methodName.equals("getFreePhysicalMemorySize")) {
+            metricsRegistry.registerStaticProbe(osBean, name, MANDATORY, (LongProbeFunction<Object>) source -> -1);
+        } else {
+            registerMethod(metricsRegistry, osBean, methodName, name, 1);
+        }
     }
 
     private static void registerMethod(MetricsRegistry metricsRegistry, Object osBean, String methodName, String name,
@@ -90,19 +91,11 @@ public final class OperatingSystemMetricSet {
         }
 
         if (long.class.equals(method.getReturnType())) {
-            metricsRegistry.register(osBean, name, MANDATORY, new LongProbeFunction() {
-                @Override
-                public long get(Object bean) throws Exception {
-                    return (Long) method.invoke(bean, EMPTY_ARGS) * multiplier;
-                }
-            });
+            metricsRegistry.registerStaticProbe(osBean, name, MANDATORY,
+                    (LongProbeFunction) bean -> (Long) method.invoke(bean, EMPTY_ARGS) * multiplier);
         } else {
-            metricsRegistry.register(osBean, name, MANDATORY, new DoubleProbeFunction() {
-                @Override
-                public double get(Object bean) throws Exception {
-                    return (Double) method.invoke(bean, EMPTY_ARGS) * multiplier;
-                }
-            });
+            metricsRegistry.registerStaticProbe(osBean, name, MANDATORY,
+                    (DoubleProbeFunction) bean -> (Double) method.invoke(bean, EMPTY_ARGS) * multiplier);
         }
     }
 
@@ -111,7 +104,7 @@ public final class OperatingSystemMetricSet {
      *
      * @param source     the source object.
      * @param methodName the name of the method to retrieve.
-     * @param name the probe name
+     * @param name       the probe name
      * @return the method
      */
     private static Method getMethod(Object source, String methodName, String name) {

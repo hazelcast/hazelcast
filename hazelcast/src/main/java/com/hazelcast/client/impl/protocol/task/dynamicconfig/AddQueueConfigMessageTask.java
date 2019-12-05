@@ -22,8 +22,8 @@ import com.hazelcast.config.ItemListenerConfig;
 import com.hazelcast.config.MergePolicyConfig;
 import com.hazelcast.config.QueueConfig;
 import com.hazelcast.config.QueueStoreConfig;
-import com.hazelcast.instance.Node;
-import com.hazelcast.nio.Connection;
+import com.hazelcast.instance.impl.Node;
+import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import java.util.List;
@@ -52,7 +52,7 @@ public class AddQueueConfigMessageTask
         config.setBackupCount(parameters.backupCount);
         config.setEmptyQueueTtl(parameters.emptyQueueTtl);
         config.setMaxSize(parameters.maxSize);
-        config.setQuorumName(parameters.quorumName);
+        config.setSplitBrainProtectionName(parameters.splitBrainProtectionName);
         config.setStatisticsEnabled(parameters.statisticsEnabled);
         if (parameters.queueStoreConfig != null) {
             QueueStoreConfig storeConfig = parameters.queueStoreConfig.asQueueStoreConfig(serializationService);
@@ -63,8 +63,7 @@ public class AddQueueConfigMessageTask
                     (List<ItemListenerConfig>) adaptListenerConfigs(parameters.listenerConfigs);
             config.setItemListenerConfigs(itemListenerConfigs);
         }
-        MergePolicyConfig mergePolicyConfig = mergePolicyConfig(parameters.mergePolicyExist, parameters.mergePolicy,
-                parameters.mergeBatchSize);
+        MergePolicyConfig mergePolicyConfig = mergePolicyConfig(parameters.mergePolicy, parameters.mergeBatchSize);
         config.setMergePolicyConfig(mergePolicyConfig);
         return config;
     }

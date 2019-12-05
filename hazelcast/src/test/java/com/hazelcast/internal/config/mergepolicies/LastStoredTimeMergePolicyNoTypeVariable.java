@@ -16,6 +16,7 @@
 
 package com.hazelcast.internal.config.mergepolicies;
 
+import com.hazelcast.map.IMap;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.merge.MergingLastStoredTime;
@@ -25,7 +26,7 @@ import java.io.IOException;
 
 /**
  * Custom merge policy which uses a single merge type,
- * which is just provided by by {@link com.hazelcast.core.IMap}.
+ * which is just provided by by {@link IMap}.
  * <p>
  * Doesn't use type variables to define the required merge types.
  */

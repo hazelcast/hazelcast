@@ -15,6 +15,6 @@
  */
 
 /**
- * <p>This package contains operations for the IExecutorService.<br/>
+ * <p>This package contains operations for the IExecutorService.<br>
  */
 package com.hazelcast.executor.impl.operations;

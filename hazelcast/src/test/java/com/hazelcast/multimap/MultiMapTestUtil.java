@@ -25,7 +25,7 @@ import com.hazelcast.multimap.impl.MultiMapService;
 import com.hazelcast.multimap.impl.MultiMapValue;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.spi.serialization.SerializationService;
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.test.HazelcastTestSupport;
 
 import java.util.ArrayList;
@@ -40,7 +40,7 @@ public final class MultiMapTestUtil {
     }
 
     /**
-     * Returns all backup entries of an {@link com.hazelcast.core.MultiMap} by a given map name.
+     * Returns all backup entries of an {@link MultiMap} by a given map name.
      * <p>
      * Note: This method returns all backups from all nodes and doesn't consider the replica indexes.
      *
@@ -63,7 +63,7 @@ public final class MultiMapTestUtil {
                     continue;
                 }
                 MultiMapPartitionContainer partitionContainer = mapService.getPartitionContainer(partitionId);
-                MultiMapContainer multiMapContainer = partitionContainer.getMultiMapContainer(multiMapName);
+                MultiMapContainer multiMapContainer = partitionContainer.getMultiMapContainer(multiMapName, false);
                 if (multiMapContainer == null) {
                     continue;
                 }

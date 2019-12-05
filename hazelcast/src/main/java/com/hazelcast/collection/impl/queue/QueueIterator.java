@@ -17,14 +17,14 @@
 package com.hazelcast.collection.impl.queue;
 
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.serialization.SerializationService;
+import com.hazelcast.internal.serialization.SerializationService;
 
 import java.util.Iterator;
 
 /**
  * Iterator for the Queue.
  *
- * @param <E>
+ * @param <E> the type of elements in the queue.
  */
 public class QueueIterator<E> implements Iterator<E> {
 

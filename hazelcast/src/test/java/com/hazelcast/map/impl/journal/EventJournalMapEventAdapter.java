@@ -17,7 +17,7 @@
 package com.hazelcast.map.impl.journal;
 
 import com.hazelcast.journal.EventJournalEventAdapter;
-import com.hazelcast.map.journal.EventJournalMapEvent;
+import com.hazelcast.map.EventJournalMapEvent;
 
 public class EventJournalMapEventAdapter<K, V> implements EventJournalEventAdapter<K, V, EventJournalMapEvent<K, V>> {
     @Override

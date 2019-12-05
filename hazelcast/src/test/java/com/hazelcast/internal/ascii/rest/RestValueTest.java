@@ -18,18 +18,18 @@ package com.hazelcast.internal.ascii.rest;
 
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import static com.hazelcast.util.StringUtil.bytesToString;
-import static com.hazelcast.util.StringUtil.stringToBytes;
+import static com.hazelcast.internal.util.StringUtil.bytesToString;
+import static com.hazelcast.internal.util.StringUtil.stringToBytes;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 
 public class RestValueTest extends HazelcastTestSupport {
 

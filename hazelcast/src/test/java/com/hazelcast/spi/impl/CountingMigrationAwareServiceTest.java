@@ -16,13 +16,13 @@
 
 package com.hazelcast.spi.impl;
 
-import com.hazelcast.spi.FragmentedMigrationAwareService;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.PartitionMigrationEvent;
-import com.hazelcast.spi.PartitionReplicationEvent;
-import com.hazelcast.spi.ServiceNamespace;
-import com.hazelcast.test.HazelcastParametersRunnerFactory;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.internal.partition.FragmentedMigrationAwareService;
+import com.hazelcast.internal.partition.PartitionMigrationEvent;
+import com.hazelcast.internal.partition.PartitionReplicationEvent;
+import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.internal.services.ServiceNamespace;
+import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
 import org.junit.Rule;
@@ -49,8 +49,8 @@ import static org.mockito.Mockito.when;
  * Test count-tracking functionality of CountingMigrationAwareService
  */
 @RunWith(Parameterized.class)
-@Parameterized.UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Parameterized.UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class CountingMigrationAwareServiceTest {
 
     @Parameterized.Parameter

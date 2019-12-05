@@ -16,24 +16,25 @@
 
 package com.hazelcast.internal.partition.impl;
 
-import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.internal.partition.InternalPartition;
 import com.hazelcast.internal.partition.PartitionReplica;
-import com.hazelcast.spi.ServiceNamespace;
+import com.hazelcast.internal.services.ServiceNamespace;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 
 import java.util.Collection;
+import java.util.function.BiConsumer;
 
-import static com.hazelcast.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 // runs on the partition owner
 final class CheckPartitionReplicaVersionTask extends AbstractPartitionPrimaryReplicaAntiEntropyTask {
 
     private final int replicaIndex;
 
-    private final ExecutionCallback callback;
+    private final BiConsumer<Object, Throwable> callback;
 
-    CheckPartitionReplicaVersionTask(NodeEngineImpl nodeEngine, int partitionId, int replicaIndex, ExecutionCallback callback) {
+    CheckPartitionReplicaVersionTask(NodeEngineImpl nodeEngine, int partitionId, int replicaIndex,
+                                     BiConsumer<Object, Throwable> callback) {
         super(nodeEngine, partitionId);
         if (replicaIndex < 1 || replicaIndex > InternalPartition.MAX_BACKUP_COUNT) {
             throw new IllegalArgumentException("Replica index should be in range [1-"
@@ -48,14 +49,14 @@ final class CheckPartitionReplicaVersionTask extends AbstractPartitionPrimaryRep
     public void run() {
         InternalPartition partition = partitionService.getPartition(partitionId);
         if (!partition.isLocal() || partition.isMigrating()) {
-            callback.onResponse(false);
+            callback.accept(false, null);
             return;
         }
 
         Collection<ServiceNamespace> namespaces = retainAndGetNamespaces();
         PartitionReplica target = partition.getReplica(replicaIndex);
         if (target == null) {
-            callback.onResponse(false);
+            callback.accept(false, null);
             return;
         }
 

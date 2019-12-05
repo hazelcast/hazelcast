@@ -16,9 +16,10 @@
 
 package com.hazelcast.client.impl;
 
-import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.transaction.impl.xa.operations.CollectRemoteTransactionsOperation;
-import com.hazelcast.util.function.Supplier;
+
+import java.util.function.Supplier;
 
 public class CollectRemoteTransactionsOperationSupplier implements Supplier<Operation> {
 

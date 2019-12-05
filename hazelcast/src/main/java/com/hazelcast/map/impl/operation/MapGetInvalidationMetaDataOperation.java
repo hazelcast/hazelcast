@@ -21,13 +21,13 @@ import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.nearcache.MapNearCacheManager;
-import com.hazelcast.nio.Address;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.ReadonlyOperation;
-import com.hazelcast.spi.partition.IPartitionService;
+import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.spi.impl.operationservice.ReadonlyOperation;
+import com.hazelcast.internal.partition.IPartitionService;
 
 import java.io.IOException;
 import java.util.AbstractMap;
@@ -41,9 +41,9 @@ import java.util.UUID;
 import static com.hazelcast.map.impl.MapDataSerializerHook.F_ID;
 import static com.hazelcast.map.impl.MapDataSerializerHook.MAP_INVALIDATION_METADATA;
 import static com.hazelcast.map.impl.MapDataSerializerHook.MAP_INVALIDATION_METADATA_RESPONSE;
-import static com.hazelcast.util.CollectionUtil.isNotEmpty;
-import static com.hazelcast.util.MapUtil.createHashMap;
-import static com.hazelcast.util.Preconditions.checkTrue;
+import static com.hazelcast.internal.util.CollectionUtil.isNotEmpty;
+import static com.hazelcast.internal.util.MapUtil.createHashMap;
+import static com.hazelcast.internal.util.Preconditions.checkTrue;
 
 public class MapGetInvalidationMetaDataOperation extends Operation implements IdentifiedDataSerializable, ReadonlyOperation {
 
@@ -98,7 +98,7 @@ public class MapGetInvalidationMetaDataOperation extends Operation implements Id
         }
 
         @Override
-        public int getId() {
+        public int getClassId() {
             return MAP_INVALIDATION_METADATA_RESPONSE;
         }
 
@@ -125,21 +125,21 @@ public class MapGetInvalidationMetaDataOperation extends Operation implements Id
         @Override
         public void readData(ObjectDataInput in) throws IOException {
             int size1 = in.readInt();
-            namePartitionSequenceList = new HashMap<String, List<Map.Entry<Integer, Long>>>(size1);
+            namePartitionSequenceList = new HashMap<>(size1);
             for (int i = 0; i < size1; i++) {
                 String name = in.readUTF();
                 int size2 = in.readInt();
-                List<Map.Entry<Integer, Long>> innerList = new ArrayList<Map.Entry<Integer, Long>>(size2);
+                List<Map.Entry<Integer, Long>> innerList = new ArrayList<>(size2);
                 for (int j = 0; j < size2; j++) {
                     int partition = in.readInt();
                     long seq = in.readLong();
-                    innerList.add(new AbstractMap.SimpleEntry<Integer, Long>(partition, seq));
+                    innerList.add(new AbstractMap.SimpleEntry<>(partition, seq));
                 }
                 namePartitionSequenceList.put(name, innerList);
             }
 
             int size3 = in.readInt();
-            partitionUuidList = new HashMap<Integer, UUID>(size3);
+            partitionUuidList = new HashMap<>(size3);
             for (int i = 0; i < size3; i++) {
                 int partition = in.readInt();
                 UUID uuid = new UUID(in.readLong(), in.readLong());
@@ -152,7 +152,7 @@ public class MapGetInvalidationMetaDataOperation extends Operation implements Id
         IPartitionService partitionService = getNodeEngine().getPartitionService();
         Map<Address, List<Integer>> memberPartitionsMap = partitionService.getMemberPartitionsMap();
         List<Integer> ownedPartitions = memberPartitionsMap.get(getNodeEngine().getThisAddress());
-        return ownedPartitions == null ? Collections.<Integer>emptyList() : ownedPartitions;
+        return ownedPartitions == null ? Collections.emptyList() : ownedPartitions;
     }
 
     private Map<Integer, UUID> getPartitionUuidList(List<Integer> ownedPartitionIds) {
@@ -167,15 +167,15 @@ public class MapGetInvalidationMetaDataOperation extends Operation implements Id
 
     private Map<String, List<Map.Entry<Integer, Long>>> getNamePartitionSequenceList(List<Integer> ownedPartitionIds) {
         MetaDataGenerator metaDataGenerator = getPartitionMetaDataGenerator();
-        Map<String, List<Map.Entry<Integer, Long>>> sequences = new HashMap<String, List<Map.Entry<Integer, Long>>>(
+        Map<String, List<Map.Entry<Integer, Long>>> sequences = new HashMap<>(
                 ownedPartitionIds.size());
 
         for (String name : mapNames) {
-            List<Map.Entry<Integer, Long>> mapSequences = new ArrayList<Map.Entry<Integer, Long>>();
+            List<Map.Entry<Integer, Long>> mapSequences = new ArrayList<>();
             for (Integer partitionId : ownedPartitionIds) {
                 long partitionSequence = metaDataGenerator.currentSequence(name, partitionId);
                 if (partitionSequence != 0) {
-                    mapSequences.add(new AbstractMap.SimpleEntry<Integer, Long>(partitionId, partitionSequence));
+                    mapSequences.add(new AbstractMap.SimpleEntry<>(partitionId, partitionSequence));
                 }
             }
             sequences.put(name, mapSequences);
@@ -212,7 +212,7 @@ public class MapGetInvalidationMetaDataOperation extends Operation implements Id
 
         int size = in.readInt();
 
-        List<String> mapNames = new ArrayList<String>(size);
+        List<String> mapNames = new ArrayList<>(size);
         for (int i = 0; i < size; i++) {
             mapNames.add(in.readUTF());
         }
@@ -226,7 +226,7 @@ public class MapGetInvalidationMetaDataOperation extends Operation implements Id
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MAP_INVALIDATION_METADATA;
     }
 

@@ -16,29 +16,42 @@
 
 package com.hazelcast.query.impl;
 
+import com.hazelcast.config.IndexConfig;
 import com.hazelcast.internal.serialization.InternalSerializationService;
-import com.hazelcast.monitor.impl.PerIndexStats;
+import com.hazelcast.internal.monitor.impl.PerIndexStats;
 import com.hazelcast.query.impl.getters.Extractors;
 
-import java.util.Collections;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+
+import static java.util.Collections.newSetFromMap;
 
 /**
  * Provides implementation of on-heap indexes.
  */
 public class IndexImpl extends AbstractIndex {
 
-    private final Set<Integer> indexedPartitions = Collections.newSetFromMap(new ConcurrentHashMap<Integer, Boolean>());
+    private final Set<Integer> indexedPartitions = newSetFromMap(new ConcurrentHashMap<>());
 
-    public IndexImpl(String attributeName, boolean ordered, InternalSerializationService ss, Extractors extractors,
-                     IndexCopyBehavior copyBehavior, PerIndexStats stats) {
-        super(attributeName, ordered, ss, extractors, copyBehavior, stats);
+    public IndexImpl(
+        IndexConfig config,
+        InternalSerializationService ss,
+        Extractors extractors,
+        IndexCopyBehavior copyBehavior,
+        PerIndexStats stats
+    ) {
+        super(config, ss, extractors, copyBehavior, stats, null);
     }
 
     @Override
     protected IndexStore createIndexStore(boolean ordered, PerIndexStats stats) {
-        return ordered ? new SortedIndexStore(copyBehavior) : new UnsortedIndexStore(copyBehavior);
+        return ordered ? new OrderedIndexStore(copyBehavior) : new UnorderedIndexStore(copyBehavior);
+    }
+
+    @Override
+    public void clear() {
+        super.clear();
+        indexedPartitions.clear();
     }
 
     @Override
@@ -55,12 +68,6 @@ public class IndexImpl extends AbstractIndex {
     @Override
     public void markPartitionAsUnindexed(int partitionId) {
         indexedPartitions.remove(partitionId);
-    }
-
-    @Override
-    public void clear() {
-        super.clear();
-        indexedPartitions.clear();
     }
 
 }

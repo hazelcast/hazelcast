@@ -16,7 +16,9 @@
 
 package com.hazelcast.internal.yaml;
 
-import com.hazelcast.internal.util.JavaVersion;
+import org.snakeyaml.engine.v1.api.Load;
+import org.snakeyaml.engine.v1.api.LoadSettings;
+import org.snakeyaml.engine.v1.api.LoadSettingsBuilder;
 
 import java.io.InputStream;
 import java.io.Reader;
@@ -24,7 +26,7 @@ import java.io.Reader;
 /**
  * YAML loader that can load, parse YAML documents and can build a tree
  * of {@link YamlNode} instances.
- * <p/>
+ * <p>
  * The possible sources of the YAML documents are:
  * <ul>
  * <li>{@link InputStream}</li>
@@ -48,9 +50,7 @@ public final class YamlLoader {
      */
     public static YamlNode load(InputStream inputStream, String rootName) {
         try {
-            YamlDocumentLoader load = getLoad();
-            Object document = load.loadFromInputStream(inputStream);
-
+            Object document = getLoad().loadFromInputStream(inputStream);
             return buildDom(rootName, document);
         } catch (Exception ex) {
             throw new YamlException("An error occurred while loading and parsing the YAML stream", ex);
@@ -66,9 +66,7 @@ public final class YamlLoader {
      */
     public static YamlNode load(InputStream inputStream) {
         try {
-            YamlDocumentLoader load = getLoad();
-            Object document = load.loadFromInputStream(inputStream);
-
+            Object document = getLoad().loadFromInputStream(inputStream);
             return buildDom(document);
         } catch (Exception ex) {
             throw new YamlException("An error occurred while loading and parsing the YAML stream", ex);
@@ -87,9 +85,7 @@ public final class YamlLoader {
      */
     public static YamlNode load(Reader reader, String rootName) {
         try {
-            YamlDocumentLoader load = getLoad();
-            Object document = load.loadFromReader(reader);
-
+            Object document = getLoad().loadFromReader(reader);
             return buildDom(rootName, document);
         } catch (Exception ex) {
             throw new YamlException("An error occurred while loading and parsing the YAML stream", ex);
@@ -105,9 +101,7 @@ public final class YamlLoader {
      */
     public static YamlNode load(Reader reader) {
         try {
-            YamlDocumentLoader load = getLoad();
-            Object document = load.loadFromReader(reader);
-
+            Object document = getLoad().loadFromReader(reader);
             return buildDom(document);
         } catch (Exception ex) {
             throw new YamlException("An error occurred while loading and parsing the YAML stream", ex);
@@ -126,9 +120,7 @@ public final class YamlLoader {
      */
     public static YamlNode load(String yaml, String rootName) {
         try {
-            YamlDocumentLoader load = getLoad();
-            Object document = load.loadFromString(yaml);
-
+            Object document = getLoad().loadFromString(yaml);
             return buildDom(rootName, document);
         } catch (Exception ex) {
             throw new YamlException("An error occurred while loading and parsing the YAML string", ex);
@@ -144,21 +136,16 @@ public final class YamlLoader {
      */
     public static YamlNode load(String yaml) {
         try {
-            YamlDocumentLoader loader = getLoad();
-            Object document = loader.loadFromString(yaml);
-
+            Object document = getLoad().loadFromString(yaml);
             return buildDom(document);
         } catch (Exception ex) {
             throw new YamlException("An error occurred while loading and parsing the YAML string", ex);
         }
     }
 
-    private static YamlDocumentLoader getLoad() {
-        if (!JavaVersion.isAtLeast(JavaVersion.JAVA_1_8)) {
-            throw new UnsupportedOperationException("Processing YAML documents requires Java 8 or higher version");
-        }
-
-        return new ReflectiveYamlDocumentLoader();
+    private static Load getLoad() {
+        LoadSettings settings = new LoadSettingsBuilder().build();
+        return new Load(settings);
     }
 
     private static YamlNode buildDom(String rootName, Object document) {

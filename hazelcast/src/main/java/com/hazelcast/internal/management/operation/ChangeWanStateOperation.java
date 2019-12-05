@@ -16,23 +16,25 @@
 
 package com.hazelcast.internal.management.operation;
 
-import com.hazelcast.config.WanPublisherState;
-import com.hazelcast.spi.AbstractLocalOperation;
-import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.wan.WanReplicationService;
+import com.hazelcast.wan.WanPublisherState;
+import com.hazelcast.spi.impl.operationservice.AbstractLocalOperation;
+import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.wan.impl.WanReplicationService;
 
 /**
- * Stop, pause or resume WAN replication for the given {@code wanReplicationName} and {@code targetGroupName}.
+ * Stop, pause or resume WAN replication for the given {@code wanReplicationName} and {@code wanPublisherId}.
  */
 public class ChangeWanStateOperation extends AbstractLocalOperation {
 
-    private String schemeName;
-    private String publisherName;
+    private String wanReplicationName;
+    private String wanPublisherId;
     private WanPublisherState state;
 
-    public ChangeWanStateOperation(String schemeName, String publisherName, WanPublisherState state) {
-        this.schemeName = schemeName;
-        this.publisherName = publisherName;
+    public ChangeWanStateOperation(String wanReplicationName,
+                                   String wanPublisherId,
+                                   WanPublisherState state) {
+        this.wanReplicationName = wanReplicationName;
+        this.wanPublisherId = wanPublisherId;
         this.state = state;
     }
 
@@ -43,13 +45,13 @@ public class ChangeWanStateOperation extends AbstractLocalOperation {
 
         switch (state) {
             case REPLICATING:
-                wanReplicationService.resume(schemeName, publisherName);
+                wanReplicationService.resume(wanReplicationName, wanPublisherId);
                 break;
             case PAUSED:
-                wanReplicationService.pause(schemeName, publisherName);
+                wanReplicationService.pause(wanReplicationName, wanPublisherId);
                 break;
             case STOPPED:
-                wanReplicationService.stop(schemeName, publisherName);
+                wanReplicationService.stop(wanReplicationName, wanPublisherId);
                 break;
             default:
                 break;

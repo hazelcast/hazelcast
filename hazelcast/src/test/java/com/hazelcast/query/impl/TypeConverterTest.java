@@ -17,7 +17,7 @@
 package com.hazelcast.query.impl;
 
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.hamcrest.CoreMatchers;
 import org.junit.Rule;
@@ -33,6 +33,7 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
 
+import static com.hazelcast.query.impl.AbstractIndex.NULL;
 import static org.hamcrest.CoreMatchers.allOf;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.instanceOf;
@@ -43,7 +44,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class TypeConverterTest {
 
     @Rule
@@ -57,7 +58,7 @@ public class TypeConverterTest {
                 return value;
             }
         };
-        assertEquals(IndexImpl.NULL, converter.convert(null));
+        assertEquals(NULL, converter.convert(null));
     }
 
     @Test
@@ -328,7 +329,7 @@ public class TypeConverterTest {
 
     @Test
     public void testCharConvert_whenPassedString_thenConvertToChar() {
-        Comparable value = "foo";
+        Comparable value = "f";
         Comparable expectedCharacter = 'f';
 
         Comparable actualCharacter = TypeConverters.CHAR_CONVERTER.convert(value);
@@ -397,4 +398,109 @@ public class TypeConverterTest {
                 is(equalTo((Comparable) expected))
         ));
     }
+
+    @Test
+    public void testNoNumericMagnitudeAndPrecisionLosses() {
+        assertEquals(Long.MAX_VALUE, TypeConverters.DOUBLE_CONVERTER.convert(Long.MAX_VALUE));
+        assertEquals(Long.MIN_VALUE, TypeConverters.DOUBLE_CONVERTER.convert(Long.MIN_VALUE));
+
+        assertEquals(0.1, TypeConverters.LONG_CONVERTER.convert(0.1));
+        assertEquals(0.1F, TypeConverters.LONG_CONVERTER.convert(0.1F));
+        assertEquals(0x1p65, TypeConverters.LONG_CONVERTER.convert(0x1p65));
+        assertEquals(0.1D, TypeConverters.LONG_CONVERTER.convert("0.1"));
+
+        assertEquals(0.1, TypeConverters.FLOAT_CONVERTER.convert(0.1));
+        assertEquals(Integer.MAX_VALUE, TypeConverters.FLOAT_CONVERTER.convert(Integer.MAX_VALUE));
+        // Integer.MIN_VALUE is representable as a float
+        assertEquals(Integer.MIN_VALUE + 1, TypeConverters.FLOAT_CONVERTER.convert(Integer.MIN_VALUE + 1));
+        assertEquals(Long.MAX_VALUE, TypeConverters.FLOAT_CONVERTER.convert(Long.MAX_VALUE));
+        assertEquals(Long.MIN_VALUE, TypeConverters.FLOAT_CONVERTER.convert(Long.MIN_VALUE));
+        assertEquals(0.1, TypeConverters.FLOAT_CONVERTER.convert("0.1"));
+
+        assertEquals(0.1, TypeConverters.INTEGER_CONVERTER.convert(0.1));
+        assertEquals(0.1F, TypeConverters.INTEGER_CONVERTER.convert(0.1F));
+        assertEquals(0x1p65, TypeConverters.INTEGER_CONVERTER.convert(0x1p65));
+        assertEquals(Long.MAX_VALUE, TypeConverters.INTEGER_CONVERTER.convert(Long.MAX_VALUE));
+        assertEquals(Long.MIN_VALUE, TypeConverters.INTEGER_CONVERTER.convert(Long.MIN_VALUE));
+        assertEquals(0.1, TypeConverters.INTEGER_CONVERTER.convert("0.1"));
+        assertEquals(Long.MAX_VALUE, TypeConverters.INTEGER_CONVERTER.convert(String.valueOf(Long.MAX_VALUE)));
+
+        assertEquals(0.1, TypeConverters.SHORT_CONVERTER.convert(0.1));
+        assertEquals(0.1F, TypeConverters.SHORT_CONVERTER.convert(0.1F));
+        assertEquals(0x1p65, TypeConverters.SHORT_CONVERTER.convert(0x1p65));
+        assertEquals(Long.MAX_VALUE, TypeConverters.SHORT_CONVERTER.convert(Long.MAX_VALUE));
+        assertEquals(Long.MIN_VALUE, TypeConverters.SHORT_CONVERTER.convert(Long.MIN_VALUE));
+        assertEquals(Integer.MAX_VALUE, TypeConverters.SHORT_CONVERTER.convert(Integer.MAX_VALUE));
+        assertEquals(Integer.MIN_VALUE, TypeConverters.SHORT_CONVERTER.convert(Integer.MIN_VALUE));
+        assertEquals(0.1, TypeConverters.SHORT_CONVERTER.convert("0.1"));
+        assertEquals(Long.MAX_VALUE, TypeConverters.SHORT_CONVERTER.convert(String.valueOf(Long.MAX_VALUE)));
+
+
+        assertEquals(0.1, TypeConverters.BYTE_CONVERTER.convert(0.1));
+        assertEquals(0.1F, TypeConverters.BYTE_CONVERTER.convert(0.1F));
+        assertEquals(0x1p65, TypeConverters.BYTE_CONVERTER.convert(0x1p65));
+        assertEquals(Long.MAX_VALUE, TypeConverters.BYTE_CONVERTER.convert(Long.MAX_VALUE));
+        assertEquals(Long.MIN_VALUE, TypeConverters.BYTE_CONVERTER.convert(Long.MIN_VALUE));
+        assertEquals(Integer.MAX_VALUE, TypeConverters.BYTE_CONVERTER.convert(Integer.MAX_VALUE));
+        assertEquals(Integer.MIN_VALUE, TypeConverters.BYTE_CONVERTER.convert(Integer.MIN_VALUE));
+        assertEquals(Short.MAX_VALUE, TypeConverters.BYTE_CONVERTER.convert(Short.MAX_VALUE));
+        assertEquals(Short.MIN_VALUE, TypeConverters.BYTE_CONVERTER.convert(Short.MIN_VALUE));
+        assertEquals(0.1, TypeConverters.BYTE_CONVERTER.convert("0.1"));
+        assertEquals(Long.MAX_VALUE, TypeConverters.BYTE_CONVERTER.convert(String.valueOf(Long.MAX_VALUE)));
+    }
+
+    @Test
+    public void testValidNumericConversions() {
+        assertEquals(0.1, TypeConverters.DOUBLE_CONVERTER.convert(0.1));
+        assertEquals(1.0, TypeConverters.DOUBLE_CONVERTER.convert(1L));
+        assertEquals(1.0, TypeConverters.DOUBLE_CONVERTER.convert(1));
+        assertEquals(1.0, TypeConverters.DOUBLE_CONVERTER.convert((short) 1));
+        assertEquals(1.0, TypeConverters.DOUBLE_CONVERTER.convert((byte) 1));
+        assertEquals(0.1, TypeConverters.DOUBLE_CONVERTER.convert("0.1"));
+        assertEquals(1.0, TypeConverters.DOUBLE_CONVERTER.convert("1"));
+
+        assertEquals(1L, TypeConverters.LONG_CONVERTER.convert(1L));
+        assertEquals(1L, TypeConverters.LONG_CONVERTER.convert(1));
+        assertEquals(1L, TypeConverters.LONG_CONVERTER.convert((short) 1));
+        assertEquals(1L, TypeConverters.LONG_CONVERTER.convert((byte) 1));
+        assertEquals(1L, TypeConverters.LONG_CONVERTER.convert(1.0));
+        assertEquals(1L, TypeConverters.LONG_CONVERTER.convert(1.0F));
+        assertEquals(1L, TypeConverters.LONG_CONVERTER.convert("1"));
+        assertEquals(1L, TypeConverters.LONG_CONVERTER.convert("1.0"));
+
+        assertEquals(0.1F, TypeConverters.FLOAT_CONVERTER.convert(0.1F));
+        assertEquals(1.0F, TypeConverters.FLOAT_CONVERTER.convert(1L));
+        assertEquals(1.0F, TypeConverters.FLOAT_CONVERTER.convert(1));
+        assertEquals(1.0F, TypeConverters.FLOAT_CONVERTER.convert((short) 1));
+        assertEquals(1.0F, TypeConverters.FLOAT_CONVERTER.convert((byte) 1));
+        assertEquals(1.0F, TypeConverters.FLOAT_CONVERTER.convert("1"));
+
+        assertEquals(1, TypeConverters.INTEGER_CONVERTER.convert(1L));
+        assertEquals(1, TypeConverters.INTEGER_CONVERTER.convert(1));
+        assertEquals(1, TypeConverters.INTEGER_CONVERTER.convert((short) 1));
+        assertEquals(1, TypeConverters.INTEGER_CONVERTER.convert((byte) 1));
+        assertEquals(1, TypeConverters.INTEGER_CONVERTER.convert(1.0));
+        assertEquals(1, TypeConverters.INTEGER_CONVERTER.convert(1.0F));
+        assertEquals(1, TypeConverters.INTEGER_CONVERTER.convert("1"));
+        assertEquals(1, TypeConverters.INTEGER_CONVERTER.convert("1.0"));
+
+        assertEquals((short) 1, TypeConverters.SHORT_CONVERTER.convert(1L));
+        assertEquals((short) 1, TypeConverters.SHORT_CONVERTER.convert(1));
+        assertEquals((short) 1, TypeConverters.SHORT_CONVERTER.convert((short) 1));
+        assertEquals((short) 1, TypeConverters.SHORT_CONVERTER.convert((byte) 1));
+        assertEquals((short) 1, TypeConverters.SHORT_CONVERTER.convert(1.0));
+        assertEquals((short) 1, TypeConverters.SHORT_CONVERTER.convert(1.0F));
+        assertEquals((short) 1, TypeConverters.SHORT_CONVERTER.convert("1"));
+        assertEquals((short) 1, TypeConverters.SHORT_CONVERTER.convert("1.0"));
+
+        assertEquals((byte) 1, TypeConverters.BYTE_CONVERTER.convert(1L));
+        assertEquals((byte) 1, TypeConverters.BYTE_CONVERTER.convert(1));
+        assertEquals((byte) 1, TypeConverters.BYTE_CONVERTER.convert((short) 1));
+        assertEquals((byte) 1, TypeConverters.BYTE_CONVERTER.convert((byte) 1));
+        assertEquals((byte) 1, TypeConverters.BYTE_CONVERTER.convert(1.0));
+        assertEquals((byte) 1, TypeConverters.BYTE_CONVERTER.convert(1.0F));
+        assertEquals((byte) 1, TypeConverters.BYTE_CONVERTER.convert("1"));
+        assertEquals((byte) 1, TypeConverters.BYTE_CONVERTER.convert("1.0"));
+    }
+
 }

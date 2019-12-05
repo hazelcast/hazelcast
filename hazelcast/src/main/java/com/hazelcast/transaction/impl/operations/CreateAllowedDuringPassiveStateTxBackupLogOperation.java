@@ -19,6 +19,8 @@ package com.hazelcast.transaction.impl.operations;
 import com.hazelcast.spi.impl.AllowedDuringPassiveState;
 import com.hazelcast.transaction.impl.TransactionManagerServiceImpl;
 
+import java.util.UUID;
+
 import static com.hazelcast.transaction.impl.TransactionDataSerializerHook.CREATE_ALLOWED_DURING_PASSIVE_STATE_TX_BACKUP_LOG;
 
 public final class CreateAllowedDuringPassiveStateTxBackupLogOperation
@@ -28,7 +30,7 @@ public final class CreateAllowedDuringPassiveStateTxBackupLogOperation
     public CreateAllowedDuringPassiveStateTxBackupLogOperation() {
     }
 
-    public CreateAllowedDuringPassiveStateTxBackupLogOperation(String callerUuid, String txnId) {
+    public CreateAllowedDuringPassiveStateTxBackupLogOperation(UUID callerUuid, UUID txnId) {
         super(callerUuid, txnId);
     }
 
@@ -40,7 +42,7 @@ public final class CreateAllowedDuringPassiveStateTxBackupLogOperation
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return CREATE_ALLOWED_DURING_PASSIVE_STATE_TX_BACKUP_LOG;
     }
 

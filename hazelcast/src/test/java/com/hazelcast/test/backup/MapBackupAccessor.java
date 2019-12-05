@@ -17,18 +17,19 @@
 package com.hazelcast.test.backup;
 
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IMap;
-import com.hazelcast.instance.Node;
+import com.hazelcast.map.IMap;
+import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.PartitionContainer;
+import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.recordstore.RecordStore;
-import com.hazelcast.nio.Address;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.spi.partition.IPartition;
-import com.hazelcast.spi.serialization.SerializationService;
+import com.hazelcast.internal.partition.IPartition;
+import com.hazelcast.internal.serialization.SerializationService;
 
 import static com.hazelcast.test.HazelcastTestSupport.getNode;
 import static com.hazelcast.test.HazelcastTestSupport.getNodeEngineImpl;
@@ -40,7 +41,7 @@ import static com.hazelcast.test.TestTaskExecutorUtil.runOnPartitionThread;
  * @param <K> type of keys
  * @param <V> type of values
  */
-class MapBackupAccessor<K, V> extends AbstractBackupAccessor<K, V> implements BackupAccessor<K, V> {
+public class MapBackupAccessor<K, V> extends AbstractBackupAccessor<K, V> implements BackupAccessor<K, V> {
 
     private final String mapName;
 
@@ -87,6 +88,20 @@ class MapBackupAccessor<K, V> extends AbstractBackupAccessor<K, V> implements Ba
         return runOnPartitionThread(hz, new GetValueCallable(serializationService, partitionContainer, key), partitionId);
     }
 
+    public Record getRecord(K key) {
+        IPartition partition = getPartitionForKey(key);
+        HazelcastInstance hz = getHazelcastInstance(partition);
+
+        Node node = getNode(hz);
+        SerializationService serializationService = node.getSerializationService();
+        MapService mapService = node.getNodeEngine().getService(MapService.SERVICE_NAME);
+        MapServiceContext context = mapService.getMapServiceContext();
+        int partitionId = partition.getPartitionId();
+        PartitionContainer partitionContainer = context.getPartitionContainer(partitionId);
+
+        return runOnPartitionThread(hz, new GetRecordCallable(serializationService, partitionContainer, key), partitionId);
+    }
+
     private class SizeCallable extends AbstractClassLoaderAwareCallable<Integer> {
 
         private final PartitionContainer partitionContainer;
@@ -129,6 +144,29 @@ class MapBackupAccessor<K, V> extends AbstractBackupAccessor<K, V> implements Ba
                 return null;
             }
             return serializationService.toObject(o);
+        }
+    }
+
+    private class GetRecordCallable extends AbstractClassLoaderAwareCallable<Record> {
+
+        private final SerializationService serializationService;
+        private final PartitionContainer partitionContainer;
+        private final K key;
+
+        GetRecordCallable(SerializationService serializationService, PartitionContainer partitionContainer, K key) {
+            this.serializationService = serializationService;
+            this.partitionContainer = partitionContainer;
+            this.key = key;
+        }
+
+        @Override
+        Record callInternal() throws Exception {
+            RecordStore recordStore = partitionContainer.getExistingRecordStore(mapName);
+            if (recordStore == null) {
+                return null;
+            }
+            Data keyData = serializationService.toData(key);
+            return recordStore.getRecord(keyData);
         }
     }
 }

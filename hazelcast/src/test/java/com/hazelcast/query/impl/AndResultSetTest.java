@@ -17,12 +17,11 @@
 package com.hazelcast.query.impl;
 
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.query.Predicate;
+import com.hazelcast.query.Predicates;
 import com.hazelcast.query.QueryException;
-import com.hazelcast.query.TruePredicate;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -34,7 +33,6 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 import static org.codehaus.groovy.runtime.InvokerHelper.asList;
@@ -42,7 +40,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 @SuppressWarnings("unchecked")
 public class AndResultSetTest extends HazelcastTestSupport {
 
@@ -50,7 +48,7 @@ public class AndResultSetTest extends HazelcastTestSupport {
     // https://github.com/hazelcast/hazelcast/issues/1501
     public void iteratingOver_noException() {
         Set<QueryableEntry> entries = generateEntries(100000);
-        AndResultSet resultSet = new AndResultSet(entries, null, asList(new FalsePredicate()));
+        AndResultSet resultSet = new AndResultSet(entries, null, asList(Predicates.alwaysFalse()));
         Iterator it = resultSet.iterator();
 
         boolean result = it.hasNext();
@@ -62,7 +60,7 @@ public class AndResultSetTest extends HazelcastTestSupport {
     // https://github.com/hazelcast/hazelcast/issues/9614
     public void size_nonMatchingPredicate() {
         Set<QueryableEntry> entries = generateEntries(100000);
-        AndResultSet resultSet = new AndResultSet(entries, null, asList(new FalsePredicate()));
+        AndResultSet resultSet = new AndResultSet(entries, null, asList(Predicates.alwaysFalse()));
 
         int size = resultSet.size();
         int countedSize = 0;
@@ -80,7 +78,7 @@ public class AndResultSetTest extends HazelcastTestSupport {
         Set<QueryableEntry> entries = generateEntries(100000);
         List<Set<QueryableEntry>> otherIndexedResults = new ArrayList<Set<QueryableEntry>>();
         otherIndexedResults.add(Collections.<QueryableEntry>emptySet());
-        AndResultSet resultSet = new AndResultSet(entries, otherIndexedResults, asList(new TruePredicate()));
+        AndResultSet resultSet = new AndResultSet(entries, otherIndexedResults, asList(Predicates.alwaysTrue()));
 
         int size = resultSet.size();
         int countedSize = 0;
@@ -97,7 +95,7 @@ public class AndResultSetTest extends HazelcastTestSupport {
     public void size_matchingPredicate_noOtherResult() {
         Set<QueryableEntry> entries = generateEntries(100000);
         List<Set<QueryableEntry>> otherIndexedResults = new ArrayList<Set<QueryableEntry>>();
-        AndResultSet resultSet = new AndResultSet(entries, otherIndexedResults, asList(new TruePredicate()));
+        AndResultSet resultSet = new AndResultSet(entries, otherIndexedResults, asList(Predicates.alwaysTrue()));
 
         int size = resultSet.size();
         int countedSize = 0;
@@ -117,7 +115,7 @@ public class AndResultSetTest extends HazelcastTestSupport {
         otherIndexResult.add(entries.iterator().next());
         List<Set<QueryableEntry>> otherIndexedResults = new ArrayList<Set<QueryableEntry>>();
         otherIndexedResults.add(otherIndexResult);
-        AndResultSet resultSet = new AndResultSet(entries, otherIndexedResults, asList(new TruePredicate()));
+        AndResultSet resultSet = new AndResultSet(entries, otherIndexedResults, asList(Predicates.alwaysTrue()));
 
         int size = resultSet.size();
         int countedSize = 0;
@@ -132,7 +130,7 @@ public class AndResultSetTest extends HazelcastTestSupport {
     @Test
     public void contains_nonMatchingPredicate() {
         Set<QueryableEntry> entries = generateEntries(100000);
-        AndResultSet resultSet = new AndResultSet(entries, null, asList(new FalsePredicate()));
+        AndResultSet resultSet = new AndResultSet(entries, null, asList(Predicates.alwaysFalse()));
 
         assertNotContains(resultSet, entries.iterator().next());
     }
@@ -142,7 +140,7 @@ public class AndResultSetTest extends HazelcastTestSupport {
         Set<QueryableEntry> entries = generateEntries(100000);
         List<Set<QueryableEntry>> otherIndexedResults = new ArrayList<Set<QueryableEntry>>();
         otherIndexedResults.add(Collections.<QueryableEntry>emptySet());
-        AndResultSet resultSet = new AndResultSet(entries, otherIndexedResults, asList(new TruePredicate()));
+        AndResultSet resultSet = new AndResultSet(entries, otherIndexedResults, asList(Predicates.alwaysTrue()));
 
         assertNotContains(resultSet, entries.iterator().next());
     }
@@ -151,7 +149,7 @@ public class AndResultSetTest extends HazelcastTestSupport {
     public void contains_matchingPredicate_noOtherResult() {
         Set<QueryableEntry> entries = generateEntries(100000);
         List<Set<QueryableEntry>> otherIndexedResults = new ArrayList<Set<QueryableEntry>>();
-        AndResultSet resultSet = new AndResultSet(entries, otherIndexedResults, asList(new TruePredicate()));
+        AndResultSet resultSet = new AndResultSet(entries, otherIndexedResults, asList(Predicates.alwaysTrue()));
 
         for (QueryableEntry entry : entries) {
             assertContains(resultSet, entry);
@@ -165,7 +163,7 @@ public class AndResultSetTest extends HazelcastTestSupport {
         otherIndexResult.add(entries.iterator().next());
         List<Set<QueryableEntry>> otherIndexedResults = new ArrayList<Set<QueryableEntry>>();
         otherIndexedResults.add(otherIndexResult);
-        AndResultSet resultSet = new AndResultSet(entries, otherIndexedResults, asList(new TruePredicate()));
+        AndResultSet resultSet = new AndResultSet(entries, otherIndexedResults, asList(Predicates.alwaysTrue()));
 
         Iterator<QueryableEntry> it = entries.iterator();
         assertContains(resultSet, it.next());
@@ -177,7 +175,7 @@ public class AndResultSetTest extends HazelcastTestSupport {
     @Test(expected = UnsupportedOperationException.class)
     public void removeUnsupported() throws IOException {
         Set<QueryableEntry> entries = generateEntries(100000);
-        AndResultSet resultSet = new AndResultSet(entries, null, asList(new TruePredicate()));
+        AndResultSet resultSet = new AndResultSet(entries, null, asList(Predicates.alwaysTrue()));
 
         resultSet.remove(resultSet.iterator().next());
     }
@@ -189,14 +187,6 @@ public class AndResultSetTest extends HazelcastTestSupport {
             result.add(entry);
         }
         return result;
-    }
-
-    private static class FalsePredicate implements Predicate {
-
-        @Override
-        public boolean apply(Map.Entry mapEntry) {
-            return false;
-        }
     }
 
     private static class DummyEntry extends QueryableEntry {

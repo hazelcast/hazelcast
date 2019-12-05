@@ -19,18 +19,17 @@ package com.hazelcast.map;
 import com.hazelcast.aggregation.Aggregators;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.InMemoryFormat;
+import com.hazelcast.config.IndexConfig;
+import com.hazelcast.config.IndexType;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IMap;
-import com.hazelcast.monitor.LocalIndexStats;
-import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.projection.Projections;
-import com.hazelcast.query.PartitionPredicate;
+import com.hazelcast.query.LocalIndexStats;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.Predicates;
-import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
 import org.junit.Test;
@@ -51,7 +50,7 @@ import static org.junit.Assert.assertTrue;
 
 @RunWith(Parameterized.class)
 @UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class LocalIndexStatsTest extends HazelcastTestSupport {
 
     @Parameters(name = "format:{0}")
@@ -84,7 +83,7 @@ public class LocalIndexStatsTest extends HazelcastTestSupport {
         noStatsMapName = mapName + "_no_stats";
 
         Config config = getConfig();
-        config.setProperty(GroupProperty.PARTITION_COUNT.getName(), Integer.toString(PARTITIONS));
+        config.setProperty(ClusterProperty.PARTITION_COUNT.getName(), Integer.toString(PARTITIONS));
         config.getMapConfig(mapName).setInMemoryFormat(inMemoryFormat);
         config.getMapConfig(noStatsMapName).setStatisticsEnabled(false);
 
@@ -94,13 +93,18 @@ public class LocalIndexStatsTest extends HazelcastTestSupport {
         queryTypes = initQueryTypes();
     }
 
+    @Override
+    protected Config getConfig() {
+        return smallInstanceConfig();
+    }
+
     protected HazelcastInstance createInstance(Config config) {
         return createHazelcastInstance(config);
     }
 
     @Test
     public void testQueryCounting() {
-        map.addIndex("this", false);
+        addIndex(map, "this", false);
         for (int i = 0; i < 100; ++i) {
             map.put(i, i);
         }
@@ -125,8 +129,8 @@ public class LocalIndexStatsTest extends HazelcastTestSupport {
 
     @Test
     public void testHitAndQueryCounting_WhenAllIndexesHit() {
-        map.addIndex("__key", false);
-        map.addIndex("this", true);
+        addIndex(map, "__key", false);
+        addIndex(map, "this", true);
         for (int i = 0; i < 100; ++i) {
             map.put(i, i);
         }
@@ -159,8 +163,8 @@ public class LocalIndexStatsTest extends HazelcastTestSupport {
 
     @Test
     public void testHitAndQueryCounting_WhenSingleIndexHit() {
-        map.addIndex("__key", false);
-        map.addIndex("this", true);
+        addIndex(map, "__key", false);
+        addIndex(map, "this", true);
         for (int i = 0; i < 100; ++i) {
             map.put(i, i);
         }
@@ -189,8 +193,8 @@ public class LocalIndexStatsTest extends HazelcastTestSupport {
 
     @Test
     public void testHitCounting_WhenIndexHitMultipleTimes() {
-        map.addIndex("__key", false);
-        map.addIndex("this", true);
+        addIndex(map, "__key", false);
+        addIndex(map, "this", true);
         for (int i = 0; i < 100; ++i) {
             map.put(i, i);
         }
@@ -240,8 +244,8 @@ public class LocalIndexStatsTest extends HazelcastTestSupport {
     private void testAverageQuerySelectivityCalculation(int entryCount) {
         double expected = 1.0 - 1.0 / entryCount;
 
-        map.addIndex("__key", false);
-        map.addIndex("this", true);
+        addIndex(map, "__key", false);
+        addIndex(map, "this", true);
         for (int i = 0; i < entryCount; ++i) {
             map.put(i, i);
         }
@@ -269,8 +273,8 @@ public class LocalIndexStatsTest extends HazelcastTestSupport {
         double expected2 = 1.0 - 0.1;
         double expected3 = 1.0 - 0.4;
 
-        map.addIndex("__key", false);
-        map.addIndex("this", true);
+        addIndex(map, "__key", false);
+        addIndex(map, "this", true);
         for (int i = 0; i < 1000; ++i) {
             map.put(i, i);
         }
@@ -311,12 +315,12 @@ public class LocalIndexStatsTest extends HazelcastTestSupport {
 
     @Test
     public void testQueryCounting_WhenTwoMapsUseIndexesNamedTheSame() {
-        map.addIndex("__key", false);
-        map.addIndex("this", true);
+        addIndex(map, "__key", false);
+        addIndex(map, "this", true);
 
         IMap<Integer, Integer> otherMap = instance.getMap(map.getName() + "_other_map");
-        otherMap.addIndex("__key", false);
-        otherMap.addIndex("this", true);
+        addIndex(otherMap, "__key", false);
+        addIndex(otherMap, "this", true);
 
         for (int i = 0; i < 100; ++i) {
             otherMap.put(i, i);
@@ -334,13 +338,13 @@ public class LocalIndexStatsTest extends HazelcastTestSupport {
     @SuppressWarnings("unchecked")
     @Test
     public void testQueryCounting_WhenPartitionPredicateIsUsed() {
-        map.addIndex("this", false);
+        addIndex(map, "this", false);
 
         for (int i = 0; i < 100; ++i) {
             map.put(i, i);
         }
 
-        map.entrySet(new PartitionPredicate(10, Predicates.equal("this", 10)));
+        map.entrySet(Predicates.partitionPredicate(10, Predicates.equal("this", 10)));
         assertEquals(1, stats().getQueryCount());
         assertEquals(0, stats().getIndexedQueryCount());
         assertEquals(0, valueStats().getQueryCount());
@@ -348,11 +352,11 @@ public class LocalIndexStatsTest extends HazelcastTestSupport {
 
     @Test
     public void testQueryCounting_WhenStatisticsIsDisabled() {
-        map.addIndex("__key", false);
-        map.addIndex("this", true);
+        addIndex(map, "__key", false);
+        addIndex(map, "this", true);
 
-        noStatsMap.addIndex("__key", false);
-        noStatsMap.addIndex("this", true);
+        addIndex(noStatsMap, "__key", false);
+        addIndex(noStatsMap, "this", true);
 
         for (int i = 0; i < 100; ++i) {
             noStatsMap.put(i, i);
@@ -371,8 +375,8 @@ public class LocalIndexStatsTest extends HazelcastTestSupport {
 
     @Test
     public void testMemoryCostTracking() {
-        map.addIndex("__key", false);
-        map.addIndex("this", true);
+        addIndex(map, "__key", false);
+        addIndex(map, "this", true);
         long keyEmptyCost = keyStats().getMemoryCost();
         long valueEmptyCost = valueStats().getMemoryCost();
         assertTrue(keyEmptyCost > 0);
@@ -409,7 +413,7 @@ public class LocalIndexStatsTest extends HazelcastTestSupport {
 
     @Test
     public void testAverageQueryLatencyTracking() {
-        map.addIndex("__key", false);
+        addIndex(map, "__key", false);
         assertEquals(0, keyStats().getAverageHitLatency());
 
         for (int i = 0; i < 100; ++i) {
@@ -438,7 +442,7 @@ public class LocalIndexStatsTest extends HazelcastTestSupport {
 
     @Test
     public void testInsertsTracking() {
-        map.addIndex("__key", false);
+        addIndex(map, "__key", false);
         assertEquals(0, keyStats().getInsertCount());
         assertEquals(0, keyStats().getTotalInsertLatency());
 
@@ -462,7 +466,7 @@ public class LocalIndexStatsTest extends HazelcastTestSupport {
 
     @Test
     public void testUpdateTracking() {
-        map.addIndex("__key", false);
+        addIndex(map, "__key", false);
         assertEquals(0, keyStats().getUpdateCount());
         assertEquals(0, keyStats().getTotalUpdateLatency());
 
@@ -492,7 +496,7 @@ public class LocalIndexStatsTest extends HazelcastTestSupport {
 
     @Test
     public void testRemoveTracking() {
-        map.addIndex("__key", false);
+        addIndex(map, "__key", false);
         assertEquals(0, keyStats().getRemoveCount());
         assertEquals(0, keyStats().getTotalRemoveLatency());
 
@@ -522,7 +526,7 @@ public class LocalIndexStatsTest extends HazelcastTestSupport {
 
     @Test
     public void testInsertUpdateRemoveAreNotAffectingEachOther() {
-        map.addIndex("__key", false);
+        addIndex(map, "__key", false);
         assertEquals(0, keyStats().getInsertCount());
         assertEquals(0, keyStats().getUpdateCount());
         assertEquals(0, keyStats().getRemoveCount());
@@ -571,7 +575,7 @@ public class LocalIndexStatsTest extends HazelcastTestSupport {
 
     @Test
     public void testIndexStatsAfterMapDestroy() {
-        map.addIndex("this", true);
+        addIndex(map, "this", true);
         for (int i = 0; i < 100; ++i) {
             map.put(i, i);
         }
@@ -599,7 +603,7 @@ public class LocalIndexStatsTest extends HazelcastTestSupport {
 
         map = instance.getMap(mapName);
         assertNull(valueStats());
-        map.addIndex("this", true);
+        addIndex(map, "this", true);
         assertNotNull(valueStats());
 
         assertEquals(0, stats().getQueryCount());
@@ -659,6 +663,12 @@ public class LocalIndexStatsTest extends HazelcastTestSupport {
                 queryType.query(predicate);
             }
         }
+    }
+
+    protected static void addIndex(IMap map, String attribute, boolean ordered) {
+        IndexConfig config = new IndexConfig(ordered ? IndexType.SORTED : IndexType.HASH, attribute).setName(attribute);
+
+        map.addIndex(config);
     }
 
     private interface QueryType {
@@ -773,7 +783,7 @@ public class LocalIndexStatsTest extends HazelcastTestSupport {
             public void query(Predicate predicate) {
                 map.project(Projections.singleAttribute("this"), predicate);
             }
-        }, };
+        }
+        };
     }
-
 }

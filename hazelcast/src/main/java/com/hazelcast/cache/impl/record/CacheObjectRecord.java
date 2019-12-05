@@ -63,22 +63,18 @@ public class CacheObjectRecord extends AbstractCacheRecord<Object, ExpiryPolicy>
     public void writeData(ObjectDataOutput out) throws IOException {
         super.writeData(out);
         out.writeObject(value);
-        if (out.getVersion().isGreaterOrEqual(EXPIRY_POLICY_VERSION)) {
-            out.writeObject(expiryPolicy);
-        }
+        out.writeObject(expiryPolicy);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         super.readData(in);
         value = in.readObject();
-        if (in.getVersion().isGreaterOrEqual(EXPIRY_POLICY_VERSION)) {
-            expiryPolicy = in.readObject();
-        }
+        expiryPolicy = in.readObject();
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return CacheDataSerializerHook.CACHE_OBJECT_RECORD;
     }
 }

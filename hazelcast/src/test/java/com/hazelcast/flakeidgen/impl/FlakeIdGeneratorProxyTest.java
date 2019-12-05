@@ -23,9 +23,9 @@ import com.hazelcast.flakeidgen.impl.FlakeIdGeneratorProxy.IdBatchAndWaitTime;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
-import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
 import org.junit.Rule;
@@ -44,13 +44,12 @@ import static com.hazelcast.flakeidgen.impl.FlakeIdGeneratorProxy.EPOCH_START;
 import static com.hazelcast.flakeidgen.impl.FlakeIdGeneratorProxy.NODE_ID_UPDATE_INTERVAL_NS;
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class FlakeIdGeneratorProxyTest {
 
     /**
@@ -153,13 +152,6 @@ public class FlakeIdGeneratorProxyTest {
         long id2 = gen.newIdBaseLocal(1516028439000L, 1234, 1).idBatch.base();
         assertEquals(5300086112257234L, id1);
         assertEquals(id1 + (1 << BITS_NODE_ID), id2);
-    }
-
-    @Test
-    public void test_init() {
-        long currentId = gen.newId();
-        assertTrue(gen.init(currentId / 2));
-        assertFalse(gen.init(currentId * 2));
     }
 
     @Test

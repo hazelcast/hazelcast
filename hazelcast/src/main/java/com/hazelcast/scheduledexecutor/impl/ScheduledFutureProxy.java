@@ -16,11 +16,11 @@
 
 package com.hazelcast.scheduledexecutor.impl;
 
+import com.hazelcast.cluster.MembershipEvent;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceAware;
-import com.hazelcast.core.MembershipEvent;
-import com.hazelcast.instance.HazelcastInstanceImpl;
-import com.hazelcast.nio.Address;
+import com.hazelcast.instance.impl.HazelcastInstanceImpl;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.partition.PartitionLostEvent;
 import com.hazelcast.scheduledexecutor.IScheduledFuture;
 import com.hazelcast.scheduledexecutor.ScheduledTaskHandler;
@@ -33,9 +33,9 @@ import com.hazelcast.scheduledexecutor.impl.operations.GetResultOperation;
 import com.hazelcast.scheduledexecutor.impl.operations.GetStatisticsOperation;
 import com.hazelcast.scheduledexecutor.impl.operations.IsCanceledOperation;
 import com.hazelcast.scheduledexecutor.impl.operations.IsDoneOperation;
-import com.hazelcast.spi.InternalCompletableFuture;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.OperationService;
+import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.spi.impl.operationservice.OperationService;
+import com.hazelcast.spi.impl.operationservice.impl.InvocationFuture;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.util.concurrent.Delayed;
@@ -44,8 +44,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import static com.hazelcast.util.ExceptionUtil.sneakyThrow;
-import static com.hazelcast.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.ExceptionUtil.sneakyThrow;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 @SuppressFBWarnings("EQ_COMPARETO_USE_OBJECT_EQUALS")
 @SuppressWarnings({"checkstyle:methodcount"})
@@ -84,7 +84,7 @@ public final class ScheduledFutureProxy<V>
 
         Operation op = new GetStatisticsOperation(handler);
 
-        return this.<ScheduledTaskStatistics>invoke(op).join();
+        return this.<ScheduledTaskStatistics>invoke(op).joinInternal();
     }
 
     @Override
@@ -94,7 +94,7 @@ public final class ScheduledFutureProxy<V>
         checkAccessibleOwner();
 
         Operation op = new GetDelayOperation(handler, unit);
-        return this.<Long>invoke(op).join();
+        return this.<Long>invoke(op).joinInternal();
     }
 
     @Override
@@ -115,7 +115,7 @@ public final class ScheduledFutureProxy<V>
         checkAccessibleOwner();
 
         Operation op = new CancelTaskOperation(handler, mayInterruptIfRunning);
-        return this.<Boolean>invoke(op).join();
+        return this.<Boolean>invoke(op).joinInternal();
     }
 
     @Override
@@ -124,7 +124,7 @@ public final class ScheduledFutureProxy<V>
         checkAccessibleOwner();
 
         Operation op = new IsCanceledOperation(handler);
-        return this.<Boolean>invoke(op).join();
+        return this.<Boolean>invoke(op).joinInternal();
     }
 
     @Override
@@ -133,10 +133,10 @@ public final class ScheduledFutureProxy<V>
         checkAccessibleOwner();
 
         Operation op = new IsDoneOperation(handler);
-        return this.<Boolean>invoke(op).join();
+        return this.<Boolean>invoke(op).joinInternal();
     }
 
-    private InternalCompletableFuture<V> get0() {
+    private InvocationFuture<V> get0() {
         checkAccessibleHandler();
         checkAccessibleOwner();
         Operation op = new GetResultOperation<V>(handler);
@@ -149,7 +149,7 @@ public final class ScheduledFutureProxy<V>
         try {
             return this.get0().get();
         } catch (ScheduledTaskResult.ExecutionExceptionDecorator ex) {
-            return sneakyThrow(ex.getCause());
+            throw sneakyThrow(ex.getCause());
         }
     }
 
@@ -160,7 +160,7 @@ public final class ScheduledFutureProxy<V>
         try {
             return this.get0().get(timeout, unit);
         } catch (ScheduledTaskResult.ExecutionExceptionDecorator ex) {
-            return sneakyThrow(ex.getCause());
+            throw sneakyThrow(ex.getCause());
         }
     }
 
@@ -170,9 +170,9 @@ public final class ScheduledFutureProxy<V>
         checkAccessibleOwner();
 
         Operation op = new DisposeTaskOperation(handler);
-        InternalCompletableFuture future = invoke(op);
+        InvocationFuture future = invoke(op);
         handler = null;
-        future.join();
+        future.joinInternal();
     }
 
     void notifyMemberLost(MembershipEvent event) {
@@ -224,7 +224,7 @@ public final class ScheduledFutureProxy<V>
         }
     }
 
-    private <T> InternalCompletableFuture<T> invoke(Operation op) {
+    private <T> InvocationFuture<T> invoke(Operation op) {
         if (handler.isAssignedToPartition()) {
             op.setPartitionId(handler.getPartitionId());
             return invokeOnPartition(op);
@@ -233,13 +233,13 @@ public final class ScheduledFutureProxy<V>
         }
     }
 
-    private <T> InternalCompletableFuture<T> invokeOnPartition(Operation op) {
+    private <T> InvocationFuture<T> invokeOnPartition(Operation op) {
         OperationService opService = ((HazelcastInstanceImpl) instance).node.getNodeEngine().getOperationService();
 
         return opService.invokeOnPartition(op);
     }
 
-    private <T> InternalCompletableFuture<T> invokeOnAddress(Operation op, Address address) {
+    private <T> InvocationFuture<T> invokeOnAddress(Operation op, Address address) {
         OperationService opService = ((HazelcastInstanceImpl) instance).node.getNodeEngine().getOperationService();
         return opService.invokeOnTarget(op.getServiceName(), op, address);
     }

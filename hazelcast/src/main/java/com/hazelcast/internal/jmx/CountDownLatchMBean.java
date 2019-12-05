@@ -16,10 +16,10 @@
 
 package com.hazelcast.internal.jmx;
 
-import com.hazelcast.core.ICountDownLatch;
+import com.hazelcast.cp.ICountDownLatch;
 
 /**
- * Management bean for {@link com.hazelcast.core.ICountDownLatch}
+ * Management bean for {@link ICountDownLatch}
  */
 @ManagedDescription("ICountDownLatch")
 public class CountDownLatchMBean extends HazelcastMBean<ICountDownLatch> {

@@ -98,10 +98,11 @@ public final class Aggregators {
      * Aggregation result type is a Set of R.
      */
     public static <I, R> Aggregator<I, Set<R>> distinct() {
-        return new DistinctValuesAggregator<I, R>();
+        return new DistinctValuesAggregator<>();
     }
 
     /**
+     * @param attributePath the attribute path
      * @param <I> type of the input object.
      * @param <R> type of the return object.
      * @return an aggregator that calculates the distinct set of input values extracted from the given attributePath.
@@ -109,7 +110,7 @@ public final class Aggregators {
      * Aggregation result type is a Set of R.
      */
     public static <I, R> Aggregator<I, Set<R>> distinct(String attributePath) {
-        return new DistinctValuesAggregator<I, R>(attributePath);
+        return new DistinctValuesAggregator<>(attributePath);
     }
 
     // ---------------------------------------------------------------------------------------------------------
@@ -128,6 +129,7 @@ public final class Aggregators {
     }
 
     /**
+     * @param attributePath the attribute path
      * @param <I> type of the input object.
      * @return an aggregator that calculates the average of the input values extracted from the given attributePath.
      * Does NOT accept null input values nor null extracted values.
@@ -150,6 +152,7 @@ public final class Aggregators {
     }
 
     /**
+     * @param attributePath the attribute path
      * @param <I> type of the input object.
      * @return an aggregator that calculates the average of the input values extracted from the given attributePath.
      * Does NOT accept null input values nor null extracted values.
@@ -172,6 +175,7 @@ public final class Aggregators {
     }
 
     /**
+     * @param attributePath the attribute path
      * @param <I> type of the input object.
      * @return an aggregator that calculates the average of the input values extracted from the given attributePath.
      * Does NOT accept null input values nor null extracted values.
@@ -194,6 +198,7 @@ public final class Aggregators {
     }
 
     /**
+     * @param attributePath the attribute path
      * @param <I> type of the input object.
      * @return an aggregator that calculates the average of the input values extracted from the given attributePath.
      * Does NOT accept null input values nor null extracted values.
@@ -216,6 +221,7 @@ public final class Aggregators {
     }
 
     /**
+     * @param attributePath the attribute path
      * @param <I> type of the input object.
      * @return an aggregator that calculates the average of the input values extracted from the given attributePath.
      * Does NOT accept null input values nor null extracted values.
@@ -238,6 +244,7 @@ public final class Aggregators {
     }
 
     /**
+     * @param attributePath the attribute path
      * @param <I> type of the input object.
      * @return an aggregator that calculates the average of the input values extracted from the given attributePath.
      * Does NOT accept null input values nor null extracted values.
@@ -264,6 +271,7 @@ public final class Aggregators {
     }
 
     /**
+     * @param attributePath the attribute path
      * @param <I> type of the input object.
      * @return an aggregator that calculates the max of the input values extracted from the given attributePath.
      * Accepts null input values and null extracted values.
@@ -286,6 +294,7 @@ public final class Aggregators {
     }
 
     /**
+     * @param attributePath the attribute path
      * @param <I> type of the input object.
      * @return an aggregator that calculates the max of the input values extracted from the given attributePath.
      * Accepts null input values nor null extracted values.
@@ -308,6 +317,7 @@ public final class Aggregators {
     }
 
     /**
+     * @param attributePath the attribute path
      * @param <I> type of the input object.
      * @return an aggregator that calculates the max of the input values extracted from the given attributePath.
      * Accepts null input values and null extracted values.
@@ -330,6 +340,7 @@ public final class Aggregators {
     }
 
     /**
+     * @param attributePath the attribute path
      * @param <I> type of the input object.
      * @return an aggregator that calculates the max of the input values extracted from the given attributePath.
      * Accepts null input values and null extracted values.
@@ -352,6 +363,7 @@ public final class Aggregators {
     }
 
     /**
+     * @param attributePath the attribute path
      * @param <I> type of the input object.
      * @return an aggregator that calculates the max of the input values extracted from the given attributePath.
      * Accepts null input values and null extracted values.
@@ -375,6 +387,7 @@ public final class Aggregators {
     }
 
     /**
+     * @param attributePath the attribute path
      * @param <I> type of the input object.
      * @param <R> type of the return object (subtype of Comparable)
      * @return an aggregator that calculates the max of the input values extracted from the given attributePath.
@@ -414,6 +427,7 @@ public final class Aggregators {
     }
 
     /**
+     * @param attributePath the attribute path
      * @param <I> type of the input object.
      * @return an aggregator that calculates the min of the input values extracted from the given attributePath.
      * Accepts null input values and null extracted values.
@@ -436,6 +450,7 @@ public final class Aggregators {
     }
 
     /**
+     * @param attributePath the attribute path
      * @param <I> type of the input object.
      * @return an aggregator that calculates the min of the input values extracted from the given attributePath.
      * Accepts null input values and null extracted values.
@@ -458,6 +473,7 @@ public final class Aggregators {
     }
 
     /**
+     * @param attributePath the attribute path
      * @param <I> type of the input object.
      * @return an aggregator that calculates the min of the input values extracted from the given attributePath.
      * Accepts null input values and null extracted values.
@@ -480,6 +496,7 @@ public final class Aggregators {
     }
 
     /**
+     * @param attributePath the attribute path
      * @param <I> type of the input object.
      * @return an aggregator that calculates the min of the input values extracted from the given attributePath.
      * Accepts null input values and null extracted values.
@@ -502,6 +519,7 @@ public final class Aggregators {
     }
 
     /**
+     * @param attributePath the attribute path
      * @param <I> type of the input object.
      * @return an aggregator that calculates the min of the input values extracted from the given attributePath.
      * Accepts null input values and null extracted values.
@@ -525,6 +543,7 @@ public final class Aggregators {
     }
 
     /**
+     * @param attributePath the attribute path
      * @param <I> type of the input object.
      * @param <R> type of the return object (subtype of Comparable)
      * @return an aggregator that calculates the min of the input values extracted from the given attributePath.
@@ -537,6 +556,7 @@ public final class Aggregators {
     }
 
     /**
+     * @param attributePath the attribute path
      * @param <I> type of the input object.
      * @return an aggregator that calculates the min of the input values extracted from the given attributePath
      * and returns the input item containing the minimum value. If multiple items contain the minimum value,
@@ -564,6 +584,7 @@ public final class Aggregators {
     }
 
     /**
+     * @param attributePath the attribute path
      * @param <I> type of the input object.
      * @return an aggregator that calculates the sum of the input values extracted from the given attributePath.
      * Does NOT accept null input values nor null extracted values.
@@ -586,6 +607,7 @@ public final class Aggregators {
     }
 
     /**
+     * @param attributePath the attribute path
      * @param <I> type of the input object.
      * @return an aggregator that calculates the sum of the input values extracted from the given attributePath.
      * Does NOT accept null input values nor null extracted values.
@@ -608,6 +630,7 @@ public final class Aggregators {
     }
 
     /**
+     * @param attributePath the attribute path
      * @param <I> type of the input object.
      * @return an aggregator that calculates the sum of the input values extracted from the given attributePath.
      * Does NOT accept null input values.
@@ -630,6 +653,7 @@ public final class Aggregators {
     }
 
     /**
+     * @param attributePath the attribute path
      * @param <I> type of the input object.
      * @return an aggregator that calculates the sum of the input values extracted from the given attributePath.
      * Does NOT accept null input values.
@@ -652,6 +676,7 @@ public final class Aggregators {
     }
 
     /**
+     * @param attributePath the attribute path
      * @param <I> type of the input object.
      * @return an aggregator that calculates the sum of the input values extracted from the given attributePath.
      * Does NOT accept null input values.
@@ -674,6 +699,7 @@ public final class Aggregators {
     }
 
     /**
+     * @param attributePath the attribute path
      * @param <I> type of the input object.
      * @return an aggregator that calculates the sum of the input values extracted from the given attributePath.
      * Does NOT accept null input values.
@@ -696,6 +722,7 @@ public final class Aggregators {
     }
 
     /**
+     * @param attributePath the attribute path
      * @param <I> type of the input object.
      * @return an aggregator that calculates the sum of the input values extracted from the given attributePath.
      * Does NOT accept null input values.

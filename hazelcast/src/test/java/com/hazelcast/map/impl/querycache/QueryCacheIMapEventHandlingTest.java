@@ -17,26 +17,27 @@
 package com.hazelcast.map.impl.querycache;
 
 import com.hazelcast.core.EntryEvent;
-import com.hazelcast.core.EntryView;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IMap;
-import com.hazelcast.instance.Node;
+import com.hazelcast.instance.impl.Node;
+import com.hazelcast.map.IMap;
 import com.hazelcast.map.QueryCache;
-import com.hazelcast.map.impl.operation.LegacyMergeOperation;
+import com.hazelcast.map.impl.operation.MergeOperation;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.listener.EntryAddedListener;
 import com.hazelcast.map.listener.EntryRemovedListener;
-import com.hazelcast.map.merge.PassThroughMergePolicy;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.Predicate;
-import com.hazelcast.query.TruePredicate;
+import com.hazelcast.query.Predicates;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
-import com.hazelcast.spi.serialization.SerializationService;
+import com.hazelcast.spi.merge.PassThroughMergePolicy;
+import com.hazelcast.spi.merge.SplitBrainMergeTypes;
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
 import org.junit.Test;
@@ -44,23 +45,25 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.mockito.Mockito;
 
+import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Future;
 
-import static com.hazelcast.map.impl.EntryViews.createSimpleEntryView;
 import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
 import static com.hazelcast.map.impl.querycache.AbstractQueryCacheTestSupport.getMap;
+import static com.hazelcast.spi.impl.merge.MergingValueFactory.createMergingEntry;
+import static java.util.Collections.singletonList;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class QueryCacheIMapEventHandlingTest extends HazelcastTestSupport {
 
     @SuppressWarnings("unchecked")
-    private static final Predicate<Integer, Integer> TRUE_PREDICATE = TruePredicate.INSTANCE;
+    private static final Predicate<Integer, Integer> TRUE_PREDICATE = Predicates.alwaysTrue();
 
     private HazelcastInstance member;
 
@@ -99,14 +102,16 @@ public class QueryCacheIMapEventHandlingTest extends HazelcastTestSupport {
     private void executeMergeOperation(HazelcastInstance member, String mapName, int key, int mergedValue) throws Exception {
         Node node = getNode(member);
         NodeEngineImpl nodeEngine = node.nodeEngine;
-        OperationServiceImpl operationService = (OperationServiceImpl) nodeEngine.getOperationService();
+        OperationServiceImpl operationService = nodeEngine.getOperationService();
         SerializationService serializationService = getSerializationService(member);
 
         Data keyData = serializationService.toData(key);
         Data valueData = serializationService.toData(mergedValue);
-        EntryView<Data, Data> entryView = createSimpleEntryView(keyData, valueData, Mockito.mock(Record.class));
+        SplitBrainMergeTypes.MapMergeTypes mergingEntry
+                = createMergingEntry(serializationService, keyData, valueData, Mockito.mock(Record.class));
 
-        LegacyMergeOperation mergeOperation = new LegacyMergeOperation(mapName, entryView, new PassThroughMergePolicy(), false);
+        Operation mergeOperation = new MergeOperation(mapName, singletonList(mergingEntry),
+                new PassThroughMergePolicy<>(), false);
         int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
         Future<Object> future = operationService.invokeOnPartition(SERVICE_NAME, mergeOperation, partitionId);
         future.get();
@@ -143,19 +148,19 @@ public class QueryCacheIMapEventHandlingTest extends HazelcastTestSupport {
 
     @Test
     public void testListenerRegistration() {
-        String addEntryListener = queryCache.addEntryListener(new EntryAddedListener<Integer, Integer>() {
+        UUID addEntryListener = queryCache.addEntryListener(new EntryAddedListener<Integer, Integer>() {
             @Override
             public void entryAdded(EntryEvent<Integer, Integer> event) {
             }
         }, true);
 
-        String removeEntryListener = queryCache.addEntryListener(new EntryRemovedListener<Integer, Integer>() {
+        UUID removeEntryListener = queryCache.addEntryListener(new EntryRemovedListener<Integer, Integer>() {
             @Override
             public void entryRemoved(EntryEvent<Integer, Integer> event) {
             }
         }, true);
 
-        assertFalse(queryCache.removeEntryListener("notFound"));
+        assertFalse(queryCache.removeEntryListener(UUID.randomUUID()));
 
         assertTrue(queryCache.removeEntryListener(removeEntryListener));
         assertFalse(queryCache.removeEntryListener(removeEntryListener));

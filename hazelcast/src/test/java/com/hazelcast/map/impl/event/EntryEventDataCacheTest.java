@@ -23,11 +23,11 @@ import com.hazelcast.map.impl.EventListenerFilter;
 import com.hazelcast.map.impl.ListenerAdapter;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.listener.EntryAddedListener;
-import com.hazelcast.nio.Address;
-import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.cluster.Address;
+import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.eventservice.impl.TrueEventFilter;
-import com.hazelcast.test.HazelcastParametersRunnerFactory;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
 import org.junit.Test;
@@ -55,8 +55,8 @@ import static org.mockito.Mockito.when;
  * Test EntryEventDataCache implementations
  */
 @RunWith(Parameterized.class)
-@Parameterized.UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Parameterized.UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class EntryEventDataCacheTest {
 
     private EntryEventDataCache instance;

@@ -25,7 +25,7 @@
         http://www.springframework.org/schema/cache
         http://www.springframework.org/schema/cache/spring-cache.xsd
         http://www.hazelcast.com/schema/spring
-        http://www.hazelcast.com/schema/spring/hazelcast-spring-3.11.xsd">
+        http://www.hazelcast.com/schema/spring/hazelcast-spring-4.0.xsd">
 
     <bean class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer"
           p:systemPropertiesModeName="SYSTEM_PROPERTIES_MODE_OVERRIDE">
@@ -41,9 +41,7 @@
     <hz:hazelcast id="instance">
         <hz:config>
             <hz:instance-name>named-spring-hz-instance</hz:instance-name>
-            <hz:group
-                    name="${cluster.group.name}"
-                    password="${cluster.group.password}"/>
+            <hz:cluster-name>${cluster.name}</hz:cluster-name>
             <hz:properties>
                 <hz:property name="hazelcast.merge.first.run.delay.seconds">5</hz:property>
                 <hz:property name="hazelcast.merge.next.run.delay.seconds">5</hz:property>
@@ -67,13 +65,11 @@
     </hz:hazelcast>
 
     <hz:client id="client" depends-on="instance">
-        <hz:group name="${cluster.group.name}" password="${cluster.group.password}"/>
+        <hz:cluster-name>${cluster.name}</hz:cluster-name>
         <hz:properties>
             <hz:property name="hazelcast.client.retry.count">13</hz:property>
         </hz:properties>
-        <hz:network connection-attempt-limit="3"
-                    connection-attempt-period="3000"
-                    connection-timeout="1000"
+        <hz:network connection-timeout="1000"
                     redo-operation="true"
                     smart-routing="true">
             <hz:member>127.0.0.1:5700</hz:member>

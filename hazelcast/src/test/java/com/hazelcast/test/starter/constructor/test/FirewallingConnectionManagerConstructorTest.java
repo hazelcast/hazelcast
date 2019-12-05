@@ -16,13 +16,13 @@
 
 package com.hazelcast.test.starter.constructor.test;
 
-import com.hazelcast.nio.Address;
-import com.hazelcast.nio.ConnectionManager;
-import com.hazelcast.nio.tcp.FirewallingConnectionManager;
+import com.hazelcast.cluster.Address;
+import com.hazelcast.internal.nio.NetworkingService;
+import com.hazelcast.internal.nio.tcp.FirewallingNetworkingService;
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.test.starter.constructor.FirewallingConnectionManagerConstructor;
+import com.hazelcast.test.starter.constructor.FirewallingNetworkingInstanceConstructor;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -35,21 +35,21 @@ import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.mock;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class FirewallingConnectionManagerConstructorTest {
 
     @Test
     public void testConstructor() throws Exception {
-        ConnectionManager delegate = mock(ConnectionManager.class);
+        NetworkingService delegate = mock(NetworkingService.class);
         Address address = new Address("172.16.16.1", 4223);
         Set<Address> blockedAddresses = Collections.singleton(address);
 
-        FirewallingConnectionManager connectionManager = new FirewallingConnectionManager(delegate, blockedAddresses);
+        FirewallingNetworkingService ns = new FirewallingNetworkingService(delegate, blockedAddresses);
 
-        FirewallingConnectionManagerConstructor constructor
-                = new FirewallingConnectionManagerConstructor(FirewallingConnectionManager.class);
-        FirewallingConnectionManager clonedConnectionManager
-                = (FirewallingConnectionManager) constructor.createNew(connectionManager);
+        FirewallingNetworkingInstanceConstructor constructor
+                = new FirewallingNetworkingInstanceConstructor(FirewallingNetworkingService.class);
+        FirewallingNetworkingService clonedConnectionManager
+                = (FirewallingNetworkingService) constructor.createNew(ns);
 
         assertEquals(delegate, getFieldValueReflectively(clonedConnectionManager, "delegate"));
         assertEquals(blockedAddresses, getFieldValueReflectively(clonedConnectionManager, "blockedAddresses"));

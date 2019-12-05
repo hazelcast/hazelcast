@@ -73,7 +73,7 @@ public abstract class AbstractCursor<T> implements IdentifiedDataSerializable {
     public void readData(ObjectDataInput in) throws IOException {
         nextTableIndexToReadFrom = in.readInt();
         int size = in.readInt();
-        objects = new ArrayList<T>(size);
+        objects = new ArrayList<>(size);
         for (int i = 0; i < size; i++) {
             objects.add(readElement(in));
         }

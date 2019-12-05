@@ -18,10 +18,10 @@ package com.hazelcast.client.impl.protocol.task.map;
 
 import com.hazelcast.aggregation.Aggregator;
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.instance.Node;
+import com.hazelcast.instance.impl.Node;
 import com.hazelcast.map.impl.query.QueryResult;
 import com.hazelcast.map.impl.query.QueryResultRow;
-import com.hazelcast.nio.Connection;
+import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.projection.Projection;
 
 import java.util.Collection;
@@ -47,5 +47,4 @@ public abstract class DefaultMapQueryMessageTask<P>
     protected void extractAndAppendResult(Collection<QueryResultRow> results, QueryResult queryResult) {
         results.addAll(queryResult.getRows());
     }
-
 }

@@ -16,7 +16,7 @@
 
 package com.hazelcast.query.impl.predicates;
 
-import com.hazelcast.nio.serialization.BinaryInterface;
+import com.hazelcast.internal.serialization.BinaryInterface;
 
 import java.util.regex.Pattern;
 
@@ -40,11 +40,11 @@ public class ILikePredicate extends LikePredicate {
 
     @Override
     protected int getFlags() {
-        return Pattern.CASE_INSENSITIVE;
+        return super.getFlags() | Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE;
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return PredicateDataSerializerHook.ILIKE_PREDICATE;
     }
 }

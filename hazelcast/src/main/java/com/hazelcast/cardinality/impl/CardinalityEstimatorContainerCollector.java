@@ -19,13 +19,13 @@ package com.hazelcast.cardinality.impl;
 import com.hazelcast.config.CardinalityEstimatorConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.MergePolicyConfig;
-import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.merge.AbstractNamedContainerCollector;
 
 import java.util.Collection;
 import java.util.concurrent.ConcurrentMap;
 
-import static com.hazelcast.util.MapUtil.createConcurrentHashMap;
+import static com.hazelcast.internal.util.MapUtil.createConcurrentHashMap;
 
 class CardinalityEstimatorContainerCollector extends AbstractNamedContainerCollector<CardinalityEstimatorContainer> {
 

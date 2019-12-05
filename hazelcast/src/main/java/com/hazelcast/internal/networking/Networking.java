@@ -16,6 +16,7 @@
 
 package com.hazelcast.internal.networking;
 
+import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.internal.networking.nio.NioNetworking;
 
 import java.io.IOException;
@@ -45,21 +46,41 @@ public interface Networking {
      * In the future we need to think about passing the socket channel because
      * it binds Networking to tcp and this is not desirable.
      *
-     * @param socketChannel the socketChannel to register
-     * @param clientMode    if the channel is made in clientMode or server mode
+     * @param endpointQualifier          the endpoint qualifier for this server socket
+     * @param channelInitializerProvider the class used for initializing the Channel after creation
+     * @param socketChannel              the socketChannel to register
+     * @param clientMode                 if the channel is made in clientMode or server mode
      * @return the created Channel
      * @throws IOException when something failed while registering the
      *                     socketChannel
+     * @throws IllegalStateException if Networking isn't running.
      */
-    Channel register(SocketChannel socketChannel, boolean clientMode) throws IOException;
+    Channel register(EndpointQualifier endpointQualifier,
+                     ChannelInitializerProvider channelInitializerProvider,
+                     SocketChannel socketChannel,
+                     boolean clientMode) throws IOException;
 
     /**
-     * Starts Networking.
+     * Restarts Networking.
+     *
+     * This method can be called when the NioNetworking is started for the first time.
+     *
+     * But can also be called after {@link #shutdown()} has been completed. This is useful if you
+     * temporarily want to disable networking (e.g. dealing with merging). You should not call this
+     * method when the Networking is still running; first you need to call {@link #shutdown()}.
+     *
+     * @throws IllegalStateException if Networking already is running.
      */
-    void start();
+    void restart();
 
     /**
-     * Shuts down Networking.
+     * Shuts down Networking and closes all registered channels.
+     *
+     * Shutting down doesn't need to be a permanent state. It could be that for e.g. cluster merge, the
+     * networking is temporarily shutdown and later restarted.
+     *
+     * Shutdown can safely be called multiple times. The first time the Networking will be shutdown and the
+     * rest of the calls it will be ignored.
      */
     void shutdown();
 }

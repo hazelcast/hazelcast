@@ -16,16 +16,17 @@
 
 package com.hazelcast.map.impl.querycache.subscriber;
 
+import com.hazelcast.config.IndexConfig;
 import com.hazelcast.core.EntryEventType;
-import com.hazelcast.core.IMap;
+import com.hazelcast.map.IMap;
 import com.hazelcast.map.listener.MapListener;
 import com.hazelcast.query.Predicate;
-import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.query.impl.getters.Extractors;
 
 import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 
 /**
  * Object for neutral {@code InternalQueryCache} implementation.
@@ -65,17 +66,17 @@ public final class NullQueryCache implements InternalQueryCache {
     }
 
     @Override
-    public Indexes getIndexes() {
-        return null;
-    }
-
-    @Override
     public void clear() {
     }
 
     @Override
-    public void setPublisherListenerId(String publisherListenerId) {
+    public void setPublisherListenerId(UUID publisherListenerId) {
 
+    }
+
+    @Override
+    public UUID getPublisherListenerId() {
+        return null;
     }
 
     @Override
@@ -91,6 +92,11 @@ public final class NullQueryCache implements InternalQueryCache {
     @Override
     public Extractors getExtractors() {
         return null;
+    }
+
+    @Override
+    public void recreate() {
+
     }
 
     @Override
@@ -119,7 +125,8 @@ public final class NullQueryCache implements InternalQueryCache {
     }
 
     @Override
-    public void addIndex(String attribute, boolean ordered) {
+    public void addIndex(IndexConfig config) {
+        // No-op.
     }
 
     @Override
@@ -158,27 +165,27 @@ public final class NullQueryCache implements InternalQueryCache {
     }
 
     @Override
-    public String addEntryListener(MapListener listener, boolean includeValue) {
+    public UUID addEntryListener(MapListener listener, boolean includeValue) {
         return null;
     }
 
     @Override
-    public String addEntryListener(MapListener listener, Object key, boolean includeValue) {
+    public UUID addEntryListener(MapListener listener, Object key, boolean includeValue) {
         return null;
     }
 
     @Override
-    public String addEntryListener(MapListener listener, Predicate predicate, boolean includeValue) {
+    public UUID addEntryListener(MapListener listener, Predicate predicate, boolean includeValue) {
         return null;
     }
 
     @Override
-    public String addEntryListener(MapListener listener, Predicate predicate, Object key, boolean includeValue) {
+    public UUID addEntryListener(MapListener listener, Predicate predicate, Object key, boolean includeValue) {
         return null;
     }
 
     @Override
-    public boolean removeEntryListener(String id) {
+    public boolean removeEntryListener(UUID id) {
         return false;
     }
 

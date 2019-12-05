@@ -18,7 +18,7 @@ package com.hazelcast.query.impl.extractor.specification;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.InMemoryFormat;
-import com.hazelcast.config.MapAttributeConfig;
+import com.hazelcast.config.AttributeConfig;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.query.Predicates;
 import com.hazelcast.query.QueryException;
@@ -27,9 +27,9 @@ import com.hazelcast.query.extractor.ValueCollector;
 import com.hazelcast.query.extractor.ValueExtractor;
 import com.hazelcast.query.extractor.ValueReader;
 import com.hazelcast.query.impl.extractor.AbstractExtractionTest;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.util.UuidUtil;
+import com.hazelcast.internal.util.UuidUtil;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -51,16 +51,16 @@ import static java.util.Collections.singletonList;
 
 /**
  * Specification test that verifies the behavior of corner-cases extraction with extractor and arguments.
- * <p/>
+ * <p>
  * Extraction mechanism: EXTRACTOR-BASED EXTRACTION
- * <p/>
+ * <p>
  * This test is parametrised on two axes (see the parametrisationData() method):
  * - in memory format
  * - indexing
  * - extraction in collections and arrays
  */
 @RunWith(Parameterized.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class ExtractionWithExtractorsSpecTest extends AbstractExtractionTest {
 
     private static final Person BOND = person("Bond",
@@ -179,10 +179,10 @@ public class ExtractionWithExtractorsSpecTest extends AbstractExtractionTest {
             public void doWithConfig(Config config, AbstractExtractionTest.Multivalue mv) {
                 MapConfig mapConfig = config.getMapConfig("map");
 
-                MapAttributeConfig tattoosCount = new AbstractExtractionTest.TestMapAttributeIndexConfig();
+                AttributeConfig tattoosCount = new TestAttributeIndexConfig();
                 tattoosCount.setName("tattoosCount");
-                tattoosCount.setExtractor("com.hazelcast.query.impl.extractor.specification.ExtractionWithExtractorsSpecTest$LimbTattoosCountExtractor");
-                mapConfig.addMapAttributeConfig(tattoosCount);
+                tattoosCount.setExtractorClassName("com.hazelcast.query.impl.extractor.specification.ExtractionWithExtractorsSpecTest$LimbTattoosCountExtractor");
+                mapConfig.addAttributeConfig(tattoosCount);
 
                 config.getSerializationConfig().addPortableFactory(ComplexTestDataStructure.PersonPortableFactory.ID, new ComplexTestDataStructure.PersonPortableFactory());
             }
@@ -190,7 +190,7 @@ public class ExtractionWithExtractorsSpecTest extends AbstractExtractionTest {
     }
 
     @SuppressWarnings("unchecked")
-    public static class LimbTattoosCountExtractor extends ValueExtractor {
+    public static class LimbTattoosCountExtractor implements ValueExtractor {
         @Override
         public void extract(Object target, Object arguments, final ValueCollector collector) {
             Integer parsedId = Integer.parseInt((String) arguments);

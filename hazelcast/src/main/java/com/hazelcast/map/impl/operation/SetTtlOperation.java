@@ -18,23 +18,28 @@ package com.hazelcast.map.impl.operation;
 
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.record.Record;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.BackupAwareOperation;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.impl.MutatingOperation;
+import com.hazelcast.spi.impl.operationservice.BackupAwareOperation;
+import com.hazelcast.spi.impl.operationservice.MutatingOperation;
+import com.hazelcast.spi.impl.operationservice.Operation;
 
-import static com.hazelcast.map.impl.recordstore.RecordStore.DEFAULT_MAX_IDLE;
+import java.io.IOException;
 
-public class SetTtlOperation extends LockAwareOperation implements BackupAwareOperation, MutatingOperation {
+public class SetTtlOperation extends LockAwareOperation
+        implements BackupAwareOperation, MutatingOperation {
 
     private transient boolean response;
 
-    public SetTtlOperation() {
+    private long ttl;
 
+    public SetTtlOperation() {
     }
 
     public SetTtlOperation(String name, Data dataKey, long ttl) {
-        super(name, dataKey, ttl, DEFAULT_MAX_IDLE);
+        super(name, dataKey);
+        this.ttl = ttl;
     }
 
     @Override
@@ -43,21 +48,22 @@ public class SetTtlOperation extends LockAwareOperation implements BackupAwareOp
     }
 
     @Override
-    public void run() throws Exception {
-        response = recordStore.setTtl(dataKey, ttl);
+    protected void runInternal() {
+        response = recordStore.setTtl(dataKey, ttl, false);
     }
 
     @Override
-    public void afterRun() throws Exception {
+    protected void afterRunInternal() {
         Record record = recordStore.getRecord(dataKey);
         if (record != null) {
             publishWanUpdate(dataKey, record.getValue());
             invalidateNearCache(dataKey);
         }
+        super.afterRunInternal();
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MapDataSerializerHook.SET_TTL;
     }
 
@@ -84,5 +90,17 @@ public class SetTtlOperation extends LockAwareOperation implements BackupAwareOp
     @Override
     public Operation getBackupOperation() {
         return new SetTtlBackupOperation(name, dataKey, ttl);
+    }
+
+    @Override
+    protected void writeInternal(ObjectDataOutput out) throws IOException {
+        super.writeInternal(out);
+        out.writeLong(ttl);
+    }
+
+    @Override
+    protected void readInternal(ObjectDataInput in) throws IOException {
+        super.readInternal(in);
+        ttl = in.readLong();
     }
 }

@@ -21,10 +21,12 @@ import com.hazelcast.cache.impl.ICacheService;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.CacheRemovePartitionLostListenerCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractRemoveListenerMessageTask;
-import com.hazelcast.instance.Node;
-import com.hazelcast.nio.Connection;
+import com.hazelcast.instance.impl.Node;
+import com.hazelcast.internal.nio.Connection;
 
 import java.security.Permission;
+import java.util.UUID;
+import java.util.concurrent.Future;
 
 public class CacheRemovePartitionLostListenerMessageTask
         extends AbstractRemoveListenerMessageTask<CacheRemovePartitionLostListenerCodec.RequestParameters> {
@@ -35,14 +37,14 @@ public class CacheRemovePartitionLostListenerMessageTask
     }
 
     @Override
-    protected boolean deRegisterListener() {
+    protected Future<Boolean> deRegisterListener() {
         ICacheService service = getService(CacheService.SERVICE_NAME);
         return service.getNodeEngine().getEventService()
-                .deregisterListener(ICacheService.SERVICE_NAME, parameters.name, parameters.registrationId);
+                      .deregisterListenerAsync(ICacheService.SERVICE_NAME, parameters.name, parameters.registrationId);
     }
 
     @Override
-    protected String getRegistrationId() {
+    protected UUID getRegistrationId() {
         return parameters.registrationId;
     }
 

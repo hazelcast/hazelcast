@@ -32,21 +32,21 @@ import org.junit.runner.RunWith;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.instance.HazelcastInstanceFactory;
+import com.hazelcast.instance.impl.HazelcastInstanceFactory;
 import com.hazelcast.internal.management.operation.ScriptExecutorOperation;
 import com.hazelcast.map.impl.MapService;
-import com.hazelcast.spi.InternalCompletableFuture;
+import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 
 /**
  * Tests possibility to disable scripting on members.
  */
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({ QuickTest.class, ParallelTest.class })
+@Category({ QuickTest.class, ParallelJVMTest.class })
 public class ScriptingProtectionTest extends HazelcastTestSupport {
 
     private static final String SCRIPT_RETURN_VAL = "John";

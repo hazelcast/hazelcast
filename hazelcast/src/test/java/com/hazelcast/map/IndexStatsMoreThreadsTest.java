@@ -18,14 +18,14 @@ package com.hazelcast.map;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.InMemoryFormat;
+import com.hazelcast.config.IndexConfig;
+import com.hazelcast.config.IndexType;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IMap;
-import com.hazelcast.monitor.LocalIndexStats;
-import com.hazelcast.monitor.LocalMapStats;
+import com.hazelcast.query.LocalIndexStats;
 import com.hazelcast.query.Predicates;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
 import org.junit.Test;
@@ -41,7 +41,7 @@ import static org.junit.Assert.assertEquals;
 
 @RunWith(Parameterized.class)
 @Parameterized.UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class IndexStatsMoreThreadsTest extends HazelcastTestSupport {
 
     @Parameterized.Parameters(name = "format:{0}")
@@ -77,7 +77,7 @@ public class IndexStatsMoreThreadsTest extends HazelcastTestSupport {
         double expectedEqual = 1.0 - 1.0 / entryCount;
         double expectedGreaterEqual = 1.0 - ((double) lessEqualCount) / entryCount;
 
-        map.addIndex("this", false);
+        map.addIndex(new IndexConfig(IndexType.HASH, "this").setName("this"));
         for (int i = 0; i < entryCount; ++i) {
             map.put(i, i);
         }
@@ -90,25 +90,22 @@ public class IndexStatsMoreThreadsTest extends HazelcastTestSupport {
         final CountDownLatch startGate = new CountDownLatch(1);
         final CountDownLatch endGate = new CountDownLatch(THREADS_NUMBER);
         for (int i = 0; i < THREADS_NUMBER; i++) {
-            new Thread() {
-                @Override
-                public void run() {
-                    try {
-                        startGate.await();
-                    } catch (InterruptedException ex) {
-                        throw new RuntimeException(ex);
-                    }
-                    try {
-                        for (int j = 0; j < THREADS_ITERATION; j++) {
-                            map.entrySet(Predicates.alwaysTrue());
-                            map.entrySet(Predicates.equal("this", 10));
-                            map.entrySet(Predicates.lessEqual("this", lessEqualCount));
-                        }
-                    } finally {
-                        endGate.countDown();
-                    }
+            new Thread(() -> {
+                try {
+                    startGate.await();
+                } catch (InterruptedException ex) {
+                    throw new RuntimeException(ex);
                 }
-            }.start();
+                try {
+                    for (int j = 0; j < THREADS_ITERATION; j++) {
+                        map.entrySet(Predicates.alwaysTrue());
+                        map.entrySet(Predicates.equal("this", 10));
+                        map.entrySet(Predicates.lessEqual("this", lessEqualCount));
+                    }
+                } finally {
+                    endGate.countDown();
+                }
+            }).start();
         }
 
         startGate.countDown();
@@ -123,7 +120,7 @@ public class IndexStatsMoreThreadsTest extends HazelcastTestSupport {
 
     @Test
     public void testIndexMapStatsWithMoreThreads() throws InterruptedException {
-        map.addIndex("this", false);
+        map.addIndex(new IndexConfig(IndexType.HASH, "this").setName("this"));
 
         assertEquals(0, valueStats().getInsertCount());
         assertEquals(0, valueStats().getUpdateCount());
@@ -133,26 +130,23 @@ public class IndexStatsMoreThreadsTest extends HazelcastTestSupport {
         final CountDownLatch endGate = new CountDownLatch(THREADS_NUMBER);
         for (int i = 0; i < THREADS_NUMBER; i++) {
             final int threadOrder = i;
-            new Thread() {
-                @Override
-                public void run() {
-                    try {
-                        startGate.await();
-                    } catch (InterruptedException ex) {
-                        throw new RuntimeException(ex);
-                    }
-                    try {
-                        for (int j = 0; j < THREADS_ITERATION; j++) {
-                            map.put(threadOrder * THREADS_ITERATION + j, j);
-                            map.put((threadOrder + THREADS_NUMBER) * THREADS_ITERATION + j, j);
-                            map.remove(threadOrder * THREADS_ITERATION + j);
-                            map.put((threadOrder + THREADS_NUMBER) * THREADS_ITERATION + j, j * j);
-                        }
-                    } finally {
-                        endGate.countDown();
-                    }
+            new Thread(() -> {
+                try {
+                    startGate.await();
+                } catch (InterruptedException ex) {
+                    throw new RuntimeException(ex);
                 }
-            }.start();
+                try {
+                    for (int j = 0; j < THREADS_ITERATION; j++) {
+                        map.put(threadOrder * THREADS_ITERATION + j, j);
+                        map.put((threadOrder + THREADS_NUMBER) * THREADS_ITERATION + j, j);
+                        map.remove(threadOrder * THREADS_ITERATION + j);
+                        map.put((threadOrder + THREADS_NUMBER) * THREADS_ITERATION + j, j * j);
+                    }
+                } finally {
+                    endGate.countDown();
+                }
+            }).start();
         }
 
         startGate.countDown();

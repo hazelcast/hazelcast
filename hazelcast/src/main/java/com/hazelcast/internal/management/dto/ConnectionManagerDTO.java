@@ -16,14 +16,18 @@
 
 package com.hazelcast.internal.management.dto;
 
-import com.hazelcast.internal.management.JsonSerializable;
+import com.hazelcast.internal.jmx.NetworkingServiceMBean;
 import com.hazelcast.internal.json.JsonObject;
-import com.hazelcast.nio.ConnectionManager;
+import com.hazelcast.json.internal.JsonSerializable;
+import com.hazelcast.internal.nio.AggregateEndpointManager;
+import com.hazelcast.internal.nio.EndpointManager;
+import com.hazelcast.internal.nio.NetworkingService;
 
-import static com.hazelcast.util.JsonUtil.getInt;
+import static com.hazelcast.instance.EndpointQualifier.CLIENT;
+import static com.hazelcast.internal.util.JsonUtil.getInt;
 
 /**
- * A Serializable DTO for {@link com.hazelcast.internal.jmx.ConnectionManagerMBean}.
+ * A Serializable DTO for {@link NetworkingServiceMBean}.
  */
 public class ConnectionManagerDTO implements JsonSerializable {
 
@@ -34,10 +38,12 @@ public class ConnectionManagerDTO implements JsonSerializable {
     public ConnectionManagerDTO() {
     }
 
-    public ConnectionManagerDTO(ConnectionManager cm) {
-        this.clientConnectionCount = cm.getCurrentClientConnections();
-        this.activeConnectionCount = cm.getActiveConnectionCount();
-        this.connectionCount = cm.getConnectionCount();
+    public ConnectionManagerDTO(NetworkingService ns) {
+        AggregateEndpointManager aggregate = ns.getAggregateEndpointManager();
+        EndpointManager cem = ns.getEndpointManager(CLIENT);
+        this.clientConnectionCount = cem != null ? cem.getActiveConnections().size() : -1;
+        this.activeConnectionCount = aggregate.getActiveConnections().size();
+        this.connectionCount = aggregate.getConnections().size();
     }
 
     @Override

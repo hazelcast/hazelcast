@@ -16,8 +16,8 @@
 
 package com.hazelcast.internal.partition.service;
 
-import com.hazelcast.spi.BackupAwareOperation;
-import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.impl.operationservice.BackupAwareOperation;
+import com.hazelcast.spi.impl.operationservice.Operation;
 
 public class TestIncrementOperation extends Operation implements BackupAwareOperation {
 

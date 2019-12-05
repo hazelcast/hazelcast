@@ -18,18 +18,19 @@ package com.hazelcast.map.impl.query;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.InMemoryFormat;
+import com.hazelcast.config.IndexType;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IMap;
+import com.hazelcast.map.IMap;
 import com.hazelcast.mock.MockUtil;
-import com.hazelcast.query.EntryObject;
 import com.hazelcast.query.Predicate;
-import com.hazelcast.query.PredicateBuilder;
+import com.hazelcast.query.PredicateBuilder.EntryObject;
+import com.hazelcast.query.Predicates;
 import com.hazelcast.query.SampleTestObjects.Employee;
-import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Before;
@@ -48,7 +49,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class QueryIndexingTest extends HazelcastTestSupport {
 
     private int count = 2000;
@@ -69,7 +70,7 @@ public class QueryIndexingTest extends HazelcastTestSupport {
         h1 = nodeFactory.newHazelcastInstance(config);
         h2 = nodeFactory.newHazelcastInstance(config);
 
-        EntryObject entryObject = new PredicateBuilder().getEntryObject();
+        EntryObject entryObject = Predicates.newPredicateBuilder().getEntryObject();
         predicate = entryObject.get("name").equal(null).and(entryObject.get("city").isNull());
 
         assertClusterSizeEventually(2, h1);
@@ -86,7 +87,7 @@ public class QueryIndexingTest extends HazelcastTestSupport {
         map.putAll(employees);
         waitAllForSafeState(h1, h2);
 
-        Collection<Employee> matchingEntries = runQueryNTimes(3, h2.<String, Employee>getMap("employees"));
+        Collection<Employee> matchingEntries = runQueryNTimes(3, h2.getMap("employees"));
 
         assertEquals(count / 2, matchingEntries.size());
         // N queries result in getters called N times
@@ -98,20 +99,20 @@ public class QueryIndexingTest extends HazelcastTestSupport {
     public void testResultsHaveNullFields_whenUsingIndexes() {
         IMap<Integer, Employee> map = h1.getMap("employees");
 
-        map.addIndex("name", false);
-        map.addIndex("city", true);
+        map.addIndex(IndexType.HASH, "name");
+        map.addIndex(IndexType.SORTED, "city");
 
         map.putAll(employees);
         waitAllForSafeState(h1, h2);
 
-        Collection<Employee> matchingEntries = runQueryNTimes(3, h2.<String, Employee>getMap("employees"));
+        Collection<Employee> matchingEntries = runQueryNTimes(3, h2.getMap("employees"));
         assertEquals(count / 2, matchingEntries.size());
 
         assertFieldsAreNull(matchingEntries);
     }
 
     private static Map<Integer, Employee> newEmployees(int employeeCount) {
-        Map<Integer, Employee> employees = new HashMap<Integer, Employee>();
+        Map<Integer, Employee> employees = new HashMap<>();
         for (int i = 0; i < employeeCount; i++) {
             Employee val;
             if (i % 2 == 0) {
@@ -129,7 +130,7 @@ public class QueryIndexingTest extends HazelcastTestSupport {
         Config conf = new Config();
         conf.getMapConfig("employees").setInMemoryFormat(InMemoryFormat.OBJECT).setBackupCount(0);
         // disabling replication since we don't use backups in this test
-        conf.setProperty(GroupProperty.PARTITION_MAX_PARALLEL_REPLICATIONS.getName(), "0");
+        conf.setProperty(ClusterProperty.PARTITION_MAX_PARALLEL_REPLICATIONS.getName(), "0");
         return conf;
     }
 

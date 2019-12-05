@@ -18,11 +18,11 @@ package com.hazelcast.map.impl;
 
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.map.impl.proxy.MapProxyImpl;
-import com.hazelcast.nio.Address;
-import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.PartitionAwareService;
-import com.hazelcast.spi.ProxyService;
-import com.hazelcast.spi.partition.IPartitionLostEvent;
+import com.hazelcast.cluster.Address;
+import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.internal.partition.PartitionAwareService;
+import com.hazelcast.spi.impl.proxyservice.ProxyService;
+import com.hazelcast.internal.partition.IPartitionLostEvent;
 
 import java.util.Collection;
 
@@ -38,7 +38,7 @@ class MapPartitionAwareService implements PartitionAwareService {
     private final NodeEngine nodeEngine;
     private final ProxyService proxyService;
 
-    public MapPartitionAwareService(MapServiceContext mapServiceContext) {
+    MapPartitionAwareService(MapServiceContext mapServiceContext) {
         this.mapServiceContext = mapServiceContext;
         this.nodeEngine = mapServiceContext.getNodeEngine();
         this.proxyService = this.nodeEngine.getProxyService();

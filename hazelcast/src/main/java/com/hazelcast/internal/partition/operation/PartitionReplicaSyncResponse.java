@@ -16,7 +16,7 @@
 
 package com.hazelcast.internal.partition.operation;
 
-import com.hazelcast.core.Member;
+import com.hazelcast.cluster.Member;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.partition.PartitionReplica;
@@ -27,29 +27,30 @@ import com.hazelcast.internal.partition.impl.PartitionDataSerializerHook;
 import com.hazelcast.internal.partition.impl.PartitionReplicaManager;
 import com.hazelcast.internal.partition.impl.PartitionStateManager;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.nio.Address;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.impl.Versioned;
-import com.hazelcast.spi.BackupOperation;
-import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.OperationResponseHandler;
-import com.hazelcast.spi.PartitionAwareOperation;
-import com.hazelcast.spi.ServiceNamespace;
-import com.hazelcast.spi.UrgentSystemOperation;
+import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.internal.services.ServiceNamespace;
 import com.hazelcast.spi.exception.WrongTargetException;
 import com.hazelcast.spi.impl.AllowedDuringPassiveState;
+import com.hazelcast.spi.impl.operationservice.BackupOperation;
+import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.spi.impl.operationservice.OperationResponseHandler;
+import com.hazelcast.spi.impl.operationservice.PartitionAwareOperation;
 import com.hazelcast.spi.impl.operationservice.TargetAware;
+import com.hazelcast.spi.impl.operationservice.UrgentSystemOperation;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.logging.Level;
 
-import static com.hazelcast.spi.impl.OperationResponseHandlerFactory.createErrorLoggingResponseHandler;
+import static com.hazelcast.internal.serialization.impl.SerializationUtil.readNullableCollection;
+import static com.hazelcast.internal.serialization.impl.SerializationUtil.writeNullableCollection;
+import static com.hazelcast.spi.impl.operationexecutor.OperationRunner.runDirect;
+import static com.hazelcast.spi.impl.operationservice.OperationResponseHandlerFactory.createErrorLoggingResponseHandler;
 
 /**
  * The replica synchronization response sent from the partition owner to a replica. It will execute the received operation
@@ -61,12 +62,10 @@ import static com.hazelcast.spi.impl.OperationResponseHandlerFactory.createError
  * <li>if the node is not a replica anymore it will clear the replica versions for the partition</li>
  * </ul>
  */
-// RU_COMPAT_39: Do not remove Versioned interface!
-// Version info is needed on 3.9 members while deserializing the operation.
 @SuppressFBWarnings("EI_EXPOSE_REP")
 public class PartitionReplicaSyncResponse extends AbstractPartitionOperation
         implements PartitionAwareOperation, BackupOperation, UrgentSystemOperation,
-        AllowedDuringPassiveState, Versioned, TargetAware {
+        AllowedDuringPassiveState, TargetAware {
 
     private Collection<Operation> operations;
     private ServiceNamespace namespace;
@@ -158,9 +157,7 @@ public class PartitionReplicaSyncResponse extends AbstractPartitionOperation
             for (Operation op : operations) {
                 prepareOperation(op);
                 try {
-                    op.beforeRun();
-                    op.run();
-                    op.afterRun();
+                    runDirect(op);
                 } catch (Throwable e) {
                     onOperationFailure(op, e);
                     logException(op, e);
@@ -264,29 +261,14 @@ public class PartitionReplicaSyncResponse extends AbstractPartitionOperation
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         out.writeObject(namespace);
         out.writeLongArray(versions);
-
-        int size = operations != null ? operations.size() : 0;
-        out.writeInt(size);
-        if (size > 0) {
-            for (Operation task : operations) {
-                out.writeObject(task);
-            }
-        }
+        writeNullableCollection(operations, out);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         namespace = in.readObject();
         versions = in.readLongArray();
-
-        int size = in.readInt();
-        if (size > 0) {
-            operations = new ArrayList<Operation>(size);
-            for (int i = 0; i < size; i++) {
-                Operation op = in.readObject();
-                operations.add(op);
-            }
-        }
+        operations = readNullableCollection(in);
     }
 
     @Override
@@ -298,7 +280,7 @@ public class PartitionReplicaSyncResponse extends AbstractPartitionOperation
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return PartitionDataSerializerHook.REPLICA_SYNC_RESPONSE;
     }
 }

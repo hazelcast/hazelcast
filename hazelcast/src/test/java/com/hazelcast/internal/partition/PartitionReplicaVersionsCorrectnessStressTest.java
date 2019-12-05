@@ -17,12 +17,12 @@
 package com.hazelcast.internal.partition;
 
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.instance.Node;
-import com.hazelcast.nio.Address;
+import com.hazelcast.instance.impl.Node;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.partition.AbstractPartitionLostListenerTest;
-import com.hazelcast.spi.DistributedObjectNamespace;
-import com.hazelcast.spi.ServiceNamespace;
-import com.hazelcast.test.HazelcastParametersRunnerFactory;
+import com.hazelcast.internal.services.DistributedObjectNamespace;
+import com.hazelcast.internal.services.ServiceNamespace;
+import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
 import com.hazelcast.test.annotation.SlowTest;
 import org.hamcrest.Matchers;
 import org.junit.Test;
@@ -45,7 +45,7 @@ import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
 
 @RunWith(Parameterized.class)
-@Parameterized.UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
+@Parameterized.UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
 @Category(SlowTest.class)
 public class PartitionReplicaVersionsCorrectnessStressTest extends AbstractPartitionLostListenerTest {
 

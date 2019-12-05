@@ -40,7 +40,7 @@ public class SampleIdentifiedDataSerializable implements IdentifiedDataSerializa
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return TestSerializationConstants.SAMPLE_IDENTIFIED_DATA_SERIALIZABLE;
     }
 

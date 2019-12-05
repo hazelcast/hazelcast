@@ -16,6 +16,7 @@
 
 package com.hazelcast.nio.serialization.compatibility;
 
+import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -129,7 +130,7 @@ public class AnIdentifiedDataSerializable implements IdentifiedDataSerializable 
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ReferenceObjects.DATA_SERIALIZABLE_CLASS_ID;
     }
 
@@ -180,7 +181,7 @@ public class AnIdentifiedDataSerializable implements IdentifiedDataSerializable 
         dataOutput.writeObject(customByteArraySerializableObject);
         dataOutput.writeObject(customStreamSerializableObject);
 
-        dataOutput.writeData(data);
+        IOUtil.writeData(dataOutput, data);
     }
 
     @Override
@@ -235,7 +236,7 @@ public class AnIdentifiedDataSerializable implements IdentifiedDataSerializable 
         customByteArraySerializableObject = dataInput.readObject();
         customStreamSerializableObject = dataInput.readObject();
 
-        data = dataInput.readData();
+        data = IOUtil.readData(dataInput);
     }
 
     @Override

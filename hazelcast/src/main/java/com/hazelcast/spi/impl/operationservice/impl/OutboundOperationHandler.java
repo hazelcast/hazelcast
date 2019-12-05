@@ -16,15 +16,16 @@
 
 package com.hazelcast.spi.impl.operationservice.impl;
 
-import com.hazelcast.instance.Node;
+import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.serialization.InternalSerializationService;
-import com.hazelcast.nio.Address;
-import com.hazelcast.nio.Connection;
-import com.hazelcast.nio.Packet;
-import com.hazelcast.spi.Operation;
+import com.hazelcast.cluster.Address;
+import com.hazelcast.internal.nio.Connection;
+import com.hazelcast.internal.nio.Packet;
+import com.hazelcast.spi.impl.operationservice.Operation;
 
-import static com.hazelcast.nio.Packet.FLAG_URGENT;
-import static com.hazelcast.util.Preconditions.checkNotNull;
+import static com.hazelcast.instance.EndpointQualifier.MEMBER;
+import static com.hazelcast.internal.nio.Packet.FLAG_URGENT;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 /**
  * Responsible for sending Operations to another member.
@@ -47,7 +48,7 @@ public class OutboundOperationHandler {
             throw new IllegalArgumentException("Target is this node! -> " + target + ", op: " + op);
         }
 
-        Connection connection = node.getConnectionManager().getOrConnect(target);
+        Connection connection = node.getNetworkingService().getEndpointManager(MEMBER).getOrConnect(target);
         return send(op, connection);
     }
 
@@ -60,6 +61,6 @@ public class OutboundOperationHandler {
             packet.raiseFlags(FLAG_URGENT);
         }
 
-        return node.getConnectionManager().transmit(packet, connection);
+        return node.getEndpointManager(MEMBER).transmit(packet, connection);
     }
 }

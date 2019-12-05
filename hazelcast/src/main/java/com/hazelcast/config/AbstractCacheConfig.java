@@ -16,13 +16,14 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.cache.impl.CacheDataSerializerHook;
 import com.hazelcast.cache.impl.DeferredValue;
 import com.hazelcast.core.HazelcastException;
-import com.hazelcast.internal.serialization.InternalSerializationService;
-import com.hazelcast.nio.ClassLoaderUtil;
-import com.hazelcast.nio.serialization.BinaryInterface;
-import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.internal.nio.ClassLoaderUtil;
+import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
+import javax.annotation.Nonnull;
 import javax.cache.configuration.CacheEntryListenerConfiguration;
 import javax.cache.configuration.CompleteConfiguration;
 import javax.cache.configuration.Factory;
@@ -34,7 +35,7 @@ import java.util.Collections;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
-import static com.hazelcast.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 /**
  * Base class for {@link CacheConfig}
@@ -42,9 +43,8 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
  * @param <K> the key type
  * @param <V> the value type
  */
-@BinaryInterface
 @SuppressWarnings("checkstyle:methodcount")
-public abstract class AbstractCacheConfig<K, V> implements CacheConfiguration<K, V>, DataSerializable {
+public abstract class AbstractCacheConfig<K, V> implements CacheConfiguration<K, V>, IdentifiedDataSerializable {
 
     private static final String DEFAULT_KEY_VALUE_TYPE = "java.lang.Object";
 
@@ -90,11 +90,13 @@ public abstract class AbstractCacheConfig<K, V> implements CacheConfiguration<K,
 
     protected HotRestartConfig hotRestartConfig = new HotRestartConfig();
 
+    protected EventJournalConfig eventJournalConfig = new EventJournalConfig();
+
     /**
-     * The ClassLoader to be used to resolve key & value types, if set
+     * The ClassLoader to be used to resolve key &amp; value types, if set
      */
     protected transient ClassLoader classLoader;
-    protected transient InternalSerializationService serializationService;
+    protected transient SerializationService serializationService;
 
     /**
      * The {@link CacheEntryListenerConfiguration}s for the {@link javax.cache.configuration.Configuration}.
@@ -254,7 +256,7 @@ public abstract class AbstractCacheConfig<K, V> implements CacheConfiguration<K,
      *
      * @return hot restart config
      */
-    public HotRestartConfig getHotRestartConfig() {
+    public @Nonnull HotRestartConfig getHotRestartConfig() {
         return hotRestartConfig;
     }
 
@@ -264,8 +266,28 @@ public abstract class AbstractCacheConfig<K, V> implements CacheConfiguration<K,
      * @param hotRestartConfig hot restart config
      * @return this {@code CacheConfiguration} instance
      */
-    public CacheConfiguration<K, V> setHotRestartConfig(HotRestartConfig hotRestartConfig) {
-        this.hotRestartConfig = hotRestartConfig;
+    public CacheConfiguration<K, V> setHotRestartConfig(@Nonnull HotRestartConfig hotRestartConfig) {
+        this.hotRestartConfig = checkNotNull(hotRestartConfig, "HotRestartConfig can't be null");
+        return this;
+    }
+
+    /**
+     * Gets the {@code EventJournalConfig} for this {@code CacheConfiguration}
+     *
+     * @return event journal config
+     */
+    public @Nonnull EventJournalConfig getEventJournalConfig() {
+        return eventJournalConfig;
+    }
+
+    /**
+     * Sets the {@code EventJournalConfig} for this {@code CacheConfiguration}
+     *
+     * @param eventJournalConfig event journal config
+     * @return this {@code CacheConfiguration} instance
+     */
+    public CacheConfiguration<K, V> setEventJournalConfig(@Nonnull EventJournalConfig eventJournalConfig) {
+        this.eventJournalConfig = checkNotNull(eventJournalConfig, "eventJournalConfig cannot be null!");
         return this;
     }
 
@@ -403,6 +425,11 @@ public abstract class AbstractCacheConfig<K, V> implements CacheConfiguration<K,
         return this;
     }
 
+    @Override
+    public int getFactoryId() {
+        return CacheDataSerializerHook.F_ID;
+    }
+
     protected Set<DeferredValue<CacheEntryListenerConfiguration<K, V>>> createConcurrentSet() {
         return Collections.newSetFromMap(new ConcurrentHashMap<DeferredValue<CacheEntryListenerConfiguration<K, V>>, Boolean>());
     }
@@ -442,6 +469,7 @@ public abstract class AbstractCacheConfig<K, V> implements CacheConfiguration<K,
     }
 
     @Override
+    @SuppressWarnings({"checkstyle:npathcomplexity"})
     public int hashCode() {
         int result = cacheLoaderFactory != null ? cacheLoaderFactory.hashCode() : 0;
         result = 31 * result + listenerConfigurations.hashCode();
@@ -454,10 +482,13 @@ public abstract class AbstractCacheConfig<K, V> implements CacheConfiguration<K,
         result = 31 * result + (isStatisticsEnabled ? 1 : 0);
         result = 31 * result + (isStoreByValue ? 1 : 0);
         result = 31 * result + (isManagementEnabled ? 1 : 0);
+        result = 31 * result + hotRestartConfig.hashCode();
+        result = 31 * result + eventJournalConfig.hashCode();
         return result;
     }
 
     @Override
+    @SuppressWarnings({"checkstyle:cyclomaticcomplexity", "checkstyle:npathcomplexity"})
     public boolean equals(final Object o) {
         if (this == o) {
             return true;
@@ -508,7 +539,12 @@ public abstract class AbstractCacheConfig<K, V> implements CacheConfiguration<K,
         if (!thisListenerConfigs.equals(thatListenerConfigs)) {
             return false;
         }
-
+        if (!eventJournalConfig.equals(that.eventJournalConfig)) {
+            return false;
+        }
+        if (!hotRestartConfig.equals(that.hotRestartConfig)) {
+            return false;
+        }
         return keyValueTypesEqual(that);
     }
 

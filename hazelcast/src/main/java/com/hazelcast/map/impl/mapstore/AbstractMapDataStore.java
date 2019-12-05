@@ -16,10 +16,13 @@
 
 package com.hazelcast.map.impl.mapstore;
 
+import com.hazelcast.internal.serialization.DataType;
 import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.internal.util.Clock;
 import com.hazelcast.map.impl.MapStoreWrapper;
+import com.hazelcast.map.impl.mapstore.writebehind.TxnReservedCapacityCounter;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.DataType;
+import com.hazelcast.spi.impl.NodeEngine;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -35,15 +38,15 @@ import java.util.Map;
  */
 public abstract class AbstractMapDataStore<K, V> implements MapDataStore<K, V> {
 
+    protected final NodeEngine nodeEngine;
+
     private final MapStoreWrapper store;
     private final InternalSerializationService serializationService;
 
-    protected AbstractMapDataStore(MapStoreWrapper store, InternalSerializationService serializationService) {
-        if (store == null || serializationService == null) {
-            throw new NullPointerException();
-        }
-        this.store = store;
-        this.serializationService = serializationService;
+    protected AbstractMapDataStore(MapStoreContext mapStoreContext) {
+        this.store = mapStoreContext.getMapStoreWrapper();
+        this.nodeEngine = mapStoreContext.getMapServiceContext().getNodeEngine();
+        this.serializationService = (InternalSerializationService) nodeEngine.getSerializationService();
     }
 
     @Override
@@ -76,6 +79,21 @@ public abstract class AbstractMapDataStore<K, V> implements MapDataStore<K, V> {
         getStore().deleteAll(objectKeys);
     }
 
+    /**
+     * Returns expiration time offset in terms of JVM clock. HZ view vs
+     * JVM view of expiration time may differ in case of a custom clock
+     * implementation.
+     *
+     * @param hzExpirationTime
+     * @return
+     */
+    protected long getUserExpirationTime(long hzExpirationTime) {
+        if (hzExpirationTime == Long.MAX_VALUE) {
+            return hzExpirationTime;
+        }
+        return Clock.toSystemCurrentTimeMillis(hzExpirationTime);
+    }
+
     protected Object toObject(Object obj) {
         return serializationService.toObject(obj);
     }
@@ -99,7 +117,7 @@ public abstract class AbstractMapDataStore<K, V> implements MapDataStore<K, V> {
         if (keys == null || keys.isEmpty()) {
             return Collections.emptyList();
         }
-        final List<Object> objectKeys = new ArrayList<Object>(keys.size());
+        final List<Object> objectKeys = new ArrayList<>(keys.size());
         for (Object key : keys) {
             objectKeys.add(toObject(key));
         }
@@ -109,5 +127,15 @@ public abstract class AbstractMapDataStore<K, V> implements MapDataStore<K, V> {
     @Override
     public boolean isPostProcessingMapStore() {
         return store.isPostProcessingMapStore();
+    }
+
+    @Override
+    public boolean isWithExpirationTime() {
+        return store.isWithExpirationTime();
+    }
+
+    @Override
+    public TxnReservedCapacityCounter getTxnReservedCapacityCounter() {
+        return TxnReservedCapacityCounter.EMPTY_COUNTER;
     }
 }

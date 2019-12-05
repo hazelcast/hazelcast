@@ -18,20 +18,22 @@ package com.hazelcast.query.impl.predicates;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.BinaryInterface;
+import com.hazelcast.internal.serialization.BinaryInterface;
+import com.hazelcast.query.Predicate;
+import com.hazelcast.query.impl.Comparables;
 import com.hazelcast.query.impl.Index;
+import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.query.impl.QueryContext;
 import com.hazelcast.query.impl.QueryableEntry;
 
 import java.io.IOException;
-import java.util.Map;
 import java.util.Set;
 
 /**
  * Between Predicate
  */
 @BinaryInterface
-public class BetweenPredicate extends AbstractIndexAwarePredicate {
+public class BetweenPredicate extends AbstractIndexAwarePredicate implements VisitablePredicate, RangePredicate {
 
     private static final long serialVersionUID = 1L;
 
@@ -41,8 +43,8 @@ public class BetweenPredicate extends AbstractIndexAwarePredicate {
     public BetweenPredicate() {
     }
 
-    public BetweenPredicate(String first, Comparable from, Comparable to) {
-        super(first);
+    public BetweenPredicate(String attribute, Comparable from, Comparable to) {
+        super(attribute);
         if (from == null || to == null) {
             throw new NullPointerException("Arguments can't be null");
         }
@@ -51,7 +53,7 @@ public class BetweenPredicate extends AbstractIndexAwarePredicate {
     }
 
     @Override
-    protected boolean applyForSingleAttributeValue(Map.Entry entry, Comparable attributeValue) {
+    protected boolean applyForSingleAttributeValue(Comparable attributeValue) {
         if (attributeValue == null) {
             return false;
         }
@@ -61,13 +63,14 @@ public class BetweenPredicate extends AbstractIndexAwarePredicate {
             return false;
         }
         attributeValue = (Comparable) convertEnumValue(attributeValue);
-        return attributeValue.compareTo(fromConvertedValue) >= 0 && attributeValue.compareTo(toConvertedValue) <= 0;
+        return Comparables.compare(attributeValue, fromConvertedValue) >= 0
+                && Comparables.compare(attributeValue, toConvertedValue) <= 0;
     }
 
     @Override
     public Set<QueryableEntry> filter(QueryContext queryContext) {
-        Index index = getIndex(queryContext);
-        return index.getSubRecordsBetween(from, to);
+        Index index = matchIndex(queryContext, QueryContext.IndexMatchHint.PREFER_ORDERED);
+        return index.getRecords(from, true, to, true);
     }
 
     @Override
@@ -90,7 +93,7 @@ public class BetweenPredicate extends AbstractIndexAwarePredicate {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return PredicateDataSerializerHook.BETWEEN_PREDICATE;
     }
 
@@ -130,4 +133,35 @@ public class BetweenPredicate extends AbstractIndexAwarePredicate {
         result = 31 * result + (from != null ? from.hashCode() : 0);
         return result;
     }
+
+    @Override
+    public Predicate accept(Visitor visitor, Indexes indexes) {
+        return visitor.visit(this, indexes);
+    }
+
+    @Override
+    public String getAttribute() {
+        return attributeName;
+    }
+
+    @Override
+    public Comparable getFrom() {
+        return from;
+    }
+
+    @Override
+    public boolean isFromInclusive() {
+        return true;
+    }
+
+    @Override
+    public Comparable getTo() {
+        return to;
+    }
+
+    @Override
+    public boolean isToInclusive() {
+        return true;
+    }
+
 }

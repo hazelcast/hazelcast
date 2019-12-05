@@ -16,7 +16,7 @@
 
 package com.hazelcast.collection.impl.queue;
 
-import com.hazelcast.spi.AbstractWaitNotifyKey;
+import com.hazelcast.spi.impl.operationservice.AbstractWaitNotifyKey;
 
 /**
  * Wait thread till notify the key.

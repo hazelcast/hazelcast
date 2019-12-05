@@ -16,7 +16,6 @@
 
 package com.hazelcast.spi.merge;
 
-import com.hazelcast.spi.annotation.Beta;
 import com.hazelcast.spi.impl.merge.AbstractSplitBrainMergePolicy;
 import com.hazelcast.spi.impl.merge.SplitBrainDataSerializerHook;
 
@@ -27,7 +26,6 @@ import com.hazelcast.spi.impl.merge.SplitBrainDataSerializerHook;
  * @param <T> the type of the merging value
  * @since 3.10
  */
-@Beta
 public class DiscardMergePolicy<V, T extends MergingValue<V>> extends AbstractSplitBrainMergePolicy<V, T> {
 
     public DiscardMergePolicy() {
@@ -42,7 +40,7 @@ public class DiscardMergePolicy<V, T extends MergingValue<V>> extends AbstractSp
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return SplitBrainDataSerializerHook.DISCARD;
     }
 }

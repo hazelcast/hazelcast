@@ -18,12 +18,10 @@ package com.hazelcast.partition;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.MigrationEvent;
-import com.hazelcast.core.MigrationListener;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -34,7 +32,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastSerialClassRunner.class)
-@Category(QuickTest.class)
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class PartitionMigrationListenerLiteMemberTest extends HazelcastTestSupport {
 
     @Test
@@ -51,12 +49,9 @@ public class PartitionMigrationListenerLiteMemberTest extends HazelcastTestSuppo
 
         factory.newHazelcastInstance();
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertTrue(listener.started.get());
-                assertTrue(listener.completed.get());
-            }
+        assertTrueEventually(() -> {
+            assertTrue(listener.started.get());
+            assertTrue(listener.completed.get());
         });
     }
 
@@ -66,17 +61,22 @@ public class PartitionMigrationListenerLiteMemberTest extends HazelcastTestSuppo
         private final AtomicBoolean completed = new AtomicBoolean();
 
         @Override
-        public void migrationStarted(MigrationEvent migrationEvent) {
+        public void migrationStarted(MigrationState state) {
             started.compareAndSet(false, true);
+
         }
 
         @Override
-        public void migrationCompleted(MigrationEvent migrationEvent) {
+        public void migrationFinished(MigrationState state) {
             completed.compareAndSet(false, true);
         }
 
         @Override
-        public void migrationFailed(MigrationEvent migrationEvent) {
+        public void replicaMigrationCompleted(ReplicaMigrationEvent event) {
+        }
+
+        @Override
+        public void replicaMigrationFailed(ReplicaMigrationEvent event) {
         }
     }
 }

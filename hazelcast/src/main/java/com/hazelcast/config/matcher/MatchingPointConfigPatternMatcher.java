@@ -17,19 +17,20 @@
 package com.hazelcast.config.matcher;
 
 import com.hazelcast.config.ConfigPatternMatcher;
-import com.hazelcast.config.ConfigurationException;
+import com.hazelcast.config.InvalidConfigurationException;
+import com.hazelcast.internal.config.ConfigUtils;
 
 /**
  * This {@code ConfigPatternMatcher} supports a simplified wildcard matching.
  * See "Config.md ## Using Wildcard" for details about the syntax options.
  * <p>
  * In addition the candidates are weighted by the best match. The best result is returned.
- * Throws {@link com.hazelcast.config.ConfigurationException} is multiple configurations are found.
+ * Throws {@link com.hazelcast.config.InvalidConfigurationException} is multiple configurations are found.
  */
 public class MatchingPointConfigPatternMatcher implements ConfigPatternMatcher {
 
     @Override
-    public String matches(Iterable<String> configPatterns, String itemName) throws ConfigurationException {
+    public String matches(Iterable<String> configPatterns, String itemName) throws InvalidConfigurationException {
         String candidate = null;
         String duplicate = null;
         int lastMatchingPoint = -1;
@@ -46,7 +47,7 @@ public class MatchingPointConfigPatternMatcher implements ConfigPatternMatcher {
             }
         }
         if (duplicate != null) {
-            throw new ConfigurationException(itemName, candidate, duplicate);
+            throw ConfigUtils.createAmbigiousConfigrationException(itemName, candidate, duplicate);
         }
         return candidate;
     }
@@ -76,4 +77,18 @@ public class MatchingPointConfigPatternMatcher implements ConfigPatternMatcher {
 
         return firstPart.length() + secondPart.length();
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        return o != null && getClass() == o.getClass();
+    }
+
+    @Override
+    public int hashCode() {
+        return super.hashCode();
+    }
+
 }

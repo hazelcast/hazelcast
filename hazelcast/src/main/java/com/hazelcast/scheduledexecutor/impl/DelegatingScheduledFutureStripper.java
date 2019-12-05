@@ -24,8 +24,8 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-import static com.hazelcast.util.ExceptionUtil.sneakyThrow;
-import static com.hazelcast.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.ExceptionUtil.sneakyThrow;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static java.lang.Thread.currentThread;
 
 /**

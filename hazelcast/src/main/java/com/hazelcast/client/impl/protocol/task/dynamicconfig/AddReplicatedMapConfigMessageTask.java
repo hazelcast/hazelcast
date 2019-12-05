@@ -23,8 +23,8 @@ import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.config.MergePolicyConfig;
 import com.hazelcast.config.ReplicatedMapConfig;
-import com.hazelcast.instance.Node;
-import com.hazelcast.nio.Connection;
+import com.hazelcast.instance.impl.Node;
+import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import java.util.ArrayList;
@@ -51,11 +51,8 @@ public class AddReplicatedMapConfigMessageTask
         ReplicatedMapConfig config = new ReplicatedMapConfig(parameters.name);
         config.setAsyncFillup(parameters.asyncFillup);
         config.setInMemoryFormat(InMemoryFormat.valueOf(parameters.inMemoryFormat));
-        if (parameters.mergeBatchSizeExist) {
-            MergePolicyConfig mergePolicyConfig = mergePolicyConfig(true, parameters.mergePolicy,
-                    parameters.mergeBatchSize);
-            config.setMergePolicyConfig(mergePolicyConfig);
-        }
+        MergePolicyConfig mergePolicyConfig = mergePolicyConfig(parameters.mergePolicy, parameters.mergeBatchSize);
+        config.setMergePolicyConfig(mergePolicyConfig);
         config.setStatisticsEnabled(parameters.statisticsEnabled);
         if (parameters.listenerConfigs != null && !parameters.listenerConfigs.isEmpty()) {
             for (ListenerConfigHolder holder : parameters.listenerConfigs) {

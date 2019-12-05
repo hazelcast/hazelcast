@@ -20,7 +20,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.core.IExecutorService;
 import com.hazelcast.core.IFunction;
-import com.hazelcast.core.Member;
+import com.hazelcast.cluster.Member;
 import com.hazelcast.core.MultiExecutionCallback;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -38,7 +38,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static com.hazelcast.util.StringUtil.isNullOrEmpty;
+import static com.hazelcast.internal.util.StringUtil.isNullOrEmpty;
 import static java.lang.String.format;
 import static org.junit.Assert.assertEquals;
 
@@ -96,7 +96,7 @@ public abstract class AbstractExpirationBouncingMemberTest extends HazelcastTest
         private final AtomicInteger totalUnexpired = new AtomicInteger();
         private final AtomicReference<String> msgUnexpired = new AtomicReference();
 
-        public RemainingCacheSize(CountDownLatch latch) {
+        RemainingCacheSize(CountDownLatch latch) {
             this.latch = latch;
         }
 

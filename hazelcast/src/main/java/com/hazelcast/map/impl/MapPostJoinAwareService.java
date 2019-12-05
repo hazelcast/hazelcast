@@ -22,8 +22,8 @@ import com.hazelcast.map.impl.querycache.publisher.MapPublisherRegistry;
 import com.hazelcast.map.impl.querycache.publisher.PartitionAccumulatorRegistry;
 import com.hazelcast.map.impl.querycache.publisher.PublisherContext;
 import com.hazelcast.map.impl.querycache.publisher.PublisherRegistry;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.PostJoinAwareService;
+import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.internal.services.PostJoinAwareService;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -34,7 +34,7 @@ class MapPostJoinAwareService implements PostJoinAwareService {
 
     private final MapServiceContext mapServiceContext;
 
-    public MapPostJoinAwareService(MapServiceContext mapServiceContext) {
+    MapPostJoinAwareService(MapServiceContext mapServiceContext) {
         this.mapServiceContext = mapServiceContext;
     }
 
@@ -52,7 +52,7 @@ class MapPostJoinAwareService implements PostJoinAwareService {
     }
 
     private List<AccumulatorInfo> getAccumulatorInfoList() {
-        List<AccumulatorInfo> infoList = new ArrayList<AccumulatorInfo>();
+        List<AccumulatorInfo> infoList = new ArrayList<>();
 
         PublisherContext publisherContext = mapServiceContext.getQueryCacheContext().getPublisherContext();
         MapPublisherRegistry mapPublisherRegistry = publisherContext.getMapPublisherRegistry();

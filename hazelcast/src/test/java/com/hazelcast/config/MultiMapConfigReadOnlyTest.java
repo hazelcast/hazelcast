@@ -16,8 +16,9 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.internal.config.MultiMapConfigReadOnly;
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -27,11 +28,11 @@ import java.util.Collections;
 import java.util.List;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class MultiMapConfigReadOnlyTest {
 
     private MultiMapConfig getReadOnlyConfig() {
-        return new MultiMapConfig().getAsReadOnly();
+        return new MultiMapConfigReadOnly(new MultiMapConfig());
     }
 
     @Test(expected = UnsupportedOperationException.class)
@@ -40,7 +41,8 @@ public class MultiMapConfigReadOnlyTest {
                 .addEntryListenerConfig(new EntryListenerConfig())
                 .addEntryListenerConfig(new EntryListenerConfig());
 
-        List<EntryListenerConfig> entryListenerConfigs = config.getAsReadOnly().getEntryListenerConfigs();
+        List<EntryListenerConfig> entryListenerConfigs = new MultiMapConfigReadOnly(config)
+                .getEntryListenerConfigs();
         entryListenerConfigs.add(new EntryListenerConfig());
     }
 
@@ -72,11 +74,6 @@ public class MultiMapConfigReadOnlyTest {
     @Test(expected = UnsupportedOperationException.class)
     public void setBinaryOfReadOnlyMultiMapConfigShouldFail() {
         getReadOnlyConfig().setBinary(true);
-    }
-
-    @Test(expected = UnsupportedOperationException.class)
-    public void setSyncBackupCountOfReadOnlyMultiMapConfigShouldFail() {
-        getReadOnlyConfig().setSyncBackupCount(1);
     }
 
     @Test(expected = UnsupportedOperationException.class)

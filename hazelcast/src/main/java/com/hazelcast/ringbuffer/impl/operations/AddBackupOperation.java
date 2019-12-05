@@ -16,10 +16,11 @@
 
 package com.hazelcast.ringbuffer.impl.operations;
 
+import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.BackupOperation;
+import com.hazelcast.spi.impl.operationservice.BackupOperation;
 
 import java.io.IOException;
 
@@ -47,7 +48,7 @@ public class AddBackupOperation extends AbstractRingBufferOperation implements B
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ADD_BACKUP_OPERATION;
     }
 
@@ -55,13 +56,13 @@ public class AddBackupOperation extends AbstractRingBufferOperation implements B
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeLong(sequenceId);
-        out.writeData(item);
+        IOUtil.writeData(out, item);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         sequenceId = in.readLong();
-        item = in.readData();
+        item = IOUtil.readData(in);
     }
 }

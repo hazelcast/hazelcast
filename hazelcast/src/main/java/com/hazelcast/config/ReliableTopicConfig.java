@@ -16,10 +16,12 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.internal.config.ConfigDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.spi.annotation.Beta;
+import com.hazelcast.spi.impl.executionservice.ExecutionService;
+import com.hazelcast.topic.ITopic;
 import com.hazelcast.topic.TopicOverloadPolicy;
 
 import java.io.IOException;
@@ -30,25 +32,27 @@ import java.util.concurrent.Executor;
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.readNullableList;
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.writeNullableList;
 import static com.hazelcast.topic.TopicOverloadPolicy.BLOCK;
-import static com.hazelcast.util.Preconditions.checkHasText;
-import static com.hazelcast.util.Preconditions.checkNotNull;
-import static com.hazelcast.util.Preconditions.checkPositive;
+import static com.hazelcast.internal.util.Preconditions.checkHasText;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.Preconditions.checkPositive;
 
 /**
- * Configuration for a reliable {@link com.hazelcast.core.ITopic}.
+ * Configuration for a reliable {@link ITopic}.
  * <p>
- * The reliable topic makes use of the {@link com.hazelcast.ringbuffer.Ringbuffer} to store the actual messages.
+ * The reliable topic makes use of a {@link com.hazelcast.ringbuffer.Ringbuffer}
+ * to store the actual messages.
  * <p>
- * To configure the ringbuffer for a reliable topic, define a ringbuffer in the config with exactly the same name. It is very
- * unlikely that you want to run with the default settings.
+ * To configure the ringbuffer for a reliable topic, define a ringbuffer in
+ * the config with exactly the same name. It is very unlikely that you want
+ * to run with the default settings.
  * <p>
- * When a ReliableTopic starts, it will always start from the tail+1 item from the RingBuffer. It will not chew its way through
- * all available events but it will wait for the next item being published.
+ * When a ReliableTopic starts, it will always start from the {@code tail+1}
+ * item from the RingBuffer. It will not chew its way through all available
+ * events but it will wait for the next item being published.
  * <p>
- * In the reliable topic, global order is always maintained, so all listeners will observe exactly the same order of sequence of
- * messages.
+ * In the reliable topic, global order is always maintained, so all listeners
+ * will observe exactly the same order of sequence of messages.
  */
-@Beta
 public class ReliableTopicConfig implements IdentifiedDataSerializable, NamedConfig {
 
     /**
@@ -88,7 +92,7 @@ public class ReliableTopicConfig implements IdentifiedDataSerializable, NamedCon
      *
      * @param config the ReliableTopicConfig to clone
      */
-    ReliableTopicConfig(ReliableTopicConfig config) {
+    public ReliableTopicConfig(ReliableTopicConfig config) {
         this.name = config.name;
         this.statisticsEnabled = config.statisticsEnabled;
         this.readBatchSize = config.readBatchSize;
@@ -133,8 +137,8 @@ public class ReliableTopicConfig implements IdentifiedDataSerializable, NamedCon
     }
 
     /**
-     * Sets the TopicOverloadPolicy for this reliable topic. Check the {@link TopicOverloadPolicy} for more details about
-     * this setting.
+     * Sets the TopicOverloadPolicy for this reliable topic. Check the
+     * {@link TopicOverloadPolicy} for more details about this setting.
      *
      * @param topicOverloadPolicy the new TopicOverloadPolicy
      * @return the updated reliable topic config
@@ -148,7 +152,8 @@ public class ReliableTopicConfig implements IdentifiedDataSerializable, NamedCon
     /**
      * Gets the Executor that is going to process the events.
      * <p>
-     * If no Executor is selected, then the {@link com.hazelcast.spi.ExecutionService#ASYNC_EXECUTOR} is used.
+     * If no Executor is selected, then the
+     * {@link ExecutionService#ASYNC_EXECUTOR} is used.
      *
      * @return the Executor used to process events
      * @see #setExecutor(java.util.concurrent.Executor)
@@ -158,16 +163,20 @@ public class ReliableTopicConfig implements IdentifiedDataSerializable, NamedCon
     }
 
     /**
-     * Sets the Executor that is going to process the event.
+     * Sets the executor that is going to process the event.
      * <p>
-     * In some cases it is desirable to set a specific Executor. For example, you may want to isolate a certain topic from other
-     * topics because it contains long running messages or very high priority messages.
+     * In some cases it is desirable to set a specific executor. For example,
+     * you may want to isolate a certain topic from other topics because it
+     * contains long running messages or very high priority messages.
      * <p>
-     * A single Executor can be shared between multiple Reliable topics, although it could take more time to process a message.
-     * If a single Executor is not shared with other reliable topics, then the Executor only needs to have a single thread.
+     * A single executor can be shared between multiple Reliable topics, although
+     * it could take more time to process a message.
+     * If a single executor is not shared with other reliable topics, then the
+     * executor only needs to have a single thread.
      *
-     * @param executor the Executor. if the executor is null, the {@link com.hazelcast.spi.ExecutionService#ASYNC_EXECUTOR} will
-     *                 be used to process the event
+     * @param executor the executor. if the executor is null, the
+     *                 {@link ExecutionService#ASYNC_EXECUTOR} will be used
+     *                 to process the event
      * @return the updated config
      */
     public ReliableTopicConfig setExecutor(Executor executor) {
@@ -176,7 +185,8 @@ public class ReliableTopicConfig implements IdentifiedDataSerializable, NamedCon
     }
 
     /**
-     * Gets the maximum number of items to read in a batch. Returned value will always be equal or larger than 1.
+     * Gets the maximum number of items to read in a batch. Returned value will
+     * always be equal or larger than 1.
      *
      * @return the read batch size
      */
@@ -187,28 +197,36 @@ public class ReliableTopicConfig implements IdentifiedDataSerializable, NamedCon
     /**
      * Sets the read batch size.
      * <p>
-     * The ReliableTopic tries to read a batch of messages from the ringbuffer. It will get at least one, but
-     * if there are more available, then it will try to get more to increase throughput. The minimal read
-     * batch size can be influenced using the read batch size.
+     * The ReliableTopic tries to read a batch of messages from the ringbuffer.
+     * It will get at least one, but if there are more available, then it will
+     * try to get more to increase throughput. The maximum read batch size can
+     * be influenced using the read batch size.
      * <p>
-     * Apart from influencing the number of messages to download, the readBatchSize also determines how many
-     * messages will be processed by the thread running the MessageListener before it returns back to the pool
-     * to look for other MessageListeners that need to be processed. The problem with returning to the pool and
-     * looking for new work is that interacting with an Executor is quite expensive due to contention on the
-     * work-queue. The more work that can be done without retuning to the pool, the smaller the overhead.
+     * Apart from influencing the number of messages to retrieve, the
+     * {@code readBatchSize} also determines how many messages will be processed
+     * by the thread running the {@code MessageListener} before it returns back
+     * to the pool to look for other {@code MessageListener}s that need to be
+     * processed. The problem with returning to the pool and looking for new work
+     * is that interacting with an executor is quite expensive due to contention
+     * on the work-queue. The more work that can be done without retuning to the
+     * pool, the smaller the overhead.
      * <p>
-     * If the readBatchSize is 10 and there are 50 messages available, 10 items are retrieved and processed
-     * consecutively before the thread goes back to the pool and helps out with the processing of other messages.
+     * If the {@code readBatchSize} is 10 and there are 50 messages available,
+     * 10 items are retrieved and processed consecutively before the thread goes
+     * back to the pool and helps out with the processing of other messages.
      * <p>
-     * If the readBatchSize is 10 and there are 2 items available, 2 items are retrieved and processed consecutively.
+     * If the {@code readBatchSize} is 10 and there are 2 items available,
+     * 2 items are retrieved and processed consecutively.
      * <p>
-     * If the readBatchSize is an issue because a thread will be busy too long with processing a single MessageListener
-     * and it can't help out other MessageListeners, increase the size of the threadpool so the other MessageListeners don't
-     * need to wait for a thread, but can be processed in parallel.
+     * If the {@code readBatchSize} is an issue because a thread will be busy
+     * too long with processing a single {@code MessageListener} and it can't
+     * help out other {@code MessageListener}s, increase the size of the
+     * threadpool so the other {@code MessageListener}s don't need to wait for
+     * a thread, but can be processed in parallel.
      *
      * @param readBatchSize the maximum number of items to read in a batch
      * @return the updated reliable topic config
-     * @throws IllegalArgumentException if readBatchSize is smaller than 1
+     * @throws IllegalArgumentException if the {@code readBatchSize} is smaller than 1
      */
     public ReliableTopicConfig setReadBatchSize(int readBatchSize) {
         this.readBatchSize = checkPositive(readBatchSize, "readBatchSize should be positive");
@@ -225,7 +243,9 @@ public class ReliableTopicConfig implements IdentifiedDataSerializable, NamedCon
     }
 
     /**
-     * Enables or disables statistics for this reliable topic..
+     * Enables or disables statistics for this reliable topic.
+     * Collects the creation time, total number of published and received
+     * messages for each member locally.
      *
      * @param statisticsEnabled {@code true} to enable statistics, {@code false} to disable
      * @return the updated reliable topic config
@@ -236,7 +256,8 @@ public class ReliableTopicConfig implements IdentifiedDataSerializable, NamedCon
     }
 
     /**
-     * Sets the list of message listeners (listens for when messages are added or removed) for this topic.
+     * Sets the list of message listeners (listens for when messages are added
+     * or removed) for this topic.
      *
      * @param listenerConfigs the list of message listeners for this topic
      * @return this updated topic configuration
@@ -247,7 +268,8 @@ public class ReliableTopicConfig implements IdentifiedDataSerializable, NamedCon
     }
 
     /**
-     * Gets the list of message listeners (listens for when messages are added or removed) for this reliable topic.
+     * Gets the list of message listeners (listens for when messages are added
+     * or removed) for this reliable topic.
      *
      * @return list of MessageListener configurations
      */
@@ -256,7 +278,8 @@ public class ReliableTopicConfig implements IdentifiedDataSerializable, NamedCon
     }
 
     /**
-     * Adds a message listener (listens for when messages are added or removed) to this reliable topic.
+     * Adds a message listener (listens for when messages are added or removed)
+     * to this reliable topic.
      *
      * @param listenerConfig the ListenerConfig to add
      * @return the updated config
@@ -280,23 +303,13 @@ public class ReliableTopicConfig implements IdentifiedDataSerializable, NamedCon
                 + '}';
     }
 
-    /**
-     * Gets immutable version of this configuration.
-     *
-     * @return immutable version of this configuration
-     * @deprecated this method will be removed in 4.0; it is meant for internal usage only
-     */
-    public ReliableTopicConfig getAsReadOnly() {
-        return new ReliableTopicConfigReadOnly(this);
-    }
-
     @Override
     public int getFactoryId() {
         return ConfigDataSerializerHook.F_ID;
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ConfigDataSerializerHook.RELIABLE_TOPIC_CONFIG;
     }
 
@@ -359,37 +372,5 @@ public class ReliableTopicConfig implements IdentifiedDataSerializable, NamedCon
         result = 31 * result + (listenerConfigs != null ? listenerConfigs.hashCode() : 0);
         result = 31 * result + (topicOverloadPolicy != null ? topicOverloadPolicy.hashCode() : 0);
         return result;
-    }
-
-    static class ReliableTopicConfigReadOnly extends ReliableTopicConfig {
-
-        ReliableTopicConfigReadOnly(ReliableTopicConfig config) {
-            super(config);
-        }
-
-        @Override
-        public ReliableTopicConfig setExecutor(Executor executor) {
-            throw new UnsupportedOperationException("This config is read-only");
-        }
-
-        @Override
-        public ReliableTopicConfig setReadBatchSize(int readBatchSize) {
-            throw new UnsupportedOperationException("This config is read-only");
-        }
-
-        @Override
-        public ReliableTopicConfig setStatisticsEnabled(boolean statisticsEnabled) {
-            throw new UnsupportedOperationException("This config is read-only");
-        }
-
-        @Override
-        public ReliableTopicConfig addMessageListenerConfig(ListenerConfig listenerConfig) {
-            throw new UnsupportedOperationException("This config is read-only");
-        }
-
-        @Override
-        public ReliableTopicConfig setTopicOverloadPolicy(TopicOverloadPolicy topicOverloadPolicy) {
-            throw new UnsupportedOperationException("This config is read-only");
-        }
     }
 }

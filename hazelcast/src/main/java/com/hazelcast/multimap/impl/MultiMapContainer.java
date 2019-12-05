@@ -16,14 +16,14 @@
 
 package com.hazelcast.multimap.impl;
 
-import com.hazelcast.concurrent.lock.LockService;
-import com.hazelcast.concurrent.lock.LockStore;
+import com.hazelcast.internal.locksupport.LockSupportService;
+import com.hazelcast.internal.locksupport.LockStore;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.DistributedObjectNamespace;
-import com.hazelcast.spi.ObjectNamespace;
+import com.hazelcast.internal.services.DistributedObjectNamespace;
+import com.hazelcast.internal.services.ObjectNamespace;
 import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 import com.hazelcast.spi.merge.SplitBrainMergeTypes.MultiMapMergeTypes;
-import com.hazelcast.spi.serialization.SerializationService;
+import com.hazelcast.internal.serialization.SerializationService;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -31,10 +31,11 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 
 import static com.hazelcast.spi.impl.merge.MergingValueFactory.createMergingEntry;
-import static com.hazelcast.util.Clock.currentTimeMillis;
-import static com.hazelcast.util.MapUtil.createHashMap;
+import static com.hazelcast.internal.util.Clock.currentTimeMillis;
+import static com.hazelcast.internal.util.MapUtil.createHashMap;
 
 /**
  * MultiMap container which holds a map of {@link MultiMapValue}.
@@ -60,13 +61,13 @@ public class MultiMapContainer extends MultiMapContainerSupport {
         super(name, service.getNodeEngine());
         this.partitionId = partitionId;
         this.lockNamespace = new DistributedObjectNamespace(MultiMapService.SERVICE_NAME, name);
-        LockService lockService = nodeEngine.getSharedService(LockService.SERVICE_NAME);
+        LockSupportService lockService = nodeEngine.getServiceOrNull(LockSupportService.SERVICE_NAME);
         this.lockStore = lockService == null ? null : lockService.createLockStore(partitionId, lockNamespace);
         this.creationTime = currentTimeMillis();
         this.objectNamespace = new DistributedObjectNamespace(MultiMapService.SERVICE_NAME, name);
     }
 
-    public boolean canAcquireLock(Data dataKey, String caller, long threadId) {
+    public boolean canAcquireLock(Data dataKey, UUID caller, long threadId) {
         return lockStore != null && lockStore.canAcquireLock(dataKey, caller, threadId);
     }
 
@@ -78,11 +79,11 @@ public class MultiMapContainer extends MultiMapContainerSupport {
         return lockStore != null && lockStore.shouldBlockReads(key);
     }
 
-    public boolean txnLock(Data key, String caller, long threadId, long referenceId, long ttl, boolean blockReads) {
+    public boolean txnLock(Data key, UUID caller, long threadId, long referenceId, long ttl, boolean blockReads) {
         return lockStore != null && lockStore.txnLock(key, caller, threadId, referenceId, ttl, blockReads);
     }
 
-    public boolean unlock(Data key, String caller, long threadId, long referenceId) {
+    public boolean unlock(Data key, UUID caller, long threadId, long referenceId) {
         return lockStore != null && lockStore.unlock(key, caller, threadId, referenceId);
     }
 
@@ -90,7 +91,7 @@ public class MultiMapContainer extends MultiMapContainerSupport {
         return lockStore != null && lockStore.forceUnlock(key);
     }
 
-    public boolean extendLock(Data key, String caller, long threadId, long ttl) {
+    public boolean extendLock(Data key, UUID caller, long threadId, long ttl) {
         return lockStore != null && lockStore.extendLeaseTime(key, caller, threadId, ttl);
     }
 
@@ -184,7 +185,7 @@ public class MultiMapContainer extends MultiMapContainerSupport {
     }
 
     public void destroy() {
-        LockService lockService = nodeEngine.getSharedService(LockService.SERVICE_NAME);
+        LockSupportService lockService = nodeEngine.getServiceOrNull(LockSupportService.SERVICE_NAME);
         if (lockService != null) {
             lockService.clearLockStore(partitionId, lockNamespace);
         }

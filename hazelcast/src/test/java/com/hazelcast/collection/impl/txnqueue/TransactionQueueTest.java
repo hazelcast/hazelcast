@@ -20,15 +20,15 @@ import com.hazelcast.collection.impl.queue.QueueService;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
-import com.hazelcast.core.IQueue;
-import com.hazelcast.core.ItemEvent;
-import com.hazelcast.core.ItemListener;
-import com.hazelcast.core.TransactionalQueue;
+import com.hazelcast.collection.IQueue;
+import com.hazelcast.collection.ItemEvent;
+import com.hazelcast.collection.ItemListener;
+import com.hazelcast.transaction.TransactionalQueue;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.transaction.TransactionContext;
 import com.hazelcast.transaction.TransactionException;
@@ -56,8 +56,26 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 @RunWith(HazelcastSerialClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class TransactionQueueTest extends HazelcastTestSupport {
+
+    @Test
+    public void testPromotionFromBackup() {
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
+        HazelcastInstance owner = factory.newHazelcastInstance();
+        HazelcastInstance backup = factory.newHazelcastInstance();
+        String name = generateKeyOwnedBy(owner);
+
+        TransactionContext context = backup.newTransactionContext();
+        context.beginTransaction();
+
+        TransactionalQueue<Integer> queue = context.getQueue(name);
+        queue.offer(1);
+        owner.getLifecycleService().terminate();
+        queue.offer(2);
+
+        context.commitTransaction();
+    }
 
     @Test
     public void testSingleQueueAtomicity() throws ExecutionException, InterruptedException {

@@ -19,10 +19,10 @@ package com.hazelcast.cache;
 import com.hazelcast.cache.impl.CacheEntryViews;
 import com.hazelcast.cache.impl.record.CacheObjectRecord;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
-import com.hazelcast.spi.serialization.SerializationService;
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
 import org.junit.Test;
@@ -35,7 +35,7 @@ import javax.cache.expiry.ExpiryPolicy;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class CacheEntryViewsTest extends HazelcastTestSupport {
 
     private SerializationService serializationService;
@@ -65,7 +65,7 @@ public class CacheEntryViewsTest extends HazelcastTestSupport {
 
         assertEquals(key, serializationService.toObject(cacheEntryView.getKey()));
         assertEquals(value, serializationService.toObject(cacheEntryView.getValue()));
-        assertEquals(record.getAccessHit(), cacheEntryView.getAccessHit());
+        assertEquals(record.getHits(), cacheEntryView.getHits());
         assertEquals(record.getExpirationTime(), cacheEntryView.getExpirationTime());
         assertEquals(record.getLastAccessTime(), cacheEntryView.getLastAccessTime());
         assertInstanceOf(EternalExpiryPolicy.class, serializationService.toObject(cacheEntryView.getExpiryPolicy()));

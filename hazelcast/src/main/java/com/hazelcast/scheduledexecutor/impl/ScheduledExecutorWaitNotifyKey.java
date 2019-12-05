@@ -16,7 +16,7 @@
 
 package com.hazelcast.scheduledexecutor.impl;
 
-import com.hazelcast.spi.AbstractWaitNotifyKey;
+import com.hazelcast.spi.impl.operationservice.AbstractWaitNotifyKey;
 
 public class ScheduledExecutorWaitNotifyKey
         extends AbstractWaitNotifyKey {

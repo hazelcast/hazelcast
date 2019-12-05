@@ -59,7 +59,7 @@ public final class BigIntegerSumAggregator<I> extends AbstractAggregator<I, BigI
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return AggregatorDataSerializerHook.BIG_INT_SUM;
     }
 

@@ -16,16 +16,14 @@
 
 package com.hazelcast.client.impl;
 
-import com.hazelcast.core.ClientType;
-import com.hazelcast.instance.BuildInfo;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.nio.Connection;
-import com.hazelcast.spi.ExecutionService;
-import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.internal.nio.Connection;
+import com.hazelcast.spi.impl.executionservice.ExecutionService;
+import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.spi.properties.HazelcastProperties;
-import com.hazelcast.util.Clock;
+import com.hazelcast.internal.util.Clock;
 
-import static com.hazelcast.util.StringUtil.timeToString;
+import static com.hazelcast.internal.util.StringUtil.timeToString;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
@@ -53,7 +51,7 @@ public class ClientHeartbeatMonitor implements Runnable {
     }
 
     private long getHeartbeatTimeout(HazelcastProperties hazelcastProperties) {
-        long configuredTimeout = hazelcastProperties.getSeconds(GroupProperty.CLIENT_HEARTBEAT_TIMEOUT_SECONDS);
+        long configuredTimeout = hazelcastProperties.getSeconds(ClusterProperty.CLIENT_HEARTBEAT_TIMEOUT_SECONDS);
         if (configuredTimeout > 0) {
             return configuredTimeout;
         }
@@ -93,13 +91,6 @@ public class ClientHeartbeatMonitor implements Runnable {
     }
 
     private void monitor(ClientEndpoint clientEndpoint) {
-        // C++ client does not send heartbeat over its owner connection for versions before 3.10
-        // We are skipping checking heartbeat for cpp owner connection on those versions.
-        if (clientEndpoint.isOwnerConnection() && ClientType.CPP.equals(clientEndpoint.getClientType())
-                && clientEndpoint.getClientVersion() < BuildInfo.calculateVersion("3.10")) {
-            return;
-        }
-
         Connection connection = clientEndpoint.getConnection();
         long lastTimePacketReceived = connection.lastReadTimeMillis();
         long timeoutInMillis = SECONDS.toMillis(heartbeatTimeoutSeconds);

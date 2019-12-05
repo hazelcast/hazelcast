@@ -17,22 +17,24 @@
 package com.hazelcast.client.impl.operations;
 
 import com.hazelcast.client.impl.ClientDataSerializerHook;
+import com.hazelcast.internal.util.UUIDSerializationUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.OperationFactory;
+import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.spi.impl.operationservice.OperationFactory;
 
 import java.io.IOException;
+import java.util.UUID;
 
 public final class OperationFactoryWrapper implements OperationFactory {
 
     private OperationFactory opFactory;
-    private String uuid;
+    private UUID uuid;
 
     public OperationFactoryWrapper() {
     }
 
-    public OperationFactoryWrapper(OperationFactory opFactory, String uuid) {
+    public OperationFactoryWrapper(OperationFactory opFactory, UUID uuid) {
         this.opFactory = opFactory;
         this.uuid = uuid;
     }
@@ -46,13 +48,13 @@ public final class OperationFactoryWrapper implements OperationFactory {
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeUTF(uuid);
+        UUIDSerializationUtil.writeUUID(out, uuid);
         out.writeObject(opFactory);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        uuid = in.readUTF();
+        uuid = UUIDSerializationUtil.readUUID(in);
         opFactory = in.readObject();
     }
 
@@ -60,7 +62,7 @@ public final class OperationFactoryWrapper implements OperationFactory {
         return opFactory;
     }
 
-    public String getUuid() {
+    public UUID getUuid() {
         return uuid;
     }
 
@@ -70,7 +72,7 @@ public final class OperationFactoryWrapper implements OperationFactory {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ClientDataSerializerHook.OP_FACTORY_WRAPPER;
     }
 

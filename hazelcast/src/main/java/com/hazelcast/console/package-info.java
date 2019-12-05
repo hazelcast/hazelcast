@@ -15,7 +15,7 @@
  */
 
 /**
- * <p>This package contains classes related to ConsoleApp<br/>
+ * <p>This package contains classes related to ConsoleApp<br>
  */
 
 package com.hazelcast.console;

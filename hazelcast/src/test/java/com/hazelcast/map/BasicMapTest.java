@@ -23,14 +23,16 @@ import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.EntryView;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IBiFunction;
-import com.hazelcast.core.IMap;
-import com.hazelcast.core.MapEvent;
-import com.hazelcast.internal.json.Json;
-import com.hazelcast.json.HazelcastJson;
 import com.hazelcast.core.HazelcastJsonValue;
+import com.hazelcast.internal.json.Json;
+import com.hazelcast.internal.util.Clock;
+import com.hazelcast.internal.util.Preconditions;
+import com.hazelcast.map.impl.proxy.MapProxyImpl;
+import com.hazelcast.map.listener.EntryExpiredListener;
 import com.hazelcast.query.PagingPredicate;
 import com.hazelcast.query.Predicate;
+import com.hazelcast.query.Predicates;
+import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.ChangeLoggingRule;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -38,11 +40,9 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ConfigureParallelRunnerWith;
 import com.hazelcast.test.annotation.HeavilyMultiThreadedTestLimiter;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.test.annotation.SlowTest;
-import com.hazelcast.util.Clock;
-import com.hazelcast.util.Preconditions;
 import org.junit.Before;
 import org.junit.ClassRule;
 import org.junit.Test;
@@ -54,8 +54,10 @@ import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Random;
 import java.util.Set;
@@ -69,7 +71,9 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.BiFunction;
 
+import static java.util.Collections.emptyMap;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.Assert.assertArrayEquals;
@@ -82,7 +86,7 @@ import static org.junit.Assert.fail;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @ConfigureParallelRunnerWith(HeavilyMultiThreadedTestLimiter.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class BasicMapTest extends HazelcastTestSupport {
 
     /**
@@ -216,7 +220,7 @@ public class BasicMapTest extends HazelcastTestSupport {
         final IMap<String, AtomicBoolean> map = getInstance().getMap("testComputeIfPresent");
 
         map.put("presentKey", new AtomicBoolean(false));
-        AtomicBoolean value = emulateComputeIfPresent(map, "presentKey", new IBiFunction<String, AtomicBoolean, AtomicBoolean>() {
+        AtomicBoolean value = emulateComputeIfPresent(map, "presentKey", new BiFunction<String, AtomicBoolean, AtomicBoolean>() {
             @Override
             public AtomicBoolean apply(String key, AtomicBoolean value) {
                 return new AtomicBoolean(true);
@@ -225,7 +229,7 @@ public class BasicMapTest extends HazelcastTestSupport {
         assertNotNull(value);
         assertTrue(value.get());
 
-        value = emulateComputeIfPresent(map, "absentKey", new IBiFunction<String, AtomicBoolean, AtomicBoolean>() {
+        value = emulateComputeIfPresent(map, "absentKey", new BiFunction<String, AtomicBoolean, AtomicBoolean>() {
             @Override
             public AtomicBoolean apply(String s, AtomicBoolean atomicBoolean) {
                 fail("should not be called");
@@ -247,8 +251,8 @@ public class BasicMapTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testMapEvictAndListener() {
-        IMap<String, String> map = getInstance().getMap("testMapEvictAndListener");
+    public void testMapExpireAndListener() {
+        IMap<String, String> map = getInstance().getMap("testMapExpireAndListener");
 
         final String value1 = "/home/data/file1.dat";
         final String value2 = "/home/data/file2.dat";
@@ -258,16 +262,13 @@ public class BasicMapTest extends HazelcastTestSupport {
         final CountDownLatch latch1 = new CountDownLatch(1);
         final CountDownLatch latch2 = new CountDownLatch(1);
 
-        map.addEntryListener(new EntryAdapter<String, String>() {
-            @Override
-            public void entryEvicted(EntryEvent<String, String> event) {
-                if (value1.equals(event.getOldValue())) {
-                    oldValue1.set(event.getOldValue());
-                    latch1.countDown();
-                } else if (value2.equals(event.getOldValue())) {
-                    oldValue2.set(event.getOldValue());
-                    latch2.countDown();
-                }
+        map.addEntryListener((EntryExpiredListener<String, String>) event -> {
+            if (value1.equals(event.getOldValue())) {
+                oldValue1.set(event.getOldValue());
+                latch1.countDown();
+            } else if (value2.equals(event.getOldValue())) {
+                oldValue2.set(event.getOldValue());
+                latch2.countDown();
             }
         }, true);
 
@@ -290,8 +291,14 @@ public class BasicMapTest extends HazelcastTestSupport {
         final CountDownLatch latchUpdated = new CountDownLatch(1);
         final CountDownLatch latchCleared = new CountDownLatch(1);
         final CountDownLatch latchEvicted = new CountDownLatch(1);
+        final CountDownLatch latchExpired = new CountDownLatch(1);
 
         map.addEntryListener(new EntryListener<String, String>() {
+            @Override
+            public void entryExpired(EntryEvent<String, String> event) {
+
+            }
+
             @Override
             public void entryAdded(EntryEvent event) {
                 latchAdded.countDown();
@@ -611,6 +618,95 @@ public class BasicMapTest extends HazelcastTestSupport {
     }
 
     @Test
+    public void testMapClonedCollectionsImmutable() {
+        testMapClonedCollectionsImmutable(getInstance(), true);
+    }
+
+    /**
+     * Tests the cloned collections returned by IMap's keySet(), localKeySet(),
+     * values(), entrySet() are immutable. To avoid code duplication the static
+     * method is called from client's test.
+     * @param instance the HZ instance
+     */
+    public static void testMapClonedCollectionsImmutable(HazelcastInstance instance, boolean onMember) {
+        IMap<Integer, Integer> map = instance.getMap("testMapClonedCollectionsImmutable");
+
+        // test empty map
+        checkMapClonedCollectionsImmutable(map, onMember);
+
+        // put some values
+        map.put(1, 1);
+        map.put(2, 2);
+        map.put(3, 3);
+        checkMapClonedCollectionsImmutable(map, onMember);
+    }
+
+    private static <K, V> void checkMapClonedCollectionsImmutable(IMap<K, V> map, boolean onMember) {
+        PagingPredicate<K, V> pagingPredicate = Predicates.pagingPredicate(5);
+
+        checkCollectionImmutable(map.entrySet());
+        checkCollectionImmutable(map.entrySet(e -> true));
+        checkCollectionImmutable(map.entrySet(e -> false));
+        checkCollectionImmutable(map.entrySet(pagingPredicate));
+        if (onMember) {
+            checkCollectionImmutable(map.localKeySet());
+            checkCollectionImmutable(map.localKeySet(k -> true));
+            checkCollectionImmutable(map.localKeySet(k -> false));
+            checkCollectionImmutable(map.localKeySet(pagingPredicate));
+        }
+        checkCollectionImmutable(map.keySet());
+        checkCollectionImmutable(map.keySet(k -> true));
+        checkCollectionImmutable(map.keySet(k -> false));
+        checkCollectionImmutable(map.keySet(pagingPredicate));
+        checkCollectionImmutable(map.values());
+        checkCollectionImmutable(map.values(v -> true));
+        checkCollectionImmutable(map.values(v -> false));
+        checkCollectionImmutable(map.values(pagingPredicate));
+        checkMapImmutable(map.getAll(map.keySet()));
+        checkMapImmutable(map.getAll(Collections.emptySet()));
+    }
+
+    private static <K, V> void checkMapImmutable(Map<K, V> map) {
+        K key = map.isEmpty() ? null : map.keySet().iterator().next();
+        V value = map.isEmpty() ? null : map.values().iterator().next();
+        assertThrows(UnsupportedOperationException.class, () -> map.put(key, value));
+        assertThrows(UnsupportedOperationException.class, () -> map.putIfAbsent(key, value));
+        assertThrows(UnsupportedOperationException.class, () -> map.computeIfAbsent(key, k -> value));
+        assertThrows(UnsupportedOperationException.class, () -> map.computeIfPresent(key, (k, v) -> value));
+        assertThrows(UnsupportedOperationException.class, () -> map.putAll(map));
+        assertThrows(UnsupportedOperationException.class, () -> map.merge(key, value, (v1, v2) -> value));
+        assertThrows(UnsupportedOperationException.class, () -> map.remove(key));
+        assertThrows(UnsupportedOperationException.class, () -> map.remove(key, value));
+        assertThrows(UnsupportedOperationException.class, () -> map.clear());
+        assertThrows(UnsupportedOperationException.class, () -> map.replace(key, value));
+        assertThrows(UnsupportedOperationException.class, () -> map.replace(key, value, value));
+        assertThrows(UnsupportedOperationException.class, () -> map.replaceAll((k, v) -> value));
+        assertThrows(UnsupportedOperationException.class, () -> map.compute(key, (k, v) -> v));
+        assertThrows(UnsupportedOperationException.class, () -> map.computeIfAbsent(key, k -> value));
+        assertThrows(UnsupportedOperationException.class, () -> map.computeIfPresent(key, (k, v) -> v));
+        checkCollectionImmutable(map.entrySet());
+        checkCollectionImmutable(map.keySet());
+        checkCollectionImmutable(map.values());
+    }
+
+    private static <T> void checkCollectionImmutable(Collection<T> c) {
+        assertThrows(UnsupportedOperationException.class, () -> c.remove(null));
+        assertThrows(UnsupportedOperationException.class, () -> c.removeIf(e -> true));
+        assertThrows(UnsupportedOperationException.class, () -> c.remove(c.isEmpty() ? null : c.iterator().next()));
+        assertThrows(UnsupportedOperationException.class, () -> c.removeAll(c));
+        assertThrows(UnsupportedOperationException.class, () -> c.add(c.isEmpty() ? null : c.iterator().next()));
+        assertThrows(UnsupportedOperationException.class, () -> c.addAll(c));
+        assertThrows(UnsupportedOperationException.class, () -> c.retainAll(Collections.emptyList()));
+        assertThrows(UnsupportedOperationException.class, () -> c.clear());
+
+        if (!c.isEmpty()) {
+            Iterator<T> iterator = c.iterator();
+            iterator.next();
+            assertThrows(UnsupportedOperationException.class, () -> iterator.remove());
+        }
+    }
+
+    @Test
     public void testMapTryLock() throws Exception {
         final IMap<Object, Object> map = getInstance().getMap("testMapTryLock");
         final String key = "key";
@@ -827,18 +923,29 @@ public class BasicMapTest extends HazelcastTestSupport {
     @Test
     public void testGetPutRemoveAsync() {
         IMap<Integer, Object> map = getInstance().getMap("testGetPutRemoveAsync");
-        Future<Object> future = map.putAsync(1, 1);
         try {
-            assertNull(future.get());
-            assertEquals(1, map.putAsync(1, 2).get());
-            assertEquals(2, map.getAsync(1).get());
-            assertEquals(2, map.removeAsync(1).get());
+            assertNull(map.putAsync(1, 1).toCompletableFuture().get());
+            assertEquals(1, map.putAsync(1, 2).toCompletableFuture().get());
+            assertEquals(2, map.getAsync(1).toCompletableFuture().get());
+            assertEquals(2, map.removeAsync(1).toCompletableFuture().get());
             assertEquals(0, map.size());
         } catch (InterruptedException e) {
             e.printStackTrace();
         } catch (ExecutionException e) {
             e.printStackTrace();
         }
+    }
+
+    @Test
+    public void testPutAllEmpty() {
+        IMap<Integer, Integer> map = getInstance().getMap("testPutAllEmpty");
+        map.putAll(emptyMap());
+    }
+
+    @Test
+    public void tstPutAllAsyncEmpty() {
+        IMap<Integer, Integer> map = getInstance().getMap("testPutAllEmpty");
+        ((MapProxyImpl<Integer, Integer>) map).putAllAsync(emptyMap());
     }
 
     @Test
@@ -936,6 +1043,23 @@ public class BasicMapTest extends HazelcastTestSupport {
         assertEquals(size, map1.size());
         for (int i = 0; i < size; i++) {
             assertEquals(i, map1.get(i).intValue());
+        }
+    }
+
+    @Test
+    public void testPutAllAsync() {
+        int size = 10000;
+
+        IMap<Integer, Integer> map = instances[0].getMap("testPutAllAsync");
+        Map<Integer, Integer> mm = new HashMap<Integer, Integer>();
+        for (int i = 0; i < size; i++) {
+            mm.put(i, i);
+        }
+        InternalCompletableFuture<Void> future = ((MapProxyImpl<Integer, Integer>) map).putAllAsync(mm);
+        assertTrueEventually(() -> assertTrue(future.isDone()));
+        assertEquals(map.size(), size);
+        for (int i = 0; i < size; i++) {
+            assertEquals(i, map.get(i).intValue());
         }
     }
 
@@ -1298,7 +1422,7 @@ public class BasicMapTest extends HazelcastTestSupport {
     @Test
     public void testJsonPutGet() {
         final IMap<String, HazelcastJsonValue> map = getInstance().getMap(randomMapName());
-        HazelcastJsonValue value = HazelcastJson.fromString("{ \"age\": 4 }");
+        HazelcastJsonValue value = new HazelcastJsonValue("{ \"age\": 4 }");
         map.put("item1", value);
         HazelcastJsonValue retrieved = map.get("item1");
 
@@ -1310,7 +1434,7 @@ public class BasicMapTest extends HazelcastTestSupport {
     public void testMapEntryProcessor() {
         IMap<Integer, Integer> map = getInstance().getMap("testMapEntryProcessor");
         map.put(1, 1);
-        EntryProcessor entryProcessor = new SampleEntryProcessor();
+        SampleEntryProcessor<Integer> entryProcessor = new SampleEntryProcessor<>();
         map.executeOnKey(1, entryProcessor);
         assertEquals(map.get(1), (Object) 2);
     }
@@ -1351,23 +1475,11 @@ public class BasicMapTest extends HazelcastTestSupport {
             test.put(i, i);
         }
 
-        Collection<Integer> values = test.values(new TestPagingPredicate(100));
+        Collection<Integer> values = test.values(Predicates.pagingPredicate(100));
         Type genericSuperClass = values.getClass().getGenericSuperclass();
         Type actualType = ((ParameterizedType) genericSuperClass).getActualTypeArguments()[0];
         // Raw class is expected. ParameterizedType-s cause troubles to Jackson serializer.
         assertInstanceOf(Class.class, actualType);
-    }
-
-    private static class TestPagingPredicate extends PagingPredicate {
-
-        public TestPagingPredicate(int pageSize) {
-            super(pageSize);
-        }
-
-        @Override
-        public boolean apply(Map.Entry mapEntry) {
-            return true;
-        }
     }
 
     @Test
@@ -1451,14 +1563,14 @@ public class BasicMapTest extends HazelcastTestSupport {
 
         runnable = new Runnable() {
             public void run() {
-                map.executeOnKeys(keys, new EntryProcessor() {
+                map.executeOnKeys(keys, new EntryProcessor<String, String, Object>() {
                     @Override
                     public Object process(Map.Entry entry) {
                         return null;
                     }
 
                     @Override
-                    public EntryBackupProcessor getBackupProcessor() {
+                    public EntryProcessor<String, String, Object> getBackupProcessor() {
                         return null;
                     }
                 });
@@ -1761,14 +1873,14 @@ public class BasicMapTest extends HazelcastTestSupport {
 
         runnable = new Runnable() {
             public void run() {
-                map.executeOnKeys(null, new EntryProcessor() {
+                map.executeOnKeys(null, new EntryProcessor<String, String, Object>() {
                     @Override
                     public Object process(Map.Entry entry) {
                         return null;
                     }
 
                     @Override
-                    public EntryBackupProcessor getBackupProcessor() {
+                    public EntryProcessor<String, String, Object> getBackupProcessor() {
                         return null;
                     }
                 });
@@ -1788,30 +1900,19 @@ public class BasicMapTest extends HazelcastTestSupport {
         assertTrue(description + " did not throw a NullPointerException.", threwNpe);
     }
 
-    private static class SampleEntryProcessor implements EntryProcessor<Integer, Integer>, EntryBackupProcessor<Integer, Integer>,
-            Serializable {
+    private static class SampleEntryProcessor<K> implements EntryProcessor<K, Integer, Boolean>, Serializable {
 
         private static final long serialVersionUID = -5735493325953375570L;
 
         @Override
-        public Object process(Map.Entry<Integer, Integer> entry) {
+        public Boolean process(Map.Entry<K, Integer> entry) {
             entry.setValue(entry.getValue() + 1);
             return true;
-        }
-
-        @Override
-        public EntryBackupProcessor<Integer, Integer> getBackupProcessor() {
-            return SampleEntryProcessor.this;
-        }
-
-        @Override
-        public void processBackup(Map.Entry<Integer, Integer> entry) {
-            entry.setValue(entry.getValue() + 1);
         }
     }
 
     private static <K, V> V emulateComputeIfPresent(ConcurrentMap<K, V> map, K key,
-                                                    IBiFunction<? super K, ? super V, ? extends V> remappingFunction) {
+                                                    BiFunction<? super K, ? super V, ? extends V> remappingFunction) {
         // emulates ConcurrentMap.computeIfPresent() introduced in Java 8
 
         Preconditions.checkNotNull(remappingFunction);

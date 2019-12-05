@@ -23,10 +23,9 @@ import com.hazelcast.internal.partition.PartitionRuntimeState;
 import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
 import com.hazelcast.internal.partition.impl.PartitionDataSerializerHook;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.nio.Address;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.impl.Versioned;
 
 import java.io.IOException;
 
@@ -37,17 +36,13 @@ import java.io.IOException;
  * @see InternalPartitionServiceImpl#syncPartitionRuntimeState
  */
 public final class PartitionStateOperation extends AbstractPartitionOperation
-        implements MigrationCycleOperation, JoinOperation, Versioned {
+        implements MigrationCycleOperation, JoinOperation {
 
     private PartitionRuntimeState partitionState;
     private boolean sync;
     private boolean success;
 
     public PartitionStateOperation() {
-    }
-
-    public PartitionStateOperation(PartitionRuntimeState partitionState) {
-        this(partitionState, false);
     }
 
     public PartitionStateOperation(PartitionRuntimeState partitionState, boolean sync) {
@@ -88,20 +83,19 @@ public final class PartitionStateOperation extends AbstractPartitionOperation
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        partitionState = new PartitionRuntimeState();
-        partitionState.readData(in);
+        partitionState = in.readObject();
         sync = in.readBoolean();
     }
 
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        partitionState.writeData(out);
+        out.writeObject(partitionState);
         out.writeBoolean(sync);
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return PartitionDataSerializerHook.PARTITION_STATE_OP;
     }
 }

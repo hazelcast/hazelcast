@@ -15,6 +15,6 @@
  */
 
 /**
- * <p>This package contains the OSGI functionality contract points for Hazelcast.<br/>
+ * <p>This package contains the OSGI functionality contract points for Hazelcast.<br>
  */
 package com.hazelcast.osgi;

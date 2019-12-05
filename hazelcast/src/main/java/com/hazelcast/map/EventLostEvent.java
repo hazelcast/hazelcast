@@ -17,8 +17,7 @@
 package com.hazelcast.map;
 
 import com.hazelcast.core.EntryEventType;
-import com.hazelcast.core.IMapEvent;
-import com.hazelcast.core.Member;
+import com.hazelcast.cluster.Member;
 
 /**
  * This event is fired in case of an event lost detection.
@@ -59,10 +58,8 @@ public class EventLostEvent implements IMapEvent {
 
     /**
      * Intentionally returns {@code null}.
-     * Used in {@link com.hazelcast.map.impl.querycache.subscriber.InternalQueryCacheListenerAdapter}.
      *
      * @return {@code null}
-     * @see com.hazelcast.map.impl.querycache.subscriber.InternalQueryCacheListenerAdapter
      */
     @Override
     public EntryEventType getEventType() {

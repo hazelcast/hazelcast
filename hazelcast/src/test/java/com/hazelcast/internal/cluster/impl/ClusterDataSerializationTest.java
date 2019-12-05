@@ -18,13 +18,14 @@ package com.hazelcast.internal.cluster.impl;
 
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.instance.BuildInfoProvider;
+import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.internal.cluster.MemberInfo;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
-import com.hazelcast.nio.Address;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.serialization.SerializationService;
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.version.MemberVersion;
 import org.junit.Test;
@@ -36,10 +37,13 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
+import static com.hazelcast.instance.EndpointQualifier.CLIENT;
+import static com.hazelcast.instance.EndpointQualifier.MEMBER;
+import static com.hazelcast.instance.EndpointQualifier.REST;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class ClusterDataSerializationTest {
 
     private static final SerializationService SERIALIZATION_SERVICE = new DefaultSerializationServiceBuilder().build();
@@ -65,7 +69,7 @@ public class ClusterDataSerializationTest {
     @Test
     public void testSerializationOf_clusterStateChangeTxnLogRecord_whenVersionChange() throws UnknownHostException {
         ClusterStateTransactionLogRecord txnLogRecord = new ClusterStateTransactionLogRecord(VERSION_CLUSTER_STATE_CHANGE,
-                new Address("127.0.0.1", 5071), new Address("127.0.0.1", 5702), UUID.randomUUID().toString(), 120,
+                new Address("127.0.0.1", 5071), new Address("127.0.0.1", 5702), UUID.randomUUID(), 120,
                 111, 130, false);
 
         Data serialized = SERIALIZATION_SERVICE.toData(txnLogRecord);
@@ -84,7 +88,7 @@ public class ClusterDataSerializationTest {
     @Test
     public void testSerializationOf_clusterStateChangeTxnLogRecord_whenStateChange() throws UnknownHostException {
         ClusterStateTransactionLogRecord txnLogRecord = new ClusterStateTransactionLogRecord(CLUSTER_STATE_CHANGE,
-                new Address("127.0.0.1", 5071), new Address("127.0.0.1", 5702), UUID.randomUUID().toString(), 120,
+                new Address("127.0.0.1", 5071), new Address("127.0.0.1", 5702), UUID.randomUUID(), 120,
                 111, 130, false);
 
         Data serialized = SERIALIZATION_SERVICE.toData(txnLogRecord);
@@ -102,13 +106,19 @@ public class ClusterDataSerializationTest {
 
     @Test
     public void testSerializationOf_memberInfo() throws UnknownHostException {
+        Address memberAddress = new Address("127.0.0.1", 5071);
+        Address clientAddress = new Address("127.0.0.1", 7654);
+        Address restAddress = new Address("127.0.0.1", 8080);
         // member attributes, test an integer, a String and an IdentifiedDataSerializable as values
-        Map<String, Object> attributes = new HashMap<String, Object>();
-        attributes.put("a", 2);
+        Map<String, String> attributes = new HashMap<>();
+        attributes.put("a", "2");
         attributes.put("b", "b");
-        attributes.put("c", new Address("127.0.0.1", 5999));
-        MemberInfo memberInfo = new MemberInfo(new Address("127.0.0.1", 5071), UUID.randomUUID().toString(), attributes,
-                false, MemberVersion.of(BuildInfoProvider.getBuildInfo().getVersion()));
+        Map<EndpointQualifier, Address> addressMap = new HashMap<EndpointQualifier, Address>();
+        addressMap.put(MEMBER, memberAddress);
+        addressMap.put(CLIENT, clientAddress);
+        addressMap.put(REST, restAddress);
+        MemberInfo memberInfo = new MemberInfo(memberAddress, UUID.randomUUID(), attributes,
+                false, MemberVersion.of(BuildInfoProvider.getBuildInfo().getVersion()), addressMap);
 
         Data serialized = SERIALIZATION_SERVICE.toData(memberInfo);
 
@@ -118,6 +128,9 @@ public class ClusterDataSerializationTest {
         assertEquals(deserialized.getUuid(), memberInfo.getUuid());
         assertEquals(deserialized.getAttributes().get("a"), memberInfo.getAttributes().get("a"));
         assertEquals(deserialized.getAttributes().get("b"), memberInfo.getAttributes().get("b"));
-        assertEquals(deserialized.getAttributes().get("c"), memberInfo.getAttributes().get("c"));
+        assertEquals(3, deserialized.getAddressMap().size());
+        assertEquals(memberAddress, deserialized.getAddressMap().get(MEMBER));
+        assertEquals(clientAddress, deserialized.getAddressMap().get(CLIENT));
+        assertEquals(restAddress, deserialized.getAddressMap().get(REST));
     }
 }

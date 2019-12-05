@@ -24,12 +24,13 @@ import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.EvictionPolicy;
+import com.hazelcast.config.MaxSizePolicy;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -45,7 +46,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class CacheStatsTest extends CacheTestSupport {
 
     protected TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
@@ -78,14 +79,10 @@ public class CacheStatsTest extends CacheTestSupport {
 
     @Test
     public void testStatisticsDisabled() {
-        long now = System.currentTimeMillis();
-
         CacheConfig cacheConfig = createCacheConfig();
         cacheConfig.setStatisticsEnabled(false);
         ICache<Integer, String> cache = createCache(cacheConfig);
         CacheStatistics stats = cache.getLocalCacheStatistics();
-
-        assertTrue(stats.getCreationTime() >= now);
 
         final int ENTRY_COUNT = 100;
 
@@ -152,7 +149,7 @@ public class CacheStatsTest extends CacheTestSupport {
         final long ENTRY_COUNT = 100;
 
         for (int i = 0; i < ENTRY_COUNT; i++) {
-            cache.putAsync(i, "Value-" + i).get();
+            cache.putAsync(i, "Value-" + i).toCompletableFuture().get();
         }
 
         assertEqualsEventually(new Callable<Long>() {
@@ -245,7 +242,7 @@ public class CacheStatsTest extends CacheTestSupport {
         }
 
         for (int i = 0; i < 2 * ENTRY_COUNT; i++) {
-            cache.getAsync(i).get();
+            cache.getAsync(i).toCompletableFuture().get();
         }
         assertEqualsEventually(new Callable<Long>() {
             @Override
@@ -309,7 +306,7 @@ public class CacheStatsTest extends CacheTestSupport {
         }
 
         for (int i = 0; i < 2 * ENTRY_COUNT; i++) {
-            cache.removeAsync(i).get();
+            cache.removeAsync(i).toCompletableFuture().get();
         }
 
         assertEqualsEventually(new Callable<Long>() {
@@ -385,7 +382,7 @@ public class CacheStatsTest extends CacheTestSupport {
         }
 
         for (int i = 0; i < GET_COUNT; i++) {
-            cache.getAsync(i).get();
+            cache.getAsync(i).toCompletableFuture().get();
         }
 
         assertEqualsEventually(new Callable<Long>() {
@@ -449,7 +446,7 @@ public class CacheStatsTest extends CacheTestSupport {
         }
 
         for (int i = 0; i < GET_COUNT; i++) {
-            cache.getAsync(i).get();
+            cache.getAsync(i).toCompletableFuture().get();
         }
 
         assertEqualsEventually(new Callable<Long>() {
@@ -736,11 +733,13 @@ public class CacheStatsTest extends CacheTestSupport {
                 .setBackupCount(1)
                 .setStatisticsEnabled(true)
                 .setEvictionConfig(
-                        new EvictionConfig(maxEntryCount, EvictionConfig.MaxSizePolicy.ENTRY_COUNT, EvictionPolicy.LFU)
+                        new EvictionConfig().setSize(maxEntryCount)
+                                .setMaxSizePolicy(MaxSizePolicy.ENTRY_COUNT)
+                                .setEvictionPolicy(EvictionPolicy.LFU)
                 );
 
         Config config = new Config();
-        config.setProperty(GroupProperty.PARTITION_COUNT.getName(), Integer.toString(partitionCount));
+        config.setProperty(ClusterProperty.PARTITION_COUNT.getName(), Integer.toString(partitionCount));
         config.addCacheConfig(cacheConfig);
 
         HazelcastInstance hz1 = getHazelcastInstance(config);

@@ -59,9 +59,9 @@ public interface YamlSequence extends YamlCollection {
 
     /**
      * Gets a child scalar node's value by its index
-     * <p/>
+     * <p>
      * See {@link YamlScalar} for the possible types
-     * <p/>
+     * <p>
      * Please note that if the scalar's type is not the expected type T,
      * a {@link ClassCastException} is thrown <strong>at the call site</strong>.
      *
@@ -74,7 +74,7 @@ public interface YamlSequence extends YamlCollection {
 
     /**
      * Gets a child scalar node's value by its name with type hinting
-     * <p/>
+     * <p>
      * See {@link YamlScalar} for the possible types
      *
      * @param index the index of the child node

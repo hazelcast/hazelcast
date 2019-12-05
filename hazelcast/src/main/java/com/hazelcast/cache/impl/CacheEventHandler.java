@@ -22,18 +22,19 @@ import com.hazelcast.internal.nearcache.impl.invalidation.Invalidator;
 import com.hazelcast.internal.nearcache.impl.invalidation.MetaDataGenerator;
 import com.hazelcast.internal.nearcache.impl.invalidation.NonStopInvalidator;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.EventRegistration;
-import com.hazelcast.spi.EventService;
-import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.impl.eventservice.EventRegistration;
+import com.hazelcast.spi.impl.eventservice.EventService;
+import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.properties.HazelcastProperties;
 
 import java.util.Collection;
+import java.util.UUID;
 
 import static com.hazelcast.cache.impl.ICacheService.SERVICE_NAME;
 import static com.hazelcast.internal.nearcache.impl.invalidation.InvalidationUtils.TRUE_FILTER;
-import static com.hazelcast.spi.properties.GroupProperty.CACHE_INVALIDATION_MESSAGE_BATCH_ENABLED;
-import static com.hazelcast.spi.properties.GroupProperty.CACHE_INVALIDATION_MESSAGE_BATCH_FREQUENCY_SECONDS;
-import static com.hazelcast.spi.properties.GroupProperty.CACHE_INVALIDATION_MESSAGE_BATCH_SIZE;
+import static com.hazelcast.spi.properties.ClusterProperty.CACHE_INVALIDATION_MESSAGE_BATCH_ENABLED;
+import static com.hazelcast.spi.properties.ClusterProperty.CACHE_INVALIDATION_MESSAGE_BATCH_FREQUENCY_SECONDS;
+import static com.hazelcast.spi.properties.ClusterProperty.CACHE_INVALIDATION_MESSAGE_BATCH_SIZE;
 
 /**
  * Sends cache invalidation events in batch or single as configured.
@@ -120,7 +121,7 @@ public class CacheEventHandler {
         eventService.publishEvent(SERVICE_NAME, candidates, eventSet, orderKey);
     }
 
-    void sendInvalidationEvent(String name, Data key, String sourceUuid) {
+    void sendInvalidationEvent(String name, Data key, UUID sourceUuid) {
         if (key == null) {
             invalidator.invalidateAllKeys(name, sourceUuid);
         } else {
@@ -132,7 +133,7 @@ public class CacheEventHandler {
         invalidator.resetPartitionMetaData(name, partitionId);
     }
 
-    public void destroy(String name, String sourceUuid) {
+    public void destroy(String name, UUID sourceUuid) {
         invalidator.destroy(name, sourceUuid);
     }
 

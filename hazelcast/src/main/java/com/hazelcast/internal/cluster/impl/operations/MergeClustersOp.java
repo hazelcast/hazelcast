@@ -16,17 +16,18 @@
 
 package com.hazelcast.internal.cluster.impl.operations;
 
-import com.hazelcast.instance.Node;
+import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.nio.Address;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 
 import java.io.IOException;
+
+import static com.hazelcast.internal.cluster.impl.ClusterServiceImpl.SPLIT_BRAIN_HANDLER_EXECUTOR_NAME;
 
 public class MergeClustersOp extends AbstractClusterOperation {
 
@@ -57,12 +58,7 @@ public class MergeClustersOp extends AbstractClusterOperation {
         logger.warning(node.getThisAddress() + " is merging to " + newTargetAddress
                 + ", because: instructed by master " + masterAddress);
 
-        nodeEngine.getExecutionService().execute(ExecutionService.SYSTEM_EXECUTOR, new Runnable() {
-            @Override
-            public void run() {
-                clusterService.merge(newTargetAddress);
-            }
-        });
+        nodeEngine.getExecutionService().execute(SPLIT_BRAIN_HANDLER_EXECUTOR_NAME, () -> clusterService.merge(newTargetAddress));
     }
 
     @Override
@@ -72,17 +68,16 @@ public class MergeClustersOp extends AbstractClusterOperation {
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
-        newTargetAddress = new Address();
-        newTargetAddress.readData(in);
+        newTargetAddress = in.readObject();
     }
 
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
-        newTargetAddress.writeData(out);
+        out.writeObject(newTargetAddress);
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ClusterDataSerializerHook.MERGE_CLUSTERS;
     }
 }

@@ -24,7 +24,7 @@ import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Before;
@@ -47,13 +47,14 @@ import javax.cache.event.CacheEntryUpdatedListener;
 import java.io.Serializable;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static com.hazelcast.cache.CacheTestSupport.createServerCachingProvider;
 import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.assertNotNull;
 import static junit.framework.Assert.assertNull;
 import static junit.framework.Assert.fail;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class BasicCacheLiteMemberTest
         extends HazelcastTestSupport {
 
@@ -71,8 +72,8 @@ public class BasicCacheLiteMemberTest
         final HazelcastInstance instance = factory.newHazelcastInstance();
         final HazelcastInstance lite = factory.newHazelcastInstance(new Config().setLiteMember(true));
 
-        instanceCachingProvider = HazelcastServerCachingProvider.createCachingProvider(instance);
-        liteCachingProvider = HazelcastServerCachingProvider.createCachingProvider(lite);
+        instanceCachingProvider = createServerCachingProvider(instance);
+        liteCachingProvider = createServerCachingProvider(lite);
         cacheName = randomMapName();
     }
 

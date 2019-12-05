@@ -22,9 +22,9 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.scheduledexecutor.impl.DistributedScheduledExecutorService;
 import com.hazelcast.scheduledexecutor.impl.ScheduledExecutorContainer;
 import com.hazelcast.scheduledexecutor.impl.ScheduledExecutorDataSerializerHook;
-import com.hazelcast.spi.NamedOperation;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.PartitionAwareOperation;
+import com.hazelcast.spi.impl.operationservice.NamedOperation;
+import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.spi.impl.operationservice.PartitionAwareOperation;
 
 import java.io.IOException;
 import java.util.concurrent.RejectedExecutionException;

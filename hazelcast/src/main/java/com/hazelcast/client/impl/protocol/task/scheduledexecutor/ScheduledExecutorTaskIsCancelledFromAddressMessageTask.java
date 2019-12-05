@@ -19,16 +19,16 @@ package com.hazelcast.client.impl.protocol.task.scheduledexecutor;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ScheduledExecutorIsCancelledFromAddressCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractAddressMessageTask;
-import com.hazelcast.instance.Node;
-import com.hazelcast.nio.Address;
-import com.hazelcast.nio.Connection;
+import com.hazelcast.instance.impl.Node;
+import com.hazelcast.cluster.Address;
+import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.scheduledexecutor.ScheduledTaskHandler;
 import com.hazelcast.scheduledexecutor.impl.DistributedScheduledExecutorService;
 import com.hazelcast.scheduledexecutor.impl.ScheduledTaskHandlerImpl;
 import com.hazelcast.scheduledexecutor.impl.operations.IsCanceledOperation;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.ScheduledExecutorPermission;
-import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.impl.operationservice.Operation;
 
 import java.security.Permission;
 
@@ -54,7 +54,9 @@ public class ScheduledExecutorTaskIsCancelledFromAddressMessageTask
 
     @Override
     protected ScheduledExecutorIsCancelledFromAddressCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
-        return ScheduledExecutorIsCancelledFromAddressCodec.decodeRequest(clientMessage);
+        parameters = ScheduledExecutorIsCancelledFromAddressCodec.decodeRequest(clientMessage);
+        parameters.address = clientEngine.memberAddressOf(parameters.address);
+        return parameters;
     }
 
     @Override

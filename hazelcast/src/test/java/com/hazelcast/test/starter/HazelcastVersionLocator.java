@@ -18,22 +18,20 @@ package com.hazelcast.test.starter;
 
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
-import org.apache.http.HttpEntity;
-import org.apache.http.client.methods.CloseableHttpResponse;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClients;
 
+import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.net.URL;
 
-import static com.hazelcast.nio.IOUtil.closeResource;
+import static com.hazelcast.internal.nio.IOUtil.closeResource;
+import static com.hazelcast.internal.nio.IOUtil.drainTo;
 import static com.hazelcast.test.JenkinsDetector.isOnJenkins;
 import static com.hazelcast.test.starter.HazelcastStarterUtils.rethrowGuardianException;
 import static java.io.File.separator;
 import static java.lang.String.format;
-import static org.apache.http.HttpStatus.SC_OK;
 
 public class HazelcastVersionLocator {
 
@@ -127,32 +125,23 @@ public class HazelcastVersionLocator {
     }
 
     private static File downloadFile(String url, File targetDirectory, String filename) {
-        CloseableHttpClient client = HttpClients.createDefault();
         File targetFile = new File(targetDirectory, filename);
         if (targetFile.isFile() && targetFile.exists()) {
             return targetFile;
         }
-        HttpGet request = new HttpGet(url);
-
-        CloseableHttpResponse response = null;
         FileOutputStream fos = null;
+        InputStream is = null;
         try {
-            response = client.execute(request);
-            if (response.getStatusLine().getStatusCode() != SC_OK) {
-                throw new GuardianException("Cannot download file from " + url
-                        + ", http response code: " + response.getStatusLine().getStatusCode());
-            }
-            HttpEntity entity = response.getEntity();
+            is = new BufferedInputStream(new URL(url).openStream());
             fos = new FileOutputStream(targetFile);
-            entity.writeTo(fos);
+            drainTo(is, fos);
             targetFile.deleteOnExit();
             return targetFile;
         } catch (IOException e) {
             throw rethrowGuardianException(e);
         } finally {
             closeResource(fos);
-            closeResource(response);
-            closeResource(client);
+            closeResource(is);
         }
     }
 

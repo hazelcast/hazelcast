@@ -17,10 +17,11 @@
 package com.hazelcast.cache.impl.operation;
 
 import com.hazelcast.cache.impl.CacheDataSerializerHook;
+import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.impl.operationservice.Operation;
 
 import javax.cache.expiry.ExpiryPolicy;
 import java.io.IOException;
@@ -28,8 +29,8 @@ import java.io.IOException;
 /**
  * Operator implementation for cache replace functionality.
  *
- * @see com.hazelcast.cache.impl.ICacheRecordStore#replace(Data, Object, ExpiryPolicy, String, int)
- * @see com.hazelcast.cache.impl.ICacheRecordStore#replace(Data, Object, Object, ExpiryPolicy, String, int)
+ * @see com.hazelcast.cache.impl.ICacheRecordStore#replace(Data, Object, ExpiryPolicy, java.util.UUID, int)
+ * @see com.hazelcast.cache.impl.ICacheRecordStore#replace(Data, Object, Object, ExpiryPolicy, java.util.UUID, int)
  */
 public class CacheReplaceOperation extends MutatingCacheOperation {
 
@@ -89,8 +90,8 @@ public class CacheReplaceOperation extends MutatingCacheOperation {
     protected void writeInternal(ObjectDataOutput out)
             throws IOException {
         super.writeInternal(out);
-        out.writeData(newValue);
-        out.writeData(oldValue);
+        IOUtil.writeData(out, newValue);
+        IOUtil.writeData(out, oldValue);
         out.writeObject(expiryPolicy);
     }
 
@@ -98,13 +99,13 @@ public class CacheReplaceOperation extends MutatingCacheOperation {
     protected void readInternal(ObjectDataInput in)
             throws IOException {
         super.readInternal(in);
-        newValue = in.readData();
-        oldValue = in.readData();
+        newValue = IOUtil.readData(in);
+        oldValue = IOUtil.readData(in);
         expiryPolicy = in.readObject();
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return CacheDataSerializerHook.REPLACE;
     }
 

@@ -18,7 +18,7 @@ package com.hazelcast.executor.impl;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceAware;
-import com.hazelcast.core.PartitionAware;
+import com.hazelcast.partition.PartitionAware;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
@@ -89,7 +89,7 @@ public final class RunnableAdapter<V> implements IdentifiedDataSerializable, Cal
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ExecutorDataSerializerHook.RUNNABLE_ADAPTER;
     }
 

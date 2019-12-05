@@ -19,11 +19,14 @@ package com.hazelcast.collection.impl.txnqueue.operations;
 import com.hazelcast.collection.impl.queue.QueueContainer;
 import com.hazelcast.collection.impl.queue.QueueDataSerializerHook;
 import com.hazelcast.collection.impl.queue.operations.QueueOperation;
+import com.hazelcast.internal.util.UUIDSerializationUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.spi.BackupOperation;
+import com.hazelcast.spi.impl.operationservice.BackupOperation;
+import com.hazelcast.transaction.TransactionalQueue;
 
 import java.io.IOException;
+import java.util.UUID;
 
 /**
  * Transaction prepare operation for a queue offer, executed on the backup replica.
@@ -33,18 +36,18 @@ import java.io.IOException;
  * transaction is done on the partition owner.
  *
  * @see TxnReserveOfferOperation
- * @see com.hazelcast.core.TransactionalQueue#offer(Object)
+ * @see TransactionalQueue#offer(Object)
  */
 public class TxnReserveOfferBackupOperation extends QueueOperation implements BackupOperation {
 
     private long itemId;
 
-    private String transactionId;
+    private UUID transactionId;
 
     public TxnReserveOfferBackupOperation() {
     }
 
-    public TxnReserveOfferBackupOperation(String name, long itemId, String transactionId) {
+    public TxnReserveOfferBackupOperation(String name, long itemId, UUID transactionId) {
         super(name);
         this.itemId = itemId;
         this.transactionId = transactionId;
@@ -57,7 +60,7 @@ public class TxnReserveOfferBackupOperation extends QueueOperation implements Ba
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return QueueDataSerializerHook.TXN_RESERVE_OFFER_BACKUP;
     }
 
@@ -65,13 +68,13 @@ public class TxnReserveOfferBackupOperation extends QueueOperation implements Ba
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeLong(itemId);
-        out.writeUTF(transactionId);
+        UUIDSerializationUtil.writeUUID(out, transactionId);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         itemId = in.readLong();
-        transactionId = in.readUTF();
+        transactionId = UUIDSerializationUtil.readUUID(in);
     }
 }

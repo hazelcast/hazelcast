@@ -18,18 +18,18 @@ package com.hazelcast.map.impl.operation;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IMap;
+import com.hazelcast.map.IMap;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.proxy.MapProxyImpl;
-import com.hazelcast.spi.InternalCompletableFuture;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.OperationFactory;
-import com.hazelcast.spi.impl.operationservice.InternalOperationService;
+import com.hazelcast.spi.impl.InternalCompletableFuture;
+import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.spi.impl.operationservice.OperationFactory;
+import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
 import org.junit.Test;
@@ -43,7 +43,7 @@ import java.util.concurrent.Future;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastSerialClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class ContainsValueOperationTest extends HazelcastTestSupport {
 
     private final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
@@ -79,7 +79,7 @@ public class ContainsValueOperationTest extends HazelcastTestSupport {
                 = operationProvider.createContainsValueOperationFactory(mapProxy.getName(), mapServiceContext.toData(value));
         Operation operation = operationFactory.createOperation();
 
-        InternalOperationService operationService = getOperationService(member1);
+        OperationServiceImpl operationService = getOperationService(member1);
         return operationService.createInvocationBuilder(MapService.SERVICE_NAME, operation, partitionId).invoke();
     }
 }

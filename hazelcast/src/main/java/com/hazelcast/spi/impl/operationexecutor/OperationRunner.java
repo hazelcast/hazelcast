@@ -16,9 +16,9 @@
 
 package com.hazelcast.spi.impl.operationexecutor;
 
-import com.hazelcast.nio.Packet;
-import com.hazelcast.spi.Operation;
+import com.hazelcast.internal.nio.Packet;
 import com.hazelcast.spi.impl.operationexecutor.impl.OperationExecutorImpl;
+import com.hazelcast.spi.impl.operationservice.Operation;
 
 /**
  * The OperationRunner is responsible for the actual running of operations.
@@ -131,5 +131,23 @@ public abstract class OperationRunner {
      */
     public final int getPartitionId() {
         return partitionId;
+    }
+
+    /**
+     * Runs operation directly without checking any conditions;
+     * node state, partition ownership, timeouts etc.
+     * <p>
+     * {@link Operation#beforeRun()}, {@link Operation#call()}
+     * and {@link Operation#afterRun()} phases are executed sequentially.
+     * <p>
+     * Operation responses and backups are ignored.
+     *
+     * @param operation operation to run
+     * @throws Exception when one of the operation phases fails with an exception
+     */
+    public static void runDirect(Operation operation) throws Exception {
+        operation.beforeRun();
+        operation.call();
+        operation.afterRun();
     }
 }

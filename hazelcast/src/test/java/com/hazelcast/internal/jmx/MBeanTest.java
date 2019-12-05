@@ -16,22 +16,18 @@
 
 package com.hazelcast.internal.jmx;
 
-import com.hazelcast.core.IAtomicLong;
-import com.hazelcast.core.IAtomicReference;
-import com.hazelcast.core.ICountDownLatch;
+import com.hazelcast.collection.IList;
+import com.hazelcast.collection.IQueue;
+import com.hazelcast.collection.ISet;
 import com.hazelcast.core.IExecutorService;
-import com.hazelcast.core.IList;
-import com.hazelcast.core.IMap;
-import com.hazelcast.core.IQueue;
-import com.hazelcast.core.ISemaphore;
-import com.hazelcast.core.ISet;
-import com.hazelcast.core.ITopic;
-import com.hazelcast.core.MultiMap;
-import com.hazelcast.core.ReplicatedMap;
+import com.hazelcast.map.IMap;
+import com.hazelcast.multimap.MultiMap;
+import com.hazelcast.replicatedmap.ReplicatedMap;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.topic.ITopic;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -44,7 +40,7 @@ import java.io.Serializable;
  * a specific test in this package. See LockMBeanTest for a specific test.
  */
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class MBeanTest extends HazelcastTestSupport {
 
     private MBeanDataHolder holder;
@@ -55,40 +51,8 @@ public class MBeanTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testAtomicLong() throws Exception {
-        IAtomicLong atomicLong = holder.getHz().getAtomicLong("atomiclong");
-        atomicLong.incrementAndGet();
-
-        holder.assertMBeanExistEventually("IAtomicLong", atomicLong.getName());
-    }
-
-    @Test
-    public void testAtomicReference() throws Exception {
-        IAtomicReference<String> atomicReference = holder.getHz().getAtomicReference("atomicreference");
-        atomicReference.set(null);
-
-        holder.assertMBeanExistEventually("IAtomicReference", atomicReference.getName());
-    }
-
-    @Test
-    public void testSemaphore() throws Exception {
-        ISemaphore semaphore = holder.getHz().getSemaphore("semaphore");
-        semaphore.availablePermits();
-
-        holder.assertMBeanExistEventually("ISemaphore", semaphore.getName());
-    }
-
-    @Test
     public void testConnection() throws Exception {
-        holder.assertMBeanExistEventually("HazelcastInstance.ConnectionManager", holder.getHz().getName());
-    }
-
-    @Test
-    public void testCountDownLatch() throws Exception {
-        ICountDownLatch countDownLatch = holder.getHz().getCountDownLatch("semaphore");
-        countDownLatch.getCount();
-
-        holder.assertMBeanExistEventually("ICountDownLatch", countDownLatch.getName());
+        holder.assertMBeanExistEventually("HazelcastInstance.NetworkingService", holder.getHz().getName());
     }
 
     @Test

@@ -17,7 +17,6 @@
 package com.hazelcast.internal.eviction;
 
 import com.hazelcast.cache.HazelcastExpiryPolicy;
-import com.hazelcast.cache.impl.HazelcastServerCachingProvider;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.test.HazelcastSerialClassRunner;
@@ -39,9 +38,9 @@ import javax.cache.event.CacheEntryExpiredListener;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
-import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import static com.hazelcast.cache.CacheTestSupport.createServerCachingProvider;
 import static com.hazelcast.cache.impl.eviction.CacheClearExpiredRecordsTask.PROP_TASK_PERIOD_SECONDS;
 import static com.hazelcast.test.OverridePropertyRule.set;
 import static com.hazelcast.test.backup.TestBackupUtils.assertBackupSizeEventually;
@@ -84,10 +83,11 @@ public class CacheExpirationStressTest extends HazelcastTestSupport {
 
     @Test
     public void test() throws InterruptedException {
-        List<Thread> list = new ArrayList<Thread>();
+        assertClusterSize(CLUSTER_SIZE, instances);
+        List<Thread> list = new ArrayList<>();
         for (int i = 0; i < CLUSTER_SIZE; i++) {
             CacheConfig cacheConfig = getCacheConfig();
-            Cache cache = HazelcastServerCachingProvider.createCachingProvider(instances[i])
+            Cache cache = createServerCachingProvider(instances[i])
                     .getCacheManager().createCache(cacheName, cacheConfig);
             cacheNameWithPrefix = cache.getName();
             list.add(new Thread(new TestRunner(cache, done)));
@@ -114,12 +114,7 @@ public class CacheExpirationStressTest extends HazelcastTestSupport {
         }
         for (int i = 0; i < instances.length; i++) {
             final int index = i;
-            assertEqualsEventually(new Callable<Integer>() {
-                @Override
-                public Integer call() {
-                    return instances[index].getCacheManager().getCache(cacheName).size();
-                }
-            }, 0);
+            assertEqualsEventually(() -> instances[index].getCacheManager().getCache(cacheName).size(), 0);
         }
         instances[0].getCacheManager().getCache(cacheName).destroy();
     }

@@ -17,33 +17,30 @@
 package com.hazelcast.spi.impl.operationservice.impl;
 
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.nio.Address;
-import com.hazelcast.spi.ExceptionAction;
-import com.hazelcast.spi.InternalCompletableFuture;
+import com.hazelcast.cluster.Address;
+import com.hazelcast.spi.impl.operationservice.ExceptionAction;
+import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.exception.TargetNotMemberException;
-import com.hazelcast.spi.impl.operationservice.InternalOperationService;
 import com.hazelcast.test.ExceptionThrowingCallable;
 import com.hazelcast.test.ExpectedRuntimeException;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.net.UnknownHostException;
-
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class OperationServiceImpl_invokeOnTargetTest extends HazelcastTestSupport {
 
     private HazelcastInstance local;
-    private InternalOperationService operationService;
+    private OperationServiceImpl operationService;
     private HazelcastInstance remote;
 
     @Before
@@ -77,7 +74,7 @@ public class OperationServiceImpl_invokeOnTargetTest extends HazelcastTestSuppor
     }
 
     @Test
-    public void whenNonExistingTarget() throws UnknownHostException {
+    public void whenNonExistingTarget() {
         Address remoteAddress = getAddress(remote);
         remote.shutdown();
 
@@ -102,7 +99,7 @@ public class OperationServiceImpl_invokeOnTargetTest extends HazelcastTestSuppor
                 null, operation, remoteAddress);
 
         try {
-            invocation.join();
+            invocation.joinInternal();
             fail();
         } catch (TargetNotMemberException e) {
         }
@@ -115,7 +112,7 @@ public class OperationServiceImpl_invokeOnTargetTest extends HazelcastTestSuppor
                 null, operation, getAddress(remote));
 
         try {
-            invocation.join();
+            invocation.joinInternal();
             fail();
         } catch (ExpectedRuntimeException expected) {
         }

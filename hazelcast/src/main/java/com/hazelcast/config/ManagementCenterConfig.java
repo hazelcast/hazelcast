@@ -16,7 +16,7 @@
 
 package com.hazelcast.config;
 
-import static com.hazelcast.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 import com.hazelcast.instance.BuildInfoProvider;
 
@@ -24,8 +24,10 @@ import com.hazelcast.instance.BuildInfoProvider;
  * Contains the configuration for a Management Center.
  */
 public class ManagementCenterConfig {
-
-    static final int UPDATE_INTERVAL = 3;
+    /**
+     * Default update interval
+     */
+    public static final int UPDATE_INTERVAL = 3;
 
     private boolean enabled;
 

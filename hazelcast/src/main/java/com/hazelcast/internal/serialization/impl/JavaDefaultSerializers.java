@@ -17,10 +17,9 @@
 package com.hazelcast.internal.serialization.impl;
 
 import com.hazelcast.core.HazelcastJsonValue;
-import com.hazelcast.json.HazelcastJson;
-import com.hazelcast.nio.BufferObjectDataInput;
-import com.hazelcast.nio.ClassLoaderUtil;
-import com.hazelcast.nio.ClassNameFilter;
+import com.hazelcast.internal.nio.BufferObjectDataInput;
+import com.hazelcast.internal.nio.ClassLoaderUtil;
+import com.hazelcast.nio.serialization.ClassNameFilter;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
@@ -44,10 +43,9 @@ import static com.hazelcast.internal.serialization.impl.SerializationConstants.J
 import static com.hazelcast.internal.serialization.impl.SerializationConstants.JAVA_DEFAULT_TYPE_BIG_INTEGER;
 import static com.hazelcast.internal.serialization.impl.SerializationConstants.JAVA_DEFAULT_TYPE_CLASS;
 import static com.hazelcast.internal.serialization.impl.SerializationConstants.JAVA_DEFAULT_TYPE_DATE;
-import static com.hazelcast.internal.serialization.impl.SerializationConstants.JAVA_DEFAULT_TYPE_ENUM;
 import static com.hazelcast.internal.serialization.impl.SerializationConstants.JAVA_DEFAULT_TYPE_EXTERNALIZABLE;
 import static com.hazelcast.internal.serialization.impl.SerializationConstants.JAVA_DEFAULT_TYPE_SERIALIZABLE;
-import static com.hazelcast.nio.IOUtil.newObjectInputStream;
+import static com.hazelcast.internal.nio.IOUtil.newObjectInputStream;
 import static java.lang.Math.max;
 
 
@@ -174,6 +172,9 @@ public final class JavaDefaultSerializers {
         }
 
         private Externalizable read(InputStream in, String className, ClassLoader classLoader) throws Exception {
+            if (classFilter != null) {
+                classFilter.filter(className);
+            }
             Externalizable ds = ClassLoaderUtil.newInstance(classLoader, className);
             ObjectInputStream objectInputStream = newObjectInputStream(classLoader, classFilter, in);
             ds.readExternal(objectInputStream);
@@ -296,36 +297,7 @@ public final class JavaDefaultSerializers {
         }
     }
 
-    public static final class EnumSerializer extends SingletonSerializer<Enum> {
-
-        @Override
-        public int getTypeId() {
-            return JAVA_DEFAULT_TYPE_ENUM;
-        }
-
-        @Override
-        public void write(ObjectDataOutput out, Enum obj) throws IOException {
-            String name = obj.getDeclaringClass().getName();
-            out.writeUTF(name);
-            out.writeUTF(obj.name());
-        }
-
-        @Override
-        public Enum read(ObjectDataInput in) throws IOException {
-            String clazzName = in.readUTF();
-            Class clazz;
-            try {
-                clazz = ClassLoaderUtil.loadClass(in.getClassLoader(), clazzName);
-            } catch (ClassNotFoundException e) {
-                throw new HazelcastSerializationException("Failed to deserialize enum: " + clazzName, e);
-            }
-
-            String name = in.readUTF();
-            return Enum.valueOf(clazz, name);
-        }
-    }
-
-    public static final class JsonStringSerializer extends SingletonSerializer<HazelcastJsonValue> {
+    public static final class HazelcastJsonValueSerializer extends SingletonSerializer<HazelcastJsonValue> {
 
         @Override
         public void write(ObjectDataOutput out, HazelcastJsonValue object) throws IOException {
@@ -334,7 +306,7 @@ public final class JavaDefaultSerializers {
 
         @Override
         public HazelcastJsonValue read(ObjectDataInput in) throws IOException {
-            return HazelcastJson.fromString(in.readUTF());
+            return new HazelcastJsonValue(in.readUTF());
         }
 
         @Override

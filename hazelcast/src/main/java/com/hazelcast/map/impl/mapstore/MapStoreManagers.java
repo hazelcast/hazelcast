@@ -55,7 +55,7 @@ public final class MapStoreManagers {
 
             @Override
             public MapDataStore getMapDataStore(String mapName, int partitionId) {
-                return MapDataStores.emptyStore();
+                return MapDataStores.EMPTY_MAP_DATA_STORE;
             }
         };
     }

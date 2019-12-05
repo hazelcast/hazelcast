@@ -16,11 +16,11 @@
 
 package com.hazelcast.config;
 
-import com.hazelcast.internal.eviction.EvictionPolicyComparator;
+import com.hazelcast.spi.eviction.EvictionPolicyComparator;
 import com.hazelcast.internal.eviction.impl.comparator.LFUEvictionPolicyComparator;
 import com.hazelcast.internal.eviction.impl.comparator.LRUEvictionPolicyComparator;
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import nl.jqno.equalsverifier.EqualsVerifier;
 import nl.jqno.equalsverifier.Warning;
@@ -28,23 +28,25 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import static com.hazelcast.config.EvictionConfig.MaxSizePolicy.ENTRY_COUNT;
-import static com.hazelcast.config.EvictionConfig.MaxSizePolicy.USED_NATIVE_MEMORY_PERCENTAGE;
+import static com.hazelcast.config.MaxSizePolicy.ENTRY_COUNT;
+import static com.hazelcast.config.MaxSizePolicy.USED_NATIVE_MEMORY_PERCENTAGE;
+import static com.hazelcast.config.EvictionPolicy.LFU;
+import static com.hazelcast.config.EvictionPolicy.LRU;
 import static com.hazelcast.test.HazelcastTestSupport.assumeDifferentHashCodes;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class EvictionConfigTest {
 
     @Test
     public void testEqualsAndHashCode() {
         assumeDifferentHashCodes();
         EqualsVerifier.forClass(EvictionConfig.class)
-                .allFieldsShouldBeUsedExcept("readOnly", "sizeConfigured")
+                .allFieldsShouldBeUsedExcept("sizeConfigured")
                 .suppress(Warning.NONFINAL_FIELDS)
                 .withPrefabValues(EvictionConfig.class,
-                        new EvictionConfig(1000, ENTRY_COUNT, EvictionPolicy.LFU),
-                        new EvictionConfig(300, USED_NATIVE_MEMORY_PERCENTAGE, EvictionPolicy.LRU))
+                        new EvictionConfig().setSize(1000).setMaxSizePolicy(ENTRY_COUNT).setEvictionPolicy(LFU),
+                        new EvictionConfig().setSize(300).setMaxSizePolicy(USED_NATIVE_MEMORY_PERCENTAGE).setEvictionPolicy(LRU))
                 .withPrefabValues(EvictionPolicyComparator.class,
                         new LFUEvictionPolicyComparator(), new LRUEvictionPolicyComparator())
                 .verify();

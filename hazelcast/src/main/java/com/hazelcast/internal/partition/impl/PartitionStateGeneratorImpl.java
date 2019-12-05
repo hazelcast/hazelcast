@@ -16,7 +16,7 @@
 
 package com.hazelcast.internal.partition.impl;
 
-import com.hazelcast.core.Member;
+import com.hazelcast.cluster.Member;
 import com.hazelcast.internal.partition.InternalPartition;
 import com.hazelcast.internal.partition.PartitionReplica;
 import com.hazelcast.internal.partition.PartitionStateGenerator;
@@ -136,9 +136,9 @@ final class PartitionStateGeneratorImpl implements PartitionStateGenerator {
             }
 
             // groups having partitions under average
-            Queue<NodeGroup> underLoadedGroups = new LinkedList<NodeGroup>();
+            Queue<NodeGroup> underLoadedGroups = new LinkedList<>();
             // groups having partitions over average
-            List<NodeGroup> overLoadedGroups = new LinkedList<NodeGroup>();
+            List<NodeGroup> overLoadedGroups = new LinkedList<>();
             // number of groups should have (average + 1) partitions
             int plusOneGroupCount = partitionCount - avgPartitionPerGroup * groupSize;
             // determine under-loaded and over-loaded groups
@@ -268,12 +268,7 @@ final class PartitionStateGeneratorImpl implements PartitionStateGenerator {
                     // all (avg + 1) partitions owned groups are found
                     // if there is any group has avg number of partitions in under-loaded queue
                     // remove it.
-                    Iterator<NodeGroup> underLoaded = underLoadedGroups.iterator();
-                    while (underLoaded.hasNext()) {
-                        if (underLoaded.next().getPartitionCount(index) >= avgPartitionPerGroup) {
-                            underLoaded.remove();
-                        }
-                    }
+                    underLoadedGroups.removeIf(nodeGroup -> nodeGroup.getPartitionCount(index) >= avgPartitionPerGroup);
                 }
             } else if ((plusOneGroupCount > 0 && count < maxPartitionPerGroup)
                     || (count < avgPartitionPerGroup)) {
@@ -296,7 +291,7 @@ final class PartitionStateGeneratorImpl implements PartitionStateGenerator {
     }
 
     private Queue<Integer> getUnownedPartitions(PartitionReplica[][] state, int replicaIndex) {
-        LinkedList<Integer> freePartitions = new LinkedList<Integer>();
+        LinkedList<Integer> freePartitions = new LinkedList<>();
         // if owner of a partition can not be found then add partition to free partitions queue.
         for (int partitionId = 0; partitionId < state.length; partitionId++) {
             PartitionReplica[] replicas = state[partitionId];
@@ -353,7 +348,7 @@ final class PartitionStateGeneratorImpl implements PartitionStateGenerator {
     }
 
     private Queue<NodeGroup> createNodeGroups(Collection<MemberGroup> memberGroups) {
-        Queue<NodeGroup> nodeGroups = new LinkedList<NodeGroup>();
+        Queue<NodeGroup> nodeGroups = new LinkedList<>();
         if (memberGroups == null || memberGroups.isEmpty()) {
             return nodeGroups;
         }
@@ -429,8 +424,8 @@ final class PartitionStateGeneratorImpl implements PartitionStateGenerator {
 
     private static class DefaultNodeGroup implements NodeGroup {
         final PartitionTable groupPartitionTable = new PartitionTable();
-        final Map<PartitionReplica, PartitionTable> nodePartitionTables = new HashMap<PartitionReplica, PartitionTable>();
-        final LinkedList<Integer> partitionQ = new LinkedList<Integer>();
+        final Map<PartitionReplica, PartitionTable> nodePartitionTables = new HashMap<>();
+        final LinkedList<Integer> partitionQ = new LinkedList<>();
 
         @Override
         public void addNode(PartitionReplica replica) {
@@ -540,7 +535,7 @@ final class PartitionStateGeneratorImpl implements PartitionStateGenerator {
                     table.add(index, partitionQ.poll());
                 }
             } else {
-                List<PartitionTable> underLoadedStates = new LinkedList<PartitionTable>();
+                List<PartitionTable> underLoadedStates = new LinkedList<>();
                 int avgCount = slimDownNodesToAvgPartitionTableSize(index, underLoadedStates);
                 if (!partitionQ.isEmpty()) {
                     for (PartitionTable table : underLoadedStates) {
@@ -676,7 +671,7 @@ final class PartitionStateGeneratorImpl implements PartitionStateGenerator {
             check(index);
             Set<Integer> set = partitions[index];
             if (set == null) {
-                set = new LinkedHashSet<Integer>();
+                set = new LinkedHashSet<>();
                 partitions[index] = set;
             }
             return set;

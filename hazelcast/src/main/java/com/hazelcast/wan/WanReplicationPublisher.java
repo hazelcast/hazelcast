@@ -16,47 +16,58 @@
 
 package com.hazelcast.wan;
 
-import com.hazelcast.config.WANQueueFullBehavior;
-import com.hazelcast.config.WanPublisherConfig;
+import com.hazelcast.config.AbstractWanPublisherConfig;
+import com.hazelcast.config.WanReplicationConfig;
 
 /**
- * This interface offers the implementation of different kinds of replication techniques like
- * TCP, UDP or maybe even an JMS based service
+ * This interface offers the implementation of different kinds of replication
+ * techniques like TCP, UDP or maybe even an JMS based service.
+ * Implementations of this interface represent a replication target,
+ * normally another Hazelcast cluster only reachable over a Wide Area
+ * Network (WAN).
+ * The publisher may implement {@link com.hazelcast.core.HazelcastInstanceAware}
+ * if it needs a reference to the instance on which it is being run.
  */
 public interface WanReplicationPublisher {
+    /**
+     * Initializes the publisher.
+     *
+     * @param wanReplicationConfig {@link WanReplicationConfig} instance
+     * @param publisherConfig      {@link AbstractWanPublisherConfig} instance
+     */
+    void init(WanReplicationConfig wanReplicationConfig, AbstractWanPublisherConfig publisherConfig);
 
     /**
-     * Publish the {@code eventObject} WAN replication event. The event may be dropped if queue capacity has been reached.
+     * Closes the publisher and its internal connections and shuts down other internal states.
+     * Signals the publisher to shut down and clean up its resources. The
+     * method does not necessarily block until the publisher has shut down.
+     */
+    void shutdown();
+
+    /**
+     * Resets the publisher (e.g. before split-brain merge).
+     */
+    default void reset() {
+    }
+
+    /**
+     * Performs pre-publication checks (e.g. enforcing invariants).
+     * Invoked before {@link #publishReplicationEvent(WanReplicationEvent)}
+     * and {@link #publishReplicationEventBackup(WanReplicationEvent)}.
+     */
+    void doPrepublicationChecks();
+
+    /**
+     * Publish the {@code eventObject} WAN replication event.
      *
-     * @param serviceName the service publishing the event
      * @param eventObject the replication event
      */
-    void publishReplicationEvent(String serviceName, ReplicationEventObject eventObject);
+    void publishReplicationEvent(WanReplicationEvent eventObject);
 
     /**
-     * Publish the {@code eventObject} WAN replication event backup. The event may be dropped if queue capacity has been reached.
+     * Publish the {@code eventObject} WAN replication event backup.
      *
-     * @param serviceName the service publishing the event
      * @param eventObject the replication backup event
      */
-    void publishReplicationEventBackup(String serviceName, ReplicationEventObject eventObject);
-
-    /**
-     * Publishes the {@code wanReplicationEvent} on this publisher. This can be used to forward received events
-     * on the target cluster.
-     *
-     * @param wanReplicationEvent the WAN event to publish
-     */
-    void publishReplicationEvent(WanReplicationEvent wanReplicationEvent);
-
-    /**
-     * Checks the size of the WAN replication queue and throws an
-     * exception if it has been reached or crossed.
-     *
-     * @throws WANReplicationQueueFullException if queue capacity has been reached and
-     *                                          {@link WanPublisherConfig#getQueueFullBehavior()} is
-     *                                          set to {@link WANQueueFullBehavior#THROW_EXCEPTION}
-     */
-    void checkWanReplicationQueues();
-
+    void publishReplicationEventBackup(WanReplicationEvent eventObject);
 }

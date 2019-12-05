@@ -16,6 +16,7 @@
 
 package com.hazelcast.internal.metrics.impl;
 
+import com.hazelcast.internal.metrics.MetricDescriptor;
 import com.hazelcast.internal.metrics.ProbeFunction;
 
 /**
@@ -32,12 +33,12 @@ import com.hazelcast.internal.metrics.ProbeFunction;
  */
 class ProbeInstance<S> {
 
-    final String name;
+    final MetricDescriptor descriptor;
     volatile ProbeFunction function;
     volatile S source;
 
-    ProbeInstance(String name, S source, ProbeFunction function) {
-        this.name = name;
+    ProbeInstance(MetricDescriptor descriptor, S source, ProbeFunction function) {
+        this.descriptor = descriptor;
         this.function = function;
         this.source = source;
     }

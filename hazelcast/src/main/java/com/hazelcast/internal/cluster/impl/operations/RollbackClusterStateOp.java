@@ -17,33 +17,35 @@
 package com.hazelcast.internal.cluster.impl.operations;
 
 import com.hazelcast.core.MemberLeftException;
+import com.hazelcast.internal.util.UUIDSerializationUtil;
 import com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.internal.cluster.impl.ClusterStateManager;
-import com.hazelcast.nio.Address;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.spi.ExceptionAction;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.UrgentSystemOperation;
+import com.hazelcast.spi.impl.operationservice.ExceptionAction;
+import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.spi.impl.operationservice.UrgentSystemOperation;
 import com.hazelcast.spi.exception.TargetNotMemberException;
 import com.hazelcast.spi.impl.AllowedDuringPassiveState;
 
 import java.io.IOException;
+import java.util.UUID;
 
 public class RollbackClusterStateOp extends Operation implements AllowedDuringPassiveState, UrgentSystemOperation,
         IdentifiedDataSerializable {
 
     private Address initiator;
-    private String txnId;
+    private UUID txnId;
 
     private boolean response;
 
     public RollbackClusterStateOp() {
     }
 
-    public RollbackClusterStateOp(Address initiator, String txnId) {
+    public RollbackClusterStateOp(Address initiator, UUID txnId) {
         this.initiator = initiator;
         this.txnId = txnId;
     }
@@ -77,16 +79,15 @@ public class RollbackClusterStateOp extends Operation implements AllowedDuringPa
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        initiator.writeData(out);
-        out.writeUTF(txnId);
+        out.writeObject(initiator);
+        UUIDSerializationUtil.writeUUID(out, txnId);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        initiator = new Address();
-        initiator.readData(in);
-        txnId = in.readUTF();
+        initiator = in.readObject();
+        txnId = UUIDSerializationUtil.readUUID(in);
     }
 
     @Override
@@ -95,7 +96,7 @@ public class RollbackClusterStateOp extends Operation implements AllowedDuringPa
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ClusterDataSerializerHook.ROLLBACK_CLUSTER_STATE;
     }
 }

@@ -18,54 +18,47 @@ package com.hazelcast.client.impl.protocol.task.map;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.MapAddPartitionLostListenerCodec;
-import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
-import com.hazelcast.client.impl.protocol.task.ListenerMessageTask;
-import com.hazelcast.instance.Node;
-import com.hazelcast.map.MapPartitionLostEvent;
+import com.hazelcast.client.impl.protocol.task.AbstractAddListenerMessageTask;
+import com.hazelcast.instance.impl.Node;
+import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.listener.MapPartitionLostListener;
-import com.hazelcast.nio.Connection;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MapPermission;
 
 import java.security.Permission;
+import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
+
+import static com.hazelcast.spi.impl.InternalCompletableFuture.newCompletedFuture;
 
 public class MapAddPartitionLostListenerMessageTask
-        extends AbstractCallableMessageTask<MapAddPartitionLostListenerCodec.RequestParameters> implements ListenerMessageTask {
-
+        extends AbstractAddListenerMessageTask<MapAddPartitionLostListenerCodec.RequestParameters> {
 
     public MapAddPartitionLostListenerMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
     @Override
-    protected Object call() {
+    protected CompletableFuture<UUID> processInternal() {
         final MapService mapService = getService(MapService.SERVICE_NAME);
 
-        final MapPartitionLostListener listener = new MapPartitionLostListener() {
-            @Override
-            public void partitionLost(MapPartitionLostEvent event) {
-                if (endpoint.isAlive()) {
-                    ClientMessage eventMessage =
-                            MapAddPartitionLostListenerCodec.encodeMapPartitionLostEvent(event.getPartitionId(),
-                                    event.getMember().getUuid());
-                    sendClientMessage(null, eventMessage);
-                }
+        final MapPartitionLostListener listener = event -> {
+            if (endpoint.isAlive()) {
+                ClientMessage eventMessage = MapAddPartitionLostListenerCodec
+                        .encodeMapPartitionLostEvent(event.getPartitionId(), event.getMember().getUuid());
+                sendClientMessage(null, eventMessage);
             }
         };
 
         MapServiceContext mapServiceContext = mapService.getMapServiceContext();
 
-        String registrationId;
         if (parameters.localOnly) {
-            registrationId = mapServiceContext.addLocalPartitionLostListener(listener, parameters.name);
-        } else {
-            registrationId = mapServiceContext.addPartitionLostListener(listener, parameters.name);
+            return newCompletedFuture(mapServiceContext.addLocalPartitionLostListener(listener, parameters.name));
         }
 
-        endpoint.addListenerDestroyAction(MapService.SERVICE_NAME, parameters.name, registrationId);
-        return registrationId;
+        return mapServiceContext.addPartitionLostListenerAsync(listener, parameters.name);
     }
 
     @Override
@@ -75,7 +68,7 @@ public class MapAddPartitionLostListenerMessageTask
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return MapAddPartitionLostListenerCodec.encodeResponse((String) response);
+        return MapAddPartitionLostListenerCodec.encodeResponse((UUID) response);
     }
 
 

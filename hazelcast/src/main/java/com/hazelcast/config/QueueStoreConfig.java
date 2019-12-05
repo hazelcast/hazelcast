@@ -16,8 +16,9 @@
 
 package com.hazelcast.config;
 
-import com.hazelcast.core.QueueStore;
-import com.hazelcast.core.QueueStoreFactory;
+import com.hazelcast.collection.QueueStore;
+import com.hazelcast.collection.QueueStoreFactory;
+import com.hazelcast.internal.config.ConfigDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
@@ -25,7 +26,7 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import java.io.IOException;
 import java.util.Properties;
 
-import static com.hazelcast.util.Preconditions.isNotNull;
+import static com.hazelcast.internal.util.Preconditions.isNotNull;
 
 /**
  * Configuration for the {@link QueueStore}.
@@ -38,7 +39,6 @@ public class QueueStoreConfig implements IdentifiedDataSerializable {
     private Properties properties = new Properties();
     private QueueStore storeImplementation;
     private QueueStoreFactory factoryImplementation;
-    private transient QueueStoreConfigReadOnly readOnly;
 
     public QueueStoreConfig() {
     }
@@ -59,19 +59,6 @@ public class QueueStoreConfig implements IdentifiedDataSerializable {
     public QueueStoreConfig setStoreImplementation(QueueStore storeImplementation) {
         this.storeImplementation = storeImplementation;
         return this;
-    }
-
-    /**
-     * Gets immutable version of this configuration.
-     *
-     * @return immutable version of this configuration
-     * @deprecated this method will be removed in 4.0; it is meant for internal usage only
-     */
-    public QueueStoreConfigReadOnly getAsReadOnly() {
-        if (readOnly == null) {
-            readOnly = new QueueStoreConfigReadOnly(this);
-        }
-        return readOnly;
     }
 
     public boolean isEnabled() {
@@ -142,7 +129,7 @@ public class QueueStoreConfig implements IdentifiedDataSerializable {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ConfigDataSerializerHook.QUEUE_STORE_CONFIG;
     }
 

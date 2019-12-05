@@ -25,6 +25,7 @@ import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.util.Properties;
 
+import static com.hazelcast.internal.util.Preconditions.checkTrue;
 
 /**
  * A {@link Config} which includes functionality for loading itself from a
@@ -39,9 +40,9 @@ public class FileSystemXmlConfig extends Config {
      * variables in the XML.
      *
      * @param configFilename the path of the Hazelcast xml configuration file
-     * @throws NullPointerException                  if configFilename is {@code null}
-     * @throws FileNotFoundException                 fi the file is not found
-     * @throws com.hazelcast.core.HazelcastException if the XML content is invalid
+     * @throws NullPointerException          if configFilename is {@code null}
+     * @throws FileNotFoundException         if the file is not found
+     * @throws InvalidConfigurationException if the XML content is invalid
      */
     public FileSystemXmlConfig(String configFilename) throws FileNotFoundException {
         this(configFilename, System.getProperties());
@@ -52,10 +53,10 @@ public class FileSystemXmlConfig extends Config {
      *
      * @param configFilename the path of the Hazelcast XML configuration file
      * @param properties     the Properties to resolve variables in the XML
-     * @throws FileNotFoundException                 fi the file is not found
-     * @throws NullPointerException                  if configFilename is {@code null}
-     * @throws IllegalArgumentException              if properties is {@code null}
-     * @throws com.hazelcast.core.HazelcastException if the XML content is invalid
+     * @throws FileNotFoundException         if the file is not found
+     * @throws NullPointerException          if configFilename is {@code null}
+     * @throws IllegalArgumentException      if properties is {@code null}
+     * @throws InvalidConfigurationException if the XML content is invalid
      */
     public FileSystemXmlConfig(String configFilename, Properties properties) throws FileNotFoundException {
         this(new File(configFilename), properties);
@@ -66,8 +67,8 @@ public class FileSystemXmlConfig extends Config {
      * variables in the XML.
      *
      * @param configFile the path of the Hazelcast XML configuration file
-     * @throws FileNotFoundException                 if the file doesn't exist
-     * @throws com.hazelcast.core.HazelcastException if the XML content is invalid
+     * @throws FileNotFoundException         if the file doesn't exist
+     * @throws InvalidConfigurationException if the XML content is invalid
      */
     public FileSystemXmlConfig(File configFile) throws FileNotFoundException {
         this(configFile, System.getProperties());
@@ -78,17 +79,13 @@ public class FileSystemXmlConfig extends Config {
      *
      * @param configFile the path of the Hazelcast xml configuration file
      * @param properties the Properties to resolve variables in the XML
-     * @throws IllegalArgumentException              if configFile or properties is {@code null}
-     * @throws FileNotFoundException                 if the file doesn't exist
-     * @throws com.hazelcast.core.HazelcastException if the XML content is invalid
+     * @throws IllegalArgumentException      if configFile or properties is {@code null}
+     * @throws FileNotFoundException         if the file doesn't exist
+     * @throws InvalidConfigurationException if the XML content is invalid
      */
     public FileSystemXmlConfig(File configFile, Properties properties) throws FileNotFoundException {
-        if (configFile == null) {
-            throw new IllegalArgumentException("configFile can't be null");
-        }
-        if (properties == null) {
-            throw new IllegalArgumentException("properties can't be null");
-        }
+        checkTrue(configFile != null, "configFile can't be null");
+        checkTrue(properties != null, "properties can't be null");
 
         LOGGER.info("Configuring Hazelcast from '" + configFile.getAbsolutePath() + "'.");
         InputStream in = new FileInputStream(configFile);

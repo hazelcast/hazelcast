@@ -17,17 +17,17 @@
 package com.hazelcast.map;
 
 import com.hazelcast.config.Config;
+import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IMap;
+import com.hazelcast.internal.services.RemoteService;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.PartitionContainer;
 import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.map.impl.recordstore.RecordStore;
-import com.hazelcast.spi.RemoteService;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.NightlyTest;
@@ -37,7 +37,7 @@ import org.junit.runner.RunWith;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import static com.hazelcast.config.MaxSizeConfig.MaxSizePolicy.PER_NODE;
+import static com.hazelcast.config.MaxSizePolicy.PER_NODE;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastSerialClassRunner.class)
@@ -117,8 +117,9 @@ public class MapContainerCreationUponDestroyStressTest extends HazelcastTestSupp
     private IMap<Long, Long> getIMap(String mapName) {
         Config config = new Config();
         MapConfig mapConfig = config.getMapConfig(mapName);
-        mapConfig.setEvictionPolicy(EvictionPolicy.LRU);
-        mapConfig.getMaxSizeConfig().setSize(10000).setMaxSizePolicy(PER_NODE);
+        EvictionConfig evictionConfig = mapConfig.getEvictionConfig();
+        evictionConfig.setEvictionPolicy(EvictionPolicy.LRU);
+        evictionConfig.setSize(10000).setMaxSizePolicy(PER_NODE);
         HazelcastInstance node = createHazelcastInstance(config);
 
         return node.getMap(mapName);

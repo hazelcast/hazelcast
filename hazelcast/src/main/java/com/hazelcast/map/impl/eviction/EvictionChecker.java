@@ -16,29 +16,30 @@
 
 package com.hazelcast.map.impl.eviction;
 
-import com.hazelcast.config.MaxSizeConfig;
+import com.hazelcast.config.EvictionConfig;
+import com.hazelcast.config.MaxSizePolicy;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.nearcache.NearCache;
+import com.hazelcast.internal.util.MemoryInfoAccessor;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.PartitionContainer;
 import com.hazelcast.map.impl.nearcache.MapNearCacheManager;
 import com.hazelcast.map.impl.recordstore.RecordStore;
-import com.hazelcast.monitor.NearCacheStats;
-import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.util.MemoryInfoAccessor;
+import com.hazelcast.nearcache.NearCacheStats;
+import com.hazelcast.spi.impl.NodeEngine;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.hazelcast.cluster.memberselector.MemberSelectors.DATA_MEMBER_SELECTOR;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.memory.MemoryUnit.MEGABYTES;
-import static com.hazelcast.util.Preconditions.checkNotNull;
 import static java.lang.String.format;
 
 /**
- * Checks whether a specific threshold is exceeded or not
- * according to configured {@link com.hazelcast.config.MaxSizeConfig.MaxSizePolicy}
+ * Checks whether a specific threshold is exceeded or not according to
+ * configured {@link MaxSizePolicy}
  * to start eviction process.
  *
  * @see EvictorImpl#evictionChecker
@@ -83,11 +84,11 @@ public class EvictionChecker {
         String mapName = recordStore.getName();
 
         MapContainer mapContainer = recordStore.getMapContainer();
-        MaxSizeConfig maxSizeConfig = mapContainer.getMapConfig().getMaxSizeConfig();
-        MaxSizeConfig.MaxSizePolicy maxSizePolicy = maxSizeConfig.getMaxSizePolicy();
-        int maxConfiguredSize = maxSizeConfig.getSize();
+        EvictionConfig evictionConfig = mapContainer.getMapConfig().getEvictionConfig();
+        MaxSizePolicy maximumSizePolicy = evictionConfig.getMaxSizePolicy();
+        int maxConfiguredSize = evictionConfig.getSize();
 
-        switch (maxSizePolicy) {
+        switch (maximumSizePolicy) {
             case PER_NODE:
                 return recordStore.size() > toPerPartitionMaxSize(maxConfiguredSize, mapName);
             case PER_PARTITION:
@@ -101,14 +102,14 @@ public class EvictionChecker {
             case FREE_HEAP_PERCENTAGE:
                 return (availableMemoryInBytes() * ONE_HUNDRED / Math.max(maxMemoryInBytes(), 1)) < maxConfiguredSize;
             default:
-                throw new IllegalArgumentException("Not an appropriate max size policy [" + maxSizePolicy + ']');
+                throw new IllegalArgumentException("Not an appropriate max size policy [" + maximumSizePolicy + ']');
         }
     }
 
     /**
      * Calculates and returns the expected maximum size of an evicted
      * record-store when {@link
-     * com.hazelcast.config.MaxSizeConfig.MaxSizePolicy#PER_NODE
+     * MaxSizePolicy#PER_NODE
      * PER_NODE} max-size-policy is used.
      */
     private double toPerPartitionMaxSize(int maxConfiguredSize, String mapName) {

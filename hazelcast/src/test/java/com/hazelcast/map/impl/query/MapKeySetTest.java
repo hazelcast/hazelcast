@@ -17,13 +17,13 @@
 package com.hazelcast.map.impl.query;
 
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IMap;
+import com.hazelcast.map.IMap;
 import com.hazelcast.query.Predicate;
-import com.hazelcast.query.TruePredicate;
-import com.hazelcast.spi.serialization.SerializationService;
+import com.hazelcast.query.Predicates;
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
 import org.junit.Test;
@@ -39,7 +39,7 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class MapKeySetTest extends HazelcastTestSupport {
 
     private IMap<String, String> map;
@@ -60,7 +60,7 @@ public class MapKeySetTest extends HazelcastTestSupport {
 
     @Test
     public void whenMapEmpty() {
-        Set<String> result = map.keySet(TruePredicate.INSTANCE);
+        Set<String> result = map.keySet(Predicates.alwaysTrue());
 
         assertTrue(result.isEmpty());
     }
@@ -82,7 +82,7 @@ public class MapKeySetTest extends HazelcastTestSupport {
         map.put("2", "b");
         map.put("3", "c");
 
-        Set<String> result = map.keySet(TruePredicate.INSTANCE);
+        Set<String> result = map.keySet(Predicates.alwaysTrue());
 
         assertEquals(setOf("1", "2", "3"), result);
     }
@@ -101,7 +101,7 @@ public class MapKeySetTest extends HazelcastTestSupport {
     @Test
     public void testResultType() {
         map.put("1", "a");
-        Set<String> entries = map.keySet(TruePredicate.INSTANCE);
+        Set<String> entries = map.keySet(Predicates.alwaysTrue());
 
         QueryResultCollection collection = assertInstanceOf(QueryResultCollection.class, entries);
         QueryResultRow row = (QueryResultRow) collection.getRows().iterator().next();

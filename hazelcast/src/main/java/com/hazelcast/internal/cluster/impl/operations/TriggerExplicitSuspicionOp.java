@@ -51,7 +51,7 @@ public class TriggerExplicitSuspicionOp extends AbstractClusterOperation {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return TRIGGER_EXPLICIT_SUSPICION;
     }
 

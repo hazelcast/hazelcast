@@ -17,6 +17,7 @@
 package com.hazelcast.map.impl.query;
 
 import com.hazelcast.query.impl.QueryableEntry;
+import com.hazelcast.internal.util.collection.PartitionIdSet;
 
 import java.util.Collection;
 
@@ -46,5 +47,5 @@ public interface ResultProcessor<T extends Result> {
      * @param partitionIds partitionIds where the given entries reside
      * @return Result of a concrete type.
      */
-    T populateResult(Query query, long resultLimit, Collection<QueryableEntry> entries, Collection<Integer> partitionIds);
+    T populateResult(Query query, long resultLimit, Collection<QueryableEntry> entries, PartitionIdSet partitionIds);
 }

@@ -18,7 +18,7 @@ package com.hazelcast.replicatedmap.impl.operation;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.impl.operations.PartitionAwareOperationFactory;
 import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 import com.hazelcast.spi.merge.SplitBrainMergeTypes.ReplicatedMapMergeTypes;
@@ -83,7 +83,7 @@ public class MergeOperationFactory extends PartitionAwareOperationFactory {
         mergingEntries = new List[partitions.length];
         for (int partitionIndex = 0; partitionIndex < partitions.length; partitionIndex++) {
             int size = in.readInt();
-            List<ReplicatedMapMergeTypes> list = new ArrayList<ReplicatedMapMergeTypes>(size);
+            List<ReplicatedMapMergeTypes> list = new ArrayList<>(size);
             for (int i = 0; i < size; i++) {
                 ReplicatedMapMergeTypes mergingEntry = in.readObject();
                 list.add(mergingEntry);
@@ -99,7 +99,7 @@ public class MergeOperationFactory extends PartitionAwareOperationFactory {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ReplicatedMapDataSerializerHook.MERGE_FACTORY;
     }
 }

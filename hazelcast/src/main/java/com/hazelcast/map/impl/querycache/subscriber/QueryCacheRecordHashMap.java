@@ -22,9 +22,9 @@ import com.hazelcast.internal.eviction.EvictionListener;
 import com.hazelcast.internal.eviction.impl.strategy.sampling.SampleableEvictableStore;
 import com.hazelcast.map.impl.querycache.subscriber.record.QueryCacheRecord;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.SerializableByConvention;
-import com.hazelcast.spi.serialization.SerializationService;
-import com.hazelcast.util.SampleableConcurrentHashMap;
+import com.hazelcast.internal.serialization.SerializableByConvention;
+import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.util.SampleableConcurrentHashMap;
 
 /**
  * Evictable concurrent hash map implementation.
@@ -44,7 +44,7 @@ public class QueryCacheRecordHashMap extends SampleableConcurrentHashMap<Data, Q
     }
 
     /**
-     * @see com.hazelcast.util.SampleableConcurrentHashMap.SamplingEntry
+     * @see com.hazelcast.internal.util.SampleableConcurrentHashMap.SamplingEntry
      * @see EvictionCandidate
      */
     class QueryCacheEvictableSamplingEntry
@@ -86,8 +86,8 @@ public class QueryCacheRecordHashMap extends SampleableConcurrentHashMap<Data, Q
         }
 
         @Override
-        public long getAccessHit() {
-            return value.getAccessHit();
+        public long getHits() {
+            return value.getHits();
         }
     }
 

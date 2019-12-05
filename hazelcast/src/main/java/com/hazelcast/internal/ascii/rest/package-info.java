@@ -15,6 +15,6 @@
  */
 
 /**
- * <p>This package contains Reset functionality for Hazelcast.<br/>
+ * <p>This package contains Reset functionality for Hazelcast.<br>
  */
 package com.hazelcast.internal.ascii.rest;

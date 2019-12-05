@@ -17,7 +17,7 @@
 package com.hazelcast.config;
 
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Rule;
 import org.junit.Test;
@@ -34,7 +34,7 @@ import java.util.Random;
 import static com.hazelcast.config.XMLConfigBuilderTest.HAZELCAST_START_TAG;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class InvalidConfigurationTest {
 
     @Rule
@@ -127,17 +127,6 @@ public class InvalidConfigurationTest {
     }
 
     @Test
-    public void testWhenValid_MapEvictionPolicy() {
-        buildConfig("map-eviction-policy", "NONE");
-    }
-
-    @Test
-    public void testWhenInvalid_MapEvictionPercentage() {
-        expectInvalid();
-        buildConfig("map-eviction-percentage", "101");
-    }
-
-    @Test
     public void testWhenInvalid_MultiMapBackupCount() {
         expectInvalid();
         buildConfig("multimap-backup-count", getInvalidBackupCount());
@@ -184,34 +173,6 @@ public class InvalidConfigurationTest {
     @Test
     public void testWhenValid_SetBackupCount() {
         buildConfig("list-backup-count", getValidBackupCount());
-    }
-
-    @Test
-    public void testWhenInvalid_SemaphoreInitialPermits() {
-        expectInvalid();
-        buildConfig("semaphore-initial-permits", "-1");
-    }
-
-    @Test
-    public void testWhenInvalid_SemaphoreBackupCount() {
-        expectInvalid();
-        buildConfig("semaphore-backup-count", getInvalidBackupCount());
-    }
-
-    @Test
-    public void testWhenValid_SemaphoreBackupCount() {
-        buildConfig("semaphore-backup-count", getValidBackupCount());
-    }
-
-    @Test
-    public void testWhenInvalid_AsyncSemaphoreBackupCount() {
-        expectInvalid();
-        buildConfig("semaphore-async-backup-count", getInvalidBackupCount());
-    }
-
-    @Test
-    public void testWhenValid_AsyncSemaphoreBackupCount() {
-        buildConfig("semaphore-async-backup-count", getValidBackupCount());
     }
 
     @Test
@@ -407,7 +368,6 @@ public class InvalidConfigurationTest {
         properties.setProperty("map-time-to-live-seconds", "0");
         properties.setProperty("map-max-idle-seconds", "0");
         properties.setProperty("map-eviction-policy", "NONE");
-        properties.setProperty("map-eviction-percentage", "25");
 
         properties.setProperty("cache-in-memory-format", "BINARY");
         properties.setProperty("cache-backup-count", "0");
@@ -456,8 +416,7 @@ public class InvalidConfigurationTest {
                 + "</network>\n"
 
                 + "<queue name=\"default\">\n"
-                + "<quorum-ref>quorumRuleWithThreeMembers</quorum-ref>"
-                + "<max-size>0</max-size>\n"
+                + "<split-brain-protection-ref>splitBrainProtectionRuleWithThreeMembers</split-brain-protection-ref>"
                 + "<backup-count>${queue-backup-count}</backup-count>\n"
                 + "<async-backup-count>${queue-async-backup-count}</async-backup-count>\n"
                 + "<empty-queue-ttl>${empty-queue-ttl}</empty-queue-ttl>\n"
@@ -469,8 +428,7 @@ public class InvalidConfigurationTest {
                 + "<async-backup-count>${map-async-backup-count}</async-backup-count>\n"
                 + "<time-to-live-seconds>${map-time-to-live-seconds}</time-to-live-seconds>\n"
                 + "<max-idle-seconds>${map-max-idle-seconds}</max-idle-seconds>\n"
-                + "<eviction-policy>${map-eviction-policy}</eviction-policy>\n"
-                + "<eviction-percentage>${map-eviction-percentage}</eviction-percentage>\n"
+                + "<eviction size=\"0\" eviction-policy=\"${map-eviction-policy}\"/>"
                 + "</map>\n"
 
                 + "<cache name=\"default\">\n"
@@ -515,16 +473,6 @@ public class InvalidConfigurationTest {
                 + "<set name=\"default\">\n"
                 + "<backup-count>${set-backup-count}</backup-count>\n"
                 + "</set>\n"
-
-                + "<semaphore name=\"default\">\n"
-                + "<initial-permits>${semaphore-initial-permits}</initial-permits>\n"
-                + "<backup-count>${semaphore-backup-count}</backup-count>\n"
-                + "<async-backup-count>${semaphore-async-backup-count}</async-backup-count>\n"
-                + "</semaphore>\n"
-
-                + "<lock name=\"default\">\n"
-                + "<quorum-ref>quorumRuleWithThreeMembers</quorum-ref>\n"
-                + "</lock>"
 
                 + "    <ringbuffer name=\"default\">\n"
                 + "        <capacity>10000</capacity>\n"

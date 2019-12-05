@@ -18,27 +18,29 @@ package com.hazelcast.client.impl.protocol.task;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ClientRemoveDistributedObjectListenerCodec;
-import com.hazelcast.instance.Node;
-import com.hazelcast.nio.Connection;
+import com.hazelcast.instance.impl.Node;
+import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.spi.impl.proxyservice.impl.ProxyServiceImpl;
 
 import java.security.Permission;
 
 public class RemoveDistributedObjectListenerMessageTask
-        extends AbstractRemoveListenerMessageTask<ClientRemoveDistributedObjectListenerCodec.RequestParameters> {
+        extends AbstractCallableMessageTask<ClientRemoveDistributedObjectListenerCodec.RequestParameters> {
 
     public RemoveDistributedObjectListenerMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
     @Override
-    protected boolean deRegisterListener() {
+    protected Object call()
+            throws Exception {
+        endpoint.removeDestroyAction(parameters.registrationId);
         return clientEngine.getProxyService().removeProxyListener(parameters.registrationId);
     }
 
     @Override
-    protected String getRegistrationId() {
-        return parameters.registrationId;
+    public Object[] getParameters() {
+        return new Object[]{parameters.registrationId};
     }
 
     @Override

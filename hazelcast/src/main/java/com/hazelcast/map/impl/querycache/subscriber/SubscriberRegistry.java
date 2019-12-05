@@ -16,40 +16,38 @@
 
 package com.hazelcast.map.impl.querycache.subscriber;
 
+import com.hazelcast.map.IMap;
 import com.hazelcast.map.impl.querycache.QueryCacheContext;
 import com.hazelcast.map.impl.querycache.Registry;
 import com.hazelcast.map.impl.querycache.accumulator.Accumulator;
 import com.hazelcast.map.impl.querycache.accumulator.AccumulatorFactory;
 import com.hazelcast.map.impl.querycache.accumulator.AccumulatorInfo;
 import com.hazelcast.map.impl.querycache.accumulator.AccumulatorInfoSupplier;
-import com.hazelcast.util.ConstructorFunction;
+import com.hazelcast.internal.util.ConstructorFunction;
 
 import java.util.Collections;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
-import static com.hazelcast.util.ConcurrencyUtil.getOrPutIfAbsent;
-import static com.hazelcast.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.ConcurrencyUtil.getOrPutIfAbsent;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 /**
- * All registered subscriber side accumulators for an {@link com.hazelcast.core.IMap IMap}
+ * All registered subscriber side accumulators for an {@link IMap IMap}
  * can be reached from this registry class.
- * <p/>
+ * <p>
  * Every map has only one {@link SubscriberRegistry}.
  */
 public class SubscriberRegistry implements Registry<String, Accumulator> {
 
     private final ConstructorFunction<String, Accumulator> accumulatorConstructor =
-            new ConstructorFunction<String, Accumulator>() {
-                @Override
-                public Accumulator createNew(String cacheId) {
-                    AccumulatorInfo info = getAccumulatorInfo(cacheId);
-                    checkNotNull(info, "info cannot be null");
+            cacheId -> {
+                AccumulatorInfo info = getAccumulatorInfo(cacheId);
+                checkNotNull(info, "info cannot be null");
 
-                    AccumulatorFactory accumulatorFactory = createSubscriberAccumulatorFactory();
-                    return accumulatorFactory.createAccumulator(info);
-                }
+                AccumulatorFactory accumulatorFactory = createSubscriberAccumulatorFactory();
+                return accumulatorFactory.createAccumulator(info);
             };
 
     private final String mapName;
@@ -59,7 +57,7 @@ public class SubscriberRegistry implements Registry<String, Accumulator> {
     public SubscriberRegistry(QueryCacheContext context, String mapName) {
         this.context = context;
         this.mapName = mapName;
-        this.accumulators = new ConcurrentHashMap<String, Accumulator>();
+        this.accumulators = new ConcurrentHashMap<>();
     }
 
     @Override

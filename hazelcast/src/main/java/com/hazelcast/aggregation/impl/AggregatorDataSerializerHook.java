@@ -21,7 +21,7 @@ import com.hazelcast.internal.serialization.impl.ArrayDataSerializableFactory;
 import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.util.ConstructorFunction;
+import com.hazelcast.internal.util.ConstructorFunction;
 
 import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.AGGREGATOR_DS_FACTORY;
 import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.AGGREGATOR_DS_FACTORY_ID;
@@ -49,15 +49,16 @@ public final class AggregatorDataSerializerHook implements DataSerializerHook {
     public static final int NUMBER_AVG = 16;
     public static final int MAX_BY = 17;
     public static final int MIN_BY = 18;
+    public static final int CANONICALIZING_SET = 19;
 
-
-    private static final int LEN = MIN_BY + 1;
+    private static final int LEN = CANONICALIZING_SET + 1;
 
     @Override
     public int getFactoryId() {
         return F_ID;
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public DataSerializableFactory createFactory() {
         ConstructorFunction<Integer, IdentifiedDataSerializable>[] constructors = new ConstructorFunction[LEN];
@@ -155,6 +156,11 @@ public final class AggregatorDataSerializerHook implements DataSerializerHook {
         constructors[MIN_BY] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             public IdentifiedDataSerializable createNew(Integer arg) {
                 return new MinByAggregator();
+            }
+        };
+        constructors[CANONICALIZING_SET] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new CanonicalizingHashSet();
             }
         };
 

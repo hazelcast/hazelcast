@@ -16,38 +16,40 @@
 
 package com.hazelcast.internal.partition.impl;
 
-import com.hazelcast.core.MigrationEvent;
-import com.hazelcast.core.MigrationEvent.MigrationStatus;
-import com.hazelcast.core.MigrationListener;
-import com.hazelcast.partition.PartitionEventListener;
+import com.hazelcast.internal.partition.PartitionEventListener;
+import com.hazelcast.partition.ReplicaMigrationEvent;
+import com.hazelcast.partition.MigrationListener;
 
 /**
  * Wraps a migration listener and dispatches a migration event to matching method
  */
-class MigrationListenerAdapter implements PartitionEventListener<MigrationEvent> {
+class MigrationListenerAdapter implements PartitionEventListener<ReplicaMigrationEvent> {
+
+    static final int MIGRATION_STARTED = -1;
+    static final int MIGRATION_FINISHED = -2;
 
     private final MigrationListener migrationListener;
 
-    public MigrationListenerAdapter(MigrationListener migrationListener) {
+    MigrationListenerAdapter(MigrationListener migrationListener) {
         this.migrationListener = migrationListener;
     }
 
     @Override
-    public void onEvent(MigrationEvent migrationEvent) {
+    public void onEvent(ReplicaMigrationEvent event) {
 
-        final MigrationStatus status = migrationEvent.getStatus();
-        switch (status) {
-            case STARTED:
-                migrationListener.migrationStarted(migrationEvent);
+        switch (event.getPartitionId()) {
+            case MIGRATION_STARTED:
+                migrationListener.migrationStarted(event.getMigrationState());
                 break;
-            case COMPLETED:
-                migrationListener.migrationCompleted(migrationEvent);
-                break;
-            case FAILED:
-                migrationListener.migrationFailed(migrationEvent);
+            case MIGRATION_FINISHED:
+                migrationListener.migrationFinished(event.getMigrationState());
                 break;
             default:
-                throw new IllegalArgumentException("Not a known MigrationStatus: " + status);
+                if (event.isSuccess()) {
+                    migrationListener.replicaMigrationCompleted(event);
+                } else {
+                    migrationListener.replicaMigrationFailed(event);
+                }
         }
 
     }

@@ -17,8 +17,8 @@
 package com.hazelcast.core;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.instance.HazelcastInstanceFactory;
-import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
+import com.hazelcast.instance.impl.HazelcastInstanceFactory;
+import com.hazelcast.instance.impl.OutOfMemoryErrorDispatcher;
 
 import java.util.Set;
 
@@ -44,7 +44,7 @@ public final class Hazelcast {
      * Creates a new HazelcastInstance (a new node in a cluster).
      * This method allows you to create and run multiple instances
      * of Hazelcast cluster members on the same JVM.
-     * <p/>
+     * <p>
      * To shutdown all running HazelcastInstances (all members on this JVM)
      * call {@link #shutdownAll()}.
      *
@@ -61,7 +61,7 @@ public final class Hazelcast {
      * Creates a new HazelcastInstance (a new node in a cluster).
      * This method allows you to create and run multiple instances
      * of Hazelcast cluster members on the same JVM.
-     * <p/>
+     * <p>
      * To shutdown all running HazelcastInstances (all members on this JVM)
      * call {@link #shutdownAll()}.
      *
@@ -93,7 +93,7 @@ public final class Hazelcast {
 
     /**
      * Returns an existing HazelcastInstance with instanceName.
-     * <p/>
+     * <p>
      * To shutdown all running HazelcastInstances (all members on this JVM)
      * call {@link #shutdownAll()}.
      *
@@ -168,7 +168,7 @@ public final class Hazelcast {
 
     /**
      * Returns all active/running HazelcastInstances on this JVM.
-     * <p/>
+     * <p>
      * To shutdown all running HazelcastInstances (all members on this JVM)
      * call {@link #shutdownAll()}.
      *
@@ -182,17 +182,17 @@ public final class Hazelcast {
     }
 
     /**
-     * Sets <tt>OutOfMemoryHandler</tt> to be used when an <tt>OutOfMemoryError</tt>
+     * Sets <code>OutOfMemoryHandler</code> to be used when an <code>OutOfMemoryError</code>
      * is caught by Hazelcast threads.
      *
      * <p>
-     * <b>Warning: </b> <tt>OutOfMemoryHandler</tt> may not be called although JVM throws
-     * <tt>OutOfMemoryError</tt>.
+     * <b>Warning: </b> <code>OutOfMemoryHandler</code> may not be called although JVM throws
+     * <code>OutOfMemoryError</code>.
      * Because error may be thrown from an external (user thread) thread
-     * and Hazelcast may not be informed about <tt>OutOfMemoryError</tt>.
+     * and Hazelcast may not be informed about <code>OutOfMemoryError</code>.
      * </p>
      *
-     * @param outOfMemoryHandler set when an <tt>OutOfMemoryError</tt> is caught by Hazelcast threads
+     * @param outOfMemoryHandler set when an <code>OutOfMemoryError</code> is caught by Hazelcast threads
      *
      * @see OutOfMemoryError
      * @see OutOfMemoryHandler

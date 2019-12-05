@@ -17,7 +17,7 @@
 
 package com.hazelcast.internal.util.concurrent;
 
-import com.hazelcast.util.QuickMath;
+import com.hazelcast.internal.util.QuickMath;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.util.Collection;

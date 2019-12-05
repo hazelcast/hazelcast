@@ -21,11 +21,11 @@
        xsi:schemaLocation="http://www.springframework.org/schema/beans
         http://www.springframework.org/schema/beans/spring-beans.xsd
         http://www.hazelcast.com/schema/spring
-        http://www.hazelcast.com/schema/spring/hazelcast-spring-3.11.xsd">
+        http://www.hazelcast.com/schema/spring/hazelcast-spring-4.0.xsd">
 
     <hz:hazelcast id="instance">
         <hz:config>
-            <hz:group name="dev1" password="dev-pass"/>
+            <hz:cluster-name>dev1</hz:cluster-name>
             <hz:network port="5701" port-auto-increment="false">
                 <hz:join>
                     <hz:multicast enabled="true"/>
@@ -37,8 +37,8 @@
                     <hz:interface>127.0.0.1</hz:interface>
                 </hz:interfaces>
             </hz:network>
-            <hz:replicatedmap name="replicatedMap" concurrency-level="3" in-memory-format="OBJECT" async-fillup="true"
-                              statistics-enabled="false" replication-delay-millis="10">
+            <hz:replicatedmap name="replicatedMap" in-memory-format="OBJECT" async-fillup="true"
+                              statistics-enabled="false">
                 <hz:entry-listeners>
                     <hz:entry-listener class-name="com.hazelcast.spring.DummyEntryListener"/>
                 </hz:entry-listeners>

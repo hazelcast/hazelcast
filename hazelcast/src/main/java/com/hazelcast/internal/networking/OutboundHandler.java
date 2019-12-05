@@ -16,11 +16,13 @@
 
 package com.hazelcast.internal.networking;
 
+import com.hazelcast.internal.nio.IOUtil;
+
 import java.nio.ByteBuffer;
 
 import static com.hazelcast.internal.networking.ChannelOption.DIRECT_BUF;
 import static com.hazelcast.internal.networking.ChannelOption.SO_SNDBUF;
-import static com.hazelcast.nio.IOUtil.newByteBuffer;
+import static com.hazelcast.internal.nio.IOUtil.newByteBuffer;
 
 /**
  * The {@link OutboundHandler} is a {@link ChannelHandler} for outbound
@@ -41,7 +43,7 @@ import static com.hazelcast.nio.IOUtil.newByteBuffer;
  *
  * If OutboundHandler has an destination buffer and the {@link #onWrite()}
  * is called, the first thing it should do is to call
- * {@link com.hazelcast.nio.IOUtil#compactOrClear(ByteBuffer)} so it flips to
+ * {@link IOUtil#compactOrClear(ByteBuffer)} so it flips to
  * writing mode. And at the end of the onWrite method, the destination buffer
  * should be flipped into reading mode.
  *
@@ -50,9 +52,9 @@ import static com.hazelcast.nio.IOUtil.newByteBuffer;
  * in front to put that buffer in reading mode.
  *
  * @param <S> the type of the source. E.g. a ByteBuffer or a
- *            {@link com.hazelcast.util.function.Supplier}.
+ *            {@link java.util.function.Supplier}.
  * @param <D> the type of the destination. E.g. a ByteBuffer or a
- *            {@link com.hazelcast.util.function.Consumer}.
+ *            {@link java.util.function.Consumer}.
  * @see Networking
  * @see InboundHandler
  * @see ChannelInitializer

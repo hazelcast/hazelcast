@@ -16,20 +16,21 @@
 
 package com.hazelcast.internal.jmx;
 
-import com.hazelcast.core.IMap;
+import com.hazelcast.map.IMap;
 import com.hazelcast.internal.jmx.suppliers.LocalMapStatsSupplier;
 import com.hazelcast.internal.jmx.suppliers.StatsSupplier;
-import com.hazelcast.monitor.LocalMapStats;
+import com.hazelcast.map.LocalMapStats;
 import com.hazelcast.query.Predicate;
-import com.hazelcast.query.SqlPredicate;
+import com.hazelcast.query.Predicates;
 
 import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
 
 /**
- * Management bean for {@link com.hazelcast.core.IMap}
+ * Management bean for {@link IMap}
  */
+@SuppressWarnings({"checkstyle:methodcount"})
 @ManagedDescription("IMap")
 public class MapMBean extends HazelcastMBean<IMap> {
 
@@ -114,6 +115,12 @@ public class MapMBean extends HazelcastMBean<IMap> {
         return localMapStatsDelegate.getLocalStats().getPutOperationCount();
     }
 
+    @ManagedAnnotation("localSetOperationCount")
+    @ManagedDescription("the number of set operations on this member")
+    public long getLocalSetOperationCount() {
+        return localMapStatsDelegate.getLocalStats().getSetOperationCount();
+    }
+
     @ManagedAnnotation("localGetOperationCount")
     @ManagedDescription("number of get operations on this member")
     public long getLocalGetOperationCount() {
@@ -132,6 +139,12 @@ public class MapMBean extends HazelcastMBean<IMap> {
         return localMapStatsDelegate.getLocalStats().getTotalPutLatency();
     }
 
+    @ManagedAnnotation("localTotalSetLatency")
+    @ManagedDescription("the total latency of set operations. To get the average latency, divide to number of sets")
+    public long getLocalTotalSetLatency() {
+        return localMapStatsDelegate.getLocalStats().getTotalSetLatency();
+    }
+
     @ManagedAnnotation("localTotalGetLatency")
     @ManagedDescription("the total latency of get operations. To get the average latency, divide to number of gets")
     public long getLocalTotalGetLatency() {
@@ -148,6 +161,12 @@ public class MapMBean extends HazelcastMBean<IMap> {
     @ManagedDescription("the maximum latency of put operations. To get the average latency, divide to number of puts")
     public long getLocalMaxPutLatency() {
         return localMapStatsDelegate.getLocalStats().getMaxPutLatency();
+    }
+
+    @ManagedAnnotation("localMaxSetLatency")
+    @ManagedDescription("the maximum latency of set operations. To get the average latency, divide to number of sets")
+    public long getLocalMaxSetLatency() {
+        return localMapStatsDelegate.getLocalStats().getMaxSetLatency();
     }
 
     @ManagedAnnotation("localMaxGetLatency")
@@ -214,7 +233,7 @@ public class MapMBean extends HazelcastMBean<IMap> {
     public String values(String query) {
         Collection coll;
         if (query != null && !query.isEmpty()) {
-            Predicate predicate = new SqlPredicate(query);
+            Predicate predicate = Predicates.sql(query);
             coll = managedObject.values(predicate);
         } else {
             coll = managedObject.values();
@@ -237,7 +256,7 @@ public class MapMBean extends HazelcastMBean<IMap> {
     public String entrySet(String query) {
         Set<Map.Entry> entrySet;
         if (query != null && !query.isEmpty()) {
-            Predicate predicate = new SqlPredicate(query);
+            Predicate predicate = Predicates.sql(query);
             entrySet = managedObject.entrySet(predicate);
         } else {
             entrySet = managedObject.entrySet();

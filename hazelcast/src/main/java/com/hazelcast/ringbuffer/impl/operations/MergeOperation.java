@@ -31,20 +31,20 @@ import com.hazelcast.ringbuffer.impl.ArrayRingbuffer;
 import com.hazelcast.ringbuffer.impl.Ringbuffer;
 import com.hazelcast.ringbuffer.impl.RingbufferContainer;
 import com.hazelcast.ringbuffer.impl.RingbufferService;
-import com.hazelcast.spi.BackupAwareOperation;
-import com.hazelcast.spi.ObjectNamespace;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.ServiceNamespace;
-import com.hazelcast.spi.ServiceNamespaceAware;
+import com.hazelcast.spi.impl.operationservice.BackupAwareOperation;
+import com.hazelcast.internal.services.ObjectNamespace;
+import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.internal.services.ServiceNamespace;
+import com.hazelcast.internal.services.ServiceNamespaceAware;
 import com.hazelcast.spi.merge.RingbufferMergeData;
 import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 import com.hazelcast.spi.merge.SplitBrainMergeTypes.RingbufferMergeTypes;
-import com.hazelcast.spi.serialization.SerializationService;
+import com.hazelcast.internal.serialization.SerializationService;
 
 import java.io.IOException;
 
-import static com.hazelcast.nio.IOUtil.readObject;
-import static com.hazelcast.nio.IOUtil.writeObject;
+import static com.hazelcast.internal.nio.IOUtil.readObject;
+import static com.hazelcast.internal.nio.IOUtil.writeObject;
 import static com.hazelcast.ringbuffer.impl.RingbufferDataSerializerHook.F_ID;
 import static com.hazelcast.ringbuffer.impl.RingbufferDataSerializerHook.MERGE_OPERATION;
 import static com.hazelcast.ringbuffer.impl.RingbufferService.SERVICE_NAME;
@@ -229,7 +229,7 @@ public class MergeOperation extends Operation
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MERGE_OPERATION;
     }
 

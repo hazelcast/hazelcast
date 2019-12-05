@@ -17,11 +17,11 @@
 package com.hazelcast.cluster;
 
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.instance.HazelcastInstanceFactory;
-import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.instance.impl.HazelcastInstanceFactory;
+import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.NightlyTest;
-import com.hazelcast.util.AbstractClockTest;
+import com.hazelcast.internal.util.AbstractClockTest;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -37,14 +37,14 @@ public class SystemClockChangeTest extends AbstractClockTest {
 
     @BeforeClass
     public static void setSystemProps() {
-        System.setProperty(GroupProperty.HEARTBEAT_INTERVAL_SECONDS.getName(), "1");
-        System.setProperty(GroupProperty.MAX_NO_HEARTBEAT_SECONDS.getName(), "10");
+        System.setProperty(ClusterProperty.HEARTBEAT_INTERVAL_SECONDS.getName(), "1");
+        System.setProperty(ClusterProperty.MAX_NO_HEARTBEAT_SECONDS.getName(), "10");
     }
 
     @AfterClass
     public static void clearSystemProps() {
-        System.clearProperty(GroupProperty.HEARTBEAT_INTERVAL_SECONDS.getName());
-        System.clearProperty(GroupProperty.MAX_NO_HEARTBEAT_SECONDS.getName());
+        System.clearProperty(ClusterProperty.HEARTBEAT_INTERVAL_SECONDS.getName());
+        System.clearProperty(ClusterProperty.MAX_NO_HEARTBEAT_SECONDS.getName());
     }
 
     @After

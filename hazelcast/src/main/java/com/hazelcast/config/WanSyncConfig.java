@@ -16,6 +16,7 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.internal.config.ConfigDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
@@ -25,7 +26,7 @@ import java.io.IOException;
 /**
  * Configuration object for the WAN sync mechanism.
  *
- * @see WanPublisherConfig
+ * @see WanBatchReplicationPublisherConfig
  * @since 3.11
  */
 public class WanSyncConfig implements IdentifiedDataSerializable {
@@ -69,7 +70,7 @@ public class WanSyncConfig implements IdentifiedDataSerializable {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ConfigDataSerializerHook.WAN_SYNC_CONFIG;
     }
 

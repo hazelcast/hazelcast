@@ -17,16 +17,18 @@
 package com.hazelcast.internal.management;
 
 import com.hazelcast.cache.impl.JCacheDetector;
-import com.hazelcast.config.GroupConfig;
+import com.hazelcast.cluster.Address;
+import com.hazelcast.cluster.Member;
+import com.hazelcast.cluster.MemberAttributeEvent;
+import com.hazelcast.cluster.MembershipEvent;
+import com.hazelcast.cluster.MembershipListener;
 import com.hazelcast.config.ManagementCenterConfig;
-import com.hazelcast.core.Member;
-import com.hazelcast.core.MemberAttributeEvent;
-import com.hazelcast.core.MembershipEvent;
-import com.hazelcast.core.MembershipListener;
-import com.hazelcast.instance.HazelcastInstanceImpl;
+import com.hazelcast.core.HazelcastException;
+import com.hazelcast.instance.impl.HazelcastInstanceImpl;
 import com.hazelcast.internal.ascii.rest.HttpCommand;
+import com.hazelcast.internal.json.Json;
 import com.hazelcast.internal.json.JsonObject;
-import com.hazelcast.internal.json.JsonValue;
+import com.hazelcast.internal.management.dto.ClientBwListDTO;
 import com.hazelcast.internal.management.events.Event;
 import com.hazelcast.internal.management.events.EventBatch;
 import com.hazelcast.internal.management.operation.UpdateManagementCenterUrlOperation;
@@ -51,16 +53,18 @@ import com.hazelcast.internal.management.request.ShutdownClusterRequest;
 import com.hazelcast.internal.management.request.ThreadDumpRequest;
 import com.hazelcast.internal.management.request.TriggerPartialStartRequest;
 import com.hazelcast.internal.management.request.WanCheckConsistencyRequest;
+import com.hazelcast.internal.nio.IOUtil;
+import com.hazelcast.internal.util.Clock;
+import com.hazelcast.internal.util.ExceptionUtil;
+import com.hazelcast.internal.util.executor.ExecutorType;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.impl.MapService;
-import com.hazelcast.nio.Address;
-import com.hazelcast.nio.IOUtil;
-import com.hazelcast.spi.ExecutionService;
-import com.hazelcast.spi.InternalCompletableFuture;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.OperationService;
-import com.hazelcast.util.Clock;
-import com.hazelcast.util.ExceptionUtil;
+import com.hazelcast.spi.exception.RetryableException;
+import com.hazelcast.spi.impl.executionservice.ExecutionService;
+import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.spi.impl.operationservice.OperationService;
+import com.hazelcast.spi.impl.operationservice.impl.InvocationFuture;
+import com.hazelcast.spi.properties.ClusterProperty;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -75,33 +79,39 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static com.hazelcast.instance.OutOfMemoryErrorDispatcher.inspectOutOfMemoryError;
-import static com.hazelcast.nio.IOUtil.closeResource;
-import static com.hazelcast.spi.ExecutionService.ASYNC_EXECUTOR;
-import static com.hazelcast.util.EmptyStatement.ignore;
-import static com.hazelcast.util.ExceptionUtil.rethrow;
-import static com.hazelcast.util.JsonUtil.getInt;
-import static com.hazelcast.util.JsonUtil.getObject;
-import static com.hazelcast.util.ThreadUtil.createThreadName;
+import static com.hazelcast.instance.impl.OutOfMemoryErrorDispatcher.inspectOutOfMemoryError;
+import static com.hazelcast.internal.nio.IOUtil.closeResource;
+import static com.hazelcast.internal.util.EmptyStatement.ignore;
+import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
+import static com.hazelcast.internal.util.JsonUtil.getInt;
+import static com.hazelcast.internal.util.JsonUtil.getObject;
+import static com.hazelcast.internal.util.ThreadUtil.createThreadName;
+import static com.hazelcast.spi.impl.executionservice.ExecutionService.ASYNC_EXECUTOR;
 import static java.net.URLEncoder.encode;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * ManagementCenterService is responsible for sending statistics data to the Management Center.
  */
 public class ManagementCenterService {
+    public static final String SERVICE_NAME = "hz:core:managementCenterService";
 
     private static final int HTTP_SUCCESS = 200;
+    private static final int HTTP_NOT_MODIFIED = 304;
     private static final int CONNECTION_TIMEOUT_MILLIS = 5000;
     private static final long SLEEP_BETWEEN_POLL_MILLIS = 1000;
     private static final long DEFAULT_UPDATE_INTERVAL = 3000;
     private static final long EVENT_SEND_INTERVAL_MILLIS = 1000;
+    private static final int EXECUTOR_QUEUE_CAPACITY_PER_THREAD = 1000;
 
     private final HazelcastInstanceImpl instance;
     private final TaskPollThread taskPollThread;
@@ -111,18 +121,21 @@ public class ManagementCenterService {
     private final ILogger logger;
 
     private final ConsoleCommandHandler commandHandler;
+    private final ClientBwListConfigHandler bwListConfigHandler;
     private final ManagementCenterConfig managementCenterConfig;
     private final AtomicBoolean isRunning = new AtomicBoolean(false);
     private final TimedMemberStateFactory timedMemberStateFactory;
     private final ManagementCenterConnectionFactory connectionFactory;
-    private final AtomicReference<TimedMemberState> timedMemberState = new AtomicReference<TimedMemberState>();
-    private final BlockingQueue<Event> events = new LinkedBlockingQueue<Event>();
+    private final AtomicReference<String> timedMemberStateJson = new AtomicReference<>();
+    private final BlockingQueue<Event> events = new LinkedBlockingQueue<>();
 
     private volatile String managementCenterUrl;
     private volatile boolean urlChanged;
     private volatile boolean manCenterConnectionLost;
     private volatile boolean taskPollFailed;
     private volatile boolean eventSendFailed;
+    private volatile ManagementCenterEventListener eventListener;
+    private volatile String lastMCConfigETag;
 
     public ManagementCenterService(HazelcastInstanceImpl instance) {
         this.instance = instance;
@@ -130,12 +143,14 @@ public class ManagementCenterService {
         this.managementCenterConfig = getManagementCenterConfig();
         this.managementCenterUrl = getManagementCenterUrl();
         this.commandHandler = new ConsoleCommandHandler(instance);
+        this.bwListConfigHandler = new ClientBwListConfigHandler(instance.node.clientEngine);
         this.taskPollThread = new TaskPollThread();
         this.stateSendThread = new StateSendThread();
         this.prepareStateThread = new PrepareStateThread();
         this.eventSendThread = new EventSendThread();
         this.timedMemberStateFactory = instance.node.getNodeExtension().createTimedMemberStateFactory(instance);
         this.connectionFactory = instance.node.getNodeExtension().getManagementCenterConnectionFactory();
+        registerExecutor();
 
         if (this.managementCenterConfig.isEnabled()) {
             this.instance.getCluster().addMembershipListener(new ManagementCenterService.MemberListenerImpl());
@@ -206,6 +221,19 @@ public class ManagementCenterService {
         }
     }
 
+    private void registerExecutor() {
+        final ExecutionService executionService = instance.node.nodeEngine.getExecutionService();
+        int threadCount = instance.node.getProperties().getInteger(ClusterProperty.MC_EXECUTOR_THREAD_COUNT);
+        logger.finest("Creating new executor for Management Center service tasks with threadCount=" + threadCount);
+        executionService.register(ExecutionService.MC_EXECUTOR,
+                threadCount, threadCount * EXECUTOR_QUEUE_CAPACITY_PER_THREAD,
+                ExecutorType.CACHED);
+    }
+
+    public Optional<String> getTimedMemberStateJson() {
+        return Optional.ofNullable(timedMemberStateJson.get());
+    }
+
     public byte[] clusterWideUpdateManagementCenterUrl(String newUrl) {
         try {
             final Collection<Member> memberList = instance.node.clusterService.getMembers();
@@ -245,17 +273,39 @@ public class ManagementCenterService {
         }
     }
 
-    public InternalCompletableFuture<Object> callOnAddress(Address address, Operation operation) {
+    public InvocationFuture<Object> callOnAddress(Address address, Operation operation) {
         // TODO: why are we always executing on the MapService?
         OperationService operationService = instance.node.nodeEngine.getOperationService();
         return operationService.invokeOnTarget(MapService.SERVICE_NAME, operation, address);
     }
 
-    public InternalCompletableFuture<Object> callOnThis(Operation operation) {
+    public InvocationFuture<Object> callOnThis(Operation operation) {
         return callOnAddress(instance.node.getThisAddress(), operation);
     }
 
-    public InternalCompletableFuture<Object> callOnMember(Member member, Operation operation) {
+    public JsonObject syncCallOnThis(Operation operation) {
+        InvocationFuture<Object> future = callOnThis(operation);
+        JsonObject result = new JsonObject();
+        Object operationResult;
+        try {
+            operationResult = future.get();
+            if (operationResult == null) {
+                result.add("result", "success");
+            } else {
+                result.add("result", operationResult.toString());
+            }
+        } catch (ExecutionException e) {
+            result.add("result", e.getMessage());
+            result.add("stackTrace", ExceptionUtil.toString(e));
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            result.add("result", e.getMessage());
+            result.add("stackTrace", ExceptionUtil.toString(e));
+        }
+        return result;
+    }
+
+    public InvocationFuture<Object> callOnMember(Member member, Operation operation) {
         return callOnAddress(member.getAddress(), operation);
     }
 
@@ -280,14 +330,53 @@ public class ManagementCenterService {
         return commandHandler;
     }
 
+    public void setEventListener(ManagementCenterEventListener eventListener) {
+        this.eventListener = eventListener;
+    }
+
     /**
-     * Logs an event to Management Center.
-     *
+     * Logs an event to Management Center and calls the configured
+     * {@link ManagementCenterEventListener} with the logged event if it
+     * is set.
+     * <p>
      * Events are used by Management Center to show the user what happens when on a cluster member.
      */
     public void log(Event event) {
         if (this.managementCenterConfig.isEnabled() && isRunning()) {
             events.add(event);
+            if (eventListener != null) {
+                eventListener.onEventLogged(event);
+            }
+        }
+    }
+
+    /**
+     * Returns ETag value of last applied MC config (client B/W list filtering).
+     *
+     * @return  last or <code>null</code>
+     */
+    public String getLastMCConfigETag() {
+        return lastMCConfigETag;
+    }
+
+    /**
+     * Applies given MC config (client B/W list filtering).
+     *
+     * @param eTag          ETag of new config
+     * @param bwListConfig  new config
+     */
+    public void applyMCConfig(String eTag, ClientBwListDTO bwListConfig) {
+        if (eTag.equals(lastMCConfigETag)) {
+            logger.warning("Client B/W list filtering config with the same ETag is already applied.");
+            return;
+        }
+
+        try {
+            bwListConfigHandler.applyConfig(bwListConfig);
+            lastMCConfigETag = eTag;
+        } catch (Exception e) {
+            logger.warning("Could not apply client B/W list filtering config.", e);
+            throw new HazelcastException("Error while applying MC config", e);
         }
     }
 
@@ -355,7 +444,7 @@ public class ManagementCenterService {
         }
 
         private void sendEvents() throws MalformedURLException {
-            ArrayList<Event> eventList = new ArrayList<Event>();
+            ArrayList<Event> eventList = new ArrayList<>();
             if (events.drainTo(eventList) == 0) {
                 return;
             }
@@ -364,14 +453,14 @@ public class ManagementCenterService {
             OutputStream outputStream = null;
             OutputStreamWriter writer = null;
             try {
-                String groupName = instance.getConfig().getGroupConfig().getName();
+                String clusterName = instance.getConfig().getClusterName();
                 String address = instance.node.address.getHost() + ":" + instance.node.address.getPort();
 
-                JsonObject batch = new EventBatch(groupName, address, eventList).toJson();
+                JsonObject batch = new EventBatch(clusterName, address, eventList).toJson();
 
                 HttpURLConnection connection = openJsonConnection(url);
                 outputStream = connection.getOutputStream();
-                writer = new OutputStreamWriter(outputStream, "UTF-8");
+                writer = new OutputStreamWriter(outputStream, UTF_8);
 
                 batch.writeTo(writer);
 
@@ -412,7 +501,17 @@ public class ManagementCenterService {
         public void run() {
             try {
                 while (isRunning()) {
-                    timedMemberState.set(timedMemberStateFactory.createTimedMemberState());
+                    try {
+                        TimedMemberState tms = timedMemberStateFactory.createTimedMemberState();
+                        JsonObject tmsJson = new JsonObject();
+                        tmsJson.add("timedMemberState", tms.toJson());
+                        timedMemberStateJson.set(tmsJson.toString());
+                    } catch (Throwable e) {
+                        if (!(e instanceof RetryableException)) {
+                            throw rethrow(e);
+                        }
+                        logger.warning("Can't create TimedMemberState. Will retry after " + updateIntervalMs + " ms");
+                    }
                     sleep();
                 }
             } catch (Throwable throwable) {
@@ -436,6 +535,8 @@ public class ManagementCenterService {
 
         private final long updateIntervalMs;
 
+        private String lastConfigETag;
+
         private StateSendThread() {
             super(createThreadName(instance.getName(), "MC.State.Sender"));
             updateIntervalMs = calcUpdateInterval();
@@ -451,7 +552,7 @@ public class ManagementCenterService {
             try {
                 while (isRunning()) {
                     long startMs = Clock.currentTimeMillis();
-                    sendState();
+                    sendStateAndReadConfig();
                     long endMs = Clock.currentTimeMillis();
                     sleepIfPossible(updateIntervalMs, endMs - startMs);
                 }
@@ -463,39 +564,71 @@ public class ManagementCenterService {
             }
         }
 
-        private void sendState() throws MalformedURLException {
+        private void sendStateAndReadConfig() throws MalformedURLException {
             URL url = newCollectorUrl();
             OutputStream outputStream = null;
             OutputStreamWriter writer = null;
             try {
                 HttpURLConnection connection = openJsonConnection(url);
+                if (lastConfigETag != null) {
+                    connection.setRequestProperty("If-None-Match", lastConfigETag);
+                }
+
                 outputStream = connection.getOutputStream();
-                writer = new OutputStreamWriter(outputStream, "UTF-8");
+                writer = new OutputStreamWriter(outputStream, UTF_8);
 
-                JsonObject root = new JsonObject();
-                TimedMemberState memberState = timedMemberState.get();
-                if (memberState != null) {
-                    root.add("timedMemberState", memberState.toJson());
-                    root.writeTo(writer);
-
+                String memberStateJson = timedMemberStateJson.get();
+                if (memberStateJson != null) {
+                    writer.write(memberStateJson);
                     writer.flush();
                     outputStream.flush();
-                    boolean success = post(connection);
-                    if (manCenterConnectionLost && success) {
-                        logger.info("Connection to Management Center restored.");
-                        manCenterConnectionLost = false;
-                    } else if (!success) {
-                        manCenterConnectionLost = true;
-                    }
+
+                    processResponse(connection);
                 }
             } catch (Exception e) {
                 if (!manCenterConnectionLost) {
                     manCenterConnectionLost = true;
                     log("Failed to connect to: " + url, e);
+                    bwListConfigHandler.handleLostConnection();
                 }
             } finally {
                 closeResource(writer);
                 closeResource(outputStream);
+            }
+        }
+
+        private void processResponse(HttpURLConnection connection) throws Exception {
+            int responseCode = connection.getResponseCode();
+            boolean okResponse = responseCode == HTTP_SUCCESS || responseCode == HTTP_NOT_MODIFIED;
+            if (!okResponse && !manCenterConnectionLost) {
+                logger.warning("Failed to send response, responseCode:" + responseCode + " url:" + connection.getURL());
+            }
+
+            if (manCenterConnectionLost && okResponse) {
+                logger.info("Connection to Management Center restored.");
+                manCenterConnectionLost = false;
+            } else if (!okResponse) {
+                manCenterConnectionLost = true;
+            }
+
+            // process response only if config changed
+            if (responseCode == HTTP_SUCCESS) {
+                readAndApplyConfig(connection);
+            }
+        }
+
+        private void readAndApplyConfig(HttpURLConnection connection) throws Exception {
+            InputStream inputStream = null;
+            InputStreamReader reader = null;
+            try {
+                inputStream = connection.getInputStream();
+                reader = new InputStreamReader(inputStream, UTF_8);
+                JsonObject response = Json.parse(reader).asObject();
+                lastConfigETag = connection.getHeaderField("ETag");
+                bwListConfigHandler.handleNewConfig(response);
+            } finally {
+                closeResource(reader);
+                closeResource(inputStream);
             }
         }
 
@@ -510,8 +643,7 @@ public class ManagementCenterService {
      */
     private final class TaskPollThread extends Thread {
 
-        private final Map<Integer, Class<? extends ConsoleRequest>> consoleRequests
-                = new HashMap<Integer, Class<? extends ConsoleRequest>>();
+        private final Map<Integer, Class<? extends ConsoleRequest>> consoleRequests = new HashMap<>();
 
         private final ExecutionService executionService = instance.node.getNodeEngine().getExecutionService();
 
@@ -605,8 +737,8 @@ public class ManagementCenterService {
             InputStreamReader reader = null;
             try {
                 inputStream = openTaskInputStream();
-                reader = new InputStreamReader(inputStream, "UTF-8");
-                JsonObject request = JsonValue.readFrom(reader).asObject();
+                reader = new InputStreamReader(inputStream, UTF_8);
+                JsonObject request = Json.parse(reader).asObject();
                 if (!request.isEmpty()) {
                     JsonObject innerRequest = getObject(request, "request");
                     final int type = getInt(innerRequest, "type");
@@ -644,7 +776,7 @@ public class ManagementCenterService {
         private boolean processTaskAndSendResponse(int taskId, ConsoleRequest task) throws Exception {
             HttpURLConnection connection = openPostResponseConnection();
             OutputStream outputStream = connection.getOutputStream();
-            final OutputStreamWriter writer = new OutputStreamWriter(outputStream, "UTF-8");
+            final OutputStreamWriter writer = new OutputStreamWriter(outputStream, UTF_8);
             try {
                 JsonObject root = new JsonObject();
                 root.add("taskId", taskId);
@@ -680,12 +812,12 @@ public class ManagementCenterService {
         }
 
         private URL newGetTaskUrl() throws IOException {
-            GroupConfig groupConfig = instance.getConfig().getGroupConfig();
+            String clusterName = instance.getConfig().getClusterName();
 
             Address localAddress = instance.node.getClusterService().getLocalMember().getAddress();
 
             String urlString = cleanupUrl(managementCenterUrl) + "getTask.do?member=" + localAddress.getHost()
-                    + ":" + localAddress.getPort() + "&cluster=" + encode(groupConfig.getName(), "UTF-8");
+                    + ":" + localAddress.getPort() + "&cluster=" + encode(clusterName, "UTF-8");
             return new URL(urlString);
         }
 
@@ -693,7 +825,7 @@ public class ManagementCenterService {
             private final int taskId;
             private final ConsoleRequest task;
 
-            public AsyncConsoleRequestTask(int taskId, ConsoleRequest task) {
+            AsyncConsoleRequestTask(int taskId, ConsoleRequest task) {
                 this.taskId = taskId;
                 this.task = task;
             }

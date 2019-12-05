@@ -17,20 +17,22 @@
 package com.hazelcast.query.impl;
 
 import com.hazelcast.config.Config;
+import com.hazelcast.config.ConfigAccessor;
 import com.hazelcast.config.InMemoryFormat;
-import com.hazelcast.config.MapIndexConfig;
+import com.hazelcast.config.IndexConfig;
+import com.hazelcast.config.IndexType;
 import com.hazelcast.config.ServiceConfig;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IMap;
-import com.hazelcast.spi.MigrationAwareService;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.PartitionMigrationEvent;
-import com.hazelcast.spi.PartitionReplicationEvent;
-import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.internal.partition.MigrationAwareService;
+import com.hazelcast.internal.partition.PartitionMigrationEvent;
+import com.hazelcast.internal.partition.PartitionReplicationEvent;
+import com.hazelcast.map.IMap;
+import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Before;
@@ -51,7 +53,7 @@ import static org.junit.Assert.assertTrue;
 
 @RunWith(Parameterized.class)
 @Parameterized.UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class PartitionIndexingTest extends HazelcastTestSupport {
 
     private static final int ENTRIES = 10000;
@@ -85,12 +87,13 @@ public class PartitionIndexingTest extends HazelcastTestSupport {
 
     @Override
     protected Config getConfig() {
-        Config config = super.getConfig();
-        config.setProperty(GroupProperty.PARTITION_COUNT.getName(), "101");
+        Config config = smallInstanceConfig();
+        config.setProperty(ClusterProperty.PARTITION_COUNT.getName(), "101");
         config.getMapConfig(MAP_NAME).setInMemoryFormat(inMemoryFormat);
-        config.getServicesConfig().addServiceConfig(
-                new ServiceConfig().setEnabled(true).setImplementation(migrationFailingService)
-                                   .setName(MigrationFailingService.class.getName()));
+        ServiceConfig serviceConfig = new ServiceConfig().setEnabled(true)
+                .setImplementation(migrationFailingService)
+                .setName(MigrationFailingService.class.getName());
+        ConfigAccessor.getServicesConfig(config).addServiceConfig(serviceConfig);
         return config;
     }
 
@@ -101,8 +104,8 @@ public class PartitionIndexingTest extends HazelcastTestSupport {
     @Test
     public void testOnPreConfiguredIndexes() {
         Config config = getConfig();
-        config.getMapConfig(MAP_NAME).addMapIndexConfig(new MapIndexConfig("this", false));
-        config.getMapConfig(MAP_NAME).addMapIndexConfig(new MapIndexConfig("__key", true));
+        config.getMapConfig(MAP_NAME).addIndexConfig(new IndexConfig(IndexType.HASH, "this"));
+        config.getMapConfig(MAP_NAME).addIndexConfig(new IndexConfig(IndexType.SORTED, "__key"));
 
         HazelcastInstance instance1 = factory.newHazelcastInstance(config);
         int expectedPartitions = getPartitionService(instance1).getPartitionCount();
@@ -152,7 +155,7 @@ public class PartitionIndexingTest extends HazelcastTestSupport {
         for (int i = 0; i < ENTRIES; ++i) {
             client1.put(i, i);
         }
-        client1.addIndex("this", false);
+        client1.addIndex(IndexType.HASH, "this");
         assertPartitionsIndexedCorrectly(expectedPartitions, map1);
 
         HazelcastInstance instance2 = factory.newHazelcastInstance(config);
@@ -170,7 +173,7 @@ public class PartitionIndexingTest extends HazelcastTestSupport {
         assertPartitionsIndexedCorrectly(expectedPartitions, map1, map3);
 
         IMap<Integer, Integer> client3 = createClientFor(map3);
-        client3.addIndex("__key", true);
+        client3.addIndex(IndexType.HASH, "__key");
         assertPartitionsIndexedCorrectly(expectedPartitions, map1, map3);
 
         migrationFailingService.fail = true;
@@ -187,7 +190,7 @@ public class PartitionIndexingTest extends HazelcastTestSupport {
         for (IMap map : maps) {
             for (Indexes indexes : getAllIndexes(map)) {
                 for (InternalIndex index : indexes.getIndexes()) {
-                    String indexName = index.getAttributeName();
+                    String indexName = index.getName();
                     BitSet indexPartitions = indexToPartitions.get(indexName);
                     if (indexPartitions == null) {
                         indexPartitions = new BitSet();

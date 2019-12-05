@@ -16,8 +16,8 @@
 
 package com.hazelcast.topic.impl.reliable;
 
-import com.hazelcast.core.Message;
-import com.hazelcast.core.MessageListener;
+import com.hazelcast.topic.Message;
+import com.hazelcast.topic.MessageListener;
 import com.hazelcast.topic.ReliableMessageListener;
 
 public class ReliableMessageListenerAdapter<E> implements ReliableMessageListener<E> {

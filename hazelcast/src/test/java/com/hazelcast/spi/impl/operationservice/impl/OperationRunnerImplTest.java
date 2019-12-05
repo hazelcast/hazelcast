@@ -18,17 +18,17 @@ package com.hazelcast.spi.impl.operationservice.impl;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.cluster.ClusterService;
-import com.hazelcast.nio.Packet;
+import com.hazelcast.internal.nio.Packet;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
-import com.hazelcast.spi.BlockingOperation;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.OperationResponseHandler;
-import com.hazelcast.spi.WaitNotifyKey;
+import com.hazelcast.spi.impl.operationservice.BlockingOperation;
+import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.spi.impl.operationservice.OperationResponseHandler;
+import com.hazelcast.spi.impl.operationservice.WaitNotifyKey;
 import com.hazelcast.spi.impl.operationservice.impl.responses.CallTimeoutResponse;
 import com.hazelcast.test.ExpectedRuntimeException;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
 import org.junit.Test;
@@ -38,8 +38,8 @@ import org.junit.runner.RunWith;
 import java.util.concurrent.atomic.AtomicLong;
 
 import static com.hazelcast.internal.util.counters.SwCounter.newSwCounter;
-import static com.hazelcast.spi.OperationAccessor.setCallId;
-import static com.hazelcast.spi.OperationAccessor.setCallTimeout;
+import static com.hazelcast.spi.impl.operationservice.OperationAccessor.setCallId;
+import static com.hazelcast.spi.impl.operationservice.OperationAccessor.setCallTimeout;
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.same;
@@ -48,7 +48,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class OperationRunnerImplTest extends HazelcastTestSupport {
 
     private HazelcastInstance local;
@@ -72,12 +72,7 @@ public class OperationRunnerImplTest extends HazelcastTestSupport {
     @Test
     public void runTask() {
         final AtomicLong counter = new AtomicLong();
-        operationRunner.run(new Runnable() {
-            @Override
-            public void run() {
-                counter.incrementAndGet();
-            }
-        });
+        operationRunner.run(() -> counter.incrementAndGet());
         assertEquals(1, counter.get());
     }
 
@@ -87,7 +82,7 @@ public class OperationRunnerImplTest extends HazelcastTestSupport {
         final Object response = "someresponse";
         Operation op = new Operation() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 counter.incrementAndGet();
             }
 
@@ -111,7 +106,7 @@ public class OperationRunnerImplTest extends HazelcastTestSupport {
 
         Operation op = new Operation() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 counter.incrementAndGet();
             }
 
@@ -170,7 +165,7 @@ public class OperationRunnerImplTest extends HazelcastTestSupport {
 
         DummyWaitingOperation op = new DummyWaitingOperation() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 counter.incrementAndGet();
             }
         };
@@ -188,7 +183,7 @@ public class OperationRunnerImplTest extends HazelcastTestSupport {
 
         Operation op = new Operation() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 counter.incrementAndGet();
             }
         };

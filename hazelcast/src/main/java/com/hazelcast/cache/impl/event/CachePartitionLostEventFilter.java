@@ -20,7 +20,7 @@ import com.hazelcast.cache.impl.CacheDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.spi.EventFilter;
+import com.hazelcast.spi.impl.eventservice.EventFilter;
 
 import java.io.IOException;
 
@@ -59,7 +59,7 @@ public class CachePartitionLostEventFilter implements EventFilter, IdentifiedDat
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return CacheDataSerializerHook.CACHE_PARTITION_LOST_EVENT_FILTER;
     }
 }

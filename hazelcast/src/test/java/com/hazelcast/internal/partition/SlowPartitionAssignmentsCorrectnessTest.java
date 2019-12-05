@@ -16,7 +16,7 @@
 
 package com.hazelcast.internal.partition;
 
-import com.hazelcast.test.HazelcastParametersRunnerFactory;
+import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
 import com.hazelcast.test.annotation.SlowTest;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -29,7 +29,7 @@ import java.util.Collection;
 import static java.util.Arrays.asList;
 
 @RunWith(Parameterized.class)
-@UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
+@UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
 @Category({SlowTest.class})
 // related issue https://github.com/hazelcast/hazelcast/issues/5444
 public class SlowPartitionAssignmentsCorrectnessTest extends AbstractPartitionAssignmentsCorrectnessTest {

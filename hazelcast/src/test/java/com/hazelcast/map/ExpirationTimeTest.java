@@ -21,15 +21,17 @@ import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.EntryView;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IMap;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.TestHazelcastInstanceFactory;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.config.InMemoryFormat.BINARY;
@@ -40,10 +42,80 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class ExpirationTimeTest extends HazelcastTestSupport {
 
     private static final long ONE_MINUTE_IN_MILLIS = MINUTES.toMillis(1);
+
+    @Test
+    public void put_without_ttl_after_put_with_ttl_cancels_previous_ttl() {
+        IMap<Integer, Integer> map = createMap();
+
+        map.put(1, 1, ONE_MINUTE_IN_MILLIS, MILLISECONDS);
+        long ttlAfter1stPut = map.getEntryView(1).getTtl();
+
+        map.put(1, 2);
+        long ttlAfter2ndPut = map.getEntryView(1).getTtl();
+
+        assertEquals(ONE_MINUTE_IN_MILLIS, ttlAfter1stPut);
+        assertEquals(Long.MAX_VALUE, ttlAfter2ndPut);
+    }
+
+    @Test
+    public void put_without_ttl_after_put_with_ttl_gets_next_ttl_value_from_map_config() {
+        int ttlSeconds = 100;
+        String mapName = randomMapName();
+        Config config = getConfig();
+        MapConfig mapConfig = config.getMapConfig(mapName);
+        mapConfig.setInMemoryFormat(inMemoryFormat());
+        mapConfig.setTimeToLiveSeconds(ttlSeconds);
+        HazelcastInstance node = createHazelcastInstance(config);
+        IMap<Integer, Integer> map = node.getMap(mapName);
+
+        map.put(1, 1, ONE_MINUTE_IN_MILLIS, MILLISECONDS);
+        long ttlAfter1stPut = map.getEntryView(1).getTtl();
+
+        map.put(1, 2);
+        long ttlAfter2ndPut = map.getEntryView(1).getTtl();
+
+        assertEquals(ONE_MINUTE_IN_MILLIS, ttlAfter1stPut);
+        assertEquals(SECONDS.toMillis(ttlSeconds), ttlAfter2ndPut);
+    }
+
+    @Test
+    public void put_without_maxIdle_after_put_with_maxIdle_cancels_previous_maxIdle() {
+        IMap<Integer, Integer> map = createMap();
+
+        map.put(1, 1, -1, MILLISECONDS, ONE_MINUTE_IN_MILLIS, MILLISECONDS);
+        long maxIdleAfter1stPut = map.getEntryView(1).getMaxIdle();
+
+        map.put(1, 2);
+        long maxIdleAfter2ndPut = map.getEntryView(1).getMaxIdle();
+
+        assertEquals(ONE_MINUTE_IN_MILLIS, maxIdleAfter1stPut);
+        assertEquals(Long.MAX_VALUE, maxIdleAfter2ndPut);
+    }
+
+    @Test
+    public void put_without_maxIdle_after_put_with_maxIdle_gets_next_maxIdle_value_from_map_config() {
+        int maxIdleSeconds = 100;
+        String mapName = randomMapName();
+        Config config = getConfig();
+        MapConfig mapConfig = config.getMapConfig(mapName);
+        mapConfig.setInMemoryFormat(inMemoryFormat());
+        mapConfig.setMaxIdleSeconds(maxIdleSeconds);
+        HazelcastInstance node = createHazelcastInstance(config);
+        IMap<Integer, Integer> map = node.getMap(mapName);
+
+        map.put(1, 1, -1, MILLISECONDS, ONE_MINUTE_IN_MILLIS, MILLISECONDS);
+        long maxIdleAfter1stPut = map.getEntryView(1).getMaxIdle();
+
+        map.put(1, 2);
+        long maxIdleAfter2ndPut = map.getEntryView(1).getMaxIdle();
+
+        assertEquals(ONE_MINUTE_IN_MILLIS, maxIdleAfter1stPut);
+        assertEquals(SECONDS.toMillis(maxIdleSeconds), maxIdleAfter2ndPut);
+    }
 
     @Test
     public void testExpirationTime_withTTL() {
@@ -56,6 +128,37 @@ public class ExpirationTimeTest extends HazelcastTestSupport {
 
         long expectedExpirationTime = creationTime + ONE_MINUTE_IN_MILLIS;
         assertEquals(expectedExpirationTime, entryView.getExpirationTime());
+    }
+
+    @Test
+    public void test_replicated_entries_view_equal_after_cluster_scale_up() {
+        Config config = getConfig();
+        String mapName = "default";
+        config.getMapConfig(mapName).setInMemoryFormat(inMemoryFormat());
+
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
+
+        HazelcastInstance node1 = factory.newHazelcastInstance(config);
+        IMap<Integer, Integer> map = node1.getMap(mapName);
+        for (int i = 0; i < 10; i++) {
+            map.put(i, i, 111, SECONDS, 222, SECONDS);
+            map.get(i);
+            map.put(i, i, 112, SECONDS, 223, SECONDS);
+        }
+
+        Map<Integer, EntryView> entryViewsBefore = new HashMap<>();
+        for (int i = 0; i < 10; i++) {
+            entryViewsBefore.put(i, map.getEntryView(i));
+        }
+
+        HazelcastInstance node2 = factory.newHazelcastInstance(config);
+        IMap<Integer, Integer> map2 = node2.getMap(mapName);
+        Map<Integer, EntryView> entryViewsAfter = new HashMap<>();
+        for (int i = 0; i < 10; i++) {
+            entryViewsAfter.put(i, map2.getEntryView(i));
+        }
+
+        assertEquals(entryViewsAfter, entryViewsBefore);
     }
 
     @Test
@@ -282,7 +385,7 @@ public class ExpirationTimeTest extends HazelcastTestSupport {
 
         EntryView<Integer, Integer> entryView = map.getEntryView(1);
 
-        long expectedExpirationTime = entryView.getLastUpdateTime() + MINUTES.toMillis(1);
+        long expectedExpirationTime = Long.MAX_VALUE;
         assertEquals(expectedExpirationTime, entryView.getExpirationTime());
     }
 
@@ -349,12 +452,11 @@ public class ExpirationTimeTest extends HazelcastTestSupport {
         return BINARY;
     }
 
-    private IMap<Integer, Integer> createMap() {
+    private <T, U> IMap<T, U> createMap() {
         String mapName = randomMapName();
         Config config = getConfig();
         config.getMapConfig(mapName).setInMemoryFormat(inMemoryFormat());
-        HazelcastInstance node = createHazelcastInstance(config);
-        return node.getMap(mapName);
+        return createHazelcastInstance(getConfig()).getMap(mapName);
     }
 
     @SuppressWarnings("SameParameterValue")

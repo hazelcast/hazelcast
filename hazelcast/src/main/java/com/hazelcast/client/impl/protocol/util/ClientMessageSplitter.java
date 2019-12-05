@@ -17,66 +17,91 @@
 package com.hazelcast.client.impl.protocol.util;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.internal.nio.Bits;
+import com.hazelcast.spi.impl.sequence.CallIdSequenceWithoutBackpressure;
 
-import java.util.ArrayList;
+import java.util.Collections;
+import java.util.LinkedList;
 import java.util.List;
 
+import static com.hazelcast.client.impl.protocol.ClientMessage.BEGIN_FRAGMENT_FLAG;
+import static com.hazelcast.client.impl.protocol.ClientMessage.END_FRAGMENT_FLAG;
+
 public final class ClientMessageSplitter {
+
+    private static final CallIdSequenceWithoutBackpressure FRAGMENT_ID_SEQUENCE = new CallIdSequenceWithoutBackpressure();
+
+    private enum ReadState {
+        //means last fragment is added to client message, need to create new fragment
+        BEGINNING,
+        //means at least a frame is added to current fragment
+        MIDDLE
+    }
 
     private ClientMessageSplitter() {
     }
 
     /**
-     * Splits a {@link ClientMessage} into frames of a maximum size.
+     * Splits a {@link ClientMessage} into fragments of a maximum size.
      *
-     * @param maxFrameSize  each split will have max size of maxFrameSize (last split can be smaller than frame size)
+     * @param maxFrameSize  each split will have max size of maxFrameSize
      * @param clientMessage main message that will be split
      * @return ordered array of split client message frames
      */
-    public static List<ClientMessage> getSubFrames(int maxFrameSize, ClientMessage clientMessage) {
-        int numberOFSubFrames = ClientMessageSplitter.getNumberOfSubFrames(maxFrameSize, clientMessage);
-        ArrayList<ClientMessage> messages = new ArrayList<ClientMessage>(numberOFSubFrames);
-        for (int i = 0; i < numberOFSubFrames; i++) {
-            messages.add(ClientMessageSplitter.getSubFrame(maxFrameSize, i, numberOFSubFrames, clientMessage));
+    public static List<ClientMessage> getFragments(int maxFrameSize, ClientMessage clientMessage) {
+        if (clientMessage.getFrameLength() <= maxFrameSize) {
+            return Collections.singletonList(clientMessage);
         }
-        return messages;
+        long fragmentId = FRAGMENT_ID_SEQUENCE.next();
+        LinkedList<ClientMessage> fragments = new LinkedList<>();
+        ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
+
+        ReadState state = ReadState.BEGINNING;
+        int length = 0;
+        ClientMessage fragment = null;
+        while (iterator.hasNext()) {
+            ClientMessage.Frame frame = iterator.peekNext();
+            int frameSize = frame.getSize();
+            length += frameSize;
+
+            if (frameSize > maxFrameSize) {
+                iterator.next();
+                if (state == ReadState.MIDDLE) {
+                    fragments.add(fragment);
+                }
+                fragment = createFragment(fragmentId);
+                fragment.add(frame.copy());
+                fragments.add(fragment);
+                state = ReadState.BEGINNING;
+                length = 0;
+            } else if (length <= maxFrameSize) {
+                iterator.next();
+                if (state == ReadState.BEGINNING) {
+                    fragment = createFragment(fragmentId);
+                }
+                fragment.add(frame.copy());
+                state = ReadState.MIDDLE;
+            } else {
+                assert state == ReadState.MIDDLE;
+                fragments.add(fragment);
+                state = ReadState.BEGINNING;
+                length = 0;
+            }
+        }
+        if (state == ReadState.MIDDLE) {
+            fragments.add(fragment);
+        }
+        fragments.getFirst().getStartFrame().flags |= BEGIN_FRAGMENT_FLAG;
+        fragments.getLast().getStartFrame().flags |= END_FRAGMENT_FLAG;
+        return fragments;
     }
 
-    static int getNumberOfSubFrames(int frameSize, ClientMessage originalClientMessage) {
-        assert ClientMessage.HEADER_SIZE < frameSize;
-        int frameLength = originalClientMessage.getFrameLength();
-        int sizeWithoutHeader = frameSize - ClientMessage.HEADER_SIZE;
-        return (int) Math.ceil((float) (frameLength - ClientMessage.HEADER_SIZE) / sizeWithoutHeader);
-    }
-
-    static ClientMessage getSubFrame(int frameSize, int frameIndex, int numberOfSubFrames, ClientMessage originalClientMessage) {
-        assert frameIndex > -1;
-        assert frameIndex < numberOfSubFrames;
-        assert ClientMessage.HEADER_SIZE < frameSize;
-
-        int frameLength = originalClientMessage.getFrameLength();
-        if (frameSize > frameLength) {
-            assert frameIndex == 0;
-            return originalClientMessage;
-        }
-
-        int subFrameMaxDataLength = frameSize - ClientMessage.HEADER_SIZE;
-        int startOffset = ClientMessage.HEADER_SIZE + frameIndex * subFrameMaxDataLength;
-        int subFrameDataLength = numberOfSubFrames != frameIndex + 1 ? subFrameMaxDataLength : frameLength - startOffset;
-        ClientMessage subFrame = ClientMessage.createForEncode(ClientMessage.HEADER_SIZE + subFrameDataLength);
-        System.arraycopy(originalClientMessage.buffer.byteArray(), startOffset,
-                subFrame.buffer.byteArray(), subFrame.getDataOffset(), subFrameDataLength);
-
-        if (frameIndex == 0) {
-            subFrame.addFlag(ClientMessage.BEGIN_FLAG);
-        } else if (numberOfSubFrames == frameIndex + 1) {
-            subFrame.addFlag(ClientMessage.END_FLAG);
-        }
-        subFrame.setPartitionId(originalClientMessage.getPartitionId());
-        subFrame.setFrameLength(ClientMessage.HEADER_SIZE + subFrameDataLength);
-        subFrame.setMessageType(originalClientMessage.getMessageType());
-        subFrame.setRetryable(originalClientMessage.isRetryable());
-        subFrame.setCorrelationId(originalClientMessage.getCorrelationId());
-        return subFrame;
+    private static ClientMessage createFragment(long fragmentId) {
+        ClientMessage fragment;
+        fragment = ClientMessage.createForEncode();
+        ClientMessage.Frame frame = new ClientMessage.Frame(new byte[Bits.LONG_SIZE_IN_BYTES]);
+        Bits.writeLongL(frame.content, ClientMessage.FRAGMENTATION_ID_OFFSET, fragmentId);
+        fragment.add(frame);
+        return fragment;
     }
 }

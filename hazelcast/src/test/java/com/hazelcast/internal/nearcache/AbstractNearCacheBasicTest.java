@@ -19,7 +19,6 @@ package com.hazelcast.internal.nearcache;
 import com.hazelcast.cache.HazelcastExpiryPolicy;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.NearCacheConfig;
-import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.internal.adapter.DataStructureAdapter;
 import com.hazelcast.internal.adapter.DataStructureAdapter.DataStructureMethods;
 import com.hazelcast.internal.adapter.DataStructureAdapterMethod;
@@ -27,9 +26,9 @@ import com.hazelcast.internal.adapter.ICacheCompletionListener;
 import com.hazelcast.internal.adapter.ICacheReplaceEntryProcessor;
 import com.hazelcast.internal.adapter.IMapReplaceEntryProcessor;
 import com.hazelcast.internal.adapter.ReplicatedMapDataStructureAdapter;
-import com.hazelcast.monitor.NearCacheStats;
-import com.hazelcast.monitor.impl.NearCacheStatsImpl;
-import com.hazelcast.query.TruePredicate;
+import com.hazelcast.internal.monitor.impl.NearCacheStatsImpl;
+import com.hazelcast.nearcache.NearCacheStats;
+import com.hazelcast.query.Predicates;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ConfigureParallelRunnerWith;
@@ -45,14 +44,14 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.CompletionStage;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
-import static com.hazelcast.config.EvictionConfig.MaxSizePolicy.ENTRY_COUNT;
 import static com.hazelcast.config.EvictionPolicy.LRU;
 import static com.hazelcast.config.EvictionPolicy.NONE;
+import static com.hazelcast.config.MaxSizePolicy.ENTRY_COUNT;
 import static com.hazelcast.internal.nearcache.NearCacheTestUtils.assertNearCacheContent;
 import static com.hazelcast.internal.nearcache.NearCacheTestUtils.assertNearCacheEvictionsEventually;
 import static com.hazelcast.internal.nearcache.NearCacheTestUtils.assertNearCacheInvalidationRequests;
@@ -172,7 +171,7 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
 
     /**
      * Checks that the Near Cache is populated when {@link DataStructureMethods#GET} is used
-     * and that the {@link com.hazelcast.monitor.NearCacheStats} are calculated correctly.
+     * and that the {@link NearCacheStats} are calculated correctly.
      */
     @Test
     public void whenGetIsUsed_thenNearCacheShouldBePopulated() {
@@ -181,7 +180,7 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
 
     /**
      * Checks that the Near Cache is populated when {@link DataStructureMethods#GET_ASYNC} is used
-     * and that the {@link com.hazelcast.monitor.NearCacheStats} are calculated correctly.
+     * and that the {@link NearCacheStats} are calculated correctly.
      */
     @Test
     public void whenGetAsyncIsUsed_thenNearCacheShouldBePopulated() {
@@ -190,7 +189,7 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
 
     /**
      * Checks that the Near Cache is populated when {@link DataStructureMethods#GET_ALL} is used
-     * and that the {@link com.hazelcast.monitor.NearCacheStats} are calculated correctly.
+     * and that the {@link NearCacheStats} are calculated correctly.
      */
     @Test
     public void whenGetAllIsUsed_thenNearCacheShouldBePopulated() {
@@ -222,7 +221,7 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
 
     /**
      * Checks that the Near Cache is populated when {@link DataStructureMethods#GET_ALL} is used on a half
-     * filled Near Cache and that the {@link com.hazelcast.monitor.NearCacheStats} are calculated correctly.
+     * filled Near Cache and that the {@link NearCacheStats} are calculated correctly.
      */
     @Test
     public void whenGetAllWithHalfFilledNearCacheIsUsed_thenNearCacheShouldBePopulated() {
@@ -434,7 +433,7 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
                     assertNull(getFuture(adapter.putAsync(i, value, 1, HOURS), "Could not put value via putAsync() with TTL"));
                     break;
                 case PUT_ASYNC_WITH_EXPIRY_POLICY:
-                    ICompletableFuture<String> future = adapter.putAsync(i, value, expiryPolicy);
+                    CompletionStage<String> future = adapter.putAsync(i, value, expiryPolicy);
                     assertNull(getFuture(future, "Could not put value via putAsync() with ExpiryPolicy"));
                     break;
                 case PUT_TRANSIENT:
@@ -834,7 +833,7 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
                     getFuture(adapter.setAsync(i, newValue, 1, HOURS), "Could not set value via setAsync() with TTL");
                     break;
                 case SET_ASYNC_WITH_EXPIRY_POLICY:
-                    ICompletableFuture<Void> voidFuture = adapter.setAsync(i, newValue, expiryPolicy);
+                    CompletionStage<Void> voidFuture = adapter.setAsync(i, newValue, expiryPolicy);
                     getFuture(voidFuture, "Could not set value via setAsync() with ExpiryPolicy");
                     break;
                 case PUT:
@@ -844,11 +843,11 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
                     assertEquals(value, getFuture(adapter.putAsync(i, newValue), "Could not put value via putAsync()"));
                     break;
                 case PUT_ASYNC_WITH_TTL:
-                    ICompletableFuture<String> ttlFuture = adapter.putAsync(i, newValue, 1, HOURS);
+                    CompletionStage<String> ttlFuture = adapter.putAsync(i, newValue, 1, HOURS);
                     assertEquals(value, getFuture(ttlFuture, "Could not put value via putAsync() with TTL"));
                     break;
                 case PUT_ASYNC_WITH_EXPIRY_POLICY:
-                    ICompletableFuture<String> expiryFuture = adapter.putAsync(i, newValue, expiryPolicy);
+                    CompletionStage<String> expiryFuture = adapter.putAsync(i, newValue, expiryPolicy);
                     assertEquals(value, getFuture(expiryFuture, "Could not put value via putAsync() with ExpiryPolicy"));
                     break;
                 case PUT_TRANSIENT:
@@ -893,7 +892,7 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
             Map<Integer, Object> resultMap = adapter.executeOnEntries(mapEntryProcessor);
             assertResultMap(resultMap);
         } else if (method == DataStructureMethods.EXECUTE_ON_ENTRIES_WITH_PREDICATE) {
-            Map<Integer, Object> resultMap = adapter.executeOnEntries(mapEntryProcessor, TruePredicate.INSTANCE);
+            Map<Integer, Object> resultMap = adapter.executeOnEntries(mapEntryProcessor, Predicates.alwaysTrue());
             assertResultMap(resultMap);
         } else if (method == DataStructureMethods.PUT_ALL) {
             adapter.putAll(invalidationMap);
@@ -1367,44 +1366,47 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
     public void testNearCacheExpiration_withTTL() {
         nearCacheConfig.setTimeToLiveSeconds(MAX_TTL_SECONDS);
 
-        testNearCacheExpiration(MAX_TTL_SECONDS);
+        testNearCacheExpiration();
     }
 
     @Test
     public void testNearCacheExpiration_withMaxIdle() {
         nearCacheConfig.setMaxIdleSeconds(MAX_IDLE_SECONDS);
 
-        testNearCacheExpiration(MAX_IDLE_SECONDS);
+        testNearCacheExpiration();
     }
 
     @SuppressWarnings("UnnecessaryLocalVariable")
-    private void testNearCacheExpiration(int expireSeconds) {
-        final NearCacheTestContext<Integer, String, NK, NV> context = createContext();
+    private void testNearCacheExpiration() {
+        NearCacheTestContext<Integer, String, NK, NV> context = createContext();
 
         populateDataAdapter(context, DEFAULT_RECORD_COUNT);
         populateNearCache(context);
 
-        // we allow a difference of -1 here, since the NearCacheStats are not updated atomically,
-        // so one entry could already be removed from the owned entry count, but not added to the
-        // expirations yet (we also copy the stats, so there are no on-fly changes during the assert)
-        NearCacheStats stats = new NearCacheStatsImpl(context.stats);
-        assertTrue(format("All entries (beside one) should be in the Near Cache or expired from the Near Cache (%s)", stats),
-                stats.getOwnedEntryCount() + stats.getExpirations() >= DEFAULT_RECORD_COUNT - 1
-                        && stats.getOwnedEntryCount() + stats.getExpirations() <= DEFAULT_RECORD_COUNT);
+        assertTrueEventually(() -> {
+            NearCacheStatsImpl stats = context.stats;
 
-        sleepSeconds(expireSeconds + 1);
+            // make assertions over near cache's backing map size.
+            long nearCacheSize = context.nearCache.size();
+            assertEquals(format("Expected zero near cache size but found: %d, [%s] ",
+                    nearCacheSize, stats), 0, nearCacheSize);
 
-        assertTrueEventually(new AssertTask() {
-            public void run() {
-                // the get() call triggers the Near Cache eviction/expiration process,
-                // but we need to call this on every assert, since the Near Cache has a cooldown for TTL cleanups
-                context.nearCacheAdapter.get(0);
+            // make assertions over near cache stats.
+            long ownedEntryCount = stats.getOwnedEntryCount();
+            assertEquals(format("Expected no owned entry but found: %d, [%s]",
+                    ownedEntryCount, stats), 0, ownedEntryCount);
 
-                assertNearCacheSize(context, 1, "Expected the Near Cache to contain just the trigger entry");
-                assertEquals("Expected no Near Cache evictions", 0, context.stats.getEvictions());
-                assertTrue(format("Expected at least %d entries to be expired from the Near Cache", DEFAULT_RECORD_COUNT),
-                        context.stats.getExpirations() >= DEFAULT_RECORD_COUNT);
-            }
+            long ownedEntryMemoryCost = stats.getOwnedEntryMemoryCost();
+            assertEquals(format("Expected zero memory cost but found: %d, [%s]",
+                    ownedEntryMemoryCost, stats), 0, ownedEntryMemoryCost);
+
+            long expiredCount = stats.getExpirations();
+            assertEquals(format("Expected to see all entries as expired but found: %d, [%s]",
+                    expiredCount, stats), DEFAULT_RECORD_COUNT, expiredCount);
+
+            long evictedCount = context.stats.getEvictions();
+            assertEquals(format("Expiration should not trigger eviction stat but found: %d, [%s]",
+                    evictedCount, stats), 0, evictedCount);
         });
     }
 
@@ -1678,12 +1680,12 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
     }
 
     protected void populateNearCache(NearCacheTestContext<Integer, String, ?, ?> context, DataStructureMethods method,
-                                          int size) {
+                                     int size) {
         populateNearCache(context, method, size, "value-");
     }
 
     protected void populateNearCache(NearCacheTestContext<Integer, String, ?, ?> context, DataStructureMethods method,
-                                          int size, String valuePrefix) {
+                                     int size, String valuePrefix) {
         switch (method) {
             case GET:
                 for (int i = 0; i < size; i++) {
@@ -1696,7 +1698,7 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
                 }
                 break;
             case GET_ASYNC:
-                List<Future<String>> futures = new ArrayList<Future<String>>(size);
+                List<CompletionStage<String>> futures = new ArrayList<>(size);
                 for (int i = 0; i < size; i++) {
                     futures.add(context.nearCacheAdapter.getAsync(i));
                 }
@@ -1710,7 +1712,7 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
                 }
                 break;
             case GET_ALL:
-                Set<Integer> getAllSet = new HashSet<Integer>(size);
+                Set<Integer> getAllSet = new HashSet<>(size);
                 for (int i = 0; i < size; i++) {
                     getAllSet.add(i);
                 }
@@ -1757,7 +1759,7 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
                 }
                 break;
             case GET_ALL:
-                Set<Integer> getAllSet = new HashSet<Integer>(size);
+                Set<Integer> getAllSet = new HashSet<>(size);
                 for (int i = 0; i < size; i++) {
                     getAllSet.add(i);
                 }

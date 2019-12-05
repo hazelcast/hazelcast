@@ -16,8 +16,8 @@
 
 package com.hazelcast.internal.partition.impl;
 
-import com.hazelcast.instance.Node;
-import com.hazelcast.instance.NodeState;
+import com.hazelcast.instance.impl.Node;
+import com.hazelcast.instance.impl.NodeState;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.logging.ILogger;
 
@@ -37,7 +37,7 @@ class PublishPartitionRuntimeStateTask implements Runnable {
 
     @Override
     public void run() {
-        if (node.isMaster()) {
+        if (partitionService.isLocalMemberMaster()) {
             MigrationManager migrationManager = partitionService.getMigrationManager();
             boolean migrationAllowed = migrationManager.areMigrationTasksAllowed()
                     && !partitionService.isFetchMostRecentPartitionTableTaskRequired();
@@ -47,11 +47,10 @@ class PublishPartitionRuntimeStateTask implements Runnable {
             }
 
             if (migrationManager.hasOnGoingMigration()) {
-                logger.info("Remaining migration tasks in queue => " + partitionService.getMigrationQueueSize());
-            }
-
-            if (node.getState() == NodeState.ACTIVE) {
-                partitionService.publishPartitionRuntimeState();
+                logger.info("Remaining migration tasks: " + partitionService.getMigrationQueueSize()
+                    + ". (" + migrationManager.getStats().formatToString(logger.isFineEnabled()) + ")");
+            } else if (node.getState() == NodeState.ACTIVE) {
+                partitionService.checkClusterPartitionRuntimeStates();
             }
         }
     }

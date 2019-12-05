@@ -17,40 +17,13 @@
 package com.hazelcast.internal.serialization.impl;
 
 import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.StreamSerializer;
-
 import java.io.IOException;
 import java.util.ArrayList;
 
-import static com.hazelcast.nio.Bits.NULL_ARRAY_LENGTH;
-
 /**
- * The {@link java.util.ArrayList} serializer
+ * The {@link ArrayList} serializer
  */
-public class ArrayListStreamSerializer implements StreamSerializer<ArrayList> {
-
-    @Override
-    public void write(ObjectDataOutput out, ArrayList arrayList) throws IOException {
-        int size = arrayList == null ? NULL_ARRAY_LENGTH : arrayList.size();
-        out.writeInt(size);
-        for (int i = 0; i < size; i++) {
-            out.writeObject(arrayList.get(i));
-        }
-    }
-
-    @Override
-    public ArrayList read(ObjectDataInput in) throws IOException {
-        int size = in.readInt();
-        ArrayList result = null;
-        if (size > NULL_ARRAY_LENGTH) {
-            result = new ArrayList(size);
-            for (int i = 0; i < size; i++) {
-                result.add(i, in.readObject());
-            }
-        }
-        return result;
-    }
+public class ArrayListStreamSerializer<E> extends AbstractCollectionStreamSerializer<ArrayList<E>> {
 
     @Override
     public int getTypeId() {
@@ -58,6 +31,11 @@ public class ArrayListStreamSerializer implements StreamSerializer<ArrayList> {
     }
 
     @Override
-    public void destroy() {
+    public ArrayList<E> read(ObjectDataInput in) throws IOException {
+        int size = in.readInt();
+
+        ArrayList<E> collection = new ArrayList<>(size);
+
+        return deserializeEntries(in, size, collection);
     }
 }

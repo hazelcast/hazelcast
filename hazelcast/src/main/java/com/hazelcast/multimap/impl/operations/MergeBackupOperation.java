@@ -16,6 +16,7 @@
 
 package com.hazelcast.multimap.impl.operations;
 
+import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.multimap.impl.MultiMapContainer;
 import com.hazelcast.multimap.impl.MultiMapDataSerializerHook;
 import com.hazelcast.multimap.impl.MultiMapRecord;
@@ -23,7 +24,7 @@ import com.hazelcast.multimap.impl.MultiMapValue;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.BackupOperation;
+import com.hazelcast.spi.impl.operationservice.BackupOperation;
 import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 
 import java.io.IOException;
@@ -31,7 +32,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Map;
 
-import static com.hazelcast.util.MapUtil.createHashMap;
+import static com.hazelcast.internal.util.MapUtil.createHashMap;
 
 /**
  * Creates backups for merged {@link MultiMapRecord} after split-brain healing with a {@link SplitBrainMergePolicy}.
@@ -75,7 +76,7 @@ public class MergeBackupOperation extends AbstractMultiMapOperation implements B
         super.writeInternal(out);
         out.writeInt(backupEntries.size());
         for (Map.Entry<Data, Collection<MultiMapRecord>> entry : backupEntries.entrySet()) {
-            out.writeData(entry.getKey());
+            IOUtil.writeData(out, entry.getKey());
             Collection<MultiMapRecord> collection = entry.getValue();
             out.writeInt(collection.size());
             for (MultiMapRecord record : collection) {
@@ -90,7 +91,7 @@ public class MergeBackupOperation extends AbstractMultiMapOperation implements B
         int size = in.readInt();
         backupEntries = createHashMap(size);
         for (int i = 0; i < size; i++) {
-            Data key = in.readData();
+            Data key = IOUtil.readData(in);
             int collectionSize = in.readInt();
             Collection<MultiMapRecord> collection = new ArrayList<MultiMapRecord>(collectionSize);
             for (int j = 0; j < collectionSize; j++) {
@@ -102,7 +103,7 @@ public class MergeBackupOperation extends AbstractMultiMapOperation implements B
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MultiMapDataSerializerHook.MERGE_BACKUP_OPERATION;
     }
 }

@@ -16,10 +16,9 @@
 
 package com.hazelcast.map.impl.querycache.publisher;
 
-import com.hazelcast.core.IFunction;
-import com.hazelcast.core.Member;
-import com.hazelcast.core.MembershipAdapter;
-import com.hazelcast.core.MembershipEvent;
+import com.hazelcast.cluster.Member;
+import com.hazelcast.cluster.MembershipAdapter;
+import com.hazelcast.cluster.MembershipEvent;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.map.impl.querycache.QueryCacheContext;
 import com.hazelcast.map.impl.querycache.QueryCacheScheduler;
@@ -27,20 +26,22 @@ import com.hazelcast.map.impl.querycache.accumulator.AccumulatorInfo;
 import com.hazelcast.map.impl.querycache.accumulator.AccumulatorInfoSupplier;
 import com.hazelcast.map.impl.querycache.accumulator.AccumulatorScannerTask;
 import com.hazelcast.map.impl.querycache.accumulator.DefaultAccumulatorInfoSupplier;
-import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.impl.NodeEngine;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
 
 import static com.hazelcast.map.impl.querycache.publisher.AccumulatorSweeper.flushAllAccumulators;
-import static com.hazelcast.util.CollectionUtil.isEmpty;
+import static com.hazelcast.internal.util.CollectionUtil.isEmpty;
 
 /**
  * Default implementation of {@link PublisherContext}.
@@ -57,18 +58,18 @@ public class DefaultPublisherContext implements PublisherContext {
     private final MapListenerRegistry mapListenerRegistry;
     private final MapPublisherRegistry mapPublisherRegistry;
     private final AccumulatorInfoSupplier accumulatorInfoSupplier;
-    private final IFunction<String, String> listenerRegistrator;
-    private final ConcurrentMap<String, ScheduledFuture> removalCandidateFutures;
+    private final Function<String, UUID> listenerRegistrator;
+    private final ConcurrentMap<UUID, ScheduledFuture> removalCandidateFutures;
 
     public DefaultPublisherContext(QueryCacheContext context, NodeEngine nodeEngine,
-                                   IFunction<String, String> listenerRegistrator) {
+                                   Function<String, UUID> listenerRegistrator) {
         this.context = context;
         this.nodeEngine = nodeEngine;
         this.mapListenerRegistry = new MapListenerRegistry(context);
         this.mapPublisherRegistry = new MapPublisherRegistry(context);
         this.accumulatorInfoSupplier = new DefaultAccumulatorInfoSupplier();
         this.listenerRegistrator = listenerRegistrator;
-        this.removalCandidateFutures = new ConcurrentHashMap<String, ScheduledFuture>();
+        this.removalCandidateFutures = new ConcurrentHashMap<>();
 
         startBackgroundAccumulatorScanner();
         handleSubscriberAddRemove();
@@ -100,12 +101,12 @@ public class DefaultPublisherContext implements PublisherContext {
     }
 
     @Override
-    public IFunction<String, String> getListenerRegistrator() {
+    public Function<String, UUID> getListenerRegistrator() {
         return listenerRegistrator;
     }
 
     @Override
-    public void handleDisconnectedSubscriber(String uuid) {
+    public void handleDisconnectedSubscriber(UUID uuid) {
         Collection<PartitionAccumulatorRegistry> removalCandidates = getRemovalCandidates(uuid);
         if (isEmpty(removalCandidates)) {
             return;
@@ -115,7 +116,7 @@ public class DefaultPublisherContext implements PublisherContext {
 
     // TODO handling client reconnection seems not straightforward with ClientAwareService
     @Override
-    public void handleConnectedSubscriber(String uuid) {
+    public void handleConnectedSubscriber(UUID uuid) {
         cancelRemovalTask(uuid);
     }
 
@@ -124,8 +125,8 @@ public class DefaultPublisherContext implements PublisherContext {
         flushAllAccumulators(this);
     }
 
-    private Collection<PartitionAccumulatorRegistry> getRemovalCandidates(String uuid) {
-        List<PartitionAccumulatorRegistry> candidates = new ArrayList<PartitionAccumulatorRegistry>();
+    private Collection<PartitionAccumulatorRegistry> getRemovalCandidates(UUID uuid) {
+        List<PartitionAccumulatorRegistry> candidates = new ArrayList<>();
         MapPublisherRegistry mapPublisherRegistry = getMapPublisherRegistry();
         Map<String, PublisherRegistry> all = mapPublisherRegistry.getAll();
         for (PublisherRegistry publisherRegistry : all.values()) {
@@ -155,14 +156,11 @@ public class DefaultPublisherContext implements PublisherContext {
         return publisherRegistry.remove(cacheId);
     }
 
-    private void startRemovalTask(final Collection<PartitionAccumulatorRegistry> removalCandidates, String uuid) {
+    private void startRemovalTask(final Collection<PartitionAccumulatorRegistry> removalCandidates, UUID uuid) {
         QueryCacheScheduler queryCacheScheduler = context.getQueryCacheScheduler();
-        ScheduledFuture scheduledFuture = queryCacheScheduler.scheduleWithRepetition(new Runnable() {
-            @Override
-            public void run() {
-                for (PartitionAccumulatorRegistry registry : removalCandidates) {
-                    removePartitionAccumulatorRegistry(registry);
-                }
+        ScheduledFuture scheduledFuture = queryCacheScheduler.scheduleWithRepetition(() -> {
+            for (PartitionAccumulatorRegistry registry : removalCandidates) {
+                removePartitionAccumulatorRegistry(registry);
             }
         }, ORPHANED_QUERY_CACHE_REMOVAL_DELAY_SECONDS);
 
@@ -172,7 +170,7 @@ public class DefaultPublisherContext implements PublisherContext {
         }
     }
 
-    private void cancelRemovalTask(String uuid) {
+    private void cancelRemovalTask(UUID uuid) {
         removalCandidateFutures.remove(uuid);
     }
 
@@ -187,14 +185,14 @@ public class DefaultPublisherContext implements PublisherContext {
             @Override
             public void memberRemoved(MembershipEvent membershipEvent) {
                 Member member = membershipEvent.getMember();
-                String uuid = member.getUuid();
+                UUID uuid = member.getUuid();
                 handleDisconnectedSubscriber(uuid);
             }
 
             @Override
             public void memberAdded(MembershipEvent membershipEvent) {
                 Member member = membershipEvent.getMember();
-                String uuid = member.getUuid();
+                UUID uuid = member.getUuid();
                 handleConnectedSubscriber(uuid);
             }
         });

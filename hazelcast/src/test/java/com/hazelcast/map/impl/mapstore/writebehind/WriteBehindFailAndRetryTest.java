@@ -17,10 +17,11 @@
 package com.hazelcast.map.impl.mapstore.writebehind;
 
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IMap;
-import com.hazelcast.core.MapStoreAdapter;
 import com.hazelcast.core.OutOfMemoryHandler;
-import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
+import com.hazelcast.instance.impl.OutOfMemoryErrorDispatcher;
+import com.hazelcast.internal.util.Clock;
+import com.hazelcast.map.IMap;
+import com.hazelcast.map.MapStoreAdapter;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.PartitionContainer;
@@ -29,9 +30,8 @@ import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.util.Clock;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -46,7 +46,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class WriteBehindFailAndRetryTest extends HazelcastTestSupport {
 
     @Test
@@ -85,10 +85,11 @@ public class WriteBehindFailAndRetryTest extends HazelcastTestSupport {
     /**
      * Returns total item count in all write behind queues of a node.
      */
-    private static int totalItemCountInWriteBehindQueues(IMap map) {
+    private static long totalItemCountInWriteBehindQueues(IMap map) {
         MapService mapService = (MapService) ((MapProxyImpl) map).getService();
         MapServiceContext mapServiceContext = mapService.getMapServiceContext();
-        return mapServiceContext.getWriteBehindQueueItemCounter().get();
+        return mapServiceContext.getNodeWideUsedCapacityCounter().currentValue();
+
     }
 
     private static int sizeOfWriteBehindQueueInPartition(int partitionId, IMap map) {
@@ -197,7 +198,7 @@ public class WriteBehindFailAndRetryTest extends HazelcastTestSupport {
 
     private static class TemporaryMapStoreException extends RuntimeException {
 
-        public TemporaryMapStoreException() {
+        TemporaryMapStoreException() {
             super("Test exception");
         }
     }

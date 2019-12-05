@@ -16,7 +16,7 @@
 
 package com.hazelcast.internal.networking.nio;
 
-import com.hazelcast.nio.tcp.TcpIpConnection_AbstractBasicTest;
+import com.hazelcast.internal.nio.tcp.TcpIpConnection_AbstractBasicTest;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;

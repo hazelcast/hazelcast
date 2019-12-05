@@ -18,9 +18,9 @@ package com.hazelcast.cache.impl;
 
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.internal.eviction.ExpirationManager;
-import com.hazelcast.spi.ServiceNamespace;
-import com.hazelcast.util.ConcurrencyUtil;
-import com.hazelcast.util.ConstructorFunction;
+import com.hazelcast.internal.services.ServiceNamespace;
+import com.hazelcast.internal.util.ConcurrencyUtil;
+import com.hazelcast.internal.util.ConstructorFunction;
 
 import java.util.Collection;
 import java.util.HashSet;
@@ -48,7 +48,7 @@ public class CachePartitionSegment implements ConstructorFunction<String, ICache
     /**
      * Used when sorting partition containers in {@link ExpirationManager}
      * A non-volatile copy of lastCleanupTime is used with two reasons.
-     * <p/>
+     * <p>
      * 1. We need an un-modified field during sorting.
      * 2. Decrease number of volatile reads.
      */

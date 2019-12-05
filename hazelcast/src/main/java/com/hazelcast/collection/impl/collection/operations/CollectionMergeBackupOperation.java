@@ -21,8 +21,8 @@ import com.hazelcast.collection.impl.collection.CollectionDataSerializerHook;
 import com.hazelcast.collection.impl.collection.CollectionItem;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.spi.BackupOperation;
-import com.hazelcast.spi.RemoteService;
+import com.hazelcast.spi.impl.operationservice.BackupOperation;
+import com.hazelcast.internal.services.RemoteService;
 import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 
 import java.io.IOException;
@@ -63,7 +63,7 @@ public class CollectionMergeBackupOperation extends CollectionOperation implemen
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return CollectionDataSerializerHook.COLLECTION_MERGE_BACKUP;
     }
 

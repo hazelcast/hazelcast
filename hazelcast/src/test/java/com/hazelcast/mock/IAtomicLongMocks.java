@@ -16,7 +16,7 @@
 
 package com.hazelcast.mock;
 
-import com.hazelcast.core.IAtomicLong;
+import com.hazelcast.cp.IAtomicLong;
 
 import java.util.concurrent.atomic.AtomicLong;
 

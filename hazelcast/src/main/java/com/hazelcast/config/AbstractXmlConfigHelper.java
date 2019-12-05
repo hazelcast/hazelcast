@@ -16,12 +16,13 @@
 
 package com.hazelcast.config;
 
-import com.hazelcast.config.AbstractConfigBuilder.ConfigType;
+import com.hazelcast.config.AbstractXmlConfigBuilder.ConfigType;
 import com.hazelcast.instance.BuildInfo;
 import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
-import com.hazelcast.util.StringUtil;
+import com.hazelcast.internal.util.StringUtil;
+import com.hazelcast.spi.annotation.PrivateApi;
 import org.w3c.dom.Document;
 import org.xml.sax.InputSource;
 
@@ -42,8 +43,8 @@ import java.io.InputStream;
 import java.net.URL;
 import java.util.ArrayList;
 
-import static com.hazelcast.nio.IOUtil.closeResource;
-import static com.hazelcast.util.StringUtil.LINE_SEPARATOR;
+import static com.hazelcast.internal.nio.IOUtil.closeResource;
+import static com.hazelcast.internal.util.StringUtil.LINE_SEPARATOR;
 
 /**
  * Contains Hazelcast XML Configuration helper methods and variables.
@@ -57,13 +58,13 @@ public abstract class AbstractXmlConfigHelper {
 
     final String xmlns = "http://www.hazelcast.com/schema/" + getNamespaceType();
 
-    private final String hazelcastSchemaLocation = getXmlType().name + "-config-" + getReleaseVersion() + ".xsd";
+    private final String hazelcastSchemaLocation = getConfigType().name + "-config-" + getReleaseVersion() + ".xsd";
 
     public String getNamespaceType() {
-        return getXmlType().name.equals("hazelcast") ? "config" : "client-config";
+        return getConfigType().name.equals("hazelcast") ? "config" : "client-config";
     }
 
-    protected ConfigType getXmlType() {
+    protected ConfigType getConfigType() {
         return ConfigType.SERVER;
     }
 
@@ -136,7 +137,8 @@ public abstract class AbstractXmlConfigHelper {
         return inputStream;
     }
 
-    protected String getReleaseVersion() {
+    @PrivateApi
+    public String getReleaseVersion() {
         BuildInfo buildInfo = BuildInfoProvider.getBuildInfo();
         String[] versionTokens = StringUtil.tokenizeVersionString(buildInfo.getVersion());
         return versionTokens[0] + "." + versionTokens[1];
@@ -165,8 +167,8 @@ public abstract class AbstractXmlConfigHelper {
     }
 
     private String xmlRefToJavaName(final String name) {
-        if (name.equals("quorum-ref")) {
-            return "quorumName";
+        if (name.equals("split-brain-protection-ref")) {
+            return "splitBrainProtectionName";
         }
         return null;
     }
@@ -179,4 +181,5 @@ public abstract class AbstractXmlConfigHelper {
         builder.append(string);
         token.setLength(0);
     }
+
 }

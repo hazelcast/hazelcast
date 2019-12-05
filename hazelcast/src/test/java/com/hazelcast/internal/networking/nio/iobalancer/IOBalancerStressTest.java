@@ -19,17 +19,17 @@ package com.hazelcast.internal.networking.nio.iobalancer;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IMap;
-import com.hazelcast.instance.HazelcastInstanceFactory;
+import com.hazelcast.map.IMap;
+import com.hazelcast.instance.impl.HazelcastInstanceFactory;
 import com.hazelcast.internal.networking.nio.MigratablePipeline;
 import com.hazelcast.internal.networking.nio.NioChannel;
-import com.hazelcast.internal.networking.nio.NioNetworking;
 import com.hazelcast.internal.networking.nio.NioInboundPipeline;
+import com.hazelcast.internal.networking.nio.NioNetworking;
 import com.hazelcast.internal.networking.nio.NioOutboundPipeline;
 import com.hazelcast.internal.networking.nio.NioThread;
-import com.hazelcast.nio.tcp.TcpIpConnection;
-import com.hazelcast.nio.tcp.TcpIpConnectionManager;
-import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.internal.nio.EndpointManager;
+import com.hazelcast.internal.nio.tcp.TcpIpConnection;
+import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.OverridePropertyRule;
@@ -66,8 +66,8 @@ public class IOBalancerStressTest extends HazelcastTestSupport {
     @Test
     public void testEachConnectionUseDifferentOwnerEventually() {
         Config config = new Config()
-                .setProperty(GroupProperty.IO_BALANCER_INTERVAL_SECONDS.getName(), "1")
-                .setProperty(GroupProperty.IO_THREAD_COUNT.getName(), "2");
+                .setProperty(ClusterProperty.IO_BALANCER_INTERVAL_SECONDS.getName(), "1")
+                .setProperty(ClusterProperty.IO_THREAD_COUNT.getName(), "2");
 
         HazelcastInstance instance1 = Hazelcast.newHazelcastInstance(config);
         HazelcastInstance instance2 = Hazelcast.newHazelcastInstance(config);
@@ -87,9 +87,9 @@ public class IOBalancerStressTest extends HazelcastTestSupport {
     }
 
     private void assertBalanced(HazelcastInstance hz) {
-        TcpIpConnectionManager connectionManager = (TcpIpConnectionManager) getConnectionManager(hz);
+        EndpointManager<TcpIpConnection> em = getEndpointManager(hz);
 
-        Map<NioThread, Set<MigratablePipeline>> pipelinesPerOwner = getPipelinesPerOwner(connectionManager);
+        Map<NioThread, Set<MigratablePipeline>> pipelinesPerOwner = getPipelinesPerOwner(em);
 
         try {
             for (Map.Entry<NioThread, Set<MigratablePipeline>> entry : pipelinesPerOwner.entrySet()) {
@@ -99,14 +99,14 @@ public class IOBalancerStressTest extends HazelcastTestSupport {
             }
         } catch (AssertionError e) {
             // if something fails, we want to see the debug output
-            System.out.println(debug(connectionManager));
+            System.out.println(debug(hz));
             throw e;
         }
     }
 
-    private Map<NioThread, Set<MigratablePipeline>> getPipelinesPerOwner(TcpIpConnectionManager connectionManager) {
+    private Map<NioThread, Set<MigratablePipeline>> getPipelinesPerOwner(EndpointManager<TcpIpConnection> em) {
         Map<NioThread, Set<MigratablePipeline>> pipelinesPerOwner = new HashMap<NioThread, Set<MigratablePipeline>>();
-        for (TcpIpConnection connection : connectionManager.getActiveConnections()) {
+        for (TcpIpConnection connection : em.getActiveConnections()) {
             NioChannel channel = (NioChannel) connection.getChannel();
             add(pipelinesPerOwner, channel.inboundPipeline());
             add(pipelinesPerOwner, channel.outboundPipeline());
@@ -154,15 +154,16 @@ public class IOBalancerStressTest extends HazelcastTestSupport {
         }
     }
 
-    private String debug(TcpIpConnectionManager connectionManager) {
-        NioNetworking threadingModel = (NioNetworking) connectionManager.getNetworking();
+    private String debug(HazelcastInstance hz) {
+        NioNetworking threadingModel = (NioNetworking) getNode(hz).getNetworkingService().getNetworking();
+        EndpointManager<TcpIpConnection> em = getNode(hz).getEndpointManager();
 
         StringBuilder sb = new StringBuilder();
         sb.append("in owners\n");
         for (NioThread in : threadingModel.getInputThreads()) {
             sb.append(in).append(": ").append(in.getEventCount()).append("\n");
 
-            for (TcpIpConnection connection : connectionManager.getActiveConnections()) {
+            for (TcpIpConnection connection : em.getActiveConnections()) {
                 NioInboundPipeline socketReader = ((NioChannel) connection.getChannel()).inboundPipeline();
                 if (socketReader.owner() == in) {
                     sb.append("\t").append(socketReader).append(" load:").append(socketReader.load()).append("\n");
@@ -173,7 +174,7 @@ public class IOBalancerStressTest extends HazelcastTestSupport {
         for (NioThread in : threadingModel.getOutputThreads()) {
             sb.append(in).append(": ").append(in.getEventCount()).append("\n");
 
-            for (TcpIpConnection connection : connectionManager.getActiveConnections()) {
+            for (TcpIpConnection connection : em.getActiveConnections()) {
                 NioOutboundPipeline socketWriter = ((NioChannel) connection.getChannel()).outboundPipeline();
                 if (socketWriter.owner() == in) {
                     sb.append("\t").append(socketWriter).append(" load:").append(socketWriter.load()).append("\n");

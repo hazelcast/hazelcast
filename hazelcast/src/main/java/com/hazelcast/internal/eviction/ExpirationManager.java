@@ -21,17 +21,18 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.LifecycleEvent;
 import com.hazelcast.core.LifecycleListener;
 import com.hazelcast.core.LifecycleService;
-import com.hazelcast.core.PartitionService;
+import com.hazelcast.partition.PartitionService;
 import com.hazelcast.partition.PartitionLostEvent;
 import com.hazelcast.partition.PartitionLostListener;
-import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.TaskScheduler;
+import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.spi.impl.executionservice.TaskScheduler;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
+import java.util.UUID;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import static com.hazelcast.util.Preconditions.checkPositive;
+import static com.hazelcast.internal.util.Preconditions.checkPositive;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
@@ -44,8 +45,8 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 public final class ExpirationManager implements LifecycleListener, PartitionLostListener {
 
     private final int taskPeriodSeconds;
-    private final String lifecycleListenerId;
-    private final String partitionLostListenerId;
+    private final UUID lifecycleListenerId;
+    private final UUID partitionLostListenerId;
     private final NodeEngine nodeEngine;
     private final ClearExpiredRecordsTask task;
     private final TaskScheduler globalTaskScheduler;

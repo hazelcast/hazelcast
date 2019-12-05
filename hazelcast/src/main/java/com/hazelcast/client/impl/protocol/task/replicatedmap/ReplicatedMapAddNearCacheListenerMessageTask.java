@@ -19,10 +19,12 @@ package com.hazelcast.client.impl.protocol.task.replicatedmap;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ReplicatedMapAddEntryListenerWithPredicateCodec;
 import com.hazelcast.client.impl.protocol.codec.ReplicatedMapAddNearCacheEntryListenerCodec;
-import com.hazelcast.instance.Node;
-import com.hazelcast.nio.Connection;
+import com.hazelcast.instance.impl.Node;
+import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.Predicate;
+
+import java.util.UUID;
 
 public class ReplicatedMapAddNearCacheListenerMessageTask
         extends AbstractReplicatedMapAddEntryListenerMessageTask
@@ -49,7 +51,7 @@ public class ReplicatedMapAddNearCacheListenerMessageTask
 
     @Override
     protected ClientMessage encodeEvent(Data key, Data newValue, Data oldValue, Data mergingValue,
-                                        int type, String uuid, int numberOfAffectedEntries) {
+                                        int type, UUID uuid, int numberOfAffectedEntries) {
         return ReplicatedMapAddNearCacheEntryListenerCodec.encodeEntryEvent(key, newValue,
                 oldValue, mergingValue, type, uuid, numberOfAffectedEntries);
     }
@@ -66,7 +68,7 @@ public class ReplicatedMapAddNearCacheListenerMessageTask
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return ReplicatedMapAddEntryListenerWithPredicateCodec.encodeResponse((String) response);
+        return ReplicatedMapAddEntryListenerWithPredicateCodec.encodeResponse((UUID) response);
     }
 
     @Override

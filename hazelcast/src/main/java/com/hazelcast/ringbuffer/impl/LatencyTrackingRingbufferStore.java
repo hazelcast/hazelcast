@@ -16,10 +16,10 @@
 
 package com.hazelcast.ringbuffer.impl;
 
-import com.hazelcast.core.RingbufferStore;
+import com.hazelcast.ringbuffer.RingbufferStore;
 import com.hazelcast.internal.diagnostics.StoreLatencyPlugin;
 import com.hazelcast.internal.diagnostics.StoreLatencyPlugin.LatencyProbe;
-import com.hazelcast.spi.ObjectNamespace;
+import com.hazelcast.internal.services.ObjectNamespace;
 
 /**
  * A {@link RingbufferStore} that decorates an RingbufferStore with latency tracking instrumentation.

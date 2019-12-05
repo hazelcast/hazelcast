@@ -16,10 +16,9 @@
 
 package com.hazelcast.spi.impl;
 
-import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -27,6 +26,7 @@ import org.junit.runner.RunWith;
 
 import java.util.concurrent.Callable;
 import java.util.concurrent.Executor;
+import java.util.function.Consumer;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotSame;
@@ -34,7 +34,7 @@ import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class AbstractInvocationFuture_IsDoneTest extends AbstractInvocationFuture_AbstractTest {
 
     @Test
@@ -72,7 +72,7 @@ public class AbstractInvocationFuture_IsDoneTest extends AbstractInvocationFutur
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
-                assertNotSame(AbstractInvocationFuture.VOID, future.getState());
+                assertNotSame(AbstractInvocationFuture.UNRESOLVED, future.getState());
             }
         });
 
@@ -81,22 +81,22 @@ public class AbstractInvocationFuture_IsDoneTest extends AbstractInvocationFutur
 
     @Test
     public void whenCallbackWithoutCustomExecutor() {
-        future.andThen(mock(ExecutionCallback.class));
+        future.thenAccept(mock(Consumer.class));
 
         assertFalse(future.isDone());
     }
 
     @Test
     public void whenCallbackWithCustomExecutor() {
-        future.andThen(mock(ExecutionCallback.class), mock(Executor.class));
+        future.thenAcceptAsync(mock(Consumer.class), mock(Executor.class));
 
         assertFalse(future.isDone());
     }
 
     @Test
     public void whenMultipleWaiters() {
-        future.andThen(mock(ExecutionCallback.class), mock(Executor.class));
-        future.andThen(mock(ExecutionCallback.class), mock(Executor.class));
+        future.thenAcceptAsync(mock(Consumer.class), mock(Executor.class));
+        future.thenAcceptAsync(mock(Consumer.class), mock(Executor.class));
 
         assertFalse(future.isDone());
     }

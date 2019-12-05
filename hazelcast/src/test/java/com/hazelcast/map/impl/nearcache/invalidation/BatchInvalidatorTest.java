@@ -21,7 +21,7 @@ import com.hazelcast.internal.nearcache.impl.invalidation.Invalidator;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -29,7 +29,7 @@ import org.junit.runner.RunWith;
 import static com.hazelcast.internal.nearcache.impl.invalidation.InvalidationUtils.TRUE_FILTER;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class BatchInvalidatorTest extends AbstractInvalidatorTest {
 
     @Override

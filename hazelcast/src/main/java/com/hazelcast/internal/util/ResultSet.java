@@ -16,13 +16,13 @@
 
 package com.hazelcast.internal.util;
 
-import com.hazelcast.util.IterationType;
-
 import java.util.AbstractSet;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Predicate;
 
 /**
  *
@@ -87,5 +87,34 @@ public class ResultSet extends AbstractSet<Map.Entry> {
         public void remove() {
             throw new UnsupportedOperationException();
         }
+    }
+
+    @Override
+    public boolean addAll(Collection c) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public boolean remove(Object o) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public boolean removeAll(Collection<?> c) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public boolean removeIf(Predicate filter) {
+        throw new UnsupportedOperationException();
+    }
+
+    public boolean retainAll(Collection<?> coll) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void clear() {
+        throw new UnsupportedOperationException();
     }
 }

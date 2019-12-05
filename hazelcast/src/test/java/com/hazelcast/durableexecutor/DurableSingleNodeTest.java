@@ -16,11 +16,10 @@
 
 package com.hazelcast.durableexecutor;
 
-import com.hazelcast.core.ExecutionCallback;
-import com.hazelcast.core.Member;
+import com.hazelcast.cluster.Member;
 import com.hazelcast.executor.ExecutorServiceTestSupport;
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
 import org.junit.Test;
@@ -45,7 +44,7 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class DurableSingleNodeTest extends ExecutorServiceTestSupport {
 
     private DurableExecutorService executor;
@@ -82,15 +81,8 @@ public class DurableSingleNodeTest extends ExecutorServiceTestSupport {
     public void executionCallback_notifiedOnSuccess() {
         final CountDownLatch latch = new CountDownLatch(1);
         Callable<String> task = new BasicTestCallable();
-        ExecutionCallback<String> executionCallback = new ExecutionCallback<String>() {
-            public void onResponse(String response) {
-                latch.countDown();
-            }
-
-            public void onFailure(Throwable t) {
-            }
-        };
-        executor.submit(task).andThen(executionCallback);
+        Runnable callback = latch::countDown;
+        executor.submit(task).toCompletableFuture().thenRun(callback);
         assertOpenEventually(latch);
     }
 
@@ -98,15 +90,10 @@ public class DurableSingleNodeTest extends ExecutorServiceTestSupport {
     public void executionCallback_notifiedOnFailure() {
         final CountDownLatch latch = new CountDownLatch(1);
         FailingTestTask task = new FailingTestTask();
-        ExecutionCallback<String> executionCallback = new ExecutionCallback<String>() {
-            public void onResponse(String response) {
-            }
-
-            public void onFailure(Throwable t) {
-                latch.countDown();
-            }
-        };
-        executor.submit(task).andThen(executionCallback);
+        executor.submit(task).toCompletableFuture().exceptionally(v -> {
+            latch.countDown();
+            return null;
+        });
         assertOpenEventually(latch);
     }
 
@@ -135,13 +122,8 @@ public class DurableSingleNodeTest extends ExecutorServiceTestSupport {
     @Test
     public void issue292() throws Exception {
         final BlockingQueue<Member> responseQueue = new ArrayBlockingQueue<Member>(1);
-        executor.submit(new MemberCheck()).andThen(new ExecutionCallback<Member>() {
-            public void onResponse(Member response) {
-                responseQueue.offer(response);
-            }
-
-            public void onFailure(Throwable t) {
-            }
+        executor.submit(new MemberCheck()).toCompletableFuture().thenAccept(response -> {
+            responseQueue.offer(response);
         });
         assertNotNull(responseQueue.poll(10, TimeUnit.SECONDS));
     }

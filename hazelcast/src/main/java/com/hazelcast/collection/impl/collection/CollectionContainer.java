@@ -22,7 +22,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.transaction.TransactionException;
 
 import java.io.IOException;
@@ -33,8 +33,9 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 
-import static com.hazelcast.util.MapUtil.createHashMap;
+import static com.hazelcast.internal.util.MapUtil.createHashMap;
 
 @SuppressWarnings("checkstyle:methodcount")
 public abstract class CollectionContainer implements IdentifiedDataSerializable {
@@ -192,7 +193,7 @@ public abstract class CollectionContainer implements IdentifiedDataSerializable 
      * TX methods
      */
 
-    public Long reserveAdd(String transactionId, Data value) {
+    public Long reserveAdd(UUID transactionId, Data value) {
         if (value != null && getCollection().contains(new CollectionItem(INVALID_ITEM_ID, value))) {
             return null;
         }
@@ -201,7 +202,7 @@ public abstract class CollectionContainer implements IdentifiedDataSerializable 
         return itemId;
     }
 
-    public void reserveAddBackup(long itemId, String transactionId) {
+    public void reserveAddBackup(long itemId, UUID transactionId) {
         TxCollectionItem item = new TxCollectionItem(itemId, null, transactionId, false);
         Object o = txMap.put(itemId, item);
         if (o != null) {
@@ -210,7 +211,7 @@ public abstract class CollectionContainer implements IdentifiedDataSerializable 
         }
     }
 
-    public CollectionItem reserveRemove(long reservedItemId, Data value, String transactionId) {
+    public CollectionItem reserveRemove(long reservedItemId, Data value, UUID transactionId) {
         final Iterator<CollectionItem> iterator = getCollection().iterator();
         while (iterator.hasNext()) {
             final CollectionItem item = iterator.next();
@@ -228,7 +229,7 @@ public abstract class CollectionContainer implements IdentifiedDataSerializable 
         return null;
     }
 
-    public void reserveRemoveBackup(long itemId, String transactionId) {
+    public void reserveRemoveBackup(long itemId, UUID transactionId) {
         final CollectionItem item = getMap().remove(itemId);
         if (item == null) {
             throw new TransactionException("Transaction reservation failed on backup member. "
@@ -309,7 +310,7 @@ public abstract class CollectionContainer implements IdentifiedDataSerializable 
         }
     }
 
-    public void rollbackTransaction(String transactionId) {
+    public void rollbackTransaction(UUID transactionId) {
         final Iterator<TxCollectionItem> iterator = txMap.values().iterator();
 
         while (iterator.hasNext()) {

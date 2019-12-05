@@ -15,7 +15,7 @@
  */
 
 /**
- * <p>This package contains classes related to New IO<br/>
+ * <p>This package contains classes related to New IO<br>
  */
 
 package com.hazelcast.nio;

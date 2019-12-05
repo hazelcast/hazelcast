@@ -16,20 +16,20 @@
 
 package com.hazelcast.map.impl.querycache;
 
-import com.hazelcast.core.Member;
+import com.hazelcast.cluster.Member;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.map.impl.querycache.publisher.PublisherContext;
 import com.hazelcast.map.impl.querycache.subscriber.SubscriberContext;
-import com.hazelcast.nio.Address;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.util.ContextMutexFactory;
+import com.hazelcast.internal.util.ContextMutexFactory;
 
 import java.util.Collection;
 
 /**
  * A global context which contains all sub-contexts which are responsible for all
  * {@link com.hazelcast.map.QueryCache QueryCache} life-cycle management phases.
- * <p/>
+ * <p>
  * Any functionality for a {@link com.hazelcast.map.QueryCache QueryCache} should be accessed
  * on this context. It also helps to make abstractions over auxiliary services to provide different implementations
  * on client and on node sides.
@@ -141,7 +141,7 @@ public interface QueryCacheContext {
 
     /**
      * Only used for testing purposes.
-     * <p/>
+     * <p>
      * Sets {@link SubscriberContext} implementation used by this query-cache context.
      *
      * @param subscriberContext the supplied {@code subscriberContext} to be set.

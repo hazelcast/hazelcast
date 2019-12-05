@@ -16,7 +16,7 @@
 
 package com.hazelcast.internal.partition;
 
-import com.hazelcast.spi.ServiceNamespace;
+import com.hazelcast.internal.services.ServiceNamespace;
 import org.junit.Assert;
 
 import java.util.Arrays;

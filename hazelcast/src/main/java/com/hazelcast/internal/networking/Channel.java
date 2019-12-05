@@ -170,10 +170,13 @@ public interface Channel extends Closeable {
      * initialize the channel and to start with processing inbound and outbound data.
      *
      * This method is not threadsafe and should be made only once.
+     *
+     * This method should be called for clientMode and non clientMode channels. Otherwise
+     * the connection will not start to read from or write to the socket.
      */
     void start();
 
-      /**
+    /**
      * Connects the channel.
      *
      * This call should only be made once and is not threadsafe.
@@ -189,6 +192,7 @@ public interface Channel extends Closeable {
      *
      * @param address       the address to connect to.
      * @param timeoutMillis the timeout in millis, or 0 if waiting indefinitely.
+     * @throws IllegalStateException if the connection is not in clientMode.
      * @throws IOException if connecting fails.
      */
     void connect(InetSocketAddress address, int timeoutMillis) throws IOException;
@@ -252,4 +256,20 @@ public interface Channel extends Closeable {
      * @return true if the frame was queued; false if rejected.
      */
     boolean write(OutboundFrame frame);
+
+    /**
+     * Returns current count of bytes read from the Channel.
+     * The read values might not reflect the most recent value.
+     *
+     * @return count of read bytes
+     */
+    long bytesRead();
+
+    /**
+     * Returns current count of bytes written into the Channel.
+     * The read values might not reflect the most recent value.
+     *
+     * @return count of written bytes
+     */
+    long bytesWritten();
 }

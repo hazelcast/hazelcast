@@ -16,13 +16,14 @@
 
 package com.hazelcast.client.impl.protocol.task.dynamicconfig;
 
+import com.hazelcast.client.impl.protocol.util.PropertiesUtil;
 import com.hazelcast.config.RingbufferStoreConfig;
-import com.hazelcast.core.RingbufferStore;
-import com.hazelcast.core.RingbufferStoreFactory;
+import com.hazelcast.ringbuffer.RingbufferStore;
+import com.hazelcast.ringbuffer.RingbufferStoreFactory;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.serialization.SerializationService;
+import com.hazelcast.internal.serialization.SerializationService;
 
-import java.util.Properties;
+import java.util.Map;
 
 /**
  * Adapter for using {@link com.hazelcast.config.RingbufferStoreConfig} in client protocol.
@@ -33,11 +34,12 @@ public class RingbufferStoreConfigHolder {
     private final String factoryClassName;
     private final Data implementation;
     private final Data factoryImplementation;
-    private final Properties properties;
+    private final Map<String, String> properties;
     private final boolean enabled;
 
     public RingbufferStoreConfigHolder(String className, String factoryClassName, Data implementation,
-                                       Data factoryImplementation, Properties properties, boolean enabled) {
+                                       Data factoryImplementation, Map<String, String> properties,
+                                       boolean enabled) {
         this.className = className;
         this.factoryClassName = factoryClassName;
         this.implementation = implementation;
@@ -62,7 +64,7 @@ public class RingbufferStoreConfigHolder {
         return factoryImplementation;
     }
 
-    public Properties getProperties() {
+    public Map<String, String> getProperties() {
         return properties;
     }
 
@@ -75,7 +77,7 @@ public class RingbufferStoreConfigHolder {
         config.setClassName(className);
         config.setEnabled(enabled);
         config.setFactoryClassName(factoryClassName);
-        config.setProperties(properties);
+        config.setProperties(PropertiesUtil.fromMap(properties));
         RingbufferStore storeImplementation = serializationService.toObject(implementation);
         RingbufferStoreFactory storeFactoryImplementation = serializationService.toObject(factoryImplementation);
         config.setStoreImplementation(storeImplementation);
@@ -97,7 +99,7 @@ public class RingbufferStoreConfigHolder {
                 ringbufferStoreConfig.getFactoryClassName(),
                 serializationService.toData(ringbufferStoreConfig.getStoreImplementation()),
                 serializationService.toData(ringbufferStoreConfig.getFactoryImplementation()),
-                ringbufferStoreConfig.getProperties(), ringbufferStoreConfig.isEnabled());
+                PropertiesUtil.toMap(ringbufferStoreConfig.getProperties()), ringbufferStoreConfig.isEnabled());
     }
 
 }

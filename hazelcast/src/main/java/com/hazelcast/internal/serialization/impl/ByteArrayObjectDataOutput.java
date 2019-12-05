@@ -17,20 +17,21 @@
 package com.hazelcast.internal.serialization.impl;
 
 import com.hazelcast.internal.serialization.InternalSerializationService;
-import com.hazelcast.nio.Bits;
-import com.hazelcast.nio.BufferObjectDataOutput;
+import com.hazelcast.internal.nio.Bits;
+import com.hazelcast.internal.nio.BufferObjectDataOutput;
+import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.util.collection.ArrayUtils;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.serialization.SerializationService;
-import com.hazelcast.util.collection.ArrayUtils;
 
 import java.io.IOException;
 import java.nio.ByteOrder;
 
-import static com.hazelcast.nio.Bits.CHAR_SIZE_IN_BYTES;
-import static com.hazelcast.nio.Bits.INT_SIZE_IN_BYTES;
-import static com.hazelcast.nio.Bits.LONG_SIZE_IN_BYTES;
-import static com.hazelcast.nio.Bits.NULL_ARRAY_LENGTH;
-import static com.hazelcast.nio.Bits.SHORT_SIZE_IN_BYTES;
+import static com.hazelcast.internal.nio.Bits.CHAR_SIZE_IN_BYTES;
+import static com.hazelcast.internal.nio.Bits.INT_SIZE_IN_BYTES;
+import static com.hazelcast.internal.nio.Bits.LONG_SIZE_IN_BYTES;
+import static com.hazelcast.internal.nio.Bits.NULL_ARRAY_LENGTH;
+import static com.hazelcast.internal.nio.Bits.SHORT_SIZE_IN_BYTES;
+import static com.hazelcast.internal.nio.Bits.UTF_8;
 import static com.hazelcast.version.Version.UNKNOWN;
 
 class ByteArrayObjectDataOutput extends VersionedObjectDataOutput implements BufferObjectDataOutput {
@@ -251,14 +252,15 @@ class ByteArrayObjectDataOutput extends VersionedObjectDataOutput implements Buf
 
     @Override
     public void writeUTF(final String str) throws IOException {
-        int len = (str != null) ? str.length() : NULL_ARRAY_LENGTH;
-        writeInt(len);
-        if (len > 0) {
-            ensureAvailable(len * 3);
-            for (int i = 0; i < len; i++) {
-                pos += Bits.writeUtf8Char(buffer, pos, str.charAt(i));
-            }
+        if (str == null) {
+            writeInt(NULL_ARRAY_LENGTH);
+            return;
         }
+
+        byte[] utf8Bytes = str.getBytes(UTF_8);
+        writeInt(utf8Bytes.length);
+        ensureAvailable(utf8Bytes.length);
+        write(utf8Bytes);
     }
 
     @Override
@@ -409,7 +411,7 @@ class ByteArrayObjectDataOutput extends VersionedObjectDataOutput implements Buf
     }
 
     @Override
-    public byte toByteArray()[] {
+    public byte[] toByteArray() {
         return toByteArray(0);
     }
 
@@ -431,6 +433,7 @@ class ByteArrayObjectDataOutput extends VersionedObjectDataOutput implements Buf
             buffer = new byte[initialSize * 8];
         }
         version = UNKNOWN;
+        wanProtocolVersion = UNKNOWN;
     }
 
     @Override

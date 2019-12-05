@@ -16,9 +16,10 @@
 
 package com.hazelcast.map.impl.querycache.subscriber;
 
-import com.hazelcast.core.IMapEvent;
+import com.hazelcast.map.IMapEvent;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.map.EventLostEvent;
+import com.hazelcast.map.IMap;
 import com.hazelcast.map.impl.EntryEventFilter;
 import com.hazelcast.map.impl.ListenerAdapter;
 import com.hazelcast.map.impl.MapServiceContext;
@@ -32,23 +33,23 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.impl.QueryEntry;
 import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.query.impl.getters.Extractors;
-import com.hazelcast.spi.EventFilter;
-import com.hazelcast.spi.EventRegistration;
-import com.hazelcast.spi.EventService;
-import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.impl.eventservice.EventFilter;
+import com.hazelcast.spi.impl.eventservice.EventRegistration;
+import com.hazelcast.spi.impl.eventservice.EventService;
+import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.eventservice.impl.Registration;
 import com.hazelcast.spi.impl.eventservice.impl.TrueEventFilter;
-import com.hazelcast.spi.serialization.SerializationService;
-import com.hazelcast.util.ContextMutexFactory;
+import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.util.ContextMutexFactory;
 
 import java.util.Collection;
+import java.util.UUID;
 
 import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
-import static com.hazelcast.map.impl.querycache.ListenerRegistrationHelper.generateListenerName;
 import static com.hazelcast.map.impl.querycache.subscriber.QueryCacheEventListenerAdapters.createQueryCacheListenerAdaptor;
-import static com.hazelcast.nio.IOUtil.closeResource;
-import static com.hazelcast.util.Preconditions.checkHasText;
-import static com.hazelcast.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.nio.IOUtil.closeResource;
+import static com.hazelcast.internal.util.Preconditions.checkHasText;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 /**
  * Node side event service implementation for query cache.
@@ -58,14 +59,14 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
 public class NodeQueryCacheEventService implements QueryCacheEventService<EventData> {
 
     private final EventService eventService;
-    private final ContextMutexFactory mutexFactory;
+    private final ContextMutexFactory lifecycleMutexFactory;
     private final MapServiceContext mapServiceContext;
 
-    public NodeQueryCacheEventService(MapServiceContext mapServiceContext, ContextMutexFactory mutexFactory) {
+    public NodeQueryCacheEventService(MapServiceContext mapServiceContext, ContextMutexFactory lifecycleMutexFactory) {
         this.mapServiceContext = mapServiceContext;
         NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
         this.eventService = nodeEngine.getEventService();
-        this.mutexFactory = mutexFactory;
+        this.lifecycleMutexFactory = lifecycleMutexFactory;
     }
 
     // TODO not used order key
@@ -76,28 +77,26 @@ public class NodeQueryCacheEventService implements QueryCacheEventService<EventD
         checkHasText(cacheId, "cacheId");
         checkNotNull(eventData, "eventData cannot be null");
 
-        publishLocalEvent(mapName, cacheId, eventData, extractors);
+        publishLocalEvent(cacheId, eventData, extractors);
     }
 
     @Override
-    public String addListener(String mapName, String cacheId, MapListener listener) {
+    public UUID addListener(String mapName, String cacheId, MapListener listener) {
         return addListener(mapName, cacheId, listener, null);
     }
 
     @Override
-    public String addPublisherListener(String mapName, String cacheId, ListenerAdapter listenerAdapter) {
-        String listenerName = generateListenerName(mapName, cacheId);
-        return mapServiceContext.addListenerAdapter(listenerAdapter, TrueEventFilter.INSTANCE, listenerName);
+    public UUID addPublisherListener(String mapName, String cacheId, ListenerAdapter listenerAdapter) {
+        return mapServiceContext.addListenerAdapter(listenerAdapter, TrueEventFilter.INSTANCE, cacheId);
     }
 
     @Override
-    public boolean removePublisherListener(String mapName, String cacheId, String listenerId) {
-        String listenerName = generateListenerName(mapName, cacheId);
-        return mapServiceContext.removeEventListener(listenerName, listenerId);
+    public boolean removePublisherListener(String mapName, String cacheId, UUID listenerId) {
+        return mapServiceContext.removeEventListener(cacheId, listenerId);
     }
 
     @Override
-    public String addListener(String mapName, String cacheId, MapListener listener, EventFilter filter) {
+    public UUID addListener(String mapName, String cacheId, MapListener listener, EventFilter filter) {
         checkHasText(mapName, "mapName");
         checkHasText(cacheId, "cacheId");
         checkNotNull(listener, "listener cannot be null");
@@ -105,11 +104,10 @@ public class NodeQueryCacheEventService implements QueryCacheEventService<EventD
         ListenerAdapter queryCacheListenerAdaptor = createQueryCacheListenerAdaptor(listener);
         ListenerAdapter listenerAdaptor = new SimpleQueryCacheListenerAdapter(queryCacheListenerAdaptor);
 
-        String listenerName = generateListenerName(mapName, cacheId);
-        ContextMutexFactory.Mutex mutex = mutexFactory.mutexFor(mapName);
+        ContextMutexFactory.Mutex mutex = lifecycleMutexFactory.mutexFor(mapName);
         try {
             synchronized (mutex) {
-                EventRegistration registration = eventService.registerLocalListener(SERVICE_NAME, listenerName,
+                EventRegistration registration = eventService.registerLocalListener(SERVICE_NAME, cacheId,
                         filter == null ? TrueEventFilter.INSTANCE : filter, listenerAdaptor);
                 return registration.getId();
             }
@@ -119,18 +117,16 @@ public class NodeQueryCacheEventService implements QueryCacheEventService<EventD
     }
 
     @Override
-    public boolean removeListener(String mapName, String cacheId, String listenerId) {
-        String listenerName = generateListenerName(mapName, cacheId);
-        return eventService.deregisterListener(SERVICE_NAME, listenerName, listenerId);
+    public boolean removeListener(String mapName, String cacheId, UUID listenerId) {
+        return eventService.deregisterListener(SERVICE_NAME, cacheId, listenerId);
     }
 
     @Override
     public void removeAllListeners(String mapName, String cacheId) {
-        String listenerName = generateListenerName(mapName, cacheId);
-        ContextMutexFactory.Mutex mutex = mutexFactory.mutexFor(mapName);
+        ContextMutexFactory.Mutex mutex = lifecycleMutexFactory.mutexFor(mapName);
         try {
             synchronized (mutex) {
-                eventService.deregisterAllListeners(SERVICE_NAME, listenerName);
+                eventService.deregisterAllListeners(SERVICE_NAME, cacheId);
             }
         } finally {
             closeResource(mutex);
@@ -139,8 +135,7 @@ public class NodeQueryCacheEventService implements QueryCacheEventService<EventD
 
     @Override
     public boolean hasListener(String mapName, String cacheId) {
-        String listenerName = generateListenerName(mapName, cacheId);
-        Collection<EventRegistration> eventRegistrations = getRegistrations(listenerName);
+        Collection<EventRegistration> eventRegistrations = getRegistrations(cacheId);
 
         if (eventRegistrations.isEmpty()) {
             return false;
@@ -158,9 +153,8 @@ public class NodeQueryCacheEventService implements QueryCacheEventService<EventD
     }
 
     // TODO needs refactoring.
-    private void publishLocalEvent(String mapName, String cacheId, Object eventData, Extractors extractors) {
-        String listenerName = generateListenerName(mapName, cacheId);
-        Collection<EventRegistration> eventRegistrations = getRegistrations(listenerName);
+    private void publishLocalEvent(String cacheId, Object eventData, Extractors extractors) {
+        Collection<EventRegistration> eventRegistrations = getRegistrations(cacheId);
         if (eventRegistrations.isEmpty()) {
             return;
         }
@@ -174,7 +168,7 @@ public class NodeQueryCacheEventService implements QueryCacheEventService<EventD
             Object eventDataToPublish = eventData;
             int orderKey = -1;
             if (eventDataToPublish instanceof LocalCacheWideEventData) {
-                orderKey = listenerName.hashCode();
+                orderKey = cacheId.hashCode();
             } else if (eventDataToPublish instanceof LocalEntryEventData) {
                 LocalEntryEventData localEntryEventData = (LocalEntryEventData) eventDataToPublish;
                 if (localEntryEventData.getEventType() != EventLostEvent.EVENT_TYPE) {
@@ -251,7 +245,7 @@ public class NodeQueryCacheEventService implements QueryCacheEventService<EventD
     /**
      * Listener for a {@link com.hazelcast.map.QueryCache QueryCache}.
      *
-     * @see com.hazelcast.core.IMap#getQueryCache(String, MapListener, com.hazelcast.query.Predicate, boolean)
+     * @see IMap#getQueryCache(String, MapListener, com.hazelcast.query.Predicate, boolean)
      */
     private static class SimpleQueryCacheListenerAdapter implements QueryCacheListenerAdapter<IMapEvent> {
 

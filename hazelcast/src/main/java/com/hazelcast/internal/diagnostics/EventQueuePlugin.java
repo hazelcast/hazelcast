@@ -29,8 +29,8 @@ import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.eventservice.impl.LocalEventDispatcher;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.spi.properties.HazelcastProperty;
-import com.hazelcast.util.ItemCounter;
-import com.hazelcast.util.executor.StripedExecutor;
+import com.hazelcast.internal.util.ItemCounter;
+import com.hazelcast.internal.util.executor.StripedExecutor;
 
 import java.text.NumberFormat;
 import java.util.ArrayList;
@@ -39,7 +39,6 @@ import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.BlockingQueue;
 
-import static com.hazelcast.internal.diagnostics.Diagnostics.PREFIX;
 import static java.lang.Math.min;
 import static java.lang.String.format;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -61,13 +60,13 @@ public class EventQueuePlugin extends DiagnosticsPlugin {
      * If set to 0, the plugin is disabled.
      */
     public static final HazelcastProperty PERIOD_SECONDS
-            = new HazelcastProperty(PREFIX + ".event.queue.period.seconds", 0, SECONDS);
+            = new HazelcastProperty("hazelcast.diagnostics.event.queue.period.seconds", 0, SECONDS);
 
     /**
      * The minimum number of events in the queue before it is being sampled.
      */
     public static final HazelcastProperty THRESHOLD
-            = new HazelcastProperty(PREFIX + ".event.queue.threshold", 1000);
+            = new HazelcastProperty("hazelcast.diagnostics.event.queue.threshold", 1000);
 
     /**
      * The number of samples to take from the event queue. Increasing the number
@@ -75,7 +74,7 @@ public class EventQueuePlugin extends DiagnosticsPlugin {
      * price.
      */
     public static final HazelcastProperty SAMPLES
-            = new HazelcastProperty(PREFIX + ".event.queue.samples", 100);
+            = new HazelcastProperty("hazelcast.diagnostics.event.queue.samples", 100);
 
     private final ItemCounter<String> occurrenceMap = new ItemCounter<String>();
     private final Random random = new Random();

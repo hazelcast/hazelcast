@@ -16,8 +16,8 @@
 
 package com.hazelcast.spring.hibernate;
 
-import com.hazelcast.nio.ClassLoaderUtil;
-import com.hazelcast.util.ExceptionUtil;
+import com.hazelcast.internal.nio.ClassLoaderUtil;
+import com.hazelcast.internal.util.ExceptionUtil;
 import org.springframework.beans.factory.support.AbstractBeanDefinition;
 import org.springframework.beans.factory.support.BeanDefinitionBuilder;
 import org.springframework.beans.factory.xml.AbstractBeanDefinitionParser;

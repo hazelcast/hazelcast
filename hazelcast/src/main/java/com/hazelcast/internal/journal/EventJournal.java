@@ -20,8 +20,8 @@ import com.hazelcast.config.EventJournalConfig;
 import com.hazelcast.config.RingbufferConfig;
 import com.hazelcast.ringbuffer.StaleSequenceException;
 import com.hazelcast.ringbuffer.impl.ReadResultSetImpl;
-import com.hazelcast.spi.ObjectNamespace;
-import com.hazelcast.spi.WaitNotifyKey;
+import com.hazelcast.internal.services.ObjectNamespace;
+import com.hazelcast.spi.impl.operationservice.WaitNotifyKey;
 
 /**
  * The event journal is a container for events related to a data structure.

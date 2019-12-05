@@ -27,7 +27,7 @@
         http://www.springframework.org/schema/tx
         http://www.springframework.org/schema/tx/spring-tx.xsd
         http://www.hazelcast.com/schema/spring
-        http://www.hazelcast.com/schema/spring/hazelcast-spring-3.11.xsd">
+        http://www.hazelcast.com/schema/spring/hazelcast-spring-4.0.xsd">
 
     <tx:annotation-driven transaction-manager="dummyTransactionManager"/>
 
@@ -38,7 +38,7 @@
 
     <hz:hazelcast id="instance1">
         <hz:config>
-            <hz:group name="dev" password="dev-pass"/>
+            <hz:cluster-name>dev</hz:cluster-name>
             <hz:network port="5701" port-auto-increment="false">
                 <hz:join>
                     <hz:multicast enabled="false"/>
@@ -109,12 +109,12 @@
                     <hz:partition-lost-listener class-name="DummyCachePartitionLostListenerImpl"/>
                 </hz:partition-lost-listeners>
             </hz:cache>
-            <hz:cache name="cacheWithQuorumRef">
-                <hz:quorum-ref>cacheQuorumRefString</hz:quorum-ref>
+            <hz:cache name="cacheWithSplitBrainProtectionRef">
+                <hz:split-brain-protection-ref>cacheSplitBrainProtectionRefString</hz:split-brain-protection-ref>
             </hz:cache>
             <hz:cache name="cacheWithDefaultMergePolicy"/>
             <hz:cache name="cacheWithCustomMergePolicy">
-                <hz:merge-policy>MyDummyMergePolicy</hz:merge-policy>
+                <hz:merge-policy batch-size="100">MyDummyMergePolicy</hz:merge-policy>
             </hz:cache>
             <hz:cache name="cacheWithComparatorClassName">
                 <hz:eviction size="50" max-size-policy="ENTRY_COUNT"

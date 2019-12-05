@@ -16,7 +16,7 @@
 
 package com.hazelcast.logging;
 
-import com.hazelcast.core.Member;
+import com.hazelcast.cluster.Member;
 import com.hazelcast.test.HazelcastTestSupport;
 
 import java.util.logging.Level;

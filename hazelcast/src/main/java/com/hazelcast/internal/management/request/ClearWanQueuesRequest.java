@@ -16,22 +16,16 @@
 
 package com.hazelcast.internal.management.request;
 
+import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.internal.management.ManagementCenterService;
 import com.hazelcast.internal.management.operation.ClearWanQueuesOperation;
-import com.hazelcast.internal.json.JsonObject;
 
-import static com.hazelcast.internal.management.ManagementCenterService.resolveFuture;
-import static com.hazelcast.util.JsonUtil.getString;
+import static com.hazelcast.internal.util.JsonUtil.getString;
 
 /**
  * Request coming from Management Center for {@link ClearWanQueuesRequest}
  */
 public class ClearWanQueuesRequest implements ConsoleRequest {
-
-    /**
-     * Result message when {@link ClearWanQueuesRequest} is invoked successfully
-     */
-    public static final String SUCCESS = "success";
 
     private String schemeName;
     private String publisherName;
@@ -51,15 +45,7 @@ public class ClearWanQueuesRequest implements ConsoleRequest {
 
     @Override
     public void writeResponse(ManagementCenterService mcs, JsonObject out) {
-        ClearWanQueuesOperation operation = new ClearWanQueuesOperation(schemeName, publisherName);
-        Object operationResult = resolveFuture(mcs.callOnThis(operation));
-        JsonObject result = new JsonObject();
-        if (operationResult == null) {
-            result.add("result", SUCCESS);
-        } else {
-            result.add("result", operationResult.toString());
-        }
-        out.add("result", result);
+        out.add("result", mcs.syncCallOnThis(new ClearWanQueuesOperation(schemeName, publisherName)));
     }
 
     @Override

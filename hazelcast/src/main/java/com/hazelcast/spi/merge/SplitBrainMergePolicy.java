@@ -18,51 +18,64 @@ package com.hazelcast.spi.merge;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceAware;
-import com.hazelcast.instance.Node;
+import com.hazelcast.instance.impl.Node;
 import com.hazelcast.nio.serialization.DataSerializable;
-import com.hazelcast.spi.NodeAware;
-import com.hazelcast.spi.annotation.Beta;
+import com.hazelcast.internal.services.NodeAware;
 
 /**
- * Policy for merging data structure values after a split-brain has been healed.
+ * Policy for merging data structure values
+ * after a split-brain has been healed.
  * <p>
- * The values of merging and existing {@link MergingValue}s are always in the in-memory format of the
- * backing data structure. This can be a serialized format, so the content cannot be processed without deserialization.
- * For most merge policies this will be fine, since the key or value are not used.
+ * The values of merging and existing {@link MergingValue}s are
+ * always in the in-memory format of the backing data structure.
+ * This can be a serialized format, so the content cannot be
+ * processed without deserialization. For most merge policies
+ * this will be fine, since the key or value are not used.
  * <p>
  * The deserialization is not done eagerly for two main reasons:
  * <ul>
- * <li>The deserialization is quite expensive and should be avoided, if the result is not needed.</li>
- * <li>There is no need to locate classes of stored entries on the server side, when the entries are not deserialized.
- * So you can put entries from a client by using {@link com.hazelcast.config.InMemoryFormat#BINARY} with a different
- * classpath on client and server. In this case a deserialization could throw a {@link java.lang.ClassNotFoundException}.</li>
+ * <li>The deserialization is quite expensive and
+ * should be avoided, if the result is not needed.</li>
+ * <li>There is no need to locate classes of stored entries
+ * on the server side, when the entries are not deserialized.
+ * So you can put entries from a client by using {@link
+ * com.hazelcast.config.InMemoryFormat#BINARY} with a different
+ * classpath on client and server. In this case a deserialization
+ * could throw a {@link java.lang.ClassNotFoundException}.</li>
  * </ul>
- * If you need the deserialized data you can call {@link MergingValue#getDeserializedValue()} or
- * {@link MergingEntry#getDeserializedKey()}, which will deserialize the data lazily.
+ * If you need the deserialized data you can call
+ * {@link MergingValue#getDeserializedValue()}
+ * or {@link MergingEntry#getDeserializedKey()},
+ * which will deserialize the data lazily.
  * <p>
- * A merge policy can implement {@link HazelcastInstanceAware} to get the {@link HazelcastInstance} injected.
- * This can be used to retrieve the user context via {@link HazelcastInstance#getUserContext()},
- * which is an easy way to get user dependencies that are otherwise hard to obtain.
+ * A merge policy can implement {@link HazelcastInstanceAware} to get the
+ * {@link HazelcastInstance} injected. This can be used to retrieve the
+ * user context via {@link HazelcastInstance#getUserContext()}, which is
+ * an easy way to get user dependencies that are otherwise hard to obtain.
  * <p>
- * A merge policy can also implement {@link NodeAware} to get an instance of {@link Node} injected.
+ * A merge policy can also implement {@link NodeAware}
+ * to get an instance of {@link Node} injected.
  *
  * @param <V> the type of the returned merged value
- * @param <T> the type of the required merging value, e.g. a simple {@code MergingValue<V>}
- *            or a composition like {@code MergingEntry<String, V> & MergingHits<V> & MergingLastAccessTime<V>}
+ * @param <T> the type of the required merging value, e.g. a simple
+ *            {@code MergingValue<V>} or a composition like {@code
+ *            MergingEntry<String, V> & MergingHits<V> & MergingLastAccessTime<V>}
  * @since 3.10
  */
-@Beta
-public interface SplitBrainMergePolicy<V, T extends MergingValue<V>> extends DataSerializable {
+public interface SplitBrainMergePolicy<V, T extends MergingValue<V>>
+        extends DataSerializable {
 
     /**
-     * Selects the value of either the merging or the existing {@link MergingValue} which should be merged.
+     * Selects the value of either the merging or the
+     * existing {@link MergingValue} which should be merged.
      * <p>
      * Note that the existing {@link MergingValue} instance may be {@code null}
      * if no matching data could be found to the merging {@link MergingValue}.
      *
-     * @param mergingValue  {@link MergingValue} instance that has the merging data of the smaller sub-cluster
-     * @param existingValue {@link MergingValue} instance that has the existing data
-     *                      or {@code null} if no matching data exists
+     * @param mergingValue  {@link MergingValue} instance that has the
+     *                      merging data of the smaller sub-cluster
+     * @param existingValue {@link MergingValue} instance that has the existing
+     *                      data or {@code null} if no matching data exists
      * @return the selected value for merging
      */
     V merge(T mergingValue, T existingValue);

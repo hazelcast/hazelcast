@@ -16,21 +16,20 @@
 
 package com.hazelcast.transaction.impl.xa;
 
-import com.hazelcast.config.GroupConfig;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
-import com.hazelcast.core.Member;
+import com.hazelcast.cluster.Member;
 import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.nio.Address;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.AbstractDistributedObject;
-import com.hazelcast.spi.InternalCompletableFuture;
-import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.OperationService;
+import com.hazelcast.spi.impl.AbstractDistributedObject;
+import com.hazelcast.spi.impl.InternalCompletableFuture;
+import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.spi.impl.operationservice.OperationService;
 import com.hazelcast.spi.exception.TargetNotMemberException;
 import com.hazelcast.spi.impl.SerializableList;
-import com.hazelcast.spi.partition.IPartitionService;
+import com.hazelcast.internal.partition.IPartitionService;
 import com.hazelcast.transaction.HazelcastXAResource;
 import com.hazelcast.transaction.TransactionContext;
 import com.hazelcast.transaction.TransactionOptions;
@@ -38,8 +37,9 @@ import com.hazelcast.transaction.impl.Transaction;
 import com.hazelcast.transaction.impl.xa.operations.ClearRemoteTransactionOperation;
 import com.hazelcast.transaction.impl.xa.operations.CollectRemoteTransactionsOperation;
 import com.hazelcast.transaction.impl.xa.operations.FinalizeRemoteTransactionOperation;
-import com.hazelcast.util.ExceptionUtil;
+import com.hazelcast.internal.util.ExceptionUtil;
 
+import javax.annotation.Nonnull;
 import javax.transaction.xa.XAException;
 import javax.transaction.xa.XAResource;
 import javax.transaction.xa.Xid;
@@ -69,14 +69,13 @@ public final class XAResourceImpl extends AbstractDistributedObject<XAService> i
     private final ConcurrentMap<Long, TransactionContext> threadContextMap = new ConcurrentHashMap<Long, TransactionContext>();
     private final ConcurrentMap<Xid, List<TransactionContext>> xidContextMap
             = new ConcurrentHashMap<Xid, List<TransactionContext>>();
-    private final String groupName;
+    private final String clusterName;
     private final AtomicInteger timeoutInSeconds = new AtomicInteger(DEFAULT_TIMEOUT_SECONDS);
     private final ILogger logger;
 
     public XAResourceImpl(NodeEngine nodeEngine, XAService service) {
         super(nodeEngine, service);
-        GroupConfig groupConfig = nodeEngine.getConfig().getGroupConfig();
-        groupName = groupConfig.getName();
+        clusterName = nodeEngine.getConfig().getClusterName();
         logger = nodeEngine.getLogger(getClass());
     }
 
@@ -228,7 +227,7 @@ public final class XAResourceImpl extends AbstractDistributedObject<XAService> i
         }
         if (xaResource instanceof XAResourceImpl) {
             XAResourceImpl otherXaResource = (XAResourceImpl) xaResource;
-            return groupName.equals(otherXaResource.groupName);
+            return clusterName.equals(otherXaResource.clusterName);
         }
         return xaResource.isSameRM(this);
     }
@@ -297,6 +296,7 @@ public final class XAResourceImpl extends AbstractDistributedObject<XAService> i
         return SERVICE_NAME;
     }
 
+    @Nonnull
     @Override
     public TransactionContext getTransactionContext() {
         long threadId = Thread.currentThread().getId();
@@ -307,8 +307,8 @@ public final class XAResourceImpl extends AbstractDistributedObject<XAService> i
         return transactionContext;
     }
 
-    public String getGroupName() {
-        return groupName;
+    public String getClusterName() {
+        return clusterName;
     }
 
     private Transaction getTransaction(TransactionContext context) {
@@ -321,6 +321,6 @@ public final class XAResourceImpl extends AbstractDistributedObject<XAService> i
 
     @Override
     public String toString() {
-        return "HazelcastXaResource {" + groupName + '}';
+        return "HazelcastXaResource {" + clusterName + '}';
     }
 }

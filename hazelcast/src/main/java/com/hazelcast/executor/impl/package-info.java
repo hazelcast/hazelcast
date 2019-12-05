@@ -15,7 +15,7 @@
  */
 
 /**
- * <p>This package contains IExecutorService functionality for Hazelcast.<br/>
+ * <p>This package contains IExecutorService functionality for Hazelcast.<br>
  * The IExecutorService extends the {@link java.util.concurrent.ExecutorService} and provides all kinds
  * of additional methods related to distributed systems. You can execute a task on a particular member, all members
  * or a subset of members. You can also execute a task on a member which own a particular partition. This is very

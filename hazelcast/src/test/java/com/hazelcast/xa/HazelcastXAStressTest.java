@@ -18,8 +18,8 @@ package com.hazelcast.xa;
 
 import com.atomikos.datasource.xa.XID;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IMap;
-import com.hazelcast.core.TransactionalMap;
+import com.hazelcast.map.IMap;
+import com.hazelcast.transaction.TransactionalMap;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -80,7 +80,7 @@ public class HazelcastXAStressTest extends HazelcastTestSupport {
 
         int i;
 
-        public XATransactionRunnable(HazelcastXAResource xaResource, String name,
+        XATransactionRunnable(HazelcastXAResource xaResource, String name,
                                      ExecutorService executorServiceForCommit, int i) {
             this.xaResource = xaResource;
             this.name = name;

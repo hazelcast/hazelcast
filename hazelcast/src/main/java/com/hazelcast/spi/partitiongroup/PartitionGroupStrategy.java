@@ -20,7 +20,7 @@ import com.hazelcast.partition.membergroup.MemberGroup;
 import com.hazelcast.spi.discovery.AbstractDiscoveryStrategy;
 
 /**
- * <p>A <tt>PartitionGroupStrategy</tt> implementation defines a strategy
+ * <p>A <code>PartitionGroupStrategy</code> implementation defines a strategy
  * how backup groups are designed. Backup groups are units containing
  * one or more Hazelcast nodes to share the same physical host, rack or
  * zone and backups are stored on nodes being part of a different
@@ -31,8 +31,9 @@ import com.hazelcast.spi.discovery.AbstractDiscoveryStrategy;
  * <p>Custom implementations of the PartitionGroupStrategy may add specific
  * or additional behavior based on the provided environment and can
  * be injected into Hazelcast by overriding
- * {@link AbstractDiscoveryStrategy#getPartitionGroupStrategy()}.</p>
+ * {@link AbstractDiscoveryStrategy#getPartitionGroupStrategy()}.
  */
+@FunctionalInterface
 public interface PartitionGroupStrategy {
 
     Iterable<MemberGroup> getMemberGroups();

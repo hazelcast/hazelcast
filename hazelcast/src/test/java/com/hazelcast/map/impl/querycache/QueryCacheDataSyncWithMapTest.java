@@ -20,15 +20,15 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.QueryCacheConfig;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IMap;
+import com.hazelcast.map.IMap;
 import com.hazelcast.map.QueryCache;
-import com.hazelcast.mapreduce.helpers.Employee;
-import com.hazelcast.query.TruePredicate;
+import com.hazelcast.map.impl.querycache.utils.Employee;
+import com.hazelcast.query.Predicates;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
 import org.junit.Test;
@@ -42,7 +42,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class QueryCacheDataSyncWithMapTest extends HazelcastTestSupport {
 
     protected String mapName = randomString();
@@ -55,7 +55,7 @@ public class QueryCacheDataSyncWithMapTest extends HazelcastTestSupport {
     @Before
     public void setUp() throws Exception {
         QueryCacheConfig queryCacheConfig = new QueryCacheConfig(cacheName);
-        queryCacheConfig.getPredicateConfig().setImplementation(TruePredicate.INSTANCE);
+        queryCacheConfig.getPredicateConfig().setImplementation(Predicates.alwaysTrue());
 
         MapConfig mapConfig = new MapConfig(mapName).addQueryCacheConfig(queryCacheConfig);
 

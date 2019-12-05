@@ -17,10 +17,11 @@
 package com.hazelcast.internal.config;
 
 import com.hazelcast.config.InMemoryFormat;
+import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -34,7 +35,7 @@ import static com.hazelcast.config.NearCacheConfig.LocalUpdatePolicy.INVALIDATE;
 import static com.hazelcast.internal.config.ConfigValidator.checkNearCacheConfig;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class ConfigValidatorNearCacheConfigTest extends HazelcastTestSupport {
 
     private static final String MAP_NAME = "default";
@@ -52,7 +53,7 @@ public class ConfigValidatorNearCacheConfigTest extends HazelcastTestSupport {
     /**
      * Not supported in open source version, so test is expected to throw exception.
      */
-    @Test(expected = IllegalArgumentException.class)
+    @Test(expected = InvalidConfigurationException.class)
     public void checkNearCacheConfig_NATIVE() {
         checkNearCacheConfig(MAP_NAME, getNearCacheConfig(NATIVE), null, false);
     }
@@ -60,7 +61,7 @@ public class ConfigValidatorNearCacheConfigTest extends HazelcastTestSupport {
     /**
      * Not supported client configuration, so test is expected to throw exception.
      */
-    @Test(expected = IllegalArgumentException.class)
+    @Test(expected = InvalidConfigurationException.class)
     public void checkNearCacheConfig_withUnsupportedClientConfig() {
         checkNearCacheConfig(MAP_NAME, getNearCacheConfig(BINARY), null, true);
     }
@@ -77,7 +78,7 @@ public class ConfigValidatorNearCacheConfigTest extends HazelcastTestSupport {
         checkNearCacheConfig(MAP_NAME, nearCacheConfig, null, true);
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test(expected = InvalidConfigurationException.class)
     public void checkNearCacheConfig_withPreloaderConfig_onMembers() {
         NearCacheConfig nearCacheConfig = getNearCacheConfig(BINARY);
         nearCacheConfig.getPreloaderConfig()
@@ -88,7 +89,7 @@ public class ConfigValidatorNearCacheConfigTest extends HazelcastTestSupport {
         checkNearCacheConfig(MAP_NAME, nearCacheConfig, null, false);
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test(expected = InvalidConfigurationException.class)
     public void checkNearCacheConfig_withLocalUpdatePolicy_CACHE_ON_UPDATE() {
         NearCacheConfig nearCacheConfig = new NearCacheConfig()
                 .setLocalUpdatePolicy(CACHE_ON_UPDATE);

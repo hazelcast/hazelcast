@@ -16,12 +16,12 @@
 
 package com.hazelcast.spi.discovery;
 
-import com.hazelcast.nio.Address;
+import com.hazelcast.cluster.Address;
 
 import java.util.Map;
 
 /**
- * A <tt>DiscoveryNode</tt> describes a nodes addresses (private and if
+ * A <code>DiscoveryNode</code> describes a nodes addresses (private and if
  * necessary a public one) as well as attributes assigned to this node.
  * Private address defines the typical internal communication port, all
  * cluster communication and also client communication inside the same
@@ -30,17 +30,17 @@ import java.util.Map;
  * address. In those situations {@link DiscoveryStrategy}
  * vendors can retrieve and assign an additional external (or public) IP
  * address of the node for clients to connect against.
- * <p/>
+ * <p>
  * Public addresses, if not necessary, can either be returned as null or
  * may return the same address instance as the private one and will be
  * handled internally the same way.
- * <p/>
+ * <p>
  * The properties will be used to store any kind of tags or other metadata
  * available for the node inside of the cloud environment. If a
  * {@link com.hazelcast.spi.discovery.NodeFilter} is configured, these
  * properties might be used for further refinement of the discovered nodes
  * based on whatever the filter decides.
- * <p/>
+ * <p>
  * This class is implemented as an abstract class to offer easy extensibility
  * in later versions of the SPI. Since Java only offers forward evolution of
  * interfaces starting with Java 8, this is the best option.

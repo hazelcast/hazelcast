@@ -18,14 +18,14 @@ package com.hazelcast.spi.impl.operationparker.impl;
 
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
-import com.hazelcast.spi.BlockingOperation;
-import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.Notifier;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.OperationService;
-import com.hazelcast.spi.WaitNotifyKey;
+import com.hazelcast.spi.impl.operationservice.BlockingOperation;
+import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.spi.impl.operationservice.Notifier;
+import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.spi.impl.operationservice.OperationService;
+import com.hazelcast.spi.impl.operationservice.WaitNotifyKey;
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
 import org.junit.Test;
@@ -34,6 +34,7 @@ import org.junit.runner.RunWith;
 
 import java.util.Iterator;
 import java.util.Queue;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -47,7 +48,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class WaitSetTest {
 
     private ILogger logger = Logger.getLogger(WaitSetTest.class);
@@ -160,14 +161,17 @@ public class WaitSetTest {
     public void invalidateAll() {
         WaitSet waitSet = newWaitSet();
 
-        BlockedOperation op1 = newBlockingOperationWithCallerUuid("foo");
+        UUID uuid = UUID.randomUUID();
+        UUID anotherUuid = UUID.randomUUID();
+
+        BlockedOperation op1 = newBlockingOperationWithCallerUuid(uuid);
         waitSet.park(op1);
-        BlockedOperation op2 = newBlockingOperationWithCallerUuid("bar");
+        BlockedOperation op2 = newBlockingOperationWithCallerUuid(anotherUuid);
         waitSet.park(op2);
-        BlockedOperation op3 = newBlockingOperationWithCallerUuid("foo");
+        BlockedOperation op3 = newBlockingOperationWithCallerUuid(uuid);
         waitSet.park(op3);
 
-        waitSet.invalidateAll("foo");
+        waitSet.invalidateAll(uuid);
 
         assertValid(waitSet, op1, false);
         assertValid(waitSet, op2, true);
@@ -203,7 +207,7 @@ public class WaitSetTest {
         assertEquals(null, entry.cancelResponse);
     }
 
-    private static BlockedOperation newBlockingOperationWithCallerUuid(String callerUuid) {
+    private static BlockedOperation newBlockingOperationWithCallerUuid(UUID callerUuid) {
         return (BlockedOperation) new BlockedOperation().setCallerUuid(callerUuid);
     }
 
@@ -267,7 +271,7 @@ public class WaitSetTest {
         private final String serviceName;
         private final String objectName;
 
-        public WaitNotifyKeyImpl(String serviceName, String objectName) {
+        WaitNotifyKeyImpl(String serviceName, String objectName) {
             this.serviceName = serviceName;
             this.objectName = objectName;
         }

@@ -16,6 +16,8 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.nio.SocketInterceptor;
+
 import java.util.Properties;
 
 /**
@@ -27,19 +29,30 @@ public class SocketInterceptorConfig {
     private Object implementation;
     private Properties properties = new Properties();
 
+    public SocketInterceptorConfig() {
+    }
+
+    public SocketInterceptorConfig(SocketInterceptorConfig socketInterceptorConfig) {
+        enabled = socketInterceptorConfig.enabled;
+        className = socketInterceptorConfig.className;
+        implementation = socketInterceptorConfig.implementation;
+        properties = new Properties();
+        properties.putAll(socketInterceptorConfig.properties);
+    }
+
     /**
-     * Returns the name of the {@link com.hazelcast.nio.SocketInterceptor} implementation class.
+     * Returns the name of the {@link SocketInterceptor} implementation class.
      *
-     * @return name of the {@link com.hazelcast.nio.SocketInterceptor} implementation class
+     * @return name of the {@link SocketInterceptor} implementation class
      */
     public String getClassName() {
         return className;
     }
 
     /**
-     * Sets the name for the {@link com.hazelcast.nio.SocketInterceptor} implementation class.
+     * Sets the name for the {@link SocketInterceptor} implementation class.
      *
-     * @param className the name of the {@link com.hazelcast.nio.SocketInterceptor} implementation class to set
+     * @param className the name of the {@link SocketInterceptor} implementation class to set
      * @return this SocketInterceptorConfig instance
      */
     public SocketInterceptorConfig setClassName(String className) {
@@ -48,9 +61,9 @@ public class SocketInterceptorConfig {
     }
 
     /**
-     * Sets the {@link com.hazelcast.nio.SocketInterceptor} implementation object.
+     * Sets the {@link SocketInterceptor} implementation object.
      *
-     * @param implementation the {@link com.hazelcast.nio.SocketInterceptor} implementation object to set
+     * @param implementation the {@link SocketInterceptor} implementation object to set
      * @return this SocketInterceptorConfig instance
      */
     public SocketInterceptorConfig setImplementation(Object implementation) {
@@ -59,9 +72,9 @@ public class SocketInterceptorConfig {
     }
 
     /**
-     * Returns the {@link com.hazelcast.nio.SocketInterceptor} implementation object.
+     * Returns the {@link SocketInterceptor} implementation object.
      *
-     * @return the {@link com.hazelcast.nio.SocketInterceptor} implementation object
+     * @return the {@link SocketInterceptor} implementation object
      */
     public Object getImplementation() {
         return implementation;

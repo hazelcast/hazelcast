@@ -18,15 +18,14 @@ package com.hazelcast.internal.partition;
 
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.core.HazelcastException;
-import com.hazelcast.core.Member;
+import com.hazelcast.cluster.Member;
 import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
 import com.hazelcast.internal.partition.impl.PartitionReplicaStateChecker;
 import com.hazelcast.internal.partition.impl.PartitionStateManager;
 import com.hazelcast.internal.partition.operation.FetchPartitionStateOperation;
-import com.hazelcast.nio.Address;
-import com.hazelcast.spi.GracefulShutdownAwareService;
-import com.hazelcast.spi.ManagedService;
-import com.hazelcast.spi.partition.IPartitionService;
+import com.hazelcast.cluster.Address;
+import com.hazelcast.internal.services.GracefulShutdownAwareService;
+import com.hazelcast.internal.services.ManagedService;
 
 import java.util.List;
 

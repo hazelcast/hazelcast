@@ -16,10 +16,9 @@
 
 package com.hazelcast.test.starter;
 
-import com.hazelcast.core.IFunction;
 import com.hazelcast.test.starter.constructor.EnumConstructor;
-import com.hazelcast.util.ConcurrentReferenceHashMap;
-import com.hazelcast.util.ConstructorFunction;
+import com.hazelcast.internal.util.ConcurrentReferenceHashMap;
+import com.hazelcast.internal.util.ConstructorFunction;
 import net.bytebuddy.ByteBuddy;
 import net.bytebuddy.description.method.MethodDescription;
 import net.bytebuddy.description.method.MethodList;
@@ -48,14 +47,14 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
-import static com.hazelcast.nio.ClassLoaderUtil.getAllInterfaces;
+import static com.hazelcast.internal.nio.ClassLoaderUtil.getAllInterfaces;
 import static com.hazelcast.test.starter.HazelcastAPIDelegatingClassloader.DELEGATION_WHITE_LIST;
 import static com.hazelcast.test.starter.HazelcastProxyFactory.ProxyPolicy.RETURN_SAME;
 import static com.hazelcast.test.starter.HazelcastStarterUtils.debug;
 import static com.hazelcast.test.starter.HazelcastStarterUtils.newCollectionFor;
 import static com.hazelcast.test.starter.ReflectionUtils.getConstructor;
 import static com.hazelcast.test.starter.ReflectionUtils.getReflectionsForTestPackage;
-import static com.hazelcast.util.ConcurrentReferenceHashMap.ReferenceType.STRONG;
+import static com.hazelcast.internal.util.ConcurrentReferenceHashMap.ReferenceType.STRONG;
 import static java.lang.System.arraycopy;
 import static java.util.Arrays.asList;
 import static net.bytebuddy.jar.asm.Opcodes.ACC_PUBLIC;
@@ -278,40 +277,32 @@ public class HazelcastProxyFactory {
 
     private static Object proxyWithSubclass(ClassLoader targetClassLoader, final Object delegate) {
         ProxySource proxySource = ProxySource.of(delegate.getClass(), targetClassLoader);
-        Class<?> targetClass = PROXIES.applyIfAbsent(proxySource, new IFunction<ProxySource, Class<?>>() {
-            @Override
-            public Class<?> apply(ProxySource input) {
-                return new ByteBuddy().subclass(input.getToProxy(), AllAsPublicConstructorStrategy.INSTANCE)
+        Class<?> targetClass = PROXIES.applyIfAbsent(proxySource,
+                input -> new ByteBuddy().subclass(input.getToProxy(), AllAsPublicConstructorStrategy.INSTANCE)
                         .method(ElementMatchers.isDeclaredBy(input.getToProxy()))
                         .intercept(InvocationHandlerAdapter.of(new ProxyInvocationHandler(delegate)))
                         .make()
                         .load(input.getTargetClassLoader())
-                        .getLoaded();
-            }
-        });
+                        .getLoaded());
         return construct(targetClass, delegate);
     }
 
     private static Object construct(Class<?> clazz, Object delegate) {
-        ConstructorFunction<Object, Object> constructorFunction = CONSTRUCTORS.applyIfAbsent(clazz,
-                new IFunction<Class<?>, ConstructorFunction<Object, Object>>() {
-                    @Override
-                    public ConstructorFunction<Object, Object> apply(Class<?> input) {
-                        String className = input.getName();
-                        Constructor<ConstructorFunction<Object, Object>> constructor = NO_PROXYING_WHITELIST.get(className);
-                        if (constructor != null) {
-                            try {
-                                return constructor.newInstance(input);
-                            } catch (Exception e) {
-                                throw new IllegalStateException(e);
-                            }
-                        } else if (input.isEnum()) {
-                            return new EnumConstructor(input);
-                        }
-                        throw new UnsupportedOperationException("Cannot construct target object for target " + input
-                                + " on classloader " + input.getClassLoader());
-                    }
-                });
+        ConstructorFunction<Object, Object> constructorFunction = CONSTRUCTORS.applyIfAbsent(clazz, input -> {
+            String className = input.getName();
+            Constructor<ConstructorFunction<Object, Object>> constructor = NO_PROXYING_WHITELIST.get(className);
+            if (constructor != null) {
+                try {
+                    return constructor.newInstance(input);
+                } catch (Exception e) {
+                    throw new IllegalStateException(e);
+                }
+            } else if (input.isEnum()) {
+                return new EnumConstructor(input);
+            }
+            throw new UnsupportedOperationException("Cannot construct target object for target " + input
+                    + " on classloader " + input.getClassLoader());
+        });
 
         return constructorFunction.createNew(delegate);
     }

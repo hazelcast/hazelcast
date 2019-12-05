@@ -16,70 +16,95 @@
 
 package com.hazelcast.internal.cluster.impl.operations;
 
+import com.hazelcast.cluster.Member;
+import com.hazelcast.config.OnJoinPermissionOperationName;
+import com.hazelcast.config.SecurityConfig;
+import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook;
-import com.hazelcast.nio.Address;
+import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
+import com.hazelcast.internal.management.operation.UpdatePermissionConfigOperation;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.OperationAccessor;
-import com.hazelcast.spi.OperationResponseHandler;
-import com.hazelcast.spi.UrgentSystemOperation;
+import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.spi.impl.operationservice.OperationAccessor;
+import com.hazelcast.spi.impl.operationservice.OperationResponseHandler;
+import com.hazelcast.spi.impl.operationservice.OperationService;
 import com.hazelcast.spi.impl.operationservice.TargetAware;
+import com.hazelcast.spi.impl.operationservice.UrgentSystemOperation;
 
 import java.io.IOException;
-import java.util.Arrays;
+import java.util.Collection;
 
-import static com.hazelcast.spi.impl.OperationResponseHandlerFactory.createErrorLoggingResponseHandler;
-import static com.hazelcast.util.Preconditions.checkNegative;
-import static com.hazelcast.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.serialization.impl.SerializationUtil.readCollection;
+import static com.hazelcast.internal.serialization.impl.SerializationUtil.writeCollection;
+import static com.hazelcast.spi.impl.operationexecutor.OperationRunner.runDirect;
+import static com.hazelcast.spi.impl.operationservice.OperationResponseHandlerFactory.createErrorLoggingResponseHandler;
+import static com.hazelcast.internal.util.Preconditions.checkNegative;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 public class OnJoinOp
         extends AbstractJoinOperation implements UrgentSystemOperation, TargetAware {
 
-    private Operation[] operations;
+    private Collection<Operation> operations;
 
     public OnJoinOp() {
     }
 
-    public OnJoinOp(final Operation... ops) {
+    public OnJoinOp(Collection<Operation> ops) {
         for (Operation op : ops) {
             checkNotNull(op, "op can't be null");
             checkNegative(op.getPartitionId(), "Post join operation can not have a partition ID!");
         }
-        // we may need to do array copy!
         operations = ops;
     }
 
     @Override
+    public String getServiceName() {
+        return ClusterServiceImpl.SERVICE_NAME;
+    }
+
+    @Override
     public void beforeRun() throws Exception {
-        if (operations != null && operations.length > 0) {
-            final NodeEngine nodeEngine = getNodeEngine();
-            final int len = operations.length;
+        if (!operations.isEmpty()) {
+            NodeEngine nodeEngine = getNodeEngine();
             OperationResponseHandler responseHandler = createErrorLoggingResponseHandler(getLogger());
-            for (int i = 0; i < len; i++) {
-                final Operation op = operations[i];
+            for (Operation op : operations) {
                 op.setNodeEngine(nodeEngine);
                 op.setOperationResponseHandler(responseHandler);
-
                 OperationAccessor.setCallerAddress(op, getCallerAddress());
                 OperationAccessor.setConnection(op, getConnection());
-                operations[i] = op;
             }
         }
     }
 
     @Override
     public void run() throws Exception {
-        if (operations != null && operations.length > 0) {
+        if (!operations.isEmpty()) {
+            SecurityConfig securityConfig = getNodeEngine().getConfig().getSecurityConfig();
+            boolean runPermissionUpdates = securityConfig.getOnJoinPermissionOperation() == OnJoinPermissionOperationName.RECEIVE;
             for (Operation op : operations) {
+                if ((op instanceof UpdatePermissionConfigOperation) && !runPermissionUpdates) {
+                    continue;
+                }
                 try {
                     // not running via OperationService since we don't want any restrictions like cluster state check etc.
-                    op.beforeRun();
-                    op.run();
-                    op.afterRun();
+                    runDirect(op);
                 } catch (Exception e) {
                     getLogger().warning("Error while running post-join operation: " + op, e);
+                }
+            }
+
+            final ClusterService clusterService = getService();
+            // if executed on master, broadcast to all other members except sender (joining member)
+            if (clusterService.isMaster()) {
+                final OperationService operationService = getNodeEngine().getOperationService();
+                for (Member member : clusterService.getMembers()) {
+                    if (!member.localMember() && !member.getUuid().equals(getCallerUuid())) {
+                        OnJoinOp operation = new OnJoinOp(operations);
+                        operationService.invokeOnTarget(getServiceName(), operation, member.getAddress());
+                    }
                 }
             }
         }
@@ -87,10 +112,8 @@ public class OnJoinOp
 
     @Override
     public void onExecutionFailure(Throwable e) {
-        if (operations != null) {
-            for (Operation op : operations) {
-                onOperationFailure(op, e);
-            }
+        for (Operation op : operations) {
+            onOperationFailure(op, e);
         }
     }
 
@@ -108,33 +131,23 @@ public class OnJoinOp
     }
 
     @Override
-    protected void writeInternal(final ObjectDataOutput out) throws IOException {
-        final int len = operations != null ? operations.length : 0;
-        out.writeInt(len);
-        if (len > 0) {
-            for (Operation op : operations) {
-                out.writeObject(op);
-            }
-        }
+    protected void writeInternal(ObjectDataOutput out) throws IOException {
+        writeCollection(operations, out);
     }
 
     @Override
-    protected void readInternal(final ObjectDataInput in) throws IOException {
-        final int len = in.readInt();
-        operations = new Operation[len];
-        for (int i = 0; i < len; i++) {
-            operations[i] = in.readObject();
-        }
+    protected void readInternal(ObjectDataInput in) throws IOException {
+        operations = readCollection(in);
     }
 
     @Override
     protected void toString(StringBuilder sb) {
         super.toString(sb);
-        sb.append(", operations=").append(Arrays.toString(operations));
+        sb.append(", operations=").append(operations);
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ClusterDataSerializerHook.POST_JOIN;
     }
 

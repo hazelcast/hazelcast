@@ -16,19 +16,19 @@
 
 package com.hazelcast.replicatedmap.impl.operation;
 
-import com.hazelcast.core.Member;
-import com.hazelcast.nio.Address;
+import com.hazelcast.cluster.Address;
+import com.hazelcast.cluster.Member;
+import com.hazelcast.internal.partition.IPartitionService;
+import com.hazelcast.map.impl.MapEntries;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapEventPublishingService;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
-import com.hazelcast.replicatedmap.impl.client.ReplicatedMapEntries;
 import com.hazelcast.replicatedmap.impl.record.ReplicatedRecordStore;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.OperationService;
-import com.hazelcast.spi.impl.MutatingOperation;
-import com.hazelcast.spi.partition.IPartitionService;
+import com.hazelcast.spi.impl.operationservice.MutatingOperation;
+import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.spi.impl.operationservice.OperationService;
 
 import java.io.IOException;
 import java.util.Collection;
@@ -41,12 +41,12 @@ import static com.hazelcast.cluster.memberselector.MemberSelectors.DATA_MEMBER_S
 public class PutAllOperation extends AbstractNamedSerializableOperation implements MutatingOperation {
 
     private String name;
-    private ReplicatedMapEntries entries;
+    private MapEntries entries;
 
     public PutAllOperation() {
     }
 
-    public PutAllOperation(String name, ReplicatedMapEntries entries) {
+    public PutAllOperation(String name, MapEntries entries) {
         this.name = name;
         this.entries = entries;
     }
@@ -100,7 +100,7 @@ public class PutAllOperation extends AbstractNamedSerializableOperation implemen
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ReplicatedMapDataSerializerHook.PUT_ALL;
     }
 

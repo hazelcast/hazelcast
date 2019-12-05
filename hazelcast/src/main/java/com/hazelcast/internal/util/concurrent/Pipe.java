@@ -17,9 +17,8 @@
 
 package com.hazelcast.internal.util.concurrent;
 
-import com.hazelcast.util.function.Predicate;
-
 import java.util.Collection;
+import java.util.function.Predicate;
 
 /**
  * A container of items processed in sequence. The point of this interface

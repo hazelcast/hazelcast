@@ -26,6 +26,7 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.sql.Timestamp;
 import java.util.Date;
+import java.util.Optional;
 import java.util.UUID;
 
 public final class SampleTestObjects {
@@ -557,4 +558,17 @@ public final class SampleTestObjects {
             return attribute;
         }
     }
+
+    public static class ObjectWithOptional<T> implements Serializable {
+        private T attribute;
+
+        public ObjectWithOptional(T attribute) {
+            this.attribute = attribute;
+        }
+
+        public Optional<T> getAttribute() {
+            return Optional.ofNullable(attribute);
+        }
+    }
+
 }

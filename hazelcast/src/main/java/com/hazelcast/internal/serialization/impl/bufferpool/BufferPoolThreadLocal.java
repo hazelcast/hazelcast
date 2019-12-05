@@ -17,15 +17,15 @@
 package com.hazelcast.internal.serialization.impl.bufferpool;
 
 import com.hazelcast.internal.serialization.InternalSerializationService;
-import com.hazelcast.nio.BufferObjectDataOutput;
-import com.hazelcast.util.ConcurrentReferenceHashMap;
-import com.hazelcast.util.function.Supplier;
+import com.hazelcast.internal.nio.BufferObjectDataOutput;
+import com.hazelcast.internal.util.ConcurrentReferenceHashMap;
 
 import java.lang.ref.WeakReference;
 import java.util.Map;
+import java.util.function.Supplier;
 
-import static com.hazelcast.util.ConcurrentReferenceHashMap.ReferenceType.STRONG;
-import static com.hazelcast.util.ConcurrentReferenceHashMap.ReferenceType.WEAK;
+import static com.hazelcast.internal.util.ConcurrentReferenceHashMap.ReferenceType.STRONG;
+import static com.hazelcast.internal.util.ConcurrentReferenceHashMap.ReferenceType.WEAK;
 
 /**
  * A thread-local for {@link BufferPool}.

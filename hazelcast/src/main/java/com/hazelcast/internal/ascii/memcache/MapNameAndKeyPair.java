@@ -16,7 +16,7 @@
 
 package com.hazelcast.internal.ascii.memcache;
 
-import static com.hazelcast.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 /**
  * Value object for (mapName, key) pair

@@ -21,12 +21,13 @@ import com.hazelcast.map.impl.querycache.Registry;
 import com.hazelcast.map.impl.querycache.accumulator.Accumulator;
 import com.hazelcast.map.impl.querycache.accumulator.AccumulatorInfo;
 import com.hazelcast.query.Predicate;
-import com.hazelcast.spi.EventFilter;
-import com.hazelcast.util.ConcurrencyUtil;
-import com.hazelcast.util.ConstructorFunction;
+import com.hazelcast.spi.impl.eventservice.EventFilter;
+import com.hazelcast.internal.util.ConcurrencyUtil;
+import com.hazelcast.internal.util.ConstructorFunction;
 
 import java.util.Collections;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -45,13 +46,14 @@ public class PartitionAccumulatorRegistry implements Registry<Integer, Accumulat
     /**
      * UUID of subscriber client/node.
      */
-    private volatile String uuid;
+    private volatile UUID uuid;
 
-    public PartitionAccumulatorRegistry(AccumulatorInfo info, ConstructorFunction<Integer, Accumulator> accumulatorConstructor) {
+    public PartitionAccumulatorRegistry(AccumulatorInfo info,
+                                        ConstructorFunction<Integer, Accumulator> accumulatorConstructor) {
         this.info = info;
         this.eventFilter = createEventFilter();
         this.accumulatorConstructor = accumulatorConstructor;
-        this.accumulators = new ConcurrentHashMap<Integer, Accumulator>();
+        this.accumulators = new ConcurrentHashMap<>();
     }
 
     private EventFilter createEventFilter() {
@@ -88,11 +90,11 @@ public class PartitionAccumulatorRegistry implements Registry<Integer, Accumulat
         return info;
     }
 
-    public String getUuid() {
+    public UUID getUuid() {
         return uuid;
     }
 
-    public void setUuid(String uuid) {
+    public void setUuid(UUID uuid) {
         this.uuid = uuid;
     }
 }

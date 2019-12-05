@@ -32,7 +32,7 @@ final class ScriptEngineActivator {
     }
 
     /**
-     * This method is used to register available script engines in OSGi contexts.<br/>
+     * This method is used to register available script engines in OSGi contexts.<br>
      * <b>Attention:</b> This method is not unused but only called via reflective calls!
      *
      * @param context BundleContext to bind the ScriptEngineManager to

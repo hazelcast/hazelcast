@@ -22,7 +22,7 @@ import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.PredicateConfig;
 import com.hazelcast.config.QueryCacheConfig;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IMap;
+import com.hazelcast.map.IMap;
 import com.hazelcast.map.QueryCache;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -95,7 +95,6 @@ public class QueryCacheInMemoryFormatTest extends HazelcastTestSupport {
 
         private void readObject(java.io.ObjectInputStream stream) throws IOException, ClassNotFoundException {
             deserializationCount.incrementAndGet();
-            Thread.dumpStack();
         }
     }
 }

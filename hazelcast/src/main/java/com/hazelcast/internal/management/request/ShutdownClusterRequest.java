@@ -16,12 +16,13 @@
 
 package com.hazelcast.internal.management.request;
 
+import com.hazelcast.cluster.Cluster;
 import com.hazelcast.internal.management.ManagementCenterService;
 import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.logging.ILogger;
 
 /**
- * Request coming from Management Center for shutting down the {@link com.hazelcast.core.Cluster}
+ * Request coming from Management Center for shutting down the {@link Cluster}
  */
 public class ShutdownClusterRequest implements AsyncConsoleRequest {
 

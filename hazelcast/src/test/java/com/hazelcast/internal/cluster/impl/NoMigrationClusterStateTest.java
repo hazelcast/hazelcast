@@ -16,23 +16,24 @@
 
 package com.hazelcast.internal.cluster.impl;
 
+import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.config.Config;
+import com.hazelcast.config.ConfigAccessor;
 import com.hazelcast.config.ServiceConfig;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.instance.Node;
+import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.partition.InternalPartition;
 import com.hazelcast.internal.partition.InternalPartitionService;
-import com.hazelcast.nio.Address;
-import com.hazelcast.spi.MigrationAwareService;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.PartitionMigrationEvent;
-import com.hazelcast.spi.PartitionReplicationEvent;
+import com.hazelcast.internal.partition.MigrationAwareService;
+import com.hazelcast.internal.partition.PartitionMigrationEvent;
+import com.hazelcast.internal.partition.PartitionReplicationEvent;
+import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -41,7 +42,7 @@ import org.junit.runner.RunWith;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static com.hazelcast.instance.TestUtil.terminateInstance;
+import static com.hazelcast.instance.impl.TestUtil.terminateInstance;
 import static com.hazelcast.internal.cluster.impl.AdvancedClusterStateTest.changeClusterStateEventually;
 import static com.hazelcast.internal.partition.InternalPartition.MAX_REPLICA_COUNT;
 import static org.hamcrest.Matchers.empty;
@@ -49,7 +50,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class NoMigrationClusterStateTest extends HazelcastTestSupport {
 
     private final NoReplicationService service = new NoReplicationService();
@@ -248,7 +249,7 @@ public class NoMigrationClusterStateTest extends HazelcastTestSupport {
 
     private Config newConfigWithMigrationAwareService() {
         Config config = new Config();
-        config.getServicesConfig().addServiceConfig(new ServiceConfig()
+        ConfigAccessor.getServicesConfig(config).addServiceConfig(new ServiceConfig()
                 .setEnabled(true)
                 .setName("no-replication-service")
                 .setImplementation(service));

@@ -16,20 +16,19 @@
 
 package com.hazelcast.multimap;
 
-import com.hazelcast.concurrent.lock.LockService;
-import com.hazelcast.concurrent.lock.LockServiceImpl;
-import com.hazelcast.concurrent.lock.LockStoreContainer;
-import com.hazelcast.concurrent.lock.LockStoreImpl;
+import com.hazelcast.internal.locksupport.LockSupportService;
+import com.hazelcast.internal.locksupport.LockSupportServiceImpl;
+import com.hazelcast.internal.locksupport.LockStoreContainer;
+import com.hazelcast.internal.locksupport.LockStoreImpl;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.MultiMapConfig;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.MultiMap;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Assert;
 import org.junit.Test;
@@ -45,7 +44,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class MultiMapLockTest extends HazelcastTestSupport {
 
     @Test(expected = NullPointerException.class)
@@ -154,7 +153,7 @@ public class MultiMapLockTest extends HazelcastTestSupport {
         multiMap.destroy();
 
         NodeEngineImpl nodeEngine = getNodeEngineImpl(hz);
-        LockServiceImpl lockService = nodeEngine.getService(LockService.SERVICE_NAME);
+        LockSupportServiceImpl lockService = nodeEngine.getService(LockSupportService.SERVICE_NAME);
         int partitionCount = nodeEngine.getPartitionService().getPartitionCount();
         for (int i = 0; i < partitionCount; i++) {
             LockStoreContainer lockContainer = lockService.getLockContainer(i);

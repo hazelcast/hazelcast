@@ -17,14 +17,15 @@
 package com.hazelcast.spi.impl.eventservice.impl;
 
 import com.hazelcast.config.Config;
+import com.hazelcast.config.ConfigAccessor;
 import com.hazelcast.config.ServiceConfig;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.spi.EventRegistration;
-import com.hazelcast.spi.impl.eventservice.InternalEventService;
+import com.hazelcast.spi.impl.eventservice.EventRegistration;
+import com.hazelcast.spi.impl.eventservice.EventService;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.hamcrest.Matchers;
 import org.junit.Test;
@@ -34,7 +35,7 @@ import org.junit.runner.RunWith;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
-import java.util.concurrent.Callable;
+import java.util.UUID;
 import java.util.concurrent.Future;
 
 import static org.hamcrest.Matchers.hasItem;
@@ -42,7 +43,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class EventServiceTest extends HazelcastTestSupport {
 
     private final String serviceName = "dummy-service";
@@ -55,15 +56,10 @@ public class EventServiceTest extends HazelcastTestSupport {
         HazelcastInstance hz1 = factory.newHazelcastInstance(newConfigWithDummyService());
         HazelcastInstance hz2 = factory.newHazelcastInstance(newConfigWithDummyService());
 
-        Future<HazelcastInstance> future = spawn(new Callable<HazelcastInstance>() {
-            @Override
-            public HazelcastInstance call() throws Exception {
-                return factory.newHazelcastInstance(newConfigWithDummyService());
-            }
-        });
+        Future<HazelcastInstance> future = spawn(() -> factory.newHazelcastInstance(newConfigWithDummyService()));
 
-        InternalEventService eventService = getEventService(hz2);
-        Set<String> registrationIds = new HashSet<String>();
+        EventService eventService = getEventService(hz2);
+        Set<UUID> registrationIds = new HashSet<UUID>();
         Object listener = new Object();
         while (getClusterService(hz2).getSize() < 3) {
             EventRegistration registration = eventService.registerListener(serviceName, topic, listener);
@@ -71,7 +67,7 @@ public class EventServiceTest extends HazelcastTestSupport {
         }
 
         HazelcastInstance hz3 = future.get();
-        InternalEventService eventService3 = getEventService(hz3);
+        EventService eventService3 = getEventService(hz3);
         Collection<EventRegistration> registrations = eventService3.getRegistrations(serviceName, topic);
 
         assertEquals(registrationIds.size(), registrations.size());
@@ -87,41 +83,36 @@ public class EventServiceTest extends HazelcastTestSupport {
         HazelcastInstance hz1 = factory.newHazelcastInstance(newConfigWithDummyService());
         HazelcastInstance hz2 = factory.newHazelcastInstance(newConfigWithDummyService());
 
-        InternalEventService eventService = getEventService(hz2);
-        Set<String> registrationIds = new HashSet<String>();
+        EventService eventService = getEventService(hz2);
+        Set<UUID> registrationIds = new HashSet<UUID>();
         Object listener = new Object();
         for (int i = 0; i < 500; i++) {
             EventRegistration registration = eventService.registerListener(serviceName, topic, listener);
             registrationIds.add(registration.getId());
         }
 
-        Future<HazelcastInstance> future = spawn(new Callable<HazelcastInstance>() {
-            @Override
-            public HazelcastInstance call() throws Exception {
-                return factory.newHazelcastInstance(newConfigWithDummyService());
-            }
-        });
+        Future<HazelcastInstance> future = spawn(() -> factory.newHazelcastInstance(newConfigWithDummyService()));
 
-        for (String registrationId : registrationIds) {
+        for (UUID registrationId : registrationIds) {
             eventService.deregisterListener(serviceName, topic, registrationId);
         }
 
-        assertThat(eventService.getRegistrations(serviceName, topic), Matchers.<EventRegistration>empty());
+        assertThat(eventService.getRegistrations(serviceName, topic), Matchers.empty());
 
         HazelcastInstance hz3 = future.get();
-        InternalEventService eventService3 = getEventService(hz3);
-        assertThat(eventService3.getRegistrations(serviceName, topic), Matchers.<EventRegistration>empty());
+        EventService eventService3 = getEventService(hz3);
+        assertThat(eventService3.getRegistrations(serviceName, topic), Matchers.empty());
     }
 
     private Config newConfigWithDummyService() {
         final Config config = new Config();
         ServiceConfig serviceConfig =
                 new ServiceConfig().setEnabled(true).setName(serviceName).setImplementation(new Object());
-        config.getServicesConfig().addServiceConfig(serviceConfig);
+        ConfigAccessor.getServicesConfig(config).addServiceConfig(serviceConfig);
         return config;
     }
 
-    private static InternalEventService getEventService(HazelcastInstance hz) {
+    private static EventService getEventService(HazelcastInstance hz) {
         return getNodeEngineImpl(hz).getEventService();
     }
 }

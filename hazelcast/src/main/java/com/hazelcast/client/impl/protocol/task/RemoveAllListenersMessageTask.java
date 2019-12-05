@@ -18,20 +18,21 @@ package com.hazelcast.client.impl.protocol.task;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ClientRemoveAllListenersCodec;
-import com.hazelcast.instance.Node;
-import com.hazelcast.nio.Connection;
+import com.hazelcast.instance.impl.Node;
+import com.hazelcast.internal.nio.Connection;
 
 import java.security.Permission;
+import java.util.concurrent.CompletableFuture;
 
 public class RemoveAllListenersMessageTask
-        extends AbstractCallableMessageTask<ClientRemoveAllListenersCodec.RequestParameters> implements ListenerMessageTask {
+        extends AbstractAsyncMessageTask<ClientRemoveAllListenersCodec.RequestParameters, Object> {
 
     public RemoveAllListenersMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
     @Override
-    protected Object call() throws Exception {
+    protected CompletableFuture<Object> processInternal() {
         endpoint.clearAllListeners();
         return null;
     }

@@ -18,15 +18,15 @@ package com.hazelcast.internal.serialization.impl.bufferpool;
 
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.HeapData;
-import com.hazelcast.nio.BufferObjectDataInput;
-import com.hazelcast.nio.BufferObjectDataOutput;
+import com.hazelcast.internal.nio.BufferObjectDataInput;
+import com.hazelcast.internal.nio.BufferObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 
 import java.io.Closeable;
 import java.util.ArrayDeque;
 import java.util.Queue;
 
-import static com.hazelcast.nio.IOUtil.closeResource;
+import static com.hazelcast.internal.nio.IOUtil.closeResource;
 
 /**
  * Default {BufferPool} implementation.

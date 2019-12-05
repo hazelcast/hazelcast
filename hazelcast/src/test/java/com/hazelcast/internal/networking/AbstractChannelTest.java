@@ -17,7 +17,7 @@
 package com.hazelcast.internal.networking;
 
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Before;
@@ -28,12 +28,12 @@ import org.junit.runner.RunWith;
 import java.io.IOException;
 import java.nio.channels.SocketChannel;
 
-import static com.hazelcast.nio.IOUtil.closeResource;
+import static com.hazelcast.internal.nio.IOUtil.closeResource;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class AbstractChannelTest {
 
     private SocketChannel socketChannel;
@@ -117,6 +117,16 @@ public class AbstractChannelTest {
         @Override
         public boolean write(OutboundFrame frame) {
             return false;
+        }
+
+        @Override
+        public long bytesRead() {
+            return 0;
+        }
+
+        @Override
+        public long bytesWritten() {
+            return 0;
         }
     }
 

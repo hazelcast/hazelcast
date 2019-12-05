@@ -21,15 +21,15 @@ import com.hazelcast.client.impl.protocol.codec.MapFlushCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
 import com.hazelcast.client.impl.protocol.task.BlockingMessageTask;
 import com.hazelcast.core.DistributedObject;
-import com.hazelcast.instance.Node;
+import com.hazelcast.instance.impl.Node;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.proxy.MapProxyImpl;
-import com.hazelcast.nio.Connection;
+import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MapPermission;
-import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.ProxyService;
+import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.spi.impl.proxyservice.ProxyService;
 
 import java.security.Permission;
 

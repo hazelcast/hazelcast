@@ -16,8 +16,10 @@
 
 package com.hazelcast.config;
 
-import java.util.HashSet;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+
+import static java.util.Collections.newSetFromMap;
 
 /**
  * Contains the configuration for a permission.
@@ -27,8 +29,8 @@ public class PermissionConfig {
     private PermissionType type;
     private String name;
     private String principal;
-    private Set<String> endpoints = new HashSet<String>();
-    private Set<String> actions = new HashSet<String>();
+    private Set<String> endpoints = newSetFromMap(new ConcurrentHashMap<String, Boolean>());
+    private Set<String> actions = newSetFromMap(new ConcurrentHashMap<String, Boolean>());
 
     public PermissionConfig() {
     }
@@ -80,10 +82,6 @@ public class PermissionConfig {
          */
         SET("set-permission"),
         /**
-         * ID generator
-         */
-        ID_GENERATOR("id-generator-permission"),
-        /**
          * Flake ID generator
          */
         FLAKE_ID_GENERATOR("flake-id-generator-permission"),
@@ -95,6 +93,10 @@ public class PermissionConfig {
          * Atomic long
          */
         ATOMIC_LONG("atomic-long-permission"),
+        /**
+         * Atomic long
+         */
+        ATOMIC_REFERENCE("atomic-reference-permission"),
         /**
          * Countdown Latch
          */
@@ -261,7 +263,7 @@ public class PermissionConfig {
         return "PermissionConfig{"
                 + "type=" + type
                 + ", name='" + name + '\''
-                + ", principal='" + principal + '\''
+                + ", clientUuid='" + principal + '\''
                 + ", endpoints=" + endpoints
                 + ", actions=" + actions
                 + '}';

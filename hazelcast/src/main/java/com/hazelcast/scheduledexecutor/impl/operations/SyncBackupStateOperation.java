@@ -40,7 +40,7 @@ public class SyncBackupStateOperation
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ScheduledExecutorDataSerializerHook.SYNC_BACKUP_STATE_OP;
     }
 

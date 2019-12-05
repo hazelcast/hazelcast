@@ -16,37 +16,16 @@
 
 package com.hazelcast.security;
 
-import com.hazelcast.nio.serialization.BinaryInterface;
+import com.hazelcast.internal.serialization.BinaryInterface;
 
 import java.io.Serializable;
 
 /**
- * Credentials is a container object for endpoint (Members and Clients)
- * security attributes.
- * <p/>
- * It is used on authentication process by {@link javax.security.auth.spi.LoginModule}s.
+ * Credentials represents an identity to be authenticated.
  */
 @BinaryInterface
+@FunctionalInterface
 public interface Credentials extends Serializable {
 
-    /**
-     * Returns IP address of endpoint.
-     *
-     * @return IP address of endpoint
-     */
-    String getEndpoint();
-
-    /**
-     * Sets IP address of endpoint.
-     *
-     * @param endpoint IP address of endpoint
-     */
-    void setEndpoint(String endpoint);
-
-    /**
-     * Returns principal of endpoint.
-     *
-     * @return endpoint principal
-     */
-    String getPrincipal();
+    String getName();
 }

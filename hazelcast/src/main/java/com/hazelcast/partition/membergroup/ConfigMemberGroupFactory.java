@@ -17,9 +17,9 @@
 package com.hazelcast.partition.membergroup;
 
 import com.hazelcast.config.MemberGroupConfig;
-import com.hazelcast.core.Member;
-import com.hazelcast.instance.MemberImpl;
-import com.hazelcast.util.AddressUtil;
+import com.hazelcast.cluster.Member;
+import com.hazelcast.cluster.impl.MemberImpl;
+import com.hazelcast.internal.util.AddressUtil;
 
 import java.util.Collection;
 import java.util.HashMap;
@@ -28,7 +28,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
-import static com.hazelcast.util.MapUtil.createLinkedHashMap;
+import static com.hazelcast.internal.util.MapUtil.createLinkedHashMap;
 
 public class ConfigMemberGroupFactory extends BackupSafeMemberGroupFactory implements MemberGroupFactory {
 

@@ -22,15 +22,14 @@ import com.hazelcast.config.ReplicatedMapConfig;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.MapEvent;
-import com.hazelcast.core.ReplicatedMap;
-import com.hazelcast.query.impl.FalsePredicate;
+import com.hazelcast.map.MapEvent;
+import com.hazelcast.query.Predicates;
 import com.hazelcast.query.impl.predicates.InstanceOfPredicate;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -43,7 +42,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class ReplicatedMapListenerTest extends HazelcastTestSupport {
 
     @Test
@@ -164,7 +163,7 @@ public class ReplicatedMapListenerTest extends HazelcastTestSupport {
     public void testListenWithPredicate() {
         ReplicatedMap<Object, Object> replicatedMap = createClusterAndGetRandomReplicatedMap();
         final EventCountingListener listener = new EventCountingListener();
-        replicatedMap.addEntryListener(listener, FalsePredicate.INSTANCE);
+        replicatedMap.addEntryListener(listener, Predicates.alwaysFalse());
         replicatedMap.put(2, 2);
         assertTrueFiveSeconds(new AssertTask() {
             @Override
@@ -235,6 +234,11 @@ public class ReplicatedMapListenerTest extends HazelcastTestSupport {
         public void entryEvicted(EntryEvent<Object, Object> event) {
             keys.add(event.getKey());
             evictCount.incrementAndGet();
+        }
+
+        @Override
+        public void entryExpired(EntryEvent<Object, Object> event) {
+            throw new UnsupportedOperationException("Expired event is not published by replicated map");
         }
 
         @Override

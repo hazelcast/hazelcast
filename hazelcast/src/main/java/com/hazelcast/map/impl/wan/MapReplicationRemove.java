@@ -16,67 +16,82 @@
 
 package com.hazelcast.map.impl.wan;
 
+import com.hazelcast.internal.nio.IOUtil;
+import com.hazelcast.map.impl.MapService;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.wan.ReplicationEventObject;
-import com.hazelcast.wan.impl.DistributedServiceWanEventCounters;
+import com.hazelcast.wan.DistributedServiceWanEventCounters;
+import com.hazelcast.wan.impl.InternalWanReplicationEvent;
 import com.hazelcast.wan.impl.WanDataSerializerHook;
 
+import javax.annotation.Nonnull;
 import java.io.IOException;
+import java.util.Collections;
+import java.util.Set;
 
-public class MapReplicationRemove implements ReplicationEventObject, IdentifiedDataSerializable {
+public class MapReplicationRemove implements InternalWanReplicationEvent, IdentifiedDataSerializable {
     private String mapName;
     private Data key;
-    private long removeTime;
 
-    public MapReplicationRemove(String mapName, Data key, long removeTime) {
+    public MapReplicationRemove(String mapName, Data key) {
         this.mapName = mapName;
         this.key = key;
-        this.removeTime = removeTime;
     }
 
     public MapReplicationRemove() {
     }
 
-    public String getMapName() {
-        return mapName;
-    }
-
-    public void setMapName(String mapName) {
-        this.mapName = mapName;
-    }
-
+    @Nonnull
     @Override
     public Data getKey() {
         return key;
+    }
+
+    @Nonnull
+    @Override
+    public Set<String> getClusterNames() {
+        // called only in EE
+        return Collections.emptySet();
+    }
+
+    @Override
+    public int getBackupCount() {
+        // called only in EE
+        return 0;
+    }
+
+    @Override
+    public long getCreationTime() {
+        // called only in EE
+        return 0;
+    }
+
+    @Override
+    public String getServiceName() {
+        return MapService.SERVICE_NAME;
+    }
+
+    @Override
+    public String getObjectName() {
+        return mapName;
     }
 
     public void setKey(Data key) {
         this.key = key;
     }
 
-    public long getRemoveTime() {
-        return removeTime;
-    }
-
-    public void setRemoveTime(long removeTime) {
-        this.removeTime = removeTime;
-    }
-
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeUTF(mapName);
-        out.writeLong(removeTime);
-        out.writeData(key);
+        IOUtil.writeData(out, key);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         mapName = in.readUTF();
-        removeTime = in.readLong();
-        key = in.readData();
+        key = IOUtil.readData(in);
     }
 
     @Override
@@ -85,7 +100,7 @@ public class MapReplicationRemove implements ReplicationEventObject, IdentifiedD
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return WanDataSerializerHook.MAP_REPLICATION_REMOVE;
     }
 

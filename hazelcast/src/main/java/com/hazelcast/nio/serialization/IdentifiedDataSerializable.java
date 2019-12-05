@@ -41,5 +41,5 @@ public interface IdentifiedDataSerializable extends DataSerializable {
      *
      * @return type ID
      */
-    int getId();
+    int getClassId();
 }

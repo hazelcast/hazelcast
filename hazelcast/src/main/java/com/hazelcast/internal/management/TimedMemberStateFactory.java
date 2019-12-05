@@ -16,68 +16,75 @@
 
 package com.hazelcast.internal.management;
 
-import com.hazelcast.cache.CacheStatistics;
 import com.hazelcast.cache.impl.CacheService;
-import com.hazelcast.cache.impl.ICacheService;
+import com.hazelcast.client.Client;
+import com.hazelcast.client.impl.statistics.ClientStatistics;
+import com.hazelcast.cluster.Address;
+import com.hazelcast.cluster.Member;
+import com.hazelcast.cluster.impl.MemberImpl;
+import com.hazelcast.collection.LocalQueueStats;
 import com.hazelcast.collection.impl.queue.QueueService;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.config.Config;
-import com.hazelcast.config.GroupConfig;
 import com.hazelcast.config.ManagementCenterConfig;
 import com.hazelcast.config.SSLConfig;
 import com.hazelcast.config.SocketInterceptorConfig;
-import com.hazelcast.core.Client;
-import com.hazelcast.core.Member;
-import com.hazelcast.crdt.pncounter.PNCounterService;
+import com.hazelcast.cp.CPMember;
+import com.hazelcast.executor.LocalExecutorStats;
 import com.hazelcast.executor.impl.DistributedExecutorService;
 import com.hazelcast.flakeidgen.impl.FlakeIdGeneratorService;
 import com.hazelcast.hotrestart.HotRestartService;
-import com.hazelcast.instance.HazelcastInstanceImpl;
-import com.hazelcast.instance.MemberImpl;
-import com.hazelcast.instance.Node;
+import com.hazelcast.instance.EndpointQualifier;
+import com.hazelcast.instance.impl.HazelcastInstanceImpl;
+import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.cluster.ClusterService;
+import com.hazelcast.internal.crdt.pncounter.PNCounterService;
+import com.hazelcast.internal.management.dto.AdvancedNetworkStatsDTO;
 import com.hazelcast.internal.management.dto.ClientEndPointDTO;
 import com.hazelcast.internal.management.dto.ClusterHotRestartStatusDTO;
+import com.hazelcast.internal.monitor.LocalCacheStats;
+import com.hazelcast.internal.monitor.LocalFlakeIdGeneratorStats;
+import com.hazelcast.internal.monitor.LocalMemoryStats;
+import com.hazelcast.internal.monitor.LocalOperationStats;
+import com.hazelcast.internal.monitor.LocalPNCounterStats;
+import com.hazelcast.internal.monitor.LocalWanStats;
+import com.hazelcast.internal.monitor.WanSyncState;
+import com.hazelcast.internal.monitor.impl.HotRestartStateImpl;
+import com.hazelcast.internal.monitor.impl.LocalMemoryStatsImpl;
+import com.hazelcast.internal.monitor.impl.LocalOperationStatsImpl;
+import com.hazelcast.internal.monitor.impl.MemberPartitionStateImpl;
+import com.hazelcast.internal.monitor.impl.MemberStateImpl;
+import com.hazelcast.internal.monitor.impl.NodeStateImpl;
+import com.hazelcast.internal.networking.NetworkStats;
+import com.hazelcast.internal.nio.AggregateEndpointManager;
+import com.hazelcast.internal.partition.IPartition;
 import com.hazelcast.internal.partition.InternalPartitionService;
+import com.hazelcast.internal.services.StatisticsAwareService;
+import com.hazelcast.map.LocalMapStats;
 import com.hazelcast.map.impl.MapService;
-import com.hazelcast.monitor.LocalExecutorStats;
-import com.hazelcast.monitor.LocalFlakeIdGeneratorStats;
-import com.hazelcast.monitor.LocalMapStats;
-import com.hazelcast.monitor.LocalMemoryStats;
-import com.hazelcast.monitor.LocalMultiMapStats;
-import com.hazelcast.monitor.LocalOperationStats;
-import com.hazelcast.monitor.LocalPNCounterStats;
-import com.hazelcast.monitor.LocalQueueStats;
-import com.hazelcast.monitor.LocalReplicatedMapStats;
-import com.hazelcast.monitor.LocalTopicStats;
-import com.hazelcast.monitor.LocalWanStats;
-import com.hazelcast.monitor.WanSyncState;
-import com.hazelcast.monitor.impl.HotRestartStateImpl;
-import com.hazelcast.monitor.impl.LocalCacheStatsImpl;
-import com.hazelcast.monitor.impl.LocalMemoryStatsImpl;
-import com.hazelcast.monitor.impl.LocalOperationStatsImpl;
-import com.hazelcast.monitor.impl.MemberPartitionStateImpl;
-import com.hazelcast.monitor.impl.MemberStateImpl;
-import com.hazelcast.monitor.impl.NodeStateImpl;
+import com.hazelcast.multimap.LocalMultiMapStats;
 import com.hazelcast.multimap.impl.MultiMapService;
-import com.hazelcast.nio.Address;
+import com.hazelcast.replicatedmap.LocalReplicatedMapStats;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
-import com.hazelcast.spi.StatisticsAwareService;
-import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.spi.impl.servicemanager.ServiceInfo;
-import com.hazelcast.spi.partition.IPartition;
+import com.hazelcast.topic.LocalTopicStats;
 import com.hazelcast.topic.impl.TopicService;
 import com.hazelcast.topic.impl.reliable.ReliableTopicService;
-import com.hazelcast.wan.WanReplicationService;
+import com.hazelcast.wan.impl.WanReplicationService;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
+import java.util.function.ToLongFunction;
 
-import static com.hazelcast.util.SetUtil.createHashSet;
+import javax.annotation.Nonnull;
+
+import static com.hazelcast.config.ConfigAccessor.getActiveMemberNetworkConfig;
+import static com.hazelcast.internal.util.MapUtil.createHashMap;
+import static com.hazelcast.internal.util.SetUtil.createHashSet;
 
 /**
  * A Factory for creating {@link TimedMemberState} instances.
@@ -88,7 +95,6 @@ public class TimedMemberStateFactory {
     private static final int PARTITION_SAFETY_CHECK_PERIOD = 60;
 
     protected final HazelcastInstanceImpl instance;
-    private final boolean cacheServiceEnabled;
 
     private volatile boolean memberStateSafe = true;
 
@@ -99,24 +105,16 @@ public class TimedMemberStateFactory {
             instance.node.loggingService.getLogger(getClass())
                     .warning("hazelcast.mc.max.visible.instance.count property is removed.");
         }
-        cacheServiceEnabled = isCacheServiceEnabled();
-    }
-
-    private boolean isCacheServiceEnabled() {
-        NodeEngineImpl nodeEngine = instance.node.nodeEngine;
-        Collection<ServiceInfo> serviceInfos = nodeEngine.getServiceInfos(CacheService.class);
-        return !serviceInfos.isEmpty();
     }
 
     public void init() {
-        instance.node.nodeEngine.getExecutionService().scheduleWithRepetition(new Runnable() {
-            @Override
-            public void run() {
-                memberStateSafe = instance.getPartitionService().isLocalMemberSafe();
-            }
-        }, INITIAL_PARTITION_SAFETY_CHECK_DELAY, PARTITION_SAFETY_CHECK_PERIOD, TimeUnit.SECONDS);
+        instance.node.nodeEngine.getExecutionService().scheduleWithRepetition(
+                () -> memberStateSafe = instance.getPartitionService().isLocalMemberSafe(),
+                INITIAL_PARTITION_SAFETY_CHECK_DELAY, PARTITION_SAFETY_CHECK_PERIOD, TimeUnit.SECONDS
+        );
     }
 
+    @Nonnull
     public TimedMemberState createTimedMemberState() {
         MemberStateImpl memberState = new MemberStateImpl();
         Collection<StatisticsAwareService> services = instance.node.nodeEngine.getServices(StatisticsAwareService.class);
@@ -124,23 +122,21 @@ public class TimedMemberStateFactory {
         TimedMemberState timedMemberState = new TimedMemberState();
         createMemberState(memberState, services);
         timedMemberState.setMaster(instance.node.isMaster());
-        timedMemberState.setMemberList(new ArrayList<String>());
-        if (timedMemberState.isMaster()) {
-            Set<Member> memberSet = instance.getCluster().getMembers();
-            for (Member member : memberSet) {
-                MemberImpl memberImpl = (MemberImpl) member;
-                Address address = memberImpl.getAddress();
-                timedMemberState.getMemberList().add(address.getHost() + ":" + address.getPort());
-            }
+        timedMemberState.setMemberList(new ArrayList<>());
+        Set<Member> memberSet = instance.getCluster().getMembers();
+        for (Member member : memberSet) {
+            MemberImpl memberImpl = (MemberImpl) member;
+            Address address = memberImpl.getAddress();
+            timedMemberState.getMemberList().add(address.getHost() + ":" + address.getPort());
         }
         timedMemberState.setMemberState(memberState);
-        GroupConfig groupConfig = instance.getConfig().getGroupConfig();
-        timedMemberState.setClusterName(groupConfig.getName());
-        SSLConfig sslConfig = instance.getConfig().getNetworkConfig().getSSLConfig();
+        timedMemberState.setClusterName(instance.getConfig().getClusterName());
+        SSLConfig sslConfig = getActiveMemberNetworkConfig(instance.getConfig()).getSSLConfig();
         timedMemberState.setSslEnabled(sslConfig != null && sslConfig.isEnabled());
         timedMemberState.setLite(instance.node.isLiteMember());
 
-        SocketInterceptorConfig interceptorConfig = instance.getConfig().getNetworkConfig().getSocketInterceptorConfig();
+        SocketInterceptorConfig interceptorConfig = getActiveMemberNetworkConfig(instance.getConfig())
+                .getSocketInterceptorConfig();
         timedMemberState.setSocketInterceptorEnabled(interceptorConfig != null && interceptorConfig.isEnabled());
 
         ManagementCenterConfig managementCenterConfig = instance.node.getConfig().getManagementCenterConfig();
@@ -153,7 +149,7 @@ public class TimedMemberStateFactory {
         return new LocalMemoryStatsImpl(instance.getMemoryStats());
     }
 
-    protected LocalOperationStats getOperationStats() {
+    private LocalOperationStats getOperationStats() {
         return new LocalOperationStatsImpl(instance.node);
     }
 
@@ -167,9 +163,19 @@ public class TimedMemberStateFactory {
             serializableClientEndPoints.add(new ClientEndPointDTO(client));
         }
         memberState.setClients(serializableClientEndPoints);
+        memberState.setName(instance.getName());
+
+        memberState.setUuid(node.getThisUuid());
+        if (instance.getConfig().getCPSubsystemConfig().getCPMemberCount() == 0) {
+            memberState.setCpMemberUuid(null);
+        } else {
+            CPMember localCPMember = instance.getCPSubsystem().getLocalCPMember();
+            memberState.setCpMemberUuid(localCPMember != null ? localCPMember.getUuid() : null);
+        }
 
         Address thisAddress = node.getThisAddress();
         memberState.setAddress(thisAddress.getHost() + ":" + thisAddress.getPort());
+        memberState.setEndpoints(node.getLocalMember().getAddressMap());
         TimedMemberStateFactoryHelper.registerJMXBeans(instance, memberState);
 
         MemberPartitionStateImpl memberPartitionState = (MemberPartitionStateImpl) memberState.getMemberPartitionState();
@@ -195,7 +201,25 @@ public class TimedMemberStateFactory {
         createClusterHotRestartStatus(memberState);
         createWanSyncState(memberState);
 
-        memberState.setClientStats(node.clientEngine.getClientStatistics());
+        memberState.setClientStats(getClientAttributes(node.getClientEngine().getClientStatistics()));
+
+        AggregateEndpointManager aggregateEndpointManager = node.getNetworkingService().getAggregateEndpointManager();
+        memberState.setInboundNetworkStats(createAdvancedNetworkStats(aggregateEndpointManager.getNetworkStats(),
+                NetworkStats::getBytesReceived));
+        memberState.setOutboundNetworkStats(createAdvancedNetworkStats(aggregateEndpointManager.getNetworkStats(),
+                NetworkStats::getBytesSent));
+    }
+
+    private Map<UUID, String> getClientAttributes(Map<UUID, ClientStatistics> allClientStatistics) {
+        Map<UUID, String> statsMap = createHashMap(allClientStatistics.size());
+        for (Map.Entry<UUID, ClientStatistics> entry : allClientStatistics.entrySet()) {
+            UUID uuid = entry.getKey();
+            ClientStatistics statistics = entry.getValue();
+            if (statistics != null) {
+                statsMap.put(uuid, statistics.clientAttributes());
+            }
+        }
+        return statsMap;
     }
 
     private void createHotRestartState(MemberStateImpl memberState) {
@@ -256,6 +280,8 @@ public class TimedMemberStateFactory {
             } else if (service instanceof FlakeIdGeneratorService) {
                 count = handleFlakeIdGenerator(memberState, count, config,
                         ((FlakeIdGeneratorService) service).getStats());
+            } else if (service instanceof CacheService) {
+                count = handleCache(memberState, count, (CacheService) service);
             }
         }
 
@@ -263,20 +289,6 @@ public class TimedMemberStateFactory {
         Map<String, LocalWanStats> wanStats = wanReplicationService.getStats();
         if (wanStats != null) {
             count = handleWan(memberState, count, wanStats);
-        }
-
-        if (cacheServiceEnabled) {
-            ICacheService cacheService = getCacheService();
-            for (CacheConfig cacheConfig : cacheService.getCacheConfigs()) {
-                if (cacheConfig.isStatisticsEnabled()) {
-                    CacheStatistics statistics = cacheService.getStatistics(cacheConfig.getNameWithPrefix());
-                    //Statistics can be null for a short period of time since config is created at first then stats map
-                    //is filled.git
-                    if (statistics != null) {
-                        count = handleCache(memberState, count, cacheConfig, statistics);
-                    }
-                }
-            }
         }
     }
 
@@ -393,6 +405,20 @@ public class TimedMemberStateFactory {
         return count;
     }
 
+    private int handleCache(MemberStateImpl memberState, int count, CacheService cacheService) {
+        Map<String, LocalCacheStats> map = cacheService.getStats();
+        for (Map.Entry<String, LocalCacheStats> entry : map.entrySet()) {
+            String name = entry.getKey();
+            CacheConfig cacheConfig = cacheService.getCacheConfig(entry.getKey());
+            if (cacheConfig != null && cacheConfig.isStatisticsEnabled()) {
+                LocalCacheStats stats = entry.getValue();
+                memberState.putLocalCacheStats(name, stats);
+                ++count;
+            }
+        }
+        return count;
+    }
+
     private int handleWan(MemberStateImpl memberState, int count, Map<String, LocalWanStats> wans) {
         for (Map.Entry<String, LocalWanStats> entry : wans.entrySet()) {
             String schemeName = entry.getKey();
@@ -403,13 +429,12 @@ public class TimedMemberStateFactory {
         return count;
     }
 
-    private int handleCache(MemberStateImpl memberState, int count, CacheConfig config, CacheStatistics cacheStatistics) {
-        memberState.putLocalCacheStats(config.getNameWithPrefix(), new LocalCacheStatsImpl(cacheStatistics));
-        return ++count;
-    }
-
-
-    private ICacheService getCacheService() {
-        return instance.node.nodeEngine.getService(ICacheService.SERVICE_NAME);
+    private AdvancedNetworkStatsDTO createAdvancedNetworkStats(Map<EndpointQualifier, NetworkStats> stats,
+                                                               ToLongFunction<NetworkStats> getBytesFn) {
+        AdvancedNetworkStatsDTO statsDTO = new AdvancedNetworkStatsDTO();
+        for (Map.Entry<EndpointQualifier, NetworkStats> entry : stats.entrySet()) {
+            statsDTO.incBytesTransceived(entry.getKey().getType(), getBytesFn.applyAsLong(entry.getValue()));
+        }
+        return statsDTO;
     }
 }

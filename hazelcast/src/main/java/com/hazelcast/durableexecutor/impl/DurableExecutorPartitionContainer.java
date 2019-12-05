@@ -18,7 +18,7 @@ package com.hazelcast.durableexecutor.impl;
 
 import com.hazelcast.config.DurableExecutorConfig;
 import com.hazelcast.durableexecutor.impl.operations.ReplicationOperation;
-import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 
 import java.util.HashMap;
@@ -30,8 +30,7 @@ public class DurableExecutorPartitionContainer {
     private final int partitionId;
     private final NodeEngineImpl nodeEngine;
 
-    private final Map<String, DurableExecutorContainer> executorContainerMap
-            = new HashMap<String, DurableExecutorContainer>();
+    private final Map<String, DurableExecutorContainer> executorContainerMap = new HashMap<>();
 
     public DurableExecutorPartitionContainer(NodeEngineImpl nodeEngine, int partitionId) {
         this.nodeEngine = nodeEngine;
@@ -54,7 +53,7 @@ public class DurableExecutorPartitionContainer {
     }
 
     public Operation prepareReplicationOperation(int replicaIndex) {
-        HashMap<String, DurableExecutorContainer> map = new HashMap<String, DurableExecutorContainer>();
+        HashMap<String, DurableExecutorContainer> map = new HashMap<>();
         for (DurableExecutorContainer executorContainer : executorContainerMap.values()) {
             if (replicaIndex > executorContainer.getDurability()) {
                 continue;
@@ -81,6 +80,15 @@ public class DurableExecutorPartitionContainer {
         for (DurableExecutorContainer container : executorContainerMap.values()) {
             container.executeAll();
         }
+    }
+
+    public void removeContainer(String name) {
+        executorContainerMap.remove(name);
+    }
+
+    // for testing
+    DurableExecutorContainer getExistingExecutorContainer(String name) {
+        return executorContainerMap.get(name);
     }
 
     private DurableExecutorContainer createExecutorContainer(String name) {

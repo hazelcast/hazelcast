@@ -18,19 +18,19 @@ package com.hazelcast.map;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.InMemoryFormat;
+import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IMap;
-import com.hazelcast.core.PartitionService;
-import com.hazelcast.monitor.impl.MemberPartitionStateImpl;
+import com.hazelcast.internal.monitor.impl.MemberPartitionStateImpl;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.partition.PartitionService;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -39,7 +39,6 @@ import org.junit.runner.RunWith;
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.HashSet;
-import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.Assert.assertEquals;
@@ -48,7 +47,7 @@ import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class InMemoryFormatTest extends HazelcastTestSupport {
 
     /**
@@ -68,12 +67,7 @@ public class InMemoryFormatTest extends HazelcastTestSupport {
         map.put("key", serializationValue);
 
         // EntryProcessor should not trigger de-serialization
-        map.executeOnKey("key", new AbstractEntryProcessor<String, SerializationValue>() {
-            @Override
-            public Object process(final Map.Entry<String, SerializationValue> entry) {
-                return null;
-            }
-        });
+        map.executeOnKey("key", entry -> null);
         assertEquals(1, SerializationValue.deSerializeCount.get());
     }
 
@@ -213,7 +207,7 @@ public class InMemoryFormatTest extends HazelcastTestSupport {
         }
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test(expected = InvalidConfigurationException.class)
     public void testNativeIMap_throwsException() throws Exception {
         Config config = getConfig();
         config.getMapConfig("default").setInMemoryFormat(InMemoryFormat.NATIVE);
@@ -222,7 +216,7 @@ public class InMemoryFormatTest extends HazelcastTestSupport {
         member.getMap("default");
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test(expected = InvalidConfigurationException.class)
     public void testNativeNearCache_throwsException() throws Exception {
         NearCacheConfig nearCacheConfig = new NearCacheConfig();
         nearCacheConfig.setInMemoryFormat(InMemoryFormat.NATIVE);

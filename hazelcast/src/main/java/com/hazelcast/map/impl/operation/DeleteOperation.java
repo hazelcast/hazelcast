@@ -16,32 +16,35 @@
 
 package com.hazelcast.map.impl.operation;
 
-import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.impl.Versioned;
 
 import java.io.IOException;
 
-public class DeleteOperation extends BaseRemoveOperation implements Versioned {
+public class DeleteOperation extends BaseRemoveOperation {
+
+    // package private for testing purposes
+    boolean disableWanReplicationEvent;
     private boolean success;
 
-    public DeleteOperation(String name, Data dataKey) {
-        super(name, dataKey);
-    }
-
     public DeleteOperation(String name, Data dataKey, boolean disableWanReplicationEvent) {
-        super(name, dataKey, disableWanReplicationEvent);
+        super(name, dataKey);
+        this.disableWanReplicationEvent = disableWanReplicationEvent;
     }
 
     public DeleteOperation() {
     }
 
     @Override
-    public void run() {
+    protected void runInternal() {
         success = recordStore.delete(dataKey, getCallerProvenance());
+    }
+
+    @Override
+    protected boolean disableWanReplicationEvent() {
+        return disableWanReplicationEvent;
     }
 
     @Override
@@ -50,9 +53,9 @@ public class DeleteOperation extends BaseRemoveOperation implements Versioned {
     }
 
     @Override
-    public void afterRun() {
+    protected void afterRunInternal() {
         if (success) {
-            super.afterRun();
+            super.afterRunInternal();
         }
     }
 
@@ -67,27 +70,19 @@ public class DeleteOperation extends BaseRemoveOperation implements Versioned {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MapDataSerializerHook.DELETE;
     }
 
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-
-        // RU_COMPAT_3_10
-        if (out.getVersion().isGreaterOrEqual(Versions.V3_11)) {
-            out.writeBoolean(disableWanReplicationEvent);
-        }
+        out.writeBoolean(disableWanReplicationEvent);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-
-        // RU_COMPAT_3_10
-        if (in.getVersion().isGreaterOrEqual(Versions.V3_11)) {
-            disableWanReplicationEvent = in.readBoolean();
-        }
+        disableWanReplicationEvent = in.readBoolean();
     }
 }

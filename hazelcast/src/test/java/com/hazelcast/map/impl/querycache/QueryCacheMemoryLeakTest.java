@@ -19,7 +19,7 @@ package com.hazelcast.map.impl.querycache;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IMap;
+import com.hazelcast.map.IMap;
 import com.hazelcast.map.QueryCache;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
@@ -34,7 +34,7 @@ import com.hazelcast.map.impl.querycache.subscriber.QueryCacheEndToEndProvider;
 import com.hazelcast.map.impl.querycache.subscriber.QueryCacheFactory;
 import com.hazelcast.map.impl.querycache.subscriber.SubscriberContext;
 import com.hazelcast.map.listener.EntryAddedListener;
-import com.hazelcast.query.TruePredicate;
+import com.hazelcast.query.Predicates;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.eventservice.impl.EventServiceImpl;
 import com.hazelcast.spi.impl.eventservice.impl.EventServiceSegment;
@@ -42,15 +42,16 @@ import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.util.RandomPicker;
+import com.hazelcast.internal.util.RandomPicker;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.util.ArrayList;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -61,7 +62,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class QueryCacheMemoryLeakTest extends HazelcastTestSupport {
 
     private static final int STRESS_TEST_RUN_SECONDS = 5;
@@ -89,7 +90,7 @@ public class QueryCacheMemoryLeakTest extends HazelcastTestSupport {
                 @Override
                 public void run() {
                     while (!stop.get()) {
-                        QueryCache queryCache = map.getQueryCache(queryCacheName, TruePredicate.INSTANCE, true);
+                        QueryCache queryCache = map.getQueryCache(queryCacheName, Predicates.alwaysTrue(), true);
                         queryCache.destroy();
                     }
                 }
@@ -136,7 +137,7 @@ public class QueryCacheMemoryLeakTest extends HazelcastTestSupport {
                         final IMap<Integer, Integer> map = node1.getMap(name);
                         int key = RandomPicker.getInt(0, Integer.MAX_VALUE);
                         map.put(key, 1);
-                        QueryCache queryCache = map.getQueryCache(name, TruePredicate.INSTANCE, true);
+                        QueryCache queryCache = map.getQueryCache(name, Predicates.alwaysTrue(), true);
                         queryCache.get(key);
 
                         queryCache.addEntryListener(new EntryAddedListener<Integer, Integer>() {
@@ -184,7 +185,7 @@ public class QueryCacheMemoryLeakTest extends HazelcastTestSupport {
         final IMap<Integer, Integer> map = node1.getMap(name);
         int key = RandomPicker.getInt(0, Integer.MAX_VALUE);
         map.put(key, 1);
-        QueryCache queryCache = map.getQueryCache(name, TruePredicate.INSTANCE, true);
+        QueryCache queryCache = map.getQueryCache(name, Predicates.alwaysTrue(), true);
         queryCache.get(key);
 
         queryCache.addEntryListener(new EntryAddedListener<Integer, Integer>() {
@@ -211,7 +212,7 @@ public class QueryCacheMemoryLeakTest extends HazelcastTestSupport {
         populateMap(map);
 
         for (int j = 0; j < 10; j++) {
-            map.getQueryCache(j + "-test-QC", TruePredicate.INSTANCE, true);
+            map.getQueryCache(j + "-test-QC", Predicates.alwaysTrue(), true);
         }
 
         map.destroy();
@@ -241,7 +242,7 @@ public class QueryCacheMemoryLeakTest extends HazelcastTestSupport {
                         try {
                             populateMap(map);
                             for (int j = 0; j < 10; j++) {
-                                map.getQueryCache(j + "-test-QC", TruePredicate.INSTANCE, true);
+                                map.getQueryCache(j + "-test-QC", Predicates.alwaysTrue(), true);
                             }
                         } finally {
                             map.destroy();
@@ -295,7 +296,7 @@ public class QueryCacheMemoryLeakTest extends HazelcastTestSupport {
         MapListenerRegistry mapListenerRegistry = publisherContext.getMapListenerRegistry();
         QueryCacheListenerRegistry registry = mapListenerRegistry.getOrNull(mapName);
         if (registry != null) {
-            Map<String, String> registeredListeners = registry.getAll();
+            Map<String, UUID> registeredListeners = registry.getAll();
             assertTrue(registeredListeners.isEmpty());
         }
     }

@@ -20,9 +20,10 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.PNCounterGetConfiguredReplicaCountCodec;
 import com.hazelcast.client.impl.protocol.codec.PNCounterGetConfiguredReplicaCountCodec.RequestParameters;
 import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
-import com.hazelcast.crdt.pncounter.PNCounterService;
-import com.hazelcast.instance.Node;
-import com.hazelcast.nio.Connection;
+import com.hazelcast.crdt.pncounter.PNCounter;
+import com.hazelcast.internal.crdt.pncounter.PNCounterService;
+import com.hazelcast.instance.impl.Node;
+import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.PNCounterPermission;
 
@@ -30,7 +31,7 @@ import java.security.Permission;
 
 /**
  * Task responsible for processing client messages for returning the max
- * configured replica count for a {@link com.hazelcast.crdt.pncounter.PNCounter}.
+ * configured replica count for a {@link PNCounter}.
  */
 public class PNCounterGetConfiguredReplicaCountMessageTask
         extends AbstractCallableMessageTask<RequestParameters> {

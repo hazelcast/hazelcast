@@ -23,6 +23,8 @@ import com.hazelcast.security.UsernamePasswordCredentials;
  */
 public class CustomCredentials extends UsernamePasswordCredentials {
 
+    public static final int CLASS_ID = 15;
+
     @Override
     public int getFactoryId() {
         return PortableFactory.FACTORY_ID;
@@ -30,7 +32,7 @@ public class CustomCredentials extends UsernamePasswordCredentials {
 
     @Override
     public int getClassId() {
-        return 7;
+        return CLASS_ID;
     }
 
 }

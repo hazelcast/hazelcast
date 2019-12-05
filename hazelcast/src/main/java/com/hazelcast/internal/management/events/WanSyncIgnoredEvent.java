@@ -19,19 +19,26 @@ package com.hazelcast.internal.management.events;
 import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.internal.management.events.EventMetadata.EventType;
 
+import java.util.UUID;
+
 import static com.hazelcast.internal.management.events.EventMetadata.EventType.WAN_SYNC_IGNORED;
 
-public final class WanSyncIgnoredEvent extends AbstractWanEventBase {
+public final class WanSyncIgnoredEvent extends AbstractWanAntiEntropyEventBase {
     private final String reason;
 
-    private WanSyncIgnoredEvent(String wanReplicationName, String targetGroupName, String mapName, String reason) {
-        super(wanReplicationName, targetGroupName, mapName);
-
+    private WanSyncIgnoredEvent(UUID uuid,
+                                String wanReplicationName,
+                                String wanPublisherId,
+                                String mapName,
+                                String reason) {
+        super(uuid, wanReplicationName, wanPublisherId, mapName);
         this.reason = reason;
     }
 
-    public static WanSyncIgnoredEvent enterpriseOnly(String wanReplicationName, String targetGroupName, String mapName) {
-        return new WanSyncIgnoredEvent(wanReplicationName, targetGroupName, mapName,
+    public static WanSyncIgnoredEvent enterpriseOnly(String wanReplicationName,
+                                                     String wanPublisherId,
+                                                     String mapName) {
+        return new WanSyncIgnoredEvent(null, wanReplicationName, wanPublisherId, mapName,
                 "WAN sync is supported for enterprise clusters only.");
     }
 

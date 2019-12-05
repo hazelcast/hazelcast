@@ -18,7 +18,7 @@ package com.hazelcast.config;
 
 import com.hazelcast.config.matcher.WildcardConfigPatternMatcher;
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -28,7 +28,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class WildcardConfigPatternMatcherTest {
 
     @Test
@@ -143,7 +143,7 @@ public class WildcardConfigPatternMatcherTest {
         assertEquals(mapConfig, config.getMapConfig("com.hazelcast.test.myMap"));
     }
 
-    @Test(expected = ConfigurationException.class)
+    @Test(expected = InvalidConfigurationException.class)
     public void testMapConfigWildcardMultipleAmbiguousConfigs() {
         MapConfig mapConfig1 = new MapConfig().setName("com.hazelcast.*");
         MapConfig mapConfig2 = new MapConfig().setName("com.hazelcast.test.*");

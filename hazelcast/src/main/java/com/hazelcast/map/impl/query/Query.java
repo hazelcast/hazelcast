@@ -24,12 +24,12 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.projection.Projection;
 import com.hazelcast.query.PagingPredicate;
 import com.hazelcast.query.Predicate;
-import com.hazelcast.spi.serialization.SerializationService;
-import com.hazelcast.util.IterationType;
+import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.util.IterationType;
 
 import java.io.IOException;
 
-import static com.hazelcast.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 /**
  * Object representing a Query together with all possible co-variants: like a predicate, iterationType, etc.
@@ -117,7 +117,7 @@ public class Query implements IdentifiedDataSerializable {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MapDataSerializerHook.QUERY;
     }
 

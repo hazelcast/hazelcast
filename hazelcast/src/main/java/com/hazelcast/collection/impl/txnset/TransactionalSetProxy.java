@@ -21,12 +21,12 @@ import com.hazelcast.collection.impl.set.SetService;
 import com.hazelcast.collection.impl.txncollection.AbstractTransactionalCollectionProxy;
 import com.hazelcast.collection.impl.txncollection.operations.CollectionReserveAddOperation;
 import com.hazelcast.collection.impl.txncollection.operations.CollectionTxnAddOperation;
-import com.hazelcast.core.TransactionalSet;
+import com.hazelcast.transaction.TransactionalSet;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.impl.Transaction;
-import com.hazelcast.util.ExceptionUtil;
+import com.hazelcast.internal.util.ExceptionUtil;
 
 import java.util.Collection;
 import java.util.HashSet;

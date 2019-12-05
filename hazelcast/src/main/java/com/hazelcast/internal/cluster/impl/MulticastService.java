@@ -19,16 +19,16 @@ package com.hazelcast.internal.cluster.impl;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.JoinConfig;
 import com.hazelcast.config.MulticastConfig;
-import com.hazelcast.instance.Node;
-import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
+import com.hazelcast.instance.impl.Node;
+import com.hazelcast.instance.impl.OutOfMemoryErrorDispatcher;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.nio.Address;
-import com.hazelcast.nio.BufferObjectDataInput;
-import com.hazelcast.nio.BufferObjectDataOutput;
-import com.hazelcast.nio.NodeIOService;
-import com.hazelcast.nio.Packet;
+import com.hazelcast.cluster.Address;
+import com.hazelcast.internal.nio.BufferObjectDataInput;
+import com.hazelcast.internal.nio.BufferObjectDataOutput;
+import com.hazelcast.internal.nio.NodeIOService;
+import com.hazelcast.internal.nio.Packet;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
-import com.hazelcast.util.ByteArrayProcessor;
+import com.hazelcast.internal.util.ByteArrayProcessor;
 
 import java.io.EOFException;
 import java.io.IOException;
@@ -43,9 +43,15 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-import static com.hazelcast.util.EmptyStatement.ignore;
+import static com.hazelcast.config.ConfigAccessor.getActiveMemberNetworkConfig;
+import static com.hazelcast.internal.util.EmptyStatement.ignore;
 
 public final class MulticastService implements Runnable {
+
+    /**
+     * IP address of a multicast group. If not set, configuration is read from the {@link MulticastConfig} configuration.
+     */
+    public static final String SYSTEM_PROPERTY_MULTICAST_GROUP = "hazelcast.multicast.group";
 
     private static final int SEND_OUTPUT_SIZE = 1024;
     private static final int DATAGRAM_BUFFER_SIZE = 64 * 1024;
@@ -54,7 +60,7 @@ public final class MulticastService implements Runnable {
     private static final int SHUTDOWN_TIMEOUT_SECONDS = 5;
     private static final int JOIN_SERIALIZATION_ERROR_SUPPRESSION_MILLIS = 60000;
 
-    private final List<MulticastListener> listeners = new CopyOnWriteArrayList<MulticastListener>();
+    private final List<MulticastListener> listeners = new CopyOnWriteArrayList<>();
     private final Object sendLock = new Object();
     private final CountDownLatch stopLatch = new CountDownLatch(1);
 
@@ -85,7 +91,7 @@ public final class MulticastService implements Runnable {
         this.sendOutput = node.getSerializationService().createObjectDataOutput(SEND_OUTPUT_SIZE);
 
         Config config = node.getConfig();
-        MulticastConfig multicastConfig = config.getNetworkConfig().getJoin().getMulticastConfig();
+        MulticastConfig multicastConfig = getActiveMemberNetworkConfig(config).getJoin().getMulticastConfig();
         this.datagramPacketSend = new DatagramPacket(new byte[0], 0, InetAddress.getByName(multicastConfig.getMulticastGroup()),
                 multicastConfig.getMulticastPort());
         this.datagramPacketReceive = new DatagramPacket(new byte[DATAGRAM_BUFFER_SIZE], DATAGRAM_BUFFER_SIZE);
@@ -96,7 +102,7 @@ public final class MulticastService implements Runnable {
     }
 
     public static MulticastService createMulticastService(Address bindAddress, Node node, Config config, ILogger logger) {
-        JoinConfig join = config.getNetworkConfig().getJoin();
+        JoinConfig join = getActiveMemberNetworkConfig(config).getJoin();
         MulticastConfig multicastConfig = join.getMulticastConfig();
         if (!multicastConfig.isEnabled()) {
             return null;
@@ -122,7 +128,7 @@ public final class MulticastService implements Runnable {
                     // bind address, then we rely on Default Network Interface.
                     logger.warning("Hazelcast is bound to " + bindAddress.getHost() + " and loop-back mode is disabled in "
                             + "the configuration. This could cause multicast auto-discovery issues and render it unable to work. "
-                            + "Check you network connectivity, try to enable the loopback mode and/or "
+                            + "Check your network connectivity, try to enable the loopback mode and/or "
                             + "force -Djava.net.preferIPv4Stack=true on your JVM.");
                 }
             } catch (Exception e) {
@@ -130,7 +136,7 @@ public final class MulticastService implements Runnable {
             }
             multicastSocket.setReceiveBufferSize(SOCKET_BUFFER_SIZE);
             multicastSocket.setSendBufferSize(SOCKET_BUFFER_SIZE);
-            String multicastGroup = System.getProperty("hazelcast.multicast.group");
+            String multicastGroup = System.getProperty(SYSTEM_PROPERTY_MULTICAST_GROUP);
             if (multicastGroup == null) {
                 multicastGroup = multicastConfig.getMulticastGroup();
             }

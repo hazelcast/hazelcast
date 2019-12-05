@@ -20,7 +20,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
-import com.hazelcast.nio.ClassLoaderUtil;
+import com.hazelcast.internal.nio.ClassLoaderUtil;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.bounce.BounceTestConfiguration.DriverType;
 import org.junit.rules.TestRule;
@@ -41,13 +41,13 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReferenceArray;
 
-import static com.hazelcast.nio.ClassLoaderUtil.isClassAvailable;
+import static com.hazelcast.internal.nio.ClassLoaderUtil.isClassAvailable;
 import static com.hazelcast.test.HazelcastTestSupport.sleepSeconds;
 import static com.hazelcast.test.bounce.BounceTestConfiguration.DriverType.ALWAYS_UP_MEMBER;
 import static com.hazelcast.test.bounce.BounceTestConfiguration.DriverType.CLIENT;
 import static com.hazelcast.test.bounce.BounceTestConfiguration.DriverType.MEMBER;
-import static com.hazelcast.util.ExceptionUtil.rethrow;
-import static com.hazelcast.util.StringUtil.timeToString;
+import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
+import static com.hazelcast.internal.util.StringUtil.timeToString;
 import static java.lang.Math.max;
 import static java.lang.System.currentTimeMillis;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -60,8 +60,8 @@ import static java.util.concurrent.TimeUnit.SECONDS;
  * the test, while other members are shutdown and replaced by new instances. For example, if the
  * BounceMemberRule is configured to setup a cluster of 5 members, one will stay up while the rest 4 will
  * be shutting down and replaced by new ones while the test tasks are executed. Use
- * {@link #getSteadyMember()} to obtain a reference to the member that is always up.<br/>
- * <b>Defaults: </b>cluster size 6 members<br/>
+ * {@link #getSteadyMember()} to obtain a reference to the member that is always up.<br>
+ * <b>Defaults: </b>cluster size 6 members<br>
  * <b>Configuration: </b>
  * <ul>
  * <li>Cluster members configuration must be provided in {@link BounceMemberRule#with(Config)} which
@@ -81,7 +81,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
  * </ul>
  * <b>Defaults: </b> when {@code com.hazelcast.client.test.TestHazelcastFactory} is available on the
  * classpath, then defaults to preparing 5 {@code CLIENT} test drivers, otherwise uses
- * {@code MEMBER} as test driver.<br/>
+ * {@code MEMBER} as test driver.<br>
  * <b>Configuration: </b>test driver type and count can be configured with the
  * {@link Builder#driverType(DriverType)} and {@link Builder#driverCount(int)} methods. For more control
  * over the configuration of test drivers, you may also specify a {@link DriverFactory} with
@@ -295,7 +295,7 @@ public class BounceMemberRule implements TestRule {
     private class BouncingClusterStatement extends Statement {
         private final Statement statement;
 
-        public BouncingClusterStatement(Statement statement) {
+        BouncingClusterStatement(Statement statement) {
             this.statement = statement;
         }
 
@@ -523,8 +523,8 @@ public class BounceMemberRule implements TestRule {
             return this;
         }
 
-        public Builder useTerminate() {
-            this.useTerminate = true;
+        public Builder useTerminate(boolean value) {
+            this.useTerminate = value;
             return this;
         }
 

@@ -16,19 +16,19 @@
 
 package com.hazelcast.map;
 
-import com.hazelcast.core.EntryView;
-import com.hazelcast.map.merge.MapMergePolicy;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.spi.merge.MergingValue;
+import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 
 import java.io.IOException;
 
-class TestCustomMapMergePolicy implements MapMergePolicy {
+class TestCustomMapMergePolicy implements SplitBrainMergePolicy<Integer, MergingValue<Integer>> {
 
     @Override
-    public Object merge(String mapName, EntryView mergingEntry, EntryView existingEntry) {
-        if (mergingEntry.getValue() instanceof Integer) {
-            return mergingEntry.getValue();
+    public Integer merge(MergingValue<Integer> mergingEntry, MergingValue<Integer> existingEntry) {
+        if (mergingEntry.getDeserializedValue() instanceof Integer) {
+            return mergingEntry.getDeserializedValue();
         }
         return null;
     }

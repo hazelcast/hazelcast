@@ -16,47 +16,224 @@
 
 package com.hazelcast.partition;
 
+import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.MigrationEvent;
-import com.hazelcast.core.MigrationListener;
-import com.hazelcast.core.PartitionService;
+import com.hazelcast.internal.partition.MigrationInfo;
+import com.hazelcast.internal.partition.MigrationStateImpl;
+import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
 import com.hazelcast.internal.partition.impl.MigrationCommitTest.DelayMigrationStart;
-import com.hazelcast.spi.properties.GroupProperty;
-import com.hazelcast.test.AssertTask;
+import com.hazelcast.internal.util.UuidUtil;
+import com.hazelcast.internal.partition.impl.MigrationInterceptor;
+import com.hazelcast.internal.partition.impl.MigrationStats;
+import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
+import org.hamcrest.Matchers;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.util.UUID;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 
+import static com.hazelcast.internal.cluster.impl.AdvancedClusterStateTest.changeClusterStateEventually;
+import static org.hamcrest.Matchers.greaterThan;
+import static org.hamcrest.Matchers.greaterThanOrEqualTo;
+import static org.hamcrest.Matchers.lessThan;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.Matchers.any;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class PartitionMigrationListenerTest extends HazelcastTestSupport {
+
+    @Test
+    public void testMigrationStats_whenMigrationProcessCompletes() {
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
+        HazelcastInstance hz1 = factory.newHazelcastInstance();
+        warmUpPartitions(hz1);
+
+        EventCollectingMigrationListener listener = new EventCollectingMigrationListener();
+        hz1.getPartitionService().addMigrationListener(listener);
+
+        factory.newHazelcastInstance();
+
+        MigrationEventsPack eventsPack = listener.ensureAndGetSingleEventPack();
+        assertMigrationProcessCompleted(eventsPack);
+        assertMigrationProcessEventsConsistent(eventsPack);
+        assertMigrationEventsConsistentWithResult(eventsPack);
+    }
+
+    @Test
+    public void testMigrationStats_whenMigrationProcessRestarts() {
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
+        Config config = new Config();
+        int partitionCount = 100;
+        config.setProperty(ClusterProperty.PARTITION_COUNT.getName(), String.valueOf(partitionCount));
+
+        HazelcastInstance hz = factory.newHazelcastInstance(config);
+        warmUpPartitions(hz);
+
+        InternalPartitionServiceImpl partitionService = (InternalPartitionServiceImpl) getPartitionService(hz);
+        AtomicReference<HazelcastInstance> newInstanceRef = new AtomicReference<>();
+        partitionService.setMigrationInterceptor(new MigrationInterceptor() {
+            @Override
+            public void onMigrationComplete(MigrationParticipant participant, MigrationInfo migration, boolean success) {
+                MigrationStats stats = partitionService.getMigrationManager().getStats();
+                if (stats.getPlannedMigrations() - stats.getCompletedMigrations() < 20) {
+                    // start a new member to restart migrations
+                    partitionService.resetMigrationInterceptor();
+                    HazelcastInstance hz = factory.newHazelcastInstance(config);
+                    assertClusterSize(3, hz);
+                    newInstanceRef.set(hz);
+                }
+            }
+        });
+
+        EventCollectingMigrationListener listener = new EventCollectingMigrationListener();
+        hz.getPartitionService().addMigrationListener(listener);
+
+        // trigger migrations
+        factory.newHazelcastInstance(config);
+
+        // await until 3rd member joins
+        assertClusterSizeEventually(3, hz);
+        assertTrueEventually(() -> assertNotNull(newInstanceRef.get()));
+
+        List<MigrationEventsPack> eventsPackList = listener.ensureAndGetEventPacks(2);
+
+        // 1st migration process, which finishes without completing all migration tasks
+        MigrationEventsPack firstEventsPack = eventsPackList.get(0);
+        assertMigrationProcessCompleted(firstEventsPack);
+        MigrationState migrationResult = firstEventsPack.migrationProcessCompleted;
+        assertThat(migrationResult.getCompletedMigrations(), lessThan(migrationResult.getPlannedMigrations()));
+        assertThat(migrationResult.getRemainingMigrations(), greaterThan(0));
+        assertMigrationEventsConsistentWithResult(firstEventsPack);
+
+        // 2nd migration process finishes by consuming all migration tasks
+        MigrationEventsPack secondEventsPack = eventsPackList.get(1);
+        assertMigrationProcessCompleted(secondEventsPack);
+        assertMigrationProcessEventsConsistent(secondEventsPack);
+        assertMigrationEventsConsistentWithResult(secondEventsPack);
+    }
+
+    @Test
+    public void testMigrationStats_afterPromotions() {
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
+        HazelcastInstance hz1 = factory.newHazelcastInstance();
+        HazelcastInstance hz2 = factory.newHazelcastInstance();
+        HazelcastInstance hz3 = factory.newHazelcastInstance();
+        warmUpPartitions(hz1, hz2, hz3);
+
+        EventCollectingMigrationListener listener = new EventCollectingMigrationListener();
+        hz1.getPartitionService().addMigrationListener(listener);
+
+        hz3.getLifecycleService().terminate();
+
+        // 2 promotions on each node + 1 repartitioning to create missing backups
+        for (MigrationEventsPack eventsPack : listener.ensureAndGetEventPacks(3)) {
+            assertMigrationProcessCompleted(eventsPack);
+            assertMigrationProcessEventsConsistent(eventsPack);
+            assertMigrationEventsConsistentWithResult(eventsPack);
+        }
+    }
+
+    @Test
+    public void testMigrationStats_afterPartitionsLost_when_NO_MIGRATION() {
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
+        Config config = new Config().setProperty(ClusterProperty.PARTITION_COUNT.getName(), "2000");
+        HazelcastInstance[] instances = factory.newInstances(config, 10);
+        assertClusterSizeEventually(instances.length, instances);
+        warmUpPartitions(instances);
+
+        EventCollectingMigrationListener listener = new EventCollectingMigrationListener();
+        instances[0].getPartitionService().addMigrationListener(listener);
+
+        changeClusterStateEventually(instances[0], ClusterState.PASSIVE);
+
+        for (int i = 3; i < instances.length; i++) {
+            instances[i].getLifecycleService().terminate();
+        }
+
+        changeClusterStateEventually(instances[0], ClusterState.NO_MIGRATION);
+
+        // 3 promotions on each remaining node + 1 to assign owners for lost partitions
+        for (MigrationEventsPack eventsPack : listener.ensureAndGetEventPacks(4)) {
+            assertMigrationProcessCompleted(eventsPack);
+            assertMigrationProcessEventsConsistent(eventsPack);
+            assertMigrationEventsConsistentWithResult(eventsPack);
+        }
+    }
+
+    private void assertMigrationProcessCompleted(MigrationEventsPack eventsPack) {
+        assertTrueEventually(() -> assertNotNull(eventsPack.migrationProcessCompleted));
+    }
+
+    private void assertMigrationProcessEventsConsistent(MigrationEventsPack eventsPack) {
+        MigrationState migrationPlan = eventsPack.migrationProcessStarted;
+        assertThat(migrationPlan.getStartTime(), greaterThan(0L));
+        assertThat(migrationPlan.getPlannedMigrations(), greaterThan(0));
+
+        MigrationState migrationResult = eventsPack.migrationProcessCompleted;
+        assertEquals(migrationPlan.getStartTime(), migrationResult.getStartTime());
+        assertThat(migrationResult.getTotalElapsedTime(), greaterThanOrEqualTo(0L));
+        assertEquals(migrationPlan.getPlannedMigrations(), migrationResult.getCompletedMigrations());
+        assertEquals(0, migrationResult.getRemainingMigrations());
+    }
+
+    private void assertMigrationEventsConsistentWithResult(MigrationEventsPack eventsPack) {
+        MigrationState migrationResult = eventsPack.migrationProcessCompleted;
+        List<ReplicaMigrationEvent> migrationsCompleted = eventsPack.migrationsCompleted;
+
+        assertEquals(migrationResult.getCompletedMigrations(), migrationsCompleted.size());
+
+        MigrationState lastProgress = null;
+        for (ReplicaMigrationEvent event : migrationsCompleted) {
+            assertTrue(event.toString(), event.isSuccess());
+            MigrationState progress = event.getMigrationState();
+            assertEquals(migrationResult.getStartTime(), progress.getStartTime());
+            assertEquals(migrationResult.getPlannedMigrations(), progress.getPlannedMigrations());
+
+            if (lastProgress != null) {
+                assertEquals(lastProgress.getCompletedMigrations(), progress.getCompletedMigrations() - 1);
+                assertEquals(lastProgress.getRemainingMigrations(), progress.getRemainingMigrations() + 1);
+                assertThat(progress.getTotalElapsedTime(),
+                        greaterThanOrEqualTo(lastProgress.getTotalElapsedTime() + event.getElapsedTime()));
+            }
+            lastProgress = progress;
+        }
+
+        assertNotNull(lastProgress);
+        assertEquals(migrationResult.getCompletedMigrations(), lastProgress.getCompletedMigrations());
+        assertThat(migrationResult.getTotalElapsedTime(), greaterThanOrEqualTo(lastProgress.getTotalElapsedTime()));
+    }
 
     @Test
     public void testMigrationListenerCalledOnlyOnceWhenMigrationHappens() {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
         Config config = new Config();
         // even partition count to make migration count deterministic
-        final int partitionCount = 10;
-        config.setProperty(GroupProperty.PARTITION_COUNT.getName(), String.valueOf(partitionCount));
+        int partitionCount = 10;
+        config.setProperty(ClusterProperty.PARTITION_COUNT.getName(), String.valueOf(partitionCount));
 
         // hold the migrations until all nodes join so that there will be no retries / failed migrations etc.
         CountDownLatch migrationStartLatch = new CountDownLatch(1);
@@ -65,7 +242,7 @@ public class PartitionMigrationListenerTest extends HazelcastTestSupport {
         HazelcastInstance instance1 = factory.newHazelcastInstance(config);
         warmUpPartitions(instance1);
 
-        final CountingMigrationListener migrationListener = new CountingMigrationListener(partitionCount);
+        CountingMigrationListener migrationListener = new CountingMigrationListener(partitionCount);
         instance1.getPartitionService().addMigrationListener(migrationListener);
 
         HazelcastInstance instance2 = factory.newHazelcastInstance(config);
@@ -74,19 +251,18 @@ public class PartitionMigrationListenerTest extends HazelcastTestSupport {
 
         waitAllForSafeState(instance2, instance1);
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                int startedTotal = getTotal(migrationListener.migrationStarted);
-                int completedTotal = getTotal(migrationListener.migrationCompleted);
+        assertTrueEventually(() -> {
+            assertEquals(1, migrationListener.migrationStarted.get());
+            assertEquals(1, migrationListener.migrationCompleted.get());
 
-                assertEquals(partitionCount / 2, startedTotal);
-                assertEquals(startedTotal, completedTotal);
-            }
+            int completed = getTotal(migrationListener.replicaMigrationCompleted);
+            int failed = getTotal(migrationListener.replicaMigrationFailed);
+
+            assertEquals(partitionCount, completed);
+            assertEquals(0, failed);
         });
 
-        assertAllLessThanOrEqual(migrationListener.migrationStarted, 1);
-        assertAllLessThanOrEqual(migrationListener.migrationCompleted, 1);
+        assertAllLessThanOrEqual(migrationListener.replicaMigrationCompleted, 1);
     }
 
     private int getTotal(AtomicInteger[] integers) {
@@ -113,8 +289,8 @@ public class PartitionMigrationListenerTest extends HazelcastTestSupport {
 
         MigrationListener listener = mock(MigrationListener.class);
 
-        String id1 = partitionService.addMigrationListener(listener);
-        String id2 = partitionService.addMigrationListener(listener);
+        UUID id1 = partitionService.addMigrationListener(listener);
+        UUID id2 = partitionService.addMigrationListener(listener);
 
         // first we check if the registration id's are different
         assertNotEquals(id1, id2);
@@ -133,7 +309,7 @@ public class PartitionMigrationListenerTest extends HazelcastTestSupport {
         HazelcastInstance hz = createHazelcastInstance();
         PartitionService partitionService = hz.getPartitionService();
 
-        boolean result = partitionService.removeMigrationListener("notExist");
+        boolean result = partitionService.removeMigrationListener(UuidUtil.newUnsecureUUID());
 
         assertFalse(result);
     }
@@ -146,7 +322,7 @@ public class PartitionMigrationListenerTest extends HazelcastTestSupport {
 
         MigrationListener listener = mock(MigrationListener.class);
 
-        String id = partitionService.addMigrationListener(listener);
+        UUID id = partitionService.addMigrationListener(listener);
         boolean removed = partitionService.removeMigrationListener(id);
 
         assertTrue(removed);
@@ -156,47 +332,117 @@ public class PartitionMigrationListenerTest extends HazelcastTestSupport {
         warmUpPartitions(hz1, hz2);
 
         // and verify that the listener isn't called.
-        verify(listener, never()).migrationStarted(any(MigrationEvent.class));
+        verify(listener, never()).migrationStarted(any(MigrationStateImpl.class));
+        verify(listener, never()).replicaMigrationCompleted(any(ReplicaMigrationEvent.class));
     }
 
 
     @SuppressWarnings("SameParameterValue")
     private void assertAllLessThanOrEqual(AtomicInteger[] integers, int expected) {
         for (AtomicInteger integer : integers) {
-            assertTrue(integer.get() <= expected);
+            assertThat(integer.get(), Matchers.lessThanOrEqualTo(expected));
         }
     }
 
     private static class CountingMigrationListener implements MigrationListener {
 
-        AtomicInteger[] migrationStarted;
-        AtomicInteger[] migrationCompleted;
-        AtomicInteger[] migrationFailed;
+        final AtomicInteger migrationStarted;
+        final AtomicInteger migrationCompleted;
+        final AtomicInteger[] replicaMigrationCompleted;
+        final AtomicInteger[] replicaMigrationFailed;
 
         CountingMigrationListener(int partitionCount) {
-            migrationStarted = new AtomicInteger[partitionCount];
-            migrationCompleted = new AtomicInteger[partitionCount];
-            migrationFailed = new AtomicInteger[partitionCount];
+            migrationStarted = new AtomicInteger();
+            migrationCompleted = new AtomicInteger();
+            replicaMigrationCompleted = new AtomicInteger[partitionCount];
+            replicaMigrationFailed = new AtomicInteger[partitionCount];
             for (int i = 0; i < partitionCount; i++) {
-                migrationStarted[i] = new AtomicInteger();
-                migrationCompleted[i] = new AtomicInteger();
-                migrationFailed[i] = new AtomicInteger();
+                replicaMigrationCompleted[i] = new AtomicInteger();
+                replicaMigrationFailed[i] = new AtomicInteger();
             }
         }
 
         @Override
-        public void migrationStarted(MigrationEvent migrationEvent) {
-            migrationStarted[migrationEvent.getPartitionId()].incrementAndGet();
+        public void migrationStarted(MigrationState state) {
+            migrationStarted.incrementAndGet();
         }
 
         @Override
-        public void migrationCompleted(MigrationEvent migrationEvent) {
-            migrationCompleted[migrationEvent.getPartitionId()].incrementAndGet();
+        public void migrationFinished(MigrationState state) {
+            migrationCompleted.incrementAndGet();
         }
 
         @Override
-        public void migrationFailed(MigrationEvent migrationEvent) {
-            migrationFailed[migrationEvent.getPartitionId()].incrementAndGet();
+        public void replicaMigrationCompleted(ReplicaMigrationEvent event) {
+            assertTrue(event.isSuccess());
+            replicaMigrationCompleted[event.getPartitionId()].incrementAndGet();
         }
+
+        @Override
+        public void replicaMigrationFailed(ReplicaMigrationEvent event) {
+            assertFalse(event.isSuccess());
+            replicaMigrationFailed[event.getPartitionId()].incrementAndGet();
+        }
+    }
+
+    // Migration events are published and processed in order in a single event thread.
+    // So we can rely on that here...
+    private static class EventCollectingMigrationListener implements MigrationListener {
+        final List<MigrationEventsPack> allEventPacks = Collections.synchronizedList(new ArrayList<>());
+        volatile MigrationEventsPack currentEvents;
+
+        @Override
+        public void migrationStarted(MigrationState state) {
+            assertNull(currentEvents);
+            currentEvents = new MigrationEventsPack();
+            currentEvents.migrationProcessStarted = state;
+        }
+
+        @Override
+        public void migrationFinished(MigrationState state) {
+            assertNotNull(currentEvents);
+            currentEvents.migrationProcessCompleted = state;
+            allEventPacks.add(currentEvents);
+            currentEvents = null;
+        }
+
+        @Override
+        public void replicaMigrationCompleted(ReplicaMigrationEvent event) {
+            assertNotNull(currentEvents);
+            currentEvents.migrationsCompleted.add(event);
+        }
+
+        @Override
+        public void replicaMigrationFailed(ReplicaMigrationEvent event) {
+            assertNotNull(currentEvents);
+            currentEvents.migrationsCompleted.add(event);
+        }
+
+        List<MigrationEventsPack> ensureAndGetEventPacks(int count) {
+            awaitEventPacksComplete(count);
+            return allEventPacks.subList(0, count);
+        }
+
+        MigrationEventsPack ensureAndGetSingleEventPack() {
+            return ensureAndGetEventPacks(1).get(0);
+        }
+
+        void awaitEventPacksComplete(int count) {
+            assertTrueEventually(() -> {
+                assertThat(allEventPacks.size(), greaterThanOrEqualTo(count));
+                assertNull(currentEvents);
+            });
+        }
+
+        void reset() {
+            allEventPacks.clear();
+            currentEvents = null;
+        }
+    }
+
+    private static class MigrationEventsPack {
+        volatile MigrationState migrationProcessStarted;
+        volatile MigrationState migrationProcessCompleted;
+        final List<ReplicaMigrationEvent> migrationsCompleted = Collections.synchronizedList(new ArrayList<>());
     }
 }

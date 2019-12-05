@@ -17,14 +17,15 @@
 package com.hazelcast.config.matcher;
 
 import com.hazelcast.config.ConfigPatternMatcher;
-import com.hazelcast.config.ConfigurationException;
+import com.hazelcast.config.InvalidConfigurationException;
+import com.hazelcast.internal.config.ConfigUtils;
 
 import java.util.regex.Pattern;
 
 /**
  * This {@code ConfigPatternMatcher} uses Java regular expressions for matching.
  * <p>
- * Throws {@link com.hazelcast.config.ConfigurationException} is multiple configurations are found.
+ * Throws {@link com.hazelcast.config.InvalidConfigurationException} is multiple configurations are found.
  */
 public class RegexConfigPatternMatcher implements ConfigPatternMatcher {
 
@@ -39,16 +40,35 @@ public class RegexConfigPatternMatcher implements ConfigPatternMatcher {
     }
 
     @Override
-    public String matches(Iterable<String> configPatterns, String itemName) throws ConfigurationException {
+    public String matches(Iterable<String> configPatterns, String itemName) throws InvalidConfigurationException {
         String candidate = null;
         for (String pattern : configPatterns) {
             if (Pattern.compile(pattern, flags).matcher(itemName).find()) {
                 if (candidate != null) {
-                    throw new ConfigurationException(itemName, candidate, pattern);
+                    throw ConfigUtils.createAmbigiousConfigrationException(itemName, candidate, pattern);
                 }
                 candidate = pattern;
             }
         }
         return candidate;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        RegexConfigPatternMatcher that = (RegexConfigPatternMatcher) o;
+
+        return flags == that.flags;
+    }
+
+    @Override
+    public int hashCode() {
+        return flags;
     }
 }

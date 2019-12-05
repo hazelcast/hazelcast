@@ -16,12 +16,12 @@
 
 package com.hazelcast.cache;
 
-import com.hazelcast.monitor.NearCacheStats;
+import com.hazelcast.nearcache.NearCacheStats;
 
 /**
  * Cache statistics
  * <p>
- *     Cache statistics are accumulated starting from the time a cache is created. <br/>
+ *     Cache statistics are accumulated starting from the time a cache is created. <br>
  *     An instance of this class represents local node values only! For an accumulated view
  *     on cluster level, the user has to retrieve all nodes statistics and aggregate values
  *     on his own.
@@ -33,7 +33,6 @@ import com.hazelcast.monitor.NearCacheStats;
  *       CacheStatistics cacheStatistics = unwrappedCache.getLocalCacheStatistics();
  *       long cacheHits = cacheStatistics.getCacheHits();
  *     </pre>
- * </p>
  *
  * @since 3.3.1
  */

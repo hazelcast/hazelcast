@@ -16,7 +16,7 @@
 
 package com.hazelcast.config;
 
-import com.hazelcast.util.StringUtil;
+import com.hazelcast.internal.util.StringUtil;
 
 import java.util.Arrays;
 
@@ -56,7 +56,7 @@ public enum CacheDeserializedValues {
     /**
      * Create instance from String
      *
-     * @param string
+     * @param string the string value to parse
      * @return instance of {@link CacheDeserializedValues}
      * @throws IllegalArgumentException when unknown value is passed
      */

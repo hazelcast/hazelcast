@@ -18,13 +18,15 @@ package com.hazelcast.client.impl.protocol.task.map;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.MapAddEntryListenerToKeyWithPredicateCodec;
-import com.hazelcast.instance.Node;
+import com.hazelcast.instance.impl.Node;
 import com.hazelcast.map.impl.EventListenerFilter;
 import com.hazelcast.map.impl.query.QueryEventFilter;
-import com.hazelcast.nio.Connection;
+import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.Predicate;
-import com.hazelcast.spi.EventFilter;
+import com.hazelcast.spi.impl.eventservice.EventFilter;
+
+import java.util.UUID;
 
 public class MapAddEntryListenerToKeyWithPredicateMessageTask
         extends AbstractMapAddEntryListenerMessageTask<MapAddEntryListenerToKeyWithPredicateCodec.RequestParameters> {
@@ -52,12 +54,12 @@ public class MapAddEntryListenerToKeyWithPredicateMessageTask
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return MapAddEntryListenerToKeyWithPredicateCodec.encodeResponse((String) response);
+        return MapAddEntryListenerToKeyWithPredicateCodec.encodeResponse((UUID) response);
     }
 
     @Override
     protected ClientMessage encodeEvent(Data keyData, Data newValueData, Data oldValueData,
-                                        Data meringValueData, int type, String uuid, int numberOfAffectedEntries) {
+                                        Data meringValueData, int type, UUID uuid, int numberOfAffectedEntries) {
         return MapAddEntryListenerToKeyWithPredicateCodec.encodeEntryEvent(keyData, newValueData,
                 oldValueData, meringValueData, type, uuid, numberOfAffectedEntries);
     }

@@ -16,7 +16,7 @@
 
 package com.hazelcast.spi.impl.operationservice.impl;
 
-import com.hazelcast.spi.UrgentSystemOperation;
+import com.hazelcast.spi.impl.operationservice.UrgentSystemOperation;
 
 public class DummyPriorityOperation extends DummyOperation implements UrgentSystemOperation {
 }

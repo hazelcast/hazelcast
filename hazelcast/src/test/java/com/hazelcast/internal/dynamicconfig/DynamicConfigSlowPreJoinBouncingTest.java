@@ -17,25 +17,27 @@
 package com.hazelcast.internal.dynamicconfig;
 
 import com.hazelcast.config.Config;
+import com.hazelcast.config.ConfigAccessor;
 import com.hazelcast.config.ServiceConfig;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.PreJoinAwareService;
+import com.hazelcast.internal.services.PreJoinAwareService;
+import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.SlowTest;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({SlowTest.class, ParallelTest.class})
+@Category({SlowTest.class, ParallelJVMTest.class})
 public class DynamicConfigSlowPreJoinBouncingTest extends DynamicConfigBouncingTest {
 
     public Config getConfig() {
         DelaysPreparingPreJoinOpService service = new DelaysPreparingPreJoinOpService();
         Config config = new Config();
-        config.getServicesConfig().addServiceConfig(
-                new ServiceConfig().setEnabled(true).setName(DelaysPreparingPreJoinOpService.SERVICE_NAME)
-                        .setImplementation(service));
+        ServiceConfig serviceConfig = new ServiceConfig().setEnabled(true)
+                                                         .setName(DelaysPreparingPreJoinOpService.SERVICE_NAME)
+                                                         .setImplementation(service);
+        ConfigAccessor.getServicesConfig(config).addServiceConfig(serviceConfig);
         return config;
     }
 
@@ -43,7 +45,7 @@ public class DynamicConfigSlowPreJoinBouncingTest extends DynamicConfigBouncingT
 
         static final String SERVICE_NAME = "delaying-pre-join-op-prep-service";
 
-        public DelaysPreparingPreJoinOpService() {
+        DelaysPreparingPreJoinOpService() {
         }
 
         @Override

@@ -18,9 +18,9 @@ package com.hazelcast.internal.nearcache;
 
 import com.hazelcast.internal.adapter.DataStructureAdapter;
 import com.hazelcast.internal.nearcache.impl.invalidation.StaleReadDetector;
-import com.hazelcast.monitor.NearCacheStats;
+import com.hazelcast.nearcache.NearCacheStats;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.InitializingObject;
+import com.hazelcast.spi.impl.InitializingObject;
 
 /**
  * {@link NearCacheRecordStore} is the contract point to store keys and values as
@@ -109,9 +109,9 @@ public interface NearCacheRecordStore<K, V> extends InitializingObject {
     NearCacheRecord getRecord(K key);
 
     /**
-     * Get the {@link com.hazelcast.monitor.NearCacheStats} instance to monitor this record store.
+     * Get the {@link NearCacheStats} instance to monitor this record store.
      *
-     * @return the {@link com.hazelcast.monitor.NearCacheStats} instance to monitor this record store.
+     * @return the {@link NearCacheStats} instance to monitor this record store.
      */
     NearCacheStats getNearCacheStats();
 

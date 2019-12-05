@@ -23,10 +23,8 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import java.io.IOException;
 
-import static com.hazelcast.map.impl.query.Target.TargetMode.ALL_NODES;
-import static com.hazelcast.map.impl.query.Target.TargetMode.LOCAL_NODE;
 import static com.hazelcast.map.impl.query.Target.TargetMode.PARTITION_OWNER;
-import static com.hazelcast.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 /**
  * Target for a query.
@@ -75,7 +73,7 @@ public class Target implements IdentifiedDataSerializable {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MapDataSerializerHook.TARGET;
     }
 

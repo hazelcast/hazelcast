@@ -20,11 +20,10 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IMap;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.test.backup.BackupAccessor;
 import com.hazelcast.test.environment.RuntimeAvailableProcessorsRule;
@@ -47,7 +46,7 @@ import static com.hazelcast.test.backup.TestBackupUtils.newMapAccessor;
 
 @RunWith(Parameterized.class)
 @UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class MapSetTtlBackupTest extends HazelcastTestSupport {
 
     private static final int CLUSTER_SIZE = 3;
@@ -106,16 +105,16 @@ public class MapSetTtlBackupTest extends HazelcastTestSupport {
         String mapName = randomMapName();
         HazelcastInstance instance = instances[0];
 
-        putKeys(instance, mapName, 10, 0, 20);
+        putKeys(instance, mapName, 15, 0, 20);
         setTtl(instance, mapName, 0, 20, 0, TimeUnit.SECONDS);
-        sleepAtLeastMillis(10100);
+        sleepAtLeastMillis(15100);
         for (int i = 0; i < CLUSTER_SIZE; i++) {
             assertKeys(instances, mapName, 0, 20);
         }
     }
 
     protected Config getConfig() {
-        return new Config();
+        return smallInstanceConfig();
     }
 
     @SuppressWarnings("SameParameterValue")

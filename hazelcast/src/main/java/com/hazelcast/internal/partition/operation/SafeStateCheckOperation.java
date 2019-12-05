@@ -18,14 +18,15 @@ package com.hazelcast.internal.partition.operation;
 
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.partition.impl.PartitionDataSerializerHook;
+import com.hazelcast.partition.PartitionService;
 import com.hazelcast.spi.impl.AllowedDuringPassiveState;
 
 /**
  * Checks whether a node is safe or not.
  * Safe means, first backups of partitions those owned by local member are sync with primary.
  *
- * @see com.hazelcast.core.PartitionService#isClusterSafe
- * @see com.hazelcast.core.PartitionService#isMemberSafe
+ * @see PartitionService#isClusterSafe
+ * @see PartitionService#isMemberSafe
  */
 public class SafeStateCheckOperation extends AbstractPartitionOperation implements AllowedDuringPassiveState {
 
@@ -43,7 +44,7 @@ public class SafeStateCheckOperation extends AbstractPartitionOperation implemen
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return PartitionDataSerializerHook.SAFE_STATE_CHECK;
     }
 }

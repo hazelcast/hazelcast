@@ -20,14 +20,14 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapStoreConfig;
-import com.hazelcast.core.MapStore;
+import com.hazelcast.map.MapStore;
 import com.hazelcast.journal.AbstractEventJournalBasicTest;
 import com.hazelcast.journal.EventJournalTestContext;
-import com.hazelcast.map.journal.EventJournalMapEvent;
+import com.hazelcast.map.EventJournalMapEvent;
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.util.MapUtil;
+import com.hazelcast.internal.util.MapUtil;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
@@ -38,7 +38,7 @@ import java.util.Map;
 import static com.hazelcast.config.MapStoreConfig.InitialLoadMode.EAGER;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class MapEventJournalBasicTest<K, V> extends AbstractEventJournalBasicTest<EventJournalMapEvent> {
 
     private static final String NON_EXPIRING_MAP = "mappy";
@@ -46,21 +46,20 @@ public class MapEventJournalBasicTest<K, V> extends AbstractEventJournalBasicTes
 
     @Override
     protected Config getConfig() {
-        final MapStoreConfig mapStoreConfig = new MapStoreConfig()
+        Config config = super.getConfig();
+        MapStoreConfig mapStoreConfig = new MapStoreConfig()
                 .setEnabled(true)
                 .setInitialLoadMode(EAGER)
                 .setImplementation(new CustomMapStore());
 
-        final MapConfig nonExpiringMapConfig = new MapConfig(NON_EXPIRING_MAP)
-                .setInMemoryFormat(getInMemoryFormat())
-                .setMapStoreConfig(mapStoreConfig);
+        config.getMapConfig(NON_EXPIRING_MAP)
+              .setInMemoryFormat(getInMemoryFormat())
+              .setMapStoreConfig(mapStoreConfig);
 
-        final MapConfig expiringMapConfig = new MapConfig(EXPIRING_MAP).setTimeToLiveSeconds(1)
-                                                                       .setInMemoryFormat(getInMemoryFormat());
+        config.getMapConfig(EXPIRING_MAP).setTimeToLiveSeconds(1)
+              .setInMemoryFormat(getInMemoryFormat());
 
-        return super.getConfig()
-                    .addMapConfig(nonExpiringMapConfig)
-                    .addMapConfig(expiringMapConfig);
+        return config;
     }
 
     protected InMemoryFormat getInMemoryFormat() {

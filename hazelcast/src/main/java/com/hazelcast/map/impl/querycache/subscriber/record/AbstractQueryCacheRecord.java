@@ -16,7 +16,7 @@
 
 package com.hazelcast.map.impl.querycache.subscriber.record;
 
-import com.hazelcast.util.Clock;
+import com.hazelcast.internal.util.Clock;
 
 import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 
@@ -29,11 +29,11 @@ import static java.util.concurrent.atomic.AtomicIntegerFieldUpdater.newUpdater;
 abstract class AbstractQueryCacheRecord implements QueryCacheRecord {
 
     private static final AtomicIntegerFieldUpdater<AbstractQueryCacheRecord> ACCESS_HIT =
-            newUpdater(AbstractQueryCacheRecord.class, "accessHit");
+            newUpdater(AbstractQueryCacheRecord.class, "hits");
 
     private final long creationTime;
 
-    private volatile int accessHit;
+    private volatile int hits;
     private volatile long accessTime = -1L;
 
     AbstractQueryCacheRecord() {
@@ -41,8 +41,8 @@ abstract class AbstractQueryCacheRecord implements QueryCacheRecord {
     }
 
     @Override
-    public int getAccessHit() {
-        return accessHit;
+    public long getHits() {
+        return hits;
     }
 
     @Override

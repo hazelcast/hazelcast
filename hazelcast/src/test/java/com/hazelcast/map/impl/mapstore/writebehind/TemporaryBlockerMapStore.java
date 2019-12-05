@@ -16,7 +16,7 @@
 
 package com.hazelcast.map.impl.mapstore.writebehind;
 
-import com.hazelcast.core.MapStoreAdapter;
+import com.hazelcast.map.MapStoreAdapter;
 
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;

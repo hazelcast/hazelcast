@@ -19,20 +19,19 @@ package com.hazelcast.cluster;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastOverloadException;
-import com.hazelcast.instance.Node;
-import com.hazelcast.instance.NodeState;
-import com.hazelcast.nio.Address;
-import com.hazelcast.spi.AbstractWaitNotifyKey;
-import com.hazelcast.spi.BlockingOperation;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.WaitNotifyKey;
-import com.hazelcast.spi.impl.operationservice.InternalOperationService;
-import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.instance.impl.Node;
+import com.hazelcast.instance.impl.NodeState;
+import com.hazelcast.spi.impl.operationservice.AbstractWaitNotifyKey;
+import com.hazelcast.spi.impl.operationservice.BlockingOperation;
+import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.spi.impl.operationservice.WaitNotifyKey;
+import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
+import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -48,7 +47,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class ClusterShutdownTest extends HazelcastTestSupport {
 
     @Test
@@ -86,13 +85,13 @@ public class ClusterShutdownTest extends HazelcastTestSupport {
     @Test
     public void clusterShutdown_shouldNotBeRejected_byBackpressure() throws Exception {
         Config config = new Config();
-        config.setProperty(GroupProperty.PARTITION_COUNT.toString(), "1");
-        config.setProperty(GroupProperty.BACKPRESSURE_ENABLED.toString(), "true");
-        config.setProperty(GroupProperty.BACKPRESSURE_BACKOFF_TIMEOUT_MILLIS.toString(), "100");
-        config.setProperty(GroupProperty.BACKPRESSURE_MAX_CONCURRENT_INVOCATIONS_PER_PARTITION.toString(), "3");
+        config.setProperty(ClusterProperty.PARTITION_COUNT.toString(), "1");
+        config.setProperty(ClusterProperty.BACKPRESSURE_ENABLED.toString(), "true");
+        config.setProperty(ClusterProperty.BACKPRESSURE_BACKOFF_TIMEOUT_MILLIS.toString(), "100");
+        config.setProperty(ClusterProperty.BACKPRESSURE_MAX_CONCURRENT_INVOCATIONS_PER_PARTITION.toString(), "3");
 
         HazelcastInstance hz = createHazelcastInstance(config);
-        final InternalOperationService operationService = getOperationService(hz);
+        final OperationServiceImpl operationService = getOperationService(hz);
         final Address address = getAddress(hz);
 
         for (int i = 0; i < 10; i++) {
@@ -120,6 +119,7 @@ public class ClusterShutdownTest extends HazelcastTestSupport {
     private HazelcastInstance testClusterShutdownWithSingleMember(ClusterState clusterState) {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(4);
         HazelcastInstance[] instances = factory.newInstances();
+        assertClusterSizeEventually(4, instances);
 
         HazelcastInstance hz1 = instances[0];
         Node[] nodes = getNodes(instances);
@@ -135,6 +135,7 @@ public class ClusterShutdownTest extends HazelcastTestSupport {
     private void testClusterShutdownWithMultipleMembers(int clusterSize, int nodeCountToTriggerShutdown) {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(clusterSize);
         HazelcastInstance[] instances = factory.newInstances();
+        assertClusterSizeEventually(clusterSize, instances);
 
         instances[0].getCluster().changeClusterState(ClusterState.PASSIVE);
         Node[] nodes = getNodes(instances);

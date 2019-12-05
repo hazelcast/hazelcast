@@ -23,20 +23,21 @@ import com.hazelcast.internal.nearcache.NearCache;
 import com.hazelcast.internal.nearcache.NearCacheRecordStore;
 import com.hazelcast.internal.nearcache.impl.store.NearCacheDataRecordStore;
 import com.hazelcast.internal.nearcache.impl.store.NearCacheObjectRecordStore;
-import com.hazelcast.monitor.NearCacheStats;
+import com.hazelcast.nearcache.NearCacheStats;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.TaskScheduler;
+import com.hazelcast.spi.impl.executionservice.TaskScheduler;
 import com.hazelcast.spi.properties.HazelcastProperties;
-import com.hazelcast.spi.serialization.SerializationService;
+import com.hazelcast.internal.serialization.SerializationService;
 
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.hazelcast.config.NearCacheConfig.DEFAULT_MEMORY_FORMAT;
-import static com.hazelcast.util.Preconditions.checkNotInstanceOf;
+import static com.hazelcast.internal.util.Preconditions.checkNotInstanceOf;
 
 public class DefaultNearCache<K, V> implements NearCache<K, V> {
+
     protected final String name;
     protected final TaskScheduler scheduler;
     protected final ClassLoader classLoader;

@@ -16,12 +16,11 @@
 
 package com.hazelcast.transaction.impl.xa;
 
-import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.spi.InternalCompletableFuture;
-import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.OperationService;
-import com.hazelcast.spi.partition.IPartitionService;
+import com.hazelcast.spi.impl.InternalCompletableFuture;
+import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.spi.impl.operationservice.OperationService;
+import com.hazelcast.internal.partition.IPartitionService;
 import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.TransactionNotActiveException;
 import com.hazelcast.transaction.TransactionOptions.TransactionType;
@@ -29,16 +28,19 @@ import com.hazelcast.transaction.impl.Transaction;
 import com.hazelcast.transaction.impl.TransactionLog;
 import com.hazelcast.transaction.impl.TransactionLogRecord;
 import com.hazelcast.transaction.impl.xa.operations.PutRemoteTransactionOperation;
-import com.hazelcast.util.Clock;
-import com.hazelcast.util.ExceptionUtil;
-import com.hazelcast.util.FutureUtil;
-import com.hazelcast.util.UuidUtil;
+import com.hazelcast.internal.util.Clock;
+import com.hazelcast.internal.util.ExceptionUtil;
+import com.hazelcast.internal.util.FutureUtil;
+import com.hazelcast.internal.util.UuidUtil;
 
 import javax.transaction.xa.XAException;
 import javax.transaction.xa.Xid;
+import java.util.Collection;
 import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
+import java.util.function.BiConsumer;
 import java.util.logging.Level;
 
 import static com.hazelcast.transaction.impl.Transaction.State.ACTIVE;
@@ -51,9 +53,9 @@ import static com.hazelcast.transaction.impl.Transaction.State.PREPARING;
 import static com.hazelcast.transaction.impl.Transaction.State.ROLLED_BACK;
 import static com.hazelcast.transaction.impl.Transaction.State.ROLLING_BACK;
 import static com.hazelcast.transaction.impl.xa.XAService.SERVICE_NAME;
-import static com.hazelcast.util.FutureUtil.RETHROW_TRANSACTION_EXCEPTION;
-import static com.hazelcast.util.FutureUtil.logAllExceptions;
-import static com.hazelcast.util.FutureUtil.waitWithDeadline;
+import static com.hazelcast.internal.util.FutureUtil.RETHROW_TRANSACTION_EXCEPTION;
+import static com.hazelcast.internal.util.FutureUtil.logAllExceptions;
+import static com.hazelcast.internal.util.FutureUtil.waitWithDeadline;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -74,9 +76,9 @@ public final class XATransaction implements Transaction {
 
     private final NodeEngine nodeEngine;
     private final long timeoutMillis;
-    private final String txnId;
+    private final UUID txnId;
     private final SerializableXID xid;
-    private final String txOwnerUuid;
+    private final UUID txOwnerUuid;
     private final TransactionLog transactionLog;
 
     private State state = NO_TXN;
@@ -84,11 +86,11 @@ public final class XATransaction implements Transaction {
 
     private boolean originatedFromClient;
 
-    public XATransaction(NodeEngine nodeEngine, Xid xid, String txOwnerUuid, int timeout, boolean originatedFromClient) {
+    public XATransaction(NodeEngine nodeEngine, Xid xid, UUID txOwnerUuid, int timeout, boolean originatedFromClient) {
         this.nodeEngine = nodeEngine;
         this.transactionLog = new TransactionLog();
         this.timeoutMillis = SECONDS.toMillis(timeout);
-        this.txnId = UuidUtil.newUnsecureUuidString();
+        this.txnId = UuidUtil.newUnsecureUUID();
         this.xid = new SerializableXID(xid.getFormatId(), xid.getGlobalTransactionId(), xid.getBranchQualifier());
         this.txOwnerUuid = txOwnerUuid == null ? nodeEngine.getLocalMember().getUuid() : txOwnerUuid;
 
@@ -99,8 +101,8 @@ public final class XATransaction implements Transaction {
         this.originatedFromClient = originatedFromClient;
     }
 
-    public XATransaction(NodeEngine nodeEngine, List<TransactionLogRecord> logs,
-                         String txnId, SerializableXID xid, String txOwnerUuid, long timeoutMillis, long startTime) {
+    public XATransaction(NodeEngine nodeEngine, Collection<TransactionLogRecord> logs,
+                         UUID txnId, SerializableXID xid, UUID txOwnerUuid, long timeoutMillis, long startTime) {
         this.nodeEngine = nodeEngine;
         this.transactionLog = new TransactionLog(logs);
         this.timeoutMillis = timeoutMillis;
@@ -145,7 +147,7 @@ public final class XATransaction implements Transaction {
 
     private void putTransactionInfoRemote() throws ExecutionException, InterruptedException {
         PutRemoteTransactionOperation operation = new PutRemoteTransactionOperation(
-                transactionLog.getRecordList(), txnId, xid, txOwnerUuid, timeoutMillis, startTime);
+                transactionLog.getRecords(), txnId, xid, txOwnerUuid, timeoutMillis, startTime);
         OperationService operationService = nodeEngine.getOperationService();
         IPartitionService partitionService = nodeEngine.getPartitionService();
         int partitionId = partitionService.getPartitionId(xid);
@@ -174,7 +176,7 @@ public final class XATransaction implements Transaction {
         }
     }
 
-    public void commitAsync(ExecutionCallback callback) {
+    public void commitAsync(BiConsumer callback) {
         if (state != PREPARED) {
             throw new IllegalStateException("Transaction is not prepared");
         }
@@ -202,7 +204,7 @@ public final class XATransaction implements Transaction {
         }
     }
 
-    public void rollbackAsync(ExecutionCallback callback) {
+    public void rollbackAsync(BiConsumer callback) {
         if (state == NO_TXN || state == ROLLED_BACK) {
             throw new IllegalStateException("Transaction is not active");
         }
@@ -213,7 +215,7 @@ public final class XATransaction implements Transaction {
     }
 
     @Override
-    public String getTxnId() {
+    public UUID getTxnId() {
         return txnId;
     }
 
@@ -221,8 +223,8 @@ public final class XATransaction implements Transaction {
         return startTime;
     }
 
-    public List<TransactionLogRecord> getTransactionRecords() {
-        return transactionLog.getRecordList();
+    public Collection<TransactionLogRecord> getTransactionRecords() {
+        return transactionLog.getRecords();
     }
 
     @Override
@@ -260,7 +262,7 @@ public final class XATransaction implements Transaction {
     }
 
     @Override
-    public String getOwnerUuid() {
+    public UUID getOwnerUuid() {
         return txOwnerUuid;
     }
 

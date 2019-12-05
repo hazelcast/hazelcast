@@ -16,9 +16,10 @@
 
 package com.hazelcast.internal.nearcache.impl.invalidation;
 
-import com.hazelcast.core.IFunction;
-import com.hazelcast.spi.EventRegistration;
-import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.impl.eventservice.EventRegistration;
+import com.hazelcast.spi.impl.NodeEngine;
+
+import java.util.function.Function;
 
 
 /**
@@ -26,7 +27,7 @@ import com.hazelcast.spi.NodeEngine;
  */
 public class NonStopInvalidator extends Invalidator {
 
-    public NonStopInvalidator(String serviceName, IFunction<EventRegistration, Boolean> eventFilter, NodeEngine nodeEngine) {
+    public NonStopInvalidator(String serviceName, Function<EventRegistration, Boolean> eventFilter, NodeEngine nodeEngine) {
         super(serviceName, eventFilter, nodeEngine);
     }
 

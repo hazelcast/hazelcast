@@ -18,7 +18,7 @@ package com.hazelcast.internal.ascii;
 
 import java.nio.ByteBuffer;
 
-import static com.hazelcast.util.StringUtil.bytesToString;
+import static com.hazelcast.internal.util.StringUtil.bytesToString;
 
 public class NoOpCommand extends AbstractTextCommand {
 

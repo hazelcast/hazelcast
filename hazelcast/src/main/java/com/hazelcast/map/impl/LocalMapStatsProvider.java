@@ -16,28 +16,28 @@
 
 package com.hazelcast.map.impl;
 
+import com.hazelcast.cluster.Address;
 import com.hazelcast.internal.cluster.ClusterService;
+import com.hazelcast.internal.monitor.LocalRecordStoreStats;
+import com.hazelcast.internal.monitor.impl.IndexesStats;
+import com.hazelcast.internal.monitor.impl.LocalMapStatsImpl;
+import com.hazelcast.internal.monitor.impl.OnDemandIndexStats;
+import com.hazelcast.internal.monitor.impl.PerIndexStats;
 import com.hazelcast.internal.nearcache.NearCache;
+import com.hazelcast.internal.partition.IPartition;
+import com.hazelcast.internal.partition.IPartitionService;
+import com.hazelcast.internal.util.ConcurrencyUtil;
+import com.hazelcast.internal.util.ConstructorFunction;
+import com.hazelcast.internal.util.ExceptionUtil;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.map.LocalMapStats;
 import com.hazelcast.map.impl.nearcache.MapNearCacheManager;
 import com.hazelcast.map.impl.recordstore.RecordStore;
-import com.hazelcast.monitor.LocalMapStats;
-import com.hazelcast.monitor.LocalRecordStoreStats;
-import com.hazelcast.monitor.NearCacheStats;
-import com.hazelcast.monitor.impl.IndexesStats;
-import com.hazelcast.monitor.impl.LocalMapStatsImpl;
-import com.hazelcast.monitor.impl.OnDemandIndexStats;
-import com.hazelcast.monitor.impl.PerIndexStats;
-import com.hazelcast.nio.Address;
+import com.hazelcast.nearcache.NearCacheStats;
 import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.query.impl.InternalIndex;
-import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.ProxyService;
-import com.hazelcast.spi.partition.IPartition;
-import com.hazelcast.spi.partition.IPartitionService;
-import com.hazelcast.util.ConcurrencyUtil;
-import com.hazelcast.util.ConstructorFunction;
-import com.hazelcast.util.ExceptionUtil;
+import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.spi.impl.proxyservice.ProxyService;
 
 import java.util.Collection;
 import java.util.HashMap;
@@ -52,7 +52,7 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 /**
  * Provides node local statistics of a map via {@link #createLocalMapStats}
- * and also holds all {@link com.hazelcast.monitor.impl.LocalMapStatsImpl} implementations of all maps.
+ * and also holds all {@link com.hazelcast.internal.monitor.impl.LocalMapStatsImpl} implementations of all maps.
  */
 public class LocalMapStatsProvider {
 
@@ -68,13 +68,9 @@ public class LocalMapStatsProvider {
     private final MapServiceContext mapServiceContext;
     private final MapNearCacheManager mapNearCacheManager;
     private final IPartitionService partitionService;
-    private final ConcurrentMap<String, LocalMapStatsImpl> statsMap = new ConcurrentHashMap<String, LocalMapStatsImpl>(1000);
+    private final ConcurrentMap<String, LocalMapStatsImpl> statsMap = new ConcurrentHashMap<>(1000);
     private final ConstructorFunction<String, LocalMapStatsImpl> constructorFunction =
-            new ConstructorFunction<String, LocalMapStatsImpl>() {
-                public LocalMapStatsImpl createNew(String key) {
-                    return new LocalMapStatsImpl();
-                }
-            };
+            key -> new LocalMapStatsImpl();
 
     public LocalMapStatsProvider(MapServiceContext mapServiceContext) {
         this.mapServiceContext = mapServiceContext;
@@ -155,7 +151,7 @@ public class LocalMapStatsProvider {
         ProxyService proxyService = nodeEngine.getProxyService();
         Collection<String> mapNames = proxyService.getDistributedObjectNames(SERVICE_NAME);
         for (String mapName : mapNames) {
-            if (!statsPerMap.containsKey(mapName)) {
+            if (!statsPerMap.containsKey(mapName) && mapServiceContext.getMapContainer(mapName).mapConfig.isStatisticsEnabled()) {
                 statsPerMap.put(mapName, EMPTY_LOCAL_MAP_STATS);
             }
         }
@@ -203,13 +199,18 @@ public class LocalMapStatsProvider {
     }
 
     private static void addPrimaryStatsOf(RecordStore recordStore, LocalMapOnDemandCalculatedStats onDemandStats) {
+        if (recordStore != null) {
+            // we need to update the locked entry count here whether or not the map is empty
+            // keys that are not contained by a map can be locked
+            onDemandStats.incrementLockedEntryCount(recordStore.getLockedEntryCount());
+        }
+
         if (!hasRecords(recordStore)) {
             return;
         }
 
         LocalRecordStoreStats stats = recordStore.getLocalRecordStoreStats();
 
-        onDemandStats.incrementLockedEntryCount(recordStore.getLockedEntryCount());
         onDemandStats.incrementHits(stats.getHits());
         onDemandStats.incrementDirtyEntryCount(recordStore.getMapDataStore().notFinishedOperationsCount());
         onDemandStats.incrementOwnedEntryMemoryCost(recordStore.getOwnedEntryCost());
@@ -371,11 +372,11 @@ public class LocalMapStatsProvider {
     private static Map<String, OnDemandIndexStats> aggregateFreshIndexStats(InternalIndex[] freshIndexes,
                                                                             Map<String, OnDemandIndexStats> freshStats) {
         if (freshIndexes.length > 0 && freshStats == null) {
-            freshStats = new HashMap<String, OnDemandIndexStats>();
+            freshStats = new HashMap<>();
         }
 
         for (InternalIndex index : freshIndexes) {
-            String indexName = index.getAttributeName();
+            String indexName = index.getName();
             OnDemandIndexStats freshIndexStats = freshStats.get(indexName);
             if (freshIndexStats == null) {
                 freshIndexStats = new OnDemandIndexStats();

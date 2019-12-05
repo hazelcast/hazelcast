@@ -17,14 +17,14 @@
 package com.hazelcast.internal.cluster.impl.operations;
 
 import com.hazelcast.cluster.ClusterState;
-import com.hazelcast.instance.Node;
+import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.AllowedDuringPassiveState;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 
-import static com.hazelcast.util.ThreadUtil.createThreadName;
+import static com.hazelcast.internal.util.ThreadUtil.createThreadName;
 
 public class ShutdownNodeOp extends AbstractClusterOperation implements AllowedDuringPassiveState {
 
@@ -36,15 +36,12 @@ public class ShutdownNodeOp extends AbstractClusterOperation implements AllowedD
         final ClusterState clusterState = clusterService.getClusterState();
 
         if (clusterState == ClusterState.PASSIVE) {
-            final NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
+            NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
             if (nodeEngine.isRunning()) {
                 logger.info("Shutting down node in cluster passive state. Requested by: " + getCallerAddress());
-                new Thread(new Runnable() {
-                    @Override
-                    public void run() {
-                        final Node node = nodeEngine.getNode();
-                        node.hazelcastInstance.getLifecycleService().shutdown();
-                    }
+                new Thread(() -> {
+                    Node node = nodeEngine.getNode();
+                    node.hazelcastInstance.getLifecycleService().shutdown();
                 }, createThreadName(nodeEngine.getHazelcastInstance().getName(), ".clusterShutdown")).start();
             } else {
                 logger.info("Node is already shutting down. NodeState: " + nodeEngine.getNode().getState());
@@ -56,7 +53,7 @@ public class ShutdownNodeOp extends AbstractClusterOperation implements AllowedD
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ClusterDataSerializerHook.SHUTDOWN_NODE;
     }
 }

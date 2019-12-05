@@ -18,13 +18,13 @@ package com.hazelcast.query.impl.extractor.predicates;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.InMemoryFormat;
-import com.hazelcast.config.MapAttributeConfig;
+import com.hazelcast.config.AttributeConfig;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.query.extractor.ValueCollector;
 import com.hazelcast.query.extractor.ValueExtractor;
 import com.hazelcast.query.impl.extractor.AbstractExtractionTest;
-import com.hazelcast.test.HazelcastParametersRunnerFactory;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -47,8 +47,8 @@ import static com.hazelcast.query.impl.extractor.predicates.SingleValueDataStruc
  * This test is parametrised. See SingleValueAllPredicatesReflectionTest for more details.
  */
 @RunWith(Parameterized.class)
-@UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
-@Category({QuickTest.class, ParallelTest.class})
+@UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
+@Category({QuickTest.class, ParallelJVMTest.class})
 @SuppressWarnings("unused")
 public class SingleValueAllPredicatesExtractorTest extends SingleValueAllPredicatesReflectionTest {
 
@@ -63,27 +63,27 @@ public class SingleValueAllPredicatesExtractorTest extends SingleValueAllPredica
             public void doWithConfig(Config config, Multivalue mv) {
                 MapConfig mapConfig = config.getMapConfig("map");
 
-                MapAttributeConfig iqConfig = new AbstractExtractionTest.TestMapAttributeIndexConfig();
+                AttributeConfig iqConfig = new TestAttributeIndexConfig();
                 iqConfig.setName("brain.iq");
-                iqConfig.setExtractor("com.hazelcast.query.impl.extractor.predicates.SingleValueAllPredicatesExtractorTest$IqExtractor");
-                mapConfig.addMapAttributeConfig(iqConfig);
+                iqConfig.setExtractorClassName("com.hazelcast.query.impl.extractor.predicates.SingleValueAllPredicatesExtractorTest$IqExtractor");
+                mapConfig.addAttributeConfig(iqConfig);
 
-                MapAttributeConfig nameConfig = new AbstractExtractionTest.TestMapAttributeIndexConfig();
+                AttributeConfig nameConfig = new TestAttributeIndexConfig();
                 nameConfig.setName("brain.name");
-                nameConfig.setExtractor("com.hazelcast.query.impl.extractor.predicates.SingleValueAllPredicatesExtractorTest$NameExtractor");
-                mapConfig.addMapAttributeConfig(nameConfig);
+                nameConfig.setExtractorClassName("com.hazelcast.query.impl.extractor.predicates.SingleValueAllPredicatesExtractorTest$NameExtractor");
+                mapConfig.addAttributeConfig(nameConfig);
             }
         };
     }
 
-    public static class IqExtractor extends ValueExtractor<Person, Object> {
+    public static class IqExtractor implements ValueExtractor<Person, Object> {
         @Override
         public void extract(Person target, Object arguments, ValueCollector collector) {
             collector.addObject(target.brain.iq);
         }
     }
 
-    public static class NameExtractor extends ValueExtractor<Person, Object> {
+    public static class NameExtractor implements ValueExtractor<Person, Object> {
         @Override
         public void extract(Person target, Object arguments, ValueCollector collector) {
             collector.addObject(target.brain.name);

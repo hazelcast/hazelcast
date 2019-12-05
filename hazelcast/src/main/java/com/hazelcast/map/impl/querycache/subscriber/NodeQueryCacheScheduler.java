@@ -18,11 +18,11 @@ package com.hazelcast.map.impl.querycache.subscriber;
 
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.querycache.QueryCacheScheduler;
-import com.hazelcast.spi.ExecutionService;
-import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.TaskScheduler;
-import com.hazelcast.util.UuidUtil;
-import com.hazelcast.util.executor.ExecutorType;
+import com.hazelcast.spi.impl.executionservice.ExecutionService;
+import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.spi.impl.executionservice.TaskScheduler;
+import com.hazelcast.internal.util.UuidUtil;
+import com.hazelcast.internal.util.executor.ExecutorType;
 
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;

@@ -20,12 +20,12 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.QueueConfig;
 import com.hazelcast.config.QueueStoreConfig;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IQueue;
-import com.hazelcast.core.QueueStore;
+import com.hazelcast.collection.IQueue;
+import com.hazelcast.collection.QueueStore;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Before;
@@ -41,11 +41,11 @@ import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 
-import static com.hazelcast.nio.IOUtil.deleteQuietly;
+import static com.hazelcast.internal.nio.IOUtil.deleteQuietly;
 import static com.hazelcast.test.TestStringUtils.fileAsText;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class StoreLatencyPlugin_QueueIntegrationTest extends HazelcastTestSupport {
 
     private static final String QUEUE_NAME = "someQueue";

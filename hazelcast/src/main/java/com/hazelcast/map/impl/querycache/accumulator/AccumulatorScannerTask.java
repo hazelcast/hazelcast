@@ -17,13 +17,12 @@
 package com.hazelcast.map.impl.querycache.accumulator;
 
 import com.hazelcast.map.impl.MapService;
-import com.hazelcast.map.impl.operation.AccumulatorConsumerOperation;
 import com.hazelcast.map.impl.querycache.QueryCacheContext;
 import com.hazelcast.map.impl.querycache.publisher.MapPublisherRegistry;
 import com.hazelcast.map.impl.querycache.publisher.PartitionAccumulatorRegistry;
 import com.hazelcast.map.impl.querycache.publisher.PublisherContext;
 import com.hazelcast.map.impl.querycache.publisher.PublisherRegistry;
-import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 
 import java.util.ArrayDeque;
@@ -34,11 +33,11 @@ import java.util.Set;
 
 /**
  * Task for scanning all {@link Accumulator} instances of all {@link com.hazelcast.map.QueryCache}s on this node.
- * <p/>
+ * <p>
  * If it finds any event that needs to be published in an accumulator, it creates and sends
- * {@link AccumulatorConsumerOperation} to relevant partitions.
+ * {@link ConsumeAccumulatorOperation} to relevant partitions.
  *
- * @see AccumulatorConsumerOperation
+ * @see ConsumeAccumulatorOperation
  */
 public class AccumulatorScannerTask implements Runnable {
 
@@ -107,7 +106,7 @@ public class AccumulatorScannerTask implements Runnable {
         PublisherContext publisherContext = context.getPublisherContext();
         NodeEngineImpl nodeEngine = (NodeEngineImpl) publisherContext.getNodeEngine();
 
-        Operation operation = new AccumulatorConsumerOperation(accumulators, MAX_PROCESSABLE_ACCUMULATOR_COUNT);
+        Operation operation = new ConsumeAccumulatorOperation(accumulators, MAX_PROCESSABLE_ACCUMULATOR_COUNT);
         operation
                 .setNodeEngine(nodeEngine)
                 .setCallerUuid(nodeEngine.getLocalMember().getUuid())
@@ -130,12 +129,12 @@ public class AccumulatorScannerTask implements Runnable {
 
         void consume(Accumulator accumulator, int partitionId) {
             if (partitionAccumulators == null) {
-                partitionAccumulators = new HashMap<Integer, Queue<Accumulator>>();
+                partitionAccumulators = new HashMap<>();
             }
 
             Queue<Accumulator> accumulators = partitionAccumulators.get(partitionId);
             if (accumulators == null) {
-                accumulators = new ArrayDeque<Accumulator>();
+                accumulators = new ArrayDeque<>();
                 partitionAccumulators.put(partitionId, accumulators);
             }
             accumulators.add(accumulator);

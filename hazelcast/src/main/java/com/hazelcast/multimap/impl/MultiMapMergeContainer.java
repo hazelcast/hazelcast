@@ -16,6 +16,8 @@
 
 package com.hazelcast.multimap.impl;
 
+import com.hazelcast.internal.nio.IOUtil;
+import com.hazelcast.multimap.MultiMap;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -26,7 +28,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 
 /**
- * Container for the merge operation of a {@link com.hazelcast.core.MultiMap}.
+ * Container for the merge operation of a {@link MultiMap}.
  *
  * @since 3.10
  */
@@ -82,13 +84,13 @@ public class MultiMapMergeContainer implements IdentifiedDataSerializable {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MultiMapDataSerializerHook.MERGE_CONTAINER;
     }
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeData(key);
+        IOUtil.writeData(out, key);
         out.writeInt(records.size());
         for (MultiMapRecord record : records) {
             out.writeObject(record);
@@ -101,7 +103,7 @@ public class MultiMapMergeContainer implements IdentifiedDataSerializable {
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        key = in.readData();
+        key = IOUtil.readData(in);
         int size = in.readInt();
         records = new ArrayList<MultiMapRecord>(size);
         for (int i = 0; i < size; i++) {

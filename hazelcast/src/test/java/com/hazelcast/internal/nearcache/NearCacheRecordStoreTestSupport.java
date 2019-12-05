@@ -18,8 +18,9 @@ package com.hazelcast.internal.nearcache;
 
 import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.InMemoryFormat;
+import com.hazelcast.config.MaxSizePolicy;
 import com.hazelcast.config.NearCacheConfig;
-import com.hazelcast.monitor.NearCacheStats;
+import com.hazelcast.nearcache.NearCacheStats;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -229,9 +230,9 @@ abstract class NearCacheRecordStoreTestSupport extends CommonNearCacheTestSuppor
         assertEquals(0, nearCacheStats.getOwnedEntryMemoryCost());
     }
 
-    void createNearCacheWithMaxSizePolicy(InMemoryFormat inMemoryFormat, EvictionConfig.MaxSizePolicy maxSizePolicy, int size) {
+    void createNearCacheWithMaxSizePolicy(InMemoryFormat inMemoryFormat, MaxSizePolicy maxSizePolicy, int size) {
         EvictionConfig evictionConfig = new EvictionConfig()
-                .setMaximumSizePolicy(maxSizePolicy)
+                .setMaxSizePolicy(maxSizePolicy)
                 .setSize(size);
 
         NearCacheConfig nearCacheConfig = createNearCacheConfig(DEFAULT_NEAR_CACHE_NAME, inMemoryFormat)

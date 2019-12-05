@@ -47,14 +47,13 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.cache.jsr.JsrTestUtil.clearCachingProviderRegistry;
 import static com.hazelcast.cache.jsr.JsrTestUtil.getCachingProviderRegistrySize;
 import static com.hazelcast.test.TestEnvironment.isRunningCompatibilityTest;
-import static com.hazelcast.util.EmptyStatement.ignore;
+import static com.hazelcast.internal.util.EmptyStatement.ignore;
 import static java.lang.Integer.getInteger;
 
 /**
@@ -77,13 +76,6 @@ public abstract class AbstractHazelcastClassRunner extends AbstractParameterized
         final String threadDumpOnFailure = System.getProperty("hazelcast.test.threadDumpOnFailure");
         THREAD_DUMP_ON_FAILURE = threadDumpOnFailure != null
                 ? Boolean.parseBoolean(threadDumpOnFailure) : JenkinsDetector.isOnJenkins();
-
-        // randomize multicast group
-        Random rand = new Random();
-        int g1 = rand.nextInt(255);
-        int g2 = rand.nextInt(255);
-        int g3 = rand.nextInt(255);
-        System.setProperty("hazelcast.multicast.group", "224." + g1 + "." + g2 + "." + g3);
 
         ThreadMXBean threadMXBean = ManagementFactory.getThreadMXBean();
 

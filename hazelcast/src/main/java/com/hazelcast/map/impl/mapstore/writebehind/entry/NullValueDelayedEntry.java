@@ -16,7 +16,11 @@
 
 package com.hazelcast.map.impl.mapstore.writebehind.entry;
 
+import com.hazelcast.map.EntryLoader;
 import com.hazelcast.map.impl.mapstore.writebehind.WriteBehindStore;
+
+import java.util.Objects;
+import java.util.UUID;
 
 /**
  * Only key is set and other values are omitted. Only used to check whether
@@ -24,14 +28,13 @@ import com.hazelcast.map.impl.mapstore.writebehind.WriteBehindStore;
  *
  * @param <K> the key type.
  * @param <V> the value type
- *
  * @see WriteBehindStore#flush
  */
 class NullValueDelayedEntry<K, V> implements DelayedEntry<K, V> {
 
     private final K key;
 
-    public NullValueDelayedEntry(K key) {
+    NullValueDelayedEntry(K key) {
         this.key = key;
     }
 
@@ -43,6 +46,11 @@ class NullValueDelayedEntry<K, V> implements DelayedEntry<K, V> {
     @Override
     public V getValue() {
         return null;
+    }
+
+    @Override
+    public long getExpirationTime() {
+        return EntryLoader.MetadataAwareValue.NO_TIME_SET;
     }
 
     @Override
@@ -70,6 +78,16 @@ class NullValueDelayedEntry<K, V> implements DelayedEntry<K, V> {
     }
 
     @Override
+    public void setTxnId(UUID txnId) {
+
+    }
+
+    @Override
+    public UUID getTxnId() {
+        return null;
+    }
+
+    @Override
     public boolean equals(Object o) {
         if (this == o) {
             return true;
@@ -80,8 +98,7 @@ class NullValueDelayedEntry<K, V> implements DelayedEntry<K, V> {
         }
 
         NullValueDelayedEntry<?, ?> that = (NullValueDelayedEntry<?, ?>) o;
-
-        return !(key != null ? !key.equals(that.key) : that.key != null);
+        return Objects.equals(key, that.key);
 
     }
 

@@ -16,19 +16,16 @@
 
 package com.hazelcast.spi.impl.merge;
 
-import com.hazelcast.nio.IOUtil;
+import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.nio.serialization.impl.Versioned;
 import com.hazelcast.spi.merge.SplitBrainMergeTypes.MapMergeTypes;
-import com.hazelcast.spi.serialization.SerializationService;
-import com.hazelcast.spi.serialization.SerializationServiceAware;
+import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.serialization.SerializationServiceAware;
 
 import java.io.IOException;
-
-import static com.hazelcast.internal.cluster.Versions.V3_11;
 
 /**
  * Implementation of {@link MapMergeTypes}.
@@ -37,7 +34,7 @@ import static com.hazelcast.internal.cluster.Versions.V3_11;
  */
 @SuppressWarnings({"WeakerAccess", "checkstyle:methodcount"})
 public class MapMergingEntryImpl
-        implements MapMergeTypes, SerializationServiceAware, IdentifiedDataSerializable, Versioned {
+        implements MapMergeTypes, SerializationServiceAware, IdentifiedDataSerializable {
 
     private Data value;
     private Data key;
@@ -50,7 +47,8 @@ public class MapMergingEntryImpl
     private long lastUpdateTime = -1;
     private long version = -1;
     private long ttl = -1;
-    //RU_COMPAT_3_10 (Long -> long)
+    // can be null when merging entries received through WAN
+    // see com.hazelcast.map.impl.wan.WanMapEntryView.getMaxIdle
     private Long maxIdle;
 
     private transient SerializationService serializationService;
@@ -210,15 +208,12 @@ public class MapMergingEntryImpl
         out.writeLong(lastUpdateTime);
         out.writeLong(version);
         out.writeLong(ttl);
-        // RU_COMPAT_3_10
         // WAN events received from source cluster also carry null maxIdle
-        // even when cluster version is 3.11
-        if (out.getVersion().isGreaterOrEqual(V3_11)) {
-            boolean hasMaxIdle = maxIdle != null;
-            out.writeBoolean(hasMaxIdle);
-            if (hasMaxIdle) {
-                out.writeLong(maxIdle);
-            }
+        // see com.hazelcast.map.impl.wan.WanMapEntryView.getMaxIdle
+        boolean hasMaxIdle = maxIdle != null;
+        out.writeBoolean(hasMaxIdle);
+        if (hasMaxIdle) {
+            out.writeLong(maxIdle);
         }
     }
 
@@ -235,14 +230,11 @@ public class MapMergingEntryImpl
         lastUpdateTime = in.readLong();
         version = in.readLong();
         ttl = in.readLong();
-        //RU_COMPAT_3_10
         // WAN events received from source cluster also carry null maxIdle
-        // even when cluster version is 3.11
-        if (in.getVersion().isGreaterOrEqual(V3_11)) {
-            boolean hasMaxIdle = in.readBoolean();
-            if (hasMaxIdle) {
-                maxIdle = in.readLong();
-            }
+        // see com.hazelcast.map.impl.wan.WanMapEntryView.getMaxIdle
+        boolean hasMaxIdle = in.readBoolean();
+        if (hasMaxIdle) {
+            maxIdle = in.readLong();
         }
     }
 
@@ -252,7 +244,7 @@ public class MapMergingEntryImpl
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return SplitBrainDataSerializerHook.MAP_MERGING_ENTRY;
     }
 

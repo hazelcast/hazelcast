@@ -16,9 +16,9 @@
 
 package com.hazelcast.partition.strategy;
 
-import com.hazelcast.core.PartitionAware;
-import com.hazelcast.core.PartitioningStrategy;
-import com.hazelcast.nio.serialization.SerializableByConvention;
+import com.hazelcast.internal.serialization.SerializableByConvention;
+import com.hazelcast.partition.PartitionAware;
+import com.hazelcast.partition.PartitioningStrategy;
 
 /**
  * A {@link PartitioningStrategy} that checks if the key implements {@link PartitionAware}.

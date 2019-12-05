@@ -19,14 +19,13 @@ package com.hazelcast.replicatedmap;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.ReplicatedMap;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -38,7 +37,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class ReplicatedMapPutSerializationTest extends HazelcastTestSupport {
 
     static AtomicInteger deSerializationCount = new AtomicInteger(0);
@@ -63,7 +62,7 @@ public class ReplicatedMapPutSerializationTest extends HazelcastTestSupport {
 
     static class SerializationCountingData implements DataSerializable {
 
-        public SerializationCountingData() {
+        SerializationCountingData() {
         }
 
         @Override

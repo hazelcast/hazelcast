@@ -19,13 +19,12 @@ package com.hazelcast.client.impl.protocol.task.executorservice.durable;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.DurableExecutorSubmitToPartitionCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractPartitionMessageTask;
-import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.durableexecutor.impl.operations.TaskOperation;
-import com.hazelcast.instance.Node;
-import com.hazelcast.nio.Connection;
+import com.hazelcast.instance.impl.Node;
+import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.security.SecurityContext;
-import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.impl.operationservice.Operation;
 
 import javax.security.auth.Subject;
 import java.security.Permission;
@@ -34,8 +33,7 @@ import java.util.concurrent.Callable;
 import static com.hazelcast.durableexecutor.impl.DistributedDurableExecutorService.SERVICE_NAME;
 
 public class DurableExecutorSubmitToPartitionMessageTask
-        extends AbstractPartitionMessageTask<DurableExecutorSubmitToPartitionCodec.RequestParameters>
-        implements ExecutionCallback {
+        extends AbstractPartitionMessageTask<DurableExecutorSubmitToPartitionCodec.RequestParameters> {
 
     public DurableExecutorSubmitToPartitionMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -47,8 +45,13 @@ public class DurableExecutorSubmitToPartitionMessageTask
         Data callableData = parameters.callable;
         if (securityContext != null) {
             Subject subject = endpoint.getSubject();
-            Callable callable = serializationService.toObject(parameters.callable);
-            callable = securityContext.createSecureCallable(subject, callable);
+            Object taskObject = serializationService.toObject(parameters.callable);
+            Callable callable;
+            if (taskObject instanceof Runnable) {
+                callable = securityContext.createSecureCallable(subject, (Runnable) taskObject);
+            } else {
+                callable = securityContext.createSecureCallable(subject, (Callable<? extends Object>) taskObject);
+            }
             callableData = serializationService.toData(callable);
         }
         return new TaskOperation(parameters.name, callableData);

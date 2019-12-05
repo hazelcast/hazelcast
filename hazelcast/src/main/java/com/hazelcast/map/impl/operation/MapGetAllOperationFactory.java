@@ -16,11 +16,12 @@
 
 package com.hazelcast.map.impl.operation;
 
+import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.impl.operationservice.Operation;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -29,7 +30,7 @@ import java.util.List;
 public class MapGetAllOperationFactory extends AbstractMapOperationFactory {
 
     private String name;
-    private List<Data> keys = new ArrayList<Data>();
+    private List<Data> keys = new ArrayList<>();
 
     public MapGetAllOperationFactory() {
     }
@@ -49,7 +50,7 @@ public class MapGetAllOperationFactory extends AbstractMapOperationFactory {
         out.writeUTF(name);
         out.writeInt(keys.size());
         for (Data key : keys) {
-            out.writeData(key);
+            IOUtil.writeData(out, key);
         }
     }
 
@@ -58,13 +59,13 @@ public class MapGetAllOperationFactory extends AbstractMapOperationFactory {
         name = in.readUTF();
         int size = in.readInt();
         for (int i = 0; i < size; i++) {
-            Data data = in.readData();
+            Data data = IOUtil.readData(in);
             keys.add(data);
         }
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MapDataSerializerHook.MAP_GET_ALL_FACTORY;
     }
 }

@@ -16,32 +16,35 @@
 
 package com.hazelcast.map.impl.tx;
 
+import com.hazelcast.internal.util.UUIDSerializationUtil;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.operation.LockAwareOperation;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.BackupAwareOperation;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.WaitNotifyKey;
-import com.hazelcast.spi.impl.MutatingOperation;
+import com.hazelcast.spi.impl.operationservice.BackupAwareOperation;
+import com.hazelcast.spi.impl.operationservice.MutatingOperation;
+import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.spi.impl.operationservice.WaitNotifyKey;
 import com.hazelcast.transaction.TransactionException;
 
 import java.io.IOException;
+import java.util.UUID;
 
 /**
  * An operation to unlock key on the partition owner.
  */
-public class TxnUnlockOperation extends LockAwareOperation implements MapTxnOperation, BackupAwareOperation, MutatingOperation {
+public class TxnUnlockOperation extends LockAwareOperation
+        implements MapTxnOperation, BackupAwareOperation, MutatingOperation {
 
     private long version;
-    private String ownerUuid;
+    private UUID ownerUuid;
 
     public TxnUnlockOperation() {
     }
 
     public TxnUnlockOperation(String name, Data dataKey, long version) {
-        super(name, dataKey, -1, -1);
+        super(name, dataKey);
         this.version = version;
     }
 
@@ -50,12 +53,13 @@ public class TxnUnlockOperation extends LockAwareOperation implements MapTxnOper
         super.innerBeforeRun();
 
         if (!recordStore.canAcquireLock(dataKey, ownerUuid, threadId)) {
-            throw new TransactionException("Cannot acquire lock UUID: " + ownerUuid + ", threadId: " + threadId);
+            throw new TransactionException("Cannot acquire lock UUID: "
+                    + ownerUuid + ", threadId: " + threadId);
         }
     }
 
     @Override
-    public void run() {
+    protected void runInternal() {
         recordStore.unlock(dataKey, ownerUuid, threadId, getCallId());
     }
 
@@ -86,9 +90,7 @@ public class TxnUnlockOperation extends LockAwareOperation implements MapTxnOper
 
     @Override
     public Operation getBackupOperation() {
-        TxnUnlockBackupOperation txnUnlockOperation = new TxnUnlockBackupOperation(name, dataKey, ownerUuid);
-        txnUnlockOperation.setThreadId(getThreadId());
-        return txnUnlockOperation;
+        return new TxnUnlockBackupOperation(name, dataKey, ownerUuid, getThreadId());
     }
 
     @Override
@@ -107,8 +109,13 @@ public class TxnUnlockOperation extends LockAwareOperation implements MapTxnOper
     }
 
     @Override
-    public void setOwnerUuid(String ownerUuid) {
+    public void setOwnerUuid(UUID ownerUuid) {
         this.ownerUuid = ownerUuid;
+    }
+
+    @Override
+    public void setTransactionId(UUID transactionId) {
+        // NOP
     }
 
     @Override
@@ -125,18 +132,18 @@ public class TxnUnlockOperation extends LockAwareOperation implements MapTxnOper
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeLong(version);
-        out.writeUTF(ownerUuid);
+        UUIDSerializationUtil.writeUUID(out, ownerUuid);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         version = in.readLong();
-        ownerUuid = in.readUTF();
+        ownerUuid = UUIDSerializationUtil.readUUID(in);
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MapDataSerializerHook.TXN_UNLOCK;
     }
 }

@@ -22,8 +22,8 @@ import com.hazelcast.internal.partition.MigrationCycleOperation;
 import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
 import com.hazelcast.internal.partition.impl.PartitionDataSerializerHook;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.nio.Address;
-import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.cluster.Address;
+import com.hazelcast.spi.impl.NodeEngine;
 
 public class ShutdownResponseOperation extends AbstractPartitionOperation implements MigrationCycleOperation {
 
@@ -67,7 +67,7 @@ public class ShutdownResponseOperation extends AbstractPartitionOperation implem
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return PartitionDataSerializerHook.SHUTDOWN_RESPONSE;
     }
 }

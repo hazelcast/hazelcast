@@ -16,19 +16,22 @@
 
 package com.hazelcast.instance;
 
-import com.hazelcast.core.Member;
-import com.hazelcast.nio.Address;
+import com.hazelcast.cluster.Member;
+import com.hazelcast.internal.util.UUIDSerializationUtil;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.version.MemberVersion;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.util.Collections;
 import java.util.Map;
+import java.util.UUID;
 
 public class SimpleMemberImpl implements Member {
 
-    private String uuid;
+    private UUID uuid;
     private InetSocketAddress address;
     private boolean liteMember;
     private MemberVersion version;
@@ -37,11 +40,11 @@ public class SimpleMemberImpl implements Member {
     public SimpleMemberImpl() {
     }
 
-    public SimpleMemberImpl(MemberVersion version, String uuid, InetSocketAddress address) {
+    public SimpleMemberImpl(MemberVersion version, UUID uuid, InetSocketAddress address) {
         this(version, uuid, address, false);
     }
 
-    public SimpleMemberImpl(MemberVersion version, String uuid, InetSocketAddress address, boolean liteMember) {
+    public SimpleMemberImpl(MemberVersion version, UUID uuid, InetSocketAddress address, boolean liteMember) {
         this.version = version;
         this.uuid = uuid;
         this.address = address;
@@ -54,13 +57,13 @@ public class SimpleMemberImpl implements Member {
     }
 
     @Override
-    public boolean localMember() {
-        return false;
+    public Map<EndpointQualifier, Address> getAddressMap() {
+        return Collections.singletonMap(EndpointQualifier.MEMBER, new Address(address));
     }
 
     @Override
-    public InetSocketAddress getInetSocketAddress() {
-        return getSocketAddress();
+    public boolean localMember() {
+        return false;
     }
 
     @Override
@@ -69,7 +72,12 @@ public class SimpleMemberImpl implements Member {
     }
 
     @Override
-    public String getUuid() {
+    public InetSocketAddress getSocketAddress(EndpointQualifier qualifier) {
+        return address;
+    }
+
+    @Override
+    public UUID getUuid() {
         return uuid;
     }
 
@@ -79,80 +87,17 @@ public class SimpleMemberImpl implements Member {
     }
 
     @Override
-    public Map<String, Object> getAttributes() {
+    public Map<String, String> getAttributes() {
         return null;
     }
 
     @Override
-    public String getStringAttribute(String key) {
+    public String getAttribute(String key) {
         return null;
     }
 
     @Override
-    public void setStringAttribute(String key, String value) {
-    }
-
-    @Override
-    public Boolean getBooleanAttribute(String key) {
-        return null;
-    }
-
-    @Override
-    public void setBooleanAttribute(String key, boolean value) {
-    }
-
-    @Override
-    public Byte getByteAttribute(String key) {
-        return null;
-    }
-
-    @Override
-    public void setByteAttribute(String key, byte value) {
-    }
-
-    @Override
-    public Short getShortAttribute(String key) {
-        return null;
-    }
-
-    @Override
-    public void setShortAttribute(String key, short value) {
-    }
-
-    @Override
-    public Integer getIntAttribute(String key) {
-        return null;
-    }
-
-    @Override
-    public void setIntAttribute(String key, int value) {
-    }
-
-    @Override
-    public Long getLongAttribute(String key) {
-        return null;
-    }
-
-    @Override
-    public void setLongAttribute(String key, long value) {
-    }
-
-    @Override
-    public Float getFloatAttribute(String key) {
-        return null;
-    }
-
-    @Override
-    public void setFloatAttribute(String key, float value) {
-    }
-
-    @Override
-    public Double getDoubleAttribute(String key) {
-        return null;
-    }
-
-    @Override
-    public void setDoubleAttribute(String key, double value) {
+    public void setAttribute(String key, String value) {
     }
 
     @Override
@@ -167,7 +112,7 @@ public class SimpleMemberImpl implements Member {
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeObject(version);
-        out.writeUTF(uuid);
+        UUIDSerializationUtil.writeUUID(out, uuid);
         out.writeObject(address);
         out.writeBoolean(liteMember);
     }
@@ -175,7 +120,7 @@ public class SimpleMemberImpl implements Member {
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         version = in.readObject();
-        uuid = in.readUTF();
+        uuid = UUIDSerializationUtil.readUUID(in);
         address = in.readObject();
         liteMember = in.readBoolean();
     }

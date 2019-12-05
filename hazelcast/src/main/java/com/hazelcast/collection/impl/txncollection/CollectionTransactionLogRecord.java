@@ -21,15 +21,17 @@ import com.hazelcast.collection.impl.collection.CollectionDataSerializerHook;
 import com.hazelcast.collection.impl.txncollection.operations.CollectionCommitOperation;
 import com.hazelcast.collection.impl.txncollection.operations.CollectionPrepareOperation;
 import com.hazelcast.collection.impl.txncollection.operations.CollectionRollbackOperation;
+import com.hazelcast.internal.util.UUIDSerializationUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.transaction.impl.TransactionLogRecord;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.UUID;
 
 /**
  * This class contains Transaction log for the Collection.
@@ -39,13 +41,13 @@ public class CollectionTransactionLogRecord implements TransactionLogRecord {
     protected String name;
     protected List<Operation> operationList;
     protected int partitionId;
-    protected String transactionId;
+    protected UUID transactionId;
     protected String serviceName;
 
     public CollectionTransactionLogRecord() {
     }
 
-    public CollectionTransactionLogRecord(String serviceName, String transactionId, String name, int partitionId) {
+    public CollectionTransactionLogRecord(String serviceName, UUID transactionId, String name, int partitionId) {
         this.serviceName = serviceName;
         this.transactionId = transactionId;
         this.name = name;
@@ -118,7 +120,7 @@ public class CollectionTransactionLogRecord implements TransactionLogRecord {
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeUTF(serviceName);
-        out.writeUTF(transactionId);
+        UUIDSerializationUtil.writeUUID(out, transactionId);
         out.writeUTF(name);
         out.writeInt(partitionId);
         CollectionTxnUtil.write(out, operationList);
@@ -127,7 +129,7 @@ public class CollectionTransactionLogRecord implements TransactionLogRecord {
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         serviceName = in.readUTF();
-        transactionId = in.readUTF();
+        transactionId = UUIDSerializationUtil.readUUID(in);
         name = in.readUTF();
         partitionId = in.readInt();
         operationList = CollectionTxnUtil.read(in);
@@ -139,7 +141,7 @@ public class CollectionTransactionLogRecord implements TransactionLogRecord {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return CollectionDataSerializerHook.COLLECTION_TRANSACTION_LOG_RECORD;
     }
 }

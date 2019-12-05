@@ -22,7 +22,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.spi.BackupOperation;
+import com.hazelcast.spi.impl.operationservice.BackupOperation;
 
 import javax.cache.processor.EntryProcessor;
 import java.io.IOException;
@@ -54,7 +54,7 @@ public class CacheBackupEntryProcessorOperation
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return CacheDataSerializerHook.BACKUP_ENTRY_PROCESSOR;
     }
 

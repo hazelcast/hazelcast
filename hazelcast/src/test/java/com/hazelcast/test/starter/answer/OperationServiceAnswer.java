@@ -17,9 +17,10 @@
 package com.hazelcast.test.starter.answer;
 
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
-import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.PartitionSpecificRunnable;
-import com.hazelcast.spi.serialization.SerializationService;
+import com.hazelcast.spi.impl.operationservice.OperationService;
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.test.TestTaskExecutorUtil.PartitionSpecificRunnableWithResultQueue;
 import org.mockito.invocation.InvocationOnMock;
 
@@ -31,7 +32,7 @@ import static com.hazelcast.test.starter.ReflectionUtils.getFieldValueReflective
 
 /**
  * Default {@link org.mockito.stubbing.Answer} to create a mock for a proxied
- * {@link com.hazelcast.spi.OperationService}.
+ * {@link OperationService}.
  * <p>
  * This class uses (de)serialization to transfer Hazelcast operations from the
  * test classloader to the delegate classloader.

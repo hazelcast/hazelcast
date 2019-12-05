@@ -24,6 +24,8 @@ import org.w3c.dom.Element;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 
+import static com.hazelcast.spring.HazelcastInstanceDefinitionParser.CP_SUBSYSTEM_SUFFIX;
+
 /**
  * BeanDefinitionParser for Type Configuration of Hazelcast Types like map, queue, topic etc.
  */
@@ -69,7 +71,11 @@ public class HazelcastTypeBeanDefinitionParser extends AbstractHazelcastBeanDefi
                     throw new IllegalStateException("'instance-ref' attribute is required for creating Hazelcast " + type);
                 }
                 String instanceRef = getTextContent(instanceRefNode);
-                builder.getRawBeanDefinition().setFactoryBeanName(instanceRef);
+                if (HazelcastNamespaceHandler.CP_TYPES.contains(type)) {
+                    builder.getRawBeanDefinition().setFactoryBeanName(instanceRef + CP_SUBSYSTEM_SUFFIX);
+                } else {
+                    builder.getRawBeanDefinition().setFactoryBeanName(instanceRef);
+                }
                 builder.addDependsOn(instanceRef);
 
                 Node nameNode = attributes.getNamedItem("name");

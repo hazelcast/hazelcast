@@ -28,7 +28,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Properties;
 
-import static com.hazelcast.util.ExceptionUtil.rethrow;
+import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 
 /**
  * Spring utility class for connecting {@link HazelcastCachingProvider} interface and Hazelcast instance.
@@ -57,16 +57,16 @@ public final class SpringHazelcastCachingProvider {
             }
         }
         if (instance instanceof HazelcastClientProxy) {
-            return HazelcastClientCachingProvider.createCachingProvider(instance).getCacheManager(uri, null, props);
+            return new HazelcastClientCachingProvider(instance).getCacheManager(uri, null, props);
         } else {
-            return HazelcastServerCachingProvider.createCachingProvider(instance).getCacheManager(uri, null, props);
+            return new HazelcastServerCachingProvider(instance).getCacheManager(uri, null, props);
         }
     }
 
     public static CacheManager getCacheManager(String uriString, Properties properties) {
         String instanceName = properties.getProperty(HazelcastCachingProvider.HAZELCAST_INSTANCE_NAME);
         if (instanceName == null) {
-            throw new IllegalStateException("Either instance-ref' attribute or "
+            throw new IllegalStateException("Either 'instance-ref' attribute or "
                     + HazelcastCachingProvider.HAZELCAST_INSTANCE_NAME + " property is required for creating cache manager");
         }
         return getCacheManager(Hazelcast.getHazelcastInstanceByName(instanceName), uriString, properties);

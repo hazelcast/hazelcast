@@ -18,8 +18,9 @@ package com.hazelcast.map.impl.query;
 
 import com.hazelcast.aggregation.Aggregator;
 import com.hazelcast.query.impl.QueryableEntry;
-import com.hazelcast.spi.serialization.SerializationService;
-import com.hazelcast.util.executor.ManagedExecutorService;
+import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.util.collection.PartitionIdSet;
+import com.hazelcast.internal.util.executor.ManagedExecutorService;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -27,8 +28,8 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.Future;
 
 import static com.hazelcast.query.impl.predicates.PredicateUtils.estimatedSizeOf;
-import static com.hazelcast.util.FutureUtil.RETHROW_EVERYTHING;
-import static com.hazelcast.util.FutureUtil.returnWithDeadline;
+import static com.hazelcast.internal.util.FutureUtil.RETHROW_EVERYTHING;
+import static com.hazelcast.internal.util.FutureUtil.returnWithDeadline;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 /**
@@ -54,7 +55,7 @@ public class ParallelAccumulationExecutor implements AccumulationExecutor {
     @Override
     @SuppressWarnings("unchecked")
     public AggregationResult execute(
-            Aggregator aggregator, Collection<QueryableEntry> entries, Collection<Integer> partitionIds) {
+            Aggregator aggregator, Collection<QueryableEntry> entries, PartitionIdSet partitionIds) {
         Collection<Aggregator> chunkAggregators = accumulateParallel(aggregator, entries);
 
         Aggregator resultAggregator = clone(aggregator);
@@ -72,7 +73,7 @@ public class ParallelAccumulationExecutor implements AccumulationExecutor {
     }
 
     protected Collection<Aggregator> accumulateParallel(Aggregator aggregator, Collection<QueryableEntry> entries) {
-        Collection<Future<Aggregator>> futures = new ArrayList<Future<Aggregator>>();
+        Collection<Future<Aggregator>> futures = new ArrayList<>();
         Collection<QueryableEntry>[] chunks = split(entries, THREAD_SPLIT_COUNT);
         if (chunks == null) {
             // not enough elements for split
@@ -97,7 +98,7 @@ public class ParallelAccumulationExecutor implements AccumulationExecutor {
         Collection<QueryableEntry>[] entriesSplit = new Collection[chunkCount];
         int entriesPerChunk = estimatedSize / chunkCount;
         for (int i = 0; i < chunkCount; i++) {
-            entriesSplit[i] = new ArrayList<QueryableEntry>(entriesPerChunk);
+            entriesSplit[i] = new ArrayList<>(entriesPerChunk);
         }
         for (QueryableEntry entry : entries) {
             entriesSplit[counter++ % THREAD_SPLIT_COUNT].add(entry);

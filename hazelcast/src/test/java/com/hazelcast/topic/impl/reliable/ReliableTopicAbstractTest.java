@@ -16,17 +16,17 @@
 
 package com.hazelcast.topic.impl.reliable;
 
+import com.hazelcast.cluster.Member;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.ReliableTopicConfig;
 import com.hazelcast.config.RingbufferConfig;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.ITopic;
-import com.hazelcast.core.Member;
-import com.hazelcast.core.Message;
-import com.hazelcast.monitor.LocalTopicStats;
+import com.hazelcast.topic.LocalTopicStats;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.util.Clock;
+import com.hazelcast.topic.ITopic;
+import com.hazelcast.topic.Message;
+import com.hazelcast.internal.util.Clock;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -72,29 +72,19 @@ public abstract class ReliableTopicAbstractTest extends HazelcastTestSupport {
 
     // ============== addMessageListener ==============================
 
-    @Test(expected = NullPointerException.class)
-    public void addMessageListener_whenNull() {
-        topic.addMessageListener(null);
-    }
-
     @Test
     public void addMessageListener() {
-        String id = topic.addMessageListener(new ReliableMessageListenerMock());
+        UUID id = topic.addMessageListener(new ReliableMessageListenerMock());
 
         assertNotNull(id);
     }
 
     // ============== removeMessageListener ==============================
 
-    @Test(expected = NullPointerException.class)
-    public void removeMessageListener_whenNull() {
-        topic.removeMessageListener(null);
-    }
-
     @Test
     public void removeMessageListener_whenExisting() {
         final ReliableMessageListenerMock listener = new ReliableMessageListenerMock();
-        String id = topic.addMessageListener(listener);
+        UUID id = topic.addMessageListener(listener);
 
         boolean removed = topic.removeMessageListener(id);
         assertTrue(removed);
@@ -111,7 +101,7 @@ public abstract class ReliableTopicAbstractTest extends HazelcastTestSupport {
 
     @Test
     public void removeMessageListener_whenNonExisting() {
-        boolean result = topic.removeMessageListener(UUID.randomUUID().toString());
+        boolean result = topic.removeMessageListener(UUID.randomUUID());
 
         assertFalse(result);
     }
@@ -119,7 +109,7 @@ public abstract class ReliableTopicAbstractTest extends HazelcastTestSupport {
     @Test
     public void removeMessageListener_whenAlreadyRemoved() {
         final ReliableMessageListenerMock listener = new ReliableMessageListenerMock();
-        String id = topic.addMessageListener(listener);
+        UUID id = topic.addMessageListener(listener);
         topic.removeMessageListener(id);
 
         boolean result = topic.removeMessageListener(id);
@@ -149,20 +139,6 @@ public abstract class ReliableTopicAbstractTest extends HazelcastTestSupport {
             @Override
             public void run() throws Exception {
                 assertContains(listener.objects, msg);
-            }
-        });
-    }
-
-    @Test
-    public void publishNull() throws InterruptedException {
-        final ReliableMessageListenerMock listener = new ReliableMessageListenerMock();
-        topic.addMessageListener(listener);
-        topic.publish(null);
-
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertContains(listener.objects, null);
             }
         });
     }

@@ -19,7 +19,6 @@ package com.hazelcast.config.helpers;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.config.CacheConfigTest;
 import com.hazelcast.config.EvictionConfig;
-import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.HotRestartConfig;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.WanReplicationRef;
@@ -28,20 +27,31 @@ import com.hazelcast.internal.dynamicconfig.DynamicConfigTest;
 import javax.cache.configuration.MutableCacheEntryListenerConfiguration;
 import java.util.Collections;
 
+import static com.hazelcast.config.MaxSizePolicy.ENTRY_COUNT;
+import static com.hazelcast.config.EvictionPolicy.RANDOM;
 import static com.hazelcast.test.HazelcastTestSupport.randomName;
 
 public abstract class CacheConfigHelper {
 
     public static EvictionConfig getEvictionConfigByPolicy() {
-        return new EvictionConfig(39, EvictionConfig.MaxSizePolicy.ENTRY_COUNT, EvictionPolicy.RANDOM);
+        return new EvictionConfig()
+                .setSize(39)
+                .setMaxSizePolicy(ENTRY_COUNT)
+                .setEvictionPolicy(RANDOM);
     }
 
     public static EvictionConfig getEvictionConfigByClassName() {
-        return new EvictionConfig(39, EvictionConfig.MaxSizePolicy.ENTRY_COUNT, "com.hazelcast.Comparator");
+        return new EvictionConfig()
+                .setSize(39)
+                .setMaxSizePolicy(ENTRY_COUNT)
+                .setComparatorClassName("com.hazelcast.Comparator");
     }
 
     public static EvictionConfig getEvictionConfigByImplementation() {
-        return new EvictionConfig(39, EvictionConfig.MaxSizePolicy.ENTRY_COUNT, new DynamicConfigTest.SampleEvictionPolicyComparator());
+        return new EvictionConfig()
+                .setSize(39)
+                .setMaxSizePolicy(ENTRY_COUNT)
+                .setComparator(new DynamicConfigTest.SampleEvictionPolicyComparator());
     }
 
     public static CacheConfig newDefaultCacheConfig(String name) {
@@ -51,7 +61,7 @@ public abstract class CacheConfigHelper {
     public static CacheConfig newCompleteCacheConfig(String name) {
         CacheConfig cacheConfig = new CacheConfig();
         cacheConfig.setName(name);
-        cacheConfig.setQuorumName("quorum");
+        cacheConfig.setSplitBrainProtectionName("split-brain-protection");
         cacheConfig.setInMemoryFormat(InMemoryFormat.OBJECT);
         cacheConfig.setBackupCount(3);
         cacheConfig.setAsyncBackupCount(2);
@@ -59,7 +69,7 @@ public abstract class CacheConfigHelper {
                 "com.hazelcast.MergePolicy", Collections.singletonList("filter"), true));
         cacheConfig.addCacheEntryListenerConfiguration(new MutableCacheEntryListenerConfiguration(
                 new CacheConfigTest.EntryListenerFactory(), null, false, true));
-        cacheConfig.setMergePolicy("mergePolicy");
+        cacheConfig.getMergePolicyConfig().setPolicy("mergePolicy");
         cacheConfig.setStatisticsEnabled(true);
         cacheConfig.setManagementEnabled(true);
         cacheConfig.setDisablePerEntryInvalidationEvents(true);

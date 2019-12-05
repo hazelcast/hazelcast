@@ -25,15 +25,15 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.spi.NamedOperation;
-import com.hazelcast.spi.ObjectNamespace;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.PartitionAwareOperation;
-import com.hazelcast.spi.ServiceNamespaceAware;
+import com.hazelcast.spi.impl.operationservice.NamedOperation;
+import com.hazelcast.internal.services.ObjectNamespace;
+import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.spi.impl.operationservice.PartitionAwareOperation;
+import com.hazelcast.internal.services.ServiceNamespaceAware;
 
 import java.io.IOException;
 
-import static com.hazelcast.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 public abstract class AbstractMultiMapOperation extends Operation
         implements NamedOperation, PartitionAwareOperation, ServiceNamespaceAware, IdentifiedDataSerializable {

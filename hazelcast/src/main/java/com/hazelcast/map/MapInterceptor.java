@@ -16,7 +16,7 @@
 
 package com.hazelcast.map;
 
-import com.hazelcast.nio.serialization.BinaryInterface;
+import com.hazelcast.internal.serialization.BinaryInterface;
 
 import java.io.Serializable;
 

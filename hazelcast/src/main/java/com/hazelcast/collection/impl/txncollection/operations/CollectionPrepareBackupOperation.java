@@ -20,23 +20,25 @@ import com.hazelcast.collection.impl.CollectionTxnUtil;
 import com.hazelcast.collection.impl.collection.CollectionContainer;
 import com.hazelcast.collection.impl.collection.CollectionDataSerializerHook;
 import com.hazelcast.collection.impl.collection.operations.CollectionOperation;
+import com.hazelcast.internal.util.UUIDSerializationUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.spi.BackupOperation;
+import com.hazelcast.spi.impl.operationservice.BackupOperation;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
+import java.util.UUID;
 
 public class CollectionPrepareBackupOperation extends CollectionOperation implements BackupOperation {
 
     private long[] itemIds;
-    private String transactionId;
+    private UUID transactionId;
 
     public CollectionPrepareBackupOperation() {
     }
 
     @SuppressFBWarnings("EI_EXPOSE_REP")
-    public CollectionPrepareBackupOperation(String name, long[] itemIds, String transactionId) {
+    public CollectionPrepareBackupOperation(String name, long[] itemIds, UUID transactionId) {
         super(name);
         this.itemIds = itemIds;
         this.transactionId = transactionId;
@@ -55,21 +57,21 @@ public class CollectionPrepareBackupOperation extends CollectionOperation implem
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return CollectionDataSerializerHook.COLLECTION_PREPARE_BACKUP;
     }
 
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        out.writeUTF(transactionId);
+        UUIDSerializationUtil.writeUUID(out, transactionId);
         out.writeLongArray(itemIds);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        transactionId = in.readUTF();
+        transactionId = UUIDSerializationUtil.readUUID(in);
         itemIds = in.readLongArray();
     }
 }

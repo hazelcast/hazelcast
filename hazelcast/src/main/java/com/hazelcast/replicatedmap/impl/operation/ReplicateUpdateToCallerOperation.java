@@ -16,15 +16,16 @@
 
 package com.hazelcast.replicatedmap.impl.operation;
 
+import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.nio.Address;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapEventPublishingService;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
 import com.hazelcast.replicatedmap.impl.record.ReplicatedRecordStore;
-import com.hazelcast.spi.PartitionAwareOperation;
+import com.hazelcast.spi.impl.operationservice.PartitionAwareOperation;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 
 import java.io.IOException;
@@ -108,8 +109,8 @@ public class ReplicateUpdateToCallerOperation extends AbstractSerializableOperat
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         out.writeUTF(name);
         out.writeLong(callId);
-        out.writeData(dataKey);
-        out.writeData(dataValue);
+        IOUtil.writeData(out, dataKey);
+        IOUtil.writeData(out, dataValue);
         response.writeData(out);
         out.writeLong(ttl);
         out.writeBoolean(isRemove);
@@ -119,8 +120,8 @@ public class ReplicateUpdateToCallerOperation extends AbstractSerializableOperat
     protected void readInternal(ObjectDataInput in) throws IOException {
         name = in.readUTF();
         callId = in.readLong();
-        dataKey = in.readData();
-        dataValue = in.readData();
+        dataKey = IOUtil.readData(in);
+        dataValue = IOUtil.readData(in);
         response = new VersionResponsePair();
         response.readData(in);
         ttl = in.readLong();
@@ -128,7 +129,7 @@ public class ReplicateUpdateToCallerOperation extends AbstractSerializableOperat
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ReplicatedMapDataSerializerHook.REPLICATE_UPDATE_TO_CALLER;
     }
 }

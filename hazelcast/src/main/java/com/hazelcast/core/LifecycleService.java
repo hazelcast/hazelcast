@@ -16,6 +16,9 @@
 
 package com.hazelcast.core;
 
+import javax.annotation.Nonnull;
+import java.util.UUID;
+
 /**
  * LifecycleService allows you to shutdown, terminate, and listen to {@link LifecycleEvent}s
  * on HazelcastInstance.
@@ -47,7 +50,7 @@ public interface LifecycleService {
      * @param lifecycleListener the listener object
      * @return the listener ID
      */
-    String addLifecycleListener(LifecycleListener lifecycleListener);
+    @Nonnull UUID addLifecycleListener(@Nonnull LifecycleListener lifecycleListener);
 
     /**
      * Removes a lifecycle listener.
@@ -55,5 +58,5 @@ public interface LifecycleService {
      * @param registrationId the listener ID returned by {@link #addLifecycleListener(LifecycleListener)}
      * @return true if the listener is removed successfully, false otherwise
      */
-    boolean removeLifecycleListener(String registrationId);
+    boolean removeLifecycleListener(@Nonnull UUID registrationId);
 }

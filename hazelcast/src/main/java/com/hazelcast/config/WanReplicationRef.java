@@ -16,10 +16,10 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.internal.config.ConfigDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.BinaryInterface;
-import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import java.io.IOException;
 import java.io.Serializable;
@@ -34,22 +34,18 @@ import java.util.List;
  *
  * @see WanReplicationConfig
  */
-@BinaryInterface
-public class WanReplicationRef implements DataSerializable, Serializable {
+public class WanReplicationRef implements IdentifiedDataSerializable, Serializable {
 
     private boolean republishingEnabled = true;
     private String name;
     private String mergePolicy;
     private List<String> filters = new LinkedList<String>();
 
-    private WanReplicationRefReadOnly readOnly;
-
     public WanReplicationRef() {
     }
 
     public WanReplicationRef(WanReplicationRef ref) {
         this(ref.name, ref.mergePolicy, ref.filters, ref.republishingEnabled);
-        this.readOnly = ref.readOnly;
     }
 
     public WanReplicationRef(String name, String mergePolicy, List<String> filters,
@@ -58,20 +54,6 @@ public class WanReplicationRef implements DataSerializable, Serializable {
         this.mergePolicy = mergePolicy;
         this.filters = filters;
         this.republishingEnabled = republishingEnabled;
-        this.readOnly = null;
-    }
-
-    /**
-     * Gets immutable version of this configuration.
-     *
-     * @return immutable version of this configuration
-     * @deprecated this method will be removed in 4.0; it is meant for internal usage only
-     */
-    public WanReplicationRefReadOnly getAsReadOnly() {
-        if (readOnly == null) {
-            readOnly = new WanReplicationRefReadOnly(this);
-        }
-        return readOnly;
     }
 
     /**
@@ -170,6 +152,16 @@ public class WanReplicationRef implements DataSerializable, Serializable {
     public WanReplicationRef setRepublishingEnabled(boolean republishEnabled) {
         this.republishingEnabled = republishEnabled;
         return this;
+    }
+
+    @Override
+    public int getFactoryId() {
+        return ConfigDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getClassId() {
+        return ConfigDataSerializerHook.WAN_REPLICATION_REF;
     }
 
     @Override

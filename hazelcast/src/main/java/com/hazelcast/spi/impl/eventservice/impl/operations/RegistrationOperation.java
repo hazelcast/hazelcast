@@ -38,7 +38,7 @@ public class RegistrationOperation extends AbstractRegistrationOperation {
     }
 
     @Override
-    protected void runInternal() throws Exception {
+    protected void runInternal() {
         EventServiceImpl eventService = (EventServiceImpl) getNodeEngine().getEventService();
         response = eventService.handleRegistration(registration);
     }
@@ -60,7 +60,7 @@ public class RegistrationOperation extends AbstractRegistrationOperation {
     }
 
     @Override
-    public int getId() {
-        return SpiDataSerializerHook.REGISTRATION;
+    public int getClassId() {
+        return SpiDataSerializerHook.REGISTRATION_OPERATION;
     }
 }

@@ -20,14 +20,14 @@ import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.spi.BackupAwareOperation;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.spi.impl.operationservice.BackupAwareOperation;
+import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
 import org.junit.Test;
@@ -39,16 +39,16 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static com.hazelcast.spi.impl.operationservice.impl.InvocationConstant.VOID;
-import static com.hazelcast.util.UuidUtil.newUnsecureUuidString;
+import static com.hazelcast.internal.util.UuidUtil.newUnsecureUuidString;
 import static java.util.Collections.newSetFromMap;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class Invocation_OnBackupLeftTest extends HazelcastTestSupport {
 
-    private static final Set<String> backupRunning = newSetFromMap(new ConcurrentHashMap<String, Boolean>());
+    private static final Set<String> backupRunning = newSetFromMap(new ConcurrentHashMap<>());
 
     // we use 20 seconds so we don't get spurious build failures
     private static final int COMPLETION_TIMEOUT_SECONDS = 20;
@@ -62,8 +62,8 @@ public class Invocation_OnBackupLeftTest extends HazelcastTestSupport {
         TestHazelcastInstanceFactory instanceFactory = createHazelcastInstanceFactory();
         Config config = new Config()
                 // a long timeout is configured to verify that the fast timeout is kicking in
-                .setProperty(GroupProperty.OPERATION_BACKUP_TIMEOUT_MILLIS.getName(), "100000")
-                .setProperty(GroupProperty.MAX_JOIN_SECONDS.getName(), "5");
+                .setProperty(ClusterProperty.OPERATION_BACKUP_TIMEOUT_MILLIS.getName(), "100000")
+                .setProperty(ClusterProperty.MAX_JOIN_SECONDS.getName(), "5");
 
         HazelcastInstance[] cluster = instanceFactory.newInstances(config, 2);
         local = cluster[0];
@@ -127,10 +127,10 @@ public class Invocation_OnBackupLeftTest extends HazelcastTestSupport {
         private String backupId;
         private int primaryResponseDelaySeconds;
 
-        public PrimaryOperation() {
+        PrimaryOperation() {
         }
 
-        public PrimaryOperation(String backupId) {
+        PrimaryOperation(String backupId) {
             this.backupId = backupId;
         }
 
@@ -188,10 +188,10 @@ public class Invocation_OnBackupLeftTest extends HazelcastTestSupport {
     static class SlowBackupOperation extends Operation {
         private String backupId;
 
-        public SlowBackupOperation() {
+        SlowBackupOperation() {
         }
 
-        public SlowBackupOperation(String backupId) {
+        SlowBackupOperation(String backupId) {
             this.backupId = backupId;
         }
 

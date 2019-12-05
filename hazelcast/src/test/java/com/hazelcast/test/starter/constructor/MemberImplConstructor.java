@@ -16,16 +16,19 @@
 
 package com.hazelcast.test.starter.constructor;
 
+import com.hazelcast.cluster.impl.MemberImpl;
 import com.hazelcast.test.starter.HazelcastStarterConstructor;
 import com.hazelcast.version.MemberVersion;
 
 import java.lang.reflect.Constructor;
+import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 
 import static com.hazelcast.test.starter.HazelcastProxyFactory.proxyArgumentsIfNeeded;
 import static com.hazelcast.test.starter.ReflectionUtils.getFieldValueReflectively;
 
-@HazelcastStarterConstructor(classNames = {"com.hazelcast.instance.MemberImpl"})
+@HazelcastStarterConstructor(classNames = {"com.hazelcast.cluster.impl.MemberImpl"})
 public class MemberImplConstructor extends AbstractStarterObjectConstructor {
 
     public MemberImplConstructor(Class<?> targetClass) {
@@ -37,29 +40,26 @@ public class MemberImplConstructor extends AbstractStarterObjectConstructor {
         Object address = getFieldValueReflectively(delegate, "address");
         Object memberVersion = getMemberVersion(delegate);
         Boolean localMember = (Boolean) getFieldValueReflectively(delegate, "localMember");
-        String uuid = (String) getFieldValueReflectively(delegate, "uuid");
+        UUID uuid = (UUID) getFieldValueReflectively(delegate, "uuid");
         Object attributes = getFieldValueReflectively(delegate, "attributes");
         Boolean liteMember = (Boolean) getFieldValueReflectively(delegate, "liteMember");
 
         ClassLoader targetClassloader = targetClass.getClassLoader();
-        Class<?> addressClass = targetClassloader.loadClass("com.hazelcast.nio.Address");
         Class<?> memberVersionClass = targetClassloader.loadClass("com.hazelcast.version.MemberVersion");
 
-        // obtain reference to constructor MemberImpl(Address address, MemberVersion version, boolean localMember,
-        //                                            String uuid, Map<String, Object> attributes, boolean liteMember)
-        Constructor<?> constructor = targetClass.getDeclaredConstructor(addressClass, memberVersionClass, Boolean.TYPE,
-                String.class, Map.class, Boolean.TYPE);
-        Object[] args = new Object[]{
-                address,
-                memberVersion,
-                localMember,
-                uuid,
-                attributes,
-                liteMember,
-        };
-
-        Object[] proxiedArgs = proxyArgumentsIfNeeded(args, targetClassloader);
-        return constructor.newInstance(proxiedArgs);
+        Class<?> hzImplClass = targetClassloader.loadClass("com.hazelcast.instance.impl.HazelcastInstanceImpl");
+        Constructor<?> constructor = targetClass
+                .getDeclaredConstructor(Map.class, memberVersionClass, Boolean.TYPE, UUID.class, Map.class, Boolean.TYPE,
+                        Integer.TYPE, hzImplClass);
+        constructor.setAccessible(true);
+        Class<?> endpointQualifierClass =
+                targetClassloader.loadClass("com.hazelcast.instance.EndpointQualifier");
+        Object memberEndpointQualifer = endpointQualifierClass.getDeclaredField("MEMBER").get(null);
+        Map addressMap = new HashMap();
+        addressMap.put(memberEndpointQualifer, address);
+        Object[] args = new Object[] {addressMap, memberVersion, localMember, uuid, attributes, liteMember,
+                                      MemberImpl.NA_MEMBER_LIST_JOIN_VERSION, null};
+        return constructor.newInstance(proxyArgumentsIfNeeded(args, targetClassloader));
     }
 
     private static Object getMemberVersion(Object delegate) throws Exception {

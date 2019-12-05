@@ -17,20 +17,17 @@
 package com.hazelcast.replicatedmap.impl.record;
 
 import com.hazelcast.core.EntryView;
-import com.hazelcast.nio.IOUtil;
+import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.nio.serialization.impl.Versioned;
 import com.hazelcast.replicatedmap.impl.operation.ReplicatedMapDataSerializerHook;
-import com.hazelcast.spi.serialization.SerializationService;
+import com.hazelcast.internal.serialization.SerializationService;
 
 import java.io.IOException;
 
-import static com.hazelcast.internal.cluster.Versions.V3_11;
-
 public class ReplicatedMapEntryView<K, V>
-        implements EntryView, IdentifiedDataSerializable, Versioned {
+        implements EntryView, IdentifiedDataSerializable {
 
     private static final int NOT_AVAILABLE = -1;
 
@@ -146,7 +143,7 @@ public class ReplicatedMapEntryView<K, V>
     }
 
     @Override
-    public Long getMaxIdle() {
+    public long getMaxIdle() {
         return maxIdle;
     }
 
@@ -164,10 +161,7 @@ public class ReplicatedMapEntryView<K, V>
         out.writeLong(lastAccessTime);
         out.writeLong(lastUpdateTime);
         out.writeLong(ttl);
-        //RU_COMPAT_3_10
-        if (out.getVersion().isGreaterOrEqual(V3_11)) {
-            out.writeLong(maxIdle);
-        }
+        out.writeLong(maxIdle);
     }
 
     @Override
@@ -179,10 +173,7 @@ public class ReplicatedMapEntryView<K, V>
         lastAccessTime = in.readLong();
         lastUpdateTime = in.readLong();
         ttl = in.readLong();
-        //RU_COMPAT_3_10
-        if (in.getVersion().isGreaterOrEqual(V3_11)) {
-            maxIdle = in.readLong();
-        }
+        maxIdle = in.readLong();
     }
 
     @Override
@@ -191,7 +182,7 @@ public class ReplicatedMapEntryView<K, V>
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ReplicatedMapDataSerializerHook.ENTRY_VIEW;
     }
 
@@ -205,6 +196,7 @@ public class ReplicatedMapEntryView<K, V>
                 + ", lastAccessTime=" + lastAccessTime
                 + ", lastUpdateTime=" + lastUpdateTime
                 + ", ttl=" + ttl
+                + ", maxIdle=" + maxIdle
                 + '}';
     }
 }

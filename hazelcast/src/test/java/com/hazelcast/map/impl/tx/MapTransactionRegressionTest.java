@@ -20,13 +20,11 @@ import com.hazelcast.config.Config;
 import com.hazelcast.core.EntryAdapter;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IMap;
-import com.hazelcast.core.TransactionalMap;
-import com.hazelcast.query.EntryObject;
+import com.hazelcast.map.IMap;
 import com.hazelcast.query.Predicate;
-import com.hazelcast.query.PredicateBuilder;
+import com.hazelcast.query.PredicateBuilder.EntryObject;
+import com.hazelcast.query.Predicates;
 import com.hazelcast.query.SampleTestObjects;
-import com.hazelcast.query.SqlPredicate;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -34,8 +32,7 @@ import com.hazelcast.test.annotation.NightlyTest;
 import com.hazelcast.transaction.TransactionContext;
 import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.TransactionOptions;
-import com.hazelcast.transaction.TransactionalTask;
-import com.hazelcast.transaction.TransactionalTaskContext;
+import com.hazelcast.transaction.TransactionalMap;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -65,45 +62,41 @@ public class MapTransactionRegressionTest extends HazelcastTestSupport {
         map.put("1", "1");
         map.put("2", "2");
 
-        boolean b = h1.executeTransaction(options, new TransactionalTask<Boolean>() {
-            public Boolean execute(TransactionalTaskContext context) throws TransactionException {
-                final TransactionalMap<Object, Object> txMap = context.getMap("default");
-                txMap.put("3", "3");
+        boolean b = h1.executeTransaction(options, (context) -> {
+            final TransactionalMap<Object, Object> txMap = context.getMap("default");
+            txMap.put("3", "3");
 
-                assertEquals(3, txMap.keySet().size());
+            assertEquals(3, txMap.keySet().size());
 
-                map.put("4", "4");
+            map.put("4", "4");
 
-                assertEquals(4, txMap.keySet().size());
+            assertEquals(4, txMap.keySet().size());
 
-                txMap.remove("1");
+            txMap.remove("1");
 
-                assertEquals(3, txMap.keySet().size());
+            assertEquals(3, txMap.keySet().size());
 
-                map.remove("2");
+            map.remove("2");
 
-                assertEquals(2, txMap.keySet().size());
-                assertEquals(2, txMap.size());
+            assertEquals(2, txMap.keySet().size());
+            assertEquals(2, txMap.size());
 
-                return true;
-            }
+            return true;
         });
 
         assertEquals(2, map.keySet().size());
 
         // raise an exception and rollback changes.
         try {
-            boolean b2 = h1.executeTransaction(options, new TransactionalTask<Boolean>() {
-                public Boolean execute(TransactionalTaskContext context) throws TransactionException {
-                    final TransactionalMap<Object, Object> txMap = context.getMap("default");
+            boolean b2 = h1.executeTransaction(options, (context) -> {
+                final TransactionalMap<Object, Object> txMap = context.getMap("default");
 
-                    txMap.put("5", "5");
+                txMap.put("5", "5");
 
-                    assertEquals(3, txMap.keySet().size());
-                    assertEquals(2, map.keySet().size());
+                assertEquals(3, txMap.keySet().size());
+                assertEquals(2, map.keySet().size());
 
-                    throw new DummyUncheckedHazelcastTestException();
-                }
+                throw new DummyUncheckedHazelcastTestException();
             });
         } catch (Exception e) {
             if (!(e instanceof DummyUncheckedHazelcastTestException)) {
@@ -131,31 +124,29 @@ public class MapTransactionRegressionTest extends HazelcastTestSupport {
 
 
         try {
-            h1.executeTransaction(options, new TransactionalTask<Boolean>() {
-                public Boolean execute(TransactionalTaskContext context) throws TransactionException {
-                    final TransactionalMap<Object, Object> txMap = context.getMap("default");
+            h1.executeTransaction(options, (context) -> {
+                final TransactionalMap<Object, Object> txMap = context.getMap("default");
 
-                    assertEquals(0, txMap.keySet(new SqlPredicate("age <= 10")).size());
-                    //put
-                    txMap.put(2, employee2);
-                    Set keys = txMap.keySet(new SqlPredicate("age <= 10"));
-                    Iterator iterator = keys.iterator();
+                assertEquals(0, txMap.keySet(Predicates.sql("age <= 10")).size());
+                //put
+                txMap.put(2, employee2);
+                Set keys = txMap.keySet(Predicates.sql("age <= 10"));
+                Iterator iterator = keys.iterator();
 
-                    assertEquals(1, keys.size());
+                assertEquals(1, keys.size());
 
-                    while (iterator.hasNext()) {
-                        assertEquals(2, ((Integer) iterator.next()).intValue());
-                    }
-
-                    txMap.put(3, employee3);
-                    txMap.put(4, employee4);
-
-                    keys = txMap.keySet(new SqlPredicate("age <= 10"));
-                    assertEquals(3, keys.size());
-
-                    // force rollback.
-                    throw new DummyUncheckedHazelcastTestException();
+                while (iterator.hasNext()) {
+                    assertEquals(2, ((Integer) iterator.next()).intValue());
                 }
+
+                txMap.put(3, employee3);
+                txMap.put(4, employee4);
+
+                keys = txMap.keySet(Predicates.sql("age <= 10"));
+                assertEquals(3, keys.size());
+
+                // force rollback.
+                throw new DummyUncheckedHazelcastTestException();
             });
         } catch (Exception e) {
             if (!(e instanceof DummyUncheckedHazelcastTestException)) {
@@ -164,7 +155,7 @@ public class MapTransactionRegressionTest extends HazelcastTestSupport {
         }
         assertEquals(1, map.size());
         assertEquals(1, map.keySet().size());
-        assertEquals(0, map.keySet(new SqlPredicate("age <= 10")).size());
+        assertEquals(0, map.keySet(Predicates.sql("age <= 10")).size());
 
         h1.shutdown();
         h2.shutdown();
@@ -194,7 +185,7 @@ public class MapTransactionRegressionTest extends HazelcastTestSupport {
 
         assertEquals(2, txMap.size());
         assertEquals(2, txMap.keySet().size());
-        assertEquals(1, txMap.keySet(new SqlPredicate("age = 34")).size());
+        assertEquals(1, txMap.keySet(Predicates.sql("age = 34")).size());
 
         context.commitTransaction();
 
@@ -216,8 +207,7 @@ public class MapTransactionRegressionTest extends HazelcastTestSupport {
         map2.put("2", "2");
 
 
-        boolean b = h1.executeTransaction(options, new TransactionalTask<Boolean>() {
-            public Boolean execute(TransactionalTaskContext context) throws TransactionException {
+        boolean b = h1.executeTransaction(options, (context) -> {
                 final TransactionalMap<Object, Object> txMap = context.getMap("default");
                 txMap.put("3", "3");
                 assertEquals(3, txMap.values().size());
@@ -231,7 +221,6 @@ public class MapTransactionRegressionTest extends HazelcastTestSupport {
                 txMap.put("12", "32");
                 assertEquals(2, map2.values().size());
                 return true;
-            }
         });
 
         assertEquals(3, map2.values().size());
@@ -251,31 +240,29 @@ public class MapTransactionRegressionTest extends HazelcastTestSupport {
         map2.put(1, emp1);
         final SampleTestObjects.Employee emp2 = new SampleTestObjects.Employee("xvz", 4, true, 10D);
 
-        boolean b = h1.executeTransaction(options, new TransactionalTask<Boolean>() {
-            public Boolean execute(TransactionalTaskContext context) throws TransactionException {
-                final TransactionalMap<Object, Object> txMap = context.getMap("default");
-                assertEquals(0, txMap.values(new SqlPredicate("age <= 10")).size());
-                txMap.put(2, emp2);
-                Collection coll = txMap.values(new SqlPredicate("age <= 10"));
-                Iterator<Object> iterator = coll.iterator();
-                while (iterator.hasNext()) {
-                    final SampleTestObjects.Employee e = (SampleTestObjects.Employee) iterator.next();
-                    assertEquals(emp2, e);
-                }
-                coll = txMap.values(new SqlPredicate("age > 30 "));
-                iterator = coll.iterator();
-                while (iterator.hasNext()) {
-                    final SampleTestObjects.Employee e = (SampleTestObjects.Employee) iterator.next();
-                    assertEquals(emp1, e);
-                }
-                txMap.remove(2);
-                coll = txMap.values(new SqlPredicate("age <= 10 "));
-                assertEquals(0, coll.size());
-                return true;
+        boolean b = h1.executeTransaction(options, (context) -> {
+            final TransactionalMap<Object, Object> txMap = context.getMap("default");
+            assertEquals(0, txMap.values(Predicates.sql("age <= 10")).size());
+            txMap.put(2, emp2);
+            Collection coll = txMap.values(Predicates.sql("age <= 10"));
+            Iterator<Object> iterator = coll.iterator();
+            while (iterator.hasNext()) {
+                final SampleTestObjects.Employee e = (SampleTestObjects.Employee) iterator.next();
+                assertEquals(emp2, e);
             }
+            coll = txMap.values(Predicates.sql("age > 30 "));
+            iterator = coll.iterator();
+            while (iterator.hasNext()) {
+                final SampleTestObjects.Employee e = (SampleTestObjects.Employee) iterator.next();
+                assertEquals(emp1, e);
+            }
+            txMap.remove(2);
+            coll = txMap.values(Predicates.sql("age <= 10 "));
+            assertEquals(0, coll.size());
+            return true;
         });
-        assertEquals(0, map2.values(new SqlPredicate("age <= 10")).size());
-        assertEquals(1, map2.values(new SqlPredicate("age = 34")).size());
+        assertEquals(0, map2.values(Predicates.sql("age <= 10")).size());
+        assertEquals(1, map2.values(Predicates.sql("age = 34")).size());
         h1.shutdown();
         h2.shutdown();
     }
@@ -289,17 +276,14 @@ public class MapTransactionRegressionTest extends HazelcastTestSupport {
         final HazelcastInstance instance2 = factory.newHazelcastInstance(config);
 
         final CountDownLatch latch = new CountDownLatch(1);
-        final Thread t = new Thread() {
-            @Override
-            public void run() {
-                TransactionContext ctx = instance2.newTransactionContext();
-                ctx.beginTransaction();
-                TransactionalMap<Integer, Integer> txnMap = ctx.getMap("test");
-                latch.countDown();
-                txnMap.delete(1);
-                ctx.commitTransaction();
-            }
-        };
+        final Thread t = new Thread(() -> {
+            TransactionContext ctx = instance2.newTransactionContext();
+            ctx.beginTransaction();
+            TransactionalMap<Integer, Integer> txnMap = ctx.getMap("test");
+            latch.countDown();
+            txnMap.delete(1);
+            ctx.commitTransaction();
+        });
 
         t.start();
 
@@ -323,8 +307,8 @@ public class MapTransactionRegressionTest extends HazelcastTestSupport {
         EntryListener<String, Integer> l = new EntryAdapter<String, Integer>() {
         };
 
-        EntryObject e = new PredicateBuilder().getEntryObject();
-        Predicate<String, Integer> p = e.equal(1);
+        EntryObject e = Predicates.newPredicateBuilder().getEntryObject();
+        Predicate<String, Integer> p = e.get("this").equal(1);
         map.addEntryListener(l, p, null, false);
 
         for (Integer i = 0; i < 100; i++) {

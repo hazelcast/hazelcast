@@ -16,22 +16,21 @@
 
 package com.hazelcast.map.impl.query;
 
-import com.hazelcast.query.PagingPredicate;
+import com.hazelcast.internal.util.executor.ManagedExecutorService;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.impl.QueryableEntriesSegment;
-import com.hazelcast.util.executor.ManagedExecutorService;
+import com.hazelcast.query.impl.predicates.PagingPredicateImpl;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Future;
 
-import static com.hazelcast.query.PagingPredicateAccessor.getNearestAnchorEntry;
-import static com.hazelcast.util.FutureUtil.RETHROW_EVERYTHING;
-import static com.hazelcast.util.FutureUtil.returnWithDeadline;
+import static com.hazelcast.internal.util.FutureUtil.RETHROW_EVERYTHING;
+import static com.hazelcast.internal.util.FutureUtil.returnWithDeadline;
+import static com.hazelcast.internal.util.SetUtil.singletonPartitionIdSet;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 /**
@@ -52,12 +51,14 @@ public class ParallelPartitionScanExecutor implements PartitionScanExecutor {
         this.timeoutInMillis = timeoutInMillis;
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public void execute(String mapName, Predicate predicate, Collection<Integer> partitions, Result result) {
         runUsingPartitionScanWithoutPaging(mapName, predicate, partitions, result);
-        if (predicate instanceof PagingPredicate) {
-            Map.Entry<Integer, Map.Entry> nearestAnchorEntry = getNearestAnchorEntry((PagingPredicate) predicate);
-            result.orderAndLimit((PagingPredicate) predicate, nearestAnchorEntry);
+        if (predicate instanceof PagingPredicateImpl) {
+            PagingPredicateImpl pagingPredicate = (PagingPredicateImpl) predicate;
+            Map.Entry<Integer, Map.Entry> nearestAnchorEntry = pagingPredicate.getNearestAnchorEntry();
+            result.orderAndLimit(pagingPredicate, nearestAnchorEntry);
         }
     }
 
@@ -72,7 +73,7 @@ public class ParallelPartitionScanExecutor implements PartitionScanExecutor {
 
     protected void runUsingPartitionScanWithoutPaging(String name, Predicate predicate, Collection<Integer> partitions,
                                                       Result result) {
-        List<Future<Result>> futures = new ArrayList<Future<Result>>(partitions.size());
+        List<Future<Result>> futures = new ArrayList<>(partitions.size());
 
         for (Integer partitionId : partitions) {
             Future<Result> future = runPartitionScanForPartition(name, predicate, partitionId, result.createSubResult());
@@ -110,7 +111,8 @@ public class ParallelPartitionScanExecutor implements PartitionScanExecutor {
         @Override
         public Result call() {
             partitionScanRunner.run(name, predicate, partition, result);
-            result.setPartitionIds(Collections.singletonList(partition));
+            result.setPartitionIds(singletonPartitionIdSet(partitionScanRunner.partitionService.getPartitionCount(),
+                    partition));
             return result;
         }
     }

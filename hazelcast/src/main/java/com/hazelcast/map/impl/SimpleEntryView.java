@@ -17,15 +17,13 @@
 package com.hazelcast.map.impl;
 
 import com.hazelcast.core.EntryView;
-import com.hazelcast.nio.IOUtil;
+import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.nio.serialization.impl.Versioned;
 
 import java.io.IOException;
-
-import static com.hazelcast.internal.cluster.Versions.V3_11;
+import java.util.Objects;
 
 /**
  * SimpleEntryView is an implementation of {@link com.hazelcast.core.EntryView} and also it is writable.
@@ -35,7 +33,7 @@ import static com.hazelcast.internal.cluster.Versions.V3_11;
  */
 @SuppressWarnings("checkstyle:methodcount")
 public class SimpleEntryView<K, V>
-        implements EntryView<K, V>, IdentifiedDataSerializable, Versioned {
+        implements EntryView<K, V>, IdentifiedDataSerializable {
 
     private K key;
     private V value;
@@ -214,7 +212,7 @@ public class SimpleEntryView<K, V>
     }
 
     @Override
-    public Long getMaxIdle() {
+    public long getMaxIdle() {
         return maxIdle;
     }
 
@@ -225,21 +223,6 @@ public class SimpleEntryView<K, V>
     public SimpleEntryView<K, V> withMaxIdle(long maxIdle) {
         this.maxIdle = maxIdle;
         return this;
-    }
-
-    /**
-     * Needed for client protocol compatibility.
-     */
-    @SuppressWarnings("unused")
-    public long getEvictionCriteriaNumber() {
-        return 0;
-    }
-
-    /**
-     * Needed for client protocol compatibility.
-     */
-    @SuppressWarnings("unused")
-    public void setEvictionCriteriaNumber(long evictionCriteriaNumber) {
     }
 
     @Override
@@ -254,13 +237,8 @@ public class SimpleEntryView<K, V>
         out.writeLong(lastStoredTime);
         out.writeLong(lastUpdateTime);
         out.writeLong(version);
-        // writes the deprecated evictionCriteriaNumber to the data output (client protocol compatibility)
-        out.writeLong(0);
         out.writeLong(ttl);
-        // RU_COMPAT_3_10
-        if (out.getVersion().isGreaterOrEqual(V3_11)) {
-            out.writeLong(maxIdle);
-        }
+        out.writeLong(maxIdle);
     }
 
     @Override
@@ -275,16 +253,8 @@ public class SimpleEntryView<K, V>
         lastStoredTime = in.readLong();
         lastUpdateTime = in.readLong();
         version = in.readLong();
-        // reads the deprecated evictionCriteriaNumber from the data input (client protocol compatibility)
-        in.readLong();
         ttl = in.readLong();
-        // RU_COMPAT_3_10
-        // DO NOT REMOVE UNTIL WAN PROTOCOL HAS BEEN IMPLEMENTED
-        // THE SOURCE CLUSTER SERIALIZES THE com.hazelcast.map.impl.wan.WanMapEntryView
-        // THE TARGET CLUSTER SHOULD DESERIALIZE THIS CLASS
-        if (in.getVersion().isGreaterOrEqual(V3_11)) {
-            maxIdle = in.readLong();
-        }
+        maxIdle = in.readLong();
     }
 
     @Override
@@ -293,7 +263,7 @@ public class SimpleEntryView<K, V>
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MapDataSerializerHook.ENTRY_VIEW;
     }
 
@@ -338,10 +308,10 @@ public class SimpleEntryView<K, V>
         if (maxIdle != that.maxIdle) {
             return false;
         }
-        if (key != null ? !key.equals(that.key) : that.key != null) {
+        if (!Objects.equals(key, that.key)) {
             return false;
         }
-        return value != null ? value.equals(that.value) : that.value == null;
+        return Objects.equals(value, that.value);
     }
 
     @Override

@@ -18,7 +18,7 @@ package com.hazelcast.wan.impl;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.MapConfig;
-import com.hazelcast.config.WanPublisherConfig;
+import com.hazelcast.config.CustomWanPublisherConfig;
 import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.config.WanReplicationRef;
 import com.hazelcast.core.HazelcastInstance;
@@ -26,11 +26,11 @@ import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.proxy.MapProxyImpl;
-import com.hazelcast.map.merge.PassThroughMergePolicy;
+import com.hazelcast.spi.merge.PassThroughMergePolicy;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
 import org.junit.Test;
@@ -44,7 +44,7 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class WanConfigurationTest extends HazelcastTestSupport {
 
     private boolean isWanReplicationEnabled;
@@ -66,7 +66,7 @@ public class WanConfigurationTest extends HazelcastTestSupport {
 
         assertFalse(mapContainer.isWanReplicationEnabled());
         assertFalse(mapContainer.isWanRepublishingEnabled());
-        assertNull(mapContainer.getWanReplicationPublisher());
+        assertNull(mapContainer.getWanReplicationDelegate());
         assertNull(mapContainer.getWanMergePolicy());
         assertNull(mapContainer.getMapConfig().getWanReplicationRef());
     }
@@ -79,7 +79,7 @@ public class WanConfigurationTest extends HazelcastTestSupport {
 
         assertTrue(mapContainer.isWanReplicationEnabled());
         assertFalse(mapContainer.isWanRepublishingEnabled());
-        assertNotNull(mapContainer.getWanReplicationPublisher());
+        assertNotNull(mapContainer.getWanReplicationDelegate());
         assertNotNull(mapContainer.getWanMergePolicy());
 
         WanReplicationRef wanReplicationRef = mapContainer.getMapConfig().getWanReplicationRef();
@@ -96,7 +96,7 @@ public class WanConfigurationTest extends HazelcastTestSupport {
 
         assertTrue(mapContainer.isWanReplicationEnabled());
         assertTrue(mapContainer.isWanRepublishingEnabled());
-        assertNotNull(mapContainer.getWanReplicationPublisher());
+        assertNotNull(mapContainer.getWanReplicationDelegate());
         assertNotNull(mapContainer.getWanMergePolicy());
 
         WanReplicationRef wanReplicationRef = mapContainer.getMapConfig().getWanReplicationRef();
@@ -111,12 +111,13 @@ public class WanConfigurationTest extends HazelcastTestSupport {
             return super.getConfig();
         }
 
-        WanPublisherConfig wanPublisherConfig = new WanPublisherConfig()
+        CustomWanPublisherConfig customWanPublisherConfig = new CustomWanPublisherConfig()
+                .setPublisherId("dummyPublisherId")
                 .setClassName(DummyWanReplication.class.getName());
 
         WanReplicationConfig wanConfig = new WanReplicationConfig()
                 .setName("dummyWan")
-                .addWanPublisherConfig(wanPublisherConfig);
+                .addCustomPublisherConfig(customWanPublisherConfig);
 
         WanReplicationRef wanRef = new WanReplicationRef()
                 .setName("dummyWan")

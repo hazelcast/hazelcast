@@ -18,7 +18,7 @@ package com.hazelcast.nio.serialization;
 
 /**
  * Base interface of custom serialization interfaces
- * <p/>
+ * <p>
  * see {@link com.hazelcast.nio.serialization.ByteArraySerializer}
  * see {@link com.hazelcast.nio.serialization.StreamSerializer}
  */

@@ -20,8 +20,10 @@ import com.hazelcast.aggregation.Aggregator;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.query.impl.Comparables;
 
 import java.io.IOException;
+import java.util.Objects;
 
 public final class MinAggregator<I, R extends Comparable> extends AbstractAggregator<I, R, R>
         implements IdentifiedDataSerializable {
@@ -47,13 +49,14 @@ public final class MinAggregator<I, R extends Comparable> extends AbstractAggreg
         if (otherValue == null) {
             return false;
         }
-        return min == null || min.compareTo(otherValue) > 0;
+        return min == null || Comparables.compare(min, otherValue) > 0;
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public void combine(Aggregator aggregator) {
-        MinAggregator maxAggregator = (MinAggregator) aggregator;
-        R valueFromOtherAggregator = (R) maxAggregator.min;
+        MinAggregator minAggregator = (MinAggregator) aggregator;
+        R valueFromOtherAggregator = (R) minAggregator.min;
         if (isCurrentlyGreaterThan(valueFromOtherAggregator)) {
             this.min = valueFromOtherAggregator;
         }
@@ -70,7 +73,7 @@ public final class MinAggregator<I, R extends Comparable> extends AbstractAggreg
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return AggregatorDataSerializerHook.MIN;
     }
 
@@ -84,5 +87,25 @@ public final class MinAggregator<I, R extends Comparable> extends AbstractAggreg
     public void readData(ObjectDataInput in) throws IOException {
         this.attributePath = in.readUTF();
         this.min = in.readObject();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        if (!super.equals(o)) {
+            return false;
+        }
+        MinAggregator<?, ?> that = (MinAggregator<?, ?>) o;
+        return Objects.equals(min, that.min);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), min);
     }
 }

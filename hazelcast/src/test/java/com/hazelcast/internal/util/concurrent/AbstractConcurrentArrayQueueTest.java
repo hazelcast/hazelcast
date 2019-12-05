@@ -18,12 +18,12 @@ package com.hazelcast.internal.util.concurrent;
 
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.RequireAssertEnabled;
-import com.hazelcast.util.function.Predicate;
 import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.function.Predicate;
 
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;

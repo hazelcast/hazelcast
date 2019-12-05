@@ -19,24 +19,22 @@ package com.hazelcast.client.impl.protocol.task.executorservice;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ExecutorServiceSubmitToAddressCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractInvocationMessageTask;
-import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.executor.impl.DistributedExecutorService;
 import com.hazelcast.executor.impl.operations.MemberCallableTaskOperation;
-import com.hazelcast.instance.Node;
-import com.hazelcast.nio.Connection;
+import com.hazelcast.instance.impl.Node;
+import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.security.SecurityContext;
-import com.hazelcast.spi.InvocationBuilder;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.impl.operationservice.InternalOperationService;
+import com.hazelcast.spi.impl.operationservice.InvocationBuilder;
+import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 
 import javax.security.auth.Subject;
 import java.security.Permission;
 import java.util.concurrent.Callable;
 
 public class ExecutorServiceSubmitToAddressMessageTask
-        extends AbstractInvocationMessageTask<ExecutorServiceSubmitToAddressCodec.RequestParameters>
-        implements ExecutionCallback {
+        extends AbstractInvocationMessageTask<ExecutorServiceSubmitToAddressCodec.RequestParameters> {
 
     public ExecutorServiceSubmitToAddressMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -44,7 +42,7 @@ public class ExecutorServiceSubmitToAddressMessageTask
 
     @Override
     protected InvocationBuilder getInvocationBuilder(Operation op) {
-        final InternalOperationService operationService = nodeEngine.getOperationService();
+        final OperationServiceImpl operationService = nodeEngine.getOperationService();
         return operationService.createInvocationBuilder(getServiceName(), op, parameters.address);
     }
 
@@ -53,9 +51,14 @@ public class ExecutorServiceSubmitToAddressMessageTask
         SecurityContext securityContext = clientEngine.getSecurityContext();
         Data callableData = parameters.callable;
         if (securityContext != null) {
-            Callable callable = serializationService.toObject(parameters.callable);
             Subject subject = endpoint.getSubject();
-            callable = securityContext.createSecureCallable(subject, callable);
+            Object taskObject = serializationService.toObject(parameters.callable);
+            Callable callable;
+            if (taskObject instanceof Runnable) {
+                callable = securityContext.createSecureCallable(subject, (Runnable) taskObject);
+            } else {
+                callable = securityContext.createSecureCallable(subject, (Callable<? extends Object>) taskObject);
+            }
             callableData = serializationService.toData(callable);
         }
 
@@ -66,7 +69,9 @@ public class ExecutorServiceSubmitToAddressMessageTask
 
     @Override
     protected ExecutorServiceSubmitToAddressCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
-        return ExecutorServiceSubmitToAddressCodec.decodeRequest(clientMessage);
+        parameters = ExecutorServiceSubmitToAddressCodec.decodeRequest(clientMessage);
+        parameters.address = clientEngine.memberAddressOf(parameters.address);
+        return parameters;
     }
 
     @Override

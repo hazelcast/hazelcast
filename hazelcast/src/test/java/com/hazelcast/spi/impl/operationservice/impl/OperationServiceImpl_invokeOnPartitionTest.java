@@ -17,13 +17,12 @@
 package com.hazelcast.spi.impl.operationservice.impl;
 
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.spi.InternalCompletableFuture;
-import com.hazelcast.spi.impl.operationservice.InternalOperationService;
+import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.test.ExceptionThrowingCallable;
 import com.hazelcast.test.ExpectedRuntimeException;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
 import org.junit.Test;
@@ -34,11 +33,11 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class OperationServiceImpl_invokeOnPartitionTest extends HazelcastTestSupport {
 
     private HazelcastInstance local;
-    private InternalOperationService operationService;
+    private OperationServiceImpl operationService;
     private HazelcastInstance remote;
 
     @Before
@@ -78,7 +77,7 @@ public class OperationServiceImpl_invokeOnPartitionTest extends HazelcastTestSup
                 null, operation, getPartitionId(remote));
 
         try {
-            invocation.join();
+            invocation.joinInternal();
             fail();
         } catch (ExpectedRuntimeException expected) {
         }

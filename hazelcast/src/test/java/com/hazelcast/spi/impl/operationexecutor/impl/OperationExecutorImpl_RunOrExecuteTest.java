@@ -16,7 +16,7 @@
 
 package com.hazelcast.spi.impl.operationexecutor.impl;
 
-import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.PartitionSpecificRunnable;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
@@ -27,7 +27,7 @@ import org.junit.runner.RunWith;
 
 import java.util.concurrent.atomic.AtomicReference;
 
-import static com.hazelcast.spi.Operation.GENERIC_PARTITION_ID;
+import static com.hazelcast.spi.impl.operationservice.Operation.GENERIC_PARTITION_ID;
 import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertSame;
 

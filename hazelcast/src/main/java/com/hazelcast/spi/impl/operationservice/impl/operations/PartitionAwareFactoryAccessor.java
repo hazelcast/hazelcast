@@ -17,7 +17,7 @@
 package com.hazelcast.spi.impl.operationservice.impl.operations;
 
 import com.hazelcast.client.impl.operations.OperationFactoryWrapper;
-import com.hazelcast.spi.OperationFactory;
+import com.hazelcast.spi.impl.operationservice.OperationFactory;
 
 public final class PartitionAwareFactoryAccessor {
 

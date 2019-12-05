@@ -17,26 +17,26 @@
 package com.hazelcast.internal.partition.impl;
 
 import com.hazelcast.cluster.ClusterState;
-import com.hazelcast.core.ExecutionCallback;
-import com.hazelcast.instance.MemberImpl;
-import com.hazelcast.instance.Node;
+import com.hazelcast.cluster.impl.MemberImpl;
+import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.internal.partition.InternalPartition;
 import com.hazelcast.internal.partition.PartitionReplica;
 import com.hazelcast.internal.partition.operation.HasOngoingMigration;
+import com.hazelcast.internal.util.Clock;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.nio.Address;
-import com.hazelcast.spi.InternalCompletableFuture;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.OperationService;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.PartitionSpecificRunnable;
-import com.hazelcast.util.Clock;
+import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.spi.impl.operationservice.OperationService;
+import com.hazelcast.spi.impl.operationservice.impl.InvocationFuture;
 
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.BiConsumer;
 import java.util.logging.Level;
 
 import static com.hazelcast.internal.partition.impl.PartitionServiceState.FETCHING_PARTITION_TABLE;
@@ -45,7 +45,7 @@ import static com.hazelcast.internal.partition.impl.PartitionServiceState.MIGRAT
 import static com.hazelcast.internal.partition.impl.PartitionServiceState.REPLICA_NOT_OWNED;
 import static com.hazelcast.internal.partition.impl.PartitionServiceState.REPLICA_NOT_SYNC;
 import static com.hazelcast.internal.partition.impl.PartitionServiceState.SAFE;
-import static com.hazelcast.spi.partition.IPartitionService.SERVICE_NAME;
+import static com.hazelcast.internal.partition.IPartitionService.SERVICE_NAME;
 import static java.lang.Thread.currentThread;
 
 /**
@@ -90,7 +90,7 @@ public class PartitionReplicaStateChecker {
             return MIGRATION_LOCAL;
         }
 
-        if (!node.isMaster() && hasOnGoingMigrationMaster(Level.OFF)) {
+        if (!partitionService.isLocalMemberMaster() && hasOnGoingMigrationMaster(Level.OFF)) {
             return MIGRATION_ON_MASTER;
         }
 
@@ -236,7 +236,7 @@ public class PartitionReplicaStateChecker {
     @SuppressWarnings("checkstyle:npathcomplexity")
     private int invokeReplicaSyncOperations(int maxBackupCount, Semaphore semaphore, AtomicBoolean result) {
         MemberImpl localMember = node.getLocalMember();
-        ExecutionCallback<Object> callback = new ReplicaSyncResponseCallback(result, semaphore);
+        BiConsumer<Object, Throwable> callback = new ReplicaSyncResponseCallback(result, semaphore);
 
         ClusterServiceImpl clusterService = node.getClusterService();
         ClusterState clusterState = clusterService.getClusterState();
@@ -299,21 +299,21 @@ public class PartitionReplicaStateChecker {
 
         Operation operation = new HasOngoingMigration();
         OperationService operationService = nodeEngine.getOperationService();
-        InternalCompletableFuture<Boolean> future = operationService
+        InvocationFuture<Boolean> future = operationService
                 .createInvocationBuilder(SERVICE_NAME, operation, masterAddress)
                 .setTryCount(INVOCATION_TRY_COUNT)
                 .setTryPauseMillis(INVOCATION_TRY_PAUSE_MILLIS)
                 .invoke();
 
         try {
-            return future.join();
+            return future.joinInternal();
         } catch (Exception e) {
             logger.log(level, "Could not get a response from master about migrations! -> " + e.toString());
         }
         return false;
     }
 
-    private static class ReplicaSyncResponseCallback implements ExecutionCallback<Object> {
+    private static class ReplicaSyncResponseCallback implements BiConsumer<Object, Throwable> {
 
         private final AtomicBoolean result;
         private final Semaphore semaphore;
@@ -324,16 +324,15 @@ public class PartitionReplicaStateChecker {
         }
 
         @Override
-        public void onResponse(Object response) {
-            if (Boolean.FALSE.equals(response)) {
+        public void accept(Object response, Throwable throwable) {
+            if (throwable == null) {
+                if (Boolean.FALSE.equals(response)) {
+                    result.set(false);
+                }
+                semaphore.release();
+            } else {
                 result.set(false);
             }
-            semaphore.release();
-        }
-
-        @Override
-        public void onFailure(Throwable t) {
-            result.set(false);
         }
     }
 }

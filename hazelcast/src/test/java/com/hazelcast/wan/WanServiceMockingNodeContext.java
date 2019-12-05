@@ -16,20 +16,44 @@
 
 package com.hazelcast.wan;
 
-import com.hazelcast.instance.DefaultNodeContext;
-import com.hazelcast.instance.Node;
-import com.hazelcast.instance.NodeExtension;
+import com.hazelcast.instance.AddressPicker;
+import com.hazelcast.instance.impl.Node;
+import com.hazelcast.instance.impl.NodeContext;
+import com.hazelcast.instance.impl.NodeExtension;
+import com.hazelcast.internal.cluster.Joiner;
+import com.hazelcast.internal.networking.ServerSocketRegistry;
+import com.hazelcast.internal.nio.NetworkingService;
 
-public class WanServiceMockingNodeContext extends DefaultNodeContext {
-    private final WanReplicationService wanReplicationService;
+import java.util.function.Function;
 
-    public WanServiceMockingNodeContext(WanReplicationService wanReplicationService) {
+public class WanServiceMockingNodeContext implements NodeContext {
+    private final NodeContext nodeContextDelegate;
+    private final Function<Node, NodeExtension> nodeExtensionFn;
+
+    public WanServiceMockingNodeContext(NodeContext nodeContextDelegate,
+                                        Function<Node, NodeExtension> nodeExtensionFn) {
         super();
-        this.wanReplicationService = wanReplicationService;
+        this.nodeContextDelegate = nodeContextDelegate;
+        this.nodeExtensionFn = nodeExtensionFn;
     }
 
     @Override
     public NodeExtension createNodeExtension(Node node) {
-        return new WanServiceMockingNodeExtension(node, wanReplicationService);
+        return nodeExtensionFn.apply(node);
+    }
+
+    @Override
+    public AddressPicker createAddressPicker(Node node) {
+        return this.nodeContextDelegate.createAddressPicker(node);
+    }
+
+    @Override
+    public Joiner createJoiner(Node node) {
+        return this.nodeContextDelegate.createJoiner(node);
+    }
+
+    @Override
+    public NetworkingService createNetworkingService(Node node, ServerSocketRegistry serverSocketRegistry) {
+        return this.nodeContextDelegate.createNetworkingService(node, serverSocketRegistry);
     }
 }

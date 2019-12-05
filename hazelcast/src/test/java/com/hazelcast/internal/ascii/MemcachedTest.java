@@ -20,10 +20,9 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.JoinConfig;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IMap;
+import com.hazelcast.map.IMap;
 import com.hazelcast.internal.ascii.memcache.MemcacheCommandProcessor;
 import com.hazelcast.internal.ascii.memcache.MemcacheEntry;
-import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -48,31 +47,31 @@ import java.util.List;
 import java.util.Map;
 import java.util.ConcurrentModificationException;
 
-
+import static com.hazelcast.instance.EndpointQualifier.MEMCACHE;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
-// intentionally not in ParallelTest category,
-// test is starting standalone HazelcastInstances.
 public class MemcachedTest extends HazelcastTestSupport {
 
-    private Config config = new Config();
-    private HazelcastInstance instance;
-    private MemcachedClient client;
+    protected HazelcastInstance instance;
+    protected MemcachedClient client;
 
-    @Before
-    public void setup() throws Exception {
-        config.setProperty(GroupProperty.MEMCACHE_ENABLED.getName(), "true");
-
+    protected Config createConfig() {
+        Config config = smallInstanceConfig();
+        config.getNetworkConfig().getMemcacheProtocolConfig().setEnabled(true);
         // Join is disabled intentionally. will start standalone HazelcastInstances.
         JoinConfig join = config.getNetworkConfig().getJoin();
         join.getMulticastConfig().setEnabled(false);
         join.getTcpIpConfig().setEnabled(false);
+        return config;
+    }
 
-        instance = Hazelcast.newHazelcastInstance(config);
+    @Before
+    public void setup() throws Exception {
+        instance = Hazelcast.newHazelcastInstance(createConfig());
         client = getMemcachedClient(instance);
     }
 
@@ -365,7 +364,7 @@ public class MemcachedTest extends HazelcastTestSupport {
     @SuppressWarnings("checkstyle:parameternumber")
     private void checkStats(int sets, int gets, int getHits, int getMisses, int deleteHits, int deleteMisses,
                             int incHits, int incMisses, int decHits, int decMisses) {
-        InetSocketAddress address = instance.getCluster().getLocalMember().getSocketAddress();
+        InetSocketAddress address = getMemcachedAddr(instance);
         Map<String, String> stats = client.getStats().get(address);
 
         assertEquals(String.valueOf(sets), stats.get("cmd_set"));
@@ -380,13 +379,16 @@ public class MemcachedTest extends HazelcastTestSupport {
         assertEquals(String.valueOf(decMisses), stats.get("decr_misses"));
     }
 
-    private MemcachedClient getMemcachedClient(HazelcastInstance instance) throws Exception {
-        InetSocketAddress address = instance.getCluster().getLocalMember().getSocketAddress();
+    protected InetSocketAddress getMemcachedAddr(HazelcastInstance instance) {
+        return instance.getCluster().getLocalMember().getSocketAddress(MEMCACHE);
+    }
+
+    protected MemcachedClient getMemcachedClient(HazelcastInstance instance) throws Exception {
         ConnectionFactory factory = new ConnectionFactoryBuilder()
                 .setOpTimeout(60 * 60 * 60)
                 .setDaemon(true)
                 .setFailureMode(FailureMode.Retry)
                 .build();
-        return new MemcachedClient(factory, Collections.singletonList(address));
+        return new MemcachedClient(factory, Collections.singletonList(getMemcachedAddr(instance)));
     }
 }

@@ -16,10 +16,13 @@
 
 package com.hazelcast.internal.partition.operation;
 
+import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.internal.partition.MigrationCycleOperation;
 import com.hazelcast.internal.partition.PartitionRuntimeState;
 import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
 import com.hazelcast.internal.partition.impl.PartitionDataSerializerHook;
+import com.hazelcast.spi.exception.TargetNotMemberException;
+import com.hazelcast.spi.impl.operationservice.ExceptionAction;
 
 /** Sent from non-master nodes to the master to initialize the partition assignment. */
 public class AssignPartitions extends AbstractPartitionOperation implements MigrationCycleOperation {
@@ -38,7 +41,16 @@ public class AssignPartitions extends AbstractPartitionOperation implements Migr
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return PartitionDataSerializerHook.ASSIGN_PARTITIONS;
+    }
+
+    @Override
+    public ExceptionAction onInvocationException(Throwable throwable) {
+        if (throwable instanceof MemberLeftException
+                || throwable instanceof TargetNotMemberException) {
+            return ExceptionAction.THROW_EXCEPTION;
+        }
+        return super.onInvocationException(throwable);
     }
 }

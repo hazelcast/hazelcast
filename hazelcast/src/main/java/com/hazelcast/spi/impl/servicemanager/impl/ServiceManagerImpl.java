@@ -23,52 +23,48 @@ import com.hazelcast.client.impl.ClientEngineImpl;
 import com.hazelcast.collection.impl.list.ListService;
 import com.hazelcast.collection.impl.queue.QueueService;
 import com.hazelcast.collection.impl.set.SetService;
-import com.hazelcast.concurrent.atomiclong.AtomicLongService;
-import com.hazelcast.concurrent.atomicreference.AtomicReferenceService;
-import com.hazelcast.concurrent.countdownlatch.CountDownLatchService;
-import com.hazelcast.concurrent.idgen.IdGeneratorService;
-import com.hazelcast.concurrent.lock.LockService;
-import com.hazelcast.concurrent.lock.LockServiceImpl;
-import com.hazelcast.concurrent.semaphore.SemaphoreService;
+import com.hazelcast.config.ConfigAccessor;
 import com.hazelcast.config.ServiceConfig;
-import com.hazelcast.config.ServicesConfig;
+import com.hazelcast.internal.config.ServicesConfig;
 import com.hazelcast.core.HazelcastException;
-import com.hazelcast.crdt.CRDTReplicationMigrationService;
-import com.hazelcast.crdt.pncounter.PNCounterService;
 import com.hazelcast.durableexecutor.impl.DistributedDurableExecutorService;
 import com.hazelcast.executor.impl.DistributedExecutorService;
 import com.hazelcast.flakeidgen.impl.FlakeIdGeneratorService;
-import com.hazelcast.instance.Node;
-import com.hazelcast.instance.NodeExtension;
+import com.hazelcast.instance.impl.Node;
+import com.hazelcast.instance.impl.NodeExtension;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
+import com.hazelcast.internal.crdt.CRDTReplicationMigrationService;
+import com.hazelcast.internal.crdt.pncounter.PNCounterService;
+import com.hazelcast.internal.locksupport.LockSupportService;
+import com.hazelcast.internal.locksupport.LockSupportServiceImpl;
+import com.hazelcast.internal.metrics.impl.MetricsService;
+import com.hazelcast.internal.nio.ClassLoaderUtil;
 import com.hazelcast.internal.partition.InternalPartitionService;
+import com.hazelcast.internal.services.ConfigurableService;
+import com.hazelcast.internal.services.ManagedService;
+import com.hazelcast.internal.util.ServiceLoader;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.impl.MapService;
-import com.hazelcast.mapreduce.impl.MapReduceService;
 import com.hazelcast.multimap.impl.MultiMapService;
-import com.hazelcast.nio.ClassLoaderUtil;
-import com.hazelcast.quorum.impl.QuorumServiceImpl;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
 import com.hazelcast.ringbuffer.impl.RingbufferService;
 import com.hazelcast.scheduledexecutor.impl.DistributedScheduledExecutorService;
-import com.hazelcast.spi.ConfigurableService;
-import com.hazelcast.spi.ManagedService;
-import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.SharedService;
+import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.eventservice.impl.EventServiceImpl;
 import com.hazelcast.spi.impl.proxyservice.impl.ProxyServiceImpl;
-import com.hazelcast.spi.impl.servicemanager.RemoteServiceDescriptor;
-import com.hazelcast.spi.impl.servicemanager.RemoteServiceDescriptorProvider;
+import com.hazelcast.spi.impl.servicemanager.ServiceDescriptor;
+import com.hazelcast.spi.impl.servicemanager.ServiceDescriptorProvider;
 import com.hazelcast.spi.impl.servicemanager.ServiceInfo;
 import com.hazelcast.spi.impl.servicemanager.ServiceManager;
+import com.hazelcast.splitbrainprotection.impl.SplitBrainProtectionServiceImpl;
 import com.hazelcast.topic.impl.TopicService;
 import com.hazelcast.topic.impl.reliable.ReliableTopicService;
 import com.hazelcast.transaction.impl.TransactionManagerServiceImpl;
 import com.hazelcast.transaction.impl.xa.XAService;
-import com.hazelcast.util.ServiceLoader;
-import com.hazelcast.wan.WanReplicationService;
+import com.hazelcast.wan.impl.WanReplicationService;
 
+import javax.annotation.Nonnull;
 import java.lang.reflect.Constructor;
 import java.util.Collection;
 import java.util.Collections;
@@ -81,17 +77,17 @@ import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
-import static com.hazelcast.util.EmptyStatement.ignore;
-import static com.hazelcast.util.ExceptionUtil.rethrow;
+import static com.hazelcast.internal.util.EmptyStatement.ignore;
+import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 
 @SuppressWarnings({"checkstyle:classdataabstractioncoupling", "checkstyle:classfanoutcomplexity"})
 public final class ServiceManagerImpl implements ServiceManager {
 
-    private static final String PROVIDER_ID = "com.hazelcast.spi.impl.servicemanager.RemoteServiceDescriptorProvider";
+    private static final String PROVIDER_ID = ServiceDescriptorProvider.class.getName();
 
     private final NodeEngineImpl nodeEngine;
     private final ILogger logger;
-    private final ConcurrentMap<String, ServiceInfo> services = new ConcurrentHashMap<String, ServiceInfo>(20, .75f, 1);
+    private final ConcurrentMap<String, ServiceInfo> services = new ConcurrentHashMap<>(20, .75f, 1);
 
     public ServiceManagerImpl(final NodeEngineImpl nodeEngine) {
         this.nodeEngine = nodeEngine;
@@ -99,8 +95,8 @@ public final class ServiceManagerImpl implements ServiceManager {
     }
 
     public synchronized void start() {
-        Map<String, Properties> serviceProps = new HashMap<String, Properties>();
-        Map<String, Object> serviceConfigObjects = new HashMap<String, Object>();
+        Map<String, Properties> serviceProps = new HashMap<>();
+        Map<String, Object> serviceConfigObjects = new HashMap<>();
 
         registerServices(serviceProps, serviceConfigObjects);
         initServices(serviceProps, serviceConfigObjects);
@@ -111,7 +107,7 @@ public final class ServiceManagerImpl implements ServiceManager {
         registerExtensionServices();
 
         Node node = nodeEngine.getNode();
-        ServicesConfig servicesConfig = node.getConfig().getServicesConfig();
+        ServicesConfig servicesConfig = ConfigAccessor.getServicesConfig(node.getConfig());
         if (servicesConfig != null) {
             registerDefaultServices(servicesConfig);
             registerUserServices(servicesConfig, serviceProps, serviceConfigObjects);
@@ -127,7 +123,7 @@ public final class ServiceManagerImpl implements ServiceManager {
         registerService(ProxyServiceImpl.SERVICE_NAME, nodeEngine.getProxyService());
         registerService(TransactionManagerServiceImpl.SERVICE_NAME, nodeEngine.getTransactionManagerService());
         registerService(ClientEngineImpl.SERVICE_NAME, node.clientEngine);
-        registerService(QuorumServiceImpl.SERVICE_NAME, nodeEngine.getQuorumService());
+        registerService(SplitBrainProtectionServiceImpl.SERVICE_NAME, nodeEngine.getSplitBrainProtectionService());
         registerService(WanReplicationService.SERVICE_NAME, nodeEngine.getWanReplicationService());
         registerService(EventServiceImpl.SERVICE_NAME, nodeEngine.getEventService());
     }
@@ -148,7 +144,7 @@ public final class ServiceManagerImpl implements ServiceManager {
 
         logger.finest("Registering default services...");
         registerService(MapService.SERVICE_NAME, createService(MapService.class));
-        registerService(LockService.SERVICE_NAME, new LockServiceImpl(nodeEngine));
+        registerService(LockSupportService.SERVICE_NAME, new LockSupportServiceImpl(nodeEngine));
         registerService(QueueService.SERVICE_NAME, new QueueService(nodeEngine));
         registerService(TopicService.SERVICE_NAME, new TopicService());
         registerService(ReliableTopicService.SERVICE_NAME, new ReliableTopicService(nodeEngine));
@@ -157,13 +153,7 @@ public final class ServiceManagerImpl implements ServiceManager {
         registerService(SetService.SERVICE_NAME, new SetService(nodeEngine));
         registerService(DistributedExecutorService.SERVICE_NAME, new DistributedExecutorService());
         registerService(DistributedDurableExecutorService.SERVICE_NAME, new DistributedDurableExecutorService(nodeEngine));
-        registerService(AtomicLongService.SERVICE_NAME, new AtomicLongService());
-        registerService(AtomicReferenceService.SERVICE_NAME, new AtomicReferenceService());
-        registerService(CountDownLatchService.SERVICE_NAME, new CountDownLatchService());
-        registerService(SemaphoreService.SERVICE_NAME, new SemaphoreService(nodeEngine));
-        registerService(IdGeneratorService.SERVICE_NAME, new IdGeneratorService(nodeEngine));
         registerService(FlakeIdGeneratorService.SERVICE_NAME, new FlakeIdGeneratorService(nodeEngine));
-        registerService(MapReduceService.SERVICE_NAME, new MapReduceService(nodeEngine));
         registerService(ReplicatedMapService.SERVICE_NAME, new ReplicatedMapService(nodeEngine));
         registerService(RingbufferService.SERVICE_NAME, new RingbufferService(nodeEngine));
         registerService(XAService.SERVICE_NAME, new XAService(nodeEngine));
@@ -171,6 +161,7 @@ public final class ServiceManagerImpl implements ServiceManager {
         registerService(PNCounterService.SERVICE_NAME, new PNCounterService());
         registerService(CRDTReplicationMigrationService.SERVICE_NAME, new CRDTReplicationMigrationService());
         registerService(DistributedScheduledExecutorService.SERVICE_NAME, new DistributedScheduledExecutorService());
+        registerService(MetricsService.SERVICE_NAME, new MetricsService(nodeEngine));
         registerCacheServiceIfAvailable();
         readServiceDescriptors();
     }
@@ -180,16 +171,16 @@ public final class ServiceManagerImpl implements ServiceManager {
 
         try {
             ClassLoader classLoader = node.getConfigClassLoader();
-            Iterator<Class<RemoteServiceDescriptorProvider>> iterator
-                    = ServiceLoader.classIterator(RemoteServiceDescriptorProvider.class, PROVIDER_ID, classLoader);
+            Iterator<Class<ServiceDescriptorProvider>> iterator
+                    = ServiceLoader.classIterator(ServiceDescriptorProvider.class, PROVIDER_ID, classLoader);
 
             while (iterator.hasNext()) {
-                Class<RemoteServiceDescriptorProvider> clazz = iterator.next();
-                Constructor<RemoteServiceDescriptorProvider> constructor = clazz.getDeclaredConstructor();
-                RemoteServiceDescriptorProvider provider = constructor.newInstance();
-                RemoteServiceDescriptor[] services = provider.createRemoteServiceDescriptors();
+                Class<ServiceDescriptorProvider> clazz = iterator.next();
+                Constructor<ServiceDescriptorProvider> constructor = clazz.getDeclaredConstructor();
+                ServiceDescriptorProvider provider = constructor.newInstance();
+                ServiceDescriptor[] services = provider.createServiceDescriptors();
 
-                for (RemoteServiceDescriptor serviceDescriptor : services) {
+                for (ServiceDescriptor serviceDescriptor : services) {
                     registerService(serviceDescriptor.getServiceName(), serviceDescriptor.getService(nodeEngine));
                 }
             }
@@ -332,23 +323,23 @@ public final class ServiceManagerImpl implements ServiceManager {
                         + ", Service: " + currentServiceInfo.getService());
             }
             if (currentServiceInfo.isManagedService()) {
-                shutdownService((ManagedService) currentServiceInfo.getService(), false);
+                shutdownService(currentServiceInfo.getService(), false);
             }
             services.put(serviceName, serviceInfo);
         }
     }
 
     @Override
-    public ServiceInfo getServiceInfo(String serviceName) {
+    public ServiceInfo getServiceInfo(@Nonnull String serviceName) {
         return services.get(serviceName);
     }
 
     @Override
     public <S> List<S> getServices(Class<S> serviceClass) {
-        final LinkedList<S> result = new LinkedList<S>();
+        final LinkedList<S> result = new LinkedList<>();
         for (ServiceInfo serviceInfo : services.values()) {
             if (serviceInfo.isInstanceOf(serviceClass)) {
-                final S service = (S) serviceInfo.getService();
+                final S service = serviceInfo.getService();
                 if (serviceInfo.isCoreService()) {
                     result.addFirst(service);
                 } else {
@@ -360,23 +351,9 @@ public final class ServiceManagerImpl implements ServiceManager {
     }
 
     @Override
-    public <T> T getService(String serviceName) {
+    public <T> T getService(@Nonnull String serviceName) {
         final ServiceInfo serviceInfo = getServiceInfo(serviceName);
         return serviceInfo != null ? (T) serviceInfo.getService() : null;
-    }
-
-    @Override
-    public <T extends SharedService> T getSharedService(String serviceName) {
-        final Object service = getService(serviceName);
-        if (service == null) {
-            return null;
-        }
-
-        if (service instanceof SharedService) {
-            return (T) service;
-        }
-
-        throw new IllegalArgumentException("No SharedService registered with name: " + serviceName);
     }
 
     /**
@@ -386,7 +363,7 @@ public final class ServiceManagerImpl implements ServiceManager {
      */
     @Override
     public List<ServiceInfo> getServiceInfos(Class serviceClass) {
-        final LinkedList<ServiceInfo> result = new LinkedList<ServiceInfo>();
+        final LinkedList<ServiceInfo> result = new LinkedList<>();
         for (ServiceInfo serviceInfo : services.values()) {
             if (serviceInfo.isInstanceOf(serviceClass)) {
                 if (serviceInfo.isCoreService()) {

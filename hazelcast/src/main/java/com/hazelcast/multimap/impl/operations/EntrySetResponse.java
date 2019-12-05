@@ -16,13 +16,14 @@
 
 package com.hazelcast.multimap.impl.operations;
 
+import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.multimap.impl.MultiMapDataSerializerHook;
 import com.hazelcast.multimap.impl.MultiMapRecord;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.impl.NodeEngine;
 
 import java.io.IOException;
 import java.util.AbstractMap;
@@ -31,8 +32,8 @@ import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
 
-import static com.hazelcast.util.MapUtil.createHashMap;
-import static com.hazelcast.util.SetUtil.createHashSet;
+import static com.hazelcast.internal.util.MapUtil.createHashMap;
+import static com.hazelcast.internal.util.SetUtil.createHashSet;
 
 public class EntrySetResponse implements IdentifiedDataSerializable {
 
@@ -82,11 +83,11 @@ public class EntrySetResponse implements IdentifiedDataSerializable {
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeInt(map.size());
         for (Map.Entry<Data, Collection<Data>> entry : map.entrySet()) {
-            out.writeData(entry.getKey());
+            IOUtil.writeData(out, entry.getKey());
             Collection<Data> coll = entry.getValue();
             out.writeInt(coll.size());
             for (Data data : coll) {
-                out.writeData(data);
+                IOUtil.writeData(out, data);
             }
         }
     }
@@ -96,11 +97,11 @@ public class EntrySetResponse implements IdentifiedDataSerializable {
         int size = in.readInt();
         map = createHashMap(size);
         for (int i = 0; i < size; i++) {
-            Data key = in.readData();
+            Data key = IOUtil.readData(in);
             int collSize = in.readInt();
             Collection<Data> coll = new ArrayList<Data>(collSize);
             for (int j = 0; j < collSize; j++) {
-                coll.add(in.readData());
+                coll.add(IOUtil.readData(in));
             }
             map.put(key, coll);
         }
@@ -112,7 +113,7 @@ public class EntrySetResponse implements IdentifiedDataSerializable {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MultiMapDataSerializerHook.ENTRY_SET_RESPONSE;
     }
 }

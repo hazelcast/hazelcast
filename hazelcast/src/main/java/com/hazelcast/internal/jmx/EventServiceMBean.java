@@ -17,14 +17,14 @@
 package com.hazelcast.internal.jmx;
 
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.spi.EventService;
+import com.hazelcast.spi.impl.eventservice.EventService;
 
 import java.util.Hashtable;
 
 import static com.hazelcast.internal.jmx.ManagementService.quote;
 
 /**
- * Management bean for {@link com.hazelcast.spi.EventService}
+ * Management bean for {@link EventService}
  */
 @ManagedDescription("HazelcastInstance.EventService")
 public class EventServiceMBean extends HazelcastMBean<EventService> {

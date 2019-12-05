@@ -17,19 +17,19 @@
 package com.hazelcast.spi.impl.merge;
 
 import com.hazelcast.config.MergePolicyConfig;
-import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.OperationService;
+import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.spi.impl.operationservice.OperationService;
 import com.hazelcast.spi.merge.MergingValue;
 import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 import com.hazelcast.spi.merge.SplitBrainMergePolicyProvider;
 
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
+import java.util.function.BiConsumer;
 
-import static com.hazelcast.util.ExceptionUtil.rethrow;
+import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 
 /**
  * Merges data structures which have been collected via an {@link AbstractContainerCollector}.
@@ -46,18 +46,7 @@ public abstract class AbstractContainerMerger<C, V, T extends MergingValue<V>> i
     protected final AbstractContainerCollector<C> collector;
 
     private final Semaphore semaphore = new Semaphore(0);
-    private final ExecutionCallback<Object> mergeCallback = new ExecutionCallback<Object>() {
-        @Override
-        public void onResponse(Object response) {
-            semaphore.release(1);
-        }
-
-        @Override
-        public void onFailure(Throwable t) {
-            logger.warning("Error while running " + getLabel() + " merge operation: " + t.getMessage());
-            semaphore.release(1);
-        }
-    };
+    private final BiConsumer<Object, Throwable> mergeCallback;
 
     private final ILogger logger;
     private final OperationService operationService;
@@ -68,6 +57,14 @@ public abstract class AbstractContainerMerger<C, V, T extends MergingValue<V>> i
     protected AbstractContainerMerger(AbstractContainerCollector<C> collector, NodeEngine nodeEngine) {
         this.collector = collector;
         this.logger = nodeEngine.getLogger(AbstractContainerMerger.class);
+        this.mergeCallback = (response, t) -> {
+            if (t == null) {
+                semaphore.release(1);
+            } else {
+                logger.warning("Error while running " + getLabel() + " merge operation: " + t.getMessage());
+                semaphore.release(1);
+            }
+        };
         this.operationService = nodeEngine.getOperationService();
         this.splitBrainMergePolicyProvider = nodeEngine.getSplitBrainMergePolicyProvider();
     }
@@ -129,7 +126,7 @@ public abstract class AbstractContainerMerger<C, V, T extends MergingValue<V>> i
             operationCount++;
             operationService
                     .invokeOnPartition(serviceName, operation, partitionId)
-                    .andThen(mergeCallback);
+                    .whenCompleteAsync(mergeCallback);
         } catch (Throwable t) {
             throw rethrow(t);
         }

@@ -16,18 +16,20 @@
 
 package com.hazelcast.map.impl.operation;
 
+import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.PartitionAwareOperation;
-import com.hazelcast.spi.ReadonlyOperation;
+import com.hazelcast.spi.impl.operationservice.PartitionAwareOperation;
+import com.hazelcast.spi.impl.operationservice.ReadonlyOperation;
 
 import java.io.IOException;
 
 /**
  * Abstract {@link MapOperation} that serves as based for readonly operations.
  */
-public abstract class ReadonlyKeyBasedMapOperation extends MapOperation implements ReadonlyOperation, PartitionAwareOperation {
+public abstract class ReadonlyKeyBasedMapOperation extends MapOperation
+        implements ReadonlyOperation, PartitionAwareOperation {
 
     protected Data dataKey;
     protected long threadId;
@@ -52,15 +54,15 @@ public abstract class ReadonlyKeyBasedMapOperation extends MapOperation implemen
 
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
-        out.writeUTF(name);
-        out.writeData(dataKey);
+        super.writeInternal(out);
+        IOUtil.writeData(out, dataKey);
         out.writeLong(threadId);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
-        name = in.readUTF();
-        dataKey = in.readData();
+        super.readInternal(in);
+        dataKey = IOUtil.readData(in);
         threadId = in.readLong();
     }
 }

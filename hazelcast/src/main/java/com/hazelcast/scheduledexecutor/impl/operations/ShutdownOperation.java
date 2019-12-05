@@ -18,7 +18,7 @@ package com.hazelcast.scheduledexecutor.impl.operations;
 
 import com.hazelcast.scheduledexecutor.impl.DistributedScheduledExecutorService;
 import com.hazelcast.scheduledexecutor.impl.ScheduledExecutorDataSerializerHook;
-import com.hazelcast.spi.impl.MutatingOperation;
+import com.hazelcast.spi.impl.operationservice.MutatingOperation;
 
 public class ShutdownOperation
         extends AbstractSchedulerOperation
@@ -38,7 +38,7 @@ public class ShutdownOperation
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ScheduledExecutorDataSerializerHook.SHUTDOWN;
     }
 

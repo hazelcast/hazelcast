@@ -17,12 +17,13 @@
 package com.hazelcast.internal.management.dto;
 
 import com.hazelcast.config.ConfigCompatibilityChecker.WanReplicationConfigChecker;
+import com.hazelcast.config.CustomWanPublisherConfig;
+import com.hazelcast.config.WanBatchReplicationPublisherConfig;
 import com.hazelcast.config.WanConsumerConfig;
-import com.hazelcast.config.WanPublisherConfig;
 import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -31,7 +32,7 @@ import org.junit.runner.RunWith;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class WanReplicationConfigDTOTest {
 
     private static final WanReplicationConfigChecker WAN_REPLICATION_CONFIG_CHECKER = new WanReplicationConfigChecker();
@@ -41,10 +42,11 @@ public class WanReplicationConfigDTOTest {
         WanReplicationConfig expected = new WanReplicationConfig()
                 .setName("myName")
                 .setWanConsumerConfig(new WanConsumerConfig())
-                .addWanPublisherConfig(new WanPublisherConfig()
-                        .setGroupName("group1"))
-                .addWanPublisherConfig(new WanPublisherConfig()
-                        .setGroupName("group2"));
+                .addWanBatchReplicationPublisherConfig(new WanBatchReplicationPublisherConfig()
+                        .setClusterName("group1"))
+                .addCustomPublisherConfig(new CustomWanPublisherConfig()
+                        .setPublisherId("group2")
+                        .setClassName("className"));
 
         WanReplicationConfig actual = cloneThroughJson(expected);
 

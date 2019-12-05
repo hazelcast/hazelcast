@@ -16,17 +16,16 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.internal.config.ConfigDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.spi.annotation.Beta;
 
 import java.io.IOException;
 
-import static com.hazelcast.util.Preconditions.checkHasText;
-import static com.hazelcast.util.Preconditions.checkNotNegative;
-import static com.hazelcast.util.Preconditions.checkNotNull;
-import static com.hazelcast.util.Preconditions.checkPositive;
+import static com.hazelcast.internal.util.Preconditions.checkNotNegative;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.Preconditions.checkPositive;
 
 /**
  * Configuration for an event journal. The event journal keeps events related
@@ -37,7 +36,6 @@ import static com.hazelcast.util.Preconditions.checkPositive;
  * This config is intended to be used with <a href="http://jet.hazelcast.org">Hazelcast Jet</a>
  * and does not expose any features in Hazelcast IMDG.
  */
-@Beta
 public class EventJournalConfig implements IdentifiedDataSerializable {
 
     /**
@@ -49,9 +47,7 @@ public class EventJournalConfig implements IdentifiedDataSerializable {
      */
     public static final int DEFAULT_TTL_SECONDS = 0;
 
-    private String mapName;
-    private String cacheName;
-    private boolean enabled = true;
+    private boolean enabled;
     private int capacity = DEFAULT_CAPACITY;
     private int timeToLiveSeconds = DEFAULT_TTL_SECONDS;
 
@@ -67,8 +63,6 @@ public class EventJournalConfig implements IdentifiedDataSerializable {
     public EventJournalConfig(EventJournalConfig config) {
         checkNotNull(config, "config can't be null");
         this.enabled = config.enabled;
-        this.mapName = config.mapName;
-        this.cacheName = config.cacheName;
         this.capacity = config.capacity;
         this.timeToLiveSeconds = config.timeToLiveSeconds;
     }
@@ -143,65 +137,10 @@ public class EventJournalConfig implements IdentifiedDataSerializable {
     @Override
     public String toString() {
         return "EventJournalConfig{"
-                + "mapName='" + mapName + '\''
-                + ", cacheName='" + cacheName + '\''
-                + ", enabled=" + enabled
+                + "enabled=" + enabled
                 + ", capacity=" + capacity
                 + ", timeToLiveSeconds=" + timeToLiveSeconds
                 + '}';
-    }
-
-    /**
-     * Returns an immutable version of this configuration.
-     *
-     * @return immutable version of this configuration
-     */
-    EventJournalConfig getAsReadOnly() {
-        return new EventJournalConfigReadOnly(this);
-    }
-
-    /**
-     * Returns the map name to which this config applies.
-     *
-     * @return the map name
-     */
-    public String getMapName() {
-        return mapName;
-    }
-
-    /**
-     * Sets the map name to which this config applies. Map names
-     * are also matched by pattern and event journal with map name "default"
-     * applies to all maps that do not have more specific event journal configs.
-     *
-     * @param mapName the map name
-     * @return the event journal config
-     */
-    public EventJournalConfig setMapName(String mapName) {
-        this.mapName = mapName;
-        return this;
-    }
-
-    /**
-     * Returns the cache name to which this config applies.
-     *
-     * @return the cache name
-     */
-    public String getCacheName() {
-        return cacheName;
-    }
-
-    /**
-     * Sets the cache name to which this config applies. Cache names
-     * are also matched by pattern and event journal with cache name "default"
-     * applies to all caches that do not have more specific event journal configs.
-     *
-     * @param cacheName the cache name
-     * @return the event journal config
-     */
-    public EventJournalConfig setCacheName(String cacheName) {
-        this.cacheName = checkHasText(cacheName, "name must contain text");
-        return this;
     }
 
     /**
@@ -231,14 +170,12 @@ public class EventJournalConfig implements IdentifiedDataSerializable {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ConfigDataSerializerHook.EVENT_JOURNAL_CONFIG;
     }
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeUTF(mapName);
-        out.writeUTF(cacheName);
         out.writeBoolean(enabled);
         out.writeInt(capacity);
         out.writeInt(timeToLiveSeconds);
@@ -246,15 +183,12 @@ public class EventJournalConfig implements IdentifiedDataSerializable {
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        mapName = in.readUTF();
-        cacheName = in.readUTF();
         enabled = in.readBoolean();
         capacity = in.readInt();
         timeToLiveSeconds = in.readInt();
     }
 
     @Override
-    @SuppressWarnings("checkstyle:npathcomplexity")
     public final boolean equals(Object o) {
         if (this == o) {
             return true;
@@ -270,55 +204,15 @@ public class EventJournalConfig implements IdentifiedDataSerializable {
         if (capacity != that.capacity) {
             return false;
         }
-        if (timeToLiveSeconds != that.timeToLiveSeconds) {
-            return false;
-        }
-        if (mapName != null ? !mapName.equals(that.mapName) : that.mapName != null) {
-            return false;
-        }
-        return cacheName != null ? cacheName.equals(that.cacheName) : that.cacheName == null;
+        return timeToLiveSeconds == that.timeToLiveSeconds;
+
     }
 
     @Override
     public final int hashCode() {
-        int result = mapName != null ? mapName.hashCode() : 0;
-        result = 31 * result + (cacheName != null ? cacheName.hashCode() : 0);
-        result = 31 * result + (enabled ? 1 : 0);
+        int result = (enabled ? 1 : 0);
         result = 31 * result + capacity;
         result = 31 * result + timeToLiveSeconds;
         return result;
-    }
-
-    // not private for testing
-    @Beta
-    static class EventJournalConfigReadOnly extends EventJournalConfig {
-        EventJournalConfigReadOnly(EventJournalConfig config) {
-            super(config);
-        }
-
-        @Override
-        public EventJournalConfig setCapacity(int capacity) {
-            throw new UnsupportedOperationException("This config is read-only");
-        }
-
-        @Override
-        public EventJournalConfig setTimeToLiveSeconds(int timeToLiveSeconds) {
-            throw new UnsupportedOperationException("This config is read-only");
-        }
-
-        @Override
-        public EventJournalConfig setEnabled(boolean enabled) {
-            throw new UnsupportedOperationException("This config is read-only");
-        }
-
-        @Override
-        public EventJournalConfig setMapName(String mapName) {
-            throw new UnsupportedOperationException("This config is read-only");
-        }
-
-        @Override
-        public EventJournalConfig setCacheName(String cacheName) {
-            throw new UnsupportedOperationException("This config is read-only");
-        }
     }
 }

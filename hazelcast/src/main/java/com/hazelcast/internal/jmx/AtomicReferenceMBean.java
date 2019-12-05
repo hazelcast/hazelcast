@@ -16,10 +16,10 @@
 
 package com.hazelcast.internal.jmx;
 
-import com.hazelcast.core.IAtomicReference;
+import com.hazelcast.cp.IAtomicReference;
 
 /**
- * Management bean for {@link com.hazelcast.core.IAtomicReference}
+ * Management bean for {@link IAtomicReference}
  */
 @ManagedDescription("IAtomicReference")
 public class AtomicReferenceMBean extends HazelcastMBean<IAtomicReference> {

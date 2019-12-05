@@ -16,6 +16,7 @@
 
 package com.hazelcast.scheduledexecutor.impl;
 
+import com.hazelcast.core.ManagedContext;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
@@ -60,13 +61,17 @@ public class NamedTaskDecorator<V>
         return ((Callable<V>) delegate).call();
     }
 
+    public void initializeContext(ManagedContext context) {
+        context.initialize(delegate);
+    }
+
     @Override
     public int getFactoryId() {
         return ScheduledExecutorDataSerializerHook.F_ID;
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ScheduledExecutorDataSerializerHook.NAMED_TASK_DECORATOR;
     }
 

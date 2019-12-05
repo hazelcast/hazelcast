@@ -17,9 +17,9 @@
 package com.hazelcast.internal.ascii;
 
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IMap;
-import com.hazelcast.instance.Node;
-import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
+import com.hazelcast.map.IMap;
+import com.hazelcast.instance.impl.Node;
+import com.hazelcast.instance.impl.OutOfMemoryErrorDispatcher;
 import com.hazelcast.internal.ascii.memcache.BulkGetCommandProcessor;
 import com.hazelcast.internal.ascii.memcache.DeleteCommandProcessor;
 import com.hazelcast.internal.ascii.memcache.EntryConverter;
@@ -38,9 +38,12 @@ import com.hazelcast.internal.ascii.rest.HttpHeadCommandProcessor;
 import com.hazelcast.internal.ascii.rest.HttpPostCommandProcessor;
 import com.hazelcast.internal.ascii.rest.RestValue;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.nio.ascii.TextEncoder;
+import com.hazelcast.internal.nio.AggregateEndpointManager;
+import com.hazelcast.internal.nio.EndpointManager;
+import com.hazelcast.internal.nio.NetworkingService;
+import com.hazelcast.internal.nio.ascii.TextEncoder;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.util.Clock;
+import com.hazelcast.internal.util.Clock;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.nio.ByteBuffer;
@@ -51,6 +54,7 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
+import static com.hazelcast.instance.EndpointQualifier.MEMCACHE;
 import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.ADD;
 import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.APPEND;
 import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.BULK_GET;
@@ -75,8 +79,8 @@ import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.
 import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.TOUCH;
 import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.UNKNOWN;
 import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.VERSION;
-import static com.hazelcast.util.EmptyStatement.ignore;
-import static com.hazelcast.util.ThreadUtil.createThreadName;
+import static com.hazelcast.internal.util.EmptyStatement.ignore;
+import static com.hazelcast.internal.util.ThreadUtil.createThreadName;
 import static java.lang.Thread.currentThread;
 
 @SuppressWarnings({"checkstyle:methodcount", "checkstyle:classdataabstractioncoupling"})
@@ -170,8 +174,13 @@ public class TextCommandServiceImpl implements TextCommandService {
         stats.setIncrMisses(incrementMisses.get());
         stats.setDecrHits(decrementHits.get());
         stats.setDecrMisses(decrementMisses.get());
-        stats.setCurrConnections(node.connectionManager.getCurrentClientConnections());
-        stats.setTotalConnections(node.connectionManager.getAllTextConnections());
+        NetworkingService cm = node.networkingService;
+        EndpointManager mem = cm.getEndpointManager(MEMCACHE);
+        int totalText = (mem != null ? mem.getActiveConnections().size() : 0);
+
+        AggregateEndpointManager aem = cm.getAggregateEndpointManager();
+        stats.setCurrConnections(totalText);
+        stats.setTotalConnections(aem.getActiveConnections().size());
         return stats;
     }
 
@@ -365,6 +374,11 @@ public class TextCommandServiceImpl implements TextCommandService {
             logger.info("Stopping text command service...");
             rtr.stop();
         }
+    }
+
+    @Override
+    public String getInstanceName() {
+        return hazelcast.getName();
     }
 
     class CommandExecutor implements Runnable {

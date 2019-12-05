@@ -16,8 +16,8 @@
 
 package com.hazelcast.internal.diagnostics;
 
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.OperationFactory;
+import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.spi.impl.operationservice.OperationFactory;
 import com.hazelcast.spi.impl.operationservice.impl.operations.Backup;
 import com.hazelcast.spi.impl.operationservice.impl.operations.PartitionIteratingOperation;
 

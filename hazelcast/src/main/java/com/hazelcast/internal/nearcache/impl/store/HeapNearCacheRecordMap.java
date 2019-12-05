@@ -20,9 +20,9 @@ import com.hazelcast.internal.eviction.EvictionCandidate;
 import com.hazelcast.internal.eviction.EvictionListener;
 import com.hazelcast.internal.nearcache.NearCacheRecord;
 import com.hazelcast.internal.nearcache.impl.SampleableNearCacheRecordMap;
-import com.hazelcast.nio.serialization.SerializableByConvention;
-import com.hazelcast.spi.serialization.SerializationService;
-import com.hazelcast.util.SampleableConcurrentHashMap;
+import com.hazelcast.internal.serialization.SerializableByConvention;
+import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.util.SampleableConcurrentHashMap;
 
 /**
  * {@link SampleableNearCacheRecordMap} implementation for on-heap Near Caches.
@@ -79,8 +79,8 @@ public class HeapNearCacheRecordMap<K, V extends NearCacheRecord>
         }
 
         @Override
-        public long getAccessHit() {
-            return value.getAccessHit();
+        public long getHits() {
+            return value.getHits();
         }
     }
 

@@ -17,12 +17,12 @@
 package com.hazelcast.cache;
 
 import com.hazelcast.config.CacheConfig;
-import com.hazelcast.core.ICompletableFuture;
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
+import com.hazelcast.internal.util.SampleableConcurrentHashMap;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.test.AssertTask;
-import com.hazelcast.util.SampleableConcurrentHashMap;
+import org.junit.Assert;
 import org.junit.Test;
 
 import javax.cache.Cache;
@@ -56,6 +56,7 @@ import java.util.NoSuchElementException;
 import java.util.Properties;
 import java.util.Random;
 import java.util.Set;
+import java.util.concurrent.CompletionStage;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
@@ -64,8 +65,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.LockSupport;
 
+import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 import static com.hazelcast.logging.Logger.getLogger;
-import static com.hazelcast.util.ExceptionUtil.rethrow;
 import static java.lang.String.format;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -119,31 +120,28 @@ public abstract class CacheBasicAbstractTest extends CacheTestSupport {
         final String key = "key";
 
         cache.put(key, "value1");
-        Future future = cache.getAsync(key);
-        assertEquals("value1", future.get());
+        CompletionStage future = cache.getAsync(key);
+        assertEquals("value1", future.toCompletableFuture().get());
 
         cache.putAsync(key, "value2");
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertEquals("value2", cache.get(key));
-            }
+        assertTrueEventually(() -> {
+            assertEquals("value2", cache.get(key));
         });
 
         future = cache.getAndPutAsync(key, "value3");
-        assertEquals("value2", future.get());
+        assertEquals("value2", future.toCompletableFuture().get());
         assertEquals("value3", cache.get(key));
 
         future = cache.removeAsync("key2");
-        assertFalse((Boolean) future.get());
+        assertFalse((Boolean) future.toCompletableFuture().get());
         future = cache.removeAsync(key);
-        assertTrue((Boolean) future.get());
+        assertTrue((Boolean) future.toCompletableFuture().get());
 
         cache.put(key, "value4");
         future = cache.getAndRemoveAsync("key2");
-        assertNull(future.get());
+        assertNull(future.toCompletableFuture().get());
         future = cache.getAndRemoveAsync(key);
-        assertEquals("value4", future.get());
+        assertEquals("value4", future.toCompletableFuture().get());
     }
 
     @Test
@@ -151,8 +149,8 @@ public abstract class CacheBasicAbstractTest extends CacheTestSupport {
         ICache<String, String> cache = createCache();
         String key = randomString();
 
-        ICompletableFuture<Boolean> iCompletableFuture = cache.putIfAbsentAsync(key, randomString());
-        assertTrue(iCompletableFuture.get());
+        CompletionStage<Boolean> stage = cache.putIfAbsentAsync(key, randomString());
+        assertTrue(stage.toCompletableFuture().get());
     }
 
     @Test
@@ -161,8 +159,8 @@ public abstract class CacheBasicAbstractTest extends CacheTestSupport {
         String key = randomString();
         cache.put(key, randomString());
 
-        ICompletableFuture<Boolean> iCompletableFuture = cache.putIfAbsentAsync(key, randomString());
-        assertFalse(iCompletableFuture.get());
+        CompletionStage<Boolean> stage = cache.putIfAbsentAsync(key, randomString());
+        assertFalse(stage.toCompletableFuture().get());
     }
 
     @Test
@@ -188,8 +186,8 @@ public abstract class CacheBasicAbstractTest extends CacheTestSupport {
         String newValue = randomString();
         cache.put(key, oldValue);
 
-        ICompletableFuture<String> iCompletableFuture = cache.getAndReplaceAsync(key, newValue);
-        assertEquals(iCompletableFuture.get(), oldValue);
+        CompletionStage<String> stage = cache.getAndReplaceAsync(key, newValue);
+        assertEquals(stage.toCompletableFuture().get(), oldValue);
         assertEquals(cache.get(key), newValue);
     }
 
@@ -254,8 +252,8 @@ public abstract class CacheBasicAbstractTest extends CacheTestSupport {
         assertEquals(0, cache.size());
 
         cache.put(key, "value4");
-        Future future = cache.getAndPutAsync(key, "value5", ttlToExpiryPolicy(1, TimeUnit.SECONDS));
-        assertEquals("value4", future.get());
+        CompletionStage stage = cache.getAndPutAsync(key, "value5", ttlToExpiryPolicy(1, TimeUnit.SECONDS));
+        assertEquals("value4", stage.toCompletableFuture().get());
 
         assertTrueEventually(new AssertTask() {
             @Override
@@ -546,41 +544,44 @@ public abstract class CacheBasicAbstractTest extends CacheTestSupport {
     }
 
     @Test
-    public void testRemoveAsync() throws Exception {
+    public void testRemoveAsync() {
         ICache<String, String> cache = createCache();
         String key = randomString();
         String value = randomString();
 
         cache.put(key, value);
-        ICompletableFuture<Boolean> future = cache.removeAsync(key);
-        assertTrue(future.get());
+        CompletionStage<Boolean> stage = cache.removeAsync(key);
+        stage.thenAccept(Assert::assertTrue);
+
+        stage.toCompletableFuture().join();
     }
 
     @Test
-    public void testRemoveAsyncWhenEntryNotFound() throws Exception {
+    public void testRemoveAsyncWhenEntryNotFound() {
         ICache<String, String> cache = createCache();
 
-        ICompletableFuture<Boolean> future = cache.removeAsync(randomString());
-        assertFalse(future.get());
+        cache.removeAsync(randomString()).thenAccept(Assert::assertFalse).toCompletableFuture().join();
     }
 
     @Test
-    public void testRemoveAsync_withOldValue() throws Exception {
+    public void testRemoveAsync_withOldValue() {
         ICache<String, String> cache = createCache();
         String key = randomString();
         String value = randomString();
 
         cache.put(key, value);
-        ICompletableFuture<Boolean> future = cache.removeAsync(key, value);
-        assertTrue(future.get());
+        cache.removeAsync(key, value)
+             .thenAccept(Assert::assertTrue)
+             .toCompletableFuture().join();
     }
 
     @Test
     public void testRemoveAsyncWhenEntryNotFound_withOldValue() throws Exception {
         ICache<String, String> cache = createCache();
 
-        ICompletableFuture<Boolean> future = cache.removeAsync(randomString(), randomString());
-        assertFalse(future.get());
+        cache.removeAsync(randomString(), randomString())
+             .thenAccept(Assert::assertFalse)
+             .toCompletableFuture().join();
     }
 
     @Test

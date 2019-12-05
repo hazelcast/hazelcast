@@ -23,29 +23,59 @@ import com.hazelcast.internal.metrics.ProbeFunction;
 
 class DoubleGaugeImpl extends AbstractGauge implements DoubleGauge {
 
-    private static final double DEFAULT_VALUE = 0d;
+    static final double DEFAULT_VALUE = 0d;
+
+    /**
+     * The value of this gauge is read out from this gauge source. Needed
+     * to handle static and dynamic metrics transparently for the gauge
+     * internals.
+     * <p/>
+     * If this gauge is created for a static metric, this is a
+     * {@link ProbeInstanceGaugeSource} instance, otherwise a
+     * {@link DoubleMetricValueCatcher} instance. The latter is used to
+     * catch the value of the dynamic metric this gauge is created for.
+     * If a static metric with metric id matching this gauge's name is
+     * created after creating this gauge, the
+     * {@link DoubleMetricValueCatcher} instance is replaced with a
+     * {@link ProbeInstanceGaugeSource} instance.
+     */
+    private volatile DoubleGaugeSource gaugeSource;
 
     DoubleGaugeImpl(MetricsRegistryImpl metricsRegistry, String name) {
         super(metricsRegistry, name);
+        ProbeInstance probeInstance = metricsRegistry.getProbeInstance(name);
+        if (probeInstance != null) {
+            this.gaugeSource = new ProbeInstanceGaugeSource(probeInstance);
+        } else {
+            this.gaugeSource = new DoubleMetricValueCatcher();
+        }
+    }
+
+    @Override
+    public void onProbeInstanceSet(ProbeInstance probeInstance) {
+        gaugeSource = new ProbeInstanceGaugeSource(probeInstance);
+    }
+
+    @Override
+    MetricValueCatcher getCatcherOrNull() {
+        // we take a defensive copy, since this.gaugeSource might be changed
+        // between the instanceof and the casting
+        DoubleGaugeSource gaugeSourceCopy = this.gaugeSource;
+        return gaugeSourceCopy instanceof DoubleMetricValueCatcher ? (DoubleMetricValueCatcher) gaugeSourceCopy : null;
     }
 
     @Override
     public double read() {
-        ProbeInstance probeInstance = getProbeInstance();
+        return gaugeSource.read();
+    }
 
-        ProbeFunction function = null;
-        Object source = null;
+    @Override
+    public void render(StringBuilder stringBuilder) {
+        stringBuilder.append(read());
+    }
 
-        if (probeInstance != null) {
-            function = probeInstance.function;
-            source = probeInstance.source;
-        }
-
-        if (function == null || source == null) {
-            clearProbeInstance();
-            return DEFAULT_VALUE;
-        }
-
+    private static double getMetricValue(String gaugeName, Object source, ProbeFunction function,
+                                         MetricsRegistryImpl metricsRegistry) {
         try {
             if (function instanceof LongProbeFunction) {
                 LongProbeFunction longFunction = (LongProbeFunction) function;
@@ -55,13 +85,73 @@ class DoubleGaugeImpl extends AbstractGauge implements DoubleGauge {
                 return doubleFunction.get(source);
             }
         } catch (Exception e) {
-            metricsRegistry.logger.warning("Failed to access the probe: " + name, e);
+            metricsRegistry.logger.warning("Failed to access the probe: " + gaugeName, e);
             return DEFAULT_VALUE;
         }
     }
 
-    @Override
-    public void render(StringBuilder stringBuilder) {
-        stringBuilder.append(read());
+    /**
+     * Local interface used to transparently back this gauge with static
+     * or dynamic metrics.
+     *
+     * @see #gaugeSource
+     */
+    private interface DoubleGaugeSource {
+        double read();
+    }
+
+    private final class DoubleMetricValueCatcher extends AbstractMetricValueCatcher implements DoubleGaugeSource {
+        private volatile double value = DEFAULT_VALUE;
+
+        @Override
+        public void catchMetricValue(long collectionId, long value) {
+            lastCollectionId = collectionId;
+            this.value = value;
+            clearCachedMetricSourceRef();
+        }
+
+        @Override
+        public void catchMetricValue(long collectionId, double value) {
+            lastCollectionId = collectionId;
+            this.value = value;
+            clearCachedMetricSourceRef();
+        }
+
+        @Override
+        public double read() {
+            return readBase(DoubleGaugeImpl::getMetricValue, () -> value);
+        }
+
+        @Override
+        void clearCachedValue() {
+            value = DEFAULT_VALUE;
+        }
+    }
+
+    private final class ProbeInstanceGaugeSource implements DoubleGaugeSource {
+
+        private volatile ProbeInstance probeInstance;
+
+        private ProbeInstanceGaugeSource(ProbeInstance probeInstance) {
+            this.probeInstance = probeInstance;
+        }
+
+        @Override
+        public double read() {
+            ProbeFunction function = null;
+            Object source = null;
+
+            if (probeInstance != null) {
+                function = probeInstance.function;
+                source = probeInstance.source;
+            }
+
+            if (function == null || source == null) {
+                probeInstance = null;
+                return DEFAULT_VALUE;
+            }
+
+            return getMetricValue(name, source, function, metricsRegistry);
+        }
     }
 }

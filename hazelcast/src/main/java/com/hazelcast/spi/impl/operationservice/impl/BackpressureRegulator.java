@@ -16,10 +16,11 @@
 
 package com.hazelcast.spi.impl.operationservice.impl;
 
+import com.hazelcast.internal.util.ConcurrencyDetection;
 import com.hazelcast.internal.util.ThreadLocalRandomProvider;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.spi.BackupAwareOperation;
-import com.hazelcast.spi.UrgentSystemOperation;
+import com.hazelcast.spi.impl.operationservice.BackupAwareOperation;
+import com.hazelcast.spi.impl.operationservice.UrgentSystemOperation;
 import com.hazelcast.spi.impl.sequence.CallIdFactory;
 import com.hazelcast.spi.impl.sequence.CallIdSequence;
 import com.hazelcast.spi.properties.HazelcastProperties;
@@ -27,12 +28,12 @@ import com.hazelcast.spi.properties.HazelcastProperties;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static com.hazelcast.spi.properties.GroupProperty.BACKPRESSURE_BACKOFF_TIMEOUT_MILLIS;
-import static com.hazelcast.spi.properties.GroupProperty.BACKPRESSURE_ENABLED;
-import static com.hazelcast.spi.properties.GroupProperty.BACKPRESSURE_MAX_CONCURRENT_INVOCATIONS_PER_PARTITION;
-import static com.hazelcast.spi.properties.GroupProperty.BACKPRESSURE_SYNCWINDOW;
-import static com.hazelcast.spi.properties.GroupProperty.OPERATION_BACKUP_TIMEOUT_MILLIS;
-import static com.hazelcast.spi.properties.GroupProperty.PARTITION_COUNT;
+import static com.hazelcast.spi.properties.ClusterProperty.BACKPRESSURE_BACKOFF_TIMEOUT_MILLIS;
+import static com.hazelcast.spi.properties.ClusterProperty.BACKPRESSURE_ENABLED;
+import static com.hazelcast.spi.properties.ClusterProperty.BACKPRESSURE_MAX_CONCURRENT_INVOCATIONS_PER_PARTITION;
+import static com.hazelcast.spi.properties.ClusterProperty.BACKPRESSURE_SYNCWINDOW;
+import static com.hazelcast.spi.properties.ClusterProperty.OPERATION_BACKUP_TIMEOUT_MILLIS;
+import static com.hazelcast.spi.properties.ClusterProperty.PARTITION_COUNT;
 import static java.lang.Math.max;
 import static java.lang.Math.round;
 import static java.lang.String.format;
@@ -125,6 +126,10 @@ class BackpressureRegulator {
     }
 
     private int getMaxConcurrentInvocations(HazelcastProperties props) {
+        if (disabled) {
+            return Integer.MAX_VALUE;
+        }
+
         int invocationsPerPartition = props.getInteger(BACKPRESSURE_MAX_CONCURRENT_INVOCATIONS_PER_PARTITION);
         if (invocationsPerPartition < 1) {
             throw new IllegalArgumentException("Can't have '" + BACKPRESSURE_MAX_CONCURRENT_INVOCATIONS_PER_PARTITION
@@ -151,8 +156,8 @@ class BackpressureRegulator {
         }
     }
 
-    CallIdSequence newCallIdSequence() {
-        return CallIdFactory.newCallIdSequence(enabled, maxConcurrentInvocations, backoffTimeoutMs);
+    CallIdSequence newCallIdSequence(ConcurrencyDetection concurrencyDetection) {
+        return CallIdFactory.newCallIdSequence(maxConcurrentInvocations, backoffTimeoutMs, concurrencyDetection);
     }
 
     /**

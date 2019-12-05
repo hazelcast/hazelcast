@@ -16,15 +16,14 @@
 
 package com.hazelcast.map.impl.mapstore;
 
-import com.hazelcast.core.IFunction;
-import com.hazelcast.core.MapLoader;
-import com.hazelcast.util.IterableUtil;
+import com.hazelcast.map.MapLoader;
+import com.hazelcast.internal.util.IterableUtil;
 
 import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 
-import static com.hazelcast.util.ExceptionUtil.rethrow;
+import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 
 /**
  * MapLoader that pauses once while loading keys until resumed using {@link #resume()}
@@ -57,14 +56,11 @@ class PausingMapLoader<K, V> implements MapLoader<K, V> {
     public Iterable<K> loadAllKeys() {
         Iterable<K> allKeys = delegate.loadAllKeys();
 
-        return IterableUtil.map(allKeys, new IFunction<K, K>() {
-            @Override
-            public K apply(K key) {
-                if (counter++ == pauseAt) {
-                    pause();
-                }
-                return key;
+        return IterableUtil.map(allKeys, key -> {
+            if (counter++ == pauseAt) {
+                pause();
             }
+            return key;
         });
     }
 

@@ -17,13 +17,12 @@
 package com.hazelcast.client.impl.protocol;
 
 import com.hazelcast.cache.CacheNotExistsException;
-import com.hazelcast.client.impl.StubAuthenticationException;
-import com.hazelcast.client.impl.protocol.codec.ErrorCodec;
+import com.hazelcast.client.AuthenticationException;
+import com.hazelcast.client.impl.protocol.codec.builtin.ErrorsCodec;
+import com.hazelcast.client.impl.protocol.exception.ErrorHolder;
 import com.hazelcast.client.impl.protocol.exception.MaxMessageSizeExceeded;
-import com.hazelcast.config.ConfigurationException;
 import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.core.ConsistencyLostException;
-import com.hazelcast.core.DuplicateInstanceNameException;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.HazelcastOverloadException;
@@ -31,20 +30,28 @@ import com.hazelcast.core.IndeterminateOperationStateException;
 import com.hazelcast.core.LocalMemberResetException;
 import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.core.OperationTimeoutException;
+import com.hazelcast.cp.exception.CPGroupDestroyedException;
+import com.hazelcast.cp.exception.CannotReplicateException;
+import com.hazelcast.cp.exception.LeaderDemotedException;
+import com.hazelcast.cp.exception.NotLeaderException;
+import com.hazelcast.cp.exception.StaleAppendRequestException;
+import com.hazelcast.cp.internal.datastructures.exception.WaitKeyCancelledException;
+import com.hazelcast.cp.internal.session.SessionExpiredException;
+import com.hazelcast.cp.lock.exception.LockAcquireLimitReachedException;
+import com.hazelcast.cp.lock.exception.LockOwnershipLostException;
 import com.hazelcast.crdt.MutationDisallowedException;
 import com.hazelcast.crdt.TargetNotReplicaException;
 import com.hazelcast.durableexecutor.StaleTaskIdException;
 import com.hazelcast.flakeidgen.impl.NodeIdOutOfRangeException;
 import com.hazelcast.internal.cluster.impl.ConfigMismatchException;
+import com.hazelcast.internal.cluster.impl.VersionMismatchException;
 import com.hazelcast.map.QueryResultSizeExceededException;
 import com.hazelcast.map.ReachedMaxSizeException;
-import com.hazelcast.mapreduce.RemoteMapReduceException;
-import com.hazelcast.mapreduce.TopologyChangedException;
 import com.hazelcast.memory.NativeOutOfMemoryError;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.partition.NoDataMemberInClusterException;
 import com.hazelcast.query.QueryException;
-import com.hazelcast.quorum.QuorumException;
+import com.hazelcast.splitbrainprotection.SplitBrainProtectionException;
 import com.hazelcast.replicatedmap.ReplicatedMapCantBeCreatedOnLiteMemberException;
 import com.hazelcast.ringbuffer.StaleSequenceException;
 import com.hazelcast.scheduledexecutor.DuplicateTaskException;
@@ -63,8 +70,8 @@ import com.hazelcast.topic.TopicOverloadException;
 import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.TransactionNotActiveException;
 import com.hazelcast.transaction.TransactionTimedOutException;
-import com.hazelcast.util.AddressUtil;
-import com.hazelcast.wan.WANReplicationQueueFullException;
+import com.hazelcast.internal.util.AddressUtil;
+import com.hazelcast.wan.WanReplicationQueueFullException;
 
 import javax.cache.CacheException;
 import javax.cache.integration.CacheLoaderException;
@@ -80,10 +87,10 @@ import java.io.UTFDataFormatException;
 import java.net.SocketException;
 import java.net.URISyntaxException;
 import java.security.AccessControlException;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.ConcurrentModificationException;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
@@ -99,8 +106,6 @@ import java.util.concurrent.TimeoutException;
  */
 public class ClientExceptions {
 
-    private static final String CAUSED_BY_STACKTRACE_MARKER = "###### Caused by:";
-
     private final Map<Class, Integer> classToInt = new HashMap<Class, Integer>();
 
     public ClientExceptions(boolean jcacheAvailable) {
@@ -114,7 +119,7 @@ public class ClientExceptions {
 
         register(ClientProtocolErrorCodes.ARRAY_INDEX_OUT_OF_BOUNDS, ArrayIndexOutOfBoundsException.class);
         register(ClientProtocolErrorCodes.ARRAY_STORE, ArrayStoreException.class);
-        register(ClientProtocolErrorCodes.AUTHENTICATION, StubAuthenticationException.class);
+        register(ClientProtocolErrorCodes.AUTHENTICATION, AuthenticationException.class);
         register(ClientProtocolErrorCodes.CACHE_NOT_EXISTS, CacheNotExistsException.class);
         register(ClientProtocolErrorCodes.CALLER_NOT_MEMBER, CallerNotMemberException.class);
         register(ClientProtocolErrorCodes.CANCELLATION, CancellationException.class);
@@ -122,9 +127,7 @@ public class ClientExceptions {
         register(ClientProtocolErrorCodes.CLASS_NOT_FOUND, ClassNotFoundException.class);
         register(ClientProtocolErrorCodes.CONCURRENT_MODIFICATION, ConcurrentModificationException.class);
         register(ClientProtocolErrorCodes.CONFIG_MISMATCH, ConfigMismatchException.class);
-        register(ClientProtocolErrorCodes.CONFIGURATION, ConfigurationException.class);
         register(ClientProtocolErrorCodes.DISTRIBUTED_OBJECT_DESTROYED, DistributedObjectDestroyedException.class);
-        register(ClientProtocolErrorCodes.DUPLICATE_INSTANCE_NAME, DuplicateInstanceNameException.class);
         register(ClientProtocolErrorCodes.EOF, EOFException.class);
         register(ClientProtocolErrorCodes.EXECUTION, ExecutionException.class);
         register(ClientProtocolErrorCodes.HAZELCAST, HazelcastException.class);
@@ -151,10 +154,9 @@ public class ClientExceptions {
         register(ClientProtocolErrorCodes.PARTITION_MIGRATING, PartitionMigratingException.class);
         register(ClientProtocolErrorCodes.QUERY, QueryException.class);
         register(ClientProtocolErrorCodes.QUERY_RESULT_SIZE_EXCEEDED, QueryResultSizeExceededException.class);
-        register(ClientProtocolErrorCodes.QUORUM, QuorumException.class);
+        register(ClientProtocolErrorCodes.SPLIT_BRAIN_PROTECTION, SplitBrainProtectionException.class);
         register(ClientProtocolErrorCodes.REACHED_MAX_SIZE, ReachedMaxSizeException.class);
         register(ClientProtocolErrorCodes.REJECTED_EXECUTION, RejectedExecutionException.class);
-        register(ClientProtocolErrorCodes.REMOTE_MAP_REDUCE, RemoteMapReduceException.class);
         register(ClientProtocolErrorCodes.RESPONSE_ALREADY_SENT, ResponseAlreadySentException.class);
         register(ClientProtocolErrorCodes.RETRYABLE_HAZELCAST, RetryableHazelcastException.class);
         register(ClientProtocolErrorCodes.RETRYABLE_IO, RetryableIOException.class);
@@ -167,7 +169,6 @@ public class ClientExceptions {
         register(ClientProtocolErrorCodes.TARGET_NOT_MEMBER, TargetNotMemberException.class);
         register(ClientProtocolErrorCodes.TIMEOUT, TimeoutException.class);
         register(ClientProtocolErrorCodes.TOPIC_OVERLOAD, TopicOverloadException.class);
-        register(ClientProtocolErrorCodes.TOPOLOGY_CHANGED, TopologyChangedException.class);
         register(ClientProtocolErrorCodes.TRANSACTION, TransactionException.class);
         register(ClientProtocolErrorCodes.TRANSACTION_NOT_ACTIVE, TransactionNotActiveException.class);
         register(ClientProtocolErrorCodes.TRANSACTION_TIMED_OUT, TransactionTimedOutException.class);
@@ -182,7 +183,7 @@ public class ClientExceptions {
         register(ClientProtocolErrorCodes.NO_DATA_MEMBER, NoDataMemberInClusterException.class);
         register(ClientProtocolErrorCodes.REPLICATED_MAP_CANT_BE_CREATED, ReplicatedMapCantBeCreatedOnLiteMemberException.class);
         register(ClientProtocolErrorCodes.MAX_MESSAGE_SIZE_EXCEEDED, MaxMessageSizeExceeded.class);
-        register(ClientProtocolErrorCodes.WAN_REPLICATION_QUEUE_FULL, WANReplicationQueueFullException.class);
+        register(ClientProtocolErrorCodes.WAN_REPLICATION_QUEUE_FULL, WanReplicationQueueFullException.class);
 
         register(ClientProtocolErrorCodes.ASSERTION_ERROR, AssertionError.class);
         register(ClientProtocolErrorCodes.OUT_OF_MEMORY_ERROR, OutOfMemoryError.class);
@@ -198,48 +199,34 @@ public class ClientExceptions {
         register(ClientProtocolErrorCodes.TARGET_NOT_REPLICA_EXCEPTION, TargetNotReplicaException.class);
         register(ClientProtocolErrorCodes.MUTATION_DISALLOWED_EXCEPTION, MutationDisallowedException.class);
         register(ClientProtocolErrorCodes.CONSISTENCY_LOST_EXCEPTION, ConsistencyLostException.class);
+        register(ClientProtocolErrorCodes.SESSION_EXPIRED_EXCEPTION, SessionExpiredException.class);
+        register(ClientProtocolErrorCodes.WAIT_KEY_CANCELLED_EXCEPTION, WaitKeyCancelledException.class);
+        register(ClientProtocolErrorCodes.LOCK_ACQUIRE_LIMIT_REACHED_EXCEPTION, LockAcquireLimitReachedException.class);
+        register(ClientProtocolErrorCodes.LOCK_OWNERSHIP_LOST_EXCEPTION, LockOwnershipLostException.class);
+        register(ClientProtocolErrorCodes.CP_GROUP_DESTROYED_EXCEPTION, CPGroupDestroyedException.class);
+        register(ClientProtocolErrorCodes.CANNOT_REPLICATE_EXCEPTION, CannotReplicateException.class);
+        register(ClientProtocolErrorCodes.LEADER_DEMOTED_EXCEPTION, LeaderDemotedException.class);
+        register(ClientProtocolErrorCodes.STALE_APPEND_REQUEST_EXCEPTION, StaleAppendRequestException.class);
+        register(ClientProtocolErrorCodes.NOT_LEADER_EXCEPTION, NotLeaderException.class);
+        register(ClientProtocolErrorCodes.VERSION_MISMATCH_EXCEPTION, VersionMismatchException.class);
     }
-
-
 
     public ClientMessage createExceptionMessage(Throwable throwable) {
-        int errorCode = getErrorCode(throwable);
-        String message = throwable.getMessage();
-
-        // Combine the stack traces of causes recursively into one long stack trace.
-        List<StackTraceElement> combinedStackTrace = new ArrayList<StackTraceElement>();
-        Throwable t = throwable;
-        while (t != null) {
-            combinedStackTrace.addAll(Arrays.asList(t.getStackTrace()));
-            t = t.getCause();
-            // add separator, if there is one more cause
-            if (t != null) {
-                // don't rely on Throwable.toString(), which contains the same logic, but rather use our own, as it might be overridden
-                String throwableToString = t.getClass().getName() + (t.getLocalizedMessage() != null ? ": " + t.getLocalizedMessage() : "");
-
-                combinedStackTrace.add(new StackTraceElement(CAUSED_BY_STACKTRACE_MARKER
-                        + " (" + getErrorCode(t) + ") " + throwableToString
-                        + " ------", "", null, -1));
-            }
-        }
-
-        final int causeErrorCode;
-        final String causeClassName;
-
+        List<ErrorHolder> errorHolders = new LinkedList<>();
+        errorHolders.add(convertToErrorHolder(throwable));
         Throwable cause = throwable.getCause();
-        if (cause != null) {
-            causeErrorCode = getErrorCode(cause);
-            causeClassName = cause.getClass().getName();
-        } else {
-            causeErrorCode = ClientProtocolErrorCodes.UNDEFINED;
-            causeClassName = null;
+        while (cause != null) {
+            errorHolders.add(convertToErrorHolder(cause));
+            cause = cause.getCause();
         }
 
-        StackTraceElement[] combinedStackTraceArray = combinedStackTrace.toArray(new StackTraceElement[combinedStackTrace.size()]);
-        return ErrorCodec.encode(errorCode, throwable.getClass().getName(), message, combinedStackTraceArray,
-                causeErrorCode, causeClassName);
+        return ErrorsCodec.encode(errorHolders);
     }
 
+    private ErrorHolder convertToErrorHolder(Throwable t) {
+        int errorCode = getErrorCode(t);
+        return new ErrorHolder(errorCode, t.getClass().getName(), t.getMessage(), Arrays.asList(t.getStackTrace()));
+    }
 
     public void register(int errorCode, Class clazz) {
         Integer currentCode = classToInt.get(clazz);

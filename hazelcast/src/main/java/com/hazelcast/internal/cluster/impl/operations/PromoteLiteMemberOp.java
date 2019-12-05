@@ -20,7 +20,9 @@ import com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.internal.cluster.impl.MembersView;
 import com.hazelcast.internal.cluster.impl.MembershipManager;
-import com.hazelcast.nio.Address;
+import com.hazelcast.cluster.Address;
+
+import java.util.UUID;
 
 /**
  * Promotes caller lite member to a normal member. Should be executed on only master node.
@@ -38,7 +40,7 @@ public class PromoteLiteMemberOp extends AbstractClusterOperation {
     public void run() throws Exception {
         ClusterServiceImpl service = getService();
         Address callerAddress = getCallerAddress();
-        String callerUuid = getCallerUuid();
+        UUID callerUuid = getCallerUuid();
 
         MembershipManager membershipManager = service.getMembershipManager();
         response = membershipManager.promoteToDataMember(callerAddress, callerUuid);
@@ -55,7 +57,7 @@ public class PromoteLiteMemberOp extends AbstractClusterOperation {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ClusterDataSerializerHook.PROMOTE_LITE_MEMBER;
     }
 }

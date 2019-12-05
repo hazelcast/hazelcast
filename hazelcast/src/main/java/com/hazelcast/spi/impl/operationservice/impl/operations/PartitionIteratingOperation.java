@@ -20,16 +20,16 @@ import com.hazelcast.client.impl.operations.OperationFactoryWrapper;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.spi.CallStatus;
-import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.Offload;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.OperationAccessor;
-import com.hazelcast.spi.OperationFactory;
-import com.hazelcast.spi.OperationResponseHandler;
+import com.hazelcast.spi.impl.operationservice.CallStatus;
+import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.spi.impl.operationservice.Offload;
+import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.spi.impl.operationservice.OperationAccessor;
+import com.hazelcast.spi.impl.operationservice.OperationFactory;
+import com.hazelcast.spi.impl.operationservice.OperationResponseHandler;
 import com.hazelcast.spi.impl.SpiDataSerializerHook;
-import com.hazelcast.spi.impl.operationservice.InternalOperationService;
 import com.hazelcast.spi.impl.operationservice.PartitionTaskFactory;
+import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 import com.hazelcast.spi.impl.operationservice.impl.responses.ErrorResponse;
 import com.hazelcast.spi.impl.operationservice.impl.responses.NormalResponse;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
@@ -37,6 +37,7 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.io.IOException;
 import java.util.BitSet;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReferenceArray;
 
@@ -93,8 +94,8 @@ public final class PartitionIteratingOperation extends Operation implements Iden
         getLogger().severe(cause);
     }
 
-    private InternalOperationService getOperationService() {
-        return (InternalOperationService) getNodeEngine().getOperationService();
+    private OperationServiceImpl getOperationService() {
+        return (OperationServiceImpl) getNodeEngine().getOperationService();
     }
 
     @Override
@@ -103,7 +104,7 @@ public final class PartitionIteratingOperation extends Operation implements Iden
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return SpiDataSerializerHook.PARTITION_ITERATOR;
     }
 
@@ -183,21 +184,18 @@ public final class PartitionIteratingOperation extends Operation implements Iden
             final OperationResponseHandler responseHandler = new OperationResponseHandlerImpl(partitions);
             final Object service = getServiceName() == null ? null : getService();
 
-            PartitionTaskFactory f = new PartitionTaskFactory() {
-                @Override
-                public Operation create(int partitionId) {
-                    Operation op = factory.createPartitionOperation(partitionId)
-                            .setNodeEngine(nodeEngine)
-                            .setPartitionId(partitionId)
-                            .setReplicaIndex(getReplicaIndex())
-                            .setOperationResponseHandler(responseHandler)
-                            .setServiceName(getServiceName())
-                            .setService(service)
-                            .setCallerUuid(extractCallerUuid());
+            PartitionTaskFactory f = partitionId -> {
+                Operation op = factory.createPartitionOperation(partitionId)
+                        .setNodeEngine(nodeEngine)
+                        .setPartitionId(partitionId)
+                        .setReplicaIndex(getReplicaIndex())
+                        .setOperationResponseHandler(responseHandler)
+                        .setServiceName(getServiceName())
+                        .setService(service)
+                        .setCallerUuid(extractCallerUuid());
 
-                    OperationAccessor.setCallerAddress(op, getCallerAddress());
-                    return op;
-                }
+                OperationAccessor.setCallerAddress(op, getCallerAddress());
+                return op;
             };
 
             getOperationService().executeOnPartitions(f, toPartitionBitSet());
@@ -211,7 +209,7 @@ public final class PartitionIteratingOperation extends Operation implements Iden
             return bitSet;
         }
 
-        private String extractCallerUuid() {
+        private UUID extractCallerUuid() {
             // Clients callerUUID can be set already. See OperationFactoryWrapper usage.
             if (operationFactory instanceof OperationFactoryWrapper) {
                 return ((OperationFactoryWrapper) operationFactory).getUuid();
@@ -311,7 +309,7 @@ public final class PartitionIteratingOperation extends Operation implements Iden
         }
 
         @Override
-        public int getId() {
+        public int getClassId() {
             return SpiDataSerializerHook.PARTITION_RESPONSE;
         }
 

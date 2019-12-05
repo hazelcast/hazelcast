@@ -17,17 +17,11 @@
 package com.hazelcast.internal.config;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.config.InvalidConfigurationException;
-import com.hazelcast.logging.ILogger;
-import com.hazelcast.logging.Logger;
-import com.hazelcast.map.merge.MergePolicyProvider;
-import com.hazelcast.map.merge.PutIfAbsentMapMergePolicy;
-import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.merge.PutIfAbsentMergePolicy;
+import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.merge.SplitBrainMergePolicyProvider;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
 import org.junit.Test;
@@ -35,20 +29,13 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.mockito.Mockito;
 
-import static com.hazelcast.config.InMemoryFormat.NATIVE;
-import static com.hazelcast.config.InMemoryFormat.OBJECT;
-import static com.hazelcast.internal.config.MergePolicyValidator.checkMergePolicySupportsInMemoryFormat;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.when;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class MergePolicyValidatorTest extends HazelcastTestSupport {
 
-    private static final ILogger LOGGER = Logger.getLogger(MergePolicyValidatorTest.class);
-
-    private MergePolicyProvider mapMergePolicyProvider;
+    private SplitBrainMergePolicyProvider mapMergePolicyProvider;
 
     @Before
     public void setUp() {
@@ -56,51 +43,12 @@ public class MergePolicyValidatorTest extends HazelcastTestSupport {
         NodeEngine nodeEngine = Mockito.mock(NodeEngine.class);
         when(nodeEngine.getConfigClassLoader()).thenReturn(config.getClassLoader());
 
-        SplitBrainMergePolicyProvider splitBrainMergePolicyProvider = new SplitBrainMergePolicyProvider(nodeEngine);
-        when(nodeEngine.getSplitBrainMergePolicyProvider()).thenReturn(splitBrainMergePolicyProvider);
-
-        mapMergePolicyProvider = new MergePolicyProvider(nodeEngine);
+        mapMergePolicyProvider = new SplitBrainMergePolicyProvider(nodeEngine);
+        when(nodeEngine.getSplitBrainMergePolicyProvider()).thenReturn(mapMergePolicyProvider);
     }
 
     @Test
     public void testConstructor() {
         assertUtilityConstructor(MergePolicyValidator.class);
     }
-
-    @Test
-    public void testCheckMergePolicySupportsInMemoryFormat_withMergePolicy_OBJECT() {
-        Object mergePolicy = mapMergePolicyProvider.getMergePolicy(PutIfAbsentMergePolicy.class.getName());
-        assertTrue(checkMergePolicySupportsInMemoryFormat("myMap", mergePolicy, OBJECT, false, LOGGER));
-    }
-
-    @Test
-    public void testCheckMergePolicySupportsInMemoryFormat_withLegacyMergePolicy_OBJECT() {
-        Object legacyMergePolicy = mapMergePolicyProvider.getMergePolicy(PutIfAbsentMapMergePolicy.class.getName());
-        assertTrue(checkMergePolicySupportsInMemoryFormat("myMap", legacyMergePolicy, OBJECT, false, LOGGER));
-    }
-
-    @Test
-    public void testCheckMergePolicySupportsInMemoryFormat_withMergePolicy_NATIVE() {
-        Object mergePolicy = mapMergePolicyProvider.getMergePolicy(PutIfAbsentMergePolicy.class.getName());
-        assertTrue(checkMergePolicySupportsInMemoryFormat("myMap", mergePolicy, NATIVE, false, LOGGER));
-    }
-
-    /**
-     * A legacy merge policy cannot merge NATIVE maps.
-     */
-    @Test
-    public void testCheckMergePolicySupportsInMemoryFormat_withLegacyMergePolicy_NATIVE() {
-        Object legacyMergePolicy = mapMergePolicyProvider.getMergePolicy(PutIfAbsentMapMergePolicy.class.getName());
-        assertFalse(checkMergePolicySupportsInMemoryFormat("myMap", legacyMergePolicy, NATIVE, false, LOGGER));
-    }
-
-    /**
-     * A legacy merge policy cannot merge NATIVE maps.
-     */
-    @Test(expected = InvalidConfigurationException.class)
-    public void testCheckMergePolicySupportsInMemoryFormat_withLegacyMergePolicy_NATIVE_failFast() {
-        Object legacyMergePolicy = mapMergePolicyProvider.getMergePolicy(PutIfAbsentMapMergePolicy.class.getName());
-        checkMergePolicySupportsInMemoryFormat("myMap", legacyMergePolicy, NATIVE, true, LOGGER);
-    }
-
 }

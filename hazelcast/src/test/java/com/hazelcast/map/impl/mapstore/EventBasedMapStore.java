@@ -17,8 +17,8 @@
 package com.hazelcast.map.impl.mapstore;
 
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.MapLoaderLifecycleSupport;
-import com.hazelcast.core.MapStore;
+import com.hazelcast.map.MapLoaderLifecycleSupport;
+import com.hazelcast.map.MapStore;
 
 import java.util.Collection;
 import java.util.HashMap;
@@ -31,27 +31,27 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 
-class EventBasedMapStore<K, V> implements MapLoaderLifecycleSupport, MapStore<K, V> {
+public class EventBasedMapStore<K, V> implements MapLoaderLifecycleSupport, MapStore<K, V> {
 
-    enum STORE_EVENTS {
+    public enum STORE_EVENTS {
         STORE, STORE_ALL, DELETE, DELETE_ALL, LOAD, LOAD_ALL, LOAD_ALL_KEYS
     }
 
-    protected final Map<K, V> store = new ConcurrentHashMap<K, V>();
+    public final Map<K, V> store = new ConcurrentHashMap<K, V>();
 
-    protected final BlockingQueue<STORE_EVENTS> events = new LinkedBlockingQueue<STORE_EVENTS>();
-    protected final AtomicInteger storeCount = new AtomicInteger();
-    protected final AtomicInteger storeAllCount = new AtomicInteger();
-    protected final AtomicInteger loadCount = new AtomicInteger();
-    protected final AtomicInteger callCount = new AtomicInteger();
-    protected final AtomicInteger initCount = new AtomicInteger();
-    protected HazelcastInstance hazelcastInstance;
-    protected Properties properties;
-    protected String mapName;
-    protected boolean loadAllKeys = true;
-    protected CountDownLatch storeLatch;
-    protected CountDownLatch deleteLatch;
-    protected CountDownLatch loadAllLatch;
+    public final BlockingQueue<STORE_EVENTS> events = new LinkedBlockingQueue<STORE_EVENTS>();
+    public final AtomicInteger storeCount = new AtomicInteger();
+    public final AtomicInteger storeAllCount = new AtomicInteger();
+    public final AtomicInteger loadCount = new AtomicInteger();
+    public final AtomicInteger callCount = new AtomicInteger();
+    public final AtomicInteger initCount = new AtomicInteger();
+    public HazelcastInstance hazelcastInstance;
+    public Properties properties;
+    public String mapName;
+    public boolean loadAllKeys = true;
+    public CountDownLatch storeLatch;
+    public CountDownLatch deleteLatch;
+    public CountDownLatch loadAllLatch;
 
     public void init(HazelcastInstance hazelcastInstance, Properties properties, String mapName) {
         this.hazelcastInstance = hazelcastInstance;
@@ -95,7 +95,7 @@ class EventBasedMapStore<K, V> implements MapLoaderLifecycleSupport, MapStore<K,
         return properties;
     }
 
-    Map<K, V> getStore() {
+    public Map<K, V> getStore() {
         return store;
     }
 

@@ -17,15 +17,15 @@
 package com.hazelcast.internal.partition;
 
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.instance.Node;
+import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.serialization.InternalSerializationService;
-import com.hazelcast.nio.Address;
-import com.hazelcast.nio.tcp.FirewallingConnectionManager;
-import com.hazelcast.nio.tcp.OperationPacketFilter;
-import com.hazelcast.nio.tcp.PacketFilter;
+import com.hazelcast.cluster.Address;
+import com.hazelcast.internal.nio.tcp.FirewallingNetworkingService;
+import com.hazelcast.internal.nio.tcp.OperationPacketFilter;
+import com.hazelcast.internal.nio.tcp.PacketFilter;
 import com.hazelcast.spi.impl.SpiDataSerializerHook;
-import com.hazelcast.test.HazelcastParametersRunnerFactory;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -39,8 +39,8 @@ import java.util.Collection;
 import static java.util.Arrays.asList;
 
 @RunWith(Parameterized.class)
-@UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
-@Category({QuickTest.class, ParallelTest.class})
+@UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class DirtyBackupTest extends PartitionCorrectnessTestSupport {
 
     @Parameters(name = "backups:{0},nodes:{1}")
@@ -81,9 +81,10 @@ public class DirtyBackupTest extends PartitionCorrectnessTestSupport {
 
     private static void setBackupPacketReorderFilter(HazelcastInstance instance) {
         Node node = getNode(instance);
-        FirewallingConnectionManager cm = (FirewallingConnectionManager) node.getConnectionManager();
-        cm.setPacketFilter(new BackupPacketReorderFilter(node.getSerializationService()));
-        cm.setDelayMillis(100, 1000);
+        FirewallingNetworkingService.FirewallingEndpointManager
+                em = (FirewallingNetworkingService.FirewallingEndpointManager) node.getEndpointManager();
+        em.setPacketFilter(new BackupPacketReorderFilter(node.getSerializationService()));
+        em.setDelayMillis(100, 1000);
     }
 
     private static class BackupPacketReorderFilter extends OperationPacketFilter implements PacketFilter {

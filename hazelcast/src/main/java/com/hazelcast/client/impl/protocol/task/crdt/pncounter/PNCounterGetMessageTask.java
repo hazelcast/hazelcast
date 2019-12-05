@@ -22,22 +22,24 @@ import com.hazelcast.client.impl.protocol.codec.PNCounterGetCodec.RequestParamet
 import com.hazelcast.client.impl.protocol.task.AbstractAddressMessageTask;
 import com.hazelcast.cluster.impl.VectorClock;
 import com.hazelcast.config.PNCounterConfig;
-import com.hazelcast.crdt.pncounter.PNCounterService;
-import com.hazelcast.crdt.pncounter.operations.CRDTTimestampedLong;
-import com.hazelcast.crdt.pncounter.operations.GetOperation;
-import com.hazelcast.instance.Node;
-import com.hazelcast.nio.Address;
-import com.hazelcast.nio.Connection;
+import com.hazelcast.crdt.pncounter.PNCounter;
+import com.hazelcast.internal.crdt.pncounter.PNCounterService;
+import com.hazelcast.internal.crdt.pncounter.operations.CRDTTimestampedLong;
+import com.hazelcast.internal.crdt.pncounter.operations.GetOperation;
+import com.hazelcast.instance.impl.Node;
+import com.hazelcast.cluster.Address;
+import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.PNCounterPermission;
-import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.impl.operationservice.Operation;
 
 import java.security.Permission;
 import java.util.Map.Entry;
+import java.util.UUID;
 
 /**
  * Task responsible for processing client messages for retrieving the
- * current {@link com.hazelcast.crdt.pncounter.PNCounter} state.
+ * current {@link PNCounter} state.
  * If this message was sent from a client with smart routing disabled, the
  * member may forward the request to a different target member.
  */
@@ -56,7 +58,7 @@ public class PNCounterGetMessageTask extends AbstractAddressMessageTask<RequestP
     protected Operation prepareOperation() {
         final VectorClock vectorClock = new VectorClock();
         if (parameters.replicaTimestamps != null) {
-            for (Entry<String, Long> timestamp : parameters.replicaTimestamps) {
+            for (Entry<UUID, Long> timestamp : parameters.replicaTimestamps) {
                 vectorClock.setReplicaTimestamp(timestamp.getKey(), timestamp.getValue());
             }
         }
@@ -65,7 +67,9 @@ public class PNCounterGetMessageTask extends AbstractAddressMessageTask<RequestP
 
     @Override
     protected PNCounterGetCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
-        return PNCounterGetCodec.decodeRequest(clientMessage);
+        parameters = PNCounterGetCodec.decodeRequest(clientMessage);
+        parameters.targetReplica = clientEngine.memberAddressOf(parameters.targetReplica);
+        return parameters;
     }
 
     @Override

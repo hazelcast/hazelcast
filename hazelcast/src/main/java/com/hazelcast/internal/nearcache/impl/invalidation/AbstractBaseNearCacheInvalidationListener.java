@@ -18,7 +18,7 @@ package com.hazelcast.internal.nearcache.impl.invalidation;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.util.HashUtil;
+import com.hazelcast.internal.util.HashUtil;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -35,14 +35,14 @@ public abstract class AbstractBaseNearCacheInvalidationListener {
      */
     private final int batchOrderKey;
 
-    public AbstractBaseNearCacheInvalidationListener(String localMemberUuid, long correlationId) {
+    public AbstractBaseNearCacheInvalidationListener(UUID localMemberUuid, long correlationId) {
         this.batchOrderKey = HashUtil.hashCode(localMemberUuid, correlationId);
     }
 
-    protected abstract ClientMessage encodeBatchInvalidation(String name, List<Data> keys, List<String> sourceUuids,
+    protected abstract ClientMessage encodeBatchInvalidation(String name, List<Data> keys, List<UUID> sourceUuids,
                                                              List<UUID> partitionUuids, List<Long> sequences);
 
-    protected abstract ClientMessage encodeSingleInvalidation(String name, Data key, String sourceUuid,
+    protected abstract ClientMessage encodeSingleInvalidation(String name, Data key, UUID sourceUuid,
                                                               UUID partitionUuid, long sequence);
 
     protected abstract void sendMessageWithOrderKey(ClientMessage clientMessage, Object orderKey);
@@ -76,10 +76,10 @@ public abstract class AbstractBaseNearCacheInvalidationListener {
         List<Invalidation> invalidations = batch.getInvalidations();
 
         int size = invalidations.size();
-        List<Data> keys = new ArrayList<Data>(size);
-        List<String> sourceUuids = new ArrayList<String>(size);
-        List<UUID> partitionUuids = new ArrayList<UUID>(size);
-        List<Long> sequences = new ArrayList<Long>(size);
+        List<Data> keys = new ArrayList<>(size);
+        List<UUID> sourceUuids = new ArrayList<>(size);
+        List<UUID> partitionUuids = new ArrayList<>(size);
+        List<Long> sequences = new ArrayList<>(size);
 
         for (Invalidation invalidation : invalidations) {
             if (canSendInvalidation(invalidation)) {
@@ -96,11 +96,11 @@ public abstract class AbstractBaseNearCacheInvalidationListener {
     private static final class ExtractedParams {
 
         private final List<Data> keys;
-        private final List<String> sourceUuids;
+        private final List<UUID> sourceUuids;
         private final List<UUID> partitionUuids;
         private final List<Long> sequences;
 
-        ExtractedParams(List<Data> keys, List<String> sourceUuids, List<UUID> partitionUuids, List<Long> sequences) {
+        ExtractedParams(List<Data> keys, List<UUID> sourceUuids, List<UUID> partitionUuids, List<Long> sequences) {
             this.keys = keys;
             this.sourceUuids = sourceUuids;
             this.partitionUuids = partitionUuids;

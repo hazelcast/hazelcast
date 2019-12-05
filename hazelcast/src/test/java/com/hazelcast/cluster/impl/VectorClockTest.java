@@ -16,65 +16,79 @@
 
 package com.hazelcast.cluster.impl;
 
+import com.hazelcast.internal.util.UuidUtil;
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+
+import java.util.UUID;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class VectorClockTest {
+
+    private static UUID[] uuidParams;
+
+    @BeforeClass
+    public static void setUp() {
+        uuidParams = new UUID[3];
+        for (int i = 0; i < 3; i++) {
+            uuidParams[i] = UuidUtil.newUnsecureUUID();
+        }
+    }
 
     @Test
     public void testEquals() {
-        final VectorClock clock = vectorClock("A", 1, "B", 2);
-        assertEquals(clock, vectorClock("A", 1, "B", 2));
+        final VectorClock clock = vectorClock(uuidParams[0], 1, uuidParams[1], 2);
+        assertEquals(clock, vectorClock(uuidParams[0], 1, uuidParams[1], 2));
         assertEquals(clock, new VectorClock(clock));
     }
 
     @Test
     public void testIsAfter() {
         assertFalse(vectorClock().isAfter(vectorClock()));
-        assertTrue(vectorClock("A", 1).isAfter(vectorClock()));
-        assertFalse(vectorClock("A", 1).isAfter(vectorClock("A", 1)));
-        assertFalse(vectorClock("A", 1).isAfter(vectorClock("B", 1)));
-        assertTrue(vectorClock("A", 1, "B", 1).isAfter(vectorClock("A", 1)));
-        assertFalse(vectorClock("A", 1).isAfter(vectorClock("A", 1, "B", 1)));
-        assertTrue(vectorClock("A", 2).isAfter(vectorClock("A", 1)));
-        assertFalse(vectorClock("A", 2).isAfter(vectorClock("A", 1, "B", 1)));
-        assertTrue(vectorClock("A", 2, "B", 1).isAfter(vectorClock("A", 1, "B", 1)));
+        assertTrue(vectorClock(uuidParams[0], 1).isAfter(vectorClock()));
+        assertFalse(vectorClock(uuidParams[0], 1).isAfter(vectorClock(uuidParams[0], 1)));
+        assertFalse(vectorClock(uuidParams[0], 1).isAfter(vectorClock(uuidParams[1], 1)));
+        assertTrue(vectorClock(uuidParams[0], 1, uuidParams[1], 1).isAfter(vectorClock(uuidParams[0], 1)));
+        assertFalse(vectorClock(uuidParams[0], 1).isAfter(vectorClock(uuidParams[0], 1, uuidParams[1], 1)));
+        assertTrue(vectorClock(uuidParams[0], 2).isAfter(vectorClock(uuidParams[0], 1)));
+        assertFalse(vectorClock(uuidParams[0], 2).isAfter(vectorClock(uuidParams[0], 1, uuidParams[1], 1)));
+        assertTrue(vectorClock(uuidParams[0], 2, uuidParams[1], 1).isAfter(vectorClock(uuidParams[0], 1, uuidParams[1], 1)));
     }
 
     @Test
     public void testMerge() {
         assertMerged(
-                vectorClock("A", 1),
+                vectorClock(uuidParams[0], 1),
                 vectorClock(),
-                vectorClock("A", 1));
+                vectorClock(uuidParams[0], 1));
         assertMerged(
-                vectorClock("A", 1),
-                vectorClock("A", 2),
-                vectorClock("A", 2));
+                vectorClock(uuidParams[0], 1),
+                vectorClock(uuidParams[0], 2),
+                vectorClock(uuidParams[0], 2));
         assertMerged(
-                vectorClock("A", 2),
-                vectorClock("A", 1),
-                vectorClock("A", 2));
+                vectorClock(uuidParams[0], 2),
+                vectorClock(uuidParams[0], 1),
+                vectorClock(uuidParams[0], 2));
         assertMerged(
-                vectorClock("A", 3, "B", 1),
-                vectorClock("A", 1, "B", 2, "C", 3),
-                vectorClock("A", 3, "B", 2, "C", 3));
+                vectorClock(uuidParams[0], 3, uuidParams[1], 1),
+                vectorClock(uuidParams[0], 1, uuidParams[1], 2, uuidParams[2], 3),
+                vectorClock(uuidParams[0], 3, uuidParams[1], 2, uuidParams[2], 3));
     }
 
     @Test
     public void testIsEmpty() {
         assertTrue(vectorClock().isEmpty());
-        assertFalse(vectorClock("A", 1).isEmpty());
+        assertFalse(vectorClock(uuidParams[0], 1).isEmpty());
     }
 
     private void assertMerged(VectorClock from, VectorClock to, VectorClock expected) {
@@ -85,7 +99,7 @@ public class VectorClockTest {
     private VectorClock vectorClock(Object... params) {
         final VectorClock clock = new VectorClock();
         for (int i = 0; i < params.length; ) {
-            clock.setReplicaTimestamp((String) params[i++], (Integer) params[i++]);
+            clock.setReplicaTimestamp((UUID) params[i++], (Integer) params[i++]);
         }
         return clock;
     }

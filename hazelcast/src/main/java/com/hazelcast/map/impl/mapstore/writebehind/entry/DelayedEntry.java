@@ -16,8 +16,13 @@
 
 package com.hazelcast.map.impl.mapstore.writebehind.entry;
 
+import com.hazelcast.map.MapStore;
+
+import javax.annotation.Nullable;
+import java.util.UUID;
+
 /**
- * General contract for an entry to be stored into {@link com.hazelcast.core.MapStore}
+ * General contract for an entry to be stored into {@link MapStore}
  * when {@link com.hazelcast.config.MapStoreConfig#writeDelaySeconds} is greater than 0.
  *
  * @param <K> the key type.
@@ -32,6 +37,8 @@ public interface DelayedEntry<K, V> {
 
     V getValue();
 
+    long getExpirationTime();
+
     long getStoreTime();
 
     int getPartitionId();
@@ -41,4 +48,9 @@ public interface DelayedEntry<K, V> {
     void setSequence(long sequence);
 
     long getSequence();
+
+    void setTxnId(UUID txnId);
+
+    @Nullable
+    UUID getTxnId();
 }

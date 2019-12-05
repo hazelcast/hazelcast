@@ -19,18 +19,20 @@ package com.hazelcast.cluster;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.instance.TestUtil;
+import com.hazelcast.instance.impl.HazelcastInstanceFactory;
+import com.hazelcast.instance.impl.TestUtil;
 import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.OverridePropertyRule;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.io.IOException;
-
 import static com.hazelcast.test.HazelcastTestSupport.assertClusterSize;
+import static com.hazelcast.test.OverridePropertyRule.clear;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -42,12 +44,15 @@ import static org.junit.Assert.assertTrue;
 @Category(QuickTest.class)
 public class ClusterJoinConfigCheckTest {
 
+    @Rule
+    public final OverridePropertyRule ruleSysPropHazelcastLocalAddress = clear("hazelcast.local.localAddress");
+
     private static final int BASE_PORT = 7777;
 
     @Before
     @After
-    public void killAllHazelcastInstances() throws IOException {
-        Hazelcast.shutdownAll();
+    public void killAllHazelcastInstances() {
+        HazelcastInstanceFactory.terminateAll();
     }
 
     @Test
@@ -62,10 +67,10 @@ public class ClusterJoinConfigCheckTest {
 
     private void whenDifferentGroups_thenDifferentClustersAreFormed(boolean tcp) {
         Config config1 = new Config();
-        config1.getGroupConfig().setName("group1");
+        config1.setClusterName("group1");
 
         Config config2 = new Config();
-        config2.getGroupConfig().setName("group2");
+        config2.setClusterName("group2");
 
         if (tcp) {
             enableTcp(config1);

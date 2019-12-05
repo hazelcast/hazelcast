@@ -17,7 +17,7 @@
 package com.hazelcast.spi.impl.merge;
 
 import com.hazelcast.spi.merge.SplitBrainMergeTypes.AtomicLongMergeTypes;
-import com.hazelcast.spi.serialization.SerializationService;
+import com.hazelcast.internal.serialization.SerializationService;
 
 /**
  * Implementation of {@link AtomicLongMergeTypes}.
@@ -37,7 +37,7 @@ public class AtomicLongMergingValueImpl
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return SplitBrainDataSerializerHook.ATOMIC_LONG_MERGING_VALUE;
     }
 }

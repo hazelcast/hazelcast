@@ -23,7 +23,7 @@ class TransactionRecordKey {
     final String name;
     final Data key;
 
-    public TransactionRecordKey(String name, Data key) {
+    TransactionRecordKey(String name, Data key) {
         this.name = name;
         this.key = key;
     }
@@ -41,10 +41,7 @@ class TransactionRecordKey {
         if (!key.equals(that.key)) {
             return false;
         }
-        if (!name.equals(that.name)) {
-            return false;
-        }
-        return true;
+        return name.equals(that.name);
     }
 
     @Override

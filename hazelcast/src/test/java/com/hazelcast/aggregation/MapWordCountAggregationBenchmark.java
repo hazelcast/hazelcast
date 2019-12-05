@@ -22,10 +22,10 @@ import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.NetworkConfig;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IMap;
+import com.hazelcast.map.IMap;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.util.StringUtil;
-import com.hazelcast.util.UuidUtil;
+import com.hazelcast.internal.util.StringUtil;
+import com.hazelcast.internal.util.UuidUtil;
 
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -165,7 +165,7 @@ public class MapWordCountAggregationBenchmark extends HazelcastTestSupport {
         return word.replaceAll("[^A-Za-z0-9]", "");
     }
 
-    private static class WordCountAggregator extends Aggregator<Map.Entry<String, String>, Map<String, MutableInt>> {
+    private static class WordCountAggregator implements Aggregator<Map.Entry<String, String>, Map<String, MutableInt>> {
 
         Map<String, MutableInt> result = new HashMap<String, MutableInt>(1000);
 

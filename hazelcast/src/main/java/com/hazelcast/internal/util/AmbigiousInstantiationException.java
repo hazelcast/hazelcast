@@ -23,7 +23,7 @@ import com.hazelcast.core.HazelcastException;
  *
  */
 final class AmbigiousInstantiationException extends HazelcastException {
-    public AmbigiousInstantiationException(String message) {
+    AmbigiousInstantiationException(String message) {
         super(message);
     }
 }

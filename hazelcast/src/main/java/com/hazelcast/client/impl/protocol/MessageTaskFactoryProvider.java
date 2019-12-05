@@ -16,10 +16,12 @@
 
 package com.hazelcast.client.impl.protocol;
 
+import com.hazelcast.internal.util.collection.Int2ObjectHashMap;
+
 /**
  * Provider for client's Message task factories;
  * Will be read from META-INF/services
  */
 public interface MessageTaskFactoryProvider {
-    MessageTaskFactory[] getFactories();
+    Int2ObjectHashMap<MessageTaskFactory> getFactories();
 }

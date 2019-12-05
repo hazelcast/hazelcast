@@ -34,7 +34,7 @@ public final class Projections {
      * Returns a projection that does no transformation.
      * <p>
      * If you use the returned projection in a 3.9 cluster it may cause a serialization exception.
-     *
+     * @param <T> type
      * @since 3.10
      */
     public static <T> Projection<T, T> identity() {
@@ -45,7 +45,8 @@ public final class Projections {
      * Returns a projection that extracts the value of the given {@code attributePath}.
      *
      * @param attributePath single attribute path, path must not be null or empty
-     * @param <O>           Output type
+     * @param <I>           input type
+     * @param <O>           output type
      */
     public static <I, O> Projection<I, O> singleAttribute(String attributePath) {
         return new SingleAttributeProjection<I, O>(attributePath);
@@ -56,6 +57,7 @@ public final class Projections {
      * The attribute values will be returned as an {@code Object[]} array from each projection call.
      *
      * @param attributePaths attribute paths, paths must not be null or empty
+     * @param <I> input type
      */
     public static <I> Projection<I, Object[]> multiAttribute(String... attributePaths) {
         return new MultiAttributeProjection<I>(attributePaths);

@@ -28,23 +28,24 @@ import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
 import com.hazelcast.internal.partition.impl.PartitionDataSerializerHook;
 import com.hazelcast.internal.partition.impl.PartitionStateManager;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.nio.Address;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.impl.Versioned;
-import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.OperationService;
-import com.hazelcast.spi.PartitionAwareOperation;
-import com.hazelcast.spi.PartitionReplicationEvent;
-import com.hazelcast.spi.ServiceNamespace;
+import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.spi.impl.operationservice.OperationService;
+import com.hazelcast.internal.partition.PartitionReplicationEvent;
+import com.hazelcast.spi.impl.operationservice.PartitionAwareOperation;
+import com.hazelcast.internal.services.ServiceNamespace;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+
+import static com.hazelcast.internal.serialization.impl.SerializationUtil.readList;
+import static com.hazelcast.internal.serialization.impl.SerializationUtil.writeList;
 
 /**
  * The request sent from a replica to the partition owner to synchronize the replica data. The partition owner can send a
@@ -56,10 +57,8 @@ import java.util.List;
  * </ul>
  * An empty response can be sent if the current replica version is 0.
  */
-// RU_COMPAT_39: Do not remove Versioned interface!
-// Version info is needed on 3.9 members while deserializing the operation.
 public final class PartitionReplicaSyncRequest extends AbstractPartitionOperation
-        implements PartitionAwareOperation, MigrationCycleOperation, Versioned {
+        implements PartitionAwareOperation, MigrationCycleOperation {
 
     private List<ServiceNamespace> namespaces;
 
@@ -255,24 +254,16 @@ public final class PartitionReplicaSyncRequest extends AbstractPartitionOperatio
 
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
-        out.writeInt(namespaces.size());
-        for (ServiceNamespace namespace : namespaces) {
-            out.writeObject(namespace);
-        }
+        writeList(namespaces, out);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
-        int len = in.readInt();
-        namespaces = new ArrayList<ServiceNamespace>(len);
-        for (int i = 0; i < len; i++) {
-            ServiceNamespace ns = in.readObject();
-            namespaces.add(ns);
-        }
+        namespaces = readList(in);
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return PartitionDataSerializerHook.REPLICA_SYNC_REQUEST;
     }
 }

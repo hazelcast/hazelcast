@@ -16,17 +16,17 @@
 
 package com.hazelcast.internal.eviction;
 
-import com.hazelcast.core.IBiFunction;
-import com.hazelcast.nio.Address;
+import java.util.function.BiFunction;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.partition.PartitionLostEvent;
-import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.impl.operationservice.InternalOperationService;
-import com.hazelcast.spi.partition.IPartition;
-import com.hazelcast.spi.partition.IPartitionService;
+import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
+import com.hazelcast.internal.partition.IPartition;
+import com.hazelcast.internal.partition.IPartitionService;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.spi.properties.HazelcastProperty;
-import com.hazelcast.util.Clock;
+import com.hazelcast.internal.util.Clock;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.util.ArrayList;
@@ -37,9 +37,9 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.internal.eviction.ToBackupSender.newToBackupSender;
-import static com.hazelcast.util.CollectionUtil.isEmpty;
-import static com.hazelcast.util.Preconditions.checkPositive;
-import static com.hazelcast.util.Preconditions.checkTrue;
+import static com.hazelcast.internal.util.CollectionUtil.isEmpty;
+import static com.hazelcast.internal.util.Preconditions.checkPositive;
+import static com.hazelcast.internal.util.Preconditions.checkTrue;
 import static java.lang.Integer.parseInt;
 import static java.lang.Math.min;
 
@@ -60,7 +60,7 @@ public abstract class ClearExpiredRecordsTask<T, S> implements Runnable {
     private final int cleanupOperationCount;
 
     private final Address thisAddress;
-    private final InternalOperationService operationService;
+    private final OperationServiceImpl operationService;
     private final AtomicBoolean singleRunPermit = new AtomicBoolean(false);
     private final AtomicInteger lostPartitionCounter = new AtomicInteger();
     private final AtomicInteger nextExpiryQueueToScanIndex = new AtomicInteger();
@@ -78,7 +78,7 @@ public abstract class ClearExpiredRecordsTask<T, S> implements Runnable {
                                       NodeEngine nodeEngine) {
         this.nodeEngine = nodeEngine;
         this.containers = containers;
-        this.operationService = (InternalOperationService) nodeEngine.getOperationService();
+        this.operationService = (OperationServiceImpl) nodeEngine.getOperationService();
         this.partitionService = nodeEngine.getPartitionService();
         this.partitionCount = nodeEngine.getPartitionService().getPartitionCount();
         this.thisAddress = nodeEngine.getThisAddress();
@@ -95,13 +95,10 @@ public abstract class ClearExpiredRecordsTask<T, S> implements Runnable {
                 newBackupExpiryOpFilter(), nodeEngine);
     }
 
-    protected IBiFunction<Integer, Integer, Boolean> newBackupExpiryOpFilter() {
-        return new IBiFunction<Integer, Integer, Boolean>() {
-            @Override
-            public Boolean apply(Integer partitionId, Integer replicaIndex) {
-                IPartition partition = partitionService.getPartition(partitionId);
-                return partition.getReplicaAddress(replicaIndex) != null;
-            }
+    protected BiFunction<Integer, Integer, Boolean> newBackupExpiryOpFilter() {
+        return (partitionId, replicaIndex) -> {
+            IPartition partition = partitionService.getPartition(partitionId);
+            return partition.getReplicaAddress(replicaIndex) != null;
         };
     }
 
@@ -130,6 +127,10 @@ public abstract class ClearExpiredRecordsTask<T, S> implements Runnable {
             T container = this.containers[partitionId];
 
             IPartition partition = partitionService.getPartition(partitionId, false);
+            if (partition.isMigrating()) {
+                continue;
+            }
+
             if (partition.isLocal()) {
                 if (lostPartitionDetected) {
                     equalizeBackupSizeWithPrimary(container);
@@ -271,8 +272,8 @@ public abstract class ClearExpiredRecordsTask<T, S> implements Runnable {
         }
     }
 
-    private IBiFunction<S, Collection<ExpiredKey>, Operation> newBackupExpiryOpSupplier() {
-        return new IBiFunction<S, Collection<ExpiredKey>, Operation>() {
+    private BiFunction<S, Collection<ExpiredKey>, Operation> newBackupExpiryOpSupplier() {
+        return new BiFunction<S, Collection<ExpiredKey>, Operation>() {
             @Override
             public Operation apply(S recordStore, Collection<ExpiredKey> expiredKeys) {
                 return newBackupExpiryOp(recordStore, expiredKeys);

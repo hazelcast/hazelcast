@@ -17,8 +17,7 @@
 package com.hazelcast.query.impl.predicates;
 
 import com.hazelcast.query.Predicate;
-import com.hazelcast.query.SqlPredicate;
-import com.hazelcast.query.impl.SkipIndexPredicate;
+import com.hazelcast.query.Predicates;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
@@ -31,11 +30,12 @@ import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
-public class SqlPredicateSkipIndexTest extends HazelcastTestSupport {
+public class SqlPredicateSkipIndexTest
+        extends HazelcastTestSupport {
 
     @Test
     public void testInPredicate() {
-        SqlPredicate sqlPredicate = new SqlPredicate("%age in (1)");
+        SqlPredicate sqlPredicate = (SqlPredicate) Predicates.sql("%age in (1)");
         Predicate p = sqlPredicate.getPredicate();
 
         SkipIndexPredicate skipIndexPredicate = (SkipIndexPredicate) p;
@@ -47,7 +47,7 @@ public class SqlPredicateSkipIndexTest extends HazelcastTestSupport {
 
     @Test
     public void testEqualPredicate() {
-        SqlPredicate sqlPredicate = new SqlPredicate("%age=40");
+        SqlPredicate sqlPredicate = (SqlPredicate) Predicates.sql("%age=40");
         Predicate p = sqlPredicate.getPredicate();
 
         SkipIndexPredicate skipIndexPredicate = (SkipIndexPredicate) p;
@@ -64,7 +64,7 @@ public class SqlPredicateSkipIndexTest extends HazelcastTestSupport {
     }
 
     public void notEqualPredicate(String operator) {
-        SqlPredicate sqlPredicate = new SqlPredicate("%age" + operator + "40");
+        SqlPredicate sqlPredicate = (SqlPredicate) Predicates.sql("%age" + operator + "40");
         Predicate p = sqlPredicate.getPredicate();
 
         SkipIndexPredicate skipIndexPredicate = (SkipIndexPredicate) p;
@@ -83,7 +83,7 @@ public class SqlPredicateSkipIndexTest extends HazelcastTestSupport {
     }
 
     public void greaterLess(String operator) {
-        SqlPredicate sqlPredicate = new SqlPredicate("%age" + operator + "40");
+        SqlPredicate sqlPredicate = (SqlPredicate) Predicates.sql("%age" + operator + "40");
         Predicate p = sqlPredicate.getPredicate();
 
         SkipIndexPredicate skipIndexPredicate = (SkipIndexPredicate) p;

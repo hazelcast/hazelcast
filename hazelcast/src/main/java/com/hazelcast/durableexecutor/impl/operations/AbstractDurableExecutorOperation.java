@@ -21,7 +21,7 @@ import com.hazelcast.durableexecutor.impl.DurableExecutorContainer;
 import com.hazelcast.durableexecutor.impl.DurableExecutorDataSerializerHook;
 import com.hazelcast.durableexecutor.impl.DurableExecutorPartitionContainer;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.spi.impl.AbstractNamedOperation;
+import com.hazelcast.spi.impl.operationservice.AbstractNamedOperation;
 
 abstract class AbstractDurableExecutorOperation extends AbstractNamedOperation implements IdentifiedDataSerializable {
 

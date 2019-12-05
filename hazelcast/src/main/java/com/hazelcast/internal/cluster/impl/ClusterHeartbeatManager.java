@@ -16,11 +16,11 @@
 
 package com.hazelcast.internal.cluster.impl;
 
+import com.hazelcast.cluster.Member;
+import com.hazelcast.cluster.impl.MemberImpl;
 import com.hazelcast.cluster.memberselector.MemberSelectors;
 import com.hazelcast.config.IcmpFailureDetectorConfig;
-import com.hazelcast.core.Member;
-import com.hazelcast.instance.MemberImpl;
-import com.hazelcast.instance.Node;
+import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.cluster.fd.ClusterFailureDetector;
 import com.hazelcast.internal.cluster.fd.ClusterFailureDetectorType;
 import com.hazelcast.internal.cluster.fd.DeadlineClusterFailureDetector;
@@ -31,28 +31,31 @@ import com.hazelcast.internal.cluster.impl.operations.HeartbeatComplaintOp;
 import com.hazelcast.internal.cluster.impl.operations.HeartbeatOp;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.nio.Address;
-import com.hazelcast.nio.Connection;
-import com.hazelcast.quorum.impl.QuorumServiceImpl;
-import com.hazelcast.spi.ExecutionService;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.OperationService;
+import com.hazelcast.cluster.Address;
+import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.spi.impl.executionservice.ExecutionService;
+import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.spi.impl.operationservice.OperationService;
+import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.spi.properties.HazelcastProperties;
-import com.hazelcast.util.Clock;
-import com.hazelcast.util.ICMPHelper;
+import com.hazelcast.splitbrainprotection.impl.SplitBrainProtectionServiceImpl;
+import com.hazelcast.internal.util.Clock;
+import com.hazelcast.internal.util.ICMPHelper;
 
 import java.io.IOException;
 import java.net.ConnectException;
 import java.util.Collection;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 import java.util.logging.Level;
 
-import static com.hazelcast.internal.cluster.impl.ClusterServiceImpl.EXECUTOR_NAME;
-import static com.hazelcast.util.EmptyStatement.ignore;
-import static com.hazelcast.util.StringUtil.timeToString;
+import static com.hazelcast.config.ConfigAccessor.getActiveMemberNetworkConfig;
+import static com.hazelcast.instance.EndpointQualifier.MEMBER;
+import static com.hazelcast.internal.cluster.impl.ClusterServiceImpl.CLUSTER_EXECUTOR_NAME;
+import static com.hazelcast.internal.util.EmptyStatement.ignore;
+import static com.hazelcast.internal.util.StringUtil.timeToString;
 import static java.lang.String.format;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.MINUTES;
@@ -61,11 +64,11 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 /**
  * ClusterHeartbeatManager manages the heartbeat sending and receiving
  * process of a node.
- * <p/>
+ * <p>
  * It periodically sends heartbeat to the other nodes and stores heartbeat timestamps
  * per node when a heartbeat is received from other nodes. If enabled and required, it can send
  * ping packets (an ICMP ping or an echo packet depending on the environment and settings).
- * <p/>
+ * <p>
  * If it detects a member is not live anymore, that member is kicked out of cluster.
  */
 public class ClusterHeartbeatManager {
@@ -74,6 +77,8 @@ public class ClusterHeartbeatManager {
     private static final int HEART_BEAT_INTERVAL_FACTOR = 10;
     private static final int MAX_PING_RETRY_COUNT = 5;
     private static final long MIN_ICMP_INTERVAL_MILLIS = SECONDS.toMillis(1);
+    private static final int DEFAULT_ICMP_TIMEOUT_MILLIS = 1000;
+    private static final int DEFAULT_ICMP_INTERVAL_MILLIS = 1000;
 
     private final ILogger logger;
     private final Lock clusterServiceLock;
@@ -109,31 +114,20 @@ public class ClusterHeartbeatManager {
         clusterServiceLock = lock;
 
         HazelcastProperties hazelcastProperties = node.getProperties();
-        maxNoHeartbeatMillis = hazelcastProperties.getMillis(GroupProperty.MAX_NO_HEARTBEAT_SECONDS);
+        maxNoHeartbeatMillis = hazelcastProperties.getMillis(ClusterProperty.MAX_NO_HEARTBEAT_SECONDS);
 
         heartbeatIntervalMillis = getHeartbeatInterval(hazelcastProperties);
         legacyIcmpCheckThresholdMillis = heartbeatIntervalMillis * HEART_BEAT_INTERVAL_FACTOR;
 
-        IcmpFailureDetectorConfig icmpFailureDetectorConfig = node.getConfig().getNetworkConfig().getIcmpFailureDetectorConfig();
+        IcmpFailureDetectorConfig icmpConfig
+                = getActiveMemberNetworkConfig(node.config).getIcmpFailureDetectorConfig();
 
-        this.icmpTtl = icmpFailureDetectorConfig == null
-                ? hazelcastProperties.getInteger(GroupProperty.ICMP_TTL)
-                : icmpFailureDetectorConfig.getTtl();
-        this.icmpTimeoutMillis = icmpFailureDetectorConfig == null
-                ? (int) hazelcastProperties.getMillis(GroupProperty.ICMP_TIMEOUT)
-                : icmpFailureDetectorConfig.getTimeoutMilliseconds();
-        this.icmpIntervalMillis = icmpFailureDetectorConfig == null
-                ? (int) hazelcastProperties.getMillis(GroupProperty.ICMP_INTERVAL)
-                : icmpFailureDetectorConfig.getIntervalMilliseconds();
-        this.icmpMaxAttempts = icmpFailureDetectorConfig == null
-                ? hazelcastProperties.getInteger(GroupProperty.ICMP_MAX_ATTEMPTS)
-                : icmpFailureDetectorConfig.getMaxAttempts();
-        this.icmpEnabled = icmpFailureDetectorConfig == null
-                ? hazelcastProperties.getBoolean(GroupProperty.ICMP_ENABLED)
-                : icmpFailureDetectorConfig.isEnabled();
-        this.icmpParallelMode = icmpEnabled && (icmpFailureDetectorConfig == null
-                ? hazelcastProperties.getBoolean(GroupProperty.ICMP_PARALLEL_MODE)
-                : icmpFailureDetectorConfig.isParallelMode());
+        this.icmpTtl = icmpConfig != null ? icmpConfig.getTtl() : 0;
+        this.icmpTimeoutMillis = icmpConfig != null ? icmpConfig.getTimeoutMilliseconds() : DEFAULT_ICMP_TIMEOUT_MILLIS;
+        this.icmpIntervalMillis = icmpConfig != null ? icmpConfig.getIntervalMilliseconds() : DEFAULT_ICMP_INTERVAL_MILLIS;
+        this.icmpMaxAttempts = icmpConfig != null ? icmpConfig.getMaxAttempts() : 3;
+        this.icmpEnabled = icmpConfig != null && icmpConfig.isEnabled();
+        this.icmpParallelMode = icmpEnabled && icmpConfig.isParallelMode();
 
         if (icmpTimeoutMillis > icmpIntervalMillis) {
             throw new IllegalStateException("ICMP timeout is set to a value greater than the ICMP interval, "
@@ -145,16 +139,15 @@ public class ClusterHeartbeatManager {
                     + MIN_ICMP_INTERVAL_MILLIS + "ms");
         }
 
-        this.icmpFailureDetector = createIcmpFailureDetectorIfNeeded(hazelcastProperties);
+        this.icmpFailureDetector = createIcmpFailureDetectorIfNeeded();
         heartbeatFailureDetector = createHeartbeatFailureDetector(hazelcastProperties);
     }
 
-    private PingFailureDetector createIcmpFailureDetectorIfNeeded(HazelcastProperties properties) {
-        IcmpFailureDetectorConfig icmpFailureDetectorConfig = node.getConfig().getNetworkConfig().getIcmpFailureDetectorConfig();
+    private PingFailureDetector createIcmpFailureDetectorIfNeeded() {
+        IcmpFailureDetectorConfig icmpFailureDetectorConfig
+                = getActiveMemberNetworkConfig(node.config).getIcmpFailureDetectorConfig();
 
-        boolean icmpEchoFailFast = icmpFailureDetectorConfig == null
-                ? properties.getBoolean(GroupProperty.ICMP_ECHO_FAIL_FAST)
-                : icmpFailureDetectorConfig.isFailFastOnStartup();
+        boolean icmpEchoFailFast = icmpFailureDetectorConfig == null || icmpFailureDetectorConfig.isFailFastOnStartup();
 
         if (icmpParallelMode) {
             if (icmpEchoFailFast) {
@@ -175,16 +168,16 @@ public class ClusterHeartbeatManager {
     }
 
     private ClusterFailureDetector createHeartbeatFailureDetector(HazelcastProperties properties) {
-        String type = properties.getString(GroupProperty.HEARTBEAT_FAILURE_DETECTOR_TYPE);
+        String type = properties.getString(ClusterProperty.HEARTBEAT_FAILURE_DETECTOR_TYPE);
         ClusterFailureDetectorType fdType = ClusterFailureDetectorType.of(type);
         switch (fdType) {
             case DEADLINE:
                 return new DeadlineClusterFailureDetector(maxNoHeartbeatMillis);
             case PHI_ACCRUAL:
-                int defaultValue = Integer.parseInt(GroupProperty.MAX_NO_HEARTBEAT_SECONDS.getDefaultValue());
+                int defaultValue = Integer.parseInt(ClusterProperty.MAX_NO_HEARTBEAT_SECONDS.getDefaultValue());
                 if (maxNoHeartbeatMillis == TimeUnit.SECONDS.toMillis(defaultValue)) {
                     logger.warning("When using Phi-Accrual Failure Detector, please consider using a lower '"
-                            + GroupProperty.MAX_NO_HEARTBEAT_SECONDS.getName() + "' value. Current is: "
+                            + ClusterProperty.MAX_NO_HEARTBEAT_SECONDS.getName() + "' value. Current is: "
                             + defaultValue + " seconds.");
                 }
                 return new PhiAccrualClusterFailureDetector(maxNoHeartbeatMillis, heartbeatIntervalMillis, properties);
@@ -202,32 +195,26 @@ public class ClusterHeartbeatManager {
     }
 
     private static long getHeartbeatInterval(HazelcastProperties hazelcastProperties) {
-        long heartbeatInterval = hazelcastProperties.getMillis(GroupProperty.HEARTBEAT_INTERVAL_SECONDS);
+        long heartbeatInterval = hazelcastProperties.getMillis(ClusterProperty.HEARTBEAT_INTERVAL_SECONDS);
         return heartbeatInterval > 0 ? heartbeatInterval : TimeUnit.SECONDS.toMillis(1);
     }
 
     /**
-     * Initializes the {@link ClusterHeartbeatManager}. It will schedule the :
-     * <ul>
-     * <li>heartbeat operation to the {@link #getHeartbeatInterval(HazelcastProperties)} interval</li>
-     * <li>master confirmation to the {@link GroupProperty#MASTER_CONFIRMATION_INTERVAL_SECONDS} interval</li>
-     * </ul>
+     * Initializes the {@link ClusterHeartbeatManager}. It will schedule the
+     * heartbeat operation to the {@link #getHeartbeatInterval(HazelcastProperties)} interval.
      */
     void init() {
         ExecutionService executionService = nodeEngine.getExecutionService();
 
-        executionService.scheduleWithRepetition(EXECUTOR_NAME, new Runnable() {
-            public void run() {
-                heartbeat();
-            }
-        }, heartbeatIntervalMillis, heartbeatIntervalMillis, TimeUnit.MILLISECONDS);
+        executionService.scheduleWithRepetition(CLUSTER_EXECUTOR_NAME, this::heartbeat,
+                heartbeatIntervalMillis, heartbeatIntervalMillis, TimeUnit.MILLISECONDS);
 
         if (icmpParallelMode) {
             startPeriodicPinger();
         }
     }
 
-    public void handleHeartbeat(MembersViewMetadata senderMembersViewMetadata, String receiverUuid, long timestamp) {
+    public void handleHeartbeat(MembersViewMetadata senderMembersViewMetadata, UUID receiverUuid, long timestamp) {
         Address senderAddress = senderMembersViewMetadata.getMemberAddress();
         try {
             long timeout = Math.min(TimeUnit.SECONDS.toMillis(1), heartbeatIntervalMillis / 2);
@@ -308,7 +295,7 @@ public class ClusterHeartbeatManager {
         Address masterAddress = clusterService.getMasterAddress();
         if (masterAddress == null) {
             logger.fine("Cannot send heartbeat complaint for " + senderMembersViewMetadata.getMemberAddress()
-                + ", master address is not set.");
+                    + ", master address is not set.");
             return;
         }
 
@@ -376,7 +363,7 @@ public class ClusterHeartbeatManager {
     /**
      * Accepts the heartbeat message from {@code member} created at {@code timestamp}. The timestamp must be
      * related to the cluster clock, not the local clock. The heartbeat is ignored if the duration between
-     * {@code timestamp} and the current cluster time is more than {@link GroupProperty#MAX_NO_HEARTBEAT_SECONDS}/2.
+     * {@code timestamp} and the current cluster time is more than {@link ClusterProperty#MAX_NO_HEARTBEAT_SECONDS}/2.
      * If the sending node is the master, this node will also calculate and set the cluster clock diff.
      *
      * @param member    the member sending the heartbeat
@@ -405,7 +392,7 @@ public class ClusterHeartbeatManager {
 
         MembershipManager membershipManager = clusterService.getMembershipManager();
         membershipManager.clearMemberSuspicion(member.getAddress(), "Valid heartbeat");
-        nodeEngine.getQuorumService().onHeartbeat(member, timestamp);
+        nodeEngine.getSplitBrainProtectionService().onHeartbeat(member, timestamp);
     }
 
     /**
@@ -439,7 +426,7 @@ public class ClusterHeartbeatManager {
      * </li>
      * <li>
      * Reset the heartbeat timestamps if the absolute diff is greater or equal to
-     * {@link GroupProperty#MAX_NO_HEARTBEAT_SECONDS}/2
+     * {@link ClusterProperty#MAX_NO_HEARTBEAT_SECONDS}/2
      * </li>
      * </ul>
      *
@@ -506,7 +493,7 @@ public class ClusterHeartbeatManager {
     }
 
     /**
-     * Removes the {@code member} if it has not sent any heartbeats in {@link GroupProperty#MAX_NO_HEARTBEAT_SECONDS}.
+     * Removes the {@code member} if it has not sent any heartbeats in {@link ClusterProperty#MAX_NO_HEARTBEAT_SECONDS}.
      * If it has not sent any heartbeats in {@link #HEART_BEAT_INTERVAL_FACTOR} heartbeat intervals, it will log a warning.
      *
      * @param now    the current cluster clock time
@@ -572,7 +559,7 @@ public class ClusterHeartbeatManager {
     }
 
     /**
-     * Pings the {@code member} if {@link GroupProperty#ICMP_ENABLED} is true and more than {@link #HEART_BEAT_INTERVAL_FACTOR}
+     * Pings the {@code member} if ICMP is enabled and more than {@link #HEART_BEAT_INTERVAL_FACTOR}
      * heartbeats have passed.
      */
     private void pingMemberIfRequired(long now, Member member) {
@@ -587,16 +574,14 @@ public class ClusterHeartbeatManager {
     }
 
     private void startPeriodicPinger() {
-        nodeEngine.getExecutionService().scheduleWithRepetition(EXECUTOR_NAME, new Runnable() {
-            public void run() {
-                Collection<Member> members = clusterService.getMembers(MemberSelectors.NON_LOCAL_MEMBER_SELECTOR);
+        nodeEngine.getExecutionService().scheduleWithRepetition(CLUSTER_EXECUTOR_NAME, () -> {
+            Collection<Member> members = clusterService.getMembers(MemberSelectors.NON_LOCAL_MEMBER_SELECTOR);
 
-                for (Member member : members) {
-                    try {
-                        runPingTask(member);
-                    } catch (Throwable e) {
-                        logger.severe(e);
-                    }
+            for (Member member : members) {
+                try {
+                    runPingTask(member);
+                } catch (Throwable e) {
+                    logger.severe(e);
                 }
             }
         }, icmpIntervalMillis, icmpIntervalMillis, TimeUnit.MILLISECONDS);
@@ -612,7 +597,9 @@ public class ClusterHeartbeatManager {
                 icmpParallelMode ? new PeriodicPingTask(member) : new PingTask(member));
     }
 
-    /** Send a {@link HeartbeatOp} to the {@code target}
+    /**
+     * Send a {@link HeartbeatOp} to the {@code target}
+     *
      * @param target target Member
      */
     private void sendHeartbeat(Member target) {
@@ -638,27 +625,20 @@ public class ClusterHeartbeatManager {
     private void logIfConnectionToEndpointIsMissing(long now, Member member) {
         long heartbeatTime = heartbeatFailureDetector.lastHeartbeat(member);
         if ((now - heartbeatTime) >= heartbeatIntervalMillis * HEART_BEAT_INTERVAL_FACTOR) {
-            Connection conn = node.connectionManager.getOrConnect(member.getAddress());
+            Connection conn = node.getEndpointManager(MEMBER).getOrConnect(member.getAddress());
             if (conn == null || !conn.isAlive()) {
                 logger.warning("This node does not have a connection to " + member);
             }
         }
     }
 
-    /**
-     * @return the {@code icmpFailureDetector} if configured, otherwise {@code null}
-     */
-    public PingFailureDetector getIcmpFailureDetector() {
-        return icmpFailureDetector;
-    }
-
     /** Reset all heartbeats to the current cluster time. Called when system clock jump is detected. */
     private void resetHeartbeats() {
-        QuorumServiceImpl quorumService = nodeEngine.getQuorumService();
+        SplitBrainProtectionServiceImpl splitBrainProtectionService = nodeEngine.getSplitBrainProtectionService();
         long now = clusterClock.getClusterTime();
         for (MemberImpl member : clusterService.getMemberImpls()) {
             heartbeatFailureDetector.heartbeat(member, now);
-            quorumService.onHeartbeat(member, now);
+            splitBrainProtectionService.onHeartbeat(member, now);
         }
     }
 
@@ -722,7 +702,7 @@ public class ClusterHeartbeatManager {
 
     private class PeriodicPingTask
             extends PingTask {
-        final QuorumServiceImpl quorumService = nodeEngine.getQuorumService();
+        final SplitBrainProtectionServiceImpl splitBrainProtectionService = nodeEngine.getSplitBrainProtectionService();
 
         PeriodicPingTask(Member member) {
             super(member);
@@ -734,13 +714,13 @@ public class ClusterHeartbeatManager {
             if (doPing(address, Level.FINE)) {
                 boolean pingRestored = (icmpFailureDetector.heartbeat(member) > 0);
                 if (pingRestored) {
-                    quorumService.onPingRestored(member);
+                    splitBrainProtectionService.onPingRestored(member);
                 }
                 return;
             }
 
             icmpFailureDetector.logAttempt(member);
-            quorumService.onPingLost(member);
+            splitBrainProtectionService.onPingLost(member);
 
             // host not reachable
             String reason = format("%s could not ping %s", node.getThisAddress(), address);

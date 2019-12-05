@@ -17,7 +17,7 @@
 package com.hazelcast.cache.impl;
 
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.serialization.SerializationService;
+import com.hazelcast.internal.serialization.SerializationService;
 
 import java.util.AbstractSet;
 import java.util.ArrayList;
@@ -168,7 +168,7 @@ public final class DeferredValue<V> {
         private final SerializationService serializationService;
         private final Set<DeferredValue<V>> delegate;
 
-        public DeferredValueSet(SerializationService serializationService, Set<DeferredValue<V>> delegate) {
+        DeferredValueSet(SerializationService serializationService, Set<DeferredValue<V>> delegate) {
             this.serializationService = serializationService;
             this.delegate = delegate;
         }
@@ -210,7 +210,7 @@ public final class DeferredValue<V> {
         private final SerializationService serializationService;
         private final Iterator<DeferredValue<V>> iterator;
 
-        public DeferredValueIterator(SerializationService serializationService, Iterator<DeferredValue<V>> iterator) {
+        DeferredValueIterator(SerializationService serializationService, Iterator<DeferredValue<V>> iterator) {
             this.serializationService = serializationService;
             this.iterator = iterator;
         }

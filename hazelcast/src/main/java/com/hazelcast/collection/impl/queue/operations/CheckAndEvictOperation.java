@@ -18,8 +18,8 @@ package com.hazelcast.collection.impl.queue.operations;
 
 import com.hazelcast.collection.impl.queue.QueueContainer;
 import com.hazelcast.collection.impl.queue.QueueDataSerializerHook;
-import com.hazelcast.spi.ProxyService;
-import com.hazelcast.spi.impl.MutatingOperation;
+import com.hazelcast.spi.impl.proxyservice.ProxyService;
+import com.hazelcast.spi.impl.operationservice.MutatingOperation;
 
 /**
  * Provides eviction functionality for Operations of Queue.
@@ -43,7 +43,7 @@ public class CheckAndEvictOperation extends QueueOperation implements MutatingOp
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return QueueDataSerializerHook.CHECK_EVICT;
     }
 }

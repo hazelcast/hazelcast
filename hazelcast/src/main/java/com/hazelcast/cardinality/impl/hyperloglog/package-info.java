@@ -15,7 +15,7 @@
  */
 
 /**
- * <p>This package contains spec for the HyperLogLog data-structure.</br>
+ * <p>This package contains spec for the HyperLogLog data-structure.</p>
  *
  * @since 3.8
  */

@@ -21,7 +21,7 @@ import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 
-import static com.hazelcast.util.Preconditions.isNotNull;
+import static com.hazelcast.internal.util.Preconditions.isNotNull;
 
 /**
  * With PartitionGroupConfig, you can control how primary and backup partitions are mapped to physical Members.
@@ -40,11 +40,9 @@ import static com.hazelcast.util.Preconditions.isNotNull;
  * Each Member is in a group of its own.
  * <p>
  * Partitions (primaries and backups) will be distributed randomly but not on the same Member.
- * <code>
  * <pre>
  * &lt;partition-group enabled="true" group-type="PER_MEMBER"/&gt;
  * </pre>
- * </code>
  *
  * This provides good redundancy when Members are on separate hosts but not if multiple instances are being
  * run from the same host.
@@ -53,11 +51,9 @@ import static com.hazelcast.util.Preconditions.isNotNull;
  * any other members on the same host.
  * <p>
  * This scheme provides good redundancy when multiple instances are being run on the same host.
- * <code>
  * <pre>
  * &lt;partition-group enabled="true" group-type="HOST_AWARE"/&gt;
  * </pre>
- * </code>
  *
  * <h1>CUSTOM Partition Groups</h1>
  * In this scheme, IP addresses, or IP address ranges, are allocated to groups. Partitions are not written to the same
@@ -65,7 +61,6 @@ import static com.hazelcast.util.Preconditions.isNotNull;
  * <p>
  * For example, members in data center 1 have IP addresses in the range 10.10.1.* and for data center 2 they have
  * the IP address range 10.10.2.*. You would achieve HA by configuring a <code>CUSTOM</code> partition group as follows:
- * <code>
  * <pre>
  * &lt;partition-group enabled="true" group-type="CUSTOM"&gt;
  *      &lt;member-group&gt;
@@ -76,35 +71,29 @@ import static com.hazelcast.util.Preconditions.isNotNull;
  *      &lt;/member-group&gt;
  * &lt;/partition-group&gt;
  * </pre>
- * </code>
  *
  * The interfaces can be configured with wildcards ('*') and also with address ranges e.g. '10-20'. Each member-group
  * can have an unlimited number of interfaces.
  * <p>
  * You can define as many <code>member-group</code>s as you want. Hazelcast will always store backups in a different
  * member-group to the primary partition.
- * <code>
  * <pre>
  * &lt;partition-group enabled="true" group-type="ZONE_AWARE"/&gt;
  * </pre>
- * </code>
  *
  * <h1>Zone Aware Partition Groups</h1>
  * In this scheme, groups are allocated according to the metadata provided by Discovery SPI Partitions are not
  * written to the same group. This is very useful for ensuring partitions are written to availability
  * zones or different racks without providing the IP addresses to the config ahead.
- * <code>
  * <pre>
  * &lt;partition-group enabled="true" group-type="SPI"/&gt;
  * </pre>
- * </code>
  *
  * <h1>SPI Aware Partition Groups</h1>
  * In this scheme, groups are allocated according to the implementation provided by Discovery SPI.
  *
  * <h2>Overlapping Groups</h2>
  * Care should be taken when selecting overlapping groups, e.g.
- * <code>
  * <pre>
  * &lt;partition-group enabled="true" group-type="CUSTOM"&gt;
  *      &lt;member-group&gt;
@@ -117,7 +106,6 @@ import static com.hazelcast.util.Preconditions.isNotNull;
  *      &lt;/member-group&gt;
  * &lt;/partition-group&gt;
  * </pre>
- * </code>
  *
  * In this example there are 2 groups, but because interface 10.10.1.1 is shared between the 2 groups, this  member
  * may store store primary and backups.
@@ -189,7 +177,7 @@ public class PartitionGroupConfig {
     /**
      * Sets the MemberGroupType. A @{link MemberGroupType#CUSTOM} indicates that custom groups are created.
      * With the {@link MemberGroupType#HOST_AWARE} group type, Hazelcast makes a group for every host, that prevents
-     * a single host containing primary and backup. See the {@see MemberGroupConfig} for more information.
+     * a single host containing primary and backup. See the {@link MemberGroupConfig} for more information.
      *
      * @param memberGroupType the MemberGroupType to set
      * @return the updated PartitionGroupConfig

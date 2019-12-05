@@ -17,15 +17,16 @@
 package com.hazelcast.internal.ascii.rest;
 
 import com.hazelcast.internal.ascii.NoOpCommand;
-import com.hazelcast.nio.IOUtil;
-import com.hazelcast.nio.ascii.TextDecoder;
-import com.hazelcast.util.StringUtil;
+import com.hazelcast.internal.nio.Connection;
+import com.hazelcast.internal.nio.IOUtil;
+import com.hazelcast.internal.nio.ascii.TextDecoder;
+import com.hazelcast.internal.util.StringUtil;
 
 import java.nio.BufferOverflowException;
 import java.nio.ByteBuffer;
 
 import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.HTTP_POST;
-import static com.hazelcast.util.StringUtil.stringToBytes;
+import static com.hazelcast.internal.util.StringUtil.stringToBytes;
 
 public class HttpPostCommand extends HttpCommand {
 
@@ -45,10 +46,12 @@ public class HttpPostCommand extends HttpCommand {
     private ByteBuffer data;
     private String contentType;
     private ByteBuffer lineBuffer = ByteBuffer.allocate(INITIAL_CAPACITY);
+    private Connection connection;
 
-    public HttpPostCommand(TextDecoder decoder, String uri) {
+    public HttpPostCommand(TextDecoder decoder, String uri, Connection connection) {
         super(HTTP_POST, uri);
         this.decoder = decoder;
+        this.connection = connection;
     }
 
     /**
@@ -56,10 +59,10 @@ public class HttpPostCommand extends HttpCommand {
      * User-Agent: HTTPTool/1.0
      * Content-TextCommandType: application/x-www-form-urlencoded
      * Content-Length: 45
-     * <next_line>
-     * <next_line>
+     * &lt;next_line&gt;
+     * &lt;next_line&gt;
      * byte[45]
-     * <next_line>
+     * &lt;next_line&gt;
      *
      * @param src
      * @return
@@ -79,25 +82,30 @@ public class HttpPostCommand extends HttpCommand {
     }
 
     private boolean doActualRead(ByteBuffer cb) {
-        if (readyToReadData) {
-            if (chunked && (data == null || !data.hasRemaining())) {
-
+        setReadyToReadData(cb);
+        if (!readyToReadData) {
+            return false;
+        }
+        if (!isSpaceForData()) {
+            if (chunked) {
                 if (data != null && cb.hasRemaining()) {
                     readCRLFOrPositionChunkSize(cb);
                 }
-
-                boolean done = readChunkSize(cb);
-                if (done) {
+                if (readChunkSize(cb)) {
                     return true;
                 }
+            } else {
+                return true;
             }
-
+        }
+        if (data != null) {
             IOUtil.copyToHeapBuffer(cb, data);
         }
+        return !chunked && !isSpaceForData();
+    }
 
-        setReadyToReadData(cb);
-
-        return !chunked && ((data != null) && !data.hasRemaining());
+    private boolean isSpaceForData() {
+        return data != null && data.hasRemaining();
     }
 
     private void setReadyToReadData(ByteBuffer cb) {
@@ -231,5 +239,9 @@ public class HttpPostCommand extends HttpCommand {
         } else if (currentLine.startsWith(HEADER_EXPECT_100)) {
             decoder.sendResponse(new NoOpCommand(RES_100));
         }
+    }
+
+    protected Connection getConnection() {
+        return connection;
     }
 }

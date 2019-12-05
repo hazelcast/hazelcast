@@ -24,7 +24,7 @@
         http://www.springframework.org/schema/context
         http://www.springframework.org/schema/context/spring-context.xsd
         http://www.hazelcast.com/schema/spring
-        http://www.hazelcast.com/schema/spring/hazelcast-spring-3.11.xsd">
+        http://www.hazelcast.com/schema/spring/hazelcast-spring-4.0.xsd">
 
     <context:annotation-config/>
 
@@ -38,7 +38,7 @@
 
     <hz:hazelcast id="instance1" lazy-init="true" scope="singleton">
         <hz:config>
-            <hz:group name="${cluster.group.name}" password="${cluster.group.password}"/>
+            <hz:cluster-name>${cluster.name}</hz:cluster-name>
             <hz:network port="${cluster.port}">
                 <hz:join>
                     <hz:multicast enabled="false"/>
@@ -49,10 +49,8 @@
     </hz:hazelcast>
 
     <hz:client id="client" lazy-init="true" scope="prototype">
-        <hz:group name="${cluster.group.name}" password="${cluster.group.password}"/>
-        <hz:network connection-attempt-limit="${client.connection.attemptLimit}"
-                    connection-attempt-period="${client.connection.attemptPeriod}"
-                    connection-timeout="1000">
+        <hz:cluster-name>${cluster.name}</hz:cluster-name>
+        <hz:network connection-timeout="1000">
         </hz:network>
     </hz:client>
 

@@ -16,16 +16,16 @@
 
 package com.hazelcast.map.impl.nearcache.invalidation;
 
-import com.hazelcast.core.Member;
+import com.hazelcast.cluster.Member;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.nearcache.impl.invalidation.InvalidationMetaDataFetcher;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.impl.operation.MapGetInvalidationMetaDataOperation;
 import com.hazelcast.map.impl.operation.MapGetInvalidationMetaDataOperation.MetaDataResponse;
-import com.hazelcast.nio.Address;
-import com.hazelcast.spi.InternalCompletableFuture;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.OperationService;
+import com.hazelcast.cluster.Address;
+import com.hazelcast.spi.impl.InternalCompletableFuture;
+import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.spi.impl.operationservice.OperationService;
 
 import java.util.Collection;
 import java.util.List;

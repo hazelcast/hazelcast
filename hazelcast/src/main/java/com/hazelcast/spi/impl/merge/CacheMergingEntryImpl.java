@@ -16,14 +16,14 @@
 
 package com.hazelcast.spi.impl.merge;
 
-import com.hazelcast.nio.IOUtil;
+import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.merge.SplitBrainMergeTypes.CacheMergeTypes;
-import com.hazelcast.spi.serialization.SerializationService;
-import com.hazelcast.spi.serialization.SerializationServiceAware;
+import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.serialization.SerializationServiceAware;
 
 import java.io.IOException;
 
@@ -152,7 +152,7 @@ public class CacheMergingEntryImpl implements CacheMergeTypes, SerializationServ
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return SplitBrainDataSerializerHook.CACHE_MERGING_ENTRY;
     }
 

@@ -16,13 +16,13 @@
 
 package com.hazelcast.map.impl.operation;
 
-import com.hazelcast.map.impl.LocalMapStatsProvider;
+import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.PartitionAwareOperation;
-import com.hazelcast.spi.ReadonlyOperation;
+import com.hazelcast.spi.impl.operationservice.PartitionAwareOperation;
+import com.hazelcast.spi.impl.operationservice.ReadonlyOperation;
 
 import java.io.IOException;
 
@@ -40,12 +40,8 @@ public class ContainsValueOperation extends MapOperation implements PartitionAwa
     }
 
     @Override
-    public void run() {
+    protected void runInternal() {
         contains = recordStore.containsValue(testValue);
-        if (mapContainer.getMapConfig().isStatisticsEnabled()) {
-            LocalMapStatsProvider localMapStatsProvider = mapServiceContext.getLocalMapStatsProvider();
-            localMapStatsProvider.getLocalMapStatsImpl(name).incrementOtherOperations();
-        }
     }
 
     @Override
@@ -56,17 +52,17 @@ public class ContainsValueOperation extends MapOperation implements PartitionAwa
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        out.writeData(testValue);
+        IOUtil.writeData(out, testValue);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        testValue = in.readData();
+        testValue = IOUtil.readData(in);
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MapDataSerializerHook.CONTAINS_VALUE;
     }
 }

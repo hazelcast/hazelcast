@@ -16,7 +16,7 @@
 
 package com.hazelcast.internal.partition.impl;
 
-import com.hazelcast.spi.ServiceNamespace;
+import com.hazelcast.internal.services.ServiceNamespace;
 
 import java.util.Collection;
 import java.util.HashMap;
@@ -27,8 +27,7 @@ import java.util.Set;
 final class PartitionReplicaVersions {
     private final int partitionId;
 
-    private final Map<ServiceNamespace, PartitionReplicaFragmentVersions> fragmentVersionsMap
-            = new HashMap<ServiceNamespace, PartitionReplicaFragmentVersions>();
+    private final Map<ServiceNamespace, PartitionReplicaFragmentVersions> fragmentVersionsMap = new HashMap<>();
 
     PartitionReplicaVersions(int partitionId) {
         this.partitionId = partitionId;

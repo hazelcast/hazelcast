@@ -106,5 +106,11 @@ public class TestSubscriberContext extends NodeSubscriberContext {
             }
             return super.isNextEvent(eventData);
         }
+
+        @Override
+        public void reset() {
+            lostSequenceNumber.clear();
+            super.reset();
+        }
     }
 }

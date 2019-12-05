@@ -22,9 +22,9 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.replicatedmap.impl.PartitionContainer;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
 import com.hazelcast.replicatedmap.impl.record.ReplicatedRecordStore;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.OperationService;
-import com.hazelcast.spi.PartitionAwareOperation;
+import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.spi.impl.operationservice.OperationService;
+import com.hazelcast.spi.impl.operationservice.PartitionAwareOperation;
 
 import java.io.IOException;
 import java.util.Map;
@@ -33,7 +33,7 @@ import java.util.concurrent.ConcurrentMap;
 
 import static com.hazelcast.replicatedmap.impl.ReplicatedMapService.INVOCATION_TRY_COUNT;
 import static com.hazelcast.replicatedmap.impl.ReplicatedMapService.SERVICE_NAME;
-import static com.hazelcast.util.MapUtil.createConcurrentHashMap;
+import static com.hazelcast.internal.util.MapUtil.createConcurrentHashMap;
 
 /**
  * Checks whether replica version is in sync with the primary.
@@ -104,7 +104,7 @@ public class CheckReplicaVersionOperation extends AbstractSerializableOperation 
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
-        versions = new ConcurrentHashMap<String, Long>();
+        versions = new ConcurrentHashMap<>();
         int size = in.readInt();
         for (int i = 0; i < size; i++) {
             String name = in.readUTF();
@@ -114,7 +114,7 @@ public class CheckReplicaVersionOperation extends AbstractSerializableOperation 
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ReplicatedMapDataSerializerHook.CHECK_REPLICA_VERSION;
     }
 }

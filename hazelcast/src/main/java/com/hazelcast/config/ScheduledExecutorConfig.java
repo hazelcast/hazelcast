@@ -16,24 +16,24 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.internal.config.ConfigDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.nio.serialization.impl.Versioned;
 import com.hazelcast.spi.merge.SplitBrainMergeTypeProvider;
 import com.hazelcast.spi.merge.SplitBrainMergeTypes;
 
 import java.io.IOException;
 
-import static com.hazelcast.util.Preconditions.checkNotNegative;
-import static com.hazelcast.util.Preconditions.checkNotNull;
-import static com.hazelcast.util.Preconditions.checkPositive;
+import static com.hazelcast.internal.util.Preconditions.checkNotNegative;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.Preconditions.checkPositive;
 
 /**
  * Configuration options for the {@link com.hazelcast.scheduledexecutor.IScheduledExecutorService}.
  */
 public class ScheduledExecutorConfig implements SplitBrainMergeTypeProvider, IdentifiedDataSerializable,
-        Versioned, NamedConfig {
+        NamedConfig {
 
     /**
      * The number of executor threads per Member for the Executor based on this configuration.
@@ -58,9 +58,7 @@ public class ScheduledExecutorConfig implements SplitBrainMergeTypeProvider, Ide
 
     private int poolSize = DEFAULT_POOL_SIZE;
 
-    private String quorumName;
-
-    private transient ScheduledExecutorConfig.ScheduledExecutorConfigReadOnly readOnly;
+    private String splitBrainProtectionName;
 
     private MergePolicyConfig mergePolicyConfig = new MergePolicyConfig();
 
@@ -75,19 +73,19 @@ public class ScheduledExecutorConfig implements SplitBrainMergeTypeProvider, Ide
         this(name, durability, capacity, poolSize, null, new MergePolicyConfig());
     }
 
-    public ScheduledExecutorConfig(String name, int durability, int capacity, int poolSize, String quorumName,
+    public ScheduledExecutorConfig(String name, int durability, int capacity, int poolSize, String splitBrainProtectionName,
                                    MergePolicyConfig mergePolicyConfig) {
         this.name = name;
         this.durability = durability;
         this.poolSize = poolSize;
         this.capacity = capacity;
-        this.quorumName = quorumName;
+        this.splitBrainProtectionName = splitBrainProtectionName;
         this.mergePolicyConfig = mergePolicyConfig;
     }
 
     public ScheduledExecutorConfig(ScheduledExecutorConfig config) {
-        this(config.getName(), config.getDurability(), config.getCapacity(), config.getPoolSize(), config.getQuorumName(),
-                config.getMergePolicyConfig());
+        this(config.getName(), config.getDurability(), config.getCapacity(), config.getPoolSize(),
+                config.getSplitBrainProtectionName(), config.getMergePolicyConfig());
     }
 
     /**
@@ -176,22 +174,22 @@ public class ScheduledExecutorConfig implements SplitBrainMergeTypeProvider, Ide
     }
 
     /**
-     * Returns the quorum name for operations.
+     * Returns the split brain protection name for operations.
      *
-     * @return the quorum name
+     * @return the split brain protection name
      */
-    public String getQuorumName() {
-        return quorumName;
+    public String getSplitBrainProtectionName() {
+        return splitBrainProtectionName;
     }
 
     /**
-     * Sets the quorum name for operations.
+     * Sets the split brain protection name for operations.
      *
-     * @param quorumName the quorum name
+     * @param splitBrainProtectionName the split brain protection name
      * @return the updated configuration
      */
-    public ScheduledExecutorConfig setQuorumName(String quorumName) {
-        this.quorumName = quorumName;
+    public ScheduledExecutorConfig setSplitBrainProtectionName(String splitBrainProtectionName) {
+        this.splitBrainProtectionName = splitBrainProtectionName;
         return this;
     }
 
@@ -227,16 +225,9 @@ public class ScheduledExecutorConfig implements SplitBrainMergeTypeProvider, Ide
                 + ", durability=" + durability
                 + ", poolSize=" + poolSize
                 + ", capacity=" + capacity
-                + ", quorumName=" + quorumName
+                + ", splitBrainProtectionName=" + splitBrainProtectionName
                 + ", mergePolicyConfig=" + mergePolicyConfig
                 + '}';
-    }
-
-    ScheduledExecutorConfig getAsReadOnly() {
-        if (readOnly == null) {
-            readOnly = new ScheduledExecutorConfig.ScheduledExecutorConfigReadOnly(this);
-        }
-        return readOnly;
     }
 
     @Override
@@ -245,7 +236,7 @@ public class ScheduledExecutorConfig implements SplitBrainMergeTypeProvider, Ide
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ConfigDataSerializerHook.SCHEDULED_EXECUTOR_CONFIG;
     }
 
@@ -255,7 +246,7 @@ public class ScheduledExecutorConfig implements SplitBrainMergeTypeProvider, Ide
         out.writeInt(durability);
         out.writeInt(capacity);
         out.writeInt(poolSize);
-        out.writeUTF(quorumName);
+        out.writeUTF(splitBrainProtectionName);
         out.writeObject(mergePolicyConfig);
     }
 
@@ -265,7 +256,7 @@ public class ScheduledExecutorConfig implements SplitBrainMergeTypeProvider, Ide
         durability = in.readInt();
         capacity = in.readInt();
         poolSize = in.readInt();
-        quorumName = in.readUTF();
+        splitBrainProtectionName = in.readUTF();
         mergePolicyConfig = in.readObject();
     }
 
@@ -290,7 +281,8 @@ public class ScheduledExecutorConfig implements SplitBrainMergeTypeProvider, Ide
         if (poolSize != that.poolSize) {
             return false;
         }
-        if (quorumName != null ? !quorumName.equals(that.quorumName) : that.quorumName != null) {
+        if (splitBrainProtectionName != null ? !splitBrainProtectionName.equals(that.splitBrainProtectionName)
+                : that.splitBrainProtectionName != null) {
             return false;
         }
         if (mergePolicyConfig != null ? !mergePolicyConfig.equals(that.mergePolicyConfig) : that.mergePolicyConfig != null) {
@@ -305,45 +297,8 @@ public class ScheduledExecutorConfig implements SplitBrainMergeTypeProvider, Ide
         result = 31 * result + durability;
         result = 31 * result + capacity;
         result = 31 * result + poolSize;
-        result = 31 * result + (quorumName != null ? quorumName.hashCode() : 0);
+        result = 31 * result + (splitBrainProtectionName != null ? splitBrainProtectionName.hashCode() : 0);
         result = 31 * result + (mergePolicyConfig != null ? mergePolicyConfig.hashCode() : 0);
         return result;
-    }
-
-    // non-private for testing
-    static class ScheduledExecutorConfigReadOnly extends ScheduledExecutorConfig {
-
-        ScheduledExecutorConfigReadOnly(ScheduledExecutorConfig config) {
-            super(config);
-        }
-
-        @Override
-        public ScheduledExecutorConfig setName(String name) {
-            throw new UnsupportedOperationException("This config is read-only scheduled executor: " + getName());
-        }
-
-        @Override
-        public ScheduledExecutorConfig setDurability(int durability) {
-            throw new UnsupportedOperationException("This config is read-only scheduled executor: " + getName());
-        }
-
-        @Override
-        public ScheduledExecutorConfig setPoolSize(int poolSize) {
-            throw new UnsupportedOperationException("This config is read-only scheduled executor: " + getName());
-        }
-
-        @Override
-        public ScheduledExecutorConfig setCapacity(int capacity) {
-            throw new UnsupportedOperationException("This config is read-only scheduled executor: " + getName());
-        }
-
-        @Override
-        public ScheduledExecutorConfig setQuorumName(String quorumName) {
-            throw new UnsupportedOperationException("This config is read-only scheduled executor: " + getName());
-        }
-
-        public ScheduledExecutorConfig setMergePolicyConfig(MergePolicyConfig mergePolicyConfig) {
-            throw new UnsupportedOperationException("This config is read-only scheduled executor: " + getName());
-        }
     }
 }

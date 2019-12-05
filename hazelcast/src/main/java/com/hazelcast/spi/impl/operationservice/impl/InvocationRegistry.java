@@ -19,7 +19,7 @@ package com.hazelcast.spi.impl.operationservice.impl;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.HazelcastOverloadException;
 import com.hazelcast.core.MemberLeftException;
-import com.hazelcast.internal.metrics.MetricsProvider;
+import com.hazelcast.internal.metrics.StaticMetricsProvider;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.util.RuntimeAvailableProcessors;
@@ -33,8 +33,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
-import static com.hazelcast.spi.OperationAccessor.deactivate;
-import static com.hazelcast.spi.OperationAccessor.setCallId;
+import static com.hazelcast.spi.impl.operationservice.OperationAccessor.deactivate;
+import static com.hazelcast.spi.impl.operationservice.OperationAccessor.setCallId;
 
 /**
  * Responsible for the registration of all pending invocations.
@@ -54,7 +54,7 @@ import static com.hazelcast.spi.OperationAccessor.setCallId;
  * the PartitionInvocation and TargetInvocation can be folded into Invocation.</li>
  * </ul>
  */
-public class InvocationRegistry implements Iterable<Invocation>, MetricsProvider {
+public class InvocationRegistry implements Iterable<Invocation>, StaticMetricsProvider {
 
     private static final int CORE_SIZE_CHECK = 8;
     private static final int CORE_SIZE_FACTOR = 4;
@@ -79,12 +79,12 @@ public class InvocationRegistry implements Iterable<Invocation>, MetricsProvider
         boolean reallyMultiCore = coreSize >= CORE_SIZE_CHECK;
         int concurrencyLevel = reallyMultiCore ? coreSize * CORE_SIZE_FACTOR : CONCURRENCY_LEVEL;
 
-        this.invocations = new ConcurrentHashMap<Long, Invocation>(INITIAL_CAPACITY, LOAD_FACTOR, concurrencyLevel);
+        this.invocations = new ConcurrentHashMap<>(INITIAL_CAPACITY, LOAD_FACTOR, concurrencyLevel);
     }
 
     @Override
-    public void provideMetrics(MetricsRegistry registry) {
-        registry.scanAndRegister(this, "operation");
+    public void provideStaticMetrics(MetricsRegistry registry) {
+        registry.registerStaticMetrics(this, "operation");
     }
 
     @Probe(name = "invocations.usedPercentage")

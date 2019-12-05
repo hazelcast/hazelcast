@@ -23,37 +23,36 @@ import com.hazelcast.cache.impl.CacheEventDataImpl;
 import com.hazelcast.cache.impl.CacheEventSet;
 import com.hazelcast.cache.impl.CacheService;
 import com.hazelcast.cache.impl.HazelcastServerCacheManager;
-import com.hazelcast.cache.impl.HazelcastServerCachingProvider;
+import com.hazelcast.cluster.Address;
+import com.hazelcast.collection.IList;
+import com.hazelcast.collection.IQueue;
+import com.hazelcast.collection.ISet;
+import com.hazelcast.collection.ItemEvent;
+import com.hazelcast.collection.ItemListener;
 import com.hazelcast.collection.impl.collection.CollectionEvent;
 import com.hazelcast.collection.impl.list.ListService;
 import com.hazelcast.collection.impl.queue.QueueEvent;
 import com.hazelcast.collection.impl.queue.QueueService;
 import com.hazelcast.collection.impl.set.SetService;
-import com.hazelcast.concurrent.atomiclong.AtomicLongService;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IList;
-import com.hazelcast.core.IMap;
-import com.hazelcast.core.IQueue;
-import com.hazelcast.core.ISet;
-import com.hazelcast.core.ItemEvent;
 import com.hazelcast.core.ItemEventType;
-import com.hazelcast.core.ItemListener;
+import com.hazelcast.internal.longregister.LongRegisterService;
+import com.hazelcast.internal.util.ItemCounter;
+import com.hazelcast.map.IMap;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.event.EntryEventData;
 import com.hazelcast.map.listener.EntryAddedListener;
 import com.hazelcast.map.listener.EntryRemovedListener;
-import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.eventservice.impl.EventServiceImpl;
 import com.hazelcast.spi.impl.eventservice.impl.LocalEventDispatcher;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.util.ItemCounter;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -75,6 +74,7 @@ import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 
+import static com.hazelcast.cache.CacheTestSupport.createServerCachingProvider;
 import static com.hazelcast.core.EntryEventType.ADDED;
 import static com.hazelcast.core.EntryEventType.REMOVED;
 import static com.hazelcast.core.EntryEventType.UPDATED;
@@ -84,7 +84,7 @@ import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class EventQueuePluginTest extends AbstractDiagnosticsPluginTest {
 
     private static final int EVENT_COUNTER = 1000;
@@ -160,7 +160,7 @@ public class EventQueuePluginTest extends AbstractDiagnosticsPluginTest {
                 .addCacheEntryListenerConfiguration(new MutableCacheEntryListenerConfiguration<Integer, Integer>(
                         FactoryBuilder.factoryOf(new TestCacheListener()), null, true, true));
 
-        CachingProvider memberProvider = HazelcastServerCachingProvider.createCachingProvider(hz);
+        CachingProvider memberProvider = createServerCachingProvider(hz);
         HazelcastServerCacheManager memberCacheManager = (HazelcastServerCacheManager) memberProvider.getCacheManager();
         final ICache<Integer, Integer> cache = memberCacheManager.createCache(CACHE_NAME, cacheConfig);
 
@@ -289,7 +289,7 @@ public class EventQueuePluginTest extends AbstractDiagnosticsPluginTest {
         assertSampleRunnable("IList 'listName' ADDED", listEventAdded, ListService.SERVICE_NAME);
         assertSampleRunnable("IList 'listName' REMOVED", listEventRemoved, ListService.SERVICE_NAME);
 
-        assertSampleRunnable("Object", new Object(), AtomicLongService.SERVICE_NAME);
+        assertSampleRunnable("Object", new Object(), LongRegisterService.SERVICE_NAME);
 
         assertSampleRunnable(new TestEvent(), TestEvent.class.getName());
     }
@@ -340,7 +340,7 @@ public class EventQueuePluginTest extends AbstractDiagnosticsPluginTest {
     private final class TestCacheListener
             implements CacheEntryCreatedListener<Integer, Integer>, CacheEntryRemovedListener<Integer, Integer>, Serializable {
 
-        public TestCacheListener() {
+        TestCacheListener() {
         }
 
         @Override

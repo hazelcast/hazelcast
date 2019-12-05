@@ -17,7 +17,7 @@
 package com.hazelcast.internal.partition.impl;
 
 import com.hazelcast.internal.partition.PartitionReplica;
-import com.hazelcast.spi.ServiceNamespace;
+import com.hazelcast.internal.services.ServiceNamespace;
 
 /**
  * The information for a replica synchronization - which partition and replica index needs synchronization and what is

@@ -22,65 +22,62 @@ import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.spi.NamedOperation;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.impl.MutatingOperation;
+import com.hazelcast.spi.impl.operationservice.AbstractNamedOperation;
+import com.hazelcast.spi.impl.operationservice.MutatingOperation;
 
 import java.io.IOException;
 
-public class RemoveInterceptorOperation extends Operation implements MutatingOperation, NamedOperation,
-                                                                     IdentifiedDataSerializable {
+public class RemoveInterceptorOperation extends AbstractNamedOperation
+        implements MutatingOperation {
 
-    private MapService mapService;
-    private String mapName;
     private String id;
+    private boolean interceptorRemoved;
 
     public RemoveInterceptorOperation() {
     }
 
     public RemoveInterceptorOperation(String mapName, String id) {
-        this.mapName = mapName;
+        super(mapName);
         this.id = id;
     }
 
     @Override
     public void run() {
-        mapService = getService();
+        interceptorRemoved = getMapContainer().getInterceptorRegistry().deregister(id);
+    }
+
+    @Override
+    public String getServiceName() {
+        return MapService.SERVICE_NAME;
+    }
+
+    private MapContainer getMapContainer() {
+        MapService mapService = getService();
         MapServiceContext mapServiceContext = mapService.getMapServiceContext();
-        MapContainer mapContainer = mapServiceContext.getMapContainer(mapName);
-        mapContainer.getInterceptorRegistry().deregister(id);
+        return mapServiceContext.getMapContainer(name);
     }
 
     @Override
     public Object getResponse() {
-        return true;
+        return interceptorRemoved;
     }
 
     @Override
     public void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        mapName = in.readUTF();
         id = in.readUTF();
     }
 
     @Override
     public void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        out.writeUTF(mapName);
         out.writeUTF(id);
-    }
-
-    @Override
-    public String getName() {
-        return mapName;
     }
 
     @Override
     protected void toString(StringBuilder sb) {
         super.toString(sb);
 
-        sb.append(", mapName=").append(mapName);
         sb.append(", id=").append(id);
     }
 
@@ -90,7 +87,7 @@ public class RemoveInterceptorOperation extends Operation implements MutatingOpe
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MapDataSerializerHook.REMOVE_INTERCEPTOR;
     }
 }

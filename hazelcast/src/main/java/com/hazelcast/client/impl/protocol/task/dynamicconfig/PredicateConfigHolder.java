@@ -19,7 +19,7 @@ package com.hazelcast.client.impl.protocol.task.dynamicconfig;
 import com.hazelcast.config.PredicateConfig;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.Predicate;
-import com.hazelcast.spi.serialization.SerializationService;
+import com.hazelcast.internal.serialization.SerializationService;
 
 /**
  *

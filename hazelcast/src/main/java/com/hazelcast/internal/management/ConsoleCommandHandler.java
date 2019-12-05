@@ -72,7 +72,7 @@ public class ConsoleCommandHandler {
      * Wrapper for {@link com.hazelcast.console.ConsoleApp}
      */
     private class ConsoleHandlerApp extends ConsoleApp {
-        public ConsoleHandlerApp(HazelcastInstance hazelcast) {
+        ConsoleHandlerApp(HazelcastInstance hazelcast) {
             super(hazelcast);
         }
 
@@ -94,7 +94,7 @@ public class ConsoleCommandHandler {
 
         @Override
         public void print(Object obj) {
-            buffer.append(String.valueOf(obj));
+            buffer.append(obj);
         }
 
         @Override

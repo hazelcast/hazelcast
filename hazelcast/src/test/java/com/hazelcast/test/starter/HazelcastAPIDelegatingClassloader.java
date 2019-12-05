@@ -16,8 +16,8 @@
 
 package com.hazelcast.test.starter;
 
-import com.hazelcast.internal.usercodedeployment.impl.ClassloadingMutexProvider;
-import com.hazelcast.util.FilteringClassLoader;
+import com.hazelcast.internal.util.ContextMutexFactory;
+import com.hazelcast.internal.util.FilteringClassLoader;
 
 import java.io.Closeable;
 import java.io.IOException;
@@ -29,8 +29,8 @@ import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.Set;
 
-import static com.hazelcast.nio.IOUtil.closeResource;
-import static com.hazelcast.nio.IOUtil.toByteArray;
+import static com.hazelcast.internal.nio.IOUtil.closeResource;
+import static com.hazelcast.internal.nio.IOUtil.toByteArray;
 import static com.hazelcast.test.compatibility.SamplingSerializationService.isTestClass;
 import static com.hazelcast.test.starter.HazelcastStarterUtils.debug;
 import static java.util.Collections.enumeration;
@@ -50,11 +50,11 @@ public class HazelcastAPIDelegatingClassloader extends URLClassLoader {
 
     static final Set<String> DELEGATION_WHITE_LIST;
 
-    private ClassloadingMutexProvider mutexFactory = new ClassloadingMutexProvider();
+    private ContextMutexFactory mutexFactory = new ContextMutexFactory();
     private ClassLoader parent;
 
     static {
-        Set<String> alwaysDelegateWhiteList = new HashSet<String>();
+        Set<String> alwaysDelegateWhiteList = new HashSet<>();
         alwaysDelegateWhiteList.add("com.hazelcast.test.starter.ProxyInvocationHandler");
         alwaysDelegateWhiteList.add("com.hazelcast.test.starter.HazelcastAPIDelegatingClassloader");
         DELEGATION_WHITE_LIST = Collections.unmodifiableSet(alwaysDelegateWhiteList);
@@ -69,7 +69,7 @@ public class HazelcastAPIDelegatingClassloader extends URLClassLoader {
     public Enumeration<URL> getResources(String name) throws IOException {
         debug("Calling getResource with %s", name);
         if (checkResourceExcluded(name)) {
-            return enumeration(Collections.<URL>emptyList());
+            return enumeration(Collections.emptyList());
         }
         if (name.contains("hazelcast")) {
             return findResources(name);
@@ -103,7 +103,7 @@ public class HazelcastAPIDelegatingClassloader extends URLClassLoader {
         if (shouldDelegate(name)) {
             return super.loadClass(name, resolve);
         } else {
-            Closeable classMutex = mutexFactory.getMutexForClass(name);
+            Closeable classMutex = mutexFactory.mutexFor(name);
             try {
                 synchronized (classMutex) {
                     Class<?> loadedClass = findLoadedClass(name);

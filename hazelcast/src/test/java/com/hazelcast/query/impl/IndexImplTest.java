@@ -16,12 +16,14 @@
 
 package com.hazelcast.query.impl;
 
+import com.hazelcast.config.IndexConfig;
+import com.hazelcast.config.IndexType;
 import com.hazelcast.internal.serialization.InternalSerializationService;
-import com.hazelcast.monitor.impl.PerIndexStats;
+import com.hazelcast.internal.monitor.impl.PerIndexStats;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
 import org.junit.Test;
@@ -34,7 +36,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class IndexImplTest {
 
     private static final String ATTRIBUTE_NAME = "attribute";
@@ -45,14 +47,17 @@ public class IndexImplTest {
     public void setUp() {
         InternalSerializationService mockSerializationService = mock(InternalSerializationService.class);
         Extractors mockExtractors = Extractors.newBuilder(mockSerializationService).build();
-        index = new IndexImpl(ATTRIBUTE_NAME, false, mockSerializationService, mockExtractors, IndexCopyBehavior.COPY_ON_READ,
-                PerIndexStats.EMPTY);
+
+        IndexConfig config = IndexUtils.createTestIndexConfig(IndexType.HASH, ATTRIBUTE_NAME);
+
+        index = new IndexImpl(config, mockSerializationService, mockExtractors,
+                IndexCopyBehavior.COPY_ON_READ, PerIndexStats.EMPTY);
     }
 
     @Test
     public void saveEntryIndex_doNotDeserializeKey() {
         QueryableEntry entry = createMockQueryableEntry();
-        index.saveEntryIndex(entry, null, Index.OperationSource.USER);
+        index.putEntry(entry, null, Index.OperationSource.USER);
         verify(entry, never()).getKey();
     }
 

@@ -59,7 +59,7 @@ public class EventJournalInitialSubscriberState implements IdentifiedDataSeriali
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return EventJournalDataSerializerHook.EVENT_JOURNAL_INITIAL_SUBSCRIBER_STATE;
     }
 

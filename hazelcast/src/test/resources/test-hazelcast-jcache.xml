@@ -18,14 +18,11 @@
 <hazelcast xmlns="http://www.hazelcast.com/schema/config"
            xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
            xsi:schemaLocation="http://www.hazelcast.com/schema/config
-           http://www.hazelcast.com/schema/config/hazelcast-config-3.11.xsd">
+           http://www.hazelcast.com/schema/config/hazelcast-config-4.0.xsd">
 
     <instance-name>test-hazelcast-jcache</instance-name>
 
-    <group>
-        <name>test-group1</name>
-        <password>test-pass1</password>
-    </group>
+    <cluster-name>test-cluster1</cluster-name>
 
     <cache name="cache1">
         <key-type class-name="java.lang.Object"/>
@@ -43,7 +40,7 @@
                 <cache-entry-listener-factory class-name="com.hazelcast.config.CacheConfigTest$MyEntryListenerFactory"/>
                 <cache-entry-event-filter-factory class-name="com.hazelcast.config.CacheConfigTest$MyEntryEventFilterFactory"/>
             </cache-entry-listener>
-           <cache-entry-listener old-value-required="true" synchronous="true">
+            <cache-entry-listener old-value-required="true" synchronous="true">
                 <cache-entry-listener-factory class-name="com.hazelcast.config.CacheConfigTest$MySyncEntryListenerFactory"/>
                 <cache-entry-event-filter-factory class-name="com.hazelcast.config.CacheConfigTest$MySyncEntryEventFilterFactory"/>
             </cache-entry-listener>
@@ -60,9 +57,9 @@
 
     <cache name="cacheWithTimedCreatedExpiryPolicyFactory">
         <expiry-policy-factory>
-               <timed-expiry-policy-factory expiry-policy-type="CREATED"
-                                            duration-amount="1"
-                                            time-unit="DAYS"/>
+            <timed-expiry-policy-factory expiry-policy-type="CREATED"
+                                         duration-amount="1"
+                                         time-unit="DAYS"/>
         </expiry-policy-factory>
     </cache>
 

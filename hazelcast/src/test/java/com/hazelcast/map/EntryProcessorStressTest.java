@@ -19,7 +19,6 @@ package com.hazelcast.map;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IMap;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
@@ -85,7 +84,7 @@ public class EntryProcessorStressTest extends HazelcastTestSupport {
     }
 
     private static class SimpleEntryProcessor implements DataSerializable,
-            EntryProcessor<Object, List<Integer>>, EntryBackupProcessor<Object, List<Integer>> {
+            EntryProcessor<Object, List<Integer>, Integer> {
 
         private int id;
 
@@ -97,18 +96,13 @@ public class EntryProcessorStressTest extends HazelcastTestSupport {
         }
 
         @Override
-        public Object process(Map.Entry<Object, List<Integer>> entry) {
+        public Integer process(Map.Entry<Object, List<Integer>> entry) {
             List<Integer> list = entry.getValue();
             list.add(id);
             // add a random artificial latency
             LockSupport.parkNanos((long) (Math.random() * 10000));
             entry.setValue(list);
             return id;
-        }
-
-        @Override
-        public void processBackup(Map.Entry<Object, List<Integer>> entry) {
-            process(entry);
         }
 
         @Override
@@ -119,11 +113,6 @@ public class EntryProcessorStressTest extends HazelcastTestSupport {
         @Override
         public void readData(ObjectDataInput in) throws IOException {
             id = in.readInt();
-        }
-
-        @Override
-        public EntryBackupProcessor<Object, List<Integer>> getBackupProcessor() {
-            return this;
         }
     }
 }

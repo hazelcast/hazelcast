@@ -17,7 +17,6 @@
 package com.hazelcast.osgi.impl;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.config.GroupConfig;
 import com.hazelcast.config.XmlConfigBuilder;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
@@ -25,11 +24,12 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.osgi.HazelcastOSGiInstance;
 import com.hazelcast.osgi.HazelcastOSGiService;
-import com.hazelcast.util.ExceptionUtil;
-import com.hazelcast.util.StringUtil;
+import com.hazelcast.internal.util.ExceptionUtil;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceRegistration;
+
+import static com.hazelcast.internal.util.StringUtil.isNullOrEmpty;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -65,11 +65,11 @@ class HazelcastOSGiServiceImpl
     // it can be read from any thread without `synchronized` blocks and without `volatile` they may seen invalid value.
     private volatile HazelcastOSGiInstance hazelcastInstance;
 
-    public HazelcastOSGiServiceImpl(Bundle ownerBundle) {
+    HazelcastOSGiServiceImpl(Bundle ownerBundle) {
         this(ownerBundle, DEFAULT_ID);
     }
 
-    public HazelcastOSGiServiceImpl(Bundle ownerBundle, String id) {
+    HazelcastOSGiServiceImpl(Bundle ownerBundle, String id) {
         this.ownerBundle = ownerBundle;
         this.ownerBundleContext = ownerBundle.getBundleContext();
         this.id = id;
@@ -81,29 +81,17 @@ class HazelcastOSGiServiceImpl
         }
     }
 
-    private boolean shouldSetGroupName(GroupConfig groupConfig) {
-        if (groupConfig == null
-                || StringUtil.isNullOrEmpty(groupConfig.getName())
-                || GroupConfig.DEFAULT_GROUP_NAME.equals(groupConfig.getName())) {
-            if (!Boolean.getBoolean(HAZELCAST_OSGI_GROUPING_DISABLED)) {
-                return true;
-            }
-        }
-        return false;
+    private boolean shouldSetClusterName(String clusterName) {
+        return (isNullOrEmpty(clusterName) || Config.DEFAULT_CLUSTER_NAME.equals(clusterName))
+                && !Boolean.getBoolean(HAZELCAST_OSGI_GROUPING_DISABLED);
     }
 
     private Config getConfig(Config config) {
         if (config == null) {
             config = new XmlConfigBuilder().build();
         }
-        GroupConfig groupConfig = config.getGroupConfig();
-        if (shouldSetGroupName(groupConfig)) {
-            String groupName = id;
-            if (groupConfig == null) {
-                config.setGroupConfig(new GroupConfig(groupName));
-            } else {
-                groupConfig.setName(groupName);
-            }
+        if (shouldSetClusterName(config.getClusterName())) {
+            config.setClusterName(id);
         }
         return config;
     }

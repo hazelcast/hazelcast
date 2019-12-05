@@ -20,24 +20,24 @@ import com.hazelcast.cache.HazelcastCacheManager;
 import com.hazelcast.cache.ICache;
 import com.hazelcast.cache.impl.CacheService;
 import com.hazelcast.cache.impl.HazelcastServerCacheManager;
-import com.hazelcast.cache.impl.HazelcastServerCachingProvider;
 import com.hazelcast.cache.impl.ICacheRecordStore;
 import com.hazelcast.cache.impl.record.CacheRecord;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.instance.HazelcastInstanceImpl;
-import com.hazelcast.instance.Node;
+import com.hazelcast.instance.impl.HazelcastInstanceImpl;
+import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.partition.InternalPartition;
 import com.hazelcast.internal.partition.InternalPartitionService;
-import com.hazelcast.nio.Address;
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.spi.partition.IPartition;
-import com.hazelcast.spi.serialization.SerializationService;
+import com.hazelcast.internal.partition.IPartition;
 
 import javax.cache.expiry.ExpiryPolicy;
 import javax.cache.spi.CachingProvider;
 import java.util.Map;
 
+import static com.hazelcast.cache.CacheTestSupport.createServerCachingProvider;
 import static com.hazelcast.test.HazelcastTestSupport.getHazelcastInstanceImpl;
 import static com.hazelcast.test.HazelcastTestSupport.getNode;
 import static com.hazelcast.test.HazelcastTestSupport.getNodeEngineImpl;
@@ -71,7 +71,7 @@ class CacheBackupAccessor<K, V> extends AbstractBackupAccessor<K, V> implements 
 
             HazelcastInstance hz = getInstanceWithAddress(replicaAddress);
             HazelcastInstanceImpl hazelcastInstanceImpl = getHazelcastInstanceImpl(hz);
-            CachingProvider provider = HazelcastServerCachingProvider.createCachingProvider(hazelcastInstanceImpl);
+            CachingProvider provider = createServerCachingProvider(hazelcastInstanceImpl);
             HazelcastCacheManager cacheManager = (HazelcastServerCacheManager) provider.getCacheManager();
 
             NodeEngineImpl nodeEngine = getNodeEngineImpl(hz);
@@ -131,7 +131,7 @@ class CacheBackupAccessor<K, V> extends AbstractBackupAccessor<K, V> implements 
 
     private static String getCacheNameWithPrefix(HazelcastInstance hz, String cacheName) {
         HazelcastInstanceImpl hazelcastInstanceImpl = getHazelcastInstanceImpl(hz);
-        CachingProvider provider = HazelcastServerCachingProvider.createCachingProvider(hazelcastInstanceImpl);
+        CachingProvider provider = createServerCachingProvider(hazelcastInstanceImpl);
         HazelcastCacheManager cacheManager = (HazelcastServerCacheManager) provider.getCacheManager();
         return cacheManager.getCacheNameWithPrefix(cacheName);
     }

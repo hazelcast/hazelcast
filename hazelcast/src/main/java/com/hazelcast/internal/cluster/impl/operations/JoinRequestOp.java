@@ -47,13 +47,12 @@ public class JoinRequestOp extends AbstractClusterOperation {
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
-        request = new JoinRequest();
-        request.readData(in);
+        request = in.readObject();
     }
 
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
-        request.writeData(out);
+        out.writeObject(request);
     }
 
     @Override
@@ -64,7 +63,7 @@ public class JoinRequestOp extends AbstractClusterOperation {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ClusterDataSerializerHook.JOIN_REQUEST_OP;
     }
 }

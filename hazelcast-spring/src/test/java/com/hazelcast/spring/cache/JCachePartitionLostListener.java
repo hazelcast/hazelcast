@@ -20,8 +20,8 @@ import com.hazelcast.cache.impl.event.CachePartitionLostEvent;
 import com.hazelcast.cache.impl.event.CachePartitionLostListener;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceAware;
-import com.hazelcast.instance.Node;
-import com.hazelcast.spi.NodeAware;
+import com.hazelcast.instance.impl.Node;
+import com.hazelcast.internal.services.NodeAware;
 import com.hazelcast.spring.context.SpringAware;
 
 import javax.annotation.Resource;

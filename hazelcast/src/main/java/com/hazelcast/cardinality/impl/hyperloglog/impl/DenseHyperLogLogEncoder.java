@@ -108,7 +108,7 @@ public class DenseHyperLogLogEncoder implements HyperLogLogEncoder {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return CardinalityEstimatorDataSerializerHook.HLL_DENSE_ENC;
     }
 

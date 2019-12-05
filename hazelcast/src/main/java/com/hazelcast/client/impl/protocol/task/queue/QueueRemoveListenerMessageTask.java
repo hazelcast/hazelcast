@@ -20,16 +20,18 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.QueueRemoveListenerCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractRemoveListenerMessageTask;
 import com.hazelcast.collection.impl.queue.QueueService;
-import com.hazelcast.instance.Node;
-import com.hazelcast.nio.Connection;
+import com.hazelcast.instance.impl.Node;
+import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.QueuePermission;
 
 import java.security.Permission;
+import java.util.UUID;
+import java.util.concurrent.Future;
 
 /**
  * Client Protocol Task for handling messages with type ID:
- * {@link com.hazelcast.client.impl.protocol.codec.QueueMessageType#QUEUE_REMOVELISTENER}
+ * {@link com.hazelcast.client.impl.protocol.codec.QueueAddListenerCodec#REQUEST_MESSAGE_TYPE}
  */
 public class QueueRemoveListenerMessageTask
         extends AbstractRemoveListenerMessageTask<QueueRemoveListenerCodec.RequestParameters> {
@@ -39,13 +41,13 @@ public class QueueRemoveListenerMessageTask
     }
 
     @Override
-    protected boolean deRegisterListener() {
+    protected Future<Boolean> deRegisterListener() {
         final QueueService service = getService(getServiceName());
-        return service.removeItemListener(parameters.name, parameters.registrationId);
+        return service.removeItemListenerAsync(parameters.name, parameters.registrationId);
     }
 
     @Override
-    protected String getRegistrationId() {
+    protected UUID getRegistrationId() {
         return parameters.registrationId;
     }
 

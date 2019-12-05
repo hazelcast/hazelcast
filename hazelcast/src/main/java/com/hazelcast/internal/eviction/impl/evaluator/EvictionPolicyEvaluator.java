@@ -18,67 +18,71 @@ package com.hazelcast.internal.eviction.impl.evaluator;
 
 import com.hazelcast.internal.eviction.Evictable;
 import com.hazelcast.internal.eviction.EvictionCandidate;
-import com.hazelcast.internal.eviction.EvictionPolicyComparator;
 import com.hazelcast.internal.eviction.Expirable;
-import com.hazelcast.util.Clock;
+import com.hazelcast.internal.util.Clock;
+import com.hazelcast.spi.eviction.EvictionPolicyComparator;
 
 /**
  * Default {@link EvictionPolicyEvaluator} implementation.
  *
- * @param <A> Type of the accessor (id) of the {@link com.hazelcast.internal.eviction.EvictionCandidate}
+ * @param <A> Type of the accessor (id) of the {@link
+ *            com.hazelcast.internal.eviction.EvictionCandidate}
  * @param <E> Type of the {@link com.hazelcast.internal.eviction.Evictable} value of
  *            {@link com.hazelcast.internal.eviction.EvictionCandidate}
  */
 public class EvictionPolicyEvaluator<A, E extends Evictable> {
 
-    private final EvictionPolicyComparator evictionPolicyComparator;
+    private final EvictionPolicyComparator comparator;
 
-    public EvictionPolicyEvaluator(EvictionPolicyComparator evictionPolicyComparator) {
-        this.evictionPolicyComparator = evictionPolicyComparator;
+    public EvictionPolicyEvaluator(EvictionPolicyComparator comparator) {
+        this.comparator = comparator;
     }
 
     public EvictionPolicyComparator getEvictionPolicyComparator() {
-        return evictionPolicyComparator;
+        return comparator;
     }
 
     /**
      * Selects the best candidate to be evicted.
-     * The definition of the best depends on configured eviction policy. (LRU, LFU, custom, etc)
+     * The definition of the best depends on configured
+     * eviction policy. (LRU, LFU, custom, etc)
      *
      * It returns <code>null</code> when there the input is empty.
      *
-     * @param evictionCandidates Multiple {@link com.hazelcast.internal.eviction.EvictionCandidate} to be evicted
+     * @param candidates Multiple {@link
+     *                   com.hazelcast.internal.eviction.EvictionCandidate} to be evicted
      * @return a selected candidate to be evicted or null.
      */
-    public <C extends EvictionCandidate<A, E>> C evaluate(Iterable<C> evictionCandidates) {
-        C selectedEvictionCandidate = null;
+    @SuppressWarnings("checkstyle:rvcheckcomparetoforspecificreturnvalue")
+    public <C extends EvictionCandidate<A, E>> C evaluate(Iterable<C> candidates) {
         long now = Clock.currentTimeMillis();
-        for (C currentEvictionCandidate : evictionCandidates) {
-            if (selectedEvictionCandidate == null) {
-                selectedEvictionCandidate = currentEvictionCandidate;
-            } else {
-                E evictable = currentEvictionCandidate.getEvictable();
-                if (isExpired(now, evictable)) {
-                    return currentEvictionCandidate;
-                }
 
-                int comparisonResult = evictionPolicyComparator.compare(selectedEvictionCandidate, currentEvictionCandidate);
-                if (comparisonResult == EvictionPolicyComparator.SECOND_ENTRY_HAS_HIGHER_PRIORITY_TO_BE_EVICTED) {
-                    selectedEvictionCandidate = currentEvictionCandidate;
-                }
+        C selected = null;
+        for (C current : candidates) {
+            // initialize selected by setting it to current candidate.
+            if (selected == null) {
+                selected = current;
+                continue;
+            }
+
+            // then check if current candidate is expired.
+            if (isExpired(current.getEvictable(), now)) {
+                return current;
+            }
+
+            // check if current candidate is more eligible than selected.
+            if (comparator.compare(current, selected) < 0) {
+                selected = current;
             }
         }
-        return selectedEvictionCandidate;
+        return selected;
     }
 
-    private boolean isExpired(long now, Evictable evictable) {
-        boolean expired = false;
-        // check if evictable is also an expirable
-        if (evictable instanceof Expirable) {
-            Expirable expirable = (Expirable) evictable;
-            // if there is an expired candidate, let's evict that one immediately
-            expired = expirable.isExpiredAt(now);
+    private static boolean isExpired(Evictable evictable, long now) {
+        if (!(evictable instanceof Expirable)) {
+            return false;
         }
-        return expired;
+
+        return ((Expirable) evictable).isExpiredAt(now);
     }
 }

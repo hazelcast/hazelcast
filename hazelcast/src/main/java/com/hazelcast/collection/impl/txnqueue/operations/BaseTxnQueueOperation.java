@@ -20,7 +20,7 @@ import com.hazelcast.collection.impl.queue.operations.QueueBackupAwareOperation;
 import com.hazelcast.collection.impl.txncollection.CollectionTxnOperation;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.spi.Notifier;
+import com.hazelcast.spi.impl.operationservice.Notifier;
 
 import java.io.IOException;
 

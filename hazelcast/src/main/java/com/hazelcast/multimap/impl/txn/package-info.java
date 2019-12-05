@@ -15,6 +15,6 @@
  */
 
 /**
- * <p>This package contains the Transaction behavior for the Multimap.<br/>
+ * <p>This package contains the Transaction behavior for the Multimap.<br>
  */
 package com.hazelcast.multimap.impl.txn;

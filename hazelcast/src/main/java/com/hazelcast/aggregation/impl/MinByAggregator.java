@@ -20,11 +20,12 @@ import com.hazelcast.aggregation.Aggregator;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.query.impl.Comparables;
 
 import java.io.IOException;
+import java.util.Objects;
 
-public final class MinByAggregator<I> extends AbstractAggregator<I, Comparable, I>
-        implements IdentifiedDataSerializable {
+public final class MinByAggregator<I> extends AbstractAggregator<I, Comparable, I> implements IdentifiedDataSerializable {
 
     private Comparable minValue;
     private I minEntry;
@@ -49,9 +50,10 @@ public final class MinByAggregator<I> extends AbstractAggregator<I, Comparable, 
         if (otherValue == null) {
             return false;
         }
-        return minValue == null || minValue.compareTo(otherValue) > 0;
+        return minValue == null || Comparables.compare(minValue, otherValue) > 0;
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public void combine(Aggregator aggregator) {
         MinByAggregator<I> minAggregator = (MinByAggregator<I>) aggregator;
@@ -73,7 +75,7 @@ public final class MinByAggregator<I> extends AbstractAggregator<I, Comparable, 
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return AggregatorDataSerializerHook.MIN_BY;
     }
 
@@ -89,5 +91,25 @@ public final class MinByAggregator<I> extends AbstractAggregator<I, Comparable, 
         this.attributePath = in.readUTF();
         this.minValue = in.readObject();
         this.minEntry = in.readObject();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        if (!super.equals(o)) {
+            return false;
+        }
+        MinByAggregator<?> that = (MinByAggregator<?>) o;
+        return Objects.equals(minValue, that.minValue) && Objects.equals(minEntry, that.minEntry);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), minValue, minEntry);
     }
 }

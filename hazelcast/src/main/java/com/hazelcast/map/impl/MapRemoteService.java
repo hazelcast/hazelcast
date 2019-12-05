@@ -19,16 +19,15 @@ package com.hazelcast.map.impl;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.DistributedObject;
+import com.hazelcast.internal.services.RemoteService;
 import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.map.impl.proxy.NearCachedMapProxyImpl;
-import com.hazelcast.map.merge.MergePolicyProvider;
-import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.RemoteService;
+import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.spi.merge.SplitBrainMergePolicyProvider;
 
 import static com.hazelcast.config.NearCacheConfigAccessor.initDefaultMaxSizeForOnHeapMaps;
 import static com.hazelcast.internal.config.ConfigValidator.checkMapConfig;
 import static com.hazelcast.internal.config.ConfigValidator.checkNearCacheConfig;
-import static com.hazelcast.internal.config.MergePolicyValidator.checkMergePolicySupportsInMemoryFormat;
 
 /**
  * Defines remote service behavior of map service.
@@ -46,15 +45,13 @@ class MapRemoteService implements RemoteService {
     }
 
     @Override
-    public DistributedObject createDistributedObject(String name) {
+    public DistributedObject createDistributedObject(String name, boolean local) {
         Config config = nodeEngine.getConfig();
         MapConfig mapConfig = config.findMapConfig(name);
-        MergePolicyProvider mergePolicyProvider = mapServiceContext.getMergePolicyProvider();
-        checkMapConfig(mapConfig, mergePolicyProvider);
+        SplitBrainMergePolicyProvider mergePolicyProvider = nodeEngine.getSplitBrainMergePolicyProvider();
 
-        Object mergePolicy = mergePolicyProvider.getMergePolicy(mapConfig.getMergePolicyConfig().getPolicy());
-        checkMergePolicySupportsInMemoryFormat(name, mergePolicy, mapConfig.getInMemoryFormat(),
-                true, nodeEngine.getLogger(getClass()));
+        checkMapConfig(mapConfig, config.getNativeMemoryConfig(), mergePolicyProvider,
+                mapServiceContext.getNodeEngine().getProperties());
 
         if (mapConfig.isNearCacheEnabled()) {
             initDefaultMaxSizeForOnHeapMaps(mapConfig.getNearCacheConfig());
@@ -66,7 +63,7 @@ class MapRemoteService implements RemoteService {
     }
 
     @Override
-    public void destroyDistributedObject(String name) {
+    public void destroyDistributedObject(String name, boolean local) {
         mapServiceContext.destroyMap(name);
     }
 }

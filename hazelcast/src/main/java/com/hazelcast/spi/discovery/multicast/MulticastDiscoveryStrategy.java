@@ -19,7 +19,7 @@ package com.hazelcast.spi.discovery.multicast;
 import com.hazelcast.config.properties.ValidationException;
 import com.hazelcast.config.properties.ValueValidator;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.nio.Address;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.spi.discovery.AbstractDiscoveryStrategy;
 import com.hazelcast.spi.discovery.DiscoveryNode;
 import com.hazelcast.spi.discovery.SimpleDiscoveryNode;
@@ -33,10 +33,9 @@ import java.net.InetSocketAddress;
 import java.net.MulticastSocket;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.Map;
 
-import static com.hazelcast.util.ExceptionUtil.rethrow;
+import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 
 /**
  * The multicast {@link com.hazelcast.spi.discovery.DiscoveryStrategy}.
@@ -71,6 +70,13 @@ public class MulticastDiscoveryStrategy extends AbstractDiscoveryStrategy {
             String group = getOrDefault(MulticastProperties.GROUP, DEFAULT_MULTICAST_GROUP);
             multicastSocket = new MulticastSocket(null);
             multicastSocket.bind(new InetSocketAddress(port));
+            if (discoveryNode != null) {
+                // See MulticastService.createMulticastService(...)
+                InetAddress inetAddress = discoveryNode.getPrivateAddress().getInetAddress();
+                if (!inetAddress.isLoopbackAddress()) {
+                    multicastSocket.setInterface(inetAddress);
+                }
+            }
             multicastSocket.setReuseAddress(true);
             multicastSocket.setTimeToLive(SOCKET_TIME_TO_LIVE);
             multicastSocket.setReceiveBufferSize(DATA_OUTPUT_BUFFER_SIZE);
@@ -126,11 +132,6 @@ public class MulticastDiscoveryStrategy extends AbstractDiscoveryStrategy {
     @Override
     public PartitionGroupStrategy getPartitionGroupStrategy() {
         return null;
-    }
-
-    @Override
-    public Map<String, Object> discoverLocalMetadata() {
-        return new HashMap<String, Object>();
     }
 
     /**

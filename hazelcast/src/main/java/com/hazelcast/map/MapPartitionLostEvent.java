@@ -16,8 +16,7 @@
 
 package com.hazelcast.map;
 
-import com.hazelcast.core.AbstractIMapEvent;
-import com.hazelcast.core.Member;
+import com.hazelcast.cluster.Member;
 
 /**
  * Used for providing information about the lost partition for a map

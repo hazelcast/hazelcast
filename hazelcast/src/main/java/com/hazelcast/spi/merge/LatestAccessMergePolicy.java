@@ -16,7 +16,6 @@
 
 package com.hazelcast.spi.merge;
 
-import com.hazelcast.spi.annotation.Beta;
 import com.hazelcast.spi.impl.merge.AbstractSplitBrainMergePolicy;
 import com.hazelcast.spi.impl.merge.SplitBrainDataSerializerHook;
 
@@ -30,7 +29,6 @@ import com.hazelcast.spi.impl.merge.SplitBrainDataSerializerHook;
  * @param <T> the type of the merging value
  * @since 3.10
  */
-@Beta
 public class LatestAccessMergePolicy<V, T extends MergingLastAccessTime<V>>
         extends AbstractSplitBrainMergePolicy<V, T> {
 
@@ -52,7 +50,7 @@ public class LatestAccessMergePolicy<V, T extends MergingLastAccessTime<V>>
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return SplitBrainDataSerializerHook.LATEST_ACCESS;
     }
 }

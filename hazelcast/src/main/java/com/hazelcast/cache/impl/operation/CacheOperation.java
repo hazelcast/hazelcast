@@ -23,20 +23,24 @@ import com.hazelcast.cache.impl.ICacheRecordStore;
 import com.hazelcast.cache.impl.ICacheService;
 import com.hazelcast.cache.impl.event.CacheWanEventPublisher;
 import com.hazelcast.cache.impl.record.CacheRecord;
+import com.hazelcast.config.CacheConfig;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.spi.BackupOperation;
-import com.hazelcast.spi.ExceptionAction;
-import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.ObjectNamespace;
-import com.hazelcast.spi.PartitionAwareOperation;
-import com.hazelcast.spi.ServiceNamespaceAware;
-import com.hazelcast.spi.impl.AbstractNamedOperation;
-import com.hazelcast.spi.serialization.SerializationService;
-import com.hazelcast.util.ExceptionUtil;
+import com.hazelcast.spi.impl.operationservice.BackupOperation;
+import com.hazelcast.spi.impl.operationservice.ExceptionAction;
+import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.internal.services.ObjectNamespace;
+import com.hazelcast.spi.impl.operationservice.PartitionAwareOperation;
+import com.hazelcast.internal.services.ServiceNamespaceAware;
+import com.hazelcast.spi.impl.operationservice.AbstractNamedOperation;
+import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.util.ExceptionUtil;
+
+import java.io.Closeable;
 
 import static com.hazelcast.cache.impl.CacheEntryViews.createDefaultEntryView;
+import static com.hazelcast.config.CacheConfigAccessor.getTenantControl;
 import static com.hazelcast.internal.util.ToHeapDataConverter.toHeapData;
 
 /**
@@ -50,6 +54,7 @@ public abstract class CacheOperation extends AbstractNamedOperation
     protected transient ICacheService cacheService;
     protected transient ICacheRecordStore recordStore;
     protected transient CacheWanEventPublisher wanEventPublisher;
+    protected transient Closeable tenantContext;
 
     protected CacheOperation() {
     }
@@ -73,6 +78,16 @@ public abstract class CacheOperation extends AbstractNamedOperation
         cacheService = getService();
         try {
             recordStore = getOrCreateStoreIfAllowed();
+            // establish tenant application's thread-local context for this cache operation
+            CacheConfig<?, ?> cacheConfig;
+            if (recordStore != null) {
+                cacheConfig = recordStore.getConfig();
+            } else {
+                cacheConfig = cacheService.getCacheConfig(name);
+            }
+            if (cacheConfig != null) {
+                tenantContext = getTenantControl(cacheConfig).setTenant(true);
+            }
         } catch (CacheNotExistsException e) {
             dispose();
             rethrowOrSwallowIfBackup(e);
@@ -83,9 +98,17 @@ public abstract class CacheOperation extends AbstractNamedOperation
 
         if (recordStore != null && recordStore.isWanReplicationEnabled()) {
             wanEventPublisher = cacheService.getCacheWanEventPublisher();
+            cacheService.doPrepublicationChecks(name);
         }
 
         beforeRunInternal();
+    }
+
+    @Override
+    public void afterRun() throws Exception {
+        if (tenantContext != null) {
+            tenantContext.close();
+        }
     }
 
     /**

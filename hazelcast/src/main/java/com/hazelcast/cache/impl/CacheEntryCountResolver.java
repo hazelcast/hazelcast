@@ -31,7 +31,7 @@ public abstract class CacheEntryCountResolver {
 
         private final CacheContext cacheContext;
 
-        public CacheContextBackedEntryCountResolver(CacheContext cacheContext) {
+        CacheContextBackedEntryCountResolver(CacheContext cacheContext) {
             this.cacheContext = cacheContext;
         }
 

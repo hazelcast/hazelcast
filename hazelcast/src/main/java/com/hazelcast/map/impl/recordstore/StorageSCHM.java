@@ -16,14 +16,15 @@
 
 package com.hazelcast.map.impl.recordstore;
 
+import com.hazelcast.internal.serialization.SerializableByConvention;
+import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.util.SampleableConcurrentHashMap;
+import com.hazelcast.map.IMap;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.SerializableByConvention;
-import com.hazelcast.spi.serialization.SerializationService;
-import com.hazelcast.util.SampleableConcurrentHashMap;
 
 /**
- * An extended {@link SampleableConcurrentHashMap} with {@link com.hazelcast.core.IMap} specifics.
+ * An extended {@link SampleableConcurrentHashMap} with {@link IMap} specifics.
  *
  * @param <R> Type of records in this CHM
  */
@@ -42,6 +43,6 @@ public class StorageSCHM<R extends Record> extends SampleableConcurrentHashMap<D
 
     @Override
     protected <E extends SamplingEntry> E createSamplingEntry(Data key, R record) {
-        return (E) new LazyEntryViewFromRecord<R>(record, serializationService);
+        return (E) new LazyEvictableEntryView<>(key, record, serializationService);
     }
 }

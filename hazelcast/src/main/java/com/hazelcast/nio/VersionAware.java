@@ -19,9 +19,10 @@ package com.hazelcast.nio;
 import com.hazelcast.version.Version;
 
 /**
- * Enables getting the version from the implementing object.
+ * An instance which supports versioning.
  * <p>
- * It may be any version (cluster version, node version, custom version, etc.), that is up to the implementer.
+ * It may be any version (cluster version, node version, custom version, etc.),
+ * that is up to the implementer.
  *
  * @since 3.8
  */
@@ -31,4 +32,12 @@ public interface VersionAware {
      * @return the version or {@code Version.UNKNOWN} if version is unknown to the object
      */
     Version getVersion();
+
+    /**
+     * If the serializer supports versioning it may set the version to use for
+     * the serialization on this object.
+     *
+     * @param version version to set
+     */
+    void setVersion(Version version);
 }

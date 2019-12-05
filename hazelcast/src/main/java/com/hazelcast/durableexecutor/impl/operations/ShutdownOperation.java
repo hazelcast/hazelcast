@@ -18,7 +18,7 @@ package com.hazelcast.durableexecutor.impl.operations;
 
 import com.hazelcast.durableexecutor.impl.DistributedDurableExecutorService;
 import com.hazelcast.durableexecutor.impl.DurableExecutorDataSerializerHook;
-import com.hazelcast.spi.impl.MutatingOperation;
+import com.hazelcast.spi.impl.operationservice.MutatingOperation;
 
 public class ShutdownOperation extends AbstractDurableExecutorOperation implements MutatingOperation {
 
@@ -36,7 +36,7 @@ public class ShutdownOperation extends AbstractDurableExecutorOperation implemen
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return DurableExecutorDataSerializerHook.SHUTDOWN;
     }
 }

@@ -20,18 +20,17 @@ import com.hazelcast.cache.HazelcastExpiryPolicy;
 import com.hazelcast.cache.ICache;
 import com.hazelcast.cache.impl.CachePartitionSegment;
 import com.hazelcast.cache.impl.CacheService;
-import com.hazelcast.cache.impl.HazelcastServerCachingProvider;
 import com.hazelcast.cache.impl.eviction.CacheClearExpiredRecordsTask;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.config.CacheConfiguration;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.LifecycleEvent;
-import com.hazelcast.instance.LifecycleServiceImpl;
+import com.hazelcast.instance.impl.LifecycleServiceImpl;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -47,6 +46,7 @@ import javax.cache.event.CacheEntryListenerException;
 import java.io.Serializable;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static com.hazelcast.cache.CacheTestSupport.createServerCachingProvider;
 import static com.hazelcast.core.LifecycleEvent.LifecycleState.MERGED;
 import static com.hazelcast.core.LifecycleEvent.LifecycleState.MERGING;
 import static com.hazelcast.core.LifecycleEvent.LifecycleState.SHUTTING_DOWN;
@@ -57,7 +57,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class CacheExpirationManagerTest extends AbstractExpirationManagerTest {
 
     @Test
@@ -217,7 +217,7 @@ public class CacheExpirationManagerTest extends AbstractExpirationManagerTest {
     }
 
     protected CacheManager createCacheManager(HazelcastInstance instance) {
-        return HazelcastServerCachingProvider.createCachingProvider(instance).getCacheManager();
+        return createServerCachingProvider(instance).getCacheManager();
     }
 
     @Override

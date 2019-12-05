@@ -18,7 +18,7 @@ package com.hazelcast.internal.util.sort;
 
 import com.hazelcast.internal.memory.MemoryAccessor;
 
-import static com.hazelcast.nio.Bits.LONG_SIZE_IN_BYTES;
+import static com.hazelcast.internal.nio.Bits.LONG_SIZE_IN_BYTES;
 
 /**
  * {@link QuickSorter} implementation for a memory block which stores an array of {@code int}s.

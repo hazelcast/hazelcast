@@ -21,9 +21,9 @@ import com.hazelcast.config.Config;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
-import com.hazelcast.instance.HazelcastInstanceImpl;
-import com.hazelcast.instance.Node;
-import com.hazelcast.instance.TestUtil;
+import com.hazelcast.instance.impl.HazelcastInstanceImpl;
+import com.hazelcast.instance.impl.Node;
+import com.hazelcast.instance.impl.TestUtil;
 import com.hazelcast.test.starter.answer.HazelcastInstanceImplAnswer;
 import com.hazelcast.test.starter.answer.NodeAnswer;
 
@@ -42,8 +42,8 @@ import static com.hazelcast.test.starter.HazelcastStarterUtils.debug;
 import static com.hazelcast.test.starter.HazelcastStarterUtils.rethrowGuardianException;
 import static com.hazelcast.test.starter.ReflectionUtils.getFieldValueReflectively;
 import static com.hazelcast.test.starter.ReflectionUtils.setFieldValueReflectively;
-import static com.hazelcast.util.ExceptionUtil.rethrow;
-import static com.hazelcast.util.UuidUtil.newUnsecureUuidString;
+import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
+import static com.hazelcast.internal.util.UuidUtil.newUnsecureUuidString;
 import static java.lang.Thread.currentThread;
 import static java.lang.reflect.Proxy.isProxyClass;
 import static org.mockito.Mockito.mock;
@@ -159,8 +159,8 @@ public class HazelcastStarter {
         if (isProxyClass(hazelcastInstance.getClass())) {
             InvocationHandler invocationHandler = Proxy.getInvocationHandler(hazelcastInstance);
             Object delegate = getFieldValueReflectively(invocationHandler, "delegate");
-            Class<?> instanceProxyClass = classloader.loadClass("com.hazelcast.instance.HazelcastInstanceProxy");
-            Class<?> instanceImplClass = classloader.loadClass("com.hazelcast.instance.HazelcastInstanceImpl");
+            Class<?> instanceProxyClass = classloader.loadClass("com.hazelcast.instance.impl.HazelcastInstanceProxy");
+            Class<?> instanceImplClass = classloader.loadClass("com.hazelcast.instance.impl.HazelcastInstanceImpl");
             if (instanceProxyClass.isAssignableFrom(delegate.getClass())) {
                 Object instanceProxy = instanceProxyClass.cast(delegate);
                 return instanceImplClass.cast(getFieldValueReflectively(instanceProxy, "original"));
@@ -234,11 +234,11 @@ public class HazelcastStarter {
             Object config = getConfig(classloader, configClass, configTemplate);
             String instanceName = configTemplate == null ? newUnsecureUuidString() : configTemplate.getInstanceName();
 
-            Class<?> nodeContextClass = classloader.loadClass("com.hazelcast.instance.NodeContext");
+            Class<?> nodeContextClass = classloader.loadClass("com.hazelcast.instance.impl.NodeContext");
             Class<?> firewallingNodeContextClass = classloader.loadClass("com.hazelcast.instance.FirewallingNodeContext");
             Object nodeContext = proxyObjectForStarter(classloader, firewallingNodeContextClass.newInstance());
 
-            Class<?> hazelcastInstanceFactoryClass = classloader.loadClass("com.hazelcast.instance.HazelcastInstanceFactory");
+            Class<?> hazelcastInstanceFactoryClass = classloader.loadClass("com.hazelcast.instance.impl.HazelcastInstanceFactory");
             System.out.println(hazelcastInstanceFactoryClass + " loaded by " + hazelcastInstanceFactoryClass.getClassLoader());
 
             Method newHazelcastInstanceMethod = hazelcastInstanceFactoryClass.getMethod("newHazelcastInstance", configClass,

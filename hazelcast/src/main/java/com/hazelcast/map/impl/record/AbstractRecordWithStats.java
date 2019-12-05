@@ -16,25 +16,18 @@
 
 package com.hazelcast.map.impl.record;
 
-import com.hazelcast.util.Clock;
-
-import static com.hazelcast.nio.Bits.INT_SIZE_IN_BYTES;
+import static com.hazelcast.internal.nio.Bits.INT_SIZE_IN_BYTES;
+import static com.hazelcast.map.impl.record.RecordReaderWriter.DATA_RECORD_WITH_STATS_READER_WRITER;
 
 /**
  * @param <V> type of {@link AbstractRecord}
  */
-abstract class AbstractRecordWithStats<V>
-        extends AbstractRecord<V> {
+abstract class AbstractRecordWithStats<V> extends AbstractRecord<V> {
 
-    private int lastStoredTime = NOT_AVAILABLE;
-    private int expirationTime = NOT_AVAILABLE;
+    private int lastStoredTime = UNSET;
+    private int expirationTime = UNSET;
 
     AbstractRecordWithStats() {
-    }
-
-    @Override
-    public final void onStore() {
-        lastStoredTime = stripBaseTime(Clock.currentTimeMillis());
     }
 
     @Override
@@ -45,7 +38,7 @@ abstract class AbstractRecordWithStats<V>
 
     @Override
     public long getExpirationTime() {
-        if (expirationTime == NOT_AVAILABLE) {
+        if (expirationTime == UNSET) {
             return 0L;
         }
 
@@ -65,7 +58,7 @@ abstract class AbstractRecordWithStats<V>
 
     @Override
     public long getLastStoredTime() {
-        if (expirationTime == NOT_AVAILABLE) {
+        if (lastStoredTime == UNSET) {
             return 0L;
         }
 
@@ -75,6 +68,31 @@ abstract class AbstractRecordWithStats<V>
     @Override
     public void setLastStoredTime(long lastStoredTime) {
         this.lastStoredTime = stripBaseTime(lastStoredTime);
+    }
+
+    @Override
+    public int getRawLastStoredTime() {
+        return lastStoredTime;
+    }
+
+    @Override
+    public void setRawLastStoredTime(int time) {
+        this.lastStoredTime = time;
+    }
+
+    @Override
+    public int getRawExpirationTime() {
+        return expirationTime;
+    }
+
+    @Override
+    public void setRawExpirationTime(int time) {
+        this.expirationTime = time;
+    }
+
+    @Override
+    public RecordReaderWriter getMatchingRecordReaderWriter() {
+        return DATA_RECORD_WITH_STATS_READER_WRITER;
     }
 
     @Override
@@ -97,5 +115,13 @@ abstract class AbstractRecordWithStats<V>
         result = 31 * result + lastStoredTime;
         result = 31 * result + expirationTime;
         return result;
+    }
+
+    @Override
+    public String toString() {
+        return "AbstractRecordWithStats{"
+                + "lastStoredTime=" + lastStoredTime
+                + ", expirationTime=" + expirationTime
+                + "} " + super.toString();
     }
 }

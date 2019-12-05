@@ -20,9 +20,9 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IMap;
-import com.hazelcast.core.MapStore;
-import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.map.IMap;
+import com.hazelcast.map.MapStore;
+import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 
 import static com.hazelcast.test.HazelcastTestSupport.randomMapName;
@@ -162,12 +162,12 @@ public class TestMapUsingMapStoreBuilder<K, V> {
                 .setInMemoryFormat(inMemoryFormat);
 
         if (writeBehindQueueCapacity > 0) {
-            config.setProperty(GroupProperty.MAP_WRITE_BEHIND_QUEUE_CAPACITY.getName(), String.valueOf(writeBehindQueueCapacity));
+            config.setProperty(ClusterProperty.MAP_WRITE_BEHIND_QUEUE_CAPACITY.getName(), String.valueOf(writeBehindQueueCapacity));
         }
 
-        config.setProperty(GroupProperty.PARTITION_COUNT.getName(), String.valueOf(partitionCount));
+        config.setProperty(ClusterProperty.PARTITION_COUNT.getName(), String.valueOf(partitionCount));
         if (backupDelaySeconds > 0) {
-            config.setProperty(GroupProperty.MAP_REPLICA_SCHEDULED_TASK_DELAY_SECONDS.getName(), String.valueOf(backupDelaySeconds));
+            config.setProperty(ClusterProperty.MAP_REPLICA_SCHEDULED_TASK_DELAY_SECONDS.getName(), String.valueOf(backupDelaySeconds));
         }
 
         // nodes

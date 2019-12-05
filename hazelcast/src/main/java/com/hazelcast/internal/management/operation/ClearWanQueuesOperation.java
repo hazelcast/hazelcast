@@ -16,9 +16,9 @@
 
 package com.hazelcast.internal.management.operation;
 
-import com.hazelcast.spi.AbstractLocalOperation;
-import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.wan.WanReplicationService;
+import com.hazelcast.spi.impl.operationservice.AbstractLocalOperation;
+import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.wan.impl.WanReplicationService;
 
 /**
  * Clear WAN replication queues for the given wan replication schema and publisher
@@ -37,6 +37,6 @@ public class ClearWanQueuesOperation extends AbstractLocalOperation {
     public void run() throws Exception {
         NodeEngine nodeEngine = getNodeEngine();
         WanReplicationService wanReplicationService = nodeEngine.getWanReplicationService();
-        wanReplicationService.clearQueues(schemeName, publisherName);
+        wanReplicationService.removeWanEvents(schemeName, publisherName);
     }
 }

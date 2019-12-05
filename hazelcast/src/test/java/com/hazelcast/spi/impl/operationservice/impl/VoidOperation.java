@@ -18,8 +18,8 @@ package com.hazelcast.spi.impl.operationservice.impl;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.PartitionAwareOperation;
+import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.spi.impl.operationservice.PartitionAwareOperation;
 
 import java.io.IOException;
 
@@ -33,10 +33,10 @@ class VoidOperation extends Operation implements PartitionAwareOperation {
 
     private long durationMs;
 
-    public VoidOperation() {
+    VoidOperation() {
     }
 
-    public VoidOperation(long durationMs) {
+    VoidOperation(long durationMs) {
         this.durationMs = durationMs;
     }
 

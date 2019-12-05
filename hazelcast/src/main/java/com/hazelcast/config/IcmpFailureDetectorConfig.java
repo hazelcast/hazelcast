@@ -16,15 +16,15 @@
 
 package com.hazelcast.config;
 
-import static com.hazelcast.util.Preconditions.checkNotNegative;
-import static com.hazelcast.util.Preconditions.checkPositive;
+import static com.hazelcast.internal.util.Preconditions.checkNotNegative;
+import static com.hazelcast.internal.util.Preconditions.checkPositive;
 import static java.lang.String.format;
 
 /**
- * This Failure Detector may be configured in addition to one of Deadline and Phi Accual Failure Detectors.<br/>
- * It operates at Layer 3 of the OSI protocol, and provides much quicker and more deterministic detection of hardware<br/>
- * and other lower level events. This detector may be configured to perform an extra check after a member is suspected by one<br/>
- * of the other detectors, or it can work in parallel, which is the default. This way hardware and network level issues<br/>
+ * This Failure Detector may be configured in addition to one of Deadline and Phi Accual Failure Detectors.<br>
+ * It operates at Layer 3 of the OSI protocol, and provides much quicker and more deterministic detection of hardware<br>
+ * and other lower level events. This detector may be configured to perform an extra check after a member is suspected by one<br>
+ * of the other detectors, or it can work in parallel, which is the default. This way hardware and network level issues<br>
  * will be detected more quickly.
  *
  * <p>This failure detector is based on InetAddress.isReachable().
@@ -114,7 +114,8 @@ public class IcmpFailureDetectorConfig {
      */
     public IcmpFailureDetectorConfig setIntervalMilliseconds(int intervalMilliseconds) {
         if (intervalMilliseconds < MIN_INTERVAL_MILLIS) {
-            throw new ConfigurationException(format("Interval can't be set to less than %d milliseconds.", MIN_INTERVAL_MILLIS));
+            throw new InvalidConfigurationException(format("Interval can't be set to less than %d milliseconds.",
+                    MIN_INTERVAL_MILLIS));
         }
 
         this.intervalMilliseconds = intervalMilliseconds;

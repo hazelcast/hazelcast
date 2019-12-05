@@ -16,16 +16,13 @@
 
 package com.hazelcast.config;
 
-import com.hazelcast.spi.annotation.Beta;
-
 /**
  * Configures the replication mechanism for all
- * {@link com.hazelcast.crdt.CRDT} implementations.
+ * {@link com.hazelcast.internal.crdt.CRDT} implementations.
  * The CRDT states are replicated in rounds (the period is configurable)
  * and in each round the state is replicated up to the configured number
  * of members.
  */
-@Beta
 public class CRDTReplicationConfig {
     /**
      * The default period between two CRDT replication rounds.
@@ -63,7 +60,7 @@ public class CRDTReplicationConfig {
      */
     public CRDTReplicationConfig setReplicationPeriodMillis(int replicationPeriodMillis) {
         if (replicationPeriodMillis <= 0) {
-            throw new ConfigurationException("The value of replicationPeriodMillis must be a non-null positive integer");
+            throw new InvalidConfigurationException("The value of replicationPeriodMillis must be a non-null positive integer");
         }
         this.replicationPeriodMillis = replicationPeriodMillis;
         return this;
@@ -90,7 +87,8 @@ public class CRDTReplicationConfig {
      */
     public CRDTReplicationConfig setMaxConcurrentReplicationTargets(int maxConcurrentReplicationTargets) {
         if (maxConcurrentReplicationTargets <= 0) {
-            throw new ConfigurationException("The value of maxConcurrentReplicationTargets must be a non-null positive integer");
+            throw new InvalidConfigurationException("The value of maxConcurrentReplicationTargets must be a non-null"
+                    + " positive integer");
         }
         this.maxConcurrentReplicationTargets = maxConcurrentReplicationTargets;
         return this;

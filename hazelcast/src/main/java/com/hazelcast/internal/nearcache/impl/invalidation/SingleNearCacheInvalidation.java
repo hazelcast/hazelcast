@@ -16,6 +16,7 @@
 
 package com.hazelcast.internal.nearcache.impl.invalidation;
 
+import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -35,7 +36,7 @@ public class SingleNearCacheInvalidation extends Invalidation {
     public SingleNearCacheInvalidation() {
     }
 
-    public SingleNearCacheInvalidation(Data key, String dataStructureName, String sourceUuid,
+    public SingleNearCacheInvalidation(Data key, String dataStructureName, UUID sourceUuid,
                                        UUID partitionUuid, long sequence) {
         super(dataStructureName, sourceUuid, partitionUuid, sequence);
         // key can be null when null it means this event is a clear event.
@@ -50,13 +51,13 @@ public class SingleNearCacheInvalidation extends Invalidation {
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         super.writeData(out);
-        out.writeData(key);
+        IOUtil.writeData(out, key);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         super.readData(in);
-        key = in.readData();
+        key = IOUtil.readData(in);
     }
 
     @Override
@@ -68,7 +69,7 @@ public class SingleNearCacheInvalidation extends Invalidation {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return NEAR_CACHE_SINGLE_INVALIDATION;
     }
 }

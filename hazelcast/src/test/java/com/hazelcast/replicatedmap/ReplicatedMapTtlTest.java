@@ -17,7 +17,6 @@
 package com.hazelcast.replicatedmap;
 
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.ReplicatedMap;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapProxy;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
 import com.hazelcast.replicatedmap.impl.record.AbstractBaseReplicatedRecordStore;
@@ -25,7 +24,7 @@ import com.hazelcast.replicatedmap.impl.record.ReplicatedRecordStore;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.SlowTest;
-import com.hazelcast.util.scheduler.SecondsBasedEntryTaskScheduler;
+import com.hazelcast.internal.util.scheduler.SecondsBasedEntryTaskScheduler;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -36,7 +35,7 @@ import java.util.List;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
 
-import static org.junit.Assert.assertEquals;
+import static junit.framework.TestCase.assertTrue;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(SlowTest.class)
@@ -168,9 +167,9 @@ public class ReplicatedMapTtlTest extends ReplicatedMapAbstractTest {
         ReplicatedMapService service = (ReplicatedMapService) replicatedMapProxy.getService();
         Collection<ReplicatedRecordStore> stores = service.getAllReplicatedRecordStores(mapName);
         for (ReplicatedRecordStore store : stores) {
-            assertEquals(0,
+            assertTrue(
                     ((SecondsBasedEntryTaskScheduler) ((AbstractBaseReplicatedRecordStore) store)
-                            .getTtlEvictionScheduler()).size());
+                            .getTtlEvictionScheduler()).isEmpty());
         }
     }
 }

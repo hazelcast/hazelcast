@@ -15,6 +15,7 @@
  */
 
 package com.hazelcast.config;
+
 /**
  * Eviction Policy enum.
  */
@@ -22,17 +23,33 @@ public enum EvictionPolicy {
     /**
      * Least Recently Used
      */
-    LRU,
+    LRU(0),
     /**
      * Least Frequently Used
      */
-    LFU,
+    LFU(1),
     /**
      * None
      */
-    NONE,
+    NONE(2),
     /**
      * Randomly
      */
-    RANDOM
+    RANDOM(3);
+
+    private static final EvictionPolicy[] VALUES = values();
+
+    private final int id;
+
+    EvictionPolicy(int id) {
+        this.id = id;
+    }
+
+    public int getId() {
+        return id;
+    }
+
+    public static EvictionPolicy getById(int id) {
+        return VALUES[id];
+    }
 }

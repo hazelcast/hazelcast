@@ -23,24 +23,24 @@ package com.hazelcast.query.impl;
  *
  * Why is it needed? In order to support correctness the internal data-structures used by indexes need to do some copying.
  * The copying may take place on-read or on-write:
- *
- * -> Copying on-read means that each index-read operation will copy the result of the query before returning it to the caller.
+ * <p>
+ * -&gt; Copying on-read means that each index-read operation will copy the result of the query before returning it to the caller.
  * This copying may be expensive, depending on the size of the result, since the result is stored in a map, which means
  * that all entries need to have the hash calculated before being stored in a bucket.
  * Each index-write operation however will be fast, since there will be no copying taking place.
- *
- * -> Copying on-write means that each index-write operation will completely copy the underlying map to provide the
+ * <p>
+ * -&gt; Copying on-write means that each index-write operation will completely copy the underlying map to provide the
  * copy-on-write semantics. Depending on the index size, it may be a very expensive operation.
  * Each index-read operation will be very fast, however, since it may just access the map and return it to the caller.
- *
- * -> Never copying is tricky. It means that the internal data structures of the index are concurrently modified without
+ * <p>
+ * -&gt; Never copying is tricky. It means that the internal data structures of the index are concurrently modified without
  * copy-on-write semantics. Index reads never copy the results of a query to a separate map.
  * It means that the results backed by the underlying index-map can change after the query has been executed.
  * Specifically an entry might have been added / removed from an index, or it might have been remapped.
  * Should be used in cases when a the caller expects "mostly correct" results - specifically, if it's ok
  * if some entries returned in the result set do not match the initial query criteria.
  * The fastest solution for read and writes, since no copying takes place.
- *
+ * <p>
  * It's a tuneable trade-off - the user may decide.
  */
 public enum IndexCopyBehavior {

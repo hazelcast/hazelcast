@@ -16,41 +16,34 @@
 
 package com.hazelcast.map.impl.mapstore.writebehind;
 
-import com.hazelcast.map.ReachedMaxSizeException;
+import com.hazelcast.map.impl.mapstore.writebehind.entry.DelayedEntry;
 
 import java.util.Collection;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicInteger;
-
-import static java.lang.String.format;
 
 /**
- * A bounded queue which throws {@link com.hazelcast.map.ReachedMaxSizeException}
- * when it exceeds max size. Used when non-write-coalescing mode is on.
- * <p/>
- * Note that this {@link WriteBehindQueue} implementation is not thread-safe. When it is in action, thread-safe access
- * will be provided by wrapping it in a {@link SynchronizedWriteBehindQueue}
+ * A bounded queue which throws {@link
+ * com.hazelcast.map.ReachedMaxSizeException} when it exceeds
+ * max size. Used when non-write-coalescing mode is on.
+ * <p>
+ * Note that this {@link WriteBehindQueue} implementation is not
+ * thread-safe. When it is in action, thread-safe access will be
+ * provided by wrapping it in a {@link SynchronizedWriteBehindQueue}
  *
  * @see SynchronizedWriteBehindQueue
  */
-class BoundedWriteBehindQueue<E> implements WriteBehindQueue<E> {
+class BoundedWriteBehindQueue<E extends DelayedEntry> implements WriteBehindQueue<E> {
 
-    /**
-     * Per node write behind queue item counter.
-     */
-    private final AtomicInteger writeBehindQueueItemCounter;
-
-    /**
-     * Allowed max capacity per node which is used to provide back-pressure.
-     */
-    private final int maxCapacity;
+    final NodeWideUsedCapacityCounter nodeWideUsedCapacityCounter;
 
     private final WriteBehindQueue<E> queue;
+    private final TxnReservedCapacityCounter txnReservedCapacityCounter;
 
-    BoundedWriteBehindQueue(int maxCapacity, AtomicInteger writeBehindQueueItemCounter, WriteBehindQueue<E> queue) {
-        this.maxCapacity = maxCapacity;
-        this.writeBehindQueueItemCounter = writeBehindQueueItemCounter;
+    BoundedWriteBehindQueue(WriteBehindQueue<E> queue,
+                            NodeWideUsedCapacityCounter nodeWideUsedCapacityCounter) {
         this.queue = queue;
+        this.nodeWideUsedCapacityCounter = nodeWideUsedCapacityCounter;
+        this.txnReservedCapacityCounter = new TxnReservedCapacityCounterImpl(nodeWideUsedCapacityCounter);
     }
 
     /**
@@ -67,15 +60,19 @@ class BoundedWriteBehindQueue<E> implements WriteBehindQueue<E> {
         queue.addFirst(collection);
     }
 
-    /**
-     * Inserts to the end of this queue.
-     *
-     * @param e element to be offered
-     */
     @Override
-    public void addLast(E e) {
-        addCapacity(1);
-        queue.addLast(e);
+    public void addLast(E e, boolean addWithoutCapacityCheck) {
+        if (e.getTxnId() != null && txnReservedCapacityCounter.hasReservedCapacity(e.getTxnId())) {
+            txnReservedCapacityCounter.decrementOnlyReserved(e.getTxnId());
+        } else {
+            if (addWithoutCapacityCheck) {
+                nodeWideUsedCapacityCounter.add(1);
+            } else {
+                nodeWideUsedCapacityCounter.checkAndAddCapacityOrThrowException(1);
+            }
+        }
+
+        queue.addLast(e, addWithoutCapacityCheck);
     }
 
     @Override
@@ -142,6 +139,7 @@ class BoundedWriteBehindQueue<E> implements WriteBehindQueue<E> {
         int size = size();
         queue.clear();
         addCapacity(-size);
+        txnReservedCapacityCounter.releaseAllReservations();
     }
 
     /**
@@ -159,48 +157,19 @@ class BoundedWriteBehindQueue<E> implements WriteBehindQueue<E> {
         queue.filter(predicate, collection);
     }
 
-    /**
-     * Increments or decrements node-wide {@link WriteBehindQueue} capacity according to the given value.
-     * Throws {@link ReachedMaxSizeException} when node-wide maximum capacity which is stated by the variable
-     * {@link #maxCapacity} is exceeded.
-     *
-     * @param capacity capacity to be added or subtracted.
-     * @throws ReachedMaxSizeException
-     */
+    @Override
+    public <T> T unwrap(Class<T> clazz) {
+        if (this.getClass().isAssignableFrom(clazz)) {
+            return (T) this;
+        }
+        return queue.unwrap(clazz);
+    }
+
+    public TxnReservedCapacityCounter getTxnReservedCapacityCounter() {
+        return txnReservedCapacityCounter;
+    }
+
     private void addCapacity(int capacity) {
-        int maxCapacity = this.maxCapacity;
-        AtomicInteger writeBehindQueueItemCounter = this.writeBehindQueueItemCounter;
-
-        int currentCapacity = writeBehindQueueItemCounter.get();
-        int newCapacity = currentCapacity + capacity;
-
-        if (newCapacity < 0) {
-            return;
-        }
-
-        if (maxCapacity < newCapacity) {
-            throwException(currentCapacity, maxCapacity, capacity);
-        }
-
-        while (!writeBehindQueueItemCounter.compareAndSet(currentCapacity, newCapacity)) {
-            currentCapacity = writeBehindQueueItemCounter.get();
-            newCapacity = currentCapacity + capacity;
-
-            if (newCapacity < 0) {
-                return;
-            }
-
-            if (maxCapacity < newCapacity) {
-                throwException(currentCapacity, maxCapacity, capacity);
-            }
-        }
+        nodeWideUsedCapacityCounter.checkAndAddCapacityOrThrowException(capacity);
     }
-
-    private void throwException(int currentCapacity, int maxSize, int requiredCapacity) {
-        final String msg = format("Reached node-wide max capacity for write-behind-stores. Max allowed capacity = [%d],"
-                        + " current capacity = [%d], required capacity = [%d]",
-                maxSize, currentCapacity, requiredCapacity);
-        throw new ReachedMaxSizeException(msg);
-    }
-
 }

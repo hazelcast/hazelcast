@@ -18,8 +18,8 @@ package com.hazelcast.scheduledexecutor.impl;
 
 import com.hazelcast.config.ScheduledExecutorConfig;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.util.ConstructorFunction;
+import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.internal.util.ConstructorFunction;
 
 public class ScheduledExecutorMemberBin
         extends AbstractScheduledExecutorContainerHolder {

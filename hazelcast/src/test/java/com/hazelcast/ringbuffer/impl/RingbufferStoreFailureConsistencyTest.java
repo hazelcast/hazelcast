@@ -21,15 +21,14 @@ import com.hazelcast.config.RingbufferConfig;
 import com.hazelcast.config.RingbufferStoreConfig;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.ICompletableFuture;
-import com.hazelcast.core.Partition;
-import com.hazelcast.core.RingbufferStore;
+import com.hazelcast.partition.Partition;
 import com.hazelcast.ringbuffer.OverflowPolicy;
 import com.hazelcast.ringbuffer.Ringbuffer;
+import com.hazelcast.ringbuffer.RingbufferStore;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
 import org.junit.Test;
@@ -37,7 +36,9 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 
+import java.util.UUID;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 
 import static com.google.common.collect.Lists.newArrayList;
 import static com.hazelcast.config.InMemoryFormat.OBJECT;
@@ -49,7 +50,7 @@ import static org.mockito.Mockito.doThrow;
 import static org.mockito.MockitoAnnotations.initMocks;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class RingbufferStoreFailureConsistencyTest extends HazelcastTestSupport {
 
     private static final String RINGBUFFER_NAME = "testRingbuffer";
@@ -120,9 +121,9 @@ public class RingbufferStoreFailureConsistencyTest extends HazelcastTestSupport 
         long seqTwo = seqInit;
         doThrow(new IllegalStateException("Expected test exception")).when(store).store(seqInit + 2, TWO);
 
-        ICompletableFuture<Long> seqOneFuture = ringbufferPrimary.addAsync(ONE, OverflowPolicy.OVERWRITE);
-        ICompletableFuture<Long> seqTwoFuture = ringbufferPrimary.addAsync(TWO, OverflowPolicy.OVERWRITE);
-        ICompletableFuture<Long> seqThreeFuture = ringbufferPrimary.addAsync(THREE, OverflowPolicy.OVERWRITE);
+        Future<Long> seqOneFuture = ringbufferPrimary.addAsync(ONE, OverflowPolicy.OVERWRITE).toCompletableFuture();
+        Future<Long> seqTwoFuture = ringbufferPrimary.addAsync(TWO, OverflowPolicy.OVERWRITE).toCompletableFuture();
+        Future<Long> seqThreeFuture = ringbufferPrimary.addAsync(THREE, OverflowPolicy.OVERWRITE).toCompletableFuture();
 
         long seqOne = seqOneFuture.get();
         try {
@@ -144,7 +145,8 @@ public class RingbufferStoreFailureConsistencyTest extends HazelcastTestSupport 
         doThrow(new IllegalStateException("Expected test exception")).when(store).storeAll(eq(seqFirstItem),
                 (String[]) any(Object[].class));
 
-        ICompletableFuture<Long> result = ringbufferPrimary.addAllAsync(newArrayList(ONE, TWO, THREE), OverflowPolicy.FAIL);
+        Future<Long> result = ringbufferPrimary.addAllAsync(newArrayList(ONE, TWO, THREE), OverflowPolicy.FAIL)
+                                               .toCompletableFuture();
         try {
             result.get();
         } catch (ExecutionException expected) {
@@ -159,15 +161,15 @@ public class RingbufferStoreFailureConsistencyTest extends HazelcastTestSupport 
 
     private HazelcastInstance getPrimaryInstance(HazelcastInstance instance, HazelcastInstance instance2) {
         Partition primaryPartition = instance.getPartitionService().getPartition(RINGBUFFER_NAME);
-        String primaryInstanceUuid = primaryPartition.getOwner().getUuid();
-        String instanceOneUuid = instance.getCluster().getLocalMember().getUuid();
+        UUID primaryInstanceUuid = primaryPartition.getOwner().getUuid();
+        UUID instanceOneUuid = instance.getCluster().getLocalMember().getUuid();
         return primaryInstanceUuid.equals(instanceOneUuid) ? instance : instance2;
     }
 
     private HazelcastInstance getBackupInstance(HazelcastInstance instance, HazelcastInstance instance2) {
         Partition primaryPartition = instance.getPartitionService().getPartition(RINGBUFFER_NAME);
-        String primaryInstanceUuid = primaryPartition.getOwner().getUuid();
-        String instanceOneUuid = instance.getCluster().getLocalMember().getUuid();
+        UUID primaryInstanceUuid = primaryPartition.getOwner().getUuid();
+        UUID instanceOneUuid = instance.getCluster().getLocalMember().getUuid();
         return primaryInstanceUuid.equals(instanceOneUuid) ? instance2 : instance;
     }
 

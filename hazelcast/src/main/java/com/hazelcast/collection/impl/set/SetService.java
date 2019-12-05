@@ -22,18 +22,18 @@ import com.hazelcast.collection.impl.set.operations.SetReplicationOperation;
 import com.hazelcast.collection.impl.txnset.TransactionalSetProxy;
 import com.hazelcast.config.SetConfig;
 import com.hazelcast.core.DistributedObject;
-import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.PartitionReplicationEvent;
+import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.internal.partition.PartitionReplicationEvent;
+import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.transaction.impl.Transaction;
-import com.hazelcast.util.ConstructorFunction;
-import com.hazelcast.util.ContextMutexFactory;
+import com.hazelcast.internal.util.ConstructorFunction;
+import com.hazelcast.internal.util.ContextMutexFactory;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
-import static com.hazelcast.util.ConcurrencyUtil.getOrPutSynchronized;
+import static com.hazelcast.internal.util.ConcurrencyUtil.getOrPutSynchronized;
 
 public class SetService extends CollectionService {
 
@@ -43,14 +43,15 @@ public class SetService extends CollectionService {
 
     private final ConcurrentMap<String, SetContainer> containerMap = new ConcurrentHashMap<String, SetContainer>();
 
-    private final ConcurrentMap<String, Object> quorumConfigCache = new ConcurrentHashMap<String, Object>();
-    private final ContextMutexFactory quorumConfigCacheMutexFactory = new ContextMutexFactory();
-    private final ConstructorFunction<String, Object> quorumConfigConstructor = new ConstructorFunction<String, Object>() {
+    private final ConcurrentMap<String, Object> splitBrainProtectionConfigCache = new ConcurrentHashMap<String, Object>();
+    private final ContextMutexFactory splitBrainProtectionConfigCacheMutexFactory = new ContextMutexFactory();
+    private final ConstructorFunction<String, Object> splitBrainProtectionConfigConstructor
+            = new ConstructorFunction<String, Object>() {
         @Override
         public Object createNew(String name) {
             SetConfig lockConfig = nodeEngine.getConfig().findSetConfig(name);
-            String quorumName = lockConfig.getQuorumName();
-            return quorumName == null ? NULL_OBJECT : quorumName;
+            String splitBrainProtectionName = lockConfig.getSplitBrainProtectionName();
+            return splitBrainProtectionName == null ? NULL_OBJECT : splitBrainProtectionName;
         }
     };
 
@@ -82,14 +83,14 @@ public class SetService extends CollectionService {
     }
 
     @Override
-    public DistributedObject createDistributedObject(String objectId) {
+    public DistributedObject createDistributedObject(String objectId, boolean local) {
         return new SetProxyImpl(objectId, nodeEngine, this);
     }
 
     @Override
-    public void destroyDistributedObject(String name) {
-        super.destroyDistributedObject(name);
-        quorumConfigCache.remove(name);
+    public void destroyDistributedObject(String name, boolean local) {
+        super.destroyDistributedObject(name, local);
+        splitBrainProtectionConfigCache.remove(name);
     }
 
     @Override
@@ -106,9 +107,9 @@ public class SetService extends CollectionService {
     }
 
     @Override
-    public String getQuorumName(final String name) {
-        Object quorumName = getOrPutSynchronized(quorumConfigCache, name, quorumConfigCacheMutexFactory,
-                quorumConfigConstructor);
-        return quorumName == NULL_OBJECT ? null : (String) quorumName;
+    public String getSplitBrainProtectionName(final String name) {
+        Object splitBrainProtectionName = getOrPutSynchronized(splitBrainProtectionConfigCache, name,
+                splitBrainProtectionConfigCacheMutexFactory, splitBrainProtectionConfigConstructor);
+        return splitBrainProtectionName == NULL_OBJECT ? null : (String) splitBrainProtectionName;
     }
 }

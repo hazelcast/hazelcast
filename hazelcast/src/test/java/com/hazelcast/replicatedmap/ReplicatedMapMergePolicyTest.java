@@ -21,14 +21,13 @@ import com.hazelcast.config.ReplicatedMapConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.LifecycleEvent;
 import com.hazelcast.core.LifecycleListener;
-import com.hazelcast.core.ReplicatedMap;
-import com.hazelcast.replicatedmap.merge.HigherHitsMapMergePolicy;
-import com.hazelcast.replicatedmap.merge.LatestUpdateMapMergePolicy;
-import com.hazelcast.replicatedmap.merge.PassThroughMergePolicy;
-import com.hazelcast.replicatedmap.merge.PutIfAbsentMapMergePolicy;
-import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.spi.merge.HigherHitsMergePolicy;
+import com.hazelcast.spi.merge.LatestUpdateMergePolicy;
+import com.hazelcast.spi.merge.PassThroughMergePolicy;
+import com.hazelcast.spi.merge.PutIfAbsentMergePolicy;
+import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.AssertTask;
-import com.hazelcast.test.HazelcastParametersRunnerFactory;
+import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.NightlyTest;
@@ -53,7 +52,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
 @RunWith(Parameterized.class)
-@UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
+@UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
 @Category(NightlyTest.class)
 public class ReplicatedMapMergePolicyTest extends HazelcastTestSupport {
 
@@ -119,11 +118,11 @@ public class ReplicatedMapMergePolicyTest extends HazelcastTestSupport {
 
     private Config newConfig(String mergePolicy, String mapName) {
         Config config = new Config();
-        config.setProperty(GroupProperty.MERGE_FIRST_RUN_DELAY_SECONDS.getName(), "5");
-        config.setProperty(GroupProperty.MERGE_NEXT_RUN_DELAY_SECONDS.getName(), "3");
-        config.getGroupConfig().setName(generateRandomString(10));
+        config.setProperty(ClusterProperty.MERGE_FIRST_RUN_DELAY_SECONDS.getName(), "5");
+        config.setProperty(ClusterProperty.MERGE_NEXT_RUN_DELAY_SECONDS.getName(), "3");
+        config.setClusterName(generateRandomString(10));
         ReplicatedMapConfig replicatedMapConfig = config.getReplicatedMapConfig(mapName);
-        replicatedMapConfig.setMergePolicy(mergePolicy);
+        replicatedMapConfig.getMergePolicyConfig().setPolicy(mergePolicy);
         return config;
     }
 
@@ -176,7 +175,7 @@ public class ReplicatedMapMergePolicyTest extends HazelcastTestSupport {
 
         @Override
         public String getMergePolicyClassName() {
-            return LatestUpdateMapMergePolicy.class.getName();
+            return LatestUpdateMergePolicy.class.getName();
         }
 
         @Override
@@ -210,7 +209,7 @@ public class ReplicatedMapMergePolicyTest extends HazelcastTestSupport {
 
         @Override
         public String getMergePolicyClassName() {
-            return HigherHitsMapMergePolicy.class.getName();
+            return HigherHitsMergePolicy.class.getName();
         }
 
         @Override
@@ -237,7 +236,7 @@ public class ReplicatedMapMergePolicyTest extends HazelcastTestSupport {
 
         @Override
         public String getMergePolicyClassName() {
-            return PutIfAbsentMapMergePolicy.class.getName();
+            return PutIfAbsentMergePolicy.class.getName();
         }
 
         @Override

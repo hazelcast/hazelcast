@@ -17,9 +17,10 @@
 package com.hazelcast.config;
 
 import java.io.File;
+import java.util.Objects;
 
-import static com.hazelcast.util.Preconditions.checkNotNull;
-import static com.hazelcast.util.Preconditions.checkPositive;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.Preconditions.checkPositive;
 
 /**
  * Configures the Hot Restart stores.
@@ -62,6 +63,7 @@ public class HotRestartPersistenceConfig {
     private HotRestartClusterDataRecoveryPolicy clusterDataRecoveryPolicy
             = HotRestartClusterDataRecoveryPolicy.FULL_RECOVERY_ONLY;
     private boolean autoRemoveStaleData = true;
+    private EncryptionAtRestConfig encryptionAtRestConfig = new EncryptionAtRestConfig();
 
     /**
      * Returns whether hot restart enabled on this member.
@@ -230,6 +232,25 @@ public class HotRestartPersistenceConfig {
         return this;
     }
 
+    /**
+     * Sets the Hot Restart Encryption at Rest configuration.
+     * @param encryptionAtRestConfig the Encryption at Rest configuration
+     * @return HotRestartPersistenceConfig§
+     */
+    public HotRestartPersistenceConfig setEncryptionAtRestConfig(EncryptionAtRestConfig encryptionAtRestConfig) {
+        checkNotNull(encryptionAtRestConfig, "Encryption at rest config cannot be null!");
+        this.encryptionAtRestConfig = encryptionAtRestConfig;
+        return this;
+    }
+
+    /**
+     * Returns the Hot Restart Encryption at Rest configuration.
+     * @return the Encryption at Rest configuration
+     */
+    public EncryptionAtRestConfig getEncryptionAtRestConfig() {
+        return encryptionAtRestConfig;
+    }
+
     @Override
     @SuppressWarnings("checkstyle:npathcomplexity")
     public final boolean equals(Object o) {
@@ -256,10 +277,13 @@ public class HotRestartPersistenceConfig {
         if (autoRemoveStaleData != that.autoRemoveStaleData) {
             return false;
         }
-        if (baseDir != null ? !baseDir.equals(that.baseDir) : that.baseDir != null) {
+        if (!Objects.equals(baseDir, that.baseDir)) {
             return false;
         }
-        if (backupDir != null ? !backupDir.equals(that.backupDir) : that.backupDir != null) {
+        if (!Objects.equals(backupDir, that.backupDir)) {
+            return false;
+        }
+        if (!Objects.equals(encryptionAtRestConfig, that.encryptionAtRestConfig)) {
             return false;
         }
         return clusterDataRecoveryPolicy == that.clusterDataRecoveryPolicy;
@@ -270,11 +294,27 @@ public class HotRestartPersistenceConfig {
         int result = (enabled ? 1 : 0);
         result = 31 * result + (baseDir != null ? baseDir.hashCode() : 0);
         result = 31 * result + (backupDir != null ? backupDir.hashCode() : 0);
+        result = 31 * result + (encryptionAtRestConfig != null ? encryptionAtRestConfig.hashCode() : 0);
         result = 31 * result + parallelism;
         result = 31 * result + validationTimeoutSeconds;
         result = 31 * result + dataLoadTimeoutSeconds;
         result = 31 * result + (clusterDataRecoveryPolicy != null ? clusterDataRecoveryPolicy.hashCode() : 0);
         result = 31 * result + (autoRemoveStaleData ? 1 : 0);
         return result;
+    }
+
+    @Override
+    public String toString() {
+        return "HotRestartPersistenceConfig{"
+                + "enabled=" + enabled
+                + ", baseDir=" + baseDir
+                + ", backupDir=" + backupDir
+                + ", parallelism=" + parallelism
+                + ", validationTimeoutSeconds=" + validationTimeoutSeconds
+                + ", dataLoadTimeoutSeconds=" + dataLoadTimeoutSeconds
+                + ", clusterDataRecoveryPolicy=" + clusterDataRecoveryPolicy
+                + ", autoRemoveStaleData=" + autoRemoveStaleData
+                + ", encryptionAtRestConfig=" + encryptionAtRestConfig
+                + '}';
     }
 }

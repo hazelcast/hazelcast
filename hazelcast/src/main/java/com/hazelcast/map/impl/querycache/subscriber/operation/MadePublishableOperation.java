@@ -21,21 +21,23 @@ import com.hazelcast.logging.Logger;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
-import com.hazelcast.map.impl.operation.MapOperation;
 import com.hazelcast.map.impl.querycache.QueryCacheContext;
 import com.hazelcast.map.impl.querycache.accumulator.AccumulatorInfo;
 import com.hazelcast.map.impl.querycache.publisher.PartitionAccumulatorRegistry;
 import com.hazelcast.map.impl.querycache.utils.QueryCacheUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.spi.impl.operationservice.AbstractNamedOperation;
 
 import java.io.IOException;
 
 /**
  * Sets {@link AccumulatorInfo#publishable} to {@code true}.
- * After enabling that, accumulators becomes available to send events in their buffers to subscriber-side.
+ *
+ * After enabling that, accumulators becomes available
+ * to send events in their buffers to subscriber-side.
  */
-public class MadePublishableOperation extends MapOperation {
+public class MadePublishableOperation extends AbstractNamedOperation {
 
     private final ILogger logger = Logger.getLogger(getClass());
 
@@ -52,12 +54,13 @@ public class MadePublishableOperation extends MapOperation {
     }
 
     @Override
-    public void run() throws Exception {
+    public void run() {
         setPublishable();
     }
 
     private void setPublishable() {
-        PartitionAccumulatorRegistry registry = QueryCacheUtil.getAccumulatorRegistryOrNull(getContext(), name, cacheId);
+        PartitionAccumulatorRegistry registry
+                = QueryCacheUtil.getAccumulatorRegistryOrNull(getContext(), name, cacheId);
         if (registry == null) {
             return;
         }
@@ -101,7 +104,7 @@ public class MadePublishableOperation extends MapOperation {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MapDataSerializerHook.MADE_PUBLISHABLE;
     }
 }

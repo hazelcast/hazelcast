@@ -19,25 +19,26 @@ package com.hazelcast.test.starter.test;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.instance.HazelcastInstanceImpl;
-import com.hazelcast.instance.Node;
-import com.hazelcast.instance.TestUtil;
+import com.hazelcast.instance.impl.HazelcastInstanceImpl;
+import com.hazelcast.instance.impl.Node;
+import com.hazelcast.instance.impl.TestUtil;
 import com.hazelcast.internal.partition.TestPartitionUtils;
 import com.hazelcast.internal.partition.impl.PartitionServiceState;
-import com.hazelcast.nio.tcp.FirewallingConnectionManager;
-import com.hazelcast.nio.tcp.TcpIpConnectionManager;
+import com.hazelcast.internal.nio.tcp.FirewallingNetworkingService;
+import com.hazelcast.internal.nio.tcp.TcpIpNetworkingService;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.SlowTest;
 import com.hazelcast.test.starter.HazelcastStarter;
 import org.junit.After;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.io.File;
 
-import static com.hazelcast.instance.TestUtil.terminateInstance;
+import static com.hazelcast.instance.impl.TestUtil.terminateInstance;
 import static com.hazelcast.test.HazelcastTestSupport.assertInstanceOf;
 import static com.hazelcast.test.HazelcastTestSupport.ignore;
 import static org.junit.Assert.assertEquals;
@@ -47,6 +48,7 @@ import static org.junit.Assert.fail;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(SlowTest.class)
+@Ignore("To be enabled in 4.1 with 4.x instances - see https://github.com/hazelcast/hazelcast/issues/15263")
 public class HazelcastStarterTest {
 
     private HazelcastInstance hz;
@@ -81,17 +83,17 @@ public class HazelcastStarterTest {
     /**
      * Hazelcast 3.9 knows the {@link FirewallingConnectionManager}.
      */
+    // reason for ignore: The ConnectionManager interface got replaced
+    // by EndpointManager and NetworkingService in 3.12. This test is
+    // supposed to verify behavior for split-brain compatibility tests
+    // that needs a considerable effort to adapt
+    // FirewallingConnectionManager to 3.12's NetworkingService. This test
+    // therefore got ignored until the decisions is made whether or not
+    // to support split-brain compatibility tests with the recent changes.
+    @Ignore
     @Test
     public void testMemberWithConfig_withFirewallingConnectionManager() {
         testMemberWithConfig("3.9", true);
-    }
-
-    /**
-     * Hazelcast 3.7 doesn't know the {@link FirewallingConnectionManager}.
-     */
-    @Test
-    public void testMemberWithConfig_withoutFirewallingConnectionManager() {
-        testMemberWithConfig("3.7", false);
     }
 
     private void testMemberWithConfig(String version, boolean supportsFirewallingConnectionManager) {
@@ -106,9 +108,9 @@ public class HazelcastStarterTest {
         assertEquals("Expected the same address from HazelcastInstance and Node",
                 hz.getCluster().getLocalMember().getAddress(), node.getThisAddress());
         if (supportsFirewallingConnectionManager) {
-            assertInstanceOf(FirewallingConnectionManager.class, node.getConnectionManager());
+            assertInstanceOf(FirewallingNetworkingService.class, node.getNetworkingService());
         } else {
-            assertInstanceOf(TcpIpConnectionManager.class, node.getConnectionManager());
+            assertInstanceOf(TcpIpNetworkingService.class, node.getNetworkingService());
         }
     }
 

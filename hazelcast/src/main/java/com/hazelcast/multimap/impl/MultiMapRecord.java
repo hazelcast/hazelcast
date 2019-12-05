@@ -16,7 +16,7 @@
 
 package com.hazelcast.multimap.impl;
 
-import com.hazelcast.nio.IOUtil;
+import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
@@ -66,10 +66,7 @@ public class MultiMapRecord implements IdentifiedDataSerializable {
         }
 
         MultiMapRecord record = (MultiMapRecord) o;
-        if (!object.equals(record.object)) {
-            return false;
-        }
-        return true;
+        return object.equals(record.object);
     }
 
     @Override
@@ -95,7 +92,7 @@ public class MultiMapRecord implements IdentifiedDataSerializable {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MultiMapDataSerializerHook.MULTIMAP_RECORD;
     }
 }

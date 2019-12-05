@@ -16,45 +16,45 @@
 
 package com.hazelcast.map.impl.operation;
 
-import com.hazelcast.concurrent.lock.LockWaitNotifyKey;
+import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.ManagedContext;
 import com.hazelcast.core.Offloadable;
 import com.hazelcast.core.ReadOnly;
-import com.hazelcast.map.EntryBackupProcessor;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.impl.MapDataSerializerHook;
-import com.hazelcast.nio.Address;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.BackupAwareOperation;
-import com.hazelcast.spi.BlockingOperation;
-import com.hazelcast.spi.CallStatus;
-import com.hazelcast.spi.Offload;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.OperationAccessor;
-import com.hazelcast.spi.OperationResponseHandler;
-import com.hazelcast.spi.WaitNotifyKey;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
 import com.hazelcast.spi.exception.WrongTargetException;
-import com.hazelcast.spi.impl.MutatingOperation;
+import com.hazelcast.spi.impl.operationservice.BackupAwareOperation;
+import com.hazelcast.spi.impl.operationservice.BlockingOperation;
+import com.hazelcast.spi.impl.operationservice.CallStatus;
+import com.hazelcast.spi.impl.operationservice.MutatingOperation;
+import com.hazelcast.spi.impl.operationservice.Offload;
+import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.spi.impl.operationservice.OperationAccessor;
+import com.hazelcast.spi.impl.operationservice.OperationResponseHandler;
 import com.hazelcast.spi.impl.operationservice.impl.responses.CallTimeoutResponse;
-import com.hazelcast.spi.serialization.SerializationService;
-import com.hazelcast.util.Clock;
-import com.hazelcast.util.UuidUtil;
+import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.util.Clock;
+import com.hazelcast.internal.util.UuidUtil;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
+import java.util.UUID;
 
-import static com.hazelcast.config.InMemoryFormat.OBJECT;
 import static com.hazelcast.core.Offloadable.NO_OFFLOADING;
+import static com.hazelcast.internal.util.ToHeapDataConverter.toHeapData;
 import static com.hazelcast.map.impl.operation.EntryOperator.operator;
-import static com.hazelcast.spi.CallStatus.DONE_RESPONSE;
-import static com.hazelcast.spi.CallStatus.WAIT;
-import static com.hazelcast.spi.ExecutionService.OFFLOADABLE_EXECUTOR;
-import static com.hazelcast.spi.InvocationBuilder.DEFAULT_TRY_PAUSE_MILLIS;
-import static com.hazelcast.util.ExceptionUtil.sneakyThrow;
+import static com.hazelcast.spi.impl.executionservice.ExecutionService.OFFLOADABLE_EXECUTOR;
+import static com.hazelcast.spi.impl.operationservice.CallStatus.DONE_RESPONSE;
+import static com.hazelcast.spi.impl.operationservice.CallStatus.WAIT;
+import static com.hazelcast.spi.impl.operationservice.InvocationBuilder.DEFAULT_TRY_PAUSE_MILLIS;
+import static com.hazelcast.internal.util.ExceptionUtil.sneakyThrow;
 import static java.lang.String.format;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
@@ -72,7 +72,7 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
  * IMap.submitToKey(Object, EntryProcessor)
  * IMap.submitToKey(Object, EntryProcessor, ExecutionCallback)
  * <p>
- * ### Offloadable (for reading & writing)
+ * ### Offloadable (for reading &amp; writing)
  * <p>
  * If the EntryProcessor implements the Offloadable interface the processing will be offloaded to the given
  * ExecutorService allowing unblocking the partition-thread. The key will be locked for the time-span of the processing
@@ -90,9 +90,9 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
  * There will not be a conflict on a write due to the pessimistic locking of the key.
  * The threading looks as follows:
  * <p>
- * 1. partition-thread (fetch & lock)
+ * 1. partition-thread (fetch &amp; lock)
  * 2. execution-thread (process)
- * 3. partition-thread (set & unlock, or just unlock if no changes)
+ * 3. partition-thread (set &amp; unlock, or just unlock if no changes)
  * <p>
  * ### Offloadable (for reading only)
  * <p>
@@ -104,8 +104,8 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
  * - EntryOperation fetches the entry and DOES NOT lock the given key on partition-thread
  * - Then the processing is offloaded to the given executor
  * - When the processing finishes
- * if there is a change to the entry -> exception is thrown
- * if there is no change to the entry -> the result is returned to the user from the executor-thread.
+ * if there is a change to the entry -&gt; exception is thrown
+ * if there is no change to the entry -&gt; the result is returned to the user from the executor-thread.
  * <p>
  * In the read-only case the threading looks as follows:
  * <p>
@@ -119,10 +119,10 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
  * <p>
  * ### Backup partitions
  * <p>
- * Offloading will not be applied to backup partitions. It is possible to initialize the EntryBackupProcessor
+ * Offloading will not be applied to backup partitions. It is possible to initialize the entry backup processor
  * with some input provided by the EntryProcessor in the EntryProcessor.getBackupProcessor() method.
- * The input allows providing context to the EntryBackupProcessor - for example the "delta"
- * so that the EntryBackupProcessor does not have to calculate the "delta" but it may just apply it.
+ * The input allows providing context to the entry backup processor - for example the "delta"
+ * so that the entry backup processor does not have to calculate the "delta" but it may just apply it.
  * <p>
  * ### Locking
  * <p>
@@ -135,8 +135,8 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
  * GOTCHA: This operation LOADS missing keys from map-store, in contrast with PartitionWideEntryOperation.
  */
 @SuppressWarnings("checkstyle:methodcount")
-public class EntryOperation extends KeyBasedMapOperation implements BackupAwareOperation, BlockingOperation,
-        MutatingOperation {
+public class EntryOperation extends LockAwareOperation
+        implements BackupAwareOperation, BlockingOperation, MutatingOperation {
 
     private static final int SET_UNLOCK_FAST_RETRY_LIMIT = 10;
 
@@ -163,6 +163,7 @@ public class EntryOperation extends KeyBasedMapOperation implements BackupAwareO
     @Override
     public void innerBeforeRun() throws Exception {
         super.innerBeforeRun();
+
         this.begin = Clock.currentTimeMillis();
         this.readOnly = entryProcessor instanceof ReadOnly;
 
@@ -176,6 +177,9 @@ public class EntryOperation extends KeyBasedMapOperation implements BackupAwareO
         if (shouldWait()) {
             return WAIT;
         }
+        // when offloading is enabled, left disposing
+        // to EntryOffloadableSetUnlockOperation
+        disposeDeferredBlocks = !offload;
 
         if (offload) {
             return new EntryOperationOffload(getCallerAddress());
@@ -189,8 +193,8 @@ public class EntryOperation extends KeyBasedMapOperation implements BackupAwareO
     }
 
     @Override
-    public WaitNotifyKey getWaitKey() {
-        return new LockWaitNotifyKey(getServiceNamespace(), dataKey);
+    protected void runInternal() {
+        // NOP
     }
 
     @Override
@@ -208,15 +212,13 @@ public class EntryOperation extends KeyBasedMapOperation implements BackupAwareO
         //at this point we cannot offload. the entry is locked or the EP does not support offload
         //if the entry is locked by us then we can still run the EP on the partition thread
         offload = false;
-        return !recordStore.canAcquireLock(dataKey, getCallerUuid(), getThreadId());
+        return super.shouldWait();
     }
 
     private boolean isOffloadingRequested(EntryProcessor entryProcessor) {
         if (entryProcessor instanceof Offloadable) {
             String executorName = ((Offloadable) entryProcessor).getExecutorName();
-            if (!executorName.equals(NO_OFFLOADING)) {
-                return true;
-            }
+            return !executorName.equals(NO_OFFLOADING);
         }
         return false;
     }
@@ -228,17 +230,54 @@ public class EntryOperation extends KeyBasedMapOperation implements BackupAwareO
 
     @Override
     public Object getResponse() {
+        if (offload) {
+            return null;
+        }
         return response;
     }
 
     @Override
+    public boolean returnsResponse() {
+        if (offload) {
+            // This has to be false, since the operation uses the
+            // deferred-response mechanism. This method returns false, but
+            // the response will be send later on using the response handler
+            return false;
+        } else {
+            return super.returnsResponse();
+        }
+    }
+
+    @Override
+    public void onExecutionFailure(Throwable e) {
+        if (offload) {
+            // This is required since if the returnsResponse() method returns
+            // false there won't be any response sent to the invoking
+            // party - this means that the operation won't be retried if
+            // the exception is instanceof HazelcastRetryableException
+            sendResponse(e);
+        } else {
+            super.onExecutionFailure(e);
+        }
+    }
+
+    @Override
+    @SuppressFBWarnings(
+            value = {"RCN_REDUNDANT_NULLCHECK_OF_NONNULL_VALUE"},
+            justification = "backupProcessor can indeed be null so check is not redundant")
     public Operation getBackupOperation() {
-        EntryBackupProcessor backupProcessor = entryProcessor.getBackupProcessor();
+        if (offload) {
+            return null;
+        }
+        EntryProcessor backupProcessor = entryProcessor.getBackupProcessor();
         return backupProcessor != null ? new EntryBackupOperation(name, dataKey, backupProcessor) : null;
     }
 
     @Override
     public boolean shouldBackup() {
+        if (offload) {
+            return false;
+        }
         return mapContainer.getTotalBackupCount() > 0 && entryProcessor.getBackupProcessor() != null;
     }
 
@@ -253,7 +292,7 @@ public class EntryOperation extends KeyBasedMapOperation implements BackupAwareO
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MapDataSerializerHook.ENTRY_OPERATION;
     }
 
@@ -281,17 +320,29 @@ public class EntryOperation extends KeyBasedMapOperation implements BackupAwareO
         public void start() {
             verifyEntryProcessor();
 
-            boolean shouldCloneForOffloading = OBJECT.equals(mapContainer.getMapConfig().getInMemoryFormat());
-            Object oldValue = recordStore.get(dataKey, false, callerAddress);
-            Object clonedOldValue = shouldCloneForOffloading ? serializationService.toData(oldValue) : oldValue;
-
+            Object oldValue = getOldValueByInMemoryFormat();
             String executorName = ((Offloadable) entryProcessor).getExecutorName();
             executorName = executorName.equals(Offloadable.OFFLOADABLE_EXECUTOR) ? OFFLOADABLE_EXECUTOR : executorName;
 
             if (readOnly) {
-                executeReadOnlyEntryProcessor(clonedOldValue, executorName);
+                executeReadOnlyEntryProcessor(oldValue, executorName);
             } else {
-                executeMutatingEntryProcessor(clonedOldValue, executorName);
+                executeMutatingEntryProcessor(oldValue, executorName);
+            }
+        }
+
+        private Object getOldValueByInMemoryFormat() {
+            Object oldValue = recordStore.get(dataKey, false, callerAddress);
+            InMemoryFormat inMemoryFormat = mapContainer.getMapConfig().getInMemoryFormat();
+            switch (inMemoryFormat) {
+                case NATIVE:
+                    return toHeapData((Data) oldValue);
+                case OBJECT:
+                    return serializationService.toData(oldValue);
+                case BINARY:
+                    return oldValue;
+                default:
+                    throw new IllegalArgumentException("Unknown in memory format: " + inMemoryFormat);
             }
         }
 
@@ -306,16 +357,13 @@ public class EntryOperation extends KeyBasedMapOperation implements BackupAwareO
 
         @SuppressWarnings("unchecked")
         private void executeReadOnlyEntryProcessor(final Object oldValue, String executorName) {
-            executionService.execute(executorName, new Runnable() {
-                @Override
-                public void run() {
-                    try {
-                        Data result = operator(EntryOperation.this, entryProcessor)
-                                .operateOnKeyValue(dataKey, oldValue).getResult();
-                        sendResponse(result);
-                    } catch (Throwable t) {
-                        sendResponse(t);
-                    }
+            executionService.execute(executorName, () -> {
+                try {
+                    Data result = operator(EntryOperation.this, entryProcessor)
+                            .operateOnKeyValue(dataKey, oldValue).getResult();
+                    sendResponse(result);
+                } catch (Throwable t) {
+                    sendResponse(t);
                 }
             });
         }
@@ -324,7 +372,7 @@ public class EntryOperation extends KeyBasedMapOperation implements BackupAwareO
         private void executeMutatingEntryProcessor(final Object oldValue, String executorName) {
             // callerId is random since the local locks are NOT re-entrant
             // using a randomID every time prevents from re-entering the already acquired lock
-            final String finalCaller = UuidUtil.newUnsecureUuidString();
+            final UUID finalCaller = UuidUtil.newUnsecureUUID();
             final Data finalDataKey = dataKey;
             final long finalThreadId = threadId;
             final long finalCallId = getCallId();
@@ -335,25 +383,22 @@ public class EntryOperation extends KeyBasedMapOperation implements BackupAwareO
             lock(finalDataKey, finalCaller, finalThreadId, finalCallId);
 
             try {
-                executionService.execute(executorName, new Runnable() {
-                    @Override
-                    public void run() {
-                        try {
-                            EntryOperator entryOperator = operator(EntryOperation.this, entryProcessor)
-                                    .operateOnKeyValue(dataKey, oldValue);
-                            Data result = entryOperator.getResult();
-                            EntryEventType modificationType = entryOperator.getEventType();
-                            if (modificationType != null) {
-                                Data newValue = serializationService.toData(entryOperator.getNewValue());
-                                updateAndUnlock(serializationService.toData(oldValue),
-                                        newValue, modificationType, finalCaller, finalThreadId, result, finalBegin);
-                            } else {
-                                unlockOnly(result, finalCaller, finalThreadId, finalBegin);
-                            }
-                        } catch (Throwable t) {
-                            getLogger().severe("Unexpected error on Offloadable execution", t);
-                            unlockOnly(t, finalCaller, finalThreadId, finalBegin);
+                executionService.execute(executorName, () -> {
+                    try {
+                        EntryOperator entryOperator = operator(EntryOperation.this, entryProcessor)
+                                .operateOnKeyValue(dataKey, oldValue);
+                        Data result = entryOperator.getResult();
+                        EntryEventType modificationType = entryOperator.getEventType();
+                        if (modificationType != null) {
+                            Data newValue = serializationService.toData(entryOperator.getNewValue());
+                            updateAndUnlock(serializationService.toData(oldValue),
+                                    newValue, modificationType, finalCaller, finalThreadId, result, finalBegin);
+                        } else {
+                            unlockOnly(result, finalCaller, finalThreadId, finalBegin);
                         }
+                    } catch (Throwable t) {
+                        getLogger().severe("Unexpected error on Offloadable execution", t);
+                        unlockOnly(t, finalCaller, finalThreadId, finalBegin);
                     }
                 });
             } catch (Throwable t) {
@@ -362,7 +407,7 @@ public class EntryOperation extends KeyBasedMapOperation implements BackupAwareO
             }
         }
 
-        private void lock(Data finalDataKey, String finalCaller, long finalThreadId, long finalCallId) {
+        private void lock(Data finalDataKey, UUID finalCaller, long finalThreadId, long finalCallId) {
             boolean locked = recordStore.localLock(finalDataKey, finalCaller, finalThreadId, finalCallId, -1);
             if (!locked) {
                 // should not happen since it's a lock-awaiting operation and we are on a partition-thread, but just to make sure
@@ -371,7 +416,7 @@ public class EntryOperation extends KeyBasedMapOperation implements BackupAwareO
             }
         }
 
-        private void unlock(Data finalDataKey, String finalCaller, long finalThreadId, long finalCallId, Throwable cause) {
+        private void unlock(Data finalDataKey, UUID finalCaller, long finalThreadId, long finalCallId, Throwable cause) {
             boolean unlocked = recordStore.unlock(finalDataKey, finalCaller, finalThreadId, finalCallId);
             if (!unlocked) {
                 throw new IllegalStateException(
@@ -379,12 +424,12 @@ public class EntryOperation extends KeyBasedMapOperation implements BackupAwareO
             }
         }
 
-        private void unlockOnly(final Object result, String caller, long threadId, long now) {
+        private void unlockOnly(final Object result, UUID caller, long threadId, long now) {
             updateAndUnlock(null, null, null, caller, threadId, result, now);
         }
 
         @SuppressWarnings({"unchecked", "checkstyle:methodlength"})
-        private void updateAndUnlock(Data previousValue, Data newValue, EntryEventType modificationType, String caller,
+        private void updateAndUnlock(Data previousValue, Data newValue, EntryEventType modificationType, UUID caller,
                                      long threadId, final Object result, long now) {
             EntryOffloadableSetUnlockOperation updateOperation = new EntryOffloadableSetUnlockOperation(name, modificationType,
                     dataKey, previousValue, newValue, caller, threadId, now, entryProcessor.getBackupProcessor());
@@ -408,12 +453,7 @@ public class EntryOperation extends KeyBasedMapOperation implements BackupAwareO
                 private void retry(final Operation op) {
                     setUnlockRetryCount++;
                     if (isFastRetryLimitReached()) {
-                        executionService.schedule(new Runnable() {
-                            @Override
-                            public void run() {
-                                operationService.execute(op);
-                            }
-                        }, DEFAULT_TRY_PAUSE_MILLIS, MILLISECONDS);
+                        executionService.schedule(() -> operationService.execute(op), DEFAULT_TRY_PAUSE_MILLIS, MILLISECONDS);
                     } else {
                         operationService.execute(op);
                     }

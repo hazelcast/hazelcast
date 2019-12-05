@@ -16,12 +16,12 @@
 
 package com.hazelcast.memory;
 
-import static com.hazelcast.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 /**
- * MemorySize represents a memory size with given value and <tt>{@link MemoryUnit}</tt>.
+ * MemorySize represents a memory size with given value and <code>{@link MemoryUnit}</code>.
  *
- * @see com.hazelcast.memory.MemoryUnit
+ * @see MemoryUnit
  * @since 3.4
  */
 public final class MemorySize {
@@ -106,9 +106,9 @@ public final class MemorySize {
      * <li>'m' or 'M' for 'mega',</li>
      * <li>'g' or 'G' for 'giga'.</li>
      * </ul>
-     * <p/>
+     * <p>
      * Default unit is bytes.
-     * <p/>
+     * <p>
      * Examples:
      * 12345, 12345m, 12345K, 123456G
      */
@@ -124,9 +124,9 @@ public final class MemorySize {
      * <li>'m' or 'M' for 'mega',</li>
      * <li>'g' or 'G' for 'giga'.</li>
      * </ul>
-     * <p/>
+     * <p>
      * Uses default unit if value does not contain unit information.
-     * <p/>
+     * <p>
      * Examples:
      * 12345, 12345m, 12345K, 123456G
      */

@@ -26,7 +26,7 @@
     <parent>
         <groupId>com.hazelcast</groupId>
         <artifactId>hazelcast-root</artifactId>
-        <version>3.12-SNAPSHOT</version>
+        <version>4.0-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -71,9 +71,12 @@
                 <artifactId>animal-sniffer-maven-plugin</artifactId>
                 <version>${maven.animal.sniffer.plugin.version}</version>
                 <configuration>
+                    <annotations>
+                        <annotation>com.hazelcast.internal.RequiresJdk8</annotation>
+                    </annotations>
                     <signature>
                         <groupId>org.codehaus.mojo.signature</groupId>
-                        <artifactId>java16</artifactId>
+                        <artifactId>java18</artifactId>
                         <version>1.0</version>
                     </signature>
                     <ignores>
@@ -82,7 +85,7 @@
                 </configuration>
                 <executions>
                     <execution>
-                        <id>source-java6-check</id>
+                        <id>source-java8-check</id>
                         <phase>compile</phase>
                         <goals>
                             <goal>check</goal>
@@ -125,6 +128,8 @@
                                 <Import-Package>
                                     !org.junit,
                                     !com.hazelcast.*,
+                                    !com.fasterxml.jackson.*,
+                                    !org.snakeyaml.*,
                                     sun.misc;resolution:=optional,
                                     javax.cache;resolution:=optional,
                                     javax.cache.*;resolution:=optional,
@@ -173,8 +178,12 @@
                     <execution>
                         <goals>
                             <goal>test-jar</goal>
-                            <!--Need to add sources for this test jar to Maven central. partic TestHazelcastInstanceFactory. Brian request. -->
                         </goals>
+                        <configuration>
+                            <excludes>
+                                <exclude>**/*.serialization.compatibility.binary</exclude>
+                            </excludes>
+                        </configuration>
                     </execution>
                 </executions>
             </plugin>
@@ -194,8 +203,12 @@
                             <target>
                                 <copy file="${basedir}/src/main/resources/hazelcast-default.xml"
                                       tofile="${basedir}/target/hazelcast.xml"/>
+                                <copy file="${basedir}/src/main/resources/hazelcast-default.yaml"
+                                      tofile="${basedir}/target/hazelcast.yaml"/>
                                 <copy file="${basedir}/src/main/resources/hazelcast-full-example.xml"
                                       tofile="${basedir}/target/hazelcast-full-example.xml"/>
+                                <copy file="${basedir}/src/main/resources/hazelcast-full-example.yaml"
+                                      tofile="${basedir}/target/hazelcast-full-example.yaml"/>
                             </target>
                         </configuration>
                     </execution>
@@ -204,7 +217,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-shade-plugin</artifactId>
-                <version>2.3</version>
+                <version>${maven.shade.plugin.version}</version>
                 <executions>
                     <execution>
                         <phase>package</phase>
@@ -218,9 +231,23 @@
                             <shadeTestJar>true</shadeTestJar>
                             <artifactSet>
                                 <includes>
-                                    <include>com.hazelcast:hazelcast-client-protocol</include>
+                                    <include>com.fasterxml.jackson.core:jackson-core</include>
+                                    <include>org.snakeyaml:snakeyaml-engine</include>
                                 </includes>
                             </artifactSet>
+                            <relocations>
+                                <relocation>
+                                    <pattern>com.fasterxml.jackson</pattern>
+                                    <shadedPattern>com.hazelcast.com.fasterxml.jackson</shadedPattern>
+                                </relocation>
+                                <relocation>
+                                    <pattern>org.snakeyaml</pattern>
+                                    <shadedPattern>com.hazelcast.org.snakeyaml</shadedPattern>
+                                </relocation>
+                            </relocations>
+                            <transformers>
+                                <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
+                            </transformers>
                         </configuration>
                     </execution>
                 </executions>
@@ -268,7 +295,7 @@
                                 <fileset>
                                     <directory>src/main/java</directory>
                                     <includes>
-                                        <include>**/Generated*</include>
+                                        <include>**/GeneratedBuildProperties.java</include>
                                     </includes>
                                 </fileset>
                             </filesets>
@@ -283,9 +310,21 @@
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-core</artifactId>
-            <version>2.9.7</version>
-            <scope>provided</scope>
+            <version>${jackson.version}</version>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.snakeyaml</groupId>
+            <artifactId>snakeyaml-engine</artifactId>
+            <version>${snakeyaml.engine.version}</version>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.hazelcast</groupId>
+            <artifactId>hazelcast-aws</artifactId>
+            <version>2.4</version>
             <optional>true</optional>
+            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.hamcrest</groupId>
@@ -356,13 +395,6 @@
             <artifactId>geronimo-jta_1.1_spec</artifactId>
             <scope>test</scope>
             <version>1.1.1</version>
-        </dependency>
-
-        <dependency>
-            <groupId>com.hazelcast</groupId>
-            <artifactId>hazelcast-client-protocol</artifactId>
-            <version>${client.protocol.version}</version>
-            <scope>compile</scope>
         </dependency>
 
         <dependency>

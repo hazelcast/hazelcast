@@ -23,7 +23,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Assert;
@@ -36,13 +36,14 @@ import javax.cache.CacheManager;
 
 import static com.hazelcast.cache.CacheUtil.getDistributedObjectName;
 import static com.hazelcast.cache.HazelcastCachingProvider.propertiesByInstanceItself;
+import static com.hazelcast.cache.CacheTestSupport.createServerCachingProvider;
 import static com.hazelcast.cache.impl.ICacheService.SERVICE_NAME;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 
 // asserts contents of AbstractCacheService.configs
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class CacheConfigPropagationTest extends HazelcastTestSupport {
 
     private static final String DYNAMIC_CACHE_NAME = "dynamic-cache";
@@ -125,7 +126,7 @@ public class CacheConfigPropagationTest extends HazelcastTestSupport {
     }
 
     protected CacheManager createCacheManagerTestDriver() {
-        return HazelcastServerCachingProvider.createCachingProvider(driver).getCacheManager(null, null,
+        return createServerCachingProvider(driver).getCacheManager(null, null,
                 propertiesByInstanceItself(driver));
     }
 

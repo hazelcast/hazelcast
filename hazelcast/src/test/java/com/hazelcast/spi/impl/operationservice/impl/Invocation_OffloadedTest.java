@@ -18,16 +18,16 @@ package com.hazelcast.spi.impl.operationservice.impl;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.spi.CallStatus;
-import com.hazelcast.spi.InternalCompletableFuture;
-import com.hazelcast.spi.Offload;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.spi.impl.operationservice.CallStatus;
+import com.hazelcast.spi.impl.InternalCompletableFuture;
+import com.hazelcast.spi.impl.operationservice.Offload;
+import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.ExpectedRuntimeException;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
 import org.junit.Test;
@@ -39,7 +39,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class Invocation_OffloadedTest extends HazelcastTestSupport {
 
     private OperationServiceImpl localOperationService;
@@ -48,7 +48,7 @@ public class Invocation_OffloadedTest extends HazelcastTestSupport {
     public void setup() {
         TestHazelcastInstanceFactory instanceFactory = createHazelcastInstanceFactory();
         Config config = new Config();
-        config.setProperty(GroupProperty.MAX_JOIN_SECONDS.getName(), "5");
+        config.setProperty(ClusterProperty.MAX_JOIN_SECONDS.getName(), "5");
 
         HazelcastInstance[] cluster = instanceFactory.newInstances(config, 1);
 
@@ -57,34 +57,24 @@ public class Invocation_OffloadedTest extends HazelcastTestSupport {
 
     @Test(expected = ExpectedRuntimeException.class)
     public void whenStartThrowsException_thenExceptionPropagated() {
-        InternalCompletableFuture f = localOperationService.invokeOnPartition(new OffloadingOperation(new OffloadFactory() {
+        InternalCompletableFuture f = localOperationService.invokeOnPartition(new OffloadingOperation(op -> new Offload(op) {
             @Override
-            public Offload create(Operation op) {
-                return new Offload(op) {
-                    @Override
-                    public void start() {
-                        throw new ExpectedRuntimeException();
-                    }
-                };
+            public void start() {
+                throw new ExpectedRuntimeException();
             }
         }));
 
         assertCompletesEventually(f);
-        f.join();
+        f.joinInternal();
     }
 
     @Test
     public void whenCompletesInStart() throws Exception {
         final String response = "someresponse";
-        OffloadingOperation source = new OffloadingOperation(new OffloadFactory() {
+        OffloadingOperation source = new OffloadingOperation(op -> new Offload(op) {
             @Override
-            public Offload create(Operation op) {
-                return new Offload(op) {
-                    @Override
-                    public void start() {
-                        offloadedOperation().sendResponse("someresponse");
-                    }
-                };
+            public void start() {
+                offloadedOperation().sendResponse("someresponse");
             }
         });
 
@@ -100,21 +90,13 @@ public class Invocation_OffloadedTest extends HazelcastTestSupport {
     public void whenCompletesEventually() throws Exception {
         final String response = "someresponse";
 
-        InternalCompletableFuture<String> f = localOperationService.invokeOnPartition(new OffloadingOperation(new OffloadFactory() {
+        InternalCompletableFuture<String> f = localOperationService.invokeOnPartition(new OffloadingOperation(op -> new Offload(op) {
             @Override
-            public Offload create(Operation op) {
-                return new Offload(op) {
-                    @Override
-                    public void start() {
-                        new Thread() {
-                            @Override
-                            public void run() {
-                                sleepSeconds(5);
-                                offloadedOperation().sendResponse(response);
-                            }
-                        }.start();
-                    }
-                };
+            public void start() {
+                new Thread(() -> {
+                    sleepSeconds(5);
+                    offloadedOperation().sendResponse(response);
+                }).start();
             }
         }));
 
@@ -124,17 +106,12 @@ public class Invocation_OffloadedTest extends HazelcastTestSupport {
 
     @Test
     public void whenOffloaded_thenAsyncOperationRegisteredOnStart_andUnregisteredOnCompletion() {
-        OffloadingOperation source = new OffloadingOperation(new OffloadFactory() {
+        OffloadingOperation source = new OffloadingOperation(op -> new Offload(op) {
             @Override
-            public Offload create(Operation op) {
-                return new Offload(op) {
-                    @Override
-                    public void start() {
-                        // we make sure that the operation is registered
-                        assertTrue(localOperationService.asyncOperations.contains(offloadedOperation()));
-                        offloadedOperation().sendResponse("someresponse");
-                    }
-                };
+            public void start() {
+                // we make sure that the operation is registered
+                assertTrue(localOperationService.asyncOperations.contains(offloadedOperation()));
+                offloadedOperation().sendResponse("someresponse");
             }
         });
 

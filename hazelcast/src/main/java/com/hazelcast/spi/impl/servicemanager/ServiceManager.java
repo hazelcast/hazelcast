@@ -16,8 +16,7 @@
 
 package com.hazelcast.spi.impl.servicemanager;
 
-import com.hazelcast.spi.SharedService;
-
+import javax.annotation.Nonnull;
 import java.util.List;
 
 /**
@@ -31,7 +30,7 @@ public interface ServiceManager {
      * @param serviceName the name of the service.
      * @return the found ServiceInfo or null if nothing is found.
      */
-    ServiceInfo getServiceInfo(String serviceName);
+    ServiceInfo getServiceInfo(@Nonnull String serviceName);
 
     /**
      * Gets all the service info's for services that implement a given class/interface.
@@ -48,7 +47,7 @@ public interface ServiceManager {
      * @param <T>
      * @return the found service or null if nothing is found.
      */
-    <T> T getService(String serviceName);
+    <T> T getService(@Nonnull String serviceName);
 
     /**
      * Gets all services implementing a certain class/interface.
@@ -60,14 +59,4 @@ public interface ServiceManager {
      * @return the found services.
      */
     <S> List<S> getServices(Class<S> serviceClass);
-
-    /**
-     * Gets a SharedService by serviceName.
-     *
-     * @param serviceName the name of the SharedService.
-     * @param <T>
-     * @return the found SharedService or null if not found.
-     * @throws IllegalArgumentException if a service with the name is found, but isn't a SharedService.
-     */
-    <T extends SharedService> T getSharedService(String serviceName);
 }

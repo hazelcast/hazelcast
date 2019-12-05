@@ -17,7 +17,7 @@
 package com.hazelcast.cache.impl.event;
 
 import com.hazelcast.cache.CacheEventType;
-import com.hazelcast.core.Member;
+import com.hazelcast.cluster.Member;
 
 /**
  * Cache events common contract.

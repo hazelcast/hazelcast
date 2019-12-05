@@ -16,18 +16,20 @@
 
 package com.hazelcast.internal.cluster.impl;
 
-import com.hazelcast.nio.Address;
+import com.hazelcast.internal.util.UUIDSerializationUtil;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import java.io.IOException;
+import java.util.UUID;
 
 public class MembersViewMetadata implements IdentifiedDataSerializable {
 
     private Address memberAddress;
 
-    private String memberUuid;
+    private UUID memberUuid;
 
     private Address masterAddress;
 
@@ -36,7 +38,7 @@ public class MembersViewMetadata implements IdentifiedDataSerializable {
     public MembersViewMetadata() {
     }
 
-    public MembersViewMetadata(Address memberAddress, String memberUuid, Address masterAddress, int memberListVersion) {
+    public MembersViewMetadata(Address memberAddress, UUID memberUuid, Address masterAddress, int memberListVersion) {
         this.memberAddress = memberAddress;
         this.memberUuid = memberUuid;
         this.masterAddress = masterAddress;
@@ -47,7 +49,7 @@ public class MembersViewMetadata implements IdentifiedDataSerializable {
         return memberAddress;
     }
 
-    public String getMemberUuid() {
+    public UUID getMemberUuid() {
         return memberUuid;
     }
 
@@ -65,14 +67,14 @@ public class MembersViewMetadata implements IdentifiedDataSerializable {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ClusterDataSerializerHook.MEMBERS_VIEW_METADATA;
     }
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeObject(memberAddress);
-        out.writeUTF(memberUuid);
+        UUIDSerializationUtil.writeUUID(out, memberUuid);
         out.writeObject(masterAddress);
         out.writeInt(memberListVersion);
     }
@@ -80,7 +82,7 @@ public class MembersViewMetadata implements IdentifiedDataSerializable {
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         memberAddress = in.readObject();
-        memberUuid = in.readUTF();
+        memberUuid = UUIDSerializationUtil.readUUID(in);
         masterAddress = in.readObject();
         memberListVersion = in.readInt();
     }
@@ -119,7 +121,7 @@ public class MembersViewMetadata implements IdentifiedDataSerializable {
 
     @Override
     public String toString() {
-        return "MembersViewMetadata{" + "memberAddress=" + memberAddress + ", memberUuid='" + memberUuid + '\''
+        return "MembersViewMetadata{" + "address=" + memberAddress + ", memberUuid='" + memberUuid + '\''
                 + ", masterAddress=" + masterAddress + ", memberListVersion=" + memberListVersion + '}';
     }
 

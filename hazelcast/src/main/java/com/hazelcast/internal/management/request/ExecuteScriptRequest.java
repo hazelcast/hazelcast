@@ -22,10 +22,10 @@ import com.hazelcast.internal.management.operation.ScriptExecutorOperation;
 import com.hazelcast.internal.json.JsonArray;
 import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.internal.json.JsonValue;
-import com.hazelcast.nio.Address;
-import com.hazelcast.util.AddressUtil;
-import com.hazelcast.util.ExceptionUtil;
-import com.hazelcast.util.MapUtil;
+import com.hazelcast.cluster.Address;
+import com.hazelcast.internal.util.AddressUtil;
+import com.hazelcast.internal.util.ExceptionUtil;
+import com.hazelcast.internal.util.MapUtil;
 
 import java.util.List;
 import java.util.Map;
@@ -33,9 +33,9 @@ import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
-import static com.hazelcast.util.JsonUtil.getArray;
-import static com.hazelcast.util.JsonUtil.getString;
-import static com.hazelcast.util.SetUtil.createHashSet;
+import static com.hazelcast.internal.util.JsonUtil.getArray;
+import static com.hazelcast.internal.util.JsonUtil.getString;
+import static com.hazelcast.internal.util.SetUtil.createHashSet;
 
 /**
  * Request for executing scripts on the nodes from Management Center.

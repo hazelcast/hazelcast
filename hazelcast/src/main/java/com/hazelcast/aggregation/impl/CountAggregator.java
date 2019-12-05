@@ -22,6 +22,7 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import java.io.IOException;
+import java.util.Objects;
 
 public final class CountAggregator<I> extends AbstractAggregator<I, Object, Long> implements IdentifiedDataSerializable {
     private long count;
@@ -56,7 +57,7 @@ public final class CountAggregator<I> extends AbstractAggregator<I, Object, Long
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return AggregatorDataSerializerHook.COUNT;
     }
 
@@ -70,5 +71,25 @@ public final class CountAggregator<I> extends AbstractAggregator<I, Object, Long
     public void readData(ObjectDataInput in) throws IOException {
         this.attributePath = in.readUTF();
         this.count = in.readLong();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        if (!super.equals(o)) {
+            return false;
+        }
+        CountAggregator<?> that = (CountAggregator<?>) o;
+        return count == that.count;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), count);
     }
 }

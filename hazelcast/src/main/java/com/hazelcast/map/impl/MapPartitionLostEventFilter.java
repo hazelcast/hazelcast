@@ -19,7 +19,7 @@ package com.hazelcast.map.impl;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.spi.EventFilter;
+import com.hazelcast.spi.impl.eventservice.EventFilter;
 
 import java.io.IOException;
 
@@ -59,7 +59,7 @@ public class MapPartitionLostEventFilter implements EventFilter, IdentifiedDataS
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MapDataSerializerHook.PARTITION_LOST_EVENT_FILTER;
     }
 }

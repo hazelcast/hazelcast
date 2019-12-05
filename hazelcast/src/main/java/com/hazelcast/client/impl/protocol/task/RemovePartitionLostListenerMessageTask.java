@@ -18,11 +18,13 @@ package com.hazelcast.client.impl.protocol.task;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ClientRemovePartitionLostListenerCodec;
-import com.hazelcast.instance.Node;
+import com.hazelcast.instance.impl.Node;
+import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.partition.InternalPartitionService;
-import com.hazelcast.nio.Connection;
 
 import java.security.Permission;
+import java.util.UUID;
+import java.util.concurrent.Future;
 
 public class RemovePartitionLostListenerMessageTask
         extends AbstractRemoveListenerMessageTask<ClientRemovePartitionLostListenerCodec.RequestParameters> {
@@ -32,13 +34,13 @@ public class RemovePartitionLostListenerMessageTask
     }
 
     @Override
-    protected boolean deRegisterListener() {
+    protected Future<Boolean> deRegisterListener() {
         final InternalPartitionService service = getService(InternalPartitionService.SERVICE_NAME);
-        return service.removePartitionLostListener(parameters.registrationId);
+        return service.removePartitionLostListenerAsync(parameters.registrationId);
     }
 
     @Override
-    protected String getRegistrationId() {
+    protected UUID getRegistrationId() {
         return parameters.registrationId;
     }
 

@@ -17,10 +17,10 @@
 package com.hazelcast.transaction.impl;
 
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.instance.MemberImpl;
+import com.hazelcast.cluster.impl.MemberImpl;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.impl.operationservice.InternalOperationService;
+import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
@@ -29,6 +29,8 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+
+import java.util.UUID;
 
 import static com.hazelcast.transaction.TransactionOptions.TransactionType.ONE_PHASE;
 import static java.lang.String.format;
@@ -43,7 +45,7 @@ import static org.mockito.Mockito.when;
 @Category(QuickTest.class)
 public class TransactionImplTest extends HazelcastTestSupport {
 
-    private InternalOperationService operationService;
+    private OperationServiceImpl operationService;
     private ILogger logger;
     private TransactionManagerServiceImpl txManagerService;
     private NodeEngine nodeEngine;
@@ -66,20 +68,20 @@ public class TransactionImplTest extends HazelcastTestSupport {
 
     @Test
     public void getTimeoutMillis() throws Exception {
-        TransactionImpl tx = new TransactionImpl(txManagerService, nodeEngine, options, "dummy-uuid");
+        TransactionImpl tx = new TransactionImpl(txManagerService, nodeEngine, options, UUID.randomUUID());
         assertEquals(options.getTimeoutMillis(), tx.getTimeoutMillis());
     }
 
     @Test
     public void testToString() throws Exception {
-        TransactionImpl tx = new TransactionImpl(txManagerService, nodeEngine, options, "dummy-uuid");
+        TransactionImpl tx = new TransactionImpl(txManagerService, nodeEngine, options, UUID.randomUUID());
         assertEquals(format("Transaction{txnId='%s', state=%s, txType=%s, timeoutMillis=%s}",
                 tx.getTxnId(), tx.getState(), options.getTransactionType(), options.getTimeoutMillis()), tx.toString());
     }
 
     @Test
     public void getOwnerUUID() throws Exception {
-        String ownerUUID = "dummy-uuid";
+        UUID ownerUUID = UUID.randomUUID();
         TransactionImpl tx = new TransactionImpl(txManagerService, nodeEngine, options, ownerUUID);
         assertEquals(ownerUUID, tx.getOwnerUuid());
     }

@@ -16,45 +16,59 @@
 
 package com.hazelcast.instance;
 
-import com.hazelcast.nio.Address;
+import com.hazelcast.cluster.Address;
 
 import java.nio.channels.ServerSocketChannel;
+import java.util.Map;
 
 /**
  * Strategy to select an {@link Address} that a Hazelcast cluster member binds its server socket to
  * and a (potentially different) address that Hazelcast will advertise to other cluster members and clients.
- *
  */
 public interface AddressPicker {
 
     /**
      * Picks both server socket listener address and public address.
      *
-     * @throws Exception
+     * @throws Exception if failure happened while picking an address.
      */
     void pickAddress() throws Exception;
 
     /**
-     * Returns a server socket listener address.
+     * Returns a server socket listener address. The returned address for different {@link EndpointQualifier}s
+     * may be the same or different, depending on the actual network configuration.
      *
      * @return {@link Address} where the server socket was bound to or <code>null</code> if called before.
      * {@link #pickAddress()}
+     * @since 3.12
      */
-    Address getBindAddress();
+    Address getBindAddress(EndpointQualifier qualifier);
 
     /**
      * Returns a public address to be advertised to other cluster members and clients.
      *
      * @return {@link Address} another members can use to connect to this member or <code>null</code> if called before
      * {@link #pickAddress()}
+     * @since 3.12
      */
-    Address getPublicAddress();
+    Address getPublicAddress(EndpointQualifier qualifier);
+
+    Map<EndpointQualifier, Address> getPublicAddressMap();
 
     /**
      * Returns a server channel.
      *
      * @return <code>ServerSocketChannel</code> to be listened to by an acceptor or <code>null</code> if called before
      * {@link #pickAddress()}
+     * @since 3.12
      */
-    ServerSocketChannel getServerSocketChannel();
+    ServerSocketChannel getServerSocketChannel(EndpointQualifier qualifier);
+
+    /**
+     * Returns all {@link ServerSocketChannel}s of this member, mapped by corresponding {@link EndpointQualifier}
+     *
+     * @return a {@code Map<EndpointQualifier, ServerSocketChannel>} of this member's server socket channels
+     * @since 3.12
+     */
+    Map<EndpointQualifier, ServerSocketChannel> getServerSocketChannels();
 }

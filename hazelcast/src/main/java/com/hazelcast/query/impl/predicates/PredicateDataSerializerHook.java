@@ -21,19 +21,14 @@ import com.hazelcast.internal.serialization.impl.ArrayDataSerializableFactory;
 import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.query.PagingPredicate;
-import com.hazelcast.query.PartitionPredicate;
-import com.hazelcast.query.SqlPredicate;
-import com.hazelcast.query.TruePredicate;
-import com.hazelcast.query.impl.FalsePredicate;
+import com.hazelcast.query.impl.CompositeValue;
 import com.hazelcast.query.impl.IndexImpl;
-import com.hazelcast.util.ConstructorFunction;
+import com.hazelcast.internal.util.ConstructorFunction;
 
 import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.PREDICATE_DS_FACTORY;
 import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.PREDICATE_DS_FACTORY_ID;
 
-public class PredicateDataSerializerHook
-        implements DataSerializerHook {
+public class PredicateDataSerializerHook implements DataSerializerHook {
 
     public static final int F_ID = FactoryIdHelper.getFactoryId(PREDICATE_DS_FACTORY, PREDICATE_DS_FACTORY_ID);
 
@@ -55,8 +50,13 @@ public class PredicateDataSerializerHook
     public static final int PAGING_PREDICATE = 15;
     public static final int PARTITION_PREDICATE = 16;
     public static final int NULL_OBJECT = 17;
+    // Objects corresponding to the 3 entries bellow are never transferred over
+    // the wire.
+    public static final int COMPOSITE_VALUE = 18;
+    public static final int NEGATIVE_INFINITY = 19;
+    public static final int POSITIVE_INFINITY = 20;
 
-    public static final int LEN = NULL_OBJECT + 1;
+    public static final int LEN = POSITIVE_INFINITY + 1;
 
     @Override
     public int getFactoryId() {
@@ -144,17 +144,35 @@ public class PredicateDataSerializerHook
         };
         constructors[PAGING_PREDICATE] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             public IdentifiedDataSerializable createNew(Integer arg) {
-                return new PagingPredicate();
+                return new PagingPredicateImpl();
             }
         };
         constructors[PARTITION_PREDICATE] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             public IdentifiedDataSerializable createNew(Integer arg) {
-                return new PartitionPredicate();
+                return new PartitionPredicateImpl();
             }
         };
         constructors[NULL_OBJECT] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             public IdentifiedDataSerializable createNew(Integer arg) {
-                return new IndexImpl.NullObject();
+                return IndexImpl.NULL;
+            }
+        };
+        constructors[COMPOSITE_VALUE] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            @Override
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new CompositeValue();
+            }
+        };
+        constructors[NEGATIVE_INFINITY] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            @Override
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return CompositeValue.NEGATIVE_INFINITY;
+            }
+        };
+        constructors[POSITIVE_INFINITY] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            @Override
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return CompositeValue.POSITIVE_INFINITY;
             }
         };
 

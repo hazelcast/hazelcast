@@ -17,11 +17,14 @@
 package com.hazelcast.spring.security;
 
 import com.hazelcast.config.Config;
+import com.hazelcast.config.CredentialsFactoryConfig;
 import com.hazelcast.config.LoginModuleConfig;
 import com.hazelcast.config.LoginModuleConfig.LoginModuleUsage;
 import com.hazelcast.config.PermissionConfig;
 import com.hazelcast.config.SecurityConfig;
 import com.hazelcast.config.SecurityInterceptorConfig;
+import com.hazelcast.config.security.JaasAuthenticationConfig;
+import com.hazelcast.config.security.RealmConfig;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.security.ICredentialsFactory;
 import com.hazelcast.security.IPermissionPolicy;
@@ -78,31 +81,39 @@ public class SecureApplicationContextTest {
         assertNotNull(securityConfig);
         assertTrue(securityConfig.isEnabled());
         assertTrue(securityConfig.getClientBlockUnmappedActions());
-        assertNotNull(securityConfig.getClientLoginModuleConfigs());
-        assertFalse(securityConfig.getClientLoginModuleConfigs().isEmpty());
+        assertEquals(2, securityConfig.getRealmConfigs().size());
+        assertNotNull(securityConfig.getClientRealm());
         assertNotNull(securityConfig.getClientPermissionConfigs());
         assertFalse(securityConfig.getClientPermissionConfigs().isEmpty());
-        assertNotNull(securityConfig.getMemberLoginModuleConfigs());
-        assertFalse(securityConfig.getMemberLoginModuleConfigs().isEmpty());
+        assertNotNull(securityConfig.getMemberRealm());
         assertNotNull(securityConfig.getClientPolicyConfig());
-        assertNotNull(securityConfig.getMemberCredentialsConfig());
         assertEquals(1, securityConfig.getSecurityInterceptorConfigs().size());
     }
 
     @Test
-    public void testMemberLoginConfigs() {
-        List<LoginModuleConfig> list = securityConfig.getMemberLoginModuleConfigs();
-        assertTrue(list.size() == 1);
+    public void testMemberRealm() {
+        RealmConfig realmConfig = securityConfig.getRealmConfig(securityConfig.getMemberRealm());
+        JaasAuthenticationConfig jaasAuthenticationConfig = realmConfig.getJaasAuthenticationConfig();
+        assertNotNull(jaasAuthenticationConfig);
+        List<LoginModuleConfig> list = jaasAuthenticationConfig.getLoginModuleConfigs();
+        assertEquals(1, list.size());
         LoginModuleConfig lm = list.get(0);
         assertEquals("com.hazelcast.examples.MyRequiredLoginModule", lm.getClassName());
         assertFalse(lm.getProperties().isEmpty());
         assertEquals(LoginModuleUsage.REQUIRED, lm.getUsage());
+
+        CredentialsFactoryConfig credentialsFactoryConfig = realmConfig.getCredentialsFactoryConfig();
+        assertNotNull(credentialsFactoryConfig);
+        assertEquals(dummyCredentialsFactory, credentialsFactoryConfig.getImplementation());
     }
 
     @Test
     public void testClientLoginConfigs() {
-        List<LoginModuleConfig> list = securityConfig.getClientLoginModuleConfigs();
-        assertTrue(list.size() == 2);
+        RealmConfig realmConfig = securityConfig.getRealmConfig(securityConfig.getClientRealm());
+        JaasAuthenticationConfig jaasAuthenticationConfig = realmConfig.getJaasAuthenticationConfig();
+        assertNotNull(jaasAuthenticationConfig);
+        List<LoginModuleConfig> list = jaasAuthenticationConfig.getLoginModuleConfigs();
+        assertEquals(2, list.size());
         LoginModuleConfig lm1 = list.get(0);
         assertEquals("com.hazelcast.examples.MyOptionalLoginModule", lm1.getClassName());
         assertFalse(lm1.getProperties().isEmpty());
@@ -111,14 +122,6 @@ public class SecureApplicationContextTest {
         assertEquals("com.hazelcast.examples.MyRequiredLoginModule", lm2.getClassName());
         assertFalse(lm2.getProperties().isEmpty());
         assertEquals(LoginModuleUsage.REQUIRED, lm2.getUsage());
-    }
-
-    @Test
-    public void testCredentialsFactory() {
-        assertEquals("com.hazelcast.examples.MyCredentialsFactory", securityConfig.getMemberCredentialsConfig()
-                .getClassName());
-        assertFalse(securityConfig.getMemberCredentialsConfig().getProperties().isEmpty());
-        assertEquals(dummyCredentialsFactory, securityConfig.getMemberCredentialsConfig().getImplementation());
     }
 
     @Test

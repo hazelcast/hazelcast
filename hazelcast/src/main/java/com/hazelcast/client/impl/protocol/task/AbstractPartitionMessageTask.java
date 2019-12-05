@@ -17,83 +17,41 @@
 package com.hazelcast.client.impl.protocol.task;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.core.ExecutionCallback;
-import com.hazelcast.core.ICompletableFuture;
-import com.hazelcast.instance.Node;
-import com.hazelcast.nio.Connection;
-import com.hazelcast.spi.ExecutionService;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.impl.operationexecutor.impl.PartitionOperationThread;
+import com.hazelcast.instance.impl.Node;
+import com.hazelcast.internal.nio.Connection;
+import com.hazelcast.spi.impl.PartitionSpecificRunnable;
+import com.hazelcast.spi.impl.operationservice.Operation;
 
-import java.util.concurrent.Executor;
+import java.util.concurrent.CompletableFuture;
 
 /**
  * AbstractPartitionMessageTask
  */
 public abstract class AbstractPartitionMessageTask<P>
-        extends AbstractMessageTask<P>
-        implements ExecutionCallback, Executor {
+        extends AbstractAsyncMessageTask<P, Object>
+        implements PartitionSpecificRunnable {
 
     protected AbstractPartitionMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
-    /**
-     * Called on node side, before starting any operation.
-     */
-    protected void beforeProcess() {
-    }
-
-    /**
-     * Called on node side, after process is run and right before sending the response to the client.
-     */
-    protected void beforeResponse() {
-    }
-
-    /**
-     * Called on node side, after sending the response to the client.
-     */
-    protected void afterResponse() {
+    @Override
+    public int getPartitionId() {
+        return clientMessage.getPartitionId();
     }
 
     @Override
-    public final void processMessage() {
-        beforeProcess();
+    protected CompletableFuture<Object> processInternal() {
         Operation op = prepareOperation();
+        if (ClientMessage.isFlagSet(clientMessage.getHeaderFlags(), ClientMessage.BACKUP_AWARE_FLAG)) {
+            op.setClientCallId(clientMessage.getCorrelationId());
+        }
         op.setCallerUuid(endpoint.getUuid());
-        ICompletableFuture f = nodeEngine.getOperationService()
-                .createInvocationBuilder(getServiceName(), op, getPartitionId())
-                .setResultDeserialized(false)
-                .invoke();
+        return nodeEngine.getOperationService().createInvocationBuilder(getServiceName(), op, getPartitionId())
+                         .setResultDeserialized(false).invoke();
 
-        f.andThen(this, this);
     }
 
     protected abstract Operation prepareOperation();
 
-    @Override
-    public void execute(Runnable command) {
-        if (Thread.currentThread().getClass() == PartitionOperationThread.class) {
-            // instead of offloading it to another thread, we run on the partition thread. This will speed up throughput.
-            command.run();
-        } else {
-            ExecutionService executionService = nodeEngine.getExecutionService();
-            Executor executor = executionService.getExecutor(ExecutionService.ASYNC_EXECUTOR);
-            executor.execute(command);
-        }
-    }
-
-    @Override
-    public void onResponse(Object response) {
-        beforeResponse();
-        sendResponse(response);
-        afterResponse();
-    }
-
-    @Override
-    public void onFailure(Throwable t) {
-        beforeResponse();
-        handleProcessingFailure(t);
-        afterResponse();
-    }
 }

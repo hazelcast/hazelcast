@@ -17,20 +17,21 @@
 package com.hazelcast.map.impl;
 
 import com.hazelcast.config.Config;
+import com.hazelcast.config.IndexConfig;
+import com.hazelcast.config.IndexType;
 import com.hazelcast.config.MapConfig;
-import com.hazelcast.config.MapIndexConfig;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IMap;
+import com.hazelcast.map.IMap;
 import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.map.impl.recordstore.DefaultRecordStore;
 import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.query.Predicates;
 import com.hazelcast.query.SampleTestObjects;
-import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.partition.IPartitionService;
+import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.internal.partition.IPartitionService;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -43,7 +44,7 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class RecordStoreTest extends HazelcastTestSupport {
 
     @Test
@@ -73,8 +74,8 @@ public class RecordStoreTest extends HazelcastTestSupport {
         String mapName = randomName();
         Config config = new Config();
         MapConfig mapConfig = config.getMapConfig(mapName);
-        MapIndexConfig indexConfig = new MapIndexConfig("name", false);
-        mapConfig.addMapIndexConfig(indexConfig);
+        IndexConfig indexConfig = new IndexConfig(IndexType.HASH, "name");
+        mapConfig.addIndexConfig(indexConfig);
         HazelcastInstance hazelcastInstance = createHazelcastInstance(config);
         IMap<Object, Object> map = hazelcastInstance.getMap(mapName);
         int key = 1;

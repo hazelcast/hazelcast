@@ -16,16 +16,16 @@
 
 package com.hazelcast.map.impl.querycache.accumulator;
 
-import com.hazelcast.util.ConstructorFunction;
+import com.hazelcast.internal.util.ConstructorFunction;
 
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
-import static com.hazelcast.util.ConcurrencyUtil.getOrPutIfAbsent;
+import static com.hazelcast.internal.util.ConcurrencyUtil.getOrPutIfAbsent;
 
 /**
  * Default implementation of {@link AccumulatorInfoSupplier}.
- * <p/>
+ * <p>
  * At most one thread can write to this class at a time.
  *
  * @see AccumulatorInfoSupplier
@@ -33,17 +33,12 @@ import static com.hazelcast.util.ConcurrencyUtil.getOrPutIfAbsent;
 public class DefaultAccumulatorInfoSupplier implements AccumulatorInfoSupplier {
 
     private static final ConstructorFunction<String, ConcurrentMap<String, AccumulatorInfo>> INFO_CTOR
-            = new ConstructorFunction<String, ConcurrentMap<String, AccumulatorInfo>>() {
-        @Override
-        public ConcurrentMap<String, AccumulatorInfo> createNew(String arg) {
-            return new ConcurrentHashMap<String, AccumulatorInfo>();
-        }
-    };
+            = arg -> new ConcurrentHashMap<>();
 
     private final ConcurrentMap<String, ConcurrentMap<String, AccumulatorInfo>> cacheInfoPerMap;
 
     public DefaultAccumulatorInfoSupplier() {
-        this.cacheInfoPerMap = new ConcurrentHashMap<String, ConcurrentMap<String, AccumulatorInfo>>();
+        this.cacheInfoPerMap = new ConcurrentHashMap<>();
     }
 
     @Override

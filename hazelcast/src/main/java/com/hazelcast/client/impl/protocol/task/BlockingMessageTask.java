@@ -18,10 +18,10 @@ package com.hazelcast.client.impl.protocol.task;
 
 /**
  * Marker interface for tasks that are blocking the running thread by doing remote operation
- * and waiting the result.
+ * and waiting for the result.
  *
- * Even-tough Query, Listener, and Transactional Tasks are also BlockingMessageTasks
- * They are marked with different interfaces, they are not implementing this interface
+ * <p>Even though Query, Listener, and Transactional Tasks are also BlockingMessageTasks,
+ * they are marked with different interfaces, they don't implement this interface.
  */
 public interface BlockingMessageTask {
 }

@@ -17,16 +17,17 @@
 package com.hazelcast.spi.impl.operationservice.impl;
 
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.instance.Node;
-import com.hazelcast.nio.Address;
+import com.hazelcast.instance.impl.Node;
+import com.hazelcast.cluster.Address;
+import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.OperationService;
+import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.spi.impl.operationservice.OperationService;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
 import org.junit.Test;
@@ -48,7 +49,7 @@ import static org.junit.Assert.assertTrue;
  * on when we see that an instance is immutable.
  */
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class InvocationFuture_GetNewInstanceTest extends HazelcastTestSupport {
 
     private HazelcastInstance local;
@@ -133,13 +134,13 @@ public class InvocationFuture_GetNewInstanceTest extends HazelcastTestSupport {
         @Override
         protected void writeInternal(ObjectDataOutput out) throws IOException {
             super.writeInternal(out);
-            out.writeData(response);
+            IOUtil.writeData(out, response);
         }
 
         @Override
         protected void readInternal(ObjectDataInput in) throws IOException {
             super.readInternal(in);
-            response = in.readData();
+            response = IOUtil.readData(in);
         }
     }
 }

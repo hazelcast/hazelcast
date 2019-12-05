@@ -16,13 +16,13 @@
 
 package com.hazelcast.query.impl;
 
-import com.hazelcast.internal.json.Json;
-import com.hazelcast.internal.json.JsonValue;
 import com.hazelcast.core.HazelcastJsonValue;
 import com.hazelcast.core.TypeConverter;
+import com.hazelcast.internal.json.Json;
 import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.map.impl.StoreAdapter;
+import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.query.QueryException;
 import com.hazelcast.query.impl.getters.Extractors;
@@ -38,7 +38,7 @@ import static com.hazelcast.query.impl.TypeConverters.NULL_CONVERTER;
 
 /**
  * This abstract class contains methods related to Queryable Entry, which means searched an indexed by SQL query or predicate.
- * <p/>
+ * <p>
  * If the object, which is used as the extraction target, is not of Data or Portable type the serializationService
  * will not be touched at all.
  */
@@ -46,6 +46,34 @@ public abstract class QueryableEntry<K, V> implements Extractable, Map.Entry<K, 
 
     protected InternalSerializationService serializationService;
     protected Extractors extractors;
+
+    private StoreAdapter storeAdapter;
+    private Record record;
+
+    // overridden in some subclasses
+    public Metadata getMetadata() {
+        // record is not set in plenty of internal unit tests
+        if (record != null) {
+            return record.getMetadata();
+        }
+        return null;
+    }
+
+    public Record getRecord() {
+        return record;
+    }
+
+    public void setRecord(Record record) {
+        this.record = record;
+    }
+
+    public StoreAdapter getStoreAdapter() {
+        return storeAdapter;
+    }
+
+    public void setStoreAdapter(StoreAdapter storeAdapter) {
+        this.storeAdapter = storeAdapter;
+    }
 
     @Override
     public Object getAttributeValue(String attributeName) throws QueryException {
@@ -62,12 +90,28 @@ public abstract class QueryableEntry<K, V> implements Extractable, Map.Entry<K, 
 
     protected abstract Object getTargetObject(boolean key);
 
+    /**
+     * Returns a converter corresponding to the attribute with the given name.
+     * Never {@code null}, but may return {@link TypeConverters#NULL_CONVERTER}
+     * if the attribute value is {@code null} and therefore its type can't be
+     * inferred. The latter may also happen for collection attributes if the
+     * collection is empty or all its elements are {@code null}.
+     */
     TypeConverter getConverter(String attributeName) {
-        Object attribute = getAttributeValue(attributeName);
-        if (attribute == null) {
+        Object attributeValue = getAttributeValue(attributeName);
+        if (attributeValue == null) {
+            return NULL_CONVERTER;
+        } else if (attributeValue instanceof MultiResult) {
+            MultiResult multiResult = (MultiResult) attributeValue;
+            for (Object result : multiResult.getResults()) {
+                if (result != null) {
+                    AttributeType attributeType = extractAttributeType(result);
+                    return attributeType == null ? IDENTITY_CONVERTER : attributeType.getConverter();
+                }
+            }
             return NULL_CONVERTER;
         } else {
-            AttributeType attributeType = extractAttributeType(attribute);
+            AttributeType attributeType = extractAttributeType(attributeValue);
             return attributeType == null ? IDENTITY_CONVERTER : attributeType.getConverter();
         }
     }
@@ -78,7 +122,11 @@ public abstract class QueryableEntry<K, V> implements Extractable, Map.Entry<K, 
             boolean isKey = startsWithKeyConstant(attributeName);
             attributeName = getAttributeName(isKey, attributeName);
             Object target = getTargetObject(isKey);
-            result = extractAttributeValueFromTargetObject(extractors, attributeName, target);
+            Object metadata = getMetadataOrNull(this. getMetadata(), isKey);
+            result = extractAttributeValueFromTargetObject(extractors, attributeName, target, metadata);
+        }
+        if (result instanceof HazelcastJsonValue) {
+            return Json.parse(result.toString());
         }
         return result;
     }
@@ -101,13 +149,13 @@ public abstract class QueryableEntry<K, V> implements Extractable, Map.Entry<K, 
      * an instance of the QueryableEntry, but is in possession of key and value.
      */
     static Object extractAttributeValue(Extractors extractors, InternalSerializationService serializationService,
-                                        String attributeName, Data key, Object value) throws QueryException {
+                                        String attributeName, Data key, Object value, Object metadata) throws QueryException {
         Object result = extractAttributeValueIfAttributeQueryConstant(serializationService, attributeName, key, value);
         if (result == null) {
             boolean isKey = startsWithKeyConstant(attributeName);
             attributeName = getAttributeName(isKey, attributeName);
             Object target = isKey ? key : value;
-            result = extractAttributeValueFromTargetObject(extractors, attributeName, target);
+            result = extractAttributeValueFromTargetObject(extractors, attributeName, target, metadata);
         }
         return result;
     }
@@ -126,7 +174,7 @@ public abstract class QueryableEntry<K, V> implements Extractable, Map.Entry<K, 
     }
 
     private static boolean startsWithKeyConstant(String attributeName) {
-        return attributeName.startsWith(KEY_ATTRIBUTE_NAME.value());
+        return attributeName.startsWith(KEY_ATTRIBUTE_NAME.value() + ".");
     }
 
     private static String getAttributeName(boolean isKey, String attributeName) {
@@ -138,61 +186,31 @@ public abstract class QueryableEntry<K, V> implements Extractable, Map.Entry<K, 
     }
 
     private static Object extractAttributeValueFromTargetObject(Extractors extractors,
-                                                                String attributeName, Object target) {
-        return extractors.extract(target, attributeName);
+                                                                String attributeName, Object target, Object metadata) {
+        return extractors.extract(target, attributeName, metadata);
     }
 
+    /**
+     * Deduces the {@link AttributeType} of the given non-{@code null} attribute
+     * value.
+     *
+     * @param attributeValue the attribute value to deduce the type of.
+     * @return the deduced attribute type or {@code null} if there is no
+     * attribute type corresponding to the type of the value. See {@link
+     * AttributeType} for the list of representable attribute types.
+     */
     public static AttributeType extractAttributeType(Object attributeValue) {
-        if (attributeValue instanceof MultiResult) {
-            return extractAttributeTypeFromMultiResult((MultiResult) attributeValue);
-        } else {
-            return extractAttributeTypeFromSingleResult(attributeValue);
-        }
-    }
-
-    private static AttributeType extractAttributeTypeFromJsonValue(JsonValue value) {
-        if (value.isNumber()) {
-            // toString method does not do any encoding in number case, it just returns stored string.
-            if (value.toString().contains(".")) {
-                // floating point number
-                return AttributeType.DOUBLE;
-            } else {
-                return AttributeType.LONG;
-            }
-        } else if (value.isBoolean()) {
-            return AttributeType.BOOLEAN;
-        } else if (value.isString()) {
-            return AttributeType.STRING;
-        }
-        throw new HazelcastSerializationException("Unknown Json type: " + value);
-    }
-
-    private static AttributeType extractAttributeTypeFromSingleResult(Object extractedSingleResult) {
-        if (extractedSingleResult == null) {
-            return null;
-        }
-        if (extractedSingleResult instanceof HazelcastJsonValue) {
-            return extractAttributeTypeFromJsonValue(Json.parse(extractedSingleResult.toString()));
-        }
-        if (extractedSingleResult instanceof Portable) {
+        if (attributeValue instanceof Portable) {
             return AttributeType.PORTABLE;
         }
-        return ReflectionHelper.getAttributeType(extractedSingleResult.getClass());
-
+        return ReflectionHelper.getAttributeType(attributeValue.getClass());
     }
 
-    private static AttributeType extractAttributeTypeFromMultiResult(MultiResult extractedMultiResult) {
-        Object firstNonNullResult = null;
-        for (Object result : extractedMultiResult.getResults()) {
-            if (result != null) {
-                firstNonNullResult = result;
-                break;
-            }
-        }
-        if (firstNonNullResult == null) {
+    private static Object getMetadataOrNull(Metadata metadata, boolean isKey) {
+        if (metadata == null) {
             return null;
         }
-        return ReflectionHelper.getAttributeType(firstNonNullResult.getClass());
+        return isKey ? metadata.getKeyMetadata() : metadata.getValueMetadata();
     }
 
 }

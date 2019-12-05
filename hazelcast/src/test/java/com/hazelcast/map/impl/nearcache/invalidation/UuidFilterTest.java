@@ -18,30 +18,35 @@ package com.hazelcast.map.impl.nearcache.invalidation;
 
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.RequireAssertEnabled;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+
+import java.util.UUID;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class UuidFilterTest {
 
-    private UuidFilter uuidFilter = new UuidFilter("sourceUuid");
+    private static UUID uuid = new UUID(0, 0);
+    private static UUID otherUuid = new UUID(1, 1);
+
+    private UuidFilter uuidFilter = new UuidFilter(uuid);
 
     @Test
     public void testEval() {
-        assertTrue(uuidFilter.eval("sourceUuid"));
+        assertTrue(uuidFilter.eval(uuid));
     }
 
     @Test
     public void testEval_withNonMatchingParameter() {
-        assertFalse(uuidFilter.eval("otherUuid"));
+        assertFalse(uuidFilter.eval(otherUuid));
     }
 
     @RequireAssertEnabled

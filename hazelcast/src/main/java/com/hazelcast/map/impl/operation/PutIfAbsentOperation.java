@@ -18,36 +18,47 @@ package com.hazelcast.map.impl.operation;
 
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.impl.MutatingOperation;
+import com.hazelcast.spi.impl.operationservice.MutatingOperation;
+
+import static com.hazelcast.map.impl.record.Record.UNSET;
 
 public class PutIfAbsentOperation extends BasePutOperation implements MutatingOperation {
 
-    private boolean successful;
+    protected transient boolean successful;
 
-    public PutIfAbsentOperation(String name, Data dataKey, Data value, long ttl, long maxIdle) {
-        super(name, dataKey, value, ttl, maxIdle);
+    public PutIfAbsentOperation(String name, Data dataKey, Data value) {
+        super(name, dataKey, value);
     }
 
     public PutIfAbsentOperation() {
     }
 
     @Override
-    public void run() {
-        final Object oldValue = recordStore.putIfAbsent(dataKey, dataValue, ttl, maxIdle, getCallerAddress());
-        dataOldValue = mapServiceContext.toData(oldValue);
-        successful = dataOldValue == null;
+    protected void runInternal() {
+        Object oldValue = recordStore.putIfAbsent(dataKey, dataValue,
+                getTtl(), getMaxIdle(), getCallerAddress());
+        this.oldValue = mapServiceContext.toData(oldValue);
+        successful = this.oldValue == null;
+    }
+
+    protected long getTtl() {
+        return UNSET;
+    }
+
+    protected long getMaxIdle() {
+        return UNSET;
     }
 
     @Override
-    public void afterRun() {
+    protected void afterRunInternal() {
         if (successful) {
-            super.afterRun();
+            super.afterRunInternal();
         }
     }
 
     @Override
     public Object getResponse() {
-        return dataOldValue;
+        return oldValue;
     }
 
     @Override
@@ -56,7 +67,7 @@ public class PutIfAbsentOperation extends BasePutOperation implements MutatingOp
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MapDataSerializerHook.PUT_IF_ABSENT;
     }
 }

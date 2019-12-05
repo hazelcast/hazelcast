@@ -45,7 +45,8 @@ public final class YamlDomBuilder {
             rootNode = ((Map) document).get(rootName);
 
             if (rootNode == null) {
-                throw new YamlException("The required " + rootName + " root node couldn't be found in the document root");
+                throw new YamlException("The required " + rootName
+                        + " root node couldn't be found in the document root");
             }
         } else {
             rootNode = document;

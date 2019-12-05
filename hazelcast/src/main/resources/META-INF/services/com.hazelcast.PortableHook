@@ -13,11 +13,3 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-
-
-com.hazelcast.spi.impl.SpiPortableHook
-com.hazelcast.internal.partition.impl.PartitionPortableHook
-com.hazelcast.mapreduce.impl.MapReducePortableHook
-com.hazelcast.replicatedmap.impl.client.ReplicatedMapPortableHook
-com.hazelcast.ringbuffer.impl.client.RingbufferPortableHook
-com.hazelcast.map.impl.client.MapPortableHook

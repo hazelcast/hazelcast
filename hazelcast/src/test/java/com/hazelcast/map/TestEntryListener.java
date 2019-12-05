@@ -20,7 +20,6 @@ import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceAware;
-import com.hazelcast.core.MapEvent;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -34,6 +33,11 @@ class TestEntryListener implements EntryListener, HazelcastInstanceAware {
 
     @Override
     public void entryEvicted(EntryEvent event) {
+    }
+
+    @Override
+    public void entryExpired(EntryEvent event) {
+
     }
 
     @Override

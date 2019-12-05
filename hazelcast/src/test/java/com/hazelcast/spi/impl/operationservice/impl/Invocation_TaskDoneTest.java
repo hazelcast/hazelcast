@@ -16,14 +16,12 @@
 
 package com.hazelcast.spi.impl.operationservice.impl;
 
-import com.hazelcast.core.ExecutionCallback;
-import com.hazelcast.core.ICompletableFuture;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.impl.operationservice.InternalOperationService;
+import com.hazelcast.spi.impl.InternalCompletableFuture;
+import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
 import org.junit.Test;
@@ -31,15 +29,16 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.util.concurrent.CountDownLatch;
+import java.util.function.Function;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class Invocation_TaskDoneTest extends HazelcastTestSupport {
 
-    private InternalOperationService operationService;
+    private OperationServiceImpl operationService;
 
     @Before
     public void before() {
@@ -65,14 +64,14 @@ public class Invocation_TaskDoneTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void when_invocationFutureCanceled_thenCallbackRunsEventually() throws InterruptedException {
+    public void when_invocationFutureCanceled_thenCallbackRunsEventually() {
         // Given
         final LatchAwaitOperation latchAwaitOp = new LatchAwaitOperation();
         final DoneCallback cb = new DoneCallback();
-        final ICompletableFuture<Object> fut =
+        final InternalCompletableFuture<Object> fut =
                 operationService.createInvocationBuilder("mockService", latchAwaitOp, 0).setDoneCallback(cb).invoke();
         final FailedLatchExecutionCallback canceledCallback = new FailedLatchExecutionCallback();
-        fut.andThen(canceledCallback);
+        fut.exceptionally(canceledCallback);
 
         // When
         fut.cancel(true);
@@ -81,12 +80,7 @@ public class Invocation_TaskDoneTest extends HazelcastTestSupport {
         // Then
         assertFalse(cb.done);
         latchAwaitOp.latch.countDown();
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertTrue(cb.done);
-            }
-        });
+        assertTrueEventually(() -> assertTrue(cb.done));
     }
 
     static class DoneCallback implements Runnable {
@@ -107,16 +101,13 @@ public class Invocation_TaskDoneTest extends HazelcastTestSupport {
         }
     }
 
-    static class FailedLatchExecutionCallback implements ExecutionCallback<Object> {
+    static class FailedLatchExecutionCallback implements Function<Throwable, Object> {
         final CountDownLatch latch = new CountDownLatch(1);
 
         @Override
-        public void onFailure(Throwable t) {
+        public Object apply(Throwable throwable) {
             latch.countDown();
-        }
-
-        @Override
-        public void onResponse(Object response) {
+            return null;
         }
     }
 }

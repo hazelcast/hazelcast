@@ -16,16 +16,16 @@
 
 package com.hazelcast.executor;
 
+import com.hazelcast.cluster.Member;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceAware;
-import com.hazelcast.core.ICountDownLatch;
+import com.hazelcast.cp.ICountDownLatch;
 import com.hazelcast.core.IExecutorService;
-import com.hazelcast.core.Member;
-import com.hazelcast.core.PartitionAware;
+import com.hazelcast.partition.PartitionAware;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
 import org.junit.Test;
@@ -43,7 +43,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class ExecutorServiceCancelTest extends ExecutorServiceTestSupport {
 
     private HazelcastInstance localHz;
@@ -57,7 +57,7 @@ public class ExecutorServiceCancelTest extends ExecutorServiceTestSupport {
         localHz = factory.newHazelcastInstance();
         remoteHz = factory.newHazelcastInstance();
         taskStartedLatchName = randomName();
-        taskStartedLatch = localHz.getCountDownLatch(taskStartedLatchName);
+        taskStartedLatch = localHz.getCPSubsystem().getCountDownLatch(taskStartedLatchName);
         taskStartedLatch.trySetCount(1);
     }
 
@@ -159,7 +159,7 @@ public class ExecutorServiceCancelTest extends ExecutorServiceTestSupport {
         private long sleepSeconds;
         private HazelcastInstance hz;
 
-        public SleepingTask(long sleepSeconds, String taskStartedLatchName) {
+        SleepingTask(long sleepSeconds, String taskStartedLatchName) {
             this.sleepSeconds = sleepSeconds;
             this.taskStartedLatchName = taskStartedLatchName;
         }
@@ -171,7 +171,7 @@ public class ExecutorServiceCancelTest extends ExecutorServiceTestSupport {
 
         @Override
         public Boolean call() throws InterruptedException {
-            hz.getCountDownLatch(taskStartedLatchName).countDown();
+            hz.getCPSubsystem().getCountDownLatch(taskStartedLatchName).countDown();
 
             sleepAtLeastSeconds((int) sleepSeconds);
             return true;

@@ -17,7 +17,7 @@
 package com.hazelcast.map.impl.event;
 
 import com.hazelcast.core.EntryEventType;
-import com.hazelcast.nio.Address;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.nio.serialization.Data;
 
 import java.util.Collection;
@@ -61,21 +61,21 @@ public interface EntryEventDataCache {
     boolean isEmpty();
 
     /**
-     * Return {@link EntryEventData} created & cached by invocations to
+     * Return {@link EntryEventData} created &amp; cached by invocations to
      * {@link #getOrCreateEventData(String, Address, Data, Object, Object, Object, int, boolean)}, including values in
      * the {@link EntryEventData} object.
      *
-     * @return {@link EntryEventData} created & cached including values. When no such {@link EntryEventData} exist, may
+     * @return {@link EntryEventData} created &amp; cached including values. When no such {@link EntryEventData} exist, may
      * return {@code null} or empty collection.
      */
     Collection<EntryEventData> eventDataIncludingValues();
 
     /**
-     * Return {@link EntryEventData} created & cached by invocations to
+     * Return {@link EntryEventData} created &amp; cached by invocations to
      * {@link #getOrCreateEventData(String, Address, Data, Object, Object, Object, int, boolean)}, excluding values from
      * the {@link EntryEventData} object.
      *
-     * @return {@link EntryEventData} created & cached excluding values. When no such {@link EntryEventData} exist, may
+     * @return {@link EntryEventData} created &amp; cached excluding values. When no such {@link EntryEventData} exist, may
      * return {@code null} or empty collection.
      */
     Collection<EntryEventData> eventDataExcludingValues();

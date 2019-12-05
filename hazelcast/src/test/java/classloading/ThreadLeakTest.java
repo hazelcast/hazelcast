@@ -20,6 +20,7 @@ import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
+import org.junit.After;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -27,20 +28,29 @@ import org.junit.runner.RunWith;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 
+import static classloading.ThreadLeakTestUtils.assertHazelcastThreadShutdown;
 import static classloading.ThreadLeakTestUtils.getAndLogThreads;
 import static classloading.ThreadLeakTestUtils.getThreads;
+import static com.hazelcast.test.HazelcastTestSupport.assertJoinable;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
-public class ThreadLeakTest extends AbstractThreadLeakTest {
+public class ThreadLeakTest {
+
+    @After
+    public void shutdownInstances() {
+        Hazelcast.shutdownAll();
+    }
 
     @Test
     public void testThreadLeak() {
+        Set<Thread> oldThreads = getThreads();
         HazelcastInstance hz = Hazelcast.newHazelcastInstance();
         hz.shutdown();
+        assertHazelcastThreadShutdown(oldThreads);
     }
 
     @Test
@@ -69,5 +79,7 @@ public class ThreadLeakTest extends AbstractThreadLeakTest {
 
         runningThreads = getAndLogThreads("There should be no threads running!", threads);
         assertNull("Expected to get null, but found running threads", runningThreads);
+
+        assertHazelcastThreadShutdown(threads);
     }
 }

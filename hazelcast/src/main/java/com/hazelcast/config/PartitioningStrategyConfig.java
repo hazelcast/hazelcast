@@ -16,10 +16,11 @@
 
 package com.hazelcast.config;
 
-import com.hazelcast.core.PartitioningStrategy;
+import com.hazelcast.internal.config.ConfigDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.partition.PartitioningStrategy;
 
 import java.io.IOException;
 
@@ -31,8 +32,6 @@ public class PartitioningStrategyConfig implements IdentifiedDataSerializable {
     private String partitioningStrategyClass;
 
     private PartitioningStrategy partitioningStrategy;
-
-    private transient PartitioningStrategyConfigReadOnly readOnly;
 
     public PartitioningStrategyConfig() {
     }
@@ -50,19 +49,6 @@ public class PartitioningStrategyConfig implements IdentifiedDataSerializable {
         this.partitioningStrategy = partitioningStrategy;
     }
 
-    /**
-     * Gets immutable version of this configuration.
-     *
-     * @return immutable version of this configuration
-     * @deprecated this method will be removed in 4.0; it is meant for internal usage only
-     */
-    public PartitioningStrategyConfigReadOnly getAsReadOnly() {
-        if (readOnly == null) {
-            readOnly = new PartitioningStrategyConfigReadOnly(this);
-        }
-        return readOnly;
-    }
-
     public String getPartitioningStrategyClass() {
         return partitioningStrategyClass;
     }
@@ -74,12 +60,6 @@ public class PartitioningStrategyConfig implements IdentifiedDataSerializable {
 
     public PartitioningStrategy getPartitioningStrategy() {
         return partitioningStrategy;
-    }
-
-    @Deprecated
-    public PartitioningStrategyConfig setPartitionStrategy(PartitioningStrategy partitionStrategy) {
-        this.partitioningStrategy = partitionStrategy;
-        return this;
     }
 
     public PartitioningStrategyConfig setPartitioningStrategy(PartitioningStrategy partitionStrategy) {
@@ -101,7 +81,7 @@ public class PartitioningStrategyConfig implements IdentifiedDataSerializable {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ConfigDataSerializerHook.PARTITION_STRATEGY_CONFIG;
     }
 

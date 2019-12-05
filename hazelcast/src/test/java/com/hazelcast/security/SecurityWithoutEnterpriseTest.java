@@ -19,16 +19,22 @@ package com.hazelcast.security;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.SecurityConfig;
 import com.hazelcast.config.SymmetricEncryptionConfig;
-import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
+
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
+
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-@RunWith(HazelcastSerialClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@RunWith(HazelcastParallelClassRunner.class)
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class SecurityWithoutEnterpriseTest extends HazelcastTestSupport {
 
     @Test(expected = IllegalStateException.class)
@@ -50,4 +56,21 @@ public class SecurityWithoutEnterpriseTest extends HazelcastTestSupport {
         config.getNetworkConfig().setSymmetricEncryptionConfig(symmetricEncryptionConfig);
         createHazelcastInstance(config);
     }
+
+    @Test
+    public void testCredentialsSerialization() {
+        HazelcastInstance hz = createHazelcastInstance(smallInstanceConfig());
+        SerializationService serializationService = getSerializationService(hz);
+
+        UsernamePasswordCredentials upc = new UsernamePasswordCredentials("admin", "secret");
+        UsernamePasswordCredentials upc2 = serializationService.toObject(serializationService.toData(upc));
+        assertEquals(upc.getName(), upc2.getName());
+        assertEquals(upc.getPassword(), upc2.getPassword());
+
+        SimpleTokenCredentials stc = new SimpleTokenCredentials(new byte[] { 1, 2, 3 });
+        SimpleTokenCredentials stc2 = serializationService.toObject(serializationService.toData(stc));
+        assertEquals(stc.getName(), stc2.getName());
+        assertArrayEquals(stc.getToken(), stc2.getToken());
+    }
+
 }

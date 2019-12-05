@@ -16,8 +16,9 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.internal.config.MemberAttributeConfigReadOnly;
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -26,14 +27,14 @@ import org.junit.runner.RunWith;
 import java.util.HashMap;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class MemberAttributeConfigTest {
 
     /**
-     * Test method for {@link com.hazelcast.config.MemberAttributeConfigReadOnly#setAttributes(java.util.Map)} .
+     * Test method for {@link MemberAttributeConfigReadOnly#setAttributes(java.util.Map)} .
      */
     @Test(expected = java.lang.UnsupportedOperationException.class)
     public void testReadOnlyMemberAttributeConfigSetAttributes() {
-        new MemberAttributeConfigReadOnly(new MemberAttributeConfig()).setAttributes(new HashMap<String, Object>());
+        new MemberAttributeConfigReadOnly(new MemberAttributeConfig()).setAttributes(new HashMap<>());
     }
 }

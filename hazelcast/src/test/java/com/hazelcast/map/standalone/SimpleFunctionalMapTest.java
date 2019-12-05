@@ -18,7 +18,7 @@ package com.hazelcast.map.standalone;
 
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IMap;
+import com.hazelcast.map.IMap;
 
 import java.util.Collection;
 import java.util.Map;

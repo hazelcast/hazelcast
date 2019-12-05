@@ -18,13 +18,15 @@ package com.hazelcast.internal.networking.nio;
 
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.internal.networking.Channel;
-import com.hazelcast.internal.networking.ChannelOptions;
 import com.hazelcast.internal.networking.ChannelOption;
+import com.hazelcast.internal.networking.ChannelOptions;
+import com.hazelcast.logging.Logger;
 
 import java.net.Socket;
 import java.net.SocketException;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.hazelcast.internal.networking.ChannelOption.DIRECT_BUF;
 import static com.hazelcast.internal.networking.ChannelOption.SO_KEEPALIVE;
@@ -34,13 +36,16 @@ import static com.hazelcast.internal.networking.ChannelOption.SO_REUSEADDR;
 import static com.hazelcast.internal.networking.ChannelOption.SO_SNDBUF;
 import static com.hazelcast.internal.networking.ChannelOption.SO_TIMEOUT;
 import static com.hazelcast.internal.networking.ChannelOption.TCP_NODELAY;
-import static com.hazelcast.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
+import static java.util.logging.Level.WARNING;
 
 /**
  * Contains the configuration for a {@link Channel}.
  */
 final class NioChannelOptions implements ChannelOptions {
 
+    private static final AtomicBoolean SEND_BUFFER_WARNING = new AtomicBoolean();
+    private static final AtomicBoolean RECEIVE_BUFFER_WARNING = new AtomicBoolean();
     private final Map<String, Object> values = new ConcurrentHashMap<String, Object>();
     private final Socket socket;
 
@@ -83,9 +88,13 @@ final class NioChannelOptions implements ChannelOptions {
             if (option.equals(TCP_NODELAY)) {
                 socket.setTcpNoDelay((Boolean) value);
             } else if (option.equals(SO_RCVBUF)) {
-                socket.setReceiveBufferSize((Integer) value);
+                int receiveBufferSize = (Integer) value;
+                socket.setReceiveBufferSize(receiveBufferSize);
+                verifyReceiveBufferSize(receiveBufferSize);
             } else if (option.equals(SO_SNDBUF)) {
-                socket.setSendBufferSize((Integer) value);
+                int sendBufferSize = (Integer) value;
+                socket.setSendBufferSize(sendBufferSize);
+                verifySendBufferSize(sendBufferSize);
             } else if (option.equals(SO_KEEPALIVE)) {
                 socket.setKeepAlive((Boolean) value);
             } else if (option.equals(SO_REUSEADDR)) {
@@ -93,9 +102,9 @@ final class NioChannelOptions implements ChannelOptions {
             } else if (option.equals(SO_TIMEOUT)) {
                 socket.setSoTimeout((Integer) value);
             } else if (option.equals(SO_LINGER)) {
-                int soLonger = (Integer) value;
-                if (soLonger > 0) {
-                    socket.setSoLinger(true, soLonger);
+                int soLinger = (Integer) value;
+                if (soLinger >= 0) {
+                    socket.setSoLinger(true, soLinger);
                 }
             } else {
                 values.put(option.name(), value);
@@ -105,5 +114,38 @@ final class NioChannelOptions implements ChannelOptions {
         }
 
         return this;
+    }
+
+    private void verifySendBufferSize(int sendBufferSize) throws SocketException {
+        if (socket.getSendBufferSize() == sendBufferSize) {
+            return;
+        }
+
+        if (SEND_BUFFER_WARNING.compareAndSet(false, true)) {
+            Logger.getLogger(NioChannelOptions.class).log(WARNING,
+                    "The configured tcp send buffer size conflicts with the value actually being used "
+                            + "by the socket and can lead to sub-optimal performance. "
+                            + "Configured " + sendBufferSize + " bytes, "
+                            + "actual " + socket.getSendBufferSize() + " bytes. "
+                            + "On Linux look for kernel parameters 'net.ipv4.tcp_wmem' and 'net.core.wmem_max'."
+                            + "This warning will only be shown once.");
+        }
+
+    }
+
+    private void verifyReceiveBufferSize(int receiveBufferSize) throws SocketException {
+        if (socket.getReceiveBufferSize() == receiveBufferSize) {
+            return;
+        }
+
+        if (RECEIVE_BUFFER_WARNING.compareAndSet(false, true)) {
+            Logger.getLogger(NioChannelOptions.class).log(WARNING,
+                    "The configured tcp receive buffer size conflicts with the value actually being used "
+                            + "by the socket and can lead to sub-optimal performance. "
+                            + "Configured " + receiveBufferSize + " bytes, "
+                            + "actual " + socket.getReceiveBufferSize() + " bytes. "
+                            + "On Linux look for kernel parameters 'net.ipv4.tcp_rmem' and 'net.core.rmem_max'."
+                            + "This warning will only be shown once.");
+        }
     }
 }

@@ -16,13 +16,11 @@
 
 package com.hazelcast.map;
 
-import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IMap;
-import com.hazelcast.map.listener.EntryEvictedListener;
+import com.hazelcast.map.listener.EntryExpiredListener;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
 import org.junit.Test;
@@ -40,7 +38,7 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class AsyncTest extends HazelcastTestSupport {
 
     private final String key = "key";
@@ -58,17 +56,17 @@ public class AsyncTest extends HazelcastTestSupport {
     public void testGetAsync() throws Exception {
         IMap<String, String> map = instance.getMap(randomString());
         map.put(key, value1);
-        Future<String> f1 = map.getAsync(key);
+        Future<String> f1 = map.getAsync(key).toCompletableFuture();
         assertEquals(value1, f1.get());
     }
 
     @Test
     public void testPutAsync() throws Exception {
         IMap<String, String> map = instance.getMap(randomString());
-        Future<String> f1 = map.putAsync(key, value1);
+        Future<String> f1 = map.putAsync(key, value1).toCompletableFuture();
         String f1Val = f1.get();
         assertNull(f1Val);
-        Future<String> f2 = map.putAsync(key, value2);
+        Future<String> f2 = map.putAsync(key, value2).toCompletableFuture();
         String f2Val = f2.get();
         assertEquals(value1, f2Val);
     }
@@ -78,13 +76,9 @@ public class AsyncTest extends HazelcastTestSupport {
         IMap<String, String> map = instance.getMap(randomString());
 
         final CountDownLatch latch = new CountDownLatch(1);
-        map.addEntryListener(new EntryEvictedListener<String, String>() {
-            public void entryEvicted(EntryEvent<String, String> event) {
-                latch.countDown();
-            }
-        }, true);
+        map.addEntryListener((EntryExpiredListener<String, String>) event -> latch.countDown(), true);
 
-        Future<String> f1 = map.putAsync(key, value1, 3, TimeUnit.SECONDS);
+        Future<String> f1 = map.putAsync(key, value1, 3, TimeUnit.SECONDS).toCompletableFuture();
         String f1Val = f1.get();
         assertNull(f1Val);
         assertEquals(value1, map.get(key));
@@ -96,10 +90,10 @@ public class AsyncTest extends HazelcastTestSupport {
     @Test
     public void testSetAsync() throws Exception {
         IMap<String, String> map = instance.getMap(randomString());
-        Future<Void> f1 = map.setAsync(key, value1);
+        Future<Void> f1 = map.setAsync(key, value1).toCompletableFuture();
         f1.get();
         assertEquals(value1, map.get(key));
-        Future<Void> f2 = map.setAsync(key, value2);
+        Future<Void> f2 = map.setAsync(key, value2).toCompletableFuture();
         f2.get();
         assertEquals(value2, map.get(key));
     }
@@ -107,7 +101,7 @@ public class AsyncTest extends HazelcastTestSupport {
     @Test
     public void testSetAsync_issue9599() throws Exception {
         IMap<String, String> map = instance.getMap(randomString());
-        Future<Void> f = map.setAsync(key, value1);
+        Future<Void> f = map.setAsync(key, value1).toCompletableFuture();
 
         // the return value was not of type Void, but Boolean. So assignment to Void would fail.
         Void v = f.get();
@@ -119,13 +113,9 @@ public class AsyncTest extends HazelcastTestSupport {
         IMap<String, String> map = instance.getMap(randomString());
 
         final CountDownLatch latch = new CountDownLatch(1);
-        map.addEntryListener(new EntryEvictedListener<String, String>() {
-            public void entryEvicted(EntryEvent<String, String> event) {
-                latch.countDown();
-            }
-        }, true);
+        map.addEntryListener((EntryExpiredListener<String, String>) event -> latch.countDown(), true);
 
-        Future<Void> f1 = map.setAsync(key, value1, 3, TimeUnit.SECONDS);
+        Future<Void> f1 = map.setAsync(key, value1, 3, TimeUnit.SECONDS).toCompletableFuture();
         f1.get();
         assertEquals(value1, map.get(key));
 
@@ -138,7 +128,7 @@ public class AsyncTest extends HazelcastTestSupport {
         IMap<String, String> map = instance.getMap(randomString());
         // populate map
         map.put(key, value1);
-        Future<String> f1 = map.removeAsync(key);
+        Future<String> f1 = map.removeAsync(key).toCompletableFuture();
         assertEquals(value1, f1.get());
     }
 
@@ -155,7 +145,7 @@ public class AsyncTest extends HazelcastTestSupport {
             }
         }).start();
         assertTrue(latch.await(20, TimeUnit.SECONDS));
-        Future<String> f1 = map.removeAsync(key);
+        Future<String> f1 = map.removeAsync(key).toCompletableFuture();
         try {
             assertEquals(value1, f1.get(0L, TimeUnit.SECONDS));
         } catch (TimeoutException e) {
@@ -168,7 +158,7 @@ public class AsyncTest extends HazelcastTestSupport {
     @Test
     public void testRemoveAsyncWithNonExistentKey() throws Exception {
         IMap<String, String> map = instance.getMap(randomString());
-        Future<String> f1 = map.removeAsync(key);
+        Future<String> f1 = map.removeAsync(key).toCompletableFuture();
         assertNull(f1.get());
     }
 }

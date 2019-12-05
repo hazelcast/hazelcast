@@ -20,13 +20,13 @@ import com.hazelcast.cache.impl.CacheDataSerializerHook;
 import com.hazelcast.cache.impl.CacheEventHandler;
 import com.hazelcast.cache.impl.CacheService;
 import com.hazelcast.internal.nearcache.impl.invalidation.MetaDataGenerator;
-import com.hazelcast.nio.Address;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.ReadonlyOperation;
-import com.hazelcast.spi.partition.IPartitionService;
+import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.spi.impl.operationservice.ReadonlyOperation;
+import com.hazelcast.internal.partition.IPartitionService;
 
 import java.io.IOException;
 import java.util.AbstractMap;
@@ -39,8 +39,8 @@ import java.util.UUID;
 
 import static com.hazelcast.cache.impl.CacheDataSerializerHook.CACHE_INVALIDATION_METADATA;
 import static com.hazelcast.cache.impl.CacheDataSerializerHook.CACHE_INVALIDATION_METADATA_RESPONSE;
-import static com.hazelcast.util.CollectionUtil.isNotEmpty;
-import static com.hazelcast.util.Preconditions.checkTrue;
+import static com.hazelcast.internal.util.CollectionUtil.isNotEmpty;
+import static com.hazelcast.internal.util.Preconditions.checkTrue;
 
 public class CacheGetInvalidationMetaDataOperation extends Operation implements IdentifiedDataSerializable, ReadonlyOperation {
 
@@ -95,7 +95,7 @@ public class CacheGetInvalidationMetaDataOperation extends Operation implements 
         }
 
         @Override
-        public int getId() {
+        public int getClassId() {
             return CACHE_INVALIDATION_METADATA_RESPONSE;
         }
 
@@ -222,7 +222,7 @@ public class CacheGetInvalidationMetaDataOperation extends Operation implements 
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return CACHE_INVALIDATION_METADATA;
     }
 

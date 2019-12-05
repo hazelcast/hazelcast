@@ -16,8 +16,8 @@
 
 package com.hazelcast.internal.partition.impl;
 
-import com.hazelcast.core.Member;
-import com.hazelcast.instance.Node;
+import com.hazelcast.cluster.Member;
+import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.partition.InternalPartition;
 import com.hazelcast.internal.partition.NonFragmentedServiceNamespace;
@@ -26,20 +26,20 @@ import com.hazelcast.internal.partition.PartitionReplicaVersionManager;
 import com.hazelcast.internal.partition.operation.PartitionReplicaSyncRequest;
 import com.hazelcast.internal.util.counters.MwCounter;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.spi.ExecutionService;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.ServiceNamespace;
-import com.hazelcast.spi.ServiceNamespaceAware;
-import com.hazelcast.spi.TaskScheduler;
+import com.hazelcast.spi.impl.executionservice.ExecutionService;
+import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.internal.services.ServiceNamespace;
+import com.hazelcast.internal.services.ServiceNamespaceAware;
+import com.hazelcast.spi.impl.executionservice.TaskScheduler;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationservice.PartitionTaskFactory;
-import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.spi.properties.HazelcastProperties;
-import com.hazelcast.util.scheduler.EntryTaskScheduler;
-import com.hazelcast.util.scheduler.EntryTaskSchedulerFactory;
-import com.hazelcast.util.scheduler.ScheduleType;
-import com.hazelcast.util.scheduler.ScheduledEntry;
-import com.hazelcast.util.scheduler.ScheduledEntryProcessor;
+import com.hazelcast.internal.util.scheduler.EntryTaskScheduler;
+import com.hazelcast.internal.util.scheduler.EntryTaskSchedulerFactory;
+import com.hazelcast.internal.util.scheduler.ScheduleType;
+import com.hazelcast.internal.util.scheduler.ScheduledEntry;
+import com.hazelcast.internal.util.scheduler.ScheduledEntryProcessor;
 
 import java.util.ArrayList;
 import java.util.BitSet;
@@ -90,8 +90,8 @@ public class PartitionReplicaManager implements PartitionReplicaVersionManager {
         partitionStateManager = partitionService.getPartitionStateManager();
 
         HazelcastProperties properties = node.getProperties();
-        partitionMigrationTimeout = properties.getMillis(GroupProperty.PARTITION_MIGRATION_TIMEOUT);
-        maxParallelReplications = properties.getInteger(GroupProperty.PARTITION_MAX_PARALLEL_REPLICATIONS);
+        partitionMigrationTimeout = properties.getMillis(ClusterProperty.PARTITION_MIGRATION_TIMEOUT);
+        maxParallelReplications = properties.getInteger(ClusterProperty.PARTITION_MAX_PARALLEL_REPLICATIONS);
         replicaSyncSemaphore = new Semaphore(maxParallelReplications);
 
         replicaVersions = new PartitionReplicaVersions[partitionCount];
@@ -112,7 +112,7 @@ public class PartitionReplicaManager implements PartitionReplicaVersionManager {
         replicaSyncTimeoutScheduler = EntryTaskSchedulerFactory.newScheduler(globalScheduler,
                 new ReplicaSyncTimeoutProcessor(), ScheduleType.POSTPONE);
 
-        replicaSyncRequests = newSetFromMap(new ConcurrentHashMap<ReplicaFragmentSyncInfo, Boolean>(partitionCount));
+        replicaSyncRequests = newSetFromMap(new ConcurrentHashMap<>(partitionCount));
     }
 
     /**
@@ -233,7 +233,7 @@ public class PartitionReplicaManager implements PartitionReplicaVersionManager {
     private List<ServiceNamespace> registerSyncInfoForNamespaces(int partitionId,
             Collection<ServiceNamespace> requestedNamespaces, int replicaIndex, PartitionReplica target, int permits) {
 
-        List<ServiceNamespace> namespaces = new ArrayList<ServiceNamespace>(permits);
+        List<ServiceNamespace> namespaces = new ArrayList<>(permits);
         for (ServiceNamespace namespace : requestedNamespaces) {
             if (namespaces.size() == permits) {
                 if (logger.isFinestEnabled()) {
@@ -427,15 +427,14 @@ public class PartitionReplicaManager implements PartitionReplicaVersionManager {
      * @return copy of ongoing replica-sync operations
      */
     List<ReplicaFragmentSyncInfo> getOngoingReplicaSyncRequests() {
-        return new ArrayList<ReplicaFragmentSyncInfo>(replicaSyncRequests);
+        return new ArrayList<>(replicaSyncRequests);
     }
 
     /**
      * @return copy of scheduled replica-sync requests
      */
     List<ScheduledEntry<ReplicaFragmentSyncInfo, Void>> getScheduledReplicaSyncRequests() {
-        final List<ScheduledEntry<ReplicaFragmentSyncInfo, Void>>
-                entries = new ArrayList<ScheduledEntry<ReplicaFragmentSyncInfo, Void>>();
+        final List<ScheduledEntry<ReplicaFragmentSyncInfo, Void>> entries = new ArrayList<>();
         for (ReplicaFragmentSyncInfo syncInfo : replicaSyncRequests) {
             ScheduledEntry<ReplicaFragmentSyncInfo, Void> entry = replicaSyncTimeoutScheduler.get(syncInfo);
             if (entry != null) {
@@ -455,7 +454,7 @@ public class PartitionReplicaManager implements PartitionReplicaVersionManager {
     }
 
     void scheduleReplicaVersionSync(ExecutionService executionService) {
-        long definedBackupSyncCheckInterval = node.getProperties().getSeconds(GroupProperty.PARTITION_BACKUP_SYNC_INTERVAL);
+        long definedBackupSyncCheckInterval = node.getProperties().getSeconds(ClusterProperty.PARTITION_BACKUP_SYNC_INTERVAL);
         long backupSyncCheckInterval = definedBackupSyncCheckInterval > 0 ? definedBackupSyncCheckInterval : 1;
 
         executionService.scheduleWithRepetition(new AntiEntropyTask(),

@@ -26,8 +26,8 @@ import com.hazelcast.map.impl.nearcache.MapNearCacheManager;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.spi.ObjectNamespace;
-import com.hazelcast.spi.ServiceNamespace;
+import com.hazelcast.internal.services.ObjectNamespace;
+import com.hazelcast.internal.services.ServiceNamespace;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -139,7 +139,7 @@ public class MapNearCacheStateHolder implements IdentifiedDataSerializable {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MAP_NEAR_CACHE_STATE_HOLDER;
     }
 }

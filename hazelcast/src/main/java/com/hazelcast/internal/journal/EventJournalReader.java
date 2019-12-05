@@ -16,9 +16,9 @@
 
 package com.hazelcast.internal.journal;
 
-import com.hazelcast.core.ICompletableFuture;
-import com.hazelcast.projection.Projection;
 import com.hazelcast.ringbuffer.ReadResultSet;
+
+import java.util.concurrent.CompletionStage;
 
 /**
  * This interface provides methods to subscribe and read from an event journal.
@@ -32,12 +32,12 @@ public interface EventJournalReader<E> {
      * The method will return the newest and oldest event journal sequence.
      *
      * @param partitionId the partition ID of the entries to which we are subscribing
-     * @return future with the initial subscriber state containing the newest and oldest event journal sequence
+     * @return {@link CompletionStage} with the initial subscriber state containing the newest and oldest event journal sequence
      * @throws UnsupportedOperationException if the cluster version is lower than 3.9 or there is no event journal
      *                                       configured for this data structure
      * @since 3.9
      */
-    ICompletableFuture<EventJournalInitialSubscriberState> subscribeToEventJournal(int partitionId);
+    CompletionStage<EventJournalInitialSubscriberState> subscribeToEventJournal(int partitionId);
 
     /**
      * Reads from the event journal. The returned future may throw {@link UnsupportedOperationException}
@@ -58,16 +58,16 @@ public interface EventJournalReader<E> {
      *                      May be {@code null} in which case the event is returned without being projected
      * @param <T>           the return type of the projection. It is equal to the journal event type
      *                      if the projection is {@code null} or it is the identity projection
-     * @return the future with the filtered and projected journal items
+     * @return {@link CompletionStage} with the filtered and projected journal items
      * @throws IllegalArgumentException if {@code maxSize} is less than {@code minSize}
      * @since 3.9
      */
-    <T> ICompletableFuture<ReadResultSet<T>> readFromEventJournal(
+    <T> CompletionStage<ReadResultSet<T>> readFromEventJournal(
             long startSequence,
             int minSize,
             int maxSize,
             int partitionId,
-            com.hazelcast.util.function.Predicate<? super E> predicate,
-            Projection<? super E, ? extends T> projection
+            java.util.function.Predicate<? super E> predicate,
+            java.util.function.Function<? super E, ? extends T> projection
     );
 }

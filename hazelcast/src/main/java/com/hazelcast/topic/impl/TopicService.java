@@ -16,55 +16,61 @@
 
 package com.hazelcast.topic.impl;
 
+import com.hazelcast.cluster.Address;
+import com.hazelcast.cluster.impl.MemberImpl;
+import com.hazelcast.config.Config;
 import com.hazelcast.config.TopicConfig;
-import com.hazelcast.core.ITopic;
-import com.hazelcast.core.Message;
-import com.hazelcast.core.MessageListener;
-import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.internal.cluster.ClusterService;
-import com.hazelcast.monitor.LocalTopicStats;
-import com.hazelcast.monitor.impl.LocalTopicStatsImpl;
-import com.hazelcast.nio.Address;
+import com.hazelcast.internal.metrics.DynamicMetricsProvider;
+import com.hazelcast.internal.metrics.MetricDescriptor;
+import com.hazelcast.internal.metrics.MetricsCollectionContext;
+import com.hazelcast.internal.monitor.impl.LocalTopicStatsImpl;
+import com.hazelcast.internal.services.ManagedService;
+import com.hazelcast.internal.services.RemoteService;
+import com.hazelcast.internal.services.StatisticsAwareService;
+import com.hazelcast.internal.util.ConstructorFunction;
+import com.hazelcast.internal.util.HashUtil;
+import com.hazelcast.internal.util.MapUtil;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.EventPublishingService;
-import com.hazelcast.spi.EventRegistration;
-import com.hazelcast.spi.EventService;
-import com.hazelcast.spi.ManagedService;
-import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.RemoteService;
-import com.hazelcast.spi.StatisticsAwareService;
-import com.hazelcast.util.ConstructorFunction;
-import com.hazelcast.util.HashUtil;
-import com.hazelcast.util.MapUtil;
+import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.spi.impl.eventservice.EventPublishingService;
+import com.hazelcast.spi.impl.eventservice.EventRegistration;
+import com.hazelcast.spi.impl.eventservice.EventService;
+import com.hazelcast.spi.properties.ClusterProperty;
+import com.hazelcast.topic.ITopic;
+import com.hazelcast.topic.LocalTopicStats;
+import com.hazelcast.topic.Message;
+import com.hazelcast.topic.MessageListener;
 
+import javax.annotation.Nonnull;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Properties;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
-import static com.hazelcast.util.ConcurrencyUtil.getOrPutSynchronized;
+import static com.hazelcast.internal.metrics.impl.ProviderHelper.provide;
+import static com.hazelcast.internal.util.ConcurrencyUtil.getOrPutSynchronized;
 
 public class TopicService implements ManagedService, RemoteService, EventPublishingService,
-        StatisticsAwareService<LocalTopicStats> {
+                                     StatisticsAwareService<LocalTopicStats>, DynamicMetricsProvider {
 
     public static final String SERVICE_NAME = "hz:impl:topicService";
 
     public static final int ORDERING_LOCKS_LENGTH = 1000;
 
-    private final ConcurrentMap<String, LocalTopicStatsImpl> statsMap = new ConcurrentHashMap<String, LocalTopicStatsImpl>();
+    private final ConcurrentMap<String, LocalTopicStatsImpl> statsMap = new ConcurrentHashMap<>();
     private final Lock[] orderingLocks = new Lock[ORDERING_LOCKS_LENGTH];
     private NodeEngine nodeEngine;
 
     private final ConstructorFunction<String, LocalTopicStatsImpl> localTopicStatsConstructorFunction =
-            new ConstructorFunction<String, LocalTopicStatsImpl>() {
-                public LocalTopicStatsImpl createNew(String mapName) {
-                    return new LocalTopicStatsImpl();
-                }
-            };
+            mapName -> new LocalTopicStatsImpl();
     private EventService eventService;
     private final AtomicInteger counter = new AtomicInteger(0);
     private Address localAddress;
@@ -77,6 +83,11 @@ public class TopicService implements ManagedService, RemoteService, EventPublish
             orderingLocks[i] = new ReentrantLock();
         }
         eventService = nodeEngine.getEventService();
+
+        boolean dsMetricsEnabled = nodeEngine.getProperties().getBoolean(ClusterProperty.METRICS_DATASTRUCTURES);
+        if (dsMetricsEnabled) {
+            ((NodeEngineImpl) nodeEngine).getMetricsRegistry().registerDynamicMetricsProvider(this);
+        }
     }
 
     // only for testing
@@ -105,7 +116,7 @@ public class TopicService implements ManagedService, RemoteService, EventPublish
     }
 
     @Override
-    public ITopic createDistributedObject(String name) {
+    public ITopic createDistributedObject(String name, boolean local) {
         TopicConfig topicConfig = nodeEngine.getConfig().findTopicConfig(name);
 
         if (topicConfig.isGlobalOrderingEnabled()) {
@@ -116,7 +127,7 @@ public class TopicService implements ManagedService, RemoteService, EventPublish
     }
 
     @Override
-    public void destroyDistributedObject(String objectId) {
+    public void destroyDistributedObject(String objectId, boolean local) {
         statsMap.remove(objectId);
         nodeEngine.getEventService().deregisterAllListeners(SERVICE_NAME, objectId);
     }
@@ -127,7 +138,9 @@ public class TopicService implements ManagedService, RemoteService, EventPublish
         ClusterService clusterService = nodeEngine.getClusterService();
         MemberImpl member = clusterService.getMember(topicEvent.publisherAddress);
         if (member == null) {
-            member = new MemberImpl(topicEvent.publisherAddress, nodeEngine.getVersion(), false);
+            member = new MemberImpl.Builder(topicEvent.publisherAddress)
+                    .version(nodeEngine.getVersion())
+                    .build();
         }
         Message message = new DataAwareMessage(topicEvent.name, topicEvent.data, topicEvent.publishTime, member
                 , nodeEngine.getSerializationService());
@@ -170,27 +183,47 @@ public class TopicService implements ManagedService, RemoteService, EventPublish
         }
     }
 
-    public String addMessageListener(String name, MessageListener listener, boolean localOnly) {
-        EventRegistration eventRegistration;
-        if (localOnly) {
-            eventRegistration = eventService.registerLocalListener(TopicService.SERVICE_NAME, name, listener);
-        } else {
-            eventRegistration = eventService.registerListener(TopicService.SERVICE_NAME, name, listener);
-
+    public UUID addLocalMessageListener(@Nonnull String name, @Nonnull MessageListener listener) {
+        EventRegistration registration = eventService.registerLocalListener(TopicService.SERVICE_NAME, name, listener);
+        if (registration == null) {
+            return null;
         }
-        return eventRegistration.getId();
+        return registration.getId();
     }
 
-    public boolean removeMessageListener(String name, String registrationId) {
+    public
+    UUID addMessageListener(@Nonnull String name, @Nonnull MessageListener listener) {
+        return eventService.registerListener(TopicService.SERVICE_NAME, name, listener).getId();
+    }
+
+    public
+    Future<UUID> addMessageListenerAsync(@Nonnull String name, @Nonnull MessageListener listener) {
+        return eventService.registerListenerAsync(TopicService.SERVICE_NAME, name, listener).thenApply(EventRegistration::getId);
+    }
+
+    public boolean removeMessageListener(@Nonnull String name, @Nonnull UUID registrationId) {
         return eventService.deregisterListener(TopicService.SERVICE_NAME, name, registrationId);
+    }
+
+    public Future<Boolean> removeMessageListenerAsync(@Nonnull String name, @Nonnull UUID registrationId) {
+        return eventService.deregisterListenerAsync(TopicService.SERVICE_NAME, name, registrationId);
     }
 
     @Override
     public Map<String, LocalTopicStats> getStats() {
         Map<String, LocalTopicStats> topicStats = MapUtil.createHashMap(statsMap.size());
-        for (Map.Entry<String, LocalTopicStatsImpl> queueStat : statsMap.entrySet()) {
-            topicStats.put(queueStat.getKey(), queueStat.getValue());
+        Config config = nodeEngine.getConfig();
+        for (Map.Entry<String, LocalTopicStatsImpl> statEntry : statsMap.entrySet()) {
+            String name = statEntry.getKey();
+            if (config.getTopicConfig(name).isStatisticsEnabled()) {
+                topicStats.put(name, statEntry.getValue());
+            }
         }
         return topicStats;
+    }
+
+    @Override
+    public void provideDynamicMetrics(MetricDescriptor descriptor, MetricsCollectionContext context) {
+        provide(descriptor, context, "topic", getStats());
     }
 }

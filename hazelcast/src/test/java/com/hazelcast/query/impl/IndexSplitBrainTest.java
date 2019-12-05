@@ -17,10 +17,11 @@
 package com.hazelcast.query.impl;
 
 import com.hazelcast.config.Config;
+import com.hazelcast.config.IndexConfig;
+import com.hazelcast.config.IndexType;
 import com.hazelcast.config.MapConfig;
-import com.hazelcast.config.MapIndexConfig;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IMap;
+import com.hazelcast.map.IMap;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
@@ -29,7 +30,7 @@ import com.hazelcast.query.Predicates;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.SplitBrainTestSupport;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -42,7 +43,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
 
 @RunWith(HazelcastSerialClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class IndexSplitBrainTest extends SplitBrainTestSupport {
 
     private final String mapName = randomMapName();
@@ -105,7 +106,7 @@ public class IndexSplitBrainTest extends SplitBrainTestSupport {
     protected Config config() {
         Config config = super.config();
         MapConfig mapConfig = config.getMapConfig(mapName);
-        mapConfig.addMapIndexConfig(new MapIndexConfig("id", false));
+        mapConfig.addIndexConfig(new IndexConfig(IndexType.HASH, "id"));
         return config;
     }
 
@@ -113,7 +114,7 @@ public class IndexSplitBrainTest extends SplitBrainTestSupport {
 
         private String id;
 
-        public ValueObject() {
+        ValueObject() {
         }
 
         ValueObject(String id) {

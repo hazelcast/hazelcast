@@ -17,16 +17,14 @@
 package com.hazelcast.internal.diagnostics;
 
 import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.spi.impl.operationservice.InternalOperationService;
 import com.hazelcast.spi.impl.operationservice.impl.Invocation;
 import com.hazelcast.spi.impl.operationservice.impl.InvocationRegistry;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.spi.properties.HazelcastProperty;
-import com.hazelcast.util.Clock;
-import com.hazelcast.util.ItemCounter;
+import com.hazelcast.internal.util.Clock;
+import com.hazelcast.internal.util.ItemCounter;
 
-import static com.hazelcast.internal.diagnostics.Diagnostics.PREFIX;
 import static com.hazelcast.internal.diagnostics.OperationDescriptors.toOperationDesc;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
@@ -48,19 +46,19 @@ public class InvocationPlugin extends DiagnosticsPlugin {
      * If set to 0, the plugin is disabled.
      */
     public static final HazelcastProperty SAMPLE_PERIOD_SECONDS
-            = new HazelcastProperty(PREFIX + ".invocation.sample.period.seconds", 0, SECONDS);
+            = new HazelcastProperty("hazelcast.diagnostics.invocation.sample.period.seconds", 0, SECONDS);
 
     /**
      * The threshold in seconds to consider an invocation to be slow.
      */
     public static final HazelcastProperty SLOW_THRESHOLD_SECONDS
-            = new HazelcastProperty(PREFIX + ".invocation.slow.threshold.seconds", 5, SECONDS);
+            = new HazelcastProperty("hazelcast.diagnostics.invocation.slow.threshold.seconds", 5, SECONDS);
 
     /**
      * The maximum number of slow invocations to print.
      */
     public static final HazelcastProperty SLOW_MAX_COUNT
-            = new HazelcastProperty(PREFIX + ".invocation.slow.max.count", 100);
+            = new HazelcastProperty("hazelcast.diagnostics.invocation.slow.max.count", 100);
 
     private final InvocationRegistry invocationRegistry;
     private final long samplePeriodMillis;
@@ -71,7 +69,7 @@ public class InvocationPlugin extends DiagnosticsPlugin {
 
     public InvocationPlugin(NodeEngineImpl nodeEngine) {
         super(nodeEngine.getLogger(PendingInvocationsPlugin.class));
-        InternalOperationService operationService = nodeEngine.getOperationService();
+        OperationServiceImpl operationService = nodeEngine.getOperationService();
         this.invocationRegistry = ((OperationServiceImpl) operationService).getInvocationRegistry();
         HazelcastProperties props = nodeEngine.getProperties();
         this.samplePeriodMillis = props.getMillis(SAMPLE_PERIOD_SECONDS);

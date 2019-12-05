@@ -22,6 +22,7 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import java.io.IOException;
+import java.util.Objects;
 
 public final class FixedSumAggregator<I> extends AbstractAggregator<I, Number, Long> implements IdentifiedDataSerializable {
 
@@ -57,7 +58,7 @@ public final class FixedSumAggregator<I> extends AbstractAggregator<I, Number, L
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return AggregatorDataSerializerHook.FIXED_SUM;
     }
 
@@ -73,4 +74,23 @@ public final class FixedSumAggregator<I> extends AbstractAggregator<I, Number, L
         this.sum = in.readLong();
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        if (!super.equals(o)) {
+            return false;
+        }
+        FixedSumAggregator<?> that = (FixedSumAggregator<?>) o;
+        return sum == that.sum;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), sum);
+    }
 }

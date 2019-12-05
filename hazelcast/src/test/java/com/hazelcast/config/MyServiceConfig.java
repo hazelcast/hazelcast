@@ -25,4 +25,6 @@ class MyServiceConfig {
     String stringProp;
     int intProp;
     boolean boolProp;
+    String nestedStringProp;
+    String nestedAttribute;
 }

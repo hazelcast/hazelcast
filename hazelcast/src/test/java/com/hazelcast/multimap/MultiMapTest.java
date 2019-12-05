@@ -18,17 +18,13 @@ package com.hazelcast.multimap;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.MultiMapConfig;
-import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.MultiMap;
-import com.hazelcast.mapreduce.aggregation.Aggregations;
-import com.hazelcast.mapreduce.aggregation.Supplier;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.util.Clock;
+import com.hazelcast.internal.util.Clock;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -48,7 +44,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class MultiMapTest extends HazelcastTestSupport {
 
     @Test
@@ -616,37 +612,6 @@ public class MultiMapTest extends HazelcastTestSupport {
 
         assertTrue(getMultiMap(instances, name).containsValue("key2_val2"));
         assertFalse(getMultiMap(instances, name).containsValue("key2_val4"));
-    }
-
-    // it must throw ClassCastException wrapped by HazelcastException
-    @Test(expected = HazelcastException.class)
-    @SuppressWarnings("deprecation")
-    public void testAggregateMultiMap_differentDataTypes() {
-        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
-        MultiMap<Object, Object> multiMap = getMultiMap(factory.newInstances(), randomString());
-
-        multiMap.put(1, "fail");
-        multiMap.put(2, 75);
-
-        Integer aggregate = multiMap.aggregate(Supplier.all(), Aggregations.integerAvg());
-
-        assertEquals(50, aggregate.intValue());
-    }
-
-    @Test
-    @SuppressWarnings("deprecation")
-    public void testAggregateMultiMap() {
-        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
-        MultiMap<Object, Object> multiMap = getMultiMap(factory.newInstances(), randomString());
-
-        Integer aggregate = multiMap.aggregate(Supplier.all(), Aggregations.integerAvg());
-        assertEquals(0, aggregate.intValue());
-
-        multiMap.put(1, 25);
-        multiMap.put(2, 75);
-
-        aggregate = multiMap.aggregate(Supplier.all(), Aggregations.integerAvg());
-        assertEquals(50, aggregate.intValue());
     }
 
     private MultiMap<Object, Object> getMultiMap(HazelcastInstance[] instances, String name) {

@@ -29,7 +29,7 @@ import com.hazelcast.query.impl.Index;
 import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.query.impl.QueryEntry;
 import com.hazelcast.query.impl.getters.Extractors;
-import com.hazelcast.util.Clock;
+import com.hazelcast.internal.util.Clock;
 
 import java.util.Collection;
 import java.util.Map;
@@ -51,10 +51,10 @@ class DefaultQueryCacheRecordStore implements QueryCacheRecordStore {
     private final InternalSerializationService serializationService;
     private final Extractors extractors;
 
-    public DefaultQueryCacheRecordStore(InternalSerializationService serializationService,
-                                        Indexes indexes,
-                                        QueryCacheConfig config, EvictionListener listener,
-                                        Extractors extractors) {
+    DefaultQueryCacheRecordStore(InternalSerializationService serializationService,
+                                 Indexes indexes,
+                                 QueryCacheConfig config, EvictionListener listener,
+                                 Extractors extractors) {
         this.cache = new QueryCacheRecordHashMap(serializationService, DEFAULT_CACHE_CAPACITY);
         this.serializationService = serializationService;
         this.recordFactory = getRecordFactory(config.getInMemoryFormat());
@@ -100,11 +100,11 @@ class DefaultQueryCacheRecordStore implements QueryCacheRecordStore {
     }
 
     private void saveIndex(Data keyData, QueryCacheRecord currentRecord, QueryCacheRecord oldRecord) {
-        if (indexes.hasIndex()) {
+        if (indexes.haveAtLeastOneIndex()) {
             Object currentValue = currentRecord.getValue();
             QueryEntry queryEntry = new QueryEntry(serializationService, keyData, currentValue, extractors);
             Object oldValue = oldRecord == null ? null : oldRecord.getValue();
-            indexes.saveEntryIndex(queryEntry, oldValue, Index.OperationSource.USER);
+            indexes.putEntry(queryEntry, oldValue, Index.OperationSource.USER);
         }
     }
 
@@ -124,8 +124,8 @@ class DefaultQueryCacheRecordStore implements QueryCacheRecordStore {
     }
 
     private void removeIndex(Data keyData, Object value) {
-        if (indexes.hasIndex()) {
-            indexes.removeEntryIndex(keyData, value, Index.OperationSource.USER);
+        if (indexes.haveAtLeastOneIndex()) {
+            indexes.removeEntry(keyData, value, Index.OperationSource.USER);
         }
     }
 

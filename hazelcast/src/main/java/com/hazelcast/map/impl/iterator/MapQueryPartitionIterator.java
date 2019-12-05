@@ -16,7 +16,7 @@
 
 package com.hazelcast.map.impl.iterator;
 
-import com.hazelcast.core.IMap;
+import com.hazelcast.map.IMap;
 import com.hazelcast.map.impl.operation.MapOperation;
 import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.map.impl.query.QueryResult;
@@ -25,9 +25,9 @@ import com.hazelcast.map.impl.query.ResultSegment;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.projection.Projection;
 import com.hazelcast.query.Predicate;
-import com.hazelcast.spi.InternalCompletableFuture;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.serialization.SerializationService;
+import com.hazelcast.spi.impl.InternalCompletableFuture;
+import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.internal.serialization.SerializationService;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -47,7 +47,8 @@ public class MapQueryPartitionIterator<K, V, R> extends AbstractMapQueryPartitio
     private final MapProxyImpl<K, V> mapProxy;
 
     public MapQueryPartitionIterator(MapProxyImpl<K, V> mapProxy, int fetchSize, int partitionId,
-                                     Predicate<K, V> predicate, Projection<Entry<K, V>, R> projection) {
+                                     Predicate<K, V> predicate,
+                                     Projection<? super Entry<K, V>, R> projection) {
         super(mapProxy, fetchSize, partitionId, predicate, projection);
         this.mapProxy = mapProxy;
         advance();
@@ -60,7 +61,7 @@ public class MapQueryPartitionIterator<K, V, R> extends AbstractMapQueryPartitio
         final ResultSegment segment = invoke(op);
         final QueryResult queryResult = (QueryResult) segment.getResult();
 
-        final List<Data> serialized = new ArrayList<Data>(queryResult.size());
+        final List<Data> serialized = new ArrayList<>(queryResult.size());
         for (QueryResultRow row : queryResult) {
             serialized.add(row.getValue());
         }
@@ -72,7 +73,7 @@ public class MapQueryPartitionIterator<K, V, R> extends AbstractMapQueryPartitio
     private ResultSegment invoke(Operation operation) {
         final InternalCompletableFuture<ResultSegment> future =
                 mapProxy.getOperationService().invokeOnPartition(mapProxy.getServiceName(), operation, partitionId);
-        return future.join();
+        return future.joinInternal();
     }
 
     @Override

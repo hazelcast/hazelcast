@@ -16,7 +16,7 @@
 
 package com.hazelcast.topic.impl.reliable;
 
-import com.hazelcast.core.Message;
+import com.hazelcast.topic.Message;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.topic.ReliableMessageListener;

@@ -16,40 +16,42 @@
 
 package com.hazelcast.topic.impl.reliable;
 
+import com.hazelcast.cluster.Address;
 import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.config.ReliableTopicConfig;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstanceAware;
-import com.hazelcast.core.ITopic;
-import com.hazelcast.core.MessageListener;
-import com.hazelcast.monitor.LocalTopicStats;
-import com.hazelcast.monitor.impl.LocalTopicStatsImpl;
-import com.hazelcast.nio.Address;
-import com.hazelcast.nio.ClassLoaderUtil;
+import com.hazelcast.internal.monitor.impl.LocalTopicStatsImpl;
+import com.hazelcast.internal.nio.ClassLoaderUtil;
+import com.hazelcast.internal.util.ExceptionUtil;
+import com.hazelcast.internal.util.UuidUtil;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.ringbuffer.OverflowPolicy;
 import com.hazelcast.ringbuffer.Ringbuffer;
-import com.hazelcast.spi.AbstractDistributedObject;
-import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.impl.AbstractDistributedObject;
+import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.topic.ITopic;
+import com.hazelcast.topic.LocalTopicStats;
+import com.hazelcast.topic.MessageListener;
 import com.hazelcast.topic.ReliableMessageListener;
 import com.hazelcast.topic.TopicOverloadException;
 import com.hazelcast.topic.TopicOverloadPolicy;
-import com.hazelcast.util.ExceptionUtil;
-import com.hazelcast.util.UuidUtil;
 
+import javax.annotation.Nonnull;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Executor;
 
+import static com.hazelcast.internal.util.ExceptionUtil.peel;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.ringbuffer.impl.RingbufferService.TOPIC_RB_PREFIX;
-import static com.hazelcast.spi.ExecutionService.ASYNC_EXECUTOR;
-import static com.hazelcast.util.ExceptionUtil.peel;
-import static com.hazelcast.util.Preconditions.checkNotNull;
+import static com.hazelcast.spi.impl.executionservice.ExecutionService.ASYNC_EXECUTOR;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 
 /**
- * The serverside {@link com.hazelcast.core.ITopic} implementation for reliable topics.
+ * The serverside {@link ITopic} implementation for reliable topics.
  *
  * @param <E> type of item contained in the topic
  */
@@ -57,11 +59,13 @@ public class ReliableTopicProxy<E> extends AbstractDistributedObject<ReliableTop
 
     public static final int MAX_BACKOFF = 2000;
     public static final int INITIAL_BACKOFF_MS = 100;
+    private static final String NULL_MESSAGE_IS_NOT_ALLOWED = "Null message is not allowed!";
+    private static final String NULL_LISTENER_IS_NOT_ALLOWED = "Null listener is not allowed!";
 
     final Ringbuffer<ReliableTopicMessage> ringbuffer;
     final Executor executor;
-    final ConcurrentMap<String, MessageRunner<E>> runnersMap
-            = new ConcurrentHashMap<String, MessageRunner<E>>();
+    final ConcurrentMap<UUID, MessageRunner<E>> runnersMap
+            = new ConcurrentHashMap<UUID, MessageRunner<E>>();
 
     /**
      * Local statistics for this reliable topic, including
@@ -151,7 +155,8 @@ public class ReliableTopicProxy<E> extends AbstractDistributedObject<ReliableTop
     }
 
     @Override
-    public void publish(E payload) {
+    public void publish(@Nonnull E payload) {
+        checkNotNull(payload, NULL_MESSAGE_IS_NOT_ALLOWED);
         try {
             Data data = nodeEngine.toData(payload);
             ReliableTopicMessage message = new ReliableTopicMessage(data, thisAddress);
@@ -163,7 +168,7 @@ public class ReliableTopicProxy<E> extends AbstractDistributedObject<ReliableTop
                     addOrOverwrite(message);
                     break;
                 case DISCARD_NEWEST:
-                    ringbuffer.addAsync(message, OverflowPolicy.FAIL).get();
+                    ringbuffer.addAsync(message, OverflowPolicy.FAIL).toCompletableFuture().get();
                     break;
                 case BLOCK:
                     addWithBackoff(message);
@@ -180,11 +185,11 @@ public class ReliableTopicProxy<E> extends AbstractDistributedObject<ReliableTop
     }
 
     private Long addOrOverwrite(ReliableTopicMessage message) throws Exception {
-        return ringbuffer.addAsync(message, OverflowPolicy.OVERWRITE).get();
+        return ringbuffer.addAsync(message, OverflowPolicy.OVERWRITE).toCompletableFuture().get();
     }
 
     private void addOrFail(ReliableTopicMessage message) throws Exception {
-        long sequenceId = ringbuffer.addAsync(message, OverflowPolicy.FAIL).get();
+        long sequenceId = ringbuffer.addAsync(message, OverflowPolicy.FAIL).toCompletableFuture().get();
         if (sequenceId == -1) {
             throw new TopicOverloadException("Failed to publish message: " + message + " on topic:" + getName());
         }
@@ -193,7 +198,7 @@ public class ReliableTopicProxy<E> extends AbstractDistributedObject<ReliableTop
     private void addWithBackoff(ReliableTopicMessage message) throws Exception {
         long timeoutMs = INITIAL_BACKOFF_MS;
         for (; ; ) {
-            long result = ringbuffer.addAsync(message, OverflowPolicy.FAIL).get();
+            long result = ringbuffer.addAsync(message, OverflowPolicy.FAIL).toCompletableFuture().get();
             if (result != -1) {
                 break;
             }
@@ -206,11 +211,12 @@ public class ReliableTopicProxy<E> extends AbstractDistributedObject<ReliableTop
         }
     }
 
+    @Nonnull
     @Override
-    public String addMessageListener(MessageListener<E> listener) {
-        checkNotNull(listener, "listener can't be null");
+    public UUID addMessageListener(@Nonnull MessageListener<E> listener) {
+        checkNotNull(listener, NULL_LISTENER_IS_NOT_ALLOWED);
 
-        String id = UuidUtil.newUnsecureUuidString();
+        UUID id = UuidUtil.newUnsecureUUID();
         ReliableMessageListener<E> reliableMessageListener;
         if (listener instanceof ReliableMessageListener) {
             reliableMessageListener = (ReliableMessageListener) listener;
@@ -227,7 +233,7 @@ public class ReliableTopicProxy<E> extends AbstractDistributedObject<ReliableTop
     }
 
     @Override
-    public boolean removeMessageListener(String registrationId) {
+    public boolean removeMessageListener(@Nonnull UUID registrationId) {
         checkNotNull(registrationId, "registrationId can't be null");
 
         MessageRunner runner = runnersMap.get(registrationId);
@@ -244,6 +250,7 @@ public class ReliableTopicProxy<E> extends AbstractDistributedObject<ReliableTop
         ringbuffer.destroy();
     }
 
+    @Nonnull
     @Override
     public LocalTopicStats getLocalTopicStats() {
         return localTopicStats;

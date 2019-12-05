@@ -18,7 +18,7 @@ package com.hazelcast.client.impl.operations;
 
 import com.hazelcast.client.impl.ClientDataSerializerHook;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.impl.operationservice.Operation;
 
 public abstract class AbstractClientOperation extends Operation implements IdentifiedDataSerializable {
 

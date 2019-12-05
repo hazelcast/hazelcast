@@ -17,38 +17,40 @@
 package com.hazelcast.map.impl.query;
 
 import com.hazelcast.config.CacheDeserializedValues;
-import com.hazelcast.core.IMap;
 import com.hazelcast.internal.cluster.ClusterService;
+import com.hazelcast.internal.partition.IPartitionService;
 import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.internal.util.Clock;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.map.IMap;
 import com.hazelcast.map.impl.LazyMapEntry;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.PartitionContainer;
+import com.hazelcast.map.impl.StoreAdapter;
 import com.hazelcast.map.impl.iterator.MapEntriesWithCursor;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.record.Records;
 import com.hazelcast.map.impl.recordstore.RecordStore;
+import com.hazelcast.map.impl.recordstore.RecordStoreAdapter;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.query.PagingPredicate;
 import com.hazelcast.query.Predicate;
+import com.hazelcast.query.impl.Metadata;
 import com.hazelcast.query.impl.QueryableEntriesSegment;
 import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.query.impl.getters.Extractors;
-import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.OperationService;
-import com.hazelcast.spi.partition.IPartitionService;
-import com.hazelcast.util.Clock;
+import com.hazelcast.query.impl.predicates.PagingPredicateImpl;
+import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.spi.impl.operationservice.OperationService;
 
 import java.util.Collection;
-import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.function.BiConsumer;
 
-import static com.hazelcast.query.PagingPredicateAccessor.getNearestAnchorEntry;
-import static com.hazelcast.util.SortingUtil.compareAnchor;
+import static com.hazelcast.internal.util.SortingUtil.compareAnchor;
 
 /**
  * Responsible for running a full-partition scan for a single partition in the calling thread.
@@ -75,56 +77,78 @@ public class PartitionScanRunner {
 
     @SuppressWarnings("unchecked")
     public void run(String mapName, Predicate predicate, int partitionId, Result result) {
-        PagingPredicate pagingPredicate = predicate instanceof PagingPredicate ? (PagingPredicate) predicate : null;
+        PagingPredicateImpl pagingPredicate = predicate instanceof PagingPredicateImpl
+                ? (PagingPredicateImpl) predicate : null;
 
         PartitionContainer partitionContainer = mapServiceContext.getPartitionContainer(partitionId);
         MapContainer mapContainer = mapServiceContext.getMapContainer(mapName);
-        Iterator<Record> iterator = partitionContainer.getRecordStore(mapName).loadAwareIterator(getNow(), false);
-        Map.Entry<Integer, Map.Entry> nearestAnchorEntry = getNearestAnchorEntry(pagingPredicate);
+        RecordStore<Record> recordStore = partitionContainer.getRecordStore(mapName);
         boolean useCachedValues = isUseCachedDeserializedValuesEnabled(mapContainer, partitionId);
         Extractors extractors = mapServiceContext.getExtractors(mapName);
-        LazyMapEntry queryEntry = new LazyMapEntry();
-        while (iterator.hasNext()) {
-            Record record = iterator.next();
-            Data key = (Data) toData(record.getKey());
-            Object value = toData(
-                    useCachedValues ? Records.getValueOrCachedValue(record, serializationService) : record.getValue());
-            if (value == null) {
-                continue;
-            }
+        StoreAdapter storeAdapter = new RecordStoreAdapter(recordStore);
+        Map.Entry<Integer, Map.Entry> nearestAnchorEntry =
+                pagingPredicate == null ? null : pagingPredicate.getNearestAnchorEntry();
 
-            queryEntry.init(serializationService, key, value, extractors);
-            if (predicate.apply(queryEntry) && compareAnchor(pagingPredicate, queryEntry, nearestAnchorEntry)) {
-                result.add(queryEntry);
+        recordStore.forEachAfterLoad(new BiConsumer<Data, Record>() {
+            LazyMapEntry queryEntry = new LazyMapEntry();
 
-                // We can't reuse the existing entry after it was added to the
-                // result. Allocate the new one.
-                queryEntry = new LazyMapEntry();
+            @Override
+            public void accept(Data key, Record record) {
+                Metadata metadata = PartitionScanRunner.this.getMetadataFromRecord(recordStore, key, record);
+                Object value = PartitionScanRunner.this.toData(useCachedValues
+                        ? Records.getValueOrCachedValue(record, serializationService)
+                        : record.getValue());
+                if (value == null) {
+                    return;
+                }
+
+                queryEntry.init(serializationService, key, value, extractors);
+                queryEntry.setMetadata(metadata);
+                queryEntry.setRecord(record);
+                queryEntry.setStoreAdapter(storeAdapter);
+                boolean valid = predicate.apply(queryEntry);
+                if (valid && compareAnchor(pagingPredicate, queryEntry, nearestAnchorEntry)) {
+                    result.add(queryEntry);
+
+                    // We can't reuse the existing entry after it was added to the
+                    // result. Allocate the new one.
+                    queryEntry = new LazyMapEntry();
+                }
             }
-        }
+        }, false);
         result.orderAndLimit(pagingPredicate, nearestAnchorEntry);
     }
 
+    // overridden in ee
+    protected Metadata getMetadataFromRecord(RecordStore recordStore, Data dataKey, Record record) {
+        return record.getMetadata();
+    }
+
     /**
-     * Executes the predicate on a partition chunk. The offset in the partition is defined by the {@code tableIndex}
-     * and the soft limit is defined by the {@code fetchSize}. The method returns the matched entries and an
-     * index from which new entries can be fetched which allows for efficient iteration of query results.
+     * Executes the predicate on a partition chunk. The offset in the
+     * partition is defined by the {@code tableIndex} and the soft
+     * limit is defined by the {@code fetchSize}. The method returns
+     * the matched entries and an index from which new entries can be
+     * fetched which allows for efficient iteration of query results.
      * <p>
      * <b>NOTE</b>
-     * Iterating the map should be done only when the {@link IMap} is not being
-     * mutated and the cluster is stable (there are no migrations or membership changes).
-     * In other cases, the iterator may not return some entries or may return an entry twice.
+     * Iterating the map should be done only when the {@link IMap}
+     * is not being mutated and the cluster is stable (there are no
+     * migrations or membership changes). In other cases, the iterator
+     * may not return some entries or may return an entry twice.
      *
      * @param mapName     the map name
      * @param predicate   the predicate which the entries must match
      * @param partitionId the partition which is queried
      * @param tableIndex  the index from which entries are queried
      * @param fetchSize   the soft limit for the number of entries to fetch
-     * @return entries matching the predicate and a table index from which new entries can be fetched
+     * @return entries matching the predicate and a
+     * table index from which new entries can be fetched
      */
-    public QueryableEntriesSegment run(String mapName, Predicate predicate, int partitionId, int tableIndex, int fetchSize) {
+    public QueryableEntriesSegment run(String mapName, Predicate predicate,
+                                       int partitionId, int tableIndex, int fetchSize) {
         int lastIndex = tableIndex;
-        final List<QueryableEntry> resultList = new LinkedList<QueryableEntry>();
+        final List<QueryableEntry> resultList = new LinkedList<>();
         final PartitionContainer partitionContainer = mapServiceContext.getPartitionContainer(partitionId);
         final RecordStore recordStore = partitionContainer.getRecordStore(mapName);
         final Extractors extractors = mapServiceContext.getExtractors(mapName);
@@ -155,7 +179,7 @@ public class PartitionScanRunner {
                 return true;
             default:
                 //if index exists then cached value is already set -> let's use it
-                return mapContainer.getIndexes(partitionId).hasIndex();
+                return mapContainer.getIndexes(partitionId).haveAtLeastOneIndex();
         }
     }
 

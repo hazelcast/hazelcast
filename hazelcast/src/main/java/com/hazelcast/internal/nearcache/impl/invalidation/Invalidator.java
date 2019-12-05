@@ -16,20 +16,20 @@
 
 package com.hazelcast.internal.nearcache.impl.invalidation;
 
-import com.hazelcast.core.IFunction;
+import com.hazelcast.internal.services.ManagedService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.EventRegistration;
-import com.hazelcast.spi.EventService;
-import com.hazelcast.spi.ManagedService;
-import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.partition.IPartitionService;
+import com.hazelcast.spi.impl.eventservice.EventRegistration;
+import com.hazelcast.spi.impl.eventservice.EventService;
+import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.internal.partition.IPartitionService;
 
 import java.util.Collection;
 import java.util.UUID;
+import java.util.function.Function;
 
 import static com.hazelcast.internal.util.ToHeapDataConverter.toHeapData;
-import static com.hazelcast.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 /**
  * Contains shared functionality for Near Cache invalidation.
@@ -43,9 +43,9 @@ public abstract class Invalidator {
     protected final EventService eventService;
     protected final MetaDataGenerator metaDataGenerator;
     protected final IPartitionService partitionService;
-    protected final IFunction<EventRegistration, Boolean> eventFilter;
+    protected final Function<EventRegistration, Boolean> eventFilter;
 
-    public Invalidator(String serviceName, IFunction<EventRegistration, Boolean> eventFilter, NodeEngine nodeEngine) {
+    public Invalidator(String serviceName, Function<EventRegistration, Boolean> eventFilter, NodeEngine nodeEngine) {
         this.serviceName = serviceName;
         this.eventFilter = eventFilter;
         this.nodeEngine = nodeEngine;
@@ -64,7 +64,7 @@ public abstract class Invalidator {
      * @param key               key of the entry to be removed from Near Cache
      * @param dataStructureName name of the data structure to be invalidated
      */
-    public final void invalidateKey(Data key, String dataStructureName, String sourceUuid) {
+    public final void invalidateKey(Data key, String dataStructureName, UUID sourceUuid) {
         checkNotNull(key, "key cannot be null");
         checkNotNull(sourceUuid, "sourceUuid cannot be null");
 
@@ -77,7 +77,7 @@ public abstract class Invalidator {
      *
      * @param dataStructureName name of the data structure to be cleared
      */
-    public final void invalidateAllKeys(String dataStructureName, String sourceUuid) {
+    public final void invalidateAllKeys(String dataStructureName, UUID sourceUuid) {
         checkNotNull(sourceUuid, "sourceUuid cannot be null");
 
         int orderKey = getPartitionId(dataStructureName);
@@ -95,17 +95,17 @@ public abstract class Invalidator {
         metaDataGenerator.resetSequence(dataStructureName, partitionId);
     }
 
-    private Invalidation newKeyInvalidation(Data key, String dataStructureName, String sourceUuid) {
+    private Invalidation newKeyInvalidation(Data key, String dataStructureName, UUID sourceUuid) {
         int partitionId = getPartitionId(key);
         return newInvalidation(key, dataStructureName, sourceUuid, partitionId);
     }
 
-    private Invalidation newClearInvalidation(String dataStructureName, String sourceUuid) {
+    private Invalidation newClearInvalidation(String dataStructureName, UUID sourceUuid) {
         int partitionId = getPartitionId(dataStructureName);
         return newInvalidation(null, dataStructureName, sourceUuid, partitionId);
     }
 
-    protected Invalidation newInvalidation(Data key, String dataStructureName, String sourceUuid, int partitionId) {
+    protected Invalidation newInvalidation(Data key, String dataStructureName, UUID sourceUuid, int partitionId) {
         long sequence = metaDataGenerator.nextSequence(dataStructureName, partitionId);
         UUID partitionUuid = metaDataGenerator.getOrCreateUuid(partitionId);
         return new SingleNearCacheInvalidation(toHeapData(key), dataStructureName, sourceUuid, partitionUuid, sequence);
@@ -138,7 +138,7 @@ public abstract class Invalidator {
      * @param dataStructureName name of the data structure.
      * @see com.hazelcast.map.impl.MapRemoteService#destroyDistributedObject(String)
      */
-    public void destroy(String dataStructureName, String sourceUuid) {
+    public void destroy(String dataStructureName, UUID sourceUuid) {
         invalidateAllKeys(dataStructureName, sourceUuid);
         metaDataGenerator.destroyMetaDataFor(dataStructureName);
     }
@@ -155,7 +155,7 @@ public abstract class Invalidator {
 
     /**
      * Shuts down this invalidator and releases used resources.
-     * Aimed to call with {@link com.hazelcast.spi.ManagedService#shutdown(boolean)}
+     * Aimed to call with {@link ManagedService#shutdown(boolean)}
      *
      * @see ManagedService#shutdown(boolean)
      */

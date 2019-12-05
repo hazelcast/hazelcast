@@ -16,26 +16,25 @@
 
 package com.hazelcast.map.impl;
 
-import com.hazelcast.core.EntryView;
+import com.hazelcast.config.WanAcknowledgeType;
+import com.hazelcast.internal.services.ReplicationSupportingService;
 import com.hazelcast.map.impl.operation.MapOperation;
 import com.hazelcast.map.impl.operation.MapOperationProvider;
 import com.hazelcast.map.impl.wan.MapReplicationRemove;
 import com.hazelcast.map.impl.wan.MapReplicationUpdate;
-import com.hazelcast.map.merge.MapMergePolicy;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.ReplicationSupportingService;
+import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 import com.hazelcast.spi.merge.SplitBrainMergeTypes.MapMergeTypes;
-import com.hazelcast.spi.serialization.SerializationService;
+import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.wan.DistributedServiceWanEventCounters;
 import com.hazelcast.wan.WanReplicationEvent;
-import com.hazelcast.wan.impl.DistributedServiceWanEventCounters;
 
 import java.util.concurrent.Future;
 
 import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
 import static com.hazelcast.spi.impl.merge.MergingValueFactory.createMergingEntry;
-import static com.hazelcast.util.ExceptionUtil.rethrow;
+import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 
 class MapReplicationSupportingService implements ReplicationSupportingService {
     private final MapServiceContext mapServiceContext;
@@ -46,23 +45,22 @@ class MapReplicationSupportingService implements ReplicationSupportingService {
         this.mapServiceContext = mapServiceContext;
         this.nodeEngine = mapServiceContext.getNodeEngine();
         this.wanEventTypeCounters = nodeEngine.getWanReplicationService()
-                                              .getReceivedEventCounters(MapService.SERVICE_NAME);
+                .getReceivedEventCounters(MapService.SERVICE_NAME);
     }
 
     @Override
-    public void onReplicationEvent(WanReplicationEvent replicationEvent) {
-        Object eventObject = replicationEvent.getEventObject();
-        if (eventObject instanceof MapReplicationUpdate) {
-            handleUpdate((MapReplicationUpdate) eventObject);
-        } else if (eventObject instanceof MapReplicationRemove) {
-            handleRemove((MapReplicationRemove) eventObject);
+    public void onReplicationEvent(WanReplicationEvent event, WanAcknowledgeType acknowledgeType) {
+        if (event instanceof MapReplicationUpdate) {
+            handleUpdate((MapReplicationUpdate) event);
+        } else if (event instanceof MapReplicationRemove) {
+            handleRemove((MapReplicationRemove) event);
         }
     }
 
     private void handleRemove(MapReplicationRemove replicationRemove) {
-        String mapName = replicationRemove.getMapName();
+        String mapName = replicationRemove.getObjectName();
         MapOperationProvider operationProvider = mapServiceContext.getMapOperationProvider(mapName);
-        MapOperation operation = operationProvider.createRemoveOperation(replicationRemove.getMapName(),
+        MapOperation operation = operationProvider.createDeleteOperation(replicationRemove.getObjectName(),
                 replicationRemove.getKey(), true);
 
         try {
@@ -77,21 +75,16 @@ class MapReplicationSupportingService implements ReplicationSupportingService {
     }
 
     private void handleUpdate(MapReplicationUpdate replicationUpdate) {
-        Object mergePolicy = replicationUpdate.getMergePolicy();
-        String mapName = replicationUpdate.getMapName();
+        SplitBrainMergePolicy mergePolicy = replicationUpdate.getMergePolicy();
+        String mapName = replicationUpdate.getObjectName();
         MapOperationProvider operationProvider = mapServiceContext.getMapOperationProvider(mapName);
 
-        MapOperation operation;
-        if (mergePolicy instanceof SplitBrainMergePolicy) {
-            SerializationService serializationService = nodeEngine.getSerializationService();
-            MapMergeTypes mergingEntry = createMergingEntry(serializationService, replicationUpdate.getEntryView());
-            //noinspection unchecked
-            operation = operationProvider.createMergeOperation(mapName, mergingEntry,
-                    (SplitBrainMergePolicy<Data, MapMergeTypes>) mergePolicy, true);
-        } else {
-            EntryView<Data, Data> entryView = replicationUpdate.getEntryView();
-            operation = operationProvider.createLegacyMergeOperation(mapName, entryView, (MapMergePolicy) mergePolicy, true);
-        }
+        SerializationService serializationService = nodeEngine.getSerializationService();
+        MapMergeTypes mergingEntry = createMergingEntry(serializationService, replicationUpdate.getEntryView());
+        //noinspection unchecked
+        MapOperation operation = operationProvider.createMergeOperation(mapName, mergingEntry,
+                (SplitBrainMergePolicy<Data, MapMergeTypes>) mergePolicy, true);
+
         try {
             int partitionId = nodeEngine.getPartitionService().getPartitionId(replicationUpdate.getEntryView().getKey());
             Future future = nodeEngine.getOperationService()

@@ -16,8 +16,10 @@
 
 package com.hazelcast.durableexecutor;
 
+import com.hazelcast.config.SplitBrainProtectionConfig;
 import com.hazelcast.core.DistributedObject;
 
+import javax.annotation.Nonnull;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -28,9 +30,10 @@ import java.util.concurrent.RejectedExecutionException;
  * Durable implementation of {@link ExecutorService}.
  * DurableExecutor provides additional methods like executing tasks on a member who is owner of a specific key
  * DurableExecutor also provides a way to retrieve the result of an execution with the given taskId.
- * @see ExecutorService
  *
- * Supports Quorum {@link com.hazelcast.config.QuorumConfig} since 3.10 in cluster versions 3.10 and higher.
+ * @see ExecutorService
+ * <p>
+ * Supports split brain protection {@link SplitBrainProtectionConfig} since 3.10 in cluster versions 3.10 and higher.
  */
 public interface DurableExecutorService extends ExecutorService, DistributedObject {
 
@@ -40,11 +43,9 @@ public interface DurableExecutorService extends ExecutorService, DistributedObje
      * Future's {@code get} method will return the task's result upon
      * successful completion.
      * <p>
-     * <p>
      * If you would like to immediately block waiting
      * for a task, you can use constructions of the form
      * {@code result = exec.submit(aCallable).get();}
-     * <p>
      * <p>Note: The {@link Executors} class includes a set of methods
      * that can convert some other common closure-like objects,
      * for example, {@link java.security.PrivilegedAction} to
@@ -57,7 +58,8 @@ public interface DurableExecutorService extends ExecutorService, DistributedObje
      *                                    scheduled for execution
      * @throws NullPointerException       if the task is null
      */
-    <T> DurableExecutorServiceFuture<T> submit(Callable<T> task);
+    @Nonnull
+    <T> DurableExecutorServiceFuture<T> submit(@Nonnull Callable<T> task);
 
     /**
      * Submits a Runnable task for execution and returns a Future
@@ -72,7 +74,8 @@ public interface DurableExecutorService extends ExecutorService, DistributedObje
      *                                    scheduled for execution
      * @throws NullPointerException       if the task is null
      */
-    <T> DurableExecutorServiceFuture<T> submit(Runnable task, T result);
+    @Nonnull
+    <T> DurableExecutorServiceFuture<T> submit(@Nonnull Runnable task, T result);
 
     /**
      * Submits a Runnable task for execution and returns a Future
@@ -85,7 +88,9 @@ public interface DurableExecutorService extends ExecutorService, DistributedObje
      *                                    scheduled for execution
      * @throws NullPointerException       if the task is null
      */
-    DurableExecutorServiceFuture<?> submit(Runnable task);
+    @Override
+    @Nonnull
+    DurableExecutorServiceFuture<?> submit(@Nonnull Runnable task);
 
     /**
      * Retrieves the result with the given taskId
@@ -118,7 +123,20 @@ public interface DurableExecutorService extends ExecutorService, DistributedObje
      * @param command a task executed on the owner of the specified key
      * @param key     the specified key
      */
-    void executeOnKeyOwner(Runnable command, Object key);
+    void executeOnKeyOwner(@Nonnull Runnable command,
+                           @Nonnull Object key);
+
+    /**
+     * Submits a task to the owner of the specified key and returns a Future
+     * representing that task.
+     *
+     * @param task task submitted to the owner of the specified key
+     * @param key  the specified key
+     * @param <T>  the return type of the task
+     * @return a Future representing pending completion of the task
+     */
+    <T> DurableExecutorServiceFuture<T> submitToKeyOwner(@Nonnull Callable<T> task,
+                                                         @Nonnull Object key);
 
     /**
      * Submits a task to the owner of the specified key and returns a Future
@@ -128,15 +146,6 @@ public interface DurableExecutorService extends ExecutorService, DistributedObje
      * @param key  the specified key
      * @return a Future representing pending completion of the task
      */
-    <T> DurableExecutorServiceFuture<T> submitToKeyOwner(Callable<T> task, Object key);
-
-    /**
-     * Submits a task to the owner of the specified key and returns a Future
-     * representing that task.
-     *
-     * @param task task submitted to the owner of the specified key
-     * @param key  the specified key
-     * @return a Future representing pending completion of the task
-     */
-    DurableExecutorServiceFuture<?> submitToKeyOwner(Runnable task, Object key);
+    DurableExecutorServiceFuture<?> submitToKeyOwner(@Nonnull Runnable task,
+                                                     @Nonnull Object key);
 }

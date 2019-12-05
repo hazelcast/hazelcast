@@ -24,7 +24,7 @@
         http://www.springframework.org/schema/tx
         http://www.springframework.org/schema/tx/spring-tx.xsd
         http://www.hazelcast.com/schema/spring
-        http://www.hazelcast.com/schema/spring/hazelcast-spring-3.11.xsd">
+        http://www.hazelcast.com/schema/spring/hazelcast-spring-4.0.xsd">
 
     <tx:annotation-driven transaction-manager="transactionManager"/>
 
@@ -47,7 +47,7 @@
 
     <hz:hazelcast id="instance" lazy-init="true" scope="singleton">
         <hz:config>
-            <hz:group name="${cluster.group.name}" password="${cluster.group.password}"/>
+            <hz:cluster-name>${cluster.name}</hz:cluster-name>
             <hz:network port="5701" port-auto-increment="false">
                 <hz:join>
                     <hz:multicast enabled="false"/>
@@ -64,10 +64,8 @@
     </hz:hazelcast>
 
     <hz:client id="client" lazy-init="true" scope="prototype">
-        <hz:group name="${cluster.group.name}" password="${cluster.group.password}"/>
-        <hz:network connection-attempt-limit="3"
-                    connection-attempt-period="3000"
-                    connection-timeout="1000"
+        <hz:cluster-name>${cluster.name}</hz:cluster-name>
+        <hz:network connection-timeout="1000"
                     redo-operation="true"
                     smart-routing="true">
 

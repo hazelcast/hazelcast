@@ -16,7 +16,7 @@
 
 package com.hazelcast.internal.nearcache.impl.invalidation;
 
-import com.hazelcast.nio.serialization.SerializableByConvention;
+import com.hazelcast.internal.serialization.SerializableByConvention;
 
 import java.util.Collection;
 import java.util.concurrent.ConcurrentLinkedQueue;

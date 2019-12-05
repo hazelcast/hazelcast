@@ -16,15 +16,15 @@
 
 package com.hazelcast.internal.cluster.fd;
 
-import com.hazelcast.core.Member;
+import com.hazelcast.cluster.Member;
 import com.hazelcast.instance.BuildInfoProvider;
-import com.hazelcast.instance.MemberImpl;
-import com.hazelcast.nio.Address;
+import com.hazelcast.cluster.impl.MemberImpl;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.spi.properties.HazelcastProperties;
-import com.hazelcast.test.HazelcastParametersRunnerFactory;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.util.Clock;
+import com.hazelcast.internal.util.Clock;
 import com.hazelcast.version.MemberVersion;
 import org.junit.Before;
 import org.junit.Test;
@@ -39,7 +39,7 @@ import java.util.Collection;
 import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 
-import static com.hazelcast.util.UuidUtil.newUnsecureUuidString;
+import static com.hazelcast.internal.util.UuidUtil.newUnsecureUUID;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.hamcrest.Matchers.lessThan;
 import static org.junit.Assert.assertEquals;
@@ -49,8 +49,8 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 @RunWith(Parameterized.class)
-@Parameterized.UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Parameterized.UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class ClusterFailureDetectorTest {
 
     private static final long HEARTBEAT_TIMEOUT = TimeUnit.SECONDS.toMillis(1);
@@ -218,7 +218,10 @@ public class ClusterFailureDetectorTest {
 
     private static Member newMember(int port) {
         MemberVersion memberVersion = MemberVersion.of(BuildInfoProvider.getBuildInfo().getVersion());
-        return new MemberImpl(newAddress(port), memberVersion, false, newUnsecureUuidString());
+        return new MemberImpl.Builder(newAddress(port))
+                .version(memberVersion)
+                .uuid(newUnsecureUUID())
+                .build();
     }
 
     private static Address newAddress(int port) {

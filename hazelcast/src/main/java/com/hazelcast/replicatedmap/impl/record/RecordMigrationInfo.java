@@ -16,6 +16,7 @@
 
 package com.hazelcast.replicatedmap.impl.record;
 
+import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -101,8 +102,8 @@ public class RecordMigrationInfo implements IdentifiedDataSerializable {
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeData(key);
-        out.writeData(value);
+        IOUtil.writeData(out, key);
+        IOUtil.writeData(out, value);
         out.writeLong(ttl);
         out.writeLong(hits);
         out.writeLong(lastAccessTime);
@@ -112,8 +113,8 @@ public class RecordMigrationInfo implements IdentifiedDataSerializable {
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        key = in.readData();
-        value = in.readData();
+        key = IOUtil.readData(in);
+        value = IOUtil.readData(in);
         ttl = in.readLong();
         hits = in.readLong();
         lastAccessTime = in.readLong();
@@ -140,7 +141,7 @@ public class RecordMigrationInfo implements IdentifiedDataSerializable {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ReplicatedMapDataSerializerHook.RECORD_MIGRATION_INFO;
     }
 }

@@ -32,7 +32,7 @@ public enum ItemEventType {
 
     private int type;
 
-    private ItemEventType(final int type) {
+    ItemEventType(final int type) {
         this.type = type;
     }
 

@@ -16,11 +16,12 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.internal.config.ConfigDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.discovery.DiscoveryStrategyFactory;
-import com.hazelcast.util.MapUtil;
+import com.hazelcast.internal.util.MapUtil;
 
 import java.io.IOException;
 import java.util.Collections;
@@ -70,6 +71,12 @@ public class DiscoveryStrategyConfig implements IdentifiedDataSerializable {
         this.discoveryStrategyFactory = discoveryStrategyFactory;
     }
 
+    public DiscoveryStrategyConfig(DiscoveryStrategyConfig config) {
+        className = config.className;
+        discoveryStrategyFactory = config.discoveryStrategyFactory;
+        properties = new HashMap<String, Comparable>(config.properties);
+    }
+
     public String getClassName() {
         return className;
     }
@@ -88,12 +95,14 @@ public class DiscoveryStrategyConfig implements IdentifiedDataSerializable {
         return discoveryStrategyFactory;
     }
 
-    public void addProperty(String key, Comparable value) {
+    public DiscoveryStrategyConfig addProperty(String key, Comparable value) {
         properties.put(key, value);
+        return this;
     }
 
-    public void removeProperty(String key) {
+    public DiscoveryStrategyConfig removeProperty(String key) {
         properties.remove(key);
+        return this;
     }
 
     public DiscoveryStrategyConfig setProperties(Map<String, Comparable> properties) {
@@ -122,7 +131,7 @@ public class DiscoveryStrategyConfig implements IdentifiedDataSerializable {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ConfigDataSerializerHook.DISCOVERY_STRATEGY_CONFIG;
     }
 

@@ -17,8 +17,8 @@
 package com.hazelcast.internal.cluster.impl.operations;
 
 import com.hazelcast.cluster.ClusterState;
-import com.hazelcast.core.Member;
-import com.hazelcast.instance.Node;
+import com.hazelcast.cluster.Member;
+import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
@@ -35,7 +35,7 @@ import static com.hazelcast.internal.cluster.impl.SplitBrainJoinMessage.SplitBra
 import static com.hazelcast.internal.cluster.impl.SplitBrainJoinMessage.SplitBrainMergeCheckResult.REMOTE_NODE_SHOULD_MERGE;
 
 /**
- * Validate whether clusters may merge to recover from a split brain, based on configuration & cluster version.
+ * Validate whether clusters may merge to recover from a split brain, based on configuration &amp; cluster version.
  */
 public class SplitBrainMergeValidationOp extends AbstractJoinOperation {
 
@@ -178,17 +178,16 @@ public class SplitBrainMergeValidationOp extends AbstractJoinOperation {
 
     @Override
     protected void readInternal(final ObjectDataInput in) throws IOException {
-        request = new SplitBrainJoinMessage();
-        request.readData(in);
+        request = in.readObject();
     }
 
     @Override
     protected void writeInternal(final ObjectDataOutput out) throws IOException {
-        request.writeData(out);
+        out.writeObject(request);
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ClusterDataSerializerHook.SPLIT_BRAIN_MERGE_VALIDATION;
     }
 }

@@ -16,29 +16,28 @@
 
 package com.hazelcast.internal.cluster.impl.operations;
 
+import com.hazelcast.internal.util.UUIDSerializationUtil;
 import com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook;
 import com.hazelcast.internal.cluster.impl.ClusterHeartbeatManager;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.internal.cluster.impl.MembersViewMetadata;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.impl.Versioned;
 
 import java.io.IOException;
+import java.util.UUID;
 
 /** A heartbeat sent from one cluster member to another. The sent timestamp is the cluster clock time of the sending member */
-// RU_COMPAT_39: Do not remove Versioned interface!
-// Version info is needed on 3.9 members while deserializing the operation.
-public final class HeartbeatOp extends AbstractClusterOperation implements Versioned {
+public final class HeartbeatOp extends AbstractClusterOperation {
 
     private MembersViewMetadata senderMembersViewMetadata;
-    private String targetUuid;
+    private UUID targetUuid;
     private long timestamp;
 
     public HeartbeatOp() {
     }
 
-    public HeartbeatOp(MembersViewMetadata senderMembersViewMetadata, String targetUuid, long timestamp) {
+    public HeartbeatOp(MembersViewMetadata senderMembersViewMetadata, UUID targetUuid, long timestamp) {
         this.senderMembersViewMetadata = senderMembersViewMetadata;
         this.targetUuid = targetUuid;
         this.timestamp = timestamp;
@@ -48,12 +47,11 @@ public final class HeartbeatOp extends AbstractClusterOperation implements Versi
     public void run() {
         ClusterServiceImpl service = getService();
         ClusterHeartbeatManager heartbeatManager = service.getClusterHeartbeatManager();
-
         heartbeatManager.handleHeartbeat(senderMembersViewMetadata, targetUuid, timestamp);
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ClusterDataSerializerHook.HEARTBEAT;
     }
 
@@ -61,7 +59,7 @@ public final class HeartbeatOp extends AbstractClusterOperation implements Versi
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeObject(senderMembersViewMetadata);
-        out.writeUTF(targetUuid);
+        UUIDSerializationUtil.writeUUID(out, targetUuid);
         out.writeLong(timestamp);
     }
 
@@ -69,7 +67,7 @@ public final class HeartbeatOp extends AbstractClusterOperation implements Versi
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         senderMembersViewMetadata = in.readObject();
-        targetUuid = in.readUTF();
+        targetUuid = UUIDSerializationUtil.readUUID(in);
         timestamp = in.readLong();
     }
 

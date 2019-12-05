@@ -16,6 +16,8 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.internal.config.ConfigDataSerializerHook;
+
 /**
  * Configuration for the Azure Discovery Strategy.
  */
@@ -25,8 +27,12 @@ public class AzureConfig
         super("azure");
     }
 
+    public AzureConfig(AzureConfig azureConfig) {
+        super(azureConfig);
+    }
+
     @Override
-    public int getId() {
+    public int getClassId() {
         return ConfigDataSerializerHook.AZURE_CONFIG;
     }
 }

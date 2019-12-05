@@ -17,8 +17,8 @@
 package com.hazelcast.client.impl.protocol.task;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.instance.Node;
-import com.hazelcast.nio.Connection;
+import com.hazelcast.instance.impl.Node;
+import com.hazelcast.internal.nio.Connection;
 
 import java.security.Permission;
 
@@ -40,10 +40,14 @@ public class NoSuchMessageTask extends AbstractMessageTask<ClientMessage> {
 
     @Override
     protected void processMessage() {
-        String message = "Unrecognized client message received with type: 0x"
-                + Integer.toHexString(parameters.getMessageType());
-        logger.warning(message);
+        String message = "Unrecognized client message received with type: 0x" + Integer.toHexString(parameters.getMessageType());
+        logger.finest(message);
         throw new UnsupportedOperationException(message);
+    }
+
+    @Override
+    protected boolean requiresAuthentication() {
+        return false;
     }
 
     @Override
@@ -64,12 +68,6 @@ public class NoSuchMessageTask extends AbstractMessageTask<ClientMessage> {
     @Override
     public Object[] getParameters() {
         return null;
-    }
-
-    // overriding the partition ID send from client as it is not recognized
-    @Override
-    public int getPartitionId() {
-        return -1;
     }
 
     @Override

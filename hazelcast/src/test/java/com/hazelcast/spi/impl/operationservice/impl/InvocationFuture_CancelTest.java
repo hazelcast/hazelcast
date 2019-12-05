@@ -17,13 +17,11 @@
 package com.hazelcast.spi.impl.operationservice.impl;
 
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.ICompletableFuture;
-import com.hazelcast.spi.InternalCompletableFuture;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.impl.operationservice.InternalOperationService;
+import com.hazelcast.spi.impl.InternalCompletableFuture;
+import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
 import org.junit.Rule;
@@ -38,7 +36,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class InvocationFuture_CancelTest extends HazelcastTestSupport {
 
     private static final int RESULT = 123;
@@ -46,7 +44,7 @@ public class InvocationFuture_CancelTest extends HazelcastTestSupport {
     @Rule
     public final ExpectedException exceptionRule = ExpectedException.none();
 
-    private InternalOperationService opService;
+    private OperationServiceImpl opService;
 
     @Before
     public void setup() {
@@ -55,9 +53,9 @@ public class InvocationFuture_CancelTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void whenCallCancel_thenCancelled() throws Exception {
+    public void whenCallCancel_thenCancelled() {
         // Given
-        ICompletableFuture future = invoke();
+        InternalCompletableFuture future = invoke();
 
         // When
         boolean result = future.cancel(true);
@@ -69,9 +67,9 @@ public class InvocationFuture_CancelTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void whenCancelled_thenCantCancelAgain() throws Exception {
+    public void whenCancelled_thenCantCancelAgain() {
         // Given
-        ICompletableFuture future = invoke();
+        InternalCompletableFuture future = invoke();
 
         // When
         future.cancel(true);
@@ -83,7 +81,7 @@ public class InvocationFuture_CancelTest extends HazelcastTestSupport {
     @Test
     public void whenCancelled_thenGetThrowsCancelled() throws Exception {
         // Given
-        ICompletableFuture future = invoke();
+        InternalCompletableFuture future = invoke();
 
         // When
         future.cancel(true);
@@ -96,7 +94,7 @@ public class InvocationFuture_CancelTest extends HazelcastTestSupport {
     private InternalCompletableFuture invoke() {
         Operation op = new Operation() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 sleepMillis(1000);
             }
 

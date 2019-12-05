@@ -20,7 +20,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IMap;
+import com.hazelcast.map.IMap;
 import com.hazelcast.internal.adapter.DataStructureAdapterMethod;
 import com.hazelcast.internal.adapter.IMapDataStructureAdapter;
 import com.hazelcast.internal.adapter.IMapMapStore;
@@ -33,7 +33,7 @@ import com.hazelcast.internal.nearcache.NearCacheTestUtils;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Before;
@@ -52,7 +52,7 @@ import static com.hazelcast.internal.nearcache.NearCacheTestUtils.getMapNearCach
  * Basic Near Cache tests for {@link IMap} on Hazelcast members.
  */
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({ParallelTest.class, QuickTest.class})
+@Category({ParallelJVMTest.class, QuickTest.class})
 public class MapNearCacheBasicTest extends AbstractNearCacheBasicTest<Data, String> {
 
     private final TestHazelcastInstanceFactory hazelcastFactory = createHazelcastInstanceFactory(2);

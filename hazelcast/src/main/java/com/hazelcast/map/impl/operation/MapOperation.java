@@ -18,6 +18,9 @@ package com.hazelcast.map.impl.operation;
 
 import com.hazelcast.core.EntryView;
 import com.hazelcast.internal.nearcache.impl.invalidation.Invalidator;
+import com.hazelcast.internal.services.ObjectNamespace;
+import com.hazelcast.internal.services.ServiceNamespaceAware;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.MapService;
@@ -25,37 +28,43 @@ import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.PartitionContainer;
 import com.hazelcast.map.impl.event.MapEventPublisher;
 import com.hazelcast.map.impl.mapstore.MapDataStore;
+import com.hazelcast.map.impl.mapstore.writebehind.TxnReservedCapacityCounter;
 import com.hazelcast.map.impl.nearcache.MapNearCacheManager;
 import com.hazelcast.map.impl.record.Record;
-import com.hazelcast.wan.impl.CallerProvenance;
 import com.hazelcast.map.impl.recordstore.RecordStore;
+import com.hazelcast.memory.NativeOutOfMemoryError;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.spi.ObjectNamespace;
-import com.hazelcast.spi.ServiceNamespaceAware;
-import com.hazelcast.spi.impl.AbstractNamedOperation;
+import com.hazelcast.spi.impl.operationservice.AbstractNamedOperation;
+import com.hazelcast.spi.impl.operationservice.BackupOperation;
+import com.hazelcast.wan.impl.CallerProvenance;
 
 import java.util.List;
+import java.util.logging.Level;
 
+import static com.hazelcast.config.InMemoryFormat.NATIVE;
+import static com.hazelcast.internal.util.CollectionUtil.isEmpty;
+import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 import static com.hazelcast.internal.util.ToHeapDataConverter.toHeapData;
 import static com.hazelcast.map.impl.EntryViews.createSimpleEntryView;
-import static com.hazelcast.util.CollectionUtil.isEmpty;
+import static com.hazelcast.map.impl.operation.ForcedEviction.runWithForcedEvictionStrategies;
 
-public abstract class MapOperation extends AbstractNamedOperation implements IdentifiedDataSerializable, ServiceNamespaceAware {
+@SuppressWarnings("checkstyle:methodcount")
+public abstract class MapOperation extends AbstractNamedOperation
+        implements IdentifiedDataSerializable, ServiceNamespaceAware {
+
+    private static final boolean ASSERTION_ENABLED = MapOperation.class.desiredAssertionStatus();
 
     protected transient MapService mapService;
+    protected transient RecordStore<Record> recordStore;
     protected transient MapContainer mapContainer;
     protected transient MapServiceContext mapServiceContext;
     protected transient MapEventPublisher mapEventPublisher;
-    protected transient RecordStore recordStore;
 
     protected transient boolean createRecordStoreOnDemand = true;
+    protected transient boolean disposeDeferredBlocks = true;
 
-    /**
-     * Used by wan-replication-service to disable wan-replication event publishing
-     * otherwise in active-active scenarios infinite loop of event forwarding can be seen.
-     */
-    protected boolean disableWanReplicationEvent;
+    private transient boolean canPublishWanEvent;
 
     public MapOperation() {
     }
@@ -64,38 +73,149 @@ public abstract class MapOperation extends AbstractNamedOperation implements Ide
         this.name = name;
     }
 
-    // for testing only
-    public void setMapService(MapService mapService) {
-        this.mapService = mapService;
-    }
-
-    // for testing only
-    public void setMapContainer(MapContainer mapContainer) {
-        this.mapContainer = mapContainer;
-    }
-
-    protected final CallerProvenance getCallerProvenance() {
-        return disableWanReplicationEvent ? CallerProvenance.WAN : CallerProvenance.NOT_WAN;
-    }
-
     @Override
-    public void beforeRun() throws Exception {
+    public final void beforeRun() throws Exception {
         super.beforeRun();
 
         mapService = getService();
         mapServiceContext = mapService.getMapServiceContext();
         mapEventPublisher = mapServiceContext.getMapEventPublisher();
 
+        try {
+            recordStore = getRecordStoreOrNull();
+            if (recordStore == null) {
+                mapContainer = mapServiceContext.getMapContainer(name);
+            } else {
+                mapContainer = recordStore.getMapContainer();
+            }
+        } catch (Throwable t) {
+            disposeDeferredBlocks();
+            throw rethrow(t, Exception.class);
+        }
+
+        canPublishWanEvent = canPublishWanEvent(mapContainer);
+
+        assertNativeMapOnPartitionThread();
+
         innerBeforeRun();
     }
 
-    public void innerBeforeRun() throws Exception {
-        recordStore = getRecordStoreOrNull();
-        if (recordStore == null) {
-            mapContainer = mapServiceContext.getMapContainer(name);
-        } else {
-            mapContainer = recordStore.getMapContainer();
+    protected void innerBeforeRun() throws Exception {
+        // Intentionally empty method body.
+        // Concrete classes can override this method.
+    }
+
+    @Override
+    public final void run() {
+        try {
+            runInternal();
+        } catch (NativeOutOfMemoryError e) {
+            rerunWithForcedEviction();
         }
+    }
+
+    protected void runInternal() {
+        // Intentionally empty method body.
+        // Concrete classes can override this method.
+    }
+
+    private void rerunWithForcedEviction() {
+        try {
+            runWithForcedEvictionStrategies(this);
+        } catch (NativeOutOfMemoryError e) {
+            disposeDeferredBlocks();
+            throw e;
+        }
+    }
+
+    @Override
+    public final void afterRun() throws Exception {
+        afterRunInternal();
+        disposeDeferredBlocks();
+        super.afterRun();
+    }
+
+    protected void afterRunInternal() {
+        // Intentionally empty method body.
+        // Concrete classes can override this method.
+    }
+
+    private void assertNativeMapOnPartitionThread() {
+        if (!ASSERTION_ENABLED) {
+            return;
+        }
+
+        assert mapContainer.getMapConfig().getInMemoryFormat() != NATIVE
+                || getPartitionId() != GENERIC_PARTITION_ID
+                : "Native memory backed map operations are not allowed to run on GENERIC_PARTITION_ID";
+    }
+
+    ILogger logger() {
+        return getLogger();
+    }
+
+    protected final CallerProvenance getCallerProvenance() {
+        return disableWanReplicationEvent() ? CallerProvenance.WAN : CallerProvenance.NOT_WAN;
+    }
+
+    private RecordStore getRecordStoreOrNull() {
+        int partitionId = getPartitionId();
+        if (partitionId == -1) {
+            return null;
+        }
+        PartitionContainer partitionContainer = mapServiceContext.getPartitionContainer(partitionId);
+        if (createRecordStoreOnDemand) {
+            return partitionContainer.getRecordStore(name);
+        } else {
+            return partitionContainer.getExistingRecordStore(name);
+        }
+    }
+
+    @Override
+    public void onExecutionFailure(Throwable e) {
+        disposeDeferredBlocks();
+        super.onExecutionFailure(e);
+    }
+
+    @Override
+    public void logError(Throwable e) {
+        ILogger logger = getLogger();
+        if (e instanceof NativeOutOfMemoryError) {
+            Level level = this instanceof BackupOperation ? Level.FINEST : Level.WARNING;
+            logger.log(level, "Cannot complete operation! -> " + e.getMessage());
+        } else {
+            // we need to introduce a proper method to handle operation failures (at the moment
+            // this is the only place where we can dispose native memory allocations on failure)
+            disposeDeferredBlocks();
+            super.logError(e);
+        }
+    }
+
+    void disposeDeferredBlocks() {
+        if (!disposeDeferredBlocks) {
+            return;
+        }
+
+        int partitionId = getPartitionId();
+        if (partitionId == -1) {
+            return;
+        }
+
+        MapService service = getService();
+        RecordStore recordStore = service.getMapServiceContext().getExistingRecordStore(partitionId, name);
+        if (recordStore != null) {
+            recordStore.disposeDeferredBlocks();
+        }
+    }
+
+    private boolean canPublishWanEvent(MapContainer mapContainer) {
+        boolean canPublishWanEvent = mapContainer.isWanReplicationEnabled()
+                && !disableWanReplicationEvent();
+
+        if (canPublishWanEvent) {
+            mapContainer.getWanReplicationDelegate().doPrepublicationChecks();
+        }
+        return canPublishWanEvent;
     }
 
     @Override
@@ -105,7 +225,8 @@ public abstract class MapOperation extends AbstractNamedOperation implements Ide
 
     public boolean isPostProcessing(RecordStore recordStore) {
         MapDataStore mapDataStore = recordStore.getMapDataStore();
-        return mapDataStore.isPostProcessingMapStore() || mapServiceContext.hasInterceptor(name);
+        return mapDataStore.isPostProcessingMapStore()
+                || !mapContainer.getInterceptorRegistry().getInterceptors().isEmpty();
     }
 
     public void setThreadId(long threadId) {
@@ -139,7 +260,8 @@ public abstract class MapOperation extends AbstractNamedOperation implements Ide
     }
 
     /**
-     * This method helps to add clearing Near Cache event only from one-partition which matches partitionId of the map name.
+     * This method helps to add clearing Near Cache event only from
+     * one-partition which matches partitionId of the map name.
      */
     protected final void invalidateAllKeysInNearCaches() {
         if (mapContainer.hasInvalidationListener()) {
@@ -160,23 +282,9 @@ public abstract class MapOperation extends AbstractNamedOperation implements Ide
         return mapNearCacheManager.getInvalidator();
     }
 
-    protected void evict(Data excludedKey) {
-        assert recordStore != null : "Record-store cannot be null";
-
-        recordStore.evictEntries(excludedKey);
-    }
-
-    private RecordStore getRecordStoreOrNull() {
-        int partitionId = getPartitionId();
-        if (partitionId == -1) {
-            return null;
-        }
-        PartitionContainer partitionContainer = mapServiceContext.getPartitionContainer(partitionId);
-        if (createRecordStoreOnDemand) {
-            return partitionContainer.getRecordStore(name);
-        } else {
-            return partitionContainer.getExistingRecordStore(name);
-        }
+    protected final void evict(Data justAddedKey) {
+        recordStore.evictEntries(justAddedKey);
+        disposeDeferredBlocks();
     }
 
     @Override
@@ -194,12 +302,14 @@ public abstract class MapOperation extends AbstractNamedOperation implements Ide
         return container.getObjectNamespace();
     }
 
-    /**
-     * @return {@code true} if this operation can generate WAN event, otherwise return {@code false}
-     * to indicate WAN event generation is not allowed for this operation
-     */
-    protected final boolean canThisOpGenerateWANEvent() {
-        return !disableWanReplicationEvent;
+    // for testing only
+    public void setMapService(MapService mapService) {
+        this.mapService = mapService;
+    }
+
+    // for testing only
+    public void setMapContainer(MapContainer mapContainer) {
+        this.mapContainer = mapContainer;
     }
 
     protected final void publishWanUpdate(Data dataKey, Object value) {
@@ -207,7 +317,7 @@ public abstract class MapOperation extends AbstractNamedOperation implements Ide
     }
 
     private void publishWanUpdateInternal(Data dataKey, Object value, boolean hasLoadProvenance) {
-        if (!canPublishWANEvent()) {
+        if (!canPublishWanEvent) {
             return;
         }
 
@@ -227,14 +337,25 @@ public abstract class MapOperation extends AbstractNamedOperation implements Ide
     }
 
     protected final void publishWanRemove(Data dataKey) {
-        if (!canPublishWANEvent()) {
+        if (!canPublishWanEvent) {
             return;
         }
 
         mapEventPublisher.publishWanRemove(name, toHeapData(dataKey));
     }
 
-    private boolean canPublishWANEvent() {
-        return mapContainer.isWanReplicationEnabled() && canThisOpGenerateWANEvent();
+    protected boolean disableWanReplicationEvent() {
+        return false;
+    }
+
+    protected final TxnReservedCapacityCounter wbqCapacityCounter() {
+        return recordStore.getMapDataStore().getTxnReservedCapacityCounter();
+    }
+
+    protected final Data getValueOrPostProcessedValue(Record record, Data dataValue) {
+        if (!isPostProcessing(recordStore)) {
+            return dataValue;
+        }
+        return mapServiceContext.toData(record.getValue());
     }
 }

@@ -18,10 +18,11 @@ package com.hazelcast.collection.impl.collection.operations;
 
 import com.hazelcast.collection.impl.collection.CollectionContainer;
 import com.hazelcast.collection.impl.collection.CollectionDataSerializerHook;
+import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.BackupOperation;
+import com.hazelcast.spi.impl.operationservice.BackupOperation;
 
 import java.io.IOException;
 
@@ -47,7 +48,7 @@ public class CollectionAddBackupOperation extends CollectionOperation implements
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return CollectionDataSerializerHook.COLLECTION_ADD_BACKUP;
     }
 
@@ -55,13 +56,13 @@ public class CollectionAddBackupOperation extends CollectionOperation implements
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeLong(itemId);
-        out.writeData(value);
+        IOUtil.writeData(out, value);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         itemId = in.readLong();
-        value = in.readData();
+        value = IOUtil.readData(in);
     }
 }

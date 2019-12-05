@@ -23,8 +23,6 @@ import com.hazelcast.map.impl.querycache.accumulator.AccumulatorInfo;
 import com.hazelcast.map.impl.querycache.accumulator.AccumulatorProcessor;
 import com.hazelcast.map.impl.querycache.event.sequence.Sequenced;
 
-import static com.hazelcast.map.impl.querycache.ListenerRegistrationHelper.generateListenerName;
-
 /**
  * Publish events which will be received by subscriber sides.
  *
@@ -47,8 +45,7 @@ public class EventPublisherAccumulatorProcessor implements AccumulatorProcessor<
 
     @Override
     public void process(Sequenced sequenced) {
-        String listenerName = generateListenerName(info.getMapName(), info.getCacheId());
-        eventService.sendEventToSubscriber(listenerName, sequenced, sequenced.getPartitionId());
+        eventService.sendEventToSubscriber(info.getCacheId(), sequenced, sequenced.getPartitionId());
 
         if (logger.isFinestEnabled()) {
             logger.finest("Publisher sent events " + sequenced);

@@ -19,12 +19,12 @@ package com.hazelcast.durableexecutor.impl.operations;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.durableexecutor.impl.DurableExecutorContainer;
 import com.hazelcast.durableexecutor.impl.DurableExecutorDataSerializerHook;
-import com.hazelcast.nio.Bits;
+import com.hazelcast.internal.nio.Bits;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.spi.BlockingOperation;
-import com.hazelcast.spi.ReadonlyOperation;
-import com.hazelcast.spi.WaitNotifyKey;
+import com.hazelcast.spi.impl.operationservice.BlockingOperation;
+import com.hazelcast.spi.impl.operationservice.ReadonlyOperation;
+import com.hazelcast.spi.impl.operationservice.WaitNotifyKey;
 
 import java.io.IOException;
 
@@ -86,7 +86,7 @@ public class RetrieveResultOperation extends AbstractDurableExecutorOperation im
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return DurableExecutorDataSerializerHook.RETRIEVE_RESULT;
     }
 }

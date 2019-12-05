@@ -16,13 +16,13 @@
 
 package com.hazelcast.internal.jmx;
 
-import com.hazelcast.core.MultiMap;
+import com.hazelcast.multimap.MultiMap;
 import com.hazelcast.internal.jmx.suppliers.LocalMultiMapStatsSupplier;
 import com.hazelcast.internal.jmx.suppliers.StatsSupplier;
-import com.hazelcast.monitor.LocalMultiMapStats;
+import com.hazelcast.multimap.LocalMultiMapStats;
 
 /**
- * Management bean for {@link com.hazelcast.core.MultiMap}
+ * Management bean for {@link MultiMap}
  */
 @ManagedDescription("MultiMap")
 public class MultiMapMBean extends HazelcastMBean<MultiMap> {

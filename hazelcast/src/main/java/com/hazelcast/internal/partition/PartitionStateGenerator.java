@@ -24,9 +24,9 @@ public interface PartitionStateGenerator {
 
     /**
      * Arranges the partition layout.
-     * <p/>
+     * <p>
      * This method does not actually change the partitions, but send back the updated layout.
-     * <p/>
+     * <p>
      * A two-dimensional array of addresses is returned where the first index is the partition ID, and
      * the second index is the replica index.
      *
@@ -38,12 +38,12 @@ public interface PartitionStateGenerator {
 
     /**
      * Arranges the partition layout.
-     * <p/>
+     * <p>
      * This method does not actually change the partitions, but send back the updated layout.
-     * <p/>
+     * <p>
      * A two-dimensional array of addresses is returned where the first index is the partition ID, and
      * the second index is the replica index.
-     * <p/>
+     * <p>
      * When null partitions is given, all partitions will be arranged,
      * similar to {@link #arrange(Collection, InternalPartition[])}.
      *

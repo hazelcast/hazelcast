@@ -18,16 +18,17 @@ package com.hazelcast.projection;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.InMemoryFormat;
+import com.hazelcast.config.IndexConfig;
+import com.hazelcast.config.IndexType;
 import com.hazelcast.config.MapConfig;
-import com.hazelcast.config.MapIndexConfig;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IMap;
+import com.hazelcast.map.IMap;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
-import com.hazelcast.query.SqlPredicate;
-import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.query.Predicates;
+import com.hazelcast.spi.properties.ClusterProperty;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.Fork;
@@ -56,12 +57,12 @@ public class Query2Benchmark {
     public void prepare() {
         Config config = new Config();
         MapConfig mapConfig = new MapConfig("map");
-        config.setProperty(GroupProperty.QUERY_PREDICATE_PARALLEL_EVALUATION.getName(), "true");
+        config.setProperty(ClusterProperty.QUERY_PREDICATE_PARALLEL_EVALUATION.getName(), "true");
         mapConfig.setInMemoryFormat(InMemoryFormat.OBJECT);
-        mapConfig.addMapIndexConfig(new MapIndexConfig("f1", false));
-        mapConfig.addMapIndexConfig(new MapIndexConfig("f2", false));
-        mapConfig.addMapIndexConfig(new MapIndexConfig("f3", false));
-        mapConfig.addMapIndexConfig(new MapIndexConfig("f4", false));
+        mapConfig.addIndexConfig(new IndexConfig(IndexType.HASH, "f1"));
+        mapConfig.addIndexConfig(new IndexConfig(IndexType.HASH, "f2"));
+        mapConfig.addIndexConfig(new IndexConfig(IndexType.HASH, "f3"));
+        mapConfig.addIndexConfig(new IndexConfig(IndexType.HASH, "f4"));
         config.addMapConfig(mapConfig);
 
         HazelcastInstance hz = Hazelcast.newHazelcastInstance(config);
@@ -79,12 +80,12 @@ public class Query2Benchmark {
 
     @Benchmark
     public void testAllIndices() {
-        map.keySet(new SqlPredicate("f1=100 and f2=100 and f3=100 and f4=100 and f5=0"));
+        map.keySet(Predicates.sql("f1=100 and f2=100 and f3=100 and f4=100 and f5=0"));
     }
 
     @Benchmark
     public void testSuppression() {
-        map.keySet(new SqlPredicate("%f1=100 and %f2=100 and %f3=100 and %f4=100 and f5=0"));
+        map.keySet(Predicates.sql("%f1=100 and %f2=100 and %f3=100 and %f4=100 and f5=0"));
     }
 
     public static class Pojo implements DataSerializable {

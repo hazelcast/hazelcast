@@ -17,7 +17,7 @@
 package com.hazelcast.internal.partition.operation;
 
 import com.hazelcast.cluster.ClusterState;
-import com.hazelcast.core.Member;
+import com.hazelcast.cluster.Member;
 import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.internal.partition.InternalPartition;
 import com.hazelcast.internal.partition.InternalPartitionService;
@@ -25,33 +25,37 @@ import com.hazelcast.internal.partition.MigrationCycleOperation;
 import com.hazelcast.internal.partition.MigrationInfo;
 import com.hazelcast.internal.partition.PartitionReplica;
 import com.hazelcast.internal.partition.PartitionStateVersionMismatchException;
-import com.hazelcast.internal.partition.impl.InternalMigrationListener;
-import com.hazelcast.internal.partition.impl.InternalMigrationListener.MigrationParticipant;
+import com.hazelcast.internal.partition.impl.MigrationInterceptor;
+import com.hazelcast.internal.partition.impl.MigrationInterceptor.MigrationParticipant;
 import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
 import com.hazelcast.internal.partition.impl.MigrationManager;
 import com.hazelcast.internal.partition.impl.PartitionStateManager;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.nio.Address;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.impl.Versioned;
-import com.hazelcast.spi.ExceptionAction;
-import com.hazelcast.spi.MigrationAwareService;
-import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.PartitionAwareOperation;
-import com.hazelcast.spi.PartitionMigrationEvent;
+import com.hazelcast.spi.impl.operationservice.ExceptionAction;
+import com.hazelcast.internal.partition.MigrationAwareService;
+import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.internal.partition.PartitionMigrationEvent;
+import com.hazelcast.spi.impl.operationservice.PartitionAwareOperation;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
 import com.hazelcast.spi.exception.TargetNotMemberException;
 import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.util.ExceptionUtil;
+import com.hazelcast.internal.util.ExceptionUtil;
 
 import java.io.IOException;
+import java.util.List;
+
+import static com.hazelcast.internal.serialization.impl.SerializationUtil.readList;
+import static com.hazelcast.internal.serialization.impl.SerializationUtil.writeList;
 
 abstract class BaseMigrationOperation extends AbstractPartitionOperation
-        implements MigrationCycleOperation, PartitionAwareOperation, Versioned {
+        implements MigrationCycleOperation, PartitionAwareOperation {
 
     protected MigrationInfo migrationInfo;
     protected boolean success;
+    protected List<MigrationInfo> completedMigrations;
     protected int partitionStateVersion;
 
     private transient boolean nodeStartCompleted;
@@ -59,8 +63,9 @@ abstract class BaseMigrationOperation extends AbstractPartitionOperation
     BaseMigrationOperation() {
     }
 
-    BaseMigrationOperation(MigrationInfo migrationInfo, int partitionStateVersion) {
+    BaseMigrationOperation(MigrationInfo migrationInfo, List<MigrationInfo> completedMigrations, int partitionStateVersion) {
         this.migrationInfo = migrationInfo;
+        this.completedMigrations = completedMigrations;
         this.partitionStateVersion = partitionStateVersion;
         setPartitionId(migrationInfo.getPartitionId());
     }
@@ -71,11 +76,9 @@ abstract class BaseMigrationOperation extends AbstractPartitionOperation
      * the cluster should be in {@link ClusterState#ACTIVE} and the node started and the partition state version from
      * the sender should match the local partition state version.
      *
-     * @throws IllegalStateException                  if the UUIDs don't match or if the cluster and node state are not
-     * @throws PartitionStateVersionMismatchException if the partition versions don't match and this node is not the master node
      */
     @Override
-    public final void beforeRun() throws Exception {
+    public final void beforeRun() {
 
         try {
             onMigrationStart();
@@ -83,6 +86,7 @@ abstract class BaseMigrationOperation extends AbstractPartitionOperation
             verifyMaster();
             verifyMigrationParticipant();
             verifyClusterState();
+            applyCompletedMigrations();
             verifyPartitionStateVersion();
         } catch (Exception e) {
             onMigrationComplete();
@@ -97,6 +101,16 @@ abstract class BaseMigrationOperation extends AbstractPartitionOperation
         if (!nodeStartCompleted) {
             throw new IllegalStateException("Migration operation is received before startup is completed. "
                     + "Sender: " + getCallerAddress());
+        }
+    }
+
+    private void applyCompletedMigrations() {
+        if (completedMigrations.isEmpty()) {
+            return;
+        }
+        InternalPartitionServiceImpl partitionService = getService();
+        if (!partitionService.applyCompletedMigrations(completedMigrations, migrationInfo.getMaster())) {
+            throw new PartitionStateVersionMismatchException(partitionStateVersion, partitionService.getPartitionStateVersion());
         }
     }
 
@@ -198,19 +212,22 @@ abstract class BaseMigrationOperation extends AbstractPartitionOperation
                     + ". Current active migration is " + currentActiveMigration);
         }
         PartitionStateManager partitionStateManager = partitionService.getPartitionStateManager();
-        partitionStateManager.setMigratingFlag(migrationInfo.getPartitionId());
+        if (!partitionStateManager.trySetMigratingFlag(migrationInfo.getPartitionId())) {
+            throw new RetryableHazelcastException("Cannot set migrating flag, "
+                    + "probably previous migration's finalization is not completed yet.");
+        }
     }
 
     void onMigrationStart() {
         InternalPartitionServiceImpl partitionService = getService();
-        InternalMigrationListener migrationListener = partitionService.getInternalMigrationListener();
-        migrationListener.onMigrationStart(getMigrationParticipantType(), migrationInfo);
+        MigrationInterceptor migrationInterceptor = partitionService.getMigrationInterceptor();
+        migrationInterceptor.onMigrationStart(getMigrationParticipantType(), migrationInfo);
     }
 
     void onMigrationComplete() {
         InternalPartitionServiceImpl partitionService = getService();
-        InternalMigrationListener migrationListener = partitionService.getInternalMigrationListener();
-        migrationListener.onMigrationComplete(getMigrationParticipantType(), migrationInfo, success);
+        MigrationInterceptor migrationInterceptor = partitionService.getMigrationInterceptor();
+        migrationInterceptor.onMigrationComplete(getMigrationParticipantType(), migrationInfo, success);
     }
 
     /** Notifies all {@link MigrationAwareService}s that the migration is starting. */
@@ -274,6 +291,8 @@ abstract class BaseMigrationOperation extends AbstractPartitionOperation
         if (e instanceof PartitionStateVersionMismatchException) {
             if (logger.isFineEnabled()) {
                 logger.fine(e.getMessage(), e);
+            } else {
+                logger.info(e.getMessage());
             }
             return;
         }
@@ -290,16 +309,17 @@ abstract class BaseMigrationOperation extends AbstractPartitionOperation
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        migrationInfo.writeData(out);
+        out.writeObject(migrationInfo);
         out.writeInt(partitionStateVersion);
+        writeList(completedMigrations, out);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        migrationInfo = new MigrationInfo();
-        migrationInfo.readData(in);
+        migrationInfo = in.readObject();
         partitionStateVersion = in.readInt();
+        completedMigrations = readList(in);
     }
 
     @Override

@@ -29,7 +29,12 @@
         <!--<Logger name="com.hazelcast.cluster" level="debug"/>-->
         <!--<Logger name="com.hazelcast.internal.cluster" level="debug"/>-->
         <!--<Logger name="com.hazelcast.internal.partition" level="debug"/>-->
-        <!--<Logger name="com.hazelcast.spi.hotrestart.cluster" level="debug"/>-->
+        <!--<Logger name="com.hazelcast.internal.hotrestart.cluster" level="debug"/>-->
         <!--<Logger name="com.hazelcast.test.mocknetwork" level="debug"/>-->
+        <Logger name="com.hazelcast.client.impl.protocol.task" level="debug"/>
+        <Logger name="com.hazelcast.client.impl.operations" level="debug"/>
+        <!--<Logger name="com.hazelcast.client.impl.spi.ClientClusterService" level="trace"/>-->
+        <!--<Logger name="com.hazelcast.client.impl.spi.ClientInvocationService" level="trace"/>-->
+        <!--<Logger name="com.hazelcast.client.impl.connection.ClientConnectionManager" level="trace"/>-->
     </Loggers>
 </Configuration>

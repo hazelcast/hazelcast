@@ -22,6 +22,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.query.impl.Metadata;
 import com.hazelcast.query.impl.CachedQueryEntry;
 import com.hazelcast.query.impl.getters.Extractors;
 
@@ -33,11 +34,10 @@ import java.util.Map;
  * A {@link java.util.Map.Entry Map.Entry} implementation which serializes/de-serializes key and value objects on demand.
  * It is beneficial when you need to prevent unneeded serialization/de-serialization
  * when creating a {@link java.util.Map.Entry Map.Entry}. Mainly targeted to supply a lazy entry to
- * {@link com.hazelcast.map.EntryProcessor#process(Map.Entry)} and
- * {@link com.hazelcast.map.EntryBackupProcessor#processBackup(Map.Entry)}} methods.
- * <p/>
+ * {@link com.hazelcast.map.EntryProcessor#process(Map.Entry)} method.
+ * <p>
  * <STRONG>Note that this implementation is not synchronized and is not thread-safe.</STRONG>
- * <p/>
+ * <p>
  * LazyMapEntry itself is serializable as long as the object representations of both key and value are serializable.
  * After serialization objects are resolved using injected SerializationService. De-serialized LazyMapEntry
  * does contain object representation only Data representations and SerializationService is set to null. In other
@@ -52,6 +52,8 @@ public class LazyMapEntry<K, V> extends CachedQueryEntry<K, V> implements Serial
     private static final long serialVersionUID = 0L;
 
     private transient boolean modified;
+
+    private transient Metadata metadata;
 
     public LazyMapEntry() {
     }
@@ -150,7 +152,16 @@ public class LazyMapEntry<K, V> extends CachedQueryEntry<K, V> implements Serial
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MapDataSerializerHook.LAZY_MAP_ENTRY;
     }
+
+    public Metadata getMetadata() {
+        return metadata;
+    }
+
+    public void setMetadata(Metadata metadata) {
+        this.metadata = metadata;
+    }
+
 }

@@ -15,6 +15,6 @@
  */
 
 /**
- * <p>This package contains IList functionality for Hazelcast.<br/>
+ * <p>This package contains IList functionality for Hazelcast.<br>
  */
 package com.hazelcast.collection.impl.list;

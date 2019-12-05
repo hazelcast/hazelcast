@@ -16,12 +16,12 @@
 
 package com.hazelcast.query.impl.getters;
 
-import com.hazelcast.config.MapAttributeConfig;
+import com.hazelcast.config.AttributeConfig;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.query.extractor.ValueCollector;
 import com.hazelcast.query.extractor.ValueExtractor;
-import com.hazelcast.test.HazelcastParametersRunnerFactory;
+import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
 import org.junit.Test;
@@ -43,7 +43,7 @@ import static org.hamcrest.Matchers.sameInstance;
 import static org.junit.Assert.assertNull;
 
 @RunWith(Parameterized.class)
-@UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
+@UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
 @Category(QuickTest.class)
 @SuppressWarnings("unused")
 public class ExtractorsTest {
@@ -86,7 +86,7 @@ public class ExtractorsTest {
     @Test
     public void extract_reflection_correctValue() {
         // WHEN
-        Object power = createExtractors(null).extract(bond, "car.power");
+        Object power = createExtractors(null).extract(bond, "car.power", null);
 
         // THEN
         assertThat((Integer) power, equalTo(550));
@@ -95,8 +95,8 @@ public class ExtractorsTest {
     @Test
     public void getGetter_extractor_cachingWorks() {
         // GIVEN
-        MapAttributeConfig config
-                = new MapAttributeConfig("gimmePower", "com.hazelcast.query.impl.getters.ExtractorsTest$PowerExtractor");
+        AttributeConfig config
+                = new AttributeConfig("gimmePower", "com.hazelcast.query.impl.getters.ExtractorsTest$PowerExtractor");
         Extractors extractors = createExtractors(config);
 
         // WHEN
@@ -108,10 +108,10 @@ public class ExtractorsTest {
         assertThat(getterFirstInvocation, instanceOf(ExtractorGetter.class));
     }
 
-    protected Extractors createExtractors(MapAttributeConfig config) {
+    protected Extractors createExtractors(AttributeConfig config) {
         Extractors.Builder builder = Extractors.newBuilder(ss);
         if (config != null) {
-            builder.setMapAttributeConfigs(singletonList(config));
+            builder.setAttributeConfigs(singletonList(config));
         }
         if (useClassloader) {
             builder.setClassLoader(this.getClass().getClassLoader());
@@ -122,12 +122,12 @@ public class ExtractorsTest {
     @Test
     public void extract_extractor_correctValue() {
         // GIVEN
-        MapAttributeConfig config
-                = new MapAttributeConfig("gimmePower", "com.hazelcast.query.impl.getters.ExtractorsTest$PowerExtractor");
+        AttributeConfig config
+                = new AttributeConfig("gimmePower", "com.hazelcast.query.impl.getters.ExtractorsTest$PowerExtractor");
         Extractors extractors = createExtractors(config);
 
         // WHEN
-        Object power = extractors.extract(bond, "gimmePower");
+        Object power = extractors.extract(bond, "gimmePower", null);
 
         // THEN
         assertThat((Integer) power, equalTo(550));
@@ -136,7 +136,7 @@ public class ExtractorsTest {
     @Test
     public void extract_nullTarget() {
         // WHEN
-        Object power = createExtractors(null).extract(null, "gimmePower");
+        Object power = createExtractors(null).extract(null, "gimmePower", null);
 
         // THEN
         assertNull(power);
@@ -145,7 +145,7 @@ public class ExtractorsTest {
     @Test
     public void extract_nullAll() {
         // WHEN
-        Object power = createExtractors(null).extract(null, null);
+        Object power = createExtractors(null).extract(null, null, null);
 
         // THEN
         assertNull(power);
@@ -153,7 +153,7 @@ public class ExtractorsTest {
 
     @Test(expected = NullPointerException.class)
     public void extract_nullAttribute() {
-        createExtractors(null).extract(bond, null);
+        createExtractors(null).extract(bond, null, null);
     }
 
     private static class Bond {
@@ -164,7 +164,7 @@ public class ExtractorsTest {
         int power = 550;
     }
 
-    public static class PowerExtractor extends ValueExtractor<Bond, Object> {
+    public static class PowerExtractor implements ValueExtractor<Bond, Object> {
         @Override
         public void extract(Bond target, Object arguments, ValueCollector collector) {
             collector.addObject(target.car.power);
