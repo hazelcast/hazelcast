@@ -21,14 +21,15 @@ import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.config.XmlConfigBuilder;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.IMap;
+import com.hazelcast.map.LocalMapStats;
 import com.hazelcast.map.MapLoader;
 import com.hazelcast.map.MapLoaderLifecycleSupport;
 import com.hazelcast.map.MapStore;
 import com.hazelcast.map.MapStoreAdapter;
 import com.hazelcast.map.MapStoreFactory;
 import com.hazelcast.map.PostProcessingMapStore;
-import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapStoreWrapper;
@@ -36,7 +37,6 @@ import com.hazelcast.map.impl.mapstore.writebehind.MapStoreWithCounter;
 import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.map.listener.EntryLoadedListener;
 import com.hazelcast.map.listener.EntryUpdatedListener;
-import com.hazelcast.map.LocalMapStats;
 import com.hazelcast.query.SampleTestObjects.Employee;
 import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -137,7 +137,7 @@ public class MapStoreTest extends AbstractMapStoreTest {
         assertFalse(loadCalled.get());
     }
 
-    @Test(timeout = 120000)
+    @Test(expected = NullPointerException.class)
     public void testNullValuesFromMapLoaderAreNotInsertedIntoMap() {
         Config config = newConfig(new NullLoader());
         HazelcastInstance node = createHazelcastInstance(config);
@@ -145,14 +145,12 @@ public class MapStoreTest extends AbstractMapStoreTest {
 
         // load entries.
         map.getAll(new HashSet<>(asList("key1", "key2", "key3")));
-
-        assertEquals(0, map.size());
     }
 
     /**
      * Always loads null values for requested keys.
      */
-    private static class NullLoader implements MapLoader<Object, Object> {
+    public static class NullLoader implements MapLoader<Object, Object> {
 
         @Override
         public Object load(Object key) {
@@ -336,9 +334,9 @@ public class MapStoreTest extends AbstractMapStoreTest {
         STORE.put(6L, "Event6");
         Config config = getConfig();
         config.getMapConfig("map")
-              .setMapStoreConfig(new MapStoreConfig()
-                      .setWriteDelaySeconds(1)
-                      .setImplementation(new SimpleMapStore<>(STORE)));
+                .setMapStoreConfig(new MapStoreConfig()
+                        .setWriteDelaySeconds(1)
+                        .setImplementation(new SimpleMapStore<>(STORE)));
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(3);
 
         HazelcastInstance instance = nodeFactory.newHazelcastInstance(config);
@@ -355,8 +353,8 @@ public class MapStoreTest extends AbstractMapStoreTest {
         final MapStore<String, Long> myMapStore = new SimpleMapStore<>(store);
         Config config = getConfig();
         config.getMapConfig("myMap")
-              .setMapStoreConfig(new MapStoreConfig()
-                      .setImplementation(myMapStore));
+                .setMapStoreConfig(new MapStoreConfig()
+                        .setImplementation(myMapStore));
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(3);
         HazelcastInstance hc = nodeFactory.newHazelcastInstance(config);
         IMap<String, Long> myMap = hc.getMap("myMap");
@@ -383,8 +381,8 @@ public class MapStoreTest extends AbstractMapStoreTest {
         MapStore<String, Long> myMapStore = new SimpleMapStore<>(store);
         Config config = getConfig();
         config.getMapConfig("myMap")
-              .setMapStoreConfig(new MapStoreConfig()
-                      .setImplementation(myMapStore));
+                .setMapStoreConfig(new MapStoreConfig()
+                        .setImplementation(myMapStore));
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(3);
         HazelcastInstance hc = nodeFactory.newHazelcastInstance(config);
         IMap<String, Long> myMap = hc.getMap("myMap");
@@ -628,8 +626,8 @@ public class MapStoreTest extends AbstractMapStoreTest {
         final MapStore<String, String> myMapStore = new SimpleMapStore<>(store);
         Config config = getConfig();
         config.getMapConfig("testIssue806CustomTTLForNull")
-              .setMapStoreConfig(new MapStoreConfig()
-                      .setImplementation(myMapStore));
+                .setMapStoreConfig(new MapStoreConfig()
+                        .setImplementation(myMapStore));
         HazelcastInstance instance = createHazelcastInstance(config);
         IMap<Object, Object> map = instance.getMap("testIssue806CustomTTLForNull");
         map.get("key");
@@ -660,7 +658,7 @@ public class MapStoreTest extends AbstractMapStoreTest {
         });
         Config config = getConfig();
         config.getMapConfig("testIssue991EvictedNullIssue")
-              .setMapStoreConfig(mapStoreConfig);
+                .setMapStoreConfig(mapStoreConfig);
         HazelcastInstance instance = createHazelcastInstance(config);
         IMap<Object, Object> map = instance.getMap("testIssue991EvictedNullIssue");
         map.get("key");
@@ -1008,7 +1006,7 @@ public class MapStoreTest extends AbstractMapStoreTest {
         });
     }
 
-    private Config newConfig(Object storeImpl) {
+    public Config newConfig(Object storeImpl) {
         return newConfig("default", storeImpl, 0, MapStoreConfig.InitialLoadMode.LAZY);
     }
 
@@ -1064,14 +1062,14 @@ public class MapStoreTest extends AbstractMapStoreTest {
         }
 
         public TestMapStore(int expectedStore, int expectedStoreAll, int expectedDelete,
-                     int expectedDeleteAll, int expectedLoad, int expectedLoadAll) {
+                            int expectedDeleteAll, int expectedLoad, int expectedLoadAll) {
             this(expectedStore, expectedStoreAll, expectedDelete, expectedDeleteAll,
                     expectedLoad, expectedLoadAll, 0);
         }
 
         public TestMapStore(int expectedStore, int expectedStoreAll, int expectedDelete,
-                     int expectedDeleteAll, int expectedLoad, int expectedLoadAll,
-                     int expectedLoadAllKeys) {
+                            int expectedDeleteAll, int expectedLoad, int expectedLoadAll,
+                            int expectedLoadAllKeys) {
             latchStore = new CountDownLatch(expectedStore);
             latchStoreAll = new CountDownLatch(expectedStoreAll);
             latchDelete = new CountDownLatch(expectedDelete);

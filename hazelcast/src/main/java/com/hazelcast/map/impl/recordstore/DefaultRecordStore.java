@@ -72,6 +72,7 @@ import static com.hazelcast.core.EntryEventType.ADDED;
 import static com.hazelcast.core.EntryEventType.LOADED;
 import static com.hazelcast.core.EntryEventType.UPDATED;
 import static com.hazelcast.internal.util.MapUtil.createHashMap;
+import static com.hazelcast.internal.util.MapUtil.isNullOrEmpty;
 import static com.hazelcast.map.impl.ExpirationTimeSetter.setExpirationTimes;
 import static com.hazelcast.map.impl.mapstore.MapDataStores.EMPTY_MAP_DATA_STORE;
 import static com.hazelcast.map.impl.record.Record.UNSET;
@@ -585,37 +586,42 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
     }
 
     @Override
-    public MapEntries getAll(Set<Data> keys, Address
-            callerAddress) {
+    public MapEntries getAll(Set<Data> keys, Address callerAddress) {
         checkIfLoaded();
         long now = getNow();
 
         MapEntries mapEntries = new MapEntries(keys.size());
 
+        // first search in memory
         Iterator<Data> iterator = keys.iterator();
         while (iterator.hasNext()) {
             Data key = iterator.next();
             Record record = getRecordOrNull(key, now, false);
             if (record != null) {
-                addMapEntrySet(key, record.getValue(), mapEntries);
+                addToMapEntrySet(key, record.getValue(), mapEntries);
                 accessRecord(record, now);
                 iterator.remove();
             }
         }
 
-        Map loadedEntries = loadEntries(keys, callerAddress);
-        addMapEntrySet(loadedEntries, mapEntries);
+        // then try to load missing keys from map-store
+        if (mapDataStore != EMPTY_MAP_DATA_STORE && !keys.isEmpty()) {
+            Map loadedEntries = loadEntries(keys, callerAddress);
+            addToMapEntrySet(loadedEntries, mapEntries);
+        }
 
         return mapEntries;
     }
 
-    protected Map<Data, Object> loadEntries(Set<Data> keys, Address callerAddress) {
+    private Map<Data, Object> loadEntries(Set<Data> keys, Address callerAddress) {
         Map loadedEntries = mapDataStore.loadAll(keys);
-        if (loadedEntries == null || loadedEntries.isEmpty()) {
+
+        if (isNullOrEmpty(loadedEntries)) {
             return Collections.emptyMap();
         }
 
-        // holds serialized keys and if values are serialized, also holds them in serialized format.
+        // holds serialized keys and if values are
+        // serialized, also holds them in serialized format.
         Map<Data, Object> resultMap = createHashMap(loadedEntries.size());
 
         // add loaded key-value pairs to this record-store.
@@ -652,7 +658,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         return resultMap;
     }
 
-    protected void addMapEntrySet(Object key, Object value, MapEntries mapEntries) {
+    protected void addToMapEntrySet(Object key, Object value, MapEntries mapEntries) {
         if (key == null || value == null) {
             return;
         }
@@ -662,9 +668,9 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         mapEntries.add(dataKey, dataValue);
     }
 
-    protected void addMapEntrySet(Map<Object, Object> entries, MapEntries mapEntries) {
+    protected void addToMapEntrySet(Map<Object, Object> entries, MapEntries mapEntries) {
         for (Map.Entry<Object, Object> entry : entries.entrySet()) {
-            addMapEntrySet(entry.getKey(), entry.getValue(), mapEntries);
+            addToMapEntrySet(entry.getKey(), entry.getValue(), mapEntries);
         }
     }
 
@@ -983,14 +989,10 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
     }
 
     protected boolean isKeyAndValueLoadable(Data key, Object value) {
-        if (key == null) {
-            logger.warning("Found an attempt to load a null key from map-store, ignoring it.");
-            return false;
-        }
-
-        if (value == null) {
-            logger.warning("Found an attempt to load a null value from map-store, ignoring it.");
-            return false;
+        if (key == null || value == null) {
+            String msg = String.format("Neither key nor value can be loaded as null. Found: key=%s, value=%s",
+                    serializationService.toObject(key), serializationService.toObject(value));
+            throw new NullPointerException(msg);
         }
 
         if (partitionService.getPartitionId(key) != partitionId) {

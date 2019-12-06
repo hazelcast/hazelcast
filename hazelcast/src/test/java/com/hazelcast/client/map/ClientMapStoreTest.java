@@ -30,6 +30,7 @@ import com.hazelcast.map.ReachedMaxSizeException;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
+import com.hazelcast.map.impl.mapstore.MapStoreTest;
 import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.AssertTask;
@@ -54,6 +55,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
+import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
@@ -247,6 +249,27 @@ public class ClientMapStoreTest extends HazelcastTestSupport {
         }
 
         map.destroy();
+    }
+
+    @Test(expected = NullPointerException.class)
+    public void testNullValuesFromMapLoaderAreNotInsertedIntoMap() {
+        MapStoreConfig mapStoreConfig = new MapStoreConfig();
+        mapStoreConfig.setImplementation(new MapStoreTest.NullLoader());
+
+        MapConfig mapConfig = new MapConfig();
+        mapConfig.setName(MAP_NAME);
+        mapConfig.setMapStoreConfig(mapStoreConfig);
+
+        Config config = getConfig();
+        config.addMapConfig(mapConfig);
+
+        HazelcastInstance server = hazelcastFactory.newHazelcastInstance(config);
+        HazelcastInstance client = hazelcastFactory.newHazelcastClient();
+        HazelcastInstance node = createHazelcastInstance(config);
+        IMap<String, String> map = node.getMap(MAP_NAME);
+
+        // load entries.
+        map.getAll(new HashSet<>(asList("key1", "key2", "key3")));
     }
 
     static class SimpleMapStore implements MapStore<String, String>, MapLoader<String, String> {
