@@ -20,6 +20,7 @@ import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.connection.ClientConnectionManager;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.spi.impl.listener.ClientListenerServiceImpl;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.core.LifecycleService;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.metrics.ProbeLevel;
@@ -29,7 +30,6 @@ import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.nio.ConnectionType;
 import com.hazelcast.internal.nio.EndpointManager;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.cluster.Address;
 
 import java.io.EOFException;
 import java.io.IOException;

@@ -30,6 +30,7 @@ import com.hazelcast.internal.partition.PartitionReplica;
 import com.hazelcast.internal.partition.PartitionTableView;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.spi.impl.executionservice.ExecutionService;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -37,31 +38,42 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.hazelcast.instance.EndpointQualifier.CLIENT;
 
 public class ClientClusterListenerService {
-
+    private static final int PUSH_PERIOD_IN_SECONDS = 30;
     private final Map<ClientEndpoint, Long> clusterListeningEndpoints = new ConcurrentHashMap<ClientEndpoint, Long>();
     private final NodeEngine nodeEngine;
     private final boolean advancedNetworkConfigEnabled;
+    private AtomicBoolean pushScheduled = new AtomicBoolean();
 
     ClientClusterListenerService(NodeEngineImpl nodeEngine) {
         this.nodeEngine = nodeEngine;
         this.advancedNetworkConfigEnabled = nodeEngine.getConfig().getAdvancedNetworkConfig().isEnabled();
+    }
 
+    private void schedulePeriodicPush() {
+        ExecutionService executor = nodeEngine.getExecutionService();
+        executor.scheduleWithRepetition(this::pushView, PUSH_PERIOD_IN_SECONDS, PUSH_PERIOD_IN_SECONDS, TimeUnit.SECONDS);
+    }
+
+    private void pushView() {
+        sendToListeningEndpoints(getPartitionViewMessage());
+        sendToListeningEndpoints(getMemberListViewMessage());
     }
 
     public void onPartitionStateChange() {
-        onClusterViewChange();
+        sendToListeningEndpoints(getPartitionViewMessage());
     }
 
     public void onMemberListChange() {
-        onClusterViewChange();
+        sendToListeningEndpoints(getMemberListViewMessage());
     }
 
-    private void onClusterViewChange() {
-        ClientMessage clientMessage = getClusterViewMessage();
+    private void sendToListeningEndpoints(ClientMessage clientMessage) {
         for (Map.Entry<ClientEndpoint, Long> entry : clusterListeningEndpoints.entrySet()) {
             Long correlationId = entry.getValue();
             //share the partition and membership table, copy only initial frame
@@ -73,14 +85,30 @@ public class ClientClusterListenerService {
     }
 
     public void registerListener(ClientEndpoint clientEndpoint, long correlationId) {
+        if (pushScheduled.compareAndSet(false, true)) {
+            schedulePeriodicPush();
+        }
         clusterListeningEndpoints.put(clientEndpoint, correlationId);
 
-        ClientMessage clientMessage = getClusterViewMessage();
-        clientMessage.setCorrelationId(correlationId);
-        clientEndpoint.getConnection().write(clientMessage);
+        ClientMessage partitionViewMessage = getPartitionViewMessage();
+        partitionViewMessage.setCorrelationId(correlationId);
+        clientEndpoint.getConnection().write(partitionViewMessage);
+
+        ClientMessage memberListViewMessage = getMemberListViewMessage();
+        memberListViewMessage.setCorrelationId(correlationId);
+        clientEndpoint.getConnection().write(memberListViewMessage);
     }
 
-    private ClientMessage getClusterViewMessage() {
+    private ClientMessage getPartitionViewMessage() {
+        InternalPartitionService partitionService = (InternalPartitionService) nodeEngine.getPartitionService();
+        PartitionTableView partitionTableView = partitionService.createPartitionTableView();
+        Map<Address, List<Integer>> partitions = getPartitions(partitionTableView);
+        int partitionStateVersion = partitionTableView.getVersion();
+
+        return ClientAddClusterViewListenerCodec.encodePartitionsViewEvent(partitionStateVersion, partitions.entrySet());
+    }
+
+    private ClientMessage getMemberListViewMessage() {
         MembershipManager membershipManager = ((ClusterServiceImpl) nodeEngine.getClusterService()).getMembershipManager();
         MembersView membersView = membershipManager.getMembersView();
 
@@ -93,13 +121,7 @@ public class ClientClusterListenerService {
                     member.isLiteMember(), member.getVersion()));
         }
 
-        InternalPartitionService partitionService = (InternalPartitionService) nodeEngine.getPartitionService();
-        PartitionTableView partitionTableView = partitionService.createPartitionTableView();
-        Map<Address, List<Integer>> partitions = getPartitions(partitionTableView);
-        int partitionStateVersion = partitionTableView.getVersion();
-
-        return ClientAddClusterViewListenerCodec.encodeMembersViewEvent(version, memberInfos,
-                partitions.entrySet(), partitionStateVersion);
+        return ClientAddClusterViewListenerCodec.encodeMembersViewEvent(version, memberInfos);
     }
 
     public void deregisterListener(ClientEndpoint clientEndpoint) {
@@ -127,7 +149,7 @@ public class ClientClusterListenerService {
      */
     public Map<Address, List<Integer>> getPartitions(PartitionTableView partitionTableView) {
 
-        Map<Address, List<Integer>> partitionsMap = new HashMap<Address, List<Integer>>();
+        Map<Address, List<Integer>> partitionsMap = new HashMap<>();
 
         int partitionCount = partitionTableView.getLength();
         for (int partitionId = 0; partitionId < partitionCount; partitionId++) {
@@ -141,11 +163,7 @@ public class ClientClusterListenerService {
                 partitionsMap.clear();
                 return partitionsMap;
             }
-            List<Integer> indexes = partitionsMap.get(clientOwnerAddress);
-            if (indexes == null) {
-                indexes = new LinkedList<Integer>();
-                partitionsMap.put(clientOwnerAddress, indexes);
-            }
+            List<Integer> indexes = partitionsMap.computeIfAbsent(clientOwnerAddress, k -> new LinkedList<>());
             indexes.add(partitionId);
         }
         return partitionsMap;

@@ -306,7 +306,7 @@ public class ClientListenerServiceImpl implements ClientListenerService, StaticM
         return isSmart;
     }
 
-    private void removeEventHandler(long callId) {
+    void removeEventHandler(long callId) {
         eventHandlerMap.remove(callId);
     }
 
