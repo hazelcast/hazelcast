@@ -1,7 +1,14 @@
 #!/bin/bash
 
 if [ "$1" = "--help" ] || [ "$1" = "-h" ]; then
-    echo "parameters:"
+    echo "Utility to query and change the state of a Hazelcast Jet cluster."
+    echo "It uses the Hazelcast REST API, which must be enabled in the cluster's"
+    echo "configuration. A command may fail with a message like"
+    echo "'REST endpoint group is not enabled - CLUSTER_READ'."
+    echo "In that case you must change the cluster's configuration to enable"
+    echo "the corresponding endpoint group."
+    echo
+    echo "Parameters:"
     echo "  -o, --operation   Specifies the operation to perform, one of 'get-state', 'change-state',"
     echo "                    'shutdown', 'force-start', 'get-cluster-version', 'change-cluster-version'."
     echo "  -s, --state       Changes the cluster state. Valid states: 'active', 'frozen', 'passive'."

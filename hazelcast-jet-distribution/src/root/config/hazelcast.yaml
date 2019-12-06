@@ -1,30 +1,93 @@
-# Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-# http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
 hazelcast:
+  # The name of the cluster. All members of a single cluster must have the
+  # same cluster name configured and a client connecting to this cluster
+  # must use it as well.
   cluster-name: jet
   network:
+    port:
+      # The preferred port number where the Jet instance will listen. The
+      # convention is to use 5701 and it is the default both here and in
+      # various tools connecting to Jet.
+      port: 5701
+      # Whether to automatically try higher port numbers when the preferred
+      # one is taken.
+      auto-increment: true
+    # Which network interface to listen on. With "enabled" set to false
+    # Jet will listen on all available interfaces.
+    interfaces:
+      enabled: false
+      interfaces:
+        - 127.0.0.1
+    # Hazelcast Jet has several techniques that simplify the formation of the
+    # cluster by automatically discovering the other nodes. This config section
+    # lists some. Jet will form a cluster only with nodes using the same discovery
+    # mechanism, so make sure to enable only one.
     join:
+      # The default way to discover nodes: using the IP multicast. This is the
+      # simplest technique, but in a cloud setting the network usually doesn't
+      # allow multicast.
       multicast:
         enabled: true
         multicast-group: 224.2.2.3
         multicast-port: 54328
+      # This technique doesn't attempt any auto-discovery, you directly list all
+      # the candidate IPs to check.
       tcp-ip:
         enabled: false
         member-list:
-          - 127.0.0.1
-    port:
-      auto-increment: true
-      port-count: 100
-      port: 5701
+          - 10.0.0.1
+          - 10.0.0.2
+      # Uses the AWS API to get a list of candidate IPs to check. access-key
+      # and secret-key are needed to access the API and the rest of the
+      # parameters work as filtering criteria that narrow down the list of
+      # IPs to check. You can get more information on the AWS plugin's GitHub
+      # page: https://github.com/hazelcast/hazelcast-aws
+      # This plugin is built into the main Hazelcast Jet JAR found in the
+      # distribution package.
+      aws:
+        enabled: false
+        access-key: my-access-key
+        secret-key: my-secret-key
+        iam-role: dummy
+        region: us-west-1
+        host-header: ec2.amazonaws.com
+        security-group-name: hazelcast-sg
+        tag-key: type
+        tag-value: hz-nodes
+      # Uses the GCP API to get a list of candidate IPs to check. For more
+      # details go to the plugin's GitHub page:
+      # https://github.com/hazelcast/hazelcast-gcp
+      # This plugin is built into the main Hazelcast Jet JAR found in the
+      # distribution package.
+      gcp:
+        enabled: false
+        label: application=hazelcast-jet
+        zones: us-east1-b,us-east1-c
+    # Selectively opens some of Hazelcast Jet's REST API endpoints.
+    # The "jet-cluster-admin" command-line tool uses REST and you may get an
+    # error message telling you which endpoint group you must enable for the
+    # operation to be allowed. Here's the place to add it.
+    rest-api:
+      enabled: true
+      endpoint-groups:
+        CLUSTER_READ:
+          enabled: true
+        CLUSTER_WRITE:
+          enabled: true
+  # Configures Jet's background collection of performance and health
+  # monitoring metrics.
+  metrics:
+    enabled: true
+    management-center:
+      enabled: true
+      retention-seconds: 5
+    jmx:
+      enabled: true
+    collection-frequency-seconds: 5
+
+  # Some features of Hazelcast Jet are configured through the system properties.
+  # You can configure the same properties here. This configuration overrides the
+  # system properties. For a full list of recognized properties see
+  # https://docs.hazelcast.org/docs/latest/manual/html-single/#system-properties
+#  properties:
+#    property.name: value
