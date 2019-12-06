@@ -17,51 +17,49 @@
 package com.hazelcast.client.impl.protocol.task.dynamicconfig;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddFlakeIdGeneratorConfigCodec;
-import com.hazelcast.config.FlakeIdGeneratorConfig;
+import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddPNCounterConfigCodec;
+import com.hazelcast.config.PNCounterConfig;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.dynamicconfig.DynamicConfigurationAwareConfig;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
-public class AddFlakeIdGeneratorConfigMessageTask
-        extends AbstractAddConfigMessageTask<DynamicConfigAddFlakeIdGeneratorConfigCodec.RequestParameters> {
+public class AddPNCounterConfigMessageTask
+        extends AbstractAddConfigMessageTask<DynamicConfigAddPNCounterConfigCodec.RequestParameters> {
 
-    public AddFlakeIdGeneratorConfigMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
+    public AddPNCounterConfigMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
     @Override
-    protected DynamicConfigAddFlakeIdGeneratorConfigCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
-        return DynamicConfigAddFlakeIdGeneratorConfigCodec.decodeRequest(clientMessage);
+    protected DynamicConfigAddPNCounterConfigCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return DynamicConfigAddPNCounterConfigCodec.decodeRequest(clientMessage);
     }
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return DynamicConfigAddFlakeIdGeneratorConfigCodec.encodeResponse();
+        return DynamicConfigAddPNCounterConfigCodec.encodeResponse();
     }
 
     @Override
     protected IdentifiedDataSerializable getConfig() {
-        FlakeIdGeneratorConfig config = new FlakeIdGeneratorConfig(parameters.name);
-        config.setPrefetchCount(parameters.prefetchCount);
-        config.setPrefetchValidityMillis(parameters.prefetchValidity);
-        config.setIdOffset(parameters.idOffset);
-        config.setNodeIdOffset(parameters.nodeIdOffset);
+        PNCounterConfig config = new PNCounterConfig(parameters.name);
+        config.setReplicaCount(parameters.replicaCount);
         config.setStatisticsEnabled(parameters.statisticsEnabled);
+        config.setSplitBrainProtectionName(parameters.splitBrainProtectionName);
         return config;
     }
 
     @Override
     public String getMethodName() {
-        return "addFlakeIdGeneratorConfig";
+        return "addPNCounterConfig";
     }
 
     @Override
     protected boolean checkStaticConfigDoesNotExist(IdentifiedDataSerializable config) {
         DynamicConfigurationAwareConfig nodeConfig = (DynamicConfigurationAwareConfig) nodeEngine.getConfig();
-        FlakeIdGeneratorConfig flakeIdGeneratorConfig = (FlakeIdGeneratorConfig) config;
-        return nodeConfig.checkStaticConfigDoesNotExist(nodeConfig.getStaticConfig().getFlakeIdGeneratorConfigs(),
-                flakeIdGeneratorConfig.getName(), flakeIdGeneratorConfig);
+        PNCounterConfig pnCounterConfig = (PNCounterConfig) config;
+        return nodeConfig.checkStaticConfigDoesNotExist(nodeConfig.getStaticConfig().getPNCounterConfigs(),
+                pnCounterConfig.getName(), pnCounterConfig);
     }
 }
