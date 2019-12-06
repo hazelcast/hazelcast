@@ -17,7 +17,6 @@
 package com.hazelcast.jet.impl;
 
 import com.hazelcast.cluster.Endpoint;
-import com.hazelcast.cluster.MemberAttributeEvent;
 import com.hazelcast.cluster.MembershipEvent;
 import com.hazelcast.cluster.MembershipListener;
 import com.hazelcast.core.HazelcastInstance;
@@ -75,10 +74,6 @@ public class MigrationWatcher {
             @Override
             public void memberRemoved(MembershipEvent membershipEvent) {
                 changeCount.incrementAndGet();
-            }
-
-            @Override
-            public void memberAttributeChanged(MemberAttributeEvent memberAttributeEvent) {
             }
         });
     }

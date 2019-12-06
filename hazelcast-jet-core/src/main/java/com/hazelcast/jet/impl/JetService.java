@@ -25,7 +25,6 @@ import com.hazelcast.internal.metrics.impl.MetricsService;
 import com.hazelcast.internal.nio.Packet;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.services.ManagedService;
-import com.hazelcast.internal.services.MemberAttributeServiceEvent;
 import com.hazelcast.internal.services.MembershipAwareService;
 import com.hazelcast.internal.services.MembershipServiceEvent;
 import com.hazelcast.jet.JetInstance;
@@ -253,10 +252,6 @@ public class JetService implements ManagedService, MembershipAwareService, LiveO
     @Override
     public void memberAdded(MembershipServiceEvent event) {
         jobCoordinationService.onMemberAdded(event.getMember());
-    }
-
-    @Override
-    public void memberAttributeChanged(MemberAttributeServiceEvent event) {
     }
 
     public AtomicInteger numConcurrentAsyncOps() {
