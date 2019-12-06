@@ -20,9 +20,13 @@ import com.hazelcast.client.impl.ClientDelegatingFuture;
 import com.hazelcast.client.impl.clientside.ClientMessageDecoder;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.codec.MCAddWanBatchPublisherConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.MCApplyMCConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.MCChangeClusterStateCodec;
 import com.hazelcast.client.impl.protocol.codec.MCChangeClusterVersionCodec;
+import com.hazelcast.client.impl.protocol.codec.MCChangeWanReplicationStateCodec;
+import com.hazelcast.client.impl.protocol.codec.MCCheckWanConsistencyCodec;
+import com.hazelcast.client.impl.protocol.codec.MCClearWanQueuesCodec;
 import com.hazelcast.client.impl.protocol.codec.MCGetClusterMetadataCodec;
 import com.hazelcast.client.impl.protocol.codec.MCGetMapConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.MCGetMemberConfigCodec;
@@ -39,6 +43,7 @@ import com.hazelcast.client.impl.protocol.codec.MCRunScriptCodec;
 import com.hazelcast.client.impl.protocol.codec.MCShutdownClusterCodec;
 import com.hazelcast.client.impl.protocol.codec.MCShutdownMemberCodec;
 import com.hazelcast.client.impl.protocol.codec.MCUpdateMapConfigCodec;
+import com.hazelcast.client.impl.protocol.codec.MCWanSyncMapCodec;
 import com.hazelcast.client.impl.spi.impl.ClientInvocation;
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.cluster.Member;
@@ -51,15 +56,22 @@ import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.util.MapUtil;
 import com.hazelcast.spi.properties.HazelcastProperty;
 import com.hazelcast.version.Version;
+import com.hazelcast.wan.WanPublisherState;
+import com.hazelcast.wan.impl.AddWanConfigResult;
+import com.hazelcast.wan.impl.WanSyncType;
 
-import javax.annotation.Nonnull;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
+import javax.annotation.Nonnull;
+
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
+import static com.hazelcast.wan.impl.WanSyncType.ALL_MAPS;
+import static com.hazelcast.wan.impl.WanSyncType.SINGLE_MAP;
 
 /**
  * Only works for smart clients, i.e. doesn't work for unisocket clients.
@@ -359,9 +371,9 @@ public class ManagementCenterService {
     /**
      * Checks if local MC config (client B/W list) on a given member has the same ETag as provided.
      *
-     * @param member    target member
-     * @param eTag      ETag value of MC config to match with (should be the latest value from MC)
-     * @return          operation future object with match result: <code>true</code> if config ETags match
+     * @param member target member
+     * @param eTag   ETag value of MC config to match with (should be the latest value from MC)
+     * @return operation future object with match result: <code>true</code> if config ETags match
      */
     @Nonnull
     public CompletableFuture<Boolean> matchMCConfig(Member member, String eTag) {
@@ -389,10 +401,10 @@ public class ManagementCenterService {
     /**
      * Applies the MC config (client B/W list) on a given member.
      *
-     * @param member        target member
-     * @param eTag          ETag of the new config
-     * @param clientBwList  new config for client B/W list filtering
-     * @return              operation future object
+     * @param member       target member
+     * @param eTag         ETag of the new config
+     * @param clientBwList new config for client B/W list filtering
+     * @return operation future object
      */
     @Nonnull
     public CompletableFuture<Void> applyMCConfig(Member member, String eTag, ClientBwListDTO clientBwList) {
@@ -476,10 +488,10 @@ public class ManagementCenterService {
     /**
      * Runs the script on a given member.
      *
-     * @param member    target member
-     * @param engine    the name of script engine which will be used for the execution
-     * @param script    the script to execute
-     * @return          operation future object with script execution output
+     * @param member target member
+     * @param engine the name of script engine which will be used for the execution
+     * @param script the script to execute
+     * @return operation future object with script execution output
      */
     @Nonnull
     public CompletableFuture<String> runScript(Member member, String engine, String script) {
@@ -503,10 +515,10 @@ public class ManagementCenterService {
     /**
      * Runs the console command on a given member.
      *
-     * @param member        target member
-     * @param namespace     namespace to be set before the command is executed (optional)
-     * @param command       the command to execute
-     * @return              operation future object with command execution output
+     * @param member    target member
+     * @param namespace namespace to be set before the command is executed (optional)
+     * @param command   the command to execute
+     * @return operation future object with command execution output
      */
     @Nonnull
     public CompletableFuture<String> runConsoleCommand(Member member, String namespace, String command) {
@@ -523,6 +535,192 @@ public class ManagementCenterService {
                 invocation.invoke(),
                 serializationService,
                 clientMessage -> MCRunConsoleCommandCodec.decodeResponse(clientMessage).result
+        );
+    }
+
+    /**
+     * Stop, pause or resume WAN replication for the given {@code wanReplicationName} and
+     * {@code wanPublisherId} on the given {@link Member}.
+     *
+     * @param member             {@link Member} to change WAN replication state on
+     * @param wanReplicationName name of the WAN replication to change state of
+     * @param wanPublisherId     ID of the WAN publisher to change state of
+     * @param newState           new state for the WAN publisher
+     */
+    @Nonnull
+    public CompletableFuture<Void> changeWanReplicationState(Member member,
+                                                             String wanReplicationName,
+                                                             String wanPublisherId,
+                                                             WanPublisherState newState) {
+        checkNotNull(member);
+        checkNotNull(wanReplicationName);
+        checkNotNull(wanPublisherId);
+        checkNotNull(newState);
+
+        ClientInvocation invocation = new ClientInvocation(
+                client,
+                MCChangeWanReplicationStateCodec.encodeRequest(wanReplicationName, wanPublisherId, newState.getId()),
+                null,
+                member.getAddress()
+        );
+
+        return new ClientDelegatingFuture<>(
+                invocation.invoke(),
+                serializationService,
+                clientMessage -> null
+        );
+    }
+
+    /**
+     * Clear WAN replication queues for the given {@code wanReplicationName} and
+     * {@code wanPublisherId} on the given {@link Member}.
+     *
+     * @param member             {@link Member} to clear WAN replication queues on
+     * @param wanReplicationName name of the WAN replication to clear queues of
+     * @param wanPublisherId     ID of the WAN publisher to clear queues of
+     */
+    @Nonnull
+    public CompletableFuture<Void> clearWanQueues(Member member,
+                                                  String wanReplicationName,
+                                                  String wanPublisherId) {
+        checkNotNull(member);
+        checkNotNull(wanReplicationName);
+        checkNotNull(wanPublisherId);
+
+        ClientInvocation invocation = new ClientInvocation(
+                client,
+                MCClearWanQueuesCodec.encodeRequest(wanReplicationName, wanPublisherId),
+                null,
+                member.getAddress()
+        );
+
+        return new ClientDelegatingFuture<>(
+                invocation.invoke(),
+                serializationService,
+                clientMessage -> null
+        );
+    }
+
+    /**
+     * Add a new WAN replication configuration.
+     *
+     * @param config the new WAN replication configuration
+     * @return a {@link CompletableFuture} that holds the IDs for the WAN publishers which were
+     * added to the configuration, and the ones that are ignored/not added to the configuration
+     */
+    @Nonnull
+    public CompletableFuture<AddWanConfigResult> addWanReplicationConfig(MCWanBatchPublisherConfig config) {
+        checkNotNull(config);
+
+        ClientInvocation invocation = new ClientInvocation(
+                client,
+                MCAddWanBatchPublisherConfigCodec.encodeRequest(
+                        config.getName(),
+                        config.getTargetCluster(),
+                        config.getPublisherId(),
+                        config.getEndpoints(),
+                        config.getQueueCapacity(),
+                        config.getBatchSize(),
+                        config.getBatchMaxDelayMillis(),
+                        config.getResponseTimeoutMillis(),
+                        config.getAckType().getId(),
+                        config.getQueueFullBehaviour().getId()
+                ),
+                null
+        );
+
+        return new ClientDelegatingFuture<>(
+                invocation.invoke(),
+                serializationService,
+                clientMessage -> {
+                    MCAddWanBatchPublisherConfigCodec.ResponseParameters response =
+                            MCAddWanBatchPublisherConfigCodec.decodeResponse(clientMessage);
+                    return new AddWanConfigResult(response.addedPublisherIds, response.ignoredPublisherIds);
+                }
+        );
+    }
+
+    /**
+     * Initiate WAN sync for a specific map.
+     *
+     * @param wanReplicationName name of the WAN replication to initiate WAN sync for
+     * @param wanPublisherId     ID of the WAN publisher to initiate WAN sync for
+     * @param mapName            name of the map to trigger WAN sync on
+     * @return a {@link CompletableFuture} that holds the UUID of the synchronization
+     */
+    @Nonnull
+    public CompletableFuture<UUID> wanSyncMap(String wanReplicationName,
+                                              String wanPublisherId,
+                                              String mapName) {
+        checkNotNull(wanReplicationName);
+        checkNotNull(wanPublisherId);
+        checkNotNull(mapName);
+
+        return wanSyncMap(wanReplicationName, wanPublisherId, SINGLE_MAP, mapName);
+    }
+
+    /**
+     * Initiate WAN sync for all maps.
+     *
+     * @param wanReplicationName name of the WAN replication to initiate WAN sync for
+     * @param wanPublisherId     ID of the WAN publisher to initiate WAN sync for
+     * @return a {@link CompletableFuture} that holds the UUID of the synchronization
+     */
+    @Nonnull
+    public CompletableFuture<UUID> wanSyncAllMaps(String wanReplicationName,
+                                                  String wanPublisherId) {
+        checkNotNull(wanReplicationName);
+        checkNotNull(wanPublisherId);
+
+        return wanSyncMap(wanReplicationName, wanPublisherId, ALL_MAPS, null);
+    }
+
+
+    private CompletableFuture<UUID> wanSyncMap(String wanReplicationName,
+                                               String wanPublisherId,
+                                               WanSyncType syncType,
+                                               String map) {
+
+        ClientInvocation invocation = new ClientInvocation(
+                client,
+                MCWanSyncMapCodec.encodeRequest(
+                        wanReplicationName, wanPublisherId, syncType.getType(), map),
+                null
+        );
+
+        return new ClientDelegatingFuture<>(
+                invocation.invoke(),
+                serializationService,
+                clientMessage -> MCWanSyncMapCodec.decodeResponse(clientMessage).uuid
+        );
+    }
+
+    /**
+     * Initiate WAN consistency check for a specific map.
+     *
+     * @param wanReplicationName name of the WAN replication to check WAN consistency for
+     * @param wanPublisherId     ID of the WAN publisher to check WAN consistency for
+     * @param mapName            name of the map to check WAN consistency for
+     * @return a {@link CompletableFuture} that holds the UUID of the WAN consistency check
+     */
+    @Nonnull
+    public CompletableFuture<UUID> checkWanConsistency(String wanReplicationName,
+                                                       String wanPublisherId,
+                                                       String mapName) {
+        checkNotNull(wanReplicationName);
+        checkNotNull(wanPublisherId);
+        checkNotNull(mapName);
+
+        ClientInvocation invocation = new ClientInvocation(
+                client,
+                MCCheckWanConsistencyCodec.encodeRequest(wanReplicationName, wanPublisherId, mapName),
+                null
+        );
+
+        return new ClientDelegatingFuture<>(
+                invocation.invoke(),
+                serializationService,
+                clientMessage -> MCCheckWanConsistencyCodec.decodeResponse(clientMessage).uuid
         );
     }
 
