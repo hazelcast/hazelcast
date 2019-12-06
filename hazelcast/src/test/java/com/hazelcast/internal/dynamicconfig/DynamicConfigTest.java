@@ -47,6 +47,7 @@ import com.hazelcast.config.MergePolicyConfig;
 import com.hazelcast.config.MerkleTreeConfig;
 import com.hazelcast.config.MetadataPolicy;
 import com.hazelcast.config.MultiMapConfig;
+import com.hazelcast.config.PNCounterConfig;
 import com.hazelcast.config.PredicateConfig;
 import com.hazelcast.config.QueryCacheConfig;
 import com.hazelcast.config.QueueConfig;
@@ -91,6 +92,7 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.config.MultiMapConfig.ValueCollectionType.LIST;
+import static com.hazelcast.test.TestConfigUtils.NON_DEFAULT_BACKUP_COUNT;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -468,6 +470,17 @@ public class DynamicConfigTest extends HazelcastTestSupport {
     }
 
     @Test
+    public void testSameCacheConfig_canBeAddedTwice() {
+        CacheSimpleConfig config = new CacheSimpleConfig()
+                .setName(name)
+                .setBackupCount(NON_DEFAULT_BACKUP_COUNT);
+
+        driver.getConfig().addCacheConfig(config);
+        driver.getCacheManager().getCache(name);
+        driver.getConfig().addCacheConfig(config);
+    }
+
+    @Test
     public void testCacheConfig() {
         CacheSimpleConfig config = getCacheConfig()
                 .setExpiryPolicyFactoryConfig(new ExpiryPolicyFactoryConfig("expiryPolicyFactory"));
@@ -681,6 +694,24 @@ public class DynamicConfigTest extends HazelcastTestSupport {
         driver.getConfig().addReliableTopicConfig(reliableTopicConfig);
 
         assertConfigurationsEqualsOnAllMembers(reliableTopicConfig);
+    }
+
+    @Test
+    public void testPNCounterConfig() {
+        PNCounterConfig pnCounterConfig = new PNCounterConfig(name)
+                .setReplicaCount(NON_DEFAULT_BACKUP_COUNT)
+                .setStatisticsEnabled(false);
+
+        driver.getConfig().addPNCounterConfig(pnCounterConfig);
+        assertConfigurationsEqualsOnAllMembers(pnCounterConfig);
+    }
+
+    private void assertConfigurationsEqualsOnAllMembers(PNCounterConfig config) {
+        String name = config.getName();
+        for (HazelcastInstance instance : members) {
+            PNCounterConfig registeredConfig = instance.getConfig().getPNCounterConfig(name);
+            assertEquals(config, registeredConfig);
+        }
     }
 
     private void assertConfigurationsEqualsOnAllMembers(CacheSimpleConfig config) {
