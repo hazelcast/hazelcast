@@ -58,14 +58,12 @@ public class NodeEngineTest extends HazelcastTestSupport {
     }
 
     @Test
-    @SuppressWarnings("deprecation")
     public void getServiceOrNull_whenNonExistingService() {
         Object sharedService = nodeEngine.getServiceOrNull("notexist");
         assertNull(sharedService);
     }
 
     @Test
-    @SuppressWarnings("deprecation")
     public void getServiceOrNull_whenExistingService() {
         Object sharedService = nodeEngine.getServiceOrNull(LockSupportService.SERVICE_NAME);
         assertNotNull(sharedService);

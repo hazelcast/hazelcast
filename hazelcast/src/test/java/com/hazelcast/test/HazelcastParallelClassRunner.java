@@ -169,7 +169,7 @@ public class HazelcastParallelClassRunner extends AbstractHazelcastClassRunner {
         }
     }
 
-    @SuppressWarnings({"deprecation", "NullableProblems"})
+    @SuppressWarnings({"deprecation"})
     private static final class ThreadLocalProperties extends Properties {
 
         private final Properties globalProperties;

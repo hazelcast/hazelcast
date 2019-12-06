@@ -715,7 +715,6 @@ public class ConfigCompatibilityChecker {
 
     public static class MapConfigChecker extends ConfigChecker<MapConfig> {
         @Override
-        @SuppressWarnings("deprecation")
         public boolean check(MapConfig c1, MapConfig c2) {
             if (c1 == c2) {
                 return true;
@@ -765,7 +764,6 @@ public class ConfigCompatibilityChecker {
                     && nullSafeEqual(c1.isRepublishingEnabled(), c2.isRepublishingEnabled());
         }
 
-        @SuppressWarnings("deprecation")
         private static boolean isCompatible(NearCacheConfig c1, NearCacheConfig c2) {
             return c1 == c2 || !(c1 == null || c2 == null)
                     && nullSafeEqual(c1.getName(), c2.getName())
@@ -773,7 +771,6 @@ public class ConfigCompatibilityChecker {
                     && isCompatible(c1.getEvictionConfig(), c2.getEvictionConfig());
         }
 
-        @SuppressWarnings("deprecation")
         private static boolean isCompatible(EvictionConfig c1, EvictionConfig c2) {
             return c1 == c2 || !(c1 == null || c2 == null)
                     && nullSafeEqual(c1.getSize(), c2.getSize())

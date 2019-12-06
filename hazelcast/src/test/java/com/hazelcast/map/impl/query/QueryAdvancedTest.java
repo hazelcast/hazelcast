@@ -104,7 +104,6 @@ public class QueryAdvancedTest extends HazelcastTestSupport {
     }
 
     @Test
-    @SuppressWarnings("deprecation")
     public void testQueryWithTTL() {
         Config config = getConfig();
         String mapName = "default";

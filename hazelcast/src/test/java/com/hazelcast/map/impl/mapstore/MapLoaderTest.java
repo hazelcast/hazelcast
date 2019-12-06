@@ -654,7 +654,6 @@ public class MapLoaderTest extends HazelcastTestSupport {
     }
 
     @Test
-    @SuppressWarnings("deprecation")
     public void testMapLoaderHittingEvictionOnInitialLoad() {
         String mapName = "testMapLoaderHittingEvictionOnInitialLoad";
         int sizePerPartition = 1;
