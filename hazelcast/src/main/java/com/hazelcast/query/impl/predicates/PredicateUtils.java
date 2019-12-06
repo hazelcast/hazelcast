@@ -16,6 +16,8 @@
 
 package com.hazelcast.query.impl.predicates;
 
+import com.hazelcast.query.PartitionPredicate;
+import com.hazelcast.query.Predicate;
 import com.hazelcast.query.impl.AndResultSet;
 import com.hazelcast.query.impl.OrResultSet;
 import com.hazelcast.query.impl.QueryableEntry;
@@ -66,5 +68,14 @@ public final class PredicateUtils {
     @SuppressWarnings("unchecked")
     public static <T> T unwrapIfOptional(Object value) {
         return value instanceof Optional ? ((Optional<T>) value).orElse(null) : (T) value;
+    }
+
+    public static PagingPredicateImpl unwrapPagingPredicate(Predicate predicate) {
+        if (predicate instanceof PagingPredicateImpl) {
+            return (PagingPredicateImpl) predicate;
+        }
+
+        Predicate unwrappedPredicate = ((PartitionPredicate) predicate).getTarget();
+        return (PagingPredicateImpl) unwrappedPredicate;
     }
 }

@@ -110,6 +110,7 @@ import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.util.CollectionUtil;
 import com.hazelcast.internal.util.IterationType;
+import com.hazelcast.internal.util.ResultSet;
 import com.hazelcast.internal.util.collection.ImmutableInflatableSet;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.EventJournalMapEvent;
@@ -148,7 +149,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -172,6 +172,7 @@ import static com.hazelcast.map.impl.ListenerAdapters.createListenerAdapter;
 import static com.hazelcast.map.impl.MapListenerFlagOperator.setAndGetListenerFlags;
 import static com.hazelcast.map.impl.querycache.subscriber.QueryCacheRequest.newQueryCacheRequest;
 import static com.hazelcast.map.impl.record.Record.UNSET;
+import static com.hazelcast.query.impl.predicates.PredicateUtils.unwrapPagingPredicate;
 import static java.lang.Thread.currentThread;
 import static java.util.Collections.emptyMap;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
@@ -1264,23 +1265,22 @@ public class ClientMapProxy<K, V> extends ClientProxy
                 .decodeResponse(response);
 
         if (resultParameters.response.isEmpty()) {
-            return Collections.EMPTY_SET;
+            return (Set<K>) new ResultSet();
         }
 
         SerializationService serializationService = getSerializationService();
 
         int size = resultParameters.response.size();
-        Set<K> keySet = new HashSet<>(size);
+        List<Map.Entry> entries = new ArrayList<>(size);
         for (int i = 0; i < size; i++) {
             K key = serializationService.toObject(resultParameters.response.get(i));
-            keySet.add(key);
+            entries.add(new AbstractMap.SimpleImmutableEntry(key, null));
         }
-        resultParameters.response.forEach(data -> keySet.add(serializationService.toObject(data)));
 
         PagingPredicateImpl<K, V> resultPredicate = serializationService.toObject(resultParameters.predicate);
         pagingPredicate.setAnchorList(resultPredicate.getAnchorList());
 
-        return keySet;
+        return (Set<K>) new ResultSet(entries, IterationType.KEY);
     }
 
     @SuppressWarnings("unchecked")
@@ -1316,12 +1316,12 @@ public class ClientMapProxy<K, V> extends ClientProxy
                 .decodeResponse(response);
 
         if (resultParameters.response.isEmpty()) {
-            return Collections.EMPTY_SET;
+            return new ResultSet();
         }
 
         SerializationService serializationService = getSerializationService();
         int size = resultParameters.response.size();
-        Set<Map.Entry> entries = new HashSet<>(size);
+        List<Map.Entry> entries = new ArrayList<>(size);
         for (int i = 0; i < size; i++) {
             Entry<Data, Data> dataEntry = resultParameters.response.get(i);
             K key = serializationService.toObject(dataEntry.getKey());
@@ -1333,12 +1333,7 @@ public class ClientMapProxy<K, V> extends ClientProxy
         PagingPredicateImpl<K, V> resultPredicate = serializationService.toObject(resultParameters.predicate);
         pagingPredicate.setAnchorList(resultPredicate.getAnchorList());
 
-        return entries;
-    }
-
-    private void setAnchor(PagingPredicateImpl pagingPredicate, Entry lastEntry) {
-        int nearestPage = (int) pagingPredicate.getNearestAnchorEntry().getKey();
-        pagingPredicate.setAnchor(nearestPage + 1, lastEntry);
+        return new ResultSet(entries, IterationType.ENTRY);
     }
 
     @Override
@@ -1377,20 +1372,21 @@ public class ClientMapProxy<K, V> extends ClientProxy
                 .decodeResponse(response);
 
         if (resultParameters.response.isEmpty()) {
-            return Collections.EMPTY_LIST;
+            return (Collection<V>) new ResultSet();
         }
 
         SerializationService serializationService = getSerializationService();
 
-        List<V> valueList = new ArrayList<>(resultParameters.response.size());
+        List<Map.Entry> entries = new ArrayList<>(resultParameters.response.size());
         resultParameters.response.forEach(entry -> {
-            valueList.add(serializationService.toObject(entry.getValue()));
+            Object value = serializationService.toObject(entry.getValue());
+            entries.add(new AbstractMap.SimpleImmutableEntry(null, value));
         });
 
         PagingPredicateImpl<K, V> resultPredicate = serializationService.toObject(resultParameters.predicate);
         pagingPredicate.setAnchorList(resultPredicate.getAnchorList());
 
-        return valueList;
+        return (Collection<V>) new ResultSet(entries, IterationType.VALUE);
     }
 
     @Override
@@ -1885,15 +1881,6 @@ public class ClientMapProxy<K, V> extends ClientProxy
         }
         PartitionPredicate partitionPredicate = (PartitionPredicate) predicate;
         return partitionPredicate.getTarget() instanceof PagingPredicateImpl;
-    }
-
-    private static PagingPredicateImpl unwrapPagingPredicate(Predicate predicate) {
-        if (predicate instanceof PagingPredicateImpl) {
-            return (PagingPredicateImpl) predicate;
-        }
-
-        Predicate unwrappedPredicate = ((PartitionPredicate) predicate).getTarget();
-        return (PagingPredicateImpl) unwrappedPredicate;
     }
 
     private class ClientMapToKeyWithPredicateEventHandler extends AbstractClientMapEventHandler {

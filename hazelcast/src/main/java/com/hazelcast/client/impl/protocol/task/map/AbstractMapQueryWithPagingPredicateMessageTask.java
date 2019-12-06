@@ -23,6 +23,7 @@ import com.hazelcast.internal.util.SortingUtil;
 import com.hazelcast.map.impl.LazyMapEntry;
 import com.hazelcast.map.impl.query.QueryResultRow;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.query.Predicate;
 import com.hazelcast.query.impl.predicates.PagingPredicateImpl;
 
 import java.util.AbstractMap;
@@ -30,6 +31,8 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+
+import static com.hazelcast.query.impl.predicates.PredicateUtils.unwrapPagingPredicate;
 
 public abstract class AbstractMapQueryWithPagingPredicateMessageTask<P> extends DefaultMapQueryMessageTask<P> {
 
@@ -45,7 +48,8 @@ public abstract class AbstractMapQueryWithPagingPredicateMessageTask<P> extends 
         //  https://github.com/hazelcast/hazelcast/issues/12205
         result.forEach(row -> accumulatedList.add(new LazyMapEntry<>(row.getKey(), row.getValue(), serializationService)));
 
-        PagingPredicateImpl pagingPredicate = serializationService.toObject(predicateData);
+        Predicate predicate = serializationService.toObject(predicateData);
+        PagingPredicateImpl pagingPredicate = unwrapPagingPredicate(predicate);
 
         List<Map.Entry<Data, Data>> entries = SortingUtil.getSortedSubList(accumulatedList, pagingPredicate);
         return new AbstractMap.SimpleImmutableEntry(pagingPredicate, entries);
