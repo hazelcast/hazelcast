@@ -117,7 +117,7 @@ public class EntryProcessorTest extends HazelcastTestSupport {
 
     @Override
     public Config getConfig() {
-        Config config = super.getConfig();
+        Config config = smallInstanceConfig();
         MapConfig mapConfig = new MapConfig(MAP_NAME);
         mapConfig.setInMemoryFormat(inMemoryFormat);
         config.addMapConfig(mapConfig);
@@ -1352,7 +1352,7 @@ public class EntryProcessorTest extends HazelcastTestSupport {
     public void receivesEntryRemovedEvent_onPostProcessingMapStore_after_executeOnKey() {
         Config config = getConfig();
         config.getMapConfig(MAP_NAME)
-              .getMapStoreConfig().setEnabled(true).setImplementation(new TestPostProcessingMapStore());
+                .getMapStoreConfig().setEnabled(true).setImplementation(new TestPostProcessingMapStore());
         HazelcastInstance node = createHazelcastInstance(config);
         IMap<Integer, Integer> map = node.getMap(MAP_NAME);
         final CountDownLatch latch = new CountDownLatch(1);
@@ -1372,7 +1372,7 @@ public class EntryProcessorTest extends HazelcastTestSupport {
     public void receivesEntryRemovedEvent_onPostProcessingMapStore_after_executeOnEntries() {
         Config config = getConfig();
         config.getMapConfig(MAP_NAME)
-              .getMapStoreConfig().setEnabled(true).setImplementation(new TestPostProcessingMapStore());
+                .getMapStoreConfig().setEnabled(true).setImplementation(new TestPostProcessingMapStore());
         HazelcastInstance node = createHazelcastInstance(config);
         IMap<Integer, Integer> map = node.getMap(MAP_NAME);
         final CountDownLatch latch = new CountDownLatch(1);
@@ -1646,8 +1646,8 @@ public class EntryProcessorTest extends HazelcastTestSupport {
     private void testEntryProcessorWithPredicate_updatesLastAccessTime(boolean accessExpected) {
         Config config = withoutNetworkJoin(smallInstanceConfig());
         config.getMapConfig(MAP_NAME)
-              .setTimeToLiveSeconds(60)
-              .setMaxIdleSeconds(30);
+                .setTimeToLiveSeconds(60)
+                .setMaxIdleSeconds(30);
 
         HazelcastInstance member = createHazelcastInstance(config);
         IMap<String, String> map = member.getMap(MAP_NAME);

@@ -34,7 +34,7 @@ public class EntryStoreWriteBehindTest extends EntryStoreSimpleTest {
 
     @Override
     protected Config getConfig() {
-        Config config = super.getConfig();
+        Config config = smallInstanceConfig();
         config.getMapConfig("default").getMapStoreConfig().setWriteDelaySeconds(1);
         return config;
     }
