@@ -1271,17 +1271,14 @@ public class ClientMapProxy<K, V> extends ClientProxy
 
         int size = resultParameters.response.size();
         Set<K> keySet = new HashSet<>(size);
-        K lastKey = null;
         for (int i = 0; i < size; i++) {
             K key = serializationService.toObject(resultParameters.response.get(i));
             keySet.add(key);
-            if (i == size - 1) {
-                lastKey = key;
-            }
         }
         resultParameters.response.forEach(data -> keySet.add(serializationService.toObject(data)));
 
-        pagingPredicate.setAnchor(pagingPredicate.getPage(), new AbstractMap.SimpleImmutableEntry(lastKey, null));
+        PagingPredicateImpl<K, V> resultPredicate = serializationService.toObject(resultParameters.predicate);
+        pagingPredicate.setAnchorList(resultPredicate.getAnchorList());
 
         return keySet;
     }
@@ -1325,21 +1322,23 @@ public class ClientMapProxy<K, V> extends ClientProxy
         SerializationService serializationService = getSerializationService();
         int size = resultParameters.response.size();
         Set<Map.Entry> entries = new HashSet<>(size);
-        Map.Entry lastEntry = null;
         for (int i = 0; i < size; i++) {
             Entry<Data, Data> dataEntry = resultParameters.response.get(i);
             K key = serializationService.toObject(dataEntry.getKey());
             V value = serializationService.toObject(dataEntry.getValue());
             Map.Entry<K, V> entry = new AbstractMap.SimpleImmutableEntry<>(key, value);
             entries.add(entry);
-            if (i == size - 1) {
-                lastEntry = entry;
-            }
         }
 
-        pagingPredicate.setAnchor(pagingPredicate.getPage(), lastEntry);
+        PagingPredicateImpl<K, V> resultPredicate = serializationService.toObject(resultParameters.predicate);
+        pagingPredicate.setAnchorList(resultPredicate.getAnchorList());
 
         return entries;
+    }
+
+    private void setAnchor(PagingPredicateImpl pagingPredicate, Entry lastEntry) {
+        int nearestPage = (int) pagingPredicate.getNearestAnchorEntry().getKey();
+        pagingPredicate.setAnchor(nearestPage + 1, lastEntry);
     }
 
     @Override
@@ -1388,10 +1387,8 @@ public class ClientMapProxy<K, V> extends ClientProxy
             valueList.add(serializationService.toObject(entry.getValue()));
         });
 
-        int lastEntryIndex = valueList.size() - 1;
-        K lastEntryKey = serializationService.toObject(resultParameters.response.get(lastEntryIndex).getKey());
-        V lastEntryValue = valueList.get(lastEntryIndex);
-        pagingPredicate.setAnchor(pagingPredicate.getPage(), new AbstractMap.SimpleImmutableEntry(lastEntryKey, lastEntryValue));
+        PagingPredicateImpl<K, V> resultPredicate = serializationService.toObject(resultParameters.predicate);
+        pagingPredicate.setAnchorList(resultPredicate.getAnchorList());
 
         return valueList;
     }

@@ -152,8 +152,14 @@ public final class SortingUtil {
     @SuppressWarnings("unchecked")
     public static ResultSet getSortedQueryResultSet(List<Map.Entry> list,
                                                     PagingPredicate pagingPredicate, IterationType iterationType) {
+        List<Map.Entry> subList = getSortedSubListAndUpdateAnchor(list, pagingPredicate, iterationType);
+        return new ResultSet(subList, iterationType);
+    }
+
+    public static List<Map.Entry> getSortedSubListAndUpdateAnchor(List<Map.Entry> list, PagingPredicate pagingPredicate,
+                                                                   IterationType iterationType) {
         if (list.isEmpty()) {
-            return new ResultSet();
+            return Collections.EMPTY_LIST;
         }
         PagingPredicateImpl pagingPredicateImpl = (PagingPredicateImpl) pagingPredicate;
         Comparator<Map.Entry> comparator = SortingUtil.newComparator(pagingPredicateImpl.getComparator(), iterationType);
@@ -166,7 +172,7 @@ public final class SortingUtil {
         long begin = pageSize * ((long) page - nearestPage - 1);
         int size = list.size();
         if (begin > size) {
-            return new ResultSet();
+            return Collections.EMPTY_LIST;
         }
         long end = begin + pageSize;
         if (end > size) {
@@ -174,8 +180,7 @@ public final class SortingUtil {
         }
         setAnchor(list, pagingPredicateImpl, nearestPage);
         // it's safe to cast begin and end back to int here since they are limited by the list size
-        List<Map.Entry> subList = list.subList((int) begin, (int) end);
-        return new ResultSet(subList, iterationType);
+        return list.subList((int) begin, (int) end);
     }
 
     public static boolean compareAnchor(PagingPredicate pagingPredicate, QueryableEntry queryEntry,
@@ -193,18 +198,20 @@ public final class SortingUtil {
         return SortingUtil.compare(comparator, iterationType, anchor, queryEntry) < 0;
     }
 
-    public static List<Map.Entry<Data, Data>> getSortedSubList(ArrayList<LazyMapEntry> accumulatedList,
+    public static List<Map.Entry<Data, Data>> getSortedSubList(List<Map.Entry> accumulatedList,
                                                                PagingPredicateImpl pagingPredicate) {
-        Comparator<Map.Entry> comparator = (entry1, entry2) ->
-                SortingUtil.compare(pagingPredicate.getComparator(), pagingPredicate.getIterationType(), entry1, entry2);
-        Collections.sort(accumulatedList, comparator);
+        if (accumulatedList.isEmpty()) {
+            return Collections.EMPTY_LIST;
+        }
 
-        int expectedEntryCount = Math.min(pagingPredicate.getPageSize(), accumulatedList.size());
-        List<LazyMapEntry> sortedSubList = accumulatedList.subList(0, expectedEntryCount);
+        List<Map.Entry> sortedSubList = getSortedSubListAndUpdateAnchor(accumulatedList, pagingPredicate,
+                pagingPredicate.getIterationType());
 
         List<Map.Entry<Data, Data>> entries = new ArrayList<>(sortedSubList.size());
-        sortedSubList
-                .forEach(entry -> entries.add(new AbstractMap.SimpleImmutableEntry<>(entry.getKeyData(), entry.getValueData())));
+
+        sortedSubList.forEach(entry -> entries.add(new AbstractMap.SimpleImmutableEntry<>(((LazyMapEntry) entry).getKeyData(),
+                ((LazyMapEntry) entry).getValueData())));
+
         return entries;
     }
 

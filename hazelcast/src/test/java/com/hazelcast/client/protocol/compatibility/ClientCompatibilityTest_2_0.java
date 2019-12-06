@@ -1334,6 +1334,7 @@ public class ClientCompatibilityTest_2_0 {
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         MapKeySetWithPagingPredicateCodec.ResponseParameters parameters = MapKeySetWithPagingPredicateCodec.decodeResponse(fromFile);
         assertTrue(isEqual(aListOfData, parameters.response));
+        assertTrue(isEqual(aData, parameters.predicate));
     }
 
     @Test
@@ -1350,6 +1351,7 @@ public class ClientCompatibilityTest_2_0 {
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         MapValuesWithPagingPredicateCodec.ResponseParameters parameters = MapValuesWithPagingPredicateCodec.decodeResponse(fromFile);
         assertTrue(isEqual(aListOfDataToData, parameters.response));
+        assertTrue(isEqual(aData, parameters.predicate));
     }
 
     @Test
@@ -1366,6 +1368,7 @@ public class ClientCompatibilityTest_2_0 {
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         MapEntriesWithPagingPredicateCodec.ResponseParameters parameters = MapEntriesWithPagingPredicateCodec.decodeResponse(fromFile);
         assertTrue(isEqual(aListOfDataToData, parameters.response));
+        assertTrue(isEqual(aData, parameters.predicate));
     }
 
     @Test

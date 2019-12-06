@@ -25,6 +25,7 @@ import com.hazelcast.map.impl.query.QueryResultRow;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.impl.predicates.PagingPredicateImpl;
 
+import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -36,8 +37,9 @@ public abstract class AbstractMapQueryWithPagingPredicateMessageTask<P> extends 
         super(clientMessage, node, connection);
     }
 
-    protected List<Map.Entry<Data, Data>> getSortedPageEntries(Collection<QueryResultRow> result, Data predicateData) {
-        ArrayList<LazyMapEntry> accumulatedList = new ArrayList<>(result.size());
+    protected Map.Entry<PagingPredicateImpl, List<Map.Entry<Data, Data>>> getSortedPageEntries(Collection<QueryResultRow> result,
+                                                                                               Data predicateData) {
+        ArrayList<Map.Entry> accumulatedList = new ArrayList<>(result.size());
 
         // TODO: The following lines will be replaced by k-way merge sort algorithm as described at
         //  https://github.com/hazelcast/hazelcast/issues/12205
@@ -45,7 +47,8 @@ public abstract class AbstractMapQueryWithPagingPredicateMessageTask<P> extends 
 
         PagingPredicateImpl pagingPredicate = serializationService.toObject(predicateData);
 
-        return SortingUtil.getSortedSubList(accumulatedList, pagingPredicate);
+        List<Map.Entry<Data, Data>> entries = SortingUtil.getSortedSubList(accumulatedList, pagingPredicate);
+        return new AbstractMap.SimpleImmutableEntry(pagingPredicate, entries);
     }
 
 }

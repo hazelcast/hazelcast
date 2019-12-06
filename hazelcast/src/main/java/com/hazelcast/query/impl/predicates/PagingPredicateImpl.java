@@ -297,6 +297,14 @@ public class PagingPredicateImpl<K, V>
         }
     }
 
+    public void setAnchorList(List<Map.Entry<Integer, Map.Entry<K, V>>> anchorList) {
+        this.anchorList = anchorList;
+    }
+
+    public List<Map.Entry<Integer, Map.Entry<K, V>>> getAnchorList() {
+        return anchorList;
+    }
+
     public Map.Entry<Integer, Map.Entry> getNearestAnchorEntry() {
         int anchorCount = anchorList.size();
         if (page == 0 || anchorCount == 0) {

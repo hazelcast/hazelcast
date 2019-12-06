@@ -24,6 +24,7 @@ import com.hazelcast.internal.util.IterationType;
 import com.hazelcast.map.impl.query.QueryResultRow;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.query.Predicate;
+import com.hazelcast.query.impl.predicates.PagingPredicateImpl;
 
 import java.util.Collection;
 import java.util.List;
@@ -58,7 +59,9 @@ public class MapValuesWithPagingPredicateMessageTask
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return MapValuesWithPagingPredicateCodec.encodeResponse((List<Map.Entry<Data, Data>>) response);
+        Map.Entry<PagingPredicateImpl, List<Map.Entry<Data, Data>>> result =
+                (Map.Entry<PagingPredicateImpl, List<Map.Entry<Data, Data>>>) response;
+        return MapValuesWithPagingPredicateCodec.encodeResponse(result.getValue(), serializationService.toData(result.getKey()));
     }
 
     @Override
