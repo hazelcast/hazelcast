@@ -34,23 +34,23 @@ import static com.hazelcast.jet.impl.util.Util.checkSerializable;
 /**
  * See {@link SinkBuilder#sinkBuilder(String, FunctionEx)}.
  *
- * @param <W> type of the writer object
+ * @param <C> type of the writer object
  * @param <T> type of the items the sink will accept
  *
  * @since 3.0
  */
-public final class SinkBuilder<W, T> {
+public final class SinkBuilder<C, T> {
 
-    private final FunctionEx<? super Context, ? extends W> createFn;
+    private final FunctionEx<? super Context, ? extends C> createFn;
     private final String name;
-    private BiConsumerEx<? super W, ? super T> receiveFn;
-    private ConsumerEx<? super W> flushFn = ConsumerEx.noop();
-    private ConsumerEx<? super W> destroyFn = ConsumerEx.noop();
+    private BiConsumerEx<? super C, ? super T> receiveFn;
+    private ConsumerEx<? super C> flushFn = ConsumerEx.noop();
+    private ConsumerEx<? super C> destroyFn = ConsumerEx.noop();
     private int preferredLocalParallelism = 1;
 
     private SinkBuilder(
             @Nonnull String name,
-            @Nonnull FunctionEx<? super Context, ? extends W> createFn
+            @Nonnull FunctionEx<? super Context, ? extends C> createFn
     ) {
         checkSerializable(createFn, "createFn");
         this.name = name;
@@ -60,19 +60,20 @@ public final class SinkBuilder<W, T> {
     /**
      * Returns a builder object that offers a step-by-step fluent API to build
      * a custom {@link Sink} for the Pipeline API. It allows you to keep a
-     * single-threaded, stateful writer object in each instance of a Jet worker
-     * dedicated to driving the sink. Its primary intended purpose is to serve
-     * as the holder of references to external resources and optional buffers.
-     * Keep in mind that only the writer object may be stateful; the functions
-     * you provide must hold no mutable state of their own.
+     * single-threaded and stateful <i>context object</i>, it got from your
+     * {@code createFn}, in each instance of a Jet worker dedicated to driving
+     * the sink. Its primary intended purpose is to serve as the holder of
+     * references to external resources and optional buffers. Keep in mind that
+     * only the context object may be stateful; the functions you provide must
+     * hold no mutable state of their own.
      * <p>
      * These are the callback functions you can provide to implement the sink's
      * behavior:
      * <ol><li>
-     *     {@code createFn} creates the writer. Gets the processor context as
-     *     argument which can be used to obtain local Jet instance, global
-     *     processor index etc. It will be called once for each worker thread.
-     *     This component is required.
+     *     {@code createFn} creates the context object. Gets the processor
+     *     context as argument which can be used to obtain local Jet instance,
+     *     global processor index etc. It will be called once for each worker
+     *     thread. This component is required.
      * </li><li>
      *     {@code onReceiveFn} gets notified of each item the sink receives and
      *     (typically) passes it to the writer. This component is required.
@@ -89,21 +90,21 @@ public final class SinkBuilder<W, T> {
      * the sink is idempotent (suppresses duplicate items), it will also be
      * compatible with the <em>exactly-once</em> guarantee.
      *
-     * @param <W> type of the writer object
+     * @param <C> type of the context object
      *
      * @since 3.0
      */
     @Nonnull
-    public static <W> SinkBuilder<W, Void> sinkBuilder(
+    public static <C> SinkBuilder<C, Void> sinkBuilder(
             @Nonnull String name,
-            @Nonnull FunctionEx<Context, ? extends W> createFn
+            @Nonnull FunctionEx<Context, ? extends C> createFn
     ) {
         return new SinkBuilder<>(name, createFn);
     }
 
     /**
      * Sets the function Jet will call upon receiving an item. The function
-     * receives two arguments: the writer object (as provided by the {@link
+     * receives two arguments: the context object (as provided by the {@link
      * #createFn} and the received item. Its job is to push the item to the
      * writer.
      *
@@ -112,20 +113,20 @@ public final class SinkBuilder<W, T> {
      */
     @Nonnull
     @SuppressWarnings("unchecked")
-    public <T_NEW> SinkBuilder<W, T_NEW> receiveFn(
-            @Nonnull BiConsumerEx<? super W, ? super T_NEW> receiveFn
+    public <T_NEW> SinkBuilder<C, T_NEW> receiveFn(
+            @Nonnull BiConsumerEx<? super C, ? super T_NEW> receiveFn
     ) {
         checkSerializable(receiveFn, "receiveFn");
-        SinkBuilder<W, T_NEW> newThis = (SinkBuilder<W, T_NEW>) this;
+        SinkBuilder<C, T_NEW> newThis = (SinkBuilder<C, T_NEW>) this;
         newThis.receiveFn = receiveFn;
         return newThis;
     }
 
     /**
      * Sets the function that implements the sink's flushing behavior. If your
-     * writer is buffered, instead of relying on some automatic flushing policy
-     * you can provide this function so Jet can choose the best moment to
-     * flush.
+     * context object is buffered, instead of relying on some automatic
+     * flushing policy you can provide this function so Jet can choose the best
+     * moment to flush.
      * <p>
      * You are not required to provide this function in case your implementation
      * doesn't need it.
@@ -133,25 +134,25 @@ public final class SinkBuilder<W, T> {
      * @param flushFn the optional "flush the writer" function
      */
     @Nonnull
-    public SinkBuilder<W, T> flushFn(@Nonnull ConsumerEx<? super W> flushFn) {
+    public SinkBuilder<C, T> flushFn(@Nonnull ConsumerEx<? super C> flushFn) {
         checkSerializable(flushFn, "flushFn");
         this.flushFn = flushFn;
         return this;
     }
 
     /**
-     * Sets the function that will destroy the writer and perform any cleanup. The
-     * function is called when the job has been completed or cancelled. Jet guarantees
-     * that no new items will be received in between the last call to {@code flushFn}
-     * and the call to {@code destroyFn}.
+     * Sets the function that will destroy the context object and perform any
+     * cleanup. The function is called when the job has been completed or
+     * cancelled. Jet guarantees that no new items will be received in between
+     * the last call to {@code flushFn} and the call to {@code destroyFn}.
      * <p>
      * You are not required to provide this function in case your implementation
      * doesn't need it.
      *
-     * @param destroyFn the optional "destroy the writer" function
+     * @param destroyFn the optional "destroy the context object" function
      */
     @Nonnull
-    public SinkBuilder<W, T> destroyFn(@Nonnull ConsumerEx<? super W> destroyFn) {
+    public SinkBuilder<C, T> destroyFn(@Nonnull ConsumerEx<? super C> destroyFn) {
         checkSerializable(destroyFn, "destroyFn");
         this.destroyFn = destroyFn;
         return this;
@@ -169,7 +170,7 @@ public final class SinkBuilder<W, T> {
      * The default value of this property is 1.
      */
     @Nonnull
-    public SinkBuilder<W, T> preferredLocalParallelism(int preferredLocalParallelism) {
+    public SinkBuilder<C, T> preferredLocalParallelism(int preferredLocalParallelism) {
         Vertex.checkLocalParallelism(preferredLocalParallelism);
         this.preferredLocalParallelism = preferredLocalParallelism;
         return this;
