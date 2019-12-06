@@ -58,7 +58,7 @@ class MapSplitBrainHandlerService extends AbstractSplitBrainHandlerService<Recor
         assertRunningOnPartitionThread();
 
         DefaultRecordStore defaultRecordStore = (DefaultRecordStore) recordStore;
-        defaultRecordStore.clearOtherDataThanStorage(false, true);
+        defaultRecordStore.getMapDataStore().reset();
         defaultRecordStore.getIndexingObserver().onDestroy(false, true);
     }
 

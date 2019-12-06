@@ -77,7 +77,8 @@ public class PartitionScanRunner {
 
     @SuppressWarnings("unchecked")
     public void run(String mapName, Predicate predicate, int partitionId, Result result) {
-        PagingPredicateImpl pagingPredicate = predicate instanceof PagingPredicateImpl ? (PagingPredicateImpl) predicate : null;
+        PagingPredicateImpl pagingPredicate = predicate instanceof PagingPredicateImpl
+                ? (PagingPredicateImpl) predicate : null;
 
         PartitionContainer partitionContainer = mapServiceContext.getPartitionContainer(partitionId);
         MapContainer mapContainer = mapServiceContext.getMapContainer(mapName);
