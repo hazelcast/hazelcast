@@ -1334,7 +1334,7 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
 
         EvictionConfig evictionConfig1 = new EvictionConfig()
                 .setSize(10)
-                .setMaxSizePolicy(MaxSizePolicy.FREE_NATIVE_MEMORY_SIZE);
+                .setMaxSizePolicy(MaxSizePolicy.FREE_HEAP_SIZE);
 
         IndexConfig indexConfig = new IndexConfig().addAttribute("attribute").setType(IndexType.SORTED);
 
@@ -1383,7 +1383,7 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
         MapConfig expectedConfig = new MapConfig()
                 .setName("carMap")
                 .setEvictionConfig(evictionConfig1)
-                .setInMemoryFormat(InMemoryFormat.NATIVE)
+                .setInMemoryFormat(InMemoryFormat.OBJECT)
                 .setMetadataPolicy(MetadataPolicy.CREATE_ON_UPDATE)
                 .setMaxIdleSeconds(100)
                 .setTimeToLiveSeconds(1000)

@@ -2587,7 +2587,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "hazelcast:\n"
                 + "  map:\n"
                 + "    mymap:\n"
-                + "      in-memory-format: NATIVE\n"
+                + "      in-memory-format: OBJECT\n"
                 + "      eviction:\n"
                 + "        max-size-policy: \"{0}\"\n"
                 + "        size: 9991\n";

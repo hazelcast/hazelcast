@@ -2580,7 +2580,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
     public void testMapNativeMaxSizePolicy() {
         String xmlFormat = HAZELCAST_START_TAG
                 + "<map name=\"mymap\">"
-                + "<in-memory-format>NATIVE</in-memory-format>"
+                + "<in-memory-format>OBJECT</in-memory-format>"
                 + "<eviction max-size-policy=\"{0}\" size=\"9991\"/>"
                 + "</map>"
                 + HAZELCAST_END_TAG;
