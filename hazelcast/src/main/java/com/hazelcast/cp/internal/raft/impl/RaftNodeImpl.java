@@ -274,13 +274,12 @@ public final class RaftNodeImpl implements RaftNode {
         }
 
         execute(() -> {
+            Throwable failure = null;
             try {
                 if (isTerminatedOrSteppedDown()) {
-                    resultFuture.complete(null);
                     return;
                 } else if (status == INITIAL) {
                     setStatus(TERMINATED);
-                    resultFuture.complete(null);
                     return;
                 }
 
@@ -293,11 +292,19 @@ public final class RaftNodeImpl implements RaftNode {
                 }
                 state.completeLeadershipTransfer(new LeaderDemotedException(state.localEndpoint(), null));
                 setStatus(TERMINATED);
-                resultFuture.complete(null);
-            } catch (Exception e) {
-                logger.severe("Failure during force-termination", e);
-                setStatus(TERMINATED);
-                resultFuture.completeExceptionally(e);
+            } catch (Throwable t) {
+                failure = t;
+
+                logger.severe("Failure during force-termination", t);
+                if (status != TERMINATED && status != STEPPED_DOWN) {
+                    setStatus(TERMINATED);
+                }
+            } finally {
+                if (failure == null) {
+                    resultFuture.complete(null);
+                } else {
+                    resultFuture.completeExceptionally(failure);
+                }
             }
         });
 
@@ -462,7 +469,7 @@ public final class RaftNodeImpl implements RaftNode {
             Level level = Level.WARNING;
             if (newStatus == ACTIVE) {
                 level = Level.INFO;
-            } else if (newStatus == TERMINATED || newStatus == STEPPED_DOWN) {
+            } else if ((newStatus == TERMINATED || newStatus == STEPPED_DOWN) && prevStatus != INITIAL) {
                 closeStateStore();
             }
             logger.log(level, "Status is set to: " + newStatus);
