@@ -20,6 +20,7 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
 import com.hazelcast.client.impl.protocol.codec.custom.*;
+import com.hazelcast.internal.serialization.Data;
 
 import javax.annotation.Nullable;
 
@@ -63,7 +64,7 @@ public final class MapGetEntryViewCodec {
         /**
          * the key of the entry.
          */
-        public com.hazelcast.nio.serialization.Data key;
+        public Data key;
 
         /**
          * The id of the user thread performing the operation. It is used to guarantee that only the lock holder thread (if a lock exists on the entry) can perform the requested operation.
@@ -71,7 +72,7 @@ public final class MapGetEntryViewCodec {
         public long threadId;
     }
 
-    public static ClientMessage encodeRequest(java.lang.String name, com.hazelcast.nio.serialization.Data key, long threadId) {
+    public static ClientMessage encodeRequest(java.lang.String name, Data key, long threadId) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(true);
         clientMessage.setOperationName("Map.GetEntryView");
@@ -100,7 +101,7 @@ public final class MapGetEntryViewCodec {
         /**
          * TODO DOC
          */
-        public @Nullable com.hazelcast.map.impl.SimpleEntryView<com.hazelcast.nio.serialization.Data, com.hazelcast.nio.serialization.Data> response;
+        public @Nullable com.hazelcast.map.impl.SimpleEntryView<Data, Data> response;
 
         /**
          * TODO DOC
@@ -108,7 +109,7 @@ public final class MapGetEntryViewCodec {
         public long maxIdle;
     }
 
-    public static ClientMessage encodeResponse(@Nullable com.hazelcast.map.impl.SimpleEntryView<com.hazelcast.nio.serialization.Data, com.hazelcast.nio.serialization.Data> response, long maxIdle) {
+    public static ClientMessage encodeResponse(@Nullable com.hazelcast.map.impl.SimpleEntryView<Data, Data> response, long maxIdle) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, RESPONSE_MESSAGE_TYPE);

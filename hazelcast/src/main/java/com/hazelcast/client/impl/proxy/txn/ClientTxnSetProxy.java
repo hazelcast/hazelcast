@@ -23,7 +23,7 @@ import com.hazelcast.client.impl.protocol.codec.TransactionalSetSizeCodec;
 import com.hazelcast.client.impl.spi.ClientTransactionContext;
 import com.hazelcast.collection.impl.set.SetService;
 import com.hazelcast.transaction.TransactionalSet;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.util.Preconditions;
 
 import static com.hazelcast.internal.util.ThreadUtil.getThreadId;

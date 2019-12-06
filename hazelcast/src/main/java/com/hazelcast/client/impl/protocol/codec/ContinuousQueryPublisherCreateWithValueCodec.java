@@ -19,9 +19,7 @@ package com.hazelcast.client.impl.protocol.codec;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
-import com.hazelcast.client.impl.protocol.codec.custom.*;
-
-import javax.annotation.Nullable;
+import com.hazelcast.internal.serialization.Data;
 
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
@@ -69,7 +67,7 @@ public final class ContinuousQueryPublisherCreateWithValueCodec {
         /**
          * The predicate to filter events which will be applied to the QueryCache.
          */
-        public com.hazelcast.nio.serialization.Data predicate;
+        public Data predicate;
 
         /**
          * The size of batch. After reaching this minimum size, node immediately sends buffered events to QueryCache.
@@ -98,7 +96,7 @@ public final class ContinuousQueryPublisherCreateWithValueCodec {
         public boolean coalesce;
     }
 
-    public static ClientMessage encodeRequest(java.lang.String mapName, java.lang.String cacheName, com.hazelcast.nio.serialization.Data predicate, int batchSize, int bufferSize, long delaySeconds, boolean populate, boolean coalesce) {
+    public static ClientMessage encodeRequest(java.lang.String mapName, java.lang.String cacheName, Data predicate, int batchSize, int bufferSize, long delaySeconds, boolean populate, boolean coalesce) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(true);
         clientMessage.setOperationName("ContinuousQuery.PublisherCreateWithValue");
@@ -137,10 +135,10 @@ public final class ContinuousQueryPublisherCreateWithValueCodec {
         /**
          * Array of key-value pairs.
          */
-        public java.util.List<java.util.Map.Entry<com.hazelcast.nio.serialization.Data, com.hazelcast.nio.serialization.Data>> response;
+        public java.util.List<java.util.Map.Entry<Data, Data>> response;
     }
 
-    public static ClientMessage encodeResponse(java.util.Collection<java.util.Map.Entry<com.hazelcast.nio.serialization.Data, com.hazelcast.nio.serialization.Data>> response) {
+    public static ClientMessage encodeResponse(java.util.Collection<java.util.Map.Entry<Data, Data>> response) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, RESPONSE_MESSAGE_TYPE);

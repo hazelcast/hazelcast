@@ -20,8 +20,7 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
 import com.hazelcast.client.impl.protocol.codec.custom.*;
-
-import javax.annotation.Nullable;
+import com.hazelcast.internal.serialization.Data;
 
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
@@ -66,7 +65,7 @@ public final class AtomicLongAlterCodec {
         /**
          * The function applied to the currently stored value.
          */
-        public com.hazelcast.nio.serialization.Data function;
+        public Data function;
 
         /**
          * 0 returns the old value, 1 returns the new value
@@ -74,7 +73,7 @@ public final class AtomicLongAlterCodec {
         public int returnValueType;
     }
 
-    public static ClientMessage encodeRequest(com.hazelcast.cp.internal.RaftGroupId groupId, java.lang.String name, com.hazelcast.nio.serialization.Data function, int returnValueType) {
+    public static ClientMessage encodeRequest(com.hazelcast.cp.internal.RaftGroupId groupId, java.lang.String name, Data function, int returnValueType) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
         clientMessage.setOperationName("AtomicLong.Alter");

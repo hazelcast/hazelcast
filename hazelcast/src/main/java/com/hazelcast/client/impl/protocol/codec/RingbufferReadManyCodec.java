@@ -19,7 +19,7 @@ package com.hazelcast.client.impl.protocol.codec;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
-import com.hazelcast.client.impl.protocol.codec.custom.*;
+import com.hazelcast.internal.serialization.Data;
 
 import javax.annotation.Nullable;
 
@@ -85,10 +85,11 @@ public final class RingbufferReadManyCodec {
         /**
          * Filter is allowed to be null, indicating there is no filter.
          */
-        public @Nullable com.hazelcast.nio.serialization.Data filter;
+        public @Nullable
+        Data filter;
     }
 
-    public static ClientMessage encodeRequest(java.lang.String name, long startSequence, int minCount, int maxCount, @Nullable com.hazelcast.nio.serialization.Data filter) {
+    public static ClientMessage encodeRequest(java.lang.String name, long startSequence, int minCount, int maxCount, @Nullable Data filter) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(true);
         clientMessage.setOperationName("Ringbuffer.ReadMany");
@@ -126,7 +127,7 @@ public final class RingbufferReadManyCodec {
         /**
          * TODO DOC
          */
-        public java.util.List<com.hazelcast.nio.serialization.Data> items;
+        public java.util.List<Data> items;
 
         /**
          * TODO DOC
@@ -139,7 +140,7 @@ public final class RingbufferReadManyCodec {
         public long nextSeq;
     }
 
-    public static ClientMessage encodeResponse(int readCount, java.util.Collection<com.hazelcast.nio.serialization.Data> items, @Nullable long[] itemSeqs, long nextSeq) {
+    public static ClientMessage encodeResponse(int readCount, java.util.Collection<Data> items, @Nullable long[] itemSeqs, long nextSeq) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, RESPONSE_MESSAGE_TYPE);

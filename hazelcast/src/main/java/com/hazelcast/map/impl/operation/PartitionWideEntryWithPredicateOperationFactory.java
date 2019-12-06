@@ -29,7 +29,7 @@ import com.hazelcast.map.impl.query.QueryResultRow;
 import com.hazelcast.map.impl.query.QueryRunner;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.Predicates;
 import com.hazelcast.spi.impl.NodeEngine;

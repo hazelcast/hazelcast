@@ -22,7 +22,7 @@ import com.hazelcast.collection.impl.queue.QueueItem;
 import com.hazelcast.internal.util.UUIDSerializationUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.internal.serialization.Data;
 
 import java.io.IOException;
 import java.util.UUID;

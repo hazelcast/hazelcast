@@ -19,7 +19,7 @@ package com.hazelcast.client.impl.protocol.codec;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
-import com.hazelcast.client.impl.protocol.codec.custom.*;
+import com.hazelcast.internal.serialization.Data;
 
 import javax.annotation.Nullable;
 
@@ -63,18 +63,19 @@ public final class CachePutIfAbsentCodec {
         /**
          * The key that is associated with the specified value.
          */
-        public com.hazelcast.nio.serialization.Data key;
+        public Data key;
 
         /**
          * The value that has the specified key associated with it.
          */
-        public com.hazelcast.nio.serialization.Data value;
+        public Data value;
 
         /**
          * The custom expiry policy for this operation.
          * A null value is equivalent to put(Object, Object).
          */
-        public @Nullable com.hazelcast.nio.serialization.Data expiryPolicy;
+        public @Nullable
+        Data expiryPolicy;
 
         /**
          * User generated id which shall be received as a field of the cache event upon completion of
@@ -83,7 +84,7 @@ public final class CachePutIfAbsentCodec {
         public int completionId;
     }
 
-    public static ClientMessage encodeRequest(java.lang.String name, com.hazelcast.nio.serialization.Data key, com.hazelcast.nio.serialization.Data value, @Nullable com.hazelcast.nio.serialization.Data expiryPolicy, int completionId) {
+    public static ClientMessage encodeRequest(java.lang.String name, Data key, Data value, @Nullable Data expiryPolicy, int completionId) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
         clientMessage.setOperationName("Cache.PutIfAbsent");

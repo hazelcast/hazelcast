@@ -19,7 +19,7 @@ package com.hazelcast.client.impl.protocol.codec;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
-import com.hazelcast.client.impl.protocol.codec.custom.*;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.logging.Logger;
 
 import javax.annotation.Nullable;
@@ -126,7 +126,7 @@ public final class ListAddListenerCodec {
         return response;
     }
 
-    public static ClientMessage encodeItemEvent(@Nullable com.hazelcast.nio.serialization.Data item, java.util.UUID uuid, int eventType) {
+    public static ClientMessage encodeItemEvent(@Nullable Data item, java.util.UUID uuid, int eventType) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[EVENT_ITEM_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         initialFrame.flags |= ClientMessage.IS_EVENT_FLAG;
@@ -148,12 +148,12 @@ public final class ListAddListenerCodec {
                 ClientMessage.Frame initialFrame = iterator.next();
                 java.util.UUID uuid = decodeUUID(initialFrame.content, EVENT_ITEM_UUID_FIELD_OFFSET);
                 int eventType = decodeInt(initialFrame.content, EVENT_ITEM_EVENT_TYPE_FIELD_OFFSET);
-                com.hazelcast.nio.serialization.Data item = CodecUtil.decodeNullable(iterator, DataCodec::decode);
+                Data item = CodecUtil.decodeNullable(iterator, DataCodec::decode);
                 handleItemEvent(item, uuid, eventType);
                 return;
             }
             Logger.getLogger(super.getClass()).finest("Unknown message type received on event handler :" + messageType);
         }
-        public abstract void handleItemEvent(@Nullable com.hazelcast.nio.serialization.Data item, java.util.UUID uuid, int eventType);
+        public abstract void handleItemEvent(@Nullable Data item, java.util.UUID uuid, int eventType);
     }
 }

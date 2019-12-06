@@ -19,9 +19,7 @@ package com.hazelcast.client.impl.protocol.codec;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
-import com.hazelcast.client.impl.protocol.codec.custom.*;
-
-import javax.annotation.Nullable;
+import com.hazelcast.internal.serialization.Data;
 
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
@@ -62,7 +60,7 @@ public final class CacheRemoveAllKeysCodec {
         /**
          * The keys to remove.
          */
-        public java.util.List<com.hazelcast.nio.serialization.Data> keys;
+        public java.util.List<Data> keys;
 
         /**
          * User generated id which shall be received as a field of the cache event upon completion of
@@ -71,7 +69,7 @@ public final class CacheRemoveAllKeysCodec {
         public int completionId;
     }
 
-    public static ClientMessage encodeRequest(java.lang.String name, java.util.Collection<com.hazelcast.nio.serialization.Data> keys, int completionId) {
+    public static ClientMessage encodeRequest(java.lang.String name, java.util.Collection<Data> keys, int completionId) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
         clientMessage.setOperationName("Cache.RemoveAllKeys");

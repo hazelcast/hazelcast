@@ -19,6 +19,7 @@ package com.hazelcast.client.impl.protocol.codec.custom;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
+import com.hazelcast.internal.serialization.Data;
 
 import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.fastForwardToEndFrame;
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
@@ -57,7 +58,7 @@ public final class EvictionConfigHolderCodec {
         java.lang.String maxSizePolicy = StringCodec.decode(iterator);
         java.lang.String evictionPolicy = StringCodec.decode(iterator);
         java.lang.String comparatorClassName = CodecUtil.decodeNullable(iterator, StringCodec::decode);
-        com.hazelcast.nio.serialization.Data comparator = CodecUtil.decodeNullable(iterator, DataCodec::decode);
+        Data comparator = CodecUtil.decodeNullable(iterator, DataCodec::decode);
 
         fastForwardToEndFrame(iterator);
 

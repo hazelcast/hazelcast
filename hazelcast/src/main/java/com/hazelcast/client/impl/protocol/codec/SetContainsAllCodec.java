@@ -19,9 +19,7 @@ package com.hazelcast.client.impl.protocol.codec;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
-import com.hazelcast.client.impl.protocol.codec.custom.*;
-
-import javax.annotation.Nullable;
+import com.hazelcast.internal.serialization.Data;
 
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
@@ -61,10 +59,10 @@ public final class SetContainsAllCodec {
         /**
          * Collection to be checked for containment in this list
          */
-        public java.util.List<com.hazelcast.nio.serialization.Data> items;
+        public java.util.List<Data> items;
     }
 
-    public static ClientMessage encodeRequest(java.lang.String name, java.util.Collection<com.hazelcast.nio.serialization.Data> items) {
+    public static ClientMessage encodeRequest(java.lang.String name, java.util.Collection<Data> items) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
         clientMessage.setOperationName("Set.ContainsAll");

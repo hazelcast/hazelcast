@@ -19,6 +19,7 @@ package com.hazelcast.client.impl.protocol.codec.custom;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
+import com.hazelcast.internal.serialization.Data;
 
 import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.fastForwardToEndFrame;
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
@@ -58,9 +59,9 @@ public final class CacheEventDataCodec {
         boolean oldValueAvailable = decodeBoolean(initialFrame.content, OLD_VALUE_AVAILABLE_FIELD_OFFSET);
 
         java.lang.String name = StringCodec.decode(iterator);
-        com.hazelcast.nio.serialization.Data dataKey = CodecUtil.decodeNullable(iterator, DataCodec::decode);
-        com.hazelcast.nio.serialization.Data dataValue = CodecUtil.decodeNullable(iterator, DataCodec::decode);
-        com.hazelcast.nio.serialization.Data dataOldValue = CodecUtil.decodeNullable(iterator, DataCodec::decode);
+        Data dataKey = CodecUtil.decodeNullable(iterator, DataCodec::decode);
+        Data dataValue = CodecUtil.decodeNullable(iterator, DataCodec::decode);
+        Data dataOldValue = CodecUtil.decodeNullable(iterator, DataCodec::decode);
 
         fastForwardToEndFrame(iterator);
 

@@ -19,7 +19,7 @@ package com.hazelcast.client.impl.protocol.codec;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
-import com.hazelcast.client.impl.protocol.codec.custom.*;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.logging.Logger;
 
 import javax.annotation.Nullable;
@@ -130,7 +130,7 @@ public final class MapAddNearCacheEntryListenerCodec {
         return response;
     }
 
-    public static ClientMessage encodeIMapInvalidationEvent(@Nullable com.hazelcast.nio.serialization.Data key, java.util.UUID sourceUuid, java.util.UUID partitionUuid, long sequence) {
+    public static ClientMessage encodeIMapInvalidationEvent(@Nullable Data key, java.util.UUID sourceUuid, java.util.UUID partitionUuid, long sequence) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[EVENT_I_MAP_INVALIDATION_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         initialFrame.flags |= ClientMessage.IS_EVENT_FLAG;
@@ -143,7 +143,7 @@ public final class MapAddNearCacheEntryListenerCodec {
         CodecUtil.encodeNullable(clientMessage, key, DataCodec::encode);
         return clientMessage;
     }
-    public static ClientMessage encodeIMapBatchInvalidationEvent(java.util.Collection<com.hazelcast.nio.serialization.Data> keys, java.util.Collection<java.util.UUID> sourceUuids, java.util.Collection<java.util.UUID> partitionUuids, java.util.Collection<java.lang.Long> sequences) {
+    public static ClientMessage encodeIMapBatchInvalidationEvent(java.util.Collection<Data> keys, java.util.Collection<java.util.UUID> sourceUuids, java.util.Collection<java.util.UUID> partitionUuids, java.util.Collection<java.lang.Long> sequences) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[EVENT_I_MAP_BATCH_INVALIDATION_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         initialFrame.flags |= ClientMessage.IS_EVENT_FLAG;
@@ -167,14 +167,14 @@ public final class MapAddNearCacheEntryListenerCodec {
                 java.util.UUID sourceUuid = decodeUUID(initialFrame.content, EVENT_I_MAP_INVALIDATION_SOURCE_UUID_FIELD_OFFSET);
                 java.util.UUID partitionUuid = decodeUUID(initialFrame.content, EVENT_I_MAP_INVALIDATION_PARTITION_UUID_FIELD_OFFSET);
                 long sequence = decodeLong(initialFrame.content, EVENT_I_MAP_INVALIDATION_SEQUENCE_FIELD_OFFSET);
-                com.hazelcast.nio.serialization.Data key = CodecUtil.decodeNullable(iterator, DataCodec::decode);
+                Data key = CodecUtil.decodeNullable(iterator, DataCodec::decode);
                 handleIMapInvalidationEvent(key, sourceUuid, partitionUuid, sequence);
                 return;
             }
             if (messageType == EVENT_I_MAP_BATCH_INVALIDATION_MESSAGE_TYPE) {
                 //empty initial frame
                 iterator.next();
-                java.util.Collection<com.hazelcast.nio.serialization.Data> keys = ListMultiFrameCodec.decode(iterator, DataCodec::decode);
+                java.util.Collection<Data> keys = ListMultiFrameCodec.decode(iterator, DataCodec::decode);
                 java.util.Collection<java.util.UUID> sourceUuids = ListUUIDCodec.decode(iterator);
                 java.util.Collection<java.util.UUID> partitionUuids = ListUUIDCodec.decode(iterator);
                 java.util.Collection<java.lang.Long> sequences = ListLongCodec.decode(iterator);
@@ -183,7 +183,7 @@ public final class MapAddNearCacheEntryListenerCodec {
             }
             Logger.getLogger(super.getClass()).finest("Unknown message type received on event handler :" + messageType);
         }
-        public abstract void handleIMapInvalidationEvent(@Nullable com.hazelcast.nio.serialization.Data key, java.util.UUID sourceUuid, java.util.UUID partitionUuid, long sequence);
-        public abstract void handleIMapBatchInvalidationEvent(java.util.Collection<com.hazelcast.nio.serialization.Data> keys, java.util.Collection<java.util.UUID> sourceUuids, java.util.Collection<java.util.UUID> partitionUuids, java.util.Collection<java.lang.Long> sequences);
+        public abstract void handleIMapInvalidationEvent(@Nullable Data key, java.util.UUID sourceUuid, java.util.UUID partitionUuid, long sequence);
+        public abstract void handleIMapBatchInvalidationEvent(java.util.Collection<Data> keys, java.util.Collection<java.util.UUID> sourceUuids, java.util.Collection<java.util.UUID> partitionUuids, java.util.Collection<java.lang.Long> sequences);
     }
 }

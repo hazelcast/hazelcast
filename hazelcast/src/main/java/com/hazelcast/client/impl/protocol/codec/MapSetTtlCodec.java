@@ -19,9 +19,7 @@ package com.hazelcast.client.impl.protocol.codec;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
-import com.hazelcast.client.impl.protocol.codec.custom.*;
-
-import javax.annotation.Nullable;
+import com.hazelcast.internal.serialization.Data;
 
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
@@ -73,7 +71,7 @@ public final class MapSetTtlCodec {
         /**
          * Key for the map entry
          */
-        public com.hazelcast.nio.serialization.Data key;
+        public Data key;
 
         /**
          * The duration in milliseconds after which this entry shall be deleted. O means infinite.
@@ -81,7 +79,7 @@ public final class MapSetTtlCodec {
         public long ttl;
     }
 
-    public static ClientMessage encodeRequest(java.lang.String name, com.hazelcast.nio.serialization.Data key, long ttl) {
+    public static ClientMessage encodeRequest(java.lang.String name, Data key, long ttl) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
         clientMessage.setOperationName("Map.SetTtl");

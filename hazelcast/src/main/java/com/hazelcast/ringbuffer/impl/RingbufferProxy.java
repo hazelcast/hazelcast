@@ -18,7 +18,7 @@ package com.hazelcast.ringbuffer.impl;
 
 import com.hazelcast.config.RingbufferConfig;
 import com.hazelcast.core.IFunction;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.splitbrainprotection.SplitBrainProtectionOn;
 import com.hazelcast.ringbuffer.OverflowPolicy;
 import com.hazelcast.ringbuffer.ReadResultSet;

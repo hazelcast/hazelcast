@@ -19,6 +19,7 @@ package com.hazelcast.client.impl.protocol.codec.custom;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
+import com.hazelcast.internal.serialization.Data;
 
 import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.fastForwardToEndFrame;
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
@@ -41,7 +42,7 @@ public final class SimpleEntryViewCodec {
     private SimpleEntryViewCodec() {
     }
 
-    public static void encode(ClientMessage clientMessage, com.hazelcast.map.impl.SimpleEntryView<com.hazelcast.nio.serialization.Data, com.hazelcast.nio.serialization.Data> simpleEntryView) {
+    public static void encode(ClientMessage clientMessage, com.hazelcast.map.impl.SimpleEntryView<Data, Data> simpleEntryView) {
         clientMessage.add(BEGIN_FRAME.copy());
 
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[INITIAL_FRAME_SIZE]);
@@ -63,7 +64,7 @@ public final class SimpleEntryViewCodec {
         clientMessage.add(END_FRAME.copy());
     }
 
-    public static com.hazelcast.map.impl.SimpleEntryView<com.hazelcast.nio.serialization.Data, com.hazelcast.nio.serialization.Data> decode(ClientMessage.ForwardFrameIterator iterator) {
+    public static com.hazelcast.map.impl.SimpleEntryView<Data, Data> decode(ClientMessage.ForwardFrameIterator iterator) {
         // begin frame
         iterator.next();
 
@@ -79,8 +80,8 @@ public final class SimpleEntryViewCodec {
         long ttl = decodeLong(initialFrame.content, TTL_FIELD_OFFSET);
         long maxIdle = decodeLong(initialFrame.content, MAX_IDLE_FIELD_OFFSET);
 
-        com.hazelcast.nio.serialization.Data key = DataCodec.decode(iterator);
-        com.hazelcast.nio.serialization.Data value = DataCodec.decode(iterator);
+        Data key = DataCodec.decode(iterator);
+        Data value = DataCodec.decode(iterator);
 
         fastForwardToEndFrame(iterator);
 

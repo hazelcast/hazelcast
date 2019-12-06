@@ -27,7 +27,7 @@ import com.hazelcast.collection.impl.txnqueue.operations.TxnReserveOfferOperatio
 import com.hazelcast.collection.impl.txnqueue.operations.TxnReservePollOperation;
 import com.hazelcast.config.QueueConfig;
 import com.hazelcast.transaction.TransactionalQueue;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.operationservice.Operation;

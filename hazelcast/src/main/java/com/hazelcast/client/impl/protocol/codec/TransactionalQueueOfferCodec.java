@@ -19,9 +19,7 @@ package com.hazelcast.client.impl.protocol.codec;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
-import com.hazelcast.client.impl.protocol.codec.custom.*;
-
-import javax.annotation.Nullable;
+import com.hazelcast.internal.serialization.Data;
 
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
@@ -74,7 +72,7 @@ public final class TransactionalQueueOfferCodec {
         /**
          * The element to add
          */
-        public com.hazelcast.nio.serialization.Data item;
+        public Data item;
 
         /**
          * How long to wait before giving up, in milliseconds
@@ -82,7 +80,7 @@ public final class TransactionalQueueOfferCodec {
         public long timeout;
     }
 
-    public static ClientMessage encodeRequest(java.lang.String name, java.util.UUID txnId, long threadId, com.hazelcast.nio.serialization.Data item, long timeout) {
+    public static ClientMessage encodeRequest(java.lang.String name, java.util.UUID txnId, long threadId, Data item, long timeout) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
         clientMessage.setOperationName("TransactionalQueue.Offer");

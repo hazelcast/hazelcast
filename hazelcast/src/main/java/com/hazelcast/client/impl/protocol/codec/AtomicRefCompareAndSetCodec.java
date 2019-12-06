@@ -20,6 +20,7 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
 import com.hazelcast.client.impl.protocol.codec.custom.*;
+import com.hazelcast.internal.serialization.Data;
 
 import javax.annotation.Nullable;
 
@@ -65,15 +66,17 @@ public final class AtomicRefCompareAndSetCodec {
         /**
          * The expected value
          */
-        public @Nullable com.hazelcast.nio.serialization.Data oldValue;
+        public @Nullable
+        Data oldValue;
 
         /**
          * The new value
          */
-        public @Nullable com.hazelcast.nio.serialization.Data newValue;
+        public @Nullable
+        Data newValue;
     }
 
-    public static ClientMessage encodeRequest(com.hazelcast.cp.internal.RaftGroupId groupId, java.lang.String name, @Nullable com.hazelcast.nio.serialization.Data oldValue, @Nullable com.hazelcast.nio.serialization.Data newValue) {
+    public static ClientMessage encodeRequest(com.hazelcast.cp.internal.RaftGroupId groupId, java.lang.String name, @Nullable Data oldValue, @Nullable Data newValue) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
         clientMessage.setOperationName("AtomicRef.CompareAndSet");

@@ -36,7 +36,7 @@ import com.hazelcast.client.impl.protocol.codec.TransactionalMapValuesWithPredic
 import com.hazelcast.client.impl.spi.ClientTransactionContext;
 import com.hazelcast.transaction.TransactionalMap;
 import com.hazelcast.map.impl.MapService;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.spi.impl.UnmodifiableLazyList;
 

@@ -20,6 +20,7 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
 import com.hazelcast.client.impl.protocol.codec.custom.*;
+import com.hazelcast.internal.serialization.Data;
 
 import javax.annotation.Nullable;
 
@@ -65,7 +66,7 @@ public final class ExecutorServiceSubmitToAddressCodec {
         /**
          * The callable object to be executed.
          */
-        public com.hazelcast.nio.serialization.Data callable;
+        public Data callable;
 
         /**
          * The member host on which the callable shall be executed on.
@@ -73,7 +74,7 @@ public final class ExecutorServiceSubmitToAddressCodec {
         public com.hazelcast.cluster.Address address;
     }
 
-    public static ClientMessage encodeRequest(java.lang.String name, java.util.UUID uuid, com.hazelcast.nio.serialization.Data callable, com.hazelcast.cluster.Address address) {
+    public static ClientMessage encodeRequest(java.lang.String name, java.util.UUID uuid, Data callable, com.hazelcast.cluster.Address address) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
         clientMessage.setOperationName("ExecutorService.SubmitToAddress");
@@ -104,10 +105,11 @@ public final class ExecutorServiceSubmitToAddressCodec {
         /**
          * The result of the callable execution.
          */
-        public @Nullable com.hazelcast.nio.serialization.Data response;
+        public @Nullable
+        Data response;
     }
 
-    public static ClientMessage encodeResponse(@Nullable com.hazelcast.nio.serialization.Data response) {
+    public static ClientMessage encodeResponse(@Nullable Data response) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, RESPONSE_MESSAGE_TYPE);

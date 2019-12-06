@@ -18,7 +18,7 @@ package com.hazelcast.map.impl.recordstore;
 
 import com.hazelcast.map.impl.StoreAdapter;
 import com.hazelcast.map.impl.record.Record;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.spi.impl.operationexecutor.impl.PartitionOperationThread;
 
 /**

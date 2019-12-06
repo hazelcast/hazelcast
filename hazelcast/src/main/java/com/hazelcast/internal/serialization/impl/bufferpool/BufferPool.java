@@ -18,7 +18,7 @@ package com.hazelcast.internal.serialization.impl.bufferpool;
 
 import com.hazelcast.internal.nio.BufferObjectDataInput;
 import com.hazelcast.internal.nio.BufferObjectDataOutput;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.internal.serialization.Data;
 
 /**
  * The BufferPool allows the pooling of the {@link BufferObjectDataInput} and {@link BufferObjectDataOutput} instances.

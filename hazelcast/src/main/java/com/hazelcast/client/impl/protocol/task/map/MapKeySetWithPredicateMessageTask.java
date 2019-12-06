@@ -21,7 +21,7 @@ import com.hazelcast.client.impl.protocol.codec.MapKeySetWithPredicateCodec;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.map.impl.query.QueryResultRow;
 import com.hazelcast.internal.nio.Connection;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.internal.util.IterationType;
 

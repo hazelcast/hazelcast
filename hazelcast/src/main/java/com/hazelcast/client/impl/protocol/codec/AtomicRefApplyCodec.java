@@ -20,6 +20,7 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
 import com.hazelcast.client.impl.protocol.codec.custom.*;
+import com.hazelcast.internal.serialization.Data;
 
 import javax.annotation.Nullable;
 
@@ -66,7 +67,7 @@ public final class AtomicRefApplyCodec {
         /**
          * The function applied to the value.
          */
-        public com.hazelcast.nio.serialization.Data function;
+        public Data function;
 
         /**
          * 0 returns no value, 1 returns the old value,
@@ -81,7 +82,7 @@ public final class AtomicRefApplyCodec {
         public boolean alter;
     }
 
-    public static ClientMessage encodeRequest(com.hazelcast.cp.internal.RaftGroupId groupId, java.lang.String name, com.hazelcast.nio.serialization.Data function, int returnValueType, boolean alter) {
+    public static ClientMessage encodeRequest(com.hazelcast.cp.internal.RaftGroupId groupId, java.lang.String name, Data function, int returnValueType, boolean alter) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
         clientMessage.setOperationName("AtomicRef.Apply");
@@ -114,10 +115,11 @@ public final class AtomicRefApplyCodec {
         /**
          * The result of the function application.
          */
-        public @Nullable com.hazelcast.nio.serialization.Data response;
+        public @Nullable
+        Data response;
     }
 
-    public static ClientMessage encodeResponse(@Nullable com.hazelcast.nio.serialization.Data response) {
+    public static ClientMessage encodeResponse(@Nullable Data response) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, RESPONSE_MESSAGE_TYPE);

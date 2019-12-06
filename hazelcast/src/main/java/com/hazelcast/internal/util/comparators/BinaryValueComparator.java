@@ -16,7 +16,7 @@
 
 package com.hazelcast.internal.util.comparators;
 
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
 
 /**

@@ -17,7 +17,7 @@
 package com.hazelcast.map.impl.eviction;
 
 import com.hazelcast.map.impl.recordstore.RecordStore;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.internal.serialization.Data;
 
 import static java.lang.Integer.getInteger;
 

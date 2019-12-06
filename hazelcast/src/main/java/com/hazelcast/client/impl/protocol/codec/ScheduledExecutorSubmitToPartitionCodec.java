@@ -19,9 +19,7 @@ package com.hazelcast.client.impl.protocol.codec;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
-import com.hazelcast.client.impl.protocol.codec.custom.*;
-
-import javax.annotation.Nullable;
+import com.hazelcast.internal.serialization.Data;
 
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
@@ -72,7 +70,7 @@ public final class ScheduledExecutorSubmitToPartitionCodec {
         /**
          * Name The name of the task
          */
-        public com.hazelcast.nio.serialization.Data task;
+        public Data task;
 
         /**
          * initial delay in milliseconds
@@ -85,7 +83,7 @@ public final class ScheduledExecutorSubmitToPartitionCodec {
         public long periodInMillis;
     }
 
-    public static ClientMessage encodeRequest(java.lang.String schedulerName, byte type, java.lang.String taskName, com.hazelcast.nio.serialization.Data task, long initialDelayInMillis, long periodInMillis) {
+    public static ClientMessage encodeRequest(java.lang.String schedulerName, byte type, java.lang.String taskName, Data task, long initialDelayInMillis, long periodInMillis) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(true);
         clientMessage.setOperationName("ScheduledExecutor.SubmitToPartition");

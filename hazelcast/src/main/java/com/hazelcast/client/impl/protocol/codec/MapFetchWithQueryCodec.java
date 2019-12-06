@@ -19,9 +19,7 @@ package com.hazelcast.client.impl.protocol.codec;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
-import com.hazelcast.client.impl.protocol.codec.custom.*;
-
-import javax.annotation.Nullable;
+import com.hazelcast.internal.serialization.Data;
 
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
@@ -73,15 +71,15 @@ public final class MapFetchWithQueryCodec {
         /**
          * projection to transform the entries with
          */
-        public com.hazelcast.nio.serialization.Data projection;
+        public Data projection;
 
         /**
          * predicate to filter the entries with
          */
-        public com.hazelcast.nio.serialization.Data predicate;
+        public Data predicate;
     }
 
-    public static ClientMessage encodeRequest(java.lang.String name, int tableIndex, int batch, com.hazelcast.nio.serialization.Data projection, com.hazelcast.nio.serialization.Data predicate) {
+    public static ClientMessage encodeRequest(java.lang.String name, int tableIndex, int batch, Data projection, Data predicate) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(true);
         clientMessage.setOperationName("Map.FetchWithQuery");
@@ -114,7 +112,7 @@ public final class MapFetchWithQueryCodec {
         /**
          * TODO DOC
          */
-        public java.util.List<com.hazelcast.nio.serialization.Data> results;
+        public java.util.List<Data> results;
 
         /**
          * TODO DOC
@@ -122,7 +120,7 @@ public final class MapFetchWithQueryCodec {
         public int nextTableIndexToReadFrom;
     }
 
-    public static ClientMessage encodeResponse(java.util.Collection<com.hazelcast.nio.serialization.Data> results, int nextTableIndexToReadFrom) {
+    public static ClientMessage encodeResponse(java.util.Collection<Data> results, int nextTableIndexToReadFrom) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, RESPONSE_MESSAGE_TYPE);

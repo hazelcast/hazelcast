@@ -19,10 +19,8 @@ package com.hazelcast.client.impl.protocol.codec;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
-import com.hazelcast.client.impl.protocol.codec.custom.*;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.logging.Logger;
-
-import javax.annotation.Nullable;
 
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
@@ -119,7 +117,7 @@ public final class TopicAddMessageListenerCodec {
         return response;
     }
 
-    public static ClientMessage encodeTopicEvent(com.hazelcast.nio.serialization.Data item, long publishTime, java.util.UUID uuid) {
+    public static ClientMessage encodeTopicEvent(Data item, long publishTime, java.util.UUID uuid) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[EVENT_TOPIC_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         initialFrame.flags |= ClientMessage.IS_EVENT_FLAG;
@@ -141,12 +139,12 @@ public final class TopicAddMessageListenerCodec {
                 ClientMessage.Frame initialFrame = iterator.next();
                 long publishTime = decodeLong(initialFrame.content, EVENT_TOPIC_PUBLISH_TIME_FIELD_OFFSET);
                 java.util.UUID uuid = decodeUUID(initialFrame.content, EVENT_TOPIC_UUID_FIELD_OFFSET);
-                com.hazelcast.nio.serialization.Data item = DataCodec.decode(iterator);
+                Data item = DataCodec.decode(iterator);
                 handleTopicEvent(item, publishTime, uuid);
                 return;
             }
             Logger.getLogger(super.getClass()).finest("Unknown message type received on event handler :" + messageType);
         }
-        public abstract void handleTopicEvent(com.hazelcast.nio.serialization.Data item, long publishTime, java.util.UUID uuid);
+        public abstract void handleTopicEvent(Data item, long publishTime, java.util.UUID uuid);
     }
 }

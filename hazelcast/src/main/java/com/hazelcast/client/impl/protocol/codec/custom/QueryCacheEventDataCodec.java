@@ -19,6 +19,7 @@ package com.hazelcast.client.impl.protocol.codec.custom;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
+import com.hazelcast.internal.serialization.Data;
 
 import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.fastForwardToEndFrame;
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
@@ -58,8 +59,8 @@ public final class QueryCacheEventDataCodec {
         int eventType = decodeInt(initialFrame.content, EVENT_TYPE_FIELD_OFFSET);
         int partitionId = decodeInt(initialFrame.content, PARTITION_ID_FIELD_OFFSET);
 
-        com.hazelcast.nio.serialization.Data dataKey = CodecUtil.decodeNullable(iterator, DataCodec::decode);
-        com.hazelcast.nio.serialization.Data dataNewValue = CodecUtil.decodeNullable(iterator, DataCodec::decode);
+        Data dataKey = CodecUtil.decodeNullable(iterator, DataCodec::decode);
+        Data dataNewValue = CodecUtil.decodeNullable(iterator, DataCodec::decode);
 
         fastForwardToEndFrame(iterator);
 

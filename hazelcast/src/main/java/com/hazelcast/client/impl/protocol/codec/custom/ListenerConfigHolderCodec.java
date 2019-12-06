@@ -19,6 +19,7 @@ package com.hazelcast.client.impl.protocol.codec.custom;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
+import com.hazelcast.internal.serialization.Data;
 
 import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.fastForwardToEndFrame;
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
@@ -58,7 +59,7 @@ public final class ListenerConfigHolderCodec {
         boolean includeValue = decodeBoolean(initialFrame.content, INCLUDE_VALUE_FIELD_OFFSET);
         boolean local = decodeBoolean(initialFrame.content, LOCAL_FIELD_OFFSET);
 
-        com.hazelcast.nio.serialization.Data listenerImplementation = CodecUtil.decodeNullable(iterator, DataCodec::decode);
+        Data listenerImplementation = CodecUtil.decodeNullable(iterator, DataCodec::decode);
         java.lang.String className = CodecUtil.decodeNullable(iterator, StringCodec::decode);
 
         fastForwardToEndFrame(iterator);

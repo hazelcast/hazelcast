@@ -19,9 +19,7 @@ package com.hazelcast.client.impl.protocol.codec;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
-import com.hazelcast.client.impl.protocol.codec.custom.*;
-
-import javax.annotation.Nullable;
+import com.hazelcast.internal.serialization.Data;
 
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
@@ -73,20 +71,20 @@ public final class TransactionalMapReplaceIfSameCodec {
         /**
          * The specified key.
          */
-        public com.hazelcast.nio.serialization.Data key;
+        public Data key;
 
         /**
          * Replace the key value if it is the old value.
          */
-        public com.hazelcast.nio.serialization.Data oldValue;
+        public Data oldValue;
 
         /**
          * The new value to replace the old value.
          */
-        public com.hazelcast.nio.serialization.Data newValue;
+        public Data newValue;
     }
 
-    public static ClientMessage encodeRequest(java.lang.String name, java.util.UUID txnId, long threadId, com.hazelcast.nio.serialization.Data key, com.hazelcast.nio.serialization.Data oldValue, com.hazelcast.nio.serialization.Data newValue) {
+    public static ClientMessage encodeRequest(java.lang.String name, java.util.UUID txnId, long threadId, Data key, Data oldValue, Data newValue) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
         clientMessage.setOperationName("TransactionalMap.ReplaceIfSame");

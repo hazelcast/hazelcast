@@ -19,7 +19,7 @@ package com.hazelcast.client.impl.protocol.codec;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
-import com.hazelcast.client.impl.protocol.codec.custom.*;
+import com.hazelcast.internal.serialization.Data;
 
 import javax.annotation.Nullable;
 
@@ -60,18 +60,18 @@ public final class CacheEntryProcessorCodec {
         /**
          * the key to the entry
          */
-        public com.hazelcast.nio.serialization.Data key;
+        public Data key;
 
         /**
          * Entry processor to invoke. Byte-array which is serialized from an object implementing
          * javax.cache.processor.EntryProcessor.
          */
-        public com.hazelcast.nio.serialization.Data entryProcessor;
+        public Data entryProcessor;
 
         /**
          * additional arguments to pass to the EntryProcessor
          */
-        public java.util.List<com.hazelcast.nio.serialization.Data> arguments;
+        public java.util.List<Data> arguments;
 
         /**
          * User generated id which shall be received as a field of the cache event upon completion of
@@ -80,7 +80,7 @@ public final class CacheEntryProcessorCodec {
         public int completionId;
     }
 
-    public static ClientMessage encodeRequest(java.lang.String name, com.hazelcast.nio.serialization.Data key, com.hazelcast.nio.serialization.Data entryProcessor, java.util.Collection<com.hazelcast.nio.serialization.Data> arguments, int completionId) {
+    public static ClientMessage encodeRequest(java.lang.String name, Data key, Data entryProcessor, java.util.Collection<Data> arguments, int completionId) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
         clientMessage.setOperationName("Cache.EntryProcessor");
@@ -113,10 +113,11 @@ public final class CacheEntryProcessorCodec {
         /**
          * the result of the processing, if any, defined by the EntryProcessor implementation
          */
-        public @Nullable com.hazelcast.nio.serialization.Data response;
+        public @Nullable
+        Data response;
     }
 
-    public static ClientMessage encodeResponse(@Nullable com.hazelcast.nio.serialization.Data response) {
+    public static ClientMessage encodeResponse(@Nullable Data response) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, RESPONSE_MESSAGE_TYPE);

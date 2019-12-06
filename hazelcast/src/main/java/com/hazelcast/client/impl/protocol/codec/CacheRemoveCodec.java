@@ -19,7 +19,7 @@ package com.hazelcast.client.impl.protocol.codec;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
-import com.hazelcast.client.impl.protocol.codec.custom.*;
+import com.hazelcast.internal.serialization.Data;
 
 import javax.annotation.Nullable;
 
@@ -61,12 +61,13 @@ public final class CacheRemoveCodec {
         /**
          * key whose mapping is to be removed from the cache
          */
-        public com.hazelcast.nio.serialization.Data key;
+        public Data key;
 
         /**
          * value expected to be associated with the specified key.
          */
-        public @Nullable com.hazelcast.nio.serialization.Data currentValue;
+        public @Nullable
+        Data currentValue;
 
         /**
          * User generated id which shall be received as a field of the cache event upon completion of
@@ -75,7 +76,7 @@ public final class CacheRemoveCodec {
         public int completionId;
     }
 
-    public static ClientMessage encodeRequest(java.lang.String name, com.hazelcast.nio.serialization.Data key, @Nullable com.hazelcast.nio.serialization.Data currentValue, int completionId) {
+    public static ClientMessage encodeRequest(java.lang.String name, Data key, @Nullable Data currentValue, int completionId) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
         clientMessage.setOperationName("Cache.Remove");

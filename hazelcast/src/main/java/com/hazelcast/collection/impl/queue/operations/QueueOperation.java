@@ -23,7 +23,7 @@ import com.hazelcast.collection.impl.queue.QueueEvent;
 import com.hazelcast.collection.impl.queue.QueueEventFilter;
 import com.hazelcast.collection.impl.queue.QueueService;
 import com.hazelcast.core.ItemEventType;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
 import com.hazelcast.spi.impl.eventservice.EventRegistration;

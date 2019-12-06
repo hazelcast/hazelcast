@@ -19,6 +19,7 @@ package com.hazelcast.client.impl.protocol.codec.custom;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
+import com.hazelcast.internal.serialization.Data;
 
 import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.fastForwardToEndFrame;
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
@@ -96,13 +97,13 @@ public final class CacheConfigHolderCodec {
         com.hazelcast.config.WanReplicationRef wanReplicationRef = CodecUtil.decodeNullable(iterator, WanReplicationRefCodec::decode);
         java.lang.String keyClassName = StringCodec.decode(iterator);
         java.lang.String valueClassName = StringCodec.decode(iterator);
-        com.hazelcast.nio.serialization.Data cacheLoaderFactory = CodecUtil.decodeNullable(iterator, DataCodec::decode);
-        com.hazelcast.nio.serialization.Data cacheWriterFactory = CodecUtil.decodeNullable(iterator, DataCodec::decode);
-        com.hazelcast.nio.serialization.Data expiryPolicyFactory = DataCodec.decode(iterator);
+        Data cacheLoaderFactory = CodecUtil.decodeNullable(iterator, DataCodec::decode);
+        Data cacheWriterFactory = CodecUtil.decodeNullable(iterator, DataCodec::decode);
+        Data expiryPolicyFactory = DataCodec.decode(iterator);
         com.hazelcast.config.HotRestartConfig hotRestartConfig = CodecUtil.decodeNullable(iterator, HotRestartConfigCodec::decode);
         com.hazelcast.config.EventJournalConfig eventJournalConfig = CodecUtil.decodeNullable(iterator, EventJournalConfigCodec::decode);
         java.lang.String splitBrainProtectionName = CodecUtil.decodeNullable(iterator, StringCodec::decode);
-        java.util.List<com.hazelcast.nio.serialization.Data> listenerConfigurations = ListMultiFrameCodec.decodeNullable(iterator, DataCodec::decode);
+        java.util.List<Data> listenerConfigurations = ListMultiFrameCodec.decodeNullable(iterator, DataCodec::decode);
         com.hazelcast.config.MergePolicyConfig mergePolicyConfig = MergePolicyConfigCodec.decode(iterator);
         java.util.List<com.hazelcast.client.impl.protocol.task.dynamicconfig.ListenerConfigHolder> cachePartitionLostListenerConfigs = ListMultiFrameCodec.decodeNullable(iterator, ListenerConfigHolderCodec::decode);
 

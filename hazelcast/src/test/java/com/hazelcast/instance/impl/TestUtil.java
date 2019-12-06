@@ -18,7 +18,7 @@ package com.hazelcast.instance.impl;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.partition.Partition;
 import com.hazelcast.partition.PartitionService;
 import com.hazelcast.internal.serialization.SerializationService;

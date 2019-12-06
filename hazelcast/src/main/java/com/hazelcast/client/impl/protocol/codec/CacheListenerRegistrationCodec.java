@@ -20,8 +20,7 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
 import com.hazelcast.client.impl.protocol.codec.custom.*;
-
-import javax.annotation.Nullable;
+import com.hazelcast.internal.serialization.Data;
 
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
@@ -61,7 +60,7 @@ public final class CacheListenerRegistrationCodec {
          * The listener configuration. Byte-array which is serialized from an object implementing
          * javax.cache.configuration.CacheEntryListenerConfiguration
          */
-        public com.hazelcast.nio.serialization.Data listenerConfig;
+        public Data listenerConfig;
 
         /**
          * true if the listener is being registered, false if the listener is being unregistered.
@@ -74,7 +73,7 @@ public final class CacheListenerRegistrationCodec {
         public com.hazelcast.cluster.Address address;
     }
 
-    public static ClientMessage encodeRequest(java.lang.String name, com.hazelcast.nio.serialization.Data listenerConfig, boolean shouldRegister, com.hazelcast.cluster.Address address) {
+    public static ClientMessage encodeRequest(java.lang.String name, Data listenerConfig, boolean shouldRegister, com.hazelcast.cluster.Address address) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
         clientMessage.setOperationName("Cache.ListenerRegistration");

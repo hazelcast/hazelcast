@@ -17,7 +17,7 @@
 package com.hazelcast.internal.util;
 
 import com.hazelcast.internal.serialization.impl.HeapData;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.internal.serialization.Data;
 
 /**
  * Converts any {@link Data} implementation to {@link HeapData}
