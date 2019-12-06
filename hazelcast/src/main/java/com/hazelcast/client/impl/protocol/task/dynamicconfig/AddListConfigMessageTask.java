@@ -22,6 +22,7 @@ import com.hazelcast.config.ItemListenerConfig;
 import com.hazelcast.config.ListConfig;
 import com.hazelcast.config.MergePolicyConfig;
 import com.hazelcast.instance.Node;
+import com.hazelcast.internal.dynamicconfig.DynamicConfigurationAwareConfig;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
@@ -65,5 +66,13 @@ public class AddListConfigMessageTask
     @Override
     public String getMethodName() {
         return "addListConfig";
+    }
+
+    @Override
+    protected boolean checkStaticConfigDoesNotExist(IdentifiedDataSerializable config) {
+        DynamicConfigurationAwareConfig nodeConfig = (DynamicConfigurationAwareConfig) nodeEngine.getConfig();
+        ListConfig listConfig = (ListConfig) config;
+        return nodeConfig.checkStaticConfigDoesNotExist(nodeConfig.getStaticConfig().getListConfigs(),
+                listConfig.getName(), listConfig);
     }
 }

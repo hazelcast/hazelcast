@@ -21,6 +21,7 @@ import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddScheduledExecuto
 import com.hazelcast.config.MergePolicyConfig;
 import com.hazelcast.config.ScheduledExecutorConfig;
 import com.hazelcast.instance.Node;
+import com.hazelcast.internal.dynamicconfig.DynamicConfigurationAwareConfig;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
@@ -57,5 +58,13 @@ public class AddScheduledExecutorConfigMessageTask
     @Override
     public String getMethodName() {
         return "addScheduledExecutorConfig";
+    }
+
+    @Override
+    protected boolean checkStaticConfigDoesNotExist(IdentifiedDataSerializable config) {
+        DynamicConfigurationAwareConfig nodeConfig = (DynamicConfigurationAwareConfig) nodeEngine.getConfig();
+        ScheduledExecutorConfig scheduledExecutorConfig = (ScheduledExecutorConfig) config;
+        return nodeConfig.checkStaticConfigDoesNotExist(nodeConfig.getStaticConfig().getScheduledExecutorConfigs(),
+                scheduledExecutorConfig.getName(), scheduledExecutorConfig);
     }
 }

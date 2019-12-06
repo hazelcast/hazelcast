@@ -20,6 +20,7 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddMerkleTreeConfigCodec;
 import com.hazelcast.config.MerkleTreeConfig;
 import com.hazelcast.instance.Node;
+import com.hazelcast.internal.dynamicconfig.DynamicConfigurationAwareConfig;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.util.Preconditions;
@@ -51,6 +52,14 @@ public class AddMerkleTreeConfigMessageTask
                 .setMapName(parameters.mapName)
                 .setEnabled(parameters.enabled)
                 .setDepth(parameters.depth);
+    }
+
+    @Override
+    protected boolean checkStaticConfigDoesNotExist(IdentifiedDataSerializable config) {
+        DynamicConfigurationAwareConfig nodeConfig = (DynamicConfigurationAwareConfig) nodeEngine.getConfig();
+        MerkleTreeConfig merkleTreeConfig = (MerkleTreeConfig) config;
+        return nodeConfig.checkStaticConfigDoesNotExist(nodeConfig.getStaticConfig().getMapMerkleTreeConfigs(),
+                merkleTreeConfig.getMapName(), merkleTreeConfig);
     }
 
     @Override

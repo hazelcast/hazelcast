@@ -21,6 +21,7 @@ import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddSemaphoreConfigC
 import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddSetConfigCodec;
 import com.hazelcast.config.SemaphoreConfig;
 import com.hazelcast.instance.Node;
+import com.hazelcast.internal.dynamicconfig.DynamicConfigurationAwareConfig;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
@@ -49,6 +50,14 @@ public class AddSemaphoreConfigMessageTask
         config.setAsyncBackupCount(parameters.asyncBackupCount);
         config.setInitialPermits(parameters.initialPermits);
         return config;
+    }
+
+    @Override
+    protected boolean checkStaticConfigDoesNotExist(IdentifiedDataSerializable config) {
+        DynamicConfigurationAwareConfig nodeConfig = (DynamicConfigurationAwareConfig) nodeEngine.getConfig();
+        SemaphoreConfig semaphoreConfig = (SemaphoreConfig) config;
+        return nodeConfig.checkStaticConfigDoesNotExist(nodeConfig.getStaticConfig().getSemaphoreConfigsAsMap(),
+                semaphoreConfig.getName(), semaphoreConfig);
     }
 
     @Override

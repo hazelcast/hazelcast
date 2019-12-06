@@ -21,6 +21,7 @@ import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddReliableTopicCon
 import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.config.ReliableTopicConfig;
 import com.hazelcast.instance.Node;
+import com.hazelcast.internal.dynamicconfig.DynamicConfigurationAwareConfig;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.topic.TopicOverloadPolicy;
@@ -63,5 +64,13 @@ public class AddReliableTopicConfigMessageTask
     @Override
     public String getMethodName() {
         return "addReliableTopicConfig";
+    }
+
+    @Override
+    protected boolean checkStaticConfigDoesNotExist(IdentifiedDataSerializable config) {
+        DynamicConfigurationAwareConfig nodeConfig = (DynamicConfigurationAwareConfig) nodeEngine.getConfig();
+        ReliableTopicConfig reliableTopicConfig = (ReliableTopicConfig) config;
+        return nodeConfig.checkStaticConfigDoesNotExist(nodeConfig.getStaticConfig().getReliableTopicConfigs(),
+                reliableTopicConfig.getName(), reliableTopicConfig);
     }
 }

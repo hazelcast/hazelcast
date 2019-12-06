@@ -20,6 +20,7 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddEventJournalConfigCodec;
 import com.hazelcast.config.EventJournalConfig;
 import com.hazelcast.instance.Node;
+import com.hazelcast.internal.dynamicconfig.DynamicConfigurationAwareConfig;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.util.StringUtil;
@@ -57,6 +58,18 @@ public class AddEventJournalConfigMessageTask
         config.setTimeToLiveSeconds(parameters.timeToLiveSeconds);
         config.setCapacity(parameters.capacity);
         return config;
+    }
+
+    @Override
+    protected boolean checkStaticConfigDoesNotExist(IdentifiedDataSerializable config) {
+        DynamicConfigurationAwareConfig nodeConfig = (DynamicConfigurationAwareConfig) nodeEngine.getConfig();
+        EventJournalConfig eventJournalConfig = (EventJournalConfig) config;
+        String name = eventJournalConfig.getMapName();
+        if (name == null) {
+            name = eventJournalConfig.getCacheName();
+        }
+        return nodeConfig.checkStaticConfigDoesNotExist(nodeConfig.getStaticConfig().getCacheEventJournalConfigs(),
+                name, eventJournalConfig);
     }
 
     @Override

@@ -20,6 +20,7 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddLockConfigCodec;
 import com.hazelcast.config.LockConfig;
 import com.hazelcast.instance.Node;
+import com.hazelcast.internal.dynamicconfig.DynamicConfigurationAwareConfig;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
@@ -45,6 +46,14 @@ public class AddLockConfigMessageTask
         LockConfig config = new LockConfig(parameters.name);
         config.setQuorumName(parameters.quorumName);
         return config;
+    }
+
+    @Override
+    protected boolean checkStaticConfigDoesNotExist(IdentifiedDataSerializable config) {
+        DynamicConfigurationAwareConfig nodeConfig = (DynamicConfigurationAwareConfig) nodeEngine.getConfig();
+        LockConfig lockConfig = (LockConfig) config;
+        return nodeConfig.checkStaticConfigDoesNotExist(nodeConfig.getStaticConfig().getLockConfigs(),
+                lockConfig.getName(), lockConfig);
     }
 
     @Override

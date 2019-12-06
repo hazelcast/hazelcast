@@ -40,6 +40,7 @@ import com.hazelcast.client.impl.protocol.task.dynamicconfig.AddLockConfigMessag
 import com.hazelcast.client.impl.protocol.task.dynamicconfig.AddMapConfigMessageTask;
 import com.hazelcast.client.impl.protocol.task.dynamicconfig.AddMerkleTreeConfigMessageTask;
 import com.hazelcast.client.impl.protocol.task.dynamicconfig.AddMultiMapConfigMessageTask;
+import com.hazelcast.client.impl.protocol.task.dynamicconfig.AddPNCounterConfigMessageTask;
 import com.hazelcast.client.impl.protocol.task.dynamicconfig.AddQueueConfigMessageTask;
 import com.hazelcast.client.impl.protocol.task.dynamicconfig.AddReliableTopicConfigMessageTask;
 import com.hazelcast.client.impl.protocol.task.dynamicconfig.AddReplicatedMapConfigMessageTask;
@@ -695,7 +696,7 @@ public class DefaultMessageTaskFactoryProvider implements MessageTaskFactoryProv
         };
         factories[com.hazelcast.client.impl.protocol.codec.SemaphoreIncreasePermitsCodec.RequestParameters.TYPE.id()] = new MessageTaskFactory() {
             public MessageTask create(ClientMessage clientMessage, Connection connection) {
-                return new com.hazelcast.client.impl.protocol.task.semaphore.SemaphoreIncreasePermitsMessageTask(clientMessage,node, connection);
+                return new com.hazelcast.client.impl.protocol.task.semaphore.SemaphoreIncreasePermitsMessageTask(clientMessage, node, connection);
             }
         };
         factories[com.hazelcast.client.impl.protocol.codec.SemaphoreTryAcquireCodec.RequestParameters.TYPE.id()] = new MessageTaskFactory() {
@@ -2155,6 +2156,11 @@ public class DefaultMessageTaskFactoryProvider implements MessageTaskFactoryProv
                 return new AddFlakeIdGeneratorConfigMessageTask(clientMessage, node, connection);
             }
         };
+        factories[com.hazelcast.client.impl.protocol.codec.DynamicConfigAddPNCounterConfigCodec.RequestParameters.TYPE.id()] = new MessageTaskFactory() {
+            public MessageTask create(ClientMessage clientMessage, Connection connection) {
+                return new AddPNCounterConfigMessageTask(clientMessage, node, connection);
+            }
+        };
 //endregion
 // region ----------- REGISTRATION FOR flake id generator
         factories[com.hazelcast.client.impl.protocol.codec.FlakeIdGeneratorNewIdBatchCodec.RequestParameters.TYPE.id()] = new MessageTaskFactory() {
@@ -2185,8 +2191,6 @@ public class DefaultMessageTaskFactoryProvider implements MessageTaskFactoryProv
             }
         };
 //endregion
-
-
 
 
         factories[com.hazelcast.client.impl.protocol.codec.CPGroupCreateCPGroupCodec.RequestParameters.TYPE.id()] = new MessageTaskFactory() {

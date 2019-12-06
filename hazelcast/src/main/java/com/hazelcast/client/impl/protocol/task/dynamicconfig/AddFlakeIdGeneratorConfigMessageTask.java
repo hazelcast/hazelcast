@@ -20,6 +20,7 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddFlakeIdGeneratorConfigCodec;
 import com.hazelcast.config.FlakeIdGeneratorConfig;
 import com.hazelcast.instance.Node;
+import com.hazelcast.internal.dynamicconfig.DynamicConfigurationAwareConfig;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
@@ -54,5 +55,13 @@ public class AddFlakeIdGeneratorConfigMessageTask
     @Override
     public String getMethodName() {
         return "addFlakeIdGeneratorConfig";
+    }
+
+    @Override
+    protected boolean checkStaticConfigDoesNotExist(IdentifiedDataSerializable config) {
+        DynamicConfigurationAwareConfig nodeConfig = (DynamicConfigurationAwareConfig) nodeEngine.getConfig();
+        FlakeIdGeneratorConfig flakeIdGeneratorConfig = (FlakeIdGeneratorConfig) config;
+        return nodeConfig.checkStaticConfigDoesNotExist(nodeConfig.getStaticConfig().getFlakeIdGeneratorConfigs(),
+                flakeIdGeneratorConfig.getName(), flakeIdGeneratorConfig);
     }
 }

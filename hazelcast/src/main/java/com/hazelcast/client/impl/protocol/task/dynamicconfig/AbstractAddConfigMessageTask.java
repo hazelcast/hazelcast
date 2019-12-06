@@ -70,8 +70,12 @@ public abstract class AbstractAddConfigMessageTask<P> extends AbstractMessageTas
     public final void processMessage() {
         IdentifiedDataSerializable config = getConfig();
         ClusterWideConfigurationService service = getService(ClusterWideConfigurationService.SERVICE_NAME);
-        ICompletableFuture<Object> future = service.broadcastConfigAsync(config);
-        future.andThen(this);
+        if (checkStaticConfigDoesNotExist(config)) {
+            ICompletableFuture<Object> future = service.broadcastConfigAsync(config);
+            future.andThen(this);
+        } else {
+            sendResponse(null);
+        }
     }
 
     @Override
@@ -106,4 +110,6 @@ public abstract class AbstractAddConfigMessageTask<P> extends AbstractMessageTas
     }
 
     protected abstract IdentifiedDataSerializable getConfig();
+
+    protected abstract boolean checkStaticConfigDoesNotExist(IdentifiedDataSerializable config);
 }

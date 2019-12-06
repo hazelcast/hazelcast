@@ -17,56 +17,49 @@
 package com.hazelcast.client.impl.protocol.task.dynamicconfig;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddTopicConfigCodec;
-import com.hazelcast.config.ListenerConfig;
-import com.hazelcast.config.TopicConfig;
+import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddPNCounterConfigCodec;
+import com.hazelcast.config.PNCounterConfig;
 import com.hazelcast.instance.Node;
 import com.hazelcast.internal.dynamicconfig.DynamicConfigurationAwareConfig;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
-import java.util.List;
+public class AddPNCounterConfigMessageTask
+        extends AbstractAddConfigMessageTask<DynamicConfigAddPNCounterConfigCodec.RequestParameters> {
 
-public class AddTopicConfigMessageTask
-        extends AbstractAddConfigMessageTask<DynamicConfigAddTopicConfigCodec.RequestParameters> {
-
-    public AddTopicConfigMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
+    public AddPNCounterConfigMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
     @Override
-    protected DynamicConfigAddTopicConfigCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
-        return DynamicConfigAddTopicConfigCodec.decodeRequest(clientMessage);
+    protected DynamicConfigAddPNCounterConfigCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return DynamicConfigAddPNCounterConfigCodec.decodeRequest(clientMessage);
     }
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return DynamicConfigAddTopicConfigCodec.encodeResponse();
+        return DynamicConfigAddPNCounterConfigCodec.encodeResponse();
     }
 
     @Override
     protected IdentifiedDataSerializable getConfig() {
-        TopicConfig config = new TopicConfig(parameters.name);
-        config.setGlobalOrderingEnabled(parameters.globalOrderingEnabled);
-        config.setMultiThreadingEnabled(parameters.multiThreadingEnabled);
+        PNCounterConfig config = new PNCounterConfig(parameters.name);
+        config.setReplicaCount(parameters.replicaCount);
         config.setStatisticsEnabled(parameters.statisticsEnabled);
-        if (parameters.listenerConfigs != null && !parameters.listenerConfigs.isEmpty()) {
-            config.setMessageListenerConfigs(
-                    (List<ListenerConfig>) adaptListenerConfigs(parameters.listenerConfigs));
-        }
+        config.setQuorumName(parameters.quorumName);
         return config;
     }
 
     @Override
     public String getMethodName() {
-        return "addTopicConfig";
+        return "addPNCounterConfig";
     }
 
     @Override
     protected boolean checkStaticConfigDoesNotExist(IdentifiedDataSerializable config) {
         DynamicConfigurationAwareConfig nodeConfig = (DynamicConfigurationAwareConfig) nodeEngine.getConfig();
-        TopicConfig topicConfig = (TopicConfig) config;
-        return nodeConfig.checkStaticConfigDoesNotExist(nodeConfig.getStaticConfig().getTopicConfigs(),
-                topicConfig.getName(), topicConfig);
+        PNCounterConfig pnCounterConfig = (PNCounterConfig) config;
+        return nodeConfig.checkStaticConfigDoesNotExist(nodeConfig.getStaticConfig().getPNCounterConfigs(),
+                pnCounterConfig.getName(), pnCounterConfig);
     }
 }
