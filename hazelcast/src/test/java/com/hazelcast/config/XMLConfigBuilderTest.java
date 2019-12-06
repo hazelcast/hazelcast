@@ -49,6 +49,7 @@ import java.net.URL;
 import java.text.MessageFormat;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -2587,9 +2588,11 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         MessageFormat messageFormat = new MessageFormat(xmlFormat);
 
         MaxSizePolicy[] maxSizePolicies = MaxSizePolicy.values();
+        EnumSet<MaxSizePolicy> notSupported = EnumSet.noneOf(MaxSizePolicy.class);
+        notSupported.addAll(notSupportedByIMap());
+        notSupported.addAll(notSupportedByObjectInMemoryFormat());
         for (MaxSizePolicy maxSizePolicy : maxSizePolicies) {
-            if (maxSizePolicy == ENTRY_COUNT) {
-                // imap does not support ENTRY_COUNT
+            if (notSupported.contains(maxSizePolicy)) {
                 continue;
             }
             Object[] objects = {maxSizePolicy.toString()};
