@@ -199,7 +199,7 @@ public class JobRestartWithSnapshotTest extends JetTestSupport {
         Job job = instance1.newJob(dag, config);
 
         JobRepository jobRepository = new JobRepository(instance1);
-        int timeout = (int) (MILLISECONDS.toSeconds(config.getSnapshotIntervalMillis()) + 2);
+        int timeout = (int) (MILLISECONDS.toSeconds(config.getSnapshotIntervalMillis() * 3) + 2);
 
         waitForFirstSnapshot(jobRepository, job.getId(), timeout, false);
         waitForNextSnapshot(jobRepository, job.getId(), timeout);
