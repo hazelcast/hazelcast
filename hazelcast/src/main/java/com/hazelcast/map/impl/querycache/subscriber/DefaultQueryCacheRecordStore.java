@@ -24,7 +24,7 @@ import com.hazelcast.map.impl.querycache.subscriber.record.DataQueryCacheRecordF
 import com.hazelcast.map.impl.querycache.subscriber.record.ObjectQueryCacheRecordFactory;
 import com.hazelcast.map.impl.querycache.subscriber.record.QueryCacheRecord;
 import com.hazelcast.map.impl.querycache.subscriber.record.QueryCacheRecordFactory;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.query.impl.Index;
 import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.query.impl.QueryEntry;

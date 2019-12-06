@@ -17,7 +17,7 @@
 package com.hazelcast.map.impl.querycache.event;
 
 import com.hazelcast.internal.serialization.InternalSerializationService;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.internal.serialization.Data;
 
 /**
  * Builder for creating a serializable event data for query cache system.

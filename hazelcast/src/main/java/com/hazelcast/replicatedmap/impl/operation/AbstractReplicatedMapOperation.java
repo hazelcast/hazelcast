@@ -19,7 +19,7 @@ package com.hazelcast.replicatedmap.impl.operation;
 import com.hazelcast.cluster.memberselector.MemberSelectors;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.cluster.Address;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationService;
 import com.hazelcast.spi.impl.operationservice.impl.responses.NormalResponse;

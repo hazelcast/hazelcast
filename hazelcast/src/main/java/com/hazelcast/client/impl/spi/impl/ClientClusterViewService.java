@@ -50,7 +50,7 @@ import com.hazelcast.internal.util.HashUtil;
 import com.hazelcast.internal.util.UuidUtil;
 import com.hazelcast.internal.util.collection.Int2ObjectHashMap;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.partition.NoDataMemberInClusterException;
 import com.hazelcast.partition.Partition;
 import com.hazelcast.partition.PartitionLostListener;

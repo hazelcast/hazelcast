@@ -38,7 +38,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * If the specified collection is also a set, this operation effectively modifies this set so that its value is the
  * asymmetric set difference of the two sets.
  */
-@Generated("8252909b5fee9e4390c3da3faae5a020")
+@Generated("f0e746845debcb38e8514d8dcf184e08")
 public final class SetCompareAndRemoveAllCodec {
     //hex: 0x060700
     public static final int REQUEST_MESSAGE_TYPE = 395008;
@@ -62,10 +62,10 @@ public final class SetCompareAndRemoveAllCodec {
         /**
          * The list of values to test for matching the item to remove.
          */
-        public java.util.List<com.hazelcast.nio.serialization.Data> values;
+        public java.util.List<com.hazelcast.internal.serialization.Data> values;
     }
 
-    public static ClientMessage encodeRequest(java.lang.String name, java.util.Collection<com.hazelcast.nio.serialization.Data> values) {
+    public static ClientMessage encodeRequest(java.lang.String name, java.util.Collection<com.hazelcast.internal.serialization.Data> values) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
         clientMessage.setOperationName("Set.CompareAndRemoveAll");

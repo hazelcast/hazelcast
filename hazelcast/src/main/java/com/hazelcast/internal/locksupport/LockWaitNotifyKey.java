@@ -16,7 +16,7 @@
 
 package com.hazelcast.internal.locksupport;
 
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.services.ObjectNamespace;
 import com.hazelcast.spi.impl.operationservice.WaitNotifyKey;
 

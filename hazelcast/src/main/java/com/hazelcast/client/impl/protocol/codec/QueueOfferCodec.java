@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Inserts the specified element into this queue, waiting up to the specified wait time if necessary for space to
  * become available.
  */
-@Generated("eedd9a3c29bf5806d09fa6d83cf91763")
+@Generated("f9d5bf6e50d04ecd3ccd1b7cff2bb548")
 public final class QueueOfferCodec {
     //hex: 0x030100
     public static final int REQUEST_MESSAGE_TYPE = 196864;
@@ -62,7 +62,7 @@ public final class QueueOfferCodec {
         /**
          * The element to add
          */
-        public com.hazelcast.nio.serialization.Data value;
+        public com.hazelcast.internal.serialization.Data value;
 
         /**
          * Maximum time in milliseconds to wait for acquiring the lock for the key.
@@ -70,7 +70,7 @@ public final class QueueOfferCodec {
         public long timeoutMillis;
     }
 
-    public static ClientMessage encodeRequest(java.lang.String name, com.hazelcast.nio.serialization.Data value, long timeoutMillis) {
+    public static ClientMessage encodeRequest(java.lang.String name, com.hazelcast.internal.serialization.Data value, long timeoutMillis) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
         clientMessage.setOperationName("Queue.Offer");

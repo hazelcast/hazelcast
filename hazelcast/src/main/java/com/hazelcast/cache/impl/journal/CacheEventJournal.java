@@ -19,7 +19,7 @@ package com.hazelcast.cache.impl.journal;
 import com.hazelcast.cache.CacheEventType;
 import com.hazelcast.config.EventJournalConfig;
 import com.hazelcast.internal.journal.EventJournal;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.services.ObjectNamespace;
 
 /**

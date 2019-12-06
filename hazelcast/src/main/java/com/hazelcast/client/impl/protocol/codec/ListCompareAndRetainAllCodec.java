@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Retains only the elements in this list that are contained in the specified collection (optional operation).
  * In other words, removes from this list all of its elements that are not contained in the specified collection.
  */
-@Generated("cde1017f0f0fcd610adc4b2d35f19d12")
+@Generated("09b244909345794cbf0a04a2d7e41840")
 public final class ListCompareAndRetainAllCodec {
     //hex: 0x050800
     public static final int REQUEST_MESSAGE_TYPE = 329728;
@@ -61,10 +61,10 @@ public final class ListCompareAndRetainAllCodec {
         /**
          * The list of values to compare for retaining.
          */
-        public java.util.List<com.hazelcast.nio.serialization.Data> values;
+        public java.util.List<com.hazelcast.internal.serialization.Data> values;
     }
 
-    public static ClientMessage encodeRequest(java.lang.String name, java.util.Collection<com.hazelcast.nio.serialization.Data> values) {
+    public static ClientMessage encodeRequest(java.lang.String name, java.util.Collection<com.hazelcast.internal.serialization.Data> values) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
         clientMessage.setOperationName("List.CompareAndRetainAll");

@@ -22,7 +22,7 @@ import com.hazelcast.collection.impl.txncollection.AbstractTransactionalCollecti
 import com.hazelcast.collection.impl.txncollection.operations.CollectionReserveAddOperation;
 import com.hazelcast.collection.impl.txncollection.operations.CollectionTxnAddOperation;
 import com.hazelcast.transaction.TransactionalSet;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.impl.Transaction;

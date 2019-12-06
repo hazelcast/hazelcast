@@ -38,7 +38,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Subscribes to this topic. When someone publishes a message on this topic. onMessage() function of the given
  * MessageListener is called. More than one message listener can be added on one instance.
  */
-@Generated("039865263072dff631a0f7915e7e4455")
+@Generated("c0f5922e368bbc969f2dbbe9a350883d")
 public final class TopicAddMessageListenerCodec {
     //hex: 0x040200
     public static final int REQUEST_MESSAGE_TYPE = 262656;
@@ -119,7 +119,7 @@ public final class TopicAddMessageListenerCodec {
         return response;
     }
 
-    public static ClientMessage encodeTopicEvent(com.hazelcast.nio.serialization.Data item, long publishTime, java.util.UUID uuid) {
+    public static ClientMessage encodeTopicEvent(com.hazelcast.internal.serialization.Data item, long publishTime, java.util.UUID uuid) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[EVENT_TOPIC_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         initialFrame.flags |= ClientMessage.IS_EVENT_FLAG;
@@ -141,12 +141,12 @@ public final class TopicAddMessageListenerCodec {
                 ClientMessage.Frame initialFrame = iterator.next();
                 long publishTime = decodeLong(initialFrame.content, EVENT_TOPIC_PUBLISH_TIME_FIELD_OFFSET);
                 java.util.UUID uuid = decodeUUID(initialFrame.content, EVENT_TOPIC_UUID_FIELD_OFFSET);
-                com.hazelcast.nio.serialization.Data item = DataCodec.decode(iterator);
+                com.hazelcast.internal.serialization.Data item = DataCodec.decode(iterator);
                 handleTopicEvent(item, publishTime, uuid);
                 return;
             }
             Logger.getLogger(super.getClass()).finest("Unknown message type received on event handler :" + messageType);
         }
-        public abstract void handleTopicEvent(com.hazelcast.nio.serialization.Data item, long publishTime, java.util.UUID uuid);
+        public abstract void handleTopicEvent(com.hazelcast.internal.serialization.Data item, long publishTime, java.util.UUID uuid);
     }
 }

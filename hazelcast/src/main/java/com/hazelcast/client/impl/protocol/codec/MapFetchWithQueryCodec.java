@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Fetches the specified number of entries from the specified partition starting from specified table index
  * that match the predicate and applies the projection logic on them.
  */
-@Generated("4eb6409c48948de6a8eadf5fc2f7fc01")
+@Generated("39bfa746569c272cf819a5dff4767320")
 public final class MapFetchWithQueryCodec {
     //hex: 0x014200
     public static final int REQUEST_MESSAGE_TYPE = 82432;
@@ -73,15 +73,15 @@ public final class MapFetchWithQueryCodec {
         /**
          * projection to transform the entries with
          */
-        public com.hazelcast.nio.serialization.Data projection;
+        public com.hazelcast.internal.serialization.Data projection;
 
         /**
          * predicate to filter the entries with
          */
-        public com.hazelcast.nio.serialization.Data predicate;
+        public com.hazelcast.internal.serialization.Data predicate;
     }
 
-    public static ClientMessage encodeRequest(java.lang.String name, int tableIndex, int batch, com.hazelcast.nio.serialization.Data projection, com.hazelcast.nio.serialization.Data predicate) {
+    public static ClientMessage encodeRequest(java.lang.String name, int tableIndex, int batch, com.hazelcast.internal.serialization.Data projection, com.hazelcast.internal.serialization.Data predicate) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(true);
         clientMessage.setOperationName("Map.FetchWithQuery");
@@ -114,7 +114,7 @@ public final class MapFetchWithQueryCodec {
         /**
          * TODO DOC
          */
-        public java.util.List<com.hazelcast.nio.serialization.Data> results;
+        public java.util.List<com.hazelcast.internal.serialization.Data> results;
 
         /**
          * TODO DOC
@@ -122,7 +122,7 @@ public final class MapFetchWithQueryCodec {
         public int nextTableIndexToReadFrom;
     }
 
-    public static ClientMessage encodeResponse(java.util.Collection<com.hazelcast.nio.serialization.Data> results, int nextTableIndexToReadFrom) {
+    public static ClientMessage encodeResponse(java.util.Collection<com.hazelcast.internal.serialization.Data> results, int nextTableIndexToReadFrom) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, RESPONSE_MESSAGE_TYPE);

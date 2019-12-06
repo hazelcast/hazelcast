@@ -20,7 +20,7 @@ import com.hazelcast.cluster.Address;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.map.impl.event.EntryEventData;
 import com.hazelcast.map.impl.event.MapEventData;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.eventservice.EventRegistration;
 import com.hazelcast.spi.impl.eventservice.EventService;

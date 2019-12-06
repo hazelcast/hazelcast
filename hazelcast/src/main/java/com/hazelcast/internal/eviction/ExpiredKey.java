@@ -16,7 +16,7 @@
 
 package com.hazelcast.internal.eviction;
 
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.internal.serialization.Data;
 
 /**
  * Holds expired key and related metadata.

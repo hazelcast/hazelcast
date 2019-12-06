@@ -19,7 +19,7 @@ package com.hazelcast.map.impl.record;
 import com.hazelcast.config.CacheDeserializedValues;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.internal.serialization.SerializationService;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.internal.serialization.Data;
 
 public class DataRecordFactory implements RecordFactory<Data> {
 
