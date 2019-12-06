@@ -19,7 +19,9 @@ package com.hazelcast.client.impl.protocol.codec;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
-import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.client.impl.protocol.codec.custom.*;
+
+import javax.annotation.Nullable;
 
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
@@ -37,7 +39,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * in the collection, and vice-versa. This method is always executed by a distributed query, so it may throw
  * a QueryResultSizeExceededException if query result size limit is configured.
  */
-@Generated("60ea09ad8cfcce3553b34826b299b211")
+@Generated("dce5e976db11cd5eb966263fc06856e0")
 public final class TransactionalMapValuesWithPredicateCodec {
     //hex: 0x0E1100
     public static final int REQUEST_MESSAGE_TYPE = 921856;
@@ -72,10 +74,10 @@ public final class TransactionalMapValuesWithPredicateCodec {
         /**
          * Specified query criteria.
          */
-        public Data predicate;
+        public com.hazelcast.internal.serialization.Data predicate;
     }
 
-    public static ClientMessage encodeRequest(java.lang.String name, java.util.UUID txnId, long threadId, Data predicate) {
+    public static ClientMessage encodeRequest(java.lang.String name, java.util.UUID txnId, long threadId, com.hazelcast.internal.serialization.Data predicate) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
         clientMessage.setOperationName("TransactionalMap.ValuesWithPredicate");
@@ -106,10 +108,10 @@ public final class TransactionalMapValuesWithPredicateCodec {
         /**
          * Result value collection of the query.
          */
-        public java.util.List<Data> response;
+        public java.util.List<com.hazelcast.internal.serialization.Data> response;
     }
 
-    public static ClientMessage encodeResponse(java.util.Collection<Data> response) {
+    public static ClientMessage encodeResponse(java.util.Collection<com.hazelcast.internal.serialization.Data> response) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, RESPONSE_MESSAGE_TYPE);

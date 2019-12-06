@@ -19,7 +19,9 @@ package com.hazelcast.client.impl.protocol.codec;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
-import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.client.impl.protocol.codec.custom.*;
+
+import javax.annotation.Nullable;
 
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
@@ -37,7 +39,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * then the lock is released.  If the current thread is not the holder of this lock,
  * then ILLEGAL_MONITOR_STATE is thrown.
  */
-@Generated("adabb7a9ed0e4172c479bfdcf6a45989")
+@Generated("d2d9c5cec0b0a462d9e01f90471a9958")
 public final class MapUnlockCodec {
     //hex: 0x011300
     public static final int REQUEST_MESSAGE_TYPE = 70400;
@@ -62,7 +64,7 @@ public final class MapUnlockCodec {
         /**
          * Key for the map entry to unlock
          */
-        public Data key;
+        public com.hazelcast.internal.serialization.Data key;
 
         /**
          * The id of the user thread performing the operation. It is used to guarantee that only the lock holder thread (if a lock exists on the entry) can perform the requested operation.
@@ -75,7 +77,7 @@ public final class MapUnlockCodec {
         public long referenceId;
     }
 
-    public static ClientMessage encodeRequest(java.lang.String name, Data key, long threadId, long referenceId) {
+    public static ClientMessage encodeRequest(java.lang.String name, com.hazelcast.internal.serialization.Data key, long threadId, long referenceId) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(true);
         clientMessage.setOperationName("Map.Unlock");

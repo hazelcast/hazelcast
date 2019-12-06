@@ -19,7 +19,9 @@ package com.hazelcast.client.impl.protocol.codec;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
-import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.client.impl.protocol.codec.custom.*;
+
+import javax.annotation.Nullable;
 
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
@@ -34,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Removes from this list all of its elements that are contained in the specified collection (optional operation).
  */
-@Generated("9bf6920ddf9abd7a8963c09beead9648")
+@Generated("d184aba11e3609405927658785b046f9")
 public final class ListCompareAndRemoveAllCodec {
     //hex: 0x050700
     public static final int REQUEST_MESSAGE_TYPE = 329472;
@@ -58,10 +60,10 @@ public final class ListCompareAndRemoveAllCodec {
         /**
          * The list of values to compare for removal.
          */
-        public java.util.List<Data> values;
+        public java.util.List<com.hazelcast.internal.serialization.Data> values;
     }
 
-    public static ClientMessage encodeRequest(java.lang.String name, java.util.Collection<Data> values) {
+    public static ClientMessage encodeRequest(java.lang.String name, java.util.Collection<com.hazelcast.internal.serialization.Data> values) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
         clientMessage.setOperationName("List.CompareAndRemoveAll");

@@ -19,7 +19,7 @@ package com.hazelcast.client.impl.protocol.codec;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
-import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.client.impl.protocol.codec.custom.*;
 
 import javax.annotation.Nullable;
 
@@ -38,7 +38,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * be replaced by the specified one and returned from the call. In addition, you have to specify a ttl and its TimeUnit
  * to define when the value is outdated and thus should be removed from the replicated map.
  */
-@Generated("02e0c1785ecf8232c7ae9105282cb93a")
+@Generated("241e3a06e9ae9e2f9bee9a163e1a9b1f")
 public final class ReplicatedMapPutCodec {
     //hex: 0x0D0100
     public static final int REQUEST_MESSAGE_TYPE = 852224;
@@ -62,12 +62,12 @@ public final class ReplicatedMapPutCodec {
         /**
          * Key with which the specified value is to be associated.
          */
-        public Data key;
+        public com.hazelcast.internal.serialization.Data key;
 
         /**
          * Value to be associated with the specified key
          */
-        public Data value;
+        public com.hazelcast.internal.serialization.Data value;
 
         /**
          * ttl in milliseconds to be associated with the specified key-value pair
@@ -75,7 +75,7 @@ public final class ReplicatedMapPutCodec {
         public long ttl;
     }
 
-    public static ClientMessage encodeRequest(java.lang.String name, Data key, Data value, long ttl) {
+    public static ClientMessage encodeRequest(java.lang.String name, com.hazelcast.internal.serialization.Data key, com.hazelcast.internal.serialization.Data value, long ttl) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
         clientMessage.setOperationName("ReplicatedMap.Put");
@@ -106,11 +106,10 @@ public final class ReplicatedMapPutCodec {
         /**
          * The old value if existed for the key.
          */
-        public @Nullable
-        Data response;
+        public @Nullable com.hazelcast.internal.serialization.Data response;
     }
 
-    public static ClientMessage encodeResponse(@Nullable Data response) {
+    public static ClientMessage encodeResponse(@Nullable com.hazelcast.internal.serialization.Data response) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, RESPONSE_MESSAGE_TYPE);

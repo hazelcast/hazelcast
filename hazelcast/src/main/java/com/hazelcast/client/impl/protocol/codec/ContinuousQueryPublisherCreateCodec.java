@@ -19,7 +19,9 @@ package com.hazelcast.client.impl.protocol.codec;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
-import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.client.impl.protocol.codec.custom.*;
+
+import javax.annotation.Nullable;
 
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
@@ -34,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * TODO DOC
  */
-@Generated("aa1ea113aa0eecf3748ea3f0692fbf94")
+@Generated("dd8958f1c8c6b89060131c7977d747d6")
 public final class ContinuousQueryPublisherCreateCodec {
     //hex: 0x160200
     public static final int REQUEST_MESSAGE_TYPE = 1442304;
@@ -67,7 +69,7 @@ public final class ContinuousQueryPublisherCreateCodec {
         /**
          * The predicate to filter events which will be applied to the QueryCache.
          */
-        public Data predicate;
+        public com.hazelcast.internal.serialization.Data predicate;
 
         /**
          * The size of batch. After reaching this minimum size, node immediately sends buffered events to QueryCache.
@@ -96,7 +98,7 @@ public final class ContinuousQueryPublisherCreateCodec {
         public boolean coalesce;
     }
 
-    public static ClientMessage encodeRequest(java.lang.String mapName, java.lang.String cacheName, Data predicate, int batchSize, int bufferSize, long delaySeconds, boolean populate, boolean coalesce) {
+    public static ClientMessage encodeRequest(java.lang.String mapName, java.lang.String cacheName, com.hazelcast.internal.serialization.Data predicate, int batchSize, int bufferSize, long delaySeconds, boolean populate, boolean coalesce) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(true);
         clientMessage.setOperationName("ContinuousQuery.PublisherCreate");
@@ -135,10 +137,10 @@ public final class ContinuousQueryPublisherCreateCodec {
         /**
          * Array of keys.
          */
-        public java.util.List<Data> response;
+        public java.util.List<com.hazelcast.internal.serialization.Data> response;
     }
 
-    public static ClientMessage encodeResponse(java.util.Collection<Data> response) {
+    public static ClientMessage encodeResponse(java.util.Collection<com.hazelcast.internal.serialization.Data> response) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, RESPONSE_MESSAGE_TYPE);

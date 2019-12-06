@@ -19,7 +19,7 @@ package com.hazelcast.client.impl.protocol.codec;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
-import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.client.impl.protocol.codec.custom.*;
 
 import javax.annotation.Nullable;
 
@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Applies the user defined EntryProcessor to the entry mapped by the key. Returns the the object which is result of
  * the process() method of EntryProcessor.
  */
-@Generated("2722892edab5649c49def2d787a78145")
+@Generated("f52985df27650b8c8c2748d8ac73d8cf")
 public final class MapExecuteOnKeyCodec {
     //hex: 0x012E00
     public static final int REQUEST_MESSAGE_TYPE = 77312;
@@ -61,12 +61,12 @@ public final class MapExecuteOnKeyCodec {
         /**
          * processor to execute on the map entry
          */
-        public Data entryProcessor;
+        public com.hazelcast.internal.serialization.Data entryProcessor;
 
         /**
          * the key of the map entry.
          */
-        public Data key;
+        public com.hazelcast.internal.serialization.Data key;
 
         /**
          * TODO DOC
@@ -74,7 +74,7 @@ public final class MapExecuteOnKeyCodec {
         public long threadId;
     }
 
-    public static ClientMessage encodeRequest(java.lang.String name, Data entryProcessor, Data key, long threadId) {
+    public static ClientMessage encodeRequest(java.lang.String name, com.hazelcast.internal.serialization.Data entryProcessor, com.hazelcast.internal.serialization.Data key, long threadId) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
         clientMessage.setOperationName("Map.ExecuteOnKey");
@@ -105,11 +105,10 @@ public final class MapExecuteOnKeyCodec {
         /**
          * result of entry process.
          */
-        public @Nullable
-        Data response;
+        public @Nullable com.hazelcast.internal.serialization.Data response;
     }
 
-    public static ClientMessage encodeResponse(@Nullable Data response) {
+    public static ClientMessage encodeResponse(@Nullable com.hazelcast.internal.serialization.Data response) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, RESPONSE_MESSAGE_TYPE);

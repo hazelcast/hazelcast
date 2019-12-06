@@ -19,7 +19,7 @@ package com.hazelcast.client.impl.protocol.codec;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
-import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.client.impl.protocol.codec.custom.*;
 import com.hazelcast.logging.Logger;
 
 import javax.annotation.Nullable;
@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Adds an item listener for this collection. Listener will be notified for all collection add/remove events.
  */
-@Generated("526a93e4ea5120a3ab0a73699d8ba9e7")
+@Generated("0a2c1c3291edf517b02d64975476ed7c")
 public final class SetAddListenerCodec {
     //hex: 0x060B00
     public static final int REQUEST_MESSAGE_TYPE = 396032;
@@ -126,7 +126,7 @@ public final class SetAddListenerCodec {
         return response;
     }
 
-    public static ClientMessage encodeItemEvent(@Nullable Data item, java.util.UUID uuid, int eventType) {
+    public static ClientMessage encodeItemEvent(@Nullable com.hazelcast.internal.serialization.Data item, java.util.UUID uuid, int eventType) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[EVENT_ITEM_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         initialFrame.flags |= ClientMessage.IS_EVENT_FLAG;
@@ -148,12 +148,12 @@ public final class SetAddListenerCodec {
                 ClientMessage.Frame initialFrame = iterator.next();
                 java.util.UUID uuid = decodeUUID(initialFrame.content, EVENT_ITEM_UUID_FIELD_OFFSET);
                 int eventType = decodeInt(initialFrame.content, EVENT_ITEM_EVENT_TYPE_FIELD_OFFSET);
-                Data item = CodecUtil.decodeNullable(iterator, DataCodec::decode);
+                com.hazelcast.internal.serialization.Data item = CodecUtil.decodeNullable(iterator, DataCodec::decode);
                 handleItemEvent(item, uuid, eventType);
                 return;
             }
             Logger.getLogger(super.getClass()).finest("Unknown message type received on event handler :" + messageType);
         }
-        public abstract void handleItemEvent(@Nullable Data item, java.util.UUID uuid, int eventType);
+        public abstract void handleItemEvent(@Nullable com.hazelcast.internal.serialization.Data item, java.util.UUID uuid, int eventType);
     }
 }

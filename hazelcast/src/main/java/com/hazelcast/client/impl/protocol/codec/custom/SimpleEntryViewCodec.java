@@ -19,13 +19,12 @@ package com.hazelcast.client.impl.protocol.codec.custom;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
-import com.hazelcast.internal.serialization.Data;
 
 import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.fastForwardToEndFrame;
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
-@Generated("a1e071865bbcb7c02d967964afe23d85")
+@Generated("ba5aacfdbb246c9c1478b371a44ddd82")
 public final class SimpleEntryViewCodec {
     private static final int COST_FIELD_OFFSET = 0;
     private static final int CREATION_TIME_FIELD_OFFSET = COST_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
@@ -42,7 +41,7 @@ public final class SimpleEntryViewCodec {
     private SimpleEntryViewCodec() {
     }
 
-    public static void encode(ClientMessage clientMessage, com.hazelcast.map.impl.SimpleEntryView<Data, Data> simpleEntryView) {
+    public static void encode(ClientMessage clientMessage, com.hazelcast.map.impl.SimpleEntryView<com.hazelcast.internal.serialization.Data, com.hazelcast.internal.serialization.Data> simpleEntryView) {
         clientMessage.add(BEGIN_FRAME.copy());
 
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[INITIAL_FRAME_SIZE]);
@@ -64,7 +63,7 @@ public final class SimpleEntryViewCodec {
         clientMessage.add(END_FRAME.copy());
     }
 
-    public static com.hazelcast.map.impl.SimpleEntryView<Data, Data> decode(ClientMessage.ForwardFrameIterator iterator) {
+    public static com.hazelcast.map.impl.SimpleEntryView<com.hazelcast.internal.serialization.Data, com.hazelcast.internal.serialization.Data> decode(ClientMessage.ForwardFrameIterator iterator) {
         // begin frame
         iterator.next();
 
@@ -80,8 +79,8 @@ public final class SimpleEntryViewCodec {
         long ttl = decodeLong(initialFrame.content, TTL_FIELD_OFFSET);
         long maxIdle = decodeLong(initialFrame.content, MAX_IDLE_FIELD_OFFSET);
 
-        Data key = DataCodec.decode(iterator);
-        Data value = DataCodec.decode(iterator);
+        com.hazelcast.internal.serialization.Data key = DataCodec.decode(iterator);
+        com.hazelcast.internal.serialization.Data value = DataCodec.decode(iterator);
 
         fastForwardToEndFrame(iterator);
 

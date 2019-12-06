@@ -20,7 +20,6 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
 import com.hazelcast.client.impl.protocol.codec.custom.*;
-import com.hazelcast.internal.serialization.Data;
 
 import javax.annotation.Nullable;
 
@@ -37,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Applies a function on the value
  */
-@Generated("f8ec8df07ab0843291141cb880db18a7")
+@Generated("ba11c99da8291785b8e4b7d597ea97ca")
 public final class AtomicRefApplyCodec {
     //hex: 0x0A0100
     public static final int REQUEST_MESSAGE_TYPE = 655616;
@@ -67,7 +66,7 @@ public final class AtomicRefApplyCodec {
         /**
          * The function applied to the value.
          */
-        public Data function;
+        public com.hazelcast.internal.serialization.Data function;
 
         /**
          * 0 returns no value, 1 returns the old value,
@@ -82,7 +81,7 @@ public final class AtomicRefApplyCodec {
         public boolean alter;
     }
 
-    public static ClientMessage encodeRequest(com.hazelcast.cp.internal.RaftGroupId groupId, java.lang.String name, Data function, int returnValueType, boolean alter) {
+    public static ClientMessage encodeRequest(com.hazelcast.cp.internal.RaftGroupId groupId, java.lang.String name, com.hazelcast.internal.serialization.Data function, int returnValueType, boolean alter) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
         clientMessage.setOperationName("AtomicRef.Apply");
@@ -115,11 +114,10 @@ public final class AtomicRefApplyCodec {
         /**
          * The result of the function application.
          */
-        public @Nullable
-        Data response;
+        public @Nullable com.hazelcast.internal.serialization.Data response;
     }
 
-    public static ClientMessage encodeResponse(@Nullable Data response) {
+    public static ClientMessage encodeResponse(@Nullable com.hazelcast.internal.serialization.Data response) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, RESPONSE_MESSAGE_TYPE);

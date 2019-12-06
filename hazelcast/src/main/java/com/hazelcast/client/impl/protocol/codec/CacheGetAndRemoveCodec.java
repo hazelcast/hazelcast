@@ -19,7 +19,7 @@ package com.hazelcast.client.impl.protocol.codec;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
-import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.client.impl.protocol.codec.custom.*;
 
 import javax.annotation.Nullable;
 
@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Atomically removes the entry for a key only if currently mapped to some value.
  */
-@Generated("79b0109d0d6c2c7a540b86235fd9c4b6")
+@Generated("f0bc3a3848b1e100d7515b00de2ba9f8")
 public final class CacheGetAndRemoveCodec {
     //hex: 0x130A00
     public static final int REQUEST_MESSAGE_TYPE = 1247744;
@@ -60,7 +60,7 @@ public final class CacheGetAndRemoveCodec {
         /**
          * key with which the specified value is associated
          */
-        public Data key;
+        public com.hazelcast.internal.serialization.Data key;
 
         /**
          * User generated id which shall be received as a field of the cache event upon completion of
@@ -69,7 +69,7 @@ public final class CacheGetAndRemoveCodec {
         public int completionId;
     }
 
-    public static ClientMessage encodeRequest(java.lang.String name, Data key, int completionId) {
+    public static ClientMessage encodeRequest(java.lang.String name, com.hazelcast.internal.serialization.Data key, int completionId) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
         clientMessage.setOperationName("Cache.GetAndRemove");
@@ -98,11 +98,10 @@ public final class CacheGetAndRemoveCodec {
         /**
          * the value if one existed or null if no mapping existed for this key
          */
-        public @Nullable
-        Data response;
+        public @Nullable com.hazelcast.internal.serialization.Data response;
     }
 
-    public static ClientMessage encodeResponse(@Nullable Data response) {
+    public static ClientMessage encodeResponse(@Nullable com.hazelcast.internal.serialization.Data response) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, RESPONSE_MESSAGE_TYPE);

@@ -19,7 +19,7 @@ package com.hazelcast.client.impl.protocol.codec;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
-import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.client.impl.protocol.codec.custom.*;
 
 import javax.annotation.Nullable;
 
@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * TODO DOC
  */
-@Generated("ae86d0c5eafcb0b6dd0e60406b79ae8b")
+@Generated("33fb2bd34f8d560e0c84bf7195aa439e")
 public final class CachePutAllCodec {
     //hex: 0x131B00
     public static final int REQUEST_MESSAGE_TYPE = 1252096;
@@ -60,14 +60,13 @@ public final class CachePutAllCodec {
         /**
          * entries to be put as batch
          */
-        public java.util.List<java.util.Map.Entry<Data, Data>> entries;
+        public java.util.List<java.util.Map.Entry<com.hazelcast.internal.serialization.Data, com.hazelcast.internal.serialization.Data>> entries;
 
         /**
          * expiry policy for the entry. Byte-array which is serialized from an object implementing
          * {@link javax.cache.expiry.ExpiryPolicy} interface.
          */
-        public @Nullable
-        Data expiryPolicy;
+        public @Nullable com.hazelcast.internal.serialization.Data expiryPolicy;
 
         /**
          * user generated id which shall be received as a field of the cache event upon completion of
@@ -76,7 +75,7 @@ public final class CachePutAllCodec {
         public int completionId;
     }
 
-    public static ClientMessage encodeRequest(java.lang.String name, java.util.Collection<java.util.Map.Entry<Data, Data>> entries, @Nullable Data expiryPolicy, int completionId) {
+    public static ClientMessage encodeRequest(java.lang.String name, java.util.Collection<java.util.Map.Entry<com.hazelcast.internal.serialization.Data, com.hazelcast.internal.serialization.Data>> entries, @Nullable com.hazelcast.internal.serialization.Data expiryPolicy, int completionId) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
         clientMessage.setOperationName("Cache.PutAll");

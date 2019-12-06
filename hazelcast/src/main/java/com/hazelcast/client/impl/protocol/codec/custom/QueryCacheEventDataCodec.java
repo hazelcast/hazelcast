@@ -19,13 +19,12 @@ package com.hazelcast.client.impl.protocol.codec.custom;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
-import com.hazelcast.internal.serialization.Data;
 
 import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.fastForwardToEndFrame;
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
-@Generated("4bd5f70d35ce20c840c5a00000337365")
+@Generated("9d4da0668948d21882a87eff94a899f6")
 public final class QueryCacheEventDataCodec {
     private static final int SEQUENCE_FIELD_OFFSET = 0;
     private static final int EVENT_TYPE_FIELD_OFFSET = SEQUENCE_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
@@ -59,8 +58,8 @@ public final class QueryCacheEventDataCodec {
         int eventType = decodeInt(initialFrame.content, EVENT_TYPE_FIELD_OFFSET);
         int partitionId = decodeInt(initialFrame.content, PARTITION_ID_FIELD_OFFSET);
 
-        Data dataKey = CodecUtil.decodeNullable(iterator, DataCodec::decode);
-        Data dataNewValue = CodecUtil.decodeNullable(iterator, DataCodec::decode);
+        com.hazelcast.internal.serialization.Data dataKey = CodecUtil.decodeNullable(iterator, DataCodec::decode);
+        com.hazelcast.internal.serialization.Data dataNewValue = CodecUtil.decodeNullable(iterator, DataCodec::decode);
 
         fastForwardToEndFrame(iterator);
 

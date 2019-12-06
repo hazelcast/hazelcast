@@ -19,7 +19,9 @@ package com.hazelcast.client.impl.protocol.codec;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
-import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.client.impl.protocol.codec.custom.*;
+
+import javax.annotation.Nullable;
 
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
@@ -35,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Replaces the entry for a key only if currently mapped to a given value. The object to be replaced will be
  * accessible only in the current transaction context until the transaction is committed.
  */
-@Generated("d2dabaf057e86cacb4aa42001b68caad")
+@Generated("32adc516c455b7c4cc68a9694e97db24")
 public final class TransactionalMapReplaceIfSameCodec {
     //hex: 0x0E0A00
     public static final int REQUEST_MESSAGE_TYPE = 920064;
@@ -71,20 +73,20 @@ public final class TransactionalMapReplaceIfSameCodec {
         /**
          * The specified key.
          */
-        public Data key;
+        public com.hazelcast.internal.serialization.Data key;
 
         /**
          * Replace the key value if it is the old value.
          */
-        public Data oldValue;
+        public com.hazelcast.internal.serialization.Data oldValue;
 
         /**
          * The new value to replace the old value.
          */
-        public Data newValue;
+        public com.hazelcast.internal.serialization.Data newValue;
     }
 
-    public static ClientMessage encodeRequest(java.lang.String name, java.util.UUID txnId, long threadId, Data key, Data oldValue, Data newValue) {
+    public static ClientMessage encodeRequest(java.lang.String name, java.util.UUID txnId, long threadId, com.hazelcast.internal.serialization.Data key, com.hazelcast.internal.serialization.Data oldValue, com.hazelcast.internal.serialization.Data newValue) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
         clientMessage.setOperationName("TransactionalMap.ReplaceIfSame");

@@ -19,7 +19,9 @@ package com.hazelcast.client.impl.protocol.codec;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
-import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.client.impl.protocol.codec.custom.*;
+
+import javax.annotation.Nullable;
 
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
@@ -37,7 +39,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * CacheEntryRemoveListeners notified. java.util.Iterator#next() may return null if the entry is no longer present,
  * has expired or has been evicted.
  */
-@Generated("734d2e28c5d0ed32ce01069aba910442")
+@Generated("82951d7d3cf7e210da2d2635c04517c9")
 public final class CacheIterateCodec {
     //hex: 0x130E00
     public static final int REQUEST_MESSAGE_TYPE = 1248768;
@@ -105,10 +107,10 @@ public final class CacheIterateCodec {
         /**
          * TODO DOC
          */
-        public java.util.List<Data> keys;
+        public java.util.List<com.hazelcast.internal.serialization.Data> keys;
     }
 
-    public static ClientMessage encodeResponse(int tableIndex, java.util.Collection<Data> keys) {
+    public static ClientMessage encodeResponse(int tableIndex, java.util.Collection<com.hazelcast.internal.serialization.Data> keys) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, RESPONSE_MESSAGE_TYPE);

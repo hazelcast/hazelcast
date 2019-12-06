@@ -19,7 +19,9 @@ package com.hazelcast.client.impl.protocol.codec;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
-import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.client.impl.protocol.codec.custom.*;
+
+import javax.annotation.Nullable;
 
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
@@ -41,7 +43,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * If an addAll is executed concurrently with an add or addAll, no guarantee is given that items are contiguous.
  * The result of the future contains the sequenceId of the last written item
  */
-@Generated("7b3dd99c761112d10909986610e91812")
+@Generated("e76ff4be830370dab313df75cbe2a594")
 public final class RingbufferAddAllCodec {
     //hex: 0x170800
     public static final int REQUEST_MESSAGE_TYPE = 1509376;
@@ -66,7 +68,7 @@ public final class RingbufferAddAllCodec {
         /**
          * the batch of items to add
          */
-        public java.util.List<Data> valueList;
+        public java.util.List<com.hazelcast.internal.serialization.Data> valueList;
 
         /**
          * the overflowPolicy to use
@@ -74,7 +76,7 @@ public final class RingbufferAddAllCodec {
         public int overflowPolicy;
     }
 
-    public static ClientMessage encodeRequest(java.lang.String name, java.util.Collection<Data> valueList, int overflowPolicy) {
+    public static ClientMessage encodeRequest(java.lang.String name, java.util.Collection<com.hazelcast.internal.serialization.Data> valueList, int overflowPolicy) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
         clientMessage.setOperationName("Ringbuffer.AddAll");

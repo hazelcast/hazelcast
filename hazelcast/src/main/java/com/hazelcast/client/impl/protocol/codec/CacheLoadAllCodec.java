@@ -19,7 +19,9 @@ package com.hazelcast.client.impl.protocol.codec;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
-import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.client.impl.protocol.codec.custom.*;
+
+import javax.annotation.Nullable;
 
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
@@ -34,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * TODO DOC
  */
-@Generated("87a3f4cb910099d39972887709eab43b")
+@Generated("a72793c72b15e1c3ea8ed372096affad")
 public final class CacheLoadAllCodec {
     //hex: 0x131000
     public static final int REQUEST_MESSAGE_TYPE = 1249280;
@@ -58,7 +60,7 @@ public final class CacheLoadAllCodec {
         /**
          * the keys to load
          */
-        public java.util.List<Data> keys;
+        public java.util.List<com.hazelcast.internal.serialization.Data> keys;
 
         /**
          * when true existing values in the Cache will
@@ -67,7 +69,7 @@ public final class CacheLoadAllCodec {
         public boolean replaceExistingValues;
     }
 
-    public static ClientMessage encodeRequest(java.lang.String name, java.util.Collection<Data> keys, boolean replaceExistingValues) {
+    public static ClientMessage encodeRequest(java.lang.String name, java.util.Collection<com.hazelcast.internal.serialization.Data> keys, boolean replaceExistingValues) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
         clientMessage.setOperationName("Cache.LoadAll");

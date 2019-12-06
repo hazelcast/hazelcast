@@ -19,7 +19,9 @@ package com.hazelcast.client.impl.protocol.codec;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
-import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.client.impl.protocol.codec.custom.*;
+
+import javax.annotation.Nullable;
 
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
@@ -46,7 +48,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * <p>
  * Time resolution for TTL is seconds. The given TTL value is rounded to the next closest second value.
  */
-@Generated("d960d973d10979d22674baa8278ebbe8")
+@Generated("9156bea2a947250e5b587b453703a81a")
 public final class MapSetTtlCodec {
     //hex: 0x014500
     public static final int REQUEST_MESSAGE_TYPE = 83200;
@@ -71,7 +73,7 @@ public final class MapSetTtlCodec {
         /**
          * Key for the map entry
          */
-        public Data key;
+        public com.hazelcast.internal.serialization.Data key;
 
         /**
          * The duration in milliseconds after which this entry shall be deleted. O means infinite.
@@ -79,7 +81,7 @@ public final class MapSetTtlCodec {
         public long ttl;
     }
 
-    public static ClientMessage encodeRequest(java.lang.String name, Data key, long ttl) {
+    public static ClientMessage encodeRequest(java.lang.String name, com.hazelcast.internal.serialization.Data key, long ttl) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
         clientMessage.setOperationName("Map.SetTtl");

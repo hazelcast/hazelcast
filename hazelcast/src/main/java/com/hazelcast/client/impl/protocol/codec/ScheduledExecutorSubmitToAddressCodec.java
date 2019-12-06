@@ -20,7 +20,8 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
 import com.hazelcast.client.impl.protocol.codec.custom.*;
-import com.hazelcast.internal.serialization.Data;
+
+import javax.annotation.Nullable;
 
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
@@ -35,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Submits the task to a member for execution, member is provided in the form of an address.
  */
-@Generated("125c03a0ce199a9e5d7496f4860a0e71")
+@Generated("13f049a9386886492ebffd4998bcce3f")
 public final class ScheduledExecutorSubmitToAddressCodec {
     //hex: 0x1A0300
     public static final int REQUEST_MESSAGE_TYPE = 1704704;
@@ -76,7 +77,7 @@ public final class ScheduledExecutorSubmitToAddressCodec {
         /**
          * Name The name of the task
          */
-        public Data task;
+        public com.hazelcast.internal.serialization.Data task;
 
         /**
          * initial delay in milliseconds
@@ -89,7 +90,7 @@ public final class ScheduledExecutorSubmitToAddressCodec {
         public long periodInMillis;
     }
 
-    public static ClientMessage encodeRequest(java.lang.String schedulerName, com.hazelcast.cluster.Address address, byte type, java.lang.String taskName, Data task, long initialDelayInMillis, long periodInMillis) {
+    public static ClientMessage encodeRequest(java.lang.String schedulerName, com.hazelcast.cluster.Address address, byte type, java.lang.String taskName, com.hazelcast.internal.serialization.Data task, long initialDelayInMillis, long periodInMillis) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(true);
         clientMessage.setOperationName("ScheduledExecutor.SubmitToAddress");

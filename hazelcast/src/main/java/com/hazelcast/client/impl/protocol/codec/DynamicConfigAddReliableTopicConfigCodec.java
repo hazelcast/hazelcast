@@ -20,7 +20,6 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
 import com.hazelcast.client.impl.protocol.codec.custom.*;
-import com.hazelcast.internal.serialization.Data;
 
 import javax.annotation.Nullable;
 
@@ -39,7 +38,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * If a reliable topic configuration with the given {@code name} already exists, then
  * the new configuration is ignored and the existing one is preserved.
  */
-@Generated("2afaf4405963ce7bc2eb0de49aa3c75a")
+@Generated("d84d60e9ed188ef8b8880bb85099ffee")
 public final class DynamicConfigAddReliableTopicConfigCodec {
     //hex: 0x1B0D00
     public static final int REQUEST_MESSAGE_TYPE = 1772800;
@@ -86,11 +85,10 @@ public final class DynamicConfigAddReliableTopicConfigCodec {
          * a serialized {@link java.util.concurrent.Executor} instance to use for executing
          * message listeners or {@code null}
          */
-        public @Nullable
-        Data executor;
+        public @Nullable com.hazelcast.internal.serialization.Data executor;
     }
 
-    public static ClientMessage encodeRequest(java.lang.String name, @Nullable java.util.Collection<com.hazelcast.client.impl.protocol.task.dynamicconfig.ListenerConfigHolder> listenerConfigs, int readBatchSize, boolean statisticsEnabled, java.lang.String topicOverloadPolicy, @Nullable Data executor) {
+    public static ClientMessage encodeRequest(java.lang.String name, @Nullable java.util.Collection<com.hazelcast.client.impl.protocol.task.dynamicconfig.ListenerConfigHolder> listenerConfigs, int readBatchSize, boolean statisticsEnabled, java.lang.String topicOverloadPolicy, @Nullable com.hazelcast.internal.serialization.Data executor) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
         clientMessage.setOperationName("DynamicConfig.AddReliableTopicConfig");

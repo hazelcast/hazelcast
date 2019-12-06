@@ -19,7 +19,7 @@ package com.hazelcast.client.impl.protocol.codec;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
-import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.client.impl.protocol.codec.custom.*;
 import com.hazelcast.logging.Logger;
 
 import javax.annotation.Nullable;
@@ -38,7 +38,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Adds the specified entry listener for the specified key.The listener will be notified for all
  * add/remove/update/evict events for the specified key only.
  */
-@Generated("a5c2b59fdcf603ecb2d647f223393f4f")
+@Generated("0fcdc932b164ff4425371ecc3a5c07ad")
 public final class MultiMapAddEntryListenerToKeyCodec {
     //hex: 0x020D00
     public static final int REQUEST_MESSAGE_TYPE = 134400;
@@ -70,7 +70,7 @@ public final class MultiMapAddEntryListenerToKeyCodec {
         /**
          * The key to listen to
          */
-        public Data key;
+        public com.hazelcast.internal.serialization.Data key;
 
         /**
          * True if EntryEvent should contain the value,false otherwise
@@ -83,7 +83,7 @@ public final class MultiMapAddEntryListenerToKeyCodec {
         public boolean localOnly;
     }
 
-    public static ClientMessage encodeRequest(java.lang.String name, Data key, boolean includeValue, boolean localOnly) {
+    public static ClientMessage encodeRequest(java.lang.String name, com.hazelcast.internal.serialization.Data key, boolean includeValue, boolean localOnly) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
         clientMessage.setOperationName("MultiMap.AddEntryListenerToKey");
@@ -135,7 +135,7 @@ public final class MultiMapAddEntryListenerToKeyCodec {
         return response;
     }
 
-    public static ClientMessage encodeEntryEvent(@Nullable Data key, @Nullable Data value, @Nullable Data oldValue, @Nullable Data mergingValue, int eventType, java.util.UUID uuid, int numberOfAffectedEntries) {
+    public static ClientMessage encodeEntryEvent(@Nullable com.hazelcast.internal.serialization.Data key, @Nullable com.hazelcast.internal.serialization.Data value, @Nullable com.hazelcast.internal.serialization.Data oldValue, @Nullable com.hazelcast.internal.serialization.Data mergingValue, int eventType, java.util.UUID uuid, int numberOfAffectedEntries) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[EVENT_ENTRY_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         initialFrame.flags |= ClientMessage.IS_EVENT_FLAG;
@@ -162,15 +162,15 @@ public final class MultiMapAddEntryListenerToKeyCodec {
                 int eventType = decodeInt(initialFrame.content, EVENT_ENTRY_EVENT_TYPE_FIELD_OFFSET);
                 java.util.UUID uuid = decodeUUID(initialFrame.content, EVENT_ENTRY_UUID_FIELD_OFFSET);
                 int numberOfAffectedEntries = decodeInt(initialFrame.content, EVENT_ENTRY_NUMBER_OF_AFFECTED_ENTRIES_FIELD_OFFSET);
-                Data key = CodecUtil.decodeNullable(iterator, DataCodec::decode);
-                Data value = CodecUtil.decodeNullable(iterator, DataCodec::decode);
-                Data oldValue = CodecUtil.decodeNullable(iterator, DataCodec::decode);
-                Data mergingValue = CodecUtil.decodeNullable(iterator, DataCodec::decode);
+                com.hazelcast.internal.serialization.Data key = CodecUtil.decodeNullable(iterator, DataCodec::decode);
+                com.hazelcast.internal.serialization.Data value = CodecUtil.decodeNullable(iterator, DataCodec::decode);
+                com.hazelcast.internal.serialization.Data oldValue = CodecUtil.decodeNullable(iterator, DataCodec::decode);
+                com.hazelcast.internal.serialization.Data mergingValue = CodecUtil.decodeNullable(iterator, DataCodec::decode);
                 handleEntryEvent(key, value, oldValue, mergingValue, eventType, uuid, numberOfAffectedEntries);
                 return;
             }
             Logger.getLogger(super.getClass()).finest("Unknown message type received on event handler :" + messageType);
         }
-        public abstract void handleEntryEvent(@Nullable Data key, @Nullable Data value, @Nullable Data oldValue, @Nullable Data mergingValue, int eventType, java.util.UUID uuid, int numberOfAffectedEntries);
+        public abstract void handleEntryEvent(@Nullable com.hazelcast.internal.serialization.Data key, @Nullable com.hazelcast.internal.serialization.Data value, @Nullable com.hazelcast.internal.serialization.Data oldValue, @Nullable com.hazelcast.internal.serialization.Data mergingValue, int eventType, java.util.UUID uuid, int numberOfAffectedEntries);
     }
 }

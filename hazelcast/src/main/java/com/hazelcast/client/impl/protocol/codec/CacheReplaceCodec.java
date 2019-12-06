@@ -19,7 +19,7 @@ package com.hazelcast.client.impl.protocol.codec;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
-import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.client.impl.protocol.codec.custom.*;
 
 import javax.annotation.Nullable;
 
@@ -39,7 +39,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * If the cache is configured for write-through operation mode, the underlying configured
  * javax.cache.integration.CacheWriter might be called to store the value of the key to any kind of external resource.
  */
-@Generated("e4126ccd1d59629eaa4055fa6b5a8f6e")
+@Generated("d45006cd6e5a7fc182e4b7efca180546")
 public final class CacheReplaceCodec {
     //hex: 0x131700
     public static final int REQUEST_MESSAGE_TYPE = 1251072;
@@ -63,25 +63,23 @@ public final class CacheReplaceCodec {
         /**
          * The key whose value is replaced.
          */
-        public Data key;
+        public com.hazelcast.internal.serialization.Data key;
 
         /**
          * Old value to match if exists before removing. Null means "don't try to remove"
          */
-        public @Nullable
-        Data oldValue;
+        public @Nullable com.hazelcast.internal.serialization.Data oldValue;
 
         /**
          * The new value to be associated with the specified key.
          */
-        public Data newValue;
+        public com.hazelcast.internal.serialization.Data newValue;
 
         /**
          * Expiry policy for the entry. Byte-array which is serialized from an object implementing
          * javax.cache.expiry.ExpiryPolicy interface.
          */
-        public @Nullable
-        Data expiryPolicy;
+        public @Nullable com.hazelcast.internal.serialization.Data expiryPolicy;
 
         /**
          * User generated id which shall be received as a field of the cache event upon completion of
@@ -90,7 +88,7 @@ public final class CacheReplaceCodec {
         public int completionId;
     }
 
-    public static ClientMessage encodeRequest(java.lang.String name, Data key, @Nullable Data oldValue, Data newValue, @Nullable Data expiryPolicy, int completionId) {
+    public static ClientMessage encodeRequest(java.lang.String name, com.hazelcast.internal.serialization.Data key, @Nullable com.hazelcast.internal.serialization.Data oldValue, com.hazelcast.internal.serialization.Data newValue, @Nullable com.hazelcast.internal.serialization.Data expiryPolicy, int completionId) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
         clientMessage.setOperationName("Cache.Replace");
@@ -125,11 +123,10 @@ public final class CacheReplaceCodec {
         /**
          * The replaced value.
          */
-        public @Nullable
-        Data response;
+        public @Nullable com.hazelcast.internal.serialization.Data response;
     }
 
-    public static ClientMessage encodeResponse(@Nullable Data response) {
+    public static ClientMessage encodeResponse(@Nullable com.hazelcast.internal.serialization.Data response) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, RESPONSE_MESSAGE_TYPE);

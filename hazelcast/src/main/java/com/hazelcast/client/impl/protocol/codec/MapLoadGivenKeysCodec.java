@@ -19,7 +19,9 @@ package com.hazelcast.client.impl.protocol.codec;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
-import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.client.impl.protocol.codec.custom.*;
+
+import javax.annotation.Nullable;
 
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
@@ -34,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Loads the given keys. This is a batch load operation so that an implementation can optimize the multiple loads.
  */
-@Generated("4e504c2e17069e3bf84ecb5856755954")
+@Generated("c51e95ddb8604252e726cc26f2ca7f56")
 public final class MapLoadGivenKeysCodec {
     //hex: 0x012100
     public static final int REQUEST_MESSAGE_TYPE = 73984;
@@ -58,7 +60,7 @@ public final class MapLoadGivenKeysCodec {
         /**
          * keys to load
          */
-        public java.util.List<Data> keys;
+        public java.util.List<com.hazelcast.internal.serialization.Data> keys;
 
         /**
          * when <code>true</code>, existing values in the Map will be replaced by those loaded from the MapLoader
@@ -66,7 +68,7 @@ public final class MapLoadGivenKeysCodec {
         public boolean replaceExistingValues;
     }
 
-    public static ClientMessage encodeRequest(java.lang.String name, java.util.Collection<Data> keys, boolean replaceExistingValues) {
+    public static ClientMessage encodeRequest(java.lang.String name, java.util.Collection<com.hazelcast.internal.serialization.Data> keys, boolean replaceExistingValues) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
         clientMessage.setOperationName("Map.LoadGivenKeys");

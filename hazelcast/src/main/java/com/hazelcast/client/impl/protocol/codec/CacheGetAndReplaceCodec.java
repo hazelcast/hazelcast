@@ -19,7 +19,7 @@ package com.hazelcast.client.impl.protocol.codec;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
-import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.client.impl.protocol.codec.custom.*;
 
 import javax.annotation.Nullable;
 
@@ -39,7 +39,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * write-through operation mode, the underlying configured javax.cache.integration.CacheWriter might be called to
  * store the value of the key to any kind of external resource.
  */
-@Generated("3a6fb73cd377192199d4911990d5310e")
+@Generated("d76ef338875ca52b2837a5a59c0b2e74")
 public final class CacheGetAndReplaceCodec {
     //hex: 0x130B00
     public static final int REQUEST_MESSAGE_TYPE = 1248000;
@@ -63,19 +63,18 @@ public final class CacheGetAndReplaceCodec {
         /**
          * The key whose value is replaced.
          */
-        public Data key;
+        public com.hazelcast.internal.serialization.Data key;
 
         /**
          * The new value to be associated with the specified key.
          */
-        public Data value;
+        public com.hazelcast.internal.serialization.Data value;
 
         /**
          * Expiry policy for the entry. Byte-array which is serialized from an object implementing
          * javax.cache.expiry.ExpiryPolicy interface.
          */
-        public @Nullable
-        Data expiryPolicy;
+        public @Nullable com.hazelcast.internal.serialization.Data expiryPolicy;
 
         /**
          * User generated id which shall be received as a field of the cache event upon completion of
@@ -84,7 +83,7 @@ public final class CacheGetAndReplaceCodec {
         public int completionId;
     }
 
-    public static ClientMessage encodeRequest(java.lang.String name, Data key, Data value, @Nullable Data expiryPolicy, int completionId) {
+    public static ClientMessage encodeRequest(java.lang.String name, com.hazelcast.internal.serialization.Data key, com.hazelcast.internal.serialization.Data value, @Nullable com.hazelcast.internal.serialization.Data expiryPolicy, int completionId) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
         clientMessage.setOperationName("Cache.GetAndReplace");
@@ -117,11 +116,10 @@ public final class CacheGetAndReplaceCodec {
         /**
          * The old value previously assigned to the given key.
          */
-        public @Nullable
-        Data response;
+        public @Nullable com.hazelcast.internal.serialization.Data response;
     }
 
-    public static ClientMessage encodeResponse(@Nullable Data response) {
+    public static ClientMessage encodeResponse(@Nullable com.hazelcast.internal.serialization.Data response) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, RESPONSE_MESSAGE_TYPE);

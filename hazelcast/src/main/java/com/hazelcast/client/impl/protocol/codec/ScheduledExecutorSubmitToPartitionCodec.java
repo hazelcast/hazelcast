@@ -19,7 +19,9 @@ package com.hazelcast.client.impl.protocol.codec;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
-import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.client.impl.protocol.codec.custom.*;
+
+import javax.annotation.Nullable;
 
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
@@ -34,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Submits the task to partition for execution, partition is chosen based on multiple criteria of the given task.
  */
-@Generated("9846304f3f92cfdf8ce734b3bb50b1b3")
+@Generated("203a0cd49001ce0bdf390c1577b774af")
 public final class ScheduledExecutorSubmitToPartitionCodec {
     //hex: 0x1A0200
     public static final int REQUEST_MESSAGE_TYPE = 1704448;
@@ -70,7 +72,7 @@ public final class ScheduledExecutorSubmitToPartitionCodec {
         /**
          * Name The name of the task
          */
-        public Data task;
+        public com.hazelcast.internal.serialization.Data task;
 
         /**
          * initial delay in milliseconds
@@ -83,7 +85,7 @@ public final class ScheduledExecutorSubmitToPartitionCodec {
         public long periodInMillis;
     }
 
-    public static ClientMessage encodeRequest(java.lang.String schedulerName, byte type, java.lang.String taskName, Data task, long initialDelayInMillis, long periodInMillis) {
+    public static ClientMessage encodeRequest(java.lang.String schedulerName, byte type, java.lang.String taskName, com.hazelcast.internal.serialization.Data task, long initialDelayInMillis, long periodInMillis) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(true);
         clientMessage.setOperationName("ScheduledExecutor.SubmitToPartition");

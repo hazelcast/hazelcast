@@ -19,7 +19,7 @@ package com.hazelcast.client.impl.protocol.codec;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
-import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.client.impl.protocol.codec.custom.*;
 
 import javax.annotation.Nullable;
 
@@ -38,7 +38,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * specified key. If the cache is configured for write-through operation mode, the underlying configured
  * javax.cache.integration.CacheWriter might be called to store the value of the key to any kind of external resource.
  */
-@Generated("113bdfa3c781e7cc2491cbc2d773c33e")
+@Generated("b0de7d1ac1b69229d5761b137b89ca9a")
 public final class CachePutIfAbsentCodec {
     //hex: 0x131200
     public static final int REQUEST_MESSAGE_TYPE = 1249792;
@@ -63,19 +63,18 @@ public final class CachePutIfAbsentCodec {
         /**
          * The key that is associated with the specified value.
          */
-        public Data key;
+        public com.hazelcast.internal.serialization.Data key;
 
         /**
          * The value that has the specified key associated with it.
          */
-        public Data value;
+        public com.hazelcast.internal.serialization.Data value;
 
         /**
          * The custom expiry policy for this operation.
          * A null value is equivalent to put(Object, Object).
          */
-        public @Nullable
-        Data expiryPolicy;
+        public @Nullable com.hazelcast.internal.serialization.Data expiryPolicy;
 
         /**
          * User generated id which shall be received as a field of the cache event upon completion of
@@ -84,7 +83,7 @@ public final class CachePutIfAbsentCodec {
         public int completionId;
     }
 
-    public static ClientMessage encodeRequest(java.lang.String name, Data key, Data value, @Nullable Data expiryPolicy, int completionId) {
+    public static ClientMessage encodeRequest(java.lang.String name, com.hazelcast.internal.serialization.Data key, com.hazelcast.internal.serialization.Data value, @Nullable com.hazelcast.internal.serialization.Data expiryPolicy, int completionId) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
         clientMessage.setOperationName("Cache.PutIfAbsent");

@@ -19,13 +19,12 @@ package com.hazelcast.client.impl.protocol.codec.custom;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
-import com.hazelcast.internal.serialization.Data;
 
 import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.fastForwardToEndFrame;
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
-@Generated("00d09158605832dc71944243b3192f51")
+@Generated("0f1ecca16092323d3709001cb8a5de7b")
 public final class RingbufferStoreConfigHolderCodec {
     private static final int ENABLED_FIELD_OFFSET = 0;
     private static final int INITIAL_FRAME_SIZE = ENABLED_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
@@ -58,8 +57,8 @@ public final class RingbufferStoreConfigHolderCodec {
 
         java.lang.String className = CodecUtil.decodeNullable(iterator, StringCodec::decode);
         java.lang.String factoryClassName = CodecUtil.decodeNullable(iterator, StringCodec::decode);
-        Data implementation = CodecUtil.decodeNullable(iterator, DataCodec::decode);
-        Data factoryImplementation = CodecUtil.decodeNullable(iterator, DataCodec::decode);
+        com.hazelcast.internal.serialization.Data implementation = CodecUtil.decodeNullable(iterator, DataCodec::decode);
+        com.hazelcast.internal.serialization.Data factoryImplementation = CodecUtil.decodeNullable(iterator, DataCodec::decode);
         java.util.Map<java.lang.String, java.lang.String> properties = MapCodec.decodeNullable(iterator, StringCodec::decode, StringCodec::decode);
 
         fastForwardToEndFrame(iterator);
