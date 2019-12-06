@@ -104,7 +104,7 @@ public class EntryProcessorOffloadableTest extends HazelcastTestSupport {
 
     @Override
     public Config getConfig() {
-        Config config = super.getConfig();
+        Config config = smallInstanceConfig();
         MapConfig mapConfig = new MapConfig(MAP_NAME);
         mapConfig.setInMemoryFormat(inMemoryFormat);
         mapConfig.setAsyncBackupCount(asyncBackupCount);

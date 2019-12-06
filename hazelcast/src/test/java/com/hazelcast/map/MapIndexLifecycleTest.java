@@ -16,14 +16,17 @@
 
 package com.hazelcast.map;
 
+import com.hazelcast.cluster.Member;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.ConfigAccessor;
 import com.hazelcast.config.IndexConfig;
 import com.hazelcast.config.IndexType;
 import com.hazelcast.config.ServiceConfig;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.cluster.Member;
 import com.hazelcast.instance.impl.Node;
+import com.hazelcast.internal.services.CoreService;
+import com.hazelcast.internal.services.PostJoinAwareService;
+import com.hazelcast.internal.util.IterationType;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
@@ -33,12 +36,10 @@ import com.hazelcast.map.impl.query.QueryResult;
 import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.query.Predicates;
 import com.hazelcast.query.impl.Indexes;
-import com.hazelcast.internal.services.CoreService;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
+import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationService;
-import com.hazelcast.internal.services.PostJoinAwareService;
-import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -46,7 +47,6 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.internal.util.IterationType;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -68,6 +68,11 @@ public class MapIndexLifecycleTest extends HazelcastTestSupport {
     private static final int BOOK_COUNT = 1000;
 
     private String mapName = randomMapName();
+
+    @Override
+    protected Config getConfig() {
+        return smallInstanceConfig();
+    }
 
     @Test
     public void recordStoresAndIndexes_createdDestroyedProperly() {
@@ -125,12 +130,12 @@ public class MapIndexLifecycleTest extends HazelcastTestSupport {
         Config config = getConfig().setProperty(ClusterProperty.PARTITION_COUNT.getName(), "4");
         config.getMapConfig(mapName);
         ConfigAccessor.getServicesConfig(config)
-                      .addServiceConfig(
-                      new ServiceConfig()
-                              .setName("SlowPostJoinAwareService")
-                              .setEnabled(true)
-                              .setImplementation(new SlowPostJoinAwareService())
-              );
+                .addServiceConfig(
+                        new ServiceConfig()
+                                .setName("SlowPostJoinAwareService")
+                                .setEnabled(true)
+                                .setImplementation(new SlowPostJoinAwareService())
+                );
 
         instances[0] = instanceFactory.newHazelcastInstance(config);
         IMap<Integer, Book> bookMap = instances[0].getMap(mapName);
@@ -173,8 +178,8 @@ public class MapIndexLifecycleTest extends HazelcastTestSupport {
             public void run() {
                 assertTrue("Author index should contain records.",
                         mapContainer.getIndexes()
-                                    .getIndex("author")
-                                    .getRecords(authorOwned).size() > 0);
+                                .getIndex("author")
+                                .getRecords(authorOwned).size() > 0);
             }
         });
 
@@ -190,7 +195,7 @@ public class MapIndexLifecycleTest extends HazelcastTestSupport {
     private int numberOfPartitionQueryResults(HazelcastInstance instance, int partitionId, String attribute, Comparable value) {
         OperationService operationService = getOperationService(instance);
         Query query = Query.of().mapName(mapName).iterationType(IterationType.KEY).predicate(Predicates.equal(attribute, value))
-                           .build();
+                .build();
         Operation queryOperation = getMapOperationProvider(instance, mapName).createQueryPartitionOperation(query);
         InternalCompletableFuture<QueryResult> future = operationService
                 .invokeOnPartition(MapService.SERVICE_NAME, queryOperation, partitionId);
@@ -268,9 +273,9 @@ public class MapIndexLifecycleTest extends HazelcastTestSupport {
     private HazelcastInstance createNode(TestHazelcastInstanceFactory instanceFactory) {
         Config config = getConfig().setProperty(ClusterProperty.PARTITION_COUNT.getName(), "4");
         config.getMapConfig(mapName)
-              .addIndexConfig(getIndexConfig("author", false))
-              .addIndexConfig(getIndexConfig("year", true))
-              .setBackupCount(1);
+                .addIndexConfig(getIndexConfig("author", false))
+                .addIndexConfig(getIndexConfig("year", true))
+                .setBackupCount(1);
         return instanceFactory.newHazelcastInstance(config);
     }
 
