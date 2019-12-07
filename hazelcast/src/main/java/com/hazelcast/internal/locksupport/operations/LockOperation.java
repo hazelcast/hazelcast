@@ -24,7 +24,7 @@ import com.hazelcast.internal.locksupport.LockStoreImpl;
 import com.hazelcast.internal.locksupport.LockWaitNotifyKey;
 import com.hazelcast.internal.services.ObjectNamespace;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.spi.impl.operationservice.BackupAwareOperation;
 import com.hazelcast.spi.impl.operationservice.BlockingOperation;
 import com.hazelcast.spi.impl.operationservice.MutatingOperation;

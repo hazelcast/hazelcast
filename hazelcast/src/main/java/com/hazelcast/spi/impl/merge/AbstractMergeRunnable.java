@@ -25,7 +25,7 @@ import com.hazelcast.internal.services.SplitBrainHandlerService;
 import com.hazelcast.internal.util.MutableLong;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.IMap;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.replicatedmap.ReplicatedMap;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.operationservice.OperationFactory;

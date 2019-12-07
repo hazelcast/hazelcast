@@ -24,7 +24,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.fastFor
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
-@Generated("247cc4f0b57e1badfaea4c096c5ecb4d")
+@Generated("79797f9219a4ebe8eb3539d70c79cf28")
 public final class CacheEventDataCodec {
     private static final int CACHE_EVENT_TYPE_FIELD_OFFSET = 0;
     private static final int OLD_VALUE_AVAILABLE_FIELD_OFFSET = CACHE_EVENT_TYPE_FIELD_OFFSET + ENUM_SIZE_IN_BYTES;
@@ -58,9 +58,9 @@ public final class CacheEventDataCodec {
         boolean oldValueAvailable = decodeBoolean(initialFrame.content, OLD_VALUE_AVAILABLE_FIELD_OFFSET);
 
         java.lang.String name = StringCodec.decode(iterator);
-        com.hazelcast.nio.serialization.Data dataKey = CodecUtil.decodeNullable(iterator, DataCodec::decode);
-        com.hazelcast.nio.serialization.Data dataValue = CodecUtil.decodeNullable(iterator, DataCodec::decode);
-        com.hazelcast.nio.serialization.Data dataOldValue = CodecUtil.decodeNullable(iterator, DataCodec::decode);
+        com.hazelcast.internal.serialization.Data dataKey = CodecUtil.decodeNullable(iterator, DataCodec::decode);
+        com.hazelcast.internal.serialization.Data dataValue = CodecUtil.decodeNullable(iterator, DataCodec::decode);
+        com.hazelcast.internal.serialization.Data dataOldValue = CodecUtil.decodeNullable(iterator, DataCodec::decode);
 
         fastForwardToEndFrame(iterator);
 

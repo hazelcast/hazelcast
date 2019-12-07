@@ -17,7 +17,7 @@
 package com.hazelcast.cache.impl.event;
 
 import com.hazelcast.cache.CacheEntryView;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.spi.impl.operationservice.Operation;
 
 /**

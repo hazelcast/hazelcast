@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Returns whether the multimap contains the given key-value pair.
  */
-@Generated("84832845dcda002ee022fd5a41d87cb4")
+@Generated("b357e300c232b884c201a3c672fd9053")
 public final class MultiMapContainsEntryCodec {
     //hex: 0x020900
     public static final int REQUEST_MESSAGE_TYPE = 133376;
@@ -61,12 +61,12 @@ public final class MultiMapContainsEntryCodec {
         /**
          * The key whose existence is checked.
          */
-        public com.hazelcast.nio.serialization.Data key;
+        public com.hazelcast.internal.serialization.Data key;
 
         /**
          * The value whose existence is checked.
          */
-        public com.hazelcast.nio.serialization.Data value;
+        public com.hazelcast.internal.serialization.Data value;
 
         /**
          * The id of the user thread performing the operation. It is used to guarantee that only the lock holder thread (if a lock exists on the entry) can perform the requested operation
@@ -74,7 +74,7 @@ public final class MultiMapContainsEntryCodec {
         public long threadId;
     }
 
-    public static ClientMessage encodeRequest(java.lang.String name, com.hazelcast.nio.serialization.Data key, com.hazelcast.nio.serialization.Data value, long threadId) {
+    public static ClientMessage encodeRequest(java.lang.String name, com.hazelcast.internal.serialization.Data key, com.hazelcast.internal.serialization.Data value, long threadId) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(true);
         clientMessage.setOperationName("MultiMap.ContainsEntry");

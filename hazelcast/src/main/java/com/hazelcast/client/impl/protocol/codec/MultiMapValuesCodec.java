@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Returns the collection of values in the multimap.The collection is NOT backed by the map, so changes to the map
  * are NOT reflected in the collection, and vice-versa.
  */
-@Generated("b33ac4e0465d3f199e1a27cdbba9a004")
+@Generated("9dc9d79d7550b3e25ac59dd09d8bc59a")
 public final class MultiMapValuesCodec {
     //hex: 0x020500
     public static final int REQUEST_MESSAGE_TYPE = 132352;
@@ -84,10 +84,10 @@ public final class MultiMapValuesCodec {
         /**
          * The collection of values in the multimap. the returned collection might be modifiable but it has no effect on the multimap.
          */
-        public java.util.List<com.hazelcast.nio.serialization.Data> response;
+        public java.util.List<com.hazelcast.internal.serialization.Data> response;
     }
 
-    public static ClientMessage encodeResponse(java.util.Collection<com.hazelcast.nio.serialization.Data> response) {
+    public static ClientMessage encodeResponse(java.util.Collection<com.hazelcast.internal.serialization.Data> response) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, RESPONSE_MESSAGE_TYPE);

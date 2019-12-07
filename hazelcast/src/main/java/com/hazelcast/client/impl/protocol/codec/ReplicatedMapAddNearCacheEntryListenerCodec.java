@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * TODO DOC
  */
-@Generated("35edd8864439a3b41c86709e38379d7c")
+@Generated("5f1ecfa63543910f1177d2303c684c7c")
 public final class ReplicatedMapAddNearCacheEntryListenerCodec {
     //hex: 0x0D1200
     public static final int REQUEST_MESSAGE_TYPE = 856576;
@@ -127,7 +127,7 @@ public final class ReplicatedMapAddNearCacheEntryListenerCodec {
         return response;
     }
 
-    public static ClientMessage encodeEntryEvent(@Nullable com.hazelcast.nio.serialization.Data key, @Nullable com.hazelcast.nio.serialization.Data value, @Nullable com.hazelcast.nio.serialization.Data oldValue, @Nullable com.hazelcast.nio.serialization.Data mergingValue, int eventType, java.util.UUID uuid, int numberOfAffectedEntries) {
+    public static ClientMessage encodeEntryEvent(@Nullable com.hazelcast.internal.serialization.Data key, @Nullable com.hazelcast.internal.serialization.Data value, @Nullable com.hazelcast.internal.serialization.Data oldValue, @Nullable com.hazelcast.internal.serialization.Data mergingValue, int eventType, java.util.UUID uuid, int numberOfAffectedEntries) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[EVENT_ENTRY_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         initialFrame.flags |= ClientMessage.IS_EVENT_FLAG;
@@ -154,15 +154,15 @@ public final class ReplicatedMapAddNearCacheEntryListenerCodec {
                 int eventType = decodeInt(initialFrame.content, EVENT_ENTRY_EVENT_TYPE_FIELD_OFFSET);
                 java.util.UUID uuid = decodeUUID(initialFrame.content, EVENT_ENTRY_UUID_FIELD_OFFSET);
                 int numberOfAffectedEntries = decodeInt(initialFrame.content, EVENT_ENTRY_NUMBER_OF_AFFECTED_ENTRIES_FIELD_OFFSET);
-                com.hazelcast.nio.serialization.Data key = CodecUtil.decodeNullable(iterator, DataCodec::decode);
-                com.hazelcast.nio.serialization.Data value = CodecUtil.decodeNullable(iterator, DataCodec::decode);
-                com.hazelcast.nio.serialization.Data oldValue = CodecUtil.decodeNullable(iterator, DataCodec::decode);
-                com.hazelcast.nio.serialization.Data mergingValue = CodecUtil.decodeNullable(iterator, DataCodec::decode);
+                com.hazelcast.internal.serialization.Data key = CodecUtil.decodeNullable(iterator, DataCodec::decode);
+                com.hazelcast.internal.serialization.Data value = CodecUtil.decodeNullable(iterator, DataCodec::decode);
+                com.hazelcast.internal.serialization.Data oldValue = CodecUtil.decodeNullable(iterator, DataCodec::decode);
+                com.hazelcast.internal.serialization.Data mergingValue = CodecUtil.decodeNullable(iterator, DataCodec::decode);
                 handleEntryEvent(key, value, oldValue, mergingValue, eventType, uuid, numberOfAffectedEntries);
                 return;
             }
             Logger.getLogger(super.getClass()).finest("Unknown message type received on event handler :" + messageType);
         }
-        public abstract void handleEntryEvent(@Nullable com.hazelcast.nio.serialization.Data key, @Nullable com.hazelcast.nio.serialization.Data value, @Nullable com.hazelcast.nio.serialization.Data oldValue, @Nullable com.hazelcast.nio.serialization.Data mergingValue, int eventType, java.util.UUID uuid, int numberOfAffectedEntries);
+        public abstract void handleEntryEvent(@Nullable com.hazelcast.internal.serialization.Data key, @Nullable com.hazelcast.internal.serialization.Data value, @Nullable com.hazelcast.internal.serialization.Data oldValue, @Nullable com.hazelcast.internal.serialization.Data mergingValue, int eventType, java.util.UUID uuid, int numberOfAffectedEntries);
     }
 }

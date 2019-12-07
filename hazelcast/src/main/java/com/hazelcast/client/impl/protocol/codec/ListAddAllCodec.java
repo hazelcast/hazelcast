@@ -39,7 +39,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * The behavior of this operation is undefined if the specified collection is modified while the operation is in progress.
  * (Note that this will occur if the specified collection is this list, and it's nonempty.)
  */
-@Generated("e1d97280b9ee3879f3d2d62f4ec04019")
+@Generated("ecd07a97752bd8c24941f4583267bfdd")
 public final class ListAddAllCodec {
     //hex: 0x050600
     public static final int REQUEST_MESSAGE_TYPE = 329216;
@@ -63,10 +63,10 @@ public final class ListAddAllCodec {
         /**
          * Collection containing elements to be added to this list
          */
-        public java.util.List<com.hazelcast.nio.serialization.Data> valueList;
+        public java.util.List<com.hazelcast.internal.serialization.Data> valueList;
     }
 
-    public static ClientMessage encodeRequest(java.lang.String name, java.util.Collection<com.hazelcast.nio.serialization.Data> valueList) {
+    public static ClientMessage encodeRequest(java.lang.String name, java.util.Collection<com.hazelcast.internal.serialization.Data> valueList) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
         clientMessage.setOperationName("List.AddAll");

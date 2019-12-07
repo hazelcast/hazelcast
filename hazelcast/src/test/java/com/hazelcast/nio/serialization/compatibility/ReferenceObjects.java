@@ -19,7 +19,7 @@ package com.hazelcast.nio.serialization.compatibility;
 import com.hazelcast.aggregation.Aggregators;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.internal.serialization.impl.HeapData;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.projection.Projections;
 import com.hazelcast.query.Predicates;

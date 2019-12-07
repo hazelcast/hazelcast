@@ -30,7 +30,7 @@ import com.hazelcast.internal.nio.Bits;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.util.FutureUtil;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.partition.PartitionAware;
 import com.hazelcast.spi.impl.AbstractDistributedObject;
 import com.hazelcast.spi.impl.DelegatingCompletableFuture;

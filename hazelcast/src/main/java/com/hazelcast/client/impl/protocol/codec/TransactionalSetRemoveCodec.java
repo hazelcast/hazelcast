@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Remove item from transactional set.
  */
-@Generated("bcd70bccbd0a0e8b8fe1d922f3754d1b")
+@Generated("49165a9aca878dd724da78c44140f1c8")
 public final class TransactionalSetRemoveCodec {
     //hex: 0x100200
     public static final int REQUEST_MESSAGE_TYPE = 1049088;
@@ -72,10 +72,10 @@ public final class TransactionalSetRemoveCodec {
         /**
          * Item removed from Transactional Set
          */
-        public com.hazelcast.nio.serialization.Data item;
+        public com.hazelcast.internal.serialization.Data item;
     }
 
-    public static ClientMessage encodeRequest(java.lang.String name, java.util.UUID txnId, long threadId, com.hazelcast.nio.serialization.Data item) {
+    public static ClientMessage encodeRequest(java.lang.String name, java.util.UUID txnId, long threadId, com.hazelcast.internal.serialization.Data item) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
         clientMessage.setOperationName("TransactionalSet.Remove");

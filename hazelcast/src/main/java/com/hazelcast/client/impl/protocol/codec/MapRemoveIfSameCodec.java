@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Removes the mapping for a key from this map if existing value equal to the this value
  */
-@Generated("164f2ac556008e8b319addf9912656de")
+@Generated("eecff2ef53d4b36241afeed76cc13110")
 public final class MapRemoveIfSameCodec {
     //hex: 0x010800
     public static final int REQUEST_MESSAGE_TYPE = 67584;
@@ -61,12 +61,12 @@ public final class MapRemoveIfSameCodec {
         /**
          * Key for the map entry.
          */
-        public com.hazelcast.nio.serialization.Data key;
+        public com.hazelcast.internal.serialization.Data key;
 
         /**
          * Test the existing value against this value to find if equal to this value. Only remove the entry from the map if the value is equal to this value.
          */
-        public com.hazelcast.nio.serialization.Data value;
+        public com.hazelcast.internal.serialization.Data value;
 
         /**
          * The id of the user thread performing the operation. It is used to guarantee that only the lock holder thread (if a lock exists on the entry) can perform the requested operation.
@@ -74,7 +74,7 @@ public final class MapRemoveIfSameCodec {
         public long threadId;
     }
 
-    public static ClientMessage encodeRequest(java.lang.String name, com.hazelcast.nio.serialization.Data key, com.hazelcast.nio.serialization.Data value, long threadId) {
+    public static ClientMessage encodeRequest(java.lang.String name, com.hazelcast.internal.serialization.Data key, com.hazelcast.internal.serialization.Data value, long threadId) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
         clientMessage.setOperationName("Map.RemoveIfSame");

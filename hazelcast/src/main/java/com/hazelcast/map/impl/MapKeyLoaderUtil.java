@@ -22,7 +22,7 @@ import com.hazelcast.config.MaxSizePolicy;
 import com.hazelcast.internal.partition.IPartitionService;
 import com.hazelcast.internal.util.CollectionUtil;
 import com.hazelcast.internal.util.UnmodifiableIterator;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.internal.serialization.Data;
 
 import java.util.Iterator;
 import java.util.List;

@@ -18,7 +18,7 @@ package com.hazelcast.internal.serialization.impl;
 
 import com.hazelcast.internal.nio.DataReader;
 import com.hazelcast.internal.serialization.InternalSerializationService;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.spi.impl.SerializationServiceSupport;
 
 import java.io.Closeable;

@@ -18,9 +18,9 @@ package com.hazelcast.internal.networking.nio;
 
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.internal.metrics.DynamicMetricsProvider;
+import com.hazelcast.internal.metrics.MetricDescriptor;
 import com.hazelcast.internal.metrics.MetricsCollectionContext;
 import com.hazelcast.internal.metrics.MetricsRegistry;
-import com.hazelcast.internal.metrics.MetricDescriptor;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.metrics.ProbeLevel;
 import com.hazelcast.internal.networking.Channel;
@@ -356,20 +356,26 @@ public final class NioNetworking implements Networking, DynamicMetricsProvider {
             context.collect(descriptorOut, channel.outboundPipeline());
         }
 
-        for (NioThread nioThread : inputThreads) {
-            MetricDescriptor descriptorInThread = descriptor
-                    .copy()
-                    .withPrefix("tcp.inputThread")
-                    .withDiscriminator("thread", nioThread.getName());
-            context.collect(descriptorInThread, nioThread);
+        NioThread[] inputThreads = this.inputThreads;
+        if (inputThreads != null) {
+            for (NioThread nioThread : inputThreads) {
+                MetricDescriptor descriptorInThread = descriptor
+                        .copy()
+                        .withPrefix("tcp.inputThread")
+                        .withDiscriminator("thread", nioThread.getName());
+                context.collect(descriptorInThread, nioThread);
+            }
         }
 
-        for (NioThread nioThread : outputThreads) {
-            MetricDescriptor descriptorOutThread = descriptor
-                    .copy()
-                    .withPrefix("tcp.outputThread")
-                    .withDiscriminator("thread", nioThread.getName());
-            context.collect(descriptorOutThread, nioThread);
+        NioThread[] outputThreads = this.outputThreads;
+        if (outputThreads != null) {
+            for (NioThread nioThread : outputThreads) {
+                MetricDescriptor descriptorOutThread = descriptor
+                        .copy()
+                        .withPrefix("tcp.outputThread")
+                        .withDiscriminator("thread", nioThread.getName());
+                context.collect(descriptorOutThread, nioThread);
+            }
         }
 
         IOBalancer ioBalancer = this.ioBalancer;

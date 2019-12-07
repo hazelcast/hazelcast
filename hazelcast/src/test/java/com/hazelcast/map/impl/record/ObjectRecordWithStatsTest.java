@@ -17,7 +17,7 @@
 package com.hazelcast.map.impl.record;
 
 import com.hazelcast.internal.util.Clock;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;

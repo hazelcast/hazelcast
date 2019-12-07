@@ -25,7 +25,7 @@ import com.hazelcast.internal.monitor.impl.IndexOperationStats;
 import com.hazelcast.internal.monitor.impl.PerIndexStats;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.query.impl.getters.MultiResult;
 import com.hazelcast.query.impl.predicates.PredicateDataSerializerHook;

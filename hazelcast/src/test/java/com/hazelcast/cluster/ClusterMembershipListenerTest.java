@@ -289,9 +289,6 @@ public class ClusterMembershipListenerTest extends HazelcastTestSupport {
         public void memberRemoved(MembershipEvent e) {
             events.add(e);
         }
-
-        public void memberAttributeChanged(MemberAttributeEvent memberAttributeEvent) {
-        }
     }
 
     private static class InitialMembershipListenerImpl implements InitialMembershipListener {
@@ -308,13 +305,6 @@ public class ClusterMembershipListenerTest extends HazelcastTestSupport {
 
         public void memberRemoved(MembershipEvent e) {
             events.add(e);
-        }
-
-        public void memberAttributeChanged(MemberAttributeEvent memberAttributeEvent) {
-        }
-
-        public void assertEventCount(int expected) {
-            assertEquals(expected, events.size());
         }
     }
 }

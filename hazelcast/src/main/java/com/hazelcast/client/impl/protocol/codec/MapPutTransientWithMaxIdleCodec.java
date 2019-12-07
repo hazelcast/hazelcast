@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Same as put except that MapStore, if defined, will not be called to store/persist the entry.
  * If ttl and maxIdle are 0, then the entry lives forever.
  */
-@Generated("35d599b1fb598afec3bc3f0dd2e24706")
+@Generated("3b1149aaf8b9f7ffc793220eddc360b0")
 public final class MapPutTransientWithMaxIdleCodec {
     //hex: 0x014700
     public static final int REQUEST_MESSAGE_TYPE = 83712;
@@ -63,12 +63,12 @@ public final class MapPutTransientWithMaxIdleCodec {
         /**
          * Key for the map entry.
          */
-        public com.hazelcast.nio.serialization.Data key;
+        public com.hazelcast.internal.serialization.Data key;
 
         /**
          * Value for the map entry.
          */
-        public com.hazelcast.nio.serialization.Data value;
+        public com.hazelcast.internal.serialization.Data value;
 
         /**
          * The id of the user thread performing the operation. It is used to guarantee that only the lock holder thread (if a lock exists on the entry) can perform the requested operation.
@@ -87,7 +87,7 @@ public final class MapPutTransientWithMaxIdleCodec {
         public long maxIdle;
     }
 
-    public static ClientMessage encodeRequest(java.lang.String name, com.hazelcast.nio.serialization.Data key, com.hazelcast.nio.serialization.Data value, long threadId, long ttl, long maxIdle) {
+    public static ClientMessage encodeRequest(java.lang.String name, com.hazelcast.internal.serialization.Data key, com.hazelcast.internal.serialization.Data value, long threadId, long ttl, long maxIdle) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
         clientMessage.setOperationName("Map.PutTransientWithMaxIdle");
@@ -122,10 +122,10 @@ public final class MapPutTransientWithMaxIdleCodec {
         /**
          * old value of the entry
          */
-        public @Nullable com.hazelcast.nio.serialization.Data response;
+        public @Nullable com.hazelcast.internal.serialization.Data response;
     }
 
-    public static ClientMessage encodeResponse(@Nullable com.hazelcast.nio.serialization.Data response) {
+    public static ClientMessage encodeResponse(@Nullable com.hazelcast.internal.serialization.Data response) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, RESPONSE_MESSAGE_TYPE);

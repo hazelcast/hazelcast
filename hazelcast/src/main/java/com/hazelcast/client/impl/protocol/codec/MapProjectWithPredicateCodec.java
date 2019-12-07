@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Applies the projection logic on map entries filtered with the Predicate and returns the result
  */
-@Generated("6ddda9d3c356e8426db2de2681d37611")
+@Generated("e7887cf7ae80c3a60cdc3857824652a3")
 public final class MapProjectWithPredicateCodec {
     //hex: 0x013D00
     public static final int REQUEST_MESSAGE_TYPE = 81152;
@@ -59,15 +59,15 @@ public final class MapProjectWithPredicateCodec {
         /**
          * projection to transform the entries with. May return null.
          */
-        public com.hazelcast.nio.serialization.Data projection;
+        public com.hazelcast.internal.serialization.Data projection;
 
         /**
          * predicate to filter the entries with
          */
-        public com.hazelcast.nio.serialization.Data predicate;
+        public com.hazelcast.internal.serialization.Data predicate;
     }
 
-    public static ClientMessage encodeRequest(java.lang.String name, com.hazelcast.nio.serialization.Data projection, com.hazelcast.nio.serialization.Data predicate) {
+    public static ClientMessage encodeRequest(java.lang.String name, com.hazelcast.internal.serialization.Data projection, com.hazelcast.internal.serialization.Data predicate) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(true);
         clientMessage.setOperationName("Map.ProjectWithPredicate");
@@ -97,10 +97,10 @@ public final class MapProjectWithPredicateCodec {
         /**
          * the resulted collection upon transformation to the type of the projection
          */
-        public java.util.List<com.hazelcast.nio.serialization.Data> response;
+        public java.util.List<com.hazelcast.internal.serialization.Data> response;
     }
 
-    public static ClientMessage encodeResponse(java.util.Collection<com.hazelcast.nio.serialization.Data> response) {
+    public static ClientMessage encodeResponse(java.util.Collection<com.hazelcast.internal.serialization.Data> response) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, RESPONSE_MESSAGE_TYPE);

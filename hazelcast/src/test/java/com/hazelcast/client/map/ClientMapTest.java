@@ -114,7 +114,6 @@ public class ClientMapTest extends HazelcastTestSupport {
     }
 
     @Test
-    @SuppressWarnings("deprecation")
     public void testIssue537() {
         IMap<String, GenericEvent> map = createMap();
         AddAndExpiredListener listener = new AddAndExpiredListener();
@@ -286,7 +285,6 @@ public class ClientMapTest extends HazelcastTestSupport {
     }
 
     @Test
-    @SuppressWarnings("deprecation")
     public void testAsyncPutWithTtl() throws Exception {
         IMap<String, String> map = createMap();
         final CountDownLatch latch = new CountDownLatch(1);
@@ -301,7 +299,6 @@ public class ClientMapTest extends HazelcastTestSupport {
     }
 
     @Test
-    @SuppressWarnings("deprecation")
     public void testAsyncPutWithMaxIdle() throws Exception {
         IMap<String, String> map = createMap();
         final CountDownLatch latch = new CountDownLatch(1);
@@ -618,7 +615,6 @@ public class ClientMapTest extends HazelcastTestSupport {
     }
 
     @Test
-    @SuppressWarnings("deprecation")
     public void testListener() {
         IMap<String, String> map = createMap();
         final CountDownLatch latch1Add = new CountDownLatch(5);
@@ -670,7 +666,6 @@ public class ClientMapTest extends HazelcastTestSupport {
     }
 
     @Test
-    @SuppressWarnings("deprecation")
     public void testPredicateListenerWithPortableKey() throws Exception {
         IMap<Portable, Integer> tradeMap = createMap();
 
@@ -793,7 +788,6 @@ public class ClientMapTest extends HazelcastTestSupport {
      * Issue #996
      */
     @Test
-    @SuppressWarnings({"deprecation", "unchecked"})
     public void testEntryListener() throws Exception {
         CountDownLatch gateAdd = new CountDownLatch(3);
         CountDownLatch gateRemove = new CountDownLatch(1);
@@ -980,7 +974,6 @@ public class ClientMapTest extends HazelcastTestSupport {
     }
 
     @Test
-    @SuppressWarnings("deprecation")
     public void testEntryListenerWithPredicateOnDeleteOperation() {
         IMap<String, String> serverMap = server.getMap("A");
         IMap<String, String> clientMap = client.getMap("A");

@@ -26,7 +26,7 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.memory.MemoryUnit;
 import com.hazelcast.internal.monitor.impl.NearCacheStatsImpl;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
 
 import java.io.File;

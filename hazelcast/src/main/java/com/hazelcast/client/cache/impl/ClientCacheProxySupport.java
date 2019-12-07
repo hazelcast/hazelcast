@@ -53,7 +53,7 @@ import com.hazelcast.core.ManagedContext;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.internal.nio.IOUtil;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.internal.util.FutureUtil;
 

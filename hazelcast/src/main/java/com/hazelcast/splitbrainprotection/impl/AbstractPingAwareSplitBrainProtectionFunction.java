@@ -17,7 +17,6 @@
 package com.hazelcast.splitbrainprotection.impl;
 
 import com.hazelcast.cluster.Member;
-import com.hazelcast.cluster.MemberAttributeEvent;
 import com.hazelcast.cluster.MembershipEvent;
 import com.hazelcast.cluster.MembershipListener;
 import com.hazelcast.config.Config;
@@ -77,11 +76,6 @@ public abstract class AbstractPingAwareSplitBrainProtectionFunction implements P
         if (pingFDEnabled) {
             pingFailureDetector.heartbeat(membershipEvent.getMember());
         }
-    }
-
-    @Override
-    public void memberAttributeChanged(MemberAttributeEvent memberAttributeEvent) {
-        // split brain protection not affected by member attribute change
     }
 
     @Override

@@ -17,7 +17,7 @@
 package com.hazelcast.map.impl.nearcache;
 
 import com.hazelcast.internal.nearcache.impl.invalidation.MinimalPartitionService;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.partition.IPartitionService;
 
 /**

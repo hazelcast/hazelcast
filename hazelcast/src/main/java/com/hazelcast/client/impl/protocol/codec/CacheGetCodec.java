@@ -38,7 +38,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * null is returned. If the cache is configured for read-through operation mode, the underlying configured
  * javax.cache.integration.CacheLoader might be called to retrieve the value of the key from any kind of external resource.
  */
-@Generated("d2581328fe4409cd010db556710a0711")
+@Generated("80da0d56f18d68235fc9a5f06b40cff3")
 public final class CacheGetCodec {
     //hex: 0x130D00
     public static final int REQUEST_MESSAGE_TYPE = 1248512;
@@ -61,16 +61,16 @@ public final class CacheGetCodec {
         /**
          * The key whose mapped value is to be returned.
          */
-        public com.hazelcast.nio.serialization.Data key;
+        public com.hazelcast.internal.serialization.Data key;
 
         /**
          * Expiry policy for the entry. Byte-array which is serialized from an object implementing
          * javax.cache.expiry.ExpiryPolicy interface.
          */
-        public @Nullable com.hazelcast.nio.serialization.Data expiryPolicy;
+        public @Nullable com.hazelcast.internal.serialization.Data expiryPolicy;
     }
 
-    public static ClientMessage encodeRequest(java.lang.String name, com.hazelcast.nio.serialization.Data key, @Nullable com.hazelcast.nio.serialization.Data expiryPolicy) {
+    public static ClientMessage encodeRequest(java.lang.String name, com.hazelcast.internal.serialization.Data key, @Nullable com.hazelcast.internal.serialization.Data expiryPolicy) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(true);
         clientMessage.setOperationName("Cache.Get");
@@ -100,10 +100,10 @@ public final class CacheGetCodec {
         /**
          * The value assigned to the given key, or null if not assigned.
          */
-        public @Nullable com.hazelcast.nio.serialization.Data response;
+        public @Nullable com.hazelcast.internal.serialization.Data response;
     }
 
-    public static ClientMessage encodeResponse(@Nullable com.hazelcast.nio.serialization.Data response) {
+    public static ClientMessage encodeResponse(@Nullable com.hazelcast.internal.serialization.Data response) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, RESPONSE_MESSAGE_TYPE);

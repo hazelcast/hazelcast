@@ -20,7 +20,7 @@ import com.hazelcast.map.EntryLoader.MetadataAwareValue;
 import com.hazelcast.map.impl.mapstore.AbstractMapDataStore;
 import com.hazelcast.map.impl.mapstore.MapStoreContext;
 import com.hazelcast.map.impl.mapstore.writebehind.entry.DelayedEntry;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.internal.serialization.Data;
 
 import java.util.UUID;
 

@@ -18,7 +18,7 @@ package com.hazelcast.map.impl.journal;
 
 import com.hazelcast.config.EventJournalConfig;
 import com.hazelcast.internal.journal.EventJournal;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.services.ObjectNamespace;
 
 /**

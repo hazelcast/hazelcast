@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Returns true if this map contains an entry for the specified value.
  */
-@Generated("ffe9d89279d25cc5fe96d5c73b562a3a")
+@Generated("c9d82ce4d2bd0c7991d89978613b19a6")
 public final class TransactionalMapContainsValueCodec {
     //hex: 0x0E1200
     public static final int REQUEST_MESSAGE_TYPE = 922112;
@@ -72,10 +72,10 @@ public final class TransactionalMapContainsValueCodec {
         /**
          * The specified value.
          */
-        public com.hazelcast.nio.serialization.Data value;
+        public com.hazelcast.internal.serialization.Data value;
     }
 
-    public static ClientMessage encodeRequest(java.lang.String name, java.util.UUID txnId, long threadId, com.hazelcast.nio.serialization.Data value) {
+    public static ClientMessage encodeRequest(java.lang.String name, java.util.UUID txnId, long threadId, com.hazelcast.internal.serialization.Data value) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
         clientMessage.setOperationName("TransactionalMap.ContainsValue");

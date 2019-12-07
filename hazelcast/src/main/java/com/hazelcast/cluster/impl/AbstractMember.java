@@ -16,7 +16,6 @@
 
 package com.hazelcast.cluster.impl;
 
-import com.hazelcast.cluster.MemberAttributeOperationType;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.internal.util.UUIDSerializationUtil;
 import com.hazelcast.instance.EndpointQualifier;
@@ -143,19 +142,6 @@ public abstract class AbstractMember implements Member {
     @Override
     public Map<String, String> getAttributes() {
         return Collections.unmodifiableMap(attributes);
-    }
-
-    public void updateAttribute(MemberAttributeOperationType operationType, String key, String value) {
-        switch (operationType) {
-            case PUT:
-                attributes.put(key, value);
-                break;
-            case REMOVE:
-                attributes.remove(key);
-                break;
-            default:
-                throw new IllegalArgumentException("Not a known OperationType " + operationType);
-        }
     }
 
     @Override

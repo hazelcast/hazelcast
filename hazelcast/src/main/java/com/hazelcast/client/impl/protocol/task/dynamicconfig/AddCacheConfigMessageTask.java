@@ -23,6 +23,7 @@ import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.instance.impl.Node;
+import com.hazelcast.internal.dynamicconfig.DynamicConfigurationAwareConfig;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
@@ -65,6 +66,7 @@ public class AddCacheConfigMessageTask
                     new ExpiryPolicyFactoryConfig(parameters.timedExpiryPolicyFactoryConfig);
             config.setExpiryPolicyFactoryConfig(expiryPolicyFactoryConfig);
         }
+        config.setEventJournalConfig(parameters.eventJournalConfig);
         config.setHotRestartConfig(parameters.hotRestartConfig);
         config.setInMemoryFormat(InMemoryFormat.valueOf(parameters.inMemoryFormat));
         config.setKeyType(parameters.keyType);
@@ -90,5 +92,13 @@ public class AddCacheConfigMessageTask
     @Override
     public String getMethodName() {
         return "addCacheConfig";
+    }
+
+    @Override
+    protected boolean checkStaticConfigDoesNotExist(IdentifiedDataSerializable config) {
+        DynamicConfigurationAwareConfig nodeConfig = (DynamicConfigurationAwareConfig) nodeEngine.getConfig();
+        CacheSimpleConfig cacheConfig = (CacheSimpleConfig) config;
+        return nodeConfig.checkStaticConfigDoesNotExist(nodeConfig.getStaticConfig().getCacheConfigs(),
+                cacheConfig.getName(), cacheConfig);
     }
 }

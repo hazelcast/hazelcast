@@ -38,7 +38,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * For every entry in the key set, the following are called: any registered CacheEntryRemovedListeners if the cache
  * is a write-through cache, the CacheWriter. If the key set is empty, the CacheWriter is not called.
  */
-@Generated("a1138d76804e179b4ff72b487e3540a3")
+@Generated("9920ca35759a3befac2471c705849e8a")
 public final class CacheRemoveAllKeysCodec {
     //hex: 0x130300
     public static final int REQUEST_MESSAGE_TYPE = 1245952;
@@ -62,7 +62,7 @@ public final class CacheRemoveAllKeysCodec {
         /**
          * The keys to remove.
          */
-        public java.util.List<com.hazelcast.nio.serialization.Data> keys;
+        public java.util.List<com.hazelcast.internal.serialization.Data> keys;
 
         /**
          * User generated id which shall be received as a field of the cache event upon completion of
@@ -71,7 +71,7 @@ public final class CacheRemoveAllKeysCodec {
         public int completionId;
     }
 
-    public static ClientMessage encodeRequest(java.lang.String name, java.util.Collection<com.hazelcast.nio.serialization.Data> keys, int completionId) {
+    public static ClientMessage encodeRequest(java.lang.String name, java.util.Collection<com.hazelcast.internal.serialization.Data> keys, int completionId) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
         clientMessage.setOperationName("Cache.RemoveAllKeys");

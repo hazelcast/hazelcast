@@ -18,7 +18,7 @@ package com.hazelcast.map.impl.record;
 
 import com.hazelcast.config.CacheDeserializedValues;
 import com.hazelcast.config.MapConfig;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;

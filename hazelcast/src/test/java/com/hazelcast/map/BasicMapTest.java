@@ -108,7 +108,7 @@ public class BasicMapTest extends HazelcastTestSupport {
     }
 
     protected Config getConfig() {
-        Config cfg = super.getConfig();
+        Config cfg = smallInstanceConfig();
         MapConfig mapConfig = new MapConfig("mapWithTTL*");
         mapConfig.setTimeToLiveSeconds(1);
         cfg.addMapConfig(mapConfig);
@@ -626,6 +626,7 @@ public class BasicMapTest extends HazelcastTestSupport {
      * Tests the cloned collections returned by IMap's keySet(), localKeySet(),
      * values(), entrySet() are immutable. To avoid code duplication the static
      * method is called from client's test.
+     *
      * @param instance the HZ instance
      */
     public static void testMapClonedCollectionsImmutable(HazelcastInstance instance, boolean onMember) {

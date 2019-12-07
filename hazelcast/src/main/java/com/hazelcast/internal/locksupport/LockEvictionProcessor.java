@@ -19,7 +19,7 @@ package com.hazelcast.internal.locksupport;
 import com.hazelcast.internal.locksupport.operations.UnlockIfLeaseExpiredOperation;
 import com.hazelcast.internal.locksupport.operations.UnlockOperation;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.internal.services.ObjectNamespace;
 import com.hazelcast.spi.impl.operationservice.Operation;

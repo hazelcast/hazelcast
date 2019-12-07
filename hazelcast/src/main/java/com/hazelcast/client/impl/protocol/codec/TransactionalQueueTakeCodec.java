@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Retrieves and removes the head of this queue, waiting if necessary until an element becomes available.
  */
-@Generated("38a214a38c1e94bdaaae9cfdcf228879")
+@Generated("d45baf0a220371bc1a9ca608086d53c5")
 public final class TransactionalQueueTakeCodec {
     //hex: 0x120200
     public static final int REQUEST_MESSAGE_TYPE = 1180160;
@@ -98,10 +98,10 @@ public final class TransactionalQueueTakeCodec {
         /**
          * The head of this queue
          */
-        public @Nullable com.hazelcast.nio.serialization.Data response;
+        public @Nullable com.hazelcast.internal.serialization.Data response;
     }
 
-    public static ClientMessage encodeResponse(@Nullable com.hazelcast.nio.serialization.Data response) {
+    public static ClientMessage encodeResponse(@Nullable com.hazelcast.internal.serialization.Data response) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, RESPONSE_MESSAGE_TYPE);

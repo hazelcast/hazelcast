@@ -26,7 +26,6 @@ import com.hazelcast.internal.partition.PartitionMigrationEvent;
 import com.hazelcast.internal.partition.PartitionReplicationEvent;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.services.ManagedService;
-import com.hazelcast.internal.services.MemberAttributeServiceEvent;
 import com.hazelcast.internal.services.MembershipAwareService;
 import com.hazelcast.internal.services.MembershipServiceEvent;
 import com.hazelcast.internal.services.RemoteService;
@@ -79,13 +78,13 @@ public class DistributedScheduledExecutorService
     private final ContextMutexFactory splitBrainProtectionConfigCacheMutexFactory = new ContextMutexFactory();
     private final ConstructorFunction<String, Object> splitBrainProtectionConfigConstructor =
             new ConstructorFunction<String, Object>() {
-        @Override
-        public Object createNew(String name) {
-            ScheduledExecutorConfig executorConfig = nodeEngine.getConfig().findScheduledExecutorConfig(name);
-            String splitBrainProtectionName = executorConfig.getSplitBrainProtectionName();
-            return splitBrainProtectionName == null ? NULL_OBJECT : splitBrainProtectionName;
-        }
-    };
+                @Override
+                public Object createNew(String name) {
+                    ScheduledExecutorConfig executorConfig = nodeEngine.getConfig().findScheduledExecutorConfig(name);
+                    String splitBrainProtectionName = executorConfig.getSplitBrainProtectionName();
+                    return splitBrainProtectionName == null ? NULL_OBJECT : splitBrainProtectionName;
+                }
+            };
 
     private NodeEngine nodeEngine;
     private ScheduledExecutorPartition[] partitions;
@@ -290,11 +289,6 @@ public class DistributedScheduledExecutorService
         for (ScheduledFutureProxy future : futures) {
             future.notifyMemberLost(event);
         }
-    }
-
-    @Override
-    public void memberAttributeChanged(MemberAttributeServiceEvent event) {
-        // ignore
     }
 
     @Override

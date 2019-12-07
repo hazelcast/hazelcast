@@ -31,7 +31,7 @@ import com.hazelcast.internal.services.StatisticsAwareService;
 import com.hazelcast.internal.util.ConstructorFunction;
 import com.hazelcast.internal.util.HashUtil;
 import com.hazelcast.internal.util.MapUtil;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.eventservice.EventPublishingService;

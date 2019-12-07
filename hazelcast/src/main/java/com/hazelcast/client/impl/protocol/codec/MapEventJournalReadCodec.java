@@ -43,7 +43,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * The predicate, filter and projection may be {@code null} in which case all elements are returned
  * and no projection is applied.
  */
-@Generated("d01fbb9aac79dc562861a403af517084")
+@Generated("343e247a8cf3940e85e24f3ece5a870f")
 public final class MapEventJournalReadCodec {
     //hex: 0x014400
     public static final int REQUEST_MESSAGE_TYPE = 82944;
@@ -86,15 +86,15 @@ public final class MapEventJournalReadCodec {
         /**
          * the predicate to apply before processing events
          */
-        public @Nullable com.hazelcast.nio.serialization.Data predicate;
+        public @Nullable com.hazelcast.internal.serialization.Data predicate;
 
         /**
          * the projection to apply to journal events
          */
-        public @Nullable com.hazelcast.nio.serialization.Data projection;
+        public @Nullable com.hazelcast.internal.serialization.Data projection;
     }
 
-    public static ClientMessage encodeRequest(java.lang.String name, long startSequence, int minSize, int maxSize, @Nullable com.hazelcast.nio.serialization.Data predicate, @Nullable com.hazelcast.nio.serialization.Data projection) {
+    public static ClientMessage encodeRequest(java.lang.String name, long startSequence, int minSize, int maxSize, @Nullable com.hazelcast.internal.serialization.Data predicate, @Nullable com.hazelcast.internal.serialization.Data projection) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(true);
         clientMessage.setOperationName("Map.EventJournalRead");
@@ -134,7 +134,7 @@ public final class MapEventJournalReadCodec {
         /**
          * TODO DOC
          */
-        public java.util.List<com.hazelcast.nio.serialization.Data> items;
+        public java.util.List<com.hazelcast.internal.serialization.Data> items;
 
         /**
          * TODO DOC
@@ -147,7 +147,7 @@ public final class MapEventJournalReadCodec {
         public long nextSeq;
     }
 
-    public static ClientMessage encodeResponse(int readCount, java.util.Collection<com.hazelcast.nio.serialization.Data> items, @Nullable long[] itemSeqs, long nextSeq) {
+    public static ClientMessage encodeResponse(int readCount, java.util.Collection<com.hazelcast.internal.serialization.Data> items, @Nullable long[] itemSeqs, long nextSeq) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, RESPONSE_MESSAGE_TYPE);

@@ -19,7 +19,7 @@ package com.hazelcast.map.impl.querycache.event;
 import com.hazelcast.map.impl.event.EventData;
 import com.hazelcast.map.impl.querycache.event.sequence.Sequenced;
 import com.hazelcast.internal.serialization.BinaryInterface;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
 
 /**

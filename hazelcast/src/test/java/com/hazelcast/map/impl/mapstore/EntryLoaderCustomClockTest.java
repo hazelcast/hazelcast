@@ -72,7 +72,7 @@ public class EntryLoaderCustomClockTest extends AbstractClockTest {
 
     @Override
     protected Config getConfig() {
-        Config config = super.getConfig();
+        Config config = smallInstanceConfig();
         MapStoreConfig mapStoreConfig = new MapStoreConfig();
         mapStoreConfig.setImplementation(testEntryStore).setEnabled(true);
         config.getMapConfig("default").setMapStoreConfig(mapStoreConfig);

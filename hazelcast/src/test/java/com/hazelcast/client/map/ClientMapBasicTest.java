@@ -1313,21 +1313,18 @@ public class ClientMapBasicTest extends AbstractClientMapTest {
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    @SuppressWarnings("deprecation")
     public void testAddLocalEntryListener() {
         IMap<String, String> map = client.getMap(randomString());
         map.addLocalEntryListener(new EmptyEntryListener());
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    @SuppressWarnings("deprecation")
     public void testAddLocalEntryListener_WithPredicate() {
         IMap<String, String> map = client.getMap(randomString());
         map.addLocalEntryListener(new EmptyEntryListener(), Predicates.alwaysFalse(), true);
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    @SuppressWarnings("deprecation")
     public void testAddLocalEntryListener_WithPredicateAndKey() {
         IMap<String, String> map = client.getMap(randomString());
         map.addLocalEntryListener(new EmptyEntryListener(), Predicates.alwaysFalse(), "Key", true);

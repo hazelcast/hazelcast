@@ -21,6 +21,7 @@ import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.config.SerializerConfig;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.core.MemberLeftException;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.partition.PartitioningStrategy;
 import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.cluster.impl.MemberImpl;

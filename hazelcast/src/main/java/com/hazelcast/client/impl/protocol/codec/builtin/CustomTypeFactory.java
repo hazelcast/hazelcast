@@ -30,7 +30,7 @@ import com.hazelcast.internal.management.dto.ClientBwListEntryDTO;
 import com.hazelcast.map.impl.SimpleEntryView;
 import com.hazelcast.map.impl.querycache.event.DefaultQueryCacheEventData;
 import com.hazelcast.cluster.Address;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.internal.serialization.Data;
 
 import java.net.UnknownHostException;
 import java.util.List;

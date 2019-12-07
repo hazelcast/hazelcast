@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Applies the aggregation logic on map entries filtered with the Predicate and returns the result
  */
-@Generated("84e1a447676b3dd2ed181d579b77b295")
+@Generated("987efffe7da92f547a204a71d831bdbe")
 public final class MapAggregateWithPredicateCodec {
     //hex: 0x013B00
     public static final int REQUEST_MESSAGE_TYPE = 80640;
@@ -59,15 +59,15 @@ public final class MapAggregateWithPredicateCodec {
         /**
          * aggregator to aggregate the entries with
          */
-        public com.hazelcast.nio.serialization.Data aggregator;
+        public com.hazelcast.internal.serialization.Data aggregator;
 
         /**
          * predicate to filter the entries with
          */
-        public com.hazelcast.nio.serialization.Data predicate;
+        public com.hazelcast.internal.serialization.Data predicate;
     }
 
-    public static ClientMessage encodeRequest(java.lang.String name, com.hazelcast.nio.serialization.Data aggregator, com.hazelcast.nio.serialization.Data predicate) {
+    public static ClientMessage encodeRequest(java.lang.String name, com.hazelcast.internal.serialization.Data aggregator, com.hazelcast.internal.serialization.Data predicate) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(true);
         clientMessage.setOperationName("Map.AggregateWithPredicate");
@@ -97,10 +97,10 @@ public final class MapAggregateWithPredicateCodec {
         /**
          * the aggregation result
          */
-        public @Nullable com.hazelcast.nio.serialization.Data response;
+        public @Nullable com.hazelcast.internal.serialization.Data response;
     }
 
-    public static ClientMessage encodeResponse(@Nullable com.hazelcast.nio.serialization.Data response) {
+    public static ClientMessage encodeResponse(@Nullable com.hazelcast.internal.serialization.Data response) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, RESPONSE_MESSAGE_TYPE);

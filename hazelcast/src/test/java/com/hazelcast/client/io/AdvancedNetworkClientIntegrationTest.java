@@ -18,8 +18,8 @@ package com.hazelcast.client.io;
 
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.Member;
-import com.hazelcast.cluster.MemberAttributeEvent;
 import com.hazelcast.cluster.MembershipEvent;
 import com.hazelcast.cluster.MembershipListener;
 import com.hazelcast.config.Config;
@@ -28,7 +28,6 @@ import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.map.IMap;
-import com.hazelcast.cluster.Address;
 import com.hazelcast.partition.Partition;
 import com.hazelcast.scheduledexecutor.IScheduledExecutorService;
 import com.hazelcast.scheduledexecutor.IScheduledFuture;
@@ -128,10 +127,6 @@ public class AdvancedNetworkClientIntegrationTest {
                 memberRemoved.set(membershipEvent.getMember());
             }
 
-            @Override
-            public void memberAttributeChanged(MemberAttributeEvent memberAttributeEvent) {
-
-            }
         });
 
         instances[2].shutdown();

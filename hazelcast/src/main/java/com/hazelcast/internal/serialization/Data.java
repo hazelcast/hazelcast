@@ -14,10 +14,10 @@
  * limitations under the License.
  */
 
-package com.hazelcast.nio.serialization;
+package com.hazelcast.internal.serialization;
 
+import com.hazelcast.nio.serialization.Serializer;
 import com.hazelcast.partition.PartitioningStrategy;
-import com.hazelcast.internal.serialization.SerializationService;
 
 /**
  * Data is basic unit of serialization. It stores binary form of an object serialized

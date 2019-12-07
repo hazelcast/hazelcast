@@ -18,7 +18,7 @@ package com.hazelcast.topic.impl;
 
 import com.hazelcast.topic.Message;
 import com.hazelcast.cluster.Member;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
 
 import java.io.IOException;

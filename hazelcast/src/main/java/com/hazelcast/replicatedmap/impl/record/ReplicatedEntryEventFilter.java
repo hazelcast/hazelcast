@@ -16,7 +16,7 @@
 
 package com.hazelcast.replicatedmap.impl.record;
 
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.spi.impl.eventservice.EventFilter;
 
 /**

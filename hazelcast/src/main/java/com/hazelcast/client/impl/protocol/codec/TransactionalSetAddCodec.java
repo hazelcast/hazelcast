@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Add new item to transactional set.
  */
-@Generated("78e0724fad8f3e461a95ff7019edfd03")
+@Generated("28291ac52e5a3e66120e7b7dac9c9a18")
 public final class TransactionalSetAddCodec {
     //hex: 0x100100
     public static final int REQUEST_MESSAGE_TYPE = 1048832;
@@ -72,10 +72,10 @@ public final class TransactionalSetAddCodec {
         /**
          * Item added to transactional set
          */
-        public com.hazelcast.nio.serialization.Data item;
+        public com.hazelcast.internal.serialization.Data item;
     }
 
-    public static ClientMessage encodeRequest(java.lang.String name, java.util.UUID txnId, long threadId, com.hazelcast.nio.serialization.Data item) {
+    public static ClientMessage encodeRequest(java.lang.String name, java.util.UUID txnId, long threadId, com.hazelcast.internal.serialization.Data item) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
         clientMessage.setOperationName("TransactionalSet.Add");

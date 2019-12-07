@@ -20,7 +20,7 @@ import com.hazelcast.core.EntryView;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.util.SampleableConcurrentHashMap;
 import com.hazelcast.map.impl.record.Record;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.internal.serialization.Data;
 
 
 /**

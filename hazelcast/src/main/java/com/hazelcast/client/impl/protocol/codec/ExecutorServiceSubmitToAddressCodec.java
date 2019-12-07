@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * TODO DOC
  */
-@Generated("f334f2bfd1c3fc584359ab22b6b04ac4")
+@Generated("8d2576dbfac02b836f1966e0adc1452e")
 public final class ExecutorServiceSubmitToAddressCodec {
     //hex: 0x080600
     public static final int REQUEST_MESSAGE_TYPE = 525824;
@@ -65,7 +65,7 @@ public final class ExecutorServiceSubmitToAddressCodec {
         /**
          * The callable object to be executed.
          */
-        public com.hazelcast.nio.serialization.Data callable;
+        public com.hazelcast.internal.serialization.Data callable;
 
         /**
          * The member host on which the callable shall be executed on.
@@ -73,7 +73,7 @@ public final class ExecutorServiceSubmitToAddressCodec {
         public com.hazelcast.cluster.Address address;
     }
 
-    public static ClientMessage encodeRequest(java.lang.String name, java.util.UUID uuid, com.hazelcast.nio.serialization.Data callable, com.hazelcast.cluster.Address address) {
+    public static ClientMessage encodeRequest(java.lang.String name, java.util.UUID uuid, com.hazelcast.internal.serialization.Data callable, com.hazelcast.cluster.Address address) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
         clientMessage.setOperationName("ExecutorService.SubmitToAddress");
@@ -104,10 +104,10 @@ public final class ExecutorServiceSubmitToAddressCodec {
         /**
          * The result of the callable execution.
          */
-        public @Nullable com.hazelcast.nio.serialization.Data response;
+        public @Nullable com.hazelcast.internal.serialization.Data response;
     }
 
-    public static ClientMessage encodeResponse(@Nullable com.hazelcast.nio.serialization.Data response) {
+    public static ClientMessage encodeResponse(@Nullable com.hazelcast.internal.serialization.Data response) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, RESPONSE_MESSAGE_TYPE);

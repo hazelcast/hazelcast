@@ -20,7 +20,7 @@ import com.hazelcast.client.impl.protocol.util.PropertiesUtil;
 import com.hazelcast.config.QueueStoreConfig;
 import com.hazelcast.collection.QueueStore;
 import com.hazelcast.collection.QueueStoreFactory;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
 
 import java.util.Map;

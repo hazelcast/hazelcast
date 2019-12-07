@@ -20,7 +20,7 @@ import com.hazelcast.client.impl.protocol.util.PropertiesUtil;
 import com.hazelcast.config.RingbufferStoreConfig;
 import com.hazelcast.ringbuffer.RingbufferStore;
 import com.hazelcast.ringbuffer.RingbufferStoreFactory;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
 
 import java.util.Map;

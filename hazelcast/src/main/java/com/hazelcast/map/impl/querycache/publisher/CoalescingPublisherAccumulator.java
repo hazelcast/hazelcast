@@ -24,7 +24,7 @@ import com.hazelcast.map.impl.querycache.accumulator.BasicAccumulator;
 import com.hazelcast.map.impl.querycache.event.BatchEventData;
 import com.hazelcast.map.impl.querycache.event.QueryCacheEventData;
 import com.hazelcast.map.impl.querycache.event.sequence.Sequenced;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.internal.serialization.Data;
 
 import java.util.Collection;
 import java.util.HashMap;

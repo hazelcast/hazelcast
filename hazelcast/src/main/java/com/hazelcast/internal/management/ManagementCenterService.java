@@ -19,7 +19,6 @@ package com.hazelcast.internal.management;
 import com.hazelcast.cache.impl.JCacheDetector;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.Member;
-import com.hazelcast.cluster.MemberAttributeEvent;
 import com.hazelcast.cluster.MembershipEvent;
 import com.hazelcast.cluster.MembershipListener;
 import com.hazelcast.config.ManagementCenterConfig;
@@ -891,8 +890,5 @@ public class ManagementCenterService {
         public void memberRemoved(MembershipEvent membershipEvent) {
         }
 
-        @Override
-        public void memberAttributeChanged(MemberAttributeEvent memberAttributeEvent) {
-        }
     }
 }

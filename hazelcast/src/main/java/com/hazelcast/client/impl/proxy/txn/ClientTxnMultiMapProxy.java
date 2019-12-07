@@ -26,7 +26,7 @@ import com.hazelcast.client.impl.protocol.codec.TransactionalMultiMapValueCountC
 import com.hazelcast.client.impl.spi.ClientTransactionContext;
 import com.hazelcast.transaction.TransactionalMultiMap;
 import com.hazelcast.multimap.impl.MultiMapService;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.spi.impl.UnmodifiableLazyList;
 import com.hazelcast.transaction.TransactionException;
 

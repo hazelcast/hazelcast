@@ -16,6 +16,9 @@
 
 package com.hazelcast.client.impl;
 
+import com.hazelcast.internal.metrics.DynamicMetricsProvider;
+import com.hazelcast.internal.metrics.MetricDescriptor;
+import com.hazelcast.internal.metrics.MetricsCollectionContext;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.nio.Connection;
@@ -42,7 +45,7 @@ import static com.hazelcast.internal.util.counters.MwCounter.newMwCounter;
 /**
  * Manages and stores {@link com.hazelcast.client.impl.ClientEndpointImpl}s.
  */
-public class ClientEndpointManagerImpl implements ClientEndpointManager {
+public class ClientEndpointManagerImpl implements ClientEndpointManager, DynamicMetricsProvider {
 
     private final ILogger logger;
     private final EventService eventService;
@@ -59,6 +62,7 @@ public class ClientEndpointManagerImpl implements ClientEndpointManager {
         this.eventService = nodeEngine.getEventService();
         MetricsRegistry metricsRegistry = ((NodeEngineImpl) nodeEngine).getMetricsRegistry();
         metricsRegistry.registerStaticMetrics(this, "client.endpoint");
+        metricsRegistry.registerDynamicMetricsProvider(this);
     }
 
     @Override
@@ -141,4 +145,8 @@ public class ClientEndpointManagerImpl implements ClientEndpointManager {
         return endpoints.size();
     }
 
+    @Override
+    public void provideDynamicMetrics(MetricDescriptor descriptor, MetricsCollectionContext context) {
+        endpoints.forEach((connection, clientEndpoint) -> clientEndpoint.provideDynamicMetrics(descriptor, context));
+    }
 }

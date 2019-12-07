@@ -39,7 +39,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * (This implies that the behavior of this call is undefined if the specified collection is this collection,
  * and this collection is nonempty.)
  */
-@Generated("cd54b485026377c996175b79788ee762")
+@Generated("917ead99f1800720a46e708938817c70")
 public final class QueueAddAllCodec {
     //hex: 0x031000
     public static final int REQUEST_MESSAGE_TYPE = 200704;
@@ -63,10 +63,10 @@ public final class QueueAddAllCodec {
         /**
          * Collection containing elements to be added to this collection
          */
-        public java.util.List<com.hazelcast.nio.serialization.Data> dataList;
+        public java.util.List<com.hazelcast.internal.serialization.Data> dataList;
     }
 
-    public static ClientMessage encodeRequest(java.lang.String name, java.util.Collection<com.hazelcast.nio.serialization.Data> dataList) {
+    public static ClientMessage encodeRequest(java.lang.String name, java.util.Collection<com.hazelcast.internal.serialization.Data> dataList) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
         clientMessage.setOperationName("Queue.AddAll");

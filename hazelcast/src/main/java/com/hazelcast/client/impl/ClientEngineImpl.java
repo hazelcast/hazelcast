@@ -43,7 +43,6 @@ import com.hazelcast.internal.nio.tcp.TcpIpConnection;
 import com.hazelcast.internal.partition.IPartitionService;
 import com.hazelcast.internal.services.CoreService;
 import com.hazelcast.internal.services.ManagedService;
-import com.hazelcast.internal.services.MemberAttributeServiceEvent;
 import com.hazelcast.internal.services.MembershipAwareService;
 import com.hazelcast.internal.services.MembershipServiceEvent;
 import com.hazelcast.internal.util.RuntimeAvailableProcessors;
@@ -363,10 +362,6 @@ public class ClientEngineImpl implements ClientEngine, CoreService,
                 clientMemberAddressMap.remove(clientAddress);
             }
         }
-    }
-
-    @Override
-    public void memberAttributeChanged(MemberAttributeServiceEvent event) {
     }
 
     @Nonnull

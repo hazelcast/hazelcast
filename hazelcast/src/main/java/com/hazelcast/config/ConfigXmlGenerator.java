@@ -207,7 +207,6 @@ public class ConfigXmlGenerator {
         }
     }
 
-    @SuppressWarnings("deprecation")
     private static void replicatedMapConfigXmlGenerator(XmlGenerator gen, Config config) {
         for (ReplicatedMapConfig r : config.getReplicatedMapConfigs().values()) {
             MergePolicyConfig mergePolicyConfig = r.getMergePolicyConfig();
@@ -885,7 +884,6 @@ public class ConfigXmlGenerator {
         return "wan-endpoint-config";
     }
 
-    @SuppressWarnings("deprecation")
     private static void mapConfigXmlGenerator(XmlGenerator gen, Config config) {
         Collection<MapConfig> mapConfigs = config.getMapConfigs().values();
         for (MapConfig m : mapConfigs) {
