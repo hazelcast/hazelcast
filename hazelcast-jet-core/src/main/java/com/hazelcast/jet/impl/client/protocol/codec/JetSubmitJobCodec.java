@@ -19,6 +19,7 @@ package com.hazelcast.jet.impl.client.protocol.codec;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.DataCodec;
+import com.hazelcast.internal.serialization.Data;
 
 import static com.hazelcast.client.impl.protocol.ClientMessage.PARTITION_ID_FIELD_OFFSET;
 import static com.hazelcast.client.impl.protocol.ClientMessage.RESPONSE_BACKUP_ACKS_FIELD_OFFSET;
@@ -61,14 +62,14 @@ public final class JetSubmitJobCodec {
 
         /**
          */
-        public com.hazelcast.nio.serialization.Data dag;
+        public Data dag;
 
         /**
          */
-        public com.hazelcast.nio.serialization.Data jobConfig;
+        public Data jobConfig;
     }
 
-    public static ClientMessage encodeRequest(long jobId, com.hazelcast.nio.serialization.Data dag, com.hazelcast.nio.serialization.Data jobConfig) {
+    public static ClientMessage encodeRequest(long jobId, Data dag, Data jobConfig) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
         clientMessage.setOperationName("Jet.SubmitJob");

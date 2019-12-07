@@ -22,7 +22,7 @@ import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.jet.impl.client.protocol.codec.JetGetJobSummaryListCodec;
 import com.hazelcast.jet.impl.operation.GetJobSummaryListOperation;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.spi.impl.operationservice.Operation;
 
 public class JetGetJobSummaryListMessageTask
