@@ -2583,7 +2583,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
 
     @Override
     @Test
-    public void testMapNativeMaxSizePolicy() {
+    public void testMapObjectInMemoryFormatMaxSizePolicy() {
         String yamlFormat = ""
                 + "hazelcast:\n"
                 + "  map:\n"

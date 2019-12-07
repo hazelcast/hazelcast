@@ -2578,7 +2578,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
 
     @Override
     @Test
-    public void testMapNativeMaxSizePolicy() {
+    public void testMapObjectInMemoryFormatMaxSizePolicy() {
         String xmlFormat = HAZELCAST_START_TAG
                 + "<map name=\"mymap\">"
                 + "<in-memory-format>OBJECT</in-memory-format>"

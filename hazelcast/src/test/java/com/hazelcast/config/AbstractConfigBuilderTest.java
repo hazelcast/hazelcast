@@ -343,7 +343,7 @@ public abstract class AbstractConfigBuilderTest extends HazelcastTestSupport {
     public abstract void testDuplicateLiteMemberConfig();
 
     @Test
-    public abstract void testMapNativeMaxSizePolicy();
+    public abstract void testMapObjectInMemoryFormatMaxSizePolicy();
 
     protected EnumSet<MaxSizePolicy> notSupportedByObjectInMemoryFormat() {
         return EnumSet.of(
