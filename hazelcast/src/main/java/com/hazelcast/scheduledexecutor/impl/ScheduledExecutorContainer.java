@@ -63,7 +63,7 @@ public class ScheduledExecutorContainer {
 
     private final NodeEngine nodeEngine;
 
-    private final DistributedScheduledExecutorService service;
+    private final TaskLifecycleHook taskLifecycleHook;
 
     private final ExecutionService executionService;
 
@@ -73,17 +73,17 @@ public class ScheduledExecutorContainer {
 
     private final int capacity;
 
-    ScheduledExecutorContainer(String name, int partitionId, NodeEngine nodeEngine, DistributedScheduledExecutorService service,
+    ScheduledExecutorContainer(String name, int partitionId, NodeEngine nodeEngine, TaskLifecycleHook hook,
                                int durability, int capacity) {
-        this(name, partitionId, nodeEngine, service, durability, capacity, new ConcurrentHashMap<>());
+        this(name, partitionId, nodeEngine, hook, durability, capacity, new ConcurrentHashMap<>());
     }
 
-    ScheduledExecutorContainer(String name, int partitionId, NodeEngine nodeEngine, DistributedScheduledExecutorService service,
+    ScheduledExecutorContainer(String name, int partitionId, NodeEngine nodeEngine, TaskLifecycleHook hook,
                                int durability, int capacity, ConcurrentMap<String, ScheduledTaskDescriptor> tasks) {
         this.logger = nodeEngine.getLogger(getClass());
         this.name = name;
         this.nodeEngine = nodeEngine;
-        this.service = service;
+        this.taskLifecycleHook = hook;
         this.executionService = nodeEngine.getExecutionService();
         this.partitionId = partitionId;
         this.durability = durability;
@@ -94,7 +94,12 @@ public class ScheduledExecutorContainer {
     public ScheduledFuture schedule(TaskDefinition definition) {
         checkNotDuplicateTask(definition.getName());
         checkNotAtCapacity();
-        return createContextAndSchedule(definition);
+        try {
+            taskLifecycleHook.preTaskSchedule(name, definition);
+            return createContextAndSchedule(definition);
+        } finally {
+            taskLifecycleHook.postTaskSchedule(name, definition);
+        }
     }
 
     public boolean cancel(String taskName) {
@@ -151,9 +156,10 @@ public class ScheduledExecutorContainer {
         log(FINEST, taskName, "Disposing");
 
         ScheduledTaskDescriptor descriptor = tasks.get(taskName);
+        taskLifecycleHook.preTaskDestroy(name, descriptor.getDefinition());
         descriptor.cancel(true);
-
         tasks.remove(taskName);
+        taskLifecycleHook.postTaskDestroy(name, descriptor.getDefinition());
     }
 
     public void enqueueSuspended(TaskDefinition definition) {
@@ -355,8 +361,6 @@ public class ScheduledExecutorContainer {
     }
 
     void checkNotAtCapacity() {
-        service.ensurePerNodeCapacity(name);
-
         if (capacity != 0 && tasks.size() >= capacity) {
             throw new RejectedExecutionException(
                     "Maximum capacity (" + capacity + ") of tasks reached for partition (" + partitionId + ") "

@@ -67,7 +67,7 @@ import static java.util.Collections.synchronizedSet;
  */
 public class DistributedScheduledExecutorService
         implements ManagedService, RemoteService, MigrationAwareService, SplitBrainProtectionAwareService,
-        SplitBrainHandlerService, MembershipAwareService {
+        SplitBrainHandlerService, MembershipAwareService, TaskLifecycleHook {
 
     public static final String SERVICE_NAME = "hz:impl:scheduledExecutorService";
     public static final int MEMBER_BIN = -1;
@@ -158,6 +158,20 @@ public class DistributedScheduledExecutorService
             if (partition != null) {
                 partition.destroy();
             }
+        }
+    }
+
+    @Override
+    public void preTaskSchedule(String scheduler, TaskDefinition definition) {
+        ensurePerNodeCapacity(scheduler);
+    }
+
+    @Override
+    public void postTaskDestroy(String scheduler, TaskDefinition definition) {
+        ScheduledExecutorConfig executorConfig = nodeEngine.getConfig().findScheduledExecutorConfig(scheduler);
+        AtomicLong tasksCount = schedulerTaskCounts.get(scheduler);
+        if (tasksCount != null) {
+            tasksCount.decrementAndGet();
         }
     }
 

@@ -148,6 +148,13 @@
                                         </xs:documentation>
                                     </xs:annotation>
                                 </xs:attribute>
+                                <xs:attribute name="capacity-policy" use="optional" type="scheduled-executor-capacity-policy" default="PER_NODE">
+                                    <xs:annotation>
+                                        <xs:documentation>
+                                            The active policy for the capacity setting
+                                        </xs:documentation>
+                                    </xs:annotation>
+                                </xs:attribute>
                             </xs:complexType>
                         </xs:element>
                         <xs:element name="cardinality-estimator" minOccurs="0" maxOccurs="unbounded">
@@ -3597,6 +3604,13 @@
             <xs:enumeration value="USED_NATIVE_MEMORY_PERCENTAGE"/>
             <xs:enumeration value="FREE_NATIVE_MEMORY_SIZE"/>
             <xs:enumeration value="FREE_NATIVE_MEMORY_PERCENTAGE"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:simpleType name="scheduled-executor-capacity-policy">
+        <xs:restriction base="non-space-string">
+            <xs:enumeration value="PER_NODE"/>
+            <xs:enumeration value="PER_PARTITION"/>
         </xs:restriction>
     </xs:simpleType>
 

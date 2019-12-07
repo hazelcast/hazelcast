@@ -16,7 +16,6 @@
 
 package com.hazelcast.scheduledexecutor.impl;
 
-import com.hazelcast.config.ScheduledExecutorConfig;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.internal.util.ConstructorFunction;
@@ -42,8 +41,8 @@ public class ScheduledExecutorMemberBin
                         logger.finest("[Partition: -1] Create new scheduled executor container with name: " + name);
                     }
 
-                    ScheduledExecutorConfig config = nodeEngine.getConfig().findScheduledExecutorConfig(name);
-                    return new ScheduledExecutorMemberOwnedContainer(name, CAPACITY_DISABLED, nodeEngine, service);
+                    return new ScheduledExecutorMemberOwnedContainer(name, CAPACITY_DISABLED,
+                            nodeEngine, taskLifecycleHook);
                 }
             };
 

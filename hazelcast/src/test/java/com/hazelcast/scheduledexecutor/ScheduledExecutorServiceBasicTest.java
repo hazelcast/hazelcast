@@ -41,6 +41,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -168,6 +169,26 @@ public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceT
         IScheduledExecutorService service = instances[0].getScheduledExecutorService(schedulerName);
         String keyOwner = "hitSamePartitionToCheckCapacity";
 
+        List<IScheduledFuture> futures = new ArrayList<>();
+        for (int i = 0; i < 100; i++) {
+            futures.add(service.scheduleOnKeyOwner(new PlainCallableTask(), keyOwner, 0, TimeUnit.SECONDS));
+        }
+
+        try {
+            service.scheduleOnKeyOwner(new PlainCallableTask(), keyOwner, 0, TimeUnit.SECONDS);
+            fail("Should have been rejected.");
+        } catch (RejectedExecutionException ex) {
+            assertEquals("Got wrong RejectedExecutionException",
+                    "Maximum capacity (100) of tasks reached for this member and scheduled executor (foobar). "
+                            + "Reminder, that tasks must be disposed if not needed.", ex.getMessage());
+        }
+
+        // Dispose all
+        for (IScheduledFuture future : futures) {
+            future.dispose();
+        }
+
+        // Re-schedule to verify capacity
         for (int i = 0; i < 100; i++) {
             service.scheduleOnKeyOwner(new PlainCallableTask(), keyOwner, 0, TimeUnit.SECONDS);
         }
@@ -195,6 +216,26 @@ public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceT
         IScheduledExecutorService service = instances[0].getScheduledExecutorService(schedulerName);
         String keyOwner = "hitSamePartitionToCheckCapacity";
 
+        List<IScheduledFuture> futures = new ArrayList<>();
+        for (int i = 0; i < 100; i++) {
+            futures.add(service.scheduleOnKeyOwner(new PlainCallableTask(), keyOwner, 0, TimeUnit.SECONDS));
+        }
+
+        try {
+            service.scheduleOnKeyOwner(new PlainCallableTask(), keyOwner, 0, TimeUnit.SECONDS);
+            fail("Should have been rejected.");
+        } catch (RejectedExecutionException ex) {
+            assertEquals("Got wrong RejectedExecutionException",
+                    "Maximum capacity (100) of tasks reached for partition (262) and scheduled executor (foobar). "
+                            + "Reminder that tasks must be disposed if not needed.", ex.getMessage());
+        }
+
+        // Dispose all
+        for (IScheduledFuture future : futures) {
+            future.dispose();
+        }
+
+        // Re-schedule to verify capacity
         for (int i = 0; i < 100; i++) {
             service.scheduleOnKeyOwner(new PlainCallableTask(), keyOwner, 0, TimeUnit.SECONDS);
         }
@@ -226,6 +267,26 @@ public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceT
         IScheduledExecutorService service = instances[0].getScheduledExecutorService(schedulerName);
         String keyOwner = "hitSamePartitionToCheckCapacity";
 
+        List<IScheduledFuture> futures = new ArrayList<>();
+        for (int i = 0; i < 10; i++) {
+            futures.add(service.scheduleOnKeyOwner(new PlainCallableTask(), keyOwner, 0, TimeUnit.SECONDS));
+        }
+
+        try {
+            service.scheduleOnKeyOwner(new PlainCallableTask(), keyOwner, 0, TimeUnit.SECONDS);
+            fail("Should have been rejected.");
+        } catch (RejectedExecutionException ex) {
+            assertEquals("Got wrong RejectedExecutionException",
+                    "Maximum capacity (10) of tasks reached for partition (262) and scheduled executor (foobar). "
+                            + "Reminder that tasks must be disposed if not needed.", ex.getMessage());
+        }
+
+        // Dispose all
+        for (IScheduledFuture future : futures) {
+            future.dispose();
+        }
+
+        // Re-schedule to verify capacity
         for (int i = 0; i < 10; i++) {
             service.scheduleOnKeyOwner(new PlainCallableTask(), keyOwner, 0, TimeUnit.SECONDS);
         }
@@ -238,6 +299,7 @@ public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceT
                     "Maximum capacity (10) of tasks reached for partition (262) and scheduled executor (foobar). "
                             + "Reminder that tasks must be disposed if not needed.", ex.getMessage());
         }
+
     }
 
     @Test
@@ -256,6 +318,26 @@ public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceT
         IScheduledExecutorService service = instances[0].getScheduledExecutorService(schedulerName);
         Member member = instances[0].getCluster().getLocalMember();
 
+        List<IScheduledFuture> futures = new ArrayList<>();
+        for (int i = 0; i < 10; i++) {
+            futures.add(service.scheduleOnMember(new PlainCallableTask(), member, 0, TimeUnit.SECONDS));
+        }
+
+        try {
+            service.scheduleOnMember(new PlainCallableTask(), member, 0, TimeUnit.SECONDS);
+            fail("Should have been rejected.");
+        } catch (RejectedExecutionException ex) {
+            assertEquals("Got wrong RejectedExecutionException",
+                    "Maximum capacity (10) of tasks reached for this member and scheduled executor (foobar). "
+                            + "Reminder, that tasks must be disposed if not needed.", ex.getMessage());
+        }
+
+        // Dispose all
+        for (IScheduledFuture future : futures) {
+            future.dispose();
+        }
+
+        // Re-schedule to verify capacity
         for (int i = 0; i < 10; i++) {
             service.scheduleOnMember(new PlainCallableTask(), member, 0, TimeUnit.SECONDS);
         }

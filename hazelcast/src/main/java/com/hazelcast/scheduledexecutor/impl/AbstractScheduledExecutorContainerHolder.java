@@ -32,16 +32,16 @@ public abstract class AbstractScheduledExecutorContainerHolder
         implements ScheduledExecutorContainerHolder {
 
     final NodeEngine nodeEngine;
-    final DistributedScheduledExecutorService service;
+    final TaskLifecycleHook taskLifecycleHook;
 
     /**
      * Containers for scheduled tasks, grouped by scheduler name
      */
     final ConcurrentMap<String, ScheduledExecutorContainer> containers = new ConcurrentHashMap<>();
 
-    public AbstractScheduledExecutorContainerHolder(NodeEngine nodeEngine, DistributedScheduledExecutorService service) {
+    public AbstractScheduledExecutorContainerHolder(NodeEngine nodeEngine, TaskLifecycleHook hook) {
         this.nodeEngine = nodeEngine;
-        this.service = service;
+        this.taskLifecycleHook = hook;
     }
 
     public ScheduledExecutorContainer getContainer(String name) {

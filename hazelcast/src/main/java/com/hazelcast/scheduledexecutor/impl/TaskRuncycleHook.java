@@ -16,7 +16,7 @@
 
 package com.hazelcast.scheduledexecutor.impl;
 
-public interface TaskLifecycleListener {
+public interface TaskRuncycleHook {
 
     void onInit();
 

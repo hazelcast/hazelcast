@@ -236,7 +236,7 @@
 
             <hz:scheduled-executor-service name="scheduledExec"
                                            pool-size="10"
-                                           durability="5">
+                                           durability="5" capacity-policy="PER_PARTITION">
                 <hz:split-brain-protection-ref>my-split-brain-protection</hz:split-brain-protection-ref>
                 <hz:merge-policy batch-size="101">PassThroughMergePolicy</hz:merge-policy>
             </hz:scheduled-executor-service>

@@ -35,8 +35,8 @@ public class ScheduledExecutorPartition extends AbstractScheduledExecutorContain
     private final int partitionId;
     private final ConstructorFunction<String, ScheduledExecutorContainer> containerConstructorFunction;
 
-    ScheduledExecutorPartition(NodeEngine nodeEngine, DistributedScheduledExecutorService service, int partitionId) {
-        super(nodeEngine, service);
+    ScheduledExecutorPartition(NodeEngine nodeEngine, TaskLifecycleHook hook, int partitionId) {
+        super(nodeEngine, hook);
         this.logger = nodeEngine.getLogger(getClass());
         this.partitionId = partitionId;
         this.containerConstructorFunction = name -> {
@@ -44,7 +44,7 @@ public class ScheduledExecutorPartition extends AbstractScheduledExecutorContain
                 logger.finest("[Partition:" + partitionId + "]Create new scheduled executor container with name:" + name);
             }
             ScheduledExecutorConfig config = nodeEngine.getConfig().findScheduledExecutorConfig(name);
-            return new ScheduledExecutorContainer(name, partitionId, nodeEngine, service, config.getDurability(),
+            return new ScheduledExecutorContainer(name, partitionId, nodeEngine, hook, config.getDurability(),
                     config.getCapacityPolicy().equals(PER_PARTITION) ? config.getCapacity() : 0);
         };
     }

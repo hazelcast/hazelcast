@@ -288,6 +288,9 @@ public class ScheduledExecutorConfig implements IdentifiedDataSerializable, Name
         if (capacity != that.capacity) {
             return false;
         }
+        if (capacityPolicy != that.capacityPolicy) {
+            return false;
+        }
         if (poolSize != that.poolSize) {
             return false;
         }
@@ -306,13 +309,14 @@ public class ScheduledExecutorConfig implements IdentifiedDataSerializable, Name
         int result = name.hashCode();
         result = 31 * result + durability;
         result = 31 * result + capacity;
+        result = 31 * result + capacityPolicy.hashCode();
         result = 31 * result + poolSize;
         result = 31 * result + (splitBrainProtectionName != null ? splitBrainProtectionName.hashCode() : 0);
         result = 31 * result + (mergePolicyConfig != null ? mergePolicyConfig.hashCode() : 0);
         return result;
     }
 
-    public static enum CapacityPolicy {
+    public enum CapacityPolicy {
 
         PER_NODE,
 
