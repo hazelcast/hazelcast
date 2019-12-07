@@ -28,6 +28,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * This configuration class describes the top-level config of the discovery
@@ -35,7 +36,7 @@ import java.util.List;
  */
 public class DiscoveryConfig implements IdentifiedDataSerializable {
 
-    private List<DiscoveryStrategyConfig> discoveryStrategyConfigs = new ArrayList<DiscoveryStrategyConfig>();
+    private List<DiscoveryStrategyConfig> discoveryStrategyConfigs = new ArrayList<>();
     private DiscoveryServiceProvider discoveryServiceProvider;
     private NodeFilter nodeFilter;
     private String nodeFilterClass;
@@ -52,7 +53,7 @@ public class DiscoveryConfig implements IdentifiedDataSerializable {
     }
 
     public DiscoveryConfig(DiscoveryConfig discoveryConfig) {
-        discoveryStrategyConfigs = new ArrayList<DiscoveryStrategyConfig>(discoveryConfig.discoveryStrategyConfigs);
+        discoveryStrategyConfigs = new ArrayList<>(discoveryConfig.discoveryStrategyConfigs);
         discoveryServiceProvider = discoveryConfig.discoveryServiceProvider;
         nodeFilter = discoveryConfig.nodeFilter;
         nodeFilterClass = discoveryConfig.nodeFilterClass;
@@ -72,6 +73,9 @@ public class DiscoveryConfig implements IdentifiedDataSerializable {
     }
 
     public DiscoveryConfig setNodeFilter(NodeFilter nodeFilter) {
+        if (nodeFilter != null) {
+            setNodeFilterClass(null);
+        }
         this.nodeFilter = nodeFilter;
         return this;
     }
@@ -81,6 +85,9 @@ public class DiscoveryConfig implements IdentifiedDataSerializable {
     }
 
     public DiscoveryConfig setNodeFilterClass(String nodeFilterClass) {
+        if (nodeFilterClass != null) {
+            setNodeFilter(null);
+        }
         this.nodeFilterClass = nodeFilterClass;
         return this;
     }
@@ -111,7 +118,7 @@ public class DiscoveryConfig implements IdentifiedDataSerializable {
      */
     public DiscoveryConfig setDiscoveryStrategyConfigs(List<DiscoveryStrategyConfig> discoveryStrategyConfigs) {
         this.discoveryStrategyConfigs = discoveryStrategyConfigs == null
-                ? new ArrayList<DiscoveryStrategyConfig>(1)
+                ? new ArrayList<>(1)
                 : discoveryStrategyConfigs;
         return this;
     }
@@ -135,8 +142,7 @@ public class DiscoveryConfig implements IdentifiedDataSerializable {
         return "DiscoveryConfig{"
                 + "discoveryStrategyConfigs=" + discoveryStrategyConfigs
                 + ", discoveryServiceProvider=" + discoveryServiceProvider
-                + ", nodeFilter=" + nodeFilter
-                + ", nodeFilterClass='" + nodeFilterClass + '\''
+                + ", nodeFilterClass='" + nodeFilterNameInternal() + '\''
                 + '}';
     }
 
@@ -167,7 +173,6 @@ public class DiscoveryConfig implements IdentifiedDataSerializable {
     }
 
     @Override
-    @SuppressWarnings("checkstyle:npathcomplexity")
     public boolean equals(Object o) {
         if (this == o) {
             return true;
@@ -178,27 +183,20 @@ public class DiscoveryConfig implements IdentifiedDataSerializable {
 
         DiscoveryConfig that = (DiscoveryConfig) o;
 
-        if (!discoveryStrategyConfigs.equals(that.discoveryStrategyConfigs)) {
-            return false;
-        }
+        return discoveryStrategyConfigs.equals(that.discoveryStrategyConfigs)
+            && Objects.equals(discoveryServiceProvider, that.discoveryServiceProvider)
+            && Objects.equals(nodeFilterNameInternal(), that.nodeFilterNameInternal());
+    }
 
-        if (discoveryServiceProvider != null
-                ? !discoveryServiceProvider.equals(that.discoveryServiceProvider)
-                : that.discoveryServiceProvider != null) {
-            return false;
+    private String nodeFilterNameInternal() {
+        if (nodeFilter != null) {
+            return nodeFilter.getClass().getName();
         }
-        if (nodeFilter != null ? !nodeFilter.equals(that.nodeFilter) : that.nodeFilter != null) {
-            return false;
-        }
-        return nodeFilterClass != null ? nodeFilterClass.equals(that.nodeFilterClass) : that.nodeFilterClass == null;
+        return nodeFilterClass;
     }
 
     @Override
     public int hashCode() {
-        int result = discoveryStrategyConfigs.hashCode();
-        result = 31 * result + (discoveryServiceProvider != null ? discoveryServiceProvider.hashCode() : 0);
-        result = 31 * result + (nodeFilter != null ? nodeFilter.hashCode() : 0);
-        result = 31 * result + (nodeFilterClass != null ? nodeFilterClass.hashCode() : 0);
-        return result;
+        return Objects.hash(discoveryStrategyConfigs, discoveryServiceProvider, nodeFilterNameInternal());
     }
 }

@@ -44,6 +44,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.Set;
 
 import static com.hazelcast.internal.config.AliasedDiscoveryConfigUtils.aliasedDiscoveryConfigsFrom;
@@ -836,8 +837,13 @@ public class ConfigCompatibilityChecker {
         @Override
         public boolean check(DiscoveryStrategyConfig c1, DiscoveryStrategyConfig c2) {
             return c1 == c2 || !(c1 == null || c2 == null)
-                    && nullSafeEqual(c1.getClassName(), c2.getClassName())
+                    && discoveryStrategyClassNameEqual(c1, c2)
                     && nullSafeEqual(c1.getProperties(), c2.getProperties());
+        }
+
+        private boolean discoveryStrategyClassNameEqual(DiscoveryStrategyConfig c1, DiscoveryStrategyConfig c2) {
+            return classNameOrImpl(c1.getClassName(), c1.getDiscoveryStrategyFactory())
+                .equals(classNameOrImpl(c2.getClassName(), c2.getDiscoveryStrategyFactory()));
         }
     }
 
@@ -1148,11 +1154,20 @@ public class ConfigCompatibilityChecker {
             boolean c1Disabled = c1 == null || !c1.isEnabled();
             boolean c2Disabled = c2 == null || !c2.isEnabled();
             return c1 == c2 || (c1Disabled && c2Disabled) || (c1 != null && c2 != null
-                    && nullSafeEqual(c1.getNodeFilterClass(), c2.getNodeFilterClass())
+                    && nodeFilterClassNameEqual(c1, c2)
                     && nullSafeEqual(c1.getDiscoveryServiceProvider(), c2.getDiscoveryServiceProvider())
                     && isCollectionCompatible(c1.getDiscoveryStrategyConfigs(), c2.getDiscoveryStrategyConfigs(),
                     new DiscoveryStrategyConfigChecker()));
         }
+
+        private boolean nodeFilterClassNameEqual(DiscoveryConfig c1, DiscoveryConfig c2) {
+            return classNameOrImpl(c1.getNodeFilterClass(), c1.getNodeFilter())
+                .equals(classNameOrImpl(c2.getNodeFilterClass(), c2.getNodeFilter()));
+        }
+    }
+
+    private static String classNameOrImpl(String className, Object impl) {
+        return impl != null ? impl.getClass().getName() : className;
     }
 
     public static class AliasedDiscoveryConfigsChecker extends ConfigChecker<List<AliasedDiscoveryConfig<?>>> {

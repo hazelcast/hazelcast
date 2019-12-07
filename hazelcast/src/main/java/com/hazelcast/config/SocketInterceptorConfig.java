@@ -18,6 +18,7 @@ package com.hazelcast.config;
 
 import com.hazelcast.nio.SocketInterceptor;
 
+import java.util.Objects;
 import java.util.Properties;
 
 /**
@@ -56,6 +57,9 @@ public class SocketInterceptorConfig {
      * @return this SocketInterceptorConfig instance
      */
     public SocketInterceptorConfig setClassName(String className) {
+        if (className != null) {
+            setImplementation(null);
+        }
         this.className = className;
         return this;
     }
@@ -67,6 +71,9 @@ public class SocketInterceptorConfig {
      * @return this SocketInterceptorConfig instance
      */
     public SocketInterceptorConfig setImplementation(Object implementation) {
+        if (implementation != null) {
+            setClassName(null);
+        }
         this.implementation = implementation;
         return this;
     }
@@ -149,7 +156,6 @@ public class SocketInterceptorConfig {
     }
 
     @Override
-    @SuppressWarnings({"checkstyle:cyclomaticcomplexity", "checkstyle:npathcomplexity"})
     public final boolean equals(Object o) {
         if (this == o) {
             return true;
@@ -160,25 +166,21 @@ public class SocketInterceptorConfig {
 
         SocketInterceptorConfig that = (SocketInterceptorConfig) o;
 
-        if (enabled != that.enabled) {
-            return false;
+        return enabled == that.enabled
+            && Objects.equals(implementationNameInternal(), that.implementationNameInternal())
+            && Objects.equals(properties, that.properties);
+    }
+
+    private String implementationNameInternal() {
+        if (implementation != null) {
+            return implementation.getClass().getName();
         }
-        if (className != null ? !className.equals(that.className) : that.className != null) {
-            return false;
-        }
-        if (implementation != null ? !implementation.equals(that.implementation) : that.implementation != null) {
-            return false;
-        }
-        return properties != null ? properties.equals(that.properties) : that.properties == null;
+        return className;
     }
 
     @Override
     public final int hashCode() {
-        int result = (enabled ? 1 : 0);
-        result = 31 * result + (className != null ? className.hashCode() : 0);
-        result = 31 * result + (implementation != null ? implementation.hashCode() : 0);
-        result = 31 * result + (properties != null ? properties.hashCode() : 0);
-        return result;
+        return Objects.hash(enabled, implementationNameInternal(), properties);
     }
 
     @Override

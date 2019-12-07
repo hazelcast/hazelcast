@@ -199,6 +199,7 @@ public class EvictionConfig implements EvictionConfiguration, IdentifiedDataSeri
     public EvictionConfig setComparatorClassName(String comparatorClassName) {
         this.comparatorClassName = checkNotNull(comparatorClassName,
                 "Eviction policy comparator class name cannot be null!");
+        this.comparator = null;
         return this;
     }
 
@@ -230,6 +231,7 @@ public class EvictionConfig implements EvictionConfiguration, IdentifiedDataSeri
     public EvictionConfig setComparator(EvictionPolicyComparator comparator) {
         this.comparator = checkNotNull(comparator,
                 "Eviction policy comparator cannot be null!");
+        this.comparatorClassName = null;
         return this;
     }
 
@@ -273,7 +275,6 @@ public class EvictionConfig implements EvictionConfiguration, IdentifiedDataSeri
     }
 
     @Override
-    @SuppressWarnings({"checkstyle:cyclomaticcomplexity", "checkstyle:npathcomplexity"})
     public final boolean equals(Object o) {
         if (this == o) {
             return true;
@@ -284,28 +285,21 @@ public class EvictionConfig implements EvictionConfiguration, IdentifiedDataSeri
 
         EvictionConfig that = (EvictionConfig) o;
 
-        if (size != that.size) {
-            return false;
+        return size == that.size
+            && maxSizePolicy == that.maxSizePolicy
+            && evictionPolicy == that.evictionPolicy
+            && Objects.equals(comparatorClassInternal(), that.comparatorClassInternal());
+    }
+
+    private String comparatorClassInternal() {
+        if (comparator != null) {
+            return comparator.getClass().getName();
         }
-        if (maxSizePolicy != that.maxSizePolicy) {
-            return false;
-        }
-        if (evictionPolicy != that.evictionPolicy) {
-            return false;
-        }
-        if (!Objects.equals(comparatorClassName, that.comparatorClassName)) {
-            return false;
-        }
-        return Objects.equals(comparator, that.comparator);
+        return comparatorClassName;
     }
 
     @Override
     public final int hashCode() {
-        int result = size;
-        result = 31 * result + (maxSizePolicy != null ? maxSizePolicy.hashCode() : 0);
-        result = 31 * result + (evictionPolicy != null ? evictionPolicy.hashCode() : 0);
-        result = 31 * result + (comparatorClassName != null ? comparatorClassName.hashCode() : 0);
-        result = 31 * result + (comparator != null ? comparator.hashCode() : 0);
-        return result;
+        return Objects.hash(size, maxSizePolicy, evictionPolicy, comparatorClassInternal());
     }
 }

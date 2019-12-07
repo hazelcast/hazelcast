@@ -23,6 +23,7 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import java.io.IOException;
 import java.util.EventListener;
+import java.util.Objects;
 
 import static com.hazelcast.internal.util.Preconditions.checkHasText;
 import static com.hazelcast.internal.util.Preconditions.isNotNull;
@@ -159,7 +160,6 @@ public class ListenerConfig implements IdentifiedDataSerializable {
     }
 
     @Override
-    @SuppressWarnings({"checkstyle:npathcomplexity"})
     public boolean equals(Object o) {
         if (this == o) {
             return true;
@@ -170,16 +170,18 @@ public class ListenerConfig implements IdentifiedDataSerializable {
 
         ListenerConfig that = (ListenerConfig) o;
 
-        if (className != null ? !className.equals(that.className) : that.className != null) {
-            return false;
+        return Objects.equals(listenerImplementationName(), that.listenerImplementationName());
+    }
+
+    private String listenerImplementationName() {
+        if (implementation != null) {
+            return implementation.getClass().getName();
         }
-        return implementation != null ? implementation.equals(that.implementation) : that.implementation == null;
+        return className;
     }
 
     @Override
     public int hashCode() {
-        int result = className != null ? className.hashCode() : 0;
-        result = 31 * result + (implementation != null ? implementation.hashCode() : 0);
-        return result;
+        return Objects.hash(listenerImplementationName());
     }
 }

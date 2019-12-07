@@ -18,6 +18,7 @@ package com.hazelcast.config;
 
 import com.hazelcast.spi.MemberAddressProvider;
 
+import java.util.Objects;
 import java.util.Properties;
 
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
@@ -56,6 +57,9 @@ public final class MemberAddressProviderConfig {
     }
 
     public MemberAddressProviderConfig setClassName(String className) {
+        if (className != null) {
+            setImplementation(null);
+        }
         this.className = className;
         return this;
     }
@@ -75,6 +79,9 @@ public final class MemberAddressProviderConfig {
     }
 
     public MemberAddressProviderConfig setImplementation(MemberAddressProvider implementation) {
+        if (implementation != null) {
+            setClassName(null);
+        }
         this.implementation = implementation;
         return this;
     }
@@ -90,7 +97,6 @@ public final class MemberAddressProviderConfig {
     }
 
     @Override
-    @SuppressWarnings("checkstyle:npathcomplexity")
     public boolean equals(Object o) {
         if (this == o) {
             return true;
@@ -101,25 +107,20 @@ public final class MemberAddressProviderConfig {
 
         MemberAddressProviderConfig that = (MemberAddressProviderConfig) o;
 
-        if (isEnabled() != that.isEnabled()) {
-            return false;
+        return isEnabled() == that.isEnabled()
+            && getProperties().equals(that.getProperties())
+            && Objects.equals(implementationNameInternal(), that.implementationNameInternal());
+    }
+
+    private String implementationNameInternal() {
+        if (implementation != null) {
+            return implementation.getClass().getName();
         }
-        if (getClassName() != null ? !getClassName().equals(that.getClassName()) : that.getClassName() != null) {
-            return false;
-        }
-        if (!getProperties().equals(that.getProperties())) {
-            return false;
-        }
-        return getImplementation() != null ? getImplementation().equals(that.getImplementation())
-                : that.getImplementation() == null;
+        return className;
     }
 
     @Override
     public int hashCode() {
-        int result = (isEnabled() ? 1 : 0);
-        result = 31 * result + (getClassName() != null ? getClassName().hashCode() : 0);
-        result = 31 * result + getProperties().hashCode();
-        result = 31 * result + (getImplementation() != null ? getImplementation().hashCode() : 0);
-        return result;
+        return Objects.hash(isEnabled(), implementationNameInternal(), getProperties());
     }
 }

@@ -98,6 +98,9 @@ public abstract class AbstractWanPublisherConfig implements IdentifiedDataSerial
      * @return this config
      */
     public AbstractWanPublisherConfig setClassName(String className) {
+        if (className != null) {
+            setImplementation(null);
+        }
         this.className = className;
         return this;
     }
@@ -116,6 +119,9 @@ public abstract class AbstractWanPublisherConfig implements IdentifiedDataSerial
      * @return this config
      */
     public AbstractWanPublisherConfig setImplementation(WanPublisher implementation) {
+        if (implementation != null) {
+            setClassName(null);
+        }
         this.implementation = implementation;
         return this;
     }
@@ -155,16 +161,16 @@ public abstract class AbstractWanPublisherConfig implements IdentifiedDataSerial
 
         AbstractWanPublisherConfig that = (AbstractWanPublisherConfig) o;
 
-        if (!publisherId.equals(that.publisherId)) {
-            return false;
+        return publisherId.equals(that.publisherId)
+            && Objects.equals(replicationPublisherNameInternal(), that.replicationPublisherNameInternal())
+            && properties.equals(that.properties);
+    }
+
+    private String replicationPublisherNameInternal() {
+        if (implementation != null) {
+            return implementation.getClass().getName();
         }
-        if (!Objects.equals(className, that.className)) {
-            return false;
-        }
-        if (!Objects.equals(implementation, that.implementation)) {
-            return false;
-        }
-        return properties.equals(that.properties);
+        return className;
     }
 
     @Override

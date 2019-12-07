@@ -27,6 +27,7 @@ import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * This configuration class describes a {@link com.hazelcast.spi.discovery.DiscoveryStrategy}
@@ -46,35 +47,35 @@ public class DiscoveryStrategyConfig implements IdentifiedDataSerializable {
     }
 
     public DiscoveryStrategyConfig(String className) {
-        this(className, Collections.<String, Comparable>emptyMap());
+        this(className, Collections.emptyMap());
     }
 
     public DiscoveryStrategyConfig(String className,
                                    Map<String, Comparable> properties) {
         this.className = className;
         this.properties = properties == null
-                ? MapUtil.<String, Comparable>createHashMap(1)
-                : new HashMap<String, Comparable>(properties);
+                ? MapUtil.createHashMap(1)
+                : new HashMap<>(properties);
         this.discoveryStrategyFactory = null;
     }
 
 
     public DiscoveryStrategyConfig(DiscoveryStrategyFactory discoveryStrategyFactory) {
-        this(discoveryStrategyFactory, Collections.<String, Comparable>emptyMap());
+        this(discoveryStrategyFactory, Collections.emptyMap());
     }
 
     public DiscoveryStrategyConfig(DiscoveryStrategyFactory discoveryStrategyFactory, Map<String, Comparable> properties) {
         this.className = null;
         this.properties = properties == null
-                ? MapUtil.<String, Comparable>createHashMap(1)
-                : new HashMap<String, Comparable>(properties);
+                ? MapUtil.createHashMap(1)
+                : new HashMap<>(properties);
         this.discoveryStrategyFactory = discoveryStrategyFactory;
     }
 
     public DiscoveryStrategyConfig(DiscoveryStrategyConfig config) {
         className = config.className;
         discoveryStrategyFactory = config.discoveryStrategyFactory;
-        properties = new HashMap<String, Comparable>(config.properties);
+        properties = new HashMap<>(config.properties);
     }
 
     public String getClassName() {
@@ -82,11 +83,17 @@ public class DiscoveryStrategyConfig implements IdentifiedDataSerializable {
     }
 
     public DiscoveryStrategyConfig setClassName(String className) {
+        if (className != null) {
+            setDiscoveryStrategyFactory(null);
+        }
         this.className = className;
         return this;
     }
 
     public DiscoveryStrategyConfig setDiscoveryStrategyFactory(DiscoveryStrategyFactory discoveryStrategyFactory) {
+        if (discoveryStrategyFactory != null) {
+            setClassName(null);
+        }
         this.discoveryStrategyFactory = discoveryStrategyFactory;
         return this;
     }
@@ -107,8 +114,8 @@ public class DiscoveryStrategyConfig implements IdentifiedDataSerializable {
 
     public DiscoveryStrategyConfig setProperties(Map<String, Comparable> properties) {
         this.properties = properties == null
-                ? MapUtil.<String, Comparable>createHashMap(1)
-                : new HashMap<String, Comparable>(properties);
+                ? MapUtil.createHashMap(1)
+                : new HashMap<>(properties);
         return this;
     }
 
@@ -117,11 +124,36 @@ public class DiscoveryStrategyConfig implements IdentifiedDataSerializable {
     }
 
     @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || !(o instanceof DiscoveryStrategyConfig)) {
+            return false;
+        }
+
+        DiscoveryStrategyConfig that = (DiscoveryStrategyConfig) o;
+        return Objects.equals(discoverStrategyFactoryNameInternal(), that.discoverStrategyFactoryNameInternal())
+            && Objects.equals(properties, that.properties);
+    }
+
+    private String discoverStrategyFactoryNameInternal() {
+        if (discoveryStrategyFactory != null) {
+            return discoveryStrategyFactory.getClass().getName();
+        }
+        return className;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(discoverStrategyFactoryNameInternal(), properties);
+    }
+
+    @Override
     public String toString() {
         return "DiscoveryStrategyConfig{"
                 + "properties=" + properties
-                + ", className='" + className + '\''
-                + ", discoveryStrategyFactory=" + discoveryStrategyFactory
+                + ", className='" + discoverStrategyFactoryNameInternal() + '\''
                 + '}';
     }
 
@@ -151,7 +183,7 @@ public class DiscoveryStrategyConfig implements IdentifiedDataSerializable {
         className = in.readUTF();
         int size = in.readInt();
         for (int i = 0; i < size; i++) {
-            properties.put(in.readUTF(), (Comparable) in.readObject());
+            properties.put(in.readUTF(), in.readObject());
         }
     }
 }

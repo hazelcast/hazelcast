@@ -24,6 +24,7 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.properties.ClusterProperty;
 
 import java.io.IOException;
+import java.util.Objects;
 import java.util.Properties;
 
 import static com.hazelcast.internal.util.Preconditions.isNotNull;
@@ -31,6 +32,7 @@ import static com.hazelcast.internal.util.Preconditions.isNotNull;
 /**
  * Contains the configuration for a Map Store.
  */
+@SuppressWarnings("checkstyle:methodcount")
 public class MapStoreConfig implements IdentifiedDataSerializable {
     /**
      * Default delay seconds for writing
@@ -101,6 +103,9 @@ public class MapStoreConfig implements IdentifiedDataSerializable {
      * @param className the name to set for the MapStore implementation class
      */
     public MapStoreConfig setClassName(String className) {
+        if (className != null) {
+            setImplementation(null);
+        }
         this.className = className;
         return this;
     }
@@ -120,6 +125,9 @@ public class MapStoreConfig implements IdentifiedDataSerializable {
      * @param factoryClassName the name to set for the MapStoreFactory implementation class
      */
     public MapStoreConfig setFactoryClassName(String factoryClassName) {
+        if (factoryClassName != null) {
+            setFactoryImplementation(null);
+        }
         this.factoryClassName = factoryClassName;
         return this;
     }
@@ -195,6 +203,9 @@ public class MapStoreConfig implements IdentifiedDataSerializable {
      * @return this MapStoreConfig instance
      */
     public MapStoreConfig setImplementation(Object implementation) {
+        if (implementation != null) {
+            setClassName(null);
+        }
         this.implementation = implementation;
         return this;
     }
@@ -215,6 +226,9 @@ public class MapStoreConfig implements IdentifiedDataSerializable {
      * @return this MapStoreConfig instance
      */
     public MapStoreConfig setFactoryImplementation(Object factoryImplementation) {
+        if (factoryImplementation != null) {
+            setFactoryClassName(null);
+        }
         this.factoryImplementation = factoryImplementation;
         return this;
     }
@@ -331,7 +345,6 @@ public class MapStoreConfig implements IdentifiedDataSerializable {
     }
 
     @Override
-    @SuppressWarnings({"checkstyle:npathcomplexity", "checkstyle:cyclomaticcomplexity"})
     public final boolean equals(Object o) {
         if (this == o) {
             return true;
@@ -342,52 +355,34 @@ public class MapStoreConfig implements IdentifiedDataSerializable {
 
         MapStoreConfig that = (MapStoreConfig) o;
 
-        if (enabled != that.enabled) {
-            return false;
+        return enabled == that.enabled
+            && writeCoalescing == that.writeCoalescing
+            && writeDelaySeconds == that.writeDelaySeconds
+            && writeBatchSize == that.writeBatchSize
+            && Objects.equals(implementationNameInternal(), that.implementationNameInternal())
+            && Objects.equals(factoryImplementationNameInternal(), that.factoryImplementationNameInternal())
+            && properties.equals(that.properties)
+            && initialLoadMode == that.initialLoadMode;
+    }
+
+    private String implementationNameInternal() {
+        if (implementation != null) {
+            return implementation.getClass().getName();
         }
-        if (writeCoalescing != that.writeCoalescing) {
-            return false;
+        return className;
+    }
+
+    private String factoryImplementationNameInternal() {
+        if (factoryImplementation != null) {
+            return factoryImplementation.getClass().getName();
         }
-        if (writeDelaySeconds != that.writeDelaySeconds) {
-            return false;
-        }
-        if (writeBatchSize != that.writeBatchSize) {
-            return false;
-        }
-        if (className != null ? !className.equals(that.className) : that.className != null) {
-            return false;
-        }
-        if (factoryClassName != null ? !factoryClassName.equals(that.factoryClassName) : that.factoryClassName != null) {
-            return false;
-        }
-        if (implementation != null ? !implementation.equals(that.implementation) : that.implementation != null) {
-            return false;
-        }
-        if (factoryImplementation != null ? !factoryImplementation.equals(that.factoryImplementation)
-                : that.factoryImplementation != null) {
-            return false;
-        }
-        if (!properties.equals(that.properties)) {
-            return false;
-        }
-        return initialLoadMode == that.initialLoadMode;
+        return factoryClassName;
     }
 
     @Override
-    @SuppressWarnings({"checkstyle:npathcomplexity"})
     public final int hashCode() {
-        final int prime = 31;
-        int result = (enabled ? 1 : 0);
-        result = prime * result + (writeCoalescing ? 1 : 0);
-        result = prime * result + (className != null ? className.hashCode() : 0);
-        result = prime * result + (factoryClassName != null ? factoryClassName.hashCode() : 0);
-        result = prime * result + writeDelaySeconds;
-        result = prime * result + writeBatchSize;
-        result = prime * result + (implementation != null ? implementation.hashCode() : 0);
-        result = prime * result + (factoryImplementation != null ? factoryImplementation.hashCode() : 0);
-        result = prime * result + properties.hashCode();
-        result = prime * result + (initialLoadMode != null ? initialLoadMode.hashCode() : 0);
-        return result;
+        return Objects.hash(enabled, writeCoalescing, implementationNameInternal(), factoryImplementationNameInternal(),
+            writeDelaySeconds, writeBatchSize, properties, initialLoadMode);
     }
 
 

@@ -24,6 +24,7 @@ import com.hazelcast.ringbuffer.RingbufferStore;
 import com.hazelcast.ringbuffer.RingbufferStoreFactory;
 
 import java.io.IOException;
+import java.util.Objects;
 import java.util.Properties;
 
 import static com.hazelcast.internal.util.Preconditions.isNotNull;
@@ -57,6 +58,9 @@ public class RingbufferStoreConfig implements IdentifiedDataSerializable {
     }
 
     public RingbufferStoreConfig setStoreImplementation(RingbufferStore storeImplementation) {
+        if (storeImplementation != null) {
+            setClassName(null);
+        }
         this.storeImplementation = storeImplementation;
         return this;
     }
@@ -102,6 +106,9 @@ public class RingbufferStoreConfig implements IdentifiedDataSerializable {
     }
 
     public RingbufferStoreConfig setFactoryClassName(String factoryClassName) {
+        if (factoryClassName != null) {
+            setFactoryImplementation(null);
+        }
         this.factoryClassName = factoryClassName;
         return this;
     }
@@ -111,6 +118,9 @@ public class RingbufferStoreConfig implements IdentifiedDataSerializable {
     }
 
     public RingbufferStoreConfig setFactoryImplementation(RingbufferStoreFactory factoryImplementation) {
+        if (factoryImplementation != null) {
+            setFactoryClassName(null);
+        }
         this.factoryImplementation = factoryImplementation;
         return this;
     }
@@ -118,7 +128,8 @@ public class RingbufferStoreConfig implements IdentifiedDataSerializable {
     public String toString() {
         return "RingbufferStoreConfig{"
                 + "enabled=" + enabled
-                + ", className='" + className + '\''
+                + ", className='" + storeImplementationNameInternal() + '\''
+                + ", factoryClassName='" + storeFactoryImplementationNameInternal() + '\''
                 + ", properties=" + properties
                 + '}';
     }
@@ -154,7 +165,6 @@ public class RingbufferStoreConfig implements IdentifiedDataSerializable {
     }
 
     @Override
-    @SuppressWarnings({"checkstyle:cyclomaticcomplexity", "checkstyle:npathcomplexity"})
     public final boolean equals(Object o) {
         if (this == o) {
             return true;
@@ -165,36 +175,28 @@ public class RingbufferStoreConfig implements IdentifiedDataSerializable {
 
         RingbufferStoreConfig that = (RingbufferStoreConfig) o;
 
-        if (enabled != that.enabled) {
-            return false;
+        return enabled == that.enabled
+            && Objects.equals(storeImplementationNameInternal(), that.storeImplementationNameInternal())
+            && Objects.equals(properties, that.properties)
+            && Objects.equals(storeFactoryImplementationNameInternal(), that.storeFactoryImplementationNameInternal());
+    }
+
+    private String storeImplementationNameInternal() {
+        if (storeImplementation != null) {
+            return storeImplementation.getClass().getName();
         }
-        if (className != null ? !className.equals(that.className) : that.className != null) {
-            return false;
+        return className;
+    }
+
+    private String storeFactoryImplementationNameInternal() {
+        if (factoryImplementation != null) {
+            return factoryImplementation.getClass().getName();
         }
-        if (factoryClassName != null
-                ? !factoryClassName.equals(that.factoryClassName) : that.factoryClassName != null) {
-            return false;
-        }
-        if (properties != null ? !properties.equals(that.properties) : that.properties != null) {
-            return false;
-        }
-        if (storeImplementation != null
-                ? !storeImplementation.equals(that.storeImplementation) : that.storeImplementation != null) {
-            return false;
-        }
-        return factoryImplementation != null
-                ? factoryImplementation.equals(that.factoryImplementation) : that.factoryImplementation == null;
+        return factoryClassName;
     }
 
     @Override
-    @SuppressWarnings({"checkstyle:cyclomaticcomplexity", "checkstyle:npathcomplexity"})
     public final int hashCode() {
-        int result = (enabled ? 1 : 0);
-        result = 31 * result + (className != null ? className.hashCode() : 0);
-        result = 31 * result + (factoryClassName != null ? factoryClassName.hashCode() : 0);
-        result = 31 * result + (properties != null ? properties.hashCode() : 0);
-        result = 31 * result + (storeImplementation != null ? storeImplementation.hashCode() : 0);
-        result = 31 * result + (factoryImplementation != null ? factoryImplementation.hashCode() : 0);
-        return result;
+        return Objects.hash(enabled, properties, storeImplementationNameInternal(), storeFactoryImplementationNameInternal());
     }
 }

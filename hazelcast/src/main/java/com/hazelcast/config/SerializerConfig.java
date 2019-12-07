@@ -18,6 +18,8 @@ package com.hazelcast.config;
 
 import com.hazelcast.nio.serialization.Serializer;
 
+import java.util.Objects;
+
 /**
  * Contains the serialization configuration for a particular class.
  */
@@ -68,6 +70,9 @@ public class SerializerConfig {
      * @return SerializationConfig
      */
     public SerializerConfig setClassName(final String className) {
+        if (className != null) {
+            setImplementation(null);
+        }
         this.className = className;
         return this;
     }
@@ -92,6 +97,9 @@ public class SerializerConfig {
      * @return SerializerConfig
      */
     public SerializerConfig setImplementation(final Serializer implementation) {
+        if (implementation != null) {
+            setClassName(null);
+        }
         this.implementation = implementation;
         return this;
     }
@@ -113,6 +121,9 @@ public class SerializerConfig {
      * @return SerializerConfig
      */
     public SerializerConfig setTypeClass(final Class typeClass) {
+        if (typeClass != null) {
+            setTypeClassName(null);
+        }
         this.typeClass = typeClass;
         return this;
     }
@@ -135,12 +146,14 @@ public class SerializerConfig {
      * @return SerializerConfig
      */
     public SerializerConfig setTypeClassName(final String typeClassName) {
+        if (typeClassName != null) {
+            setTypeClass(null);
+        }
         this.typeClassName = typeClassName;
         return this;
     }
 
     @Override
-    @SuppressWarnings({"checkstyle:cyclomaticcomplexity", "checkstyle:npathcomplexity"})
     public final boolean equals(Object o) {
         if (this == o) {
             return true;
@@ -151,25 +164,27 @@ public class SerializerConfig {
 
         SerializerConfig that = (SerializerConfig) o;
 
-        if (className != null ? !className.equals(that.className) : that.className != null) {
-            return false;
+        return Objects.equals(implementationNameInternal(), that.implementationNameInternal())
+            && Objects.equals(typeClassNameInternal(), that.typeClassNameInternal());
+    }
+
+    private String implementationNameInternal() {
+        if (implementation != null) {
+            return implementation.getClass().getName();
         }
-        if (implementation != null ? !implementation.equals(that.implementation) : that.implementation != null) {
-            return false;
+        return className;
+    }
+
+    private String typeClassNameInternal() {
+        if (typeClass != null) {
+            return typeClass.getName();
         }
-        if (typeClass != null ? !typeClass.equals(that.typeClass) : that.typeClass != null) {
-            return false;
-        }
-        return typeClassName != null ? typeClassName.equals(that.typeClassName) : that.typeClassName == null;
+        return typeClassName;
     }
 
     @Override
     public final int hashCode() {
-        int result = className != null ? className.hashCode() : 0;
-        result = 31 * result + (implementation != null ? implementation.hashCode() : 0);
-        result = 31 * result + (typeClass != null ? typeClass.hashCode() : 0);
-        result = 31 * result + (typeClassName != null ? typeClassName.hashCode() : 0);
-        return result;
+        return Objects.hash(typeClassNameInternal(), implementationNameInternal());
     }
 
     @Override

@@ -24,6 +24,7 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import java.io.IOException;
+import java.util.Objects;
 import java.util.Properties;
 
 import static com.hazelcast.internal.util.Preconditions.isNotNull;
@@ -57,6 +58,9 @@ public class QueueStoreConfig implements IdentifiedDataSerializable {
     }
 
     public QueueStoreConfig setStoreImplementation(QueueStore storeImplementation) {
+        if (storeImplementation != null) {
+            setClassName(null);
+        }
         this.storeImplementation = storeImplementation;
         return this;
     }
@@ -75,6 +79,9 @@ public class QueueStoreConfig implements IdentifiedDataSerializable {
     }
 
     public QueueStoreConfig setClassName(String className) {
+        if (className != null) {
+            setStoreImplementation(null);
+        }
         this.className = className;
         return this;
     }
@@ -102,6 +109,9 @@ public class QueueStoreConfig implements IdentifiedDataSerializable {
     }
 
     public QueueStoreConfig setFactoryClassName(String factoryClassName) {
+        if (factoryClassName != null) {
+            setFactoryImplementation(null);
+        }
         this.factoryClassName = factoryClassName;
         return this;
     }
@@ -111,6 +121,9 @@ public class QueueStoreConfig implements IdentifiedDataSerializable {
     }
 
     public QueueStoreConfig setFactoryImplementation(QueueStoreFactory factoryImplementation) {
+        if (factoryImplementation != null) {
+            setFactoryClassName(null);
+        }
         this.factoryImplementation = factoryImplementation;
         return this;
     }
@@ -118,7 +131,8 @@ public class QueueStoreConfig implements IdentifiedDataSerializable {
     public String toString() {
         return "QueueStoreConfig{"
                 + "enabled=" + enabled
-                + ", className='" + className + '\''
+                + ", className='" + storeImplementationNameInternal() + '\''
+                + ", factoryClassName='" + storeFactoryImplementationNameInternal() + '\''
                 + ", properties=" + properties
                 + '}';
     }
@@ -154,7 +168,6 @@ public class QueueStoreConfig implements IdentifiedDataSerializable {
     }
 
     @Override
-    @SuppressWarnings({"checkstyle:cyclomaticcomplexity", "checkstyle:npathcomplexity"})
     public final boolean equals(Object o) {
         if (this == o) {
             return true;
@@ -164,36 +177,29 @@ public class QueueStoreConfig implements IdentifiedDataSerializable {
         }
 
         QueueStoreConfig that = (QueueStoreConfig) o;
-        if (isEnabled() != that.isEnabled()) {
-            return false;
+        return isEnabled() == that.isEnabled()
+            && Objects.equals(getProperties(), that.getProperties())
+            && Objects.equals(storeImplementationNameInternal(), that.storeImplementationNameInternal())
+            && Objects.equals(storeFactoryImplementationNameInternal(), that.storeFactoryImplementationNameInternal());
+    }
+
+    private String storeImplementationNameInternal() {
+        if (storeImplementation != null) {
+            return storeImplementation.getClass().getName();
         }
-        if (getClassName() != null ? !getClassName().equals(that.getClassName()) : that.getClassName() != null) {
-            return false;
+        return className;
+    }
+
+    private String storeFactoryImplementationNameInternal() {
+        if (factoryImplementation != null) {
+            return factoryImplementation.getClass().getName();
         }
-        if (getFactoryClassName() != null ? !getFactoryClassName().equals(that.getFactoryClassName())
-                : that.getFactoryClassName() != null) {
-            return false;
-        }
-        if (getProperties() != null ? !getProperties().equals(that.getProperties()) : that.getProperties() != null) {
-            return false;
-        }
-        if (getStoreImplementation() != null ? !getStoreImplementation().equals(that.getStoreImplementation())
-                : that.getStoreImplementation() != null) {
-            return false;
-        }
-        return getFactoryImplementation() != null ? getFactoryImplementation().equals(that.getFactoryImplementation())
-                : that.getFactoryImplementation() == null;
+        return factoryClassName;
     }
 
     @Override
-    @SuppressWarnings("checkstyle:npathcomplexity")
     public final int hashCode() {
-        int result = (isEnabled() ? 1 : 0);
-        result = 31 * result + (getClassName() != null ? getClassName().hashCode() : 0);
-        result = 31 * result + (getFactoryClassName() != null ? getFactoryClassName().hashCode() : 0);
-        result = 31 * result + (getProperties() != null ? getProperties().hashCode() : 0);
-        result = 31 * result + (getStoreImplementation() != null ? getStoreImplementation().hashCode() : 0);
-        result = 31 * result + (getFactoryImplementation() != null ? getFactoryImplementation().hashCode() : 0);
-        return result;
+        return Objects.hash(isEnabled(), storeImplementationNameInternal(), getProperties(),
+            storeFactoryImplementationNameInternal());
     }
 }

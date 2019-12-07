@@ -93,6 +93,9 @@ public class WanConsumerConfig implements IdentifiedDataSerializable {
      * @see #setImplementation(WanConsumer)
      */
     public WanConsumerConfig setClassName(String className) {
+        if (className != null) {
+            setImplementation(null);
+        }
         this.className = className;
         return this;
     }
@@ -118,6 +121,9 @@ public class WanConsumerConfig implements IdentifiedDataSerializable {
      * @see #setClassName(String)
      */
     public WanConsumerConfig setImplementation(WanConsumer implementation) {
+        if (implementation != null) {
+            setClassName(null);
+        }
         this.implementation = implementation;
         return this;
     }
@@ -199,24 +205,20 @@ public class WanConsumerConfig implements IdentifiedDataSerializable {
 
         WanConsumerConfig that = (WanConsumerConfig) o;
 
-        if (persistWanReplicatedData != that.persistWanReplicatedData) {
-            return false;
+        return persistWanReplicatedData == that.persistWanReplicatedData
+            && Objects.equals(replicationConsumerNameInternal(), that.replicationConsumerNameInternal())
+            && Objects.equals(properties, that.properties);
+    }
+
+    private String replicationConsumerNameInternal() {
+        if (implementation != null) {
+            return implementation.getClass().getName();
         }
-        if (!Objects.equals(className, that.className)) {
-            return false;
-        }
-        if (!Objects.equals(implementation, that.implementation)) {
-            return false;
-        }
-        return Objects.equals(properties, that.properties);
+        return className;
     }
 
     @Override
     public int hashCode() {
-        int result = (persistWanReplicatedData ? 1 : 0);
-        result = 31 * result + (className != null ? className.hashCode() : 0);
-        result = 31 * result + (implementation != null ? implementation.hashCode() : 0);
-        result = 31 * result + (properties != null ? properties.hashCode() : 0);
-        return result;
+        return Objects.hash(persistWanReplicatedData, replicationConsumerNameInternal(), properties);
     }
 }

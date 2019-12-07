@@ -628,8 +628,10 @@ public class ConfigXmlGenerator {
             QueueStoreConfig storeConfig = q.getQueueStoreConfig();
             if (storeConfig != null) {
                 gen.open("queue-store", "enabled", storeConfig.isEnabled())
-                        .node("class-name", storeConfig.getClassName())
-                        .node("factory-class-name", storeConfig.getFactoryClassName())
+                        .node("class-name",
+                            classNameOrImplClass(storeConfig.getClassName(), storeConfig.getStoreImplementation()))
+                        .node("factory-class-name",
+                            classNameOrImplClass(storeConfig.getFactoryClassName(), storeConfig.getFactoryImplementation()))
                         .appendProperties(storeConfig.getProperties())
                         .close();
             }
@@ -654,8 +656,10 @@ public class ConfigXmlGenerator {
             RingbufferStoreConfig storeConfig = rbConfig.getRingbufferStoreConfig();
             if (storeConfig != null) {
                 gen.open("ringbuffer-store", "enabled", storeConfig.isEnabled())
-                        .node("class-name", storeConfig.getClassName())
-                        .node("factory-class-name", storeConfig.getFactoryClassName())
+                        .node("class-name",
+                            classNameOrImplClass(storeConfig.getClassName(), storeConfig.getStoreImplementation()))
+                        .node("factory-class-name",
+                            classNameOrImplClass(storeConfig.getFactoryClassName(), storeConfig.getFactoryImplementation()))
                         .appendProperties(storeConfig.getProperties());
                 gen.close();
             }

@@ -16,6 +16,7 @@
 
 package com.hazelcast.config;
 
+import java.util.Objects;
 import java.util.Properties;
 
 /**
@@ -60,6 +61,9 @@ public final class SSLConfig {
      * @param factoryClassName the name implementation class
      */
     public SSLConfig setFactoryClassName(String factoryClassName) {
+        if (factoryClassName != null) {
+            setFactoryImplementation(null);
+        }
         this.factoryClassName = factoryClassName;
         return this;
     }
@@ -93,6 +97,9 @@ public final class SSLConfig {
      * @return this SSLConfig instance
      */
     public SSLConfig setFactoryImplementation(Object factoryImplementation) {
+        if (factoryImplementation != null) {
+            setFactoryClassName(null);
+        }
         this.factoryImplementation = factoryImplementation;
         return this;
     }
@@ -179,26 +186,20 @@ public final class SSLConfig {
 
         SSLConfig sslConfig = (SSLConfig) o;
 
-        if (enabled != sslConfig.enabled) {
-            return false;
+        return Objects.equals(enabled, sslConfig.enabled)
+            && Objects.equals(properties, sslConfig.properties)
+            && Objects.equals(factoryClassInternal(), sslConfig.factoryClassInternal());
+    }
+
+    private String factoryClassInternal() {
+        if (factoryImplementation != null) {
+            return factoryImplementation.getClass().getName();
         }
-        if (factoryClassName != null
-                ? !factoryClassName.equals(sslConfig.factoryClassName) : sslConfig.factoryClassName != null) {
-            return false;
-        }
-        if (factoryImplementation != null
-                ? !factoryImplementation.equals(sslConfig.factoryImplementation) : sslConfig.factoryImplementation != null) {
-            return false;
-        }
-        return properties != null ? properties.equals(sslConfig.properties) : sslConfig.properties == null;
+        return factoryClassName;
     }
 
     @Override
     public int hashCode() {
-        int result = (enabled ? 1 : 0);
-        result = 31 * result + (factoryClassName != null ? factoryClassName.hashCode() : 0);
-        result = 31 * result + (factoryImplementation != null ? factoryImplementation.hashCode() : 0);
-        result = 31 * result + (properties != null ? properties.hashCode() : 0);
-        return result;
+        return Objects.hash(enabled, factoryClassInternal(), properties);
     }
 }
