@@ -47,7 +47,7 @@ import com.hazelcast.internal.util.scheduler.CoalescingDelayedTrigger;
 import com.hazelcast.internal.util.scheduler.ScheduledEntry;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.cluster.Address;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.partition.MigrationListener;
 import com.hazelcast.partition.NoDataMemberInClusterException;
 import com.hazelcast.partition.PartitionEvent;

@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Retrieves and removes the head of this queue.  This method differs from poll only in that it throws an exception
  * if this queue is empty.
  */
-@Generated("c610173415df5033787a3f9adb1d513f")
+@Generated("21170a95f40c5558861d14e1a431859c")
 public final class QueueRemoveCodec {
     //hex: 0x030400
     public static final int REQUEST_MESSAGE_TYPE = 197632;
@@ -61,10 +61,10 @@ public final class QueueRemoveCodec {
         /**
          * Element to be removed from this queue, if present
          */
-        public com.hazelcast.nio.serialization.Data value;
+        public com.hazelcast.internal.serialization.Data value;
     }
 
-    public static ClientMessage encodeRequest(java.lang.String name, com.hazelcast.nio.serialization.Data value) {
+    public static ClientMessage encodeRequest(java.lang.String name, com.hazelcast.internal.serialization.Data value) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
         clientMessage.setOperationName("Queue.Remove");

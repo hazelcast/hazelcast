@@ -31,7 +31,4 @@ public class MembershipAdapter implements MembershipListener {
     public void memberRemoved(MembershipEvent membershipEvent) {
     }
 
-    @Override
-    public void memberAttributeChanged(MemberAttributeEvent memberAttributeEvent) {
-    }
 }

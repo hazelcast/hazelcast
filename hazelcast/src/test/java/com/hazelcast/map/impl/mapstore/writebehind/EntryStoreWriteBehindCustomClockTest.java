@@ -68,7 +68,7 @@ public class EntryStoreWriteBehindCustomClockTest extends AbstractClockTest {
 
     @Override
     protected Config getConfig() {
-        Config config = super.getConfig();
+        Config config = smallInstanceConfig();
         MapStoreConfig mapStoreConfig = new MapStoreConfig();
         mapStoreConfig.setImplementation(testEntryStore).setWriteDelaySeconds(3).setEnabled(true);
         config.getMapConfig("default").setMapStoreConfig(mapStoreConfig);

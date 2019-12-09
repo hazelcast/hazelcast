@@ -20,7 +20,7 @@ import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.internal.services.NodeAware;
 import com.hazelcast.spi.impl.NodeEngine;

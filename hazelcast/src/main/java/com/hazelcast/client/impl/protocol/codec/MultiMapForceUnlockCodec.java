@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Releases the lock for the specified key regardless of the lock owner. It always successfully unlocks the key,
  * never blocks and returns immediately.
  */
-@Generated("507205642213230d95bbb46ae61ced0e")
+@Generated("722d4ee7497bfdf1854d176b2144fe05")
 public final class MultiMapForceUnlockCodec {
     //hex: 0x021400
     public static final int REQUEST_MESSAGE_TYPE = 136192;
@@ -61,7 +61,7 @@ public final class MultiMapForceUnlockCodec {
         /**
          * The key to Lock
          */
-        public com.hazelcast.nio.serialization.Data key;
+        public com.hazelcast.internal.serialization.Data key;
 
         /**
          * The client-wide unique id for this request. It is used to make the request idempotent by sending the same reference id during retries.
@@ -69,7 +69,7 @@ public final class MultiMapForceUnlockCodec {
         public long referenceId;
     }
 
-    public static ClientMessage encodeRequest(java.lang.String name, com.hazelcast.nio.serialization.Data key, long referenceId) {
+    public static ClientMessage encodeRequest(java.lang.String name, com.hazelcast.internal.serialization.Data key, long referenceId) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(true);
         clientMessage.setOperationName("MultiMap.ForceUnlock");

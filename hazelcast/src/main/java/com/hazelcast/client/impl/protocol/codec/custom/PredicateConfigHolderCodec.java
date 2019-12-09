@@ -24,7 +24,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.fastFor
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
-@Generated("6e0f94fa7c1cbd2912b9490d1dac3b49")
+@Generated("acd962c976edf32ea4982090217f9fe7")
 public final class PredicateConfigHolderCodec {
 
     private PredicateConfigHolderCodec() {
@@ -46,7 +46,7 @@ public final class PredicateConfigHolderCodec {
 
         java.lang.String className = CodecUtil.decodeNullable(iterator, StringCodec::decode);
         java.lang.String sql = CodecUtil.decodeNullable(iterator, StringCodec::decode);
-        com.hazelcast.nio.serialization.Data implementation = CodecUtil.decodeNullable(iterator, DataCodec::decode);
+        com.hazelcast.internal.serialization.Data implementation = CodecUtil.decodeNullable(iterator, DataCodec::decode);
 
         fastForwardToEndFrame(iterator);
 

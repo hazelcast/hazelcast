@@ -18,7 +18,7 @@ package com.hazelcast.multimap.impl;
 
 import com.hazelcast.internal.locksupport.LockSupportService;
 import com.hazelcast.internal.locksupport.LockStore;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.services.DistributedObjectNamespace;
 import com.hazelcast.internal.services.ObjectNamespace;
 import com.hazelcast.spi.merge.SplitBrainMergePolicy;

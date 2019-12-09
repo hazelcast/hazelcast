@@ -16,14 +16,13 @@
 
 package com.hazelcast.collection.impl.queue;
 
+import com.hazelcast.cluster.MembershipEvent;
+import com.hazelcast.cluster.MembershipListener;
+import com.hazelcast.collection.IQueue;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
-import com.hazelcast.collection.IQueue;
-import com.hazelcast.cluster.MemberAttributeEvent;
-import com.hazelcast.cluster.MembershipEvent;
-import com.hazelcast.cluster.MembershipListener;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -91,9 +90,6 @@ public class QueueAdvancedTest extends HazelcastTestSupport {
                 shutdownLatch.countDown();
             }
 
-            @Override
-            public void memberAttributeChanged(MemberAttributeEvent memberAttributeEvent) {
-            }
         }));
 
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);

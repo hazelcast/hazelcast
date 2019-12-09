@@ -132,7 +132,7 @@ public class ManagementCenterService {
     @SuppressFBWarnings("RV_RETURN_VALUE_IGNORED_BAD_PRACTICE")
     public void log(Event event) {
         if (System.nanoTime() - lastMCEventsPollNanos > MC_EVENTS_WINDOW_NANOS) {
-            // ignore event and clear the queue if polls happened a while ago
+            // ignore event and clear the queue if the last poll happened a while ago
             mcEvents.clear();
         } else {
             mcEvents.offer(event);

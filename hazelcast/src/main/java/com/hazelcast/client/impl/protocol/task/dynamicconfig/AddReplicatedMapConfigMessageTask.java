@@ -24,6 +24,7 @@ import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.config.MergePolicyConfig;
 import com.hazelcast.config.ReplicatedMapConfig;
 import com.hazelcast.instance.impl.Node;
+import com.hazelcast.internal.dynamicconfig.DynamicConfigurationAwareConfig;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
@@ -67,5 +68,13 @@ public class AddReplicatedMapConfigMessageTask
     @Override
     public String getMethodName() {
         return "addReplicatedMapConfig";
+    }
+
+    @Override
+    protected boolean checkStaticConfigDoesNotExist(IdentifiedDataSerializable config) {
+        DynamicConfigurationAwareConfig nodeConfig = (DynamicConfigurationAwareConfig) nodeEngine.getConfig();
+        ReplicatedMapConfig replicatedMapConfig = (ReplicatedMapConfig) config;
+        return nodeConfig.checkStaticConfigDoesNotExist(nodeConfig.getStaticConfig().getReplicatedMapConfigs(),
+                replicatedMapConfig.getName(), replicatedMapConfig);
     }
 }

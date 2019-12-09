@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Returns the set of keys in the multimap.The collection is NOT backed by the map, so changes to the map are NOT
  * reflected in the collection, and vice-versa.
  */
-@Generated("63080d25d5df4720e7b2854e753a18be")
+@Generated("9f076a717a548534cd14c03a64b6c6d7")
 public final class MultiMapKeySetCodec {
     //hex: 0x020400
     public static final int REQUEST_MESSAGE_TYPE = 132096;
@@ -84,10 +84,10 @@ public final class MultiMapKeySetCodec {
         /**
          * The set of keys in the multimap. The returned set might be modifiable but it has no effect on the multimap.
          */
-        public java.util.List<com.hazelcast.nio.serialization.Data> response;
+        public java.util.List<com.hazelcast.internal.serialization.Data> response;
     }
 
-    public static ClientMessage encodeResponse(java.util.Collection<com.hazelcast.nio.serialization.Data> response) {
+    public static ClientMessage encodeResponse(java.util.Collection<com.hazelcast.internal.serialization.Data> response) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, RESPONSE_MESSAGE_TYPE);

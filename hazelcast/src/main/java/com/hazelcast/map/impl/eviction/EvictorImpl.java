@@ -24,7 +24,7 @@ import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.recordstore.LazyEvictableEntryView;
 import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.map.impl.recordstore.Storage;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.spi.eviction.EvictionPolicyComparator;
 
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;

@@ -16,7 +16,7 @@
 
 package com.hazelcast.replicatedmap.impl.record;
 
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.impl.QueryableEntry;
 

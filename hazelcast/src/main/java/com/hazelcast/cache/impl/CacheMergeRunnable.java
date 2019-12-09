@@ -19,7 +19,7 @@ package com.hazelcast.cache.impl;
 import com.hazelcast.cache.impl.record.CacheRecord;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.config.InMemoryFormat;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.merge.AbstractMergeRunnable;
 import com.hazelcast.spi.impl.operationservice.OperationFactory;

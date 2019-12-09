@@ -18,7 +18,7 @@ package com.hazelcast.client.impl.spi;
 
 import com.hazelcast.partition.Partition;
 import com.hazelcast.cluster.Address;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.internal.serialization.Data;
 
 import javax.annotation.Nonnull;
 

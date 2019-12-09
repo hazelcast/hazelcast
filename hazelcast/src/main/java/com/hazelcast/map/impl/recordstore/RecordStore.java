@@ -22,6 +22,7 @@ import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.internal.eviction.ExpiredKey;
 import com.hazelcast.internal.monitor.LocalRecordStoreStats;
 import com.hazelcast.internal.nearcache.impl.invalidation.InvalidationQueue;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.util.comparators.ValueComparator;
 import com.hazelcast.map.IMap;
 import com.hazelcast.map.MapLoader;
@@ -32,7 +33,6 @@ import com.hazelcast.map.impl.iterator.MapKeysWithCursor;
 import com.hazelcast.map.impl.mapstore.MapDataStore;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.record.RecordFactory;
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
 import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 import com.hazelcast.spi.merge.SplitBrainMergeTypes.MapMergeTypes;
@@ -167,12 +167,12 @@ public interface RecordStore<R extends Record> {
      * com.hazelcast.map.impl.proxy.MapProxySupport#getInternal}
      * <p>
      * Returns corresponding value for key as {@link
-     * com.hazelcast.nio.serialization.Data}. This adds
+     * Data}. This adds
      * an extra serialization step. For the reason of
      * this behaviour please see issue 1292 on github.
      *
      * @param key key to be accessed
-     * @return value as {@link com.hazelcast.nio.serialization.Data}
+     * @return value as {@link Data}
      * independent of {@link com.hazelcast.config.InMemoryFormat}
      */
     @SuppressWarnings("JavadocReference")

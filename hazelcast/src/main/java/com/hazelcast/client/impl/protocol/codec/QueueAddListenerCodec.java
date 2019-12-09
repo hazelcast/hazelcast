@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Adds an listener for this collection. Listener will be notified or all collection add/remove events.
  */
-@Generated("5baa397ae7f842b6e847406c52de8edb")
+@Generated("062a68e1429acd98eed9c5441951145d")
 public final class QueueAddListenerCodec {
     //hex: 0x031100
     public static final int REQUEST_MESSAGE_TYPE = 200960;
@@ -126,7 +126,7 @@ public final class QueueAddListenerCodec {
         return response;
     }
 
-    public static ClientMessage encodeItemEvent(@Nullable com.hazelcast.nio.serialization.Data item, java.util.UUID uuid, int eventType) {
+    public static ClientMessage encodeItemEvent(@Nullable com.hazelcast.internal.serialization.Data item, java.util.UUID uuid, int eventType) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[EVENT_ITEM_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         initialFrame.flags |= ClientMessage.IS_EVENT_FLAG;
@@ -148,12 +148,12 @@ public final class QueueAddListenerCodec {
                 ClientMessage.Frame initialFrame = iterator.next();
                 java.util.UUID uuid = decodeUUID(initialFrame.content, EVENT_ITEM_UUID_FIELD_OFFSET);
                 int eventType = decodeInt(initialFrame.content, EVENT_ITEM_EVENT_TYPE_FIELD_OFFSET);
-                com.hazelcast.nio.serialization.Data item = CodecUtil.decodeNullable(iterator, DataCodec::decode);
+                com.hazelcast.internal.serialization.Data item = CodecUtil.decodeNullable(iterator, DataCodec::decode);
                 handleItemEvent(item, uuid, eventType);
                 return;
             }
             Logger.getLogger(super.getClass()).finest("Unknown message type received on event handler :" + messageType);
         }
-        public abstract void handleItemEvent(@Nullable com.hazelcast.nio.serialization.Data item, java.util.UUID uuid, int eventType);
+        public abstract void handleItemEvent(@Nullable com.hazelcast.internal.serialization.Data item, java.util.UUID uuid, int eventType);
     }
 }

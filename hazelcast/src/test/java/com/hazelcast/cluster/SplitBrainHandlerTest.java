@@ -221,9 +221,6 @@ public class SplitBrainHandlerTest extends HazelcastTestSupport {
                 splitLatch.countDown();
             }
 
-            @Override
-            public void memberAttributeChanged(MemberAttributeEvent memberAttributeEvent) {
-            }
         });
 
         final CountDownLatch mergeLatch = new CountDownLatch(1);
@@ -783,9 +780,6 @@ public class SplitBrainHandlerTest extends HazelcastTestSupport {
             splitLatch.countDown();
         }
 
-        @Override
-        public void memberAttributeChanged(MemberAttributeEvent memberAttributeEvent) {
-        }
     }
 
     private void testClusterMerge(boolean advancedNetwork, boolean multicast) {

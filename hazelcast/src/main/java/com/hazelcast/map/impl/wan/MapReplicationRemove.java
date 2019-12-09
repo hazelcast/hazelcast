@@ -20,7 +20,7 @@ import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.wan.DistributedServiceWanEventCounters;
 import com.hazelcast.wan.impl.InternalWanReplicationEvent;

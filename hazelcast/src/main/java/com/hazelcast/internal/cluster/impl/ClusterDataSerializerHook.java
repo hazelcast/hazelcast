@@ -34,7 +34,6 @@ import com.hazelcast.internal.cluster.impl.operations.JoinMastershipClaimOp;
 import com.hazelcast.internal.cluster.impl.operations.JoinRequestOp;
 import com.hazelcast.internal.cluster.impl.operations.LockClusterStateOp;
 import com.hazelcast.internal.cluster.impl.operations.MasterResponseOp;
-import com.hazelcast.internal.cluster.impl.operations.MemberAttributeChangedOp;
 import com.hazelcast.internal.cluster.impl.operations.MembersUpdateOp;
 import com.hazelcast.internal.cluster.impl.operations.MergeClustersOp;
 import com.hazelcast.internal.cluster.impl.operations.OnJoinOp;
@@ -77,7 +76,7 @@ public final class ClusterDataSerializerHook implements DataSerializerHook {
     public static final int LOCK_CLUSTER_STATE = 14;
     public static final int MASTER_CLAIM = 15;
     public static final int WHOIS_MASTER = 16;
-    public static final int MEMBER_ATTR_CHANGED = 17;
+    public static final int ENDPOINT_QUALIFIER = 17;
     public static final int MERGE_CLUSTERS = 18;
     public static final int POST_JOIN = 19;
     public static final int ROLLBACK_CLUSTER_STATE = 20;
@@ -101,9 +100,8 @@ public final class ClusterDataSerializerHook implements DataSerializerHook {
     public static final int HEARTBEAT_COMPLAINT = 38;
     public static final int PROMOTE_LITE_MEMBER = 39;
     public static final int VECTOR_CLOCK = 40;
-    public static final int ENDPOINT_QUALIFIER = 41;
 
-    static final int LEN = ENDPOINT_QUALIFIER + 1;
+    static final int LEN = VECTOR_CLOCK + 1;
 
     @Override
     public int getFactoryId() {
@@ -131,7 +129,6 @@ public final class ClusterDataSerializerHook implements DataSerializerHook {
         constructors[LOCK_CLUSTER_STATE] = arg -> new LockClusterStateOp();
         constructors[MASTER_CLAIM] = arg -> new JoinMastershipClaimOp();
         constructors[WHOIS_MASTER] = arg -> new WhoisMasterOp();
-        constructors[MEMBER_ATTR_CHANGED] = arg -> new MemberAttributeChangedOp();
         constructors[MERGE_CLUSTERS] = arg -> new MergeClustersOp();
         constructors[POST_JOIN] = arg -> new OnJoinOp();
         constructors[ROLLBACK_CLUSTER_STATE] = arg -> new RollbackClusterStateOp();

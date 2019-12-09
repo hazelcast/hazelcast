@@ -16,7 +16,7 @@
 
 package com.hazelcast.wan.impl;
 
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.util.Clock;
 import com.hazelcast.wan.WanReplicationEvent;
 

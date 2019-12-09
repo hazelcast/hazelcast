@@ -16,7 +16,7 @@
 
 package com.hazelcast.collection.impl.queue;
 
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
 
 import java.util.Iterator;

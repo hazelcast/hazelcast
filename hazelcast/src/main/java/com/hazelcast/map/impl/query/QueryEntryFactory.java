@@ -18,7 +18,7 @@ package com.hazelcast.map.impl.query;
 
 import com.hazelcast.config.CacheDeserializedValues;
 import com.hazelcast.internal.serialization.InternalSerializationService;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.query.impl.CachedQueryEntry;
 import com.hazelcast.query.impl.QueryEntry;
 import com.hazelcast.query.impl.QueryableEntry;

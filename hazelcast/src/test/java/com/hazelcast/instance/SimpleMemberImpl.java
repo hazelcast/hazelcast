@@ -97,14 +97,6 @@ public class SimpleMemberImpl implements Member {
     }
 
     @Override
-    public void setAttribute(String key, String value) {
-    }
-
-    @Override
-    public void removeAttribute(String key) {
-    }
-
-    @Override
     public MemberVersion getVersion() {
         return null;
     }

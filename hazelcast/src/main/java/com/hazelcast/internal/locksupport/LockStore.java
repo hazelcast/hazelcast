@@ -16,7 +16,7 @@
 
 package com.hazelcast.internal.locksupport;
 
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.spi.properties.ClusterProperty;
 
 import java.util.Set;

@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Checks if the reference contains the value.
  */
-@Generated("1f9368e3c43e6e8b7bcc4fc8ed5af40e")
+@Generated("2fd8f8b581a4503d1ac5298788518a9f")
 public final class AtomicRefContainsCodec {
     //hex: 0x0A0300
     public static final int REQUEST_MESSAGE_TYPE = 656128;
@@ -65,10 +65,10 @@ public final class AtomicRefContainsCodec {
         /**
          * The value to check (is allowed to be null).
          */
-        public @Nullable com.hazelcast.nio.serialization.Data value;
+        public @Nullable com.hazelcast.internal.serialization.Data value;
     }
 
-    public static ClientMessage encodeRequest(com.hazelcast.cp.internal.RaftGroupId groupId, java.lang.String name, @Nullable com.hazelcast.nio.serialization.Data value) {
+    public static ClientMessage encodeRequest(com.hazelcast.cp.internal.RaftGroupId groupId, java.lang.String name, @Nullable com.hazelcast.internal.serialization.Data value) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(true);
         clientMessage.setOperationName("AtomicRef.Contains");

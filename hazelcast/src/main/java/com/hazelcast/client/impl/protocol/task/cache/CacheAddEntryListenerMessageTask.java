@@ -30,7 +30,7 @@ import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.serialization.impl.HeapData;
 import com.hazelcast.internal.services.ListenerWrapperEventFilter;
 import com.hazelcast.internal.services.NotifiableEventListener;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.CachePermission;
 import com.hazelcast.spi.impl.eventservice.EventRegistration;

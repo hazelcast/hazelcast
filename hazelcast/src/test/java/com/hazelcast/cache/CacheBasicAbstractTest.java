@@ -20,7 +20,7 @@ import com.hazelcast.config.CacheConfig;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.internal.util.SampleableConcurrentHashMap;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.test.AssertTask;
 import org.junit.Assert;
 import org.junit.Test;

@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Returns an iterator over the elements in this list in proper sequence.
  */
-@Generated("76578b13de4fe2cf9cce86303039fb0e")
+@Generated("4d031395eb408af261146c3194195045")
 public final class ListIteratorCodec {
     //hex: 0x051600
     public static final int REQUEST_MESSAGE_TYPE = 333312;
@@ -83,10 +83,10 @@ public final class ListIteratorCodec {
         /**
          * An iterator over the elements in this list in proper sequence
          */
-        public java.util.List<com.hazelcast.nio.serialization.Data> response;
+        public java.util.List<com.hazelcast.internal.serialization.Data> response;
     }
 
-    public static ClientMessage encodeResponse(java.util.Collection<com.hazelcast.nio.serialization.Data> response) {
+    public static ClientMessage encodeResponse(java.util.Collection<com.hazelcast.internal.serialization.Data> response) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, RESPONSE_MESSAGE_TYPE);

@@ -16,7 +16,7 @@
 
 package com.hazelcast.map.impl.querycache.subscriber.record;
 
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.internal.serialization.Data;
 
 /**
  * Contract for various {@link QueryCacheRecord} factories.

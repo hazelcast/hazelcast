@@ -17,7 +17,7 @@
 package com.hazelcast.internal.nearcache.impl.invalidation;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.util.HashUtil;
 
 import java.util.ArrayList;

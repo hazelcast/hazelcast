@@ -23,7 +23,7 @@ import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.EventJournalMapEvent;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.spi.impl.SerializationServiceSupport;
 import com.hazelcast.internal.serialization.SerializationService;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;

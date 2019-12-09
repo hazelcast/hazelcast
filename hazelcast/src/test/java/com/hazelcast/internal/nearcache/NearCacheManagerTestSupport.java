@@ -56,6 +56,11 @@ public abstract class NearCacheManagerTestSupport extends CommonNearCacheTestSup
         executionService = nodeEngineImpl.getExecutionService();
     }
 
+    @Override
+    protected Config getConfig() {
+        return smallInstanceConfig();
+    }
+
     void doCreateAndGetNearCache() {
         NearCacheManager nearCacheManager = createNearCacheManager();
 

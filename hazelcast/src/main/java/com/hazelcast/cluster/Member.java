@@ -102,25 +102,6 @@ public interface Member extends DataSerializable, Endpoint {
     String getAttribute(String key);
 
     /**
-     * Defines a key-value pair string attribute for this member available
-     * to other cluster members.
-     *
-     * @param key The key for this property.
-     * @param value The value that corresponds to this attribute and this member.
-     */
-    void setAttribute(String key, String value);
-
-    /**
-     * Removes a key-value pair attribute for this member if given key was
-     * previously assigned as an attribute.<br>
-     * If key wasn't assigned to a value this method does nothing.
-     *
-     * @param key The key to be deleted from the member attributes
-     * @since 3.2
-     */
-    void removeAttribute(String key);
-
-    /**
      * Returns the Hazelcast codebase version of this member; this may or may not be different from the version reported by
      * {@link Cluster#getClusterVersion()}, for example when a node with a different codebase version is added to an
      * existing cluster. See the documentation for {@link Cluster#getClusterVersion()} for a more thorough discussion

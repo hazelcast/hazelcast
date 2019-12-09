@@ -46,17 +46,17 @@ import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.internal.nearcache.NearCache;
 import com.hazelcast.internal.nio.Connection;
+import com.hazelcast.internal.util.IterationType;
 import com.hazelcast.internal.util.ResultSet;
 import com.hazelcast.internal.util.ThreadLocalRandomProvider;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.MapEvent;
 import com.hazelcast.map.impl.DataAwareEntryEvent;
-import com.hazelcast.replicatedmap.LocalReplicatedMapStats;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.query.Predicate;
+import com.hazelcast.replicatedmap.LocalReplicatedMapStats;
 import com.hazelcast.replicatedmap.ReplicatedMap;
 import com.hazelcast.spi.impl.UnmodifiableLazyList;
-import com.hazelcast.internal.util.IterationType;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -122,12 +122,25 @@ public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements Repli
     @Override
     protected void postDestroy() {
         try {
-            if (nearCache != null) {
-                removeNearCacheInvalidationListener();
-                getContext().getNearCacheManager(getServiceName()).destroyNearCache(name);
-            }
+            destroyNearCache();
         } finally {
             super.postDestroy();
+        }
+    }
+
+    @Override
+    protected void onShutdown() {
+        try {
+            destroyNearCache();
+        } finally {
+            super.onShutdown();
+        }
+    }
+
+    private void destroyNearCache() {
+        if (nearCache != null) {
+            removeNearCacheInvalidationListener();
+            getContext().getNearCacheManager(getServiceName()).destroyNearCache(name);
         }
     }
 
@@ -376,8 +389,8 @@ public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements Repli
     @Nonnull
     @Override
     public UUID addEntryListener(@Nonnull EntryListener<K, V> listener,
-                                   @Nonnull Predicate<K, V> predicate,
-                                   @Nullable K key) {
+                                 @Nonnull Predicate<K, V> predicate,
+                                 @Nullable K key) {
         checkNotNull(listener, NULL_LISTENER_IS_NOT_ALLOWED);
         checkNotNull(predicate, NULL_PREDICATE_IS_NOT_ALLOWED);
 
@@ -705,7 +718,7 @@ public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements Repli
 
         @Override
         public void handleEntryEvent(Data dataKey, Data value, Data oldValue, Data mergingValue,
-                                        int eventType, UUID uuid, int numberOfAffectedEntries) {
+                                     int eventType, UUID uuid, int numberOfAffectedEntries) {
             EntryEventType entryEventType = EntryEventType.getByType(eventType);
             switch (entryEventType) {
                 case ADDED:

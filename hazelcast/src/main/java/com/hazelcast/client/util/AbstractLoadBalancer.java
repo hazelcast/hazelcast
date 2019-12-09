@@ -22,7 +22,6 @@ import com.hazelcast.cluster.Cluster;
 import com.hazelcast.cluster.InitialMembershipEvent;
 import com.hazelcast.cluster.InitialMembershipListener;
 import com.hazelcast.cluster.Member;
-import com.hazelcast.cluster.MemberAttributeEvent;
 import com.hazelcast.cluster.MembershipEvent;
 
 import java.util.Set;
@@ -68,7 +67,4 @@ public abstract class AbstractLoadBalancer implements LoadBalancer, InitialMembe
         setMembersRef();
     }
 
-    @Override
-    public final void memberAttributeChanged(MemberAttributeEvent memberAttributeEvent) {
-    }
 }

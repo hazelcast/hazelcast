@@ -18,7 +18,7 @@ package com.hazelcast.internal.nearcache;
 
 import com.hazelcast.internal.adapter.DataStructureAdapter;
 import com.hazelcast.nearcache.NearCacheStats;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.spi.impl.InitializingObject;
 import com.hazelcast.spi.properties.HazelcastProperty;
 

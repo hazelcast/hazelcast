@@ -77,17 +77,4 @@ public final class MemberImpl extends AbstractMember implements Member {
         return false;
     }
 
-    @Override
-    public void setAttribute(String key, String value) {
-        throw notSupportedOnClient();
-    }
-
-    @Override
-    public void removeAttribute(String key) {
-        throw notSupportedOnClient();
-    }
-
-    private UnsupportedOperationException notSupportedOnClient() {
-        return new UnsupportedOperationException("Attributes on remote members must not be changed");
-    }
 }

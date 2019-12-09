@@ -17,7 +17,7 @@
 package com.hazelcast.map.impl.recordstore;
 
 import com.hazelcast.map.MapLoader;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.internal.serialization.Data;
 
 import java.util.List;
 import java.util.concurrent.Future;

@@ -21,7 +21,7 @@ import com.hazelcast.cp.IAtomicReference;
 import com.hazelcast.cp.internal.RaftGroupId;
 import com.hazelcast.cp.internal.datastructures.atomicref.proxy.AtomicRefProxy;
 import com.hazelcast.cp.internal.datastructures.spi.atomic.RaftAtomicValueService;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 

@@ -20,6 +20,7 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.MCApplyMCConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.MCApplyMCConfigCodec.RequestParameters;
 import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
+import com.hazelcast.core.HazelcastException;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.management.ManagementCenterService;
 import com.hazelcast.internal.management.dto.ClientBwListDTO;
@@ -37,9 +38,7 @@ public class ApplyMCConfigMessageTask extends AbstractCallableMessageTask<Reques
     protected Object call() throws Exception {
         ManagementCenterService mcs = nodeEngine.getManagementCenterService();
         if (mcs == null) {
-            // as ManagementCenterService is not initialized yet,
-            // we silently ignore this operation and let MC to retry later
-            return null;
+            throw new HazelcastException("ManagementCenterService is not initialized yet");
         }
         ClientBwListDTO.Mode mode = ClientBwListDTO.Mode.getById(parameters.clientBwListMode);
         if (mode == null) {

@@ -19,7 +19,7 @@ package com.hazelcast.collection.impl.common;
 import com.hazelcast.collection.ItemEvent;
 import com.hazelcast.core.ItemEventType;
 import com.hazelcast.cluster.Member;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
 
 import java.io.IOException;

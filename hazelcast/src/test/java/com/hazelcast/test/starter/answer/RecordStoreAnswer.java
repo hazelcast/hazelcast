@@ -17,7 +17,7 @@
 package com.hazelcast.test.starter.answer;
 
 import com.hazelcast.cluster.Address;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.internal.serialization.Data;
 import org.mockito.invocation.InvocationOnMock;
 
 import javax.cache.expiry.ExpiryPolicy;

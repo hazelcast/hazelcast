@@ -30,7 +30,7 @@ import com.hazelcast.internal.services.RemoteService;
 import com.hazelcast.internal.services.SplitBrainHandlerService;
 import com.hazelcast.internal.services.TransactionalService;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.partition.strategy.StringPartitioningStrategy;
 import com.hazelcast.internal.services.SplitBrainProtectionAwareService;
 import com.hazelcast.spi.impl.NodeEngine;

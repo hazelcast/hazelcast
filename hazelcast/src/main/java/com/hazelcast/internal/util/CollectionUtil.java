@@ -17,7 +17,7 @@
 package com.hazelcast.internal.util;
 
 import com.hazelcast.internal.serialization.SerializationService;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.internal.serialization.Data;
 
 import java.util.AbstractList;
 import java.util.ArrayList;

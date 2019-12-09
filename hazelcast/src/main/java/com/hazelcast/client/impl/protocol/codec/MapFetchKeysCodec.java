@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Fetches specified number of keys from the specified partition starting from specified table index.
  */
-@Generated("ebe9d99bc867e55415f008dd926e946b")
+@Generated("43fd6949f3fbfd20c3635d3d5884b5a5")
 public final class MapFetchKeysCodec {
     //hex: 0x013800
     public static final int REQUEST_MESSAGE_TYPE = 79872;
@@ -104,10 +104,10 @@ public final class MapFetchKeysCodec {
         /**
          * TODO DOC
          */
-        public java.util.List<com.hazelcast.nio.serialization.Data> keys;
+        public java.util.List<com.hazelcast.internal.serialization.Data> keys;
     }
 
-    public static ClientMessage encodeResponse(int tableIndex, java.util.Collection<com.hazelcast.nio.serialization.Data> keys) {
+    public static ClientMessage encodeResponse(int tableIndex, java.util.Collection<com.hazelcast.internal.serialization.Data> keys) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, RESPONSE_MESSAGE_TYPE);

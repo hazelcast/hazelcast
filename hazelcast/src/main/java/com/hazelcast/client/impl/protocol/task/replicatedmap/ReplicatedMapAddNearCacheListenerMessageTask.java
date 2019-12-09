@@ -21,7 +21,7 @@ import com.hazelcast.client.impl.protocol.codec.ReplicatedMapAddEntryListenerWit
 import com.hazelcast.client.impl.protocol.codec.ReplicatedMapAddNearCacheEntryListenerCodec;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.query.Predicate;
 
 import java.util.UUID;

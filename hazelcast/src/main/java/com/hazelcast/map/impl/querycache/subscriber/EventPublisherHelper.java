@@ -30,7 +30,7 @@ import com.hazelcast.map.impl.querycache.QueryCacheEventService;
 import com.hazelcast.map.impl.querycache.event.LocalCacheWideEventData;
 import com.hazelcast.map.impl.querycache.event.LocalEntryEventData;
 import com.hazelcast.map.impl.querycache.subscriber.record.QueryCacheRecord;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.spi.impl.eventservice.EventFilter;
 import com.hazelcast.internal.serialization.SerializationService;
