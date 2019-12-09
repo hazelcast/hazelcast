@@ -22,20 +22,18 @@ import com.hazelcast.cardinality.impl.hyperloglog.HyperLogLog;
 import com.hazelcast.collection.impl.collection.CollectionItem;
 import com.hazelcast.collection.impl.queue.QueueItem;
 import com.hazelcast.core.EntryView;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.multimap.impl.MultiMapContainer;
 import com.hazelcast.multimap.impl.MultiMapMergeContainer;
 import com.hazelcast.multimap.impl.MultiMapRecord;
-import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.replicatedmap.impl.record.ReplicatedRecord;
 import com.hazelcast.ringbuffer.impl.Ringbuffer;
 import com.hazelcast.scheduledexecutor.impl.ScheduledTaskDescriptor;
 import com.hazelcast.spi.merge.MergingEntry;
 import com.hazelcast.spi.merge.MergingValue;
 import com.hazelcast.spi.merge.RingbufferMergeData;
-import com.hazelcast.spi.merge.SplitBrainMergeTypes.AtomicLongMergeTypes;
-import com.hazelcast.spi.merge.SplitBrainMergeTypes.AtomicReferenceMergeTypes;
 import com.hazelcast.spi.merge.SplitBrainMergeTypes.CacheMergeTypes;
 import com.hazelcast.spi.merge.SplitBrainMergeTypes.CardinalityEstimatorMergeTypes;
 import com.hazelcast.spi.merge.SplitBrainMergeTypes.CollectionMergeTypes;
@@ -62,7 +60,7 @@ public final class MergingValueFactory {
 
     public static CollectionMergeTypes createMergingValue(SerializationService serializationService,
                                                           Collection<CollectionItem> items) {
-        Collection<Object> values = new ArrayList<Object>(items.size());
+        Collection<Object> values = new ArrayList<>(items.size());
         for (CollectionItem item : items) {
             values.add(item.getValue());
         }
@@ -71,7 +69,7 @@ public final class MergingValueFactory {
     }
 
     public static QueueMergeTypes createMergingValue(SerializationService serializationService, Queue<QueueItem> items) {
-        Collection<Object> values = new ArrayList<Object>(items.size());
+        Collection<Object> values = new ArrayList<>(items.size());
         for (QueueItem item : items) {
             values.add(item.getData());
         }
@@ -79,18 +77,9 @@ public final class MergingValueFactory {
                 .setValue(values);
     }
 
-    public static AtomicLongMergeTypes createMergingValue(SerializationService serializationService, Long value) {
-        return new AtomicLongMergingValueImpl(serializationService)
-                .setValue(value);
-    }
-
-    public static AtomicReferenceMergeTypes createMergingValue(SerializationService serializationService, Data value) {
-        return new AtomicReferenceMergingValueImpl(serializationService)
-                .setValue(value);
-    }
-
-    public static MapMergeTypes createMergingEntry(SerializationService serializationService, EntryView<Data, Data> entryView) {
-        return new MapMergingEntryImpl(serializationService)
+    public static <K, V> MapMergeTypes<K, V> createMergingEntry(
+            SerializationService serializationService, EntryView<Data, Data> entryView) {
+        return new MapMergingEntryImpl<K, V>(serializationService)
                 .setKey(entryView.getKey())
                 .setValue(entryView.getValue())
                 .setCreationTime(entryView.getCreationTime())
@@ -105,9 +94,9 @@ public final class MergingValueFactory {
                 .setCost(entryView.getCost());
     }
 
-    public static MapMergeTypes createMergingEntry(SerializationService serializationService,
-                                                   Data dataKey, Record record) {
-        return new MapMergingEntryImpl(serializationService)
+    public static <K, V> MapMergeTypes<K, V> createMergingEntry(SerializationService serializationService,
+                                                                Data dataKey, Record record) {
+        return new MapMergingEntryImpl<K, V>(serializationService)
                 .setKey(dataKey)
                 .setValue(serializationService.toData(record.getValue()))
                 .setCreationTime(record.getCreationTime())
@@ -123,9 +112,9 @@ public final class MergingValueFactory {
                 .setCost(record.getCost());
     }
 
-    public static MapMergeTypes createMergingEntry(SerializationService serializationService,
-                                                   Data dataKey, Data dataValue, Record record) {
-        return new MapMergingEntryImpl(serializationService)
+    public static <K, V> MapMergeTypes<K, V> createMergingEntry(SerializationService serializationService,
+                                                                Data dataKey, Data dataValue, Record record) {
+        return new MapMergingEntryImpl<K, V>(serializationService)
                 .setKey(dataKey)
                 .setValue(dataValue)
                 .setCreationTime(record.getCreationTime())
@@ -140,9 +129,9 @@ public final class MergingValueFactory {
                 .setCost(record.getCost());
     }
 
-    public static CacheMergeTypes createMergingEntry(SerializationService serializationService,
-                                                     CacheEntryView<Data, Data> entryView) {
-        return new CacheMergingEntryImpl(serializationService)
+    public static <K, V> CacheMergeTypes<K, V> createMergingEntry(SerializationService serializationService,
+                                                                  CacheEntryView<Data, Data> entryView) {
+        return new CacheMergingEntryImpl<K, V>(serializationService)
                 .setKey(entryView.getKey())
                 .setValue(entryView.getValue())
                 .setCreationTime(entryView.getCreationTime())
@@ -151,9 +140,9 @@ public final class MergingValueFactory {
                 .setHits(entryView.getHits());
     }
 
-    public static <R extends CacheRecord> CacheMergeTypes createMergingEntry(SerializationService serializationService,
-                                                                             Data key, Data value, R record) {
-        return new CacheMergingEntryImpl(serializationService)
+    public static <K, V, R extends CacheRecord> CacheMergeTypes<K, V> createMergingEntry(
+            SerializationService serializationService, Data key, Data value, R record) {
+        return new CacheMergingEntryImpl<K, V>(serializationService)
                 .setKey(key)
                 .setValue(value)
                 .setCreationTime(record.getCreationTime())
@@ -162,8 +151,9 @@ public final class MergingValueFactory {
                 .setHits(record.getHits());
     }
 
-    public static ReplicatedMapMergeTypes createMergingEntry(SerializationService serializationService, ReplicatedRecord record) {
-        return new ReplicatedMapMergingEntryImpl(serializationService)
+    public static <K, V> ReplicatedMapMergeTypes<K, V> createMergingEntry(
+            SerializationService serializationService, ReplicatedRecord record) {
+        return new ReplicatedMapMergingEntryImpl<K, V>(serializationService)
                 .setKey(record.getKeyInternal())
                 .setValue(record.getValueInternal())
                 .setCreationTime(record.getCreationTime())
@@ -175,7 +165,7 @@ public final class MergingValueFactory {
 
     public static MultiMapMergeTypes createMergingEntry(SerializationService serializationService,
                                                         MultiMapMergeContainer container) {
-        Collection<Object> values = new ArrayList<Object>(container.getRecords().size());
+        Collection<Object> values = new ArrayList<>(container.getRecords().size());
         for (MultiMapRecord record : container.getRecords()) {
             values.add(record.getObject());
         }
@@ -191,7 +181,7 @@ public final class MergingValueFactory {
 
     public static MultiMapMergeTypes createMergingEntry(SerializationService serializationService, MultiMapContainer container,
                                                         Data dataKey, Collection<MultiMapRecord> records, long hits) {
-        Collection<Object> values = new ArrayList<Object>(records.size());
+        Collection<Object> values = new ArrayList<>(records.size());
         for (MultiMapRecord record : records) {
             values.add(record.getObject());
         }

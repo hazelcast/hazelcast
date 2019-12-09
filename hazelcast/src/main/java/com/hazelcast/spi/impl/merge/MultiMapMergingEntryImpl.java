@@ -35,7 +35,8 @@ import java.util.Collection;
  * @since 3.10
  */
 @SuppressWarnings("WeakerAccess")
-public class MultiMapMergingEntryImpl implements MultiMapMergeTypes, SerializationServiceAware, IdentifiedDataSerializable {
+public class MultiMapMergingEntryImpl<K,V>
+        implements MultiMapMergeTypes<K,V>, SerializationServiceAware, IdentifiedDataSerializable {
 
     private Data key;
     private Collection<Object> value;
@@ -60,11 +61,11 @@ public class MultiMapMergingEntryImpl implements MultiMapMergeTypes, Serializati
     }
 
     @Override
-    public <DK> DK getDeserializedKey() {
+    public K getDeserializedKey() {
         return serializationService.toObject(key);
     }
 
-    public MultiMapMergingEntryImpl setKey(Data key) {
+    public MultiMapMergingEntryImpl<K,V> setKey(Data key) {
         this.key = key;
         return this;
     }
@@ -75,15 +76,15 @@ public class MultiMapMergingEntryImpl implements MultiMapMergeTypes, Serializati
     }
 
     @Override
-    public <DV> DV getDeserializedValue() {
-        Collection<Object> deserializedValues = new ArrayList<Object>(value.size());
+    public Collection<V> getDeserializedValue() {
+        Collection<V> deserializedValues = new ArrayList<>(value.size());
         for (Object aValue : value) {
             deserializedValues.add(serializationService.toObject(aValue));
         }
-        return (DV) deserializedValues;
+        return deserializedValues;
     }
 
-    public MultiMapMergingEntryImpl setValues(Collection<Object> values) {
+    public MultiMapMergingEntryImpl<K,V> setValues(Collection<Object> values) {
         this.value = values;
         return this;
     }
@@ -93,7 +94,7 @@ public class MultiMapMergingEntryImpl implements MultiMapMergeTypes, Serializati
         return creationTime;
     }
 
-    public MultiMapMergingEntryImpl setCreationTime(long creationTime) {
+    public MultiMapMergingEntryImpl<K,V> setCreationTime(long creationTime) {
         this.creationTime = creationTime;
         return this;
     }
@@ -103,7 +104,7 @@ public class MultiMapMergingEntryImpl implements MultiMapMergeTypes, Serializati
         return hits;
     }
 
-    public MultiMapMergingEntryImpl setHits(long hits) {
+    public MultiMapMergingEntryImpl<K,V> setHits(long hits) {
         this.hits = hits;
         return this;
     }
@@ -113,7 +114,7 @@ public class MultiMapMergingEntryImpl implements MultiMapMergeTypes, Serializati
         return lastAccessTime;
     }
 
-    public MultiMapMergingEntryImpl setLastAccessTime(long lastAccessTime) {
+    public MultiMapMergingEntryImpl<K,V> setLastAccessTime(long lastAccessTime) {
         this.lastAccessTime = lastAccessTime;
         return this;
     }
@@ -123,7 +124,7 @@ public class MultiMapMergingEntryImpl implements MultiMapMergeTypes, Serializati
         return lastUpdateTime;
     }
 
-    public MultiMapMergingEntryImpl setLastUpdateTime(long lastUpdateTime) {
+    public MultiMapMergingEntryImpl<K,V> setLastUpdateTime(long lastUpdateTime) {
         this.lastUpdateTime = lastUpdateTime;
         return this;
     }
@@ -151,7 +152,7 @@ public class MultiMapMergingEntryImpl implements MultiMapMergeTypes, Serializati
     public void readData(ObjectDataInput in) throws IOException {
         key = IOUtil.readObject(in);
         int size = in.readInt();
-        value = new ArrayList<Object>(size);
+        value = new ArrayList<>(size);
         for (int i = 0; i < size; i++) {
             value.add(in.readObject());
         }
@@ -182,7 +183,7 @@ public class MultiMapMergingEntryImpl implements MultiMapMergeTypes, Serializati
             return false;
         }
 
-        MultiMapMergingEntryImpl that = (MultiMapMergingEntryImpl) o;
+        MultiMapMergingEntryImpl<K,V> that = (MultiMapMergingEntryImpl<K,V>) o;
         if (creationTime != that.creationTime) {
             return false;
         }

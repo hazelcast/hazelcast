@@ -33,7 +33,8 @@ import java.io.IOException;
  * @since 3.10
  */
 @SuppressWarnings("WeakerAccess")
-public class CacheMergingEntryImpl implements CacheMergeTypes, SerializationServiceAware, IdentifiedDataSerializable {
+public class CacheMergingEntryImpl<K,V>
+        implements CacheMergeTypes<K,V>, SerializationServiceAware, IdentifiedDataSerializable {
 
     private Data value;
     private Data key;
@@ -57,11 +58,11 @@ public class CacheMergingEntryImpl implements CacheMergeTypes, SerializationServ
     }
 
     @Override
-    public Object getDeserializedValue() {
+    public V getDeserializedValue() {
         return serializationService.toObject(value);
     }
 
-    public CacheMergingEntryImpl setValue(Data value) {
+    public CacheMergingEntryImpl<K,V> setValue(Data value) {
         this.value = value;
         return this;
     }
@@ -72,11 +73,11 @@ public class CacheMergingEntryImpl implements CacheMergeTypes, SerializationServ
     }
 
     @Override
-    public Object getDeserializedKey() {
+    public K getDeserializedKey() {
         return serializationService.toObject(key);
     }
 
-    public CacheMergingEntryImpl setKey(Data key) {
+    public CacheMergingEntryImpl<K,V> setKey(Data key) {
         this.key = key;
         return this;
     }
@@ -86,7 +87,7 @@ public class CacheMergingEntryImpl implements CacheMergeTypes, SerializationServ
         return creationTime;
     }
 
-    public CacheMergingEntryImpl setCreationTime(long creationTime) {
+    public CacheMergingEntryImpl<K,V> setCreationTime(long creationTime) {
         this.creationTime = creationTime;
         return this;
     }
@@ -96,7 +97,7 @@ public class CacheMergingEntryImpl implements CacheMergeTypes, SerializationServ
         return expirationTime;
     }
 
-    public CacheMergingEntryImpl setExpirationTime(long expirationTime) {
+    public CacheMergingEntryImpl<K,V> setExpirationTime(long expirationTime) {
         this.expirationTime = expirationTime;
         return this;
     }
@@ -106,7 +107,7 @@ public class CacheMergingEntryImpl implements CacheMergeTypes, SerializationServ
         return hits;
     }
 
-    public CacheMergingEntryImpl setHits(long hits) {
+    public CacheMergingEntryImpl<K,V> setHits(long hits) {
         this.hits = hits;
         return this;
     }
@@ -116,7 +117,7 @@ public class CacheMergingEntryImpl implements CacheMergeTypes, SerializationServ
         return lastAccessTime;
     }
 
-    public CacheMergingEntryImpl setLastAccessTime(long lastAccessTime) {
+    public CacheMergingEntryImpl<K,V> setLastAccessTime(long lastAccessTime) {
         this.lastAccessTime = lastAccessTime;
         return this;
     }
@@ -166,7 +167,7 @@ public class CacheMergingEntryImpl implements CacheMergeTypes, SerializationServ
             return false;
         }
 
-        CacheMergingEntryImpl that = (CacheMergingEntryImpl) o;
+        CacheMergingEntryImpl<K,V> that = (CacheMergingEntryImpl<K,V>) o;
         if (creationTime != that.creationTime) {
             return false;
         }

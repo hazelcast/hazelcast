@@ -30,13 +30,12 @@ public interface MergingEntry<K, V> extends MergingValue<V> {
      *
      * @return the merging key
      */
-    K getKey();
+    Object getKey();
 
     /**
      * Returns the deserialized merging key.
      *
-     * @param <DK> the type of the deserialized key
      * @return the deserialized merging key
      */
-    <DK> DK getDeserializedKey();
+    K getDeserializedKey();
 }

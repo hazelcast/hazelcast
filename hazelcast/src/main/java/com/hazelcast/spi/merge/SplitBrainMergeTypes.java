@@ -22,9 +22,6 @@ import com.hazelcast.collection.IQueue;
 import com.hazelcast.collection.ISet;
 import com.hazelcast.map.IMap;
 import com.hazelcast.multimap.MultiMap;
-import com.hazelcast.cp.IAtomicLong;
-import com.hazelcast.cp.IAtomicReference;
-import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.replicatedmap.ReplicatedMap;
 import com.hazelcast.scheduledexecutor.impl.ScheduledTaskDescriptor;
 
@@ -49,9 +46,9 @@ public class SplitBrainMergeTypes {
      *
      * @since 3.10
      */
-    public interface MapMergeTypes extends MergingEntry<Data, Data>, MergingCreationTime<Data>, MergingHits<Data>,
-            MergingLastAccessTime<Data>, MergingLastUpdateTime<Data>, MergingTTL<Data>, MergingMaxIdle<Data>, MergingCosts<Data>,
-            MergingVersion<Data>, MergingExpirationTime<Data>, MergingLastStoredTime<Data> {
+    public interface MapMergeTypes<K, V> extends MergingEntry<K, V>, MergingCreationTime<V>, MergingHits<V>,
+            MergingLastAccessTime<V>, MergingLastUpdateTime<V>, MergingTTL<V>, MergingMaxIdle<V>, MergingCosts<V>,
+            MergingVersion<V>, MergingExpirationTime<V>, MergingLastStoredTime<V> {
     }
 
     /**
@@ -59,8 +56,8 @@ public class SplitBrainMergeTypes {
      *
      * @since 3.10
      */
-    public interface CacheMergeTypes extends MergingEntry<Data, Data>, MergingCreationTime<Data>, MergingHits<Data>,
-            MergingLastAccessTime<Data>, MergingExpirationTime<Data> {
+    public interface CacheMergeTypes<K, V> extends MergingEntry<K, V>, MergingCreationTime<V>, MergingHits<V>,
+            MergingLastAccessTime<V>, MergingExpirationTime<V> {
     }
 
     /**
@@ -68,8 +65,8 @@ public class SplitBrainMergeTypes {
      *
      * @since 3.10
      */
-    public interface ReplicatedMapMergeTypes extends MergingEntry<Object, Object>, MergingCreationTime<Object>,
-            MergingHits<Object>, MergingLastAccessTime<Object>, MergingLastUpdateTime<Object>, MergingTTL<Object> {
+    public interface ReplicatedMapMergeTypes<K, V> extends MergingEntry<K, V>, MergingCreationTime<V>,
+            MergingHits<V>, MergingLastAccessTime<V>, MergingLastUpdateTime<V>, MergingTTL<V> {
     }
 
     /**
@@ -77,9 +74,9 @@ public class SplitBrainMergeTypes {
      *
      * @since 3.10
      */
-    public interface MultiMapMergeTypes extends MergingEntry<Data, Collection<Object>>, MergingCreationTime<Collection<Object>>,
-            MergingHits<Collection<Object>>, MergingLastAccessTime<Collection<Object>>,
-            MergingLastUpdateTime<Collection<Object>> {
+    public interface MultiMapMergeTypes<K, V> extends MergingEntry<K, Collection<V>>, MergingCreationTime<Collection<V>>,
+            MergingHits<Collection<V>>, MergingLastAccessTime<Collection<V>>,
+            MergingLastUpdateTime<Collection<V>> {
     }
 
     /**
@@ -104,22 +101,6 @@ public class SplitBrainMergeTypes {
      * @since 3.10
      */
     public interface RingbufferMergeTypes extends MergingValue<RingbufferMergeData> {
-    }
-
-    /**
-     * Provided merge types of {@link IAtomicLong}.
-     *
-     * @since 3.10
-     */
-    public interface AtomicLongMergeTypes extends MergingValue<Long> {
-    }
-
-    /**
-     * Provided merge types of {@link IAtomicReference}.
-     *
-     * @since 3.10
-     */
-    public interface AtomicReferenceMergeTypes extends MergingValue<Object> {
     }
 
     /**

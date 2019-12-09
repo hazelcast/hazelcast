@@ -32,8 +32,8 @@ import java.io.IOException;
  * @since 3.10
  */
 @SuppressWarnings("WeakerAccess")
-public class ReplicatedMapMergingEntryImpl
-        implements ReplicatedMapMergeTypes, SerializationServiceAware, IdentifiedDataSerializable {
+public class ReplicatedMapMergingEntryImpl<K,V>
+        implements ReplicatedMapMergeTypes<K,V>, SerializationServiceAware, IdentifiedDataSerializable {
 
     private Object value;
     private Object key;
@@ -58,11 +58,11 @@ public class ReplicatedMapMergingEntryImpl
     }
 
     @Override
-    public Object getDeserializedValue() {
+    public V getDeserializedValue() {
         return serializationService.toObject(value);
     }
 
-    public ReplicatedMapMergingEntryImpl setValue(Object value) {
+    public ReplicatedMapMergingEntryImpl<K,V> setValue(Object value) {
         this.value = value;
         return this;
     }
@@ -73,11 +73,11 @@ public class ReplicatedMapMergingEntryImpl
     }
 
     @Override
-    public Object getDeserializedKey() {
+    public K getDeserializedKey() {
         return serializationService.toObject(key);
     }
 
-    public ReplicatedMapMergingEntryImpl setKey(Object key) {
+    public ReplicatedMapMergingEntryImpl<K,V> setKey(Object key) {
         this.key = key;
         return this;
     }
@@ -87,7 +87,7 @@ public class ReplicatedMapMergingEntryImpl
         return creationTime;
     }
 
-    public ReplicatedMapMergingEntryImpl setCreationTime(long creationTime) {
+    public ReplicatedMapMergingEntryImpl<K,V> setCreationTime(long creationTime) {
         this.creationTime = creationTime;
         return this;
     }
@@ -97,7 +97,7 @@ public class ReplicatedMapMergingEntryImpl
         return hits;
     }
 
-    public ReplicatedMapMergingEntryImpl setHits(long hits) {
+    public ReplicatedMapMergingEntryImpl<K,V> setHits(long hits) {
         this.hits = hits;
         return this;
     }
@@ -107,7 +107,7 @@ public class ReplicatedMapMergingEntryImpl
         return lastAccessTime;
     }
 
-    public ReplicatedMapMergingEntryImpl setLastAccessTime(long lastAccessTime) {
+    public ReplicatedMapMergingEntryImpl<K,V> setLastAccessTime(long lastAccessTime) {
         this.lastAccessTime = lastAccessTime;
         return this;
     }
@@ -117,7 +117,7 @@ public class ReplicatedMapMergingEntryImpl
         return lastUpdateTime;
     }
 
-    public ReplicatedMapMergingEntryImpl setLastUpdateTime(long lastUpdateTime) {
+    public ReplicatedMapMergingEntryImpl<K,V> setLastUpdateTime(long lastUpdateTime) {
         this.lastUpdateTime = lastUpdateTime;
         return this;
     }
@@ -127,7 +127,7 @@ public class ReplicatedMapMergingEntryImpl
         return ttl;
     }
 
-    public ReplicatedMapMergingEntryImpl setTtl(long ttl) {
+    public ReplicatedMapMergingEntryImpl<K,V> setTtl(long ttl) {
         this.ttl = ttl;
         return this;
     }
@@ -179,7 +179,7 @@ public class ReplicatedMapMergingEntryImpl
             return false;
         }
 
-        ReplicatedMapMergingEntryImpl that = (ReplicatedMapMergingEntryImpl) o;
+        ReplicatedMapMergingEntryImpl<K,V> that = (ReplicatedMapMergingEntryImpl<K,V>) o;
         if (creationTime != that.creationTime) {
             return false;
         }

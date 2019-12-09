@@ -29,13 +29,12 @@ public interface MergingValue<V> {
      *
      * @return the merging value
      */
-    V getValue();
+    Object getValue();
 
     /**
      * Returns the deserialized merging value.
      *
-     * @param <DV> the type of the deserialized value
      * @return the deserialized merging value
      */
-    <DV> DV getDeserializedValue();
+    V getDeserializedValue();
 }
