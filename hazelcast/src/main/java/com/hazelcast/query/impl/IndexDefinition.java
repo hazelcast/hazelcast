@@ -221,7 +221,7 @@ public final class IndexDefinition {
     }
 
     /**
-     * @return {@code true} if this index ordered, {@code} if unordered.
+     * @return {@code true} if this index ordered, {@code false} if unordered.
      */
     public boolean isOrdered() {
         return ordered;
