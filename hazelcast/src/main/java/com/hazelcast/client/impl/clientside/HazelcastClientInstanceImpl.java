@@ -358,6 +358,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
             invocationService.start();
             ClientContext clientContext = new ClientContext(this);
             userCodeDeploymentService.start();
+            clusterService.start();
             clientClusterViewListenerService.start();
             connectionManager.start();
             diagnostics.start();
@@ -389,10 +390,10 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
             if (invocationService instanceof SmartClientInvocationService) {
                 ((SmartClientInvocationService) invocationService).addBackupListener();
             }
-            clusterService.start();
             ClientConnectionStrategyConfig connectionStrategyConfig = config.getConnectionStrategyConfig();
             if (!connectionStrategyConfig.isAsyncStart()) {
                 connectionManager.tryOpenConnectionToAllMembers();
+                waitForInitialMembershipEvents();
             }
             loadBalancer.init(getCluster(), config);
             partitionService.start();
@@ -763,7 +764,6 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         proxyManager.destroy();
         connectionManager.shutdown();
         clientDiscoveryService.shutdown();
-        clusterService.shutdown();
         transactionManager.shutdown();
         invocationService.shutdown();
         executionService.shutdown();
@@ -836,7 +836,6 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
     }
 
     public void waitForInitialMembershipEvents() {
-        //after clusterService/connection manager has reset, cluster listeners will be re added
         clusterService.waitInitialMemberListFetched();
     }
 

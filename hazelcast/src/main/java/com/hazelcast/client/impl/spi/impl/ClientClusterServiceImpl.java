@@ -18,7 +18,6 @@ package com.hazelcast.client.impl.spi.impl;
 
 import com.hazelcast.client.Client;
 import com.hazelcast.client.config.ClientConfig;
-import com.hazelcast.client.config.ClientConnectionStrategyConfig;
 import com.hazelcast.client.impl.ClientImpl;
 import com.hazelcast.client.impl.MemberImpl;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
@@ -226,14 +225,6 @@ public class ClientClusterServiceImpl implements ClientClusterService {
 
     public void start() {
         handleListenerConfigs();
-        ClientConnectionStrategyConfig connectionStrategyConfig = client.getClientConfig().getConnectionStrategyConfig();
-        boolean asyncStart = connectionStrategyConfig.isAsyncStart();
-        if (!asyncStart) {
-            waitInitialMemberListFetched();
-        }
-    }
-
-    public void shutdown() {
     }
 
     public void waitInitialMemberListFetched() {
