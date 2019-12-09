@@ -104,20 +104,21 @@ public class ManagementCenterService {
             return Optional.ofNullable(tmsJson.get());
         }
 
-        synchronized (tmsFactory) {
-            try {
-                TimedMemberState tms = tmsFactory.createTimedMemberState();
-                JsonObject json = new JsonObject();
-                json.add("timedMemberState", tms.toJson());
-                tmsJson.set(json.toString());
+        try {
+            TimedMemberState tms;
+            synchronized (tmsFactory) {
+                tms = tmsFactory.createTimedMemberState();
                 lastTMSUpdateNanos = System.nanoTime();
-            } catch (Throwable e) {
-                if (e instanceof RetryableException) {
-                    logger.warning("Failed to create TimedMemberState. Will try again on next request "
-                            + "from Management Center.");
-                } else {
-                    inspectOutOfMemoryError(e);
-                }
+            }
+            JsonObject json = new JsonObject();
+            json.add("timedMemberState", tms.toJson());
+            tmsJson.set(json.toString());
+        } catch (Throwable e) {
+            if (e instanceof RetryableException) {
+                logger.warning("Failed to create TimedMemberState. Will try again on next request "
+                        + "from Management Center.");
+            } else {
+                inspectOutOfMemoryError(e);
             }
         }
         return Optional.ofNullable(tmsJson.get());
