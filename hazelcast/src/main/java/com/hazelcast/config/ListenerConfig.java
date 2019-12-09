@@ -170,18 +170,12 @@ public class ListenerConfig implements IdentifiedDataSerializable {
 
         ListenerConfig that = (ListenerConfig) o;
 
-        return Objects.equals(listenerImplementationName(), that.listenerImplementationName());
-    }
-
-    private String listenerImplementationName() {
-        if (implementation != null) {
-            return implementation.getClass().getName();
-        }
-        return className;
+        return Objects.equals(implementation, that.implementation)
+            && Objects.equals(className, that.className);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(listenerImplementationName());
+        return Objects.hash(implementation, className);
     }
 }

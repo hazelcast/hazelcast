@@ -206,19 +206,13 @@ public class WanConsumerConfig implements IdentifiedDataSerializable {
         WanConsumerConfig that = (WanConsumerConfig) o;
 
         return persistWanReplicatedData == that.persistWanReplicatedData
-            && Objects.equals(replicationConsumerNameInternal(), that.replicationConsumerNameInternal())
+            && Objects.equals(className, that.className)
+            && Objects.equals(implementation, that.implementation)
             && Objects.equals(properties, that.properties);
-    }
-
-    private String replicationConsumerNameInternal() {
-        if (implementation != null) {
-            return implementation.getClass().getName();
-        }
-        return className;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(persistWanReplicatedData, replicationConsumerNameInternal(), properties);
+        return Objects.hash(persistWanReplicatedData, className, implementation, properties);
     }
 }

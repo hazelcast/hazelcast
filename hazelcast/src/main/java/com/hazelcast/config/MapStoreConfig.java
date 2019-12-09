@@ -359,29 +359,17 @@ public class MapStoreConfig implements IdentifiedDataSerializable {
             && writeCoalescing == that.writeCoalescing
             && writeDelaySeconds == that.writeDelaySeconds
             && writeBatchSize == that.writeBatchSize
-            && Objects.equals(implementationNameInternal(), that.implementationNameInternal())
-            && Objects.equals(factoryImplementationNameInternal(), that.factoryImplementationNameInternal())
+            && Objects.equals(implementation, that.implementation)
+            && Objects.equals(className, that.className)
+            && Objects.equals(factoryImplementation, that.factoryImplementation)
+            && Objects.equals(factoryClassName, that.factoryClassName)
             && properties.equals(that.properties)
             && initialLoadMode == that.initialLoadMode;
     }
 
-    private String implementationNameInternal() {
-        if (implementation != null) {
-            return implementation.getClass().getName();
-        }
-        return className;
-    }
-
-    private String factoryImplementationNameInternal() {
-        if (factoryImplementation != null) {
-            return factoryImplementation.getClass().getName();
-        }
-        return factoryClassName;
-    }
-
     @Override
     public final int hashCode() {
-        return Objects.hash(enabled, writeCoalescing, implementationNameInternal(), factoryImplementationNameInternal(),
+        return Objects.hash(enabled, writeCoalescing, implementation, className, factoryImplementation, factoryClassName,
             writeDelaySeconds, writeBatchSize, properties, initialLoadMode);
     }
 

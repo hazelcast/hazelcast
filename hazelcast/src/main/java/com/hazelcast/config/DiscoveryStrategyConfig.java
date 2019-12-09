@@ -133,27 +133,22 @@ public class DiscoveryStrategyConfig implements IdentifiedDataSerializable {
         }
 
         DiscoveryStrategyConfig that = (DiscoveryStrategyConfig) o;
-        return Objects.equals(discoverStrategyFactoryNameInternal(), that.discoverStrategyFactoryNameInternal())
+        return Objects.equals(discoveryStrategyFactory, that.discoveryStrategyFactory)
+            && Objects.equals(className, that.className)
             && Objects.equals(properties, that.properties);
-    }
-
-    private String discoverStrategyFactoryNameInternal() {
-        if (discoveryStrategyFactory != null) {
-            return discoveryStrategyFactory.getClass().getName();
-        }
-        return className;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(discoverStrategyFactoryNameInternal(), properties);
+        return Objects.hash(discoveryStrategyFactory, className, properties);
     }
 
     @Override
     public String toString() {
         return "DiscoveryStrategyConfig{"
                 + "properties=" + properties
-                + ", className='" + discoverStrategyFactoryNameInternal() + '\''
+                + ", className='" + className + '\''
+                + ", discoveryStrategyFactory=" + discoveryStrategyFactory + '\''
                 + '}';
     }
 

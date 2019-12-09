@@ -167,20 +167,14 @@ public class SocketInterceptorConfig {
         SocketInterceptorConfig that = (SocketInterceptorConfig) o;
 
         return enabled == that.enabled
-            && Objects.equals(implementationNameInternal(), that.implementationNameInternal())
+            && Objects.equals(implementation, that.implementation)
+            && Objects.equals(className, that.className)
             && Objects.equals(properties, that.properties);
-    }
-
-    private String implementationNameInternal() {
-        if (implementation != null) {
-            return implementation.getClass().getName();
-        }
-        return className;
     }
 
     @Override
     public final int hashCode() {
-        return Objects.hash(enabled, implementationNameInternal(), properties);
+        return Objects.hash(enabled, implementation, className, properties);
     }
 
     @Override

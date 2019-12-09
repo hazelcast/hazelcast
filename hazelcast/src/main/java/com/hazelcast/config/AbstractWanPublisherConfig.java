@@ -35,7 +35,7 @@ import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 public abstract class AbstractWanPublisherConfig implements IdentifiedDataSerializable {
 
     protected String publisherId = "";
-    protected String className = "";
+    protected String className;
     protected WanPublisher implementation;
     protected Map<String, Comparable> properties = new HashMap<>();
 
@@ -162,23 +162,13 @@ public abstract class AbstractWanPublisherConfig implements IdentifiedDataSerial
         AbstractWanPublisherConfig that = (AbstractWanPublisherConfig) o;
 
         return publisherId.equals(that.publisherId)
-            && Objects.equals(replicationPublisherNameInternal(), that.replicationPublisherNameInternal())
+            && Objects.equals(implementation, that.implementation)
+            && Objects.equals(className, that.className)
             && properties.equals(that.properties);
-    }
-
-    private String replicationPublisherNameInternal() {
-        if (implementation != null) {
-            return implementation.getClass().getName();
-        }
-        return className;
     }
 
     @Override
     public int hashCode() {
-        int result = publisherId.hashCode();
-        result = 31 * result + (className != null ? className.hashCode() : 0);
-        result = 31 * result + (implementation != null ? implementation.hashCode() : 0);
-        result = 31 * result + properties.hashCode();
-        return result;
+        return Objects.hash(publisherId, className, implementation, properties);
     }
 }

@@ -142,7 +142,8 @@ public class DiscoveryConfig implements IdentifiedDataSerializable {
         return "DiscoveryConfig{"
                 + "discoveryStrategyConfigs=" + discoveryStrategyConfigs
                 + ", discoveryServiceProvider=" + discoveryServiceProvider
-                + ", nodeFilterClass='" + nodeFilterNameInternal() + '\''
+                + ", nodeFilter=" + nodeFilter + '\''
+                + ", nodeFilterClass='" + nodeFilterClass + '\''
                 + '}';
     }
 
@@ -185,18 +186,12 @@ public class DiscoveryConfig implements IdentifiedDataSerializable {
 
         return discoveryStrategyConfigs.equals(that.discoveryStrategyConfigs)
             && Objects.equals(discoveryServiceProvider, that.discoveryServiceProvider)
-            && Objects.equals(nodeFilterNameInternal(), that.nodeFilterNameInternal());
-    }
-
-    private String nodeFilterNameInternal() {
-        if (nodeFilter != null) {
-            return nodeFilter.getClass().getName();
-        }
-        return nodeFilterClass;
+            && Objects.equals(nodeFilterClass, that.nodeFilterClass)
+            && Objects.equals(nodeFilter, that.nodeFilter);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(discoveryStrategyConfigs, discoveryServiceProvider, nodeFilterNameInternal());
+        return Objects.hash(discoveryStrategyConfigs, discoveryServiceProvider, nodeFilterClass, nodeFilter);
     }
 }

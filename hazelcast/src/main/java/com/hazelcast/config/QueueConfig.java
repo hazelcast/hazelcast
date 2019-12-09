@@ -384,7 +384,6 @@ public class QueueConfig implements SplitBrainMergeTypeProvider, IdentifiedDataS
     }
 
     @Override
-    @SuppressWarnings({"checkstyle:cyclomaticcomplexity", "checkstyle:npathcomplexity"})
     public final boolean equals(Object o) {
         if (this == o) {
             return true;
@@ -399,7 +398,7 @@ public class QueueConfig implements SplitBrainMergeTypeProvider, IdentifiedDataS
             && getMaxSize() == that.getMaxSize()
             && emptyQueueTtl == that.emptyQueueTtl
             && statisticsEnabled == that.statisticsEnabled
-            && name.equals(that.name)
+            && Objects.equals(name, that.name)
             && getItemListenerConfigs().equals(that.getItemListenerConfigs())
             && Objects.equals(queueStoreConfig, that.queueStoreConfig)
             && Objects.equals(splitBrainProtectionName, that.splitBrainProtectionName)
@@ -408,16 +407,7 @@ public class QueueConfig implements SplitBrainMergeTypeProvider, IdentifiedDataS
 
     @Override
     public final int hashCode() {
-        int result = name.hashCode();
-        result = 31 * result + getItemListenerConfigs().hashCode();
-        result = 31 * result + backupCount;
-        result = 31 * result + asyncBackupCount;
-        result = 31 * result + getMaxSize();
-        result = 31 * result + emptyQueueTtl;
-        result = 31 * result + (queueStoreConfig != null ? queueStoreConfig.hashCode() : 0);
-        result = 31 * result + (statisticsEnabled ? 1 : 0);
-        result = 31 * result + (splitBrainProtectionName != null ? splitBrainProtectionName.hashCode() : 0);
-        result = 31 * result + (mergePolicyConfig != null ? mergePolicyConfig.hashCode() : 0);
-        return result;
+        return Objects.hash(name, getItemListenerConfigs(), backupCount, asyncBackupCount, getMaxSize(), emptyQueueTtl,
+            queueStoreConfig, statisticsEnabled, splitBrainProtectionName, mergePolicyConfig);
     }
 }

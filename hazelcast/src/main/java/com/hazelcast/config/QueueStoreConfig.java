@@ -131,8 +131,10 @@ public class QueueStoreConfig implements IdentifiedDataSerializable {
     public String toString() {
         return "QueueStoreConfig{"
                 + "enabled=" + enabled
-                + ", className='" + storeImplementationNameInternal() + '\''
-                + ", factoryClassName='" + storeFactoryImplementationNameInternal() + '\''
+                + ", className='" + className + '\''
+                + ", storeImplementation='" + storeImplementation + '\''
+                + ", factoryClassName='" + factoryClassName + '\''
+                + ", factoryImplementation='" + factoryImplementation + '\''
                 + ", properties=" + properties
                 + '}';
     }
@@ -179,27 +181,14 @@ public class QueueStoreConfig implements IdentifiedDataSerializable {
         QueueStoreConfig that = (QueueStoreConfig) o;
         return isEnabled() == that.isEnabled()
             && Objects.equals(getProperties(), that.getProperties())
-            && Objects.equals(storeImplementationNameInternal(), that.storeImplementationNameInternal())
-            && Objects.equals(storeFactoryImplementationNameInternal(), that.storeFactoryImplementationNameInternal());
-    }
-
-    private String storeImplementationNameInternal() {
-        if (storeImplementation != null) {
-            return storeImplementation.getClass().getName();
-        }
-        return className;
-    }
-
-    private String storeFactoryImplementationNameInternal() {
-        if (factoryImplementation != null) {
-            return factoryImplementation.getClass().getName();
-        }
-        return factoryClassName;
+            && Objects.equals(className, that.className)
+            && Objects.equals(storeImplementation, that.storeImplementation)
+            && Objects.equals(factoryClassName, that.factoryClassName)
+            && Objects.equals(factoryImplementation, that.factoryImplementation);
     }
 
     @Override
     public final int hashCode() {
-        return Objects.hash(isEnabled(), storeImplementationNameInternal(), getProperties(),
-            storeFactoryImplementationNameInternal());
+        return Objects.hash(isEnabled(), className, storeImplementation, getProperties(), factoryClassName, factoryImplementation);
     }
 }

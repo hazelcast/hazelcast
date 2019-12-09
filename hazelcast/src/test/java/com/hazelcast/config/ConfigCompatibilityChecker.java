@@ -52,6 +52,7 @@ import static com.hazelcast.internal.config.ConfigUtils.lookupByPattern;
 import static java.text.MessageFormat.format;
 import static java.util.Collections.singletonMap;
 import static org.codehaus.groovy.runtime.InvokerHelper.asList;
+import static org.junit.Assert.assertEquals;
 
 public class ConfigCompatibilityChecker {
 
@@ -169,7 +170,7 @@ public class ConfigCompatibilityChecker {
     }
 
     private static boolean nullSafeEqual(Object a, Object b) {
-        return (a == b) || (a != null && a.equals(b));
+        return Objects.equals(a, b);
     }
 
     private static <T> boolean isCollectionCompatible(Collection<T> c1, Collection<T> c2, ConfigChecker<T> checker) {
@@ -231,6 +232,25 @@ public class ConfigCompatibilityChecker {
                 && nullSafeEqual(c1.getPolicy(), c2.getPolicy());
     }
 
+    public static void checkQueueConfig(QueueConfig expectedConfig, QueueConfig actualConfig) {
+        checkCompatibleConfigs("queue-config", expectedConfig, actualConfig, new QueueConfigChecker());
+    }
+
+    public static void checkListenerConfigs(List<ListenerConfig> expectedConfigs, List<ListenerConfig> actualConfigs) {
+        assertEquals(expectedConfigs.size(), actualConfigs.size());
+        for (int i = 0; i < expectedConfigs.size(); i++) {
+            checkCompatibleConfigs("listener-config", expectedConfigs.get(i), actualConfigs.get(i), new ReplicatedMapListenerConfigChecker());
+        }
+    }
+
+    public static void checkSocketInterceptorConfig(SocketInterceptorConfig expectedConfig, SocketInterceptorConfig actualConfig) {
+        checkCompatibleConfigs("socket-interceptor-config", expectedConfig, actualConfig, new SocketInterceptorConfigChecker());
+    }
+
+    public static void checkMapConfig(MapConfig expectedConfig, MapConfig actualConfig) {
+        checkCompatibleConfigs("map-config", expectedConfig, actualConfig, new MapConfigChecker());
+    }
+
     private abstract static class ConfigChecker<T> {
 
         abstract boolean check(T t1, T t2);
@@ -290,9 +310,13 @@ public class ConfigCompatibilityChecker {
             boolean c1Disabled = c1 == null || !c1.isEnabled();
             boolean c2Disabled = c2 == null || !c2.isEnabled();
             return c1 == c2 || (c1Disabled && c2Disabled) || (c1 != null && c2 != null
-                    && nullSafeEqual(c1.getClassName(), c2.getClassName())
-                    && nullSafeEqual(c1.getFactoryClassName(), c2.getFactoryClassName())
-                    && nullSafeEqual(c1.getProperties(), c2.getProperties()));
+                && nullSafeEqual(
+                    classNameOrImpl(c1.getClassName(), c1.getStoreImplementation()),
+                    classNameOrImpl(c2.getClassName(), c2.getStoreImplementation()))
+                && nullSafeEqual(
+                    classNameOrImpl(c1.getFactoryClassName(), c1.getFactoryImplementation()),
+                    classNameOrImpl(c2.getFactoryClassName(), c2.getFactoryImplementation()))
+                && nullSafeEqual(c1.getProperties(), c2.getProperties()));
         }
 
         @Override
@@ -462,8 +486,9 @@ public class ConfigCompatibilityChecker {
         @Override
         boolean check(ListenerConfig c1, ListenerConfig c2) {
             return c1 == c2 || !(c1 == null || c2 == null)
-                    && nullSafeEqual(c1.getClassName(), c2.getClassName())
-                    && nullSafeEqual(c1.getImplementation(), c2.getImplementation());
+                && nullSafeEqual(
+                    classNameOrImpl(c1.getClassName(), c1.getImplementation()),
+                    classNameOrImpl(c2.getClassName(), c2.getImplementation()));
         }
     }
 
@@ -785,9 +810,13 @@ public class ConfigCompatibilityChecker {
             boolean c1Disabled = c1 == null || !c1.isEnabled();
             boolean c2Disabled = c2 == null || !c2.isEnabled();
             return c1 == c2 || (c1Disabled && c2Disabled) || (c1 != null && c2 != null
-                    && nullSafeEqual(c1.getClassName(), c2.getClassName())
-                    && nullSafeEqual(c1.getFactoryClassName(), c2.getFactoryClassName())
-                    && nullSafeEqual(c1.getProperties(), c2.getProperties()));
+                && nullSafeEqual(
+                    classNameOrImpl(c1.getClassName(), c1.getImplementation()),
+                    classNameOrImpl(c2.getClassName(), c2.getImplementation()))
+                && nullSafeEqual(
+                    classNameOrImpl(c1.getFactoryClassName(), c1.getFactoryImplementation()),
+                    classNameOrImpl(c2.getFactoryClassName(), c2.getFactoryImplementation()))
+                && nullSafeEqual(c1.getProperties(), c2.getProperties()));
         }
 
         @Override
@@ -1117,8 +1146,8 @@ public class ConfigCompatibilityChecker {
             boolean c2Disabled = c2 == null || !c2.isEnabled();
             return c1 == c2 || (c1Disabled && c2Disabled) || (c1 != null && c2 != null
                     && nullSafeEqual(c1.getFactoryClassName(), c2.getFactoryClassName())
-                    && nullSafeEqual(c1.getFactoryImplementation(), c2.getFactoryImplementation()))
-                    && nullSafeEqual(c1.getProperties(), c2.getProperties());
+                    && nullSafeEqual(c1.getFactoryImplementation(), c2.getFactoryImplementation())
+                    && nullSafeEqual(c1.getProperties(), c2.getProperties()));
         }
     }
 
@@ -1128,9 +1157,10 @@ public class ConfigCompatibilityChecker {
             boolean c1Disabled = c1 == null || !c1.isEnabled();
             boolean c2Disabled = c2 == null || !c2.isEnabled();
             return c1 == c2 || (c1Disabled && c2Disabled) || (c1 != null && c2 != null
-                    && nullSafeEqual(c1.getClassName(), c2.getClassName())
-                    && nullSafeEqual(c1.getImplementation(), c2.getImplementation()))
-                    && nullSafeEqual(c1.getProperties(), c2.getProperties());
+                && nullSafeEqual(
+                    classNameOrImpl(c1.getClassName(), c1.getImplementation()),
+                    classNameOrImpl(c2.getClassName(), c2.getImplementation()))
+                && nullSafeEqual(c1.getProperties(), c2.getProperties()));
         }
     }
 

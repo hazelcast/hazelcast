@@ -326,7 +326,7 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
 
         SocketInterceptorConfig actualConfig = getNewConfigViaXMLGenerator(cfg).getNetworkConfig().getSocketInterceptorConfig();
 
-        assertEquals(expectedConfig, actualConfig);
+        ConfigCompatibilityChecker.checkSocketInterceptorConfig(expectedConfig, actualConfig);
     }
 
     private static class TestSocketInterceptor implements SocketInterceptor {
@@ -356,7 +356,7 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
 
         Config actualConfig = getNewConfigViaXMLGenerator(expectedConfig);
 
-        assertEquals(expectedConfig.getListenerConfigs(), actualConfig.getListenerConfigs());
+        ConfigCompatibilityChecker.checkListenerConfigs(expectedConfig.getListenerConfigs(), actualConfig.getListenerConfigs());
     }
 
     private static class TestEventListener implements EventListener { }
@@ -1219,7 +1219,7 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
         MergePolicyConfig xmlMergePolicyConfig = actualConfig.getMergePolicyConfig();
         assertEquals(DiscardMergePolicy.class.getSimpleName(), xmlMergePolicyConfig.getPolicy());
         assertEquals(1234, xmlMergePolicyConfig.getBatchSize());
-        assertEquals(expectedConfig, actualConfig);
+        ConfigCompatibilityChecker.checkQueueConfig(expectedConfig, actualConfig);
     }
 
     @Test
@@ -1434,7 +1434,7 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
         AttributeConfig xmlAttrConfig = actualConfig.getAttributeConfigs().get(0);
         assertEquals(attrConfig.getName(), xmlAttrConfig.getName());
         assertEquals(attrConfig.getExtractorClassName(), xmlAttrConfig.getExtractorClassName());
-        assertEquals(expectedConfig, actualConfig);
+        ConfigCompatibilityChecker.checkMapConfig(expectedConfig, actualConfig);
     }
 
     @Test

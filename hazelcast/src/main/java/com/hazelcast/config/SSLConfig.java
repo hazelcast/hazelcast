@@ -175,7 +175,6 @@ public final class SSLConfig {
     }
 
     @Override
-    @SuppressWarnings({"checkstyle:npathcomplexity"})
     public boolean equals(Object o) {
         if (this == o) {
             return true;
@@ -188,18 +187,12 @@ public final class SSLConfig {
 
         return Objects.equals(enabled, sslConfig.enabled)
             && Objects.equals(properties, sslConfig.properties)
-            && Objects.equals(factoryClassInternal(), sslConfig.factoryClassInternal());
-    }
-
-    private String factoryClassInternal() {
-        if (factoryImplementation != null) {
-            return factoryImplementation.getClass().getName();
-        }
-        return factoryClassName;
+            && Objects.equals(factoryImplementation, sslConfig.factoryImplementation)
+            && Objects.equals(factoryClassName, sslConfig.factoryClassName);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(enabled, factoryClassInternal(), properties);
+        return Objects.hash(enabled, factoryImplementation, factoryClassName, properties);
     }
 }

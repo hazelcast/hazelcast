@@ -288,18 +288,12 @@ public class EvictionConfig implements EvictionConfiguration, IdentifiedDataSeri
         return size == that.size
             && maxSizePolicy == that.maxSizePolicy
             && evictionPolicy == that.evictionPolicy
-            && Objects.equals(comparatorClassInternal(), that.comparatorClassInternal());
-    }
-
-    private String comparatorClassInternal() {
-        if (comparator != null) {
-            return comparator.getClass().getName();
-        }
-        return comparatorClassName;
+            && Objects.equals(comparatorClassName, that.comparatorClassName)
+            && Objects.equals(comparator, that.comparator);
     }
 
     @Override
     public final int hashCode() {
-        return Objects.hash(size, maxSizePolicy, evictionPolicy, comparatorClassInternal());
+        return Objects.hash(size, maxSizePolicy, evictionPolicy, comparator, comparatorClassName);
     }
 }
