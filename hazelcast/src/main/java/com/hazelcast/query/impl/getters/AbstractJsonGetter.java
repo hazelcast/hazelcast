@@ -193,7 +193,21 @@ public abstract class AbstractJsonGetter extends Getter {
         return contextCache.getCacheSize();
     }
 
-    protected abstract NavigableJsonInputAdapter annotate(Object object);
+    protected abstract NavigableJsonInputAdapter annotate(Object object) throws IOException;
+
+    /**
+     * Creates the input for the give JSON object. For testing purposes only.
+     *
+     * @param object Object.
+     * @return Input.
+     */
+    public NavigableJsonInputAdapter toInput(Object object) {
+        try {
+            return annotate(object);
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to create the input: " + e.getMessage(), e);
+        }
+    }
 
     /**
      * Looks for the attribute with the given name only in current

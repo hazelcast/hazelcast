@@ -25,10 +25,9 @@ import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.internal.json.JsonValue;
 import com.hazelcast.internal.json.WriterConfig;
 import com.hazelcast.internal.serialization.InternalSerializationService;
-import com.hazelcast.internal.serialization.impl.DataInputNavigableJsonAdapter;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.internal.serialization.impl.NavigableJsonInputAdapter;
-import com.hazelcast.internal.serialization.impl.StringNavigableJsonAdapter;
+import com.hazelcast.query.impl.getters.JsonDataGetter;
 import com.hazelcast.query.impl.getters.JsonPathCursor;
 
 import java.io.IOException;
@@ -39,8 +38,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
 public abstract class AbstractJsonSchemaTest {
-
-    protected final int JSON_UTF8_START_OFFSET = 12; // 8 byte (header) + 4 byte (character count)
 
     protected JsonFactory factory = new JsonFactory();
 
@@ -54,9 +51,9 @@ public abstract class AbstractJsonSchemaTest {
 
     protected NavigableJsonInputAdapter toAdapter(HazelcastJsonValue jsonValue) {
         if (getInMemoryFormay() == InMemoryFormat.OBJECT) {
-            return new StringNavigableJsonAdapter(jsonValue.toString(), 0);
+            return new NavigableJsonInputAdapter(jsonValue.toString(), 0);
         } else {
-            return new DataInputNavigableJsonAdapter(serializationService.createObjectDataInput(serializationService.toData(jsonValue)), JSON_UTF8_START_OFFSET);
+            return new JsonDataGetter(serializationService).toInput(serializationService.toData(jsonValue));
         }
     }
 

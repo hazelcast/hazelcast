@@ -18,10 +18,10 @@ package com.hazelcast.query.impl.getters;
 
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonParser;
-import com.hazelcast.internal.serialization.InternalSerializationService;
-import com.hazelcast.internal.serialization.impl.DataInputNavigableJsonAdapter;
-import com.hazelcast.internal.serialization.impl.NavigableJsonInputAdapter;
+import com.hazelcast.internal.nio.BufferObjectDataInput;
 import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.internal.serialization.impl.NavigableJsonInputAdapter;
 
 import java.io.IOException;
 
@@ -29,28 +29,36 @@ import static com.hazelcast.internal.serialization.impl.HeapData.HEAP_DATA_OVERH
 
 public final class JsonDataGetter extends AbstractJsonGetter {
 
-    private static final int UTF_CHARACTER_COUNT_FIELD_SIZE = 4;
+    private static final int UTF_BYTE_COUNT_FIELD_SIZE = 4;
 
-    private JsonFactory factory = new JsonFactory();
+    private final JsonFactory factory = new JsonFactory();
 
-    private InternalSerializationService ss;
+    private final InternalSerializationService ss;
 
-    JsonDataGetter(InternalSerializationService ss) {
+    public JsonDataGetter(InternalSerializationService ss) {
         super(null);
+
         this.ss = ss;
     }
 
     protected JsonParser createParser(Object obj) throws IOException {
         Data data = (Data) obj;
-        return factory.createParser(data.toByteArray(),
-                HEAP_DATA_OVERHEAD + UTF_CHARACTER_COUNT_FIELD_SIZE,
-                data.dataSize() - UTF_CHARACTER_COUNT_FIELD_SIZE);
+
+        return factory.createParser(
+            data.toByteArray(),
+            HEAP_DATA_OVERHEAD + UTF_BYTE_COUNT_FIELD_SIZE,
+            data.dataSize() - UTF_BYTE_COUNT_FIELD_SIZE
+        );
     }
 
     @Override
-    protected NavigableJsonInputAdapter annotate(Object object) {
+    protected NavigableJsonInputAdapter annotate(Object object) throws IOException {
         Data data = (Data) object;
-        return new DataInputNavigableJsonAdapter(ss.createObjectDataInput(data),
-                HEAP_DATA_OVERHEAD + UTF_CHARACTER_COUNT_FIELD_SIZE);
+
+        assert data.isJson();
+
+        try (BufferObjectDataInput input = ss.createObjectDataInput(data)) {
+            return new NavigableJsonInputAdapter(input.readUTF(), 0);
+        }
     }
 }

@@ -20,7 +20,6 @@ import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonParser;
 import com.hazelcast.core.HazelcastJsonValue;
 import com.hazelcast.internal.serialization.impl.NavigableJsonInputAdapter;
-import com.hazelcast.internal.serialization.impl.StringNavigableJsonAdapter;
 import com.hazelcast.query.QueryException;
 
 import java.io.IOException;
@@ -38,7 +37,7 @@ public final class JsonGetter extends AbstractJsonGetter {
     @Override
     protected NavigableJsonInputAdapter annotate(Object object) {
         HazelcastJsonValue hazelcastJson = (HazelcastJsonValue) object;
-        return new StringNavigableJsonAdapter(hazelcastJson.toString(), 0);
+        return new NavigableJsonInputAdapter(hazelcastJson.toString(), 0);
     }
 
     @Override

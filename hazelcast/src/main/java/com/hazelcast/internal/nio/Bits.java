@@ -18,8 +18,6 @@ package com.hazelcast.internal.nio;
 
 import com.hazelcast.internal.memory.impl.EndiannessUtil;
 
-import java.io.DataInput;
-import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 
@@ -199,16 +197,6 @@ public final class Bits {
 
     public static int writeUtf8Char(byte[] buffer, int pos, int c) {
         return EndiannessUtil.writeUtf8Char(BYTE_ARRAY_ACCESS, buffer, pos, c);
-    }
-
-    public static int readUtf8Char(byte[] buffer, int pos, char[] dst, int dstPos)
-            throws IOException {
-        return EndiannessUtil.readUtf8Char(buffer, pos, dst, dstPos);
-    }
-
-    public static char readUtf8Char(DataInput in, byte firstByte)
-            throws IOException {
-        return EndiannessUtil.readUtf8Char(in, firstByte);
     }
 
     /**

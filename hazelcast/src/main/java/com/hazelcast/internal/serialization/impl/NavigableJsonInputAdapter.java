@@ -21,32 +21,48 @@ import com.fasterxml.jackson.core.JsonParser;
 import com.hazelcast.internal.json.JsonReducedValueParser;
 import com.hazelcast.internal.json.JsonValue;
 import com.hazelcast.query.impl.getters.JsonPathCursor;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
+import java.io.StringReader;
 
 /**
- * An adapter offering utility methods over a data input containing
- * Json content.
+ * An adapter offering utility methods over a data input containing JSON content.
  */
-public abstract class NavigableJsonInputAdapter {
+public class NavigableJsonInputAdapter {
+    private final int initialOffset;
+    private String source;
+    private int pos;
+
+    public NavigableJsonInputAdapter(String source, int initialOffset) {
+        this.initialOffset = initialOffset;
+        this.source = source;
+        this.pos = initialOffset;
+    }
 
     /**
      * Sets the position of underlying data input.
-     * @param position
+     * @param position Position.
      */
-    public abstract void position(int position);
+    public void position(int position) {
+        this.pos = initialOffset + position;
+    }
 
     /**
      * Gives the current position of the cursor.
      *
      * @return the current read position of the cursor
      */
-    public abstract int position();
+    public int position() {
+        return pos - initialOffset;
+    }
 
     /**
      * Resets the read cursor.
      */
-    public abstract void reset();
+    public void reset() {
+        pos = initialOffset;
+    }
 
     /**
      * This method verifies that the underlying input currently points
@@ -58,30 +74,52 @@ public abstract class NavigableJsonInputAdapter {
      * any position further forward than where it was prior to this
      * method.
      *
-     * @param cursor
+     * @param cursor Cursor.
      * @return {@code true} if the given attributeName matches the one
      *          in underlying data input
      */
-    public abstract boolean isAttributeName(JsonPathCursor cursor);
+    public boolean isAttributeName(JsonPathCursor cursor) {
+        if (source.length() < pos + cursor.getCurrent().length() + 2) {
+            return false;
+        }
+        if (source.charAt(pos++) != '"') {
+            return false;
+        }
+        for (int i = 0; i < cursor.getCurrent().length() && pos < source.length(); i++) {
+            if (cursor.getCurrent().charAt(i) != source.charAt(pos++)) {
+                return false;
+            }
+        }
+        return source.charAt(pos++) == '"';
+    }
 
     /**
      * Tries to parse a single JsonValue from the input. The {@code offset}
      * must be pointing to the beginning of a scalar Json value.
      *
-     * @param parser
-     * @param offset
+     * @param parser Parser.
+     * @param offset Offset.
      * @return either null or a scalar JsonValue.
      * @throws IOException if offset is pointing to a non-scalar
      *                      or invalid Json input
      */
-    public abstract JsonValue parseValue(JsonReducedValueParser parser, int offset) throws IOException;
+    @SuppressFBWarnings("SR_NOT_CHECKED")
+    public JsonValue parseValue(JsonReducedValueParser parser, int offset) throws IOException {
+        StringReader reader = new StringReader(source);
+        if (reader.skip(initialOffset + offset) != initialOffset + offset) {
+            throw new IOException("There are not enough characters in this string");
+        }
+        return parser.parse(reader);
+    }
 
     /**
      * Creates a parser from given factory
      *
-     * @param factory
+     * @param factory Factory.
      * @return the parser
-     * @throws IOException
+     * @throws IOException If failed.
      */
-    public abstract JsonParser createParser(JsonFactory factory) throws IOException;
+    public JsonParser createParser(JsonFactory factory) throws IOException {
+        return factory.createParser(new StringReader(source));
+    }
 }
