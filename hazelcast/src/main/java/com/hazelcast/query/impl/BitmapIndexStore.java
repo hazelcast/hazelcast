@@ -271,12 +271,11 @@ public final class BitmapIndexStore extends BaseIndexStore {
             bitmap.clear();
             if (internalKeys != null) {
                 internalKeys.clear();
-                internalKeyCounter = 0;
             }
             if (internalObjectKeys != null) {
                 internalObjectKeys.clear();
-                internalKeyCounter = 0;
             }
+            internalKeyCounter = 0;
         } finally {
             releaseWriteLock();
         }
