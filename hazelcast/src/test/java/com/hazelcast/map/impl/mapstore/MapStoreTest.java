@@ -43,8 +43,10 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
 import java.io.InputStream;
@@ -71,6 +73,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import static com.hazelcast.map.impl.mapstore.writebehind.WriteBehindFlushTest.assertWriteBehindQueuesEmpty;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
+import static org.hamcrest.CoreMatchers.startsWith;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -80,6 +83,9 @@ import static org.junit.Assert.assertTrue;
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class MapStoreTest extends AbstractMapStoreTest {
+
+    @Rule
+    public ExpectedException expectedException = ExpectedException.none();
 
     @Test(timeout = 120000)
     public void testMapGetAll() {
@@ -106,7 +112,10 @@ public class MapStoreTest extends AbstractMapStoreTest {
                 loadAllCalled.set(true);
                 final HashMap<String, String> temp = new HashMap<>();
                 for (String key : keys) {
-                    temp.put(key, _map.get(key));
+                    String value = _map.get(key);
+                    if (value != null) {
+                        temp.put(key, value);
+                    }
                 }
                 return temp;
             }
@@ -137,12 +146,14 @@ public class MapStoreTest extends AbstractMapStoreTest {
         assertFalse(loadCalled.get());
     }
 
-    @Test(expected = NullPointerException.class)
+    @Test
     public void testNullValuesFromMapLoaderAreNotInsertedIntoMap() {
         Config config = newConfig(new NullLoader());
         HazelcastInstance node = createHazelcastInstance(config);
         IMap<String, String> map = node.getMap(randomName());
 
+        expectedException.expect(NullPointerException.class);
+        expectedException.expectMessage(startsWith("Neither key nor value can be loaded as null"));
         // load entries.
         map.getAll(new HashSet<>(asList("key1", "key2", "key3")));
     }

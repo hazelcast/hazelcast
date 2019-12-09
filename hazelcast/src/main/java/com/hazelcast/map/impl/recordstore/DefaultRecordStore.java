@@ -23,6 +23,7 @@ import com.hazelcast.core.EntryEventType;
 import com.hazelcast.internal.locksupport.LockSupportService;
 import com.hazelcast.internal.partition.IPartition;
 import com.hazelcast.internal.partition.IPartitionService;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.services.ObjectNamespace;
 import com.hazelcast.internal.util.Clock;
 import com.hazelcast.internal.util.ExceptionUtil;
@@ -46,7 +47,6 @@ import com.hazelcast.map.impl.querycache.publisher.MapPublisherRegistry;
 import com.hazelcast.map.impl.querycache.publisher.PublisherContext;
 import com.hazelcast.map.impl.querycache.publisher.PublisherRegistry;
 import com.hazelcast.map.impl.record.Record;
-import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.merge.SplitBrainMergePolicy;
@@ -364,12 +364,12 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
 
     @Override
     public Record loadRecordOrNull(Data key, boolean backup, Address callerAddress) {
-        Record record;
-        long ttl = UNSET;
         Object value = mapDataStore.load(key);
         if (value == null) {
             return null;
         }
+        
+        long ttl = UNSET;
         if (mapDataStore.isWithExpirationTime()) {
             MetadataAwareValue loaderEntry = (MetadataAwareValue) value;
             long proposedTtl = expirationTimeToTtl(loaderEntry.getExpirationTime());
@@ -379,7 +379,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
             value = loaderEntry.getValue();
             ttl = proposedTtl;
         }
-        record = createRecord(key, value, ttl, UNSET, getNow());
+        Record record = createRecord(key, value, ttl, UNSET, getNow());
         markRecordStoreExpirable(ttl, UNSET);
         storage.put(key, record);
         mutationObserver.onLoadRecord(key, record, backup);

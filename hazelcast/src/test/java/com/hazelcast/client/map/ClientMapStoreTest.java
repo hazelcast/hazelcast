@@ -39,8 +39,10 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.SlowTest;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
 import java.io.ByteArrayInputStream;
@@ -56,12 +58,16 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
 import static java.util.Arrays.asList;
+import static org.hamcrest.CoreMatchers.startsWith;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(SlowTest.class)
 public class ClientMapStoreTest extends HazelcastTestSupport {
+
+    @Rule
+    public ExpectedException expectedException = ExpectedException.none();
 
     private static final String MAP_NAME = "clientMapStoreLoad";
 
@@ -251,7 +257,7 @@ public class ClientMapStoreTest extends HazelcastTestSupport {
         map.destroy();
     }
 
-    @Test(expected = NullPointerException.class)
+    @Test
     public void testNullValuesFromMapLoaderAreNotInsertedIntoMap() {
         MapStoreConfig mapStoreConfig = new MapStoreConfig();
         mapStoreConfig.setImplementation(new MapStoreTest.NullLoader());
@@ -268,6 +274,8 @@ public class ClientMapStoreTest extends HazelcastTestSupport {
         HazelcastInstance node = createHazelcastInstance(config);
         IMap<String, String> map = node.getMap(MAP_NAME);
 
+        expectedException.expect(NullPointerException.class);
+        expectedException.expectMessage(startsWith("Neither key nor value can be loaded as null"));
         // load entries.
         map.getAll(new HashSet<>(asList("key1", "key2", "key3")));
     }
