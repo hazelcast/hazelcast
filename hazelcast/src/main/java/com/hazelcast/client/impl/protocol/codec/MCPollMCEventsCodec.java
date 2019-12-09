@@ -34,84 +34,67 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  */
 
 /**
- * Applies given MC config (client filter list).
+ * Polls events available on member. Once read, events are removed from member's internal queue.
  */
-@Generated("b65e9fe40f3406a96061bc13a810d5a1")
-public final class MCApplyMCConfigCodec {
-    //hex: 0x200D00
-    public static final int REQUEST_MESSAGE_TYPE = 2100480;
-    //hex: 0x200D01
-    public static final int RESPONSE_MESSAGE_TYPE = 2100481;
-    private static final int REQUEST_CLIENT_BW_LIST_MODE_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_CLIENT_BW_LIST_MODE_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+@Generated("3c4e1131adfe04d6ffeb44e93d1f31f1")
+public final class MCPollMCEventsCodec {
+    //hex: 0x201800
+    public static final int REQUEST_MESSAGE_TYPE = 2103296;
+    //hex: 0x201801
+    public static final int RESPONSE_MESSAGE_TYPE = 2103297;
+    private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
 
-    private MCApplyMCConfigCodec() {
+    private MCPollMCEventsCodec() {
     }
 
     @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
     public static class RequestParameters {
-
-        /**
-         * ETag value of the config.
-         */
-        public java.lang.String eTag;
-
-        /**
-         * The mode for client filtering:
-         * 0 - DISABLED
-         * 1 - WHITELIST
-         * 2 - BLACKLIST
-         */
-        public int clientBwListMode;
-
-        /**
-         * Client filter list entries.
-         */
-        public java.util.List<com.hazelcast.internal.management.dto.ClientBwListEntryDTO> clientBwListEntries;
     }
 
-    public static ClientMessage encodeRequest(java.lang.String eTag, int clientBwListMode, java.util.Collection<com.hazelcast.internal.management.dto.ClientBwListEntryDTO> clientBwListEntries) {
+    public static ClientMessage encodeRequest() {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
-        clientMessage.setOperationName("MC.ApplyMCConfig");
+        clientMessage.setOperationName("MC.PollMCEvents");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
-        encodeInt(initialFrame.content, REQUEST_CLIENT_BW_LIST_MODE_FIELD_OFFSET, clientBwListMode);
         clientMessage.add(initialFrame);
-        StringCodec.encode(clientMessage, eTag);
-        ListMultiFrameCodec.encode(clientMessage, clientBwListEntries, ClientBwListEntryCodec::encode);
         return clientMessage;
     }
 
-    public static MCApplyMCConfigCodec.RequestParameters decodeRequest(ClientMessage clientMessage) {
+    public static MCPollMCEventsCodec.RequestParameters decodeRequest(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         RequestParameters request = new RequestParameters();
-        ClientMessage.Frame initialFrame = iterator.next();
-        request.clientBwListMode = decodeInt(initialFrame.content, REQUEST_CLIENT_BW_LIST_MODE_FIELD_OFFSET);
-        request.eTag = StringCodec.decode(iterator);
-        request.clientBwListEntries = ListMultiFrameCodec.decode(iterator, ClientBwListEntryCodec::decode);
+        //empty initial frame
+        iterator.next();
         return request;
     }
 
     @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
     public static class ResponseParameters {
+
+        /**
+         * List of events.
+         */
+        public java.util.List<com.hazelcast.internal.management.dto.MCEventDTO> events;
     }
 
-    public static ClientMessage encodeResponse() {
+    public static ClientMessage encodeResponse(java.util.Collection<com.hazelcast.internal.management.dto.MCEventDTO> events) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, RESPONSE_MESSAGE_TYPE);
         clientMessage.add(initialFrame);
 
+        ListMultiFrameCodec.encode(clientMessage, events, MCEventCodec::encode);
         return clientMessage;
     }
 
-    public static MCApplyMCConfigCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
+    public static MCPollMCEventsCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         ResponseParameters response = new ResponseParameters();
         //empty initial frame
         iterator.next();
+        response.events = ListMultiFrameCodec.decode(iterator, MCEventCodec::decode);
         return response;
     }
 

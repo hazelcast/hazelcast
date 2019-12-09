@@ -164,6 +164,7 @@ import com.hazelcast.client.impl.protocol.codec.MCGetSystemPropertiesCodec;
 import com.hazelcast.client.impl.protocol.codec.MCGetThreadDumpCodec;
 import com.hazelcast.client.impl.protocol.codec.MCGetTimedMemberStateCodec;
 import com.hazelcast.client.impl.protocol.codec.MCMatchMCConfigCodec;
+import com.hazelcast.client.impl.protocol.codec.MCPollMCEventsCodec;
 import com.hazelcast.client.impl.protocol.codec.MCPromoteLiteMemberCodec;
 import com.hazelcast.client.impl.protocol.codec.MCReadMetricsCodec;
 import com.hazelcast.client.impl.protocol.codec.MCRunConsoleCommandCodec;
@@ -522,6 +523,7 @@ import com.hazelcast.client.impl.protocol.task.management.GetSystemPropertiesMes
 import com.hazelcast.client.impl.protocol.task.management.GetThreadDumpMessageTask;
 import com.hazelcast.client.impl.protocol.task.management.GetTimedMemberStateMessageTask;
 import com.hazelcast.client.impl.protocol.task.management.MatchMCConfigMessageTask;
+import com.hazelcast.client.impl.protocol.task.management.PollMCEventsMessageTask;
 import com.hazelcast.client.impl.protocol.task.management.PromoteLiteMemberMessageTask;
 import com.hazelcast.client.impl.protocol.task.management.RunConsoleCommandMessageTask;
 import com.hazelcast.client.impl.protocol.task.management.RunGcMessageTask;
@@ -1685,6 +1687,8 @@ public class DefaultMessageTaskFactoryProvider implements MessageTaskFactoryProv
                 (cm, con) -> new WanSyncMapMessageTask(cm, node, con));
         factories.put(com.hazelcast.client.impl.protocol.codec.MCCheckWanConsistencyCodec.REQUEST_MESSAGE_TYPE,
                 (cm, con) -> new CheckWanConsistencyMessageTask(cm, node, con));
+        factories.put(MCPollMCEventsCodec.REQUEST_MESSAGE_TYPE,
+                (cm, con) -> new PollMCEventsMessageTask(cm, node, con));
     }
 
     @SuppressFBWarnings({"MS_EXPOSE_REP", "EI_EXPOSE_REP"})

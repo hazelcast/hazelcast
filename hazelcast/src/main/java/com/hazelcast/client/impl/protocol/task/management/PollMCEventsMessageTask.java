@@ -17,20 +17,23 @@
 package com.hazelcast.client.impl.protocol.task.management;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.codec.MCApplyMCConfigCodec;
-import com.hazelcast.client.impl.protocol.codec.MCApplyMCConfigCodec.RequestParameters;
+import com.hazelcast.client.impl.protocol.codec.MCPollMCEventsCodec;
+import com.hazelcast.client.impl.protocol.codec.MCPollMCEventsCodec.RequestParameters;
 import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
-import com.hazelcast.core.HazelcastException;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.management.ManagementCenterService;
-import com.hazelcast.internal.management.dto.ClientBwListDTO;
+import com.hazelcast.internal.management.dto.MCEventDTO;
+import com.hazelcast.internal.management.events.Event;
 import com.hazelcast.internal.nio.Connection;
 
 import java.security.Permission;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
-public class ApplyMCConfigMessageTask extends AbstractCallableMessageTask<RequestParameters> {
+public class PollMCEventsMessageTask extends AbstractCallableMessageTask<RequestParameters> {
 
-    public ApplyMCConfigMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
+    public PollMCEventsMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
@@ -38,24 +41,24 @@ public class ApplyMCConfigMessageTask extends AbstractCallableMessageTask<Reques
     protected Object call() throws Exception {
         ManagementCenterService mcs = nodeEngine.getManagementCenterService();
         if (mcs == null) {
-            throw new HazelcastException("ManagementCenterService is not initialized yet");
+            return Collections.<MCEventDTO>emptyList();
         }
-        ClientBwListDTO.Mode mode = ClientBwListDTO.Mode.getById(parameters.clientBwListMode);
-        if (mode == null) {
-            throw new IllegalArgumentException("Unexpected client B/W list mode = [" + parameters.clientBwListMode + "]");
+        List<Event> polledEvents = mcs.pollMCEvents();
+        List<MCEventDTO> result = new ArrayList<>(polledEvents.size());
+        for (Event event : polledEvents) {
+            result.add(MCEventDTO.fromEvent(event));
         }
-        mcs.applyMCConfig(parameters.eTag, new ClientBwListDTO(mode, parameters.clientBwListEntries));
-        return null;
+        return result;
     }
 
     @Override
     protected RequestParameters decodeClientMessage(ClientMessage clientMessage) {
-        return MCApplyMCConfigCodec.decodeRequest(clientMessage);
+        return MCPollMCEventsCodec.decodeRequest(clientMessage);
     }
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return MCApplyMCConfigCodec.encodeResponse();
+        return MCPollMCEventsCodec.encodeResponse((List<MCEventDTO>) response);
     }
 
     @Override
@@ -75,15 +78,11 @@ public class ApplyMCConfigMessageTask extends AbstractCallableMessageTask<Reques
 
     @Override
     public String getMethodName() {
-        return "applyMCConfig";
+        return "pollMCEvents";
     }
 
     @Override
     public Object[] getParameters() {
-        return new Object[] {
-                parameters.eTag,
-                parameters.clientBwListMode,
-                parameters.clientBwListEntries
-        };
+        return new Object[0];
     }
 }

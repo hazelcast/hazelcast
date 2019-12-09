@@ -34,6 +34,7 @@ import com.hazelcast.client.impl.protocol.codec.MCGetSystemPropertiesCodec;
 import com.hazelcast.client.impl.protocol.codec.MCGetThreadDumpCodec;
 import com.hazelcast.client.impl.protocol.codec.MCGetTimedMemberStateCodec;
 import com.hazelcast.client.impl.protocol.codec.MCMatchMCConfigCodec;
+import com.hazelcast.client.impl.protocol.codec.MCPollMCEventsCodec;
 import com.hazelcast.client.impl.protocol.codec.MCPromoteLiteMemberCodec;
 import com.hazelcast.client.impl.protocol.codec.MCReadMetricsCodec;
 import com.hazelcast.client.impl.protocol.codec.MCRunConsoleCommandCodec;
@@ -48,6 +49,7 @@ import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.internal.management.TimedMemberState;
 import com.hazelcast.internal.management.dto.ClientBwListDTO;
+import com.hazelcast.internal.management.dto.MCEventDTO;
 import com.hazelcast.internal.metrics.managementcenter.MetricsResultSet;
 import com.hazelcast.internal.nio.ConnectionType;
 import com.hazelcast.internal.serialization.InternalSerializationService;
@@ -719,6 +721,28 @@ public class ManagementCenterService {
                 invocation.invoke(),
                 serializationService,
                 clientMessage -> MCCheckWanConsistencyCodec.decodeResponse(clientMessage).uuid
+        );
+    }
+
+    /**
+     * Polls pending events from the member it's called on.
+     *
+     * @param member target member
+     */
+    @Nonnull
+    public CompletableFuture<List<MCEventDTO>> pollMCEvents(Member member) {
+        checkNotNull(member);
+
+        ClientInvocation invocation = new ClientInvocation(
+                client,
+                MCPollMCEventsCodec.encodeRequest(),
+                null,
+                member.getAddress());
+
+        return new ClientDelegatingFuture<>(
+                invocation.invoke(),
+                serializationService,
+                clientMessage -> MCPollMCEventsCodec.decodeResponse(clientMessage).events
         );
     }
 }

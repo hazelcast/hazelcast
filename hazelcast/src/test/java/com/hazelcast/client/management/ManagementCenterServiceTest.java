@@ -28,8 +28,12 @@ import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.internal.cluster.impl.VersionMismatchException;
+import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.internal.management.dto.ClientBwListDTO;
 import com.hazelcast.internal.management.dto.ClientBwListEntryDTO;
+import com.hazelcast.internal.management.dto.MCEventDTO;
+import com.hazelcast.internal.management.events.Event;
+import com.hazelcast.internal.management.events.EventMetadata;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -42,6 +46,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.security.AccessControlException;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
@@ -54,6 +59,7 @@ import static com.hazelcast.config.MapConfig.DEFAULT_MAX_IDLE_SECONDS;
 import static com.hazelcast.config.MapConfig.DEFAULT_MAX_SIZE;
 import static com.hazelcast.config.MapConfig.DEFAULT_TTL_SECONDS;
 import static com.hazelcast.config.MaxSizePolicy.PER_NODE;
+import static com.hazelcast.internal.management.events.EventMetadata.EventType.WAN_SYNC_STARTED;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 import static java.util.Arrays.stream;
 import static java.util.Collections.emptyList;
@@ -137,13 +143,13 @@ public class ManagementCenterServiceTest extends HazelcastTestSupport {
                 "map-1", 27, 29, EvictionPolicy.LRU, false, 35, PER_NODE);
         resolve(managementCenterService.updateMapConfig(members[0], parameters));
 
-        MCMapConfig retrievedConfig1 = managementCenterService.getMapConfig(members[0], "map-1").get();
+        MCMapConfig retrievedConfig1 = resolve(managementCenterService.getMapConfig(members[0], "map-1"));
         assertEquals(27, retrievedConfig1.getTimeToLiveSeconds());
         assertEquals(29, retrievedConfig1.getMaxIdleSeconds());
         assertEquals(35, retrievedConfig1.getMaxSize());
         assertEquals(PER_NODE, retrievedConfig1.getMaxSizePolicy());
 
-        MCMapConfig retrievedConfig2 = managementCenterService.getMapConfig(members[1], "map-1").get();
+        MCMapConfig retrievedConfig2 = resolve(managementCenterService.getMapConfig(members[1], "map-1"));
         assertEquals(DEFAULT_TTL_SECONDS, retrievedConfig2.getTimeToLiveSeconds());
         assertEquals(DEFAULT_MAX_IDLE_SECONDS, retrievedConfig2.getMaxIdleSeconds());
         assertEquals(DEFAULT_MAX_SIZE, retrievedConfig2.getMaxSize());
@@ -277,17 +283,13 @@ public class ManagementCenterServiceTest extends HazelcastTestSupport {
         });
     }
 
-    private <T> T resolve(CompletableFuture<T> future) throws Exception {
-        return future.get(ASSERT_TRUE_EVENTUALLY_TIMEOUT, SECONDS);
-    }
-
     @Test
     public void matchMCConfig() throws Exception {
         ClientBwListDTO bwListDTO = new ClientBwListDTO(ClientBwListDTO.Mode.DISABLED, emptyList());
         getMemberMCService(hazelcastInstances[0]).applyMCConfig("testETag", bwListDTO);
 
-        assertTrue(managementCenterService.matchMCConfig(members[0], "testETag").get());
-        assertFalse(managementCenterService.matchMCConfig(members[0], "wrongETag").get());
+        assertTrue(resolve(managementCenterService.matchMCConfig(members[0], "testETag")));
+        assertFalse(resolve(managementCenterService.matchMCConfig(members[0], "wrongETag")));
     }
 
     @Test
@@ -298,7 +300,7 @@ public class ManagementCenterServiceTest extends HazelcastTestSupport {
                 ClientBwListDTO.Mode.BLACKLIST,
                 singletonList(new ClientBwListEntryDTO(ClientBwListEntryDTO.Type.INSTANCE_NAME, "test-name"))
         );
-        managementCenterService.applyMCConfig(members[0], "testETag", bwListDTO).get();
+        resolve(managementCenterService.applyMCConfig(members[0], "testETag", bwListDTO));
 
         assertEquals("testETag", getMemberMCService(hazelcastInstances[0]).getLastMCConfigETag());
     }
@@ -333,7 +335,46 @@ public class ManagementCenterServiceTest extends HazelcastTestSupport {
         assertContains(result, "0");
     }
 
+    public void pollMCEvents() throws Exception {
+        List<MCEventDTO> events = resolve(managementCenterService.pollMCEvents(members[2]));
+        assertEquals(0, events.size());
+
+        getMemberMCService(hazelcastInstances[2]).log(new TestEvent());
+        getMemberMCService(hazelcastInstances[2]).log(new TestEvent());
+
+        events = resolve(managementCenterService.pollMCEvents(members[2]));
+        assertEquals(2, events.size());
+        assertEquals(42, events.get(0).getTimestamp());
+        assertEquals(WAN_SYNC_STARTED.getCode(), events.get(0).getType());
+        assertEquals(new TestEvent().toJson().toString(), events.get(0).getDataJson());
+    }
+
+    private static <T> T resolve(CompletableFuture<T> future) throws Exception {
+        return future.get(ASSERT_TRUE_EVENTUALLY_TIMEOUT, SECONDS);
+    }
+
     private static com.hazelcast.internal.management.ManagementCenterService getMemberMCService(HazelcastInstance instance) {
         return getNode(instance).getManagementCenterService();
+    }
+
+    private static class TestEvent implements Event {
+
+        @Override
+        public EventMetadata.EventType getType() {
+            return WAN_SYNC_STARTED;
+        }
+
+        @Override
+        public long getTimestamp() {
+            return 42;
+        }
+
+        @Override
+        public JsonObject toJson() {
+            JsonObject json = new JsonObject();
+            json.add("foo", "bar");
+            return json;
+        }
+
     }
 }

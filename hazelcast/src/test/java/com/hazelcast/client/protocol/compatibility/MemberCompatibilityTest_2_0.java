@@ -7333,6 +7333,21 @@ public class MemberCompatibilityTest_2_0 {
         compareClientMessages(fromFile, encoded);
     }
 
+    @Test
+    public void test_MCPollMCEventsCodec_decodeRequest() {
+        int fileClientMessageIndex = 812;
+        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
+        MCPollMCEventsCodec.RequestParameters parameters = MCPollMCEventsCodec.decodeRequest(fromFile);
+    }
+
+    @Test
+    public void test_MCPollMCEventsCodec_encodeResponse() {
+        int fileClientMessageIndex = 813;
+        ClientMessage encoded = MCPollMCEventsCodec.encodeResponse(aListOfMCEvents);
+        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
+        compareClientMessages(fromFile, encoded);
+    }
+
      private void compareClientMessages(ClientMessage binaryMessage, ClientMessage encodedMessage) {
         ClientMessage.Frame binaryFrame, encodedFrame;
 

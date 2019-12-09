@@ -6819,6 +6819,22 @@ public class ClientCompatibilityTest_2_0 {
         assertTrue(isEqual(aUUID, parameters.uuid));
     }
 
+    @Test
+    public void test_MCPollMCEventsCodec_encodeRequest() {
+        int fileClientMessageIndex = 812;
+        ClientMessage encoded = MCPollMCEventsCodec.encodeRequest();
+        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
+        compareClientMessages(fromFile, encoded);
+    }
+
+    @Test
+    public void test_MCPollMCEventsCodec_decodeResponse() {
+        int fileClientMessageIndex = 813;
+        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
+        MCPollMCEventsCodec.ResponseParameters parameters = MCPollMCEventsCodec.decodeResponse(fromFile);
+        assertTrue(isEqual(aListOfMCEvents, parameters.events));
+    }
+
     private void compareClientMessages(ClientMessage binaryMessage, ClientMessage encodedMessage) {
         ClientMessage.Frame binaryFrame, encodedFrame;
 

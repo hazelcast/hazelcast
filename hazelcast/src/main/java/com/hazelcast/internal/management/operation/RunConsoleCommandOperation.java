@@ -16,6 +16,7 @@
 
 package com.hazelcast.internal.management.operation;
 
+import com.hazelcast.core.HazelcastException;
 import com.hazelcast.internal.management.ConsoleCommandHandler;
 import com.hazelcast.internal.management.ManagementCenterService;
 import com.hazelcast.logging.ILogger;
@@ -44,14 +45,18 @@ public class RunConsoleCommandOperation extends AbstractLocalOperation {
 
     @Override
     public void run() throws Exception {
+        final ManagementCenterService mcs = ((NodeEngineImpl) getNodeEngine()).getManagementCenterService();
+        if (mcs == null) {
+            sendResponse(new HazelcastException("ManagementCenterService is not initialized yet"));
+            return;
+        }
         final ILogger logger = getNodeEngine().getLogger(getClass());
-        final ManagementCenterService mcService = ((NodeEngineImpl) getNodeEngine()).getManagementCenterService();
         final ExecutionService executionService = getNodeEngine().getExecutionService();
 
         Future<String> future = executionService.submit(
                 ExecutionService.MC_EXECUTOR,
                 () -> {
-                    ConsoleCommandHandler handler = mcService.getCommandHandler();
+                    ConsoleCommandHandler handler = mcs.getCommandHandler();
                     try {
                         final String ns = namespace;
                         String cmd = command;
