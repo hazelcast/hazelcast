@@ -368,7 +368,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         if (value == null) {
             return null;
         }
-        
+
         long ttl = UNSET;
         if (mapDataStore.isWithExpirationTime()) {
             MetadataAwareValue loaderEntry = (MetadataAwareValue) value;
@@ -641,10 +641,8 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
 
             } else {
                 resultMap.put(key, value);
-
                 putFromLoad(key, value, callerAddress);
             }
-
         }
 
         if (hasQueryCache()) {
@@ -952,9 +950,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
 
     private Object putFromLoadInternal(Data key, Object value, long ttl,
                                        long maxIdle, boolean backup, Address callerAddress) {
-        if (!isKeyAndValueLoadable(key, value)) {
-            return null;
-        }
+        checkKeyAndValue(key, value);
 
         long now = getNow();
 
@@ -988,18 +984,16 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         return oldValue;
     }
 
-    protected boolean isKeyAndValueLoadable(Data key, Object value) {
+    private void checkKeyAndValue(Data key, Object value) {
         if (key == null || value == null) {
-            String msg = String.format("Neither key nor value can be loaded as null. Found: key=%s, value=%s",
-                    serializationService.toObject(key), serializationService.toObject(value));
+            String msg = String.format("Neither key nor value can be loaded as null.[mapName: %s, key: %s, value: %s]",
+                    name, serializationService.toObject(key), serializationService.toObject(value));
             throw new NullPointerException(msg);
         }
 
         if (partitionService.getPartitionId(key) != partitionId) {
             throw new IllegalStateException("MapLoader loaded an item belongs to a different partition");
         }
-
-        return true;
     }
 
     @Override
