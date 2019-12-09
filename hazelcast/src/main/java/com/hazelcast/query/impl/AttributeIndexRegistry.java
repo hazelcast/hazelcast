@@ -199,11 +199,6 @@ public class AttributeIndexRegistry {
         }
 
         @Override
-        public String getUniqueKey() {
-            return delegate.getUniqueKey();
-        }
-
-        @Override
         public TypeConverter getConverter() {
             CompositeConverter converter = (CompositeConverter) delegate.getConverter();
             return converter == null ? null : converter.getComponentConverter(0);

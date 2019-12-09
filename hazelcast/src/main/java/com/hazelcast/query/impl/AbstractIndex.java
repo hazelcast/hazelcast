@@ -56,7 +56,6 @@ public abstract class AbstractIndex implements InternalIndex {
     private final String name;
     private final String[] components;
     private final boolean ordered;
-    private final String uniqueKey;
     private final PerIndexStats stats;
 
     private volatile TypeConverter converter;
@@ -67,7 +66,6 @@ public abstract class AbstractIndex implements InternalIndex {
         this.name = definition.getName();
         this.components = definition.getComponents();
         this.ordered = definition.isOrdered();
-        this.uniqueKey = definition.getUniqueKey();
         this.ss = ss;
         this.extractors = extractors;
         this.copyBehavior = copyBehavior;
@@ -91,11 +89,6 @@ public abstract class AbstractIndex implements InternalIndex {
     @Override
     public boolean isOrdered() {
         return ordered;
-    }
-
-    @Override
-    public String getUniqueKey() {
-        return uniqueKey;
     }
 
     @Override

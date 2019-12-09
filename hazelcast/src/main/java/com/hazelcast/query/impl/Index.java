@@ -59,12 +59,6 @@ public interface Index {
     boolean isOrdered();
 
     /**
-     * @return the unique key attribute configured for bitmap indexes, {@code
-     * null} if no unique key configured.
-     */
-    String getUniqueKey();
-
-    /**
      * @return the converter associated with this index; or {@code null} if the
      * converter is not known because there were no saves to this index and
      * the attribute type is not inferred yet.
