@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Returns the current list of CP members.
  */
-@Generated("8ebbc15532570630468766ddc485fce4")
+@Generated("05ca78599121b6f035c5bb5fcd283dd8")
 public final class MCGetCPMembersCodec {
     //hex: 0x201900
     public static final int REQUEST_MESSAGE_TYPE = 2103552;
@@ -76,16 +76,16 @@ public final class MCGetCPMembersCodec {
         /**
          * List of CP members (as <UUID string, address string> pairs)
          */
-        public java.util.List<java.util.Map.Entry<java.lang.String, java.lang.String>> members;
+        public java.util.List<java.util.Map.Entry<java.lang.String, java.lang.String>> cpMembers;
     }
 
-    public static ClientMessage encodeResponse(java.util.Collection<java.util.Map.Entry<java.lang.String, java.lang.String>> members) {
+    public static ClientMessage encodeResponse(java.util.Collection<java.util.Map.Entry<java.lang.String, java.lang.String>> cpMembers) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, RESPONSE_MESSAGE_TYPE);
         clientMessage.add(initialFrame);
 
-        EntryListCodec.encode(clientMessage, members, StringCodec::encode, StringCodec::encode);
+        EntryListCodec.encode(clientMessage, cpMembers, StringCodec::encode, StringCodec::encode);
         return clientMessage;
     }
 
@@ -94,7 +94,7 @@ public final class MCGetCPMembersCodec {
         ResponseParameters response = new ResponseParameters();
         //empty initial frame
         iterator.next();
-        response.members = EntryListCodec.decode(iterator, StringCodec::decode, StringCodec::decode);
+        response.cpMembers = EntryListCodec.decode(iterator, StringCodec::decode, StringCodec::decode);
         return response;
     }
 

@@ -26,9 +26,11 @@ import com.hazelcast.cluster.Member;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.cp.CPMember;
 import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.internal.cluster.impl.VersionMismatchException;
 import com.hazelcast.internal.json.JsonObject;
+import com.hazelcast.internal.management.dto.CPMemberDTO;
 import com.hazelcast.internal.management.dto.ClientBwListDTO;
 import com.hazelcast.internal.management.dto.ClientBwListEntryDTO;
 import com.hazelcast.internal.management.dto.MCEventDTO;
@@ -51,6 +53,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
+import java.util.stream.Collectors;
 
 import static com.hazelcast.cluster.ClusterState.ACTIVE;
 import static com.hazelcast.cluster.ClusterState.IN_TRANSITION;
@@ -69,6 +72,7 @@ import static org.hamcrest.Matchers.isEmptyOrNullString;
 import static org.hamcrest.Matchers.not;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
@@ -86,9 +90,9 @@ public class ManagementCenterServiceTest extends HazelcastTestSupport {
     @Before
     public void setUp() {
         factory = new TestHazelcastFactory(NODE_COUNT);
-        hazelcastInstances[0] = factory.newHazelcastInstance(getConfig());
-        hazelcastInstances[1] = factory.newHazelcastInstance(getConfig().setLiteMember(true));
-        Config config = getConfig();
+        hazelcastInstances[0] = factory.newHazelcastInstance(makeConfig());
+        hazelcastInstances[1] = factory.newHazelcastInstance(makeConfig().setLiteMember(true));
+        Config config = makeConfig();
         config.getManagementCenterConfig().setScriptingEnabled(false);
         hazelcastInstances[2] = factory.newHazelcastInstance(config);
 
@@ -328,6 +332,7 @@ public class ManagementCenterServiceTest extends HazelcastTestSupport {
         assertContains(result, "0");
     }
 
+    @Test
     public void pollMCEvents() throws Exception {
         List<MCEventDTO> events = resolve(managementCenterService.pollMCEvents(members[2]));
         assertEquals(0, events.size());
@@ -340,6 +345,30 @@ public class ManagementCenterServiceTest extends HazelcastTestSupport {
         assertEquals(42, events.get(0).getTimestamp());
         assertEquals(WAN_SYNC_STARTED.getCode(), events.get(0).getType());
         assertEquals(new TestEvent().toJson().toString(), events.get(0).getDataJson());
+    }
+
+    @Test
+    public void getCPMembers() throws Exception {
+        // we need one more member to start CP subsystem
+        HazelcastInstance cpInstance = factory.newHazelcastInstance(makeConfig());
+        assertTrueEventually(() -> assertNotNull(cpInstance.getCPSubsystem().getLocalCPMember()));
+
+        CPMember expectedCPMember = cpInstance.getCPSubsystem().getLocalCPMember();
+        String expectedUuid = expectedCPMember.getUuid().toString();
+        String expectedAddress = "[" + expectedCPMember.getAddress().getHost() + "]:" + expectedCPMember.getAddress().getPort();
+
+        List<CPMemberDTO> cpMembers = resolve(managementCenterService.getCPMembers());
+        assertEquals(3, cpMembers.size());
+        List<String> uuids = cpMembers.stream().map(CPMemberDTO::getUuid).collect(Collectors.toList());
+        assertContains(uuids, expectedUuid);
+        List<String> addresses = cpMembers.stream().map(CPMemberDTO::getAddress).collect(Collectors.toList());
+        assertContains(addresses, expectedAddress);
+    }
+
+    private Config makeConfig() {
+        Config config = getConfig();
+        config.getCPSubsystemConfig().setCPMemberCount(3);
+        return config;
     }
 
     private static <T> T resolve(CompletableFuture<T> future) throws Exception {

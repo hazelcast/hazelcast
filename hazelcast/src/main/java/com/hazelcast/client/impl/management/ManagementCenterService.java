@@ -27,6 +27,7 @@ import com.hazelcast.client.impl.protocol.codec.MCChangeClusterVersionCodec;
 import com.hazelcast.client.impl.protocol.codec.MCChangeWanReplicationStateCodec;
 import com.hazelcast.client.impl.protocol.codec.MCCheckWanConsistencyCodec;
 import com.hazelcast.client.impl.protocol.codec.MCClearWanQueuesCodec;
+import com.hazelcast.client.impl.protocol.codec.MCGetCPMembersCodec;
 import com.hazelcast.client.impl.protocol.codec.MCGetClusterMetadataCodec;
 import com.hazelcast.client.impl.protocol.codec.MCGetMapConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.MCGetMemberConfigCodec;
@@ -48,6 +49,7 @@ import com.hazelcast.client.impl.spi.impl.ClientInvocation;
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.internal.management.TimedMemberState;
+import com.hazelcast.internal.management.dto.CPMemberDTO;
 import com.hazelcast.internal.management.dto.ClientBwListDTO;
 import com.hazelcast.internal.management.dto.MCEventDTO;
 import com.hazelcast.internal.metrics.managementcenter.MetricsResultSet;
@@ -60,14 +62,14 @@ import com.hazelcast.wan.WanPublisherState;
 import com.hazelcast.wan.impl.AddWanConfigResult;
 import com.hazelcast.wan.impl.WanSyncType;
 
+import javax.annotation.Nonnull;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
-
-import javax.annotation.Nonnull;
+import java.util.stream.Collectors;
 
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.wan.impl.WanSyncType.ALL_MAPS;
@@ -743,6 +745,28 @@ public class ManagementCenterService {
                 invocation.invoke(),
                 serializationService,
                 clientMessage -> MCPollMCEventsCodec.decodeResponse(clientMessage).events
+        );
+    }
+
+    /**
+     * Returns the current list of CP members.
+     *
+     * @return list of CP members
+     */
+    @Nonnull
+    public CompletableFuture<List<CPMemberDTO>> getCPMembers() {
+        ClientInvocation invocation = new ClientInvocation(
+                client,
+                MCGetCPMembersCodec.encodeRequest(),
+                null);
+
+        return new ClientDelegatingFuture<>(
+                invocation.invoke(),
+                serializationService,
+                clientMessage -> MCGetCPMembersCodec.decodeResponse(clientMessage).cpMembers
+                        .stream()
+                        .map(e -> new CPMemberDTO(e.getKey(), e.getValue()))
+                        .collect(Collectors.toList())
         );
     }
 }
