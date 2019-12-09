@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * TODO DOC
  */
-@Generated("afed730a18957fc8c91177020067f87a")
+@Generated("4937bbafaa3730af062b6114fa9b0fe8")
 public final class MapEntriesWithPagingPredicateCodec {
     //hex: 0x013600
     public static final int REQUEST_MESSAGE_TYPE = 79360;
@@ -91,15 +91,21 @@ public final class MapEntriesWithPagingPredicateCodec {
          * key-value pairs for the query.
          */
         public java.util.List<java.util.Map.Entry<com.hazelcast.internal.serialization.Data, com.hazelcast.internal.serialization.Data>> response;
+
+        /**
+         * The predicate with updated anchor list.
+         */
+        public com.hazelcast.internal.serialization.Data predicate;
     }
 
-    public static ClientMessage encodeResponse(java.util.Collection<java.util.Map.Entry<com.hazelcast.internal.serialization.Data, com.hazelcast.internal.serialization.Data>> response) {
+    public static ClientMessage encodeResponse(java.util.Collection<java.util.Map.Entry<com.hazelcast.internal.serialization.Data, com.hazelcast.internal.serialization.Data>> response, com.hazelcast.internal.serialization.Data predicate) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, RESPONSE_MESSAGE_TYPE);
         clientMessage.add(initialFrame);
 
         EntryListCodec.encode(clientMessage, response, DataCodec::encode, DataCodec::encode);
+        DataCodec.encode(clientMessage, predicate);
         return clientMessage;
     }
 
@@ -109,6 +115,7 @@ public final class MapEntriesWithPagingPredicateCodec {
         //empty initial frame
         iterator.next();
         response.response = EntryListCodec.decode(iterator, DataCodec::decode, DataCodec::decode);
+        response.predicate = DataCodec.decode(iterator);
         return response;
     }
 
