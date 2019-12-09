@@ -71,6 +71,12 @@ public final class IndexDefinition {
          */
         RAW("RAW");
 
+        private final String text;
+
+        UniqueKeyTransform(String text) {
+            this.text = text;
+        }
+
         private static UniqueKeyTransform parse(String text) {
             if (StringUtil.isNullOrEmpty(text)) {
                 throw new IllegalArgumentException("empty unique key transform");
@@ -88,12 +94,6 @@ public final class IndexDefinition {
             }
 
             throw new IllegalArgumentException("unexpected unique key transform: " + text);
-        }
-
-        private final String text;
-
-        UniqueKeyTransform(String text) {
-            this.text = text;
         }
 
         @Override
@@ -152,6 +152,7 @@ public final class IndexDefinition {
         return new IndexDefinition(attribute, ordered, attribute);
     }
 
+    @SuppressWarnings("checkstyle:npathcomplexity")
     private static IndexDefinition tryParseBitmap(String definition, boolean ordered) {
         if (definition == null || !definition.toUpperCase().startsWith(BITMAP_PREFIX)) {
             return null;
