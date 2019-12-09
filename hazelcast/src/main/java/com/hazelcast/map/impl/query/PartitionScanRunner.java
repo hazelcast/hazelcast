@@ -110,12 +110,9 @@ public class PartitionScanRunner {
                 if (predicate.apply(queryEntry)
                         && compareAnchor(pagingPredicate, queryEntry, nearestAnchorEntry)) {
 
-                    // always copy key&value to heap
-                    key = toHeapData(key);
+                    // always copy key&value to heap if map is backed by native memory
                     value = nativeMemory ? toHeapData((Data) value) : value;
-                    queryEntry.init(ss, key, value, extractors);
-
-                    result.add(queryEntry);
+                    result.add(queryEntry.init(ss, toHeapData(key), value, extractors));
 
                     // We can't reuse the existing entry after it was added to the
                     // result. Allocate the new one.
