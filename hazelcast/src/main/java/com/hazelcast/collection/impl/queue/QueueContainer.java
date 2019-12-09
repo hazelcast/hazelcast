@@ -92,20 +92,13 @@ public class QueueContainer implements IdentifiedDataSerializable {
     // to avoid reloading same items
     private long lastIdLoaded;
 
-    /**
-     * The default no-args constructor is only meant for factory usage.
-     */
     public QueueContainer() {
     }
 
-    public QueueContainer(String name) {
+    public QueueContainer(String name, QueueConfig config, NodeEngine nodeEngine, QueueService service) {
         this.name = name;
         this.pollWaitNotifyKey = new QueueWaitNotifyKey(name, "poll");
         this.offerWaitNotifyKey = new QueueWaitNotifyKey(name, "offer");
-    }
-
-    public QueueContainer(String name, QueueConfig config, NodeEngine nodeEngine, QueueService service) {
-        this(name);
         setConfig(config, nodeEngine, service);
     }
 

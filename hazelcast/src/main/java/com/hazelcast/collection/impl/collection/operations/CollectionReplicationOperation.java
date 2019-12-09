@@ -60,7 +60,7 @@ public abstract class CollectionReplicationOperation extends Operation implement
         for (Map.Entry<String, CollectionContainer> entry : migrationData.entrySet()) {
             out.writeUTF(entry.getKey());
             CollectionContainer container = entry.getValue();
-            container.writeData(out);
+            out.writeObject(container);
         }
     }
 }

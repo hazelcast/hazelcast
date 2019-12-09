@@ -19,7 +19,6 @@ package com.hazelcast.collection.impl.set.operations;
 import com.hazelcast.collection.impl.collection.CollectionContainer;
 import com.hazelcast.collection.impl.collection.CollectionDataSerializerHook;
 import com.hazelcast.collection.impl.collection.operations.CollectionReplicationOperation;
-import com.hazelcast.collection.impl.set.SetContainer;
 import com.hazelcast.nio.ObjectDataInput;
 
 import java.io.IOException;
@@ -42,9 +41,7 @@ public class SetReplicationOperation extends CollectionReplicationOperation {
         migrationData = createHashMap(mapSize);
         for (int i = 0; i < mapSize; i++) {
             String name = in.readUTF();
-            SetContainer container = new SetContainer();
-            container.readData(in);
-            migrationData.put(name, container);
+            migrationData.put(name, in.readObject());
         }
     }
 

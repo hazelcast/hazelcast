@@ -156,8 +156,7 @@ public abstract class AbstractMember implements Member {
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        address = new Address();
-        address.readData(in);
+        address = in.readObject();
         uuid = UUIDSerializationUtil.readUUID(in);
         liteMember = in.readBoolean();
         version = in.readObject();
@@ -172,7 +171,7 @@ public abstract class AbstractMember implements Member {
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        address.writeData(out);
+        out.writeObject(address);
         UUIDSerializationUtil.writeUUID(out, uuid);
         out.writeBoolean(liteMember);
         out.writeObject(version);
