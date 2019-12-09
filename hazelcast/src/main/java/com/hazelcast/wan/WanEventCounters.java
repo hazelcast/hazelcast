@@ -30,7 +30,7 @@ import static com.hazelcast.internal.util.ConcurrencyUtil.getOrPutIfAbsent;
  * This class may contain counters for a single WAN publisher or multiple
  * WAN publishers, depending on its usage.
  */
-public class WanEventDistributedServiceCounters {
+public class WanEventCounters {
     private static final ConstructorFunction<String, DistributedObjectWanEventCounters> EVENT_COUNTER_CONSTRUCTOR_FN
             = ignored -> new DistributedObjectWanEventCounters();
     private final ConcurrentHashMap<String, DistributedObjectWanEventCounters> eventCounterMap

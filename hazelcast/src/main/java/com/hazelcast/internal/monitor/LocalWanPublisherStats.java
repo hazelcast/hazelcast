@@ -19,7 +19,7 @@ package com.hazelcast.internal.monitor;
 
 import com.hazelcast.wan.WanPublisherState;
 import com.hazelcast.json.internal.JsonSerializable;
-import com.hazelcast.wan.WanEventDistributedServiceCounters.DistributedObjectWanEventCounters;
+import com.hazelcast.wan.WanEventCounters.DistributedObjectWanEventCounters;
 import com.hazelcast.wan.impl.WanSyncStats;
 import com.hazelcast.wan.impl.ConsistencyCheckResult;
 import com.hazelcast.wan.impl.WanReplicationService;

@@ -25,7 +25,7 @@ import com.hazelcast.internal.monitor.WanSyncState;
 import com.hazelcast.internal.services.CoreService;
 import com.hazelcast.internal.services.StatisticsAwareService;
 import com.hazelcast.version.Version;
-import com.hazelcast.wan.WanEventDistributedServiceCounters;
+import com.hazelcast.wan.WanEventCounters;
 import com.hazelcast.wan.WanPublisher;
 
 import java.util.List;
@@ -223,7 +223,7 @@ public interface WanReplicationService extends CoreService, StatisticsAwareServi
      * @param serviceName the name of the service for the WAN events
      * @return the WAN event counter
      */
-    WanEventDistributedServiceCounters getReceivedEventCounters(String serviceName);
+    WanEventCounters getReceivedEventCounters(String serviceName);
 
     /**
      * Returns a counter of sent and processed WAN replication events.
@@ -233,9 +233,9 @@ public interface WanReplicationService extends CoreService, StatisticsAwareServi
      * @param serviceName        the name of the service for the WAN events
      * @return the WAN event counter
      */
-    WanEventDistributedServiceCounters getSentEventCounters(String wanReplicationName,
-                                                            String wanPublisherId,
-                                                            String serviceName);
+    WanEventCounters getSentEventCounters(String wanReplicationName,
+                                          String wanPublisherId,
+                                          String serviceName);
 
     /**
      * Removes all WAN event counters for the given {@code serviceName} and

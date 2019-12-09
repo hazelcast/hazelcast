@@ -25,7 +25,7 @@ public interface WanEvent {
      *
      * @param counters the WAN event counter
      */
-    void incrementEventCount(WanEventDistributedServiceCounters counters);
+    void incrementEventCount(WanEventCounters counters);
 
     /**
      * Returns the service name on which this event occurred.

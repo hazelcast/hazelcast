@@ -27,7 +27,7 @@ import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 import com.hazelcast.spi.merge.SplitBrainMergeTypes.MapMergeTypes;
 import com.hazelcast.internal.serialization.SerializationService;
-import com.hazelcast.wan.WanEventDistributedServiceCounters;
+import com.hazelcast.wan.WanEventCounters;
 import com.hazelcast.wan.WanEvent;
 
 import java.util.concurrent.Future;
@@ -39,7 +39,7 @@ import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 class WanMapSupportingService implements WanSupportingService {
     private final MapServiceContext mapServiceContext;
     private final NodeEngine nodeEngine;
-    private final WanEventDistributedServiceCounters wanEventTypeCounters;
+    private final WanEventCounters wanEventTypeCounters;
 
     WanMapSupportingService(MapServiceContext mapServiceContext) {
         this.mapServiceContext = mapServiceContext;

@@ -38,7 +38,7 @@ import com.hazelcast.map.impl.MapService;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.version.Version;
-import com.hazelcast.wan.WanEventDistributedServiceCounters;
+import com.hazelcast.wan.WanEventCounters;
 import com.hazelcast.wan.WanMigrationAwarePublisher;
 import com.hazelcast.wan.WanPublisher;
 
@@ -71,10 +71,10 @@ public class WanReplicationServiceImpl implements WanReplicationService,
     private final Node node;
 
     /** WAN event counters for all services and only received events */
-    private final WanEventCounters receivedWanEventCounters = new WanEventCounters();
+    private final WanEventCounterRegistry receivedWanEventCounters = new WanEventCounterRegistry();
 
     /** WAN event counters for all services and only sent events */
-    private final WanEventCounters sentWanEventCounters = new WanEventCounters();
+    private final WanEventCounterRegistry sentWanEventCounters = new WanEventCounterRegistry();
 
     private final ConcurrentMap<String, DelegatingWanScheme> wanReplications = createConcurrentHashMap(1);
 
@@ -264,14 +264,14 @@ public class WanReplicationServiceImpl implements WanReplicationService,
     }
 
     @Override
-    public WanEventDistributedServiceCounters getReceivedEventCounters(String serviceName) {
+    public WanEventCounters getReceivedEventCounters(String serviceName) {
         return receivedWanEventCounters.getWanEventCounter("", "", serviceName);
     }
 
     @Override
-    public WanEventDistributedServiceCounters getSentEventCounters(String wanReplicationName,
-                                                                   String wanPublisherId,
-                                                                   String serviceName) {
+    public WanEventCounters getSentEventCounters(String wanReplicationName,
+                                                 String wanPublisherId,
+                                                 String serviceName) {
         return sentWanEventCounters.getWanEventCounter(wanReplicationName, wanPublisherId, serviceName);
     }
 

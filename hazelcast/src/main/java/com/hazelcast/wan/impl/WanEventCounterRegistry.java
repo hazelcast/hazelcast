@@ -19,20 +19,20 @@ package com.hazelcast.wan.impl;
 import com.hazelcast.cache.impl.CacheService;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.internal.util.ConstructorFunction;
-import com.hazelcast.wan.WanEventDistributedServiceCounters;
+import com.hazelcast.wan.WanEventCounters;
 
 import java.util.concurrent.ConcurrentHashMap;
 
 import static com.hazelcast.internal.util.ConcurrencyUtil.getOrPutIfAbsent;
 
 /**
- * Thread safe container for {@link WanEventDistributedServiceCounters}
+ * Thread safe container for {@link WanEventCounters}
  * grouped by WAN publisher, distributed service name and distributed object
  * name.
  * The publisher is defined by the WAN replication name and the target group
  * name.
  */
-public class WanEventCounters {
+public class WanEventCounterRegistry {
     private static final ConstructorFunction<String, WanPublisherEventCounters> WAN_EVENT_COUNTER_CONSTRUCTOR_FN
             = ignored -> new WanPublisherEventCounters();
 
@@ -40,11 +40,11 @@ public class WanEventCounters {
 
 
     /**
-     * Returns the {@link WanEventDistributedServiceCounters} for the given {@code serviceName}
+     * Returns the {@link WanEventCounters} for the given {@code serviceName}
      */
-    public WanEventDistributedServiceCounters getWanEventCounter(String wanReplicationName,
-                                                                 String wanPublisherId,
-                                                                 String serviceName) {
+    public WanEventCounters getWanEventCounter(String wanReplicationName,
+                                               String wanPublisherId,
+                                               String serviceName) {
         final String counterId = wanReplicationName + ":" + wanPublisherId;
         final WanPublisherEventCounters serviceWanEventCounters
                 = getOrPutIfAbsent(eventCounterMap, counterId, WAN_EVENT_COUNTER_CONSTRUCTOR_FN);
@@ -62,12 +62,12 @@ public class WanEventCounters {
     }
 
     /**
-     * Thread safe container for {@link WanEventDistributedServiceCounters}s
+     * Thread safe container for {@link WanEventCounters}s
      * for all distributed objects and a single WAN publisher.
      */
     private static final class WanPublisherEventCounters {
-        private final WanEventDistributedServiceCounters mapEventCounters = new WanEventDistributedServiceCounters();
-        private final WanEventDistributedServiceCounters cacheEventCounters = new WanEventDistributedServiceCounters();
+        private final WanEventCounters mapEventCounters = new WanEventCounters();
+        private final WanEventCounters cacheEventCounters = new WanEventCounters();
 
         /**
          * Removes the counter for the given {@code serviceName} and {@code dataStructureName}.
@@ -77,9 +77,9 @@ public class WanEventCounters {
         }
 
         /**
-         * Returns the {@link WanEventDistributedServiceCounters} for the given {@code serviceName}
+         * Returns the {@link WanEventCounters} for the given {@code serviceName}
          */
-        WanEventDistributedServiceCounters getWanEventCounter(String serviceName) {
+        WanEventCounters getWanEventCounter(String serviceName) {
             if (MapService.SERVICE_NAME.equals(serviceName)) {
                 return mapEventCounters;
             } else if (CacheService.SERVICE_NAME.equals(serviceName)) {

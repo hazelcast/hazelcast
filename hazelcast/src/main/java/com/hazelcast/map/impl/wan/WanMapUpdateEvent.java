@@ -23,7 +23,7 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.merge.SplitBrainMergePolicy;
-import com.hazelcast.wan.WanEventDistributedServiceCounters;
+import com.hazelcast.wan.WanEventCounters;
 import com.hazelcast.wan.impl.InternalWanEvent;
 import com.hazelcast.wan.impl.WanDataSerializerHook;
 
@@ -102,7 +102,7 @@ public class WanMapUpdateEvent implements InternalWanEvent, IdentifiedDataSerial
     }
 
     @Override
-    public void incrementEventCount(WanEventDistributedServiceCounters counters) {
+    public void incrementEventCount(WanEventCounters counters) {
         counters.incrementUpdate(mapName);
     }
 
