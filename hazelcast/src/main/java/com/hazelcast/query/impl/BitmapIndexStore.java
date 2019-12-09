@@ -40,6 +40,8 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 
+import static com.hazelcast.query.impl.QueryableEntry.extractAttributeValue;
+
 /**
  * The store of bitmap indexes.
  * <p>
@@ -365,43 +367,23 @@ public final class BitmapIndexStore extends BaseIndexStore {
     }
 
     private long extractLongKey(Data entryKey, Object entryValue) {
-        Object key =
-                QueryableEntry.extractAttributeValue(extractors, serializationService, keyAttribute, entryKey, entryValue, null);
-        if (key == null) {
-            throw new NullPointerException("non-null unique key value is required");
-        }
-        if (!Numbers.isLongRepresentable(key.getClass())) {
-            throw new NullPointerException("integer-valued unique key value is required");
-        }
-        return ((Number) key).longValue();
+        Object key = extractAttributeValue(extractors, serializationService, keyAttribute, entryKey, entryValue, null);
+        return extractLongKey(key);
     }
 
     private long extractLongKey(QueryableEntry entry) {
         Object key = entry.getAttributeValue(keyAttribute);
-        if (key == null) {
-            throw new NullPointerException("non-null unique key value is required");
-        }
-        if (!Numbers.isLongRepresentable(key.getClass())) {
-            throw new NullPointerException("integer-valued unique key value is required");
-        }
-        return ((Number) key).longValue();
+        return extractLongKey(key);
     }
 
     private Object extractObjectKey(Data entryKey, Object entryValue) {
-        Object key =
-                QueryableEntry.extractAttributeValue(extractors, serializationService, keyAttribute, entryKey, entryValue, null);
-        if (key == null) {
-            throw new NullPointerException("non-null unique key value is required");
-        }
-        return key;
+        Object key = extractAttributeValue(extractors, serializationService, keyAttribute, entryKey, entryValue, null);
+        return extractObjectKey(key);
     }
 
     private Object extractObjectKey(QueryableEntry entry) {
         Object key = entry.getAttributeValue(keyAttribute);
-        if (key == null) {
-            throw new NullPointerException("non-null unique key value is required");
-        }
-        return key;
+        return extractObjectKey(key);
     }
 
     private Iterator makeIterator(Object value) {
@@ -422,6 +404,23 @@ public final class BitmapIndexStore extends BaseIndexStore {
 
     private static UnsupportedOperationException makeUnsupportedOperationException() {
         return new UnsupportedOperationException("bitmap indexes support only direct predicate evaluation");
+    }
+
+    private static long extractLongKey(Object key) {
+        if (key == null) {
+            throw new NullPointerException("non-null unique key value is required");
+        }
+        if (!Numbers.isLongRepresentable(key.getClass())) {
+            throw new IllegalArgumentException("integer-valued unique key value is required");
+        }
+        return ((Number) key).longValue();
+    }
+
+    private static Object extractObjectKey(Object key) {
+        if (key == null) {
+            throw new NullPointerException("non-null unique key value is required");
+        }
+        return key;
     }
 
     private IllegalArgumentException makeNegativeKeyException(long key) {
