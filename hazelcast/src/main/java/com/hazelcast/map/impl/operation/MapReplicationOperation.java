@@ -134,8 +134,11 @@ public class MapReplicationOperation extends Operation
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         mapReplicationStateHolder = in.readObject();
+        mapReplicationStateHolder.setOperation(this);
         writeBehindStateHolder = in.readObject();
+        writeBehindStateHolder.setMapReplicationOperation(this);
         mapNearCacheStateHolder = in.readObject();
+        mapNearCacheStateHolder.setMapReplicationOperation(this);
     }
 
     RecordStore getRecordStore(String mapName) {
