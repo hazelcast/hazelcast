@@ -214,20 +214,22 @@ public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceT
 
         HazelcastInstance[] instances = createClusterWithCount(1, config);
         IScheduledExecutorService service = instances[0].getScheduledExecutorService(schedulerName);
-        String keyOwner = "hitSamePartitionToCheckCapacity";
+        String key = "hitSamePartitionToCheckCapacity";
+        int keyOwner = getNodeEngineImpl(instances[0]).getPartitionService().getPartitionId(key);
 
         List<IScheduledFuture> futures = new ArrayList<>();
         for (int i = 0; i < 100; i++) {
-            futures.add(service.scheduleOnKeyOwner(new PlainCallableTask(), keyOwner, 0, TimeUnit.SECONDS));
+            futures.add(service.scheduleOnKeyOwner(new PlainCallableTask(), key, 0, TimeUnit.SECONDS));
         }
 
         try {
-            service.scheduleOnKeyOwner(new PlainCallableTask(), keyOwner, 0, TimeUnit.SECONDS);
+            service.scheduleOnKeyOwner(new PlainCallableTask(), key, 0, TimeUnit.SECONDS);
             fail("Should have been rejected.");
         } catch (RejectedExecutionException ex) {
             assertEquals("Got wrong RejectedExecutionException",
-                    "Maximum capacity (100) of tasks reached for partition (262) and scheduled executor (foobar). "
-                            + "Reminder that tasks must be disposed if not needed.", ex.getMessage());
+                    "Maximum capacity (100) of tasks reached for partition (" + keyOwner + ") "
+                            + "and scheduled executor (foobar). Reminder that tasks must be disposed if not needed.",
+                    ex.getMessage());
         }
 
         // Dispose all
@@ -237,16 +239,17 @@ public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceT
 
         // Re-schedule to verify capacity
         for (int i = 0; i < 100; i++) {
-            service.scheduleOnKeyOwner(new PlainCallableTask(), keyOwner, 0, TimeUnit.SECONDS);
+            service.scheduleOnKeyOwner(new PlainCallableTask(), key, 0, TimeUnit.SECONDS);
         }
 
         try {
-            service.scheduleOnKeyOwner(new PlainCallableTask(), keyOwner, 0, TimeUnit.SECONDS);
+            service.scheduleOnKeyOwner(new PlainCallableTask(), key, 0, TimeUnit.SECONDS);
             fail("Should have been rejected.");
         } catch (RejectedExecutionException ex) {
             assertEquals("Got wrong RejectedExecutionException",
-                    "Maximum capacity (100) of tasks reached for partition (262) and scheduled executor (foobar). "
-                            + "Reminder that tasks must be disposed if not needed.", ex.getMessage());
+                    "Maximum capacity (100) of tasks reached for partition (" + keyOwner + ") "
+                            + "and scheduled executor (foobar). Reminder that tasks must be disposed if not needed.",
+                    ex.getMessage());
         }
     }
 
@@ -265,7 +268,8 @@ public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceT
 
         HazelcastInstance[] instances = createClusterWithCount(1, config);
         IScheduledExecutorService service = instances[0].getScheduledExecutorService(schedulerName);
-        String keyOwner = "hitSamePartitionToCheckCapacity";
+        String key = "hitSamePartitionToCheckCapacity";
+        int keyOwner = getNodeEngineImpl(instances[0]).getPartitionService().getPartitionId(key);
 
         List<IScheduledFuture> futures = new ArrayList<>();
         for (int i = 0; i < 10; i++) {
@@ -277,8 +281,9 @@ public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceT
             fail("Should have been rejected.");
         } catch (RejectedExecutionException ex) {
             assertEquals("Got wrong RejectedExecutionException",
-                    "Maximum capacity (10) of tasks reached for partition (262) and scheduled executor (foobar). "
-                            + "Reminder that tasks must be disposed if not needed.", ex.getMessage());
+                    "Maximum capacity (100) of tasks reached for partition (" + keyOwner + ") "
+                            + "and scheduled executor (foobar). Reminder that tasks must be disposed if not needed.",
+                    ex.getMessage());
         }
 
         // Dispose all
@@ -296,8 +301,9 @@ public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceT
             fail("Should have been rejected.");
         } catch (RejectedExecutionException ex) {
             assertEquals("Got wrong RejectedExecutionException",
-                    "Maximum capacity (10) of tasks reached for partition (262) and scheduled executor (foobar). "
-                            + "Reminder that tasks must be disposed if not needed.", ex.getMessage());
+                    "Maximum capacity (100) of tasks reached for partition (" + keyOwner + ") "
+                            + "and scheduled executor (foobar). Reminder that tasks must be disposed if not needed.",
+                    ex.getMessage());
         }
 
     }

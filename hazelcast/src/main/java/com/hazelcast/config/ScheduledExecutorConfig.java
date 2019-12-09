@@ -165,6 +165,9 @@ public class ScheduledExecutorConfig implements IdentifiedDataSerializable, Name
      * The capacity represents the maximum number of tasks that a scheduler can have at any given point in time per partition.
      * If this is set to 0 then there is no limit
      *
+     * To prevent any undesirable data-loss, capacity is ignored during partition migrations,
+     * the count is updated accordingly, however the rejection is not enforced.
+     *
      * @param capacity the capacity of the executor
      * @return this executor config instance
      */
@@ -182,6 +185,10 @@ public class ScheduledExecutorConfig implements IdentifiedDataSerializable, Name
 
     /**
      * Set the capacity policy for the configured {@link capacity} value
+     *
+     * To prevent any undesirable data-loss, capacity is ignored during partition migrations,
+     * the count is updated accordingly, however the rejection is not enforced.
+     *
      * @param capacityPolicy
      */
     public ScheduledExecutorConfig setCapacityPolicy(CapacityPolicy capacityPolicy) {
@@ -316,10 +323,24 @@ public class ScheduledExecutorConfig implements IdentifiedDataSerializable, Name
         return result;
     }
 
+    /**
+     * Capacity policy options
+     */
     public enum CapacityPolicy {
-
+        /**
+         * Capacity policy that counts tasks per Hazelcast instance node/member,
+         * and rejects new ones when {@link #capacity} value is reached
+         */
         PER_NODE,
 
+        /**
+         * Capacity policy that counts tasks per partition, and rejects new ones when {@link #capacity} value is reached.
+         * Storage size depends on the partition count in a Hazelcast instance.
+         * This policy should not be used often.
+         * Avoid using this policy with a small cluster: if the cluster is small it will
+         * be hosting more partitions, and therefore tasks, than that of a larger
+         * cluster.
+         */
         PER_PARTITION
 
     }

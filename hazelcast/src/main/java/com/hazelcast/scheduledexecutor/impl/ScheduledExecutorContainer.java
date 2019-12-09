@@ -142,11 +142,11 @@ public class ScheduledExecutorContainer {
     public void destroy() {
         log(FINEST, "Destroying container...");
 
-        for (ScheduledTaskDescriptor descriptor : tasks.values()) {
+        for (String task : tasks.keySet()) {
             try {
-                descriptor.cancel(true);
+                dispose(task);
             } catch (Exception ex) {
-                log(WARNING, descriptor.getDefinition().getName(), "Error while destroying", ex);
+                log(WARNING, task, "Error while destroying", ex);
             }
         }
     }
@@ -157,9 +157,12 @@ public class ScheduledExecutorContainer {
 
         ScheduledTaskDescriptor descriptor = tasks.get(taskName);
         taskLifecycleHook.preTaskDestroy(name, descriptor.getDefinition());
-        descriptor.cancel(true);
-        tasks.remove(taskName);
-        taskLifecycleHook.postTaskDestroy(name, descriptor.getDefinition());
+        try {
+            descriptor.cancel(true);
+        } finally {
+            tasks.remove(taskName);
+            taskLifecycleHook.postTaskDestroy(name, descriptor.getDefinition());
+        }
     }
 
     public void enqueueSuspended(TaskDefinition definition) {
@@ -171,8 +174,11 @@ public class ScheduledExecutorContainer {
             log(FINEST, "Enqueuing suspended, i.e., backup: " + descriptor.getDefinition());
         }
 
-        if (force || !tasks.containsKey(descriptor.getDefinition().getName())) {
+        boolean keyExists = tasks.containsKey(descriptor.getDefinition().getName());
+        if (force || !keyExists) {
+            taskLifecycleHook.preSuspendedEnqueue(name, descriptor, !keyExists);
             tasks.put(descriptor.getDefinition().getName(), descriptor);
+            taskLifecycleHook.postSuspendedEnqueue(name, descriptor, !keyExists);
         }
     }
 

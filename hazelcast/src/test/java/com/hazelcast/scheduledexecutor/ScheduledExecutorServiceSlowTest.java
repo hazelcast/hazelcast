@@ -364,7 +364,10 @@ public class ScheduledExecutorServiceSlowTest extends ScheduledExecutorServiceTe
     @Test
     public void reschedulingAfterMigration_whenCurrentNodePreviouslyOwnedTask() {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
-        HazelcastInstance first = factory.newHazelcastInstance();
+        Config config = new Config();
+        config.addScheduledExecutorConfig(new ScheduledExecutorConfig("scheduler").setCapacity(1000));
+
+        HazelcastInstance first = factory.newHazelcastInstance(config);
 
         int tasksCount = 1000;
         final IScheduledExecutorService scheduler = first.getScheduledExecutorService("scheduler");

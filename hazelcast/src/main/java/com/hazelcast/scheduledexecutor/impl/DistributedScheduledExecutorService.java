@@ -163,19 +163,23 @@ public class DistributedScheduledExecutorService
 
     @Override
     public void preTaskSchedule(String scheduler, TaskDefinition definition) {
-        ensurePerNodeCapacity(scheduler);
+        ensurePerNodeCapacity(scheduler, true);
+    }
+
+    @Override
+    public void preSuspendedEnqueue(String scheduler, ScheduledTaskDescriptor descriptor, boolean newEntry) {
+        ensurePerNodeCapacity(scheduler, false);
     }
 
     @Override
     public void postTaskDestroy(String scheduler, TaskDefinition definition) {
-        ScheduledExecutorConfig executorConfig = nodeEngine.getConfig().findScheduledExecutorConfig(scheduler);
         AtomicLong tasksCount = schedulerTaskCounts.get(scheduler);
         if (tasksCount != null) {
             tasksCount.decrementAndGet();
         }
     }
 
-    void ensurePerNodeCapacity(String scheduler) {
+    void ensurePerNodeCapacity(String scheduler, boolean enforce) {
         ScheduledExecutorConfig executorConfig = nodeEngine.getConfig().findScheduledExecutorConfig(scheduler);
 
         if (executorConfig.getCapacityPolicy().equals(PER_NODE) && executorConfig.getCapacity() > 0) {
@@ -184,11 +188,15 @@ public class DistributedScheduledExecutorService
             tasksCount = tasksCount == null ? newCounter : tasksCount;
 
             if (tasksCount.getAndIncrement() >= executorConfig.getCapacity()) {
-                tasksCount.decrementAndGet(); // Release that incr
-                throw new RejectedExecutionException(
-                        "Maximum capacity (" + executorConfig.getCapacity() + ") of tasks reached for this member "
-                                + "and scheduled executor (" + scheduler + "). "
-                                + "Reminder, that tasks must be disposed if not needed.");
+                // Release that incr
+                tasksCount.decrementAndGet();
+
+                if (enforce) {
+                    throw new RejectedExecutionException(
+                            "Maximum capacity (" + executorConfig.getCapacity() + ") of tasks reached for this member "
+                                    + "and scheduled executor (" + scheduler + "). "
+                                    + "Reminder, that tasks must be disposed if not needed.");
+                }
             }
         }
     }

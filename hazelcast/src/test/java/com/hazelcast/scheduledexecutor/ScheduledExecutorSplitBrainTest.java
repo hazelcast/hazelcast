@@ -18,6 +18,7 @@ package com.hazelcast.scheduledexecutor;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.MergePolicyConfig;
+import com.hazelcast.config.ScheduledExecutorConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.scheduledexecutor.ScheduledExecutorServiceTestSupport.PlainCallableTask;
@@ -109,6 +110,7 @@ public class ScheduledExecutorSplitBrainTest extends SplitBrainTestSupport {
         Config config = super.config();
         config.getScheduledExecutorConfig(scheduledExecutorName)
                 .setDurability(1)
+                .setCapacityPolicy(ScheduledExecutorConfig.CapacityPolicy.PER_PARTITION)
                 .setMergePolicyConfig(mergePolicyConfig);
         return config;
     }
