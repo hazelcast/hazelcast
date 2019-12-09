@@ -99,7 +99,6 @@ import com.hazelcast.client.impl.protocol.task.executorservice.durable.DurableEx
 import com.hazelcast.client.impl.protocol.task.executorservice.durable.DurableExecutorIsShutdownMessageTask;
 import com.hazelcast.client.impl.protocol.task.executorservice.durable.DurableExecutorRetrieveAndDisposeResultMessageTask;
 import com.hazelcast.client.impl.protocol.task.executorservice.durable.DurableExecutorRetrieveResultMessageTask;
-import com.hazelcast.client.impl.protocol.task.management.AddWanBatchPublisherConfigMessageTask;
 import com.hazelcast.client.impl.protocol.task.executorservice.durable.DurableExecutorShutdownMessageTask;
 import com.hazelcast.client.impl.protocol.task.executorservice.durable.DurableExecutorSubmitToPartitionMessageTask;
 import com.hazelcast.client.impl.protocol.task.list.ListAddAllMessageTask;
@@ -125,6 +124,7 @@ import com.hazelcast.client.impl.protocol.task.list.ListRemoveWithIndexMessageTa
 import com.hazelcast.client.impl.protocol.task.list.ListSetMessageTask;
 import com.hazelcast.client.impl.protocol.task.list.ListSizeMessageTask;
 import com.hazelcast.client.impl.protocol.task.list.ListSubMessageTask;
+import com.hazelcast.client.impl.protocol.task.management.AddWanBatchPublisherConfigMessageTask;
 import com.hazelcast.client.impl.protocol.task.management.ApplyMCConfigMessageTask;
 import com.hazelcast.client.impl.protocol.task.management.ChangeClusterStateMessageTask;
 import com.hazelcast.client.impl.protocol.task.management.ChangeClusterVersionMessageTask;
@@ -141,6 +141,9 @@ import com.hazelcast.client.impl.protocol.task.management.GetTimedMemberStateMes
 import com.hazelcast.client.impl.protocol.task.management.MatchMCConfigMessageTask;
 import com.hazelcast.client.impl.protocol.task.management.PollMCEventsMessageTask;
 import com.hazelcast.client.impl.protocol.task.management.PromoteLiteMemberMessageTask;
+import com.hazelcast.client.impl.protocol.task.management.PromoteToCPMemberMessageTask;
+import com.hazelcast.client.impl.protocol.task.management.RemoveCPMemberMessageTask;
+import com.hazelcast.client.impl.protocol.task.management.ResetCPSubsystemMessageTask;
 import com.hazelcast.client.impl.protocol.task.management.RunConsoleCommandMessageTask;
 import com.hazelcast.client.impl.protocol.task.management.RunGcMessageTask;
 import com.hazelcast.client.impl.protocol.task.management.RunScriptMessageTask;
@@ -1307,6 +1310,12 @@ public class DefaultMessageTaskFactoryProvider implements MessageTaskFactoryProv
                 (cm, con) -> new PollMCEventsMessageTask(cm, node, con));
         factories.put(MCGetCPMembersCodec.REQUEST_MESSAGE_TYPE,
                 (cm, con) -> new GetCPMembersMessageTask(cm, node, con));
+        factories.put(MCPromoteToCPMemberCodec.REQUEST_MESSAGE_TYPE,
+                (cm, con) -> new PromoteToCPMemberMessageTask(cm, node, con));
+        factories.put(MCRemoveCPMemberCodec.REQUEST_MESSAGE_TYPE,
+                (cm, con) -> new RemoveCPMemberMessageTask(cm, node, con));
+        factories.put(MCResetCPSubsystemCodec.REQUEST_MESSAGE_TYPE,
+                (cm, con) -> new ResetCPSubsystemMessageTask(cm, node, con));
     }
 
     @SuppressFBWarnings({"MS_EXPOSE_REP", "EI_EXPOSE_REP"})

@@ -26,7 +26,9 @@ import com.hazelcast.cluster.Member;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.cp.CPGroup;
 import com.hazelcast.cp.CPMember;
+import com.hazelcast.cp.internal.RaftService;
 import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.internal.cluster.impl.VersionMismatchException;
 import com.hazelcast.internal.json.JsonObject;
@@ -51,6 +53,7 @@ import java.security.AccessControlException;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
@@ -62,6 +65,8 @@ import static com.hazelcast.config.MapConfig.DEFAULT_MAX_IDLE_SECONDS;
 import static com.hazelcast.config.MapConfig.DEFAULT_MAX_SIZE;
 import static com.hazelcast.config.MapConfig.DEFAULT_TTL_SECONDS;
 import static com.hazelcast.config.MaxSizePolicy.PER_NODE;
+import static com.hazelcast.cp.CPGroup.METADATA_CP_GROUP_NAME;
+import static com.hazelcast.cp.internal.HazelcastRaftTestSupport.waitUntilCPDiscoveryCompleted;
 import static com.hazelcast.internal.management.events.EventMetadata.EventType.WAN_SYNC_STARTED;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 import static java.util.Arrays.stream;
@@ -72,6 +77,7 @@ import static org.hamcrest.Matchers.isEmptyOrNullString;
 import static org.hamcrest.Matchers.not;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThat;
@@ -349,7 +355,6 @@ public class ManagementCenterServiceTest extends HazelcastTestSupport {
 
     @Test
     public void getCPMembers() throws Exception {
-        // we need one more member to start CP subsystem
         HazelcastInstance cpInstance = factory.newHazelcastInstance(makeConfig());
         assertTrueEventually(() -> assertNotNull(cpInstance.getCPSubsystem().getLocalCPMember()));
 
@@ -365,6 +370,49 @@ public class ManagementCenterServiceTest extends HazelcastTestSupport {
         assertContains(addresses, expectedAddress);
     }
 
+    @Test
+    public void promoteToCPMember() throws Exception {
+        HazelcastInstance cpInstance = factory.newHazelcastInstance(makeConfig());
+        assertTrueEventually(() -> assertNotNull(cpInstance.getCPSubsystem().getLocalCPMember()));
+
+        HazelcastInstance apInstance = factory.newHazelcastInstance(makeConfig());
+        resolve(managementCenterService.promoteToCPMember(apInstance.getCluster().getLocalMember()));
+
+        assertNotNull(apInstance.getCPSubsystem().getLocalCPMember());
+    }
+
+    @Test
+    public void removeCPMember() throws Exception {
+        HazelcastInstance lostInstance = factory.newHazelcastInstance(makeConfig());
+        assertClusterSizeEventually(4, lostInstance);
+        assertTrueEventually(() -> assertNotNull(lostInstance.getCPSubsystem().getLocalCPMember()));
+        UUID lostUuid = lostInstance.getCPSubsystem().getLocalCPMember().getUuid();
+
+        lostInstance.getLifecycleService().terminate();
+        assertClusterSizeEventually(3, hazelcastInstances);
+        resolve(managementCenterService.removeCPMember(lostUuid));
+
+        CPGroup metadataGroup = hazelcastInstances[0].getCPSubsystem().getCPSubsystemManagementService()
+                                                     .getCPGroup(METADATA_CP_GROUP_NAME)
+                                                     .toCompletableFuture()
+                                                     .get();
+        assertEquals(2, metadataGroup.members().size());
+    }
+
+    @Test
+    public void resetCPSubsystem() throws Exception {
+        // we need one more member to start CP subsystem
+        HazelcastInstance cpInstance = factory.newHazelcastInstance(makeConfig());
+        assertTrueEventually(() -> assertNotNull(cpInstance.getCPSubsystem().getLocalCPMember()));
+        CPMember oldCPMember = cpInstance.getCPSubsystem().getLocalCPMember();
+
+        resolve(managementCenterService.resetCPSubsystem());
+        assertTrueEventually(() -> assertNotNull(cpInstance.getCPSubsystem().getLocalCPMember()));
+        CPMember newCPMember = cpInstance.getCPSubsystem().getLocalCPMember();
+
+        assertNotEquals(oldCPMember.getUuid(), newCPMember.getUuid());
+    }
+
     private Config makeConfig() {
         Config config = getConfig();
         config.getCPSubsystemConfig().setCPMemberCount(3);
@@ -377,6 +425,10 @@ public class ManagementCenterServiceTest extends HazelcastTestSupport {
 
     private static com.hazelcast.internal.management.ManagementCenterService getMemberMCService(HazelcastInstance instance) {
         return getNode(instance).getManagementCenterService();
+    }
+
+    public static RaftService getRaftService(HazelcastInstance instance) {
+        return getNodeEngineImpl(instance).getService(RaftService.SERVICE_NAME);
     }
 
     private static class TestEvent implements Event {
