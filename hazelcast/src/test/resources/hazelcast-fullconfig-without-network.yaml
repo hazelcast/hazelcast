@@ -66,7 +66,7 @@ hazelcast:
           acknowledge-type: ACK_ON_RECEIPT
           target-endpoints: "10.3.5.1:5701, 10.3.5.2:5701"
           snapshot-enabled: true
-          wan-sync:
+          sync:
             consistency-check-strategy: MERKLE_TREES
 
         istanbul:

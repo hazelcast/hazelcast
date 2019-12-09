@@ -243,9 +243,9 @@ public class RestTest {
     @Test
     public void addWanConfig() throws Exception {
         Config config = instance.getConfig();
-        WanReplicationConfig wanConfig = new WanReplicationConfig();
-        wanConfig.setName("test");
-        WanReplicationConfigDTO dto = new WanReplicationConfigDTO(wanConfig);
+        WanReplicationConfig wanReplicationConfig = new WanReplicationConfig();
+        wanReplicationConfig.setName("test");
+        WanReplicationConfigDTO dto = new WanReplicationConfigDTO(wanReplicationConfig);
         String result = communicator.addWanConfig(config.getClusterName(), "", dto.toJson().toString());
         assertEquals("{\"status\":\"fail\",\"message\":\"Adding new WAN config is not supported.\"}", result);
     }

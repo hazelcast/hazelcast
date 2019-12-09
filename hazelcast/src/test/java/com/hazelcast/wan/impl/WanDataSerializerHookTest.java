@@ -16,8 +16,8 @@
 
 package com.hazelcast.wan.impl;
 
-import com.hazelcast.map.impl.wan.MapReplicationRemove;
-import com.hazelcast.map.impl.wan.MapReplicationUpdate;
+import com.hazelcast.map.impl.wan.WanMapRemoveEvent;
+import com.hazelcast.map.impl.wan.WanMapUpdateEvent;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -37,11 +37,11 @@ public class WanDataSerializerHookTest {
         WanDataSerializerHook hook = new WanDataSerializerHook();
         IdentifiedDataSerializable mapUpdate = hook.createFactory()
                 .create(WanDataSerializerHook.MAP_REPLICATION_UPDATE);
-        assertTrue(mapUpdate instanceof MapReplicationUpdate);
+        assertTrue(mapUpdate instanceof WanMapUpdateEvent);
 
         IdentifiedDataSerializable mapRemove = hook.createFactory()
                 .create(WanDataSerializerHook.MAP_REPLICATION_REMOVE);
-        assertTrue(mapRemove instanceof MapReplicationRemove);
+        assertTrue(mapRemove instanceof WanMapRemoveEvent);
     }
 
     @Test(expected = IllegalArgumentException.class)

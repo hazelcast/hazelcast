@@ -39,7 +39,7 @@ import com.hazelcast.config.ReplicatedMapConfig;
 import com.hazelcast.config.RingbufferConfig;
 import com.hazelcast.config.ScheduledExecutorConfig;
 import com.hazelcast.config.ServerSocketEndpointConfig;
-import com.hazelcast.config.WanBatchReplicationPublisherConfig;
+import com.hazelcast.config.WanBatchPublisherConfig;
 import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.config.cp.CPSubsystemConfig;
 import com.hazelcast.instance.EndpointQualifier;
@@ -291,7 +291,7 @@ public final class ConfigValidator {
 
         // endpoint qualifiers referenced by WAN publishers must exist
         for (WanReplicationConfig wanReplicationConfig : config.getWanReplicationConfigs().values()) {
-            for (WanBatchReplicationPublisherConfig wanPublisherConfig : wanReplicationConfig.getBatchPublisherConfigs()) {
+            for (WanBatchPublisherConfig wanPublisherConfig : wanReplicationConfig.getBatchPublisherConfigs()) {
                 if (wanPublisherConfig.getEndpoint() != null) {
                     EndpointQualifier qualifier = EndpointQualifier.resolve(WAN, wanPublisherConfig.getEndpoint());
                     if (endpointConfigs.get(qualifier) == null) {

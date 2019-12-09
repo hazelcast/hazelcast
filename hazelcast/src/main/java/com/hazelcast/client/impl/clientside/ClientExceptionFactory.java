@@ -74,7 +74,7 @@ import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.TransactionNotActiveException;
 import com.hazelcast.transaction.TransactionTimedOutException;
 import com.hazelcast.internal.util.AddressUtil;
-import com.hazelcast.wan.WanReplicationQueueFullException;
+import com.hazelcast.wan.WanQueueFullException;
 
 import javax.cache.CacheException;
 import javax.cache.integration.CacheLoaderException;
@@ -541,10 +541,10 @@ public class ClientExceptionFactory {
                 return new MaxMessageSizeExceeded(message);
             }
         });
-        register(ClientProtocolErrorCodes.WAN_REPLICATION_QUEUE_FULL, WanReplicationQueueFullException.class, new ExceptionFactory() {
+        register(ClientProtocolErrorCodes.WAN_REPLICATION_QUEUE_FULL, WanQueueFullException.class, new ExceptionFactory() {
             @Override
             public Throwable createException(String message, Throwable cause) {
-                return new WanReplicationQueueFullException(message);
+                return new WanQueueFullException(message);
             }
         });
 

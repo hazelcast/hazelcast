@@ -21,7 +21,7 @@ import com.hazelcast.client.impl.protocol.codec.MCAddWanBatchPublisherConfigCode
 import com.hazelcast.client.impl.protocol.codec.MCAddWanBatchPublisherConfigCodec.RequestParameters;
 import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
 import com.hazelcast.config.WanAcknowledgeType;
-import com.hazelcast.config.WanBatchReplicationPublisherConfig;
+import com.hazelcast.config.WanBatchPublisherConfig;
 import com.hazelcast.config.WanQueueFullBehavior;
 import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.instance.impl.Node;
@@ -31,8 +31,8 @@ import com.hazelcast.wan.impl.WanReplicationService;
 
 import java.security.Permission;
 
-import static com.hazelcast.config.WanBatchReplicationPublisherConfig.DEFAULT_ACKNOWLEDGE_TYPE;
-import static com.hazelcast.config.WanBatchReplicationPublisherConfig.DEFAULT_QUEUE_FULL_BEHAVIOUR;
+import static com.hazelcast.config.WanBatchPublisherConfig.DEFAULT_ACKNOWLEDGE_TYPE;
+import static com.hazelcast.config.WanBatchPublisherConfig.DEFAULT_QUEUE_FULL_BEHAVIOUR;
 
 public class AddWanBatchPublisherConfigMessageTask extends AbstractCallableMessageTask<RequestParameters> {
     public AddWanBatchPublisherConfigMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
@@ -44,7 +44,7 @@ public class AddWanBatchPublisherConfigMessageTask extends AbstractCallableMessa
         WanReplicationConfig wanConfig = new WanReplicationConfig();
         wanConfig.setName(parameters.name);
 
-        WanBatchReplicationPublisherConfig publisherConfig = new WanBatchReplicationPublisherConfig();
+        WanBatchPublisherConfig publisherConfig = new WanBatchPublisherConfig();
         publisherConfig.setPublisherId(parameters.publisherId);
         publisherConfig.setClusterName(parameters.targetCluster);
         publisherConfig.setTargetEndpoints(parameters.endpoints);
@@ -59,7 +59,7 @@ public class AddWanBatchPublisherConfigMessageTask extends AbstractCallableMessa
         WanQueueFullBehavior queueFullBehavior = WanQueueFullBehavior.getByType(parameters.queueFullBehavior);
         publisherConfig.setQueueFullBehavior(
                 queueFullBehavior != null ? queueFullBehavior : DEFAULT_QUEUE_FULL_BEHAVIOUR);
-        wanConfig.addWanBatchReplicationPublisherConfig(publisherConfig);
+        wanConfig.addBatchReplicationPublisherConfig(publisherConfig);
 
         return nodeEngine.getWanReplicationService().addWanReplicationConfig(wanConfig);
     }

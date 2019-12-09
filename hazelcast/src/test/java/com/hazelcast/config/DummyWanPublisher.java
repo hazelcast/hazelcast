@@ -16,12 +16,12 @@
 
 package com.hazelcast.config;
 
-import com.hazelcast.wan.WanReplicationEvent;
-import com.hazelcast.wan.WanReplicationPublisher;
+import com.hazelcast.wan.WanEvent;
+import com.hazelcast.wan.WanPublisher;
 
 import java.io.Serializable;
 
-public class DummyWanPublisher implements WanReplicationPublisher, Serializable {
+public class DummyWanPublisher implements WanPublisher, Serializable {
     @Override
     public void init(WanReplicationConfig wanReplicationConfig, AbstractWanPublisherConfig publisherConfig) {
 
@@ -38,12 +38,12 @@ public class DummyWanPublisher implements WanReplicationPublisher, Serializable 
     }
 
     @Override
-    public void publishReplicationEvent(WanReplicationEvent eventObject) {
+    public void publishReplicationEvent(WanEvent eventObject) {
 
     }
 
     @Override
-    public void publishReplicationEventBackup(WanReplicationEvent eventObject) {
+    public void publishReplicationEventBackup(WanEvent eventObject) {
 
     }
 

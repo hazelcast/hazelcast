@@ -19,5 +19,5 @@ package com.hazelcast.internal.cluster.impl.operations;
 /**
  * Marker interface for WAN Replication Operations
  */
-public interface WanReplicationOperation {
+public interface WanOperation {
 }

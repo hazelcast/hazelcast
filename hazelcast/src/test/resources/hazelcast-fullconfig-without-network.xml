@@ -70,9 +70,9 @@
             <response-timeout-millis>5000</response-timeout-millis>
             <acknowledge-type>ACK_ON_RECEIPT</acknowledge-type>
             <target-endpoints>10.3.5.1:5701, 10.3.5.2:5701</target-endpoints>
-            <wan-sync>
+            <sync>
                 <consistency-check-strategy>MERKLE_TREES</consistency-check-strategy>
-            </wan-sync>
+            </sync>
         </batch-publisher>
         <batch-publisher>
             <cluster-name>istanbul</cluster-name>

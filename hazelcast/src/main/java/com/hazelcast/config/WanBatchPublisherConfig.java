@@ -20,8 +20,9 @@ import com.hazelcast.internal.config.ConfigDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.discovery.DiscoveryNode;
+import com.hazelcast.wan.WanEvent;
 import com.hazelcast.wan.WanPublisherState;
-import com.hazelcast.wan.WanReplicationPublisher;
+import com.hazelcast.wan.WanPublisher;
 
 import javax.annotation.Nonnull;
 import java.io.IOException;
@@ -43,7 +44,7 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
  * @see AwsConfig
  */
 @SuppressWarnings({"checkstyle:methodcount", "checkstyle:javadocvariable"})
-public class WanBatchReplicationPublisherConfig extends AbstractWanPublisherConfig {
+public class WanBatchPublisherConfig extends AbstractWanPublisherConfig {
     public static final String DEFAULT_CLUSTER_NAME = "dev";
     public static final boolean DEFAULT_SNAPSHOT_ENABLED = false;
     public static final WanPublisherState DEFAULT_INITIAL_PUBLISHER_STATE = WanPublisherState.REPLICATING;
@@ -86,7 +87,7 @@ public class WanBatchReplicationPublisherConfig extends AbstractWanPublisherConf
     private KubernetesConfig kubernetesConfig = new KubernetesConfig();
     private EurekaConfig eurekaConfig = new EurekaConfig();
     private DiscoveryConfig discoveryConfig = new DiscoveryConfig();
-    private WanSyncConfig wanSyncConfig = new WanSyncConfig();
+    private WanSyncConfig syncConfig = new WanSyncConfig();
     /**
      * WAN endpoint configuration qualifier. When using pre-3.12 network configuration, its value
      * can be {@code null} and is not taken into account. With 3.12+ advanced network config,
@@ -97,29 +98,29 @@ public class WanBatchReplicationPublisherConfig extends AbstractWanPublisherConf
      */
     private String endpoint;
 
-    public WanBatchReplicationPublisherConfig() {
+    public WanBatchPublisherConfig() {
         setClassName("com.hazelcast.enterprise.wan.impl.replication.WanBatchReplication");
     }
 
     @Override
-    public WanBatchReplicationPublisherConfig setClassName(String className) {
+    public WanBatchPublisherConfig setClassName(String className) {
         super.setClassName(className);
         return this;
     }
 
     @Override
-    public WanReplicationPublisher getImplementation() {
+    public WanPublisher getImplementation() {
         return null;
     }
 
     @Override
-    public WanBatchReplicationPublisherConfig setPublisherId(String publisherId) {
+    public WanBatchPublisherConfig setPublisherId(String publisherId) {
         super.setPublisherId(publisherId);
         return this;
     }
 
     @Override
-    public WanBatchReplicationPublisherConfig setProperties(@Nonnull Map<String, Comparable> properties) {
+    public WanBatchPublisherConfig setProperties(@Nonnull Map<String, Comparable> properties) {
         super.setProperties(properties);
         return this;
     }
@@ -130,7 +131,7 @@ public class WanBatchReplicationPublisherConfig extends AbstractWanPublisherConf
      * @return this config
      */
     @Override
-    public WanBatchReplicationPublisherConfig setImplementation(WanReplicationPublisher implementation) {
+    public WanBatchPublisherConfig setImplementation(WanPublisher implementation) {
         return this;
     }
 
@@ -160,7 +161,7 @@ public class WanBatchReplicationPublisherConfig extends AbstractWanPublisherConf
      * @return this config
      * @see #getPublisherId()
      */
-    public WanBatchReplicationPublisherConfig setClusterName(@Nonnull String clusterName) {
+    public WanBatchPublisherConfig setClusterName(@Nonnull String clusterName) {
         this.clusterName = checkNotNull(clusterName, "Cluster name must not be null");
         return this;
     }
@@ -168,10 +169,10 @@ public class WanBatchReplicationPublisherConfig extends AbstractWanPublisherConf
     /**
      * Returns {@code true} if key-based coalescing is configured for this WAN
      * publisher.
-     * When enabled, only the latest {@link com.hazelcast.wan.WanReplicationEvent}
+     * When enabled, only the latest {@link WanEvent}
      * of a key is sent to target.
      *
-     * @see WanBatchReplicationPublisherConfig#isSnapshotEnabled()
+     * @see WanBatchPublisherConfig#isSnapshotEnabled()
      */
     public boolean isSnapshotEnabled() {
         return snapshotEnabled;
@@ -179,13 +180,13 @@ public class WanBatchReplicationPublisherConfig extends AbstractWanPublisherConf
 
     /**
      * Sets if key-based coalescing is configured for this WAN publisher.
-     * When enabled, only the latest {@link com.hazelcast.wan.WanReplicationEvent}
+     * When enabled, only the latest {@link WanEvent}
      * of a key is sent to target.
      *
      * @return this config
-     * @see WanBatchReplicationPublisherConfig#isSnapshotEnabled()
+     * @see WanBatchPublisherConfig#isSnapshotEnabled()
      */
-    public WanBatchReplicationPublisherConfig setSnapshotEnabled(boolean snapshotEnabled) {
+    public WanBatchPublisherConfig setSnapshotEnabled(boolean snapshotEnabled) {
         this.snapshotEnabled = snapshotEnabled;
         return this;
     }
@@ -205,7 +206,7 @@ public class WanBatchReplicationPublisherConfig extends AbstractWanPublisherConf
      * @param batchSize the maximum size of a WAN event batch
      * @return this config
      */
-    public WanBatchReplicationPublisherConfig setBatchSize(int batchSize) {
+    public WanBatchPublisherConfig setBatchSize(int batchSize) {
         this.batchSize = batchSize;
         return this;
     }
@@ -229,7 +230,7 @@ public class WanBatchReplicationPublisherConfig extends AbstractWanPublisherConf
      * @param batchMaxDelayMillis maximum amount of time to wait before sending a batch of events
      * @return this config
      */
-    public WanBatchReplicationPublisherConfig setBatchMaxDelayMillis(int batchMaxDelayMillis) {
+    public WanBatchPublisherConfig setBatchMaxDelayMillis(int batchMaxDelayMillis) {
         this.batchMaxDelayMillis = batchMaxDelayMillis;
         return this;
     }
@@ -253,7 +254,7 @@ public class WanBatchReplicationPublisherConfig extends AbstractWanPublisherConf
      * @param responseTimeoutMillis timeout for response from target cluster
      * @return this config
      */
-    public WanBatchReplicationPublisherConfig setResponseTimeoutMillis(int responseTimeoutMillis) {
+    public WanBatchPublisherConfig setResponseTimeoutMillis(int responseTimeoutMillis) {
         this.responseTimeoutMillis = responseTimeoutMillis;
         return this;
     }
@@ -276,7 +277,7 @@ public class WanBatchReplicationPublisherConfig extends AbstractWanPublisherConf
      * @param acknowledgeType acknowledge type
      * @return this config
      */
-    public WanBatchReplicationPublisherConfig setAcknowledgeType(@Nonnull WanAcknowledgeType acknowledgeType) {
+    public WanBatchPublisherConfig setAcknowledgeType(@Nonnull WanAcknowledgeType acknowledgeType) {
         this.acknowledgeType = checkNotNull(acknowledgeType, "Acknowledge type name must not be null");
         return this;
     }
@@ -314,7 +315,7 @@ public class WanBatchReplicationPublisherConfig extends AbstractWanPublisherConf
      * @see #setEurekaConfig(EurekaConfig)
      * @see #setDiscoveryConfig(DiscoveryConfig)
      */
-    public WanBatchReplicationPublisherConfig setTargetEndpoints(String targetEndpoints) {
+    public WanBatchPublisherConfig setTargetEndpoints(String targetEndpoints) {
         this.targetEndpoints = targetEndpoints;
         return this;
     }
@@ -322,18 +323,18 @@ public class WanBatchReplicationPublisherConfig extends AbstractWanPublisherConf
     /**
      * Returns the config for the WAN sync mechanism.
      */
-    public WanSyncConfig getWanSyncConfig() {
-        return wanSyncConfig;
+    public WanSyncConfig getSyncConfig() {
+        return syncConfig;
     }
 
     /**
      * Sets the config for the WAN sync mechanism.
      *
-     * @param wanSyncConfig the WAN sync config
+     * @param syncConfig the WAN sync config
      * @return this config
      */
-    public WanBatchReplicationPublisherConfig setWanSyncConfig(WanSyncConfig wanSyncConfig) {
-        this.wanSyncConfig = wanSyncConfig;
+    public WanBatchPublisherConfig setSyncConfig(WanSyncConfig syncConfig) {
+        this.syncConfig = syncConfig;
         return this;
     }
 
@@ -370,7 +371,7 @@ public class WanBatchReplicationPublisherConfig extends AbstractWanPublisherConf
      * @param queueCapacity the queue capacity
      * @return this config
      */
-    public WanBatchReplicationPublisherConfig setQueueCapacity(int queueCapacity) {
+    public WanBatchPublisherConfig setQueueCapacity(int queueCapacity) {
         this.queueCapacity = queueCapacity;
         return this;
     }
@@ -391,7 +392,7 @@ public class WanBatchReplicationPublisherConfig extends AbstractWanPublisherConf
      * @param queueFullBehavior the behaviour of this publisher when the WAN queue is full
      * @return this config
      */
-    public WanBatchReplicationPublisherConfig setQueueFullBehavior(@Nonnull WanQueueFullBehavior queueFullBehavior) {
+    public WanBatchPublisherConfig setQueueFullBehavior(@Nonnull WanQueueFullBehavior queueFullBehavior) {
         this.queueFullBehavior = checkNotNull(queueFullBehavior, "Queue full behaviour must not be null");
         return this;
     }
@@ -410,7 +411,7 @@ public class WanBatchReplicationPublisherConfig extends AbstractWanPublisherConf
      * @param initialPublisherState the state
      * @return this configuration
      */
-    public WanBatchReplicationPublisherConfig setInitialPublisherState(@Nonnull WanPublisherState initialPublisherState) {
+    public WanBatchPublisherConfig setInitialPublisherState(@Nonnull WanPublisherState initialPublisherState) {
         this.initialPublisherState = checkNotNull(initialPublisherState, "Initial WAN publisher state must not be null");
         return this;
     }
@@ -432,7 +433,7 @@ public class WanBatchReplicationPublisherConfig extends AbstractWanPublisherConf
      * @param discoveryPeriodSeconds period for retrying connections to target endpoints
      * @return this config
      */
-    public WanBatchReplicationPublisherConfig setDiscoveryPeriodSeconds(int discoveryPeriodSeconds) {
+    public WanBatchPublisherConfig setDiscoveryPeriodSeconds(int discoveryPeriodSeconds) {
         this.discoveryPeriodSeconds = discoveryPeriodSeconds;
         return this;
     }
@@ -458,7 +459,7 @@ public class WanBatchReplicationPublisherConfig extends AbstractWanPublisherConf
      * @param maxTargetEndpoints maximum number of endpoints that WAN will connect to
      * @return this config
      */
-    public WanBatchReplicationPublisherConfig setMaxTargetEndpoints(int maxTargetEndpoints) {
+    public WanBatchPublisherConfig setMaxTargetEndpoints(int maxTargetEndpoints) {
         this.maxTargetEndpoints = maxTargetEndpoints;
         return this;
     }
@@ -528,7 +529,7 @@ public class WanBatchReplicationPublisherConfig extends AbstractWanPublisherConf
      *                                 concurrently
      * @return this config
      */
-    public WanBatchReplicationPublisherConfig setMaxConcurrentInvocations(int maxConcurrentInvocations) {
+    public WanBatchPublisherConfig setMaxConcurrentInvocations(int maxConcurrentInvocations) {
         this.maxConcurrentInvocations = maxConcurrentInvocations;
         return this;
     }
@@ -558,7 +559,7 @@ public class WanBatchReplicationPublisherConfig extends AbstractWanPublisherConf
      * @see DiscoveryNode#getPublicAddress()
      * @see DiscoveryNode#getPrivateAddress()
      */
-    public WanBatchReplicationPublisherConfig setUseEndpointPrivateAddress(boolean useEndpointPrivateAddress) {
+    public WanBatchPublisherConfig setUseEndpointPrivateAddress(boolean useEndpointPrivateAddress) {
         this.useEndpointPrivateAddress = useEndpointPrivateAddress;
         return this;
     }
@@ -582,7 +583,7 @@ public class WanBatchReplicationPublisherConfig extends AbstractWanPublisherConf
      *                      parked
      * @return this config
      */
-    public WanBatchReplicationPublisherConfig setIdleMinParkNs(long idleMinParkNs) {
+    public WanBatchPublisherConfig setIdleMinParkNs(long idleMinParkNs) {
         this.idleMinParkNs = idleMinParkNs;
         return this;
     }
@@ -606,7 +607,7 @@ public class WanBatchReplicationPublisherConfig extends AbstractWanPublisherConf
      *                      parked
      * @return this config
      */
-    public WanBatchReplicationPublisherConfig setIdleMaxParkNs(long idleMaxParkNs) {
+    public WanBatchPublisherConfig setIdleMaxParkNs(long idleMaxParkNs) {
         this.idleMaxParkNs = idleMaxParkNs;
         return this;
     }
@@ -627,7 +628,7 @@ public class WanBatchReplicationPublisherConfig extends AbstractWanPublisherConf
      * @return this config
      * @throws IllegalArgumentException if awsConfig is null
      */
-    public WanBatchReplicationPublisherConfig setAwsConfig(final AwsConfig awsConfig) {
+    public WanBatchPublisherConfig setAwsConfig(final AwsConfig awsConfig) {
         this.awsConfig = isNotNull(awsConfig, "awsConfig");
         return this;
     }
@@ -648,7 +649,7 @@ public class WanBatchReplicationPublisherConfig extends AbstractWanPublisherConf
      * @return this config
      * @throws IllegalArgumentException if gcpConfig is null
      */
-    public WanBatchReplicationPublisherConfig setGcpConfig(final GcpConfig gcpConfig) {
+    public WanBatchPublisherConfig setGcpConfig(final GcpConfig gcpConfig) {
         this.gcpConfig = isNotNull(gcpConfig, "gcpConfig");
         return this;
     }
@@ -669,7 +670,7 @@ public class WanBatchReplicationPublisherConfig extends AbstractWanPublisherConf
      * @return this config
      * @throws IllegalArgumentException if azureConfig is null
      */
-    public WanBatchReplicationPublisherConfig setAzureConfig(final AzureConfig azureConfig) {
+    public WanBatchPublisherConfig setAzureConfig(final AzureConfig azureConfig) {
         this.azureConfig = isNotNull(azureConfig, "azureConfig");
         return this;
     }
@@ -690,7 +691,7 @@ public class WanBatchReplicationPublisherConfig extends AbstractWanPublisherConf
      * @return this config
      * @throws IllegalArgumentException if kubernetesConfig is null
      */
-    public WanBatchReplicationPublisherConfig setKubernetesConfig(final KubernetesConfig kubernetesConfig) {
+    public WanBatchPublisherConfig setKubernetesConfig(final KubernetesConfig kubernetesConfig) {
         this.kubernetesConfig = isNotNull(kubernetesConfig, "kubernetesConfig");
         return this;
     }
@@ -711,7 +712,7 @@ public class WanBatchReplicationPublisherConfig extends AbstractWanPublisherConf
      * @return this config
      * @throws IllegalArgumentException if eurekaConfig is null
      */
-    public WanBatchReplicationPublisherConfig setEurekaConfig(final EurekaConfig eurekaConfig) {
+    public WanBatchPublisherConfig setEurekaConfig(final EurekaConfig eurekaConfig) {
         this.eurekaConfig = isNotNull(eurekaConfig, "eurekaConfig");
         return this;
     }
@@ -734,7 +735,7 @@ public class WanBatchReplicationPublisherConfig extends AbstractWanPublisherConf
      * @return this config
      * @throws IllegalArgumentException if discoveryProvidersConfig is null
      */
-    public WanBatchReplicationPublisherConfig setDiscoveryConfig(DiscoveryConfig discoveryConfig) {
+    public WanBatchPublisherConfig setDiscoveryConfig(DiscoveryConfig discoveryConfig) {
         this.discoveryConfig = isNotNull(discoveryConfig, "discoveryProvidersConfig");
         return this;
     }
@@ -772,7 +773,7 @@ public class WanBatchReplicationPublisherConfig extends AbstractWanPublisherConf
      * @see AdvancedNetworkConfig
      * @since 3.12
      */
-    public WanBatchReplicationPublisherConfig setEndpoint(String endpoint) {
+    public WanBatchPublisherConfig setEndpoint(String endpoint) {
         this.endpoint = endpoint;
         return this;
     }
@@ -785,7 +786,7 @@ public class WanBatchReplicationPublisherConfig extends AbstractWanPublisherConf
                 + ", queueCapacity=" + queueCapacity
                 + ", queueFullBehavior=" + queueFullBehavior
                 + ", initialPublisherState=" + initialPublisherState
-                + ", wanSyncConfig=" + wanSyncConfig
+                + ", wanSyncConfig=" + syncConfig
                 + ", properties=" + properties
                 + ", className='" + className + '\''
                 + ", implementation=" + implementation
@@ -834,7 +835,7 @@ public class WanBatchReplicationPublisherConfig extends AbstractWanPublisherConf
         out.writeObject(kubernetesConfig);
         out.writeObject(eurekaConfig);
         out.writeObject(discoveryConfig);
-        out.writeObject(wanSyncConfig);
+        out.writeObject(syncConfig);
         out.writeUTF(endpoint);
     }
 
@@ -863,7 +864,7 @@ public class WanBatchReplicationPublisherConfig extends AbstractWanPublisherConf
         kubernetesConfig = in.readObject();
         eurekaConfig = in.readObject();
         discoveryConfig = in.readObject();
-        wanSyncConfig = in.readObject();
+        syncConfig = in.readObject();
         endpoint = in.readUTF();
     }
 

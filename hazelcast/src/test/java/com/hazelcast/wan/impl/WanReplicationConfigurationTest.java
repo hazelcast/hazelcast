@@ -18,7 +18,7 @@ package com.hazelcast.wan.impl;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.MapConfig;
-import com.hazelcast.config.CustomWanPublisherConfig;
+import com.hazelcast.config.WanCustomPublisherConfig;
 import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.config.WanReplicationRef;
 import com.hazelcast.core.HazelcastInstance;
@@ -45,7 +45,7 @@ import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class WanConfigurationTest extends HazelcastTestSupport {
+public class WanReplicationConfigurationTest extends HazelcastTestSupport {
 
     private boolean isWanReplicationEnabled;
     private boolean isWanRepublishingEnabled;
@@ -111,13 +111,13 @@ public class WanConfigurationTest extends HazelcastTestSupport {
             return super.getConfig();
         }
 
-        CustomWanPublisherConfig customWanPublisherConfig = new CustomWanPublisherConfig()
+        WanCustomPublisherConfig wanCustomPublisherConfig = new WanCustomPublisherConfig()
                 .setPublisherId("dummyPublisherId")
-                .setClassName(DummyWanReplication.class.getName());
+                .setClassName(WanDummyPublisher.class.getName());
 
-        WanReplicationConfig wanConfig = new WanReplicationConfig()
+        WanReplicationConfig wanReplicationConfig = new WanReplicationConfig()
                 .setName("dummyWan")
-                .addCustomPublisherConfig(customWanPublisherConfig);
+                .addCustomPublisherConfig(wanCustomPublisherConfig);
 
         WanReplicationRef wanRef = new WanReplicationRef()
                 .setName("dummyWan")
@@ -128,7 +128,7 @@ public class WanConfigurationTest extends HazelcastTestSupport {
                 .setWanReplicationRef(wanRef);
 
         return super.getConfig()
-                .addWanReplicationConfig(wanConfig)
+                .addWanReplicationConfig(wanReplicationConfig)
                 .addMapConfig(mapConfig);
     }
 

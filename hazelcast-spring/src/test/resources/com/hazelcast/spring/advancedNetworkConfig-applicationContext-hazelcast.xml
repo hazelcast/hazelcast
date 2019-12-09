@@ -119,9 +119,9 @@
             <hz:wan-replication name="testWan2">
                 <hz:batch-publisher>
                     <hz:cluster-name>tokyo</hz:cluster-name>
-                    <hz:wan-sync>
+                    <hz:sync>
                         <hz:consistency-check-strategy>MERKLE_TREES</hz:consistency-check-strategy>
-                    </hz:wan-sync>
+                    </hz:sync>
                 </hz:batch-publisher>
                 <hz:consumer class-name="WanConsumer" persist-wan-replicated-data="true"/>
             </hz:wan-replication>

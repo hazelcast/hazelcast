@@ -19,7 +19,7 @@ package com.hazelcast.config;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.wan.WanReplicationPublisher;
+import com.hazelcast.wan.WanPublisher;
 
 import javax.annotation.Nonnull;
 import java.io.IOException;
@@ -36,7 +36,7 @@ public abstract class AbstractWanPublisherConfig implements IdentifiedDataSerial
 
     protected String publisherId = "";
     protected String className = "";
-    protected WanReplicationPublisher implementation;
+    protected WanPublisher implementation;
     protected Map<String, Comparable> properties = new HashMap<>();
 
     /**
@@ -82,7 +82,7 @@ public abstract class AbstractWanPublisherConfig implements IdentifiedDataSerial
 
     /**
      * Returns the name of the class implementing
-     * {@link com.hazelcast.wan.WanReplicationPublisher}.
+     * {@link WanPublisher}.
      */
     public String getClassName() {
         return className;
@@ -90,9 +90,9 @@ public abstract class AbstractWanPublisherConfig implements IdentifiedDataSerial
 
     /**
      * Sets the name of the class implementing
-     * {@link com.hazelcast.wan.WanReplicationPublisher}.
+     * {@link WanPublisher}.
      * To configure the built in WanBatchReplication, please use
-     * {@link WanBatchReplicationPublisherConfig} config class.
+     * {@link WanBatchPublisherConfig} config class.
      *
      * @param className the name of the class implementation for the WAN replication
      * @return this config
@@ -103,19 +103,19 @@ public abstract class AbstractWanPublisherConfig implements IdentifiedDataSerial
     }
 
     /**
-     * Returns the implementation of {@link com.hazelcast.wan.WanReplicationPublisher}.
+     * Returns the implementation of {@link WanPublisher}.
      */
-    public WanReplicationPublisher getImplementation() {
+    public WanPublisher getImplementation() {
         return implementation;
     }
 
     /**
-     * Sets the implementation of {@link com.hazelcast.wan.WanReplicationPublisher}.
+     * Sets the implementation of {@link WanPublisher}.
      *
      * @param implementation the implementation for the WAN replication
      * @return this config
      */
-    public AbstractWanPublisherConfig setImplementation(WanReplicationPublisher implementation) {
+    public AbstractWanPublisherConfig setImplementation(WanPublisher implementation) {
         this.implementation = implementation;
         return this;
     }

@@ -20,7 +20,7 @@ package com.hazelcast.internal.monitor.impl;
 import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.monitor.LocalWanPublisherStats;
-import com.hazelcast.wan.DistributedServiceWanEventCounters.DistributedObjectWanEventCounters;
+import com.hazelcast.wan.WanEventCounters.DistributedObjectWanEventCounters;
 import com.hazelcast.wan.WanPublisherState;
 import com.hazelcast.wan.impl.ConsistencyCheckResult;
 import com.hazelcast.wan.impl.WanSyncStats;

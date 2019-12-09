@@ -18,7 +18,7 @@ package com.hazelcast.wan.impl;
 
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.util.Clock;
-import com.hazelcast.wan.WanReplicationEvent;
+import com.hazelcast.wan.WanEvent;
 
 import javax.annotation.Nonnull;
 import java.util.Set;
@@ -26,7 +26,7 @@ import java.util.Set;
 /**
  * Private API for WAN replication events
  */
-public interface InternalWanReplicationEvent extends WanReplicationEvent {
+public interface InternalWanEvent extends WanEvent {
     /**
      * Returns the key for the entry on which the event occurred.
      */

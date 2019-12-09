@@ -29,8 +29,8 @@ import com.hazelcast.config.EventJournalConfig;
 import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.MaxSizePolicy;
-import com.hazelcast.config.WanConsumerConfig;
 import com.hazelcast.config.WanReplicationConfig;
+import com.hazelcast.config.WanConsumerConfig;
 import com.hazelcast.config.WanReplicationRef;
 import com.hazelcast.core.ManagedContext;
 import com.hazelcast.internal.diagnostics.StoreLatencyPlugin;
@@ -221,7 +221,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
             Config config = nodeEngine.getConfig();
             WanReplicationConfig wanReplicationConfig = config.getWanReplicationConfig(wanReplicationRefName);
             if (wanReplicationConfig != null) {
-                WanConsumerConfig wanConsumerConfig = wanReplicationConfig.getWanConsumerConfig();
+                WanConsumerConfig wanConsumerConfig = wanReplicationConfig.getConsumerConfig();
                 if (wanConsumerConfig != null) {
                     persistWanReplicatedData = wanConsumerConfig.isPersistWanReplicatedData();
                 }

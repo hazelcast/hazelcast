@@ -17,9 +17,9 @@
 package com.hazelcast.spring;
 
 import com.hazelcast.config.WanConsumerConfig;
-import com.hazelcast.wan.WanReplicationConsumer;
+import com.hazelcast.wan.WanConsumer;
 
-public class DummyWanConsumer implements WanReplicationConsumer {
+public class DummyWanConsumer implements WanConsumer {
     @Override
     public void init(String wanReplicationName, WanConsumerConfig config) {
 

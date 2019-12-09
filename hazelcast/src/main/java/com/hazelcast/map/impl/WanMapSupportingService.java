@@ -17,18 +17,18 @@
 package com.hazelcast.map.impl;
 
 import com.hazelcast.config.WanAcknowledgeType;
-import com.hazelcast.internal.services.ReplicationSupportingService;
+import com.hazelcast.internal.services.WanSupportingService;
 import com.hazelcast.map.impl.operation.MapOperation;
 import com.hazelcast.map.impl.operation.MapOperationProvider;
-import com.hazelcast.map.impl.wan.MapReplicationRemove;
-import com.hazelcast.map.impl.wan.MapReplicationUpdate;
+import com.hazelcast.map.impl.wan.WanMapRemoveEvent;
+import com.hazelcast.map.impl.wan.WanMapUpdateEvent;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 import com.hazelcast.spi.merge.SplitBrainMergeTypes.MapMergeTypes;
 import com.hazelcast.internal.serialization.SerializationService;
-import com.hazelcast.wan.DistributedServiceWanEventCounters;
-import com.hazelcast.wan.WanReplicationEvent;
+import com.hazelcast.wan.WanEventCounters;
+import com.hazelcast.wan.WanEvent;
 
 import java.util.concurrent.Future;
 
@@ -36,12 +36,12 @@ import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
 import static com.hazelcast.spi.impl.merge.MergingValueFactory.createMergingEntry;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 
-class MapReplicationSupportingService implements ReplicationSupportingService {
+class WanMapSupportingService implements WanSupportingService {
     private final MapServiceContext mapServiceContext;
     private final NodeEngine nodeEngine;
-    private final DistributedServiceWanEventCounters wanEventTypeCounters;
+    private final WanEventCounters wanEventTypeCounters;
 
-    MapReplicationSupportingService(MapServiceContext mapServiceContext) {
+    WanMapSupportingService(MapServiceContext mapServiceContext) {
         this.mapServiceContext = mapServiceContext;
         this.nodeEngine = mapServiceContext.getNodeEngine();
         this.wanEventTypeCounters = nodeEngine.getWanReplicationService()
@@ -49,15 +49,15 @@ class MapReplicationSupportingService implements ReplicationSupportingService {
     }
 
     @Override
-    public void onReplicationEvent(WanReplicationEvent event, WanAcknowledgeType acknowledgeType) {
-        if (event instanceof MapReplicationUpdate) {
-            handleUpdate((MapReplicationUpdate) event);
-        } else if (event instanceof MapReplicationRemove) {
-            handleRemove((MapReplicationRemove) event);
+    public void onReplicationEvent(WanEvent event, WanAcknowledgeType acknowledgeType) {
+        if (event instanceof WanMapUpdateEvent) {
+            handleUpdate((WanMapUpdateEvent) event);
+        } else if (event instanceof WanMapRemoveEvent) {
+            handleRemove((WanMapRemoveEvent) event);
         }
     }
 
-    private void handleRemove(MapReplicationRemove replicationRemove) {
+    private void handleRemove(WanMapRemoveEvent replicationRemove) {
         String mapName = replicationRemove.getObjectName();
         MapOperationProvider operationProvider = mapServiceContext.getMapOperationProvider(mapName);
         MapOperation operation = operationProvider.createDeleteOperation(replicationRemove.getObjectName(),
@@ -74,7 +74,7 @@ class MapReplicationSupportingService implements ReplicationSupportingService {
         }
     }
 
-    private void handleUpdate(MapReplicationUpdate replicationUpdate) {
+    private void handleUpdate(WanMapUpdateEvent replicationUpdate) {
         SplitBrainMergePolicy mergePolicy = replicationUpdate.getMergePolicy();
         String mapName = replicationUpdate.getObjectName();
         MapOperationProvider operationProvider = mapServiceContext.getMapOperationProvider(mapName);

@@ -36,7 +36,7 @@ import com.hazelcast.internal.services.NotifiableEventListener;
 import com.hazelcast.internal.services.ObjectNamespace;
 import com.hazelcast.internal.services.PostJoinAwareService;
 import com.hazelcast.internal.services.RemoteService;
-import com.hazelcast.internal.services.ReplicationSupportingService;
+import com.hazelcast.internal.services.WanSupportingService;
 import com.hazelcast.internal.services.ServiceNamespace;
 import com.hazelcast.internal.services.SplitBrainHandlerService;
 import com.hazelcast.internal.services.SplitBrainProtectionAwareService;
@@ -58,7 +58,7 @@ import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.transaction.TransactionalObject;
 import com.hazelcast.transaction.impl.Transaction;
-import com.hazelcast.wan.WanReplicationEvent;
+import com.hazelcast.wan.WanEvent;
 
 import java.util.Collection;
 import java.util.Map;
@@ -77,7 +77,7 @@ import static com.hazelcast.core.EntryEventType.INVALIDATION;
  * @see MapEventPublishingService
  * @see MapPostJoinAwareService
  * @see MapSplitBrainHandlerService
- * @see MapReplicationSupportingService
+ * @see WanMapSupportingService
  * @see MapPartitionAwareService
  * @see MapSplitBrainProtectionAwareService
  * @see MapClientAwareService
@@ -86,7 +86,7 @@ import static com.hazelcast.core.EntryEventType.INVALIDATION;
 @SuppressWarnings({"checkstyle:ClassFanOutComplexity", "checkstyle:MethodCount"})
 public class MapService implements ManagedService, FragmentedMigrationAwareService, TransactionalService, RemoteService,
                                    EventPublishingService<Object, ListenerAdapter>, PostJoinAwareService,
-                                   SplitBrainHandlerService, ReplicationSupportingService, StatisticsAwareService<LocalMapStats>,
+                                   SplitBrainHandlerService, WanSupportingService, StatisticsAwareService<LocalMapStats>,
                                    PartitionAwareService, ClientAwareService, SplitBrainProtectionAwareService,
                                    NotifiableEventListener, ClusterStateListener, LockInterceptorService<Data>,
                                    DynamicMetricsProvider {
@@ -100,7 +100,7 @@ public class MapService implements ManagedService, FragmentedMigrationAwareServi
     protected EventPublishingService eventPublishingService;
     protected PostJoinAwareService postJoinAwareService;
     protected SplitBrainHandlerService splitBrainHandlerService;
-    protected ReplicationSupportingService replicationSupportingService;
+    protected WanSupportingService wanSupportingService;
     protected StatisticsAwareService statisticsAwareService;
     protected PartitionAwareService partitionAwareService;
     protected ClientAwareService clientAwareService;
@@ -188,8 +188,8 @@ public class MapService implements ManagedService, FragmentedMigrationAwareServi
     }
 
     @Override
-    public void onReplicationEvent(WanReplicationEvent event, WanAcknowledgeType acknowledgeType) {
-        replicationSupportingService.onReplicationEvent(event, acknowledgeType);
+    public void onReplicationEvent(WanEvent event, WanAcknowledgeType acknowledgeType) {
+        wanSupportingService.onReplicationEvent(event, acknowledgeType);
     }
 
     @Override

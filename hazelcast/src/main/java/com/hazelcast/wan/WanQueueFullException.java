@@ -16,29 +16,19 @@
 
 package com.hazelcast.wan;
 
+import com.hazelcast.config.WanQueueFullBehavior;
+import com.hazelcast.core.HazelcastException;
+
 /**
- * Interface for all WAN replication messages
+ * A {@link com.hazelcast.core.HazelcastException} that
+ * is thrown when the wan replication queues are full
+ *
+ * This exception is only thrown when WAN is configured with
+ * {@link WanQueueFullBehavior#THROW_EXCEPTION}
  */
-public interface WanReplicationEvent {
-    /**
-     * Increments the count for the related event in the {@code counters}
-     *
-     * @param counters the WAN event counter
-     */
-    void incrementEventCount(DistributedServiceWanEventCounters counters);
+public class WanQueueFullException extends HazelcastException {
 
-    /**
-     * Returns the service name on which this event occurred.
-     *
-     * @return the service name
-     */
-    String getServiceName();
-
-    /**
-     * Returns the name of the distributed object (map or cache) on which this
-     * event occurred.
-     *
-     * @return the distributed object name
-     */
-    String getObjectName();
+    public WanQueueFullException(String message) {
+        super(message);
+    }
 }
