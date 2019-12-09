@@ -42,7 +42,7 @@ import static com.hazelcast.internal.util.ConcurrencyUtil.CALLER_RUNS;
  * Adds cluster listener to one of the connections. If that connection is removed,
  * it registers connection to any other connection
  */
-public class ClusterListenerService implements ConnectionListener {
+public class ClientClusterViewListenerService implements ConnectionListener {
 
     private final HazelcastClientInstanceImpl client;
     private final ClientListenerService listenerService;
@@ -54,7 +54,7 @@ public class ClusterListenerService implements ConnectionListener {
     private volatile long lastCorrelationId;
 
 
-    public ClusterListenerService(HazelcastClientInstanceImpl client) {
+    public ClientClusterViewListenerService(HazelcastClientInstanceImpl client) {
         this.client = client;
         this.listenerService = client.getListenerService();
         this.logger = client.getLoggingService().getLogger(ClientListenerService.class);

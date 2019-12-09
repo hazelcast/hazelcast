@@ -86,7 +86,7 @@ public interface ClientEngine extends Consumer<ClientMessage> {
 
     TransactionManagerService getTransactionManagerService();
 
-    ClientClusterListenerService getClientClusterListenerService();
+    ClusterViewListenerService getClientClusterListenerService();
 
     /**
      * Returns Map which contains number of connected clients to the cluster.

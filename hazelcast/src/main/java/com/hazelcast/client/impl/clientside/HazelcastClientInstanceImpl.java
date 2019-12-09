@@ -57,7 +57,7 @@ import com.hazelcast.client.impl.spi.impl.ClientUserCodeDeploymentService;
 import com.hazelcast.client.impl.spi.impl.NonSmartClientInvocationService;
 import com.hazelcast.client.impl.spi.impl.SmartClientInvocationService;
 import com.hazelcast.client.impl.spi.impl.listener.ClientListenerServiceImpl;
-import com.hazelcast.client.impl.spi.impl.listener.ClusterListenerService;
+import com.hazelcast.client.impl.spi.impl.listener.ClientClusterViewListenerService;
 import com.hazelcast.client.impl.statistics.ClientStatisticsService;
 import com.hazelcast.client.util.RoundRobinLB;
 import com.hazelcast.cluster.Cluster;
@@ -171,7 +171,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
     private final AbstractClientInvocationService invocationService;
     private final ClientExecutionServiceImpl executionService;
     private final ClientListenerServiceImpl listenerService;
-    private final ClusterListenerService clusterListenerService;
+    private final ClientClusterViewListenerService clientClusterViewListenerService;
     private final ClientTransactionManagerServiceImpl transactionManager;
     private final ProxyManager proxyManager;
     private final ConcurrentMap<String, Object> userContext = new ConcurrentHashMap<>();
@@ -243,7 +243,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         invocationService = initInvocationService();
         listenerService = new ClientListenerServiceImpl(this);
         clusterService = new ClientClusterServiceImpl(this);
-        clusterListenerService = new ClusterListenerService(this);
+        clientClusterViewListenerService = new ClientClusterViewListenerService(this);
         userContext.putAll(config.getUserContext());
         diagnostics = initDiagnostics();
         hazelcastCacheManager = new ClientICacheManager(this);
@@ -358,6 +358,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
             invocationService.start();
             ClientContext clientContext = new ClientContext(this);
             userCodeDeploymentService.start();
+            clientClusterViewListenerService.start();
             connectionManager.start();
             diagnostics.start();
 
@@ -396,7 +397,6 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
             loadBalancer.init(getCluster(), config);
             partitionService.start();
             clientStatisticsService.start();
-            clusterListenerService.start();
             clientExtension.afterStart(this);
             cpSubsystem.init(clientContext);
             sendStateToCluster();

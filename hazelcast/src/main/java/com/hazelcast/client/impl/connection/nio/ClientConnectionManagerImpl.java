@@ -513,7 +513,6 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
 
     @Override
     public Connection getConnection(@Nonnull Address target) {
-        checkClientActive();
         return activeConnections.get(resolveAddress(target));
     }
 

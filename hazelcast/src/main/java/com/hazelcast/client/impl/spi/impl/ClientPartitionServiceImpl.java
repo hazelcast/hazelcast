@@ -141,10 +141,10 @@ public final class ClientPartitionServiceImpl implements ClientPartitionService 
         }
         if (!connection.equals(current.connection)) {
             if (logger.isFinestEnabled()) {
-                logFailure(connection, partitionStateVersion, current,
-                        "response is from old connection");
+                logger.finest("Event coming from a new connection. Old connection: " + current.connection
+                        + ", new connection " + connection);
             }
-            return false;
+            return true;
         }
         if (partitionStateVersion <= current.partitionSateVersion) {
             if (logger.isFinestEnabled()) {

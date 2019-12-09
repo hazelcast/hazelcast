@@ -43,14 +43,14 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.hazelcast.instance.EndpointQualifier.CLIENT;
 
-public class ClientClusterListenerService {
+public class ClusterViewListenerService {
     private static final int PUSH_PERIOD_IN_SECONDS = 30;
     private final Map<ClientEndpoint, Long> clusterListeningEndpoints = new ConcurrentHashMap<ClientEndpoint, Long>();
     private final NodeEngine nodeEngine;
     private final boolean advancedNetworkConfigEnabled;
     private AtomicBoolean pushScheduled = new AtomicBoolean();
 
-    ClientClusterListenerService(NodeEngineImpl nodeEngine) {
+    ClusterViewListenerService(NodeEngineImpl nodeEngine) {
         this.nodeEngine = nodeEngine;
         this.advancedNetworkConfigEnabled = nodeEngine.getConfig().getAdvancedNetworkConfig().isEnabled();
     }
@@ -61,12 +61,18 @@ public class ClientClusterListenerService {
     }
 
     private void pushView() {
-        sendToListeningEndpoints(getPartitionViewMessage());
+        ClientMessage partitionViewMessage = getPartitionViewMessageOrNull();
+        if (partitionViewMessage != null) {
+            sendToListeningEndpoints(partitionViewMessage);
+        }
         sendToListeningEndpoints(getMemberListViewMessage());
     }
 
     public void onPartitionStateChange() {
-        sendToListeningEndpoints(getPartitionViewMessage());
+        ClientMessage partitionViewMessage = getPartitionViewMessageOrNull();
+        if (partitionViewMessage != null) {
+            sendToListeningEndpoints(partitionViewMessage);
+        }
     }
 
     public void onMemberListChange() {
@@ -90,19 +96,24 @@ public class ClientClusterListenerService {
         }
         clusterListeningEndpoints.put(clientEndpoint, correlationId);
 
-        ClientMessage partitionViewMessage = getPartitionViewMessage();
-        partitionViewMessage.setCorrelationId(correlationId);
-        clientEndpoint.getConnection().write(partitionViewMessage);
+        ClientMessage partitionViewMessage = getPartitionViewMessageOrNull();
+        if (partitionViewMessage != null) {
+            partitionViewMessage.setCorrelationId(correlationId);
+            clientEndpoint.getConnection().write(partitionViewMessage);
+        }
 
         ClientMessage memberListViewMessage = getMemberListViewMessage();
         memberListViewMessage.setCorrelationId(correlationId);
         clientEndpoint.getConnection().write(memberListViewMessage);
     }
 
-    private ClientMessage getPartitionViewMessage() {
+    private ClientMessage getPartitionViewMessageOrNull() {
         InternalPartitionService partitionService = (InternalPartitionService) nodeEngine.getPartitionService();
         PartitionTableView partitionTableView = partitionService.createPartitionTableView();
         Map<Address, List<Integer>> partitions = getPartitions(partitionTableView);
+        if (partitions.size() == 0) {
+            return null;
+        }
         int partitionStateVersion = partitionTableView.getVersion();
 
         return ClientAddClusterViewListenerCodec.encodePartitionsViewEvent(partitionStateVersion, partitions.entrySet());
