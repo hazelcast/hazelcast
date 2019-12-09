@@ -56,7 +56,7 @@ hazelcast:
       batch-publisher:
         tokyoPublisherId:
           cluster-name: tokyo
-          class-name: com.hazelcast.enterprise.wan.impl.replication.WanBatchReplication
+          class-name: com.hazelcast.enterprise.wan.impl.replication.WanBatchPublisher
           queue-capacity: 1000
           queue-full-behavior: THROW_EXCEPTION
           initial-publisher-state: STOPPED

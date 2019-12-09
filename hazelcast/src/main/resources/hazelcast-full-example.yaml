@@ -134,7 +134,7 @@ hazelcast:
   #
   # The "wan-replication" element has the following sub-elements:
   # * "batch-publisher":
-  #     WAN publisher using the built-in com.hazelcast.enterprise.wan.impl.replication.WanBatchReplication.
+  #     WAN publisher using the built-in com.hazelcast.enterprise.wan.impl.replication.WanBatchPublisher.
   #     Waits until a batch size is reached or a delay time is passed.
   #     Please see the batch-size and batch-max-delay-millis configuration descriptions below.
   #     * "cluster-name":

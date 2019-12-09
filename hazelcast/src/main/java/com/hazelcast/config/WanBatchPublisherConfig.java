@@ -99,7 +99,7 @@ public class WanBatchPublisherConfig extends AbstractWanPublisherConfig {
     private String endpoint;
 
     public WanBatchPublisherConfig() {
-        setClassName("com.hazelcast.enterprise.wan.impl.replication.WanBatchReplication");
+        setClassName("com.hazelcast.enterprise.wan.impl.replication.WanBatchPublisher");
     }
 
     @Override
