@@ -25,15 +25,15 @@ package com.hazelcast.spi.impl.operationservice;
  * <li>Runnable</li>
  * </ol>
  *
- * See {@link InternalOperationService#executeOnPartitions} for more details.
+ * See {@link OperationService#executeOnPartitions} for more details.
  */
 public interface PartitionTaskFactory<T> {
 
     /**
      * Creates the task.
      *
-     * @param partitionId the partitionId of the partition this task is going to
-     *                    run on
+     * @param partitionId the partitionId of the
+     *                    partition this task is going to run on
      * @return the created task. The returned task should not be null.
      */
     T create(int partitionId);

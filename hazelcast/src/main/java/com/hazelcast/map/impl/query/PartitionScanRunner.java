@@ -17,8 +17,10 @@
 package com.hazelcast.map.impl.query;
 
 import com.hazelcast.config.CacheDeserializedValues;
+import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.partition.IPartitionService;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.util.Clock;
 import com.hazelcast.logging.ILogger;
@@ -30,10 +32,8 @@ import com.hazelcast.map.impl.PartitionContainer;
 import com.hazelcast.map.impl.StoreAdapter;
 import com.hazelcast.map.impl.iterator.MapEntriesWithCursor;
 import com.hazelcast.map.impl.record.Record;
-import com.hazelcast.map.impl.record.Records;
 import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.map.impl.recordstore.RecordStoreAdapter;
-import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.impl.Metadata;
 import com.hazelcast.query.impl.QueryableEntriesSegment;
@@ -51,6 +51,8 @@ import java.util.Map.Entry;
 import java.util.function.BiConsumer;
 
 import static com.hazelcast.internal.util.SortingUtil.compareAnchor;
+import static com.hazelcast.internal.util.ToHeapDataConverter.toHeapData;
+import static com.hazelcast.map.impl.record.Records.getValueOrCachedValue;
 
 /**
  * Responsible for running a full-partition scan for a single partition in the calling thread.
@@ -60,7 +62,7 @@ public class PartitionScanRunner {
     protected final MapServiceContext mapServiceContext;
     protected final NodeEngine nodeEngine;
     protected final ILogger logger;
-    protected final InternalSerializationService serializationService;
+    protected final InternalSerializationService ss;
     protected final IPartitionService partitionService;
     protected final OperationService operationService;
     protected final ClusterService clusterService;
@@ -68,7 +70,7 @@ public class PartitionScanRunner {
     public PartitionScanRunner(MapServiceContext mapServiceContext) {
         this.mapServiceContext = mapServiceContext;
         this.nodeEngine = mapServiceContext.getNodeEngine();
-        this.serializationService = (InternalSerializationService) nodeEngine.getSerializationService();
+        this.ss = (InternalSerializationService) nodeEngine.getSerializationService();
         this.partitionService = nodeEngine.getPartitionService();
         this.logger = nodeEngine.getLogger(getClass());
         this.operationService = nodeEngine.getOperationService();
@@ -83,6 +85,7 @@ public class PartitionScanRunner {
         PartitionContainer partitionContainer = mapServiceContext.getPartitionContainer(partitionId);
         MapContainer mapContainer = mapServiceContext.getMapContainer(mapName);
         RecordStore<Record> recordStore = partitionContainer.getRecordStore(mapName);
+        boolean nativeMemory = recordStore.getInMemoryFormat() == InMemoryFormat.NATIVE;
         boolean useCachedValues = isUseCachedDeserializedValuesEnabled(mapContainer, partitionId);
         Extractors extractors = mapServiceContext.getExtractors(mapName);
         StoreAdapter storeAdapter = new RecordStoreAdapter(recordStore);
@@ -94,20 +97,24 @@ public class PartitionScanRunner {
 
             @Override
             public void accept(Data key, Record record) {
-                Metadata metadata = PartitionScanRunner.this.getMetadataFromRecord(recordStore, key, record);
-                Object value = PartitionScanRunner.this.toData(useCachedValues
-                        ? Records.getValueOrCachedValue(record, serializationService)
-                        : record.getValue());
+                Object value = useCachedValues ? getValueOrCachedValue(record, ss) : record.getValue();
+                // TODO how can a value be null?
                 if (value == null) {
                     return;
                 }
 
-                queryEntry.init(serializationService, key, value, extractors);
-                queryEntry.setMetadata(metadata);
+                // always copy key&value to heap
+                key = toHeapData(key);
+                value = nativeMemory ? toHeapData((Data) value) : value;
+
+                queryEntry.init(ss, key, value, extractors);
                 queryEntry.setRecord(record);
                 queryEntry.setStoreAdapter(storeAdapter);
-                boolean valid = predicate.apply(queryEntry);
-                if (valid && compareAnchor(pagingPredicate, queryEntry, nearestAnchorEntry)) {
+                queryEntry.setMetadata(PartitionScanRunner.this.getMetadataFromRecord(recordStore, key, record));
+
+                if (predicate.apply(queryEntry)
+                        && compareAnchor(pagingPredicate, queryEntry, nearestAnchorEntry)) {
+
                     result.add(queryEntry);
 
                     // We can't reuse the existing entry after it was added to the
@@ -161,7 +168,7 @@ public class PartitionScanRunner {
                 break;
             }
             for (Entry<Data, Data> entry : entries) {
-                QueryableEntry queryEntry = new LazyMapEntry(entry.getKey(), entry.getValue(), serializationService, extractors);
+                QueryableEntry queryEntry = new LazyMapEntry(entry.getKey(), entry.getValue(), ss, extractors);
                 if (predicate.apply(queryEntry)) {
                     resultList.add(queryEntry);
                 }
