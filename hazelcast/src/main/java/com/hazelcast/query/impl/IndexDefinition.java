@@ -55,35 +55,35 @@ public final class IndexDefinition {
          * Extracted unique key value is interpreted as an object value.
          * Non-negative unique ID is assigned to every distinct object value.
          */
-        OBJECT("object"),
+        OBJECT("OBJECT"),
 
         /**
          * Extracted unique key value is interpreted as a whole integer value of
          * byte, short, int or long type. The extracted value is upcasted to
          * long and unique non-negative ID is assigned to every distinct value.
          */
-        LONG("long"),
+        LONG("LONG"),
 
         /**
          * Extracted unique key value is interpreted as a whole integer value of
          * byte, short, int or long type. The extracted value is upcasted to
          * long and the resulting value is used directly as an ID.
          */
-        RAW("raw");
+        RAW("RAW");
 
         private static UniqueKeyTransform parse(String text) {
             if (StringUtil.isNullOrEmpty(text)) {
                 throw new IllegalArgumentException("empty unique key transform");
             }
 
-            String lowerCasedText = text.toLowerCase();
-            if (lowerCasedText.equals(OBJECT.text)) {
+            String upperCasedText = text.toUpperCase();
+            if (upperCasedText.equals(OBJECT.text)) {
                 return OBJECT;
             }
-            if (lowerCasedText.equals(LONG.text)) {
+            if (upperCasedText.equals(LONG.text)) {
                 return LONG;
             }
-            if (lowerCasedText.equals(RAW.text)) {
+            if (upperCasedText.equals(RAW.text)) {
                 return RAW;
             }
 
