@@ -38,8 +38,7 @@ public class QueryResultCollection<E> extends AbstractSet<E> {
         this.binary = binary;
         if (unique) {
             // convert to a set
-            this.rows = new HashSet<QueryResultRow>();
-            this.rows.addAll(queryResult.getRows());
+            this.rows = new HashSet<QueryResultRow>(queryResult.getRows());
         } else {
             // reuse the existing underlying list
             this.rows = queryResult.getRows();
