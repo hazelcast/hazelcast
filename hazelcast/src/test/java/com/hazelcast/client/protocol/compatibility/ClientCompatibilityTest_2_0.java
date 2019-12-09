@@ -1350,7 +1350,7 @@ public class ClientCompatibilityTest_2_0 {
         int fileClientMessageIndex = 149;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         MapValuesWithPagingPredicateCodec.ResponseParameters parameters = MapValuesWithPagingPredicateCodec.decodeResponse(fromFile);
-        assertTrue(isEqual(aListOfDataToData, parameters.response));
+        assertTrue(isEqual(aListOfData, parameters.response));
         assertTrue(isEqual(aData, parameters.predicate));
     }
 

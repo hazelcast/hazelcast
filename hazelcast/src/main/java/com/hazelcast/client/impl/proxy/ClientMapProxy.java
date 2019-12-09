@@ -1378,8 +1378,8 @@ public class ClientMapProxy<K, V> extends ClientProxy
         SerializationService serializationService = getSerializationService();
 
         List<Map.Entry> entries = new ArrayList<>(resultParameters.response.size());
-        resultParameters.response.forEach(entry -> {
-            Object value = serializationService.toObject(entry.getValue());
+        resultParameters.response.forEach(valueData -> {
+            Object value = serializationService.toObject(valueData);
             entries.add(new AbstractMap.SimpleImmutableEntry(null, value));
         });
 

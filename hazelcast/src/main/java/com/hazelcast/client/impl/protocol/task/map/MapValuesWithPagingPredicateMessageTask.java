@@ -26,6 +26,8 @@ import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.impl.predicates.PagingPredicateImpl;
 
+import java.util.AbstractMap;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -39,7 +41,14 @@ public class MapValuesWithPagingPredicateMessageTask
 
     @Override
     protected Object reduce(Collection<QueryResultRow> result) {
-        return getSortedPageEntries(result, parameters.predicate);
+        Map.Entry<PagingPredicateImpl, List<Map.Entry<Data, Data>>> sortResult = getSortedPageEntries(result,
+                parameters.predicate);
+
+        List<Map.Entry<Data, Data>> entries = sortResult.getValue();
+        List<Data> dataList = new ArrayList<>(entries.size());
+        entries.forEach(entry -> dataList.add(entry.getValue()));
+
+        return new AbstractMap.SimpleImmutableEntry(sortResult.getKey(), dataList);
     }
 
     @Override
@@ -59,8 +68,7 @@ public class MapValuesWithPagingPredicateMessageTask
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        Map.Entry<PagingPredicateImpl, List<Map.Entry<Data, Data>>> result =
-                (Map.Entry<PagingPredicateImpl, List<Map.Entry<Data, Data>>>) response;
+        Map.Entry<PagingPredicateImpl, List<Data>> result = (Map.Entry<PagingPredicateImpl, List<Data>>) response;
         return MapValuesWithPagingPredicateCodec.encodeResponse(result.getValue(), serializationService.toData(result.getKey()));
     }
 

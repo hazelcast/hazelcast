@@ -45,10 +45,10 @@ public class MapKeySetWithPagingPredicateMessageTask
                 parameters.predicate);
 
         List<Map.Entry<Data, Data>> entries = sortResult.getValue();
-        List<Data> set = new ArrayList<Data>(entries.size());
-        entries.forEach(entry -> set.add(entry.getKey()));
+        List<Data> keyList = new ArrayList<>(entries.size());
+        entries.forEach(entry -> keyList.add(entry.getKey()));
 
-        return new AbstractMap.SimpleImmutableEntry(sortResult.getKey(), set);
+        return new AbstractMap.SimpleImmutableEntry(sortResult.getKey(), keyList);
     }
 
     @Override
