@@ -149,7 +149,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
     private volatile AtomicReference<ClusterState> state = new AtomicReference<>(ClusterState.STARTING);
 
     private enum ClusterState {
-        STARTING, RECONNECTING, CONNECTED, DISCONNECTED
+        STARTING, CONNECTED, DISCONNECTED
     }
 
     public ClientConnectionManagerImpl(HazelcastClientInstanceImpl client) {
@@ -660,7 +660,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
         if (activeConnections.remove(resolveAddress(endpoint), connection)) {
             logger.info("Removed connection to endpoint: " + endpoint + ", connection: " + connection);
             if (connectionCount.decrementAndGet() == 0) {
-                if (state.compareAndSet(ClusterState.DISCONNECTED, ClusterState.RECONNECTING)) {
+                if (state.compareAndSet(ClusterState.CONNECTED, ClusterState.DISCONNECTED)) {
                     fireLifecycleEvent(LifecycleEvent.LifecycleState.CLIENT_DISCONNECTED);
                     triggerReconnectToCluster();
                 }
