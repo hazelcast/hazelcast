@@ -1421,7 +1421,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "    " + configName + ":\n"
                 + "      batch-publisher:\n"
                 + "        nyc:\n"
-                + "          wan-sync:\n"
+                + "          sync:\n"
                 + "            consistency-check-strategy: MERKLE_TREES\n";
 
         Config config = buildConfig(yaml);

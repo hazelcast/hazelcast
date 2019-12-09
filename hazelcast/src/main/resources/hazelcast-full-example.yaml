@@ -355,7 +355,7 @@ hazelcast:
           max-target-endpoints: 2147483647
           queue-capacity: 10000
           target-endpoints: 10.3.5.1:5701,10.3.5.2:5701
-          wan-sync:
+          sync:
             consistency-check-strategy: NONE
           # aws:
           #   enabled: false
