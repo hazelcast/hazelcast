@@ -69,10 +69,11 @@ public class SingleValueBitmapIndexTest extends HazelcastTestSupport {
     public static Collection<Object[]> parameters() {
         // @formatter:off
         return asList(new Object[][]{
-                {"age -> __key"},
-                {"age -> stringId"},
-                {"age -> __key!"},
-                {"age -> __key?"}
+                {"BITMAP(age)"},
+                {"BITMAP(age, stringId)"},
+                {"BITMAP(age, stringId, OBJECT)"},
+                {"BITMAP(age, __key, RAW)"},
+                {"BITMAP(age, __key, LONG)"}
         });
         // @formatter:on
     }

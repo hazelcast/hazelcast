@@ -78,26 +78,37 @@ public final class BitmapIndexStore extends BaseIndexStore {
     private final Object2LongHashMap internalObjectKeys;
     private long internalKeyCounter;
 
-    public BitmapIndexStore(String keyAttribute, InternalSerializationService serializationService, Extractors extractors) {
+    public BitmapIndexStore(IndexDefinition definition, InternalSerializationService serializationService,
+                            Extractors extractors) {
         super(IndexCopyBehavior.NEVER);
-        if (keyAttribute.endsWith("?")) {
-            // long-to-long remapping
-            this.keyAttribute = keyAttribute.substring(0, keyAttribute.length() - 1);
-            this.internalKeys = new Long2LongHashMap(INITIAL_CAPACITY, LOAD_FACTOR, NO_KEY);
-            this.internalObjectKeys = null;
-        } else if (keyAttribute.endsWith("!")) {
-            // no remapping, raw attribute values are used as long keys
-            this.keyAttribute = keyAttribute.substring(0, keyAttribute.length() - 1);
-            this.internalKeys = null;
-            this.internalObjectKeys = null;
-        } else {
-            // object-to-long remapping
-            this.keyAttribute = keyAttribute;
-            this.internalObjectKeys = new Object2LongHashMap(INITIAL_CAPACITY, LOAD_FACTOR, NO_KEY);
-            this.internalKeys = null;
+
+        if (definition.isOrdered()) {
+            throw new IllegalArgumentException("Ordered bitmap indexes are not supported");
         }
+
+        this.keyAttribute = definition.getUniqueKey();
         this.serializationService = serializationService;
         this.extractors = extractors;
+
+        switch (definition.getUniqueKeyTransform()) {
+            case OBJECT:
+                // object-to-long remapping
+                this.internalObjectKeys = new Object2LongHashMap(INITIAL_CAPACITY, LOAD_FACTOR, NO_KEY);
+                this.internalKeys = null;
+                break;
+            case LONG:
+                // long-to-long remapping
+                this.internalKeys = new Long2LongHashMap(INITIAL_CAPACITY, LOAD_FACTOR, NO_KEY);
+                this.internalObjectKeys = null;
+                break;
+            case RAW:
+                // no remapping, raw attribute values are used as long keys
+                this.internalKeys = null;
+                this.internalObjectKeys = null;
+                break;
+            default:
+                throw new IllegalArgumentException("unexpected unique key transform: " + definition.getUniqueKeyTransform());
+        }
     }
 
     @Override

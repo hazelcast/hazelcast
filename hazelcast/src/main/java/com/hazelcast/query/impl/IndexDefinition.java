@@ -17,12 +17,14 @@
 package com.hazelcast.query.impl;
 
 import com.hazelcast.query.impl.predicates.PredicateUtils;
+import com.hazelcast.util.StringUtil;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.util.HashSet;
 import java.util.Set;
 import java.util.regex.Pattern;
 
+import static com.hazelcast.query.QueryConstants.KEY_ATTRIBUTE_NAME;
 import static com.hazelcast.query.impl.predicates.PredicateUtils.canonicalizeAttribute;
 import static com.hazelcast.query.impl.predicates.PredicateUtils.constructCanonicalCompositeIndexName;
 
@@ -35,17 +37,85 @@ public final class IndexDefinition {
 
     private static final Pattern COMMA_PATTERN = Pattern.compile("\\s*,\\s*");
 
-    private static final Pattern ARROW_PATTERN = Pattern.compile("\\s*->\\s*");
+    private static final String BITMAP_PREFIX = "BITMAP(";
+    private static final String BITMAP_POSTFIX = ")";
 
     private final String name;
     private final boolean ordered;
     private final String uniqueKey;
+    private final UniqueKeyTransform uniqueKeyTransform;
     private final String[] components;
 
-    private IndexDefinition(String name, boolean ordered, String uniqueKey, String... components) {
+    /**
+     * Defines an assortment of transforms applied to unique key values.
+     */
+    public enum UniqueKeyTransform {
+
+        /**
+         * Extracted unique key value is interpreted as an object value.
+         * Non-negative unique ID is assigned to every distinct object value.
+         */
+        OBJECT("object"),
+
+        /**
+         * Extracted unique key value is interpreted as a whole integer value of
+         * byte, short, int or long type. The extracted value is upcasted to
+         * long and unique non-negative ID is assigned to every distinct value.
+         */
+        LONG("long"),
+
+        /**
+         * Extracted unique key value is interpreted as a whole integer value of
+         * byte, short, int or long type. The extracted value is upcasted to
+         * long and the resulting value is used directly as an ID.
+         */
+        RAW("raw");
+
+        private static UniqueKeyTransform parse(String text) {
+            if (StringUtil.isNullOrEmpty(text)) {
+                throw new IllegalArgumentException("empty unique key transform");
+            }
+
+            String lowerCasedText = text.toLowerCase();
+            if (lowerCasedText.equals(OBJECT.text)) {
+                return OBJECT;
+            }
+            if (lowerCasedText.equals(LONG.text)) {
+                return LONG;
+            }
+            if (lowerCasedText.equals(RAW.text)) {
+                return RAW;
+            }
+
+            throw new IllegalArgumentException("unexpected unique key transform: " + text);
+        }
+
+        private final String text;
+
+        UniqueKeyTransform(String text) {
+            this.text = text;
+        }
+
+        @Override
+        public String toString() {
+            return text;
+        }
+    }
+
+    private IndexDefinition(String name, boolean ordered, String... components) {
+        this.name = name;
+        this.ordered = ordered;
+        this.uniqueKey = null;
+        this.uniqueKeyTransform = UniqueKeyTransform.OBJECT;
+        this.components = components;
+    }
+
+    private IndexDefinition(String name, boolean ordered, String uniqueKey, UniqueKeyTransform uniqueKeyTransform,
+                            String... components) {
         this.name = name;
         this.ordered = ordered;
         this.uniqueKey = uniqueKey;
+        this.uniqueKeyTransform = uniqueKeyTransform;
         this.components = components;
     }
 
@@ -79,32 +149,40 @@ public final class IndexDefinition {
         }
 
         String attribute = canonicalizeAttribute(definition);
-        return new IndexDefinition(attribute, ordered, null, attribute);
+        return new IndexDefinition(attribute, ordered, attribute);
     }
 
     private static IndexDefinition tryParseBitmap(String definition, boolean ordered) {
-        String[] parts = ARROW_PATTERN.split(definition);
-
-        if (parts.length == 1) {
+        if (definition == null || !definition.toUpperCase().startsWith(BITMAP_PREFIX)) {
             return null;
         }
 
-        if (parts.length != 2) {
-            throw new IllegalArgumentException("Invalid bitmap index definition: " + definition);
+        if (!definition.endsWith(BITMAP_POSTFIX)) {
+            throw makeInvalidBitmapIndexDefinitionException(definition);
         }
 
-        parts[0] = canonicalizeAttribute(parts[0]);
-        parts[1] = canonicalizeAttribute(parts[1]);
+        String innerText = definition.substring(BITMAP_PREFIX.length(), definition.length() - 1);
+        String[] parts = COMMA_PATTERN.split(innerText, -1);
 
-        if (parts[0].isEmpty() || parts[1].isEmpty() || parts[0].equals(parts[1])) {
-            throw new IllegalArgumentException("Invalid bitmap index definition: " + definition);
+        if (parts.length == 0 || parts.length > 3) {
+            throw makeInvalidBitmapIndexDefinitionException(definition);
         }
 
-        if (parts[0].contains(",") || parts[1].contains(",")) {
-            throw new IllegalArgumentException("Composite bitmap indexes are not supported: " + definition);
+        String attribute = canonicalizeAttribute(parts[0]);
+        String uniqueKey = parts.length >= 2 ? canonicalizeAttribute(parts[1]) : KEY_ATTRIBUTE_NAME.value();
+        UniqueKeyTransform uniqueKeyTransform =
+                parts.length == 3 ? UniqueKeyTransform.parse(parts[2]) : UniqueKeyTransform.OBJECT;
+
+        if (attribute.isEmpty() || uniqueKey.isEmpty() || attribute.equals(uniqueKey)) {
+            throw makeInvalidBitmapIndexDefinitionException(definition);
         }
 
-        return new IndexDefinition(parts[0] + " -> " + parts[1], ordered, parts[1], parts[0]);
+        String canonicalName = BITMAP_PREFIX + attribute + ", " + uniqueKey + ", " + uniqueKeyTransform + BITMAP_POSTFIX;
+        return new IndexDefinition(canonicalName, ordered, uniqueKey, uniqueKeyTransform, attribute);
+    }
+
+    private static IllegalArgumentException makeInvalidBitmapIndexDefinitionException(String definition) {
+        return new IllegalArgumentException("Invalid bitmap index definition: " + definition);
     }
 
     private static IndexDefinition tryParseComposite(String definition, boolean ordered) {
@@ -131,7 +209,7 @@ public final class IndexDefinition {
             }
         }
 
-        return new IndexDefinition(constructCanonicalCompositeIndexName(attributes), ordered, null, attributes);
+        return new IndexDefinition(constructCanonicalCompositeIndexName(attributes), ordered, attributes);
     }
 
     /**
@@ -154,6 +232,14 @@ public final class IndexDefinition {
      */
     public String getUniqueKey() {
         return uniqueKey;
+    }
+
+    /**
+     * @return the transform that should be applied to {@link #getUniqueKey()
+     * unique key} values.
+     */
+    public UniqueKeyTransform getUniqueKeyTransform() {
+        return uniqueKeyTransform;
     }
 
     /**

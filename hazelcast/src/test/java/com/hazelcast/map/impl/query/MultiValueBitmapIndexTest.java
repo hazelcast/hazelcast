@@ -70,10 +70,11 @@ public class MultiValueBitmapIndexTest extends HazelcastTestSupport {
     public static Collection<Object[]> parameters() {
         // @formatter:off
         return asList(new Object[][]{
-                {"habits[any] -> __key"},
-                {"habits[any] -> stringId"},
-                {"habits[any] -> __key!"},
-                {"habits[any] -> __key?"}
+                {"BITMAP(habits[any])"},
+                {"BITMAP(habits[any], stringId)"},
+                {"BITMAP(habits[any], stringId, OBJECT)"},
+                {"BITMAP(habits[any], __key, RAW)"},
+                {"BITMAP(habits[any], __key, LONG)"}
         });
         // @formatter:on
     }

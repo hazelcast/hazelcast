@@ -58,7 +58,7 @@ public class BitmapIndexInsertBenchmark {
 
         MapConfig personsBitmapConfig = config.getMapConfig("personsBitmap");
         personsBitmapConfig.setInMemoryFormat(InMemoryFormat.OBJECT);
-        personsBitmapConfig.addMapIndexConfig(new MapIndexConfig("habits[any] -> __key!", false));
+        personsBitmapConfig.addMapIndexConfig(new MapIndexConfig("BITMAP(habits[any], __key, RAW)", false));
 
         MapConfig personsHashConfig = config.getMapConfig("personsHash");
         personsHashConfig.setInMemoryFormat(InMemoryFormat.OBJECT);

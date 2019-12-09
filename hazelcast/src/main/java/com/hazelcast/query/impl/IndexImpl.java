@@ -42,10 +42,7 @@ public class IndexImpl extends AbstractIndex {
         if (definition.getUniqueKey() == null) {
             return definition.isOrdered() ? new OrderedIndexStore(copyBehavior) : new UnorderedIndexStore(copyBehavior);
         } else {
-            if (definition.isOrdered()) {
-                throw new IllegalArgumentException("Ordered bitmap indexes are not supported");
-            }
-            return new BitmapIndexStore(definition.getUniqueKey(), ss, extractors);
+            return new BitmapIndexStore(definition, ss, extractors);
         }
     }
 
