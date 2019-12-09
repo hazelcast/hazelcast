@@ -22,7 +22,7 @@ import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.util.SortingUtil;
 import com.hazelcast.map.impl.LazyMapEntry;
 import com.hazelcast.map.impl.query.QueryResultRow;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.impl.predicates.PagingPredicateImpl;
 
