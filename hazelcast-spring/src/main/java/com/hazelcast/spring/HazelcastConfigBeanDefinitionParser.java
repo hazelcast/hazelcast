@@ -1374,7 +1374,7 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                 if ("custom-publisher".equals(nName)) {
                     customPublishers.add(handleCustomPublisher(n));
                 } else if ("consumer".equals(nName)) {
-                    replicationConfigBuilder.addPropertyValue("wanConsumerConfig", handleWanConsumer(n));
+                    replicationConfigBuilder.addPropertyValue("consumerConfig", handleWanConsumer(n));
                 }
             }
             replicationConfigBuilder.addPropertyValue("batchPublisherConfigs", batchPublishers);
@@ -1389,7 +1389,7 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
             ArrayList<String> excluded = new ArrayList<>(AliasedDiscoveryConfigUtils.getTags());
             excluded.add("properties");
             excluded.add("discoveryStrategies");
-            excluded.add("wanSync");
+            excluded.add("sync");
 
             fillValues(n, builder, excluded.toArray(new String[0]));
 
