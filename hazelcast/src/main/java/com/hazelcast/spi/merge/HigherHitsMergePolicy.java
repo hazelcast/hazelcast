@@ -33,7 +33,7 @@ public class HigherHitsMergePolicy<V, T extends MergingHits<V>> extends Abstract
     }
 
     @Override
-    public V merge(T mergingValue, T existingValue) {
+    public Object merge(T mergingValue, T existingValue) {
         if (mergingValue == null) {
             return existingValue.getValue();
         }

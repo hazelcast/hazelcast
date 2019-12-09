@@ -335,8 +335,8 @@ public abstract class AbstractReplicatedRecordStore<K, V> extends AbstractBaseRe
 
     @Override
     @SuppressWarnings("unchecked")
-    public boolean merge(ReplicatedMapMergeTypes mergingEntry,
-                         SplitBrainMergePolicy<Object, ReplicatedMapMergeTypes> mergePolicy) {
+    public boolean merge(ReplicatedMapMergeTypes<Object, Object> mergingEntry,
+                         SplitBrainMergePolicy<Object, ReplicatedMapMergeTypes<Object, Object>> mergePolicy) {
         serializationService.getManagedContext().initialize(mergingEntry);
         serializationService.getManagedContext().initialize(mergePolicy);
 

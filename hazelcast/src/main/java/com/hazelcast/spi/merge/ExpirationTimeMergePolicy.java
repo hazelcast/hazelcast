@@ -33,7 +33,7 @@ public class ExpirationTimeMergePolicy<V, T extends MergingExpirationTime<V>>
         extends AbstractSplitBrainMergePolicy<V, T> {
 
     @Override
-    public V merge(T mergingValue, T existingValue) {
+    public Object merge(T mergingValue, T existingValue) {
         if (mergingValue == null) {
             return existingValue.getValue();
         }

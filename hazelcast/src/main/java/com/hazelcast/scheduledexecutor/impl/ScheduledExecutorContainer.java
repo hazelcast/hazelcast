@@ -252,7 +252,7 @@ public class ScheduledExecutorContainer {
         serializationService.getManagedContext().initialize(mergePolicy);
 
         // try to find an existing task with the same definition
-        ScheduledTaskDescriptor mergingTask = mergingEntry.getValue();
+        ScheduledTaskDescriptor mergingTask = (ScheduledTaskDescriptor) mergingEntry.getValue();
         ScheduledTaskDescriptor existingTask = null;
         for (ScheduledTaskDescriptor task : tasks.values()) {
             if (mergingTask.equals(task)) {
@@ -261,14 +261,14 @@ public class ScheduledExecutorContainer {
             }
         }
         if (existingTask == null) {
-            ScheduledTaskDescriptor newTask = mergePolicy.merge(mergingEntry, null);
+            ScheduledTaskDescriptor newTask = (ScheduledTaskDescriptor) mergePolicy.merge(mergingEntry, null);
             if (newTask != null) {
                 enqueueSuspended(newTask, false);
                 return newTask;
             }
         } else {
             ScheduledExecutorMergeTypes existingEntry = createMergingEntry(serializationService, existingTask);
-            ScheduledTaskDescriptor newTask = mergePolicy.merge(mergingEntry, existingEntry);
+            ScheduledTaskDescriptor newTask = (ScheduledTaskDescriptor) mergePolicy.merge(mergingEntry, existingEntry);
             // we are using == instead of equals() for the task comparison,
             // since the descriptor may have the same fields for merging and existing entry,
             // but we still want to be able to choose which one is merged (e.g. PassThroughMergePolicy)

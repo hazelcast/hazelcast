@@ -257,8 +257,8 @@ public interface RecordStore<R extends Record> {
      */
     Object putFromLoadBackup(Data key, Object value, long expirationTime);
 
-    boolean merge(MapMergeTypes mergingEntry,
-                  SplitBrainMergePolicy<Data, MapMergeTypes> mergePolicy);
+    boolean merge(MapMergeTypes<Object, Object> mergingEntry,
+                  SplitBrainMergePolicy<Object, MapMergeTypes<Object, Object>> mergePolicy);
 
     /**
      * Merges the given {@link MapMergeTypes} via the given {@link SplitBrainMergePolicy}.
@@ -268,8 +268,8 @@ public interface RecordStore<R extends Record> {
      * @param provenance   origin of call to this method.
      * @return {@code true} if merge is applied, otherwise {@code false}
      */
-    boolean merge(MapMergeTypes mergingEntry,
-                  SplitBrainMergePolicy<Data, MapMergeTypes> mergePolicy,
+    boolean merge(MapMergeTypes<Object, Object> mergingEntry,
+                  SplitBrainMergePolicy<Object, MapMergeTypes<Object, Object>> mergePolicy,
                   CallerProvenance provenance);
 
     R getRecord(Data key);

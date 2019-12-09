@@ -75,7 +75,7 @@ public class CollectionMergeOperation extends CollectionBackupAwareOperation {
         Collection<CollectionItem> existingItems = container.getCollection();
 
         CollectionMergeTypes existingValue = createMergingValueOrNull(serializationService, existingItems);
-        Collection<Object> newValues = mergePolicy.merge(mergingValue, existingValue);
+        Collection<Object> newValues = (Collection<Object>) mergePolicy.merge(mergingValue, existingValue);
 
         if (isEmpty(newValues)) {
             RemoteService service = getService();

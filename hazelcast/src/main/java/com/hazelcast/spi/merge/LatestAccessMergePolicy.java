@@ -36,7 +36,7 @@ public class LatestAccessMergePolicy<V, T extends MergingLastAccessTime<V>>
     }
 
     @Override
-    public V merge(T mergingValue, T existingValue) {
+    public Object merge(T mergingValue, T existingValue) {
         if (mergingValue == null) {
             return existingValue.getValue();
         }

@@ -45,7 +45,7 @@ import static com.hazelcast.internal.util.MapUtil.createHashMap;
 public class MergeOperation extends AbstractMultiMapOperation implements BackupAwareOperation {
 
     private List<MultiMapMergeContainer> mergeContainers;
-    private SplitBrainMergePolicy<Collection<Object>, MultiMapMergeTypes> mergePolicy;
+    private SplitBrainMergePolicy<Collection<Object>, MultiMapMergeTypes<Object, Object>> mergePolicy;
 
     private transient Map<Data, Collection<MultiMapRecord>> resultMap;
 
@@ -53,7 +53,7 @@ public class MergeOperation extends AbstractMultiMapOperation implements BackupA
     }
 
     public MergeOperation(String name, List<MultiMapMergeContainer> mergeContainers,
-                          SplitBrainMergePolicy<Collection<Object>, MultiMapMergeTypes> mergePolicy) {
+                          SplitBrainMergePolicy<Collection<Object>, MultiMapMergeTypes<Object, Object>> mergePolicy) {
         super(name);
         this.mergeContainers = mergeContainers;
         this.mergePolicy = mergePolicy;

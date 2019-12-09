@@ -259,8 +259,8 @@ public class WanCustomPublisherTest extends HazelcastTestSupport {
         MapOperation op;
         SimpleEntryView<Data, Data> entryView = new SimpleEntryView<Data, Data>().withKey(data).withValue(data);
 
-        MapMergeTypes mergingEntry = createMergingEntry(serializationService, entryView);
-        SplitBrainMergePolicy<Data, MapMergeTypes> mergePolicy
+        MapMergeTypes<Object, Object> mergingEntry = createMergingEntry(serializationService, entryView);
+        SplitBrainMergePolicy<Object, MapMergeTypes<Object, Object>> mergePolicy
                 = new com.hazelcast.spi.merge.PassThroughMergePolicy<>();
         op = operationProvider.createMergeOperation(mapName, mergingEntry, mergePolicy, !enableWANReplicationEvent);
         operationService.createInvocationBuilder(MapService.SERVICE_NAME, op, partitionService.getPartitionId(data)).invoke();

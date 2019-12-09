@@ -35,16 +35,16 @@ import java.util.List;
 public class MergeOperation extends AbstractNamedSerializableOperation {
 
     private String name;
-    private List<ReplicatedMapMergeTypes> mergingEntries;
-    private SplitBrainMergePolicy<Object, ReplicatedMapMergeTypes> mergePolicy;
+    private List<ReplicatedMapMergeTypes<Object, Object>> mergingEntries;
+    private SplitBrainMergePolicy<Object, ReplicatedMapMergeTypes<Object, Object>> mergePolicy;
 
     private transient boolean hasMergedValues;
 
     public MergeOperation() {
     }
 
-    MergeOperation(String name, List<ReplicatedMapMergeTypes> mergingEntries,
-                   SplitBrainMergePolicy<Object, ReplicatedMapMergeTypes> mergePolicy) {
+    MergeOperation(String name, List<ReplicatedMapMergeTypes<Object, Object>> mergingEntries,
+                   SplitBrainMergePolicy<Object, ReplicatedMapMergeTypes<Object, Object>> mergePolicy) {
         this.name = name;
         this.mergingEntries = mergingEntries;
         this.mergePolicy = mergePolicy;
@@ -60,7 +60,7 @@ public class MergeOperation extends AbstractNamedSerializableOperation {
         ReplicatedMapService service = getService();
         ReplicatedRecordStore recordStore = service.getReplicatedRecordStore(name, true, getPartitionId());
 
-        for (ReplicatedMapMergeTypes mergingEntry : mergingEntries) {
+        for (ReplicatedMapMergeTypes<Object, Object> mergingEntry : mergingEntries) {
             if (recordStore.merge(mergingEntry, mergePolicy)) {
                 hasMergedValues = true;
             }
@@ -77,7 +77,7 @@ public class MergeOperation extends AbstractNamedSerializableOperation {
         super.writeInternal(out);
         out.writeUTF(name);
         out.writeInt(mergingEntries.size());
-        for (ReplicatedMapMergeTypes mergingEntry : mergingEntries) {
+        for (ReplicatedMapMergeTypes<Object, Object> mergingEntry : mergingEntries) {
             out.writeObject(mergingEntry);
         }
         out.writeObject(mergePolicy);
@@ -90,7 +90,7 @@ public class MergeOperation extends AbstractNamedSerializableOperation {
         int size = in.readInt();
         mergingEntries = new ArrayList<>(size);
         for (int i = 0; i < size; i++) {
-            ReplicatedMapMergeTypes mergingEntry = in.readObject();
+            ReplicatedMapMergeTypes<Object, Object> mergingEntry = in.readObject();
             mergingEntries.add(mergingEntry);
         }
         mergePolicy = in.readObject();

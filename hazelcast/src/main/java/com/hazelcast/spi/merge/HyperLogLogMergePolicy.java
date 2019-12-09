@@ -37,11 +37,12 @@ public class HyperLogLogMergePolicy extends AbstractSplitBrainMergePolicy<HyperL
 
     @Override
     public HyperLogLog merge(CardinalityEstimatorMergeTypes mergingValue, CardinalityEstimatorMergeTypes existingValue) {
+        HyperLogLog hll = (HyperLogLog) mergingValue.getValue();
         if (existingValue == null) {
-            return mergingValue.getValue();
+            return hll;
         }
-        mergingValue.getValue().merge(existingValue.getValue());
-        return mergingValue.getValue();
+        hll.merge((HyperLogLog) existingValue.getValue());
+        return hll;
     }
 
     @Override

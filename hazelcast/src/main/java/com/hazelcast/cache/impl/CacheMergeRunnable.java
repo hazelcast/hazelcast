@@ -37,7 +37,7 @@ import static com.hazelcast.cache.impl.AbstractCacheRecordStore.SOURCE_NOT_AVAIL
 import static com.hazelcast.cache.impl.ICacheService.SERVICE_NAME;
 import static com.hazelcast.spi.impl.merge.MergingValueFactory.createMergingEntry;
 
-class CacheMergeRunnable extends AbstractMergeRunnable<Data, Data, ICacheRecordStore, CacheMergeTypes> {
+class CacheMergeRunnable extends AbstractMergeRunnable<Object, Object, ICacheRecordStore, CacheMergeTypes<Object, Object>> {
 
     private final CacheService cacheService;
     private final ConcurrentMap<String, CacheConfig> configs;
@@ -66,7 +66,7 @@ class CacheMergeRunnable extends AbstractMergeRunnable<Data, Data, ICacheRecordS
     }
 
     @Override
-    protected void mergeStore(ICacheRecordStore store, BiConsumer<Integer, CacheMergeTypes> consumer) {
+    protected void mergeStore(ICacheRecordStore store, BiConsumer<Integer, CacheMergeTypes<Object, Object>> consumer) {
         int partitionId = store.getPartitionId();
 
         for (Map.Entry<Data, CacheRecord> entry : store.getReadOnlyRecords().entrySet()) {
@@ -106,8 +106,8 @@ class CacheMergeRunnable extends AbstractMergeRunnable<Data, Data, ICacheRecordS
 
     @Override
     protected OperationFactory createMergeOperationFactory(String dataStructureName,
-                                                           SplitBrainMergePolicy<Data, CacheMergeTypes> mergePolicy,
-                                                           int[] partitions, List<CacheMergeTypes>[] entries) {
+                                                           SplitBrainMergePolicy<Object, CacheMergeTypes<Object, Object>> mergePolicy,
+                                                           int[] partitions, List<CacheMergeTypes<Object, Object>>[] entries) {
         CacheConfig cacheConfig = cacheService.getCacheConfig(dataStructureName);
         CacheOperationProvider operationProvider
                 = cacheService.getCacheOperationProvider(dataStructureName, cacheConfig.getInMemoryFormat());

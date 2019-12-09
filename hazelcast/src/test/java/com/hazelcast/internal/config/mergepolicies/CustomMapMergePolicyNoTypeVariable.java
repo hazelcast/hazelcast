@@ -32,10 +32,10 @@ import java.io.IOException;
  *
  * @see SplitBrainMergeTypes
  */
-public class CustomMapMergePolicyNoTypeVariable implements SplitBrainMergePolicy<Data, SplitBrainMergeTypes.MapMergeTypes> {
+public class CustomMapMergePolicyNoTypeVariable<K,V> implements SplitBrainMergePolicy<V, SplitBrainMergeTypes.MapMergeTypes<K,V>> {
 
     @Override
-    public Data merge(SplitBrainMergeTypes.MapMergeTypes mergingValue, SplitBrainMergeTypes.MapMergeTypes existingValue) {
+    public Data merge(SplitBrainMergeTypes.MapMergeTypes<K,V> mergingValue, SplitBrainMergeTypes.MapMergeTypes<K,V> existingValue) {
         return null;
     }
 

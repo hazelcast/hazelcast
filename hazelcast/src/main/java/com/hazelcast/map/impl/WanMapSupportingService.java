@@ -83,7 +83,7 @@ class WanMapSupportingService implements WanSupportingService {
         MapMergeTypes mergingEntry = createMergingEntry(serializationService, replicationUpdate.getEntryView());
         //noinspection unchecked
         MapOperation operation = operationProvider.createMergeOperation(mapName, mergingEntry,
-                (SplitBrainMergePolicy<Data, MapMergeTypes>) mergePolicy, true);
+                (SplitBrainMergePolicy<Object, MapMergeTypes<Object, Object>>) mergePolicy, true);
 
         try {
             int partitionId = nodeEngine.getPartitionService().getPartitionId(replicationUpdate.getEntryView().getKey());

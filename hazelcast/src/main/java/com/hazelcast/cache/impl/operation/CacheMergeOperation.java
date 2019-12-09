@@ -41,8 +41,8 @@ import static com.hazelcast.wan.impl.CallerProvenance.NOT_WAN;
  */
 public class CacheMergeOperation extends CacheOperation implements BackupAwareOperation {
 
-    private List<CacheMergeTypes> mergingEntries;
-    private SplitBrainMergePolicy<Data, CacheMergeTypes> mergePolicy;
+    private List<CacheMergeTypes<Object, Object>> mergingEntries;
+    private SplitBrainMergePolicy<Object, CacheMergeTypes<Object, Object>> mergePolicy;
 
     private transient boolean hasBackups;
     private transient Map<Data, CacheRecord> backupRecords;
@@ -50,8 +50,8 @@ public class CacheMergeOperation extends CacheOperation implements BackupAwareOp
     public CacheMergeOperation() {
     }
 
-    public CacheMergeOperation(String name, List<CacheMergeTypes> mergingEntries,
-                               SplitBrainMergePolicy<Data, CacheMergeTypes> mergePolicy) {
+    public CacheMergeOperation(String name, List<CacheMergeTypes<Object, Object>> mergingEntries,
+                               SplitBrainMergePolicy<Object, CacheMergeTypes<Object, Object>> mergePolicy) {
         super(name);
         this.mergingEntries = mergingEntries;
         this.mergePolicy = mergePolicy;
@@ -67,13 +67,13 @@ public class CacheMergeOperation extends CacheOperation implements BackupAwareOp
 
     @Override
     public void run() {
-        for (CacheMergeTypes mergingEntry : mergingEntries) {
+        for (CacheMergeTypes<Object, Object> mergingEntry : mergingEntries) {
             merge(mergingEntry);
         }
     }
 
-    private void merge(CacheMergeTypes mergingEntry) {
-        Data dataKey = mergingEntry.getKey();
+    private void merge(CacheMergeTypes<Object, Object> mergingEntry) {
+        Data dataKey = getNodeEngine().getSerializationService().toData(mergingEntry.getKey());
 
         CacheRecord backupRecord = recordStore.merge(mergingEntry, mergePolicy, NOT_WAN);
         if (backupRecords != null && backupRecord != null) {
@@ -107,7 +107,7 @@ public class CacheMergeOperation extends CacheOperation implements BackupAwareOp
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeInt(mergingEntries.size());
-        for (CacheMergeTypes mergingEntry : mergingEntries) {
+        for (CacheMergeTypes<Object, Object> mergingEntry : mergingEntries) {
             out.writeObject(mergingEntry);
         }
         out.writeObject(mergePolicy);
@@ -119,7 +119,7 @@ public class CacheMergeOperation extends CacheOperation implements BackupAwareOp
         int size = in.readInt();
         mergingEntries = new ArrayList<>(size);
         for (int i = 0; i < size; i++) {
-            CacheMergeTypes mergingEntry = in.readObject();
+            CacheMergeTypes<Object, Object> mergingEntry = in.readObject();
             mergingEntries.add(mergingEntry);
         }
         mergePolicy = in.readObject();

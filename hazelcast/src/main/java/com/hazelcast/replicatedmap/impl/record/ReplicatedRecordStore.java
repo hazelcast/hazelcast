@@ -105,5 +105,6 @@ public interface ReplicatedRecordStore {
      * @param mergePolicy  the {@link SplitBrainMergePolicy} instance to apply
      * @return {@code true} if merge is applied, otherwise {@code false}
      */
-    boolean merge(ReplicatedMapMergeTypes mergingEntry, SplitBrainMergePolicy<Object, ReplicatedMapMergeTypes> mergePolicy);
+    boolean merge(ReplicatedMapMergeTypes<Object, Object> mergingEntry,
+                  SplitBrainMergePolicy<Object, ReplicatedMapMergeTypes<Object, Object>> mergePolicy);
 }

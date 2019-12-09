@@ -37,7 +37,7 @@ import static com.hazelcast.replicatedmap.impl.ReplicatedMapService.SERVICE_NAME
 import static com.hazelcast.spi.impl.merge.MergingValueFactory.createMergingEntry;
 
 class ReplicatedMapMergeRunnable
-        extends AbstractMergeRunnable<Object, Object, ReplicatedRecordStore, ReplicatedMapMergeTypes> {
+        extends AbstractMergeRunnable<Object, Object, ReplicatedRecordStore, ReplicatedMapMergeTypes<Object, Object>> {
 
     private final ReplicatedMapService service;
 
@@ -50,7 +50,7 @@ class ReplicatedMapMergeRunnable
     }
 
     @Override
-    protected void mergeStore(ReplicatedRecordStore store, BiConsumer<Integer, ReplicatedMapMergeTypes> consumer) {
+    protected void mergeStore(ReplicatedRecordStore store, BiConsumer<Integer, ReplicatedMapMergeTypes<Object, Object>> consumer) {
         int partitionId = store.getPartitionId();
 
         Iterator<ReplicatedRecord> iterator = store.recordIterator();
@@ -93,8 +93,8 @@ class ReplicatedMapMergeRunnable
 
     @Override
     protected OperationFactory createMergeOperationFactory(String dataStructureName,
-                                                           SplitBrainMergePolicy<Object, ReplicatedMapMergeTypes> mergePolicy,
-                                                           int[] partitions, List<ReplicatedMapMergeTypes>[] entries) {
+                                                           SplitBrainMergePolicy<Object, ReplicatedMapMergeTypes<Object, Object>> mergePolicy,
+                                                           int[] partitions, List<ReplicatedMapMergeTypes<Object, Object>>[] entries) {
         return new MergeOperationFactory(dataStructureName, partitions, entries, mergePolicy);
     }
 

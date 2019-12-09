@@ -109,7 +109,7 @@ public class MergeOperation extends Operation
     private Ringbuffer<Object> merge(RingbufferContainer<Object, Object> existingContainer, RingbufferMergeTypes mergingValue) {
         RingbufferMergeTypes existingValue = createMergingValueOrNull(existingContainer);
 
-        RingbufferMergeData resultData = mergePolicy.merge(mergingValue, existingValue);
+        RingbufferMergeData resultData = (RingbufferMergeData) mergePolicy.merge(mergingValue, existingValue);
 
         if (resultData == null) {
             ringbufferService.destroyDistributedObject(namespace.getObjectName());

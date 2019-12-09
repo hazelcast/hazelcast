@@ -29,7 +29,7 @@ import org.junit.runner.RunWith;
 public class ExpirationTimeSplitBrainMergePolicyTest extends AbstractSplitBrainMergePolicyTest {
 
     @Override
-    protected SplitBrainMergePolicy<Data, MapMergeTypes> createMergePolicy() {
-        return new ExpirationTimeMergePolicy<Data, MapMergeTypes>();
+    protected SplitBrainMergePolicy<String, MapMergeTypes<Object, String>> createMergePolicy() {
+        return new ExpirationTimeMergePolicy<>();
     }
 }

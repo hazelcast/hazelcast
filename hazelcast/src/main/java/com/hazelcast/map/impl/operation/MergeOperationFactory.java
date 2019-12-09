@@ -40,15 +40,15 @@ import java.util.List;
 public class MergeOperationFactory extends PartitionAwareOperationFactory {
 
     protected String name;
-    protected List<MapMergeTypes>[] mergingEntries;
-    protected SplitBrainMergePolicy<Data, MapMergeTypes> mergePolicy;
+    protected List<MapMergeTypes<Object, Object>>[] mergingEntries;
+    protected SplitBrainMergePolicy<Object, MapMergeTypes<Object, Object>> mergePolicy;
 
     public MergeOperationFactory() {
     }
 
     @SuppressFBWarnings("EI_EXPOSE_REP2")
-    public MergeOperationFactory(String name, int[] partitions, List<MapMergeTypes>[] mergingEntries,
-                                 SplitBrainMergePolicy<Data, MapMergeTypes> mergePolicy) {
+    public MergeOperationFactory(String name, int[] partitions, List<MapMergeTypes<Object, Object>>[] mergingEntries,
+                                 SplitBrainMergePolicy<Object, MapMergeTypes<Object, Object>> mergePolicy) {
         this.name = name;
         this.partitions = partitions;
         this.mergingEntries = mergingEntries;
@@ -69,9 +69,9 @@ public class MergeOperationFactory extends PartitionAwareOperationFactory {
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeUTF(name);
         out.writeIntArray(partitions);
-        for (List<MapMergeTypes> list : mergingEntries) {
+        for (List<MapMergeTypes<Object, Object>> list : mergingEntries) {
             out.writeInt(list.size());
-            for (MapMergeTypes mergingEntry : list) {
+            for (MapMergeTypes<Object, Object> mergingEntry : list) {
                 out.writeObject(mergingEntry);
             }
         }
@@ -86,9 +86,9 @@ public class MergeOperationFactory extends PartitionAwareOperationFactory {
         mergingEntries = new List[partitions.length];
         for (int partitionIndex = 0; partitionIndex < partitions.length; partitionIndex++) {
             int size = in.readInt();
-            List<MapMergeTypes> list = new ArrayList<>(size);
+            List<MapMergeTypes<Object, Object>> list = new ArrayList<>(size);
             for (int i = 0; i < size; i++) {
-                MapMergeTypes mergingEntry = in.readObject();
+                MapMergeTypes<Object, Object> mergingEntry = in.readObject();
                 list.add(mergingEntry);
             }
             mergingEntries[partitionIndex] = list;

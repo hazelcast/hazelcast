@@ -110,8 +110,8 @@ public interface MapOperationProvider {
 
     MapOperation createTxnSetOperation(String name, Data dataKey, Data value, long version, long ttl);
 
-    MapOperation createMergeOperation(String name, MapMergeTypes mergingValue,
-                                      SplitBrainMergePolicy<Data, MapMergeTypes> mergePolicy,
+    MapOperation createMergeOperation(String name, MapMergeTypes<Object, Object> mergingValue,
+                                      SplitBrainMergePolicy<Object, MapMergeTypes<Object, Object>> mergePolicy,
                                       boolean disableWanReplicationEvent);
 
     MapOperation createMapFlushOperation(String name);
@@ -154,6 +154,7 @@ public interface MapOperationProvider {
 
     OperationFactory createPutAllOperationFactory(String name, int[] partitions, MapEntries[] mapEntries);
 
-    OperationFactory createMergeOperationFactory(String name, int[] partitions, List<MapMergeTypes>[] mergingEntries,
-                                                 SplitBrainMergePolicy<Data, MapMergeTypes> mergePolicy);
+    OperationFactory createMergeOperationFactory(String name, int[] partitions,
+                                                 List<MapMergeTypes<Object, Object>>[] mergingEntries,
+                                                 SplitBrainMergePolicy<Object, MapMergeTypes<Object, Object>> mergePolicy);
 }

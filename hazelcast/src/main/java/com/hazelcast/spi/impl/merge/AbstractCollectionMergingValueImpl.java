@@ -55,13 +55,13 @@ public abstract class AbstractCollectionMergingValueImpl<V extends Collection, T
     }
 
     @Override
-    public <DV> DV getDeserializedValue() {
+    public V getDeserializedValue() {
         Collection<Object> deserializedValues = new ArrayList<Object>(value.size());
         for (Object aValue : value) {
             deserializedValues.add(serializationService.toObject(aValue));
         }
         //noinspection unchecked
-        return (DV) deserializedValues;
+        return (V) deserializedValues;
     }
 
     public T setValue(V value) {

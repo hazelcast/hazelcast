@@ -32,7 +32,7 @@ public class PutIfAbsentMergePolicy<V, T extends MergingValue<V>> extends Abstra
     }
 
     @Override
-    public V merge(T mergingValue, T existingValue) {
+    public Object merge(T mergingValue, T existingValue) {
         if (existingValue == null) {
             return mergingValue.getValue();
         }

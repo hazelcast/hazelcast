@@ -34,35 +34,35 @@ public abstract class AbstractSplitBrainMergePolicyTest {
     private static final Data EXISTING = SERIALIZATION_SERVICE.toData("EXISTING");
     private static final Data MERGING = SERIALIZATION_SERVICE.toData("MERGING");
 
-    protected SplitBrainMergePolicy<Data, MapMergeTypes> mergePolicy;
+    protected SplitBrainMergePolicy<String, MapMergeTypes<Object, String>> mergePolicy;
 
     @Before
     public void setup() {
         mergePolicy = createMergePolicy();
     }
 
-    protected abstract SplitBrainMergePolicy<Data, MapMergeTypes> createMergePolicy();
+    protected abstract SplitBrainMergePolicy<String, MapMergeTypes<Object, String>> createMergePolicy();
 
     @Test
     public void merge_mergingWins() {
-        MapMergeTypes existing = mergingValueWithGivenPropertyAndValue(1, EXISTING);
-        MapMergeTypes merging = mergingValueWithGivenPropertyAndValue(333, MERGING);
+        MapMergeTypes<Object, String> existing = mergingValueWithGivenPropertyAndValue(1, EXISTING);
+        MapMergeTypes<Object, String> merging = mergingValueWithGivenPropertyAndValue(333, MERGING);
 
         assertEquals(MERGING, mergePolicy.merge(merging, existing));
     }
 
     @Test
     public void merge_existingWins() {
-        MapMergeTypes existing = mergingValueWithGivenPropertyAndValue(333, EXISTING);
-        MapMergeTypes merging = mergingValueWithGivenPropertyAndValue(1, MERGING);
+        MapMergeTypes<Object, String> existing = mergingValueWithGivenPropertyAndValue(333, EXISTING);
+        MapMergeTypes<Object, String> merging = mergingValueWithGivenPropertyAndValue(1, MERGING);
 
         assertEquals(EXISTING, mergePolicy.merge(merging, existing));
     }
 
     @Test
     public void merge_draw_mergingWins() {
-        MapMergeTypes existing = mergingValueWithGivenPropertyAndValue(1, EXISTING);
-        MapMergeTypes merging = mergingValueWithGivenPropertyAndValue(1, MERGING);
+        MapMergeTypes<Object, String> existing = mergingValueWithGivenPropertyAndValue(1, EXISTING);
+        MapMergeTypes<Object, String> merging = mergingValueWithGivenPropertyAndValue(1, MERGING);
 
         assertEquals(MERGING, mergePolicy.merge(merging, existing));
     }
@@ -70,8 +70,8 @@ public abstract class AbstractSplitBrainMergePolicyTest {
     @Test
     @SuppressWarnings("ConstantConditions")
     public void merge_mergingWins_sinceExistingIsNotExist() {
-        MapMergeTypes existing = null;
-        MapMergeTypes merging = mergingValueWithGivenPropertyAndValue(1, MERGING);
+        MapMergeTypes<Object, String> existing = null;
+        MapMergeTypes<Object, String> merging = mergingValueWithGivenPropertyAndValue(1, MERGING);
 
         assertEquals(MERGING, mergePolicy.merge(merging, existing));
     }
@@ -79,14 +79,14 @@ public abstract class AbstractSplitBrainMergePolicyTest {
     @Test
     @SuppressWarnings("ConstantConditions")
     public void merge_existingWins_sinceMergingIsNotExist() {
-        MapMergeTypes existing = mergingValueWithGivenPropertyAndValue(1, EXISTING);
-        MapMergeTypes merging = null;
+        MapMergeTypes<Object, String> existing = mergingValueWithGivenPropertyAndValue(1, EXISTING);
+        MapMergeTypes<Object, String> merging = null;
 
         assertEquals(EXISTING, mergePolicy.merge(merging, existing));
     }
 
-    private MapMergeTypes mergingValueWithGivenPropertyAndValue(long testedProperty, Data value) {
-        MapMergeTypes mergingEntry = mock(MapMergeTypes.class);
+    private MapMergeTypes<Object, String> mergingValueWithGivenPropertyAndValue(long testedProperty, Data value) {
+        MapMergeTypes<Object, String> mergingEntry = mock(MapMergeTypes.class);
         try {
             if (mergePolicy instanceof ExpirationTimeMergePolicy) {
                 when(mergingEntry.getExpirationTime()).thenReturn(testedProperty);

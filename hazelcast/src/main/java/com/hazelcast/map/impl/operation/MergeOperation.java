@@ -44,8 +44,8 @@ public class MergeOperation extends MapOperation
         implements PartitionAwareOperation, BackupAwareOperation {
 
     private boolean disableWanReplicationEvent;
-    private List<MapMergeTypes> mergingEntries;
-    private SplitBrainMergePolicy<Data, MapMergeTypes> mergePolicy;
+    private List<MapMergeTypes<Object, Object>> mergingEntries;
+    private SplitBrainMergePolicy<Object, MapMergeTypes<Object, Object>> mergePolicy;
 
     private transient int currentIndex;
     private transient boolean hasMapListener;
@@ -61,8 +61,8 @@ public class MergeOperation extends MapOperation
     public MergeOperation() {
     }
 
-    public MergeOperation(String name, List<MapMergeTypes> mergingEntries,
-                          SplitBrainMergePolicy<Data, MapMergeTypes> mergePolicy,
+    public MergeOperation(String name, List<MapMergeTypes<Object, Object>> mergingEntries,
+                          SplitBrainMergePolicy<Object, MapMergeTypes<Object, Object>> mergePolicy,
                           boolean disableWanReplicationEvent) {
         super(name);
         this.mergingEntries = mergingEntries;
@@ -100,8 +100,8 @@ public class MergeOperation extends MapOperation
         }
     }
 
-    private void merge(MapMergeTypes mergingEntry) {
-        Data dataKey = mergingEntry.getKey();
+    private void merge(MapMergeTypes<Object, Object> mergingEntry) {
+        Data dataKey = getNodeEngine().getSerializationService().toData(mergingEntry.getKey());
         Data oldValue = hasMapListener ? getValue(dataKey) : null;
 
         if (recordStore.merge(mergingEntry, mergePolicy, getCallerProvenance())) {

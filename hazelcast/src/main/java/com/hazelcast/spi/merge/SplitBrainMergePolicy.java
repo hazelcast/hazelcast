@@ -78,5 +78,5 @@ public interface SplitBrainMergePolicy<V, T extends MergingValue<V>>
      *                      data or {@code null} if no matching data exists
      * @return the selected value for merging
      */
-    V merge(T mergingValue, T existingValue);
+    Object merge(T mergingValue, T existingValue);
 }

@@ -41,7 +41,7 @@ public class DiscardMergePolicyTest {
     private static final Data EXISTING = SERIALIZATION_SERVICE.toData("EXISTING");
     private static final Data MERGING = SERIALIZATION_SERVICE.toData("MERGING");
 
-    private SplitBrainMergePolicy<Data, MapMergeTypes> mergePolicy;
+    private SplitBrainMergePolicy<String, MapMergeTypes<Object, String>> mergePolicy;
 
     @Before
     public void setup() {
@@ -51,16 +51,16 @@ public class DiscardMergePolicyTest {
     @Test
     @SuppressWarnings("ConstantConditions")
     public void merge_existingValueAbsent() {
-        MapMergeTypes existing = null;
-        MapMergeTypes merging = mergingValueWithGivenValue(MERGING);
+        MapMergeTypes<Object, String> existing = null;
+        MapMergeTypes<Object, String> merging = mergingValueWithGivenValue(MERGING);
 
         assertNull(mergePolicy.merge(merging, existing));
     }
 
     @Test
     public void merge_existingValuePresent() {
-        MapMergeTypes existing = mergingValueWithGivenValue(EXISTING);
-        MapMergeTypes merging = mergingValueWithGivenValue(MERGING);
+        MapMergeTypes<Object, String> existing = mergingValueWithGivenValue(EXISTING);
+        MapMergeTypes<Object, String> merging = mergingValueWithGivenValue(MERGING);
 
         assertEquals(EXISTING, mergePolicy.merge(merging, existing));
     }
@@ -68,22 +68,22 @@ public class DiscardMergePolicyTest {
     @Test
     @SuppressWarnings("ConstantConditions")
     public void merge_mergingNull() {
-        MapMergeTypes existing = mergingValueWithGivenValue(EXISTING);
-        MapMergeTypes merging = null;
+        MapMergeTypes<Object, String> existing = mergingValueWithGivenValue(EXISTING);
+        MapMergeTypes<Object, String> merging = null;
 
         assertEquals(EXISTING, mergePolicy.merge(merging, existing));
     }
 
     @Test
     public void merge_bothValuesNull() {
-        MapMergeTypes existing = mergingValueWithGivenValue(null);
-        MapMergeTypes merging = mergingValueWithGivenValue(null);
+        MapMergeTypes<Object, String> existing = mergingValueWithGivenValue(null);
+        MapMergeTypes<Object, String> merging = mergingValueWithGivenValue(null);
 
         assertNull(mergePolicy.merge(merging, existing));
     }
 
-    private MapMergeTypes mergingValueWithGivenValue(Data value) {
-        MapMergeTypes mergingValue = mock(MapMergeTypes.class);
+    private MapMergeTypes<Object, String> mergingValueWithGivenValue(Data value) {
+        MapMergeTypes<Object, String> mergingValue = mock(MapMergeTypes.class);
         try {
             when(mergingValue.getValue()).thenReturn(value);
             return mergingValue;

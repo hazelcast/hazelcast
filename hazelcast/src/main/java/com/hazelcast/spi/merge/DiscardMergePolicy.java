@@ -32,7 +32,7 @@ public class DiscardMergePolicy<V, T extends MergingValue<V>> extends AbstractSp
     }
 
     @Override
-    public V merge(T mergingValue, T existingValue) {
+    public Object merge(T mergingValue, T existingValue) {
         if (existingValue == null) {
             return null;
         }

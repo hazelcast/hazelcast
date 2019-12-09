@@ -19,6 +19,7 @@ package com.hazelcast.spi.impl.merge;
 import com.hazelcast.internal.serialization.DataSerializerHook;
 import com.hazelcast.internal.serialization.impl.ArrayDataSerializableFactory;
 import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
+import com.hazelcast.internal.util.ConstructorFunction;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.merge.DiscardMergePolicy;
@@ -30,7 +31,6 @@ import com.hazelcast.spi.merge.LatestUpdateMergePolicy;
 import com.hazelcast.spi.merge.PassThroughMergePolicy;
 import com.hazelcast.spi.merge.PutIfAbsentMergePolicy;
 import com.hazelcast.spi.merge.SplitBrainMergePolicy;
-import com.hazelcast.internal.util.ConstructorFunction;
 
 import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.SPLIT_BRAIN_DS_FACTORY;
 import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.SPLIT_BRAIN_DS_FACTORY_ID;
@@ -89,16 +89,6 @@ public final class SplitBrainDataSerializerHook implements DataSerializerHook {
         constructors[QUEUE_MERGING_VALUE] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             public IdentifiedDataSerializable createNew(Integer arg) {
                 return new QueueMergingValueImpl();
-            }
-        };
-        constructors[ATOMIC_LONG_MERGING_VALUE] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new AtomicLongMergingValueImpl();
-            }
-        };
-        constructors[ATOMIC_REFERENCE_MERGING_VALUE] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new AtomicReferenceMergingValueImpl();
             }
         };
         constructors[MAP_MERGING_ENTRY] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {

@@ -75,7 +75,7 @@ public class QueueMergeOperation extends QueueBackupAwareOperation implements Mu
 
         Queue<QueueItem> existingItems = container.getItemQueue();
         QueueMergeTypes existingValue = createMergingValueOrNull(serializationService, existingItems);
-        Collection<Object> newValues = mergePolicy.merge(mergingValue, existingValue);
+        Collection<Object> newValues = (Collection<Object>) mergePolicy.merge(mergingValue, existingValue);
 
         if (isEmpty(newValues)) {
             if (existingValue != null) {

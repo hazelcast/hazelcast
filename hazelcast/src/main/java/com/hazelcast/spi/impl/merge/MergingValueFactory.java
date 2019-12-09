@@ -163,14 +163,14 @@ public final class MergingValueFactory {
                 .setTtl(record.getTtlMillis());
     }
 
-    public static MultiMapMergeTypes createMergingEntry(SerializationService serializationService,
-                                                        MultiMapMergeContainer container) {
+    public static <K, V> MultiMapMergeTypes<K, V> createMergingEntry(SerializationService serializationService,
+                                                                     MultiMapMergeContainer container) {
         Collection<Object> values = new ArrayList<>(container.getRecords().size());
         for (MultiMapRecord record : container.getRecords()) {
             values.add(record.getObject());
         }
 
-        return new MultiMapMergingEntryImpl(serializationService)
+        return new MultiMapMergingEntryImpl<K, V>(serializationService)
                 .setKey(container.getKey())
                 .setValues(values)
                 .setCreationTime(container.getCreationTime())
@@ -179,14 +179,16 @@ public final class MergingValueFactory {
                 .setHits(container.getHits());
     }
 
-    public static MultiMapMergeTypes createMergingEntry(SerializationService serializationService, MultiMapContainer container,
-                                                        Data dataKey, Collection<MultiMapRecord> records, long hits) {
+    public static <K, V> MultiMapMergeTypes<K, V> createMergingEntry(SerializationService serializationService,
+                                                                     MultiMapContainer container,
+                                                                     Data dataKey, Collection<MultiMapRecord> records,
+                                                                     long hits) {
         Collection<Object> values = new ArrayList<>(records.size());
         for (MultiMapRecord record : records) {
             values.add(record.getObject());
         }
 
-        return new MultiMapMergingEntryImpl(serializationService)
+        return new MultiMapMergingEntryImpl<K, V>(serializationService)
                 .setKey(dataKey)
                 .setValues(values)
                 .setCreationTime(container.getCreationTime())
