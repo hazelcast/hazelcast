@@ -7355,6 +7355,67 @@ public class MemberCompatibilityTest_2_0 {
         compareClientMessages(fromFile, encoded);
     }
 
+    @Test
+    public void test_MCGetCPMembersCodec_decodeRequest() {
+        int fileClientMessageIndex = 814;
+        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
+        MCGetCPMembersCodec.RequestParameters parameters = MCGetCPMembersCodec.decodeRequest(fromFile);
+    }
+
+    @Test
+    public void test_MCGetCPMembersCodec_encodeResponse() {
+        int fileClientMessageIndex = 815;
+        ClientMessage encoded = MCGetCPMembersCodec.encodeResponse(aListOfStringToString);
+        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
+        compareClientMessages(fromFile, encoded);
+    }
+
+    @Test
+    public void test_MCPromoteToCPMemberCodec_decodeRequest() {
+        int fileClientMessageIndex = 816;
+        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
+        MCPromoteToCPMemberCodec.RequestParameters parameters = MCPromoteToCPMemberCodec.decodeRequest(fromFile);
+    }
+
+    @Test
+    public void test_MCPromoteToCPMemberCodec_encodeResponse() {
+        int fileClientMessageIndex = 817;
+        ClientMessage encoded = MCPromoteToCPMemberCodec.encodeResponse();
+        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
+        compareClientMessages(fromFile, encoded);
+    }
+
+    @Test
+    public void test_MCRemoveCPMemberCodec_decodeRequest() {
+        int fileClientMessageIndex = 818;
+        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
+        MCRemoveCPMemberCodec.RequestParameters parameters = MCRemoveCPMemberCodec.decodeRequest(fromFile);
+        assertTrue(isEqual(aUUID, parameters.cpMemberUuid));
+    }
+
+    @Test
+    public void test_MCRemoveCPMemberCodec_encodeResponse() {
+        int fileClientMessageIndex = 819;
+        ClientMessage encoded = MCRemoveCPMemberCodec.encodeResponse();
+        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
+        compareClientMessages(fromFile, encoded);
+    }
+
+    @Test
+    public void test_MCResetCPSubsystemCodec_decodeRequest() {
+        int fileClientMessageIndex = 820;
+        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
+        MCResetCPSubsystemCodec.RequestParameters parameters = MCResetCPSubsystemCodec.decodeRequest(fromFile);
+    }
+
+    @Test
+    public void test_MCResetCPSubsystemCodec_encodeResponse() {
+        int fileClientMessageIndex = 821;
+        ClientMessage encoded = MCResetCPSubsystemCodec.encodeResponse();
+        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
+        compareClientMessages(fromFile, encoded);
+    }
+
      private void compareClientMessages(ClientMessage binaryMessage, ClientMessage encodedMessage) {
         ClientMessage.Frame binaryFrame, encodedFrame;
 
