@@ -723,13 +723,13 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
                 handleAliasedDiscoveryStrategy(config, targetChild, targetChildName);
             } else if ("discovery-strategies".equals(targetChildName)) {
                 handleDiscoveryStrategies(config.getDiscoveryConfig(), targetChild);
-            } else if ("wan-sync".equals(targetChildName)) {
-                handleWanSync(config.getWanSyncConfig(), targetChild);
+            } else if ("sync".equals(targetChildName)) {
+                handleWanSync(config.getSyncConfig(), targetChild);
             } else if ("endpoint".equals(targetChildName)) {
                 config.setEndpoint(getTextContent(targetChild));
             }
         }
-        wanReplicationConfig.addWanBatchReplicationPublisherConfig(config);
+        wanReplicationConfig.addBatchReplicationPublisherConfig(config);
     }
 
     void handleWanConsumerNode(WanReplicationConfig wanReplicationConfig, Node nodeTarget) {
@@ -737,7 +737,7 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         for (Node targetChild : childElements(nodeTarget)) {
             handleWanConsumerConfig(consumerConfig, targetChild);
         }
-        wanReplicationConfig.setWanConsumerConfig(consumerConfig);
+        wanReplicationConfig.setConsumerConfig(consumerConfig);
     }
 
     private void handleWanSync(WanSyncConfig wanSyncConfig, Node node) {

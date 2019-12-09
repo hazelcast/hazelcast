@@ -99,7 +99,7 @@ public class WanBatchPublisherConfigDTO implements JsonSerializable {
             root.add("discovery", new DiscoveryConfigDTO(discoveryConfig).toJson());
         }
 
-        WanSyncConfig syncConfig = config.getWanSyncConfig();
+        WanSyncConfig syncConfig = config.getSyncConfig();
         if (syncConfig != null) {
             root.add("sync", new WanSyncConfigDTO(syncConfig).toJson());
         }
@@ -171,7 +171,7 @@ public class WanBatchPublisherConfigDTO implements JsonSerializable {
         if (syncJson != null && !syncJson.isNull()) {
             WanSyncConfigDTO syncDTO = new WanSyncConfigDTO();
             syncDTO.fromJson(syncJson.asObject());
-            config.setWanSyncConfig(syncDTO.getConfig());
+            config.setSyncConfig(syncDTO.getConfig());
         }
 
         consumeIfExists(json, "endpoint", v -> config.setEndpoint(v.asString()));

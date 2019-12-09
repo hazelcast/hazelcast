@@ -60,9 +60,9 @@ public class WanReplicationConfigTest {
         publisherConfigs.add(wanPublisherConfig1);
 
         config.setName("name");
-        config.setWanConsumerConfig(wanConsumerConfig);
+        config.setConsumerConfig(wanConsumerConfig);
         config.setBatchPublisherConfigs(publisherConfigs);
-        config.addWanBatchReplicationPublisherConfig(wanPublisherConfig2);
+        config.addBatchReplicationPublisherConfig(wanPublisherConfig2);
 
         ArrayList<WanCustomPublisherConfig> customPublishers = new ArrayList<>(1);
         customPublishers.add(new WanCustomPublisherConfig());
@@ -89,7 +89,7 @@ public class WanReplicationConfigTest {
 
     private static void assertWanReplicationConfig(WanReplicationConfig expected, WanReplicationConfig actual) {
         assertEquals(expected.getName(), actual.getName());
-        assertWanConsumerConfig(expected.getWanConsumerConfig(), actual.getWanConsumerConfig());
+        assertWanConsumerConfig(expected.getConsumerConfig(), actual.getConsumerConfig());
         Iterator<WanBatchPublisherConfig> expectedWanPublisherConfigIterator
                 = expected.getBatchPublisherConfigs().iterator();
         Iterator<WanBatchPublisherConfig> actualWanPublisherConfigIterator

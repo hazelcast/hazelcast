@@ -38,7 +38,7 @@ import java.util.Objects;
  * <p>
  * NOTE: EE only
  *
- * @see WanReplicationConfig#setWanConsumerConfig(WanConsumerConfig)
+ * @see WanReplicationConfig#setConsumerConfig(WanConsumerConfig)
  * @see WanCustomPublisherConfig#setClassName(String)
  */
 public class WanConsumerConfig implements IdentifiedDataSerializable {

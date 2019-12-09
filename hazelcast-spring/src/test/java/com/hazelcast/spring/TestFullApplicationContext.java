@@ -942,7 +942,7 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         WanBatchPublisherConfig publisherPlaceHolderConfig = wcfg.getBatchPublisherConfigs().get(1);
         assertEquals(5000, publisherPlaceHolderConfig.getQueueCapacity());
 
-        WanConsumerConfig consumerConfig = wcfg.getWanConsumerConfig();
+        WanConsumerConfig consumerConfig = wcfg.getConsumerConfig();
         assertEquals("com.hazelcast.wan.custom.WanConsumer", consumerConfig.getClassName());
         Map<String, Comparable> consumerProps = consumerConfig.getProperties();
         assertEquals("prop.consumer", consumerProps.get("custom.prop.consumer"));
@@ -952,7 +952,7 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
     @Test
     public void testWanConsumerWithPersistDataFalse() {
         WanReplicationConfig config2 = config.getWanReplicationConfig("testWan2");
-        WanConsumerConfig consumerConfig2 = config2.getWanConsumerConfig();
+        WanConsumerConfig consumerConfig2 = config2.getConsumerConfig();
         assertInstanceOf(DummyWanConsumer.class, consumerConfig2.getImplementation());
         assertFalse(consumerConfig2.isPersistWanReplicatedData());
     }
@@ -960,14 +960,14 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
     @Test
     public void testNoWanConsumerClass() {
         WanReplicationConfig config2 = config.getWanReplicationConfig("testWan3");
-        WanConsumerConfig consumerConfig2 = config2.getWanConsumerConfig();
+        WanConsumerConfig consumerConfig2 = config2.getConsumerConfig();
         assertFalse(consumerConfig2.isPersistWanReplicatedData());
     }
 
     @Test
     public void testWanReplicationSyncConfig() {
         final WanReplicationConfig wcfg = config.getWanReplicationConfig("testWan2");
-        final WanConsumerConfig consumerConfig = wcfg.getWanConsumerConfig();
+        final WanConsumerConfig consumerConfig = wcfg.getConsumerConfig();
         final Map<String, Comparable> consumerProps = new HashMap<>();
         consumerProps.put("custom.prop.consumer", "prop.consumer");
         consumerConfig.setProperties(consumerProps);
@@ -982,7 +982,7 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         final WanBatchPublisherConfig pc = publisherConfigs.get(0);
         assertEquals("tokyo", pc.getClusterName());
 
-        final WanSyncConfig wanSyncConfig = pc.getWanSyncConfig();
+        final WanSyncConfig wanSyncConfig = pc.getSyncConfig();
         assertNotNull(wanSyncConfig);
         assertEquals(ConsistencyCheckStrategy.MERKLE_TREES, wanSyncConfig.getConsistencyCheckStrategy());
     }

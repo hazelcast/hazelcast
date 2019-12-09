@@ -675,7 +675,7 @@ public class ConfigXmlGenerator {
                 wanCustomPublisherXmlGenerator(gen, p);
             }
 
-            WanConsumerConfig consumerConfig = wan.getWanConsumerConfig();
+            WanConsumerConfig consumerConfig = wan.getConsumerConfig();
             if (consumerConfig != null) {
                 wanReplicationConsumerGenerator(gen, consumerConfig);
             }
@@ -724,7 +724,7 @@ public class ConfigXmlGenerator {
         if (c.getEndpoint() != null) {
             gen.node("endpoint", c.getEndpoint());
         }
-        wanReplicationSyncGenerator(gen, c.getWanSyncConfig());
+        wanReplicationSyncGenerator(gen, c.getSyncConfig());
         aliasedDiscoveryConfigsGenerator(gen, aliasedDiscoveryConfigsFrom(c));
         discoveryStrategyConfigXmlGenerator(gen, c.getDiscoveryConfig());
         gen.close();
@@ -740,7 +740,7 @@ public class ConfigXmlGenerator {
     }
 
     private static void wanReplicationSyncGenerator(XmlGenerator gen, WanSyncConfig c) {
-        gen.open("wan-sync")
+        gen.open("sync")
                 .node("consistency-check-strategy", c.getConsistencyCheckStrategy())
                 .close();
     }

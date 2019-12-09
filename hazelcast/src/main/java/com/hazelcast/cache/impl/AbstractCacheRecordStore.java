@@ -221,7 +221,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
             Config config = nodeEngine.getConfig();
             WanReplicationConfig wanReplicationConfig = config.getWanReplicationConfig(wanReplicationRefName);
             if (wanReplicationConfig != null) {
-                WanConsumerConfig wanConsumerConfig = wanReplicationConfig.getWanConsumerConfig();
+                WanConsumerConfig wanConsumerConfig = wanReplicationConfig.getConsumerConfig();
                 if (wanConsumerConfig != null) {
                     persistWanReplicatedData = wanConsumerConfig.isPersistWanReplicatedData();
                 }

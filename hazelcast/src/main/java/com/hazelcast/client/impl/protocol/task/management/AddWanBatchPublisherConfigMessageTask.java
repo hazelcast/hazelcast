@@ -59,7 +59,7 @@ public class AddWanBatchPublisherConfigMessageTask extends AbstractCallableMessa
         WanQueueFullBehavior queueFullBehavior = WanQueueFullBehavior.getByType(parameters.queueFullBehavior);
         publisherConfig.setQueueFullBehavior(
                 queueFullBehavior != null ? queueFullBehavior : DEFAULT_QUEUE_FULL_BEHAVIOUR);
-        wanConfig.addWanBatchReplicationPublisherConfig(publisherConfig);
+        wanConfig.addBatchReplicationPublisherConfig(publisherConfig);
 
         return nodeEngine.getWanReplicationService().addWanReplicationConfig(wanConfig);
     }

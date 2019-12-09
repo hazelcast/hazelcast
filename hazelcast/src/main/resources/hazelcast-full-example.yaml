@@ -251,7 +251,7 @@ hazelcast:
   #     * "target-endpoints":
   #         Comma separated list of IP addresses of the target cluster members for
   #         which the WAN replication is implemented.
-  #     * "wan-sync":
+  #     * "sync":
   #     Configuration for the WAN sync mechanism. It has the following sub-elements:
   #         - "consistency-check-strategy":
   #             Sets the strategy for checking consistency of data between source and

@@ -2296,7 +2296,7 @@
             <xs:element name="kubernetes" type="aliased-discovery-strategy" minOccurs="0" maxOccurs="1"/>
             <xs:element name="eureka" type="aliased-discovery-strategy" minOccurs="0" maxOccurs="1"/>
             <xs:element name="discovery-strategies" type="discovery-strategies" minOccurs="0" maxOccurs="1"/>
-            <xs:element name="wan-sync" type="wan-sync" minOccurs="0"/>
+            <xs:element name="sync" type="wan-sync" minOccurs="0"/>
             <xs:element name="endpoint" type="xs:string" minOccurs="0">
                 <xs:annotation>
                     <xs:documentation>

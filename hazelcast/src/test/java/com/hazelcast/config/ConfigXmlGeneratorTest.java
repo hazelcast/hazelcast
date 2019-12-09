@@ -1273,7 +1273,7 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
         props.put("prop3", "val3");
         WanReplicationConfig wanReplicationConfig = new WanReplicationConfig()
                 .setName("testName")
-                .setWanConsumerConfig(new WanConsumerConfig().setClassName("dummyClass").setProperties(props));
+                .setConsumerConfig(new WanConsumerConfig().setClassName("dummyClass").setProperties(props));
         WanBatchPublisherConfig batchPublisher = new WanBatchPublisherConfig()
                 .setClusterName("dummyGroup")
                 .setPublisherId("dummyPublisherId")
@@ -1297,7 +1297,7 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
                 .setEndpoint("WAN")
                 .setProperties(props);
 
-        batchPublisher.getWanSyncConfig()
+        batchPublisher.getSyncConfig()
                 .setConsistencyCheckStrategy(ConsistencyCheckStrategy.MERKLE_TREES);
 
         WanCustomPublisherConfig customPublisher = new WanCustomPublisherConfig()
@@ -1310,8 +1310,8 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
                 .setProperties(props)
                 .setPersistWanReplicatedData(false);
 
-        wanReplicationConfig.setWanConsumerConfig(wanConsumerConfig)
-                            .addWanBatchReplicationPublisherConfig(batchPublisher)
+        wanReplicationConfig.setConsumerConfig(wanConsumerConfig)
+                            .addBatchReplicationPublisherConfig(batchPublisher)
                             .addCustomPublisherConfig(customPublisher);
 
         Config config = new Config().addWanReplicationConfig(wanReplicationConfig);

@@ -1204,7 +1204,7 @@ public class ConfigCompatibilityChecker {
         public boolean check(WanReplicationConfig c1, WanReplicationConfig c2) {
             return c1 == c2 || !(c1 == null || c2 == null)
                     && nullSafeEqual(c1.getName(), c2.getName())
-                    && WAN_CONSUMER_CONFIG_CHECKER.check(c1.getWanConsumerConfig(), c2.getWanConsumerConfig())
+                    && WAN_CONSUMER_CONFIG_CHECKER.check(c1.getConsumerConfig(), c2.getConsumerConfig())
                     && isCollectionCompatible(c1.getBatchPublisherConfigs(), c2.getBatchPublisherConfigs(),
                     new WanBatchPublisherConfigChecker())
                     && isCollectionCompatible(c1.getCustomPublisherConfigs(), c2.getCustomPublisherConfigs(),
@@ -1257,7 +1257,7 @@ public class ConfigCompatibilityChecker {
                     && nullSafeEqual(c1.getTargetEndpoints(), c2.getTargetEndpoints())
                     && new AliasedDiscoveryConfigsChecker().check(aliasedDiscoveryConfigsFrom(c1), aliasedDiscoveryConfigsFrom(c2))
                     && new DiscoveryConfigChecker().check(c1.getDiscoveryConfig(), c2.getDiscoveryConfig())
-                    && new WanSyncConfigChecker().check(c1.getWanSyncConfig(), c2.getWanSyncConfig())
+                    && new WanSyncConfigChecker().check(c1.getSyncConfig(), c2.getSyncConfig())
                     && nullSafeEqual(c1.getEndpoint(), c2.getEndpoint())
                     && nullSafeEqual(c1.getImplementation(), c2.getImplementation())
                     && nullSafeEqual(c1.getProperties(), c2.getProperties());

@@ -41,8 +41,8 @@ public class WanReplicationConfigDTOTest {
     public void testSerialization() {
         WanReplicationConfig expected = new WanReplicationConfig()
                 .setName("myName")
-                .setWanConsumerConfig(new WanConsumerConfig())
-                .addWanBatchReplicationPublisherConfig(new WanBatchPublisherConfig()
+                .setConsumerConfig(new WanConsumerConfig())
+                .addBatchReplicationPublisherConfig(new WanBatchPublisherConfig()
                         .setClusterName("group1"))
                 .addCustomPublisherConfig(new WanCustomPublisherConfig()
                         .setPublisherId("group2")

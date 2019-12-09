@@ -66,7 +66,7 @@ public class WanBatchPublisherConfigTest {
                 .setIdleMaxParkNs(1000)
                 .setTargetEndpoints("a,b,c,d")
                 .setDiscoveryConfig(new DiscoveryConfig())
-                .setWanSyncConfig(new WanSyncConfig())
+                .setSyncConfig(new WanSyncConfig())
                 .setAwsConfig(new AwsConfig().setEnabled(true).setProperty("connection-timeout-seconds", "20"))
                 .setGcpConfig(new GcpConfig().setEnabled(true).setProperty("gcp", "gcp-val"))
                 .setAzureConfig(new AzureConfig().setEnabled(true).setProperty("azure", "azure-val"))

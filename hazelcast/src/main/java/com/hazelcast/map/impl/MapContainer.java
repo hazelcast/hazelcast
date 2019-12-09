@@ -233,7 +233,7 @@ public class MapContainer {
 
         WanReplicationConfig wanReplicationConfig = config.getWanReplicationConfig(wanReplicationRefName);
         if (wanReplicationConfig != null) {
-            WanConsumerConfig wanConsumerConfig = wanReplicationConfig.getWanConsumerConfig();
+            WanConsumerConfig wanConsumerConfig = wanReplicationConfig.getConsumerConfig();
             if (wanConsumerConfig != null) {
                 persistWanReplicatedData = wanConsumerConfig.isPersistWanReplicatedData();
             }
@@ -258,7 +258,7 @@ public class MapContainer {
         return replicationConfig.getBatchPublisherConfigs()
                 .stream()
                 .anyMatch(c -> {
-                    WanSyncConfig syncConfig = c.getWanSyncConfig();
+                    WanSyncConfig syncConfig = c.getSyncConfig();
                     return syncConfig != null && MERKLE_TREES.equals(syncConfig.getConsistencyCheckStrategy());
                 });
     }

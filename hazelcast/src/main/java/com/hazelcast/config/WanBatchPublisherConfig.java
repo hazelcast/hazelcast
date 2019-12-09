@@ -87,7 +87,7 @@ public class WanBatchPublisherConfig extends AbstractWanPublisherConfig {
     private KubernetesConfig kubernetesConfig = new KubernetesConfig();
     private EurekaConfig eurekaConfig = new EurekaConfig();
     private DiscoveryConfig discoveryConfig = new DiscoveryConfig();
-    private WanSyncConfig wanSyncConfig = new WanSyncConfig();
+    private WanSyncConfig syncConfig = new WanSyncConfig();
     /**
      * WAN endpoint configuration qualifier. When using pre-3.12 network configuration, its value
      * can be {@code null} and is not taken into account. With 3.12+ advanced network config,
@@ -323,18 +323,18 @@ public class WanBatchPublisherConfig extends AbstractWanPublisherConfig {
     /**
      * Returns the config for the WAN sync mechanism.
      */
-    public WanSyncConfig getWanSyncConfig() {
-        return wanSyncConfig;
+    public WanSyncConfig getSyncConfig() {
+        return syncConfig;
     }
 
     /**
      * Sets the config for the WAN sync mechanism.
      *
-     * @param wanSyncConfig the WAN sync config
+     * @param syncConfig the WAN sync config
      * @return this config
      */
-    public WanBatchPublisherConfig setWanSyncConfig(WanSyncConfig wanSyncConfig) {
-        this.wanSyncConfig = wanSyncConfig;
+    public WanBatchPublisherConfig setSyncConfig(WanSyncConfig syncConfig) {
+        this.syncConfig = syncConfig;
         return this;
     }
 
@@ -786,7 +786,7 @@ public class WanBatchPublisherConfig extends AbstractWanPublisherConfig {
                 + ", queueCapacity=" + queueCapacity
                 + ", queueFullBehavior=" + queueFullBehavior
                 + ", initialPublisherState=" + initialPublisherState
-                + ", wanSyncConfig=" + wanSyncConfig
+                + ", wanSyncConfig=" + syncConfig
                 + ", properties=" + properties
                 + ", className='" + className + '\''
                 + ", implementation=" + implementation
@@ -835,7 +835,7 @@ public class WanBatchPublisherConfig extends AbstractWanPublisherConfig {
         out.writeObject(kubernetesConfig);
         out.writeObject(eurekaConfig);
         out.writeObject(discoveryConfig);
-        out.writeObject(wanSyncConfig);
+        out.writeObject(syncConfig);
         out.writeUTF(endpoint);
     }
 
@@ -864,7 +864,7 @@ public class WanBatchPublisherConfig extends AbstractWanPublisherConfig {
         kubernetesConfig = in.readObject();
         eurekaConfig = in.readObject();
         discoveryConfig = in.readObject();
-        wanSyncConfig = in.readObject();
+        syncConfig = in.readObject();
         endpoint = in.readUTF();
     }
 

@@ -59,7 +59,7 @@ import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 public class WanReplicationConfig implements IdentifiedDataSerializable {
 
     private String name;
-    private WanConsumerConfig wanConsumerConfig;
+    private WanConsumerConfig consumerConfig;
     private List<WanCustomPublisherConfig> customPublisherConfigs = new ArrayList<>(0);
     private List<WanBatchPublisherConfig> batchPublisherConfigs = new ArrayList<>(1);
 
@@ -85,8 +85,8 @@ public class WanReplicationConfig implements IdentifiedDataSerializable {
      * WAN replication. The WAN consumer is in charge of consuming (processing)
      * incoming WAN events.
      */
-    public WanConsumerConfig getWanConsumerConfig() {
-        return wanConsumerConfig;
+    public WanConsumerConfig getConsumerConfig() {
+        return consumerConfig;
     }
 
     /**
@@ -94,11 +94,11 @@ public class WanReplicationConfig implements IdentifiedDataSerializable {
      * WAN replication. The WAN consumer is in charge of consuming (processing)
      * incoming WAN events.
      *
-     * @param wanConsumerConfig the WAN consumer configuration
+     * @param consumerConfig the WAN consumer configuration
      * @return this config
      */
-    public WanReplicationConfig setWanConsumerConfig(WanConsumerConfig wanConsumerConfig) {
-        this.wanConsumerConfig = wanConsumerConfig;
+    public WanReplicationConfig setConsumerConfig(WanConsumerConfig consumerConfig) {
+        this.consumerConfig = consumerConfig;
         return this;
     }
 
@@ -154,7 +154,7 @@ public class WanReplicationConfig implements IdentifiedDataSerializable {
      * @param config the WAN publisher configuration
      * @return this config
      */
-    public WanReplicationConfig addWanBatchReplicationPublisherConfig(WanBatchPublisherConfig config) {
+    public WanReplicationConfig addBatchReplicationPublisherConfig(WanBatchPublisherConfig config) {
         this.batchPublisherConfigs.add(config);
         return this;
     }
@@ -175,7 +175,7 @@ public class WanReplicationConfig implements IdentifiedDataSerializable {
     public String toString() {
         return "WanReplicationConfig{"
                 + "name='" + name + '\''
-                + ", wanConsumerConfig=" + wanConsumerConfig
+                + ", wanConsumerConfig=" + consumerConfig
                 + ", customPublisherConfigs=" + customPublisherConfigs
                 + ", batchPublisherConfigs=" + batchPublisherConfigs
                 + '}';
@@ -194,7 +194,7 @@ public class WanReplicationConfig implements IdentifiedDataSerializable {
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeUTF(name);
-        out.writeObject(wanConsumerConfig);
+        out.writeObject(consumerConfig);
         writeCollection(batchPublisherConfigs, out);
         writeCollection(customPublisherConfigs, out);
     }
@@ -202,7 +202,7 @@ public class WanReplicationConfig implements IdentifiedDataSerializable {
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         name = in.readUTF();
-        wanConsumerConfig = in.readObject();
+        consumerConfig = in.readObject();
 
         batchPublisherConfigs = readList(in);
         customPublisherConfigs = readList(in);
@@ -222,7 +222,7 @@ public class WanReplicationConfig implements IdentifiedDataSerializable {
         if (name != null ? !name.equals(that.name) : that.name != null) {
             return false;
         }
-        if (wanConsumerConfig != null ? !wanConsumerConfig.equals(that.wanConsumerConfig) : that.wanConsumerConfig != null) {
+        if (consumerConfig != null ? !consumerConfig.equals(that.consumerConfig) : that.consumerConfig != null) {
             return false;
         }
         if (!customPublisherConfigs.equals(that.customPublisherConfigs)) {
@@ -234,7 +234,7 @@ public class WanReplicationConfig implements IdentifiedDataSerializable {
     @Override
     public int hashCode() {
         int result = name != null ? name.hashCode() : 0;
-        result = 31 * result + (wanConsumerConfig != null ? wanConsumerConfig.hashCode() : 0);
+        result = 31 * result + (consumerConfig != null ? consumerConfig.hashCode() : 0);
         result = 31 * result + customPublisherConfigs.hashCode();
         result = 31 * result + batchPublisherConfigs.hashCode();
         return result;
