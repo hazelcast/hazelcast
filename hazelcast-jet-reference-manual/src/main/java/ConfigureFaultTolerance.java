@@ -14,6 +14,9 @@
  * limitations under the License.
  */
 
+import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.client.config.ClientFailoverConfig;
+import com.hazelcast.client.config.ClientNetworkConfig;
 import com.hazelcast.jet.Jet;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.config.JetConfig;
@@ -76,6 +79,17 @@ public class ConfigureFaultTolerance {
 
     static void s7() {
         //tag::s7[]
+        ClientConfig clientConfig = new ClientConfig();
+        clientConfig.setClusterName("clusterA");
+        ClientNetworkConfig networkConfig = clientConfig.getNetworkConfig();
+        networkConfig.addAddress("10.216.1.18", "10.216.1.19");
+        ClientConfig clientConfig2 = new ClientConfig();
+        clientConfig2.setClusterName("clusterB");
+        ClientNetworkConfig networkConfig2 = clientConfig2.getNetworkConfig();
+        networkConfig2.addAddress( "10.214.2.10", "10.214.2.11");
+        ClientFailoverConfig clientFailoverConfig = new ClientFailoverConfig();
+        clientFailoverConfig.addClientConfig(clientConfig).addClientConfig(clientConfig2).setTryCount(10);
+        JetInstance client = Jet.newJetFailoverClient(clientFailoverConfig);
         //end::s7[]
     }
 

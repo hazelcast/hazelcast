@@ -239,3 +239,52 @@ members must be present after the restart for Jet to be able to reload
 the data. Beyond that, there's no special action to take: as soon as the
 cluster re-forms, it will automatically reload the persisted snapshots
 and resume the jobs.
+
+= Configure Blue/Green Client (Enterprise Only)
+
+Blue/Green deployment refers to a software technique which can be used
+to reduces system downtime by deploying two mirrored production
+environments referred to as Blue and Green. One of the environments is
+running in production while the other one is active standby.
+
+The Jet client can be configured to switch to the other cluster in case
+of a connection failure on production environment.
+
+== Programmatic Configuration
+
+[source]
+----
+include::{javasource}/ConfigureFaultTolerance.java[tag=s7]
+----
+
+== Declarative Configuration
+
+[source]
+----
+<hazelcast-client-failover>
+    <try-count>10</try-count>
+    <clients>
+        <client>hazelcast-client-A.xml</client>
+        <client>hazelcast-client-B.xml</client>
+    </clients>
+</hazelcast-client-failover>
+----
+
+After switching to the cluster-B, the state of any running job on
+cluster-A will be undefined. The jobs may continue running on cluster-A
+if the cluster is still alive and the switching was because of a network
+problem. When you try to query the state of the job using the `Job`
+interface you'll get `job not found` exception.
+
+While you can use the Jet client for any IMDG operation, in Jet context,
+a client is mostly used for submitting jobs to the cluster. After the
+submission the job lives on the cluster, client is used to query the
+state of the job. Therefore Blue/Green deployment is not applicable for
+long living jobs but can be used with short living batch jobs which
+will not cause any problem if runs on different clusters at the same
+time, like queries for example.
+
+
+For more information on Blue/Green configuration options see Hazelcast
+IMDG documentation
+{hz-refman}#blue-green-deployment-and-disaster-recovery[Blue-Green Deployment]
