@@ -24,9 +24,9 @@ import com.hazelcast.internal.partition.MigrationInfo;
 import com.hazelcast.internal.partition.MigrationStateImpl;
 import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
 import com.hazelcast.internal.partition.impl.MigrationCommitTest.DelayMigrationStart;
-import com.hazelcast.internal.util.UuidUtil;
 import com.hazelcast.internal.partition.impl.MigrationInterceptor;
 import com.hazelcast.internal.partition.impl.MigrationStats;
+import com.hazelcast.internal.util.UuidUtil;
 import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -38,10 +38,11 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.util.UUID;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
@@ -143,6 +144,7 @@ public class PartitionMigrationListenerTest extends HazelcastTestSupport {
         HazelcastInstance hz2 = factory.newHazelcastInstance();
         HazelcastInstance hz3 = factory.newHazelcastInstance();
         warmUpPartitions(hz1, hz2, hz3);
+        waitAllForSafeState(Arrays.asList(hz1, hz2, hz3));
 
         EventCollectingMigrationListener listener = new EventCollectingMigrationListener();
         hz1.getPartitionService().addMigrationListener(listener);
