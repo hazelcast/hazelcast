@@ -660,7 +660,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
         if (activeConnections.remove(resolveAddress(endpoint), connection)) {
             logger.info("Removed connection to endpoint: " + endpoint + ", connection: " + connection);
             if (connectionCount.decrementAndGet() == 0) {
-                if(state.compareAndSet(ClusterState.DISCONNECTED, ClusterState.RECONNECTING)) {
+                if (state.compareAndSet(ClusterState.DISCONNECTED, ClusterState.RECONNECTING)) {
                     fireLifecycleEvent(LifecycleEvent.LifecycleState.CLIENT_DISCONNECTED);
                     triggerReconnectToCluster();
                 }
