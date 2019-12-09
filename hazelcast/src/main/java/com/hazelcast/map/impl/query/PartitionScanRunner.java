@@ -22,7 +22,6 @@ import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.partition.IPartitionService;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.InternalSerializationService;
-import com.hazelcast.internal.util.Clock;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.IMap;
 import com.hazelcast.map.impl.LazyMapEntry;
@@ -103,10 +102,6 @@ public class PartitionScanRunner {
                     return;
                 }
 
-                // always copy key&value to heap
-                key = toHeapData(key);
-                value = nativeMemory ? toHeapData((Data) value) : value;
-
                 queryEntry.init(ss, key, value, extractors);
                 queryEntry.setRecord(record);
                 queryEntry.setStoreAdapter(storeAdapter);
@@ -114,6 +109,11 @@ public class PartitionScanRunner {
 
                 if (predicate.apply(queryEntry)
                         && compareAnchor(pagingPredicate, queryEntry, nearestAnchorEntry)) {
+
+                    // always copy key&value to heap
+                    key = toHeapData(key);
+                    value = nativeMemory ? toHeapData((Data) value) : value;
+                    queryEntry.init(ss, key, value, extractors);
 
                     result.add(queryEntry);
 
@@ -188,13 +188,5 @@ public class PartitionScanRunner {
                 //if index exists then cached value is already set -> let's use it
                 return mapContainer.getIndexes(partitionId).haveAtLeastOneIndex();
         }
-    }
-
-    protected <T> Object toData(T input) {
-        return input;
-    }
-
-    protected long getNow() {
-        return Clock.currentTimeMillis();
     }
 }
