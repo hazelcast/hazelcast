@@ -32,11 +32,11 @@ public class QueryResultCollection<E> extends AbstractSet<E> {
     private final boolean binary;
 
     public QueryResultCollection(SerializationService serializationService, IterationType iterationType, boolean binary,
-                                 boolean unique, QueryResult queryResult) {
+                                 boolean distinct, QueryResult queryResult) {
         this.serializationService = serializationService;
         this.iterationType = iterationType;
         this.binary = binary;
-        if (unique) {
+        if (distinct) {
             // convert to a set
             this.rows = new HashSet<QueryResultRow>(queryResult.getRows());
         } else {
