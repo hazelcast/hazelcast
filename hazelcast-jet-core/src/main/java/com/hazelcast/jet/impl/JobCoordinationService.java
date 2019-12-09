@@ -17,10 +17,8 @@
 package com.hazelcast.jet.impl;
 
 import com.hazelcast.cluster.ClusterState;
-import com.hazelcast.cluster.Member;
 import com.hazelcast.cluster.impl.MemberImpl;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
-import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
@@ -35,13 +33,11 @@ import com.hazelcast.jet.core.JobStatus;
 import com.hazelcast.jet.core.TopologyChangedException;
 import com.hazelcast.jet.impl.exception.EnteringPassiveClusterStateException;
 import com.hazelcast.jet.impl.metrics.RawJobMetrics;
-import com.hazelcast.jet.impl.operation.GetClusterMetadataOperation;
 import com.hazelcast.jet.impl.operation.NotifyMemberShutdownOperation;
 import com.hazelcast.jet.impl.util.LoggingUtil;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
-import com.hazelcast.spi.exception.TargetNotMemberException;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.executionservice.ExecutionService;
 import com.hazelcast.spi.properties.HazelcastProperties;
@@ -56,7 +52,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.Callable;
@@ -64,7 +59,6 @@ import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
@@ -503,11 +497,6 @@ public class JobCoordinationService {
                 || clusterState == PASSIVE || clusterState == IN_TRANSITION) {
             return false;
         }
-        if (!allMembersHaveSameState(clusterState)) {
-            LoggingUtil.logFine(logger, "Not starting jobs because not all members have the same state: %s",
-                    clusterState);
-            return false;
-        }
         // if there are any members in a shutdown process, don't start jobs
         if (!membersShuttingDown.isEmpty()) {
             LoggingUtil.logFine(logger, "Not starting jobs because members are shutting down: %s",
@@ -597,49 +586,6 @@ public class JobCoordinationService {
             // job doesn't exist
             throw new JobNotFoundException(jobId);
         });
-    }
-
-    /**
-     * Returns {@code true} if all members except for the local member have
-     * state equal to the given {@code clusterState}. Ignores members that just
-     * left the cluster. Any failure when querying the state on any member
-     * causes the method to return {@code false}.
-     */
-    private boolean allMembersHaveSameState(ClusterState clusterState) {
-        // TODO remove once the issue is fixed on the IMDG side
-        try {
-            Set<Member> members = nodeEngine.getClusterService().getMembers();
-            List<Future<ClusterMetadata>> futures =
-                    members.stream()
-                           .filter(member -> !member.localMember())
-                           .map(this::clusterMetadataAsync)
-                           .collect(toList());
-            return futures.stream()
-                          .map(future -> {
-                              try {
-                                  return future.get();
-                              } catch (ExecutionException e) {
-                                  if (e.getCause() instanceof MemberLeftException
-                                          || e.getCause() instanceof TargetNotMemberException) {
-                                      // ignore these exceptions
-                                      return null;
-                                  }
-                                  throw sneakyThrow(e);
-                              } catch (Exception e) {
-                                  throw sneakyThrow(e);
-                              }
-                          })
-                          .filter(Objects::nonNull)
-                          .allMatch(metaData -> metaData.getState() == clusterState);
-        } catch (Exception e) {
-            logger.warning("Exception during member state check", e);
-            return false;
-        }
-    }
-
-    private Future<ClusterMetadata> clusterMetadataAsync(Member member) {
-        return nodeEngine.getOperationService().invokeOnTarget(JetService.SERVICE_NAME,
-                new GetClusterMetadataOperation(), member.getAddress());
     }
 
     void onMemberAdded(MemberImpl addedMember) {
