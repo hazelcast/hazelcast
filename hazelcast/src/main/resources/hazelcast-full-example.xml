@@ -103,6 +103,8 @@
         The element <management-center> has the following optional attributes:
         * scripting-enabled:
         Set to true to allow scripting on the member, false to disallow.
+        Default value for this config element depends on Hazelcast edition:
+        false for Hazelcast Enterprise, true for Hazelcast (open source).
 
         Hazelcast's Open Source edition provides the Management Center with monitoring at most 3 members
         in your cluster. To use it for more members, you need to have either a Management Center,
