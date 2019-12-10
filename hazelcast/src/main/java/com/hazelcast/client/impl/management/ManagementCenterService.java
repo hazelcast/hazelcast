@@ -83,6 +83,7 @@ import static com.hazelcast.wan.impl.WanSyncType.SINGLE_MAP;
 /**
  * Only works for smart clients, i.e. doesn't work for unisocket clients.
  */
+@SuppressWarnings({"checkstyle:methodcount"})
 public class ManagementCenterService {
 
     /**
