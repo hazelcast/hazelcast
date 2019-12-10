@@ -91,7 +91,6 @@ public class MetricsService implements ManagedService, LiveOperationsTracker {
     @Override
     public void init(NodeEngine nodeEngine, Properties properties) {
         if (config.isEnabled()) {
-
             if (config.getManagementCenterConfig().isEnabled()) {
                 publishers.add(createMcPublisher());
             }

@@ -150,7 +150,7 @@ public class JmxPublisher implements MetricsPublisher {
 
     // package-visible for test
     @SuppressWarnings("checkstyle:BooleanExpressionComplexity")
-    static String escapeObjectNameValue(String name) {
+    public static String escapeObjectNameValue(String name) {
         if (name.indexOf(',') < 0
                 && name.indexOf('=') < 0
                 && name.indexOf(':') < 0
@@ -255,6 +255,8 @@ public class JmxPublisher implements MetricsPublisher {
             }
         } catch (MalformedObjectNameException e) {
             throw new RuntimeException("Exception when unregistering JMX beans", e);
+        } finally {
+
         }
     }
 }
