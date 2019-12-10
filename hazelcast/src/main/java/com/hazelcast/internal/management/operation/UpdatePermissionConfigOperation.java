@@ -19,7 +19,6 @@ package com.hazelcast.internal.management.operation;
 import com.hazelcast.config.PermissionConfig;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.management.ManagementDataSerializerHook;
-import com.hazelcast.internal.management.dto.PermissionConfigDTO;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.impl.NodeEngineImpl;
@@ -59,7 +58,7 @@ public class UpdatePermissionConfigOperation extends AbstractManagementOperation
         super.writeInternal(out);
         out.writeInt(permissionConfigs.size());
         for (PermissionConfig permissionConfig : permissionConfigs) {
-            new PermissionConfigDTO(permissionConfig).writeData(out);
+            permissionConfig.writeData(out);
         }
     }
 
@@ -69,9 +68,9 @@ public class UpdatePermissionConfigOperation extends AbstractManagementOperation
         int configSize = in.readInt();
         permissionConfigs = new HashSet<>(configSize);
         for (int i = 0; i < configSize; i++) {
-            PermissionConfigDTO permissionConfigDTO = new PermissionConfigDTO();
-            permissionConfigDTO.readData(in);
-            permissionConfigs.add(permissionConfigDTO.getPermissionConfig());
+            PermissionConfig permissionConfig = new PermissionConfig();
+            permissionConfig.readData(in);
+            permissionConfigs.add(permissionConfig);
         }
     }
 }

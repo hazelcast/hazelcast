@@ -22,11 +22,7 @@ import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.internal.json.JsonValue;
 import com.hazelcast.internal.util.StringUtil;
 import com.hazelcast.json.internal.JsonSerializable;
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.DataSerializable;
 
-import java.io.IOException;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -34,7 +30,7 @@ import java.util.Set;
  * DTO object that provides serialization/deserialization support
  * for {@link PermissionConfig}
  */
-public class PermissionConfigDTO implements JsonSerializable, DataSerializable {
+public class PermissionConfigDTO implements JsonSerializable {
 
     private PermissionConfig permissionConfig;
 
@@ -102,55 +98,6 @@ public class PermissionConfigDTO implements JsonSerializable, DataSerializable {
             permissionConfig.setActions(actions);
         }
 
-    }
-
-    @Override
-    public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeUTF(permissionConfig.getType().getNodeName());
-        out.writeUTF(permissionConfig.getName());
-        if (StringUtil.isNullOrEmptyAfterTrim(permissionConfig.getPrincipal())) {
-            out.writeUTF("*");
-        } else {
-            out.writeUTF(permissionConfig.getPrincipal());
-        }
-
-        Set<String> endpoints = permissionConfig.getEndpoints();
-        out.writeInt(endpoints.size());
-        for (String endpoint : endpoints) {
-            out.writeUTF(endpoint);
-        }
-
-        Set<String> actions = permissionConfig.getActions();
-        out.writeInt(actions.size());
-        for (String action : actions) {
-            out.writeUTF(action);
-        }
-    }
-
-    @Override
-    public void readData(ObjectDataInput in) throws IOException {
-        permissionConfig = new PermissionConfig();
-        permissionConfig.setType(PermissionConfig.PermissionType.getType(in.readUTF()));
-        permissionConfig.setName(in.readUTF());
-        permissionConfig.setPrincipal(in.readUTF());
-
-        int endpointsSize = in.readInt();
-        if (endpointsSize != 0) {
-            Set<String> endpoints = new HashSet<>();
-            for (int i = 0; i < endpointsSize; i++) {
-                endpoints.add(in.readUTF());
-            }
-            permissionConfig.setEndpoints(endpoints);
-        }
-
-        int actionsSize = in.readInt();
-        if (actionsSize != 0) {
-            Set<String> actions = new HashSet<>();
-            for (int i = 0; i < actionsSize; i++) {
-                actions.add(in.readUTF());
-            }
-            permissionConfig.setActions(actions);
-        }
     }
 
     public PermissionConfig getPermissionConfig() {
