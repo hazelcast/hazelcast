@@ -484,8 +484,10 @@ public class NodeEngineImpl implements NodeEngine {
         operationService.reset();
     }
 
-    @SuppressWarnings("checkstyle:npathcomplexity")
+    @SuppressWarnings({"checkstyle:npathcomplexity", "checkstyle:CyclomaticComplexity"})
     public void shutdown(boolean terminate) {
+        RuntimeException runtimeException = null;
+
         try {
             logger.finest("Shutting down services...");
             if (operationParker != null) {
@@ -518,12 +520,18 @@ public class NodeEngineImpl implements NodeEngine {
             if (diagnostics != null) {
                 diagnostics.shutdown();
             }
+        } catch (RuntimeException e) {
+            runtimeException = e;
         } finally {
-            assertNoMBeans(node.hazelcastInstance.getName());
+            assertNoMBeans(node.hazelcastInstance.getName(), runtimeException);
+
+            if (runtimeException != null) {
+                throw runtimeException;
+            }
         }
     }
 
-    private static void assertNoMBeans(String instanceName) {
+    private static void assertNoMBeans(String instanceName, RuntimeException runtimeException) {
         String instanceNameEscaped = JmxPublisher.escapeObjectNameValue(instanceName);
 
         try {
@@ -542,7 +550,12 @@ public class NodeEngineImpl implements NodeEngine {
             }
 
             if (!bad.isEmpty()) {
-                throw new RuntimeException("MBeans are not unregistered: " + bad);
+                if (runtimeException != null) {
+                    throw new RuntimeException("MBeans are not unregistered due to exception: "
+                        + runtimeException.getMessage() + ": " + bad, runtimeException);
+                } else {
+                    throw new RuntimeException("MBeans are not unregistered: " + bad);
+                }
             }
 
         } catch (RuntimeException e) {
