@@ -111,8 +111,6 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
                 handleWanResumePublisher(command);
             } else if (uri.startsWith(URI_WAN_CONSISTENCY_CHECK_MAP)) {
                 handleWanConsistencyCheck(command);
-            } else if (uri.startsWith(URI_UPDATE_PERMISSIONS)) {
-                command.send403();
             } else if (uri.startsWith(URI_CP_MEMBERS_URL)) {
                 handleCPMember(command);
                 sendResponse = false;

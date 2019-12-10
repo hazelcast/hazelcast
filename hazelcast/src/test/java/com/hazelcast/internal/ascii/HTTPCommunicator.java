@@ -314,12 +314,6 @@ public class HTTPCommunicator {
         return doPost(url, clusterName, clusterPassword, wanRepConfigJson).response;
     }
 
-    public ConnectionResponse updatePermissions(String clusterName, String groupPassword, String permConfJson)
-            throws IOException {
-        String url = address + "management/security/permissions";
-        return doPost(url, clusterName, groupPassword, permConfJson);
-    }
-
     public ConnectionResponse getCPGroupIds() throws IOException {
         String url = address + "cp-subsystem/groups";
         return doGet(url);
