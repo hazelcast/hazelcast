@@ -530,14 +530,15 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      *
      * <p><b>Interactions with the map store</b>
      * <p>
-     * If any keys are not found in memory,
-     * {@link MapLoader#loadAll(java.util.Collection)} is called with
-     * the missing keys. Exceptions thrown by loadAll fail the operation
-     * and are propagated to the caller.
+     * If any keys are not found in memory, {@link MapLoader#loadAll}
+     * is called with the missing keys. Exceptions thrown by
+     * loadAll fail the operation and are propagated to the caller.
      *
      * @param keys keys to get (keys inside the collection cannot be null)
      * @return an immutable map of entries
-     * @throws NullPointerException if any of the specified keys are null
+     * @throws NullPointerException if any of the specified
+     *                              keys are null or if any key or any value returned
+     *                              from {@link MapLoader#loadAll} is {@code null}.
      */
     Map<K, V> getAll(@Nullable Set<K> keys);
 
