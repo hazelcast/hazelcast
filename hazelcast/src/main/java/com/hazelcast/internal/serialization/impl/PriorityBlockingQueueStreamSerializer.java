@@ -43,11 +43,8 @@ public class PriorityBlockingQueueStreamSerializer<E> extends AbstractCollection
     @Override
     public PriorityBlockingQueue<E> read(ObjectDataInput in) throws IOException {
         Comparator<E> comparator = in.readObject();
-
         int size = in.readInt();
-
-        PriorityBlockingQueue<E> collection = new PriorityBlockingQueue<>(size, comparator);
-
+        PriorityBlockingQueue<E> collection = new PriorityBlockingQueue<>(Math.max(1, size), comparator);
         return deserializeEntries(in, size, collection);
     }
 }
