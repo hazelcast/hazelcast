@@ -66,9 +66,8 @@ final class OperationBackupHandler {
      *
      * @param op the Operation to backup.
      * @return the number of ACKS required to complete the invocation.
-     * @throws Exception if there is any exception sending the backups.
      */
-    int sendBackups(Operation op) throws Exception {
+    int sendBackups(Operation op) {
         if (!(op instanceof BackupAwareOperation)) {
             return 0;
         }
