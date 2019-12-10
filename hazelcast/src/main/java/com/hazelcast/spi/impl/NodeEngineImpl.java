@@ -486,48 +486,36 @@ public class NodeEngineImpl implements NodeEngine {
 
     @SuppressWarnings({"checkstyle:npathcomplexity", "checkstyle:CyclomaticComplexity"})
     public void shutdown(boolean terminate) {
-        RuntimeException runtimeException = null;
-
-        try {
-            logger.finest("Shutting down services...");
-            if (operationParker != null) {
-                operationParker.shutdown();
-            }
-            if (operationService != null) {
-                operationService.shutdownInvocations();
-            }
-            if (proxyService != null) {
-                proxyService.shutdown();
-            }
-            if (serviceManager != null) {
-                serviceManager.shutdown(terminate);
-            }
-            if (eventService != null) {
-                eventService.shutdown();
-            }
-            if (operationService != null) {
-                operationService.shutdownOperationExecutor();
-            }
-            if (wanReplicationService != null) {
-                wanReplicationService.shutdown();
-            }
-            if (executionService != null) {
-                executionService.shutdown();
-            }
-            if (metricsRegistry != null) {
-                metricsRegistry.shutdown();
-            }
-            if (diagnostics != null) {
-                diagnostics.shutdown();
-            }
-        } catch (RuntimeException e) {
-            runtimeException = e;
-        } finally {
-            assertNoMBeans(node.hazelcastInstance.getName(), runtimeException);
-
-            if (runtimeException != null) {
-                throw runtimeException;
-            }
+        logger.finest("Shutting down services...");
+        if (operationParker != null) {
+            operationParker.shutdown();
+        }
+        if (operationService != null) {
+            operationService.shutdownInvocations();
+        }
+        if (proxyService != null) {
+            proxyService.shutdown();
+        }
+        if (serviceManager != null) {
+            serviceManager.shutdown(terminate);
+        }
+        if (eventService != null) {
+            eventService.shutdown();
+        }
+        if (operationService != null) {
+            operationService.shutdownOperationExecutor();
+        }
+        if (wanReplicationService != null) {
+            wanReplicationService.shutdown();
+        }
+        if (executionService != null) {
+            executionService.shutdown();
+        }
+        if (metricsRegistry != null) {
+            metricsRegistry.shutdown();
+        }
+        if (diagnostics != null) {
+            diagnostics.shutdown();
         }
     }
 
