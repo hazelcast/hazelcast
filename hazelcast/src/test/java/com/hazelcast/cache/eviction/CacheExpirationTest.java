@@ -79,7 +79,7 @@ public class CacheExpirationTest extends CacheTestSupport {
     public static Collection<Object[]> parameters() {
         return asList(new Object[][]{
                 {true},
-                {false},
+                {false}
         });
     }
 
@@ -88,7 +88,7 @@ public class CacheExpirationTest extends CacheTestSupport {
 
     private final Duration THREE_SECONDS = new Duration(TimeUnit.SECONDS, 3);
 
-    private static final int CLUSTER_SIZE = 3;
+    private static final int CLUSTER_SIZE = 2;
     private static final int KEY_RANGE = 1000;
 
     private HazelcastInstance[] instances = new HazelcastInstance[3];
@@ -101,7 +101,7 @@ public class CacheExpirationTest extends CacheTestSupport {
 
     @Override
     protected void onSetup() {
-        factory = createHazelcastInstanceFactory(3);
+        factory = createHazelcastInstanceFactory(CLUSTER_SIZE);
         for (int i = 0; i < CLUSTER_SIZE; i++) {
             instances[i] = factory.newHazelcastInstance(getConfig());
         }
@@ -317,9 +317,10 @@ public class CacheExpirationTest extends CacheTestSupport {
             }
         }
 
-        // terminate 2 nodes to cause backup promotion at the 0th member
-        getNode(instances[1]).shutdown(true);
-        getNode(instances[2]).shutdown(true);
+        // terminate other nodes than number zero to cause backup promotion at the 0th member
+        for (int i = 1; i < CLUSTER_SIZE; i++) {
+            getNode(instances[i]).shutdown(true);
+        }
 
         // expiration time is over.
         sleepAtLeastSeconds(3);
