@@ -134,7 +134,7 @@ public class ManagementCenterService {
     public void log(Event event) {
         if (System.nanoTime() - lastMCEventsPollNanos > MC_EVENTS_WINDOW_NANOS) {
             // ignore event and clear the queue if the last poll happened a while ago
-            mcEvents.clear();
+            onMCEventWindowExceeded();
         } else {
             mcEvents.offer(event);
         }
@@ -142,6 +142,11 @@ public class ManagementCenterService {
         if (eventListener != null) {
             eventListener.onEventLogged(event);
         }
+    }
+
+    // visible for tests
+    void onMCEventWindowExceeded() {
+        mcEvents.clear();
     }
 
     // used for tests
