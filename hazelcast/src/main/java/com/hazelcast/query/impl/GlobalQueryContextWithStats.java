@@ -106,6 +106,11 @@ public class GlobalQueryContextWithStats extends QueryContext {
         }
 
         @Override
+        public String getUniqueKey() {
+            return delegate.getUniqueKey();
+        }
+
+        @Override
         public TypeConverter getConverter() {
             return delegate.getConverter();
         }
