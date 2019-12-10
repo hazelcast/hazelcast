@@ -16,6 +16,7 @@
 
 package com.hazelcast.map.impl.mapstore;
 
+import com.hazelcast.cluster.Address;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.IndexConfig;
@@ -40,7 +41,6 @@ import com.hazelcast.map.MapStore;
 import com.hazelcast.map.MapStoreAdapter;
 import com.hazelcast.map.MapStoreFactory;
 import com.hazelcast.map.impl.mapstore.writebehind.TestMapUsingMapStoreBuilder;
-import com.hazelcast.cluster.Address;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.Predicates;
 import com.hazelcast.spi.properties.ClusterProperty;
@@ -76,6 +76,7 @@ import static com.hazelcast.test.TestCollectionUtils.setOfValuesBetween;
 import static com.hazelcast.test.TimeConstants.MINUTE;
 import static java.lang.String.format;
 import static java.util.Collections.singleton;
+import static org.hamcrest.CoreMatchers.startsWith;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -87,6 +88,11 @@ public class MapLoaderTest extends HazelcastTestSupport {
     @Rule
     public ExpectedException expectedException = ExpectedException.none();
 
+    @Override
+    protected Config getConfig() {
+        return smallInstanceConfig();
+    }
+
     @Test
     public void testSenderAndBackupTerminates_AfterInitialLoad() {
         final ILogger logger = Logger.getLogger(MapLoaderTest.class);
@@ -96,7 +102,7 @@ public class MapLoaderTest extends HazelcastTestSupport {
                 .setInitialLoadMode(MapStoreConfig.InitialLoadMode.EAGER)
                 .setImplementation(new DummyMapLoader());
 
-        Config config = new Config();
+        Config config = getConfig();
         config.getMapConfig(name)
                 .setMapStoreConfig(mapStoreConfig);
 
@@ -147,7 +153,7 @@ public class MapLoaderTest extends HazelcastTestSupport {
                 .setInitialLoadMode(MapStoreConfig.InitialLoadMode.EAGER)
                 .setImplementation(new DummyMapLoader(keysInMapStore));
 
-        Config config = new Config();
+        Config config = getConfig();
         config.getMapConfig(name)
                 .setMapStoreConfig(mapStoreConfig);
 
@@ -176,7 +182,7 @@ public class MapLoaderTest extends HazelcastTestSupport {
                 .setInitialLoadMode(MapStoreConfig.InitialLoadMode.EAGER)
                 .setImplementation(new MapLoaderTest.DummyMapLoader(keysInMapStore));
 
-        Config config = new Config();
+        Config config = getConfig();
         config.getMapConfig(name)
                 .setMapStoreConfig(mapStoreConfig);
 
@@ -238,30 +244,16 @@ public class MapLoaderTest extends HazelcastTestSupport {
                     }
                 });
 
-        Config config = new Config();
+        Config config = getConfig();
         config.getMapConfig(name)
                 .setMapStoreConfig(mapStoreConfig);
 
         HazelcastInstance instance = createHazelcastInstance(config);
         IMap<String, String> map = instance.getMap(name);
 
-        try {
-            map.size();
-            // We can't expect that since the exception transmission in map-loader is heavily dependant on operation execution.
-            // See: https://github.com/hazelcast/hazelcast/issues/11931
-            // fail("Expected a NPE due to a null key in a MapLoader");
-        } catch (NullPointerException e) {
-            assertEquals("Key loaded by a MapLoader cannot be null.", e.getMessage());
-        }
-
-        try {
-            assertEquals(2, map.size());
-            assertEquals("1", map.get("1"));
-            assertEquals("2", map.get("2"));
-            assertEquals("3", map.get("3"));
-        } catch (NullPointerException e) {
-            handleNpeFromKnownIssue(e);
-        }
+        expectedException.expect(NullPointerException.class);
+        expectedException.expectMessage(startsWith("Key loaded by a MapLoader cannot be null"));
+        map.size();
     }
 
     @Test
@@ -311,14 +303,15 @@ public class MapLoaderTest extends HazelcastTestSupport {
                     }
                 });
 
-        Config config = new Config();
+        Config config = getConfig();
         config.getMapConfig(name)
                 .setMapStoreConfig(mapStoreConfig);
 
         HazelcastInstance instance = createHazelcastInstance(config);
         IMap<String, String> map = instance.getMap(name);
 
-        // THIS DOES NOT THROW ANY EXCEPTION
+        expectedException.expect(NullPointerException.class);
+        expectedException.expectMessage(startsWith("Neither key nor value can be loaded as null"));
         map.size();
 
         assertEquals(2, map.size());
@@ -374,7 +367,7 @@ public class MapLoaderTest extends HazelcastTestSupport {
                     }
                 });
 
-        Config config = new Config();
+        Config config = getConfig();
         config.getMapConfig(name)
                 .setMapStoreConfig(mapStoreConfig);
 
@@ -383,19 +376,9 @@ public class MapLoaderTest extends HazelcastTestSupport {
 
         map.addInterceptor(new TestInterceptor());
 
-        try {
-            map.size();
-            // We can't expect that since the exception transmission in map-loader is heavily dependant on operation execution.
-            // See: https://github.com/hazelcast/hazelcast/issues/11931
-            // fail("Expected a NPE due to a null value in a MapLoader");
-        } catch (NullPointerException e) {
-            assertEquals("Value loaded by a MapLoader cannot be null.", e.getMessage());
-        }
-
-        assertEquals(2, map.size());
-        assertEquals("1", map.get("1"));
-        assertEquals(null, map.get("2"));
-        assertEquals("3", map.get("3"));
+        expectedException.expect(NullPointerException.class);
+        expectedException.expectMessage(startsWith("Neither key nor value can be loaded as null"));
+        map.size();
     }
 
     @Test
@@ -445,30 +428,16 @@ public class MapLoaderTest extends HazelcastTestSupport {
                     }
                 });
 
-        Config config = new Config();
+        Config config = getConfig();
         config.getMapConfig(name)
                 .setMapStoreConfig(mapStoreConfig);
 
         HazelcastInstance instance = createHazelcastInstance(config);
         IMap<String, String> map = instance.getMap(name);
 
-        try {
-            map.size();
-            // We can't expect that since the exception transmission in map-loader is heavily dependant on operation execution.
-            // See: https://github.com/hazelcast/hazelcast/issues/11931
-            // fail("Expected a NPE due to a null key in a MapLoader");
-        } catch (NullPointerException e) {
-            assertEquals("Key loaded by a MapLoader cannot be null.", e.getMessage());
-        }
-
-        try {
-            assertEquals(0, map.size());
-            assertEquals("1", map.get("1"));
-            assertEquals("2", map.get("2"));
-            assertEquals("3", map.get("3"));
-        } catch (NullPointerException e) {
-            handleNpeFromKnownIssue(e);
-        }
+        expectedException.expect(NullPointerException.class);
+        expectedException.expectMessage(startsWith("Key loaded by a MapLoader cannot be null"));
+        map.size();
     }
 
     private void handleNpeFromKnownIssue(NullPointerException e) {
@@ -493,7 +462,7 @@ public class MapLoaderTest extends HazelcastTestSupport {
                 .setInitialLoadMode(MapStoreConfig.InitialLoadMode.EAGER)
                 .setImplementation(new MapLoaderTest.DummyMapLoader(keysInMapStore));
 
-        Config config = new Config();
+        Config config = getConfig();
         config.getMapConfig(name)
                 .setMapStoreConfig(mapStoreConfig);
 
@@ -521,12 +490,12 @@ public class MapLoaderTest extends HazelcastTestSupport {
                     @Override
                     public Map<Object, Object> loadAll(Collection keys) {
                         loadAllCalled.set(true);
-                        return new HashMap<Object, Object>();
+                        return new HashMap<>();
                     }
 
                     @Override
                     public Set<Object> loadAllKeys() {
-                        return new HashSet<Object>(Collections.singletonList(1));
+                        return new HashSet<>(Collections.singletonList(1));
                     }
                 });
 
@@ -543,12 +512,8 @@ public class MapLoaderTest extends HazelcastTestSupport {
         HazelcastInstance hz = createHazelcastInstance(config);
         hz.getMap(mapConfig.getName());
 
-        assertTrueAllTheTime(new AssertTask() {
-            @Override
-            public void run() {
-                assertFalse("LoadAll should not have been called", loadAllCalled.get());
-            }
-        }, 10);
+        assertTrueAllTheTime(()
+                -> assertFalse("LoadAll should not have been called", loadAllCalled.get()), 10);
     }
 
     @Test
