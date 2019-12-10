@@ -236,15 +236,14 @@ public abstract class AbstractSerializationService implements InternalSerializat
 
     private static HazelcastSerializationException newHazelcastSerializationException(int typeId) {
         return new HazelcastSerializationException("There is no suitable de-serializer for type " + typeId + ". "
-                + "This exception is likely to be caused by differences in the serialization configuration between members "
+                + "This exception is likely caused by differences in the serialization configuration between members "
                 + "or between clients and members.");
     }
 
     @Override
     public final void writeObject(final ObjectDataOutput out, final Object obj) {
         if (obj instanceof Data) {
-            throw new HazelcastSerializationException(
-                    "Cannot write a Data instance! " + "Use #writeData(ObjectDataOutput out, Data data) instead.");
+            throw new HazelcastSerializationException("Cannot write a Data instance, use writeData() instead");
         }
         try {
             SerializerAdapter serializer = serializerFor(obj);
@@ -357,11 +356,11 @@ public abstract class AbstractSerializationService implements InternalSerializat
 
     public final void register(Class type, Serializer serializer) {
         if (type == null) {
-            throw new IllegalArgumentException("Class type information is required!");
+            throw new IllegalArgumentException("type is required");
         }
         if (serializer.getTypeId() <= 0) {
             throw new IllegalArgumentException(
-                    "Type ID must be positive! Current: " + serializer.getTypeId() + ", Serializer: " + serializer);
+                    "Type ID must be positive. Current: " + serializer.getTypeId() + ", Serializer: " + serializer);
         }
         safeRegister(type, createSerializerAdapter(serializer, this));
     }
@@ -373,7 +372,7 @@ public abstract class AbstractSerializationService implements InternalSerializat
     public final void registerGlobal(final Serializer serializer, boolean overrideJavaSerialization) {
         SerializerAdapter adapter = createSerializerAdapter(serializer, this);
         if (!global.compareAndSet(null, adapter)) {
-            throw new IllegalStateException("Global serializer is already registered!");
+            throw new IllegalStateException("Global serializer is already registered");
         }
         this.overrideJavaSerialization = overrideJavaSerialization;
         SerializerAdapter current = idMap.putIfAbsent(serializer.getTypeId(), adapter);
@@ -381,7 +380,7 @@ public abstract class AbstractSerializationService implements InternalSerializat
             global.compareAndSet(adapter, null);
             this.overrideJavaSerialization = false;
             throw new IllegalStateException(
-                    "Serializer [" + current.getImpl() + "] has been already registered for type-id: " + serializer.getTypeId());
+                    "Serializer [" + current.getImpl() + "] has been already registered for type ID: " + serializer.getTypeId());
         }
     }
 
@@ -404,7 +403,7 @@ public abstract class AbstractSerializationService implements InternalSerializat
 
     protected final boolean safeRegister(final Class type, final SerializerAdapter serializer) {
         if (constantTypesMap.containsKey(type)) {
-            throw new IllegalArgumentException("[" + type + "] serializer cannot be overridden!");
+            throw new IllegalArgumentException("[" + type + "] serializer cannot be overridden");
         }
         SerializerAdapter current = typeMap.putIfAbsent(type, serializer);
         if (current != null && current.getImpl().getClass() != serializer.getImpl().getClass()) {
@@ -414,7 +413,7 @@ public abstract class AbstractSerializationService implements InternalSerializat
         current = idMap.putIfAbsent(serializer.getTypeId(), serializer);
         if (current != null && current.getImpl().getClass() != serializer.getImpl().getClass()) {
             throw new IllegalStateException(
-                    "Serializer [" + current.getImpl() + "] has been already registered for type-id: " + serializer.getTypeId());
+                    "Serializer [" + current.getImpl() + "] has been already registered for type ID: " + serializer.getTypeId());
         }
         return current == null;
     }
