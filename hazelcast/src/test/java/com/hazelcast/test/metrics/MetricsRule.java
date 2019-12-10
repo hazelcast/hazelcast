@@ -18,6 +18,7 @@ package com.hazelcast.test.metrics;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.metrics.MetricsPublisher;
+import com.hazelcast.internal.util.StringUtil;
 import org.junit.rules.TestRule;
 import org.junit.runner.Description;
 import org.junit.runners.model.Statement;
@@ -60,8 +61,15 @@ public class MetricsRule implements TestRule {
                 try {
                     base.evaluate();
                 } catch (Throwable t) {
-                    System.out.println("\nMetrics recorded during the test:");
-                    publishers.forEach((instanceName, publisher) -> publisher.dumpRecordings(instanceName));
+                    StringBuilder sb = new StringBuilder();
+                    publishers.forEach((instanceName, publisher) -> publisher.dumpRecordings(instanceName, sb));
+
+                    String metricsString = sb.toString();
+                    if (!StringUtil.isNullOrEmptyAfterTrim(metricsString)) {
+                        System.out.println("\nMetrics recorded during the test:" + metricsString);
+                    } else {
+                        System.out.println("\nNo metrics recorded during the test");
+                    }
 
                     throw t;
                 }

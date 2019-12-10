@@ -68,14 +68,14 @@ class TestMetricPublisher implements MetricsPublisher {
         recordedMetrics = true;
     }
 
-    void dumpRecordings(String instanceName) {
+    void dumpRecordings(String instanceName, StringBuilder sb) {
         // if there is no recording we wait for bounded time to record one blob with metrics
         long deadline = System.currentTimeMillis() + TimeUnit.SECONDS.toMillis(10);
         while (!recordedMetrics && System.currentTimeMillis() < deadline) {
             sleepMillis(250);
         }
 
-        System.out.println();
+        sb.append("\n");
 
         final int oldestSlotIdx;
         final byte[][] slotsCopy = new byte[slots][];
@@ -92,17 +92,17 @@ class TestMetricPublisher implements MetricsPublisher {
                 MetricsCompressor.extractMetrics(blob, new MetricConsumer() {
                     @Override
                     public void consumeLong(MetricDescriptor descriptor, long value) {
-                        System.out.println(metricStringBuilder(instanceName, date, descriptor).append(value).toString());
+                        appendMetric(sb, instanceName, date, descriptor).append(value).append("\n");
                     }
 
                     @Override
                     public void consumeDouble(MetricDescriptor descriptor, double value) {
-                        System.out.println(metricStringBuilder(instanceName, date, descriptor).append(value).toString());
+                        appendMetric(sb, instanceName, date, descriptor).append(value).append("\n");
                     }
 
-                    private StringBuilder metricStringBuilder(String instanceName, Date date, MetricDescriptor descriptor) {
-                        return new StringBuilder()
-                                .append('[').append(instanceName).append("] ")
+                    private StringBuilder appendMetric(StringBuilder sb, String instanceName, Date date,
+                                                       MetricDescriptor descriptor) {
+                        return sb.append('[').append(instanceName).append("] ")
                                 .append('[').append(formatter.format(date)).append("] ")
                                 .append(descriptor.metricString()).append('=');
                     }
