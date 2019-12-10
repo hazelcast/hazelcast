@@ -574,8 +574,7 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
     @Override
     protected void postDestroy() {
         try {
-            removeNearCacheInvalidationListener();
-            getContext().getNearCacheManager(getServiceName()).destroyNearCache(name);
+            destroyNearCache();
         } finally {
             super.postDestroy();
         }
@@ -583,10 +582,16 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
 
     @Override
     protected void onShutdown() {
+        try {
+            destroyNearCache();
+        } finally {
+            super.onShutdown();
+        }
+    }
+
+    private void destroyNearCache() {
         removeNearCacheInvalidationListener();
         getContext().getNearCacheManager(getServiceName()).destroyNearCache(name);
-
-        super.onShutdown();
     }
 
     private Object toNearCacheKey(Object key) {
