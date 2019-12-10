@@ -125,15 +125,14 @@ public class ManagementCenterServiceIntegrationTest extends HazelcastTestSupport
     @Test
     public void testMCEvents_clearsEventQueue_noRecentPoll() {
         mcs.pollMCEvents();
-
         mcs.log(new TestEvent());
         mcs.log(new TestEvent());
 
         mcs.onMCEventWindowExceeded();
-
-        assertEquals(2, mcs.pollMCEvents().size());
-        mcs.pollMCEvents();
         assertEquals(0, mcs.pollMCEvents().size());
+
+        mcs.log(new TestEvent());
+        assertEquals(1, mcs.pollMCEvents().size());
     }
 
     private static class TestEvent implements Event {
