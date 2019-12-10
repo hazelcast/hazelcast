@@ -17,6 +17,7 @@
 package com.hazelcast.map.impl;
 
 import com.hazelcast.core.EntryView;
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.map.impl.record.Record;
 
 /**
@@ -43,5 +44,20 @@ public final class EntryViews {
                 .withCreationTime(record.getCreationTime())
                 .withExpirationTime(record.getExpirationTime())
                 .withLastStoredTime(record.getLastStoredTime());
+    }
+
+    public static <K, V> EntryView<K, V> toLazyEntryView(EntryView<K, V> entryView,
+                                                         SerializationService serializationService) {
+        return new LazyEntryView<>(entryView.getKey(), entryView.getValue(), serializationService)
+                .setCost(entryView.getCost())
+                .setVersion(entryView.getVersion())
+                .setLastAccessTime(entryView.getLastAccessTime())
+                .setLastUpdateTime(entryView.getLastUpdateTime())
+                .setTtl(entryView.getTtl())
+                .setMaxIdle(entryView.getMaxIdle())
+                .setCreationTime(entryView.getCreationTime())
+                .setHits(entryView.getHits())
+                .setExpirationTime(entryView.getExpirationTime())
+                .setLastStoredTime(entryView.getLastStoredTime());
     }
 }

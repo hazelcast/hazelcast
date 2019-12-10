@@ -27,8 +27,10 @@ import com.hazelcast.config.WanReplicationConfig;
  * Network (WAN).
  * The publisher may implement {@link com.hazelcast.core.HazelcastInstanceAware}
  * if it needs a reference to the instance on which it is being run.
+ *
+ * @param <T> type of event data that the publisher will publish
  */
-public interface WanPublisher {
+public interface WanPublisher<T> {
     /**
      * Initializes the publisher.
      *
@@ -62,12 +64,12 @@ public interface WanPublisher {
      *
      * @param eventObject the replication event
      */
-    void publishReplicationEvent(WanEvent eventObject);
+    void publishReplicationEvent(WanEvent<T> eventObject);
 
     /**
      * Publish the {@code eventObject} WAN replication event backup.
      *
      * @param eventObject the replication backup event
      */
-    void publishReplicationEventBackup(WanEvent eventObject);
+    void publishReplicationEventBackup(WanEvent<T> eventObject);
 }

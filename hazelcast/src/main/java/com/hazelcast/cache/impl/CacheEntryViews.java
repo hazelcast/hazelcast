@@ -21,6 +21,7 @@ import com.hazelcast.cache.impl.merge.entry.DefaultCacheEntryView;
 import com.hazelcast.cache.impl.merge.entry.LazyCacheEntryView;
 import com.hazelcast.cache.impl.record.CacheRecord;
 import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.internal.serialization.SerializationService;
 
 /**
  * A class providing static factory methods that create various entry view objects.
@@ -58,16 +59,16 @@ public final class CacheEntryViews {
      */
     public static CacheEntryView<Data, Data> createDefaultEntryView(Data key, Data value, Data expiryPolicy,
                                                                     CacheRecord<Object, Data> record) {
-        CacheEntryView entryView = new DefaultCacheEntryView(key, value,
-                                                             record.getCreationTime(),
-                                                             record.getExpirationTime(),
-                                                             record.getLastAccessTime(),
-                                                             record.getHits(),
-                                                             expiryPolicy);
-        return entryView;
+        return new DefaultCacheEntryView(key, value,
+                record.getCreationTime(),
+                record.getExpirationTime(),
+                record.getLastAccessTime(),
+                record.getHits(),
+                expiryPolicy);
     }
 
-    public static CacheEntryView<Data, Data> createEntryView(Data key, Data expiryPolicy, CacheRecord record) {
+    public static CacheEntryView<Data, Data> createEntryView(Data key, Data expiryPolicy,
+                                                             CacheRecord<Object, Data> record) {
         if (record == null) {
             throw new IllegalArgumentException("Empty record");
         }
@@ -85,13 +86,23 @@ public final class CacheEntryViews {
      * @return the {@link LazyCacheEntryView} instance
      */
     public static CacheEntryView<Data, Data> createLazyEntryView(Data key, Data value, Data expiryPolicy, CacheRecord record) {
-        CacheEntryView entryView = new LazyCacheEntryView(key, value,
-                                                          record.getCreationTime(),
-                                                          record.getExpirationTime(),
-                                                          record.getLastAccessTime(),
-                                                          record.getHits(),
-                                                          expiryPolicy);
-        return entryView;
+        return new LazyCacheEntryView<>(key, value,
+                record.getCreationTime(),
+                record.getExpirationTime(),
+                record.getLastAccessTime(),
+                record.getHits(),
+                expiryPolicy);
+    }
+
+    public static <K, V> CacheEntryView<K, V> createLazyEntryView(CacheEntryView<K, V> entryView,
+                                                                  SerializationService serializationService) {
+        return new LazyCacheEntryView<>(entryView.getKey(), entryView.getValue(),
+                entryView.getCreationTime(),
+                entryView.getExpirationTime(),
+                entryView.getLastAccessTime(),
+                entryView.getHits(),
+                entryView.getExpiryPolicy(),
+                serializationService);
     }
 
     /**

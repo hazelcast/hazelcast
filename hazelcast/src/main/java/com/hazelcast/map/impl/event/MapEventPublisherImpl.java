@@ -104,7 +104,7 @@ public class MapEventPublisherImpl implements MapEventPublisher {
 
         MapContainer mapContainer = mapServiceContext.getMapContainer(mapName);
         SplitBrainMergePolicy wanMergePolicy = mapContainer.getWanMergePolicy();
-        WanMapUpdateEvent event = new WanMapUpdateEvent(mapName, wanMergePolicy, entryView);
+        WanMapUpdateEvent event = new WanMapUpdateEvent(mapName, wanMergePolicy, entryView, serializationService);
         publishWanEvent(mapName, event);
     }
 
@@ -114,7 +114,7 @@ public class MapEventPublisherImpl implements MapEventPublisher {
             return;
         }
 
-        WanMapRemoveEvent event = new WanMapRemoveEvent(mapName, key);
+        WanMapRemoveEvent event = new WanMapRemoveEvent(mapName, key, serializationService);
         publishWanEvent(mapName, event);
     }
 

@@ -25,8 +25,10 @@ import java.util.Set;
 
 /**
  * Private API for WAN replication events
+ *
+ * @param <T> type of event data
  */
-public interface InternalWanEvent extends WanEvent {
+public interface InternalWanEvent<T> extends WanEvent<T> {
     /**
      * Returns the key for the entry on which the event occurred.
      */
@@ -51,4 +53,11 @@ public interface InternalWanEvent extends WanEvent {
      * @see Clock#currentTimeMillis()
      */
     long getCreationTime();
+
+    /**
+     * Returns the service name on which this event occurred.
+     *
+     * @return the service name
+     */
+    @Nonnull String getServiceName();
 }

@@ -16,23 +16,28 @@
 
 package com.hazelcast.wan;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+
 /**
  * Interface for all WAN replication messages
+ *
+ * @param <T> type of event data
  */
-public interface WanEvent {
+public interface WanEvent<T> {
     /**
      * Increments the count for the related event in the {@code counters}
      *
      * @param counters the WAN event counter
      */
-    void incrementEventCount(WanEventCounters counters);
+    void incrementEventCount(@Nonnull WanEventCounters counters);
 
     /**
      * Returns the service name on which this event occurred.
      *
-     * @return the service name
+     * @return the service on which this event occurred.
      */
-    String getServiceName();
+    @Nonnull WanEventService getService();
 
     /**
      * Returns the name of the distributed object (map or cache) on which this
@@ -40,5 +45,19 @@ public interface WanEvent {
      *
      * @return the distributed object name
      */
-    String getObjectName();
+    @Nonnull String getObjectName();
+
+    /**
+     * Returns the type of this event.
+     *
+     * @return the WAN event type
+     */
+    @Nonnull WanEventType getEventType();
+
+    /**
+     * Returns the event object/data.
+     *
+     * @return the WAN event object
+     */
+    @Nullable T getEventObject();
 }
