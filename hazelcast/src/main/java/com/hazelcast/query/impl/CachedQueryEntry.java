@@ -38,16 +38,18 @@ public class CachedQueryEntry<K, V> extends QueryableEntry<K, V> {
     public CachedQueryEntry() {
     }
 
-    public CachedQueryEntry(InternalSerializationService serializationService, Data key, Object value, Extractors extractors) {
-        init(serializationService, key, value, extractors);
+    public CachedQueryEntry(InternalSerializationService ss,
+                            Data key, Object value, Extractors extractors) {
+        init(ss, key, value, extractors);
     }
 
     @SuppressWarnings("unchecked")
-    public void init(InternalSerializationService serializationService, Data key, Object value, Extractors extractors) {
+    public CachedQueryEntry<K, V> init(InternalSerializationService ss,
+                                       Data key, Object value, Extractors extractors) {
         if (key == null) {
             throw new IllegalArgumentException("keyData cannot be null");
         }
-        this.serializationService = serializationService;
+        this.serializationService = ss;
         this.keyData = key;
         this.keyObject = null;
 
@@ -59,6 +61,7 @@ public class CachedQueryEntry<K, V> extends QueryableEntry<K, V> {
             this.valueData = null;
         }
         this.extractors = extractors;
+        return this;
     }
 
     @Override

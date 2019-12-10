@@ -36,8 +36,8 @@ import com.hazelcast.spi.impl.operationservice.PartitionAwareOperation;
 
 import java.io.IOException;
 
-public class AddIndexOperation extends MapOperation implements PartitionAwareOperation, MutatingOperation,
-        BackupAwareOperation {
+public class AddIndexOperation extends MapOperation
+        implements PartitionAwareOperation, MutatingOperation, BackupAwareOperation {
     /**
      * Configuration of the index.
      */
