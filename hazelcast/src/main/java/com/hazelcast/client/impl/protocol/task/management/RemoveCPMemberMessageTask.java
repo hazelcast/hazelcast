@@ -73,6 +73,6 @@ public class RemoveCPMemberMessageTask extends AbstractAsyncMessageTask<RequestP
 
     @Override
     public Object[] getParameters() {
-        return new Object[0];
+        return new Object[] { parameters.cpMemberUuid };
     }
 }
