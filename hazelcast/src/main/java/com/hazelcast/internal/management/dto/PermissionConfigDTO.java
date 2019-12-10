@@ -20,12 +20,11 @@ import com.hazelcast.config.PermissionConfig;
 import com.hazelcast.internal.json.JsonArray;
 import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.internal.json.JsonValue;
-import com.hazelcast.internal.management.ManagementDataSerializerHook;
 import com.hazelcast.internal.util.StringUtil;
 import com.hazelcast.json.internal.JsonSerializable;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.nio.serialization.DataSerializable;
 
 import java.io.IOException;
 import java.util.HashSet;
@@ -35,12 +34,11 @@ import java.util.Set;
  * DTO object that provides serialization/deserialization support
  * for {@link PermissionConfig}
  */
-public class PermissionConfigDTO implements JsonSerializable, IdentifiedDataSerializable {
+public class PermissionConfigDTO implements JsonSerializable, DataSerializable {
 
     private PermissionConfig permissionConfig;
 
     public PermissionConfigDTO() {
-
     }
 
     public PermissionConfigDTO(PermissionConfig permissionConfig) {
@@ -88,7 +86,7 @@ public class PermissionConfigDTO implements JsonSerializable, IdentifiedDataSeri
 
         JsonValue endpointsVal = json.get("endpoints");
         if (endpointsVal != null) {
-            Set<String> endpoints = new HashSet<String>();
+            Set<String> endpoints = new HashSet<>();
             for (JsonValue endpoint : endpointsVal.asArray().values()) {
                 endpoints.add(endpoint.asString());
             }
@@ -97,7 +95,7 @@ public class PermissionConfigDTO implements JsonSerializable, IdentifiedDataSeri
 
         JsonValue actionsVal = json.get("actions");
         if (actionsVal != null) {
-            Set<String> actions = new HashSet<String>();
+            Set<String> actions = new HashSet<>();
             for (JsonValue action : actionsVal.asArray().values()) {
                 actions.add(action.asString());
             }
@@ -138,7 +136,7 @@ public class PermissionConfigDTO implements JsonSerializable, IdentifiedDataSeri
 
         int endpointsSize = in.readInt();
         if (endpointsSize != 0) {
-            Set<String> endpoints = new HashSet<String>();
+            Set<String> endpoints = new HashSet<>();
             for (int i = 0; i < endpointsSize; i++) {
                 endpoints.add(in.readUTF());
             }
@@ -147,7 +145,7 @@ public class PermissionConfigDTO implements JsonSerializable, IdentifiedDataSeri
 
         int actionsSize = in.readInt();
         if (actionsSize != 0) {
-            Set<String> actions = new HashSet<String>();
+            Set<String> actions = new HashSet<>();
             for (int i = 0; i < actionsSize; i++) {
                 actions.add(in.readUTF());
             }
@@ -157,16 +155,6 @@ public class PermissionConfigDTO implements JsonSerializable, IdentifiedDataSeri
 
     public PermissionConfig getPermissionConfig() {
         return permissionConfig;
-    }
-
-    @Override
-    public int getFactoryId() {
-        return ManagementDataSerializerHook.F_ID;
-    }
-
-    @Override
-    public int getClassId() {
-        return ManagementDataSerializerHook.PERMISSION_CONFIG_DTO;
     }
 
 }

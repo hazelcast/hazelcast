@@ -36,9 +36,9 @@ public class UpdatePermissionConfigOperation extends AbstractManagementOperation
     private Set<PermissionConfig> permissionConfigs;
 
     public UpdatePermissionConfigOperation() {
-
     }
 
+    @SuppressWarnings("unused")
     public UpdatePermissionConfigOperation(Set<PermissionConfig> permissionConfigs) {
         this.permissionConfigs = permissionConfigs;
     }
@@ -67,7 +67,7 @@ public class UpdatePermissionConfigOperation extends AbstractManagementOperation
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         int configSize = in.readInt();
-        permissionConfigs = new HashSet<PermissionConfig>(configSize);
+        permissionConfigs = new HashSet<>(configSize);
         for (int i = 0; i < configSize; i++) {
             PermissionConfigDTO permissionConfigDTO = new PermissionConfigDTO();
             permissionConfigDTO.readData(in);
