@@ -48,7 +48,7 @@ public class ManagementCenterService {
 
     public static final String SERVICE_NAME = "hz:core:managementCenterService";
 
-    private static final int EVENT_QUEUE_CAPACITY = 1000;
+    private static final int MIN_EVENT_QUEUE_CAPACITY = 1000;
     private static final int EXECUTOR_QUEUE_CAPACITY_PER_THREAD = 1000;
     private static final long TMS_CACHE_TIMEOUT_NANOS = TimeUnit.SECONDS.toNanos(1);
     private static final long MC_EVENTS_WINDOW_NANOS = TimeUnit.SECONDS.toNanos(30);
@@ -72,7 +72,8 @@ public class ManagementCenterService {
         this.instance = instance;
         this.logger = instance.node.getLogger(ManagementCenterService.class);
         this.tmsFactory = instance.node.getNodeExtension().createTimedMemberStateFactory(instance);
-        this.mcEvents = new LinkedBlockingQueue<>(EVENT_QUEUE_CAPACITY);
+        int partitionCount = instance.node.getPartitionService().getPartitionCount();
+        this.mcEvents = new LinkedBlockingQueue<>(Math.max(MIN_EVENT_QUEUE_CAPACITY, partitionCount));
         this.commandHandler = new ConsoleCommandHandler(instance);
         this.bwListConfigHandler = new ClientBwListConfigHandler(instance.node.clientEngine);
         registerExecutor();
