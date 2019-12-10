@@ -734,9 +734,6 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
         try {
             response = invocationFuture.get(authenticationTimeout, MILLISECONDS);
         } catch (Exception e) {
-            if (logger.isFinestEnabled()) {
-                logger.finest("Authentication of " + connection + " failed.", e);
-            }
             connection.close("Failed to authenticate connection", e);
             throw rethrow(e);
         }
@@ -783,12 +780,19 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
                 }
                 break;
             case CREDENTIALS_FAILED:
-                throw new AuthenticationException("Invalid credentials!");
+                AuthenticationException authException = new AuthenticationException("Invalid credentials!");
+                connection.close("Failed to authenticate connection", authException);
+                throw authException;
             case NOT_ALLOWED_IN_CLUSTER:
-                throw new ClientNotAllowedInClusterException("Client is not allowed in the cluster");
+                ClientNotAllowedInClusterException notAllowedException =
+                        new ClientNotAllowedInClusterException("Client is not allowed in the cluster");
+                connection.close("Failed to authenticate connection", notAllowedException);
+                throw notAllowedException;
             default:
-                throw new AuthenticationException("Authentication status code not supported. status: "
-                        + authenticationStatus);
+                AuthenticationException exception =
+                        new AuthenticationException("Authentication status code not supported. status: " + authenticationStatus);
+                connection.close("Failed to authenticate connection", exception);
+                throw exception;
         }
     }
 
