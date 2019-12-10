@@ -23,10 +23,10 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import java.io.IOException;
-import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
+import static com.hazelcast.internal.util.SetUtil.createHashSet;
 import static java.util.Collections.newSetFromMap;
 
 /**
@@ -268,7 +268,7 @@ public class PermissionConfig implements IdentifiedDataSerializable {
 
         int endpointsSize = in.readInt();
         if (endpointsSize != 0) {
-            Set<String> endpoints = new HashSet<>();
+            Set<String> endpoints = createHashSet(endpointsSize);
             for (int i = 0; i < endpointsSize; i++) {
                 endpoints.add(in.readUTF());
             }
@@ -277,7 +277,7 @@ public class PermissionConfig implements IdentifiedDataSerializable {
 
         int actionsSize = in.readInt();
         if (actionsSize != 0) {
-            Set<String> actions = new HashSet<>();
+            Set<String> actions = createHashSet(actionsSize);
             for (int i = 0; i < actionsSize; i++) {
                 actions.add(in.readUTF());
             }
