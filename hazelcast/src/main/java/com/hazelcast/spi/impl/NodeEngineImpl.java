@@ -94,7 +94,6 @@ import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 import static com.hazelcast.spi.properties.ClusterProperty.BACKPRESSURE_ENABLED;
 import static com.hazelcast.spi.properties.ClusterProperty.CONCURRENT_WINDOW_MS;
 import static java.lang.System.currentTimeMillis;
-import static java.lang.System.in;
 
 /**
  * The NodeEngineImpl is the where the construction of the Hazelcast dependencies take place. It can be

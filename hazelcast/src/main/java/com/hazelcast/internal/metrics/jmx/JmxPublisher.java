@@ -255,8 +255,6 @@ public class JmxPublisher implements MetricsPublisher {
             }
         } catch (MalformedObjectNameException e) {
             throw new RuntimeException("Exception when unregistering JMX beans", e);
-        } finally {
-
         }
     }
 }
