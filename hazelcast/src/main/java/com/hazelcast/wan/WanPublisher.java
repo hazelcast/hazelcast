@@ -28,7 +28,7 @@ import com.hazelcast.config.WanReplicationConfig;
  * The publisher may implement {@link com.hazelcast.core.HazelcastInstanceAware}
  * if it needs a reference to the instance on which it is being run.
  */
-public interface WanReplicationPublisher {
+public interface WanPublisher {
     /**
      * Initializes the publisher.
      *
@@ -52,8 +52,8 @@ public interface WanReplicationPublisher {
 
     /**
      * Performs pre-publication checks (e.g. enforcing invariants).
-     * Invoked before {@link #publishReplicationEvent(WanReplicationEvent)}
-     * and {@link #publishReplicationEventBackup(WanReplicationEvent)}.
+     * Invoked before {@link #publishReplicationEvent(WanEvent)}
+     * and {@link #publishReplicationEventBackup(WanEvent)}.
      */
     void doPrepublicationChecks();
 
@@ -62,12 +62,12 @@ public interface WanReplicationPublisher {
      *
      * @param eventObject the replication event
      */
-    void publishReplicationEvent(WanReplicationEvent eventObject);
+    void publishReplicationEvent(WanEvent eventObject);
 
     /**
      * Publish the {@code eventObject} WAN replication event backup.
      *
      * @param eventObject the replication backup event
      */
-    void publishReplicationEventBackup(WanReplicationEvent eventObject);
+    void publishReplicationEventBackup(WanEvent eventObject);
 }

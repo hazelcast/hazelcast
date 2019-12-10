@@ -174,7 +174,7 @@ public class PostJoinMapOperation extends Operation implements IdentifiedDataSer
 
         out.writeInt(interceptorInfoList.size());
         for (InterceptorInfo interceptorInfo : interceptorInfoList) {
-            interceptorInfo.writeData(out);
+            out.writeObject(interceptorInfo);
         }
         int size = infoList.size();
         out.writeInt(size);
@@ -189,9 +189,7 @@ public class PostJoinMapOperation extends Operation implements IdentifiedDataSer
 
         int interceptorsCount = in.readInt();
         for (int i = 0; i < interceptorsCount; i++) {
-            InterceptorInfo info = new InterceptorInfo();
-            info.readData(in);
-            interceptorInfoList.add(info);
+            interceptorInfoList.add(in.readObject());
         }
         int accumulatorsCount = in.readInt();
         if (accumulatorsCount < 1) {

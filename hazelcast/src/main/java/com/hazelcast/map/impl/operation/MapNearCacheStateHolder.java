@@ -56,7 +56,7 @@ public class MapNearCacheStateHolder implements IdentifiedDataSerializable {
     public MapNearCacheStateHolder() {
     }
 
-    public MapNearCacheStateHolder(MapReplicationOperation mapReplicationOperation) {
+    public void setMapReplicationOperation(MapReplicationOperation mapReplicationOperation) {
         this.mapReplicationOperation = mapReplicationOperation;
     }
 

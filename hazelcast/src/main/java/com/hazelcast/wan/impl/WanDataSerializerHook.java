@@ -18,8 +18,8 @@ package com.hazelcast.wan.impl;
 
 import com.hazelcast.internal.serialization.DataSerializerHook;
 import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
-import com.hazelcast.map.impl.wan.MapReplicationRemove;
-import com.hazelcast.map.impl.wan.MapReplicationUpdate;
+import com.hazelcast.map.impl.wan.WanMapRemoveEvent;
+import com.hazelcast.map.impl.wan.WanMapUpdateEvent;
 import com.hazelcast.map.impl.wan.WanMapEntryView;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 
@@ -48,9 +48,9 @@ public class WanDataSerializerHook implements DataSerializerHook {
         return typeId -> {
             switch (typeId) {
                 case MAP_REPLICATION_UPDATE:
-                    return new MapReplicationUpdate();
+                    return new WanMapUpdateEvent();
                 case MAP_REPLICATION_REMOVE:
-                    return new MapReplicationRemove();
+                    return new WanMapRemoveEvent();
                 case WAN_MAP_ENTRY_VIEW:
                     return new WanMapEntryView<>();
                 case WAN_EVENT_CONTAINER_REPLICATION_OPERATION:

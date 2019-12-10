@@ -111,9 +111,9 @@
             <hz:wan-replication name="testWan2">
                 <hz:batch-publisher>
                     <hz:cluster-name>tokyo</hz:cluster-name>
-                    <hz:wan-sync>
+                    <hz:sync>
                         <hz:consistency-check-strategy>MERKLE_TREES</hz:consistency-check-strategy>
-                    </hz:wan-sync>
+                    </hz:sync>
                 </hz:batch-publisher>
                 <hz:consumer implementation="wanConsumer" persist-wan-replicated-data="false"/>
             </hz:wan-replication>
@@ -917,7 +917,7 @@
     <bean id="dummyRingbufferStore" class="com.hazelcast.spring.DummyRingbufferStore"/>
     <bean id="dummyRingbufferStoreFactory" class="com.hazelcast.spring.DummyRingbufferStoreFactory"/>
     <bean id="dummyEvictionPolicyComparator" class="com.hazelcast.spring.DummyMapEvictionPolicyComparator"/>
-    <bean id="dummyWanReplication" class="com.hazelcast.spring.DummyWanReplication"/>
+    <bean id="dummyWanReplication" class="com.hazelcast.spring.WanDummyPublisher"/>
     <bean id="dummyMembershipListener" class="com.hazelcast.spring.DummyMembershipListener"/>
     <bean id="dummyEntryListener" class="com.hazelcast.spring.DummyEntryListener"/>
     <bean id="dummySplitBrainProtectionListener" class="com.hazelcast.spring.DummySplitBrainProtectionListener"/>

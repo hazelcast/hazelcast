@@ -73,7 +73,7 @@ public class WriteBehindStateHolder implements IdentifiedDataSerializable {
     public WriteBehindStateHolder() {
     }
 
-    public WriteBehindStateHolder(MapReplicationOperation mapReplicationOperation) {
+    public void setMapReplicationOperation(MapReplicationOperation mapReplicationOperation) {
         this.mapReplicationOperation = mapReplicationOperation;
     }
 

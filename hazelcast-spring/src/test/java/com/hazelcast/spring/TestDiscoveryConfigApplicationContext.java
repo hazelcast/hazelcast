@@ -20,7 +20,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.DiscoveryConfig;
 import com.hazelcast.config.DiscoveryStrategyConfig;
 import com.hazelcast.config.NetworkConfig;
-import com.hazelcast.config.WanBatchReplicationPublisherConfig;
+import com.hazelcast.config.WanBatchPublisherConfig;
 import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.impl.HazelcastInstanceFactory;
@@ -71,7 +71,7 @@ public class TestDiscoveryConfigApplicationContext {
     @Test
     public void testWanDiscoveryConfig() {
         WanReplicationConfig wcfg = config.getWanReplicationConfig("testWan");
-        WanBatchReplicationPublisherConfig publisherConfig = wcfg.getBatchPublisherConfigs().get(0);
+        WanBatchPublisherConfig publisherConfig = wcfg.getBatchPublisherConfigs().get(0);
 
         assertDiscoveryConfig(publisherConfig.getDiscoveryConfig());
     }

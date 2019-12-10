@@ -20,7 +20,7 @@ import com.hazelcast.internal.config.ConfigDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.wan.WanReplicationConsumer;
+import com.hazelcast.wan.WanConsumer;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -38,8 +38,8 @@ import java.util.Objects;
  * <p>
  * NOTE: EE only
  *
- * @see WanReplicationConfig#setWanConsumerConfig(WanConsumerConfig)
- * @see CustomWanPublisherConfig#setClassName(String)
+ * @see WanReplicationConfig#setConsumerConfig(WanConsumerConfig)
+ * @see WanCustomPublisherConfig#setClassName(String)
  */
 public class WanConsumerConfig implements IdentifiedDataSerializable {
 
@@ -50,7 +50,7 @@ public class WanConsumerConfig implements IdentifiedDataSerializable {
 
     private boolean persistWanReplicatedData = DEFAULT_PERSIST_WAN_REPLICATED_DATA;
     private String className;
-    private WanReplicationConsumer implementation;
+    private WanConsumer implementation;
     private Map<String, Comparable> properties = new HashMap<>();
 
     /**
@@ -74,7 +74,7 @@ public class WanConsumerConfig implements IdentifiedDataSerializable {
 
     /**
      * Returns the fully qualified class name of the class implementing
-     * {@link com.hazelcast.wan.WanReplicationConsumer}.
+     * {@link WanConsumer}.
      *
      * @return fully qualified class name
      */
@@ -84,13 +84,13 @@ public class WanConsumerConfig implements IdentifiedDataSerializable {
 
     /**
      * Sets the fully qualified class name of the class implementing
-     * {@link com.hazelcast.wan.WanReplicationConsumer}.
+     * {@link WanConsumer}.
      * The class name may be {@code null} in which case the implementation or
      * the default processing logic for incoming WAN events will be used.
      *
      * @param className fully qualified class name
      * @return this config
-     * @see #setImplementation(WanReplicationConsumer)
+     * @see #setImplementation(WanConsumer)
      */
     public WanConsumerConfig setClassName(String className) {
         this.className = className;
@@ -99,25 +99,25 @@ public class WanConsumerConfig implements IdentifiedDataSerializable {
 
     /**
      * Returns the implementation implementing
-     * {@link com.hazelcast.wan.WanReplicationConsumer}.
+     * {@link WanConsumer}.
      *
      * @return the implementation for this WAN consumer
      */
-    public WanReplicationConsumer getImplementation() {
+    public WanConsumer getImplementation() {
         return implementation;
     }
 
     /**
      * Sets the implementation for this WAN consumer. The object must implement
-     * {@link com.hazelcast.wan.WanReplicationConsumer}.
+     * {@link WanConsumer}.
      * The implementation may be {@code null} in which case the class name or
      * the default processing logic for incoming WAN events will be used.
      *
-     * @param implementation the object implementing {@link com.hazelcast.wan.WanReplicationConsumer}
+     * @param implementation the object implementing {@link WanConsumer}
      * @return this config
      * @see #setClassName(String)
      */
-    public WanConsumerConfig setImplementation(WanReplicationConsumer implementation) {
+    public WanConsumerConfig setImplementation(WanConsumer implementation) {
         this.implementation = implementation;
         return this;
     }

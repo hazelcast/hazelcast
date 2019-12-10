@@ -63,9 +63,11 @@ public class CacheReplicationOperation extends Operation implements IdentifiedDa
 
     private final List<CacheConfig> configs = new ArrayList<CacheConfig>();
     private final Map<String, Map<Data, CacheRecord>> data = new HashMap<String, Map<Data, CacheRecord>>();
-    private final CacheNearCacheStateHolder nearCacheStateHolder = new CacheNearCacheStateHolder(this);
+    private CacheNearCacheStateHolder nearCacheStateHolder;
 
     public CacheReplicationOperation() {
+        nearCacheStateHolder = new CacheNearCacheStateHolder();
+        nearCacheStateHolder.setCacheReplicationOperation(this);
     }
 
     public final void prepare(CachePartitionSegment segment, Collection<ServiceNamespace> namespaces,
@@ -178,7 +180,7 @@ public class CacheReplicationOperation extends Operation implements IdentifiedDa
             IOUtil.writeData(out, null);
         }
 
-        nearCacheStateHolder.writeData(out);
+        out.writeObject(nearCacheStateHolder);
     }
 
     @Override
@@ -211,7 +213,8 @@ public class CacheReplicationOperation extends Operation implements IdentifiedDa
             }
         }
 
-        nearCacheStateHolder.readData(in);
+        nearCacheStateHolder = in.readObject();
+        nearCacheStateHolder.setCacheReplicationOperation(this);
     }
 
     public boolean isEmpty() {

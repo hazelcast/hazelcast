@@ -26,8 +26,8 @@ import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapPartitionLostEventFilter;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.query.QueryEventFilter;
-import com.hazelcast.map.impl.wan.MapReplicationRemove;
-import com.hazelcast.map.impl.wan.MapReplicationUpdate;
+import com.hazelcast.map.impl.wan.WanMapRemoveEvent;
+import com.hazelcast.map.impl.wan.WanMapUpdateEvent;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.spi.impl.eventservice.EventFilter;
@@ -38,9 +38,9 @@ import com.hazelcast.spi.impl.eventservice.impl.TrueEventFilter;
 import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 import com.hazelcast.internal.partition.IPartitionService;
 import com.hazelcast.spi.properties.HazelcastProperty;
-import com.hazelcast.wan.WanReplicationPublisher;
-import com.hazelcast.wan.impl.InternalWanReplicationEvent;
-import com.hazelcast.wan.impl.DelegatingWanReplicationScheme;
+import com.hazelcast.wan.WanPublisher;
+import com.hazelcast.wan.impl.InternalWanEvent;
+import com.hazelcast.wan.impl.DelegatingWanScheme;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -104,7 +104,7 @@ public class MapEventPublisherImpl implements MapEventPublisher {
 
         MapContainer mapContainer = mapServiceContext.getMapContainer(mapName);
         SplitBrainMergePolicy wanMergePolicy = mapContainer.getWanMergePolicy();
-        MapReplicationUpdate event = new MapReplicationUpdate(mapName, wanMergePolicy, entryView);
+        WanMapUpdateEvent event = new WanMapUpdateEvent(mapName, wanMergePolicy, entryView);
         publishWanEvent(mapName, event);
     }
 
@@ -114,19 +114,19 @@ public class MapEventPublisherImpl implements MapEventPublisher {
             return;
         }
 
-        MapReplicationRemove event = new MapReplicationRemove(mapName, key);
+        WanMapRemoveEvent event = new WanMapRemoveEvent(mapName, key);
         publishWanEvent(mapName, event);
     }
 
     /**
-     * Publishes the {@code event} to the {@link WanReplicationPublisher} configured for this map.
+     * Publishes the {@code event} to the {@link WanPublisher} configured for this map.
      *
      * @param mapName the map name
      * @param event   the event
      */
-    protected void publishWanEvent(String mapName, InternalWanReplicationEvent event) {
+    protected void publishWanEvent(String mapName, InternalWanEvent event) {
         MapContainer mapContainer = mapServiceContext.getMapContainer(mapName);
-        DelegatingWanReplicationScheme wanReplicationPublisher
+        DelegatingWanScheme wanReplicationPublisher
                 = mapContainer.getWanReplicationDelegate();
         if (isOwnedPartition(event.getKey())) {
             wanReplicationPublisher.publishReplicationEvent(event);

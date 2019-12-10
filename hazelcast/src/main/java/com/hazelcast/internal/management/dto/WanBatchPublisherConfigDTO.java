@@ -24,7 +24,7 @@ import com.hazelcast.config.EurekaConfig;
 import com.hazelcast.config.GcpConfig;
 import com.hazelcast.config.KubernetesConfig;
 import com.hazelcast.config.WanAcknowledgeType;
-import com.hazelcast.config.WanBatchReplicationPublisherConfig;
+import com.hazelcast.config.WanBatchPublisherConfig;
 import com.hazelcast.config.WanQueueFullBehavior;
 import com.hazelcast.config.WanSyncConfig;
 import com.hazelcast.internal.json.JsonObject;
@@ -39,16 +39,16 @@ import static com.hazelcast.internal.util.JsonUtil.toJsonObject;
 import static com.hazelcast.internal.util.MapUtil.isNullOrEmpty;
 
 /**
- * A JSON representation of {@link WanBatchReplicationPublisherConfig}.
+ * A JSON representation of {@link WanBatchPublisherConfig}.
  */
-public class WanBatchReplicationPublisherConfigDTO implements JsonSerializable {
+public class WanBatchPublisherConfigDTO implements JsonSerializable {
 
-    private WanBatchReplicationPublisherConfig config;
+    private WanBatchPublisherConfig config;
 
-    public WanBatchReplicationPublisherConfigDTO() {
+    public WanBatchPublisherConfigDTO() {
     }
 
-    public WanBatchReplicationPublisherConfigDTO(WanBatchReplicationPublisherConfig config) {
+    public WanBatchPublisherConfigDTO(WanBatchPublisherConfig config) {
         this.config = config;
     }
 
@@ -99,7 +99,7 @@ public class WanBatchReplicationPublisherConfigDTO implements JsonSerializable {
             root.add("discovery", new DiscoveryConfigDTO(discoveryConfig).toJson());
         }
 
-        WanSyncConfig syncConfig = config.getWanSyncConfig();
+        WanSyncConfig syncConfig = config.getSyncConfig();
         if (syncConfig != null) {
             root.add("sync", new WanSyncConfigDTO(syncConfig).toJson());
         }
@@ -117,7 +117,7 @@ public class WanBatchReplicationPublisherConfigDTO implements JsonSerializable {
     @Override
     @SuppressWarnings({"checkstyle:methodlength", "checkstyle:cyclomaticcomplexity", "checkstyle:npathcomplexity"})
     public void fromJson(JsonObject json) {
-        config = new WanBatchReplicationPublisherConfig();
+        config = new WanBatchPublisherConfig();
 
         consumeIfExists(json, "clusterName", v -> config.setClusterName(v.asString()));
         consumeIfExists(json, "publisherId", v -> config.setPublisherId(v.asString()));
@@ -171,7 +171,7 @@ public class WanBatchReplicationPublisherConfigDTO implements JsonSerializable {
         if (syncJson != null && !syncJson.isNull()) {
             WanSyncConfigDTO syncDTO = new WanSyncConfigDTO();
             syncDTO.fromJson(syncJson.asObject());
-            config.setWanSyncConfig(syncDTO.getConfig());
+            config.setSyncConfig(syncDTO.getConfig());
         }
 
         consumeIfExists(json, "endpoint", v -> config.setEndpoint(v.asString()));
@@ -221,7 +221,7 @@ public class WanBatchReplicationPublisherConfigDTO implements JsonSerializable {
         }
     }
 
-    public WanBatchReplicationPublisherConfig getConfig() {
+    public WanBatchPublisherConfig getConfig() {
         return config;
     }
 }

@@ -49,7 +49,7 @@ public class CacheNearCacheStateHolder implements IdentifiedDataSerializable {
     public CacheNearCacheStateHolder() {
     }
 
-    public CacheNearCacheStateHolder(CacheReplicationOperation cacheReplicationOperation) {
+    public void setCacheReplicationOperation(CacheReplicationOperation cacheReplicationOperation) {
         this.cacheReplicationOperation = cacheReplicationOperation;
     }
 

@@ -22,7 +22,8 @@ import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.CardinalityEstimatorConfig;
 import com.hazelcast.config.ClassFilter;
 import com.hazelcast.config.Config;
-import com.hazelcast.config.CustomWanPublisherConfig;
+import com.hazelcast.config.WanBatchPublisherConfig;
+import com.hazelcast.config.WanCustomPublisherConfig;
 import com.hazelcast.config.DiscoveryConfig;
 import com.hazelcast.config.DurableExecutorConfig;
 import com.hazelcast.config.EndpointConfig;
@@ -65,7 +66,6 @@ import com.hazelcast.config.SplitBrainProtectionConfig;
 import com.hazelcast.config.SplitBrainProtectionListenerConfig;
 import com.hazelcast.config.TcpIpConfig;
 import com.hazelcast.config.TopicConfig;
-import com.hazelcast.config.WanBatchReplicationPublisherConfig;
 import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.config.WanReplicationRef;
 import com.hazelcast.config.cp.CPSubsystemConfig;
@@ -228,7 +228,7 @@ public class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
     protected void handleWanReplicationChild(WanReplicationConfig wanReplicationConfig, Node nodeTarget, String nodeName) {
         if ("batch-publisher".equals(nodeName)) {
             for (Node publisherNode : childElements(nodeTarget)) {
-                WanBatchReplicationPublisherConfig publisherConfig = new WanBatchReplicationPublisherConfig();
+                WanBatchPublisherConfig publisherConfig = new WanBatchPublisherConfig();
                 String clusterNameOrPublisherId = publisherNode.getNodeName();
                 Node clusterNameAttr = publisherNode.getAttributes().getNamedItem("cluster-name");
 
@@ -243,7 +243,7 @@ public class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
             }
         } else if ("custom-publisher".equals(nodeName)) {
             for (Node publisherNode : childElements(nodeTarget)) {
-                CustomWanPublisherConfig publisherConfig = new CustomWanPublisherConfig();
+                WanCustomPublisherConfig publisherConfig = new WanCustomPublisherConfig();
                 publisherConfig.setPublisherId(publisherNode.getNodeName());
                 handleCustomWanPublisherNode(wanReplicationConfig, publisherNode, publisherConfig);
             }

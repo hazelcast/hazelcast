@@ -17,7 +17,7 @@
 package com.hazelcast.config;
 
 import com.hazelcast.internal.config.ConfigDataSerializerHook;
-import com.hazelcast.wan.WanReplicationPublisher;
+import com.hazelcast.wan.WanPublisher;
 
 import javax.annotation.Nonnull;
 import java.util.Map;
@@ -30,7 +30,7 @@ import static com.hazelcast.internal.util.Preconditions.checkNotNull;
  * The publisher can be some other external system which is not a Hazelcast
  * cluster (e.g. JMS queue).
  */
-public class CustomWanPublisherConfig extends AbstractWanPublisherConfig {
+public class WanCustomPublisherConfig extends AbstractWanPublisherConfig {
 
     @Override
     public String toString() {
@@ -49,25 +49,25 @@ public class CustomWanPublisherConfig extends AbstractWanPublisherConfig {
     }
 
     @Override
-    public CustomWanPublisherConfig setPublisherId(@Nonnull String publisherId) {
+    public WanCustomPublisherConfig setPublisherId(@Nonnull String publisherId) {
         super.setPublisherId(checkNotNull(publisherId, "Publisher ID must not be null"));
         return this;
     }
 
     @Override
-    public CustomWanPublisherConfig setProperties(@Nonnull Map<String, Comparable> properties) {
+    public WanCustomPublisherConfig setProperties(@Nonnull Map<String, Comparable> properties) {
         super.setProperties(properties);
         return this;
     }
 
     @Override
-    public CustomWanPublisherConfig setClassName(String className) {
+    public WanCustomPublisherConfig setClassName(String className) {
         super.setClassName(className);
         return this;
     }
 
     @Override
-    public CustomWanPublisherConfig setImplementation(WanReplicationPublisher implementation) {
+    public WanCustomPublisherConfig setImplementation(WanPublisher implementation) {
         super.setImplementation(implementation);
         return this;
     }

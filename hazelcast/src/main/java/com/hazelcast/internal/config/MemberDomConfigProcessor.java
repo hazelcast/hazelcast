@@ -28,7 +28,8 @@ import com.hazelcast.config.CardinalityEstimatorConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.ConsistencyCheckStrategy;
 import com.hazelcast.config.CredentialsFactoryConfig;
-import com.hazelcast.config.CustomWanPublisherConfig;
+import com.hazelcast.config.WanBatchPublisherConfig;
+import com.hazelcast.config.WanCustomPublisherConfig;
 import com.hazelcast.config.DiscoveryConfig;
 import com.hazelcast.config.DiscoveryStrategyConfig;
 import com.hazelcast.config.DurableExecutorConfig;
@@ -111,10 +112,9 @@ import com.hazelcast.config.TopicConfig;
 import com.hazelcast.config.UserCodeDeploymentConfig;
 import com.hazelcast.config.VaultSecureStoreConfig;
 import com.hazelcast.config.WanAcknowledgeType;
-import com.hazelcast.config.WanBatchReplicationPublisherConfig;
+import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.config.WanConsumerConfig;
 import com.hazelcast.config.WanQueueFullBehavior;
-import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.config.WanReplicationRef;
 import com.hazelcast.config.WanSyncConfig;
 import com.hazelcast.config.cp.CPSubsystemConfig;
@@ -651,10 +651,10 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
                                              Node nodeTarget,
                                              String nodeName) {
         if ("batch-publisher".equals(nodeName)) {
-            WanBatchReplicationPublisherConfig config = new WanBatchReplicationPublisherConfig();
+            WanBatchPublisherConfig config = new WanBatchPublisherConfig();
             handleBatchWanPublisherNode(wanReplicationConfig, nodeTarget, config);
         } else if ("custom-publisher".equals(nodeName)) {
-            CustomWanPublisherConfig config = new CustomWanPublisherConfig();
+            WanCustomPublisherConfig config = new WanCustomPublisherConfig();
             handleCustomWanPublisherNode(wanReplicationConfig, nodeTarget, config);
         } else if ("consumer".equals(nodeName)) {
             handleWanConsumerNode(wanReplicationConfig, nodeTarget);
@@ -663,7 +663,7 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
 
     void handleCustomWanPublisherNode(WanReplicationConfig wanReplicationConfig,
                                       Node nodeTarget,
-                                      CustomWanPublisherConfig config) {
+                                      WanCustomPublisherConfig config) {
         for (Node targetChild : childElements(nodeTarget)) {
             String targetChildName = cleanNodeName(targetChild);
             if ("properties".equals(targetChildName)) {
@@ -678,7 +678,7 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
     }
 
     void handleBatchWanPublisherNode(WanReplicationConfig wanReplicationConfig, Node nodeTarget,
-                                     WanBatchReplicationPublisherConfig config) {
+                                     WanBatchPublisherConfig config) {
         for (Node targetChild : childElements(nodeTarget)) {
             String targetChildName = cleanNodeName(targetChild);
             if ("cluster-name".equals(targetChildName)) {
@@ -721,13 +721,13 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
                 handleAliasedDiscoveryStrategy(config, targetChild, targetChildName);
             } else if ("discovery-strategies".equals(targetChildName)) {
                 handleDiscoveryStrategies(config.getDiscoveryConfig(), targetChild);
-            } else if ("wan-sync".equals(targetChildName)) {
-                handleWanSync(config.getWanSyncConfig(), targetChild);
+            } else if ("sync".equals(targetChildName)) {
+                handleWanSync(config.getSyncConfig(), targetChild);
             } else if ("endpoint".equals(targetChildName)) {
                 config.setEndpoint(getTextContent(targetChild));
             }
         }
-        wanReplicationConfig.addWanBatchReplicationPublisherConfig(config);
+        wanReplicationConfig.addBatchReplicationPublisherConfig(config);
     }
 
     void handleWanConsumerNode(WanReplicationConfig wanReplicationConfig, Node nodeTarget) {
@@ -735,7 +735,7 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         for (Node targetChild : childElements(nodeTarget)) {
             handleWanConsumerConfig(consumerConfig, targetChild);
         }
-        wanReplicationConfig.setWanConsumerConfig(consumerConfig);
+        wanReplicationConfig.setConsumerConfig(consumerConfig);
     }
 
     private void handleWanSync(WanSyncConfig wanSyncConfig, Node node) {
@@ -1313,7 +1313,7 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         updateConfig(aliasedDiscoveryConfig, node);
     }
 
-    private void handleAliasedDiscoveryStrategy(WanBatchReplicationPublisherConfig publisherConfig,
+    private void handleAliasedDiscoveryStrategy(WanBatchPublisherConfig publisherConfig,
                                                 Node node,
                                                 String tag) {
         AliasedDiscoveryConfig aliasedDiscoveryConfig = getConfigByTag(publisherConfig, tag);

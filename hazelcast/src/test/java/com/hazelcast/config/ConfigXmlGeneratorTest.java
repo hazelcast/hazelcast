@@ -1253,10 +1253,10 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
         props.put("prop1", "val1");
         props.put("prop2", "val2");
         props.put("prop3", "val3");
-        WanReplicationConfig wanConfig = new WanReplicationConfig()
+        WanReplicationConfig wanReplicationConfig = new WanReplicationConfig()
                 .setName("testName")
-                .setWanConsumerConfig(new WanConsumerConfig().setClassName("dummyClass").setProperties(props));
-        WanBatchReplicationPublisherConfig batchPublisher = new WanBatchReplicationPublisherConfig()
+                .setConsumerConfig(new WanConsumerConfig().setClassName("dummyClass").setProperties(props));
+        WanBatchPublisherConfig batchPublisher = new WanBatchPublisherConfig()
                 .setClusterName("dummyGroup")
                 .setPublisherId("dummyPublisherId")
                 .setSnapshotEnabled(false)
@@ -1279,10 +1279,10 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
                 .setEndpoint("WAN")
                 .setProperties(props);
 
-        batchPublisher.getWanSyncConfig()
+        batchPublisher.getSyncConfig()
                 .setConsistencyCheckStrategy(ConsistencyCheckStrategy.MERKLE_TREES);
 
-        CustomWanPublisherConfig customPublisher = new CustomWanPublisherConfig()
+        WanCustomPublisherConfig customPublisher = new WanCustomPublisherConfig()
                 .setPublisherId("dummyPublisherId")
                 .setClassName("className")
                 .setProperties(props);
@@ -1292,11 +1292,11 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
                 .setProperties(props)
                 .setPersistWanReplicatedData(false);
 
-        wanConfig.setWanConsumerConfig(wanConsumerConfig)
-                .addWanBatchReplicationPublisherConfig(batchPublisher)
-                .addCustomPublisherConfig(customPublisher);
+        wanReplicationConfig.setConsumerConfig(wanConsumerConfig)
+                            .addBatchReplicationPublisherConfig(batchPublisher)
+                            .addCustomPublisherConfig(customPublisher);
 
-        Config config = new Config().addWanReplicationConfig(wanConfig);
+        Config config = new Config().addWanReplicationConfig(wanReplicationConfig);
         Config xmlConfig = getNewConfigViaXMLGenerator(config);
 
         ConfigCompatibilityChecker.checkWanConfigs(

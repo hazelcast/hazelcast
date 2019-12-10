@@ -662,14 +662,14 @@ public class ConfigXmlGenerator {
     private static void wanReplicationXmlGenerator(XmlGenerator gen, Config config) {
         for (WanReplicationConfig wan : config.getWanReplicationConfigs().values()) {
             gen.open("wan-replication", "name", wan.getName());
-            for (WanBatchReplicationPublisherConfig p : wan.getBatchPublisherConfigs()) {
+            for (WanBatchPublisherConfig p : wan.getBatchPublisherConfigs()) {
                 wanBatchReplicationPublisherXmlGenerator(gen, p);
             }
-            for (CustomWanPublisherConfig p : wan.getCustomPublisherConfigs()) {
+            for (WanCustomPublisherConfig p : wan.getCustomPublisherConfigs()) {
                 wanCustomPublisherXmlGenerator(gen, p);
             }
 
-            WanConsumerConfig consumerConfig = wan.getWanConsumerConfig();
+            WanConsumerConfig consumerConfig = wan.getConsumerConfig();
             if (consumerConfig != null) {
                 wanReplicationConsumerGenerator(gen, consumerConfig);
             }
@@ -689,7 +689,7 @@ public class ConfigXmlGenerator {
                 .close();
     }
 
-    private static void wanBatchReplicationPublisherXmlGenerator(XmlGenerator gen, WanBatchReplicationPublisherConfig c) {
+    private static void wanBatchReplicationPublisherXmlGenerator(XmlGenerator gen, WanBatchPublisherConfig c) {
         String publisherId = c.getPublisherId();
         gen.open("batch-publisher");
         gen.node("cluster-name", c.getClusterName())
@@ -718,13 +718,13 @@ public class ConfigXmlGenerator {
         if (c.getEndpoint() != null) {
             gen.node("endpoint", c.getEndpoint());
         }
-        wanReplicationSyncGenerator(gen, c.getWanSyncConfig());
+        wanReplicationSyncGenerator(gen, c.getSyncConfig());
         aliasedDiscoveryConfigsGenerator(gen, aliasedDiscoveryConfigsFrom(c));
         discoveryStrategyConfigXmlGenerator(gen, c.getDiscoveryConfig());
         gen.close();
     }
 
-    private static void wanCustomPublisherXmlGenerator(XmlGenerator gen, CustomWanPublisherConfig c) {
+    private static void wanCustomPublisherXmlGenerator(XmlGenerator gen, WanCustomPublisherConfig c) {
         String publisherId = c.getPublisherId();
         gen.open("custom-publisher")
                 .appendProperties(c.getProperties())
@@ -734,7 +734,7 @@ public class ConfigXmlGenerator {
     }
 
     private static void wanReplicationSyncGenerator(XmlGenerator gen, WanSyncConfig c) {
-        gen.open("wan-sync")
+        gen.open("sync")
                 .node("consistency-check-strategy", c.getConsistencyCheckStrategy())
                 .close();
     }

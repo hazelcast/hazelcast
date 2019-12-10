@@ -38,6 +38,7 @@ import java.util.concurrent.TimeUnit;
 
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
@@ -147,6 +148,7 @@ public abstract class AbstractGracefulShutdownCorrectnessTest extends PartitionC
 
         for (int p = 0; p < partitionCount; p++) {
             Integer actual = (Integer) operationService.invokeOnPartition(null, new TestGetOperation(), p).join();
+            assertNotNull(actual);
             assertEquals(value, actual.intValue());
         }
     }

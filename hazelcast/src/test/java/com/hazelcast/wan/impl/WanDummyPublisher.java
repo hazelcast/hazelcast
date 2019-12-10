@@ -18,15 +18,15 @@ package com.hazelcast.wan.impl;
 
 import com.hazelcast.config.AbstractWanPublisherConfig;
 import com.hazelcast.config.WanReplicationConfig;
-import com.hazelcast.wan.WanReplicationEvent;
-import com.hazelcast.wan.WanReplicationPublisher;
+import com.hazelcast.wan.WanEvent;
+import com.hazelcast.wan.WanPublisher;
 
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
-class DummyWanReplication implements WanReplicationPublisher, InternalWanReplicationPublisher {
+class WanDummyPublisher implements WanPublisher, InternalWanPublisher {
 
-    Queue<WanReplicationEvent> eventQueue = new ConcurrentLinkedQueue<>();
+    Queue<WanEvent> eventQueue = new ConcurrentLinkedQueue<>();
 
     @Override
     public void init(WanReplicationConfig wanReplicationConfig,
@@ -38,12 +38,12 @@ class DummyWanReplication implements WanReplicationPublisher, InternalWanReplica
     }
 
     @Override
-    public void publishReplicationEvent(WanReplicationEvent event) {
+    public void publishReplicationEvent(WanEvent event) {
         eventQueue.add(event);
     }
 
     @Override
-    public void publishReplicationEventBackup(WanReplicationEvent event) {
+    public void publishReplicationEventBackup(WanEvent event) {
     }
 
     @Override
@@ -59,7 +59,7 @@ class DummyWanReplication implements WanReplicationPublisher, InternalWanReplica
     }
 
     @Override
-    public void republishReplicationEvent(WanReplicationEvent event) {
+    public void republishReplicationEvent(WanEvent event) {
         publishReplicationEvent(event);
     }
 
@@ -67,7 +67,7 @@ class DummyWanReplication implements WanReplicationPublisher, InternalWanReplica
     public void doPrepublicationChecks() {
     }
 
-    Queue<WanReplicationEvent> getEventQueue() {
+    Queue<WanEvent> getEventQueue() {
         return eventQueue;
     }
 }

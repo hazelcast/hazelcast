@@ -109,7 +109,7 @@ public class Registration implements EventRegistration {
         UUIDSerializationUtil.writeUUID(out, id);
         out.writeUTF(serviceName);
         out.writeUTF(topic);
-        subscriber.writeData(out);
+        out.writeObject(subscriber);
         out.writeObject(filter);
     }
 
@@ -118,8 +118,7 @@ public class Registration implements EventRegistration {
         id = UUIDSerializationUtil.readUUID(in);
         serviceName = in.readUTF();
         topic = in.readUTF();
-        subscriber = new Address();
-        subscriber.readData(in);
+        subscriber = in.readObject();
         filter = in.readObject();
     }
 

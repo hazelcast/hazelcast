@@ -300,7 +300,7 @@ public final class LockStoreImpl implements IdentifiedDataSerializable, LockStor
         if (len > 0) {
             for (LockResourceImpl lock : locks.values()) {
                 if (!lock.isLocal()) {
-                    lock.writeData(out);
+                    out.writeObject(lock);
                 }
             }
         }
@@ -314,8 +314,7 @@ public final class LockStoreImpl implements IdentifiedDataSerializable, LockStor
         int len = in.readInt();
         if (len > 0) {
             for (int i = 0; i < len; i++) {
-                LockResourceImpl lock = new LockResourceImpl();
-                lock.readData(in);
+                LockResourceImpl lock = in.readObject();
                 lock.setLockStore(this);
                 locks.put(lock.getKey(), lock);
             }

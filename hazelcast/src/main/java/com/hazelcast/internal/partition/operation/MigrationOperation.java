@@ -142,7 +142,7 @@ public class MigrationOperation extends BaseMigrationOperation implements Target
             InternalPartitionServiceImpl partitionService = getService();
             PartitionReplicaManager replicaManager = partitionService.getReplicaManager();
             int destinationNewReplicaIndex = migrationInfo.getDestinationNewReplicaIndex();
-            int replicaOffset = destinationNewReplicaIndex <= 1 ? 1 : destinationNewReplicaIndex;
+            int replicaOffset = Math.max(destinationNewReplicaIndex, 1);
 
             Map<ServiceNamespace, long[]> namespaceVersions = fragmentMigrationState.getNamespaceVersionMap();
             for (Entry<ServiceNamespace, long[]> e  : namespaceVersions.entrySet()) {

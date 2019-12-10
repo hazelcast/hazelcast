@@ -129,7 +129,7 @@ hazelcast:
   #
   # The "wan-replication" element has the following sub-elements:
   # * "batch-publisher":
-  #     WAN publisher using the built-in com.hazelcast.enterprise.wan.impl.replication.WanBatchReplication.
+  #     WAN publisher using the built-in com.hazelcast.enterprise.wan.impl.replication.WanBatchPublisher.
   #     Waits until a batch size is reached or a delay time is passed.
   #     Please see the batch-size and batch-max-delay-millis configuration descriptions below.
   #     * "cluster-name":
@@ -246,7 +246,7 @@ hazelcast:
   #     * "target-endpoints":
   #         Comma separated list of IP addresses of the target cluster members for
   #         which the WAN replication is implemented.
-  #     * "wan-sync":
+  #     * "sync":
   #     Configuration for the WAN sync mechanism. It has the following sub-elements:
   #         - "consistency-check-strategy":
   #             Sets the strategy for checking consistency of data between source and
@@ -350,7 +350,7 @@ hazelcast:
           max-target-endpoints: 2147483647
           queue-capacity: 10000
           target-endpoints: 10.3.5.1:5701,10.3.5.2:5701
-          wan-sync:
+          sync:
             consistency-check-strategy: NONE
           # aws:
           #   enabled: false

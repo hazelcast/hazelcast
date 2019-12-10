@@ -18,7 +18,7 @@ package com.hazelcast.wan.impl;
 
 import com.hazelcast.config.AbstractWanPublisherConfig;
 import com.hazelcast.config.Config;
-import com.hazelcast.config.CustomWanPublisherConfig;
+import com.hazelcast.config.WanCustomPublisherConfig;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.config.WanReplicationRef;
@@ -36,9 +36,9 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.wan.MigrationAwareWanReplicationPublisher;
-import com.hazelcast.wan.WanReplicationEvent;
-import com.hazelcast.wan.WanReplicationPublisher;
+import com.hazelcast.wan.WanMigrationAwarePublisher;
+import com.hazelcast.wan.WanEvent;
+import com.hazelcast.wan.WanPublisher;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -127,12 +127,12 @@ public class WanPublisherMigrationTest extends HazelcastTestSupport {
 
     @Override
     protected Config getConfig() {
-        CustomWanPublisherConfig publisherConfig = new CustomWanPublisherConfig()
+        WanCustomPublisherConfig publisherConfig = new WanCustomPublisherConfig()
                 .setPublisherId("dummyPublisherId")
                 .setClassName(MigrationCountingWanPublisher.class.getName());
         publisherConfig.getProperties().put("failMigrations", failMigrations);
 
-        WanReplicationConfig wanConfig = new WanReplicationConfig()
+        WanReplicationConfig wanReplicationConfig = new WanReplicationConfig()
                 .setName("dummyWan")
                 .addCustomPublisherConfig(publisherConfig);
 
@@ -144,18 +144,18 @@ public class WanPublisherMigrationTest extends HazelcastTestSupport {
                 .setWanReplicationRef(wanRef);
 
         return smallInstanceConfig()
-                .addWanReplicationConfig(wanConfig)
+                .addWanReplicationConfig(wanReplicationConfig)
                 .addMapConfig(mapConfig);
     }
 
     private MigrationCountingWanPublisher getPublisher(HazelcastInstance instance) {
         WanReplicationService service = getNodeEngineImpl(instance).getWanReplicationService();
-        DelegatingWanReplicationScheme delegate = service.getWanReplicationPublishers("dummyWan");
+        DelegatingWanScheme delegate = service.getWanReplicationPublishers("dummyWan");
         return (MigrationCountingWanPublisher) delegate.getPublishers().iterator().next();
     }
 
     public static class MigrationCountingWanPublisher implements
-            WanReplicationPublisher, MigrationAwareWanReplicationPublisher<Map<String, String>> {
+            WanPublisher, WanMigrationAwarePublisher<Map<String, String>> {
         private final AtomicBoolean failMigration = new AtomicBoolean();
 
         final AtomicLong migrationStart = new AtomicLong();
@@ -180,12 +180,12 @@ public class WanPublisherMigrationTest extends HazelcastTestSupport {
         }
 
         @Override
-        public void publishReplicationEvent(WanReplicationEvent eventObject) {
+        public void publishReplicationEvent(WanEvent eventObject) {
 
         }
 
         @Override
-        public void publishReplicationEventBackup(WanReplicationEvent eventObject) {
+        public void publishReplicationEventBackup(WanEvent eventObject) {
 
         }
 

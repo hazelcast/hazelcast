@@ -30,7 +30,8 @@ import com.hazelcast.config.CacheSimpleEntryListenerConfig;
 import com.hazelcast.config.CardinalityEstimatorConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.CredentialsFactoryConfig;
-import com.hazelcast.config.CustomWanPublisherConfig;
+import com.hazelcast.config.WanBatchPublisherConfig;
+import com.hazelcast.config.WanCustomPublisherConfig;
 import com.hazelcast.config.DurableExecutorConfig;
 import com.hazelcast.config.EncryptionAtRestConfig;
 import com.hazelcast.config.EndpointConfig;
@@ -102,7 +103,6 @@ import com.hazelcast.config.SymmetricEncryptionConfig;
 import com.hazelcast.config.TcpIpConfig;
 import com.hazelcast.config.TopicConfig;
 import com.hazelcast.config.VaultSecureStoreConfig;
-import com.hazelcast.config.WanBatchReplicationPublisherConfig;
 import com.hazelcast.config.WanConsumerConfig;
 import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.config.WanReplicationRef;
@@ -1373,7 +1373,7 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                 if ("custom-publisher".equals(nName)) {
                     customPublishers.add(handleCustomPublisher(n));
                 } else if ("consumer".equals(nName)) {
-                    replicationConfigBuilder.addPropertyValue("wanConsumerConfig", handleWanConsumer(n));
+                    replicationConfigBuilder.addPropertyValue("consumerConfig", handleWanConsumer(n));
                 }
             }
             replicationConfigBuilder.addPropertyValue("batchPublisherConfigs", batchPublishers);
@@ -1382,13 +1382,13 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
         }
 
         private AbstractBeanDefinition handleBatchPublisher(Node n) {
-            BeanDefinitionBuilder builder = createBeanBuilder(WanBatchReplicationPublisherConfig.class);
+            BeanDefinitionBuilder builder = createBeanBuilder(WanBatchPublisherConfig.class);
             AbstractBeanDefinition definition = builder.getBeanDefinition();
 
             ArrayList<String> excluded = new ArrayList<>(AliasedDiscoveryConfigUtils.getTags());
             excluded.add("properties");
             excluded.add("discoveryStrategies");
-            excluded.add("wanSync");
+            excluded.add("sync");
 
             fillValues(n, builder, excluded.toArray(new String[0]));
 
@@ -1401,15 +1401,15 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                     handleAliasedDiscoveryStrategy(child, builder, nodeName);
                 } else if ("discovery-strategies".equals(nodeName)) {
                     handleDiscoveryStrategies(child, builder);
-                } else if ("wan-sync".equals(nodeName)) {
-                    createAndFillBeanBuilder(child, WanSyncConfig.class, "wanSyncConfig", builder);
+                } else if ("sync".equals(nodeName)) {
+                    createAndFillBeanBuilder(child, WanSyncConfig.class, "syncConfig", builder);
                 }
             }
             return definition;
         }
 
         private AbstractBeanDefinition handleCustomPublisher(Node n) {
-            BeanDefinitionBuilder builder = createBeanBuilder(CustomWanPublisherConfig.class);
+            BeanDefinitionBuilder builder = createBeanBuilder(WanCustomPublisherConfig.class);
             AbstractBeanDefinition definition = builder.getBeanDefinition();
             fillValues(n, builder, "properties");
 

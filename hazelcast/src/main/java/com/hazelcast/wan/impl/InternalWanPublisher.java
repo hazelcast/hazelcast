@@ -17,13 +17,13 @@
 package com.hazelcast.wan.impl;
 
 import com.hazelcast.internal.monitor.LocalWanPublisherStats;
-import com.hazelcast.wan.WanReplicationEvent;
-import com.hazelcast.wan.WanReplicationPublisher;
+import com.hazelcast.wan.WanEvent;
+import com.hazelcast.wan.WanPublisher;
 
 /**
  * Methods exposed on WAN publishers for internal use.
  */
-public interface InternalWanReplicationPublisher extends WanReplicationPublisher {
+public interface InternalWanPublisher extends WanPublisher {
 
     /**
      * Releases all resources for the map with the given {@code mapName}.
@@ -49,9 +49,9 @@ public interface InternalWanReplicationPublisher extends WanReplicationPublisher
      * Publishes the {@code wanReplicationEvent} on this publisher. This can be
      * used to forward received events on the target cluster.
      *
-     * @param wanReplicationEvent the WAN event to publish
+     * @param wanEvent the WAN event to publish
      */
-    void republishReplicationEvent(WanReplicationEvent wanReplicationEvent);
+    void republishReplicationEvent(WanEvent wanEvent);
 
     /**
      * Publishes a WAN anti-entropy event. This method may also process the
@@ -65,13 +65,13 @@ public interface InternalWanReplicationPublisher extends WanReplicationPublisher
 
     /**
      * Calls to this method will pause WAN event container polling. Effectively,
-     * pauses WAN replication for its {@link WanReplicationPublisher} instance.
+     * pauses WAN replication for its {@link WanPublisher} instance.
      * <p>
      * WAN events will still be offered to WAN event containers but they won't
      * be polled. This means that the containers might eventually fill up and start
      * dropping events.
      * <p>
-     * Calling this method on already paused {@link WanReplicationPublisher}
+     * Calling this method on already paused {@link WanPublisher}
      * instances will have no effect.
      * <p></p>
      * There is no synchronization with the thread polling the WAN event
@@ -93,7 +93,7 @@ public interface InternalWanReplicationPublisher extends WanReplicationPublisher
      * events in the containers but these events will not be replicated until
      * the publisher is resumed.
      * <p>
-     * Calling this method on already stopped {@link WanReplicationPublisher}
+     * Calling this method on already stopped {@link WanPublisher}
      * instances will have no effect.
      * NOTE: used only in Hazelcast Enterprise.
      *
@@ -105,9 +105,9 @@ public interface InternalWanReplicationPublisher extends WanReplicationPublisher
 
     /**
      * This method re-enables WAN event containers polling for a paused or stopped
-     * {@link WanReplicationPublisher} instance.
+     * {@link WanPublisher} instance.
      * <p>
-     * Calling this method on already running {@link WanReplicationPublisher}
+     * Calling this method on already running {@link WanPublisher}
      * instances will have no effect.
      * NOTE: used only in Hazelcast Enterprise.
      *
@@ -118,7 +118,7 @@ public interface InternalWanReplicationPublisher extends WanReplicationPublisher
     }
 
     /**
-     * Gathers statistics of related {@link WanReplicationPublisher} instance.
+     * Gathers statistics of related {@link WanPublisher} instance.
      * This method will always return the same instance.
      * NOTE: used only in Hazelcast Enterprise.
      *

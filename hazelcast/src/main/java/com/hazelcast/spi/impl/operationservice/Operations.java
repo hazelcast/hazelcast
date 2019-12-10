@@ -17,7 +17,7 @@
 package com.hazelcast.spi.impl.operationservice;
 
 import com.hazelcast.internal.cluster.impl.operations.JoinOperation;
-import com.hazelcast.internal.cluster.impl.operations.WanReplicationOperation;
+import com.hazelcast.internal.cluster.impl.operations.WanOperation;
 import com.hazelcast.internal.partition.MigrationCycleOperation;
 
 /**
@@ -41,10 +41,10 @@ public final class Operations {
     }
 
     /**
-     *  Checks if the given operation is an instance of {@link WanReplicationOperation}
+     *  Checks if the given operation is an instance of {@link WanOperation}
      */
     public static boolean isWanReplicationOperation(Operation op) {
-        return op instanceof WanReplicationOperation
+        return op instanceof WanOperation
                 && op.getClass().getClassLoader() == THIS_CLASS_LOADER;
     }
 }

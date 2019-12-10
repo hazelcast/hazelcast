@@ -16,15 +16,15 @@
 
 package com.hazelcast.collection.impl.queue;
 
+import com.hazelcast.collection.IQueue;
+import com.hazelcast.collection.ItemEvent;
+import com.hazelcast.collection.ItemListener;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.ItemListenerConfig;
 import com.hazelcast.config.QueueConfig;
 import com.hazelcast.core.DistributedObjectEvent;
 import com.hazelcast.core.DistributedObjectListener;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.collection.IQueue;
-import com.hazelcast.collection.ItemEvent;
-import com.hazelcast.collection.ItemListener;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -39,6 +39,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -111,7 +112,13 @@ public class QueueListenerTest extends HazelcastTestSupport {
         for (int i = 0; i < TOTAL_QUEUE_PUT / 2; i++) {
             queue.put(i);
         }
-        factory.newHazelcastInstance(config);
+        HazelcastInstance second = factory.newHazelcastInstance(config);
+        assertTrueEventually(() -> {
+            assertEquals(2,
+                    getNodeEngineImpl(instance).getEventService().getRegistrations(QueueService.SERVICE_NAME, QUEUE_NAME).size());
+            assertEquals(2,
+                    getNodeEngineImpl(second).getEventService().getRegistrations(QueueService.SERVICE_NAME, QUEUE_NAME).size());
+        });
         for (int i = 0; i < TOTAL_QUEUE_PUT / 4; i++) {
             queue.put(i);
         }
