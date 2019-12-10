@@ -24,7 +24,9 @@ import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
+import com.hazelcast.test.OverridePropertyRule;
 import com.hazelcast.test.annotation.QuickTest;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -40,6 +42,14 @@ import static org.junit.Assert.assertSame;
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
 public class MetricsPropertiesTest extends HazelcastTestSupport {
+
+    @Rule
+    public OverridePropertyRule overrideFrequency =
+            OverridePropertyRule.clear(ClusterProperty.METRICS_COLLECTION_FREQUENCY.getName());
+
+    @Rule
+    public OverridePropertyRule overrideDebug =
+            OverridePropertyRule.clear(ClusterProperty.METRICS_DEBUG.getName());
 
     @Test
     public void testSystemPropertiesOverrideConfig() {

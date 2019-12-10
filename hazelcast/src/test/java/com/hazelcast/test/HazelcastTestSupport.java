@@ -39,6 +39,8 @@ import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.nio.EndpointManager;
 import com.hazelcast.internal.nio.Packet;
+import com.hazelcast.internal.partition.IPartition;
+import com.hazelcast.internal.partition.IPartitionService;
 import com.hazelcast.internal.partition.InternalPartition;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.partition.impl.PartitionServiceState;
@@ -63,10 +65,9 @@ import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationparker.impl.OperationParkerImpl;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
-import com.hazelcast.internal.partition.IPartition;
-import com.hazelcast.internal.partition.IPartitionService;
 import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.jitter.JitterRule;
+import com.hazelcast.test.metrics.MetricsRule;
 import com.hazelcast.test.starter.HazelcastStarter;
 import junit.framework.AssertionFailedError;
 import org.junit.After;
@@ -148,6 +149,9 @@ public abstract class HazelcastTestSupport {
     public JitterRule jitterRule = new JitterRule();
 
     @Rule
+    public MetricsRule metricsRule = new MetricsRule();
+
+    @Rule
     public DumpBuildInfoOnFailureRule dumpInfoRule = new DumpBuildInfoOnFailureRule();
 
     private TestHazelcastInstanceFactory factory;
@@ -159,6 +163,8 @@ public abstract class HazelcastTestSupport {
         LOGGER.fine("ASSERT_COMPLETES_STALL_TOLERANCE = " + ASSERT_COMPLETES_STALL_TOLERANCE);
         String pmemDirectory = System.getProperty("hazelcast.persistent.memory");
         PERSISTENT_MEMORY_DIRECTORY =  pmemDirectory != null ? pmemDirectory : "/tmp/pmem";
+        System.setProperty(ClusterProperty.METRICS_COLLECTION_FREQUENCY.getName(), "1");
+        System.setProperty(ClusterProperty.METRICS_DEBUG.getName(), "true");
     }
 
     protected static <T> boolean containsIn(T item1, Collection<T> collection, Comparator<T> comparator) {
@@ -232,7 +238,7 @@ public abstract class HazelcastTestSupport {
         if (factory != null) {
             throw new IllegalStateException("Node factory is already created!");
         }
-        return factory = createHazelcastInstanceFactory0(nodeCount);
+        return factory = createHazelcastInstanceFactory0(nodeCount).withMetricsRule(metricsRule);
     }
 
     protected final TestHazelcastInstanceFactory createHazelcastInstanceFactory(String... addresses) {
@@ -243,7 +249,7 @@ public abstract class HazelcastTestSupport {
             throw new UnsupportedOperationException(
                     "Cannot start a factory with specific addresses when running compatibility tests");
         } else {
-            return factory = new TestHazelcastInstanceFactory(addresses);
+            return factory = new TestHazelcastInstanceFactory(addresses).withMetricsRule(metricsRule);
         }
     }
 
@@ -251,7 +257,7 @@ public abstract class HazelcastTestSupport {
         if (factory != null) {
             throw new IllegalStateException("Node factory is already created!");
         }
-        return factory = createHazelcastInstanceFactory0(null);
+        return factory = createHazelcastInstanceFactory0(null).withMetricsRule(metricsRule);
     }
 
     protected final TestHazelcastInstanceFactory createHazelcastInstanceFactory(int initialPort, String... addresses) {
@@ -262,7 +268,7 @@ public abstract class HazelcastTestSupport {
             throw new UnsupportedOperationException(
                     "Cannot start a factory with specific addresses when running compatibility tests");
         } else {
-            return factory = new TestHazelcastInstanceFactory(initialPort, addresses);
+            return factory = new TestHazelcastInstanceFactory(initialPort, addresses).withMetricsRule(metricsRule);
         }
     }
 
