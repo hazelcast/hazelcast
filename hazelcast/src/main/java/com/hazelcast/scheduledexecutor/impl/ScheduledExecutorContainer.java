@@ -37,7 +37,6 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
@@ -63,43 +62,35 @@ public class ScheduledExecutorContainer {
 
     private final NodeEngine nodeEngine;
 
-    private final TaskLifecycleHook taskLifecycleHook;
-
     private final ExecutionService executionService;
 
     private final int partitionId;
 
     private final int durability;
 
-    private final int capacity;
+    private final CapacityPermit permit;
 
-    ScheduledExecutorContainer(String name, int partitionId, NodeEngine nodeEngine, TaskLifecycleHook hook,
-                               int durability, int capacity) {
-        this(name, partitionId, nodeEngine, hook, durability, capacity, new ConcurrentHashMap<>());
+    ScheduledExecutorContainer(String name, int partitionId, NodeEngine nodeEngine, CapacityPermit permit,
+                               int durability) {
+        this(name, partitionId, nodeEngine, permit, durability, new ConcurrentHashMap<>());
     }
 
-    ScheduledExecutorContainer(String name, int partitionId, NodeEngine nodeEngine, TaskLifecycleHook hook,
-                               int durability, int capacity, ConcurrentMap<String, ScheduledTaskDescriptor> tasks) {
+    ScheduledExecutorContainer(String name, int partitionId, NodeEngine nodeEngine, CapacityPermit permit,
+                               int durability, ConcurrentMap<String, ScheduledTaskDescriptor> tasks) {
         this.logger = nodeEngine.getLogger(getClass());
         this.name = name;
         this.nodeEngine = nodeEngine;
-        this.taskLifecycleHook = hook;
         this.executionService = nodeEngine.getExecutionService();
         this.partitionId = partitionId;
         this.durability = durability;
-        this.capacity = capacity;
+        this.permit = permit;
         this.tasks = tasks;
     }
 
     public ScheduledFuture schedule(TaskDefinition definition) {
         checkNotDuplicateTask(definition.getName());
-        checkNotAtCapacity();
-        try {
-            taskLifecycleHook.preTaskSchedule(name, definition);
-            return createContextAndSchedule(definition);
-        } finally {
-            taskLifecycleHook.postTaskSchedule(name, definition);
-        }
+        permit.acquire();
+        return createContextAndSchedule(definition);
     }
 
     public boolean cancel(String taskName) {
@@ -156,13 +147,10 @@ public class ScheduledExecutorContainer {
         log(FINEST, taskName, "Disposing");
 
         ScheduledTaskDescriptor descriptor = tasks.get(taskName);
-        taskLifecycleHook.preTaskDestroy(name, descriptor.getDefinition());
-        try {
-            descriptor.cancel(true);
-        } finally {
-            tasks.remove(taskName);
-            taskLifecycleHook.postTaskDestroy(name, descriptor.getDefinition());
-        }
+
+        descriptor.cancel(true);
+        tasks.remove(taskName);
+        permit.release();
     }
 
     public void enqueueSuspended(TaskDefinition definition) {
@@ -176,9 +164,11 @@ public class ScheduledExecutorContainer {
 
         boolean keyExists = tasks.containsKey(descriptor.getDefinition().getName());
         if (force || !keyExists) {
-            taskLifecycleHook.preSuspendedEnqueue(name, descriptor, !keyExists);
+            if (!keyExists) {
+                permit.acquireQuietly();
+            }
+
             tasks.put(descriptor.getDefinition().getName(), descriptor);
-            taskLifecycleHook.postSuspendedEnqueue(name, descriptor, !keyExists);
         }
     }
 
@@ -363,15 +353,6 @@ public class ScheduledExecutorContainer {
         if (tasks.containsKey(taskName)) {
             throw new DuplicateTaskException(
                     "There is already a task " + "with the same name '" + taskName + "' in '" + getName() + "'");
-        }
-    }
-
-    void checkNotAtCapacity() {
-        if (capacity != 0 && tasks.size() >= capacity) {
-            throw new RejectedExecutionException(
-                    "Maximum capacity (" + capacity + ") of tasks reached for partition (" + partitionId + ") "
-                            + "and scheduled executor (" + name + "). "
-                            + "Reminder that tasks must be disposed if not needed.");
         }
     }
 

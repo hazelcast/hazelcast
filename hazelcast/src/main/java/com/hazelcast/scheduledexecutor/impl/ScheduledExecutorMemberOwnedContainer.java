@@ -39,9 +39,9 @@ public class ScheduledExecutorMemberOwnedContainer
 
     private final AtomicBoolean memberPartitionLock = new AtomicBoolean();
 
-    ScheduledExecutorMemberOwnedContainer(String name, int capacity,
-                                          NodeEngine nodeEngine, TaskLifecycleHook hook) {
-        super(name, -1, nodeEngine, hook, MEMBER_DURABILITY, capacity, new ConcurrentHashMap<>());
+    ScheduledExecutorMemberOwnedContainer(String name, CapacityPermit permit,
+                                          NodeEngine nodeEngine) {
+        super(name, -1, nodeEngine, permit, MEMBER_DURABILITY, new ConcurrentHashMap<>());
     }
 
     @Override

@@ -50,10 +50,7 @@ import java.util.UUID;
 import java.util.WeakHashMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.RejectedExecutionException;
-import java.util.concurrent.atomic.AtomicLong;
 
-import static com.hazelcast.config.ScheduledExecutorConfig.CapacityPolicy.PER_NODE;
 import static com.hazelcast.internal.config.ConfigValidator.checkScheduledExecutorConfig;
 import static com.hazelcast.internal.util.ConcurrencyUtil.getOrPutSynchronized;
 import static com.hazelcast.internal.util.ExceptionUtil.peel;
@@ -67,15 +64,16 @@ import static java.util.Collections.synchronizedSet;
  */
 public class DistributedScheduledExecutorService
         implements ManagedService, RemoteService, MigrationAwareService, SplitBrainProtectionAwareService,
-        SplitBrainHandlerService, MembershipAwareService, TaskLifecycleHook {
+        SplitBrainHandlerService, MembershipAwareService {
 
     public static final String SERVICE_NAME = "hz:impl:scheduledExecutorService";
     public static final int MEMBER_BIN = -1;
+    public static final CapacityPermit NOOP_PERMIT = new NoopCapacityPermit();
 
     private static final Object NULL_OBJECT = new Object();
 
     private final ConcurrentMap<String, Boolean> shutdownExecutors = new ConcurrentHashMap<>();
-    private final ConcurrentMap<String, AtomicLong> schedulerTaskCounts = new ConcurrentHashMap<>();
+    private final ConcurrentMap<String, CapacityPermit> permits = new ConcurrentHashMap<>();
     private final Set<ScheduledFutureProxy> lossListeners = synchronizedSet(newSetFromMap(new WeakHashMap<>()));
 
     private final ConcurrentMap<String, Object> splitBrainProtectionConfigCache = new ConcurrentHashMap<>();
@@ -144,7 +142,7 @@ public class DistributedScheduledExecutorService
     @Override
     public void shutdown(boolean terminate) {
         shutdownExecutors.clear();
-        schedulerTaskCounts.clear();
+        permits.clear();
 
         if (memberBin != null) {
             memberBin.destroy();
@@ -161,44 +159,15 @@ public class DistributedScheduledExecutorService
         }
     }
 
-    @Override
-    public void preTaskSchedule(String scheduler, TaskDefinition definition) {
-        ensurePerNodeCapacity(scheduler, true);
-    }
-
-    @Override
-    public void preSuspendedEnqueue(String scheduler, ScheduledTaskDescriptor descriptor, boolean newEntry) {
-        ensurePerNodeCapacity(scheduler, false);
-    }
-
-    @Override
-    public void postTaskDestroy(String scheduler, TaskDefinition definition) {
-        AtomicLong tasksCount = schedulerTaskCounts.get(scheduler);
-        if (tasksCount != null) {
-            tasksCount.decrementAndGet();
+    CapacityPermit permitFor(String name, ScheduledExecutorConfig config) {
+        CapacityPermit permit = permits.get(name);
+        if (permit == null) {
+            CapacityPermit newPermit = new MemberCapacityPermit(name, config.getCapacity());
+            permit = permits.putIfAbsent(name, newPermit);
+            permit = (permit == null) ? newPermit : permit;
         }
-    }
 
-    void ensurePerNodeCapacity(String scheduler, boolean enforce) {
-        ScheduledExecutorConfig executorConfig = nodeEngine.getConfig().findScheduledExecutorConfig(scheduler);
-
-        if (executorConfig.getCapacityPolicy().equals(PER_NODE) && executorConfig.getCapacity() > 0) {
-            AtomicLong newCounter = new AtomicLong();
-            AtomicLong tasksCount = schedulerTaskCounts.putIfAbsent(scheduler, newCounter);
-            tasksCount = tasksCount == null ? newCounter : tasksCount;
-
-            if (tasksCount.getAndIncrement() >= executorConfig.getCapacity()) {
-                // Release that incr
-                tasksCount.decrementAndGet();
-
-                if (enforce) {
-                    throw new RejectedExecutionException(
-                            "Maximum capacity (" + executorConfig.getCapacity() + ") of tasks reached for this member "
-                                    + "and scheduled executor (" + scheduler + "). "
-                                    + "Reminder, that tasks must be disposed if not needed.");
-                }
-            }
-        }
+        return permit;
     }
 
     void addLossListener(ScheduledFutureProxy future) {
@@ -286,7 +255,7 @@ public class DistributedScheduledExecutorService
     }
 
     private void resetPartitionOrMemberBinContainer(String name) {
-        schedulerTaskCounts.remove(name);
+        permits.remove(name);
         if (memberBin != null) {
             memberBin.destroyContainer(name);
         }

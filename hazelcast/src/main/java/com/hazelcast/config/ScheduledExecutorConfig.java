@@ -16,12 +16,15 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.cluster.Member;
 import com.hazelcast.internal.config.ConfigDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.scheduledexecutor.IScheduledExecutorService;
 
 import java.io.IOException;
+import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.config.ScheduledExecutorConfig.CapacityPolicy.PER_NODE;
 import static com.hazelcast.internal.util.Preconditions.checkNotNegative;
@@ -29,7 +32,7 @@ import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.internal.util.Preconditions.checkPositive;
 
 /**
- * Configuration options for the {@link com.hazelcast.scheduledexecutor.IScheduledExecutorService}.
+ * Configuration options for the {@link IScheduledExecutorService}.
  */
 public class ScheduledExecutorConfig implements IdentifiedDataSerializable, NamedConfig {
 
@@ -184,7 +187,7 @@ public class ScheduledExecutorConfig implements IdentifiedDataSerializable, Name
     }
 
     /**
-     * Set the capacity policy for the configured {@link capacity} value
+     * Set the capacity policy for the configured capacity value
      *
      * To prevent any undesirable data-loss, capacity is ignored during partition migrations,
      * the count is updated accordingly, however the rejection is not enforced.
@@ -242,6 +245,7 @@ public class ScheduledExecutorConfig implements IdentifiedDataSerializable, Name
                 + ", durability=" + durability
                 + ", poolSize=" + poolSize
                 + ", capacity=" + capacity
+                + ", capacityPolicy=" + capacityPolicy
                 + ", splitBrainProtectionName=" + splitBrainProtectionName
                 + ", mergePolicyConfig=" + mergePolicyConfig
                 + '}';
@@ -265,6 +269,7 @@ public class ScheduledExecutorConfig implements IdentifiedDataSerializable, Name
         out.writeInt(poolSize);
         out.writeUTF(splitBrainProtectionName);
         out.writeObject(mergePolicyConfig);
+        out.writeInt(capacityPolicy.ordinal());
     }
 
     @Override
@@ -275,6 +280,7 @@ public class ScheduledExecutorConfig implements IdentifiedDataSerializable, Name
         poolSize = in.readInt();
         splitBrainProtectionName = in.readUTF();
         mergePolicyConfig = in.readObject();
+        capacityPolicy = CapacityPolicy.values()[in.readInt()];
     }
 
     @SuppressWarnings({"checkstyle:npathcomplexity"})
@@ -338,8 +344,10 @@ public class ScheduledExecutorConfig implements IdentifiedDataSerializable, Name
          * Storage size depends on the partition count in a Hazelcast instance.
          * This policy should not be used often.
          * Avoid using this policy with a small cluster: if the cluster is small it will
-         * be hosting more partitions, and therefore tasks, than that of a larger
-         * cluster.
+         * be hosting more partitions, and therefore tasks, than that of a larger cluster.
+         *
+         * This policy has no effect when scheduling is done using the OnMember APIs
+         * eg. {@link IScheduledExecutorService#scheduleOnMember(Runnable, Member, long, TimeUnit)}
          */
         PER_PARTITION
 

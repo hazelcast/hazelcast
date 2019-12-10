@@ -16,23 +16,18 @@
 
 package com.hazelcast.scheduledexecutor.impl;
 
-public interface TaskLifecycleHook {
+public class NoopCapacityPermit
+    implements CapacityPermit {
 
-    default void preTaskSchedule(String scheduler, TaskDefinition definition) {
+    @Override
+    public void acquire() {
     }
 
-    default void postTaskSchedule(String scheduler, TaskDefinition definition) {
+    @Override
+    public void acquireQuietly() {
     }
 
-    default void preTaskDestroy(String scheduler, TaskDefinition definition) {
-    }
-
-    default void postTaskDestroy(String scheduler, TaskDefinition definition) {
-    }
-
-    default void preSuspendedEnqueue(String scheduler, ScheduledTaskDescriptor descriptor, boolean newEntry) {
-    }
-
-    default void postSuspendedEnqueue(String scheduler, ScheduledTaskDescriptor descriptor, boolean newEntry) {
+    @Override
+    public void release() {
     }
 }
