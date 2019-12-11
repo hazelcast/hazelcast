@@ -68,7 +68,7 @@ public class PromoteToCPMemberMessageTask extends AbstractAsyncMessageTask<Reque
 
     @Override
     public String getMethodName() {
-        return "mcPromoteToCPMember";
+        return "promoteToCPMember";
     }
 
     @Override

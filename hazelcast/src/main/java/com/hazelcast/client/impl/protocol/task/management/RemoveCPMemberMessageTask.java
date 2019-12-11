@@ -68,7 +68,7 @@ public class RemoveCPMemberMessageTask extends AbstractAsyncMessageTask<RequestP
 
     @Override
     public String getMethodName() {
-        return "mcRemoveCPMember";
+        return "removeCPMember";
     }
 
     @Override

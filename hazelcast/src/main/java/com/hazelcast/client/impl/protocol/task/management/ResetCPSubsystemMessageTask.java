@@ -68,7 +68,7 @@ public class ResetCPSubsystemMessageTask extends AbstractAsyncMessageTask<Reques
 
     @Override
     public String getMethodName() {
-        return "mcResetCPSubsystem";
+        return "resetCPSubsystem";
     }
 
     @Override

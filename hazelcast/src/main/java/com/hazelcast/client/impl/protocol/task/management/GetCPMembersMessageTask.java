@@ -82,7 +82,7 @@ public class GetCPMembersMessageTask extends AbstractAsyncMessageTask<RequestPar
 
     @Override
     public String getMethodName() {
-        return "mcGetCPMembers";
+        return "getCPMembers";
     }
 
     @Override
