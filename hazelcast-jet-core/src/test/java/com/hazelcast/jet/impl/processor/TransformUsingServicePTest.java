@@ -24,31 +24,38 @@ import com.hazelcast.jet.core.test.TestProcessorContext;
 import com.hazelcast.jet.core.test.TestProcessorSupplierContext;
 import com.hazelcast.jet.function.TriFunction;
 import com.hazelcast.jet.pipeline.ServiceFactory;
+import com.hazelcast.jet.pipeline.ServiceFactory.ServiceContext;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import static com.hazelcast.jet.impl.processor.TransformUsingServiceP.supplier;
+import static com.hazelcast.jet.pipeline.ServiceFactory.MAX_PENDING_CALLS_DEFAULT;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastSerialClassRunner.class)
 public class TransformUsingServicePTest {
 
     @Test
-    public void when_sharedLocally_then_oneContextInstance() throws Exception {
+    public void when_sharedLocally_then_oneServiceInstance() throws Exception {
         testSharing(true);
     }
 
     @Test
-    public void when_notSharedLocally_then_multipleContextInstances() throws Exception {
+    public void when_notSharedLocally_then_multipleServiceInstances() throws Exception {
         testSharing(false);
     }
 
     private void testSharing(boolean share) throws Exception {
         int[] createCounter = {0};
         int[] destroyCounter = {0};
-        ServiceFactory<String> serviceFactory = ServiceFactory.withCreateFn(jet -> "context-" + createCounter[0]++)
-                                                              .withDestroyFn(ctx -> destroyCounter[0]++);
+        ServiceContext[] serviceContexts = new ServiceContext[2];
+        ServiceFactory<String> serviceFactory = ServiceFactory.withCreateFn(ctx -> {
+            serviceContexts[ctx.localIndex()] = ctx;
+            return "context-" + createCounter[0]++;
+        }).withDestroyFn(svc -> destroyCounter[0]++);
+
         if (share) {
             serviceFactory = serviceFactory.withLocalSharing();
         }
@@ -61,11 +68,36 @@ public class TransformUsingServicePTest {
         assertEquals(share ? 1 : 0, createCounter[0]);
         //noinspection SuspiciousToArrayCall
         TransformUsingServiceP[] processors = supplier.get(2).toArray(new TransformUsingServiceP[0]);
-        processors[0].init(outbox1, new TestProcessorContext());
+        processors[0].init(outbox1, new TestProcessorContext()
+                .setLocalParallelism(2)
+                .setLocalProcessorIndex(0)
+                .setTotalParallelism(2)
+        );
+
         assertEquals(1, createCounter[0]);
-        processors[1].init(outbox2, new TestProcessorContext());
+
+        processors[1].init(outbox2, new TestProcessorContext()
+                .setLocalProcessorIndex(1)
+                .setLocalParallelism(2)
+                .setTotalParallelism(2)
+        );
         assertEquals(share ? 1 : 2, createCounter[0]);
         assertEquals(share, processors[0].service == processors[1].service);
+
+        assertEquals("localIndex", 0, serviceContexts[0].localIndex());
+        assertEquals("testVertex", serviceContexts[0].vertexName());
+        assertEquals("memberIndex", 0, serviceContexts[0].memberIndex());
+        assertEquals("memberCount", 1, serviceContexts[0].memberCount());
+        assertEquals("isSharedLocally", share, serviceContexts[0].isSharedLocally());
+        assertTrue("hasOrderedAsyncResponses", serviceContexts[0].hasOrderedAsyncResponses());
+        assertEquals("maxPendingCallsPerProcessor",
+                MAX_PENDING_CALLS_DEFAULT, serviceContexts[0].maxPendingCallsPerProcessor()
+        );
+
+        if (!share) {
+            assertEquals(0, serviceContexts[1].memberIndex());
+            assertEquals(1, serviceContexts[1].localIndex());
+        }
 
         processors[0].tryProcess(0, "foo");
         processors[1].tryProcess(0, "foo");

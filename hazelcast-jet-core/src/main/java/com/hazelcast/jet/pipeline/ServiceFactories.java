@@ -63,7 +63,8 @@ public final class ServiceFactories {
     @Nonnull
     public static <K, V> ServiceFactory<ReplicatedMap<K, V>> replicatedMapService(@Nonnull String mapName) {
         return ServiceFactory
-                .withCreateFn(jet -> jet.getHazelcastInstance().getReplicatedMap(mapName));
+                .withCreateFn(ctx -> ctx.jetInstance().<K, V>getReplicatedMap(mapName))
+                .withLocalSharing();
     }
 
     /**
@@ -90,7 +91,7 @@ public final class ServiceFactories {
     @Nonnull
     public static <K, V> ServiceFactory<IMap<K, V>> iMapService(@Nonnull String mapName) {
         return ServiceFactory
-                .withCreateFn(jet -> jet.<K, V>getMap(mapName))
+                .withCreateFn(ctx -> ctx.jetInstance().<K, V>getMap(mapName))
                 .withLocalSharing();
     }
 }

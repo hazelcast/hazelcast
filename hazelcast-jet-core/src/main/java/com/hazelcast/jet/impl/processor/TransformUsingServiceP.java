@@ -18,6 +18,7 @@ package com.hazelcast.jet.impl.processor;
 
 import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.core.AbstractProcessor;
+import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.core.ResettableSingletonTraverser;
 import com.hazelcast.jet.function.TriFunction;
@@ -42,8 +43,8 @@ public final class TransformUsingServiceP<S, T, R> extends AbstractProcessor {
     S service;
 
     private final ServiceFactory<S> serviceFactory;
-    private final TriFunction<ResettableSingletonTraverser<R>, ? super S, ? super T,
-                    ? extends Traverser<? extends R>> flatMapFn;
+    private final TriFunction<? super ResettableSingletonTraverser<R>, ? super S, ? super T, ? extends Traverser<R>>
+            flatMapFn;
 
     private Traverser<? extends R> outputTraverser;
     private final ResettableSingletonTraverser<R> singletonTraverser = new ResettableSingletonTraverser<>();
@@ -54,8 +55,8 @@ public final class TransformUsingServiceP<S, T, R> extends AbstractProcessor {
     private TransformUsingServiceP(
             @Nonnull ServiceFactory<S> serviceFactory,
             @Nullable S service,
-            @Nonnull TriFunction<ResettableSingletonTraverser<R>, ? super S, ? super T,
-                                    ? extends Traverser<? extends R>> flatMapFn
+            @Nonnull TriFunction<? super ResettableSingletonTraverser<R>, ? super S, ? super T, ? extends Traverser<R>>
+                    flatMapFn
     ) {
         this.serviceFactory = serviceFactory;
         this.flatMapFn = flatMapFn;
@@ -71,10 +72,10 @@ public final class TransformUsingServiceP<S, T, R> extends AbstractProcessor {
     }
 
     @Override
-    protected void init(@Nonnull Context context) {
+    protected void init(@Nonnull Processor.Context context) {
         if (!serviceFactory.hasLocalSharing()) {
             assert service == null : "service is not null: " + service;
-            service = serviceFactory.createFn().apply(context.jetInstance());
+            service = serviceFactory.createFn().apply(new ServiceContextImpl(serviceFactory, context));
         }
     }
 
@@ -107,8 +108,8 @@ public final class TransformUsingServiceP<S, T, R> extends AbstractProcessor {
      */
     public static <S, T, R> ProcessorSupplier supplier(
             @Nonnull ServiceFactory<S> serviceFactory,
-            @Nonnull TriFunction<ResettableSingletonTraverser<R>, ? super S, ? super T,
-                                            ? extends Traverser<? extends R>> flatMapFn
+            @Nonnull TriFunction<? super ResettableSingletonTraverser<R>, ? super S, ? super T, ? extends Traverser<R>>
+                    flatMapFn
     ) {
         return supplierWithService(serviceFactory,
                 (serviceFn, service) -> new TransformUsingServiceP<S, T, R>(serviceFn, service, flatMapFn)

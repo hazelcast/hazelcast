@@ -25,6 +25,7 @@ import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.Traversers;
 import com.hazelcast.jet.core.AbstractProcessor;
 import com.hazelcast.jet.core.BroadcastKey;
+import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.core.ResettableSingletonTraverser;
 import com.hazelcast.jet.core.Watermark;
@@ -122,10 +123,10 @@ public final class AsyncTransformUsingServiceUnorderedP<S, T, K, R> extends Abst
     }
 
     @Override
-    protected void init(@Nonnull Context context) {
+    protected void init(@Nonnull Processor.Context context) {
         if (!serviceFactory.hasLocalSharing()) {
             assert service == null : "service is not null: " + service;
-            service = serviceFactory.createFn().apply(context.jetInstance());
+            service = serviceFactory.createFn().apply(new ServiceContextImpl(serviceFactory, context));
         }
         maxAsyncOps = serviceFactory.maxPendingCallsPerProcessor();
         resultQueue = new ManyToOneConcurrentArrayQueue<>(maxAsyncOps);

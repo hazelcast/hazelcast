@@ -81,7 +81,7 @@ public final class PartitionedProcessorTransform<T, K> extends ProcessorTransfor
     public static <S, T, K, R> PartitionedProcessorTransform<T, K> flatMapUsingServicePartitionedTransform(
             @Nonnull Transform upstream,
             @Nonnull ServiceFactory<S> serviceFactory,
-            @Nonnull BiFunctionEx<? super S, ? super T, ? extends Traverser<? extends R>> flatMapFn,
+            @Nonnull BiFunctionEx<? super S, ? super T, ? extends Traverser<R>> flatMapFn,
             @Nonnull FunctionEx<? super T, ? extends K> partitionKeyFn
     ) {
         return new PartitionedProcessorTransform<>("flatMapUsingPartitionedService",

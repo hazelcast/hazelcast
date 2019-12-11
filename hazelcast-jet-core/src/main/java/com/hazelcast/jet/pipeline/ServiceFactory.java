@@ -20,6 +20,7 @@ import com.hazelcast.function.ConsumerEx;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.core.Processor;
+import com.hazelcast.logging.ILogger;
 
 import javax.annotation.Nonnull;
 import java.io.Serializable;
@@ -72,7 +73,9 @@ public final class ServiceFactory<S> implements Serializable {
      */
     public static final boolean ORDERED_ASYNC_RESPONSES_DEFAULT = true;
 
-    private final FunctionEx<JetInstance, ? extends S> createFn;
+    @Nonnull
+    private final FunctionEx<? super ServiceContext, ? extends S> createFn;
+    @Nonnull
     private final ConsumerEx<? super S> destroyFn;
     private final boolean isCooperative;
     private final boolean hasLocalSharing;
@@ -80,8 +83,8 @@ public final class ServiceFactory<S> implements Serializable {
     private final boolean orderedAsyncResponses;
 
     private ServiceFactory(
-            FunctionEx<JetInstance, ? extends S> createFn,
-            ConsumerEx<? super S> destroyFn,
+            @Nonnull FunctionEx<? super ServiceContext, ? extends S> createFn,
+            @Nonnull ConsumerEx<? super S> destroyFn,
             boolean isCooperative,
             boolean hasLocalSharing,
             int maxPendingCallsPerProcessor,
@@ -107,7 +110,7 @@ public final class ServiceFactory<S> implements Serializable {
      */
     @Nonnull
     public static <S> ServiceFactory<S> withCreateFn(
-            @Nonnull FunctionEx<JetInstance, ? extends S> createServiceFn
+            @Nonnull FunctionEx<? super ServiceContext, ? extends S> createServiceFn
     ) {
         checkSerializable(createServiceFn, "createServiceFn");
         return new ServiceFactory<>(
@@ -238,7 +241,7 @@ public final class ServiceFactory<S> implements Serializable {
      * Returns the create-function.
      */
     @Nonnull
-    public FunctionEx<JetInstance, ? extends S> createFn() {
+    public FunctionEx<? super ServiceContext, ? extends S> createFn() {
         return createFn;
     }
 
@@ -278,5 +281,67 @@ public final class ServiceFactory<S> implements Serializable {
      */
     public boolean hasOrderedAsyncResponses() {
         return orderedAsyncResponses;
+    }
+
+    /**
+     * Provides contextual information to {@link ServiceFactory#createFn()}
+     * that helps it set up the service.
+     */
+    public interface ServiceContext {
+        /**
+         * Returns the number of members in the Jet cluster.
+         */
+        int memberCount();
+
+        /**
+         * Returns the index of the Jet member where {@code createFn} is being invoked.
+         * Each member of the cluster has an index between 0 and {@link #memberCount()}.
+         * */
+        int memberIndex();
+
+        /**
+         * Returns the index of the service instance within the same Jet member.
+         * If the service {@linkplain #isSharedLocally()}, there's just one
+         * instance on each member so this returns 0.
+         */
+        int localIndex();
+
+        /**
+         * Says whether the service will be shared locally, i.e., there will be
+         * just one instance of it on each Jet member.
+         */
+        boolean isSharedLocally();
+
+        /**
+         * Returns {@code true} if the service will be used to make async requests
+         * and the responses will respect the order of requests.
+         */
+        boolean hasOrderedAsyncResponses();
+
+        /**
+         * Returns the limit on the number of async requests Jet will issue without
+         * awaiting their response. When this limit is reached, backpressure will
+         * kick in and the pipeline stage won't accept more data until some
+         * responses come in.
+         */
+        int maxPendingCallsPerProcessor();
+
+        /**
+         * Returns the name of the associated vertex.
+         */
+        @Nonnull
+        String vertexName();
+
+        /**
+         * Returns a logger the service can use for diagnostic output.
+         */
+        @Nonnull
+        ILogger logger();
+
+        /**
+         * Returns the Jet instance which is creating the service.
+         */
+        @Nonnull
+        JetInstance jetInstance();
     }
 }

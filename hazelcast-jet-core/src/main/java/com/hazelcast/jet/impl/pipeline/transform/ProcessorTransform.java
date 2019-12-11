@@ -76,7 +76,7 @@ public class ProcessorTransform extends AbstractTransform {
     public static <S, T, R> ProcessorTransform flatMapUsingServiceTransform(
             @Nonnull Transform upstream,
             @Nonnull ServiceFactory<S> serviceFactory,
-            @Nonnull BiFunctionEx<? super S, ? super T, ? extends Traverser<? extends R>> flatMapFn
+            @Nonnull BiFunctionEx<? super S, ? super T, ? extends Traverser<R>> flatMapFn
     ) {
         return new ProcessorTransform("flatMapUsingService", upstream,
                 ProcessorMetaSupplier.of(getPreferredLP(serviceFactory), flatMapUsingServiceP(serviceFactory, flatMapFn)));

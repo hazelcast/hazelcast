@@ -34,7 +34,7 @@ import static com.hazelcast.jet.impl.util.Util.checkSerializable;
 /**
  * See {@link SinkBuilder#sinkBuilder(String, FunctionEx)}.
  *
- * @param <C> type of the writer object
+ * @param <C> type of the context object
  * @param <T> type of the items the sink will accept
  *
  * @since 3.0
@@ -76,11 +76,11 @@ public final class SinkBuilder<C, T> {
      *     thread. This component is required.
      * </li><li>
      *     {@code onReceiveFn} gets notified of each item the sink receives and
-     *     (typically) passes it to the writer. This component is required.
+     *     (typically) passes it to the context. This component is required.
      * </li><li>
-     *     {@code flushFn} flushes the writer. This component is optional.
+     *     {@code flushFn} flushes the context. This component is optional.
      * </li><li>
-     *     {@code destroyFn} destroys the writer. This component is optional.
+     *     {@code destroyFn} destroys the context. This component is optional.
      * </li></ol>
      * The returned sink will be non-cooperative and will have preferred local
      * parallelism of 1. It doesn't participate in the fault-tolerance protocol,
@@ -106,9 +106,9 @@ public final class SinkBuilder<C, T> {
      * Sets the function Jet will call upon receiving an item. The function
      * receives two arguments: the context object (as provided by the {@link
      * #createFn} and the received item. Its job is to push the item to the
-     * writer.
+     * context.
      *
-     * @param receiveFn the "add item to the writer" function
+     * @param receiveFn the "add item to the context" function
      * @param <T_NEW> type of the items the sink will accept
      */
     @Nonnull
@@ -131,7 +131,7 @@ public final class SinkBuilder<C, T> {
      * You are not required to provide this function in case your implementation
      * doesn't need it.
      *
-     * @param flushFn the optional "flush the writer" function
+     * @param flushFn the optional "flush the context" function
      */
     @Nonnull
     public SinkBuilder<C, T> flushFn(@Nonnull ConsumerEx<? super C> flushFn) {

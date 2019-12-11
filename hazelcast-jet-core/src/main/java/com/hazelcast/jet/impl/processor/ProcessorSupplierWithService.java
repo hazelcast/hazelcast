@@ -36,21 +36,21 @@ public final class ProcessorSupplierWithService<S> implements ProcessorSupplier 
     static final long serialVersionUID = 1L;
 
     private final ServiceFactory<S> serviceFactory;
-    private BiFunction<ServiceFactory<S>, S, Processor> createProcessorFn;
+    private final BiFunction<? super ServiceFactory<S>, ? super S, ? extends Processor> createProcessorFn;
     private transient S service;
 
     private ProcessorSupplierWithService(
             @Nonnull ServiceFactory<S> serviceFactory,
-            @Nonnull BiFunction<ServiceFactory<S>, S, Processor> createProcessorFn
+            @Nonnull BiFunction<? super ServiceFactory<S>, ? super S, ? extends Processor> createProcessorFn
     ) {
         this.serviceFactory = serviceFactory;
         this.createProcessorFn = createProcessorFn;
     }
 
     @Override
-    public void init(@Nonnull Context context) {
+    public void init(@Nonnull ProcessorSupplier.Context context) {
         if (serviceFactory.hasLocalSharing()) {
-            service = serviceFactory.createFn().apply(context.jetInstance());
+            service = serviceFactory.createFn().apply(new ServiceContextImpl(serviceFactory, context));
         }
     }
 
@@ -72,7 +72,7 @@ public final class ProcessorSupplierWithService<S> implements ProcessorSupplier 
     @Nonnull
     public static <S> ProcessorSupplier supplierWithService(
             @Nonnull ServiceFactory<S> serviceFactory,
-            @Nonnull BiFunctionEx<ServiceFactory<S>, S, Processor> createProcessorFn
+            @Nonnull BiFunctionEx<? super ServiceFactory<S>, ? super S, ? extends Processor> createProcessorFn
     ) {
         return new ProcessorSupplierWithService<>(serviceFactory, createProcessorFn);
     }

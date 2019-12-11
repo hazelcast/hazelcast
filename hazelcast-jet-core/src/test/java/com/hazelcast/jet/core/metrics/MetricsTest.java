@@ -178,7 +178,7 @@ public class MetricsTest extends JetTestSupport {
     }
 
     @Test
-    public void usingContextAsync() {
+    public void usingServiceAsync() {
         int inputSize = 100_000;
 
         Integer[] inputs = new Integer[inputSize];

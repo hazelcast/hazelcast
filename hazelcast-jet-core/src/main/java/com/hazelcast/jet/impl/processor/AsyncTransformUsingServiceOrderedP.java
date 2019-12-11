@@ -91,7 +91,7 @@ public final class AsyncTransformUsingServiceOrderedP<S, T, R> extends AbstractP
     protected void init(@Nonnull Context context) {
         if (!serviceFactory.hasLocalSharing()) {
             assert service == null : "service is not null: " + service;
-            service = serviceFactory.createFn().apply(context.jetInstance());
+            service = serviceFactory.createFn().apply(new ServiceContextImpl(serviceFactory, context));
         }
         maxAsyncOps = serviceFactory.maxPendingCallsPerProcessor();
         queue = new ArrayDeque<>(maxAsyncOps);

@@ -983,10 +983,10 @@ public final class Processors {
     @Nonnull
     public static <S, T, R> ProcessorSupplier flatMapUsingServiceP(
             @Nonnull ServiceFactory<S> serviceFactory,
-            @Nonnull BiFunctionEx<? super S, ? super T, ? extends Traverser<? extends R>> flatMapFn
+            @Nonnull BiFunctionEx<? super S, ? super T, ? extends Traverser<R>> flatMapFn
     ) {
         return TransformUsingServiceP.<S, T, R>supplier(serviceFactory,
-                (singletonTraverser, context, item) -> flatMapFn.apply(context, item));
+                (singletonTraverser, service, item) -> flatMapFn.apply(service, item));
     }
 
     /**
