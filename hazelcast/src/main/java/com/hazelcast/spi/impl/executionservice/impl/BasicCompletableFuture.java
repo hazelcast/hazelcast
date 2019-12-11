@@ -57,11 +57,6 @@ class BasicCompletableFuture<V> extends InternalCompletableFuture<V> {
     }
 
     @Override
-    public V getNow(V valueIfAbsent) {
-        return super.getNow(valueIfAbsent);
-    }
-
-    @Override
     public V get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
         return (V) ensureResultSet(timeout, unit);
     }
