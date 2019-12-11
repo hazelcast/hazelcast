@@ -55,14 +55,16 @@ final class BitmapAlgorithms {
 
     private static final class AndIterator implements AscendingLongIterator {
 
-        // The idea: on every advancement request, order iterators by their
-        // current index; if the index of the first iterator (minimum) equal to
-        // the last one (maximum), we have a match; otherwise advance the first
-        // iterator at least to the last iterator index (maximum) and make it
-        // the new maximum, make the iterator previously ordered second to be
-        // the new minimum, repeat checking for a match.
+        // The idea: order iterators by their current index; if the index of the
+        // first iterator (minimum) equal to the last one (maximum), we have a
+        // match; otherwise advance the first iterator at least to the last
+        // iterator index (maximum) and make it the new maximum, make the
+        // iterator previously ordered second to be the new minimum, repeat
+        // checking for a match.
 
         private final Node[] nodes;
+        private Node first;
+        private Node last;
 
         private long index;
 
@@ -72,6 +74,8 @@ final class BitmapAlgorithms {
                 nodes[i] = new Node(iterators[i]);
             }
             this.nodes = nodes;
+
+            orderAndLink();
             advance();
         }
 
@@ -84,50 +88,33 @@ final class BitmapAlgorithms {
         public long advance() {
             long current = index;
 
-            Arrays.sort(nodes);
-
-            Node first = nodes[0];
             long min = first.iterator.getIndex();
-            Node last = nodes[nodes.length - 1];
             long max = last.iterator.getIndex();
 
-            if (min != max && min != AscendingLongIterator.END) {
-                // No match: build a linked list.
-
-                for (int i = 0; i < nodes.length - 1; ++i) {
-                    nodes[i].next = nodes[i + 1];
-                }
-                last.next = null;
-            }
-
-            while (min != max && min != AscendingLongIterator.END) {
+            while (min != max && min != AscendingLongIterator.END && max != AscendingLongIterator.END) {
                 max = first.iterator.advanceAtLeastTo(max);
-                if (max == AscendingLongIterator.END) {
-                    // End reached at the maximum iterator.
-                    index = AscendingLongIterator.END;
-                    return current;
-                }
 
                 // The first iterator is now guaranteed to be at the maximum or
                 // beyond it, make it last and repeat.
 
-                Node newFirst = first.next;
+                Node second = first.next;
                 first.next = null;
                 last.next = first;
                 last = first;
-                first = newFirst;
+                first = second;
 
                 // The new first iterator is now our minimum.
                 min = first.iterator.getIndex();
             }
 
-            if (min != AscendingLongIterator.END) {
-                // All iterators are at the same index: advance.
-                for (Node node : nodes) {
-                    node.iterator.advance();
-                }
+            if (max == AscendingLongIterator.END) {
+                index = AscendingLongIterator.END;
+                return current;
             }
 
+            if (min != AscendingLongIterator.END) {
+                last.iterator.advance();
+            }
             index = min;
             return current;
         }
@@ -138,11 +125,36 @@ final class BitmapAlgorithms {
                 return index;
             }
 
+            long max = member;
             for (Node node : nodes) {
-                node.iterator.advanceAtLeastTo(member);
+                long advancedTo = node.iterator.advanceAtLeastTo(max);
+                if (advancedTo == AscendingLongIterator.END) {
+                    // make it first just to detect the end in advance()
+                    first = node;
+                    index = AscendingLongIterator.END;
+                    return AscendingLongIterator.END;
+                }
+
+                if (advancedTo > max) {
+                    max = advancedTo;
+                }
             }
+
+            orderAndLink();
             advance();
             return index;
+        }
+
+        private void orderAndLink() {
+            Arrays.sort(nodes);
+
+            first = nodes[0];
+            last = nodes[nodes.length - 1];
+
+            for (int i = 0; i < nodes.length - 1; ++i) {
+                nodes[i].next = nodes[i + 1];
+            }
+            last.next = null;
         }
 
         private static final class Node implements Comparable<Node> {
