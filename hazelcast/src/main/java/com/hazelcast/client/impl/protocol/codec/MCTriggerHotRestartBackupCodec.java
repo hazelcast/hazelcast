@@ -34,19 +34,19 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  */
 
 /**
- * Triggers a partial restart process
+ * Triggers the hot restart backup process
  */
-@Generated("8e9ab63bdf368672c9d723a870c4b3bd")
-public final class MCTriggerPartialRestartCodec {
-    //hex: 0x201900
-    public static final int REQUEST_MESSAGE_TYPE = 2103552;
-    //hex: 0x201901
-    public static final int RESPONSE_MESSAGE_TYPE = 2103553;
+@Generated("08179192c976db60db41080fb2b8ce68")
+public final class MCTriggerHotRestartBackupCodec {
+    //hex: 0x201B00
+    public static final int REQUEST_MESSAGE_TYPE = 2104064;
+    //hex: 0x201B01
+    public static final int RESPONSE_MESSAGE_TYPE = 2104065;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_RESULT_FIELD_OFFSET = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_RESULT_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
 
-    private MCTriggerPartialRestartCodec() {
+    private MCTriggerHotRestartBackupCodec() {
     }
 
     @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
@@ -56,14 +56,14 @@ public final class MCTriggerPartialRestartCodec {
     public static ClientMessage encodeRequest() {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
-        clientMessage.setOperationName("MC.TriggerPartialRestart");
+        clientMessage.setOperationName("MC.TriggerHotRestartBackup");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
         clientMessage.add(initialFrame);
         return clientMessage;
     }
 
-    public static MCTriggerPartialRestartCodec.RequestParameters decodeRequest(ClientMessage clientMessage) {
+    public static MCTriggerHotRestartBackupCodec.RequestParameters decodeRequest(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         RequestParameters request = new RequestParameters();
         //empty initial frame
@@ -75,7 +75,7 @@ public final class MCTriggerPartialRestartCodec {
     public static class ResponseParameters {
 
         /**
-         * True if the partial restart succeeded, false otherwise
+         * True is the hot restart backup was initiated successfully, false otherwise
          */
         public boolean result;
     }
@@ -90,7 +90,7 @@ public final class MCTriggerPartialRestartCodec {
         return clientMessage;
     }
 
-    public static MCTriggerPartialRestartCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
+    public static MCTriggerHotRestartBackupCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         ResponseParameters response = new ResponseParameters();
         ClientMessage.Frame initialFrame = iterator.next();
