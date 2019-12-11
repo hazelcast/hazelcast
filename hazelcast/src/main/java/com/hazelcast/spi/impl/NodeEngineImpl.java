@@ -31,7 +31,6 @@ import com.hazelcast.internal.management.ManagementCenterService;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.impl.MetricsConfigHelper;
 import com.hazelcast.internal.metrics.impl.MetricsRegistryImpl;
-import com.hazelcast.internal.metrics.jmx.JmxPublisher;
 import com.hazelcast.internal.metrics.metricsets.ClassLoadingMetricSet;
 import com.hazelcast.internal.metrics.metricsets.FileMetricSet;
 import com.hazelcast.internal.metrics.metricsets.GarbageCollectionMetricSet;
@@ -77,14 +76,8 @@ import com.hazelcast.version.MemberVersion;
 import com.hazelcast.wan.impl.WanReplicationService;
 
 import javax.annotation.Nonnull;
-import javax.management.ObjectInstance;
-import javax.management.ObjectName;
-import java.lang.management.ManagementFactory;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedList;
-import java.util.List;
-import java.util.Set;
 import java.util.UUID;
 import java.util.function.Consumer;
 
@@ -484,7 +477,7 @@ public class NodeEngineImpl implements NodeEngine {
         operationService.reset();
     }
 
-    @SuppressWarnings({"checkstyle:npathcomplexity", "checkstyle:CyclomaticComplexity"})
+    @SuppressWarnings("checkstyle:npathcomplexity")
     public void shutdown(boolean terminate) {
         logger.finest("Shutting down services...");
         if (operationParker != null) {
@@ -516,40 +509,6 @@ public class NodeEngineImpl implements NodeEngine {
         }
         if (diagnostics != null) {
             diagnostics.shutdown();
-        }
-    }
-
-    private static void assertNoMBeans(String instanceName, RuntimeException runtimeException) {
-        String instanceNameEscaped = JmxPublisher.escapeObjectNameValue(instanceName);
-
-        try {
-            List<String> bad = new ArrayList<>();
-
-            ObjectName objectName = new ObjectName("com.hazelcast*:*");
-
-            Set<ObjectInstance> instances = ManagementFactory.getPlatformMBeanServer().queryMBeans(objectName, null);
-
-            for (ObjectInstance instance : instances) {
-                String name = instance.getObjectName().getCanonicalName();
-
-                if (name != null && name.startsWith("com.hazelcast:instance=" + instanceNameEscaped)) {
-                    bad.add(name);
-                }
-            }
-
-            if (!bad.isEmpty()) {
-                if (runtimeException != null) {
-                    throw new RuntimeException("MBeans are not unregistered due to exception: "
-                        + runtimeException.getMessage() + ": " + bad, runtimeException);
-                } else {
-                    throw new RuntimeException("MBeans are not unregistered: " + bad);
-                }
-            }
-
-        } catch (RuntimeException e) {
-            throw e;
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to check MBeans: " + e.getMessage(), e);
         }
     }
 

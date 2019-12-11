@@ -34,11 +34,13 @@ import com.hazelcast.test.metrics.MetricsRule;
 import com.hazelcast.test.mocknetwork.TestNodeRegistry;
 
 import java.net.UnknownHostException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -65,6 +67,8 @@ public class TestHazelcastInstanceFactory {
     private final int count;
 
     private MetricsRule metricsRule;
+
+    private final List<String> instanceNames = new ArrayList<>(1);
 
     public TestHazelcastInstanceFactory() {
         this(0);
@@ -140,7 +144,11 @@ public class TestHazelcastInstanceFactory {
         if (isMockNetwork) {
             config = initOrCreateConfig(config);
             NodeContext nodeContext = registry.createNodeContext(address);
-            return HazelcastInstanceFactory.newHazelcastInstance(config, instanceName, nodeContext);
+            HazelcastInstance hazelcastInstance =
+                HazelcastInstanceFactory.newHazelcastInstance(config, instanceName, nodeContext);
+            registerInstance(hazelcastInstance);
+
+            return hazelcastInstance;
         }
         throw new UnsupportedOperationException("Explicit address is only available for mock network setup!");
     }
@@ -183,7 +191,11 @@ public class TestHazelcastInstanceFactory {
                     blockedAddresses == null
                             ? Collections.emptySet()
                             : new HashSet<>(asList(blockedAddresses)));
-            return HazelcastInstanceFactory.newHazelcastInstance(config, instanceName, nodeContext);
+            HazelcastInstance hazelcastInstance =
+                HazelcastInstanceFactory.newHazelcastInstance(config, instanceName, nodeContext);
+            registerInstance(hazelcastInstance);
+
+            return hazelcastInstance;
         }
         throw new UnsupportedOperationException("Explicit address is only available for mock network setup!");
     }
@@ -214,20 +226,22 @@ public class TestHazelcastInstanceFactory {
             NodeContext nodeContext = registry.createNodeContext(nextAddress(config.getNetworkConfig().getPort()));
             HazelcastInstance hazelcastInstance = HazelcastInstanceFactory
                     .newHazelcastInstance(config, instanceName, nodeContext);
-            registerTestMetricsPublisher(hazelcastInstance);
+            registerInstance(hazelcastInstance);
             return hazelcastInstance;
         }
         HazelcastInstance hazelcastInstance = HazelcastInstanceFactory.newHazelcastInstance(config);
-        registerTestMetricsPublisher(hazelcastInstance);
+        registerInstance(hazelcastInstance);
         return hazelcastInstance;
     }
 
-    private void registerTestMetricsPublisher(HazelcastInstance hazelcastInstance) {
+    private void registerInstance(HazelcastInstance hazelcastInstance) {
         if (metricsRule != null && metricsRule.isEnabled()) {
             MetricsService metricService = getNodeEngineImpl(hazelcastInstance).getService(MetricsService.SERVICE_NAME);
             metricService.registerPublisher(
                     (FunctionEx<NodeEngine, MetricsPublisher>) nodeEngine -> metricsRule.getMetricsPublisher(hazelcastInstance));
         }
+
+        instanceNames.add(hazelcastInstance.getName());
     }
 
     public Address nextAddress() {
@@ -296,10 +310,14 @@ public class TestHazelcastInstanceFactory {
      * @param instance the instance to terminate
      */
     public void terminate(HazelcastInstance instance) {
-        Address address = getNode(instance).address;
-        terminateInstance(instance);
-        if (isMockNetwork) {
-            registry.removeInstance(address);
+        try {
+            Address address = getNode(instance).address;
+            terminateInstance(instance);
+            if (isMockNetwork) {
+                registry.removeInstance(address);
+            }
+        } finally {
+            TestJmxLeakHelper.checkJmxBeans(instance.getName());
         }
     }
 
@@ -307,11 +325,15 @@ public class TestHazelcastInstanceFactory {
      * Shutdown all instances started by this factory.
      */
     public void shutdownAll() {
-        if (isMockNetwork) {
-            registry.shutdown();
-            addressMap.clear();
-        } else {
-            Hazelcast.shutdownAll();
+        try {
+            if (isMockNetwork) {
+                registry.shutdown();
+                addressMap.clear();
+            } else {
+                Hazelcast.shutdownAll();
+            }
+        } finally {
+            TestJmxLeakHelper.checkJmxBeans(instanceNames);
         }
     }
 
@@ -319,10 +341,14 @@ public class TestHazelcastInstanceFactory {
      * Terminates all instances started by this factory.
      */
     public void terminateAll() {
-        if (isMockNetwork) {
-            registry.terminate();
-        } else {
-            HazelcastInstanceFactory.terminateAll();
+        try {
+            if (isMockNetwork) {
+                registry.terminate();
+            } else {
+                HazelcastInstanceFactory.terminateAll();
+            }
+        } finally {
+            TestJmxLeakHelper.checkJmxBeans(instanceNames);
         }
     }
 

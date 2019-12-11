@@ -22,7 +22,6 @@ import javax.management.MBeanServer;
 import javax.management.ObjectInstance;
 import javax.management.ObjectName;
 import java.lang.management.ManagementFactory;
-import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -48,7 +47,7 @@ public class JmxPublisherTestHelper {
 
     public void assertNoMBeans() {
         Set<ObjectInstance> instances = queryOurInstances();
-        assertEquals(Arrays.toString(instances.toArray()), 0, instances.size());
+        assertEquals(0, instances.size());
     }
 
     public void assertMBeanContains(String... expectedObjectNames) throws Exception {
