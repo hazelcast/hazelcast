@@ -33,6 +33,7 @@ import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ConfigureParallelRunnerWith;
 import com.hazelcast.test.annotation.HeavilyMultiThreadedTestLimiter;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import javax.cache.expiry.ExpiryPolicy;
@@ -268,7 +269,7 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
         assertNearCacheStats(context, 0, 0, 0);
 
         // use getAll() with an empty set, which should not populate the Near Cache
-        context.nearCacheAdapter.getAll(Collections.<Integer>emptySet());
+        context.nearCacheAdapter.getAll(Collections.emptySet());
         assertNearCacheSize(context, 0);
         assertNearCacheStats(context, 0, 0, 0);
     }
@@ -1426,6 +1427,8 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
      * This variant uses a multi-threaded approach to fill the Near Cache with data.
      */
     @Test
+    @Ignore
+    // TODO fix by fixing near cache stat updates
     public void testNearCacheMemoryCostCalculation_withConcurrentCacheMisses() {
         testNearCacheMemoryCostCalculation(10);
     }

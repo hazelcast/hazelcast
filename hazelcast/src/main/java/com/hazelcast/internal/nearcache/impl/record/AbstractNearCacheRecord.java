@@ -23,40 +23,52 @@ import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 
 /**
- * Abstract implementation of {@link NearCacheRecord} with value and expiration time as internal state.
+ * Abstract implementation of {@link NearCacheRecord}
+ * with value and expiration time as internal state.
  *
- * @param <V> the type of the value stored by this {@link AbstractNearCacheRecord}
+ * @param <V> the type of the value stored
+ *            by this {@link AbstractNearCacheRecord}
  */
 public abstract class AbstractNearCacheRecord<V> implements NearCacheRecord<V> {
+    // primitive long typed fields: "recordState", "sequence"
+    public static final int NUMBER_OF_LONG_FIELD_TYPES = 3;
+    // primitive int typed fields: "partitionId", "accessHit",
+    // "accessTime","expirationTime" and "creationTime"
+    public static final int NUMBER_OF_INTEGER_FIELD_TYPES = 4;
+    // primitive boolean typed field: "cachedAsNull"
+    public static final int NUMBER_OF_BOOLEAN_FIELD_TYPES = 1;
 
-    // primitive long typed fields:
-    // "creationTime", "expirationTime" and "accessTime", "recordState", "sequence"
-    public static final int NUMBER_OF_LONG_FIELD_TYPES = 5;
-    // primitive int typed fields: "accessHit"
-    public static final int NUMBER_OF_INTEGER_FIELD_TYPES = 1;
-
-    private static final AtomicIntegerFieldUpdater<AbstractNearCacheRecord> ACCESS_HIT =
-            AtomicIntegerFieldUpdater.newUpdater(AbstractNearCacheRecord.class, "accessHit");
-
+    private static final AtomicIntegerFieldUpdater<AbstractNearCacheRecord> HITS =
+            AtomicIntegerFieldUpdater.newUpdater(AbstractNearCacheRecord.class, "hits");
     private static final AtomicLongFieldUpdater<AbstractNearCacheRecord> RECORD_STATE =
             AtomicLongFieldUpdater.newUpdater(AbstractNearCacheRecord.class, "recordState");
 
-    protected long creationTime = TIME_NOT_SET;
-
-    protected volatile int partitionId;
-    protected volatile long sequence;
-    protected volatile UUID uuid;
+    protected int creationTime;
 
     protected volatile V value;
-    protected volatile long expirationTime = TIME_NOT_SET;
-    protected volatile long accessTime = TIME_NOT_SET;
+    protected volatile UUID uuid;
+    protected volatile boolean cachedAsNull;
+    protected volatile int hits;
+    protected volatile int partitionId;
+    protected volatile int lastAccessTime = TIME_NOT_SET;
+    protected volatile int expirationTime;
+    protected volatile long sequence;
     protected volatile long recordState = READ_PERMITTED;
-    protected volatile int accessHit;
 
     public AbstractNearCacheRecord(V value, long creationTime, long expirationTime) {
         this.value = value;
-        this.creationTime = creationTime;
-        this.expirationTime = expirationTime;
+        this.creationTime = stripBaseTime(creationTime);
+        this.expirationTime = stripBaseTime(expirationTime);
+    }
+
+    @Override
+    public boolean isCachedAsNull() {
+        return cachedAsNull;
+    }
+
+    @Override
+    public void setCachedAsNull(boolean valueCachedAsNull) {
+        this.cachedAsNull = valueCachedAsNull;
     }
 
     @Override
@@ -71,80 +83,57 @@ public abstract class AbstractNearCacheRecord<V> implements NearCacheRecord<V> {
 
     @Override
     public long getExpirationTime() {
-        return expirationTime;
+        return recomputeWithBaseTime(expirationTime);
     }
 
     @Override
     public void setExpirationTime(long expirationTime) {
-        this.expirationTime = expirationTime;
+        this.expirationTime = stripBaseTime(expirationTime);
     }
 
     @Override
     public long getCreationTime() {
-        return creationTime;
+        return recomputeWithBaseTime(creationTime);
     }
 
     @Override
     public void setCreationTime(long creationTime) {
-        this.creationTime = creationTime;
+        this.creationTime = stripBaseTime(creationTime);
     }
 
     @Override
     public long getLastAccessTime() {
-        return accessTime;
+        return recomputeWithBaseTime(lastAccessTime);
     }
 
     @Override
-    public void setAccessTime(long accessTime) {
-        this.accessTime = accessTime;
+    public void setLastAccessTime(long lastAccessTime) {
+        this.lastAccessTime = stripBaseTime(lastAccessTime);
     }
 
     @Override
     public long getHits() {
-        return accessHit;
+        return hits;
     }
 
     @Override
-    public void setHits(int accessHit) {
-        ACCESS_HIT.set(this, accessHit);
+    public void setHits(int hits) {
+        HITS.set(this, hits);
     }
 
     @Override
     public void incrementHits() {
-        ACCESS_HIT.addAndGet(this, 1);
+        HITS.addAndGet(this, 1);
     }
 
     @Override
-    public void resetHits() {
-        ACCESS_HIT.set(this, 0);
-    }
-
-    @Override
-    public boolean isExpiredAt(long now) {
-        return (expirationTime > TIME_NOT_SET) && (expirationTime <= now);
-    }
-
-    @Override
-    public boolean isIdleAt(long maxIdleMilliSeconds, long now) {
-        if (maxIdleMilliSeconds > 0) {
-            if (accessTime > TIME_NOT_SET) {
-                return accessTime + maxIdleMilliSeconds < now;
-            } else {
-                return creationTime + maxIdleMilliSeconds < now;
-            }
-        } else {
-            return false;
-        }
-    }
-
-    @Override
-    public long getRecordState() {
+    public long getReservationId() {
         return recordState;
     }
 
     @Override
-    public boolean casRecordState(long expect, long update) {
-        return RECORD_STATE.compareAndSet(this, expect, update);
+    public void setReservationId(long reservationId) {
+        RECORD_STATE.set(this, reservationId);
     }
 
     @Override
@@ -183,8 +172,8 @@ public abstract class AbstractNearCacheRecord<V> implements NearCacheRecord<V> {
                 + ", sequence=" + sequence
                 + ", uuid=" + uuid
                 + ", expirationTime=" + expirationTime
-                + ", accessTime=" + accessTime
-                + ", accessHit=" + accessHit
+                + ", lastAccessTime=" + lastAccessTime
+                + ", hits=" + hits
                 + ", recordState=" + recordState
                 + ", value=" + value;
     }

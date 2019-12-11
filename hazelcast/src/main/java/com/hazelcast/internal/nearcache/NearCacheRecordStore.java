@@ -60,6 +60,8 @@ public interface NearCacheRecordStore<K, V> extends InitializingObject {
      */
     long tryReserveForUpdate(K key, Data keyData);
 
+    long tryReserveForCacheOnUpdate(K key, Data keyData);
+
     /**
      * Tries to update reserved key with supplied value. If update
      * happens, value is published. Publishing means making the value

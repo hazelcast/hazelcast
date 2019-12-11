@@ -69,13 +69,14 @@ public class NearCacheConfig implements IdentifiedDataSerializable, Serializable
      */
     public enum LocalUpdatePolicy {
         /**
-         * A local put and local remove immediately invalidates the Near Cache.
+         * Local put and local remove
+         * immediately invalidate Near Cache.
          */
         INVALIDATE,
 
         /**
-         * A local put immediately adds the new value to the Near Cache.
-         * A local remove works as in INVALIDATE mode.
+         * While local remove immediately invalidates
+         * Near Cache, local put adds new value to it.
          */
         CACHE_ON_UPDATE
     }

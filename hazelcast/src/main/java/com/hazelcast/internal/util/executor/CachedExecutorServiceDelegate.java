@@ -102,7 +102,7 @@ public final class CachedExecutorServiceDelegate implements ExecutorService, Man
     @Override
     public void execute(Runnable command) {
         if (shutdown.get()) {
-            throw new RejectedExecutionException();
+            throw new RejectedExecutionException("Executor[" + name + "] was shut down.");
         }
         if (!taskQ.offer(command)) {
             throw new RejectedExecutionException("Executor[" + name + "] is overloaded!");

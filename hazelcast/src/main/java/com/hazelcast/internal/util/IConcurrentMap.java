@@ -16,8 +16,8 @@
 
 package com.hazelcast.internal.util;
 
-import java.util.function.Function;
 import java.util.function.BiFunction;
+import java.util.function.Function;
 
 
 /**
@@ -30,7 +30,6 @@ import java.util.function.BiFunction;
  * actions subsequent to the access or removal of that object from
  * the {@code ConcurrentMap} in another thread.
  *
- *
  * @param <K> the type of keys maintained by this map
  * @param <V> the type of mapped values
  */
@@ -38,8 +37,10 @@ public interface IConcurrentMap<K, V> extends java.util.concurrent.ConcurrentMap
     /**
      * {@inheritDoc}
      *
-     * @implSpec
-     * The default implementation is equivalent to the following steps for this
+     * @throws UnsupportedOperationException {@inheritDoc}
+     * @throws ClassCastException            {@inheritDoc}
+     * @throws NullPointerException          {@inheritDoc}
+     * @implSpec The default implementation is equivalent to the following steps for this
      * {@code map}, then returning the current value or {@code null} if now
      * absent:
      *
@@ -59,18 +60,16 @@ public interface IConcurrentMap<K, V> extends java.util.concurrent.ConcurrentMap
      * values and {@code get()} returning null unambiguously means the key is
      * absent. Implementations which support null values <strong>must</strong>
      * override this default implementation.
-     *
-     * @throws UnsupportedOperationException {@inheritDoc}
-     * @throws ClassCastException {@inheritDoc}
-     * @throws NullPointerException {@inheritDoc}
      */
     V applyIfAbsent(K key, Function<? super K, ? extends V> mappingFunction);
 
     /**
      * {@inheritDoc}
      *
-     * @implSpec
-     * The default implementation is equivalent to performing the following
+     * @throws UnsupportedOperationException {@inheritDoc}
+     * @throws ClassCastException            {@inheritDoc}
+     * @throws NullPointerException          {@inheritDoc}
+     * @implSpec The default implementation is equivalent to performing the following
      * steps for this {@code map}, then returning the current value or
      * {@code null} if now absent. :
      *
@@ -93,10 +92,9 @@ public interface IConcurrentMap<K, V> extends java.util.concurrent.ConcurrentMap
      * values and {@code get()} returning null unambiguously means the key is
      * absent. Implementations which support null values <strong>must</strong>
      * override this default implementation.
-     *
-     * @throws UnsupportedOperationException {@inheritDoc}
-     * @throws ClassCastException {@inheritDoc}
-     * @throws NullPointerException {@inheritDoc}
      */
     V applyIfPresent(K key, BiFunction<? super K, ? super V, ? extends V> mappingFunction);
+
+
+    V apply(K key, BiFunction<? super K, ? super V, ? extends V> remappingFunction);
 }
