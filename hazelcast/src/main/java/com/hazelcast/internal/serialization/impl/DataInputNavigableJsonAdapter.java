@@ -24,10 +24,12 @@ import com.hazelcast.internal.nio.Bits;
 import com.hazelcast.internal.nio.BufferObjectDataInput;
 import com.hazelcast.query.impl.getters.JsonPathCursor;
 
-import java.io.DataInput;
-import java.io.EOFException;
 import java.io.IOException;
 import java.io.Reader;
+import java.nio.ByteBuffer;
+import java.nio.CharBuffer;
+import java.nio.charset.CharsetDecoder;
+import java.nio.charset.CoderResult;
 
 public class DataInputNavigableJsonAdapter extends NavigableJsonInputAdapter {
 
@@ -88,12 +90,43 @@ public class DataInputNavigableJsonAdapter extends NavigableJsonInputAdapter {
         return input.readByte() == '"';
     }
 
-    private static class UTF8Reader extends Reader {
+    static class UTF8Reader extends Reader {
 
-        private final DataInput input;
+        private final CharsetDecoder utf8Decoder;
+        private final ByteBuffer inputBuffer;
+        // required to support read() for multibyte characters
+        private boolean hasLeftoverChar;
+        private int leftoverChar;
 
-        UTF8Reader(DataInput input) {
-            this.input = input;
+        UTF8Reader(BufferObjectDataInput input) {
+            byte[] data = obtainBytes(input);
+            inputBuffer = ByteBuffer.wrap(data);
+            inputBuffer.position(input.position());
+            this.utf8Decoder = Bits.UTF_8.newDecoder();
+        }
+
+        // default read() implementation does not handle multibyte chars well
+        @Override
+        public int read() throws IOException {
+            if (hasLeftoverChar) {
+                hasLeftoverChar = false;
+                return leftoverChar;
+            }
+
+            char[] buffer = new char[2];
+            int charsRead = read(buffer, 0, 2);
+            switch (charsRead) {
+                case -1:
+                    return -1;
+                case 2:
+                    leftoverChar = buffer[1];
+                    hasLeftoverChar = true;
+                    return buffer[0];
+                case 1:
+                    return buffer[0];
+                default:
+                    throw new IllegalStateException("Unexpected result from read: " + charsRead);
+            }
         }
 
         @Override
@@ -101,21 +134,34 @@ public class DataInputNavigableJsonAdapter extends NavigableJsonInputAdapter {
             if (off < 0 || (off + len) > cbuf.length) {
                 throw new IndexOutOfBoundsException();
             }
-            int i = 0;
-            try {
-                for (i = 0; i < len; i++) {
-                    byte firstByte = input.readByte();
-                    char c = Bits.readUtf8Char(input, firstByte);
-                    cbuf[off + i] = c;
-                }
-            } catch (EOFException e) {
-                if (i == 0) {
-                    return -1;
-                }
+            if (!inputBuffer.hasRemaining()) {
+                return -1;
             }
-            return i;
+            CharBuffer charbuffer = CharBuffer.wrap(cbuf, off, len);
+            CoderResult result = utf8Decoder.decode(inputBuffer, charbuffer, true);
+            if (result.isError()) {
+                result.throwException();
+            }
+            if (result.isUnderflow()) {
+                // return number of characters read
+                if (!inputBuffer.hasRemaining()) {
+                    utf8Decoder.flush(charbuffer);
+                }
+                return charbuffer.position() - off;
+            } else {
+                // result is overflow:
+                // the given cbuf did not fit all characters, inputBuffer still has bytes remaining
+                return charbuffer.position() - off;
+            }
         }
 
+        private byte[] obtainBytes(BufferObjectDataInput input) {
+            if (input instanceof ByteArrayObjectDataInput) {
+                return ((ByteArrayObjectDataInput) input).data;
+            } else {
+                throw new IllegalArgumentException("All BufferObjectDataInput are instances of ByteArrayObjectDataInput");
+            }
+        }
         @Override
         public void close() throws IOException {
 
