@@ -16,6 +16,10 @@
 
 package com.hazelcast.query.impl.bitmap;
 
+import com.hazelcast.query.impl.Numbers;
+
+import java.util.Arrays;
+
 /**
  * Provides algorithms crucial for set operations on ordered iterators provided
  * by sparse bit sets.
@@ -51,16 +55,23 @@ final class BitmapAlgorithms {
 
     private static final class AndIterator implements AscendingLongIterator {
 
-        // The idea: iteratively advance all iterators to the current
-        // maximum index among all iterators until all iterators are at the
-        // same index or the end is reached in at least one of the iterators.
+        // The idea: on every advancement request, order iterators by their
+        // current index; if the index of the first iterator (minimum) equal to
+        // the last one (maximum), we have a match; otherwise advance the first
+        // iterator at least to the last iterator index (maximum) and make it
+        // the new maximum, make the iterator previously ordered second to be
+        // the new minimum, repeat checking for a match.
 
-        private final AscendingLongIterator[] iterators;
+        private final Node[] nodes;
 
         private long index;
 
         AndIterator(AscendingLongIterator[] iterators) {
-            this.iterators = iterators;
+            Node[] nodes = new Node[iterators.length];
+            for (int i = 0; i < nodes.length; ++i) {
+                nodes[i] = new Node(iterators[i]);
+            }
+            this.nodes = nodes;
             advance();
         }
 
@@ -73,23 +84,51 @@ final class BitmapAlgorithms {
         public long advance() {
             long current = index;
 
-            long currentMax = iterators[0].getIndex();
-            long max = AscendingLongIterator.END;
-            while (currentMax != max) {
-                max = currentMax;
-                for (AscendingLongIterator iterator : iterators) {
-                    currentMax = iterator.advanceAtLeastTo(currentMax);
-                    if (currentMax == AscendingLongIterator.END) {
-                        index = AscendingLongIterator.END;
-                        return current;
-                    }
+            Arrays.sort(nodes);
+
+            Node first = nodes[0];
+            long min = first.iterator.getIndex();
+            Node last = nodes[nodes.length - 1];
+            long max = last.iterator.getIndex();
+
+            if (min != max && min != AscendingLongIterator.END) {
+                // No match: build a linked list.
+
+                for (int i = 0; i < nodes.length - 1; ++i) {
+                    nodes[i].next = nodes[i + 1];
+                }
+                last.next = null;
+            }
+
+            while (min != max && min != AscendingLongIterator.END) {
+                max = first.iterator.advanceAtLeastTo(max);
+                if (max == AscendingLongIterator.END) {
+                    // End reached at the maximum iterator.
+                    index = AscendingLongIterator.END;
+                    return current;
+                }
+
+                // The first iterator is now guaranteed to be at the maximum or
+                // beyond it, make it last and repeat.
+
+                Node newFirst = first.next;
+                first.next = null;
+                last.next = first;
+                last = first;
+                first = newFirst;
+
+                // The new first iterator is now our minimum.
+                min = first.iterator.getIndex();
+            }
+
+            if (min != AscendingLongIterator.END) {
+                // All iterators are at the same index: advance.
+                for (Node node : nodes) {
+                    node.iterator.advance();
                 }
             }
 
-            // make a progress
-            iterators[0].advance();
-
-            index = max;
+            index = min;
             return current;
         }
 
@@ -99,11 +138,33 @@ final class BitmapAlgorithms {
                 return index;
             }
 
-            for (AscendingLongIterator iterator : iterators) {
-                iterator.advanceAtLeastTo(member);
+            for (Node node : nodes) {
+                node.iterator.advanceAtLeastTo(member);
             }
             advance();
             return index;
+        }
+
+        private static final class Node implements Comparable<Node> {
+
+            final AscendingLongIterator iterator;
+
+            Node next;
+
+            Node(AscendingLongIterator iterator) {
+                this.iterator = iterator;
+            }
+
+            @Override
+            public int compareTo(Node that) {
+                return Numbers.compareLongs(this.iterator.getIndex(), that.iterator.getIndex());
+            }
+
+            @Override
+            public String toString() {
+                return Long.toString(iterator.getIndex());
+            }
+
         }
 
     }
