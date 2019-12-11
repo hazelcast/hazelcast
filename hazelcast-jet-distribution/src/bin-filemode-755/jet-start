@@ -2,6 +2,15 @@
 
 SCRIPT_DIR=$(dirname "$0")
 #shellcheck source=bin-regular/common.sh
+
+if [[ "$1" = "--help" ]] || [[ "$1" = "-h" ]]; then
+    echo "Usage: jet-start [-d]"
+    echo "  -d, --daemon   Starts Hazelcast Jet in daemon mode"
+    exit 0
+elif [[ "$1" = "-d" ]] || [[ "$1" = "--daemon" ]]; then
+    DAEMON="true"
+fi
+
 . "$SCRIPT_DIR"/common.sh
 
 echo "########################################"
@@ -9,7 +18,14 @@ echo "# JAVA=$JAVA"
 echo "# JAVA_OPTS=${JAVA_OPTS_ARRAY[*]}"
 echo "# CLASSPATH=$CLASSPATH"
 echo "########################################"
-echo "Starting Hazelcast Jet"
 
-set -x
-$JAVA "${JAVA_OPTS_ARRAY[@]}" -cp "$CLASSPATH" com.hazelcast.jet.server.JetMemberStarter
+if [[ "$DAEMON" = "true" ]]; then
+    mkdir -p $JET_HOME/logs
+    JET_LOG="$JET_HOME/logs/hazelcast-jet.out"
+    echo "Starting Hazelcast Jet in daemon mode. Standard out and error will be written to $JET_LOG"
+    nohup $JAVA "${JAVA_OPTS_ARRAY[@]}" -cp "$CLASSPATH" com.hazelcast.jet.server.JetMemberStarter > "$JET_LOG" 2>&1 &
+else
+    echo "Starting Hazelcast Jet"
+    set -x
+    $JAVA "${JAVA_OPTS_ARRAY[@]}" -cp "$CLASSPATH" com.hazelcast.jet.server.JetMemberStarter
+fi
