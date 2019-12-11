@@ -19,6 +19,7 @@ package com.hazelcast.client.management;
 import com.hazelcast.client.impl.clientside.HazelcastClientProxy;
 import com.hazelcast.client.impl.management.ManagementCenterService;
 import com.hazelcast.client.test.TestHazelcastFactory;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
@@ -28,7 +29,6 @@ import com.hazelcast.cp.internal.CPMemberInfo;
 import com.hazelcast.cp.internal.HazelcastRaftTestSupport;
 import com.hazelcast.cp.internal.RaftGroupId;
 import com.hazelcast.cp.internal.RaftService;
-import com.hazelcast.internal.management.dto.CPMemberDTO;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -38,6 +38,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
@@ -66,15 +67,13 @@ public class ManagementCenterServiceCPOperationsTest extends HazelcastRaftTestSu
         initManagementCenterService();
 
         CPMember expectedCPMember = cpInstances[0].getCPSubsystem().getLocalCPMember();
-        String expectedUuid = expectedCPMember.getUuid().toString();
-        String expectedAddress = "[" + expectedCPMember.getAddress().getHost() + "]:" + expectedCPMember.getAddress().getPort();
 
-        List<CPMemberDTO> cpMembers = resolve(managementCenterService.getCPMembers());
+        List<CPMember> cpMembers = resolve(managementCenterService.getCPMembers());
         assertEquals(3, cpMembers.size());
-        List<String> uuids = cpMembers.stream().map(CPMemberDTO::getUuid).collect(Collectors.toList());
-        assertContains(uuids, expectedUuid);
-        List<String> addresses = cpMembers.stream().map(CPMemberDTO::getAddress).collect(Collectors.toList());
-        assertContains(addresses, expectedAddress);
+        List<UUID> uuids = cpMembers.stream().map(CPMember::getUuid).collect(Collectors.toList());
+        assertContains(uuids, expectedCPMember.getUuid());
+        List<Address> addresses = cpMembers.stream().map(CPMember::getAddress).collect(Collectors.toList());
+        assertContains(addresses, expectedCPMember.getAddress());
     }
 
     @Test

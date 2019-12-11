@@ -631,6 +631,8 @@ public class ReferenceObjects {
     public static List<Long> aListOfLongs = Collections.singletonList(aLong);
     public static List<UUID> aListOfUUIDs = Collections.singletonList(aUUID);
     public static Address anAddress;
+    public static List<Map.Entry<UUID, Address>> aListOfUUIDToAddress
+            = Collections.singletonList(new AbstractMap.SimpleEntry<>(aUUID, anAddress));
 
     static {
         try {

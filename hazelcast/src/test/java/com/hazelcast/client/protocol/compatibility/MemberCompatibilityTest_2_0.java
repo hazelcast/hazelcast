@@ -7365,7 +7365,7 @@ public class MemberCompatibilityTest_2_0 {
     @Test
     public void test_MCGetCPMembersCodec_encodeResponse() {
         int fileClientMessageIndex = 815;
-        ClientMessage encoded = MCGetCPMembersCodec.encodeResponse(aListOfStringToString);
+        ClientMessage encoded = MCGetCPMembersCodec.encodeResponse(aListOfUUIDToAddress);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
     }

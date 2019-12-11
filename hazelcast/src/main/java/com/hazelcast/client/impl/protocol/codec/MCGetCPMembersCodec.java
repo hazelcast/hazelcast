@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Returns the current list of CP members.
  */
-@Generated("05ca78599121b6f035c5bb5fcd283dd8")
+@Generated("9c0b406eaa8da9ba71e3e1cf7d9793ce")
 public final class MCGetCPMembersCodec {
     //hex: 0x201900
     public static final int REQUEST_MESSAGE_TYPE = 2103552;
@@ -74,18 +74,18 @@ public final class MCGetCPMembersCodec {
     public static class ResponseParameters {
 
         /**
-         * List of CP members (as <UUID string, address string> pairs)
+         * List of CP members
          */
-        public java.util.List<java.util.Map.Entry<java.lang.String, java.lang.String>> cpMembers;
+        public java.util.List<java.util.Map.Entry<java.util.UUID, com.hazelcast.cluster.Address>> cpMembers;
     }
 
-    public static ClientMessage encodeResponse(java.util.Collection<java.util.Map.Entry<java.lang.String, java.lang.String>> cpMembers) {
+    public static ClientMessage encodeResponse(java.util.Collection<java.util.Map.Entry<java.util.UUID, com.hazelcast.cluster.Address>> cpMembers) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, RESPONSE_MESSAGE_TYPE);
         clientMessage.add(initialFrame);
 
-        EntryListCodec.encode(clientMessage, cpMembers, StringCodec::encode, StringCodec::encode);
+        EntryListUUIDAddressCodec.encode(clientMessage, cpMembers);
         return clientMessage;
     }
 
@@ -94,7 +94,7 @@ public final class MCGetCPMembersCodec {
         ResponseParameters response = new ResponseParameters();
         //empty initial frame
         iterator.next();
-        response.cpMembers = EntryListCodec.decode(iterator, StringCodec::decode, StringCodec::decode);
+        response.cpMembers = EntryListUUIDAddressCodec.decode(iterator);
         return response;
     }
 
