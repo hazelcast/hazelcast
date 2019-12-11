@@ -5,10 +5,10 @@ data source and a data sink in a batch computation job.
 
 The S3 Source and Sink uses Amazon S3 SDK to connect to the storage.
 The connectors expect the user to provide either an S3Client
-client instance or credentials (Access key ID, Secret Access Key) to create the
-client. The source and sink assume the data is in the form of plain
-text and emit/receive data items which represent individual lines of
-text.
+client instance or credentials (Access key ID, Secret Access Key) to
+create the client. The source and sink assume the data is in the form
+of plain text and emit/receive data items which represent individual
+lines of text.
 
 The connectors are not fault-tolerant. On job restart they behave as if
 you started a new job. The source does not do snapshotting. The sink
@@ -33,10 +33,10 @@ include::{javasource}/integration/S3.java[tag=s1]
 
 S3 sink writes items to the specified bucket by transforming each item
 to a line using given transform function. The sink creates an object
-in the bucket for each processor instance. Name of the file will include an user provided
-prefix (if defined) and followed by the processor's global index, for example the
-processor having the index `2` with prefix `my-object-` will create the object
-`my-object-2`.
+in the bucket for each processor instance. Name of the file will
+include a user provided prefix (if defined) and followed by the
+processor's global index, for example the processor having the index
+ `2` with prefix `my-object-` will create the object `my-object-2`.
 
 Here's a small example of usage:
 
@@ -44,6 +44,12 @@ Here's a small example of usage:
 ----
 include::{javasource}/integration/S3.java[tag=s2]
 ----
+
+S3 sink uses multi-part upload feature of S3 SDK. The sink buffers the
+items to parts and uploads them after buffer reaches to the threshold.
+The multi-part upload is completed when the job completes and makes the
+objects available on the S3. Since streaming jobs never complete, S3
+sink is not applicable for streaming jobs. 
 
 == Using HDFS as S3 connector
 
