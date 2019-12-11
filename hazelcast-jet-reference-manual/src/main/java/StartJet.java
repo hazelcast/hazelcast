@@ -66,10 +66,10 @@ public class StartJet {
     class CustomJetJob {
         public static void main(String[] args) {
             JetInstance jet = JetBootstrap.getInstance();
-            jet.newJob(buildPipeline()).join();
+            jet.newJob(buildPipeline(args)).join();
         }
 
-        static Pipeline buildPipeline() {
+        static Pipeline buildPipeline(String[] args) {
             Pipeline p = Pipeline.create();
             // ...
             return p;
