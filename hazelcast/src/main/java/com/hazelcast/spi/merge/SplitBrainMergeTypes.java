@@ -27,6 +27,7 @@ import com.hazelcast.cp.IAtomicReference;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.replicatedmap.ReplicatedMap;
 import com.hazelcast.scheduledexecutor.impl.ScheduledTaskDescriptor;
+import com.hazelcast.spi.impl.merge.SplitBrainMergeTypeProvider;
 
 import java.util.Collection;
 

@@ -19,7 +19,7 @@ package com.hazelcast.internal.config;
 import com.hazelcast.config.MergePolicyConfig;
 import com.hazelcast.config.NamedConfig;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.spi.merge.SplitBrainMergeTypeProvider;
+import com.hazelcast.spi.impl.merge.SplitBrainMergeTypeProvider;
 
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 

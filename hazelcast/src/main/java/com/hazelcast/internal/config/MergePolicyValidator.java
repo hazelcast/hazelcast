@@ -23,7 +23,7 @@ import com.hazelcast.spi.merge.MergingLastStoredTime;
 import com.hazelcast.spi.merge.MergingValue;
 import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 import com.hazelcast.spi.merge.SplitBrainMergePolicyProvider;
-import com.hazelcast.spi.merge.SplitBrainMergeTypeProvider;
+import com.hazelcast.spi.impl.merge.SplitBrainMergeTypeProvider;
 
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;

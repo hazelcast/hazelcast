@@ -50,7 +50,7 @@ public interface InternalPartitionService extends IPartitionService, ManagedServ
     /**
      * Number of the member groups to be used in partition assignments.
      *
-     * @see com.hazelcast.partition.membergroup.MemberGroupFactory
+     * @see com.hazelcast.internal.partition.membergroup.MemberGroupFactory
      * @see com.hazelcast.config.PartitionGroupConfig
      * @return number of member groups
      */

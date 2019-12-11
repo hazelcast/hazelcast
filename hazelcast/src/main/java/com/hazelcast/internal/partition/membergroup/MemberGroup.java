@@ -14,7 +14,24 @@
  * limitations under the License.
  */
 
-/**
- * todo
- */
-package com.hazelcast.partition.membergroup;
+package com.hazelcast.internal.partition.membergroup;
+
+import com.hazelcast.cluster.Member;
+
+import java.util.Collection;
+import java.util.Iterator;
+
+public interface MemberGroup {
+
+    void addMember(Member member);
+
+    void addMembers(Collection<Member> members);
+
+    void removeMember(Member member);
+
+    boolean hasMember(Member member);
+
+    Iterator<Member> iterator();
+
+    int size();
+}

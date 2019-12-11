@@ -22,8 +22,8 @@ import com.hazelcast.internal.partition.PartitionReplica;
 import com.hazelcast.internal.partition.PartitionStateGenerator;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
-import com.hazelcast.partition.membergroup.MemberGroup;
-import com.hazelcast.partition.membergroup.SingleMemberGroup;
+import com.hazelcast.internal.partition.membergroup.MemberGroup;
+import com.hazelcast.internal.partition.membergroup.SingleMemberGroup;
 
 import java.util.Collection;
 import java.util.Collections;

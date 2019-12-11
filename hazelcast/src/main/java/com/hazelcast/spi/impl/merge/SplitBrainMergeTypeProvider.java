@@ -14,7 +14,10 @@
  * limitations under the License.
  */
 
-package com.hazelcast.spi.merge;
+package com.hazelcast.spi.impl.merge;
+
+import com.hazelcast.spi.merge.MergingValue;
+import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 
 /**
  * Returns a class with the provided merge value types.

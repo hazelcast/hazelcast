@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.partition.membergroup;
+package com.hazelcast.internal.partition.membergroup;
 
 import com.hazelcast.config.MemberGroupConfig;
 import com.hazelcast.cluster.Member;

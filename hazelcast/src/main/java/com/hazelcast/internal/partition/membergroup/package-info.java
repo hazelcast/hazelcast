@@ -14,19 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.partition.membergroup;
-
-import com.hazelcast.config.PartitionGroupConfig;
-import com.hazelcast.cluster.Member;
-
-import java.util.Collection;
-
 /**
- * Defines how members will be grouped (e.g. during partition arrangement).
- *
- * @see PartitionGroupConfig#getGroupType()
+ * todo
  */
-public interface MemberGroupFactory {
-
-    Collection<MemberGroup> createMemberGroups(Collection<? extends Member> members);
-}
+package com.hazelcast.internal.partition.membergroup;

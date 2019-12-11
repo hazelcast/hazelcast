@@ -49,7 +49,7 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.spi.eviction.EvictionPolicyComparator;
 import com.hazelcast.spi.merge.SplitBrainMergePolicyProvider;
-import com.hazelcast.spi.merge.SplitBrainMergeTypeProvider;
+import com.hazelcast.spi.impl.merge.SplitBrainMergeTypeProvider;
 import com.hazelcast.spi.properties.HazelcastProperties;
 
 import java.util.EnumMap;
