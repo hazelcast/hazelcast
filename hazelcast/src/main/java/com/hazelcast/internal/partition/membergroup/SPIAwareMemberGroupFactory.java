@@ -24,6 +24,7 @@ import com.hazelcast.internal.partition.impl.PartitionStateManager;
 import com.hazelcast.spi.discovery.DiscoveryStrategy;
 import com.hazelcast.spi.discovery.impl.DefaultDiscoveryService;
 import com.hazelcast.spi.discovery.integration.DiscoveryService;
+import com.hazelcast.spi.partitiongroup.MemberGroup;
 
 import java.util.Collection;
 import java.util.Set;

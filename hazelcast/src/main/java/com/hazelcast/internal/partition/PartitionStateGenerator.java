@@ -16,7 +16,7 @@
 
 package com.hazelcast.internal.partition;
 
-import com.hazelcast.internal.partition.membergroup.MemberGroup;
+import com.hazelcast.spi.partitiongroup.MemberGroup;
 
 import java.util.Collection;
 

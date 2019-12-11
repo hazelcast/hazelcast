@@ -19,6 +19,7 @@ package com.hazelcast.internal.partition.membergroup;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.cluster.impl.MemberImpl;
 import com.hazelcast.cluster.Address;
+import com.hazelcast.spi.partitiongroup.MemberGroup;
 
 import java.util.Collection;
 import java.util.HashSet;

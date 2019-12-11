@@ -39,7 +39,7 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.internal.partition.membergroup.DefaultMemberGroup;
-import com.hazelcast.internal.partition.membergroup.MemberGroup;
+import com.hazelcast.spi.partitiongroup.MemberGroup;
 import com.hazelcast.internal.partition.membergroup.MemberGroupFactory;
 import com.hazelcast.internal.partition.membergroup.SPIAwareMemberGroupFactory;
 import com.hazelcast.spi.discovery.impl.DefaultDiscoveryService;

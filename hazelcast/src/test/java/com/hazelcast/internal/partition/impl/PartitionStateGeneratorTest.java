@@ -31,7 +31,7 @@ import com.hazelcast.cluster.Address;
 import com.hazelcast.internal.partition.membergroup.ConfigMemberGroupFactory;
 import com.hazelcast.internal.partition.membergroup.DefaultMemberGroup;
 import com.hazelcast.internal.partition.membergroup.HostAwareMemberGroupFactory;
-import com.hazelcast.internal.partition.membergroup.MemberGroup;
+import com.hazelcast.spi.partitiongroup.MemberGroup;
 import com.hazelcast.internal.partition.membergroup.MemberGroupFactory;
 import com.hazelcast.internal.partition.membergroup.SingleMemberGroupFactory;
 import com.hazelcast.test.HazelcastParallelClassRunner;
