@@ -12,13 +12,11 @@ quick Hello World example to verify your setup.
 In the good tradition of Hazelcast products, Jet is distributed as a JAR
 with no other dependencies. It requires JRE version 8 or higher to run.
 
-== Install Hazelcast Jet
+== Use Hazelcast Jet as an Embedded Runtime
 
-The easiest way to start using Hazelcast Jet is to add it as a
-dependency to your project.
-
-Hazelcast Jet is published on the Maven repositories. Add the following
-lines to your `pom.xml`:
+If you want to use Jet embedded into your existing distributed
+application, all you need is a single Jet JAR on your classpath. These
+are the Maven and Gradle snippets you can use:
 
 [source,xml,subs="attributes+"]
 ----
@@ -31,16 +29,40 @@ lines to your `pom.xml`:
 </dependencies>
 ----
 
-If you prefer to use Gradle, execute the following command:
-
 [source,groovy,subs="attributes+"]
 ----
 compile 'com.hazelcast.jet:hazelcast-jet:{jet-version}'
 ----
 
-Alternatively you can download the latest
-https://jet.hazelcast.org/download[distribution package of Hazelcast Jet]
-and add the `hazelcast-jet-{jet-version}.jar` file to your classpath.
+== Install Jet as a Standalone Cluster
+
+If you are setting up Jet as a standalone cluster, download the
+https://jet.hazelcast.org/download[distribution package] of Hazelcast Jet
+and use the `bin/start-jet` command to start an instance.
+
+The distribution package contains a ready-made JAR,
+`examples/hello-world.jar`, that you can use to run a simple smoke
+test. In the base directory of the Jet distribution, type:
+
+[source,bash]
+----
+$ bin/jet-start &
+... wait for Jet to start ...
+$ bin/jet submit examples/hello-world.jar
+----
+
+If everything works out, you should see this in the log output:
+
+[source]
+----
+INFO [HelloWorld] [main] - Top 10 random numbers observed so far in the stream are:
+----
+
+This uses a simple Jet cluster of size 1, but you can use the same file
+to verify your full cluster setup as well. The source code of the example
+JAR is
+{jet-repo}/examples/hello-world/src/main/java/com/hazelcast/jet/examples/helloworld/HelloWorld.java[
+here].
 
 == Install Hazelcast Jet Enterprise (Optional)
 
@@ -135,15 +157,18 @@ Please see the {jet-mc-refman}[Hazelcast Jet Management Center Reference Manual]
 instructions.
 
 [[verify-your-setup]]
-== Verify Your Setup With a Word Count Example
+== Write Your First Jet Job
 
-You can verify your setup by running this simple program. It processes
-the contents of a Hazelcast `IList` that contains lines of text, finds
-the number of occurrences of each word in it, and stores its results
-in a Hazelcast `IMap`. In a distributed  computation job the input and
-output cannot be simple in-memory structures like a Java `List`; they
-must be accessible to any member of the computing cluster and must
-persist after a job ends. This is why we use Hazelcast structures.
+The simple program below processes the contents of a Hazelcast `IList`
+that contains lines of text, finds the number of occurrences of each
+word in it, and stores its results in a Hazelcast `IMap`. In a
+distributed computation job, the input and output cannot be simple
+in-memory structures like a Java `List`; they must be accessible to any
+member of the computing cluster and must persist after a job ends. This
+is why we use Hazelcast structures.
+
+The best way to run this code is by creating a Maven or Gradle project
+with Jet as a dependency, and then copying the code below into it.
 
 [source]
 ----
@@ -153,6 +178,7 @@ include::{javasource}/HelloWorld.java[]
 You should expect to see a lot of logging output from Jet (sent to
 `stderr`) and two lines on `stdout`:
 
+[source]
 ----
 Count of hello: 4
 Count of world: 5
@@ -192,11 +218,11 @@ another transformation (an intermediate step).
 Finally, you'll notice that Jet's Pipeline API is much more powerful
 than the Stream API. Here are a few highlights:
 
-- <<cogroup, joining streams>>
-- forking streams
-- <<windowed-aggregation, windowed aggregation over infinite streams>>
-- <<fault-tolerance, fault tolerance>>
-- <<source-sink-connectors, connectors to 3rd party systems>>
+- <<cogroup, Joining streams>>
+- Forking streams (simply do `stage.transform1(); stage1.transform2()`)
+- <<windowed-aggregation, Windowed aggregation over infinite streams>>
+- <<fault-tolerance, Fault tolerance>>
+- <<source-sink-connectors, Connectors to 3rd party systems>>
 
 === Example: List Transformation
 
@@ -482,23 +508,28 @@ You can install the chart using the following command:
 helm install stable/hazelcast-jet
 ```
 
-See
-https://github.com/helm/charts/tree/master/stable/hazelcast-jet[Hazelcast Jet Helm Chart]
-for more details on configuration and the
-https://github.com/hazelcast/charts#troubleshooting-in-kubernetes-environments[Troubleshooting in Kubernetes Environments]
-section if you encounter any issues.
+See the
+https://github.com/helm/charts/tree/master/stable/hazelcast-jet[
+Hazelcast Jet Helm Chart] for more details on configuration and the
+https://github.com/hazelcast/charts#troubleshooting-in-kubernetes-environments[
+Troubleshooting in Kubernetes Environments] section if you encounter any
+issues.
 
-Apart from the official Helm charts for Hazelcast Jet, we do also provide
-Helm charts for https://github.com/hazelcast/charts/tree/master/stable/hazelcast-jet[Hazelcast Jet with Hazelcast Jet Management Center]
-and https://github.com/hazelcast/charts/tree/master/stable/hazelcast-jet-enterprise[Hazelcast Jet Enterprise] 
-on the https://github.com/hazelcast/charts[Hazelcast Enterprise Helm Chart Repository].
+In addition to the official Helm charts for Hazelcast Jet, we also
+provide Helm charts for
+https://github.com/hazelcast/charts/tree/master/stable/hazelcast-jet[
+Hazelcast Jet with Management Center]
+and
+https://github.com/hazelcast/charts/tree/master/stable/hazelcast-jet-enterprise[
+Hazelcast Jet Enterprise] on the
+https://github.com/hazelcast/charts[Hazelcast Enterprise Helm Chart Repository].
 
 == Scaling the Cluster in Kubernetes
 
 Hazelcast Jet cluster is easily scalable within Kubernetes. You can use
 the standard `kubectl scale` command to change the cluster size. See
-https://kubernetes.io/docs/tasks/run-application/scale-stateful-set/#scaling-statefulsets[Scaling StatefulSets]
-for more information.
+https://kubernetes.io/docs/tasks/run-application/scale-stateful-set/#scaling-statefulsets[
+Scaling StatefulSets] for more information.
 
 Note however that, by default, Hazelcast Jet is configured to `TERMINATE`
 on receiving the `SIGTERM` signal from Kubernetes, which means that a

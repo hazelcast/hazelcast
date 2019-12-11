@@ -1,17 +1,17 @@
 [[command-line]]
 = Jet Command Line Tool
 
-Jet comes with a command line tool, `jet` which you can use to submit
+Jet comes with a command line tool, `jet`, which you can use to submit
 jobs and do basic management of their lifecycle. It supports these
 commands:
 
 [%header]
 |===
 |Command|Description
-|`cluster`|Shows current cluster state and information about members
-|`list-jobs`|Lists running jobs on the cluster
 |`submit`|Submits a job to the cluster
 |`cancel`|Cancels a running job
+|`list-jobs`|Lists running jobs on the cluster
+|`cluster`|Shows current cluster state and information about members
 |`suspend`|Suspends a running job
 |`resume`|Resumes a suspended job
 |`restart`|Restarts a running job
@@ -20,28 +20,31 @@ commands:
 |`delete-snapshot`|Deletes a named snapshot
 |===
 
-The command line uses the Jet client under the hood and thus needs to be
-configured with connection information to the cluster. By default,
-the command line tools uses the `hazelcast-client.xml` found in the
-`config` path of the distribution. It's also possible to specify
-connection parameters explicitly. For example, to list all the
-jobs running on the cluster you can use the following command:
+The `jet` command uses a Jet Client under the hood and thus needs to
+proper configuration to be able to connect to your cluster. By default
+it uses the settings from `config/hazelcast-client.yaml` in the
+distribution package, which has presets that will connect to Jet instance
+on the local machine. You can customize it by editing the YAML
+configuration, or by giving the connection parameters directly on the
+command line. For example, you can pass the addresses of the cluster
+members:
 
-....
-bin/jet -a 192.168.0.1:5701,192.168.0.1:5702 -g my-group list-jobs
-....
+[source]
+----
+$ bin/jet -a 192.168.0.1:5701,192.168.0.1:5702 -c my-cluster list-jobs
+----
 
-This command would try to connect to either `192.168.0.1:5701`
-or `192.168.0.2:5702` using group name `my-group` and will list
-all the running jobs on the cluster. If you want to use the tool
-with a different `client.xml` you can do it as follows:
+This will try to connect to either `192.168.0.1:5701` or
+`192.168.0.2:5702` using the cluster name `my-cluster` and list
+all the running jobs in that cluster. If you want to use the tool
+with a different config file, you can do it as follows:
 
-....
-bin/jet -f client.xml list-jobs
-....
+[source]
+----
+$ bin/jet -f my-config.yaml list-jobs
+----
 
-For more details on how to use the command line tool please refer to its own
-documentation which can be retrieved by the command `jet --help`
+For more details on its usage type `jet --help`.
 
 [[management-center]]
 = Management Center
