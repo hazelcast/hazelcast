@@ -92,7 +92,8 @@ public class DataInputNavigableJsonAdapter extends NavigableJsonInputAdapter {
 
     static class UTF8Reader extends Reader {
 
-        private final CharsetDecoder utf8Decoder;
+        static final ThreadLocal<CharsetDecoder> DECODER_THREAD_LOCAL = ThreadLocal.withInitial(Bits.UTF_8::newDecoder);
+
         private final ByteBuffer inputBuffer;
         // required to support read() for multibyte characters
         private boolean hasLeftoverChar;
@@ -102,7 +103,6 @@ public class DataInputNavigableJsonAdapter extends NavigableJsonInputAdapter {
             byte[] data = obtainBytes(input);
             inputBuffer = ByteBuffer.wrap(data);
             inputBuffer.position(input.position());
-            this.utf8Decoder = Bits.UTF_8.newDecoder();
         }
 
         // default read() implementation does not handle multibyte chars well
@@ -131,6 +131,8 @@ public class DataInputNavigableJsonAdapter extends NavigableJsonInputAdapter {
 
         @Override
         public int read(char[] cbuf, int off, int len) throws IOException {
+            final CharsetDecoder decoder = DECODER_THREAD_LOCAL.get();
+            decoder.reset();
             if (off < 0 || (off + len) > cbuf.length) {
                 throw new IndexOutOfBoundsException();
             }
@@ -138,14 +140,14 @@ public class DataInputNavigableJsonAdapter extends NavigableJsonInputAdapter {
                 return -1;
             }
             CharBuffer charbuffer = CharBuffer.wrap(cbuf, off, len);
-            CoderResult result = utf8Decoder.decode(inputBuffer, charbuffer, true);
+            CoderResult result = decoder.decode(inputBuffer, charbuffer, true);
             if (result.isError()) {
                 result.throwException();
             }
             if (result.isUnderflow()) {
                 // return number of characters read
                 if (!inputBuffer.hasRemaining()) {
-                    utf8Decoder.flush(charbuffer);
+                    decoder.flush(charbuffer);
                 }
                 return charbuffer.position() - off;
             } else {

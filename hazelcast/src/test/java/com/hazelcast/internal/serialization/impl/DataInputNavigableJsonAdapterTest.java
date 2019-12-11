@@ -18,6 +18,7 @@ package com.hazelcast.internal.serialization.impl;
 
 import com.hazelcast.internal.nio.BufferObjectDataInput;
 import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.internal.util.ExceptionUtil;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -29,6 +30,7 @@ import org.junit.runner.RunWith;
 import java.io.IOException;
 import java.nio.CharBuffer;
 import java.nio.charset.MalformedInputException;
+import java.util.concurrent.CountDownLatch;
 
 import static com.hazelcast.internal.nio.Bits.UTF_8;
 import static com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder.DEFAULT_BYTE_ORDER;
@@ -89,12 +91,6 @@ public class DataInputNavigableJsonAdapterTest {
     }
 
     @Test
-    public void testReadAround() throws IOException {
-        byte[] sample = SAMPLE_BYTES[2];
-
-    }
-
-    @Test
     public void testSamples()
             throws IOException {
         for (byte[] sample : SAMPLE_BYTES) {
@@ -111,6 +107,38 @@ public class DataInputNavigableJsonAdapterTest {
             input = new ByteArrayObjectDataInput(sample, serializationService, DEFAULT_BYTE_ORDER);
             DataInputNavigableJsonAdapter.UTF8Reader reader = new DataInputNavigableJsonAdapter.UTF8Reader(input);
             assertMalformed(reader);
+        }
+    }
+
+    // ensure that when UTF8Reader instances are created & used from several threads safely
+    // UTF8Reader is not thread safe, but caches CharsetDecoders in ThreadLocals
+    @Test
+    public void testConcurrently() throws InterruptedException {
+        int concurrency = 8;
+        CountDownLatch latch = new CountDownLatch(1);
+        Thread[] threads = new Thread[concurrency];
+        for (int i = 0; i < concurrency; i++) {
+            threads[i] = new Thread(() -> {
+                try {
+                    latch.await();
+                    for (byte[] sample : SAMPLE_BYTES) {
+                        BufferObjectDataInput input =
+                                new ByteArrayObjectDataInput(sample, serializationService, DEFAULT_BYTE_ORDER);
+                        DataInputNavigableJsonAdapter.UTF8Reader reader =
+                                new DataInputNavigableJsonAdapter.UTF8Reader(input);
+                        assertReadFully(reader, sample);
+                    }
+                } catch (InterruptedException e) {
+                    ignore(e);
+                } catch (IOException e) {
+                    ExceptionUtil.rethrow(e);
+                }
+            });
+            threads[i].start();
+        }
+        latch.countDown();
+        for (int i = 0; i < concurrency; i++) {
+            threads[i].join();
         }
     }
 
