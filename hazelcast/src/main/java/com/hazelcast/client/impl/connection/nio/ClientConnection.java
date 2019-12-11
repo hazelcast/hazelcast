@@ -19,6 +19,7 @@ package com.hazelcast.client.impl.connection.nio;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.connection.ClientConnectionManager;
 import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.spi.EventHandler;
 import com.hazelcast.client.impl.spi.impl.listener.ClientListenerServiceImpl;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.core.LifecycleService;
@@ -37,10 +38,14 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.nio.channels.CancelledKeyException;
 import java.security.cert.Certificate;
+import java.util.Collections;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
 
+import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
 import static com.hazelcast.internal.util.StringUtil.timeToStringFriendly;
 
 /**
@@ -59,6 +64,9 @@ public class ClientConnection implements Connection {
     private final long startTime = System.currentTimeMillis();
     private final Consumer<ClientMessage> responseHandler;
     private final ConcurrentMap attributeMap;
+
+    @Probe(name = "eventHandlerCount", level = MANDATORY)
+    private final ConcurrentMap<Long, EventHandler> eventHandlerMap = new ConcurrentHashMap<>();
 
     private volatile Address remoteEndpoint;
     @Probe(level = ProbeLevel.DEBUG)
@@ -181,6 +189,7 @@ public class ClientConnection implements Connection {
 
         logClose();
 
+        eventHandlerMap.clear();
         try {
             innerClose();
         } catch (Exception e) {
@@ -291,5 +300,22 @@ public class ClientConnection implements Connection {
     @Override
     public Certificate[] getRemoteCertificates() {
         return attributeMap != null ? (Certificate[]) attributeMap.get(Certificate.class) : null;
+    }
+
+    public EventHandler getEventHandler(long correlationId) {
+        return eventHandlerMap.get(correlationId);
+    }
+
+    public void removeEventHandler(long correlationId) {
+        eventHandlerMap.remove(correlationId);
+    }
+
+    public void addEventHandler(long correlationId, EventHandler handler) {
+        eventHandlerMap.put(correlationId, handler);
+    }
+
+    // used in tests
+    public Map<Long, EventHandler> getEventHandlers() {
+        return Collections.unmodifiableMap(eventHandlerMap);
     }
 }

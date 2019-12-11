@@ -36,7 +36,7 @@ public class AddClusterViewListenerMessageTask
 
     @Override
     protected Object call() {
-        ClusterViewListenerService service = clientEngine.getClientClusterListenerService();
+        ClusterViewListenerService service = clientEngine.getClusterListenerService();
         service.registerListener(endpoint, clientMessage.getCorrelationId());
         endpoint.addDestroyAction(UuidUtil.newUnsecureUUID(), () -> {
             service.deregisterListener(endpoint);

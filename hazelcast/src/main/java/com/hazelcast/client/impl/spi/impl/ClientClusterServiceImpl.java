@@ -48,7 +48,6 @@ import com.hazelcast.spi.exception.TargetDisconnectedException;
 import javax.annotation.Nonnull;
 import java.net.InetSocketAddress;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.EventListener;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -73,8 +72,7 @@ public class ClientClusterServiceImpl implements ClientClusterService {
 
     private static final int INITIAL_MEMBERS_TIMEOUT_SECONDS = 120;
 
-    private static final MemberListSnapshot EMPTY_SNAPSHOT =
-            new MemberListSnapshot(-1, new LinkedHashMap<>(), Collections.emptySet());
+    private static final MemberListSnapshot EMPTY_SNAPSHOT = new MemberListSnapshot(-1, new LinkedHashMap<>());
     private final HazelcastClientInstanceImpl client;
 
     private final AtomicReference<MemberListSnapshot> memberListSnapshot = new AtomicReference<>(EMPTY_SNAPSHOT);
@@ -88,12 +86,10 @@ public class ClientClusterServiceImpl implements ClientClusterService {
     private static final class MemberListSnapshot {
         private final int version;
         private final LinkedHashMap<Address, Member> members;
-        private final Set<Member> memberSet;
 
-        private MemberListSnapshot(int version, LinkedHashMap<Address, Member> members, Set<Member> memberSet) {
+        private MemberListSnapshot(int version, LinkedHashMap<Address, Member> members) {
             this.version = version;
             this.members = members;
-            this.memberSet = memberSet;
         }
     }
 
@@ -165,18 +161,6 @@ public class ClientClusterServiceImpl implements ClientClusterService {
     }
 
     @Override
-    public int getSize(@Nonnull MemberSelector selector) {
-        checkNotNull(selector, "selector must not be null");
-        int size = 0;
-        for (Member member : getMemberList()) {
-            if (selector.select(member)) {
-                size++;
-            }
-        }
-        return size;
-    }
-
-    @Override
     public long getClusterTime() {
         return Clock.currentTimeMillis();
     }
@@ -199,11 +183,11 @@ public class ClientClusterServiceImpl implements ClientClusterService {
             UUID id = addMembershipListenerWithoutInit(listener);
             if (listener instanceof InitialMembershipListener) {
                 Cluster cluster = client.getCluster();
-                Set<Member> members = memberListSnapshot.get().memberSet;
+                Collection<Member> members = memberListSnapshot.get().members.values();
                 //if members are empty,it means initial event did not arrive yet
                 //it will be redirected to listeners when it arrives see #handleInitialMembershipEvent
                 if (!members.isEmpty()) {
-                    InitialMembershipEvent event = new InitialMembershipEvent(cluster, members);
+                    InitialMembershipEvent event = new InitialMembershipEvent(cluster, toUnmodifiableHasSet(members));
                     ((InitialMembershipListener) listener).init(event);
                 }
             }
@@ -248,7 +232,7 @@ public class ClientClusterServiceImpl implements ClientClusterService {
             //This check is necessary so that `clearMemberListVersion` when handling auth response will not
             //intervene with client failover logic
             if (clusterViewSnapshot != EMPTY_SNAPSHOT) {
-                memberListSnapshot.set(new MemberListSnapshot(0, clusterViewSnapshot.members, clusterViewSnapshot.memberSet));
+                memberListSnapshot.set(new MemberListSnapshot(0, clusterViewSnapshot.members));
             }
         }
     }
@@ -267,7 +251,7 @@ public class ClientClusterServiceImpl implements ClientClusterService {
         MemberListSnapshot snapshot = createSnapshot(version, memberInfos);
         memberListSnapshot.set(snapshot);
         logger.info(membersString(snapshot));
-        Set<Member> members = snapshot.memberSet;
+        Set<Member> members = toUnmodifiableHasSet(snapshot.members.values());
         InitialMembershipEvent event = new InitialMembershipEvent(client.getCluster(), members);
         for (MembershipListener listener : listeners.values()) {
             if (listener instanceof InitialMembershipListener) {
@@ -283,11 +267,14 @@ public class ClientClusterServiceImpl implements ClientClusterService {
             newMembers.put(address, new MemberImpl(address, memberInfo.getVersion(), memberInfo.getUuid(),
                     memberInfo.getAttributes(), memberInfo.isLiteMember()));
         }
-        Set<Member> memberSet = unmodifiableSet(new HashSet<>(newMembers.values()));
-        return new MemberListSnapshot(memberListVersion, newMembers, memberSet);
+        return new MemberListSnapshot(memberListVersion, newMembers);
     }
 
-    private List<MembershipEvent> detectMembershipEvents(Set<Member> prevMembers, Set<Member> currentMembers) {
+    private Set<Member> toUnmodifiableHasSet(Collection<Member> members) {
+        return unmodifiableSet(new HashSet<>(members));
+    }
+
+    private List<MembershipEvent> detectMembershipEvents(Collection<Member> prevMembers, Set<Member> currentMembers) {
         List<Member> newMembers = new LinkedList<>();
         Set<Member> deadMembers = new HashSet<>(prevMembers);
         for (Member member : currentMembers) {
@@ -342,7 +329,7 @@ public class ClientClusterServiceImpl implements ClientClusterService {
             logger.finest("Handling new snapshot with membership version: " + memberListVersion + ", membersString "
                     + membersString(snapshot));
         }
-        MemberListSnapshot clusterViewSnapshot = memberListSnapshot.get();
+        MemberListSnapshot  clusterViewSnapshot = memberListSnapshot.get();
         if (clusterViewSnapshot == EMPTY_SNAPSHOT) {
             synchronized (clusterViewLock) {
                 clusterViewSnapshot = memberListSnapshot.get();
@@ -360,10 +347,10 @@ public class ClientClusterServiceImpl implements ClientClusterService {
             synchronized (clusterViewLock) {
                 clusterViewSnapshot = memberListSnapshot.get();
                 if (memberListVersion >= clusterViewSnapshot.version) {
-                    Set<Member> prevMembers = clusterViewSnapshot.memberSet;
+                    Collection<Member> prevMembers = clusterViewSnapshot.members.values();
                     MemberListSnapshot snapshot = createSnapshot(memberListVersion, memberInfos);
                     memberListSnapshot.set(snapshot);
-                    Set<Member> currentMembers = snapshot.memberSet;
+                    Set<Member> currentMembers = toUnmodifiableHasSet(snapshot.members.values());
                     events = detectMembershipEvents(prevMembers, currentMembers);
                 }
             }

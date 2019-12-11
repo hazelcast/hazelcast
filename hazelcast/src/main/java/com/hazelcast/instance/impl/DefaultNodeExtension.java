@@ -368,7 +368,7 @@ public class DefaultNodeExtension implements NodeExtension {
 
     @Override
     public void onPartitionStateChange() {
-        ClusterViewListenerService service = node.clientEngine.getClientClusterListenerService();
+        ClusterViewListenerService service = node.clientEngine.getClusterListenerService();
         if (service != null) {
             service.onPartitionStateChange();
         }
@@ -376,7 +376,7 @@ public class DefaultNodeExtension implements NodeExtension {
 
     @Override
     public void onMemberListChange() {
-        ClusterViewListenerService service = node.clientEngine.getClientClusterListenerService();
+        ClusterViewListenerService service = node.clientEngine.getClusterListenerService();
         if (service != null) {
             service.onMemberListChange();
         }

@@ -36,8 +36,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static com.hazelcast.internal.util.ConcurrencyUtil.CALLER_RUNS;
-
 /**
  * Adds cluster listener to one of the connections. If that connection is removed,
  * it registers connection to any other connection
@@ -45,18 +43,14 @@ import static com.hazelcast.internal.util.ConcurrencyUtil.CALLER_RUNS;
 public class ClientClusterViewListenerService implements ConnectionListener {
 
     private final HazelcastClientInstanceImpl client;
-    private final ClientListenerService listenerService;
     private final ClientConnectionManager connectionManager;
     private final ClientPartitionServiceImpl partitionService;
     private final ClientClusterServiceImpl clusterService;
     private final ILogger logger;
     private final AtomicReference<Connection> listenerAddedConnection = new AtomicReference<>();
-    private volatile long lastCorrelationId;
-
 
     public ClientClusterViewListenerService(HazelcastClientInstanceImpl client) {
         this.client = client;
-        this.listenerService = client.getListenerService();
         this.logger = client.getLoggingService().getLogger(ClientListenerService.class);
         this.connectionManager = client.getConnectionManager();
         partitionService = (ClientPartitionServiceImpl) client.getClientPartitionService();
@@ -103,34 +97,43 @@ public class ClientClusterViewListenerService implements ConnectionListener {
 
     @Override
     public void connectionAdded(Connection connection) {
-        if (listenerAddedConnection.compareAndSet(null, connection)) {
-            register(connection);
-        }
+        tryRegister(connection);
     }
 
     @Override
     public void connectionRemoved(Connection connection) {
-        if (listenerAddedConnection.compareAndSet(connection, null)) {
-            ((ClientListenerServiceImpl) listenerService).removeEventHandler(lastCorrelationId);
-            Connection newConnection = connectionManager.getRandomConnection();
-            if (newConnection != null) {
-                if (listenerAddedConnection.compareAndSet(null, newConnection)) {
-                    register(newConnection);
-                }
-            }
+        tryReregisterToRandomConnection(connection);
+    }
+
+    private void tryReregisterToRandomConnection(Connection oldConnection) {
+        if (!listenerAddedConnection.compareAndSet(oldConnection, null)) {
+            //somebody else already trying to rereigster
+            return;
+        }
+        Connection newConnection = connectionManager.getRandomConnection();
+        if (newConnection != null) {
+            tryRegister(newConnection);
         }
     }
 
-    private void register(Connection connection) {
+    private void tryRegister(Connection connection) {
+        if (!listenerAddedConnection.compareAndSet(null, connection)) {
+            //already registering/registered to another connection
+            return;
+        }
         ClientMessage clientMessage = ClientAddClusterViewListenerCodec.encodeRequest();
         ClientInvocation invocation = new ClientInvocation(client, clientMessage, null, connection);
         ClusterViewListenerHandler handler = new ClusterViewListenerHandler(connection);
         invocation.setEventHandler(handler);
         handler.beforeListenerRegister(connection);
-        invocation.invokeUrgent().thenAcceptAsync(message -> {
-            lastCorrelationId = clientMessage.getCorrelationId();
-            handler.onListenerRegister(connection);
-        }, CALLER_RUNS);
+        invocation.invokeUrgent().whenCompleteAsync((message, throwable) -> {
+            if (message != null) {
+                handler.onListenerRegister(connection);
+                return;
+            }
+            //completes with exception, listener needs to be reregistered
+            tryReregisterToRandomConnection(connection);
+        });
     }
 
 }
