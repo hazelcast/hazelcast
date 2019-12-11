@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * TODO DOC
  */
-@Generated("ae791cede73d29423eb90b11c99c4cbf")
+@Generated("2d9c02b3bbc3b7989275ed4efceaf548")
 public final class ReplicatedMapValuesCodec {
     //hex: 0x0D1000
     public static final int REQUEST_MESSAGE_TYPE = 856064;
@@ -79,11 +79,6 @@ public final class ReplicatedMapValuesCodec {
 
     @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
     public static class ResponseParameters {
-
-        /**
-         * A collection view of the values contained in this map.
-         */
-        public java.util.List<com.hazelcast.internal.serialization.Data> response;
     }
 
     public static ClientMessage encodeResponse(java.util.Collection<com.hazelcast.internal.serialization.Data> response) {
@@ -96,12 +91,12 @@ public final class ReplicatedMapValuesCodec {
         return clientMessage;
     }
 
-    public static ReplicatedMapValuesCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
+    public static ReplicatedMapValuesCodec.ResponseParameters decodeResponse(ClientMessage clientMessage, java.util.function.Consumer<com.hazelcast.internal.serialization.Data> responseConsumer) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         ResponseParameters response = new ResponseParameters();
         //empty initial frame
         iterator.next();
-        response.response = ListMultiFrameCodec.decode(iterator, DataCodec::decode);
+        ListMultiFrameCodec.decode(iterator, DataCodec::decode, responseConsumer);
         return response;
     }
 

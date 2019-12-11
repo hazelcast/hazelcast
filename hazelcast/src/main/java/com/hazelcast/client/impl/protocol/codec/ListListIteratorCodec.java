@@ -39,7 +39,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * ListIterator#next next. An initial call to ListIterator#previous previous would return the element with the
  * specified index minus one.
  */
-@Generated("15e5eeede0859571d9d5f75ddae7e480")
+@Generated("a4707aa3ae5f626d06e54b2b8ff899d0")
 public final class ListListIteratorCodec {
     //hex: 0x051700
     public static final int REQUEST_MESSAGE_TYPE = 333568;
@@ -89,12 +89,6 @@ public final class ListListIteratorCodec {
 
     @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
     public static class ResponseParameters {
-
-        /**
-         * a list iterator over the elements in this list (in proper
-         * sequence), starting at the specified position in the list
-         */
-        public java.util.List<com.hazelcast.internal.serialization.Data> response;
     }
 
     public static ClientMessage encodeResponse(java.util.Collection<com.hazelcast.internal.serialization.Data> response) {
@@ -107,12 +101,12 @@ public final class ListListIteratorCodec {
         return clientMessage;
     }
 
-    public static ListListIteratorCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
+    public static ListListIteratorCodec.ResponseParameters decodeResponse(ClientMessage clientMessage, java.util.function.Consumer<com.hazelcast.internal.serialization.Data> responseConsumer) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         ResponseParameters response = new ResponseParameters();
         //empty initial frame
         iterator.next();
-        response.response = ListMultiFrameCodec.decode(iterator, DataCodec::decode);
+        ListMultiFrameCodec.decode(iterator, DataCodec::decode, responseConsumer);
         return response;
     }
 

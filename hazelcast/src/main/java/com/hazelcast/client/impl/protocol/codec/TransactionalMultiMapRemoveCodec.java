@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Removes the given key value pair from the multimap.
  */
-@Generated("573864d2ae283f885c7d1f1579c53591")
+@Generated("2f334a367347758b24e02d4aca3d9292")
 public final class TransactionalMultiMapRemoveCodec {
     //hex: 0x0F0300
     public static final int REQUEST_MESSAGE_TYPE = 983808;
@@ -101,11 +101,6 @@ public final class TransactionalMultiMapRemoveCodec {
 
     @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
     public static class ResponseParameters {
-
-        /**
-         * True if the size of the multimap changed after the remove operation, false otherwise.
-         */
-        public java.util.List<com.hazelcast.internal.serialization.Data> response;
     }
 
     public static ClientMessage encodeResponse(java.util.Collection<com.hazelcast.internal.serialization.Data> response) {
@@ -118,12 +113,12 @@ public final class TransactionalMultiMapRemoveCodec {
         return clientMessage;
     }
 
-    public static TransactionalMultiMapRemoveCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
+    public static TransactionalMultiMapRemoveCodec.ResponseParameters decodeResponse(ClientMessage clientMessage, java.util.function.Consumer<com.hazelcast.internal.serialization.Data> responseConsumer) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         ResponseParameters response = new ResponseParameters();
         //empty initial frame
         iterator.next();
-        response.response = ListMultiFrameCodec.decode(iterator, DataCodec::decode);
+        ListMultiFrameCodec.decode(iterator, DataCodec::decode, responseConsumer);
         return response;
     }
 

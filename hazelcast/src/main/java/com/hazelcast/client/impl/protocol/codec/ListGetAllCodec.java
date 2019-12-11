@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Return the all elements of this collection
  */
-@Generated("088fb0119293cb1fb1964ac433024a50")
+@Generated("8505df216c38a626134d868436b65cf4")
 public final class ListGetAllCodec {
     //hex: 0x050A00
     public static final int REQUEST_MESSAGE_TYPE = 330240;
@@ -79,11 +79,6 @@ public final class ListGetAllCodec {
 
     @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
     public static class ResponseParameters {
-
-        /**
-         * An array of all item values in the list.
-         */
-        public java.util.List<com.hazelcast.internal.serialization.Data> response;
     }
 
     public static ClientMessage encodeResponse(java.util.Collection<com.hazelcast.internal.serialization.Data> response) {
@@ -96,12 +91,12 @@ public final class ListGetAllCodec {
         return clientMessage;
     }
 
-    public static ListGetAllCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
+    public static ListGetAllCodec.ResponseParameters decodeResponse(ClientMessage clientMessage, java.util.function.Consumer<com.hazelcast.internal.serialization.Data> responseConsumer) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         ResponseParameters response = new ResponseParameters();
         //empty initial frame
         iterator.next();
-        response.response = ListMultiFrameCodec.decode(iterator, DataCodec::decode);
+        ListMultiFrameCodec.decode(iterator, DataCodec::decode, responseConsumer);
         return response;
     }
 

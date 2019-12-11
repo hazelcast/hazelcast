@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Applies the user defined EntryProcessor to the all entries in the map.Returns the results mapped by each key in the map.
  */
-@Generated("b9e390ae3dff2eaff42ee391608a49b3")
+@Generated("10e257367c4c8d1a534c77b9fcbfd1a4")
 public final class MapExecuteOnAllKeysCodec {
     //hex: 0x013000
     public static final int REQUEST_MESSAGE_TYPE = 77824;
@@ -86,11 +86,6 @@ public final class MapExecuteOnAllKeysCodec {
 
     @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
     public static class ResponseParameters {
-
-        /**
-         * results of entry process on the entries
-         */
-        public java.util.List<java.util.Map.Entry<com.hazelcast.internal.serialization.Data, com.hazelcast.internal.serialization.Data>> response;
     }
 
     public static ClientMessage encodeResponse(java.util.Collection<java.util.Map.Entry<com.hazelcast.internal.serialization.Data, com.hazelcast.internal.serialization.Data>> response) {
@@ -103,12 +98,12 @@ public final class MapExecuteOnAllKeysCodec {
         return clientMessage;
     }
 
-    public static MapExecuteOnAllKeysCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
+    public static MapExecuteOnAllKeysCodec.ResponseParameters decodeResponse(ClientMessage clientMessage, java.util.function.BiConsumer<com.hazelcast.internal.serialization.Data, com.hazelcast.internal.serialization.Data> responseBiConsumer) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         ResponseParameters response = new ResponseParameters();
         //empty initial frame
         iterator.next();
-        response.response = EntryListCodec.decode(iterator, DataCodec::decode, DataCodec::decode);
+        EntryListCodec.decode(iterator, DataCodec::decode, DataCodec::decode, responseBiConsumer);
         return response;
     }
 

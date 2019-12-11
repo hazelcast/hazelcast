@@ -39,7 +39,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * configured javax.cache.integration.CacheLoader might be called to retrieve the values of the keys from any kind
  * of external resource.
  */
-@Generated("32d5f111176a266fb5d9fada189b90b8")
+@Generated("7415d38c4479e4ea457eda2e6bc54f0c")
 public final class CacheGetAllCodec {
     //hex: 0x130900
     public static final int REQUEST_MESSAGE_TYPE = 1247488;
@@ -97,12 +97,6 @@ public final class CacheGetAllCodec {
 
     @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
     public static class ResponseParameters {
-
-        /**
-         * A map of entries that were found for the given keys. Keys not found
-         * in the cache are not in the returned map.
-         */
-        public java.util.List<java.util.Map.Entry<com.hazelcast.internal.serialization.Data, com.hazelcast.internal.serialization.Data>> response;
     }
 
     public static ClientMessage encodeResponse(java.util.Collection<java.util.Map.Entry<com.hazelcast.internal.serialization.Data, com.hazelcast.internal.serialization.Data>> response) {
@@ -115,12 +109,12 @@ public final class CacheGetAllCodec {
         return clientMessage;
     }
 
-    public static CacheGetAllCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
+    public static CacheGetAllCodec.ResponseParameters decodeResponse(ClientMessage clientMessage, java.util.function.BiConsumer<com.hazelcast.internal.serialization.Data, com.hazelcast.internal.serialization.Data> responseBiConsumer) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         ResponseParameters response = new ResponseParameters();
         //empty initial frame
         iterator.next();
-        response.response = EntryListCodec.decode(iterator, DataCodec::decode, DataCodec::decode);
+        EntryListCodec.decode(iterator, DataCodec::decode, DataCodec::decode, responseBiConsumer);
         return response;
     }
 

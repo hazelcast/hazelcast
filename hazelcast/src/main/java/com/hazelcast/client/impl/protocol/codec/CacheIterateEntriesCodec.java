@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Fetches specified number of entries from the specified partition starting from specified table index.
  */
-@Generated("1609ce3c9a290f199b3a1b72931ff05d")
+@Generated("84d0b0f8a3e769f145304e7ff2b55082")
 public final class CacheIterateEntriesCodec {
     //hex: 0x131C00
     public static final int REQUEST_MESSAGE_TYPE = 1252352;
@@ -100,11 +100,6 @@ public final class CacheIterateEntriesCodec {
          * The slot number (or index) to start the iterator
          */
         public int tableIndex;
-
-        /**
-         * TODO DOC
-         */
-        public java.util.List<java.util.Map.Entry<com.hazelcast.internal.serialization.Data, com.hazelcast.internal.serialization.Data>> entries;
     }
 
     public static ClientMessage encodeResponse(int tableIndex, java.util.Collection<java.util.Map.Entry<com.hazelcast.internal.serialization.Data, com.hazelcast.internal.serialization.Data>> entries) {
@@ -118,12 +113,12 @@ public final class CacheIterateEntriesCodec {
         return clientMessage;
     }
 
-    public static CacheIterateEntriesCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
+    public static CacheIterateEntriesCodec.ResponseParameters decodeResponse(ClientMessage clientMessage, java.util.function.BiConsumer<com.hazelcast.internal.serialization.Data, com.hazelcast.internal.serialization.Data> entriesBiConsumer) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         ResponseParameters response = new ResponseParameters();
         ClientMessage.Frame initialFrame = iterator.next();
         response.tableIndex = decodeInt(initialFrame.content, RESPONSE_TABLE_INDEX_FIELD_OFFSET);
-        response.entries = EntryListCodec.decode(iterator, DataCodec::decode, DataCodec::decode);
+        EntryListCodec.decode(iterator, DataCodec::decode, DataCodec::decode, entriesBiConsumer);
         return response;
     }
 

@@ -28,7 +28,7 @@ import com.hazelcast.map.IMap;
 import com.hazelcast.map.impl.iterator.AbstractMapPartitionIterator;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.util.ExceptionUtil;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.internal.serialization.Data;
 
 import java.util.AbstractMap;
 import java.util.ArrayList;

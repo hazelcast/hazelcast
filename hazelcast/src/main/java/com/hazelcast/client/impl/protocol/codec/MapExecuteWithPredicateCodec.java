@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Applies the user defined EntryProcessor to the entries in the map which satisfies provided predicate.
  * Returns the results mapped by each key in the map.
  */
-@Generated("df9fcb93f23f454b6b7275857e66a048")
+@Generated("44eac82aac7d269fcdf490bbf0942949")
 public final class MapExecuteWithPredicateCodec {
     //hex: 0x013100
     public static final int REQUEST_MESSAGE_TYPE = 78080;
@@ -94,11 +94,6 @@ public final class MapExecuteWithPredicateCodec {
 
     @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
     public static class ResponseParameters {
-
-        /**
-         * results of entry process on the entries matching the query criteria
-         */
-        public java.util.List<java.util.Map.Entry<com.hazelcast.internal.serialization.Data, com.hazelcast.internal.serialization.Data>> response;
     }
 
     public static ClientMessage encodeResponse(java.util.Collection<java.util.Map.Entry<com.hazelcast.internal.serialization.Data, com.hazelcast.internal.serialization.Data>> response) {
@@ -111,12 +106,12 @@ public final class MapExecuteWithPredicateCodec {
         return clientMessage;
     }
 
-    public static MapExecuteWithPredicateCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
+    public static MapExecuteWithPredicateCodec.ResponseParameters decodeResponse(ClientMessage clientMessage, java.util.function.BiConsumer<com.hazelcast.internal.serialization.Data, com.hazelcast.internal.serialization.Data> responseBiConsumer) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         ResponseParameters response = new ResponseParameters();
         //empty initial frame
         iterator.next();
-        response.response = EntryListCodec.decode(iterator, DataCodec::decode, DataCodec::decode);
+        EntryListCodec.decode(iterator, DataCodec::decode, DataCodec::decode, responseBiConsumer);
         return response;
     }
 

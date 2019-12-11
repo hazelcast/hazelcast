@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Fetches specified number of keys from the specified partition starting from specified table index.
  */
-@Generated("43fd6949f3fbfd20c3635d3d5884b5a5")
+@Generated("9fbbd7bfd0dafd9db91437534e4416d2")
 public final class MapFetchKeysCodec {
     //hex: 0x013800
     public static final int REQUEST_MESSAGE_TYPE = 79872;
@@ -100,11 +100,6 @@ public final class MapFetchKeysCodec {
          * The slot number (or index) to start the iterator
          */
         public int tableIndex;
-
-        /**
-         * TODO DOC
-         */
-        public java.util.List<com.hazelcast.internal.serialization.Data> keys;
     }
 
     public static ClientMessage encodeResponse(int tableIndex, java.util.Collection<com.hazelcast.internal.serialization.Data> keys) {
@@ -118,12 +113,12 @@ public final class MapFetchKeysCodec {
         return clientMessage;
     }
 
-    public static MapFetchKeysCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
+    public static MapFetchKeysCodec.ResponseParameters decodeResponse(ClientMessage clientMessage, java.util.function.Consumer<com.hazelcast.internal.serialization.Data> keysConsumer) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         ResponseParameters response = new ResponseParameters();
         ClientMessage.Frame initialFrame = iterator.next();
         response.tableIndex = decodeInt(initialFrame.content, RESPONSE_TABLE_INDEX_FIELD_OFFSET);
-        response.keys = ListMultiFrameCodec.decode(iterator, DataCodec::decode);
+        ListMultiFrameCodec.decode(iterator, DataCodec::decode, keysConsumer);
         return response;
     }
 

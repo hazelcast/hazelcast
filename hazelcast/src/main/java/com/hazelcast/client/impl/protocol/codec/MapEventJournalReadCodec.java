@@ -43,7 +43,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * The predicate, filter and projection may be {@code null} in which case all elements are returned
  * and no projection is applied.
  */
-@Generated("343e247a8cf3940e85e24f3ece5a870f")
+@Generated("81dda55b61887e09c91ac08d52fb9b67")
 public final class MapEventJournalReadCodec {
     //hex: 0x014400
     public static final int REQUEST_MESSAGE_TYPE = 82944;
@@ -134,11 +134,6 @@ public final class MapEventJournalReadCodec {
         /**
          * TODO DOC
          */
-        public java.util.List<com.hazelcast.internal.serialization.Data> items;
-
-        /**
-         * TODO DOC
-         */
         public @Nullable long[] itemSeqs;
 
         /**
@@ -160,13 +155,13 @@ public final class MapEventJournalReadCodec {
         return clientMessage;
     }
 
-    public static MapEventJournalReadCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
+    public static MapEventJournalReadCodec.ResponseParameters decodeResponse(ClientMessage clientMessage, java.util.function.Consumer<com.hazelcast.internal.serialization.Data> itemsConsumer) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         ResponseParameters response = new ResponseParameters();
         ClientMessage.Frame initialFrame = iterator.next();
         response.readCount = decodeInt(initialFrame.content, RESPONSE_READ_COUNT_FIELD_OFFSET);
         response.nextSeq = decodeLong(initialFrame.content, RESPONSE_NEXT_SEQ_FIELD_OFFSET);
-        response.items = ListMultiFrameCodec.decode(iterator, DataCodec::decode);
+        ListMultiFrameCodec.decode(iterator, DataCodec::decode, itemsConsumer);
         response.itemSeqs = CodecUtil.decodeNullable(iterator, LongArrayCodec::decode);
         return response;
     }
