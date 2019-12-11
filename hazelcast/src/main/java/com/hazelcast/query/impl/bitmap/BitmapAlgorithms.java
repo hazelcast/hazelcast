@@ -126,23 +126,9 @@ final class BitmapAlgorithms {
                 return index;
             }
 
-            long max = member;
-            for (Node node : nodes) {
-                long advancedTo = node.iterator.advanceAtLeastTo(max);
-                if (advancedTo == AscendingLongIterator.END) {
-                    // make it first just to detect the end in advance()
-                    first = node;
-                    index = AscendingLongIterator.END;
-                    return AscendingLongIterator.END;
-                }
-
-                if (advancedTo > max) {
-                    max = advancedTo;
-                }
-            }
-
-            orderAndLink();
+            last.iterator.advanceAtLeastTo(member);
             advance();
+
             return index;
         }
 
