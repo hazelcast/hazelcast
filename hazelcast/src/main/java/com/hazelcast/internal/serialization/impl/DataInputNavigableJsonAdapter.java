@@ -23,6 +23,7 @@ import com.hazelcast.internal.json.JsonValue;
 import com.hazelcast.internal.nio.Bits;
 import com.hazelcast.internal.nio.BufferObjectDataInput;
 import com.hazelcast.query.impl.getters.JsonPathCursor;
+import com.hazelcast.spi.impl.operationexecutor.impl.OperationThread;
 
 import java.io.IOException;
 import java.io.Reader;
@@ -131,7 +132,9 @@ public class DataInputNavigableJsonAdapter extends NavigableJsonInputAdapter {
 
         @Override
         public int read(char[] cbuf, int off, int len) throws IOException {
-            final CharsetDecoder decoder = DECODER_THREAD_LOCAL.get();
+            final CharsetDecoder decoder = Thread.currentThread() instanceof OperationThread
+                    ? DECODER_THREAD_LOCAL.get()
+                    : Bits.UTF_8.newDecoder();
             decoder.reset();
             if (off < 0 || (off + len) > cbuf.length) {
                 throw new IndexOutOfBoundsException();
