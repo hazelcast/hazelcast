@@ -104,8 +104,9 @@ public class NioChannelMemoryLeakTest extends HazelcastTestSupport {
 
         assertThat(channels.size(), lessThanOrEqualTo(maxChannelCount));
         for (NioChannel channel : channels) {
-            assertTrue("Channel " + channel + " was found closed in instance " + instance,
-                    channel.socketChannel().isOpen());
+            assertTrue("Channel " + channel + " was found closed (channel: " + channel.isClosed() + ", socketChannel: " + !channel
+                            .socketChannel().isOpen() + ") in instance " + instance,
+                    !channel.isClosed() && channel.socketChannel().isOpen());
         }
     }
 
