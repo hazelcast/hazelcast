@@ -27,7 +27,6 @@ import com.hazelcast.client.impl.spi.EventHandler;
 import com.hazelcast.client.impl.spi.impl.ClientInvocationFuture;
 import com.hazelcast.client.impl.spi.impl.ListenerMessageCodec;
 import com.hazelcast.config.NearCacheConfig;
-import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.internal.adapter.IMapDataStructureAdapter;
 import com.hazelcast.internal.monitor.impl.LocalMapStatsImpl;
 import com.hazelcast.internal.nearcache.NearCache;
@@ -519,18 +518,6 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
             invalidateNearCache(key);
         }
         return future;
-    }
-
-    @Override
-    public <R> void submitToKeyInternal(Object key,
-                                        EntryProcessor<K, V, R> entryProcessor,
-                                        ExecutionCallback<? super R> callback) {
-        key = toNearCacheKey(key);
-        try {
-            super.submitToKeyInternal(key, entryProcessor, callback);
-        } finally {
-            invalidateNearCache(key);
-        }
     }
 
     @Override

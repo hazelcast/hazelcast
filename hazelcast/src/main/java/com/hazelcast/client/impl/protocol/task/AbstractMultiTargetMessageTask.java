@@ -32,6 +32,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.function.BiConsumer;
 import java.util.function.Supplier;
 
+import static com.hazelcast.internal.util.ConcurrencyUtil.CALLER_RUNS;
 import static com.hazelcast.internal.util.MapUtil.createHashMap;
 import static java.util.Collections.EMPTY_MAP;
 
@@ -62,7 +63,7 @@ public abstract class AbstractMultiTargetMessageTask<P> extends AbstractAsyncMes
                                                         .setResultDeserialized(false);
 
             InvocationFuture<Object> invocationFuture = builder.invoke();
-            invocationFuture.whenComplete(new SingleTargetCallback(target, callback));
+            invocationFuture.whenCompleteAsync(new SingleTargetCallback(target, callback), CALLER_RUNS);
         }
 
         return finalResult;

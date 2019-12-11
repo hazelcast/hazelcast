@@ -102,7 +102,6 @@ import com.hazelcast.config.IndexConfig;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.EntryView;
-import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.ReadOnly;
 import com.hazelcast.internal.journal.EventJournalInitialSubscriberState;
 import com.hazelcast.internal.journal.EventJournalReader;
@@ -1414,36 +1413,6 @@ public class ClientMapProxy<K, V> extends ClientProxy
         ClientMessage response = invoke(request, keyData);
         MapExecuteOnKeyCodec.ResponseParameters resultParameters = MapExecuteOnKeyCodec.decodeResponse(response);
         return toObject(resultParameters.response);
-    }
-
-    @Override
-    public <R> void submitToKey(@Nonnull K key,
-                                @Nonnull EntryProcessor<K, V, R> entryProcessor,
-                                ExecutionCallback<? super R> callback) {
-        checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
-        submitToKeyInternal(key, entryProcessor, callback);
-    }
-
-    @SuppressWarnings("unchecked")
-    public <R> void submitToKeyInternal(Object key,
-                                        EntryProcessor<K, V, R> entryProcessor,
-                                        ExecutionCallback<? super R> callback) {
-        try {
-            Data keyData = toData(key);
-            ClientMessage request = MapSubmitToKeyCodec.encodeRequest(name, toData(entryProcessor), keyData, getThreadId());
-            ClientInvocationFuture future = invokeOnKeyOwner(request, keyData);
-            SerializationService ss = getSerializationService();
-            new ClientDelegatingFuture<R>(future, ss, message -> MapSubmitToKeyCodec.decodeResponse(message).response)
-                    .whenCompleteAsync((response, throwable) -> {
-                        if (throwable == null) {
-                            callback.onResponse(response);
-                        } else {
-                            callback.onFailure(throwable);
-                        }
-                    });
-        } catch (Exception e) {
-            throw rethrow(e);
-        }
     }
 
     @Override

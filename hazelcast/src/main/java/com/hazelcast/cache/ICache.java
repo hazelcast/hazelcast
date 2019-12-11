@@ -75,6 +75,15 @@ import java.util.concurrent.ForkJoinPool;
  *   System.out.println( value );
  * </pre>
  *
+ * <b>Execution properties of returned {@code CompletionStage}s</b>
+ * <p>
+ *     Actions supplied for dependent completions of non-async methods and async methods
+ *     without an explicit {@link java.util.concurrent.Executor} argument are performed
+ *     by the {@link ForkJoinPool#commonPool()} (unless it does not support a parallelism
+ *     level of at least 2, in which case a new {@code Thread} is created per task).
+ * </p>
+ *
+ *
  * <p>
  * Dependent actions can be registered on the returned {@link CompletionStage}.
  * Their execution follows {@link java.util.concurrent.CompletableFuture}

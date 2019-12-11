@@ -16,38 +16,46 @@
 
 package com.hazelcast.client.impl.spi.impl;
 
+import com.hazelcast.client.HazelcastClientNotActiveException;
+import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.MapGetCodec;
 import com.hazelcast.client.test.ClientTestSupport;
 import com.hazelcast.client.test.TestHazelcastFactory;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.config.Config;
-import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.LifecycleEvent;
 import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.util.FutureUtil;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.IMap;
-import com.hazelcast.cluster.Address;
 import com.hazelcast.spi.exception.TargetNotMemberException;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.mockito.Matchers;
 
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.LockSupport;
+import java.util.function.BiConsumer;
 
+import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 import static com.hazelcast.internal.util.ThreadUtil.getThreadId;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
 
@@ -86,7 +94,7 @@ public class ClientInvocationTest extends ClientTestSupport {
         String key = randomString();
         for (int i = 0; i < count; i++) {
             callbacks[i] = new FailureExecutionCallback();
-            map.submitToKey(key, ep, callbacks[i]);
+            map.submitToKey(key, ep).whenCompleteAsync(callbacks[i]);
         }
 
         // crash the server
@@ -116,16 +124,13 @@ public class ClientInvocationTest extends ClientTestSupport {
         }
     }
 
-    // This test is now failing. Reason is that failure to schedule an execution callback
-    // resulted in the callback's `onFailure` method being called, with the `RejectedExecutionException`
-    // as argument. This seems wrong but maybe some behaviour/functionality (especially related to shutdown)
-    // relies on this and becomes broken in 4.0.
-    // See also local scratch_74 for behaviour of CompletableFuture when callback cannot be submitted for execution
-    @Ignore
     @Test
     public void executionCallback_FailOnShutdown() {
         HazelcastInstance server = hazelcastFactory.newHazelcastInstance();
-        HazelcastInstance client = hazelcastFactory.newHazelcastClient();
+        ClientConfig clientConfig = new ClientConfig();
+        clientConfig.getConnectionStrategyConfig()
+                    .getConnectionRetryConfig().setClusterConnectTimeoutMillis(10000);
+        HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig);
 
         final CountDownLatch disconnectedLatch = new CountDownLatch(1);
 
@@ -139,22 +144,32 @@ public class ClientInvocationTest extends ClientTestSupport {
         assertOpenEventually(disconnectedLatch);
         int n = 100;
         final CountDownLatch errorLatch = new CountDownLatch(n);
+        CompletableFuture[] userCallbackFutures = new CompletableFuture[n];
         for (int i = 0; i < n; i++) {
-            try {
-                map.submitToKey(randomString(), new DummyEntryProcessor(), new ExecutionCallback() {
-                    @Override
-                    public void onResponse(Object response) {
-                    }
-
-                    @Override
-                    public void onFailure(Throwable t) {
-                        errorLatch.countDown();
-                    }
-                });
-            } catch (Exception e) {
-                errorLatch.countDown();
-            }
+            // submitStage is completed with HazelcastClientNotActiveException
+            CompletionStage<Object> submitStage = map.submitToKey(randomString(), new DummyEntryProcessor());
+            // a user-supplied callback submitted to default executor will not be executed with RejectedExecutionException
+            CompletableFuture<Object> userCallbackFuture = submitStage.whenCompleteAsync((v, t) -> {
+                fail("This must not be executed");
+            }).toCompletableFuture();
+            userCallbackFutures[i] = userCallbackFuture;
+            userCallbackFuture.whenCompleteAsync((v, t) -> {
+                if (t instanceof HazelcastClientNotActiveException) {
+                    errorLatch.countDown();
+                } else {
+                    throw rethrow(t);
+                }
+            });
         }
+        FutureUtil.waitWithDeadline(Arrays.asList(userCallbackFutures), 30, TimeUnit.SECONDS, t -> {
+            // t is ExecutionException < HazelcastClientNotActiveException
+            if (t.getCause() == null
+                    || !(t.getCause() instanceof HazelcastClientNotActiveException)) {
+                System.out.println("Throwable was unexpected instance of "
+                        + (t.getCause() == null ? t.getClass() : t.getCause().getClass()));
+                throw rethrow(t);
+            }
+        });
         assertOpenEventually("Not all of the requests failed", errorLatch);
     }
 
@@ -172,18 +187,15 @@ public class ClientInvocationTest extends ClientTestSupport {
     }
 
 
-    private static class FailureExecutionCallback implements ExecutionCallback {
+    private static class FailureExecutionCallback implements BiConsumer<Object, Throwable> {
         final CountDownLatch latch = new CountDownLatch(1);
         volatile Throwable failure;
 
         @Override
-        public void onResponse(Object response) {
-            latch.countDown();
-        }
-
-        @Override
-        public void onFailure(Throwable t) {
-            failure = t;
+        public void accept(Object o, Throwable throwable) {
+            if (throwable != null) {
+                failure = throwable;
+            }
             latch.countDown();
         }
     }

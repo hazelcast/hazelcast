@@ -47,15 +47,15 @@ import com.hazelcast.client.impl.spi.ClientPartitionService;
 import com.hazelcast.client.impl.spi.ClientProxy;
 import com.hazelcast.client.impl.spi.impl.ClientInvocation;
 import com.hazelcast.client.impl.spi.impl.ClientInvocationFuture;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.core.ManagedContext;
-import com.hazelcast.logging.ILogger;
-import com.hazelcast.cluster.Address;
 import com.hazelcast.internal.nio.IOUtil;
+import com.hazelcast.internal.util.FutureUtil;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
-import com.hazelcast.internal.util.FutureUtil;
 
 import javax.cache.CacheException;
 import javax.cache.CacheManager;
@@ -91,6 +91,7 @@ import static com.hazelcast.client.cache.impl.ClientCacheProxySupportUtil.addCal
 import static com.hazelcast.client.cache.impl.ClientCacheProxySupportUtil.getSafely;
 import static com.hazelcast.client.cache.impl.ClientCacheProxySupportUtil.handleFailureOnCompletionListener;
 import static com.hazelcast.internal.util.CollectionUtil.objectToDataCollection;
+import static com.hazelcast.internal.util.ConcurrencyUtil.CALLER_RUNS;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrowAllowedTypeFirst;
 import static com.hazelcast.internal.util.ExceptionUtil.sneakyThrow;
@@ -515,7 +516,7 @@ abstract class ClientCacheProxySupport<K, V> extends ClientProxy implements ICac
         ClientDelegatingFuture<V> future = newDelegatingFuture(invocationFuture,
                 message -> CachePutCodec.decodeResponse(message).response);
         if (callback != null) {
-            future.whenComplete(callback);
+            future.whenCompleteAsync(callback, CALLER_RUNS);
         }
         return future;
     }

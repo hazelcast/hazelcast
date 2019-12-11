@@ -43,6 +43,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
+import static com.hazelcast.internal.util.ConcurrencyUtil.CALLER_RUNS;
 import static com.hazelcast.internal.util.ExceptionUtil.withTryCatch;
 import static com.hazelcast.internal.util.MapUtil.entry;
 import static java.util.stream.Collectors.joining;
@@ -178,7 +179,7 @@ public class MetricsService implements ManagedService, LiveOperationsTracker {
             throw new IllegalArgumentException("Metrics collection is not enabled");
         }
         CompletableFuture<RingbufferSlice<Map.Entry<Long, byte[]>>> future = new CompletableFuture<>();
-        future.whenComplete(withTryCatch(logger, (s, e) -> pendingReads.remove(future)));
+        future.whenCompleteAsync(withTryCatch(logger, (s, e) -> pendingReads.remove(future)), CALLER_RUNS);
         pendingReads.put(future, startSequence);
 
         tryCompleteRead(future, startSequence);

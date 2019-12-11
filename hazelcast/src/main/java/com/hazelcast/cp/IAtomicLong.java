@@ -41,6 +41,12 @@ import java.util.concurrent.CompletionStage;
  * });
  * </pre>
  * <p>
+ * Actions supplied for dependent completions of default non-async methods and async methods
+ * without an explicit {@link java.util.concurrent.Executor} argument are performed
+ * by the {@link java.util.concurrent.ForkJoinPool#commonPool()} (unless it does not
+ * support a parallelism level of at least 2, in which case a new {@code Thread} is
+ * created per task).
+ * <p>
  * IAtomicLong is accessed via {@link CPSubsystem#getAtomicLong(String)}.
  * It works on top of the Raft consensus algorithm. It offers linearizability during crash
  * failures and network partitions. It is CP with respect to the CAP principle.

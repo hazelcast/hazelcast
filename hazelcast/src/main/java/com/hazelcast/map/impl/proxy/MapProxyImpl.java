@@ -19,13 +19,13 @@ package com.hazelcast.map.impl.proxy;
 import com.hazelcast.aggregation.Aggregator;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.EntryView;
-import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.ManagedContext;
 import com.hazelcast.internal.journal.EventJournalInitialSubscriberState;
 import com.hazelcast.internal.journal.EventJournalReader;
 import com.hazelcast.internal.util.CollectionUtil;
 import com.hazelcast.internal.util.IterationType;
 import com.hazelcast.map.EntryProcessor;
+import com.hazelcast.map.EventJournalMapEvent;
 import com.hazelcast.map.IMap;
 import com.hazelcast.map.MapInterceptor;
 import com.hazelcast.map.QueryCache;
@@ -42,7 +42,6 @@ import com.hazelcast.map.impl.querycache.QueryCacheContext;
 import com.hazelcast.map.impl.querycache.subscriber.QueryCacheEndToEndProvider;
 import com.hazelcast.map.impl.querycache.subscriber.QueryCacheRequest;
 import com.hazelcast.map.impl.querycache.subscriber.SubscriberContext;
-import com.hazelcast.map.EventJournalMapEvent;
 import com.hazelcast.map.listener.MapListener;
 import com.hazelcast.map.listener.MapPartitionLostListener;
 import com.hazelcast.internal.serialization.Data;
@@ -717,7 +716,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         handleHazelcastInstanceAwareParams(entryProcessor);
 
-        Data result = executeOnKeyInternal(key, entryProcessor);
+        Data result = executeOnKeyInternal(key, entryProcessor).joinInternal();
         return toObject(result);
     }
 
@@ -747,22 +746,12 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
     }
 
     @Override
-    public <R> void submitToKey(@Nonnull K key,
-                                @Nonnull EntryProcessor<K, V, R> entryProcessor,
-                                ExecutionCallback<? super R> callback) {
-        checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
-        handleHazelcastInstanceAwareParams(entryProcessor, callback);
-
-        executeOnKeyInternal(key, entryProcessor, callback);
-    }
-
-    @Override
     public <R> InternalCompletableFuture<R> submitToKey(@Nonnull K key,
                                                         @Nonnull EntryProcessor<K, V, R> entryProcessor) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         handleHazelcastInstanceAwareParams(entryProcessor);
 
-        InternalCompletableFuture future = executeOnKeyInternal(key, entryProcessor, null);
+        InternalCompletableFuture<Data> future = executeOnKeyInternal(key, entryProcessor);
         return newDelegatingFuture(serializationService, future);
     }
 

@@ -26,19 +26,19 @@ import com.hazelcast.client.impl.spi.ClientPartitionService;
 import com.hazelcast.client.impl.spi.ClientProxy;
 import com.hazelcast.client.impl.spi.impl.ClientInvocation;
 import com.hazelcast.client.impl.spi.impl.ClientInvocationFuture;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.cluster.MemberSelector;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.IExecutorService;
 import com.hazelcast.core.MultiExecutionCallback;
+import com.hazelcast.executor.LocalExecutorStats;
 import com.hazelcast.executor.impl.ExecutionCallbackAdapter;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.util.Clock;
 import com.hazelcast.internal.util.UuidUtil;
-import com.hazelcast.executor.LocalExecutorStats;
-import com.hazelcast.cluster.Address;
-import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.partition.PartitionAware;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
 
@@ -59,6 +59,7 @@ import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static com.hazelcast.internal.util.ConcurrencyUtil.DEFAULT_ASYNC_EXECUTOR;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.spi.impl.InternalCompletableFuture.newCompletedFuture;
@@ -470,7 +471,12 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
                 (T) null);
 
         if (callback != null) {
-            delegatingFuture.whenCompleteAsync(new ExecutionCallbackAdapter<>(callback));
+            delegatingFuture.whenCompleteAsync(new ExecutionCallbackAdapter<>(callback))
+                            .whenCompleteAsync((v, t) -> {
+                                if (t instanceof RejectedExecutionException) {
+                                    callback.onFailure(t);
+                                }
+                            }, DEFAULT_ASYNC_EXECUTOR);
         }
         return delegatingFuture;
     }
@@ -496,7 +502,12 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
         InternalCompletableFuture<T> delegatingFuture = (InternalCompletableFuture<T>) checkSync(f, uuid, partitionId, false,
                 (T) null);
         if (callback != null) {
-            delegatingFuture.whenCompleteAsync(new ExecutionCallbackAdapter<>(callback));
+            delegatingFuture.whenCompleteAsync(new ExecutionCallbackAdapter<>(callback))
+                            .whenCompleteAsync((v, t) -> {
+                                if (t instanceof RejectedExecutionException) {
+                                    callback.onFailure(t);
+                                }
+                            }, DEFAULT_ASYNC_EXECUTOR);
         }
     }
 
@@ -523,7 +534,12 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
         InternalCompletableFuture<T> delegatingFuture = (InternalCompletableFuture<T>) checkSync(f, uuid, address, false,
                 (T) null);
         if (callback != null) {
-            delegatingFuture.whenCompleteAsync(new ExecutionCallbackAdapter<>(callback));
+            delegatingFuture.whenCompleteAsync(new ExecutionCallbackAdapter<>(callback))
+                            .whenCompleteAsync((v, t) -> {
+                                if (t instanceof RejectedExecutionException) {
+                                    callback.onFailure(t);
+                                }
+                            }, DEFAULT_ASYNC_EXECUTOR);
         }
     }
 

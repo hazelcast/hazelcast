@@ -192,7 +192,7 @@ public class BasicCompletableFutureTest {
         BiConsumer<String, Throwable> callback = getStringExecutionCallback();
 
         delegateFuture.run();
-        outerFuture.whenComplete(callback);
+        outerFuture.whenCompleteAsync(callback, CALLER_RUNS);
         outerFuture.isDone();
 
         verify(callback, times(1)).accept(any(String.class), isNull());
@@ -205,7 +205,7 @@ public class BasicCompletableFutureTest {
         BiConsumer<String, Throwable> callback = getStringExecutionCallback();
 
         delegateFuture.run();
-        outerFuture.whenComplete(callback);
+        outerFuture.whenCompleteAsync(callback, CALLER_RUNS);
         outerFuture.get();
 
         verify(callback, times(1)).accept(any(String.class), isNull());
