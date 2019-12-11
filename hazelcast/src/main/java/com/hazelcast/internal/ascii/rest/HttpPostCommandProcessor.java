@@ -37,6 +37,8 @@ import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 
 import static com.hazelcast.cp.CPGroup.METADATA_CP_GROUP_NAME;
+import static com.hazelcast.internal.ascii.rest.HttpCommand.RES_400;
+import static com.hazelcast.internal.ascii.rest.HttpCommand.RES_403;
 import static com.hazelcast.internal.ascii.rest.HttpCommandProcessor.ResponseType.FAIL;
 import static com.hazelcast.internal.ascii.rest.HttpCommandProcessor.ResponseType.SUCCESS;
 import static com.hazelcast.internal.util.ExceptionUtil.peel;
@@ -115,10 +117,17 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
             } else {
                 command.send404();
             }
+        } catch (HttpBadRequestException e) {
+            prepareResponse(RES_400, command, response(FAIL, "message", e.getMessage()));
+            sendResponse = true;
+        } catch (HttpForbiddenException e) {
+            prepareResponse(RES_403, command, response(FAIL, "message", "unauthenticated"));
+            sendResponse = true;
         } catch (Throwable e) {
             logger.warning("An error occurred while handling request " + command, e);
             prepareResponse(HttpCommand.RES_500, command, exceptionResponse(e));
         }
+
         if (sendResponse) {
             textCommandService.sendResponse(command);
         }
@@ -126,10 +135,6 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
 
     private void handleChangeClusterState(HttpPostCommand cmd) throws Throwable {
         String[] params = decodeParamsAndAuthenticate(cmd, 3);
-        if (params == null) {
-            return;
-        }
-
         ClusterService clusterService = getNode().getClusterService();
         ClusterState state = ClusterState.valueOf(upperCaseInternal(params[2]));
         if (!state.equals(clusterService.getClusterState())) {
@@ -145,10 +150,7 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
     }
 
     private void handleGetClusterState(HttpPostCommand cmd) throws Throwable {
-        String[] params = decodeParamsAndAuthenticate(cmd, 2);
-        if (params == null) {
-            return;
-        }
+        decodeParamsAndAuthenticate(cmd, 2);
         ClusterService clusterService = getNode().getClusterService();
         ClusterState clusterState = clusterService.getClusterState();
         prepareResponse(cmd, response(SUCCESS, "state", lowerCaseInternal(clusterState.toString())));
@@ -156,10 +158,6 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
 
     private void handleChangeClusterVersion(HttpPostCommand cmd) throws Throwable {
         String[] params = decodeParamsAndAuthenticate(cmd, 3);
-        if (params == null) {
-            return;
-        }
-
         ClusterService clusterService = getNode().getClusterService();
         Version version = Version.of(params[2]);
         clusterService.changeClusterVersion(version);
@@ -168,63 +166,38 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
     }
 
     private void handleForceStart(HttpPostCommand cmd) throws Throwable {
-        String[] params = decodeParamsAndAuthenticate(cmd, 2);
-        if (params == null) {
-            return;
-        }
-
+        decodeParamsAndAuthenticate(cmd, 2);
         boolean success = getNode().getNodeExtension().getInternalHotRestartService().triggerForceStart();
         prepareResponse(cmd, response(success ? SUCCESS : FAIL));
     }
 
     private void handlePartialStart(HttpPostCommand cmd) throws Throwable {
-        String[] params = decodeParamsAndAuthenticate(cmd, 2);
-        if (params == null) {
-            return;
-        }
-
+        decodeParamsAndAuthenticate(cmd, 2);
         boolean success = getNode().getNodeExtension().getInternalHotRestartService().triggerPartialStart();
         prepareResponse(cmd, response(success ? SUCCESS : FAIL));
     }
 
     private void handleHotRestartBackup(HttpPostCommand cmd) throws Throwable {
-        String[] params = decodeParamsAndAuthenticate(cmd, 2);
-        if (params == null) {
-            return;
-        }
-
+        decodeParamsAndAuthenticate(cmd, 2);
         getNode().getNodeExtension().getHotRestartService().backup();
         prepareResponse(cmd, response(SUCCESS));
     }
 
     private void handleHotRestartBackupInterrupt(HttpPostCommand cmd) throws Throwable {
-        String[] params = decodeParamsAndAuthenticate(cmd, 2);
-        if (params == null) {
-            return;
-        }
-
+        decodeParamsAndAuthenticate(cmd, 2);
         getNode().getNodeExtension().getHotRestartService().interruptBackupTask();
         prepareResponse(cmd, response(SUCCESS));
     }
 
     private void handleClusterShutdown(HttpPostCommand command) throws UnsupportedEncodingException {
-        String[] params = decodeParamsAndAuthenticate(command, 2);
-        if (params == null) {
-            textCommandService.sendResponse(command);
-            return;
-        }
+        decodeParamsAndAuthenticate(command, 2);
         ClusterService clusterService = getNode().getClusterService();
         sendResponse(command, response(SUCCESS));
         clusterService.shutdown();
     }
 
     private void handleListNodes(HttpPostCommand cmd) throws Throwable {
-        String[] params = decodeParamsAndAuthenticate(cmd, 2);
-        if (params == null) {
-            textCommandService.sendResponse(cmd);
-            return;
-        }
-
+        decodeParamsAndAuthenticate(cmd, 2);
         ClusterService clusterService = getNode().getClusterService();
         final String responseTxt = clusterService.getMembers().toString() + "\n"
                 + getNode().getBuildInfo().getVersion() + "\n"
@@ -233,21 +206,12 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
     }
 
     private void handleShutdownNode(HttpPostCommand command) throws UnsupportedEncodingException {
-        String[] params = decodeParamsAndAuthenticate(command, 2);
-        if (params == null) {
-            textCommandService.sendResponse(command);
-            return;
-        }
+        decodeParamsAndAuthenticate(command, 2);
         sendResponse(command, response(SUCCESS));
         getNode().hazelcastInstance.shutdown();
     }
 
     private void handleQueue(HttpPostCommand command, String uri) throws UnsupportedEncodingException {
-        String[] params = decodeParamsAndAuthenticate(command, 2);
-        if (params == null) {
-            return;
-        }
-
         String simpleValue = null;
         String suffix;
         if (uri.endsWith("/")) {
@@ -282,10 +246,6 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
     }
 
     private void handleMap(HttpPostCommand command, String uri) throws UnsupportedEncodingException {
-        String[] params = decodeParamsAndAuthenticate(command, 2);
-        if (params == null) {
-            return;
-        }
         int indexEnd = uri.indexOf('/', URI_MAPS.length());
         String mapName = uri.substring(URI_MAPS.length(), indexEnd);
         String key = uri.substring(indexEnd + 1);
@@ -303,9 +263,6 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
     @SuppressWarnings("checkstyle:magicnumber")
     private void handleWanSyncMap(HttpPostCommand cmd) throws Throwable {
         String[] params = decodeParamsAndAuthenticate(cmd, 5);
-        if (params == null) {
-            return;
-        }
 
         String wanRepName = params[2];
         String publisherId = params[3];
@@ -325,9 +282,6 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
     @SuppressWarnings("checkstyle:magicnumber")
     private void handleWanSyncAllMaps(HttpPostCommand cmd) throws Throwable {
         String[] params = decodeParamsAndAuthenticate(cmd, 4);
-        if (params == null) {
-            return;
-        }
 
         final String wanRepName = params[2];
         final String publisherId = params[3];
@@ -345,9 +299,6 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
     @SuppressWarnings("checkstyle:magicnumber")
     private void handleWanConsistencyCheck(HttpPostCommand cmd) throws Throwable {
         String[] params = decodeParamsAndAuthenticate(cmd, 5);
-        if (params == null) {
-            return;
-        }
 
         String wanReplicationName = params[2];
         String publisherId = params[3];
@@ -367,9 +318,6 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
     @SuppressWarnings("checkstyle:magicnumber")
     private void handleWanClearQueues(HttpPostCommand cmd) throws Throwable {
         String[] params = decodeParamsAndAuthenticate(cmd, 4);
-        if (params == null) {
-            return;
-        }
 
         final String wanRepName = params[2];
         final String publisherId = params[3];
@@ -385,9 +333,6 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
      */
     private void handleAddWanConfig(HttpPostCommand cmd) throws Throwable {
         String[] params = decodeParamsAndAuthenticate(cmd, 3);
-        if (params == null) {
-            return;
-        }
 
         String wanConfigJson = params[2];
         WanReplicationConfigDTO dto = new WanReplicationConfigDTO(new WanReplicationConfig());
@@ -413,9 +358,6 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
     @SuppressWarnings("checkstyle:magicnumber")
     private void handleWanPausePublisher(HttpPostCommand cmd) throws Throwable {
         String[] params = decodeParamsAndAuthenticate(cmd, 4);
-        if (params == null) {
-            return;
-        }
 
         String wanReplicationName = params[2];
         String publisherId = params[3];
@@ -435,9 +377,6 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
     @SuppressWarnings("checkstyle:magicnumber")
     private void handleWanStopPublisher(HttpPostCommand cmd) throws Throwable {
         String[] params = decodeParamsAndAuthenticate(cmd, 4);
-        if (params == null) {
-            return;
-        }
 
         String wanReplicationName = params[2];
         String publisherId = params[3];
@@ -457,9 +396,6 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
     @SuppressWarnings("checkstyle:magicnumber")
     private void handleWanResumePublisher(HttpPostCommand cmd) throws Throwable {
         String[] params = decodeParamsAndAuthenticate(cmd, 4);
-        if (params == null) {
-            return;
-        }
 
         String wanReplicationName = params[2];
         String publisherId = params[3];
@@ -469,12 +405,7 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
     }
 
     private void handleCPMember(final HttpPostCommand command) throws UnsupportedEncodingException {
-        String[] params = decodeParamsAndAuthenticate(command, 2);
-        if (params == null) {
-            textCommandService.sendResponse(command);
-            return;
-        }
-
+        decodeParamsAndAuthenticate(command, 2);
         String uri = command.getURI();
         if (uri.endsWith(URI_REMOVE_SUFFIX) || uri.endsWith(URI_REMOVE_SUFFIX + "/")) {
             handleRemoveCPMember(command);
@@ -527,12 +458,7 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
     }
 
     private void handleCPGroup(HttpPostCommand command) throws UnsupportedEncodingException {
-        String[] params = decodeParamsAndAuthenticate(command, 2);
-        if (params == null) {
-            textCommandService.sendResponse(command);
-            return;
-        }
-
+        decodeParamsAndAuthenticate(command, 2);
         String uri = command.getURI();
         if (!uri.endsWith(URI_REMOVE_SUFFIX) && !uri.endsWith(URI_REMOVE_SUFFIX + "/")) {
             command.send404();
@@ -602,11 +528,7 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
     }
 
     private void handleResetCPSubsystem(final HttpPostCommand command) throws UnsupportedEncodingException {
-        String[] params = decodeParamsAndAuthenticate(command, 2);
-        if (params == null) {
-            textCommandService.sendResponse(command);
-            return;
-        }
+        decodeParamsAndAuthenticate(command, 2);
 
         getCpSubsystem().getCPSubsystemManagementService()
                         .reset()
@@ -636,10 +558,7 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
     }
 
     private void handleSetLicense(HttpPostCommand cmd) throws Throwable {
-        String[] params = decodeParamsAndAuthenticate(cmd, 2);
-        if (params == null) {
-            return;
-        }
+        String[] params = decodeParamsAndAuthenticate(cmd, 3);
         try {
             final int retryCount = 100;
             // assumes that both groupName and password are present

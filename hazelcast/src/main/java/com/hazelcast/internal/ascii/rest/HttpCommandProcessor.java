@@ -39,8 +39,6 @@ import static com.hazelcast.internal.ascii.rest.HttpCommand.CONTENT_TYPE_BINARY;
 import static com.hazelcast.internal.ascii.rest.HttpCommand.CONTENT_TYPE_JSON;
 import static com.hazelcast.internal.ascii.rest.HttpCommand.CONTENT_TYPE_PLAIN_TEXT;
 import static com.hazelcast.internal.ascii.rest.HttpCommand.RES_200;
-import static com.hazelcast.internal.ascii.rest.HttpCommand.RES_400;
-import static com.hazelcast.internal.ascii.rest.HttpCommand.RES_403;
 import static com.hazelcast.internal.ascii.rest.HttpCommandProcessor.ResponseType.FAIL;
 import static com.hazelcast.internal.util.StringUtil.bytesToString;
 import static com.hazelcast.internal.util.StringUtil.stringToBytes;
@@ -152,15 +150,19 @@ public abstract class HttpCommandProcessor<T> extends AbstractTextCommandProcess
      * @return the decoded params
      * @throws UnsupportedEncodingException If character encoding needs to be consulted, but
      *                                      named character encoding is not supported
+     * @throws HttpBadRequestException      in case the command did not contain at least {@code expectedParamCount}
+     *                                      parameters
      */
-    private static String[] decodeParams(HttpPostCommand command, int expectedParamCount)
+    private static @Nonnull
+    String[] decodeParams(HttpPostCommand command, int expectedParamCount)
             throws UnsupportedEncodingException {
-        final byte[] data = command.getData();
-        final String[] encoded = bytesToString(data).split("&");
-        final String[] decoded = new String[encoded.length];
+        byte[] data = command.getData();
+        String[] encoded = bytesToString(data).split("&", expectedParamCount);
+        String[] decoded = new String[encoded.length];
 
         if (encoded.length < expectedParamCount) {
-            return null;
+            throw new HttpBadRequestException(
+                    "This endpoint expects at least " + expectedParamCount + " parameters");
         }
 
         for (int i = 0; i < expectedParamCount; i++) {
@@ -172,14 +174,8 @@ public abstract class HttpCommandProcessor<T> extends AbstractTextCommandProcess
     protected String[] decodeParamsAndAuthenticate(HttpPostCommand cmd, int expectedParamCount)
             throws UnsupportedEncodingException {
         String[] params = decodeParams(cmd, expectedParamCount);
-        if (params == null) {
-            prepareResponse(RES_400, cmd, response(FAIL, "message",
-                    "This endpoint expects at least " + expectedParamCount + " parameters"));
-            return null;
-        }
         if (!authenticate(cmd, params[0], params[1])) {
-            prepareResponse(RES_403, cmd, response(FAIL, "message", "unauthenticated"));
-            return null;
+            throw new HttpForbiddenException();
         }
         return params;
     }
