@@ -23,6 +23,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
+import static java.util.Objects.requireNonNull;
+
 /**
  * Handler class for console commands that sent from Console application which located in Management Center.
  */
@@ -48,6 +50,8 @@ public class ConsoleCommandHandler {
     * @throws java.lang.InterruptedException
     */
     public String handleCommand(final String command) throws InterruptedException {
+        requireNonNull(command, "Command must not be null");
+
         if (lock.tryLock(1, TimeUnit.SECONDS)) {
             try {
                 return doHandleCommand(command);

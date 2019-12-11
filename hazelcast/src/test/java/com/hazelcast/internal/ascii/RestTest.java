@@ -18,7 +18,6 @@ package com.hazelcast.internal.ascii;
 
 import com.hazelcast.collection.IQueue;
 import com.hazelcast.config.Config;
-import com.hazelcast.config.PermissionConfig;
 import com.hazelcast.config.RestApiConfig;
 import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.core.Hazelcast;
@@ -29,7 +28,6 @@ import com.hazelcast.internal.ascii.HTTPCommunicator.ConnectionResponse;
 import com.hazelcast.internal.json.Json;
 import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.internal.management.dto.WanReplicationConfigDTO;
-import com.hazelcast.internal.management.request.UpdatePermissionConfigRequest;
 import com.hazelcast.map.IMap;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -44,11 +42,8 @@ import org.junit.runner.RunWith;
 
 import java.io.IOException;
 import java.io.OutputStream;
-import java.net.HttpURLConnection;
 import java.net.InetSocketAddress;
 import java.net.Socket;
-import java.util.HashSet;
-import java.util.Set;
 
 import static com.hazelcast.internal.ascii.rest.HttpCommand.CONTENT_TYPE_JSON;
 import static com.hazelcast.internal.nio.IOUtil.readFully;
@@ -248,17 +243,6 @@ public class RestTest {
         WanReplicationConfigDTO dto = new WanReplicationConfigDTO(wanReplicationConfig);
         String result = communicator.addWanConfig(config.getClusterName(), "", dto.toJson().toString());
         assertEquals("{\"status\":\"fail\",\"message\":\"Adding new WAN config is not supported.\"}", result);
-    }
-
-    @Test
-    public void updatePermissions() throws Exception {
-        Config config = instance.getConfig();
-        Set<PermissionConfig> permissionConfigs = new HashSet<PermissionConfig>();
-        permissionConfigs.add(new PermissionConfig(PermissionConfig.PermissionType.MAP, "test", "*"));
-        UpdatePermissionConfigRequest request = new UpdatePermissionConfigRequest(permissionConfigs);
-        ConnectionResponse resp =
-                communicator.updatePermissions(config.getClusterName(), "", request.toJson().toString());
-        assertEquals(HttpURLConnection.HTTP_FORBIDDEN, resp.responseCode);
     }
 
     @Test

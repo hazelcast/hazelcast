@@ -17,8 +17,8 @@
 package com.hazelcast.internal.management.dto;
 
 import com.hazelcast.config.EvictionConfig;
-import com.hazelcast.config.MaxSizePolicy;
 import com.hazelcast.config.EvictionPolicy;
+import com.hazelcast.config.MaxSizePolicy;
 import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.internal.json.JsonValue;
 import com.hazelcast.json.internal.JsonSerializable;

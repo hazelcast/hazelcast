@@ -16,15 +16,11 @@
 
 package com.hazelcast.internal.util;
 
-import com.hazelcast.config.ManagementCenterConfig;
 import com.hazelcast.instance.BuildInfo;
 import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.instance.JetBuildInfo;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
-import com.hazelcast.internal.json.Json;
-import com.hazelcast.internal.json.JsonObject;
-import com.hazelcast.internal.management.ManagementCenterConnectionFactory;
 import com.hazelcast.internal.nio.ConnectionType;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.properties.ClusterProperty;
@@ -32,16 +28,13 @@ import com.hazelcast.spi.properties.ClusterProperty;
 import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
 import java.lang.management.ManagementFactory;
 import java.lang.management.OperatingSystemMXBean;
 import java.lang.management.RuntimeMXBean;
-import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLConnection;
 import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
@@ -52,7 +45,6 @@ import java.util.concurrent.TimeUnit;
 import static com.hazelcast.internal.nio.IOUtil.closeResource;
 import static com.hazelcast.internal.util.EmptyStatement.ignore;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
-import static com.hazelcast.internal.util.JsonUtil.getString;
 import static java.lang.System.getenv;
 
 /**
@@ -173,13 +165,6 @@ public class PhoneHome {
                 .addParam("jetv", jetBuildInfo == null ? "" : jetBuildInfo.getVersion());
         addClientInfo(hazelcastNode, parameterCreator);
         addOSInfo(parameterCreator);
-        boolean isManagementCenterConfigEnabled = hazelcastNode.config.getManagementCenterConfig().isEnabled();
-        if (isManagementCenterConfigEnabled) {
-            addManCenterInfo(hazelcastNode, clusterSize, parameterCreator);
-        } else {
-            parameterCreator.addParam("mclicense", "MC_NOT_CONFIGURED");
-            parameterCreator.addParam("mcver", "MC_NOT_CONFIGURED");
-        }
 
         return parameterCreator;
     }
@@ -242,63 +227,6 @@ public class PhoneHome {
                 .addParam("cnjs", Integer.toString(clusterClientStats.getOrDefault(ConnectionType.NODEJS_CLIENT, 0)))
                 .addParam("cpy", Integer.toString(clusterClientStats.getOrDefault(ConnectionType.PYTHON_CLIENT, 0)))
                 .addParam("cgo", Integer.toString(clusterClientStats.getOrDefault(ConnectionType.GO_CLIENT, 0)));
-    }
-
-    private void addManCenterInfo(Node hazelcastNode, int clusterSize, PhoneHomeParameterCreator parameterCreator) {
-        int responseCode;
-        String version;
-        String license;
-
-        InputStream inputStream = null;
-        InputStreamReader reader = null;
-        try {
-            ManagementCenterConfig managementCenterConfig = hazelcastNode.config.getManagementCenterConfig();
-            String manCenterURL = managementCenterConfig.getUrl();
-            manCenterURL = manCenterURL.endsWith("/") ? manCenterURL : manCenterURL + '/';
-            URL manCenterPhoneHomeURL = new URL(manCenterURL + "phoneHome.do");
-            ManagementCenterConnectionFactory connectionFactory
-                    = hazelcastNode.getNodeExtension().getManagementCenterConnectionFactory();
-            HttpURLConnection connection;
-            if (connectionFactory != null) {
-                connectionFactory.init(managementCenterConfig.getMutualAuthConfig());
-                connection = (HttpURLConnection) connectionFactory.openConnection(manCenterPhoneHomeURL);
-            } else {
-                connection = (HttpURLConnection) manCenterPhoneHomeURL.openConnection();
-            }
-            connection.setConnectTimeout(CONNECTION_TIMEOUT_MILLIS);
-            connection.setReadTimeout(CONNECTION_TIMEOUT_MILLIS);
-
-            // if management center is not running,
-            // connection.getInputStream() throws 'java.net.ConnectException: Connection refused'
-            inputStream = connection.getInputStream();
-            responseCode = connection.getResponseCode();
-
-            reader = new InputStreamReader(inputStream, StandardCharsets.UTF_8);
-            JsonObject mcPhoneHomeInfoJson = Json.parse(reader).asObject();
-            version = getString(mcPhoneHomeInfoJson, "mcVersion");
-            license = getString(mcPhoneHomeInfoJson, "mcLicense", null);
-        } catch (Exception ignored) {
-            // SpotBugs is not happy without this ignore call
-            ignore(ignored);
-            parameterCreator.addParam("mclicense", "MC_NOT_AVAILABLE");
-            parameterCreator.addParam("mcver", "MC_NOT_AVAILABLE");
-            return;
-        } finally {
-            closeResource(reader);
-            closeResource(inputStream);
-        }
-
-        if (responseCode == HttpURLConnection.HTTP_OK) {
-            if (license == null) {
-                checkClusterSizeAndSetLicense(clusterSize, parameterCreator);
-            } else {
-                parameterCreator.addParam("mclicense", license);
-            }
-            parameterCreator.addParam("mcver", version);
-        } else {
-            parameterCreator.addParam("mclicense", "MC_CONN_ERR_" + responseCode);
-            parameterCreator.addParam("mcver", "MC_CONN_ERR_" + responseCode);
-        }
     }
 
     private void checkClusterSizeAndSetLicense(int clusterSize, PhoneHomeParameterCreator parameterCreator) {

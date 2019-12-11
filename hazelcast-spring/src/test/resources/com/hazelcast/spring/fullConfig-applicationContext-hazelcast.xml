@@ -38,15 +38,7 @@
             <hz:instance-name>test-instance</hz:instance-name>
             <hz:cluster-name>${cluster.name}</hz:cluster-name>
             <hz:license-key>HAZELCAST_ENTERPRISE_LICENSE_KEY</hz:license-key>
-            <hz:management-center enabled="true" update-interval="2" scripting-enabled="false">
-                <hz:url>myserver:80</hz:url>
-                <hz:mutual-auth enabled="true">
-                    <hz:factory-class-name>who.let.the.cat.out.class</hz:factory-class-name>
-                    <hz:properties>
-                        <hz:property name="bool">ean</hz:property>
-                    </hz:properties>
-                </hz:mutual-auth>
-            </hz:management-center>
+            <hz:management-center scripting-enabled="false" />
 
             <hz:properties>
                 <hz:property name="hazelcast.merge.first.run.delay.seconds">5</hz:property>

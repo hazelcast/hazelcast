@@ -72,13 +72,13 @@ import com.hazelcast.cache.impl.tenantcontrol.CacheDestroyEventContext;
 import com.hazelcast.client.impl.protocol.task.cache.CacheAssignAndGetUuidsOperation;
 import com.hazelcast.client.impl.protocol.task.cache.CacheAssignAndGetUuidsOperationFactory;
 import com.hazelcast.config.CacheConfig;
-import com.hazelcast.internal.management.request.GetCacheEntryRequest;
+import com.hazelcast.internal.management.operation.GetCacheEntryViewEntryProcessor;
 import com.hazelcast.internal.serialization.DataSerializerHook;
 import com.hazelcast.internal.serialization.impl.ArrayDataSerializableFactory;
 import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
+import com.hazelcast.internal.util.ConstructorFunction;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.internal.util.ConstructorFunction;
 
 import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.CACHE_DS_FACTORY;
 import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.CACHE_DS_FACTORY_ID;
@@ -228,8 +228,8 @@ public final class CacheDataSerializerHook
         constructors[EVENT_JOURNAL_INTERNAL_CACHE_EVENT] = arg -> new InternalEventJournalCacheEvent();
         constructors[EVENT_JOURNAL_READ_RESULT_SET] = arg -> new CacheEventJournalReadResultSetImpl<>();
         constructors[PRE_JOIN_CACHE_CONFIG] = arg -> new PreJoinCacheConfig();
-        constructors[CACHE_BROWSER_ENTRY_VIEW] = arg -> new GetCacheEntryRequest.CacheBrowserEntryView();
-        constructors[GET_CACHE_ENTRY_VIEW_PROCESSOR] = arg -> new GetCacheEntryRequest.GetCacheEntryViewEntryProcessor();
+        constructors[CACHE_BROWSER_ENTRY_VIEW] = arg -> new GetCacheEntryViewEntryProcessor.CacheBrowserEntryView();
+        constructors[GET_CACHE_ENTRY_VIEW_PROCESSOR] = arg -> new GetCacheEntryViewEntryProcessor();
         constructors[MERGE_FACTORY] = arg -> new CacheMergeOperationFactory();
         constructors[MERGE] = arg -> new CacheMergeOperation();
         constructors[ADD_CACHE_CONFIG_OPERATION] = arg -> new AddCacheConfigOperation();

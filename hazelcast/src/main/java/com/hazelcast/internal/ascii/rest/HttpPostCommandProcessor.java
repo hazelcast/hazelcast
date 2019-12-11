@@ -25,7 +25,6 @@ import com.hazelcast.internal.ascii.TextCommandService;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.json.Json;
 import com.hazelcast.internal.json.JsonObject;
-import com.hazelcast.internal.management.ManagementCenterService;
 import com.hazelcast.internal.management.dto.WanReplicationConfigDTO;
 import com.hazelcast.internal.management.operation.SetLicenseOperation;
 import com.hazelcast.internal.util.StringUtil;
@@ -72,8 +71,6 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
             String uri = command.getURI();
             if (uri.startsWith(URI_MAPS)) {
                 handleMap(command, uri);
-            } else if (uri.startsWith(URI_MANCENTER_CHANGE_URL)) {
-                handleManagementCenterUrlChange(command);
             } else if (uri.startsWith(URI_QUEUES)) {
                 handleQueue(command, uri);
             } else if (uri.startsWith(URI_CLUSTER_STATE_URL)) {
@@ -98,13 +95,13 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
             } else if (uri.startsWith(URI_SHUTDOWN_NODE_CLUSTER_URL)) {
                 handleShutdownNode(command);
                 return;
-            } else if (uri.startsWith(URI_WAN_SYNC_MAP) || uri.startsWith(LEGACY_URI_WAN_SYNC_MAP)) {
+            } else if (uri.startsWith(URI_WAN_SYNC_MAP)) {
                 handleWanSyncMap(command);
-            } else if (uri.startsWith(URI_WAN_SYNC_ALL_MAPS) || uri.startsWith(LEGACY_URI_WAN_SYNC_ALL_MAPS)) {
+            } else if (uri.startsWith(URI_WAN_SYNC_ALL_MAPS)) {
                 handleWanSyncAllMaps(command);
-            } else if (uri.startsWith(URI_MANCENTER_WAN_CLEAR_QUEUES) || uri.startsWith(LEGACY_URI_MANCENTER_WAN_CLEAR_QUEUES)) {
+            } else if (uri.startsWith(URI_WAN_CLEAR_QUEUES)) {
                 handleWanClearQueues(command);
-            } else if (uri.startsWith(URI_ADD_WAN_CONFIG) || uri.startsWith(LEGACY_URI_ADD_WAN_CONFIG)) {
+            } else if (uri.startsWith(URI_ADD_WAN_CONFIG)) {
                 handleAddWanConfig(command);
             } else if (uri.startsWith(URI_WAN_PAUSE_PUBLISHER)) {
                 handleWanPausePublisher(command);
@@ -114,8 +111,6 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
                 handleWanResumePublisher(command);
             } else if (uri.startsWith(URI_WAN_CONSISTENCY_CHECK_MAP)) {
                 handleWanConsistencyCheck(command);
-            } else if (uri.startsWith(URI_UPDATE_PERMISSIONS)) {
-                command.send403();
             } else if (uri.startsWith(URI_CP_MEMBERS_URL)) {
                 handleCPMember(command);
                 sendResponse = false;
@@ -298,23 +293,6 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
         } else {
             command.setResponse(HttpCommand.RES_503);
         }
-    }
-
-    private void handleManagementCenterUrlChange(HttpPostCommand cmd) {
-        withExceptionHandling("Error occurred while changing management center URL",
-                withAuthentication(command -> {
-                    String[] strList = bytesToString(command.getData()).split("&");
-                    ManagementCenterService managementCenterService =
-                            textCommandService.getNode().getManagementCenterService();
-                    if (managementCenterService != null) {
-                        String url = URLDecoder.decode(strList[2], "UTF-8");
-                        command.setResponse(managementCenterService.clusterWideUpdateManagementCenterUrl(url));
-                    } else {
-                        logger.warning("Unable to change URL of ManagementCenter as "
-                                + "the ManagementCenterService is not running on this member.");
-                        command.send204();
-                    }
-                })).handle(cmd);
     }
 
     private void handleMap(HttpPostCommand command, String uri) {

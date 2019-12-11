@@ -31,9 +31,6 @@ import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.cp.internal.persistence.CPPersistenceService;
 import com.hazelcast.cp.internal.persistence.NopCPPersistenceService;
 import com.hazelcast.hotrestart.HotRestartService;
-import com.hazelcast.internal.hotrestart.InternalHotRestartService;
-import com.hazelcast.internal.hotrestart.NoOpHotRestartService;
-import com.hazelcast.internal.hotrestart.NoopInternalHotRestartService;
 import com.hazelcast.instance.BuildInfo;
 import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.instance.EndpointQualifier;
@@ -64,8 +61,10 @@ import com.hazelcast.internal.diagnostics.SystemLogPlugin;
 import com.hazelcast.internal.diagnostics.SystemPropertiesPlugin;
 import com.hazelcast.internal.dynamicconfig.DynamicConfigListener;
 import com.hazelcast.internal.dynamicconfig.EmptyDynamicConfigListener;
+import com.hazelcast.internal.hotrestart.InternalHotRestartService;
+import com.hazelcast.internal.hotrestart.NoOpHotRestartService;
+import com.hazelcast.internal.hotrestart.NoopInternalHotRestartService;
 import com.hazelcast.internal.jmx.ManagementService;
-import com.hazelcast.internal.management.ManagementCenterConnectionFactory;
 import com.hazelcast.internal.management.TimedMemberStateFactory;
 import com.hazelcast.internal.memory.DefaultMemoryStats;
 import com.hazelcast.internal.memory.MemoryStats;
@@ -495,11 +494,6 @@ public class DefaultNodeExtension implements NodeExtension {
         diagnostics.register(new NetworkingImbalancePlugin(nodeEngine));
         diagnostics.register(new OperationHeartbeatPlugin(nodeEngine));
         diagnostics.register(new OperationThreadSamplerPlugin(nodeEngine));
-    }
-
-    @Override
-    public ManagementCenterConnectionFactory getManagementCenterConnectionFactory() {
-        return null;
     }
 
     @Override

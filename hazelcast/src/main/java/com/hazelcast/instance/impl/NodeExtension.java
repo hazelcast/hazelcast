@@ -19,7 +19,6 @@ package com.hazelcast.instance.impl;
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.cp.internal.persistence.CPPersistenceService;
 import com.hazelcast.hotrestart.HotRestartService;
-import com.hazelcast.internal.hotrestart.InternalHotRestartService;
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.internal.ascii.TextCommandService;
 import com.hazelcast.internal.auditlog.AuditlogService;
@@ -27,8 +26,8 @@ import com.hazelcast.internal.cluster.impl.JoinMessage;
 import com.hazelcast.internal.cluster.impl.JoinRequest;
 import com.hazelcast.internal.diagnostics.Diagnostics;
 import com.hazelcast.internal.dynamicconfig.DynamicConfigListener;
+import com.hazelcast.internal.hotrestart.InternalHotRestartService;
 import com.hazelcast.internal.jmx.ManagementService;
-import com.hazelcast.internal.management.ManagementCenterConnectionFactory;
 import com.hazelcast.internal.management.TimedMemberStateFactory;
 import com.hazelcast.internal.memory.MemoryStats;
 import com.hazelcast.internal.networking.ChannelInitializerProvider;
@@ -288,8 +287,6 @@ public interface NodeExtension {
      * @return {@link TimedMemberStateFactory}
      */
     TimedMemberStateFactory createTimedMemberStateFactory(HazelcastInstanceImpl instance);
-
-    ManagementCenterConnectionFactory getManagementCenterConnectionFactory();
 
     ManagementService createJMXManagementService(HazelcastInstanceImpl instance);
 

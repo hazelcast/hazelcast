@@ -554,10 +554,6 @@ public class Node {
             nodeExtension.beforeShutdown();
         }
 
-        if (managementCenterService != null) {
-            managementCenterService.shutdown();
-        }
-
         if (textCommandService != null) {
             textCommandService.stop();
         }
