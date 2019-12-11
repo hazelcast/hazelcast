@@ -631,8 +631,6 @@ public class ReferenceObjects {
     public static List<Long> aListOfLongs = Collections.singletonList(aLong);
     public static List<UUID> aListOfUUIDs = Collections.singletonList(aUUID);
     public static Address anAddress;
-    public static List<Map.Entry<UUID, Address>> aListOfUUIDToAddress
-            = Collections.singletonList(new AbstractMap.SimpleEntry<>(aUUID, anAddress));
 
     static {
         try {
@@ -642,6 +640,8 @@ public class ReferenceObjects {
         }
     }
 
+    public static List<Map.Entry<UUID, Address>> aListOfUUIDToAddress
+            = Collections.singletonList(new AbstractMap.SimpleEntry<>(aUUID, anAddress));
     public static Map<String, String> aMapOfStringToString = Collections.singletonMap(aString, aString);
     public static List<String> aListOfStrings = Collections.singletonList(aString);
     public static StackTraceElement aStackTraceElement = new StackTraceElement(aString, aString, aString, anInt);
