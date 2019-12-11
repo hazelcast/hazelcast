@@ -164,27 +164,15 @@ public class SerializerConfig {
 
         SerializerConfig that = (SerializerConfig) o;
 
-        return Objects.equals(implementationNameInternal(), that.implementationNameInternal())
-            && Objects.equals(typeClassNameInternal(), that.typeClassNameInternal());
-    }
-
-    private String implementationNameInternal() {
-        if (implementation != null) {
-            return implementation.getClass().getName();
-        }
-        return className;
-    }
-
-    private String typeClassNameInternal() {
-        if (typeClass != null) {
-            return typeClass.getName();
-        }
-        return typeClassName;
+        return Objects.equals(implementation, that.implementation)
+            && Objects.equals(className, that.className)
+            && Objects.equals(typeClass, that.typeClass)
+            && Objects.equals(typeClassName, that.typeClassName);
     }
 
     @Override
     public final int hashCode() {
-        return Objects.hash(typeClassNameInternal(), implementationNameInternal());
+        return Objects.hash(typeClass, typeClassName, implementation, className);
     }
 
     @Override

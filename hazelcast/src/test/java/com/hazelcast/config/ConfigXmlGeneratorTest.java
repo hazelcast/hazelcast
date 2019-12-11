@@ -194,7 +194,7 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
         Config newConfigViaXMLGenerator = getNewConfigViaXMLGenerator(cfg);
         MemberAddressProviderConfig actual = newConfigViaXMLGenerator.getNetworkConfig().getMemberAddressProviderConfig();
 
-        assertEquals(expected, actual);
+        ConfigCompatibilityChecker.checkMemberAddressProviderConfig(expected, actual);
     }
 
     private static class TestMemberAddressProvider implements MemberAddressProvider {
@@ -639,7 +639,7 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
         assertEquals(expectedConfig.getGlobalSerializerConfig(), actualConfig.getGlobalSerializerConfig());
         assertEquals(expectedConfig.getDataSerializableFactoryClasses(), actualConfig.getDataSerializableFactoryClasses());
         assertEquals(expectedConfig.getPortableFactoryClasses(), actualConfig.getPortableFactoryClasses());
-        assertEquals(expectedConfig.getSerializerConfigs(), actualConfig.getSerializerConfigs());
+        ConfigCompatibilityChecker.checkSerializerConfigs(expectedConfig.getSerializerConfigs(), actualConfig.getSerializerConfigs());
         assertEquals(expectedConfig.getJavaSerializationFilterConfig(), actualConfig.getJavaSerializationFilterConfig());
     }
 
@@ -652,7 +652,7 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
                 .setOverrideJavaSerialization(true);
 
         SerializerConfig serializerConfig = new SerializerConfig()
-                .setClass(SerializerClass.class)
+                .setImplementation(new SerializerClass())
                 .setTypeClass(TypeClass.class);
 
         JavaSerializationFilterConfig filterConfig = new JavaSerializationFilterConfig();
@@ -689,7 +689,7 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
         assertEquals(expectedConfig.getGlobalSerializerConfig(), actualConfig.getGlobalSerializerConfig());
         assertEquals(expectedConfig.getDataSerializableFactoryClasses(), actualConfig.getDataSerializableFactoryClasses());
         assertEquals(expectedConfig.getPortableFactoryClasses(), actualConfig.getPortableFactoryClasses());
-        assertCollection(expectedConfig.getSerializerConfigs(), actualConfig.getSerializerConfigs());
+        ConfigCompatibilityChecker.checkSerializerConfigs(expectedConfig.getSerializerConfigs(), actualConfig.getSerializerConfigs());
         assertEquals(expectedConfig.getJavaSerializationFilterConfig(), actualConfig.getJavaSerializationFilterConfig());
     }
 
@@ -993,7 +993,7 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
         Config xmlConfig = getNewConfigViaXMLGenerator(config);
 
         RingbufferConfig actualConfig = xmlConfig.getRingbufferConfig(expectedConfig.getName());
-        assertEquals(expectedConfig, actualConfig);
+        ConfigCompatibilityChecker.checkRingbufferConfig(expectedConfig, actualConfig);
     }
 
     @Test

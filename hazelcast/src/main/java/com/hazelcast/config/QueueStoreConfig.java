@@ -132,9 +132,9 @@ public class QueueStoreConfig implements IdentifiedDataSerializable {
         return "QueueStoreConfig{"
                 + "enabled=" + enabled
                 + ", className='" + className + '\''
-                + ", storeImplementation='" + storeImplementation + '\''
+                + ", storeImplementation=" + storeImplementation
                 + ", factoryClassName='" + factoryClassName + '\''
-                + ", factoryImplementation='" + factoryImplementation + '\''
+                + ", factoryImplementation=" + factoryImplementation
                 + ", properties=" + properties
                 + '}';
     }
@@ -189,6 +189,7 @@ public class QueueStoreConfig implements IdentifiedDataSerializable {
 
     @Override
     public final int hashCode() {
-        return Objects.hash(isEnabled(), className, storeImplementation, getProperties(), factoryClassName, factoryImplementation);
+        return Objects.hash(isEnabled(), className, storeImplementation, getProperties(), factoryClassName,
+            factoryImplementation);
     }
 }

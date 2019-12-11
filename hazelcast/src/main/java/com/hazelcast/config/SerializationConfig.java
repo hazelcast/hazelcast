@@ -490,6 +490,7 @@ public class SerializationConfig {
     }
 
     @Override
+    @SuppressWarnings({"checkstyle:cyclomaticcomplexity"})
     public boolean equals(Object o) {
         if (this == o) {
             return true;

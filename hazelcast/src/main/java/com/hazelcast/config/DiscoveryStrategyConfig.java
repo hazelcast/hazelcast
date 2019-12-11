@@ -27,7 +27,6 @@ import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Objects;
 
 /**
  * This configuration class describes a {@link com.hazelcast.spi.discovery.DiscoveryStrategy}
@@ -124,31 +123,11 @@ public class DiscoveryStrategyConfig implements IdentifiedDataSerializable {
     }
 
     @Override
-    public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (o == null || !(o instanceof DiscoveryStrategyConfig)) {
-            return false;
-        }
-
-        DiscoveryStrategyConfig that = (DiscoveryStrategyConfig) o;
-        return Objects.equals(discoveryStrategyFactory, that.discoveryStrategyFactory)
-            && Objects.equals(className, that.className)
-            && Objects.equals(properties, that.properties);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(discoveryStrategyFactory, className, properties);
-    }
-
-    @Override
     public String toString() {
         return "DiscoveryStrategyConfig{"
                 + "properties=" + properties
                 + ", className='" + className + '\''
-                + ", discoveryStrategyFactory=" + discoveryStrategyFactory + '\''
+                + ", discoveryStrategyFactory=" + discoveryStrategyFactory
                 + '}';
     }
 

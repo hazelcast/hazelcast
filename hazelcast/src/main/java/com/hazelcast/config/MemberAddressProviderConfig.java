@@ -109,18 +109,12 @@ public final class MemberAddressProviderConfig {
 
         return isEnabled() == that.isEnabled()
             && getProperties().equals(that.getProperties())
-            && Objects.equals(implementationNameInternal(), that.implementationNameInternal());
-    }
-
-    private String implementationNameInternal() {
-        if (implementation != null) {
-            return implementation.getClass().getName();
-        }
-        return className;
+            && Objects.equals(className, that.className)
+            && Objects.equals(implementation, that.implementation);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(isEnabled(), implementationNameInternal(), getProperties());
+        return Objects.hash(isEnabled(), getProperties(), className, implementation);
     }
 }

@@ -142,7 +142,7 @@ public class DiscoveryConfig implements IdentifiedDataSerializable {
         return "DiscoveryConfig{"
                 + "discoveryStrategyConfigs=" + discoveryStrategyConfigs
                 + ", discoveryServiceProvider=" + discoveryServiceProvider
-                + ", nodeFilter=" + nodeFilter + '\''
+                + ", nodeFilter=" + nodeFilter
                 + ", nodeFilterClass='" + nodeFilterClass + '\''
                 + '}';
     }

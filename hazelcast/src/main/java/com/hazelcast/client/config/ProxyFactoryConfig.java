@@ -18,6 +18,8 @@ package com.hazelcast.client.config;
 
 import com.hazelcast.client.impl.spi.ClientProxyFactory;
 
+import java.util.Objects;
+
 /**
  * This class is related to SPI. To register custom services to java client.
  */
@@ -97,13 +99,6 @@ public class ProxyFactoryConfig {
         return this;
     }
 
-    private String internalClassName() {
-        if (factoryImpl != null) {
-            return factoryImpl.getClass().getName();
-        }
-        return className;
-    }
-
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -115,24 +110,14 @@ public class ProxyFactoryConfig {
 
         ProxyFactoryConfig that = (ProxyFactoryConfig) o;
 
-        String thisClassName = internalClassName();
-        String thatClassName = that.internalClassName();
-        if (thisClassName != null ? !thisClassName.equals(thatClassName) : thatClassName != null) {
-            return false;
-        }
-        if (service != null ? !service.equals(that.service) : that.service != null) {
-            return false;
-        }
-
-        return true;
+        return Objects.equals(service, that.service)
+            && Objects.equals(factoryImpl, that.factoryImpl)
+            && Objects.equals(className, that.className);
     }
 
     @Override
     public int hashCode() {
-        int result = service != null ? service.hashCode() : 0;
-        String internalClassName = internalClassName();
-        result = 31 * result + (internalClassName != null ? internalClassName.hashCode() : 0);
-        return result;
+        return Objects.hash(service, factoryImpl, className);
     }
 
     @Override

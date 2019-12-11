@@ -79,6 +79,9 @@ public class RingbufferStoreConfig implements IdentifiedDataSerializable {
     }
 
     public RingbufferStoreConfig setClassName(String className) {
+        if (className != null) {
+            setStoreImplementation(null);
+        }
         this.className = className;
         return this;
     }
@@ -128,8 +131,10 @@ public class RingbufferStoreConfig implements IdentifiedDataSerializable {
     public String toString() {
         return "RingbufferStoreConfig{"
                 + "enabled=" + enabled
-                + ", className='" + storeImplementationNameInternal() + '\''
-                + ", factoryClassName='" + storeFactoryImplementationNameInternal() + '\''
+                + ", className='" + className + '\''
+                + ", storeImplementation=" + storeImplementation
+                + ", factoryClassName='" + factoryClassName + '\''
+                + ", factoryImplementation=" + factoryImplementation
                 + ", properties=" + properties
                 + '}';
     }
@@ -176,27 +181,15 @@ public class RingbufferStoreConfig implements IdentifiedDataSerializable {
         RingbufferStoreConfig that = (RingbufferStoreConfig) o;
 
         return enabled == that.enabled
-            && Objects.equals(storeImplementationNameInternal(), that.storeImplementationNameInternal())
+            && Objects.equals(storeImplementation, that.storeImplementation)
+            && Objects.equals(className, that.className)
             && Objects.equals(properties, that.properties)
-            && Objects.equals(storeFactoryImplementationNameInternal(), that.storeFactoryImplementationNameInternal());
-    }
-
-    private String storeImplementationNameInternal() {
-        if (storeImplementation != null) {
-            return storeImplementation.getClass().getName();
-        }
-        return className;
-    }
-
-    private String storeFactoryImplementationNameInternal() {
-        if (factoryImplementation != null) {
-            return factoryImplementation.getClass().getName();
-        }
-        return factoryClassName;
+            && Objects.equals(factoryImplementation, that.factoryImplementation)
+            && Objects.equals(factoryClassName, that.factoryClassName);
     }
 
     @Override
     public final int hashCode() {
-        return Objects.hash(enabled, properties, storeImplementationNameInternal(), storeFactoryImplementationNameInternal());
+        return Objects.hash(enabled, properties, storeImplementation, className, factoryImplementation, factoryClassName);
     }
 }

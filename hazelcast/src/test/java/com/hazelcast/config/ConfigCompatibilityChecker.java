@@ -251,6 +251,24 @@ public class ConfigCompatibilityChecker {
         checkCompatibleConfigs("map-config", expectedConfig, actualConfig, new MapConfigChecker());
     }
 
+    public static void checkRingbufferConfig(RingbufferConfig expectedConfig, RingbufferConfig actualConfig) {
+        checkCompatibleConfigs("ringbuffer", expectedConfig, actualConfig, new RingbufferConfigChecker());
+    }
+
+    public static void checkMemberAddressProviderConfig(MemberAddressProviderConfig expected, MemberAddressProviderConfig actual) {
+        checkCompatibleConfigs("member-address-provider", expected, actual, new MemberAddressProviderConfigChecker());
+    }
+
+    public static void checkSerializerConfigs(Collection<SerializerConfig> expected, Collection<SerializerConfig> actual) {
+        assertEquals(expected.size(), actual.size());
+        Iterator<SerializerConfig> expectedIterator = expected.iterator();
+        Iterator<SerializerConfig> actualIterator = actual.iterator();
+        SerializerConfigChecker checker = new SerializerConfigChecker();
+        while (expectedIterator.hasNext()) {
+            checkCompatibleConfigs("serializer", expectedIterator.next(), actualIterator.next(), checker);
+        }
+    }
+
     private abstract static class ConfigChecker<T> {
 
         abstract boolean check(T t1, T t2);
@@ -279,9 +297,13 @@ public class ConfigCompatibilityChecker {
             boolean c1Disabled = c1 == null || !c1.isEnabled();
             boolean c2Disabled = c2 == null || !c2.isEnabled();
             return c1 == c2 || (c1Disabled && c2Disabled) || (c1 != null && c2 != null
-                    && nullSafeEqual(c1.getClassName(), c2.getClassName())
-                    && nullSafeEqual(c1.getFactoryClassName(), c2.getFactoryClassName())
-                    && nullSafeEqual(c1.getProperties(), c2.getProperties()));
+                && nullSafeEqual(
+                    classNameOrImpl(c1.getClassName(), c1.getStoreImplementation()),
+                    classNameOrImpl(c2.getClassName(), c2.getStoreImplementation()))
+                && nullSafeEqual(
+                    classNameOrImpl(c1.getFactoryClassName(), c1.getFactoryImplementation()),
+                    classNameOrImpl(c2.getFactoryClassName(), c2.getFactoryImplementation()))
+                && nullSafeEqual(c1.getProperties(), c2.getProperties()));
         }
 
         @Override
@@ -887,10 +909,13 @@ public class ConfigCompatibilityChecker {
     private static class SerializerConfigChecker extends ConfigChecker<SerializerConfig> {
         @Override
         boolean check(SerializerConfig c1, SerializerConfig c2) {
-            return c1 == c2 || !(c1 == null || c2 == null)
-                    && nullSafeEqual(c1.getClassName(), c2.getClassName())
-                    && nullSafeEqual(c1.getTypeClass(), c2.getTypeClass())
-                    && nullSafeEqual(c1.getTypeClassName(), c2.getTypeClassName());
+            return c1 == c2 || (c1 != null && c2 != null
+                && nullSafeEqual(
+                    classNameOrImpl(c1.getClassName(), c1.getImplementation()),
+                    classNameOrImpl(c2.getClassName(), c2.getImplementation()))
+                && nullSafeEqual(
+                    classNameOrClass(c1.getTypeClassName(), c1.getTypeClass()),
+                    classNameOrClass(c2.getTypeClassName(), c2.getTypeClass())));
         }
     }
 
@@ -1062,7 +1087,11 @@ public class ConfigCompatibilityChecker {
         boolean check(MemberAddressProviderConfig t1, MemberAddressProviderConfig t2) {
             boolean t1Disabled = t1 == null || !t1.isEnabled();
             boolean t2Disabled = t2 == null || !t2.isEnabled();
-            return t1 == t2 || (t1Disabled && t2Disabled) || (t1 != null && t1.equals(t2));
+            return t1 == t2 || (t1Disabled && t2Disabled) || (t1 != null && t2 != null
+                && nullSafeEqual(
+                    classNameOrImpl(t1.getClassName(), t1.getImplementation()),
+                    classNameOrImpl(t2.getClassName(), t2.getImplementation()))
+            );
         }
     }
 
@@ -1198,6 +1227,10 @@ public class ConfigCompatibilityChecker {
 
     private static String classNameOrImpl(String className, Object impl) {
         return impl != null ? impl.getClass().getName() : className;
+    }
+
+    private static String classNameOrClass(String className, Class<?> clazz) {
+        return clazz != null ? clazz.getName() : className;
     }
 
     public static class AliasedDiscoveryConfigsChecker extends ConfigChecker<List<AliasedDiscoveryConfig<?>>> {
