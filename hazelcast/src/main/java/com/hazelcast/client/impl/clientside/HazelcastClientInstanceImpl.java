@@ -48,14 +48,16 @@ import com.hazelcast.client.impl.spi.ClientPartitionService;
 import com.hazelcast.client.impl.spi.ClientTransactionManagerService;
 import com.hazelcast.client.impl.spi.ProxyManager;
 import com.hazelcast.client.impl.spi.impl.AbstractClientInvocationService;
-import com.hazelcast.client.impl.spi.impl.ClientClusterViewService;
+import com.hazelcast.client.impl.spi.impl.ClientClusterServiceImpl;
 import com.hazelcast.client.impl.spi.impl.ClientExecutionServiceImpl;
 import com.hazelcast.client.impl.spi.impl.ClientInvocation;
+import com.hazelcast.client.impl.spi.impl.ClientPartitionServiceImpl;
 import com.hazelcast.client.impl.spi.impl.ClientTransactionManagerServiceImpl;
 import com.hazelcast.client.impl.spi.impl.ClientUserCodeDeploymentService;
 import com.hazelcast.client.impl.spi.impl.NonSmartClientInvocationService;
 import com.hazelcast.client.impl.spi.impl.SmartClientInvocationService;
 import com.hazelcast.client.impl.spi.impl.listener.ClientListenerServiceImpl;
+import com.hazelcast.client.impl.spi.impl.listener.ClientClusterViewListenerService;
 import com.hazelcast.client.impl.statistics.ClientStatisticsService;
 import com.hazelcast.client.util.RoundRobinLB;
 import com.hazelcast.cluster.Cluster;
@@ -164,13 +166,15 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
     private final ClientConfig config;
     private final LifecycleServiceImpl lifecycleService;
     private final ClientConnectionManagerImpl connectionManager;
-    private final ClientClusterViewService clusterService;
+    private final ClientClusterServiceImpl clusterService;
+    private final ClientPartitionServiceImpl partitionService;
     private final AbstractClientInvocationService invocationService;
     private final ClientExecutionServiceImpl executionService;
     private final ClientListenerServiceImpl listenerService;
+    private final ClientClusterViewListenerService clientClusterViewListenerService;
     private final ClientTransactionManagerServiceImpl transactionManager;
     private final ProxyManager proxyManager;
-    private final ConcurrentMap<String, Object> userContext;
+    private final ConcurrentMap<String, Object> userContext = new ConcurrentHashMap<>();
     private final LoadBalancer loadBalancer;
     private final ClientExtension clientExtension;
     private final LoggingService loggingService;
@@ -233,12 +237,13 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         executionService = initExecutionService();
         loadBalancer = initLoadBalancer(config);
         transactionManager = new ClientTransactionManagerServiceImpl(this);
+        partitionService = new ClientPartitionServiceImpl(this);
         clientDiscoveryService = initClientDiscoveryService(externalAddressProvider);
         connectionManager = (ClientConnectionManagerImpl) clientConnectionManagerFactory.createConnectionManager(this);
         invocationService = initInvocationService();
         listenerService = new ClientListenerServiceImpl(this);
-        clusterService = new ClientClusterViewService(this);
-        userContext = new ConcurrentHashMap<>();
+        clusterService = new ClientClusterServiceImpl(this);
+        clientClusterViewListenerService = new ClientClusterViewListenerService(this);
         userContext.putAll(config.getUserContext());
         diagnostics = initDiagnostics();
         hazelcastCacheManager = new ClientICacheManager(this);
@@ -353,6 +358,8 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
             invocationService.start();
             ClientContext clientContext = new ClientContext(this);
             userCodeDeploymentService.start();
+            clusterService.start();
+            clientClusterViewListenerService.start();
             connectionManager.start();
             diagnostics.start();
 
@@ -383,12 +390,13 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
             if (invocationService instanceof SmartClientInvocationService) {
                 ((SmartClientInvocationService) invocationService).addBackupListener();
             }
-            clusterService.start();
             ClientConnectionStrategyConfig connectionStrategyConfig = config.getConnectionStrategyConfig();
             if (!connectionStrategyConfig.isAsyncStart()) {
                 connectionManager.tryOpenConnectionToAllMembers();
+                waitForInitialMembershipEvents();
             }
             loadBalancer.init(getCluster(), config);
+            partitionService.start();
             clientStatisticsService.start();
             clientExtension.afterStart(this);
             cpSubsystem.init(clientContext);
@@ -627,7 +635,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
     @Nonnull
     @Override
     public PartitionService getPartitionService() {
-        return new PartitionServiceProxy(clusterService, listenerService);
+        return new PartitionServiceProxy(partitionService, listenerService);
     }
 
     @Nonnull
@@ -715,7 +723,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
     }
 
     public ClientPartitionService getClientPartitionService() {
-        return clusterService;
+        return partitionService;
     }
 
     public ClientInvocationService getInvocationService() {
@@ -756,7 +764,6 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         proxyManager.destroy();
         connectionManager.shutdown();
         clientDiscoveryService.shutdown();
-        clusterService.shutdown();
         transactionManager.shutdown();
         invocationService.shutdown();
         executionService.shutdown();
@@ -802,17 +809,34 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
 
     public void onClusterChange() {
         ILogger logger = loggingService.getLogger(HazelcastInstance.class);
-        logger.info("Resetting local state of the client");
+        logger.info("Resetting local state of the client, because of a cluster change ");
 
         for (Disposable disposable : onClusterChangeDisposables) {
             disposable.dispose();
         }
         //clear the member lists
         clusterService.reset();
+        //clear partition service
+        partitionService.reset();
         //close all the connections, consequently waiting invocations get TargetDisconnectedException
         //non retryable client messages will fail immediately
         //retryable client messages will be retried but they will wait for new partition table
         connectionManager.reset();
+    }
+
+    public void onClusterRestart() {
+        ILogger logger = loggingService.getLogger(HazelcastInstance.class);
+        logger.info("Clearing local state of the client, because of a cluster restart ");
+
+        for (Disposable disposable : onClusterChangeDisposables) {
+            disposable.dispose();
+        }
+        //clear the member list version
+        clusterService.clearMemberListVersion();
+    }
+
+    public void waitForInitialMembershipEvents() {
+        clusterService.waitInitialMemberListFetched();
     }
 
     public void sendStateToCluster() throws ExecutionException, InterruptedException {

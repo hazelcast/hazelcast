@@ -37,41 +37,36 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * TODO DOC
  */
-@Generated("31932e989ca413ed287b11a2e8f57174")
+@Generated("5d1772412b87cda68e87d8ac98ba3bec")
 public final class ClientAddClusterViewListenerCodec {
     //hex: 0x000300
     public static final int REQUEST_MESSAGE_TYPE = 768;
     //hex: 0x000301
     public static final int RESPONSE_MESSAGE_TYPE = 769;
-    private static final int REQUEST_LOCAL_ONLY_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_LOCAL_ONLY_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
+    private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int EVENT_MEMBERS_VIEW_VERSION_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    private static final int EVENT_MEMBERS_VIEW_PARTITION_STATE_VERSION_FIELD_OFFSET = EVENT_MEMBERS_VIEW_VERSION_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    private static final int EVENT_MEMBERS_VIEW_INITIAL_FRAME_SIZE = EVENT_MEMBERS_VIEW_PARTITION_STATE_VERSION_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int EVENT_MEMBERS_VIEW_INITIAL_FRAME_SIZE = EVENT_MEMBERS_VIEW_VERSION_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     //hex: 0x000302
     private static final int EVENT_MEMBERS_VIEW_MESSAGE_TYPE = 770;
+    private static final int EVENT_PARTITIONS_VIEW_VERSION_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int EVENT_PARTITIONS_VIEW_INITIAL_FRAME_SIZE = EVENT_PARTITIONS_VIEW_VERSION_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    //hex: 0x000303
+    private static final int EVENT_PARTITIONS_VIEW_MESSAGE_TYPE = 771;
 
     private ClientAddClusterViewListenerCodec() {
     }
 
     @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
     public static class RequestParameters {
-
-        /**
-         * if true only master node sends events, otherwise all registered nodes send all membership
-         * changes.
-         */
-        public boolean localOnly;
     }
 
-    public static ClientMessage encodeRequest(boolean localOnly) {
+    public static ClientMessage encodeRequest() {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
         clientMessage.setOperationName("Client.AddClusterViewListener");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
-        encodeBoolean(initialFrame.content, REQUEST_LOCAL_ONLY_FIELD_OFFSET, localOnly);
         clientMessage.add(initialFrame);
         return clientMessage;
     }
@@ -79,8 +74,8 @@ public final class ClientAddClusterViewListenerCodec {
     public static ClientAddClusterViewListenerCodec.RequestParameters decodeRequest(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         RequestParameters request = new RequestParameters();
-        ClientMessage.Frame initialFrame = iterator.next();
-        request.localOnly = decodeBoolean(initialFrame.content, REQUEST_LOCAL_ONLY_FIELD_OFFSET);
+        //empty initial frame
+        iterator.next();
         return request;
     }
 
@@ -105,16 +100,25 @@ public final class ClientAddClusterViewListenerCodec {
         return response;
     }
 
-    public static ClientMessage encodeMembersViewEvent(int version, java.util.Collection<com.hazelcast.internal.cluster.MemberInfo> memberInfos, java.util.Collection<java.util.Map.Entry<com.hazelcast.cluster.Address, java.util.List<java.lang.Integer>>> partitions, int partitionStateVersion) {
+    public static ClientMessage encodeMembersViewEvent(int version, java.util.Collection<com.hazelcast.internal.cluster.MemberInfo> memberInfos) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[EVENT_MEMBERS_VIEW_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         initialFrame.flags |= ClientMessage.IS_EVENT_FLAG;
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, EVENT_MEMBERS_VIEW_MESSAGE_TYPE);
         encodeInt(initialFrame.content, EVENT_MEMBERS_VIEW_VERSION_FIELD_OFFSET, version);
-        encodeInt(initialFrame.content, EVENT_MEMBERS_VIEW_PARTITION_STATE_VERSION_FIELD_OFFSET, partitionStateVersion);
         clientMessage.add(initialFrame);
 
         ListMultiFrameCodec.encode(clientMessage, memberInfos, MemberInfoCodec::encode);
+        return clientMessage;
+    }
+    public static ClientMessage encodePartitionsViewEvent(int version, java.util.Collection<java.util.Map.Entry<com.hazelcast.cluster.Address, java.util.List<java.lang.Integer>>> partitions) {
+        ClientMessage clientMessage = ClientMessage.createForEncode();
+        ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[EVENT_PARTITIONS_VIEW_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
+        initialFrame.flags |= ClientMessage.IS_EVENT_FLAG;
+        encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, EVENT_PARTITIONS_VIEW_MESSAGE_TYPE);
+        encodeInt(initialFrame.content, EVENT_PARTITIONS_VIEW_VERSION_FIELD_OFFSET, version);
+        clientMessage.add(initialFrame);
+
         EntryListCodec.encode(clientMessage, partitions, AddressCodec::encode, ListIntegerCodec::encode);
         return clientMessage;
     }
@@ -127,14 +131,20 @@ public final class ClientAddClusterViewListenerCodec {
             if (messageType == EVENT_MEMBERS_VIEW_MESSAGE_TYPE) {
                 ClientMessage.Frame initialFrame = iterator.next();
                 int version = decodeInt(initialFrame.content, EVENT_MEMBERS_VIEW_VERSION_FIELD_OFFSET);
-                int partitionStateVersion = decodeInt(initialFrame.content, EVENT_MEMBERS_VIEW_PARTITION_STATE_VERSION_FIELD_OFFSET);
                 java.util.Collection<com.hazelcast.internal.cluster.MemberInfo> memberInfos = ListMultiFrameCodec.decode(iterator, MemberInfoCodec::decode);
+                handleMembersViewEvent(version, memberInfos);
+                return;
+            }
+            if (messageType == EVENT_PARTITIONS_VIEW_MESSAGE_TYPE) {
+                ClientMessage.Frame initialFrame = iterator.next();
+                int version = decodeInt(initialFrame.content, EVENT_PARTITIONS_VIEW_VERSION_FIELD_OFFSET);
                 java.util.Collection<java.util.Map.Entry<com.hazelcast.cluster.Address, java.util.List<java.lang.Integer>>> partitions = EntryListCodec.decode(iterator, AddressCodec::decode, ListIntegerCodec::decode);
-                handleMembersViewEvent(version, memberInfos, partitions, partitionStateVersion);
+                handlePartitionsViewEvent(version, partitions);
                 return;
             }
             Logger.getLogger(super.getClass()).finest("Unknown message type received on event handler :" + messageType);
         }
-        public abstract void handleMembersViewEvent(int version, java.util.Collection<com.hazelcast.internal.cluster.MemberInfo> memberInfos, java.util.Collection<java.util.Map.Entry<com.hazelcast.cluster.Address, java.util.List<java.lang.Integer>>> partitions, int partitionStateVersion);
+        public abstract void handleMembersViewEvent(int version, java.util.Collection<com.hazelcast.internal.cluster.MemberInfo> memberInfos);
+        public abstract void handlePartitionsViewEvent(int version, java.util.Collection<java.util.Map.Entry<com.hazelcast.cluster.Address, java.util.List<java.lang.Integer>>> partitions);
     }
 }

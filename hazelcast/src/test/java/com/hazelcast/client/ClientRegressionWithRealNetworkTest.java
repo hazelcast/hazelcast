@@ -290,7 +290,7 @@ public class ClientRegressionWithRealNetworkTest extends ClientTestSupport {
         ClientConfig config = new ClientConfig();
         config.getConnectionStrategyConfig().setAsyncStart(true).
                 setReconnectMode(ClientConnectionStrategyConfig.ReconnectMode.ASYNC)
-                .getConnectionRetryConfig().setInitialBackoffMillis(1).setMaxBackoffMillis(1000);
+                .getConnectionRetryConfig().setInitialBackoffMillis(1).setClusterConnectTimeoutMillis(1000);
         HazelcastInstance client = HazelcastClient.newHazelcastClient(config);
         final HazelcastClientInstanceImpl clientInstanceImpl = getHazelcastClientInstanceImpl(client);
         final ClientConnectionManagerImpl connectionManager = (ClientConnectionManagerImpl) clientInstanceImpl.getConnectionManager();

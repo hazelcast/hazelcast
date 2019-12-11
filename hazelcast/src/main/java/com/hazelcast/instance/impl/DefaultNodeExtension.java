@@ -18,7 +18,7 @@ package com.hazelcast.instance.impl;
 
 import com.hazelcast.cache.impl.CacheService;
 import com.hazelcast.cache.impl.ICacheService;
-import com.hazelcast.client.impl.ClientClusterListenerService;
+import com.hazelcast.client.impl.ClusterViewListenerService;
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.HotRestartPersistenceConfig;
@@ -367,7 +367,7 @@ public class DefaultNodeExtension implements NodeExtension {
 
     @Override
     public void onPartitionStateChange() {
-        ClientClusterListenerService service = node.clientEngine.getClientClusterListenerService();
+        ClusterViewListenerService service = node.clientEngine.getClusterListenerService();
         if (service != null) {
             service.onPartitionStateChange();
         }
@@ -375,7 +375,7 @@ public class DefaultNodeExtension implements NodeExtension {
 
     @Override
     public void onMemberListChange() {
-        ClientClusterListenerService service = node.clientEngine.getClientClusterListenerService();
+        ClusterViewListenerService service = node.clientEngine.getClusterListenerService();
         if (service != null) {
             service.onMemberListChange();
         }

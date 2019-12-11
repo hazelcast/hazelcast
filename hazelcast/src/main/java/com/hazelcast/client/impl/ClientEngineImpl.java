@@ -115,7 +115,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService,
 
     private final MessageTaskFactory messageTaskFactory;
     private final ClientExceptions clientExceptions;
-    private final ClientClusterListenerService clusterListenerService;
+    private final ClusterViewListenerService clusterListenerService;
     private final boolean advancedNetworkConfigEnabled;
     private final ClientLifecycleMonitor lifecycleMonitor;
     private final Map<UUID, Consumer<Long>> backupListeners = new ConcurrentHashMap<>();
@@ -130,7 +130,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService,
         this.blockingExecutor = newBlockingExecutor();
         this.messageTaskFactory = new CompositeMessageTaskFactory(nodeEngine);
         this.clientExceptions = initClientExceptionFactory();
-        this.clusterListenerService = new ClientClusterListenerService(nodeEngine);
+        this.clusterListenerService = new ClusterViewListenerService(nodeEngine);
         this.advancedNetworkConfigEnabled = node.getConfig().getAdvancedNetworkConfig().isEnabled();
         this.lifecycleMonitor = new ClientLifecycleMonitor(endpointManager, this, logger, nodeEngine,
                 nodeEngine.getExecutionService(), node.getProperties());
@@ -420,7 +420,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService,
     }
 
     @Override
-    public ClientClusterListenerService getClientClusterListenerService() {
+    public ClusterViewListenerService getClusterListenerService() {
         return clusterListenerService;
     }
 

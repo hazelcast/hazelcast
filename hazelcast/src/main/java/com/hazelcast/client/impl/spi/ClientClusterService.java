@@ -84,14 +84,6 @@ public interface ClientClusterService {
     int getSize();
 
     /**
-     * Gets the number of members that satisfy the given {@link MemberSelector} instance.
-     *
-     * @param selector {@link MemberSelector} instance that filters members to be counted.
-     * @return the number of members that satisfy the given {@link MemberSelector} instance.
-     */
-    int getSize(@Nonnull MemberSelector selector);
-
-    /**
      * Returns the cluster-time.
      *
      * @return The cluster-time.

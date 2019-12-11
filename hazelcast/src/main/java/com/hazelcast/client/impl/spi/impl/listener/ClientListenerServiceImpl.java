@@ -33,7 +33,6 @@ import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.metrics.StaticMetricsProvider;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.nio.ConnectionListener;
-import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.util.EmptyStatement;
 import com.hazelcast.internal.util.ExceptionUtil;
 import com.hazelcast.internal.util.UuidUtil;
@@ -51,7 +50,6 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -63,24 +61,17 @@ import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 public class ClientListenerServiceImpl implements ClientListenerService, StaticMetricsProvider, ConnectionListener {
 
-    protected final HazelcastClientInstanceImpl client;
-    protected final SerializationService serializationService;
-    protected final Map<UUID, ClientListenerRegistration> registrations = new ConcurrentHashMap<>();
+    private final HazelcastClientInstanceImpl client;
+    private final Map<UUID, ClientListenerRegistration> registrations = new ConcurrentHashMap<>();
     private final ClientConnectionManager clientConnectionManager;
     private final ILogger logger;
     private final ExecutorService registrationExecutor;
-
-    @Probe(name = "eventHandlerCount", level = MANDATORY)
-    private final ConcurrentMap<Long, EventHandler> eventHandlerMap
-            = new ConcurrentHashMap<Long, EventHandler>();
-
     private final StripedExecutor eventExecutor;
     private final boolean isSmart;
 
     public ClientListenerServiceImpl(HazelcastClientInstanceImpl client) {
         this.client = client;
         this.isSmart = client.getClientConfig().getNetworkConfig().isSmartRouting();
-        this.serializationService = client.getSerializationService();
         this.logger = client.getLoggingService().getLogger(ClientListenerService.class);
         String name = client.getName();
         HazelcastProperties properties = client.getProperties();
@@ -164,10 +155,6 @@ public class ClientListenerServiceImpl implements ClientListenerService, StaticM
         return eventExecutor.processedCount();
     }
 
-    public void addEventHandler(long callId, EventHandler handler) {
-        eventHandlerMap.put(callId, handler);
-    }
-
     public void handleEventMessage(ClientMessage clientMessage) {
         try {
             eventExecutor.execute(new ClientEventProcessor(clientMessage));
@@ -178,7 +165,8 @@ public class ClientListenerServiceImpl implements ClientListenerService, StaticM
 
     public void handleEventMessageOnCallingThread(ClientMessage clientMessage) {
         long correlationId = clientMessage.getCorrelationId();
-        EventHandler eventHandler = eventHandlerMap.get(correlationId);
+        ClientConnection connection = (ClientConnection) clientMessage.getConnection();
+        EventHandler eventHandler = connection.getEventHandler(correlationId);
         if (eventHandler == null) {
             logger.warning("No eventHandler for callId: " + correlationId + ", event: " + clientMessage);
             return;
@@ -248,10 +236,7 @@ public class ClientListenerServiceImpl implements ClientListenerService, StaticM
 
         registrationExecutor.submit(() -> {
             for (ClientListenerRegistration registry : registrations.values()) {
-                ClientConnectionRegistration registration = registry.getConnectionRegistrations().remove(connection);
-                if (registration != null) {
-                    removeEventHandler(registration.getCallId());
-                }
+                registry.getConnectionRegistrations().remove(connection);
             }
         });
     }
@@ -285,11 +270,6 @@ public class ClientListenerServiceImpl implements ClientListenerService, StaticM
         return Collections.unmodifiableMap(registrations);
     }
 
-    // used in tests
-    public Map<Long, EventHandler> getEventHandlers() {
-        return Collections.unmodifiableMap(eventHandlerMap);
-    }
-
     private void invokeFromInternalThread(ClientListenerRegistration registrationKey, Connection connection) {
         //This method should only be called from registrationExecutor
         assert (Thread.currentThread().getName().contains("eventRegistration"));
@@ -304,10 +284,6 @@ public class ClientListenerServiceImpl implements ClientListenerService, StaticM
 
     private boolean registersLocalOnly() {
         return isSmart;
-    }
-
-    private void removeEventHandler(long callId) {
-        eventHandlerMap.remove(callId);
     }
 
     private Boolean deregisterListenerInternal(@Nullable UUID userRegistrationId) {
@@ -333,7 +309,7 @@ public class ClientListenerServiceImpl implements ClientListenerService, StaticM
                 if (request != null) {
                     new ClientInvocation(client, request, null, subscriber).invoke().get();
                 }
-                removeEventHandler(registration.getCallId());
+                ((ClientConnection) subscriber).removeEventHandler(registration.getCallId());
                 iterator.remove();
             } catch (Exception e) {
                 if (subscriber.isAlive()) {

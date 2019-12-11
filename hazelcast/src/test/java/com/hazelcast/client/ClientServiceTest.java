@@ -110,7 +110,7 @@ public class ClientServiceTest extends ClientTestSupport {
         final HazelcastInstance instance = hazelcastFactory.newHazelcastInstance();
         final ClientConfig clientConfig = new ClientConfig();
         clientConfig.setClusterName("wrongName");
-        clientConfig.getConnectionStrategyConfig().getConnectionRetryConfig().setMaxBackoffMillis(2000);
+        clientConfig.getConnectionStrategyConfig().getConnectionRetryConfig().setClusterConnectTimeoutMillis(2000);
         try {
             hazelcastFactory.newHazelcastClient(clientConfig);
         } catch (IllegalStateException ignored) {
@@ -126,7 +126,7 @@ public class ClientServiceTest extends ClientTestSupport {
         final HazelcastInstance instance2 = hazelcastFactory.newHazelcastInstance();
         final ClientConfig clientConfig = new ClientConfig();
         clientConfig.setClusterName("wrongName");
-        clientConfig.getConnectionStrategyConfig().getConnectionRetryConfig().setMaxBackoffMillis(2000);
+        clientConfig.getConnectionStrategyConfig().getConnectionRetryConfig().setClusterConnectTimeoutMillis(2000);
         try {
             hazelcastFactory.newHazelcastClient(clientConfig);
         } catch (IllegalStateException ignored) {
@@ -145,7 +145,7 @@ public class ClientServiceTest extends ClientTestSupport {
         final HazelcastInstance instance2 = hazelcastFactory.newHazelcastInstance();
         final ClientConfig clientConfig = new ClientConfig();
         clientConfig.setClusterName("wrongName");
-        clientConfig.getConnectionStrategyConfig().getConnectionRetryConfig().setMaxBackoffMillis(2000);
+        clientConfig.getConnectionStrategyConfig().getConnectionRetryConfig().setClusterConnectTimeoutMillis(2000);
         try {
             hazelcastFactory.newHazelcastClient(clientConfig);
         } catch (IllegalStateException ignored) {
@@ -392,7 +392,7 @@ public class ClientServiceTest extends ClientTestSupport {
         HazelcastInstance hazelcastInstance = hazelcastFactory.newHazelcastInstance();
         final CountDownLatch countDownLatch = new CountDownLatch(1);
         ClientConfig config = new ClientConfig();
-        config.getConnectionStrategyConfig().getConnectionRetryConfig().setMaxBackoffMillis(2000);
+        config.getConnectionStrategyConfig().getConnectionRetryConfig().setClusterConnectTimeoutMillis(2000);
         HazelcastInstance client = hazelcastFactory.newHazelcastClient(config);
         client.getLifecycleService().addLifecycleListener(new LifecycleListener() {
             @Override

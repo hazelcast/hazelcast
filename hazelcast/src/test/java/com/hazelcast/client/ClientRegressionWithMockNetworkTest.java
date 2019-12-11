@@ -206,7 +206,10 @@ public class ClientRegressionWithMockNetworkTest extends HazelcastTestSupport {
     @Test
     public void testIssue821() {
         final HazelcastInstance instance = hazelcastFactory.newHazelcastInstance();
-        final HazelcastInstance client = hazelcastFactory.newHazelcastClient();
+        ClientConfig clientConfig = new ClientConfig();
+        clientConfig.setProperty(ClientProperty.INVOCATION_TIMEOUT_SECONDS.getName(), String.valueOf(Integer.MAX_VALUE));
+        clientConfig.getConnectionStrategyConfig().getConnectionRetryConfig().setClusterConnectTimeoutMillis(5000);
+        final HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig);
 
         final IMap<Object, Object> map = client.getMap("default");
 
@@ -371,7 +374,7 @@ public class ClientRegressionWithMockNetworkTest extends HazelcastTestSupport {
 
         ClientConfig clientConfig = new ClientConfig();
         clientConfig.setClusterName("foo");
-        clientConfig.getConnectionStrategyConfig().getConnectionRetryConfig().setMaxBackoffMillis(0);
+        clientConfig.getConnectionStrategyConfig().getConnectionRetryConfig().setClusterConnectTimeoutMillis(1000);
         ClientSecurityConfig securityConfig = clientConfig.getSecurityConfig();
         securityConfig.setCredentials(new MyCredentials());
         // not null username/password credentials are not allowed when Security is disabled
@@ -753,6 +756,7 @@ public class ClientRegressionWithMockNetworkTest extends HazelcastTestSupport {
         clientConfig.getNetworkConfig().setRedoOperation(true);
         //Retry all requests forever(until client is shutdown)
         clientConfig.setProperty(ClientProperty.INVOCATION_TIMEOUT_SECONDS.getName(), String.valueOf(Integer.MAX_VALUE));
+        clientConfig.getConnectionStrategyConfig().getConnectionRetryConfig().setClusterConnectTimeoutMillis(5000);
         HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig);
 
         final IMap<Object, Object> map = client.getMap(randomMapName());

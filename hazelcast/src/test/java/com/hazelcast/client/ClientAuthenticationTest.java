@@ -52,7 +52,7 @@ public class ClientAuthenticationTest extends HazelcastTestSupport {
     @Test(expected = IllegalStateException.class)
     public void testNoClusterFound() {
         final ClientConfig clientConfig = new ClientConfig();
-        clientConfig.getConnectionStrategyConfig().getConnectionRetryConfig().setMaxBackoffMillis(2000);
+        clientConfig.getConnectionStrategyConfig().getConnectionRetryConfig().setClusterConnectTimeoutMillis(2000);
         hazelcastFactory.newHazelcastClient(clientConfig);
     }
 
@@ -70,6 +70,8 @@ public class ClientAuthenticationTest extends HazelcastTestSupport {
 
         // custom credentials are not supported when security is disabled on members
         expectedException.expect(IllegalStateException.class);
+
+        clientConfig.getConnectionStrategyConfig().getConnectionRetryConfig().setClusterConnectTimeoutMillis(1000);
         hazelcastFactory.newHazelcastClient(clientConfig);
     }
 

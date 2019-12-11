@@ -16,7 +16,7 @@
 
 package com.hazelcast.client.impl.protocol.task;
 
-import com.hazelcast.client.impl.ClientClusterListenerService;
+import com.hazelcast.client.impl.ClusterViewListenerService;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ClientAddClusterViewListenerCodec;
 import com.hazelcast.instance.impl.Node;
@@ -36,7 +36,7 @@ public class AddClusterViewListenerMessageTask
 
     @Override
     protected Object call() {
-        ClientClusterListenerService service = clientEngine.getClientClusterListenerService();
+        ClusterViewListenerService service = clientEngine.getClusterListenerService();
         service.registerListener(endpoint, clientMessage.getCorrelationId());
         endpoint.addDestroyAction(UuidUtil.newUnsecureUUID(), () -> {
             service.deregisterListener(endpoint);
