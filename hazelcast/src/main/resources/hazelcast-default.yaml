@@ -24,9 +24,6 @@
 # at https://hazelcast.org/documentation/
 hazelcast:
   cluster-name: dev
-  management-center:
-    enabled: false
-    url: http://localhost:8080/hazelcast-mancenter
   network:
     port:
       auto-increment: true

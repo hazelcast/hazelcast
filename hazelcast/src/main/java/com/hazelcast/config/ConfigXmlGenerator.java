@@ -178,13 +178,7 @@ public class ConfigXmlGenerator {
         if (config.getManagementCenterConfig() != null) {
             ManagementCenterConfig mcConfig = config.getManagementCenterConfig();
             gen.open("management-center",
-                    "enabled", mcConfig.isEnabled(),
-                    "scripting-enabled", mcConfig.isScriptingEnabled(),
-                    "update-interval", mcConfig.getUpdateInterval());
-            gen.node("url", mcConfig.getUrl());
-            if (mcConfig.getUrl() != null) {
-                mcMutualAuthConfigXmlGenerator(gen, config.getManagementCenterConfig());
-            }
+                    "scripting-enabled", mcConfig.isScriptingEnabled());
             gen.close();
         }
     }
@@ -1302,28 +1296,6 @@ public class ConfigXmlGenerator {
 
             gen.node("factory-class-name",
                     classNameOrImplClass(ssl.getFactoryClassName(), ssl.getFactoryImplementation()))
-                    .appendProperties(props);
-        }
-        gen.close();
-    }
-
-    private void mcMutualAuthConfigXmlGenerator(XmlGenerator gen, ManagementCenterConfig mcConfig) {
-        MCMutualAuthConfig mutualAuthConfig = mcConfig.getMutualAuthConfig();
-        gen.open("mutual-auth", "enabled", mutualAuthConfig != null && mutualAuthConfig.isEnabled());
-        if (mutualAuthConfig != null) {
-            Properties props = new Properties();
-            props.putAll(mutualAuthConfig.getProperties());
-
-            if (maskSensitiveFields && props.containsKey("trustStorePassword")) {
-                props.setProperty("trustStorePassword", MASK_FOR_SENSITIVE_DATA);
-            }
-
-            if (maskSensitiveFields && props.containsKey("keyStorePassword")) {
-                props.setProperty("keyStorePassword", MASK_FOR_SENSITIVE_DATA);
-            }
-
-            gen.node("factory-class-name",
-                    classNameOrImplClass(mutualAuthConfig.getFactoryClassName(), mutualAuthConfig.getFactoryImplementation()))
                     .appendProperties(props);
         }
         gen.close();

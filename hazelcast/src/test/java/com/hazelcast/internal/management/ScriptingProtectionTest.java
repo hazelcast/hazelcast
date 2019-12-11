@@ -16,11 +16,16 @@
 
 package com.hazelcast.internal.management;
 
-import static org.junit.Assert.assertEquals;
-
-import java.security.AccessControlException;
-import java.util.concurrent.ExecutionException;
-
+import com.hazelcast.client.impl.clientside.HazelcastClientProxy;
+import com.hazelcast.client.impl.management.ManagementCenterService;
+import com.hazelcast.client.test.TestHazelcastFactory;
+import com.hazelcast.config.Config;
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.instance.impl.HazelcastInstanceFactory;
+import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.HazelcastTestSupport;
+import com.hazelcast.test.annotation.ParallelJVMTest;
+import com.hazelcast.test.annotation.QuickTest;
 import org.hamcrest.CoreMatchers;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -30,17 +35,11 @@ import org.junit.experimental.categories.Category;
 import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
-import com.hazelcast.config.Config;
-import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.instance.impl.HazelcastInstanceFactory;
-import com.hazelcast.internal.management.operation.ScriptExecutorOperation;
-import com.hazelcast.map.impl.MapService;
-import com.hazelcast.spi.impl.InternalCompletableFuture;
-import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.TestHazelcastInstanceFactory;
-import com.hazelcast.test.annotation.ParallelJVMTest;
-import com.hazelcast.test.annotation.QuickTest;
+import java.security.AccessControlException;
+import java.util.concurrent.ExecutionException;
+
+import static java.util.concurrent.TimeUnit.SECONDS;
+import static org.junit.Assert.assertEquals;
 
 /**
  * Tests possibility to disable scripting on members.
@@ -64,38 +63,18 @@ public class ScriptingProtectionTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testScritpingDisabled() throws InterruptedException, ExecutionException {
-        testInternal(false, false);
+    public void testScriptingDisabled() throws Exception {
+        testInternal(false);
     }
 
     @Test
-    public void testScritpingDisabledOnSrc() throws InterruptedException, ExecutionException {
-        testInternal(false, true);
+    public void testScriptingEnabled() throws Exception {
+        testInternal(true);
     }
 
     @Test
-    public void testScritpingDisabledOnDest() throws InterruptedException, ExecutionException {
-        testInternal(true, false);
-    }
-
-    @Test
-    public void testScritpingEnabled() throws InterruptedException, ExecutionException {
-        testInternal(true, true);
-    }
-
-    @Test
-    public void testDefaultValue() throws InterruptedException, ExecutionException {
-        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
-        HazelcastInstance hz1 = factory.newHazelcastInstance();
-        HazelcastInstance hz2 = factory.newHazelcastInstance();
-        ScriptExecutorOperation op = createScriptExecutorOp();
-        InternalCompletableFuture<Object> result = getOperationService(hz1).invokeOnTarget(MapService.SERVICE_NAME, op,
-                getAddress(hz2));
-        if (!getScriptingEnabledDefaultValue()) {
-            expectedException.expect(ExecutionException.class);
-            expectedException.expectCause(CoreMatchers.<Throwable>instanceOf(AccessControlException.class));
-        }
-        assertEquals(SCRIPT_RETURN_VAL, result.get());
+    public void testDefaultValue() throws Exception {
+        testInternal(null, getScriptingEnabledDefaultValue());
     }
 
     /**
@@ -106,30 +85,27 @@ public class ScriptingProtectionTest extends HazelcastTestSupport {
     }
 
     /**
-     * Tests scripting protection on 2 nodes cluster. The source node sends a {@link ScriptExecutorOperation} to the destination
-     * one. If the destination node has scripting disabled, an exception is thrown, otherwise the source gets correct script
+     * Tests scripting protection on single node cluster with a client. The client tries to run script on the node.
+     * If the node has scripting disabled, an exception is thrown, otherwise the client gets correct script
      * execution result.
      *
-     * @param srcEnabled scripting enabled on source node (it's value should have no effect on the test)
-     * @param destEnabled scripting enabled on destination node
+     * @param enabled scripting enabled on the node
      */
-    protected void testInternal(boolean srcEnabled, boolean destEnabled) throws InterruptedException, ExecutionException {
-        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
-        HazelcastInstance hz1 = factory.newHazelcastInstance(createConfig(srcEnabled));
-        HazelcastInstance hz2 = factory.newHazelcastInstance(createConfig(destEnabled));
-        ScriptExecutorOperation op = createScriptExecutorOp();
-        InternalCompletableFuture<Object> result = getOperationService(hz1).invokeOnTarget(MapService.SERVICE_NAME, op,
-                getAddress(hz2));
-        if (!destEnabled) {
-            expectedException.expect(ExecutionException.class);
-            expectedException.expectCause(CoreMatchers.<Throwable>instanceOf(AccessControlException.class));
-        }
-        assertEquals(SCRIPT_RETURN_VAL, result.get());
+    protected void testInternal(boolean enabled) throws Exception {
+        testInternal(createConfig(enabled), enabled);
     }
 
-    protected ScriptExecutorOperation createScriptExecutorOp() {
-        ScriptExecutorOperation op = new ScriptExecutorOperation(ENGINE, SCRIPT);
-        return op;
+    private void testInternal(Config config, boolean expectEnabled) throws Exception {
+        TestHazelcastFactory factory = new TestHazelcastFactory(1);
+        HazelcastInstance hz = config != null ? factory.newHazelcastInstance(config) : factory.newHazelcastInstance();
+        HazelcastInstance client = factory.newHazelcastClient();
+        ManagementCenterService mcs = ((HazelcastClientProxy) client).client.getManagementCenterService();
+        if (!expectEnabled) {
+            expectedException.expect(ExecutionException.class);
+            expectedException.expectCause(CoreMatchers.instanceOf(AccessControlException.class));
+        }
+        assertEquals(SCRIPT_RETURN_VAL,
+                mcs.runScript(hz.getCluster().getLocalMember(), ENGINE, SCRIPT).get(ASSERT_TRUE_EVENTUALLY_TIMEOUT, SECONDS));
     }
 
     protected Config createConfig(boolean scriptingEnabled) {

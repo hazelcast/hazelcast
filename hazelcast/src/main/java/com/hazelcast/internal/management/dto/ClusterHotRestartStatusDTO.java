@@ -17,10 +17,10 @@
 package com.hazelcast.internal.management.dto;
 
 import com.hazelcast.config.HotRestartClusterDataRecoveryPolicy;
-import com.hazelcast.json.internal.JsonSerializable;
 import com.hazelcast.internal.json.JsonArray;
 import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.internal.json.JsonValue;
+import com.hazelcast.json.internal.JsonSerializable;
 
 import java.util.Collections;
 import java.util.Map;

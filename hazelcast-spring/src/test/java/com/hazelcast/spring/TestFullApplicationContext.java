@@ -133,6 +133,7 @@ import com.hazelcast.nio.ssl.SSLContextFactory;
 import com.hazelcast.replicatedmap.ReplicatedMap;
 import com.hazelcast.ringbuffer.RingbufferStore;
 import com.hazelcast.ringbuffer.RingbufferStoreFactory;
+import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.splitbrainprotection.SplitBrainProtectionOn;
 import com.hazelcast.splitbrainprotection.impl.ProbabilisticSplitBrainProtectionFunction;
 import com.hazelcast.splitbrainprotection.impl.RecentlyActiveSplitBrainProtectionFunction;
@@ -276,9 +277,17 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
     private PNCounter pnCounter;
 
     @BeforeClass
-    @AfterClass
     public static void start() {
+        // OverridePropertyRule can't be used here since the Spring context
+        // with the Hazelcast instance is created before the rules
+        System.clearProperty(ClusterProperty.METRICS_COLLECTION_FREQUENCY.getName());
         HazelcastInstanceFactory.terminateAll();
+    }
+
+    @AfterClass
+    public static void stop() {
+        HazelcastInstanceFactory.terminateAll();
+        System.setProperty(ClusterProperty.METRICS_COLLECTION_FREQUENCY.getName(), "1");
     }
 
     @Before
@@ -1043,13 +1052,7 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
     public void testManagementCenterConfig() {
         ManagementCenterConfig managementCenterConfig = config.getManagementCenterConfig();
         assertNotNull(managementCenterConfig);
-        assertTrue(managementCenterConfig.isEnabled());
         assertFalse(managementCenterConfig.isScriptingEnabled());
-        assertEquals("myserver:80", managementCenterConfig.getUrl());
-        assertEquals(2, managementCenterConfig.getUpdateInterval());
-        assertTrue(managementCenterConfig.getMutualAuthConfig().isEnabled());
-        assertEquals(1, managementCenterConfig.getMutualAuthConfig().getProperties().size());
-        assertEquals("who.let.the.cat.out.class", managementCenterConfig.getMutualAuthConfig().getFactoryClassName());
     }
 
     @Test

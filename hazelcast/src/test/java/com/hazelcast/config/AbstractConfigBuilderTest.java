@@ -128,22 +128,10 @@ public abstract class AbstractConfigBuilderTest extends HazelcastTestSupport {
     public abstract void testManagementCenterConfig();
 
     @Test
-    public abstract void testManagementCenterConfigComplex();
-
-    @Test
     public abstract void testNullManagementCenterConfig();
 
     @Test
     public abstract void testEmptyManagementCenterConfig();
-
-    @Test
-    public abstract void testNotEnabledManagementCenterConfig();
-
-    @Test
-    public abstract void testNotEnabledWithURLManagementCenterConfig();
-
-    @Test
-    public abstract void testManagementCenterConfigComplexDisabledMutualAuth();
 
     @Test
     public abstract void testMapStoreInitialModeLazy();

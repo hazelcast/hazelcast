@@ -14,18 +14,13 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.management.request;
+package com.hazelcast.internal.management.operation;
 
 import com.hazelcast.cache.CacheEntryView;
-import com.hazelcast.cache.ICache;
 import com.hazelcast.cache.impl.CacheDataSerializerHook;
 import com.hazelcast.cache.impl.CacheEntryProcessorEntry;
 import com.hazelcast.cache.impl.record.CacheRecord;
 import com.hazelcast.core.ReadOnly;
-import com.hazelcast.cache.impl.HazelcastInstanceCacheManager;
-import com.hazelcast.internal.json.JsonObject;
-import com.hazelcast.internal.management.ManagementCenterService;
-import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
@@ -36,95 +31,34 @@ import javax.cache.processor.EntryProcessorException;
 import javax.cache.processor.MutableEntry;
 import java.io.IOException;
 
-import static com.hazelcast.internal.util.JsonUtil.getString;
+public class GetCacheEntryViewEntryProcessor implements EntryProcessor<Object, Object, CacheEntryView>,
+                                                        IdentifiedDataSerializable, ReadOnly {
+    @Override
+    public CacheEntryView process(MutableEntry mutableEntry, Object... objects) throws EntryProcessorException {
+        CacheEntryProcessorEntry entry = (CacheEntryProcessorEntry) mutableEntry;
+        if (entry.getRecord() == null) {
+            return null;
+        }
 
-/**
- * Request for fetching cache entries.
- */
-public class GetCacheEntryRequest implements ConsoleRequest {
-
-    private static final GetCacheEntryViewEntryProcessor ENTRY_PROCESSOR = new GetCacheEntryViewEntryProcessor();
-    private String cacheName;
-    private String type;
-    private String key;
-
-    public GetCacheEntryRequest() {
-    }
-
-    public GetCacheEntryRequest(String type, String cacheName, String key) {
-        this.type = type;
-        this.cacheName = cacheName;
-        this.key = key;
+        return new CacheBrowserEntryView(entry);
     }
 
     @Override
-    public int getType() {
-        return ConsoleRequestConstants.REQUEST_TYPE_CACHE_ENTRY;
+    public int getFactoryId() {
+        return CacheDataSerializerHook.F_ID;
     }
 
     @Override
-    public void writeResponse(ManagementCenterService mcs, JsonObject root) {
-        InternalSerializationService serializationService = mcs.getHazelcastInstance().getSerializationService();
-        HazelcastInstanceCacheManager cacheManager = mcs.getHazelcastInstance().getCacheManager();
-        ICache<Object, Object> cache = cacheManager.getCache(cacheName);
-        CacheEntryView cacheEntry = null;
-
-        if ("string".equals(type)) {
-            cacheEntry = cache.invoke(key, ENTRY_PROCESSOR);
-        } else if ("long".equals(type)) {
-            cacheEntry = cache.invoke(Long.valueOf(key), ENTRY_PROCESSOR);
-        } else if ("integer".equals(type)) {
-            cacheEntry = cache.invoke(Integer.valueOf(key), ENTRY_PROCESSOR);
-        }
-        JsonObject result = new JsonObject();
-        if (cacheEntry != null) {
-            Object value = serializationService.toObject(cacheEntry.getValue());
-            result.add("cacheBrowse_value", value != null ? value.toString() : "null");
-            result.add("cacheBrowse_class", value != null ? value.getClass().getName() : "null");
-            result.add("date_cache_creation_time", Long.toString(cacheEntry.getCreationTime()));
-            result.add("date_cache_expiration_time", Long.toString(cacheEntry.getExpirationTime()));
-            result.add("cacheBrowse_hits", Long.toString(cacheEntry.getHits()));
-            result.add("date_cache_access_time", Long.toString(cacheEntry.getLastAccessTime()));
-        }
-        root.add("result", result);
+    public int getClassId() {
+        return CacheDataSerializerHook.GET_CACHE_ENTRY_VIEW_PROCESSOR;
     }
 
     @Override
-    public void fromJson(JsonObject json) {
-        cacheName = getString(json, "cacheName");
-        type = getString(json, "type");
-        key = getString(json, "key");
+    public void writeData(ObjectDataOutput out) throws IOException {
     }
 
-    public static class GetCacheEntryViewEntryProcessor implements EntryProcessor<Object, Object, CacheEntryView>,
-            IdentifiedDataSerializable, ReadOnly {
-        @Override
-        public CacheEntryView process(MutableEntry mutableEntry, Object... objects) throws EntryProcessorException {
-            CacheEntryProcessorEntry entry = (CacheEntryProcessorEntry) mutableEntry;
-            if (entry.getRecord() == null) {
-                return null;
-            }
-
-            return new CacheBrowserEntryView(entry);
-        }
-
-        @Override
-        public int getFactoryId() {
-            return CacheDataSerializerHook.F_ID;
-        }
-
-        @Override
-        public int getClassId() {
-            return CacheDataSerializerHook.GET_CACHE_ENTRY_VIEW_PROCESSOR;
-        }
-
-        @Override
-        public void writeData(ObjectDataOutput out) throws IOException {
-        }
-
-        @Override
-        public void readData(ObjectDataInput in) throws IOException {
-        }
+    @Override
+    public void readData(ObjectDataInput in) throws IOException {
     }
 
     public static class CacheBrowserEntryView implements CacheEntryView<Object, Object>, IdentifiedDataSerializable {

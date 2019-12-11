@@ -16,8 +16,8 @@
 
 package com.hazelcast.internal.management.dto;
 
-import com.hazelcast.json.internal.JsonSerializable;
 import com.hazelcast.internal.json.JsonObject;
+import com.hazelcast.json.internal.JsonSerializable;
 
 import java.util.HashMap;
 import java.util.Iterator;
@@ -35,9 +35,7 @@ public class MXBeansDTO implements JsonSerializable {
     private ConnectionManagerDTO connectionManagerBean;
     private PartitionServiceBeanDTO partitionServiceBean;
     private ProxyServiceDTO proxyServiceBean;
-    private Map<String, ManagedExecutorDTO> managedExecutorBeans =
-            new HashMap<String, ManagedExecutorDTO>();
-
+    private Map<String, ManagedExecutorDTO> managedExecutorBeans = new HashMap<>();
 
     public MXBeansDTO() {
     }

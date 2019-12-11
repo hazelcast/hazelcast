@@ -23,6 +23,7 @@ import com.hazelcast.config.CachePartitionLostListenerConfig;
 import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.CacheSimpleEntryListenerConfig;
 import com.hazelcast.config.CardinalityEstimatorConfig;
+import com.hazelcast.config.PermissionConfig;
 import com.hazelcast.config.WanCustomPublisherConfig;
 import com.hazelcast.config.DiscoveryConfig;
 import com.hazelcast.config.DiscoveryStrategyConfig;
@@ -149,8 +150,9 @@ public final class ConfigDataSerializerHook implements DataSerializerHook {
     public static final int DISCOVERY_STRATEGY_CONFIG = 58;
     public static final int WAN_REPLICATION_REF = 59;
     public static final int EVICTION_CONFIG = 60;
+    public static final int PERMISSION_CONFIG = 61;
 
-    private static final int LEN = EVICTION_CONFIG + 1;
+    private static final int LEN = PERMISSION_CONFIG + 1;
 
     @Override
     public int getFactoryId() {
@@ -221,6 +223,7 @@ public final class ConfigDataSerializerHook implements DataSerializerHook {
         constructors[DISCOVERY_STRATEGY_CONFIG] = arg -> new DiscoveryStrategyConfig();
         constructors[WAN_REPLICATION_REF] = arg -> new WanReplicationRef();
         constructors[EVICTION_CONFIG] = arg -> new EvictionConfig();
+        constructors[PERMISSION_CONFIG] = arg -> new PermissionConfig();
 
         return new ArrayDataSerializableFactory(constructors);
     }

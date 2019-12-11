@@ -783,42 +783,13 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
     @Test
     public void testManagementCenterConfig() {
         String xml = HAZELCAST_START_TAG
-                + "<management-center enabled=\"true\" scripting-enabled='false'>"
-                + "someUrl"
-                + "</management-center>"
+                + "<management-center scripting-enabled='false' />"
                 + HAZELCAST_END_TAG;
 
         Config config = buildConfig(xml);
         ManagementCenterConfig manCenterCfg = config.getManagementCenterConfig();
 
-        assertTrue(manCenterCfg.isEnabled());
         assertFalse(manCenterCfg.isScriptingEnabled());
-        assertEquals("someUrl", manCenterCfg.getUrl());
-    }
-
-    @Override
-    @Test
-    public void testManagementCenterConfigComplex() {
-        String xml = HAZELCAST_START_TAG
-                + "<management-center enabled=\"true\">"
-                + "<url>wowUrl</url>"
-                + "<mutual-auth enabled=\"true\">"
-                + "<properties>"
-                + "<property name=\"keyStore\">/tmp/foo_keystore</property>"
-                + "<property name=\"trustStore\">/tmp/foo_truststore</property>"
-                + "</properties>"
-                + "</mutual-auth>"
-                + "</management-center>"
-                + HAZELCAST_END_TAG;
-
-        Config config = buildConfig(xml);
-        ManagementCenterConfig manCenterCfg = config.getManagementCenterConfig();
-
-        assertTrue(manCenterCfg.isEnabled());
-        assertEquals("wowUrl", manCenterCfg.getUrl());
-        assertTrue(manCenterCfg.getMutualAuthConfig().isEnabled());
-        assertEquals("/tmp/foo_keystore", manCenterCfg.getMutualAuthConfig().getProperty("keyStore"));
-        assertEquals("/tmp/foo_truststore", manCenterCfg.getMutualAuthConfig().getProperty("trustStore"));
     }
 
     @Override
@@ -832,8 +803,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         Config config = buildConfig(xml);
         ManagementCenterConfig manCenterCfg = config.getManagementCenterConfig();
 
-        assertFalse(manCenterCfg.isEnabled());
-        assertNull(manCenterCfg.getUrl());
+        assertTrue(manCenterCfg.isScriptingEnabled());
     }
 
     @Override
@@ -844,57 +814,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         Config config = buildConfig(xml);
         ManagementCenterConfig manCenterCfg = config.getManagementCenterConfig();
 
-        assertFalse(manCenterCfg.isEnabled());
-        assertNull(manCenterCfg.getUrl());
-    }
-
-    @Override
-    @Test
-    public void testNotEnabledManagementCenterConfig() {
-        String xml = HAZELCAST_START_TAG
-                + "<management-center enabled=\"false\">"
-                + "</management-center>"
-                + HAZELCAST_END_TAG;
-
-        Config config = buildConfig(xml);
-        ManagementCenterConfig manCenterCfg = config.getManagementCenterConfig();
-        assertFalse(manCenterCfg.isEnabled());
-        assertNull(manCenterCfg.getUrl());
-    }
-
-    @Override
-    @Test
-    public void testNotEnabledWithURLManagementCenterConfig() {
-        String xml = HAZELCAST_START_TAG
-                + "<management-center enabled=\"false\">"
-                + "http://localhost:8080/mancenter"
-                + "</management-center>"
-                + HAZELCAST_END_TAG;
-
-        Config config = buildConfig(xml);
-        ManagementCenterConfig manCenterCfg = config.getManagementCenterConfig();
-
-        assertFalse(manCenterCfg.isEnabled());
-        assertEquals("http://localhost:8080/mancenter", manCenterCfg.getUrl());
-    }
-
-    @Override
-    @Test
-    public void testManagementCenterConfigComplexDisabledMutualAuth() {
-        String xml = HAZELCAST_START_TAG
-                + "<management-center enabled=\"true\">"
-                + "<url>wowUrl</url>"
-                + "<mutual-auth enabled=\"false\">"
-                + "</mutual-auth>"
-                + "</management-center>"
-                + HAZELCAST_END_TAG;
-
-        Config config = buildConfig(xml);
-        ManagementCenterConfig manCenterCfg = config.getManagementCenterConfig();
-
-        assertTrue(manCenterCfg.isEnabled());
-        assertEquals("wowUrl", manCenterCfg.getUrl());
-        assertFalse(manCenterCfg.getMutualAuthConfig().isEnabled());
+        assertTrue(manCenterCfg.isScriptingEnabled());
     }
 
     @Override

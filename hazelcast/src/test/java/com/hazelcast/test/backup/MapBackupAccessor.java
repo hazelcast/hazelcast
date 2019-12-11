@@ -16,20 +16,20 @@
 
 package com.hazelcast.test.backup;
 
+import com.hazelcast.cluster.Address;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.map.IMap;
 import com.hazelcast.instance.impl.Node;
+import com.hazelcast.internal.partition.IPartition;
 import com.hazelcast.internal.partition.InternalPartitionService;
+import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.map.IMap;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.PartitionContainer;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.recordstore.RecordStore;
-import com.hazelcast.cluster.Address;
-import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.internal.partition.IPartition;
-import com.hazelcast.internal.serialization.SerializationService;
 
 import static com.hazelcast.test.HazelcastTestSupport.getNode;
 import static com.hazelcast.test.HazelcastTestSupport.getNodeEngineImpl;
@@ -168,5 +168,11 @@ public class MapBackupAccessor<K, V> extends AbstractBackupAccessor<K, V> implem
             Data keyData = serializationService.toData(key);
             return recordStore.getRecord(keyData);
         }
+    }
+
+    @Override
+    public String toString() {
+        return "MapBackupAccessor{mapName='" + mapName
+                + '\'' + "} " + super.toString();
     }
 }

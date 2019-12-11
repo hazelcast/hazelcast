@@ -78,9 +78,7 @@ public class RestApiFilter implements TextProtocolFilter {
         if (requestUri.startsWith(HttpCommandProcessor.URI_HEALTH_URL)) {
             return RestEndpointGroup.HEALTH_CHECK;
         }
-        if (requestUri.startsWith(HttpCommandProcessor.URI_MANCENTER_BASE_URL + "/wan/")
-                || requestUri.startsWith("/hazelcast/rest/wan/")
-                || requestUri.startsWith(HttpCommandProcessor.LEGACY_URI_MANCENTER_WAN_CLEAR_QUEUES)) {
+        if (requestUri.startsWith(HttpCommandProcessor.URI_WAN_BASE_URL)) {
             return RestEndpointGroup.WAN;
         }
         if (requestUri.startsWith(HttpCommandProcessor.URI_FORCESTART_CLUSTER_URL)

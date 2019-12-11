@@ -89,7 +89,7 @@ public class ManagementCenterServiceTest extends HazelcastTestSupport {
         hazelcastInstances[0] = factory.newHazelcastInstance(getConfig());
         hazelcastInstances[1] = factory.newHazelcastInstance(getConfig().setLiteMember(true));
         Config config = getConfig();
-        config.getManagementCenterConfig().setEnabled(true).setUrl("a").setScriptingEnabled(false);
+        config.getManagementCenterConfig().setScriptingEnabled(false);
         hazelcastInstances[2] = factory.newHazelcastInstance(config);
 
         members = stream(hazelcastInstances)
@@ -229,13 +229,6 @@ public class ManagementCenterServiceTest extends HazelcastTestSupport {
                     .get(ASSERT_TRUE_EVENTUALLY_TIMEOUT, SECONDS);
             assertTrue(timedMemberStateJson.isPresent());
         });
-    }
-
-    @Test
-    public void testGetTimedMemberState_empty() throws Exception {
-        Optional<String> timedMemberStateJson = managementCenterService.getTimedMemberState(members[0])
-                .get(ASSERT_TRUE_EVENTUALLY_TIMEOUT, SECONDS);
-        assertFalse(timedMemberStateJson.isPresent());
     }
 
     @Test

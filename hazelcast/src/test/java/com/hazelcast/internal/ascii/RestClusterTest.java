@@ -217,16 +217,6 @@ public class RestClusterTest {
     }
 
     @Test
-    public void testManagementCenterUrlChange() throws IOException {
-        Config config = createConfigWithRestEnabled();
-        final HazelcastInstance instance = factory.newHazelcastInstance(config);
-        final HTTPCommunicator communicator = new HTTPCommunicator(instance);
-        String clusterName = config.getClusterName();
-        assertEquals(HttpURLConnection.HTTP_NO_CONTENT,
-                communicator.changeManagementCenterUrl(clusterName, getPassword(), "http://bla").responseCode);
-    }
-
-    @Test
     public void testListNodes() throws Exception {
         Config config = createConfigWithRestEnabled();
         HazelcastInstance instance = factory.newHazelcastInstance(config);

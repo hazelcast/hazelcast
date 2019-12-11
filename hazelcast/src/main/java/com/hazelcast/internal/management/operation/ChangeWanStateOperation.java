@@ -16,9 +16,9 @@
 
 package com.hazelcast.internal.management.operation;
 
-import com.hazelcast.wan.WanPublisherState;
-import com.hazelcast.spi.impl.operationservice.AbstractLocalOperation;
 import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.spi.impl.operationservice.AbstractLocalOperation;
+import com.hazelcast.wan.WanPublisherState;
 import com.hazelcast.wan.impl.WanReplicationService;
 
 /**

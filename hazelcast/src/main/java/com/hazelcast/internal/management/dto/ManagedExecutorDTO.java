@@ -16,9 +16,9 @@
 
 package com.hazelcast.internal.management.dto;
 
-import com.hazelcast.json.internal.JsonSerializable;
 import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.internal.util.executor.ManagedExecutorService;
+import com.hazelcast.json.internal.JsonSerializable;
 
 import static com.hazelcast.internal.util.JsonUtil.getBoolean;
 import static com.hazelcast.internal.util.JsonUtil.getInt;

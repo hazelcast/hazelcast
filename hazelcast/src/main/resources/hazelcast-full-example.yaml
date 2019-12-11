@@ -88,23 +88,18 @@ hazelcast:
   #
   # ===== HAZELCAST MANAGEMENT CENTER CONFIGURATION =====
   #
-  # The value for the element "management-center" is the URL where you deploy the Management Center.
-  # It has three optional attributes:
-  # * enabled:
-  # Set to true to be able to use the Management Center. Its default value is false.
+  # The element "management-center" has the following optional attributes:
   # * scripting-enabled:
   # Set to true to allow scripting on the member, false to disallow.
-  # * update-interval:
-  # The time frequency (in seconds) for which Management Center will take information from Hazelcast cluster.
-  # Its default value is 3 seconds. Hazelcast's Open Source edition provides the Management Center with monitoring
-  # at most 2 members in your cluster. To use it for more members, you need to have either a Management Center,
+  # Default value for this config element depends on Hazelcast edition:
+  # false for Hazelcast Enterprise, true for Hazelcast (open source).
+  #
+  # Hazelcast's Open Source edition provides the Management Center with monitoring at most 3 members
+  # in your cluster. To use it for more members, you need to have either a Management Center,
   # Hazelcast Enterprise or Hazelcast Enterprise HD license.
   #
   management-center:
-    enabled: true
     scripting-enabled: false
-    update-interval: 2
-    url: http://localhost:8080/hazelcast-mancenter
   #
   # The "properties" mapping lets you add properties to some of the Hazelcast elements used to configure some of
   # the Hazelcast modules.
