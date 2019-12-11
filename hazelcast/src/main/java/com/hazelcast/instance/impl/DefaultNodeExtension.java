@@ -31,9 +31,6 @@ import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.cp.internal.persistence.CPPersistenceService;
 import com.hazelcast.cp.internal.persistence.NopCPPersistenceService;
 import com.hazelcast.hotrestart.HotRestartService;
-import com.hazelcast.internal.hotrestart.InternalHotRestartService;
-import com.hazelcast.internal.hotrestart.NoOpHotRestartService;
-import com.hazelcast.internal.hotrestart.NoopInternalHotRestartService;
 import com.hazelcast.instance.BuildInfo;
 import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.instance.EndpointQualifier;
@@ -64,6 +61,9 @@ import com.hazelcast.internal.diagnostics.SystemLogPlugin;
 import com.hazelcast.internal.diagnostics.SystemPropertiesPlugin;
 import com.hazelcast.internal.dynamicconfig.DynamicConfigListener;
 import com.hazelcast.internal.dynamicconfig.EmptyDynamicConfigListener;
+import com.hazelcast.internal.hotrestart.InternalHotRestartService;
+import com.hazelcast.internal.hotrestart.NoOpHotRestartService;
+import com.hazelcast.internal.hotrestart.NoopInternalHotRestartService;
 import com.hazelcast.internal.jmx.ManagementService;
 import com.hazelcast.internal.management.ManagementCenterConnectionFactory;
 import com.hazelcast.internal.management.TimedMemberStateFactory;
@@ -171,18 +171,36 @@ public class DefaultNodeExtension implements NodeExtension {
     }
 
     @Override
-    public void printNodeInfo() {
+    public final void printNodeInfo() {
         BuildInfo buildInfo = node.getBuildInfo();
 
+        printBannersBeforeNodeInfo();
+
+        String build = constructBuildString(buildInfo);
+        printNodeInfoInternal(buildInfo, build);
+    }
+
+    protected void printBannersBeforeNodeInfo() {
+    }
+
+    protected String constructBuildString(BuildInfo buildInfo) {
         String build = buildInfo.getBuild();
         String revision = buildInfo.getRevision();
         if (!revision.isEmpty()) {
             build += " - " + revision;
         }
-        systemLogger.info("Hazelcast " + buildInfo.getVersion()
+        return build;
+    }
+
+    private void printNodeInfoInternal(BuildInfo buildInfo, String build) {
+        systemLogger.info(getEditionString() + " " + buildInfo.getVersion()
                 + " (" + build + ") starting at " + node.getThisAddress());
         systemLogger.info("Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.");
         systemLogger.fine("Configured Hazelcast Serialization version: " + buildInfo.getSerializationVersion());
+    }
+
+    protected String getEditionString() {
+        return "Hazelcast";
     }
 
     @Override
