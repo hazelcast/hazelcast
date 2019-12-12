@@ -96,7 +96,7 @@ public class ClientNodeExtensionTest
 
         ClientConfig clientConfig = new ClientConfig();
         clientConfig.getNetworkConfig().addAddress("127.0.0.1:5555");
-        clientConfig.getConnectionStrategyConfig().getConnectionRetryConfig().setMaxBackoffMillis(2000);
+        clientConfig.getConnectionStrategyConfig().getConnectionRetryConfig().setClusterConnectTimeoutMillis(2000);
         clientConfig.setProperty(ClientProperty.HEARTBEAT_TIMEOUT.getName(), "1000");
         factory.newHazelcastClient(clientConfig);
     }

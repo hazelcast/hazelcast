@@ -71,7 +71,7 @@ public class ClientQueryCacheRecreationTest extends HazelcastTestSupport {
         ClientConfig config = new ClientConfig();
         config.addQueryCacheConfig(mapName, queryCacheConfig);
         config.getConnectionStrategyConfig().getConnectionRetryConfig()
-                .setMaxBackoffMillis((int) TimeUnit.SECONDS.toMillis(5));
+                .setClusterConnectTimeoutMillis((int) TimeUnit.SECONDS.toMillis(5));
 
         client = factory.newHazelcastClient(config);
     }

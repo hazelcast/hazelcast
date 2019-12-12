@@ -25,7 +25,6 @@ import com.hazelcast.client.impl.spi.ClientExecutionService;
 import com.hazelcast.client.impl.spi.ClientInvocationService;
 import com.hazelcast.client.impl.spi.ClientPartitionService;
 import com.hazelcast.client.impl.spi.EventHandler;
-import com.hazelcast.client.impl.spi.impl.listener.ClientListenerServiceImpl;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.exception.TargetDisconnectedException;
@@ -58,7 +57,6 @@ public abstract class AbstractClientInvocationService implements ClientInvocatio
     protected ClientConnectionManager connectionManager;
     protected ClientPartitionService partitionService;
     final ILogger invocationLogger;
-    private ClientListenerServiceImpl clientListenerService;
 
     @Probe(name = "pendingCalls", level = MANDATORY)
     private ConcurrentMap<Long, ClientInvocation> invocations = new ConcurrentHashMap<Long, ClientInvocation>();
@@ -72,7 +70,7 @@ public abstract class AbstractClientInvocationService implements ClientInvocatio
     private final boolean shouldFailOnIndeterminateOperationState;
     private final int operationBackupTimeoutMillis;
 
-    public AbstractClientInvocationService(HazelcastClientInstanceImpl client) {
+    AbstractClientInvocationService(HazelcastClientInstanceImpl client) {
         this.client = client;
         this.invocationLogger = client.getLoggingService().getLogger(ClientInvocationService.class);
         this.invocationTimeoutMillis = initInvocationTimeoutMillis();
@@ -121,7 +119,6 @@ public abstract class AbstractClientInvocationService implements ClientInvocatio
 
     public void start() {
         connectionManager = client.getConnectionManager();
-        clientListenerService = (ClientListenerServiceImpl) client.getListenerService();
         partitionService = client.getClientPartitionService();
         responseHandlerSupplier.start();
         ClientExecutionService executionService = client.getClientExecutionService();
@@ -144,7 +141,7 @@ public abstract class AbstractClientInvocationService implements ClientInvocatio
         if (isShutdown) {
             throw new HazelcastClientNotActiveException();
         }
-        registerInvocation(invocation);
+        registerInvocation(invocation, connection);
 
         ClientMessage clientMessage = invocation.getClientMessage();
         if (!writeToConnection(connection, clientMessage)) {
@@ -158,14 +155,14 @@ public abstract class AbstractClientInvocationService implements ClientInvocatio
         return connection.write(clientMessage);
     }
 
-    private void registerInvocation(ClientInvocation clientInvocation) {
+    private void registerInvocation(ClientInvocation clientInvocation, ClientConnection connection) {
 
         ClientMessage clientMessage = clientInvocation.getClientMessage();
         long correlationId = clientMessage.getCorrelationId();
         invocations.put(correlationId, clientInvocation);
         EventHandler handler = clientInvocation.getEventHandler();
         if (handler != null) {
-            clientListenerService.addEventHandler(correlationId, handler);
+            connection.addEventHandler(correlationId, handler);
         }
     }
 

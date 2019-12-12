@@ -18,7 +18,6 @@ package com.hazelcast.map.impl.proxy;
 
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.NearCacheConfig;
-import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.nearcache.NearCache;
 import com.hazelcast.internal.nearcache.impl.invalidation.BatchNearCacheInvalidation;
@@ -495,12 +494,12 @@ public class NearCachedMapProxyImpl<K, V> extends MapProxyImpl<K, V> {
     }
 
     @Override
-    public Data executeOnKeyInternal(Object key, EntryProcessor entryProcessor) {
-        key = toNearCacheKeyWithStrategy(key);
+    public InternalCompletableFuture<Data> executeOnKeyInternal(Object key, EntryProcessor entryProcessor) {
+        final Object nearCacheKey = toNearCacheKeyWithStrategy(key);
         try {
-            return super.executeOnKeyInternal(key, entryProcessor);
+            return super.executeOnKeyInternal(nearCacheKey, entryProcessor);
         } finally {
-            invalidateNearCache(key);
+            invalidateNearCache(nearCacheKey);
         }
     }
 
@@ -518,18 +517,6 @@ public class NearCachedMapProxyImpl<K, V> extends MapProxyImpl<K, V> {
             for (Object key : ncKeys) {
                 invalidateNearCache(key);
             }
-        }
-    }
-
-    @Override
-    public <R> InternalCompletableFuture<R> executeOnKeyInternal(Object key,
-                                                                 EntryProcessor<K, V, R> entryProcessor,
-                                                                 ExecutionCallback<? super R> callback) {
-        key = toNearCacheKeyWithStrategy(key);
-        try {
-            return super.executeOnKeyInternal(key, entryProcessor, callback);
-        } finally {
-            invalidateNearCache(key);
         }
     }
 

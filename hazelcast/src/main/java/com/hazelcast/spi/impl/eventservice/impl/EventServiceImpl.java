@@ -19,8 +19,8 @@ package com.hazelcast.spi.impl.eventservice.impl;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.impl.MemberImpl;
 import com.hazelcast.internal.cluster.ClusterService;
-import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.MetricDescriptor;
+import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.metrics.StaticMetricsProvider;
 import com.hazelcast.internal.nio.Connection;
@@ -61,6 +61,7 @@ import java.util.logging.Level;
 
 import static com.hazelcast.instance.EndpointQualifier.MEMBER;
 import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
+import static com.hazelcast.internal.util.ConcurrencyUtil.CALLER_RUNS;
 import static com.hazelcast.internal.util.EmptyStatement.ignore;
 import static com.hazelcast.internal.util.FutureUtil.getValue;
 import static com.hazelcast.internal.util.InvocationUtil.invokeOnStableClusterSerial;
@@ -339,7 +340,8 @@ public class EventServiceImpl implements EventService, StaticMetricsProvider {
 
     private CompletableFuture<EventRegistration> invokeOnAllMembers(Registration reg, Supplier<Operation> operationSupplier) {
         // we do not check the result value but always return registration. The method will throw exception if a failure.
-        return invokeOnStableClusterSerial(nodeEngine, operationSupplier, MAX_RETRIES).thenApply(result -> reg);
+        return invokeOnStableClusterSerial(nodeEngine, operationSupplier, MAX_RETRIES)
+                .thenApplyAsync(result -> reg, CALLER_RUNS);
     }
 
     public boolean handleRegistration(Registration reg) {
@@ -377,7 +379,7 @@ public class EventServiceImpl implements EventService, StaticMetricsProvider {
         }
 
         return invokeOnAllMembers(reg, new DeregistrationOperationSupplier(reg, nodeEngine.getClusterService()))
-                .thenApply(Objects::nonNull);
+                .thenApplyAsync(Objects::nonNull, CALLER_RUNS);
     }
 
     @Override

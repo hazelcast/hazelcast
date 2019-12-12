@@ -23,7 +23,6 @@ import com.hazelcast.config.IndexType;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.core.EntryView;
-import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.core.HazelcastJsonValue;
@@ -527,17 +526,11 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         IncrementorEntryProcessor<Integer> entryProcessor = new IncrementorEntryProcessor<>();
         final AtomicInteger result = new AtomicInteger(0);
         final CountDownLatch latch = new CountDownLatch(1);
-        map.submitToKey(1, entryProcessor, new ExecutionCallback<Integer>() {
-            @Override
-            public void onResponse(Integer response) {
-                result.set(response);
-                latch.countDown();
+        map.submitToKey(1, entryProcessor).whenCompleteAsync((v, t) -> {
+            if (t == null) {
+                result.set(v);
             }
-
-            @Override
-            public void onFailure(Throwable t) {
-                latch.countDown();
-            }
+            latch.countDown();
         });
 
         latch.await(10, TimeUnit.SECONDS);
@@ -1039,18 +1032,7 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         map.put(1, 1);
 
         final CountDownLatch latch = new CountDownLatch(1);
-        ExecutionCallback<Integer> executionCallback = new ExecutionCallback<Integer>() {
-            @Override
-            public void onResponse(Integer response) {
-                latch.countDown();
-            }
-
-            @Override
-            public void onFailure(Throwable t) {
-            }
-        };
-
-        map.submitToKey(1, new IncrementorEntryProcessor<>(), executionCallback);
+        map.submitToKey(1, new IncrementorEntryProcessor<>()).thenRunAsync(latch::countDown);
         assertTrue(latch.await(5, TimeUnit.SECONDS));
         assertEquals(2, (int) map.get(1));
     }

@@ -37,6 +37,7 @@ import java.security.Permission;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
+import static com.hazelcast.internal.util.ConcurrencyUtil.CALLER_RUNS;
 import static com.hazelcast.spi.impl.InternalCompletableFuture.newCompletedFuture;
 
 /**
@@ -61,7 +62,7 @@ public class SetAddListenerMessageTask
         }
 
         return eventService.registerListenerAsync(getServiceName(), parameters.name, filter, listener)
-                           .thenApply(EventRegistration::getId);
+                           .thenApplyAsync(EventRegistration::getId, CALLER_RUNS);
     }
 
     private ItemListener createItemListener(final ClientEndpoint endpoint, final Data partitionKey) {

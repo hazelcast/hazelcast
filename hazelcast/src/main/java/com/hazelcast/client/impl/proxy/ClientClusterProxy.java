@@ -16,7 +16,7 @@
 
 package com.hazelcast.client.impl.proxy;
 
-import com.hazelcast.client.impl.spi.impl.ClientClusterViewService;
+import com.hazelcast.client.impl.spi.impl.ClientClusterServiceImpl;
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.cluster.Cluster;
 import com.hazelcast.cluster.Member;
@@ -37,9 +37,9 @@ import java.util.UUID;
  */
 public class ClientClusterProxy implements Cluster {
 
-    private final ClientClusterViewService clusterService;
+    private final ClientClusterServiceImpl clusterService;
 
-    public ClientClusterProxy(ClientClusterViewService clusterService) {
+    public ClientClusterProxy(ClientClusterServiceImpl clusterService) {
         this.clusterService = clusterService;
     }
 

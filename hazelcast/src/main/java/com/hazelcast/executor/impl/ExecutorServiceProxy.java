@@ -417,8 +417,17 @@ public class ExecutorServiceProxy
         Data taskData = nodeEngine.toData(task);
         CallableTaskOperation op = new CallableTaskOperation(name, null, taskData);
         OperationService operationService = nodeEngine.getOperationService();
-        operationService.createInvocationBuilder(DistributedExecutorService.SERVICE_NAME, op, partitionId)
-                .setExecutionCallback((ExecutionCallback) callback).invoke();
+        InvocationFuture<T> future = operationService
+                .createInvocationBuilder(DistributedExecutorService.SERVICE_NAME, op, partitionId)
+                .invoke();
+        if (callback != null) {
+            future.whenCompleteAsync(new ExecutionCallbackAdapter<>(callback))
+                  .whenCompleteAsync((v, t) -> {
+                      if (t instanceof RejectedExecutionException) {
+                          callback.onFailure(t);
+                      }
+                  });
+        }
     }
 
     @Override
@@ -450,9 +459,17 @@ public class ExecutorServiceProxy
         MemberCallableTaskOperation op = new MemberCallableTaskOperation(name, uuid, taskData);
         OperationService operationService = nodeEngine.getOperationService();
         Address address = member.getAddress();
-        operationService
+        InvocationFuture<T> future = operationService
                 .createInvocationBuilder(DistributedExecutorService.SERVICE_NAME, op, address)
-                .setExecutionCallback((ExecutionCallback) callback).invoke();
+                .invoke();
+        if (callback != null) {
+            future.whenCompleteAsync(new ExecutionCallbackAdapter<>(callback))
+                  .whenCompleteAsync((v, t) -> {
+                        if (t instanceof RejectedExecutionException) {
+                            callback.onFailure(t);
+                        }
+                    });
+        }
     }
 
     @Override

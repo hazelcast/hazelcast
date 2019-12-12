@@ -69,7 +69,7 @@ public class ClientConnectionTest extends HazelcastTestSupport {
 
         hazelcastFactory.newHazelcastInstance();
         ClientConfig config = new ClientConfig();
-        config.getConnectionStrategyConfig().getConnectionRetryConfig().setMaxBackoffMillis(2000);
+        config.getConnectionStrategyConfig().getConnectionRetryConfig().setClusterConnectTimeoutMillis(2000);
         config.getNetworkConfig().addAddress(illegalAddress);
         hazelcastFactory.newHazelcastClient(config);
     }

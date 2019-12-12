@@ -91,6 +91,7 @@ import static com.hazelcast.cache.impl.PreJoinCacheConfig.asCacheConfig;
 import static com.hazelcast.config.CacheConfigAccessor.getTenantControl;
 import static com.hazelcast.internal.config.ConfigValidator.checkCacheConfig;
 import static com.hazelcast.internal.metrics.impl.ProviderHelper.provide;
+import static com.hazelcast.internal.util.ConcurrencyUtil.CALLER_RUNS;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 import static com.hazelcast.internal.util.FutureUtil.RETHROW_EVERYTHING;
 import static com.hazelcast.internal.util.MapUtil.createHashMap;
@@ -612,7 +613,8 @@ public abstract class AbstractCacheService implements ICacheService, PreJoinAwar
         EventService eventService = getNodeEngine().getEventService();
 
         return eventService.registerListenerAsync(AbstractCacheService.SERVICE_NAME, cacheNameWithPrefix, listener)
-                           .thenApply((eventRegistration) -> updateRegisteredListeners(listener, eventRegistration));
+                           .thenApplyAsync((eventRegistration) -> updateRegisteredListeners(listener, eventRegistration),
+                                   CALLER_RUNS);
     }
 
     @Override
@@ -621,7 +623,8 @@ public abstract class AbstractCacheService implements ICacheService, PreJoinAwar
         EventService eventService = getNodeEngine().getEventService();
 
         return eventService.registerListenerAsync(AbstractCacheService.SERVICE_NAME, cacheNameWithPrefix, eventFilter, listener)
-                           .thenApply((eventRegistration) -> updateRegisteredListeners(listener, eventRegistration));
+                           .thenApplyAsync((eventRegistration) -> updateRegisteredListeners(listener, eventRegistration),
+                                   CALLER_RUNS);
     }
 
     private UUID updateRegisteredListeners(CacheEventListener listener, EventRegistration eventRegistration) {
@@ -663,10 +666,10 @@ public abstract class AbstractCacheService implements ICacheService, PreJoinAwar
         EventService eventService = getNodeEngine().getEventService();
 
         return eventService.deregisterListenerAsync(AbstractCacheService.SERVICE_NAME, cacheNameWithPrefix, registrationId)
-                           .thenApply(result -> {
+                           .thenApplyAsync(result -> {
                                removeFromLocalResources(registrationId);
                                return result;
-                           });
+                           }, CALLER_RUNS);
     }
 
     private void removeFromLocalResources(UUID registrationId) {

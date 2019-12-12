@@ -56,6 +56,7 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
 import static com.hazelcast.internal.metrics.impl.ProviderHelper.provide;
+import static com.hazelcast.internal.util.ConcurrencyUtil.CALLER_RUNS;
 import static com.hazelcast.internal.util.ConcurrencyUtil.getOrPutSynchronized;
 
 public class TopicService implements ManagedService, RemoteService, EventPublishingService,
@@ -198,7 +199,8 @@ public class TopicService implements ManagedService, RemoteService, EventPublish
 
     public
     Future<UUID> addMessageListenerAsync(@Nonnull String name, @Nonnull MessageListener listener) {
-        return eventService.registerListenerAsync(TopicService.SERVICE_NAME, name, listener).thenApply(EventRegistration::getId);
+        return eventService.registerListenerAsync(TopicService.SERVICE_NAME, name, listener)
+                           .thenApplyAsync(EventRegistration::getId, CALLER_RUNS);
     }
 
     public boolean removeMessageListener(@Nonnull String name, @Nonnull UUID registrationId) {

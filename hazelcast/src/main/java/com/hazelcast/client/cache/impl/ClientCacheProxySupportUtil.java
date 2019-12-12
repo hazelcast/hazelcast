@@ -48,6 +48,7 @@ import java.util.function.BiConsumer;
 
 import static com.hazelcast.cache.CacheEventType.PARTITION_LOST;
 import static com.hazelcast.config.InMemoryFormat.NATIVE;
+import static com.hazelcast.internal.util.ConcurrencyUtil.CALLER_RUNS;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 import static com.hazelcast.internal.util.Preconditions.checkTrue;
 
@@ -88,7 +89,7 @@ final class ClientCacheProxySupportUtil {
         if (callback == null) {
             return;
         }
-        delegatingFuture.whenComplete(callback);
+        delegatingFuture.whenCompleteAsync(callback, CALLER_RUNS);
     }
 
     static NearCacheConfig checkNearCacheConfig(NearCacheConfig nearCacheConfig, NativeMemoryConfig nativeMemoryConfig) {

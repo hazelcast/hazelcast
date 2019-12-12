@@ -95,6 +95,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static com.hazelcast.client.config.ClientConnectionStrategyConfig.ReconnectMode.OFF;
 import static com.hazelcast.client.impl.management.ManagementCenterService.MC_CLIENT_MODE_PROP;
@@ -145,8 +146,11 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
     private volatile Credentials currentCredentials;
     private volatile int partitionCount = -1;
     private volatile UUID clusterId;
-    //possible states STARTING , CONNECTED , DISCONNECTED
-    private volatile LifecycleEvent.LifecycleState state = LifecycleEvent.LifecycleState.STARTING;
+    private volatile AtomicReference<ClusterState> state = new AtomicReference<>(ClusterState.STARTING);
+
+    private enum ClusterState {
+        STARTING, CONNECTED, DISCONNECTED
+    }
 
     public ClientConnectionManagerImpl(HazelcastClientInstanceImpl client) {
         this.client = client;
@@ -338,7 +342,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
 
         while (discoveryService.hasNext() && client.getLifecycleService().isRunning()) {
             discoveryService.current().destroy();
-
+            client.onClusterChange();
             CandidateClusterContext candidateClusterContext = discoveryService.next();
             candidateClusterContext.start();
             ((ClientLoggingService) client.getLoggingService()).updateClusterName(candidateClusterContext.getClusterName());
@@ -346,6 +350,8 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
             logger.info("Trying to connect to next cluster with client name: " + candidateClusterContext.getClusterName());
 
             if (connectToCandidate(candidateClusterContext)) {
+                client.waitForInitialMembershipEvents();
+                fireLifecycleEvent(LifecycleEvent.LifecycleState.CLIENT_CHANGED_CLUSTER);
                 return;
             }
         }
@@ -409,12 +415,12 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
 
     @Override
     public void checkInvocationAllowed() throws IOException {
-        LifecycleEvent.LifecycleState state = this.state;
-        if (state.equals(LifecycleEvent.LifecycleState.CLIENT_CONNECTED)) {
+        ClusterState state = this.state.get();
+        if (state.equals(ClusterState.CONNECTED)) {
             return;
         }
 
-        if (state.equals(LifecycleEvent.LifecycleState.STARTING)) {
+        if (state.equals(ClusterState.STARTING)) {
             if (asyncStart) {
                 throw new HazelcastClientOfflineException();
             } else {
@@ -513,7 +519,6 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
 
     @Override
     public Connection getConnection(@Nonnull Address target) {
-        checkClientActive();
         return activeConnections.get(resolveAddress(target));
     }
 
@@ -655,9 +660,11 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
         if (activeConnections.remove(resolveAddress(endpoint), connection)) {
             logger.info("Removed connection to endpoint: " + endpoint + ", connection: " + connection);
             if (connectionCount.decrementAndGet() == 0) {
-                state = LifecycleEvent.LifecycleState.CLIENT_DISCONNECTED;
-                fireLifecycleEvent(LifecycleEvent.LifecycleState.CLIENT_DISCONNECTED);
-                triggerReconnectToCluster();
+                if (state.compareAndSet(ClusterState.CONNECTED, ClusterState.DISCONNECTED)) {
+                    fireLifecycleEvent(LifecycleEvent.LifecycleState.CLIENT_DISCONNECTED);
+                    triggerReconnectToCluster();
+                }
+
             }
             fireConnectionRemovedEvent(connection);
         } else {
@@ -734,9 +741,6 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
         try {
             response = invocationFuture.get(authenticationTimeout, MILLISECONDS);
         } catch (Exception e) {
-            if (logger.isFinestEnabled()) {
-                logger.finest("Authentication of " + connection + " failed.", e);
-            }
             connection.close("Failed to authenticate connection", e);
             throw rethrow(e);
         }
@@ -745,62 +749,70 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
         AuthenticationStatus authenticationStatus = AuthenticationStatus.getById(result.status);
         switch (authenticationStatus) {
             case AUTHENTICATED:
-                checkPartitionCount(result.partitionCount);
-                connection.setConnectedServerVersion(result.serverHazelcastVersion);
-                connection.setRemoteEndpoint(result.address);
-                UUID newClusterId = result.clusterId;
-
-                if (logger.isFineEnabled()) {
-                    logger.fine("Checking the cluster id.Old: " + this.clusterId + ", new: " + newClusterId);
-                }
-
-                boolean changedCluster = clusterId != null && !newClusterId.equals(clusterId);
-                clusterId = newClusterId;
-
-                if (changedCluster) {
-                    client.onClusterChange();
-                }
-                activeConnections.put(resolveAddress(result.address), connection);
-                fireConnectionAddedEvent(connection);
-
-                logger.info("Authenticated with server " + result.address + ", server version:" + connection
-                        .getConnectedServerVersion() + " Local address: " + connection.getLocalSocketAddress());
-
-                establishConnectedState(newClusterId, changedCluster);
-
-                // Check if connection is closed by remote before authentication complete, if that is the case
-                // we need to remove it back from active connections.
-                // Race description from https://github.com/hazelcast/hazelcast/pull/8832.(A little bit changed)
-                // - open a connection client -> member
-                // - send auth message
-                // - receive auth reply -> reply processing is offloaded to an executor. Did not start to run yet.
-                // - member closes the connection -> the connection is trying to removed from map
-                //                                                     but it was not there to begin with
-                // - the executor start processing the auth reply -> it put the connection to the connection map.
-                // - we end up with a closed connection in activeConnections map
-                if (!connection.isAlive()) {
-                    removeFromActiveConnections(connection);
-                }
+                handleAuthResponse(connection, result);
                 break;
             case CREDENTIALS_FAILED:
-                throw new AuthenticationException("Invalid credentials!");
+                AuthenticationException authException = new AuthenticationException("Invalid credentials!");
+                connection.close("Failed to authenticate connection", authException);
+                throw authException;
             case NOT_ALLOWED_IN_CLUSTER:
-                throw new ClientNotAllowedInClusterException("Client is not allowed in the cluster");
+                ClientNotAllowedInClusterException notAllowedException =
+                        new ClientNotAllowedInClusterException("Client is not allowed in the cluster");
+                connection.close("Failed to authenticate connection", notAllowedException);
+                throw notAllowedException;
             default:
-                throw new AuthenticationException("Authentication status code not supported. status: "
-                        + authenticationStatus);
+                AuthenticationException exception =
+                        new AuthenticationException("Authentication status code not supported. status: " + authenticationStatus);
+                connection.close("Failed to authenticate connection", exception);
+                throw exception;
         }
     }
 
-    private void establishConnectedState(UUID newClusterId, boolean changedCluster) {
+    private void handleAuthResponse(ClientConnection connection, ClientAuthenticationCodec.ResponseParameters result) {
+        checkPartitionCount(result.partitionCount);
+        connection.setConnectedServerVersion(result.serverHazelcastVersion);
+        connection.setRemoteEndpoint(result.address);
+        UUID newClusterId = result.clusterId;
+
+        if (logger.isFineEnabled()) {
+            logger.fine("Checking the cluster id.Old: " + this.clusterId + ", new: " + newClusterId);
+        }
+
         boolean isFirstConnectionAfterDisconnection = connectionCount.incrementAndGet() == 1;
+        boolean changedCluster = false;
         if (isFirstConnectionAfterDisconnection) {
-            if (changedCluster) {
-                clusterConnectionExecutor.execute(() -> sendStatesToCluster(newClusterId));
-            } else {
-                state = LifecycleEvent.LifecycleState.CLIENT_CONNECTED;
-                fireLifecycleEvent(LifecycleEvent.LifecycleState.CLIENT_CONNECTED);
-            }
+            changedCluster = clusterId != null && !newClusterId.equals(clusterId);
+            clusterId = newClusterId;
+        }
+
+        if (changedCluster) {
+            client.onClusterRestart();
+        }
+        activeConnections.put(resolveAddress(result.address), connection);
+        fireConnectionAddedEvent(connection);
+
+        logger.info("Authenticated with server " + result.address + ", server version:" + connection
+                .getConnectedServerVersion() + " Local address: " + connection.getLocalSocketAddress());
+
+        if (changedCluster) {
+            clusterConnectionExecutor.execute(() -> sendStatesToCluster(newClusterId));
+        } else if (isFirstConnectionAfterDisconnection) {
+            state.set(ClusterState.CONNECTED);
+            fireLifecycleEvent(LifecycleEvent.LifecycleState.CLIENT_CONNECTED);
+        }
+
+        // Check if connection is closed by remote before authentication complete, if that is the case
+        // we need to remove it back from active connections.
+        // Race description from https://github.com/hazelcast/hazelcast/pull/8832.(A little bit changed)
+        // - open a connection client -> member
+        // - send auth message
+        // - receive auth reply -> reply processing is offloaded to an executor. Did not start to run yet.
+        // - member closes the connection -> the connection is trying to removed from map
+        //                                                     but it was not there to begin with
+        // - the executor start processing the auth reply -> it put the connection to the connection map.
+        // - we end up with a closed connection in activeConnections map
+        if (!connection.isAlive()) {
+            removeFromActiveConnections(connection);
         }
     }
 
@@ -882,11 +894,8 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
             if (targetClusterId.equals(clusterId)) {
                 //still possible to send state twice to same cluster, since sendState is idempotent, there is no problem
                 client.sendStateToCluster();
-                state = LifecycleEvent.LifecycleState.CLIENT_CONNECTED;
+                state.set(ClusterState.CONNECTED);
                 fireLifecycleEvent(LifecycleEvent.LifecycleState.CLIENT_CONNECTED);
-                if (failoverConfigProvided) {
-                    fireLifecycleEvent(LifecycleEvent.LifecycleState.CLIENT_CHANGED_CLUSTER);
-                }
             }
         } catch (Exception e) {
             String clusterName = discoveryService.current().getClusterName();

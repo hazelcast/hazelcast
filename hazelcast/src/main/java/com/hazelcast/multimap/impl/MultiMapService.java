@@ -86,6 +86,7 @@ import java.util.concurrent.Future;
 
 import static com.hazelcast.internal.config.ConfigValidator.checkMultiMapConfig;
 import static com.hazelcast.internal.metrics.impl.ProviderHelper.provide;
+import static com.hazelcast.internal.util.ConcurrencyUtil.CALLER_RUNS;
 import static com.hazelcast.internal.util.ConcurrencyUtil.getOrPutIfAbsent;
 import static com.hazelcast.internal.util.ConcurrencyUtil.getOrPutSynchronized;
 import static com.hazelcast.internal.util.MapUtil.createConcurrentHashMap;
@@ -270,7 +271,8 @@ public class MultiMapService implements ManagedService, RemoteService, Fragmente
                                                    boolean includeValue) {
         EventService eventService = nodeEngine.getEventService();
         MultiMapEventFilter filter = new MultiMapEventFilter(includeValue, key);
-        return eventService.registerListenerAsync(SERVICE_NAME, name, filter, listener).thenApply(EventRegistration::getId);
+        return eventService.registerListenerAsync(SERVICE_NAME, name, filter, listener)
+                           .thenApplyAsync(EventRegistration::getId, CALLER_RUNS);
     }
 
     public UUID addLocalListener(String name,

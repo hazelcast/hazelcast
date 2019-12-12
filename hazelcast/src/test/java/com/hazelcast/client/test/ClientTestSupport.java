@@ -19,9 +19,15 @@ package com.hazelcast.client.test;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.clientside.HazelcastClientProxy;
 import com.hazelcast.client.impl.connection.ClientConnectionManager;
+import com.hazelcast.client.impl.connection.nio.ClientConnection;
+import com.hazelcast.client.impl.spi.EventHandler;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.test.HazelcastTestSupport;
+
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
 
@@ -77,5 +83,15 @@ public class ClientTestSupport extends HazelcastTestSupport {
             ClientConnectionManager connectionManager = getHazelcastClientInstanceImpl(client).getConnectionManager();
             assertEquals(numberOfServers, connectionManager.getActiveConnections().size());
         });
+    }
+
+    protected Map<Long, EventHandler> getAllEventHandlers(HazelcastInstance client) {
+        ClientConnectionManager connectionManager = getHazelcastClientInstanceImpl(client).getConnectionManager();
+        Collection<ClientConnection> activeConnections = connectionManager.getActiveConnections();
+        HashMap<Long, EventHandler> map = new HashMap<>();
+        for (ClientConnection activeConnection : activeConnections) {
+            map.putAll(activeConnection.getEventHandlers());
+        }
+        return map;
     }
 }

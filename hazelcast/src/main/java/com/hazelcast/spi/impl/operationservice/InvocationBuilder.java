@@ -16,15 +16,12 @@
 
 package com.hazelcast.spi.impl.operationservice;
 
-import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.IndeterminateOperationStateException;
 import com.hazelcast.internal.nio.EndpointManager;
 import com.hazelcast.internal.partition.InternalPartition;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.spi.impl.operationservice.impl.InvocationFuture;
-
-import javax.annotation.Nullable;
 
 import static com.hazelcast.internal.util.Preconditions.checkFalse;
 import static com.hazelcast.spi.impl.operationservice.Operation.GENERIC_PARTITION_ID;
@@ -66,7 +63,6 @@ public abstract class InvocationBuilder {
     protected final Operation op;
     protected final int partitionId;
     protected final Address target;
-    protected ExecutionCallback<Object> executionCallback;
     protected Runnable doneCallback;
 
     protected long callTimeout = DEFAULT_CALL_TIMEOUT;
@@ -251,34 +247,9 @@ public abstract class InvocationBuilder {
         return callTimeout;
     }
 
-    /**
-     * Gets the ExecutionCallback. If none is set, null is returned.
-     *
-     * @return gets the ExecutionCallback.
-     */
-    public ExecutionCallback<Object> getExecutionCallback() {
-        return executionCallback;
-    }
-
-    /**
-     * Sets the ExecutionCallback.
-     *
-     * @param executionCallback the new ExecutionCallback. If null is passed, the ExecutionCallback is unset.
-     * @return the updated InvocationBuilder.
-     */
-    public InvocationBuilder setExecutionCallback(
-            @Nullable ExecutionCallback<Object> executionCallback) {
-        this.executionCallback = executionCallback;
-        return this;
-    }
-
     public InvocationBuilder setEndpointManager(EndpointManager endpointManager) {
         this.endpointManager = endpointManager;
         return this;
-    }
-
-    protected ExecutionCallback getTargetExecutionCallback() {
-        return executionCallback;
     }
 
     /**

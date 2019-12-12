@@ -16,7 +16,6 @@
 
 package com.hazelcast.spi.impl.operationservice.impl;
 
-import com.hazelcast.executor.impl.ExecutionCallbackAdapter;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.spi.impl.operationservice.InvocationBuilder;
 import com.hazelcast.spi.impl.operationservice.Operation;
@@ -57,11 +56,6 @@ class InvocationBuilderImpl extends InvocationBuilder {
                     callTimeout, resultDeserialized, endpointManager);
         }
 
-        InvocationFuture future = invocation.invoke();
-        if (executionCallback != null) {
-            future.whenCompleteAsync(new ExecutionCallbackAdapter(executionCallback));
-        }
-
-        return future;
+        return invocation.invoke();
     }
 }

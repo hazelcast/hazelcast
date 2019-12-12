@@ -103,7 +103,7 @@ public class ClientQueryCacheDestroyResourcesTest extends ClientTestSupport {
         ClientListenerServiceImpl listenerService = (ClientListenerServiceImpl) client.getListenerService();
         Map<UUID, ClientListenerRegistration> registrations = listenerService.getRegistrations();
 
-        //we expect at least 2 for backup listener and cluster view listener
-        assertEquals(registrations.toString(), 2, registrations.size());
+        //we expect at least 1 for backup listener
+        assertEquals(registrations.toString(), 1, registrations.size());
     }
 }
