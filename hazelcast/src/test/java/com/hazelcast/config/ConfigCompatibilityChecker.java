@@ -193,6 +193,14 @@ public class ConfigCompatibilityChecker {
         return !(i1.hasNext() || i2.hasNext());
     }
 
+    private static boolean isCompatible(EvictionConfig c1, EvictionConfig c2) {
+        return new EvictionConfigChecker().check(c1, c2);
+    }
+
+    private static boolean isCompatible(PredicateConfig c1, PredicateConfig c2) {
+        return new PredicateConfigChecker().check(c1, c2);
+    }
+
     private static boolean isCompatible(CollectionConfig c1, CollectionConfig c2) {
         return c1 == c2 || !(c1 == null || c2 == null)
                 && nullSafeEqual(c1.getName(), c2.getName())
@@ -269,12 +277,83 @@ public class ConfigCompatibilityChecker {
         }
     }
 
+    public static void checkSSLConfig(SSLConfig expected, SSLConfig actual) {
+        checkCompatibleConfigs("ssl", expected, actual, new SSLConfigChecker());
+    }
+
+    public static void checkQueryCacheConfig(QueryCacheConfig expected, QueryCacheConfig actual) {
+        checkCompatibleConfigs("query-cache", expected, actual, new QueryCacheConfigChecker());
+    }
+
+    public static void checkNearCacheConfig(NearCacheConfig expected, NearCacheConfig actual) {
+        checkCompatibleConfigs("near-cache", expected, actual, new NearCacheConfigChecker());
+    }
+
     private abstract static class ConfigChecker<T> {
 
         abstract boolean check(T t1, T t2);
 
         T getDefault(Config c) {
             return null;
+        }
+    }
+
+    private static class NearCacheConfigChecker extends ConfigChecker<NearCacheConfig> {
+        @Override
+        boolean check(NearCacheConfig c1, NearCacheConfig c2) {
+            return c1 == c2 || (c1 != null && c2 != null
+                && c1.isCacheLocalEntries() == c2.isCacheLocalEntries()
+                && c1.isSerializeKeys() == c2.isSerializeKeys()
+                && c1.isInvalidateOnChange() == c2.isInvalidateOnChange()
+                && c1.getTimeToLiveSeconds() == c2.getTimeToLiveSeconds()
+                && c1.getMaxIdleSeconds() == c2.getMaxIdleSeconds()
+                && c1.getInMemoryFormat() == c2.getInMemoryFormat()
+                && c1.getLocalUpdatePolicy() == c2.getLocalUpdatePolicy()
+                && isCompatible(c1.getEvictionConfig(), c2.getEvictionConfig())
+                && nullSafeEqual(c1.getPreloaderConfig(), c2.getPreloaderConfig())
+            );
+        }
+    }
+
+    private static class QueryCacheConfigChecker extends ConfigChecker<QueryCacheConfig> {
+        @Override
+        boolean check(QueryCacheConfig c1, QueryCacheConfig c2) {
+            return c1 == c2 || (c1 != null && c2 != null
+                && c1.getBatchSize() == c2.getBatchSize()
+                && c1.getBufferSize() == c2.getBufferSize()
+                && c1.getDelaySeconds() == c2.getDelaySeconds()
+                && c1.isIncludeValue() == c2.isIncludeValue()
+                && c1.isPopulate() == c2.isPopulate()
+                && c1.isCoalesce() == c2.isCoalesce()
+                && c1.getInMemoryFormat() == c2.getInMemoryFormat()
+                && isCompatible(c1.getEvictionConfig(), c2.getEvictionConfig())
+                && isCollectionCompatible(c1.getEntryListenerConfigs(), c2.getEntryListenerConfigs(), new EntryListenerConfigChecker())
+                && isCollectionCompatible(c1.getIndexConfigs(), c2.getIndexConfigs(), new IndexConfigChecker())
+                && isCompatible(c1.getPredicateConfig(), c2.getPredicateConfig()));
+        }
+    }
+
+    private static class PredicateConfigChecker extends ConfigChecker<PredicateConfig> {
+        @Override
+        boolean check(PredicateConfig c1, PredicateConfig c2) {
+            return c1 == c2 || (c1 != null && c2 != null
+                && nullSafeEqual(
+                    classNameOrImpl(c1.getClassName(), c1.getImplementation()),
+                    classNameOrImpl(c2.getClassName(), c2.getImplementation()))
+                && nullSafeEqual(c1.getSql(), c2.getSql()));
+        }
+    }
+
+    private static class EvictionConfigChecker extends ConfigChecker<EvictionConfig> {
+        @Override
+        boolean check(EvictionConfig c1, EvictionConfig c2) {
+            return c1 == c2 || (c1 != null && c2 != null
+                && c1.getSize() == c2.getSize()
+                && c1.getMaxSizePolicy() == c2.getMaxSizePolicy()
+                && c1.getEvictionPolicy() == c2.getEvictionPolicy()
+                && nullSafeEqual(
+                    classNameOrImpl(c1.getComparatorClassName(), c1.getComparator()),
+                    classNameOrImpl(c2.getComparatorClassName(), c2.getComparator())));
         }
     }
 
@@ -871,7 +950,9 @@ public class ConfigCompatibilityChecker {
             return c1 == c2 || !(c1 == null || c2 == null)
                     && nullSafeEqual(c1.isLocal(), c2.isLocal())
                     && nullSafeEqual(c1.isIncludeValue(), c2.isIncludeValue())
-                    && nullSafeEqual(c1.getClassName(), c2.getClassName());
+                    && nullSafeEqual(
+                        classNameOrImpl(c1.getClassName(), c1.getImplementation()),
+                        classNameOrImpl(c2.getClassName(), c2.getImplementation()));
         }
     }
 
@@ -1174,8 +1255,9 @@ public class ConfigCompatibilityChecker {
             boolean c1Disabled = c1 == null || !c1.isEnabled();
             boolean c2Disabled = c2 == null || !c2.isEnabled();
             return c1 == c2 || (c1Disabled && c2Disabled) || (c1 != null && c2 != null
-                    && nullSafeEqual(c1.getFactoryClassName(), c2.getFactoryClassName())
-                    && nullSafeEqual(c1.getFactoryImplementation(), c2.getFactoryImplementation())
+                    && nullSafeEqual(
+                        classNameOrImpl(c1.getFactoryClassName(), c1.getFactoryImplementation()),
+                        classNameOrImpl(c2.getFactoryClassName(), c2.getFactoryImplementation()))
                     && nullSafeEqual(c1.getProperties(), c2.getProperties()));
         }
     }

@@ -19,6 +19,7 @@ package com.hazelcast.client.config;
 import com.hazelcast.client.LoadBalancer;
 import com.hazelcast.client.util.RandomLB;
 import com.hazelcast.config.AliasedDiscoveryConfig;
+import com.hazelcast.config.ConfigCompatibilityChecker;
 import com.hazelcast.config.CredentialsFactoryConfig;
 import com.hazelcast.config.DiscoveryConfig;
 import com.hazelcast.config.DiscoveryStrategyConfig;
@@ -215,7 +216,7 @@ public class ClientConfigXmlGeneratorTest extends HazelcastTestSupport {
         clientConfig.getNetworkConfig().setSSLConfig(expected);
 
         SSLConfig actual = newConfigViaGenerator().getNetworkConfig().getSSLConfig();
-        assertEquals(expected, actual);
+        ConfigCompatibilityChecker.checkSSLConfig(expected, actual);
     }
 
     private static class TestSSLContextFactory implements SSLContextFactory {
@@ -451,7 +452,7 @@ public class ClientConfigXmlGeneratorTest extends HazelcastTestSupport {
         assertTrue(actual instanceof RandomLB);
     }
 
-    private NearCacheConfig createNearCacheConfig() {
+    private NearCacheConfig createNearCacheConfig(String name) {
         NearCacheConfig expected = new NearCacheConfig();
         expected.setInMemoryFormat(InMemoryFormat.NATIVE)
             .setSerializeKeys(true)
@@ -459,13 +460,13 @@ public class ClientConfigXmlGeneratorTest extends HazelcastTestSupport {
             .setTimeToLiveSeconds(randomInt())
             .setMaxIdleSeconds(randomInt())
             .setLocalUpdatePolicy(CACHE_ON_UPDATE)
-            .setName(randomString());
+            .setName(name);
         return expected;
     }
 
     @Test
     public void nearCache() {
-        NearCacheConfig expected = createNearCacheConfig()
+        NearCacheConfig expected = createNearCacheConfig(randomString())
                 .setPreloaderConfig(
                         new NearCachePreloaderConfig()
                                 .setEnabled(true)
@@ -487,8 +488,9 @@ public class ClientConfigXmlGeneratorTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void nearCache_evictionConfigWithPolicyCompartor() {
-        NearCacheConfig expected = createNearCacheConfig()
+    public void nearCache_evictionConfigWithPolicyComparator() {
+        String nearCacheName = randomString();
+        NearCacheConfig expected = createNearCacheConfig(nearCacheName)
             .setPreloaderConfig(
                 new NearCachePreloaderConfig()
                     .setEnabled(true)
@@ -505,8 +507,8 @@ public class ClientConfigXmlGeneratorTest extends HazelcastTestSupport {
             );
         clientConfig.addNearCacheConfig(expected);
 
-        Map<String, NearCacheConfig> actual = newConfigViaGenerator().getNearCacheConfigMap();
-        assertMap(clientConfig.getNearCacheConfigMap(), actual);
+        NearCacheConfig actual = newConfigViaGenerator().getNearCacheConfigMap().get(nearCacheName);
+        ConfigCompatibilityChecker.checkNearCacheConfig(expected, actual);
     }
 
     private static class TestEvictionPolicyComparator implements EvictionPolicyComparator {
@@ -516,11 +518,11 @@ public class ClientConfigXmlGeneratorTest extends HazelcastTestSupport {
         }
     }
 
-    private QueryCacheConfig createQueryCacheConfig() {
+    private QueryCacheConfig createQueryCacheConfig(String name) {
         return new QueryCacheConfig()
             .setBufferSize(randomInt())
             .setInMemoryFormat(InMemoryFormat.OBJECT)
-            .setName(randomString())
+            .setName(name)
             .setBatchSize(randomInt())
             .setCoalesce(true)
             .setDelaySeconds(randomInt())
@@ -542,7 +544,7 @@ public class ClientConfigXmlGeneratorTest extends HazelcastTestSupport {
 
     @Test
     public void queryCache() {
-        QueryCacheConfig expected = createQueryCacheConfig()
+        QueryCacheConfig expected = createQueryCacheConfig(randomString())
             .addEntryListenerConfig(
                 (EntryListenerConfig) new EntryListenerConfig()
                     .setIncludeValue(true)
@@ -556,16 +558,18 @@ public class ClientConfigXmlGeneratorTest extends HazelcastTestSupport {
 
     @Test
     public void queryCache_withEntryEventListenerClass() {
-        QueryCacheConfig expected = createQueryCacheConfig()
+        String queryCacheName = randomString();
+        QueryCacheConfig expected = createQueryCacheConfig(queryCacheName)
             .addEntryListenerConfig(
                 new EntryListenerConfig()
                     .setIncludeValue(true)
                     .setLocal(true)
                     .setImplementation(new TestMapListener()));
-        clientConfig.addQueryCacheConfig(randomString(), expected);
+        String mapName = randomString();
+        clientConfig.addQueryCacheConfig(mapName, expected);
 
-        Map<String, Map<String, QueryCacheConfig>> actual = newConfigViaGenerator().getQueryCacheConfigs();
-        assertMap(clientConfig.getQueryCacheConfigs(), actual);
+        QueryCacheConfig actual = newConfigViaGenerator().getQueryCacheConfigs().get(mapName).get(queryCacheName);
+        ConfigCompatibilityChecker.checkQueryCacheConfig(expected, actual);
     }
 
     private static class TestMapListener implements MapListener { }
