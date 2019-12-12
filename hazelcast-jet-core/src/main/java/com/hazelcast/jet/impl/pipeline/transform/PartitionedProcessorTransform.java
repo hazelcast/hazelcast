@@ -58,7 +58,7 @@ public final class PartitionedProcessorTransform<T, K> extends ProcessorTransfor
 
     public static <S, T, K, R> PartitionedProcessorTransform<T, K> mapUsingServicePartitionedTransform(
             @Nonnull Transform upstream,
-            @Nonnull ServiceFactory<S> serviceFactory,
+            @Nonnull ServiceFactory<?, S> serviceFactory,
             @Nonnull BiFunctionEx<? super S, ? super T, ? extends R> mapFn,
             @Nonnull FunctionEx<? super T, ? extends K> partitionKeyFn
     ) {
@@ -69,7 +69,7 @@ public final class PartitionedProcessorTransform<T, K> extends ProcessorTransfor
 
     public static <S, T, K> PartitionedProcessorTransform<T, K> filterUsingServicePartitionedTransform(
             @Nonnull Transform upstream,
-            @Nonnull ServiceFactory<S> serviceFactory,
+            @Nonnull ServiceFactory<?, S> serviceFactory,
             @Nonnull BiPredicateEx<? super S, ? super T> filterFn,
             @Nonnull FunctionEx<? super T, ? extends K> partitionKeyFn
     ) {
@@ -80,7 +80,7 @@ public final class PartitionedProcessorTransform<T, K> extends ProcessorTransfor
 
     public static <S, T, K, R> PartitionedProcessorTransform<T, K> flatMapUsingServicePartitionedTransform(
             @Nonnull Transform upstream,
-            @Nonnull ServiceFactory<S> serviceFactory,
+            @Nonnull ServiceFactory<?, S> serviceFactory,
             @Nonnull BiFunctionEx<? super S, ? super T, ? extends Traverser<R>> flatMapFn,
             @Nonnull FunctionEx<? super T, ? extends K> partitionKeyFn
     ) {
@@ -92,7 +92,7 @@ public final class PartitionedProcessorTransform<T, K> extends ProcessorTransfor
     public static <S, T, K, R> PartitionedProcessorTransform<T, K> flatMapUsingServiceAsyncPartitionedTransform(
             @Nonnull Transform upstream,
             @Nonnull String operationName,
-            @Nonnull ServiceFactory<S> serviceFactory,
+            @Nonnull ServiceFactory<?, S> serviceFactory,
             @Nonnull BiFunctionEx<? super S, ? super T, CompletableFuture<Traverser<R>>> flatMapAsyncFn,
             @Nonnull FunctionEx<? super T, ? extends K> partitionKeyFn
     ) {

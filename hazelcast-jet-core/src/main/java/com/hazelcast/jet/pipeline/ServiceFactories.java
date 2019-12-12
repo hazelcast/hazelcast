@@ -17,7 +17,9 @@
 package com.hazelcast.jet.pipeline;
 
 import com.hazelcast.function.BiFunctionEx;
+import com.hazelcast.function.ConsumerEx;
 import com.hazelcast.function.FunctionEx;
+import com.hazelcast.function.SupplierEx;
 import com.hazelcast.map.IMap;
 import com.hazelcast.replicatedmap.ReplicatedMap;
 
@@ -61,10 +63,9 @@ public final class ServiceFactories {
      * @since 3.0
      */
     @Nonnull
-    public static <K, V> ServiceFactory<ReplicatedMap<K, V>> replicatedMapService(@Nonnull String mapName) {
-        return ServiceFactory
-                .withCreateFn(ctx -> ctx.jetInstance().<K, V>getReplicatedMap(mapName))
-                .withLocalSharing();
+    public static <K, V> ServiceFactory<?, ReplicatedMap<K, V>> replicatedMapService(@Nonnull String mapName) {
+        return ServiceFactory.withCreateContextFn(ctx -> ctx.jetInstance().<K, V>getReplicatedMap(mapName))
+                             .withCreateServiceFn((ctx, map) -> map);
     }
 
     /**
@@ -89,9 +90,60 @@ public final class ServiceFactories {
      * @since 3.0
      */
     @Nonnull
-    public static <K, V> ServiceFactory<IMap<K, V>> iMapService(@Nonnull String mapName) {
-        return ServiceFactory
-                .withCreateFn(ctx -> ctx.jetInstance().<K, V>getMap(mapName))
-                .withLocalSharing();
+    public static <K, V> ServiceFactory<?, IMap<K, V>> iMapService(@Nonnull String mapName) {
+        return ServiceFactory.withCreateContextFn(ctx -> ctx.jetInstance().<K, V>getMap(mapName))
+                             .withCreateServiceFn((ctx, map) -> map);
+    }
+
+    /**
+     * Returns a {@link ServiceFactory} which will provide a single shared
+     * service object per cluster member. All parallel processors serving the
+     * associated pipeline stage will use the same object. Since the service
+     * object will be accessed from many parallel threads, it must be
+     * thread-safe.
+     *
+     * @param createServiceFn the function that creates the service. It will be called once on each
+     *                        Jet member.
+     * @param destroyServiceFn the function that destroys the service. It will be called once on each
+     *                         Jet member. It can be used to tear down any resources acquired by the
+     *                         service.
+     * @param <S> type of the service object
+     *
+     * @see #nonSharedService(SupplierEx, ConsumerEx)
+     */
+    public static <S> ServiceFactory<?, S> sharedService(
+            @Nonnull SupplierEx<S> createServiceFn,
+            @Nonnull ConsumerEx<S> destroyServiceFn
+    ) {
+        return ServiceFactory.withCreateContextFn(c -> createServiceFn.get())
+                             .withCreateServiceFn((ctx, c) -> c)
+                             .withDestroyContextFn(destroyServiceFn);
+    }
+
+    /**
+     * Returns a {@link ServiceFactory} which creates a separate service
+     * instance for each parallel Jet processor. The number of processors on
+     * each cluster member is dictated by {@link GeneralStage#setLocalParallelism
+     * stage.localParallelism}. Use this when the service instance should not
+     * be shared across multiple threads.
+     *
+     * @param createServiceFn the function that creates the service. It will be called once per
+     *                        processor instance.
+     * @param destroyServiceFn the function that destroys the service. It will be called once per
+     *                         processor instance. It can be used to tear down any resources
+     *                         acquired by the service.
+     *
+     * @param <S> type of the service object
+     *
+     * @see #sharedService(SupplierEx, ConsumerEx)
+     */
+    public static <S> ServiceFactory<?, S> nonSharedService(
+            @Nonnull SupplierEx<? extends S> createServiceFn,
+            @Nonnull ConsumerEx<? super S> destroyServiceFn
+    ) {
+        return ServiceFactory.<Void>withCreateContextFn(c -> null)
+                .<S>withCreateServiceFn((ctx, c) -> createServiceFn.get())
+                .withDestroyServiceFn(destroyServiceFn)
+                .withDestroyContextFn(ConsumerEx.noop());
     }
 }

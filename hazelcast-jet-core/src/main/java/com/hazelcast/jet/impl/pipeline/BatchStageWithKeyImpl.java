@@ -82,7 +82,7 @@ public class BatchStageWithKeyImpl<T, K> extends StageWithGroupingBase<T, K> imp
 
     @Nonnull @Override
     public <S, R> BatchStage<R> mapUsingService(
-            @Nonnull ServiceFactory<S> serviceFactory,
+            @Nonnull ServiceFactory<?, S> serviceFactory,
             @Nonnull TriFunction<? super S, ? super K, ? super T, ? extends R> mapFn
     ) {
         return attachMapUsingService(serviceFactory, mapFn);
@@ -90,7 +90,7 @@ public class BatchStageWithKeyImpl<T, K> extends StageWithGroupingBase<T, K> imp
 
     @Nonnull @Override
     public <S, R> BatchStage<R> mapUsingServiceAsync(
-            @Nonnull ServiceFactory<S> serviceFactory,
+            @Nonnull ServiceFactory<?, S> serviceFactory,
             @Nonnull TriFunction<? super S, ? super K, ? super T, CompletableFuture<R>> mapAsyncFn
     ) {
         return attachTransformUsingServiceAsync("map", serviceFactory,
@@ -99,7 +99,7 @@ public class BatchStageWithKeyImpl<T, K> extends StageWithGroupingBase<T, K> imp
 
     @Nonnull @Override
     public <S> BatchStage<T> filterUsingService(
-            @Nonnull ServiceFactory<S> serviceFactory,
+            @Nonnull ServiceFactory<?, S> serviceFactory,
             @Nonnull TriPredicate<? super S, ? super K, ? super T> filterFn
     ) {
         return attachFilterUsingService(serviceFactory, filterFn);
@@ -107,7 +107,7 @@ public class BatchStageWithKeyImpl<T, K> extends StageWithGroupingBase<T, K> imp
 
     @Nonnull @Override
     public <S> BatchStage<T> filterUsingServiceAsync(
-            @Nonnull ServiceFactory<S> serviceFactory,
+            @Nonnull ServiceFactory<?, S> serviceFactory,
             @Nonnull TriFunction<? super S, ? super K, ? super T, CompletableFuture<Boolean>>
                     filterAsyncFn
     ) {
@@ -117,7 +117,7 @@ public class BatchStageWithKeyImpl<T, K> extends StageWithGroupingBase<T, K> imp
 
     @Nonnull @Override
     public <S, R> BatchStage<R> flatMapUsingService(
-            @Nonnull ServiceFactory<S> serviceFactory,
+            @Nonnull ServiceFactory<?, S> serviceFactory,
             @Nonnull TriFunction<? super S, ? super K, ? super T, ? extends Traverser<R>> flatMapFn
     ) {
         return attachFlatMapUsingService(serviceFactory, flatMapFn);
@@ -125,7 +125,7 @@ public class BatchStageWithKeyImpl<T, K> extends StageWithGroupingBase<T, K> imp
 
     @Nonnull @Override
     public <S, R> BatchStage<R> flatMapUsingServiceAsync(
-            @Nonnull ServiceFactory<S> serviceFactory,
+            @Nonnull ServiceFactory<?, S> serviceFactory,
             @Nonnull TriFunction<? super S, ? super K, ? super T, CompletableFuture<Traverser<R>>>
                     flatMapAsyncFn
     ) {

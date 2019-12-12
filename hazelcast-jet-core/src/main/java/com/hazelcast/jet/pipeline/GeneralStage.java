@@ -287,7 +287,7 @@ public interface GeneralStage<T> extends Stage {
      */
     @Nonnull
     <S, R> GeneralStage<R> mapUsingService(
-            @Nonnull ServiceFactory<S> serviceFactory,
+            @Nonnull ServiceFactory<?, S> serviceFactory,
             @Nonnull BiFunctionEx<? super S, ? super T, ? extends R> mapFn
     );
 
@@ -329,7 +329,7 @@ public interface GeneralStage<T> extends Stage {
      */
     @Nonnull
     <S, R> GeneralStage<R> mapUsingServiceAsync(
-            @Nonnull ServiceFactory<S> serviceFactory,
+            @Nonnull ServiceFactory<?, S> serviceFactory,
             @Nonnull BiFunctionEx<? super S, ? super T, ? extends CompletableFuture<R>> mapAsyncFn
     );
 
@@ -365,7 +365,7 @@ public interface GeneralStage<T> extends Stage {
      */
     @Nonnull
     <S> GeneralStage<T> filterUsingService(
-            @Nonnull ServiceFactory<S> serviceFactory,
+            @Nonnull ServiceFactory<?, S> serviceFactory,
             @Nonnull BiPredicateEx<? super S, ? super T> filterFn
     );
 
@@ -405,7 +405,7 @@ public interface GeneralStage<T> extends Stage {
      */
     @Nonnull
     <S> GeneralStage<T> filterUsingServiceAsync(
-            @Nonnull ServiceFactory<S> serviceFactory,
+            @Nonnull ServiceFactory<?, S> serviceFactory,
             @Nonnull BiFunctionEx<? super S, ? super T, ? extends CompletableFuture<Boolean>> filterAsyncFn
     );
 
@@ -446,7 +446,7 @@ public interface GeneralStage<T> extends Stage {
      */
     @Nonnull
     <S, R> GeneralStage<R> flatMapUsingService(
-            @Nonnull ServiceFactory<S> serviceFactory,
+            @Nonnull ServiceFactory<?, S> serviceFactory,
             @Nonnull BiFunctionEx<? super S, ? super T, ? extends Traverser<R>> flatMapFn
     );
 
@@ -492,7 +492,7 @@ public interface GeneralStage<T> extends Stage {
      */
     @Nonnull
     <S, R> GeneralStage<R> flatMapUsingServiceAsync(
-            @Nonnull ServiceFactory<S> serviceFactory,
+            @Nonnull ServiceFactory<?, S> serviceFactory,
             @Nonnull BiFunctionEx<? super S, ? super T, ? extends CompletableFuture<Traverser<R>>>
                     flatMapAsyncFn
     );

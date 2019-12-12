@@ -93,7 +93,7 @@ public class StreamStageWithKeyImpl<T, K> extends StageWithGroupingBase<T, K> im
 
     @Nonnull @Override
     public <S, R> StreamStage<R> mapUsingService(
-            @Nonnull ServiceFactory<S> serviceFactory,
+            @Nonnull ServiceFactory<?, S> serviceFactory,
             @Nonnull TriFunction<? super S, ? super K, ? super T, ? extends R> mapFn
     ) {
         return attachMapUsingService(serviceFactory, mapFn);
@@ -101,7 +101,7 @@ public class StreamStageWithKeyImpl<T, K> extends StageWithGroupingBase<T, K> im
 
     @Nonnull @Override
     public <S, R> StreamStage<R> mapUsingServiceAsync(
-            @Nonnull ServiceFactory<S> serviceFactory,
+            @Nonnull ServiceFactory<?, S> serviceFactory,
             @Nonnull TriFunction<? super S, ? super K, ? super T, CompletableFuture<R>> mapAsyncFn
     ) {
         return attachTransformUsingServiceAsync("map", serviceFactory,
@@ -110,7 +110,7 @@ public class StreamStageWithKeyImpl<T, K> extends StageWithGroupingBase<T, K> im
 
     @Nonnull @Override
     public <S> StreamStage<T> filterUsingService(
-            @Nonnull ServiceFactory<S> serviceFactory,
+            @Nonnull ServiceFactory<?, S> serviceFactory,
             @Nonnull TriPredicate<? super S, ? super K, ? super T> filterFn
     ) {
         return attachFilterUsingService(serviceFactory, filterFn);
@@ -118,7 +118,7 @@ public class StreamStageWithKeyImpl<T, K> extends StageWithGroupingBase<T, K> im
 
     @Nonnull @Override
     public <S> StreamStage<T> filterUsingServiceAsync(
-            @Nonnull ServiceFactory<S> serviceFactory,
+            @Nonnull ServiceFactory<?, S> serviceFactory,
             @Nonnull TriFunction<? super S, ? super K, ? super T, CompletableFuture<Boolean>> filterAsyncFn
     ) {
         return attachTransformUsingServiceAsync("filter", serviceFactory,
@@ -127,7 +127,7 @@ public class StreamStageWithKeyImpl<T, K> extends StageWithGroupingBase<T, K> im
 
     @Nonnull @Override
     public <S, R> StreamStage<R> flatMapUsingService(
-            @Nonnull ServiceFactory<S> serviceFactory,
+            @Nonnull ServiceFactory<?, S> serviceFactory,
             @Nonnull TriFunction<? super S, ? super K, ? super T, ? extends Traverser<R>> flatMapFn
     ) {
         return attachFlatMapUsingService(serviceFactory, flatMapFn);
@@ -135,7 +135,7 @@ public class StreamStageWithKeyImpl<T, K> extends StageWithGroupingBase<T, K> im
 
     @Nonnull @Override
     public <S, R> StreamStage<R> flatMapUsingServiceAsync(
-            @Nonnull ServiceFactory<S> serviceFactory,
+            @Nonnull ServiceFactory<?, S> serviceFactory,
             @Nonnull TriFunction<? super S, ? super K, ? super T, CompletableFuture<Traverser<R>>>
                     flatMapAsyncFn
     ) {

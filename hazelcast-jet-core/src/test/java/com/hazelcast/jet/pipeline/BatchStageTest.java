@@ -17,6 +17,7 @@
 package com.hazelcast.jet.pipeline;
 
 import com.hazelcast.function.BiFunctionEx;
+import com.hazelcast.function.ConsumerEx;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.function.PredicateEx;
 import com.hazelcast.jet.JetInstance;
@@ -59,6 +60,8 @@ import static com.hazelcast.jet.datamodel.Tuple2.tuple2;
 import static com.hazelcast.jet.datamodel.Tuple3.tuple3;
 import static com.hazelcast.jet.impl.pipeline.AbstractStage.transformOf;
 import static com.hazelcast.jet.pipeline.JoinClause.joinMapEntries;
+import static com.hazelcast.jet.pipeline.ServiceFactories.sharedService;
+import static com.hazelcast.jet.pipeline.ServiceFactories.nonSharedService;
 import static com.hazelcast.jet.pipeline.test.AssertionSinks.assertAnyOrder;
 import static com.hazelcast.jet.pipeline.test.AssertionSinks.assertOrdered;
 import static java.util.Arrays.asList;
@@ -193,7 +196,7 @@ public class BatchStageTest extends PipelineTestSupport {
 
         // When
         BatchStage<String> mapped = batchStageFromList(input).mapUsingService(
-                ServiceFactory.withCreateFn(i -> suffix),
+                sharedService(() -> suffix, ConsumerEx.noop()),
                 formatFn
         );
 
@@ -216,7 +219,7 @@ public class BatchStageTest extends PipelineTestSupport {
         BatchStage<String> mapped = batchStageFromList(input)
                 .groupingKey(i -> i)
                 .mapUsingService(
-                        ServiceFactory.withCreateFn(i -> suffix),
+                        sharedService(() -> suffix, ConsumerEx.noop()),
                         (service, k, i) -> formatFn.apply(i, service)
                 );
 
@@ -235,8 +238,8 @@ public class BatchStageTest extends PipelineTestSupport {
 
         // When
         BatchStage<Integer> mapped = batchStageFromList(input).filterUsingService(
-                ServiceFactory.withCreateFn(i -> 1),
-                (ctx, i) -> i % 2 == ctx);
+                sharedService(() -> 1, ConsumerEx.noop()),
+                (svc, i) -> i % 2 == svc);
 
         // Then
         mapped.writeTo(sink);
@@ -256,8 +259,8 @@ public class BatchStageTest extends PipelineTestSupport {
         BatchStage<Integer> mapped = batchStageFromList(input)
                 .groupingKey(i -> i)
                 .filterUsingService(
-                        ServiceFactory.withCreateFn(i -> 1),
-                        (ctx, k, r) -> r % 2 == ctx);
+                        sharedService(() -> 1, ConsumerEx.noop()),
+                        (svc, k, r) -> r % 2 == svc);
 
         // Then
         mapped.writeTo(sink);
@@ -275,7 +278,7 @@ public class BatchStageTest extends PipelineTestSupport {
 
         // When
         BatchStage<Entry<Integer, String>> flatMapped = batchStageFromList(input).flatMapUsingService(
-                ServiceFactory.withCreateFn(procCtx -> asList("A", "B")),
+                sharedService(() -> asList("A", "B"), ConsumerEx.noop()),
                 (ctx, i) -> traverseItems(entry(i, ctx.get(0)), entry(i, ctx.get(1))));
 
         // Then
@@ -296,7 +299,7 @@ public class BatchStageTest extends PipelineTestSupport {
         BatchStage<Entry<Integer, String>> flatMapped = batchStageFromList(input)
                 .groupingKey(i -> i)
                 .flatMapUsingService(
-                        ServiceFactory.withCreateFn(procCtx -> asList("A", "B")),
+                        sharedService(() -> asList("A", "B"), ConsumerEx.noop()),
                         (ctx, k, i) -> traverseItems(entry(i, ctx.get(0)), entry(i, ctx.get(1))));
 
         // Then
@@ -902,7 +905,7 @@ public class BatchStageTest extends PipelineTestSupport {
         BatchStage<Object> custom = batchStageFromList(input)
                 .groupingKey(extractKeyFn)
                 .customTransform("map", Processors.mapUsingServiceP(
-                        ServiceFactory.withCreateFn(jet -> new HashSet<>()),
+                        nonSharedService(HashSet::new, ConsumerEx.noop()),
                         (Set<Integer> ctx, Integer item) -> {
                             Integer key = extractKeyFn.apply(item);
                             return ctx.add(key) ? key : null;

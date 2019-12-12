@@ -17,12 +17,14 @@
 package com.hazelcast.jet.impl.processor;
 
 import com.hazelcast.function.BiFunctionEx;
+import com.hazelcast.function.ConsumerEx;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.core.Watermark;
 import com.hazelcast.jet.core.test.TestSupport;
+import com.hazelcast.jet.pipeline.ServiceFactories;
 import com.hazelcast.jet.pipeline.ServiceFactory;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import org.junit.Rule;
@@ -63,7 +65,7 @@ public class AsyncTransformUsingServicePTest {
     private ProcessorSupplier getSupplier(BiFunctionEx<? super String, ? super String,
                             CompletableFuture<Traverser<String>>> mapFn
     ) {
-        ServiceFactory<String> serviceFactory = ServiceFactory.withCreateFn(jet -> "foo");
+        ServiceFactory<?, String> serviceFactory = ServiceFactories.nonSharedService(() -> "foo", ConsumerEx.noop());
         if (!ordered) {
             serviceFactory = serviceFactory.withUnorderedAsyncResponses();
         }

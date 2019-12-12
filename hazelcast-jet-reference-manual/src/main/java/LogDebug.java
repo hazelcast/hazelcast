@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+import com.hazelcast.function.ConsumerEx;
 import com.hazelcast.jet.Jet;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Job;
@@ -23,7 +24,6 @@ import com.hazelcast.jet.core.metrics.Metrics;
 import com.hazelcast.jet.core.metrics.Unit;
 import com.hazelcast.jet.pipeline.BatchSource;
 import com.hazelcast.jet.pipeline.Pipeline;
-import com.hazelcast.jet.pipeline.ServiceFactory;
 import com.hazelcast.jet.pipeline.Sink;
 import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.jet.pipeline.Sources;
@@ -34,6 +34,7 @@ import java.util.concurrent.CompletableFuture;
 import static com.hazelcast.function.Functions.wholeItem;
 import static com.hazelcast.jet.Traversers.traverseArray;
 import static com.hazelcast.jet.aggregate.AggregateOperations.counting;
+import static com.hazelcast.jet.pipeline.ServiceFactories.nonSharedService;
 import static java.util.Arrays.asList;
 
 public class LogDebug {
@@ -103,7 +104,7 @@ public class LogDebug {
         p.readFrom(TestSources.items(0, 1, 2, 3))
             //tag::s6[]
             .filterUsingServiceAsync(
-                ServiceFactory.withCreateFn(i -> 0L),
+                nonSharedService(() -> 0L, ConsumerEx.noop()),
                 (ctx, l) -> CompletableFuture.supplyAsync(
                     () -> {
                         boolean pass = l % 2L == ctx;
@@ -123,7 +124,7 @@ public class LogDebug {
         p.readFrom(TestSources.items(0, 1, 2, 3))
             //tag::s7[]
             .filterUsingServiceAsync(
-                ServiceFactory.withCreateFn(i -> "foo"),
+                nonSharedService(() -> "foo", ConsumerEx.noop()),
                 (ctx, item) -> {
                     // need to use thread-safe metric since it will be mutated for another thread
                     Metric dropped = Metrics.threadSafeMetric("dropped", Unit.COUNT);

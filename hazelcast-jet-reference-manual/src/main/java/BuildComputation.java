@@ -19,6 +19,7 @@ import com.hazelcast.collection.IList;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.function.ComparatorEx;
+import com.hazelcast.function.ConsumerEx;
 import com.hazelcast.jet.Jet;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Traverser;
@@ -45,6 +46,7 @@ import com.hazelcast.jet.pipeline.BatchStage;
 import com.hazelcast.jet.pipeline.BatchStageWithKey;
 import com.hazelcast.jet.pipeline.GroupAggregateBuilder;
 import com.hazelcast.jet.pipeline.Pipeline;
+import com.hazelcast.jet.pipeline.ServiceFactories;
 import com.hazelcast.jet.pipeline.ServiceFactory;
 import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.jet.pipeline.Sources;
@@ -444,16 +446,15 @@ class BuildComputation {
 
     static void s16a() {
         //tag::s16a[]
-        ServiceFactory<IMap<String, StockInfo>> ctxFac = ServiceFactory
-                .withCreateFn(x -> {
+        ServiceFactory<?, IMap<String, StockInfo>> ctxFac = ServiceFactories.sharedService(
+                () -> {
                     ClientConfig cc = new ClientConfig();
                     cc.getNearCacheConfigMap().put("stock-info",
                             new NearCacheConfig());
                     HazelcastInstance client = newHazelcastClient(cc);
                     IMap<String, StockInfo> map = client.getMap("stock-info");
                     return map;
-                })
-                .withLocalSharing();
+                }, ConsumerEx.noop());
         StreamSource<Trade> tradesSource = Sources.mapJournal("trades",
                 START_FROM_CURRENT, mapEventNewValue(), mapPutEvents());
 

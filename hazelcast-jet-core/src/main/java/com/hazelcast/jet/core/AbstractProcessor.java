@@ -74,7 +74,7 @@ public abstract class AbstractProcessor implements Processor {
     private Object pendingItem;
     private Entry<?, ?> pendingSnapshotItem;
 
-    // final implementations of Processor API
+    // final implementations of the Processor API
 
     @Override
     public final void init(@Nonnull Outbox outbox, @Nonnull Context context) throws Exception {
@@ -127,7 +127,6 @@ public abstract class AbstractProcessor implements Processor {
             throw sneakyThrow(e);
         }
     }
-
 
 
     //                Callback methods designed to be overridden by subclasses
@@ -592,37 +591,37 @@ public abstract class AbstractProcessor implements Processor {
     // of the megamorphic call site of tryProcessN here.
 
 
-    void process0(@Nonnull Inbox inbox) throws Exception {
+    protected void process0(@Nonnull Inbox inbox) throws Exception {
         for (Object item; (item = inbox.peek()) != null && tryProcess0(item); ) {
             inbox.remove();
         }
     }
 
-    void process1(@Nonnull Inbox inbox) throws Exception {
+    protected void process1(@Nonnull Inbox inbox) throws Exception {
         for (Object item; (item = inbox.peek()) != null && tryProcess1(item); ) {
             inbox.remove();
         }
     }
 
-    void process2(@Nonnull Inbox inbox) throws Exception {
+    protected void process2(@Nonnull Inbox inbox) throws Exception {
         for (Object item; (item = inbox.peek()) != null && tryProcess2(item); ) {
             inbox.remove();
         }
     }
 
-    void process3(@Nonnull Inbox inbox) throws Exception {
+    protected void process3(@Nonnull Inbox inbox) throws Exception {
         for (Object item; (item = inbox.peek()) != null && tryProcess3(item); ) {
             inbox.remove();
         }
     }
 
-    void process4(@Nonnull Inbox inbox) throws Exception {
+    protected void process4(@Nonnull Inbox inbox) throws Exception {
         for (Object item; (item = inbox.peek()) != null && tryProcess4(item); ) {
             inbox.remove();
         }
     }
 
-    void processAny(int ordinal, @Nonnull Inbox inbox) throws Exception {
+    protected void processAny(int ordinal, @Nonnull Inbox inbox) throws Exception {
         for (Object item; (item = inbox.peek()) != null && tryProcess(ordinal, item); ) {
             inbox.remove();
         }

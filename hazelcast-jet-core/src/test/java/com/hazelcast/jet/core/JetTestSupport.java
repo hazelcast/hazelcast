@@ -27,16 +27,18 @@ import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.JetTestInstanceFactory;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.config.JetConfig;
+import com.hazelcast.jet.function.RunnableEx;
 import com.hazelcast.jet.impl.JetService;
 import com.hazelcast.jet.impl.JobExecutionRecord;
 import com.hazelcast.jet.impl.JobRepository;
-import com.hazelcast.jet.impl.util.Util.RunnableExc;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.map.IMap;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.test.HazelcastTestSupport;
 import org.junit.After;
+import org.junit.ClassRule;
+import org.junit.rules.Timeout;
 
 import javax.annotation.Nonnull;
 import java.io.File;
@@ -51,8 +53,6 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-import org.junit.ClassRule;
-import org.junit.rules.Timeout;
 
 import static com.hazelcast.jet.Util.idToString;
 import static org.junit.Assert.assertEquals;
@@ -196,11 +196,15 @@ public abstract class JetTestSupport extends HazelcastTestSupport {
         instanceFactory.terminate(instance);
     }
 
-    public Future spawnSafe(RunnableExc r) {
+    /**
+     * Runs the given Runnable in a new thread, if you're not interested in the
+     * execution failure, any errors are logged at WARN level.
+     */
+    public Future spawnSafe(RunnableEx r) {
         return spawn(() -> {
             try {
-                r.run();
-            } catch (Exception e) {
+                r.runEx();
+            } catch (Throwable e) {
                 logger.warning("Spawned Runnable failed", e);
             }
         });

@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.core.metrics;
 
+import com.hazelcast.function.ConsumerEx;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.function.SupplierEx;
 import com.hazelcast.jet.JetInstance;
@@ -30,7 +31,6 @@ import com.hazelcast.jet.core.TestProcessors;
 import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.impl.processor.TransformP;
 import com.hazelcast.jet.pipeline.Pipeline;
-import com.hazelcast.jet.pipeline.ServiceFactory;
 import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.jet.pipeline.test.TestSources;
 import com.hazelcast.test.HazelcastSerialClassRunner;
@@ -50,6 +50,7 @@ import java.util.concurrent.CompletableFuture;
 import static com.hazelcast.jet.aggregate.AggregateOperations.counting;
 import static com.hazelcast.jet.core.Edge.between;
 import static com.hazelcast.jet.core.processor.SinkProcessors.writeListP;
+import static com.hazelcast.jet.pipeline.ServiceFactories.nonSharedService;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -187,7 +188,7 @@ public class MetricsTest extends JetTestSupport {
         pipeline.readFrom(TestSources.items(inputs))
                 .addTimestamps(i -> i, 0L)
                 .filterUsingServiceAsync(
-                        ServiceFactory.withCreateFn(i -> 0L),
+                        nonSharedService(() -> 0L, ConsumerEx.noop()),
                         (ctx, l) -> {
                             Metric dropped = Metrics.threadSafeMetric("dropped");
                             Metric total = Metrics.threadSafeMetric("total");

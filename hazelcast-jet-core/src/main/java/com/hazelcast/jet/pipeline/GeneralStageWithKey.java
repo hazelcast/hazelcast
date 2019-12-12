@@ -241,7 +241,7 @@ public interface GeneralStageWithKey<T, K> {
      */
     @Nonnull
     <S, R> GeneralStage<R> mapUsingService(
-            @Nonnull ServiceFactory<S> serviceFactory,
+            @Nonnull ServiceFactory<?, S> serviceFactory,
             @Nonnull TriFunction<? super S, ? super K, ? super T, ? extends R> mapFn
     );
 
@@ -273,7 +273,7 @@ public interface GeneralStageWithKey<T, K> {
      */
     @Nonnull
     <S, R> GeneralStage<R> mapUsingServiceAsync(
-            @Nonnull ServiceFactory<S> serviceFactory,
+            @Nonnull ServiceFactory<?, S> serviceFactory,
             @Nonnull TriFunction<? super S, ? super K, ? super T, CompletableFuture<R>> mapAsyncFn
     );
 
@@ -315,7 +315,7 @@ public interface GeneralStageWithKey<T, K> {
      */
     @Nonnull
     <S> GeneralStage<T> filterUsingService(
-            @Nonnull ServiceFactory<S> serviceFactory,
+            @Nonnull ServiceFactory<?, S> serviceFactory,
             @Nonnull TriPredicate<? super S, ? super K, ? super T> filterFn
     );
 
@@ -346,7 +346,7 @@ public interface GeneralStageWithKey<T, K> {
      */
     @Nonnull
     <S> GeneralStage<T> filterUsingServiceAsync(
-            @Nonnull ServiceFactory<S> serviceFactory,
+            @Nonnull ServiceFactory<?, S> serviceFactory,
             @Nonnull TriFunction<? super S, ? super K, ? super T, CompletableFuture<Boolean>> filterAsyncFn
     );
 
@@ -394,7 +394,7 @@ public interface GeneralStageWithKey<T, K> {
      */
     @Nonnull
     <S, R> GeneralStage<R> flatMapUsingService(
-            @Nonnull ServiceFactory<S> serviceFactory,
+            @Nonnull ServiceFactory<?, S> serviceFactory,
             @Nonnull TriFunction<? super S, ? super K, ? super T, ? extends Traverser<R>> flatMapFn
     );
 
@@ -431,7 +431,7 @@ public interface GeneralStageWithKey<T, K> {
      */
     @Nonnull
     <S, R> GeneralStage<R> flatMapUsingServiceAsync(
-            @Nonnull ServiceFactory<S> serviceFactory,
+            @Nonnull ServiceFactory<?, S> serviceFactory,
             @Nonnull TriFunction<? super S, ? super K, ? super T, CompletableFuture<Traverser<R>>>
                     flatMapAsyncFn
     );

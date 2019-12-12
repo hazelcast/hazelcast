@@ -853,8 +853,7 @@ public final class Processors {
      * Therefore it can be used to implement filtering semantics as well.
      * <p>
      * Unlike {@link #mapStatefulP} (with the "{@code Keyed}" part),
-     * this method creates one service object per processor (or per member, if
-     * {@linkplain ServiceFactory#withLocalSharing() shared}).
+     * this method creates one service object per processor.
      * <p>
      * While it's allowed to store some local state in the service object, it
      * won't be saved to the snapshot and will misbehave in a fault-tolerant
@@ -867,11 +866,11 @@ public final class Processors {
      * @param <R> type of emitted item
      */
     @Nonnull
-    public static <S, T, R> ProcessorSupplier mapUsingServiceP(
-            @Nonnull ServiceFactory<S> serviceFactory,
+    public static <C, S, T, R> ProcessorSupplier mapUsingServiceP(
+            @Nonnull ServiceFactory<C, S> serviceFactory,
             @Nonnull BiFunctionEx<? super S, ? super T, ? extends R> mapFn
     ) {
-        return TransformUsingServiceP.<S, T, R>supplier(serviceFactory, (singletonTraverser, context, item) -> {
+        return TransformUsingServiceP.<C, S, T, R>supplier(serviceFactory, (singletonTraverser, context, item) -> {
             singletonTraverser.accept(mapFn.apply(context, item));
             return singletonTraverser;
         });
@@ -897,8 +896,8 @@ public final class Processors {
      * @param <T> type of received item
      */
     @Nonnull
-    public static <S, T, K, R> ProcessorSupplier mapUsingServiceAsyncP(
-            @Nonnull ServiceFactory<S> serviceFactory,
+    public static <C, S, T, K, R> ProcessorSupplier mapUsingServiceAsyncP(
+            @Nonnull ServiceFactory<C, S> serviceFactory,
             @Nonnull FunctionEx<T, K> extractKeyFn,
             @Nonnull BiFunctionEx<? super S, ? super T, CompletableFuture<R>> mapAsyncFn
     ) {
@@ -922,11 +921,11 @@ public final class Processors {
      * @param <T> type of received item
      */
     @Nonnull
-    public static <S, T> ProcessorSupplier filterUsingServiceP(
-            @Nonnull ServiceFactory<S> serviceFactory,
+    public static <C, S, T> ProcessorSupplier filterUsingServiceP(
+            @Nonnull ServiceFactory<C, S> serviceFactory,
             @Nonnull BiPredicateEx<? super S, ? super T> filterFn
     ) {
-        return TransformUsingServiceP.<S, T, T>supplier(serviceFactory, (singletonTraverser, context, item) -> {
+        return TransformUsingServiceP.<C, S, T, T>supplier(serviceFactory, (singletonTraverser, context, item) -> {
             singletonTraverser.accept(filterFn.test(context, item) ? item : null);
             return singletonTraverser;
         });
@@ -952,8 +951,8 @@ public final class Processors {
      * @param <T> type of received item
      */
     @Nonnull
-    public static <S, T, K> ProcessorSupplier filterUsingServiceAsyncP(
-            @Nonnull ServiceFactory<S> serviceFactory,
+    public static <C, S, T, K> ProcessorSupplier filterUsingServiceAsyncP(
+            @Nonnull ServiceFactory<C, S> serviceFactory,
             @Nonnull FunctionEx<T, K> extractKeyFn,
             @Nonnull BiFunctionEx<? super S, ? super T, CompletableFuture<Boolean>> filterAsyncFn
     ) {
@@ -981,11 +980,11 @@ public final class Processors {
      * @param <R> emitted item type
      */
     @Nonnull
-    public static <S, T, R> ProcessorSupplier flatMapUsingServiceP(
-            @Nonnull ServiceFactory<S> serviceFactory,
+    public static <C, S, T, R> ProcessorSupplier flatMapUsingServiceP(
+            @Nonnull ServiceFactory<C, S> serviceFactory,
             @Nonnull BiFunctionEx<? super S, ? super T, ? extends Traverser<R>> flatMapFn
     ) {
-        return TransformUsingServiceP.<S, T, R>supplier(serviceFactory,
+        return TransformUsingServiceP.<C, S, T, R>supplier(serviceFactory,
                 (singletonTraverser, service, item) -> flatMapFn.apply(service, item));
     }
 
@@ -1012,8 +1011,8 @@ public final class Processors {
      * @param <T> type of received item
      */
     @Nonnull
-    public static <S, T, K, R> ProcessorSupplier flatMapUsingServiceAsyncP(
-            @Nonnull ServiceFactory<S> serviceFactory,
+    public static <C, S, T, K, R> ProcessorSupplier flatMapUsingServiceAsyncP(
+            @Nonnull ServiceFactory<C, S> serviceFactory,
             @Nonnull FunctionEx<? super T, ? extends K> extractKeyFn,
             @Nonnull BiFunctionEx<? super S, ? super T, CompletableFuture<Traverser<R>>> flatMapAsyncFn
     ) {

@@ -16,11 +16,13 @@
 
 package com.hazelcast.jet.pipeline;
 
+import com.hazelcast.function.BiFunctionEx;
 import com.hazelcast.function.ConsumerEx;
 import com.hazelcast.function.FunctionEx;
-import com.hazelcast.jet.JetInstance;
+import com.hazelcast.function.SupplierEx;
 import com.hazelcast.jet.core.Processor;
-import com.hazelcast.logging.ILogger;
+import com.hazelcast.jet.core.ProcessorSupplier;
+import com.hazelcast.jet.core.ProcessorSupplier.Context;
 
 import javax.annotation.Nonnull;
 import java.io.Serializable;
@@ -29,9 +31,39 @@ import static com.hazelcast.internal.util.Preconditions.checkPositive;
 import static com.hazelcast.jet.impl.util.Util.checkSerializable;
 
 /**
- * A holder of functions needed to create and destroy a service object.
+ * A holder of functions needed to create and destroy a service object used in
+ * pipeline transforms such as {@link GeneralStage#mapUsingService
+ * stage.mapUsingService()}.
  * <p>
- * You can use the service factory from these Pipeline API methods:
+ * The lifecycle of this factory object is as follows:
+ * <ol><li>
+ *     When you submit a job, Jet serializes {@code ServiceFactory} and sends
+ *     it to all the cluster members.
+ * <li>
+ *     On each member Jet calls {@link #createContextFn()} to get a context
+ *     object that will be shared across all the service instances on that
+ *     member. For example, if you are connecting to an external service that
+ *     provides a thread-safe client, you can create it here and then create
+ *     individual sessions for each service instance.
+ * <li>
+ *     Jet repeatedly calls {@link #createServiceFn()} to create as many
+ *     service instances on each member as determined by the {@link
+ *     GeneralStage#setLocalParallelism(int) localParallelism} of the pipeline
+ *     stage. The invocations of {@link #createServiceFn()} receive the context
+ *     object.
+ *  <li>
+ *      When the job is done, Jet calls {@link #destroyServiceFn()} with each
+ *      service instance.
+ *  <li>
+ *      Finally, Jet calls {@link #destroyContextFn()} with the context object.
+ * </ol>
+ * If you don't need the member-wide context object, you can call the simpler
+ * methods {@link ServiceFactories#nonSharedService(SupplierEx, ConsumerEx)
+ * ServiceFactories.processorLocalService} or {@link
+ * ServiceFactories#sharedService(SupplierEx, ConsumerEx)
+ * ServiceFactories.memberLocalService}.
+ * <p>
+ * Here's a list of pipeline transforms that require a {@code ServiceFactory}:
  * <ul>
  *     <li>{@link GeneralStage#mapUsingService}
  *     <li>{@link GeneralStage#filterUsingService}
@@ -47,11 +79,12 @@ import static com.hazelcast.jet.impl.util.Util.checkSerializable;
  *     <li>{@link GeneralStageWithKey#flatMapUsingServiceAsync}
  * </ul>
  *
- * @param <S> the user-defined service object type
+ * @param <C> type of the shared context object
+ * @param <S> type of the service object
  *
- * @since 3.0
+ * @since 4.0
  */
-public final class ServiceFactory<S> implements Serializable {
+public final class ServiceFactory<C, S> implements Serializable {
 
     /**
      * Default value for {@link #maxPendingCallsPerProcessor}.
@@ -64,156 +97,204 @@ public final class ServiceFactory<S> implements Serializable {
     public static final boolean COOPERATIVE_DEFAULT = true;
 
     /**
-     * Default value for {@link #hasLocalSharing}.
-     */
-    public static final boolean SHARE_LOCALLY_DEFAULT = false;
-
-    /**
      * Default value for {@link #hasOrderedAsyncResponses}.
      */
     public static final boolean ORDERED_ASYNC_RESPONSES_DEFAULT = true;
 
-    @Nonnull
-    private final FunctionEx<? super ServiceContext, ? extends S> createFn;
-    @Nonnull
-    private final ConsumerEx<? super S> destroyFn;
     private final boolean isCooperative;
-    private final boolean hasLocalSharing;
+
+    // options for async
     private final int maxPendingCallsPerProcessor;
     private final boolean orderedAsyncResponses;
 
+    @Nonnull
+    private final FunctionEx<? super Context, ? extends C> createContextFn;
+    @Nonnull
+    private final BiFunctionEx<? super Processor.Context, ? super C, ? extends S> createServiceFn;
+    @Nonnull
+    private final ConsumerEx<? super S> destroyServiceFn;
+    @Nonnull
+    private final ConsumerEx<? super C> destroyContextFn;
+
     private ServiceFactory(
-            @Nonnull FunctionEx<? super ServiceContext, ? extends S> createFn,
-            @Nonnull ConsumerEx<? super S> destroyFn,
+            @Nonnull FunctionEx<? super ProcessorSupplier.Context, ? extends C> createContextFn,
+            @Nonnull BiFunctionEx<? super Processor.Context, ? super C, ? extends S> createServiceFn,
+            @Nonnull ConsumerEx<? super S> destroyServiceFn,
+            @Nonnull ConsumerEx<? super C> destroyContextFn,
             boolean isCooperative,
-            boolean hasLocalSharing,
             int maxPendingCallsPerProcessor,
             boolean orderedAsyncResponses
     ) {
-        this.createFn = createFn;
-        this.destroyFn = destroyFn;
+        this.createContextFn = createContextFn;
+        this.createServiceFn = createServiceFn;
+        this.destroyServiceFn = destroyServiceFn;
+        this.destroyContextFn = destroyContextFn;
         this.isCooperative = isCooperative;
-        this.hasLocalSharing = hasLocalSharing;
         this.maxPendingCallsPerProcessor = maxPendingCallsPerProcessor;
         this.orderedAsyncResponses = orderedAsyncResponses;
     }
 
     /**
-     * Creates a new {@link ServiceFactory} with the given create-function.
+     * Creates a new {@code ServiceFactory} with the given function that
+     * creates the shared context object. Make sure to also call {@link
+     * #withCreateServiceFn} that creates the service objects. You can use the
+     * shared context as a shared service object as well, by returning it from
+     * {@code createServiceFn}. To achieve this more conveniently, use {@link
+     * ServiceFactories#sharedService} instead of this method. If you don't need
+     * a shared context at all, just independent service instances, you can use
+     * the convenience of {@link ServiceFactories#nonSharedService}.
      *
-     * @param createServiceFn the function to create new service object, given
-     *                        a JetInstance
-     * @param <S> the user-defined service object type
-     * @return a new factory instance
+     * @param createContextFn the function to create new context object, given a {@link
+     *                        ProcessorSupplier.Context}. Called once per Jet member.
+     * @param <C> type of the service context instance
      *
-     * @since 3.0
+     * @return a new factory instance, not yet ready to use (needs the {@code
+     *         createServiceFn})
      */
     @Nonnull
-    public static <S> ServiceFactory<S> withCreateFn(
-            @Nonnull FunctionEx<? super ServiceContext, ? extends S> createServiceFn
+    public static <C> ServiceFactory<C, Void> withCreateContextFn(
+            @Nonnull FunctionEx<? super ProcessorSupplier.Context, ? extends C> createContextFn
     ) {
-        checkSerializable(createServiceFn, "createServiceFn");
+        checkSerializable(createContextFn, "createContextFn");
         return new ServiceFactory<>(
-                createServiceFn, ConsumerEx.noop(), COOPERATIVE_DEFAULT, SHARE_LOCALLY_DEFAULT,
-                MAX_PENDING_CALLS_DEFAULT, ORDERED_ASYNC_RESPONSES_DEFAULT);
+                createContextFn,
+                (ctx, svcContext) -> {
+                    throw new IllegalStateException("This ServiceFactory is missing a createServiceFn");
+                },
+                ConsumerEx.noop(),
+                ConsumerEx.noop(),
+                COOPERATIVE_DEFAULT, MAX_PENDING_CALLS_DEFAULT, ORDERED_ASYNC_RESPONSES_DEFAULT
+        );
     }
 
     /**
-     * Returns a copy of this {@link ServiceFactory} with the destroy-function
-     * replaced with the given function.
+     * Returns a copy of this {@code ServiceFactory} with the {@code
+     * destroyContext} function replaced with the given function.
      * <p>
-     * The destroy function is called at the end of the job to destroy all
-     * created service objects.
+     * Jet calls this function at the end of the job for each shared context
+     * object it created (one on each cluster member).
      *
-     * @param destroyFn the function to destroy user-defined service
+     * @param destroyContextFn the function to destroy the shared service context
      * @return a copy of this factory with the supplied destroy-function
      */
     @Nonnull
-    public ServiceFactory<S> withDestroyFn(@Nonnull ConsumerEx<? super S> destroyFn) {
-        checkSerializable(destroyFn, "destroyFn");
-        return new ServiceFactory<>(createFn, destroyFn, isCooperative, hasLocalSharing,
-                maxPendingCallsPerProcessor, orderedAsyncResponses);
+    public ServiceFactory<C, S> withDestroyContextFn(@Nonnull ConsumerEx<? super C> destroyContextFn) {
+        checkSerializable(destroyContextFn, "destroyContextFn");
+        return new ServiceFactory<>(createContextFn, createServiceFn, destroyServiceFn, destroyContextFn,
+                isCooperative, maxPendingCallsPerProcessor, orderedAsyncResponses);
     }
 
     /**
-     * Returns a copy of this {@link ServiceFactory} with the
-     * <em>isCooperative</em> flag set to {@code false}. The service factory is
-     * cooperative by default. Call this method if your transform function
-     * doesn't follow the {@linkplain Processor#isCooperative() cooperative
-     * processor contract}, that is if it waits for IO, blocks for
-     * synchronization, takes too long to complete etc. If you intend to use
-     * the factory for an async operation, you also typically can use a
-     * cooperative processor. Cooperative processors offer higher performance.
+     * Returns a copy of this {@code ServiceFactory} with the given {@code
+     * createService} function.
+     * <p>
+     * Jet calls this function to create each parallel instance of the service
+     * object (their number on each cluster member is determined by {@link
+     * GeneralStage#setLocalParallelism(int) stage.localParallelism}). Each
+     * invocation gets the {@linkplain #createContextFn() shared context
+     * instance} as the parameter, as well as the lower-level {@link
+     * Processor.Context}.
+     * <p>
+     * Since the call of this method establishes the {@code <S>} type parameter
+     * of the service factory, you must call it before setting the {@link
+     * #withDestroyServiceFn(ConsumerEx) destroyService} function. Calling
+     * this method resets any pre-existing {@code destroyService} function to a
+     * no-op.
+     *
+     * @param createServiceFn the function that creates the service instance
+     * @return a copy of this factory with the supplied create-service-function
+     */
+    @Nonnull
+    public <S_NEW> ServiceFactory<C, S_NEW> withCreateServiceFn(
+            @Nonnull BiFunctionEx<? super Processor.Context, ? super C, ? extends S_NEW> createServiceFn
+    ) {
+        checkSerializable(createServiceFn, "initFn");
+        return new ServiceFactory<>(createContextFn, createServiceFn, ConsumerEx.noop(), destroyContextFn,
+                isCooperative, maxPendingCallsPerProcessor, orderedAsyncResponses);
+    }
+
+    /**
+     * Returns a copy of this {@code ServiceFactory} with the {@code
+     * destroyService} function replaced with the given function.
+     * <p>
+     * The destroy function is called at the end of the job to destroy all
+     * created services objects.
+     *
+     * @param destroyServiceFn the function to destroy the service instance.
+     *                         This function is called once per processor instance
+     * @return a copy of this factory with the supplied destroy-function
+     */
+    @Nonnull
+    public ServiceFactory<C, S> withDestroyServiceFn(@Nonnull ConsumerEx<? super S> destroyServiceFn) {
+        checkSerializable(destroyServiceFn, "destroyServiceFn");
+        return new ServiceFactory<>(createContextFn, createServiceFn, destroyServiceFn, destroyContextFn,
+                isCooperative, maxPendingCallsPerProcessor, orderedAsyncResponses);
+    }
+
+    /**
+     * Returns a copy of this {@code ServiceFactory} with the {@code
+     * isCooperative} flag set to {@code false}. Call this method if your
+     * service doesn't follow the {@linkplain Processor#isCooperative()
+     * cooperative processor contract}, that is if it waits for IO, blocks for
+     * synchronization, takes too long to complete etc. If the service will
+     * perform async operations, you can typically use a cooperative
+     * processor. Cooperative processors offer higher performance.
      *
      * @return a copy of this factory with the {@code isCooperative} flag set
      * to {@code false}.
      */
     @Nonnull
-    public ServiceFactory<S> toNonCooperative() {
-        return new ServiceFactory<>(createFn, destroyFn, false, hasLocalSharing,
-                maxPendingCallsPerProcessor, orderedAsyncResponses);
+    public ServiceFactory<C, S> toNonCooperative() {
+        return new ServiceFactory<>(
+                createContextFn, createServiceFn, destroyServiceFn, destroyContextFn,
+                false, maxPendingCallsPerProcessor, orderedAsyncResponses
+        );
     }
 
     /**
-     * Returns a copy of this {@link ServiceFactory} with the
-     * <em>localSharing</em> flag set. If the pipeline doesn't have grouping,
-     * there will be:
-     * <ul>
-     *     <li>one service object per local processor, if flag is disabled
-     *     <li>one service object per member, if flag is enabled. Make
-     *     sure the service object is <em>thread-safe</em> in this case.
-     * </ul>
-     *
-     * @return a copy of this factory with the {@code hasLocalSharing} flag
-     * set.
-     */
-    @Nonnull
-    public ServiceFactory<S> withLocalSharing() {
-        return new ServiceFactory<>(createFn, destroyFn, isCooperative, true,
-                maxPendingCallsPerProcessor, orderedAsyncResponses);
-    }
-
-    /**
-     * Returns a copy of this {@link ServiceFactory} with the
-     * <em>maxPendingCallsPerProcessor</em> property set to the given value. Jet
+     * Returns a copy of this {@link ServiceFactory} with the {@code
+     * maxPendingCallsPerProcessor} property set to the given value. Jet
      * will execute at most this many concurrent async operations per processor
-     * and will apply backpressure to the upstream.
+     * and will apply backpressure to the upstream to enforce it.
      * <p>
      * If you use the same service factory on multiple pipeline stages, each
      * stage will count the pending calls independently.
      * <p>
      * This value is ignored when the {@code ServiceFactory} is used in a
-     * synchronous transformation.
+     * synchronous transformation because synchronous operations are by nature
+     * performed one at a time.
      * <p>
      * Default value is {@value #MAX_PENDING_CALLS_DEFAULT}.
      *
      * @return a copy of this factory with the {@code maxPendingCallsPerProcessor}
-     *      property set.
+     *         property set
      */
     @Nonnull
-    public ServiceFactory<S> withMaxPendingCallsPerProcessor(int maxPendingCallsPerProcessor) {
+    public ServiceFactory<C, S> withMaxPendingCallsPerProcessor(int maxPendingCallsPerProcessor) {
         checkPositive(maxPendingCallsPerProcessor, "maxPendingCallsPerProcessor must be >= 1");
-        return new ServiceFactory<>(createFn, destroyFn, isCooperative, hasLocalSharing,
-                maxPendingCallsPerProcessor, orderedAsyncResponses);
+        return new ServiceFactory<>(
+                createContextFn, createServiceFn, destroyServiceFn, destroyContextFn,
+                isCooperative, maxPendingCallsPerProcessor, orderedAsyncResponses
+        );
     }
 
     /**
-     * Returns a copy of this {@link ServiceFactory} with the
-     * <em>unorderedAsyncResponses</em> flag set to true.
+     * Returns a copy of this {@link ServiceFactory} with the {@code
+     * unorderedAsyncResponses} flag set to true.
      * <p>
      * Jet can process asynchronous responses in two modes:
      * <ol><li>
-     *     <b>Unordered:</b> results of the async calls are emitted as they
-     *     arrive. This mode is enabled by this method.
-     * </li><li>
      *     <b>Ordered:</b> results of the async calls are emitted in the submission
      *     order. This is the default.
+     * <li>
+     *     <b>Unordered:</b> results of the async calls are emitted as they
+     *     arrive. This mode is enabled by this method.
      * </ol>
      * The unordered mode can be faster:
      * <ul><li>
      *     in the ordered mode, one stalling call will block all subsequent items,
      *     even though responses for them were already received
-     * </li><li>
+     * <li>
      *     to preserve the order after a restart, the ordered implementation when
      *     saving the state to the snapshot waits for all async calls to complete.
      *     This creates a hiccup depending on the async call latency. The unordered
@@ -232,39 +313,65 @@ public final class ServiceFactory<S> implements Serializable {
      * @return a copy of this factory with the {@code unorderedAsyncResponses} flag set.
      */
     @Nonnull
-    public ServiceFactory<S> withUnorderedAsyncResponses() {
-        return new ServiceFactory<>(createFn, destroyFn, isCooperative, hasLocalSharing,
-                maxPendingCallsPerProcessor, false);
+    public ServiceFactory<C, S> withUnorderedAsyncResponses() {
+        return new ServiceFactory<>(
+                createContextFn, createServiceFn, destroyServiceFn, destroyContextFn,
+                isCooperative, maxPendingCallsPerProcessor, false
+        );
     }
 
     /**
-     * Returns the create-function.
+     * Returns the function that creates the shared context object. Each
+     * Jet member creates one such object and passes it to all the parallel
+     * service instances.
+     *
+     * @see #withCreateContextFn(FunctionEx)
      */
     @Nonnull
-    public FunctionEx<? super ServiceContext, ? extends S> createFn() {
-        return createFn;
+    public FunctionEx<? super ProcessorSupplier.Context, ? extends C> createContextFn() {
+        return createContextFn;
     }
 
     /**
-     * Returns the destroy-function.
+     * Returns the function that creates the service object. There can be many
+     * parallel service objects on each Jet member serving the same pipeline
+     * stage, their number is determined by {@link
+     * GeneralStage#setLocalParallelism(int) stage.localParallelism}.
+     *
+     * @see #withCreateServiceFn(BiFunctionEx)
      */
     @Nonnull
-    public ConsumerEx<? super S> destroyFn() {
-        return destroyFn;
+    public BiFunctionEx<? super Processor.Context, ? super C, ? extends S> createServiceFn() {
+        return createServiceFn;
     }
 
     /**
-     * Returns the {@code isCooperative} flag.
+     * Returns the function that destroys the service object at the end of the
+     * Jet job.
+     *
+     * @see #withDestroyServiceFn(ConsumerEx)
+     */
+    @Nonnull
+    public ConsumerEx<? super S> destroyServiceFn() {
+        return destroyServiceFn;
+    }
+
+    /**
+     * Returns the function that destroys the shared context object at the end
+     * of the Jet job.
+     *
+     * @see #withDestroyContextFn(ConsumerEx)
+     */
+    @Nonnull
+    public ConsumerEx<? super C> destroyContextFn() {
+        return destroyContextFn;
+    }
+
+    /**
+     * Returns the {@code isCooperative} flag, see {@link #toNonCooperative()}.
      */
     public boolean isCooperative() {
         return isCooperative;
-    }
-
-    /**
-     * Returns the {@code hasLocalSharing} flag.
-     */
-    public boolean hasLocalSharing() {
-        return hasLocalSharing;
     }
 
     /**
@@ -281,67 +388,5 @@ public final class ServiceFactory<S> implements Serializable {
      */
     public boolean hasOrderedAsyncResponses() {
         return orderedAsyncResponses;
-    }
-
-    /**
-     * Provides contextual information to {@link ServiceFactory#createFn()}
-     * that helps it set up the service.
-     */
-    public interface ServiceContext {
-        /**
-         * Returns the number of members in the Jet cluster.
-         */
-        int memberCount();
-
-        /**
-         * Returns the index of the Jet member where {@code createFn} is being invoked.
-         * Each member of the cluster has an index between 0 and {@link #memberCount()}.
-         * */
-        int memberIndex();
-
-        /**
-         * Returns the index of the service instance within the same Jet member.
-         * If the service {@linkplain #isSharedLocally()}, there's just one
-         * instance on each member so this returns 0.
-         */
-        int localIndex();
-
-        /**
-         * Says whether the service will be shared locally, i.e., there will be
-         * just one instance of it on each Jet member.
-         */
-        boolean isSharedLocally();
-
-        /**
-         * Returns {@code true} if the service will be used to make async requests
-         * and the responses will respect the order of requests.
-         */
-        boolean hasOrderedAsyncResponses();
-
-        /**
-         * Returns the limit on the number of async requests Jet will issue without
-         * awaiting their response. When this limit is reached, backpressure will
-         * kick in and the pipeline stage won't accept more data until some
-         * responses come in.
-         */
-        int maxPendingCallsPerProcessor();
-
-        /**
-         * Returns the name of the associated vertex.
-         */
-        @Nonnull
-        String vertexName();
-
-        /**
-         * Returns a logger the service can use for diagnostic output.
-         */
-        @Nonnull
-        ILogger logger();
-
-        /**
-         * Returns the Jet instance which is creating the service.
-         */
-        @Nonnull
-        JetInstance jetInstance();
     }
 }

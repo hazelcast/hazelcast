@@ -23,7 +23,6 @@ import com.hazelcast.internal.util.concurrent.ManyToOneConcurrentArrayQueue;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.Traversers;
-import com.hazelcast.jet.core.AbstractProcessor;
 import com.hazelcast.jet.core.BroadcastKey;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorSupplier;
@@ -36,7 +35,6 @@ import com.hazelcast.jet.pipeline.ServiceFactory;
 
 import javax.annotation.CheckReturnValue;
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.util.ArrayDeque;
 import java.util.IdentityHashMap;
 import java.util.Iterator;
@@ -73,13 +71,11 @@ import static com.hazelcast.jet.impl.util.LoggingUtil.logFine;
  * @param <K> extracted key type
  * @param <R> emitted item type
  */
-public final class AsyncTransformUsingServiceUnorderedP<S, T, K, R> extends AbstractProcessor {
+public final class AsyncTransformUsingServiceUnorderedP<C, S, T, K, R> extends AbstractTransformUsingServiceP<C, S> {
 
-    private final ServiceFactory<S> serviceFactory;
     private final BiFunctionEx<? super S, ? super T, CompletableFuture<Traverser<R>>> callAsyncFn;
     private final Function<? super T, ? extends K> extractKeyFn;
 
-    private S service;
     private ManyToOneConcurrentArrayQueue<Tuple3<T, Long, Object>> resultQueue;
     // TODO we can use more efficient structure: we only remove from the beginning and add to the end
     private final SortedMap<Long, Long> watermarkCounts = new TreeMap<>();
@@ -103,31 +99,21 @@ public final class AsyncTransformUsingServiceUnorderedP<S, T, K, R> extends Abst
      * Constructs a processor with the given mapping function.
      */
     private AsyncTransformUsingServiceUnorderedP(
-            @Nonnull ServiceFactory<S> serviceFactory,
-            @Nullable S service,
+            @Nonnull ServiceFactory<C, S> serviceFactory,
+            @Nonnull C serviceContext,
             @Nonnull BiFunctionEx<? super S, ? super T, CompletableFuture<Traverser<R>>> callAsyncFn,
             @Nonnull Function<? super T, ? extends K> extractKeyFn
     ) {
-        assert service == null ^ serviceFactory.hasLocalSharing()
-                : "if service is shared, it must be non-null, or vice versa";
-
-        this.serviceFactory = serviceFactory;
+        super(serviceFactory, serviceContext);
         this.callAsyncFn = callAsyncFn;
-        this.service = service;
         this.extractKeyFn = extractKeyFn;
     }
 
-    @Override
-    public boolean isCooperative() {
-        return serviceFactory.isCooperative();
-    }
 
     @Override
-    protected void init(@Nonnull Processor.Context context) {
-        if (!serviceFactory.hasLocalSharing()) {
-            assert service == null : "service is not null: " + service;
-            service = serviceFactory.createFn().apply(new ServiceContextImpl(serviceFactory, context));
-        }
+    protected void init(@Nonnull Processor.Context context) throws Exception {
+        super.init(context);
+
         maxAsyncOps = serviceFactory.maxPendingCallsPerProcessor();
         resultQueue = new ManyToOneConcurrentArrayQueue<>(maxAsyncOps);
     }
@@ -255,16 +241,6 @@ public final class AsyncTransformUsingServiceUnorderedP<S, T, K, R> extends Abst
         return false;
     }
 
-    @Override
-    public void close() {
-        // close() might be called even if init() was not called.
-        // Only destroy the service if is not shared (i.e. it is our own).
-        if (service != null && !serviceFactory.hasLocalSharing()) {
-            serviceFactory.destroyFn().accept(service);
-        }
-        service = null;
-    }
-
     /**
      * Drains items from the queue until either:
      * <ul><li>
@@ -327,14 +303,14 @@ public final class AsyncTransformUsingServiceUnorderedP<S, T, K, R> extends Abst
      * The {@link ResettableSingletonTraverser} is passed as a first argument to
      * {@code callAsyncFn}, it can be used if needed.
      */
-    public static <S, T, K, R> ProcessorSupplier supplier(
-            @Nonnull ServiceFactory<S> serviceFactory,
+    public static <C, S, T, K, R> ProcessorSupplier supplier(
+            @Nonnull ServiceFactory<C, S> serviceFactory,
             @Nonnull BiFunctionEx<? super S, ? super T, CompletableFuture<Traverser<R>>> callAsyncFn,
             @Nonnull FunctionEx<? super T, ? extends K> extractKeyFn
     ) {
         return supplierWithService(serviceFactory,
-                (serviceFn, service) -> new AsyncTransformUsingServiceUnorderedP<>(
-                        serviceFn, service, callAsyncFn, extractKeyFn
+                (serviceFn, context) -> new AsyncTransformUsingServiceUnorderedP<>(
+                        serviceFn, context, callAsyncFn, extractKeyFn
                 )
         );
     }

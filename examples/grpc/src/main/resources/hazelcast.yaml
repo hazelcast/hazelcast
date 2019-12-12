@@ -13,8 +13,8 @@ hazelcast:
         member-list:
           - 127.0.0.1:5701
           - 127.0.0.1:5702
-  event-journal:
-    map:
-      trades:
+  map:
+    trades:
+      event-journal:
         enabled: true
         capacity: 100000

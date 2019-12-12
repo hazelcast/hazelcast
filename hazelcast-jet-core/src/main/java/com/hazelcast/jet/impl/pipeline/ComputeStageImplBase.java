@@ -215,7 +215,7 @@ public abstract class ComputeStageImplBase<T> extends AbstractStage {
     @Nonnull
     @SuppressWarnings("unchecked")
     <S, R, RET> RET attachMapUsingService(
-            @Nonnull ServiceFactory<S> serviceFactory,
+            @Nonnull ServiceFactory<?, S> serviceFactory,
             @Nonnull BiFunctionEx<? super S, ? super T, ? extends R> mapFn
     ) {
         checkSerializable(mapFn, "mapFn");
@@ -228,7 +228,7 @@ public abstract class ComputeStageImplBase<T> extends AbstractStage {
     @Nonnull
     @SuppressWarnings("unchecked")
     <S, RET> RET attachFilterUsingService(
-            @Nonnull ServiceFactory<S> serviceFactory,
+            @Nonnull ServiceFactory<?, S> serviceFactory,
             @Nonnull BiPredicateEx<? super S, ? super T> filterFn
     ) {
         checkSerializable(filterFn, "filterFn");
@@ -241,7 +241,7 @@ public abstract class ComputeStageImplBase<T> extends AbstractStage {
     @Nonnull
     @SuppressWarnings("unchecked")
     <S, R, RET> RET attachFlatMapUsingService(
-            @Nonnull ServiceFactory<S> serviceFactory,
+            @Nonnull ServiceFactory<?, S> serviceFactory,
             @Nonnull BiFunctionEx<? super S, ? super T, ? extends Traverser<? extends R>> flatMapFn
     ) {
         checkSerializable(flatMapFn, "flatMapFn");
@@ -255,7 +255,7 @@ public abstract class ComputeStageImplBase<T> extends AbstractStage {
     @SuppressWarnings("unchecked")
     <S, R, RET> RET attachFlatMapUsingServiceAsync(
             @Nonnull String operationName,
-            @Nonnull ServiceFactory<S> serviceFactory,
+            @Nonnull ServiceFactory<?, S> serviceFactory,
             @Nonnull BiFunctionEx<? super S, ? super T, ? extends CompletableFuture<Traverser<R>>> flatMapAsyncFn
     ) {
         checkSerializable(flatMapAsyncFn, operationName + "AsyncFn");
@@ -268,7 +268,7 @@ public abstract class ComputeStageImplBase<T> extends AbstractStage {
     @Nonnull
     @SuppressWarnings("unchecked")
     <S, K, R, RET> RET attachMapUsingPartitionedService(
-            @Nonnull ServiceFactory<S> serviceFactory,
+            @Nonnull ServiceFactory<?, S> serviceFactory,
             @Nonnull FunctionEx<? super T, ? extends K> partitionKeyFn,
             @Nonnull BiFunctionEx<? super S, ? super T, ? extends R> mapFn
     ) {
@@ -284,7 +284,7 @@ public abstract class ComputeStageImplBase<T> extends AbstractStage {
     @Nonnull
     @SuppressWarnings("unchecked")
     <S, K, RET> RET attachFilterUsingPartitionedService(
-            @Nonnull ServiceFactory<S> serviceFactory,
+            @Nonnull ServiceFactory<?, S> serviceFactory,
             @Nonnull FunctionEx<? super T, ? extends K> partitionKeyFn,
             @Nonnull BiPredicateEx<? super S, ? super T> filterFn
     ) {
@@ -301,7 +301,7 @@ public abstract class ComputeStageImplBase<T> extends AbstractStage {
     @Nonnull
     @SuppressWarnings("unchecked")
     <S, K, R, RET> RET attachFlatMapUsingPartitionedService(
-            @Nonnull ServiceFactory<S> serviceFactory,
+            @Nonnull ServiceFactory<?, S> serviceFactory,
             @Nonnull FunctionEx<? super T, ? extends K> partitionKeyFn,
             @Nonnull BiFunctionEx<? super S, ? super T, ? extends Traverser<? extends R>> flatMapFn
     ) {
@@ -319,7 +319,7 @@ public abstract class ComputeStageImplBase<T> extends AbstractStage {
     @SuppressWarnings("unchecked")
     <S, K, R, RET> RET attachTransformUsingPartitionedServiceAsync(
             @Nonnull String operationName,
-            @Nonnull ServiceFactory<S> serviceFactory,
+            @Nonnull ServiceFactory<?, S> serviceFactory,
             @Nonnull FunctionEx<? super T, ? extends K> partitionKeyFn,
             @Nonnull BiFunctionEx<? super S, ? super T, CompletableFuture<Traverser<R>>> flatMapAsyncFn
     ) {

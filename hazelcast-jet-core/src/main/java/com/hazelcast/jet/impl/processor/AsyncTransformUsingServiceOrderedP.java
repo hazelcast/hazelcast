@@ -21,7 +21,6 @@ import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.Traversers;
-import com.hazelcast.jet.core.AbstractProcessor;
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.core.ResettableSingletonTraverser;
 import com.hazelcast.jet.core.Watermark;
@@ -29,7 +28,6 @@ import com.hazelcast.jet.datamodel.Tuple2;
 import com.hazelcast.jet.pipeline.ServiceFactory;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.util.ArrayDeque;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -49,12 +47,10 @@ import static com.hazelcast.jet.impl.processor.ProcessorSupplierWithService.supp
  * @param <T> received item type
  * @param <R> emitted item type
  */
-public final class AsyncTransformUsingServiceOrderedP<S, T, R> extends AbstractProcessor {
+public final class AsyncTransformUsingServiceOrderedP<C, S, T, R> extends AbstractTransformUsingServiceP<C, S> {
 
-    private final ServiceFactory<S> serviceFactory;
     private final BiFunctionEx<? super S, ? super T, CompletableFuture<Traverser<R>>> callAsyncFn;
 
-    private S service;
     // on the queue there is either:
     // - tuple2(originalItem, future)
     // - watermark
@@ -70,29 +66,18 @@ public final class AsyncTransformUsingServiceOrderedP<S, T, R> extends AbstractP
      * Constructs a processor with the given mapping function.
      */
     private AsyncTransformUsingServiceOrderedP(
-            @Nonnull ServiceFactory<S> serviceFactory,
-            @Nullable S service,
+            @Nonnull C serviceContext,
+            @Nonnull ServiceFactory<C, S> serviceFactory,
             @Nonnull BiFunctionEx<? super S, ? super T, CompletableFuture<Traverser<R>>> callAsyncFn
     ) {
-        this.serviceFactory = serviceFactory;
+        super(serviceFactory, serviceContext);
         this.callAsyncFn = callAsyncFn;
-        this.service = service;
-
-        assert service == null ^ serviceFactory.hasLocalSharing()
-                : "if service is shared, it must be non-null, or vice versa";
     }
 
     @Override
-    public boolean isCooperative() {
-        return serviceFactory.isCooperative();
-    }
+    protected void init(@Nonnull Context context) throws Exception {
+        super.init(context);
 
-    @Override
-    protected void init(@Nonnull Context context) {
-        if (!serviceFactory.hasLocalSharing()) {
-            assert service == null : "service is not null: " + service;
-            service = serviceFactory.createFn().apply(new ServiceContextImpl(serviceFactory, context));
-        }
         maxAsyncOps = serviceFactory.maxPendingCallsPerProcessor();
         queue = new ArrayDeque<>(maxAsyncOps);
     }
@@ -138,16 +123,6 @@ public final class AsyncTransformUsingServiceOrderedP<S, T, R> extends AbstractP
         // stop-the-world situation, no new async requests are sent while waiting. If async requests
         // are slow, this might be a major slowdown.
         return tryFlushQueue();
-    }
-
-    @Override
-    public void close() {
-        // close() might be called even if init() was not called.
-        // Only destroy the service if is not shared (i.e. it is our own).
-        if (service != null && !serviceFactory.hasLocalSharing()) {
-            serviceFactory.destroyFn().accept(service);
-        }
-        service = null;
     }
 
     /**
@@ -200,12 +175,12 @@ public final class AsyncTransformUsingServiceOrderedP<S, T, R> extends AbstractP
      * The {@link ResettableSingletonTraverser} is passed as a first argument to
      * {@code callAsyncFn}, it can be used if needed.
      */
-    public static <S, T, R> ProcessorSupplier supplier(
-            @Nonnull ServiceFactory<S> serviceFactory,
+    public static <C, S, T, R> ProcessorSupplier supplier(
+            @Nonnull ServiceFactory<C, S> serviceFactory,
             @Nonnull BiFunctionEx<? super S, ? super T, CompletableFuture<Traverser<R>>> callAsyncFn
     ) {
         return supplierWithService(serviceFactory,
-                (serviceFn, service) -> new AsyncTransformUsingServiceOrderedP<>(serviceFn, service, callAsyncFn)
+                (serviceFn, context) -> new AsyncTransformUsingServiceOrderedP<>(context, serviceFn, callAsyncFn)
         );
     }
 }

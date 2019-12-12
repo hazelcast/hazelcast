@@ -105,7 +105,7 @@ public class StreamStageImpl<T> extends ComputeStageImplBase<T> implements Strea
 
     @Nonnull @Override
     public <S, R> StreamStage<R> mapUsingService(
-            @Nonnull ServiceFactory<S> serviceFactory,
+            @Nonnull ServiceFactory<?, S> serviceFactory,
             @Nonnull BiFunctionEx<? super S, ? super T, ? extends R> mapFn
     ) {
         return attachMapUsingService(serviceFactory, mapFn);
@@ -113,7 +113,7 @@ public class StreamStageImpl<T> extends ComputeStageImplBase<T> implements Strea
 
     @Nonnull @Override
     public <S, R> StreamStage<R> mapUsingServiceAsync(
-            @Nonnull ServiceFactory<S> serviceFactory,
+            @Nonnull ServiceFactory<?, S> serviceFactory,
             @Nonnull BiFunctionEx<? super S, ? super T, ? extends CompletableFuture<R>> mapAsyncFn
     ) {
         return attachFlatMapUsingServiceAsync("map", serviceFactory,
@@ -122,7 +122,7 @@ public class StreamStageImpl<T> extends ComputeStageImplBase<T> implements Strea
 
     @Nonnull @Override
     public <S> StreamStage<T> filterUsingService(
-            @Nonnull ServiceFactory<S> serviceFactory,
+            @Nonnull ServiceFactory<?, S> serviceFactory,
             @Nonnull BiPredicateEx<? super S, ? super T> filterFn
     ) {
         return attachFilterUsingService(serviceFactory, filterFn);
@@ -130,7 +130,7 @@ public class StreamStageImpl<T> extends ComputeStageImplBase<T> implements Strea
 
     @Nonnull @Override
     public <S> StreamStage<T> filterUsingServiceAsync(
-            @Nonnull ServiceFactory<S> serviceFactory,
+            @Nonnull ServiceFactory<?, S> serviceFactory,
             @Nonnull BiFunctionEx<? super S, ? super T, ? extends CompletableFuture<Boolean>> filterAsyncFn
     ) {
         return attachFlatMapUsingServiceAsync("filter", serviceFactory,
@@ -139,7 +139,7 @@ public class StreamStageImpl<T> extends ComputeStageImplBase<T> implements Strea
 
     @Nonnull @Override
     public <S, R> StreamStage<R> flatMapUsingService(
-            @Nonnull ServiceFactory<S> serviceFactory,
+            @Nonnull ServiceFactory<?, S> serviceFactory,
             @Nonnull BiFunctionEx<? super S, ? super T, ? extends Traverser<R>> flatMapFn
     ) {
         return attachFlatMapUsingService(serviceFactory, flatMapFn);
@@ -147,7 +147,7 @@ public class StreamStageImpl<T> extends ComputeStageImplBase<T> implements Strea
 
     @Nonnull @Override
     public <S, R> StreamStage<R> flatMapUsingServiceAsync(
-            @Nonnull ServiceFactory<S> serviceFactory,
+            @Nonnull ServiceFactory<?, S> serviceFactory,
             @Nonnull BiFunctionEx<? super S, ? super T, ? extends CompletableFuture<Traverser<R>>> flatMapAsyncFn
     ) {
         return attachFlatMapUsingServiceAsync("flatMap", serviceFactory, flatMapAsyncFn);

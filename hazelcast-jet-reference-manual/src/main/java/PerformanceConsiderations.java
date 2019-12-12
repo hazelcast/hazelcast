@@ -15,6 +15,7 @@
  */
 
 import com.hazelcast.config.SerializerConfig;
+import com.hazelcast.function.ConsumerEx;
 import com.hazelcast.jet.Jet;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.config.EdgeConfig;
@@ -32,6 +33,8 @@ import java.io.Serializable;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
+
+import static com.hazelcast.jet.pipeline.ServiceFactories.nonSharedService;
 
 public class PerformanceConsiderations {
 
@@ -102,9 +105,9 @@ public class PerformanceConsiderations {
         //tag::s8[]
         Pipeline p = Pipeline.create();
         BatchStage<Long> src = p.readFrom(Sources.list("input"));
-        ServiceFactory<DateTimeFormatter> serviceFactory = ServiceFactory.withCreateFn( // <1>
-                x -> DateTimeFormatter.ofPattern("HH:mm:ss.SSS")
-                                      .withZone(ZoneId.systemDefault()));
+        ServiceFactory<?, DateTimeFormatter> serviceFactory = nonSharedService( // <1>
+                () -> DateTimeFormatter.ofPattern("HH:mm:ss.SSS")
+                                      .withZone(ZoneId.systemDefault()), ConsumerEx.noop());
         src.mapUsingService(serviceFactory, // <2>
                 (formatter, tstamp) -> formatter.format(Instant.ofEpochMilli(tstamp))); // <3>
         //end::s8[]

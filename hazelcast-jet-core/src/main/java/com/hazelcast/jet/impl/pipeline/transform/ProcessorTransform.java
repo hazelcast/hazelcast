@@ -57,7 +57,7 @@ public class ProcessorTransform extends AbstractTransform {
 
     public static <S, T, R> ProcessorTransform mapUsingServiceTransform(
             @Nonnull Transform upstream,
-            @Nonnull ServiceFactory<S> serviceFactory,
+            @Nonnull ServiceFactory<?, S> serviceFactory,
             @Nonnull BiFunctionEx<? super S, ? super T, ? extends R> mapFn
     ) {
         return new ProcessorTransform("mapUsingService", upstream,
@@ -66,7 +66,7 @@ public class ProcessorTransform extends AbstractTransform {
 
     public static <S, T> ProcessorTransform filterUsingServiceTransform(
             @Nonnull Transform upstream,
-            @Nonnull ServiceFactory<S> serviceFactory,
+            @Nonnull ServiceFactory<?, S> serviceFactory,
             @Nonnull BiPredicateEx<? super S, ? super T> filterFn
     ) {
         return new ProcessorTransform("filterUsingService", upstream,
@@ -75,7 +75,7 @@ public class ProcessorTransform extends AbstractTransform {
 
     public static <S, T, R> ProcessorTransform flatMapUsingServiceTransform(
             @Nonnull Transform upstream,
-            @Nonnull ServiceFactory<S> serviceFactory,
+            @Nonnull ServiceFactory<?, S> serviceFactory,
             @Nonnull BiFunctionEx<? super S, ? super T, ? extends Traverser<R>> flatMapFn
     ) {
         return new ProcessorTransform("flatMapUsingService", upstream,
@@ -85,7 +85,7 @@ public class ProcessorTransform extends AbstractTransform {
     public static <S, T, R> ProcessorTransform flatMapUsingServiceAsyncTransform(
             @Nonnull Transform upstream,
             @Nonnull String operationName,
-            @Nonnull ServiceFactory<S> serviceFactory,
+            @Nonnull ServiceFactory<?, S> serviceFactory,
             @Nonnull BiFunctionEx<? super S, ? super T, CompletableFuture<Traverser<R>>> flatMapAsyncFn
     ) {
         // TODO use better key so that snapshots are local. Currently they will
@@ -96,7 +96,7 @@ public class ProcessorTransform extends AbstractTransform {
                         flatMapUsingServiceAsyncP(serviceFactory, Object::hashCode, flatMapAsyncFn)));
     }
 
-    static <S> int getPreferredLP(@Nonnull ServiceFactory<S> serviceFactory) {
+    static <S> int getPreferredLP(@Nonnull ServiceFactory<?, S> serviceFactory) {
         return serviceFactory.isCooperative() ? LOCAL_PARALLELISM_USE_DEFAULT : NON_COOPERATIVE_DEFAULT_LOCAL_PARALLELISM;
     }
 

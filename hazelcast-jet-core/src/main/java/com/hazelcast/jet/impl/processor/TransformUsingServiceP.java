@@ -17,15 +17,12 @@
 package com.hazelcast.jet.impl.processor;
 
 import com.hazelcast.jet.Traverser;
-import com.hazelcast.jet.core.AbstractProcessor;
-import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.core.ResettableSingletonTraverser;
 import com.hazelcast.jet.function.TriFunction;
 import com.hazelcast.jet.pipeline.ServiceFactory;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 
 import static com.hazelcast.jet.impl.processor.ProcessorSupplierWithService.supplierWithService;
 
@@ -37,12 +34,8 @@ import static com.hazelcast.jet.impl.processor.ProcessorSupplierWithService.supp
  * @param <T> received item type
  * @param <R> emitted item type
  */
-public final class TransformUsingServiceP<S, T, R> extends AbstractProcessor {
+public final class TransformUsingServiceP<C, S, T, R> extends AbstractTransformUsingServiceP<C, S> {
 
-    // package-visible for test
-    S service;
-
-    private final ServiceFactory<S> serviceFactory;
     private final TriFunction<? super ResettableSingletonTraverser<R>, ? super S, ? super T, ? extends Traverser<R>>
             flatMapFn;
 
@@ -53,31 +46,15 @@ public final class TransformUsingServiceP<S, T, R> extends AbstractProcessor {
      * Constructs a processor with the given mapping function.
      */
     private TransformUsingServiceP(
-            @Nonnull ServiceFactory<S> serviceFactory,
-            @Nullable S service,
+            @Nonnull ServiceFactory<C, S> serviceFactory,
+            @Nonnull C context,
             @Nonnull TriFunction<? super ResettableSingletonTraverser<R>, ? super S, ? super T, ? extends Traverser<R>>
                     flatMapFn
     ) {
-        this.serviceFactory = serviceFactory;
+        super(serviceFactory, context);
         this.flatMapFn = flatMapFn;
-        this.service = service;
-
-        assert service == null ^ serviceFactory.hasLocalSharing()
-                : "if service is shared, it must be non-null, or vice versa";
     }
 
-    @Override
-    public boolean isCooperative() {
-        return serviceFactory.isCooperative();
-    }
-
-    @Override
-    protected void init(@Nonnull Processor.Context context) {
-        if (!serviceFactory.hasLocalSharing()) {
-            assert service == null : "service is not null: " + service;
-            service = serviceFactory.createFn().apply(new ServiceContextImpl(serviceFactory, context));
-        }
-    }
 
     @Override
     @SuppressWarnings("unchecked")
@@ -92,27 +69,17 @@ public final class TransformUsingServiceP<S, T, R> extends AbstractProcessor {
         return false;
     }
 
-    @Override
-    public void close() {
-        // close() might be called even if init() was not called.
-        // Only destroy the service if is not shared (i.e. it is our own).
-        if (service != null && !serviceFactory.hasLocalSharing()) {
-            serviceFactory.destroyFn().accept(service);
-        }
-        service = null;
-    }
-
     /**
      * The {@link ResettableSingletonTraverser} is passed as a first argument to
      * {@code flatMapFn}, it can be used if needed.
      */
-    public static <S, T, R> ProcessorSupplier supplier(
-            @Nonnull ServiceFactory<S> serviceFactory,
+    public static <C, S, T, R> ProcessorSupplier supplier(
+            @Nonnull ServiceFactory<C, S> serviceFactory,
             @Nonnull TriFunction<? super ResettableSingletonTraverser<R>, ? super S, ? super T, ? extends Traverser<R>>
                     flatMapFn
     ) {
         return supplierWithService(serviceFactory,
-                (serviceFn, service) -> new TransformUsingServiceP<S, T, R>(serviceFn, service, flatMapFn)
+                (serviceFn, context) -> new TransformUsingServiceP<C, S, T, R>(serviceFn, context, flatMapFn)
         );
     }
 }

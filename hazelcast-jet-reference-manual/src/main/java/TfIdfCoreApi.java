@@ -15,6 +15,7 @@
  */
 
 import com.hazelcast.function.BiFunctionEx;
+import com.hazelcast.function.ConsumerEx;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.Util;
@@ -23,7 +24,7 @@ import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.core.processor.Processors;
 import com.hazelcast.jet.core.processor.SinkProcessors;
-import com.hazelcast.jet.pipeline.ServiceFactory;
+import com.hazelcast.jet.pipeline.ServiceFactories;
 
 import javax.annotation.Nonnull;
 import java.io.IOException;
@@ -85,7 +86,7 @@ public class TfIdfCoreApi {
 
         //tag::s5[]
         Vertex docLines = dag.newVertex("doc-lines", flatMapUsingServiceP(
-                ServiceFactory.withCreateFn(jet -> null).toNonCooperative(),
+                ServiceFactories.nonSharedService(() -> null, ConsumerEx.noop()).toNonCooperative(),
                 (Object ctx, Entry<Long, String> e) ->
                 traverseStream(docLines("books/" + e.getValue())
                     .map(line -> entry(e.getKey(), line)))));
