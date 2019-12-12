@@ -16,6 +16,7 @@
 
 package com.hazelcast.spring;
 
+import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.impl.clientside.HazelcastClientProxy;
 import com.hazelcast.core.Hazelcast;
@@ -45,6 +46,7 @@ public class TestClientConfigAndSpringDefaults {
     @BeforeClass
     @AfterClass
     public static void start() {
+        HazelcastClient.shutdownAll();
         Hazelcast.shutdownAll();
     }
 

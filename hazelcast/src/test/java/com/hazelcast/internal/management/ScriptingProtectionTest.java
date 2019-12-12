@@ -97,15 +97,20 @@ public class ScriptingProtectionTest extends HazelcastTestSupport {
 
     private void testInternal(Config config, boolean expectEnabled) throws Exception {
         TestHazelcastFactory factory = new TestHazelcastFactory(1);
-        HazelcastInstance hz = config != null ? factory.newHazelcastInstance(config) : factory.newHazelcastInstance();
-        HazelcastInstance client = factory.newHazelcastClient();
-        ManagementCenterService mcs = ((HazelcastClientProxy) client).client.getManagementCenterService();
-        if (!expectEnabled) {
-            expectedException.expect(ExecutionException.class);
-            expectedException.expectCause(CoreMatchers.instanceOf(AccessControlException.class));
-        }
-        assertEquals(SCRIPT_RETURN_VAL,
+
+        try {
+            HazelcastInstance hz = config != null ? factory.newHazelcastInstance(config) : factory.newHazelcastInstance();
+            HazelcastInstance client = factory.newHazelcastClient();
+            ManagementCenterService mcs = ((HazelcastClientProxy) client).client.getManagementCenterService();
+            if (!expectEnabled) {
+                expectedException.expect(ExecutionException.class);
+                expectedException.expectCause(CoreMatchers.instanceOf(AccessControlException.class));
+            }
+            assertEquals(SCRIPT_RETURN_VAL,
                 mcs.runScript(hz.getCluster().getLocalMember(), ENGINE, SCRIPT).get(ASSERT_TRUE_EVENTUALLY_TIMEOUT, SECONDS));
+        } finally {
+            factory.shutdownAll();
+        }
     }
 
     protected Config createConfig(boolean scriptingEnabled) {
