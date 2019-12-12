@@ -20,7 +20,6 @@ import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.cp.CPSubsystem;
 import com.hazelcast.cp.CPSubsystemManagementService;
-import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.ascii.TextCommandService;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.json.Json;
@@ -28,27 +27,22 @@ import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.internal.management.dto.WanReplicationConfigDTO;
 import com.hazelcast.internal.management.operation.SetLicenseOperation;
 import com.hazelcast.internal.util.StringUtil;
-import com.hazelcast.logging.ILogger;
-import com.hazelcast.security.SecurityContext;
-import com.hazelcast.security.UsernamePasswordCredentials;
 import com.hazelcast.version.Version;
 import com.hazelcast.wan.WanPublisherState;
 import com.hazelcast.wan.impl.AddWanConfigResult;
 import com.hazelcast.wan.impl.WanReplicationService;
 
-import javax.security.auth.login.LoginContext;
-import javax.security.auth.login.LoginException;
 import java.io.UnsupportedEncodingException;
-import java.net.URLDecoder;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 
 import static com.hazelcast.cp.CPGroup.METADATA_CP_GROUP_NAME;
-import static com.hazelcast.internal.ascii.rest.HttpPostCommandProcessor.ResponseType.FAIL;
-import static com.hazelcast.internal.ascii.rest.HttpPostCommandProcessor.ResponseType.SUCCESS;
+import static com.hazelcast.internal.ascii.rest.HttpCommand.RES_400;
+import static com.hazelcast.internal.ascii.rest.HttpCommand.RES_403;
+import static com.hazelcast.internal.ascii.rest.HttpCommandProcessor.ResponseType.FAIL;
+import static com.hazelcast.internal.ascii.rest.HttpCommandProcessor.ResponseType.SUCCESS;
 import static com.hazelcast.internal.util.ExceptionUtil.peel;
 import static com.hazelcast.internal.util.InvocationUtil.invokeOnStableClusterSerial;
-import static com.hazelcast.internal.util.StringUtil.bytesToString;
 import static com.hazelcast.internal.util.StringUtil.lowerCaseInternal;
 import static com.hazelcast.internal.util.StringUtil.stringToBytes;
 import static com.hazelcast.internal.util.StringUtil.upperCaseInternal;
@@ -56,11 +50,9 @@ import static com.hazelcast.internal.util.StringUtil.upperCaseInternal;
 @SuppressWarnings({"checkstyle:cyclomaticcomplexity", "checkstyle:methodcount", "checkstyle:methodlength"})
 public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostCommand> {
     private static final byte[] QUEUE_SIMPLE_VALUE_CONTENT_TYPE = stringToBytes("text/plain");
-    private final ILogger logger;
 
     public HttpPostCommandProcessor(TextCommandService textCommandService) {
-        super(textCommandService);
-        this.logger = textCommandService.getNode().getLogger(HttpPostCommandProcessor.class);
+        super(textCommandService, textCommandService.getNode().getLogger(HttpPostCommandProcessor.class));
     }
 
     @Override
@@ -125,149 +117,112 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
             } else {
                 command.send404();
             }
-        } catch (IndexOutOfBoundsException e) {
-            command.send400();
-        } catch (Exception e) {
-            command.send500();
+        } catch (HttpBadRequestException e) {
+            prepareResponse(RES_400, command, response(FAIL, "message", e.getMessage()));
+            sendResponse = true;
+        } catch (HttpForbiddenException e) {
+            prepareResponse(RES_403, command, response(FAIL, "message", "unauthenticated"));
+            sendResponse = true;
+        } catch (Throwable e) {
+            logger.warning("An error occurred while handling request " + command, e);
+            prepareResponse(HttpCommand.RES_500, command, exceptionResponse(e));
         }
+
         if (sendResponse) {
             textCommandService.sendResponse(command);
         }
     }
 
-    private void handleChangeClusterState(HttpPostCommand cmd) {
-        withExceptionHandling("Error occurred while changing cluster state",
-                withAuthentication(command -> {
-                    byte[] data = command.getData();
-                    String[] strList = bytesToString(data).split("&");
-                    Node node = textCommandService.getNode();
-                    ClusterService clusterService = node.getClusterService();
-                    String stateParam = URLDecoder.decode(strList[2], "UTF-8");
-                    ClusterState state = ClusterState.valueOf(upperCaseInternal(stateParam));
-                    if (!state.equals(clusterService.getClusterState())) {
-                        clusterService.changeClusterState(state);
-                        JsonObject res = response(SUCCESS,
-                                "state", state.toString().toLowerCase(StringUtil.LOCALE_INTERNAL));
-                        prepareResponse(command, res);
-                    } else {
-                        JsonObject res = response(FAIL,
-                                "state", state.toString().toLowerCase(StringUtil.LOCALE_INTERNAL));
-                        prepareResponse(command, res);
-                    }
-                })).handle(cmd);
-    }
-
-    private void handleGetClusterState(HttpPostCommand cmd) {
-        withExceptionHandling("Error occurred while getting cluster state",
-                withAuthentication(command -> {
-                    Node node = textCommandService.getNode();
-                    ClusterService clusterService = node.getClusterService();
-                    ClusterState clusterState = clusterService.getClusterState();
-                    prepareResponse(command, response(SUCCESS, "state", lowerCaseInternal(clusterState.toString())));
-                })).handle(cmd);
-    }
-
-    private void handleChangeClusterVersion(HttpPostCommand cmd) {
-        withExceptionHandling("Error occurred while changing cluster version",
-                withAuthentication(command -> {
-                    byte[] data = command.getData();
-                    String[] strList = bytesToString(data).split("&");
-                    Node node = textCommandService.getNode();
-                    ClusterService clusterService = node.getClusterService();
-                    String versionParam = URLDecoder.decode(strList[2], "UTF-8");
-                    Version version = Version.of(versionParam);
-                    clusterService.changeClusterVersion(version);
-                    JsonObject rsp = response(SUCCESS, "version", clusterService.getClusterVersion().toString());
-                    prepareResponse(command, rsp);
-                })).handle(cmd);
-    }
-
-    private void handleForceStart(HttpPostCommand cmd) {
-        withExceptionHandling("Error occurred while handling force start",
-                withAuthentication(command -> {
-                    Node node = textCommandService.getNode();
-                    boolean success = node.getNodeExtension().getInternalHotRestartService().triggerForceStart();
-                    prepareResponse(command, response(success ? SUCCESS : FAIL));
-                })).handle(cmd);
-    }
-
-    private void handlePartialStart(HttpPostCommand cmd) {
-        withExceptionHandling("Error occurred while handling partial start",
-                withAuthentication(command -> {
-                    Node node = textCommandService.getNode();
-                    boolean success = node.getNodeExtension().getInternalHotRestartService().triggerPartialStart();
-                    prepareResponse(command, response(success ? SUCCESS : FAIL));
-                })).handle(cmd);
-    }
-
-    private void handleHotRestartBackup(HttpPostCommand cmd) {
-        withExceptionHandling("Error occurred while invoking hot backup",
-                withAuthentication(command -> {
-                    textCommandService.getNode().getNodeExtension().getHotRestartService().backup();
-                    prepareResponse(command, response(SUCCESS));
-                })).handle(cmd);
-    }
-
-    private void handleHotRestartBackupInterrupt(HttpPostCommand cmd) {
-        withExceptionHandling("Error occurred while interrupting hot backup",
-                withAuthentication(command -> {
-                    textCommandService.getNode().getNodeExtension().getHotRestartService().interruptBackupTask();
-                    prepareResponse(command, response(SUCCESS));
-                })).handle(cmd);
-    }
-
-    private void handleClusterShutdown(HttpPostCommand command) {
-        try {
-            Node node = textCommandService.getNode();
-            ClusterService clusterService = node.getClusterService();
-            if (!checkCredentials(command)) {
-                command.send403();
-                textCommandService.sendResponse(command);
-            } else {
-                sendResponse(command, response(ResponseType.SUCCESS));
-                clusterService.shutdown();
-            }
-        } catch (Throwable throwable) {
-            logger.warning("Error occurred while shutting down cluster", throwable);
-            sendResponse(command, exceptionResponse(throwable));
+    private void handleChangeClusterState(HttpPostCommand cmd) throws Throwable {
+        String[] params = decodeParamsAndAuthenticate(cmd, 3);
+        ClusterService clusterService = getNode().getClusterService();
+        ClusterState state = ClusterState.valueOf(upperCaseInternal(params[2]));
+        if (!state.equals(clusterService.getClusterState())) {
+            clusterService.changeClusterState(state);
+            JsonObject res = response(SUCCESS,
+                    "state", state.toString().toLowerCase(StringUtil.LOCALE_INTERNAL));
+            prepareResponse(cmd, res);
+        } else {
+            JsonObject res = response(FAIL,
+                    "state", state.toString().toLowerCase(StringUtil.LOCALE_INTERNAL));
+            prepareResponse(cmd, res);
         }
     }
 
-    private void handleListNodes(HttpPostCommand cmd) {
-        withExceptionHandling("Error occurred while listing nodes",
-                withAuthentication(command -> {
-                    Node node = textCommandService.getNode();
-                    ClusterService clusterService = node.getClusterService();
-                    final String responseTxt = clusterService.getMembers().toString() + "\n"
-                            + node.getBuildInfo().getVersion() + "\n"
-                            + System.getProperty("java.version");
-                    prepareResponse(command, response(SUCCESS, "response", responseTxt));
-                })).handle(cmd);
+    private void handleGetClusterState(HttpPostCommand cmd) throws Throwable {
+        decodeParamsAndAuthenticate(cmd, 2);
+        ClusterService clusterService = getNode().getClusterService();
+        ClusterState clusterState = clusterService.getClusterState();
+        prepareResponse(cmd, response(SUCCESS, "state", lowerCaseInternal(clusterState.toString())));
     }
 
-    private void handleShutdownNode(HttpPostCommand command) {
-        try {
-            Node node = textCommandService.getNode();
-            if (!checkCredentials(command)) {
-                command.send403();
-                textCommandService.sendResponse(command);
-            } else {
-                sendResponse(command, response(ResponseType.SUCCESS));
-                node.hazelcastInstance.shutdown();
-            }
-        } catch (Throwable throwable) {
-            logger.warning("Error occurred while shutting down", throwable);
-            sendResponse(command, exceptionResponse(throwable));
-        }
+    private void handleChangeClusterVersion(HttpPostCommand cmd) throws Throwable {
+        String[] params = decodeParamsAndAuthenticate(cmd, 3);
+        ClusterService clusterService = getNode().getClusterService();
+        Version version = Version.of(params[2]);
+        clusterService.changeClusterVersion(version);
+        JsonObject rsp = response(SUCCESS, "version", clusterService.getClusterVersion().toString());
+        prepareResponse(cmd, rsp);
+    }
+
+    private void handleForceStart(HttpPostCommand cmd) throws Throwable {
+        decodeParamsAndAuthenticate(cmd, 2);
+        boolean success = getNode().getNodeExtension().getInternalHotRestartService().triggerForceStart();
+        prepareResponse(cmd, response(success ? SUCCESS : FAIL));
+    }
+
+    private void handlePartialStart(HttpPostCommand cmd) throws Throwable {
+        decodeParamsAndAuthenticate(cmd, 2);
+        boolean success = getNode().getNodeExtension().getInternalHotRestartService().triggerPartialStart();
+        prepareResponse(cmd, response(success ? SUCCESS : FAIL));
+    }
+
+    private void handleHotRestartBackup(HttpPostCommand cmd) throws Throwable {
+        decodeParamsAndAuthenticate(cmd, 2);
+        getNode().getNodeExtension().getHotRestartService().backup();
+        prepareResponse(cmd, response(SUCCESS));
+    }
+
+    private void handleHotRestartBackupInterrupt(HttpPostCommand cmd) throws Throwable {
+        decodeParamsAndAuthenticate(cmd, 2);
+        getNode().getNodeExtension().getHotRestartService().interruptBackupTask();
+        prepareResponse(cmd, response(SUCCESS));
+    }
+
+    private void handleClusterShutdown(HttpPostCommand command) throws UnsupportedEncodingException {
+        decodeParamsAndAuthenticate(command, 2);
+        ClusterService clusterService = getNode().getClusterService();
+        sendResponse(command, response(SUCCESS));
+        clusterService.shutdown();
+    }
+
+    private void handleListNodes(HttpPostCommand cmd) throws Throwable {
+        decodeParamsAndAuthenticate(cmd, 2);
+        ClusterService clusterService = getNode().getClusterService();
+        final String responseTxt = clusterService.getMembers().toString() + "\n"
+                + getNode().getBuildInfo().getVersion() + "\n"
+                + System.getProperty("java.version");
+        prepareResponse(cmd, response(SUCCESS, "response", responseTxt));
+    }
+
+    private void handleShutdownNode(HttpPostCommand command) throws UnsupportedEncodingException {
+        decodeParamsAndAuthenticate(command, 2);
+        sendResponse(command, response(SUCCESS));
+        getNode().hazelcastInstance.shutdown();
     }
 
     private void handleQueue(HttpPostCommand command, String uri) {
         String simpleValue = null;
         String suffix;
+        int baseUriLength = URI_QUEUES.length();
         if (uri.endsWith("/")) {
-            suffix = uri.substring(URI_QUEUES.length(), uri.length() - 1);
+            int requestedUriLength = uri.length();
+            if (baseUriLength == requestedUriLength) {
+                throw new HttpBadRequestException("Missing queue name");
+            }
+            suffix = uri.substring(baseUriLength, requestedUriLength - 1);
         } else {
-            suffix = uri.substring(URI_QUEUES.length());
+            suffix = uri.substring(baseUriLength);
         }
         int indexSlash = suffix.lastIndexOf('/');
 
@@ -291,12 +246,15 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
         if (offerResult) {
             command.send200();
         } else {
-            command.setResponse(HttpCommand.RES_503);
+            command.send503();
         }
     }
 
     private void handleMap(HttpPostCommand command, String uri) {
         int indexEnd = uri.indexOf('/', URI_MAPS.length());
+        if (indexEnd == -1) {
+            throw new HttpBadRequestException("Missing map name");
+        }
         String mapName = uri.substring(URI_MAPS.length(), indexEnd);
         String key = uri.substring(indexEnd + 1);
         byte[] data = command.getData();
@@ -311,17 +269,15 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
      * @param cmd the HTTP command
      */
     @SuppressWarnings("checkstyle:magicnumber")
-    private void handleWanSyncMap(HttpPostCommand cmd) {
-        withExceptionHandling("Error occurred while syncing map",
-                withAuthentication(command -> {
-                    String[] params = decodeParams(command, 5);
-                    String wanRepName = params[2];
-                    String publisherId = params[3];
-                    String mapName = params[4];
-                    UUID uuid = textCommandService.getNode().getNodeEngine().getWanReplicationService()
-                                                  .syncMap(wanRepName, publisherId, mapName);
-                    prepareResponse(command, response(SUCCESS, "message", "Sync initiated", "uuid", uuid.toString()));
-                })).handle(cmd);
+    private void handleWanSyncMap(HttpPostCommand cmd) throws Throwable {
+        String[] params = decodeParamsAndAuthenticate(cmd, 5);
+
+        String wanRepName = params[2];
+        String publisherId = params[3];
+        String mapName = params[4];
+        UUID uuid = getNode().getNodeEngine().getWanReplicationService()
+                             .syncMap(wanRepName, publisherId, mapName);
+        prepareResponse(cmd, response(SUCCESS, "message", "Sync initiated", "uuid", uuid.toString()));
     }
 
     /**
@@ -331,16 +287,15 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
      *
      * @param cmd the HTTP command
      */
-    private void handleWanSyncAllMaps(HttpPostCommand cmd) {
-        withExceptionHandling("Error occurred while syncing maps",
-                withAuthentication(command -> {
-                    final String[] params = decodeParams(command, 4);
-                    final String wanRepName = params[2];
-                    final String publisherId = params[3];
-                    UUID uuid = textCommandService.getNode().getNodeEngine().getWanReplicationService()
-                                                  .syncAllMaps(wanRepName, publisherId);
-                    prepareResponse(command, response(SUCCESS, "message", "Sync initiated", "uuid", uuid.toString()));
-                })).handle(cmd);
+    @SuppressWarnings("checkstyle:magicnumber")
+    private void handleWanSyncAllMaps(HttpPostCommand cmd) throws Throwable {
+        String[] params = decodeParamsAndAuthenticate(cmd, 4);
+
+        final String wanRepName = params[2];
+        final String publisherId = params[3];
+        UUID uuid = getNode().getNodeEngine().getWanReplicationService()
+                             .syncAllMaps(wanRepName, publisherId);
+        prepareResponse(cmd, response(SUCCESS, "message", "Sync initiated", "uuid", uuid.toString()));
     }
 
     /**
@@ -350,19 +305,16 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
      * @param cmd the HTTP command
      */
     @SuppressWarnings("checkstyle:magicnumber")
-    private void handleWanConsistencyCheck(HttpPostCommand cmd) {
-        withExceptionHandling("Error occurred while syncing maps",
-                withAuthentication(command -> {
-                    String[] params = decodeParams(command, 5);
-                    String wanReplicationName = params[2];
-                    String publisherId = params[3];
-                    String mapName = params[4];
-                    WanReplicationService service = textCommandService.getNode()
-                                                                      .getNodeEngine().getWanReplicationService();
-                    UUID uuid = service.consistencyCheck(wanReplicationName, publisherId, mapName);
-                    prepareResponse(command, response(SUCCESS,
-                            "message", "Consistency check initiated", "uuid", uuid.toString()));
-                })).handle(cmd);
+    private void handleWanConsistencyCheck(HttpPostCommand cmd) throws Throwable {
+        String[] params = decodeParamsAndAuthenticate(cmd, 5);
+
+        String wanReplicationName = params[2];
+        String publisherId = params[3];
+        String mapName = params[4];
+        WanReplicationService service = getNode().getNodeEngine().getWanReplicationService();
+        UUID uuid = service.consistencyCheck(wanReplicationName, publisherId, mapName);
+        prepareResponse(cmd, response(SUCCESS,
+                "message", "Consistency check initiated", "uuid", uuid.toString()));
     }
 
     /**
@@ -371,17 +323,14 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
      *
      * @param cmd the HTTP command
      */
-    private void handleWanClearQueues(HttpPostCommand cmd) {
-        withExceptionHandling("Error occurred while clearing queues",
-                withAuthentication(command -> {
-                    final String[] params = decodeParams(command, 4);
-                    final String wanRepName = params[2];
-                    final String publisherId = params[3];
-                    textCommandService.getNode().getNodeEngine()
-                                      .getWanReplicationService()
-                                      .removeWanEvents(wanRepName, publisherId);
-                    prepareResponse(command, response(SUCCESS, "message", "WAN replication queues are cleared."));
-                })).handle(cmd);
+    @SuppressWarnings("checkstyle:magicnumber")
+    private void handleWanClearQueues(HttpPostCommand cmd) throws Throwable {
+        String[] params = decodeParamsAndAuthenticate(cmd, 4);
+
+        final String wanRepName = params[2];
+        final String publisherId = params[3];
+        getNode().getNodeEngine().getWanReplicationService().removeWanEvents(wanRepName, publisherId);
+        prepareResponse(cmd, response(SUCCESS, "message", "WAN replication queues are cleared."));
     }
 
     /**
@@ -390,23 +339,20 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
      *
      * @param cmd the HTTP command
      */
-    private void handleAddWanConfig(HttpPostCommand cmd) {
-        withExceptionHandling("Error occurred while adding WAN config",
-                withAuthentication(command -> {
-                    JsonObject res;
-                    String[] params = decodeParams(command, 3);
-                    String wanConfigJson = params[2];
-                    WanReplicationConfigDTO dto = new WanReplicationConfigDTO(new WanReplicationConfig());
-                    dto.fromJson(Json.parse(wanConfigJson).asObject());
+    private void handleAddWanConfig(HttpPostCommand cmd) throws Throwable {
+        String[] params = decodeParamsAndAuthenticate(cmd, 3);
 
-                    AddWanConfigResult result = textCommandService.getNode().getNodeEngine()
-                                                                  .getWanReplicationService()
-                                                                  .addWanReplicationConfig(dto.getConfig());
-                    res = response(SUCCESS, "message", "WAN configuration added.");
-                    res.add("addedPublisherIds", Json.array(result.getAddedPublisherIds().toArray(new String[]{})));
-                    res.add("ignoredPublisherIds", Json.array(result.getIgnoredPublisherIds().toArray(new String[]{})));
-                    prepareResponse(command, res);
-                })).handle(cmd);
+        String wanConfigJson = params[2];
+        WanReplicationConfigDTO dto = new WanReplicationConfigDTO(new WanReplicationConfig());
+        dto.fromJson(Json.parse(wanConfigJson).asObject());
+
+        AddWanConfigResult result = getNode().getNodeEngine()
+                                             .getWanReplicationService()
+                                             .addWanReplicationConfig(dto.getConfig());
+        JsonObject res = response(SUCCESS, "message", "WAN configuration added.");
+        res.add("addedPublisherIds", Json.array(result.getAddedPublisherIds().toArray(new String[]{})));
+        res.add("ignoredPublisherIds", Json.array(result.getIgnoredPublisherIds().toArray(new String[]{})));
+        prepareResponse(cmd, res);
     }
 
     /**
@@ -418,17 +364,14 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
      * @see WanPublisherState#PAUSED
      */
     @SuppressWarnings("checkstyle:magicnumber")
-    private void handleWanPausePublisher(HttpPostCommand cmd) {
-        withExceptionHandling("Error occurred while pausing WAN publisher",
-                withAuthentication(command -> {
-                    String[] params = decodeParams(command, 4);
-                    String wanReplicationName = params[2];
-                    String publisherId = params[3];
-                    WanReplicationService service = textCommandService.getNode().getNodeEngine()
-                                                                      .getWanReplicationService();
-                    service.pause(wanReplicationName, publisherId);
-                    prepareResponse(command, response(SUCCESS, "message", "WAN publisher paused"));
-                })).handle(cmd);
+    private void handleWanPausePublisher(HttpPostCommand cmd) throws Throwable {
+        String[] params = decodeParamsAndAuthenticate(cmd, 4);
+
+        String wanReplicationName = params[2];
+        String publisherId = params[3];
+        WanReplicationService service = getNode().getNodeEngine().getWanReplicationService();
+        service.pause(wanReplicationName, publisherId);
+        prepareResponse(cmd, response(SUCCESS, "message", "WAN publisher paused"));
     }
 
     /**
@@ -440,17 +383,14 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
      * @see WanPublisherState#STOPPED
      */
     @SuppressWarnings("checkstyle:magicnumber")
-    private void handleWanStopPublisher(HttpPostCommand cmd) {
-        withExceptionHandling("Error occurred while stopping WAN publisher",
-                withAuthentication(command -> {
-                    String[] params = decodeParams(command, 4);
-                    String wanReplicationName = params[2];
-                    String publisherId = params[3];
-                    WanReplicationService service = textCommandService.getNode().getNodeEngine()
-                                                                      .getWanReplicationService();
-                    service.stop(wanReplicationName, publisherId);
-                    prepareResponse(command, response(SUCCESS, "message", "WAN publisher stopped"));
-                })).handle(cmd);
+    private void handleWanStopPublisher(HttpPostCommand cmd) throws Throwable {
+        String[] params = decodeParamsAndAuthenticate(cmd, 4);
+
+        String wanReplicationName = params[2];
+        String publisherId = params[3];
+        WanReplicationService service = getNode().getNodeEngine().getWanReplicationService();
+        service.stop(wanReplicationName, publisherId);
+        prepareResponse(cmd, response(SUCCESS, "message", "WAN publisher stopped"));
     }
 
     /**
@@ -462,26 +402,18 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
      * @see WanPublisherState#REPLICATING
      */
     @SuppressWarnings("checkstyle:magicnumber")
-    private void handleWanResumePublisher(HttpPostCommand cmd) {
-        withExceptionHandling("Error occurred while stopping WAN publisher",
-                withAuthentication(command -> {
-                    String[] params = decodeParams(command, 4);
-                    String wanReplicationName = params[2];
-                    String publisherId = params[3];
-                    WanReplicationService service = textCommandService.getNode().getNodeEngine()
-                                                                      .getWanReplicationService();
-                    service.resume(wanReplicationName, publisherId);
-                    prepareResponse(command, response(SUCCESS, "message", "WAN publisher resumed"));
-                })).handle(cmd);
+    private void handleWanResumePublisher(HttpPostCommand cmd) throws Throwable {
+        String[] params = decodeParamsAndAuthenticate(cmd, 4);
+
+        String wanReplicationName = params[2];
+        String publisherId = params[3];
+        WanReplicationService service = getNode().getNodeEngine().getWanReplicationService();
+        service.resume(wanReplicationName, publisherId);
+        prepareResponse(cmd, response(SUCCESS, "message", "WAN publisher resumed"));
     }
 
     private void handleCPMember(final HttpPostCommand command) throws UnsupportedEncodingException {
-        if (!checkCredentials(command)) {
-            command.send403();
-            textCommandService.sendResponse(command);
-            return;
-        }
-
+        decodeParamsAndAuthenticate(command, 2);
         String uri = command.getURI();
         if (uri.endsWith(URI_REMOVE_SUFFIX) || uri.endsWith(URI_REMOVE_SUFFIX + "/")) {
             handleRemoveCPMember(command);
@@ -534,12 +466,7 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
     }
 
     private void handleCPGroup(HttpPostCommand command) throws UnsupportedEncodingException {
-        if (!checkCredentials(command)) {
-            command.send403();
-            textCommandService.sendResponse(command);
-            return;
-        }
-
+        decodeParamsAndAuthenticate(command, 2);
         String uri = command.getURI();
         if (!uri.endsWith(URI_REMOVE_SUFFIX) && !uri.endsWith(URI_REMOVE_SUFFIX + "/")) {
             command.send404();
@@ -609,23 +536,20 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
     }
 
     private void handleResetCPSubsystem(final HttpPostCommand command) throws UnsupportedEncodingException {
-        if (checkCredentials(command)) {
-            getCpSubsystem().getCPSubsystemManagementService()
-                            .reset()
-                            .whenCompleteAsync((response, t) -> {
-                                if (t == null) {
-                                    command.send200();
-                                    textCommandService.sendResponse(command);
-                                } else {
-                                    logger.warning("Error while resetting CP subsystem", t);
-                                    command.send500();
-                                    textCommandService.sendResponse(command);
-                                }
-                            });
-        } else {
-            command.send403();
-            textCommandService.sendResponse(command);
-        }
+        decodeParamsAndAuthenticate(command, 2);
+
+        getCpSubsystem().getCPSubsystemManagementService()
+                        .reset()
+                        .whenCompleteAsync((response, t) -> {
+                            if (t == null) {
+                                command.send200();
+                                textCommandService.sendResponse(command);
+                            } else {
+                                logger.warning("Error while resetting CP subsystem", t);
+                                command.send500();
+                                textCommandService.sendResponse(command);
+                            }
+                        });
     }
 
     private CPSubsystemManagementService getCpSubsystemManagementService() {
@@ -633,98 +557,7 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
     }
 
     private CPSubsystem getCpSubsystem() {
-        return textCommandService.getNode().getNodeEngine().getHazelcastInstance().getCPSubsystem();
-    }
-
-    private static JsonObject exceptionResponse(Throwable throwable) {
-        return response(FAIL, "message", throwable.getMessage());
-    }
-
-    protected static JsonObject response(ResponseType type, String... attributes) {
-        JsonObject object = new JsonObject()
-                .add("status", type.toString());
-        if (attributes.length > 0) {
-            for (int i = 0; i < attributes.length; ) {
-                String key = attributes[i++];
-                String value = attributes[i++];
-                if (value != null) {
-                    object.add(key, value);
-                }
-            }
-        }
-        return object;
-    }
-
-    protected enum ResponseType {
-        SUCCESS, FAIL;
-
-        @Override
-        public String toString() {
-            return super.toString().toLowerCase(StringUtil.LOCALE_INTERNAL);
-        }
-    }
-
-    /**
-     * Decodes HTTP post params contained in {@link HttpPostCommand#getData()}. The data
-     * should be encoded in UTF-8 and joined together with an ampersand (&).
-     *
-     * @param command    the HTTP post command
-     * @param paramCount the number of parameters expected in the command
-     * @return the decoded params
-     * @throws UnsupportedEncodingException If character encoding needs to be consulted, but
-     *                                      named character encoding is not supported
-     */
-    private static String[] decodeParams(HttpPostCommand command, int paramCount) throws UnsupportedEncodingException {
-        final byte[] data = command.getData();
-        final String[] encoded = bytesToString(data).split("&");
-        final String[] decoded = new String[encoded.length];
-        for (int i = 0; i < paramCount; i++) {
-            decoded[i] = URLDecoder.decode(encoded[i], "UTF-8");
-        }
-        return decoded;
-    }
-
-    private boolean checkCredentials(HttpPostCommand command) throws UnsupportedEncodingException {
-        byte[] data = command.getData();
-        if (data == null) {
-            return false;
-        }
-        final String[] strList = bytesToString(data).split("&", -1);
-        return authenticate(command, strList[0], strList.length > 1 ? strList[1] : null);
-    }
-
-    /**
-     * Checks if the request is valid. If Hazelcast Security is not enabled, then only the given user name is compared to
-     * cluster name in node configuration. Otherwise member JAAS authentication (member login module stack) is used to
-     * authenticate the command.
-     */
-    private boolean authenticate(HttpPostCommand command, String userName, String pass)
-            throws UnsupportedEncodingException {
-        String decodedName = userName != null ? URLDecoder.decode(userName, "UTF-8") : null;
-        Node node = textCommandService.getNode();
-        SecurityContext securityContext = node.getNodeExtension().getSecurityContext();
-        String clusterName = node.getConfig().getClusterName();
-        if (securityContext == null) {
-            if (pass != null && !pass.isEmpty()) {
-                logger.fine("Password was provided but the Hazelcast Security is disabled.");
-            }
-            return clusterName.equals(decodedName);
-        }
-        String decodedPass = pass != null ? URLDecoder.decode(pass, "UTF-8") : null;
-        UsernamePasswordCredentials credentials = new UsernamePasswordCredentials(decodedName, decodedPass);
-        try {
-            // we don't have an argument for clusterName in HTTP request, so let's reuse the "username" here
-            LoginContext lc = securityContext.createMemberLoginContext(decodedName, credentials, command.getConnection());
-            lc.login();
-        } catch (LoginException e) {
-            return false;
-        }
-        return true;
-    }
-
-    protected void sendResponse(HttpPostCommand command, JsonObject json) {
-        prepareResponse(command, json);
-        textCommandService.sendResponse(command);
+        return getNode().getNodeEngine().getHazelcastInstance().getCPSubsystem();
     }
 
     @Override
@@ -732,53 +565,18 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
         handle(command);
     }
 
-    private void handleSetLicense(HttpPostCommand cmd) {
-        withExceptionHandling("Error occurred while updating the license",
-                withAuthentication(command -> {
-                    try {
-                        final int retryCount = 100;
-                        byte[] data = command.getData();
-                        String[] strList = bytesToString(data).split("&");
-                        // assumes that both groupName and password are present
-                        String licenseKey = strList.length > 2 ? URLDecoder.decode(strList[2], "UTF-8") : null;
-                        invokeOnStableClusterSerial(textCommandService.getNode().nodeEngine,
-                                () -> new SetLicenseOperation(licenseKey), retryCount).get();
-                        prepareResponse(command, responseOnSetLicenseSuccess());
-                    } catch (ExecutionException executionException) {
-                        logger.warning("Error occurred while updating the license", executionException.getCause());
-                        prepareResponse(command, exceptionResponse(executionException.getCause()));
-                    }
-                })).handle(cmd);
-    }
-
-    private ExceptionThrowingCommandHandler withAuthentication(ExceptionThrowingCommandHandler commandHandler) {
-        return command -> {
-            if (checkCredentials(command)) {
-                commandHandler.handle(command);
-            } else {
-                command.send403();
-            }
-        };
-    }
-
-    private CommandHandler withExceptionHandling(String errorMsg,
-                                                 ExceptionThrowingCommandHandler commandHandler) {
-        return cmd -> {
-            try {
-                commandHandler.handle(cmd);
-            } catch (Throwable throwable) {
-                logger.warning(errorMsg, throwable);
-                prepareResponse(cmd, exceptionResponse(throwable));
-            }
-        };
-    }
-
-    private interface CommandHandler {
-        void handle(HttpPostCommand command);
-    }
-
-    private interface ExceptionThrowingCommandHandler {
-        void handle(HttpPostCommand command) throws Throwable;
+    private void handleSetLicense(HttpPostCommand cmd) throws Throwable {
+        String[] params = decodeParamsAndAuthenticate(cmd, 3);
+        try {
+            final int retryCount = 100;
+            // assumes that both groupName and password are present
+            String licenseKey = params[2];
+            invokeOnStableClusterSerial(getNode().nodeEngine,
+                    () -> new SetLicenseOperation(licenseKey), retryCount).get();
+            prepareResponse(cmd, responseOnSetLicenseSuccess());
+        } catch (ExecutionException executionException) {
+            throw executionException.getCause();
+        }
     }
 
     protected JsonObject responseOnSetLicenseSuccess() {

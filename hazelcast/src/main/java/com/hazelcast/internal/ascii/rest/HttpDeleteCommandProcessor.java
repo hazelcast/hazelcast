@@ -21,7 +21,7 @@ import com.hazelcast.internal.ascii.TextCommandService;
 public class HttpDeleteCommandProcessor extends HttpCommandProcessor<HttpDeleteCommand> {
 
     public HttpDeleteCommandProcessor(TextCommandService textCommandService) {
-        super(textCommandService);
+        super(textCommandService, textCommandService.getNode().getLogger(HttpPostCommandProcessor.class));
     }
 
     @Override

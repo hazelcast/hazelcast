@@ -218,21 +218,27 @@ public class RestTest {
     public void syncMapOverWAN() throws Exception {
         Config config = instance.getConfig();
         String result = communicator.syncMapOverWAN(config.getClusterName(), "", "atob", "b", "default");
-        assertEquals("{\"status\":\"fail\",\"message\":\"WAN sync for map is not supported.\"}", result);
+        assertJsonContains(result,
+                "status", "fail",
+                "message", "WAN sync for map is not supported.");
     }
 
     @Test
     public void syncAllMapsOverWAN() throws Exception {
         Config config = instance.getConfig();
         String result = communicator.syncMapsOverWAN(config.getClusterName(), "", "atob", "b");
-        assertEquals("{\"status\":\"fail\",\"message\":\"WAN sync is not supported.\"}", result);
+        assertJsonContains(result,
+                "status", "fail",
+                "message", "WAN sync is not supported.");
     }
 
     @Test
     public void wanClearQueues() throws Exception {
         Config config = instance.getConfig();
         String result = communicator.wanClearQueues(config.getClusterName(), "", "atob", "b");
-        assertEquals("{\"status\":\"fail\",\"message\":\"Clearing WAN replication queues is not supported.\"}", result);
+        assertJsonContains(result,
+                "status", "fail",
+                "message", "Clearing WAN replication queues is not supported.");
     }
 
     @Test
@@ -242,7 +248,9 @@ public class RestTest {
         wanReplicationConfig.setName("test");
         WanReplicationConfigDTO dto = new WanReplicationConfigDTO(wanReplicationConfig);
         String result = communicator.addWanConfig(config.getClusterName(), "", dto.toJson().toString());
-        assertEquals("{\"status\":\"fail\",\"message\":\"Adding new WAN config is not supported.\"}", result);
+        assertJsonContains(result,
+                "status", "fail",
+                "message", "Adding new WAN config is not supported.");
     }
 
     @Test
@@ -344,6 +352,7 @@ public class RestTest {
     public void testBad_PostRequest() throws IOException {
         ConnectionResponse resp = communicator.postBadRequestURI();
         assertEquals(HTTP_BAD_REQUEST, resp.responseCode);
+        assertJsonContains(resp.response, "status", "fail", "message", "Missing map name");
     }
 
     @Test
