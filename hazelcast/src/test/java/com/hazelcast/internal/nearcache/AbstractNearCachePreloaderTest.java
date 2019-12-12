@@ -350,11 +350,12 @@ public abstract class AbstractNearCachePreloaderTest<NK, NV> extends HazelcastTe
             adapter.destroy();
             adapter = getDataStructure(context, name);
         }
+        adapter.destroy();
     }
 
     @Test(timeout = 10 * MINUTE)
     public void testCreateAndDestroyDataStructure_withDifferentNames() {
-        String name = randomMapName("createDestroyNearCache-" + getClass().getName());
+        String name = randomMapName("createDestroyNearCache-diff-" + getClass().getName());
         nearCacheConfig.setName(name + "*");
 
         NearCacheTestContext<Object, String, NK, NV> context = createContext(true);
@@ -365,6 +366,7 @@ public abstract class AbstractNearCachePreloaderTest<NK, NV> extends HazelcastTe
             adapter.destroy();
             adapter = getDataStructure(context, name + i);
         }
+        adapter.destroy();
     }
 
     protected final NearCacheConfig getNearCacheConfig(InMemoryFormat inMemoryFormat, boolean serializeKeys,
