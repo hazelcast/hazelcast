@@ -211,13 +211,18 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
         getNode().hazelcastInstance.shutdown();
     }
 
-    private void handleQueue(HttpPostCommand command, String uri) throws UnsupportedEncodingException {
+    private void handleQueue(HttpPostCommand command, String uri) {
         String simpleValue = null;
         String suffix;
+        int baseUriLength = URI_QUEUES.length();
         if (uri.endsWith("/")) {
-            suffix = uri.substring(URI_QUEUES.length(), uri.length() - 1);
+            int requestedUriLength = uri.length();
+            if (baseUriLength == requestedUriLength) {
+                throw new HttpBadRequestException("Missing queue name");
+            }
+            suffix = uri.substring(baseUriLength, requestedUriLength - 1);
         } else {
-            suffix = uri.substring(URI_QUEUES.length());
+            suffix = uri.substring(baseUriLength);
         }
         int indexSlash = suffix.lastIndexOf('/');
 

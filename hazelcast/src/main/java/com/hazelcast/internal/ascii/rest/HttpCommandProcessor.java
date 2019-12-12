@@ -157,6 +157,11 @@ public abstract class HttpCommandProcessor<T> extends AbstractTextCommandProcess
     String[] decodeParams(HttpPostCommand command, int expectedParamCount)
             throws UnsupportedEncodingException {
         byte[] data = command.getData();
+        if (data == null) {
+            throw new HttpBadRequestException(
+                    "This endpoint expects at least " + expectedParamCount + " parameters");
+        }
+
         String[] encoded = bytesToString(data).split("&", expectedParamCount);
         String[] decoded = new String[encoded.length];
 
