@@ -180,12 +180,14 @@ Maven snippet:
 #### Requirements
 
 * JDK 8 or later
-* [Apache Maven](https://maven.apache.org/) version 3.5.2 or later
 
-To build, use the command:
-
+To build on Linux/MacOS X use:
 ```
-mvn clean package -DskipTests
+./mvnw clean package -DskipTests
+```
+for Windows use:
+```
+mvnw clean package -DskipTests
 ```
 
 ### Contributions
