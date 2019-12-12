@@ -157,7 +157,6 @@ import com.hazelcast.client.impl.protocol.codec.ListSubCodec;
 import com.hazelcast.client.impl.protocol.codec.MCApplyMCConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.MCChangeClusterStateCodec;
 import com.hazelcast.client.impl.protocol.codec.MCChangeClusterVersionCodec;
-import com.hazelcast.client.impl.protocol.codec.MCForceStartCodec;
 import com.hazelcast.client.impl.protocol.codec.MCGetClusterMetadataCodec;
 import com.hazelcast.client.impl.protocol.codec.MCGetMapConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.MCGetMemberConfigCodec;
@@ -174,8 +173,9 @@ import com.hazelcast.client.impl.protocol.codec.MCRunGcCodec;
 import com.hazelcast.client.impl.protocol.codec.MCRunScriptCodec;
 import com.hazelcast.client.impl.protocol.codec.MCShutdownClusterCodec;
 import com.hazelcast.client.impl.protocol.codec.MCShutdownMemberCodec;
+import com.hazelcast.client.impl.protocol.codec.MCTriggerForceStartCodec;
 import com.hazelcast.client.impl.protocol.codec.MCTriggerHotRestartBackupCodec;
-import com.hazelcast.client.impl.protocol.codec.MCTriggerPartialRestartCodec;
+import com.hazelcast.client.impl.protocol.codec.MCTriggerPartialStartCodec;
 import com.hazelcast.client.impl.protocol.codec.MCUpdateMapConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.MapAddEntryListenerCodec;
 import com.hazelcast.client.impl.protocol.codec.MapAddEntryListenerToKeyCodec;
@@ -1697,9 +1697,9 @@ public class DefaultMessageTaskFactoryProvider implements MessageTaskFactoryProv
                 (cm, con) -> new CheckWanConsistencyMessageTask(cm, node, con));
         factories.put(MCPollMCEventsCodec.REQUEST_MESSAGE_TYPE,
                 (cm, con) -> new PollMCEventsMessageTask(cm, node, con));
-        factories.put(MCTriggerPartialRestartCodec.REQUEST_MESSAGE_TYPE,
+        factories.put(MCTriggerPartialStartCodec.REQUEST_MESSAGE_TYPE,
                 (cm, con) -> new TriggerPartialRestartMessageTask(cm, node, con));
-        factories.put(MCForceStartCodec.REQUEST_MESSAGE_TYPE,
+        factories.put(MCTriggerForceStartCodec.REQUEST_MESSAGE_TYPE,
                 (cm, con) -> new ForceStartClusterMessageTask(cm, node, con));
         factories.put(MCTriggerHotRestartBackupCodec.REQUEST_MESSAGE_TYPE,
                 (cm, con) -> new HotRestartBackupMessageTask(cm, node, con));

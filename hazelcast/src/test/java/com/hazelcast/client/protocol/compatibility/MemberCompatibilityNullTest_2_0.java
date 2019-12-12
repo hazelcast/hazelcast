@@ -7356,31 +7356,31 @@ public class MemberCompatibilityNullTest_2_0 {
     }
 
     @Test
-    public void test_MCTriggerPartialRestartCodec_decodeRequest() {
+    public void test_MCTriggerPartialStartCodec_decodeRequest() {
         int fileClientMessageIndex = 815;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
-        MCTriggerPartialRestartCodec.RequestParameters parameters = MCTriggerPartialRestartCodec.decodeRequest(fromFile);
+        MCTriggerPartialStartCodec.RequestParameters parameters = MCTriggerPartialStartCodec.decodeRequest(fromFile);
     }
 
     @Test
-    public void test_MCTriggerPartialRestartCodec_encodeResponse() {
+    public void test_MCTriggerPartialStartCodec_encodeResponse() {
         int fileClientMessageIndex = 816;
-        ClientMessage encoded = MCTriggerPartialRestartCodec.encodeResponse(aBoolean);
+        ClientMessage encoded = MCTriggerPartialStartCodec.encodeResponse(aBoolean);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
     }
 
     @Test
-    public void test_MCForceStartCodec_decodeRequest() {
+    public void test_MCTriggerForceStartCodec_decodeRequest() {
         int fileClientMessageIndex = 817;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
-        MCForceStartCodec.RequestParameters parameters = MCForceStartCodec.decodeRequest(fromFile);
+        MCTriggerForceStartCodec.RequestParameters parameters = MCTriggerForceStartCodec.decodeRequest(fromFile);
     }
 
     @Test
-    public void test_MCForceStartCodec_encodeResponse() {
+    public void test_MCTriggerForceStartCodec_encodeResponse() {
         int fileClientMessageIndex = 818;
-        ClientMessage encoded = MCForceStartCodec.encodeResponse(aBoolean);
+        ClientMessage encoded = MCTriggerForceStartCodec.encodeResponse(aBoolean);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
     }

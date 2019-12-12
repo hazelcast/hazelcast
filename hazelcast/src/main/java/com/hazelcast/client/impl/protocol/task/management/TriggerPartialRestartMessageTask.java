@@ -1,7 +1,7 @@
 package com.hazelcast.client.impl.protocol.task.management;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.codec.MCTriggerPartialRestartCodec;
+import com.hazelcast.client.impl.protocol.codec.MCTriggerPartialStartCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.management.ManagementCenterService;
@@ -9,7 +9,7 @@ import com.hazelcast.internal.nio.Connection;
 
 import java.security.Permission;
 
-public class TriggerPartialRestartMessageTask extends AbstractCallableMessageTask<MCTriggerPartialRestartCodec.RequestParameters> {
+public class TriggerPartialRestartMessageTask extends AbstractCallableMessageTask<MCTriggerPartialStartCodec.RequestParameters> {
 
     private final Node node;
 
@@ -25,13 +25,13 @@ public class TriggerPartialRestartMessageTask extends AbstractCallableMessageTas
     }
 
     @Override
-    protected MCTriggerPartialRestartCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
-        return MCTriggerPartialRestartCodec.decodeRequest(clientMessage);
+    protected MCTriggerPartialStartCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return MCTriggerPartialStartCodec.decodeRequest(clientMessage);
     }
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return MCTriggerPartialRestartCodec.encodeResponse((Boolean) response);
+        return MCTriggerPartialStartCodec.encodeResponse((Boolean) response);
     }
 
     @Override

@@ -6847,34 +6847,34 @@ public class ClientCompatibilityTest_2_0 {
     }
 
     @Test
-    public void test_MCTriggerPartialRestartCodec_encodeRequest() {
+    public void test_MCTriggerPartialStartCodec_encodeRequest() {
         int fileClientMessageIndex = 815;
-        ClientMessage encoded = MCTriggerPartialRestartCodec.encodeRequest();
+        ClientMessage encoded = MCTriggerPartialStartCodec.encodeRequest();
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
     }
 
     @Test
-    public void test_MCTriggerPartialRestartCodec_decodeResponse() {
+    public void test_MCTriggerPartialStartCodec_decodeResponse() {
         int fileClientMessageIndex = 816;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
-        MCTriggerPartialRestartCodec.ResponseParameters parameters = MCTriggerPartialRestartCodec.decodeResponse(fromFile);
+        MCTriggerPartialStartCodec.ResponseParameters parameters = MCTriggerPartialStartCodec.decodeResponse(fromFile);
         assertTrue(isEqual(aBoolean, parameters.result));
     }
 
     @Test
-    public void test_MCForceStartCodec_encodeRequest() {
+    public void test_MCTriggerForceStartCodec_encodeRequest() {
         int fileClientMessageIndex = 817;
-        ClientMessage encoded = MCForceStartCodec.encodeRequest();
+        ClientMessage encoded = MCTriggerForceStartCodec.encodeRequest();
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
     }
 
     @Test
-    public void test_MCForceStartCodec_decodeResponse() {
+    public void test_MCTriggerForceStartCodec_decodeResponse() {
         int fileClientMessageIndex = 818;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
-        MCForceStartCodec.ResponseParameters parameters = MCForceStartCodec.decodeResponse(fromFile);
+        MCTriggerForceStartCodec.ResponseParameters parameters = MCTriggerForceStartCodec.decodeResponse(fromFile);
         assertTrue(isEqual(aBoolean, parameters.result));
     }
 

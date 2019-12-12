@@ -1,7 +1,7 @@
 package com.hazelcast.client.impl.protocol.task.management;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.codec.MCForceStartCodec;
+import com.hazelcast.client.impl.protocol.codec.MCTriggerForceStartCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.management.ManagementCenterService;
@@ -9,7 +9,7 @@ import com.hazelcast.internal.nio.Connection;
 
 import java.security.Permission;
 
-public class ForceStartClusterMessageTask extends AbstractCallableMessageTask<MCForceStartCodec.RequestParameters> {
+public class ForceStartClusterMessageTask extends AbstractCallableMessageTask<MCTriggerForceStartCodec.RequestParameters> {
 
     private Node node;
 
@@ -25,13 +25,13 @@ public class ForceStartClusterMessageTask extends AbstractCallableMessageTask<MC
     }
 
     @Override
-    protected MCForceStartCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
-        return MCForceStartCodec.decodeRequest(clientMessage);
+    protected MCTriggerForceStartCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return MCTriggerForceStartCodec.decodeRequest(clientMessage);
     }
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return MCForceStartCodec.encodeResponse((Boolean) response);
+        return MCTriggerForceStartCodec.encodeResponse((Boolean) response);
     }
 
     @Override
