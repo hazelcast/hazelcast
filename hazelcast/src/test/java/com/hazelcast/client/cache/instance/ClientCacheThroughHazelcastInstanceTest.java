@@ -64,7 +64,8 @@ public class ClientCacheThroughHazelcastInstanceTest extends CacheThroughHazelca
         ownerInstance = instanceFactory.newHazelcastInstance(config);
 
         ClientConfig clientConfig = new ClientConfig();
-        clientConfig.getConnectionStrategyConfig().getConnectionRetryConfig().setClusterConnectTimeoutMillis(1000);
+        clientConfig.getConnectionStrategyConfig().getConnectionRetryConfig().setClusterConnectTimeoutMillis(1_000);
+
         if (config.getClassLoader() != null) {
             final ClassLoader tccl = Thread.currentThread().getContextClassLoader();
             try {
