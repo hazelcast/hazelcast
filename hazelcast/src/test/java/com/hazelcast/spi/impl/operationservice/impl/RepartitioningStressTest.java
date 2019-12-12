@@ -130,7 +130,7 @@ public class RepartitioningStressTest extends HazelcastTestSupport {
             thread.assertDiedPeacefully();
         }
 
-        assertEqualsWithDuplicatesTolerance("Unexpected count of updates seen in listener", updateCounter.get(),
+        assertEqualsWithDuplicatesAndMissesTolerance("Unexpected count of updates seen in listener", updateCounter.get(),
                 updateCounterInListener.get());
 
         int[] expectedValues = new int[itemCount];
@@ -187,6 +187,13 @@ public class RepartitioningStressTest extends HazelcastTestSupport {
 
     private void assertEqualsWithDuplicatesTolerance(String msg, long expected, long actual) {
         if (actual < expected || actual > expected + DUPLICATE_OPS_TOLERANCE) {
+            fail(String.format("%s, expected: %d, actual %d, tolerance for duplicates: %d", msg, expected,
+                    actual, DUPLICATE_OPS_TOLERANCE));
+        }
+    }
+
+    private void assertEqualsWithDuplicatesAndMissesTolerance(String msg, long expected, long actual) {
+        if (actual < expected - DUPLICATE_OPS_TOLERANCE || actual > expected + DUPLICATE_OPS_TOLERANCE) {
             fail(String.format("%s, expected: %d, actual %d, tolerance for duplicates: %d", msg, expected,
                     actual, DUPLICATE_OPS_TOLERANCE));
         }
