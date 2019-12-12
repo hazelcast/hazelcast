@@ -7388,7 +7388,7 @@ public class MemberCompatibilityTest_2_0 {
     @Test
     public void test_MCTriggerHotRestartBackupCodec_encodeResponse() {
         int fileClientMessageIndex = 819;
-        ClientMessage encoded = MCTriggerHotRestartBackupCodec.encodeResponse(aBoolean);
+        ClientMessage encoded = MCTriggerHotRestartBackupCodec.encodeResponse();
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
     }
@@ -7403,7 +7403,7 @@ public class MemberCompatibilityTest_2_0 {
     @Test
     public void test_MCInterruptHotRestartBackupCodec_encodeResponse() {
         int fileClientMessageIndex = 821;
-        ClientMessage encoded = MCInterruptHotRestartBackupCodec.encodeResponse(aBoolean);
+        ClientMessage encoded = MCInterruptHotRestartBackupCodec.encodeResponse();
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
     }

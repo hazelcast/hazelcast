@@ -36,15 +36,14 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Interrupts the hot restart backup
  */
-@Generated("451a69f0e7f9bd4ac2d52b308cb86d90")
+@Generated("adcdb1c2eff170607c02cdd9be2ded6b")
 public final class MCInterruptHotRestartBackupCodec {
     //hex: 0x201C00
     public static final int REQUEST_MESSAGE_TYPE = 2104320;
     //hex: 0x201C01
     public static final int RESPONSE_MESSAGE_TYPE = 2104321;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    private static final int RESPONSE_RESULT_FIELD_OFFSET = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_RESULT_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
+    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
 
     private MCInterruptHotRestartBackupCodec() {
     }
@@ -73,18 +72,12 @@ public final class MCInterruptHotRestartBackupCodec {
 
     @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
     public static class ResponseParameters {
-
-        /**
-         * True is the hot restart backup was interrupted successfully, false otherwise
-         */
-        public boolean result;
     }
 
-    public static ClientMessage encodeResponse(boolean result) {
+    public static ClientMessage encodeResponse() {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, RESPONSE_MESSAGE_TYPE);
-        encodeBoolean(initialFrame.content, RESPONSE_RESULT_FIELD_OFFSET, result);
         clientMessage.add(initialFrame);
 
         return clientMessage;
@@ -93,8 +86,8 @@ public final class MCInterruptHotRestartBackupCodec {
     public static MCInterruptHotRestartBackupCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         ResponseParameters response = new ResponseParameters();
-        ClientMessage.Frame initialFrame = iterator.next();
-        response.result = decodeBoolean(initialFrame.content, RESPONSE_RESULT_FIELD_OFFSET);
+        //empty initial frame
+        iterator.next();
         return response;
     }
 

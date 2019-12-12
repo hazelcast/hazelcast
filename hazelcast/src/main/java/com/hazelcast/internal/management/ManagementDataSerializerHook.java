@@ -38,6 +38,8 @@ public class ManagementDataSerializerHook implements DataSerializerHook {
     public static final int SET_LICENSE = 2;
     public static final int CHANGE_CLUSTER_STATE = 3;
     public static final int UPDATE_PERMISSION_CONFIG_OPERATION = 4;
+    public static final int HOT_RESTART_BACKUP_OPERATION = 5;
+    public static final int HOT_RESTART_BACKUP_INTERRUPT_OPERATION = 6;
 
     private static final int LEN = UPDATE_PERMISSION_CONFIG_OPERATION + 1;
 

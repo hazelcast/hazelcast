@@ -1,7 +1,7 @@
 package com.hazelcast.client.impl.protocol.task.management;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.codec.MCTriggerHotRestartBackupCodec;
+import com.hazelcast.client.impl.protocol.codec.MCInterruptHotRestartBackupCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractInvocationMessageTask;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.management.ManagementCenterService;
@@ -12,33 +12,33 @@ import com.hazelcast.spi.impl.operationservice.Operation;
 
 import java.security.Permission;
 
-import static com.hazelcast.internal.management.ManagementDataSerializerHook.HOT_RESTART_BACKUP_OPERATION;
+import static com.hazelcast.internal.management.ManagementDataSerializerHook.HOT_RESTART_BACKUP_INTERRUPT_OPERATION;
 
-class HotRestartBackupOperation extends AbstractManagementOperation {
+class HotRestartBackupInterruptOperation extends AbstractManagementOperation {
 
     private final Node node;
 
-    HotRestartBackupOperation(Node node) {
+    public HotRestartBackupInterruptOperation(Node node) {
         this.node = node;
     }
 
     @Override
     public void run()
             throws Exception {
-        node.getNodeExtension().getHotRestartService().backup();
+        node.getNodeExtension().getHotRestartService().interruptBackupTask();
     }
 
     @Override
     public int getClassId() {
-        return HOT_RESTART_BACKUP_OPERATION;
+        return HOT_RESTART_BACKUP_INTERRUPT_OPERATION;
     }
 }
 
-public class HotRestartBackupMessageTask extends AbstractInvocationMessageTask<MCTriggerHotRestartBackupCodec.RequestParameters> {
+public class HotRestartBackupInterruptMessageTask extends AbstractInvocationMessageTask<MCInterruptHotRestartBackupCodec.RequestParameters> {
 
     private final Node node;
 
-    public HotRestartBackupMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
+    public HotRestartBackupInterruptMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
         this.node = node;
     }
@@ -51,17 +51,17 @@ public class HotRestartBackupMessageTask extends AbstractInvocationMessageTask<M
 
     @Override
     protected Operation prepareOperation() {
-        return new HotRestartBackupOperation(node);
+        return new HotRestartBackupInterruptOperation(node);
     }
 
     @Override
-    protected MCTriggerHotRestartBackupCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
-        return MCTriggerHotRestartBackupCodec.decodeRequest(clientMessage);
+    protected MCInterruptHotRestartBackupCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return MCInterruptHotRestartBackupCodec.decodeRequest(clientMessage);
     }
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return MCTriggerHotRestartBackupCodec.encodeResponse();
+        return MCInterruptHotRestartBackupCodec.encodeResponse();
     }
 
     @Override
@@ -81,7 +81,7 @@ public class HotRestartBackupMessageTask extends AbstractInvocationMessageTask<M
 
     @Override
     public String getMethodName() {
-        return "triggerHotRestartBackup";
+        return "interruptHotRestartBackup";
     }
 
     @Override

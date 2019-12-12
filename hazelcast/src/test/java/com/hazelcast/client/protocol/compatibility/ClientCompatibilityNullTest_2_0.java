@@ -6880,7 +6880,6 @@ public class ClientCompatibilityNullTest_2_0 {
         int fileClientMessageIndex = 819;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         MCTriggerHotRestartBackupCodec.ResponseParameters parameters = MCTriggerHotRestartBackupCodec.decodeResponse(fromFile);
-        assertTrue(isEqual(aBoolean, parameters.result));
     }
 
     @Test
@@ -6896,7 +6895,6 @@ public class ClientCompatibilityNullTest_2_0 {
         int fileClientMessageIndex = 821;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         MCInterruptHotRestartBackupCodec.ResponseParameters parameters = MCInterruptHotRestartBackupCodec.decodeResponse(fromFile);
-        assertTrue(isEqual(aBoolean, parameters.result));
     }
 
     private void compareClientMessages(ClientMessage binaryMessage, ClientMessage encodedMessage) {
