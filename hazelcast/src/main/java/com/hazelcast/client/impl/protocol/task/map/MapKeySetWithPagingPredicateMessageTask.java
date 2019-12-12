@@ -42,12 +42,12 @@ public class MapKeySetWithPagingPredicateMessageTask
 
     @Override
     protected Object reduce(Collection<QueryResultRow> result) {
-        PagingPredicateImpl pagingPredicate = (PagingPredicateImpl) getPredicate();
-        List<Map.Entry<Data, Data>> entriesData = getSortedPageEntries(result, pagingPredicate);
+        List<Map.Entry<Data, Data>> entriesData = getSortedPageEntries(result);
 
         List<Data> keyList = new ArrayList<>(entriesData.size());
         entriesData.forEach(entry -> keyList.add(entry.getKey()));
 
+        PagingPredicateImpl pagingPredicate = (PagingPredicateImpl) getPredicate();
         return new AbstractMap.SimpleImmutableEntry(pagingPredicate.getAnchorList(), keyList);
     }
 

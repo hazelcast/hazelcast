@@ -41,9 +41,8 @@ public class MapEntriesWithPagingPredicateMessageTask
 
     @Override
     protected Object reduce(Collection<QueryResultRow> result) {
+        List<Map.Entry<Data, Data>> entriesData = getSortedPageEntries(result);
         PagingPredicateImpl pagingPredicate = (PagingPredicateImpl) getPredicate();
-        List<Map.Entry<Data, Data>> entriesData = getSortedPageEntries(result, pagingPredicate);
-
         return new AbstractMap.SimpleImmutableEntry(pagingPredicate.getAnchorList(), entriesData);
     }
 

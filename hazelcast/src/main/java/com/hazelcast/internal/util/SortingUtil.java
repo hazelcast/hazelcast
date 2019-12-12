@@ -16,9 +16,9 @@
 
 package com.hazelcast.internal.util;
 
-import com.hazelcast.map.impl.LazyMapEntry;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.query.PagingPredicate;
+import com.hazelcast.query.impl.CachedQueryEntry;
 import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.query.impl.predicates.PagingPredicateImpl;
 
@@ -152,12 +152,13 @@ public final class SortingUtil {
     @SuppressWarnings("unchecked")
     public static ResultSet getSortedQueryResultSet(List<Map.Entry> list,
                                                     PagingPredicate pagingPredicate, IterationType iterationType) {
-        List<Map.Entry> subList = getSortedSubListAndUpdateAnchor(list, pagingPredicate, iterationType);
+        List<? extends Map.Entry> subList = getSortedSubListAndUpdateAnchor(list, pagingPredicate, iterationType);
         return new ResultSet(subList, iterationType);
     }
 
-    public static List<Map.Entry> getSortedSubListAndUpdateAnchor(List<Map.Entry> list, PagingPredicate pagingPredicate,
-                                                                   IterationType iterationType) {
+    public static List<? extends Map.Entry> getSortedSubListAndUpdateAnchor(List<? extends Map.Entry> list,
+                                                                            PagingPredicate pagingPredicate,
+                                                                            IterationType iterationType) {
         if (list.isEmpty()) {
             return Collections.EMPTY_LIST;
         }
@@ -198,24 +199,26 @@ public final class SortingUtil {
         return SortingUtil.compare(comparator, iterationType, anchor, queryEntry) < 0;
     }
 
-    public static List<Map.Entry<Data, Data>> getSortedSubList(List<Map.Entry> accumulatedList,
+    public static List<Map.Entry<Data, Data>> getSortedSubList(List<QueryableEntry> accumulatedList,
                                                                PagingPredicateImpl pagingPredicate) {
         if (accumulatedList.isEmpty()) {
             return Collections.EMPTY_LIST;
         }
 
-        List<Map.Entry> sortedSubList = getSortedSubListAndUpdateAnchor(accumulatedList, pagingPredicate,
+        List<? extends Map.Entry> sortedSubList = getSortedSubListAndUpdateAnchor(accumulatedList, pagingPredicate,
                 pagingPredicate.getIterationType());
 
         List<Map.Entry<Data, Data>> entries = new ArrayList<>(sortedSubList.size());
 
-        sortedSubList.forEach(entry -> entries.add(new AbstractMap.SimpleImmutableEntry<>(((LazyMapEntry) entry).getKeyData(),
-                ((LazyMapEntry) entry).getValueData())));
+        sortedSubList.forEach(entry -> {
+            CachedQueryEntry queryEntry = (CachedQueryEntry) entry;
+            entries.add(new AbstractMap.SimpleImmutableEntry<>(queryEntry.getKeyData(), queryEntry.getValueData()));
+        });
 
         return entries;
     }
 
-    private static void setAnchor(List<Map.Entry> list, PagingPredicateImpl pagingPredicate, int nearestPage) {
+    private static void setAnchor(List<? extends Map.Entry> list, PagingPredicateImpl pagingPredicate, int nearestPage) {
         if (list.isEmpty()) {
             return;
         }

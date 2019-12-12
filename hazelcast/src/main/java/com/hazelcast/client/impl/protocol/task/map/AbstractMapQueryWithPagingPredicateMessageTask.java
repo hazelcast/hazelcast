@@ -21,11 +21,11 @@ import com.hazelcast.client.impl.protocol.codec.holder.PagingPredicateHolder;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.util.SortingUtil;
-import com.hazelcast.map.impl.LazyMapEntry;
 import com.hazelcast.map.impl.query.QueryResultRow;
 import com.hazelcast.internal.serialization.Data;
-import com.hazelcast.query.PagingPredicate;
 import com.hazelcast.query.Predicate;
+import com.hazelcast.query.impl.CachedQueryEntry;
+import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.query.impl.predicates.PagingPredicateImpl;
 
 import java.util.ArrayList;
@@ -40,13 +40,13 @@ public abstract class AbstractMapQueryWithPagingPredicateMessageTask<P> extends 
         super(clientMessage, node, connection);
     }
 
-    protected List<Map.Entry<Data, Data>> getSortedPageEntries(Collection<QueryResultRow> result,
-                                                               PagingPredicate pagingPredicate) {
-        ArrayList<Map.Entry> accumulatedList = new ArrayList<>(result.size());
+    protected List<Map.Entry<Data, Data>> getSortedPageEntries(Collection<QueryResultRow> result) {
+        ArrayList<QueryableEntry> accumulatedList = new ArrayList<>(result.size());
 
         // TODO: The following lines will be replaced by k-way merge sort algorithm as described at
         //  https://github.com/hazelcast/hazelcast/issues/12205
-        result.forEach(row -> accumulatedList.add(new LazyMapEntry<>(row.getKey(), row.getValue(), serializationService)));
+        result.forEach(
+                row -> accumulatedList.add(new CachedQueryEntry(serializationService, row.getKey(), row.getValue(), null)));
 
         PagingPredicateImpl pagingPredicateImpl = (PagingPredicateImpl) getPredicate();
 
