@@ -274,7 +274,10 @@ public class MultiValueBitmapIndexTest extends HazelcastTestSupport {
             Predicate actualQuery = actualQueries[i];
             ExpectedQuery expectedQuery = expectedQueries[i];
 
+            long before = persons.getLocalMapStats().getIndexStats().values().iterator().next().getQueryCount();
             Set<Map.Entry<Long, Person>> entries = persons.entrySet(actualQuery);
+            long after = persons.getLocalMapStats().getIndexStats().values().iterator().next().getQueryCount();
+            assertEquals(1, after - before);
             expectedQuery.verify(entries);
         }
     }
