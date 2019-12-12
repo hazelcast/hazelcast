@@ -86,10 +86,6 @@ public class ClientConfig {
      */
     private final List<ListenerConfig> listenerConfigs;
 
-    /**
-     * pool-size for internal ExecutorService which handles responses etc.
-     */
-    private int executorPoolSize = -1;
     private String instanceName;
     private String clusterName = Config.DEFAULT_CLUSTER_NAME;
     private ConfigPatternMatcher configPatternMatcher = new MatchingPointConfigPatternMatcher();
@@ -132,7 +128,6 @@ public class ClientConfig {
         for (ListenerConfig listenerConfig : config.listenerConfigs) {
             listenerConfigs.add(new ListenerConfig(listenerConfig));
         }
-        executorPoolSize = config.executorPoolSize;
         instanceName = config.instanceName;
         configPatternMatcher = config.configPatternMatcher;
         nearCacheConfigMap = new ConcurrentHashMap<>();
@@ -618,26 +613,6 @@ public class ClientConfig {
     }
 
     /**
-     * Pool size for internal ExecutorService which handles responses etc.
-     *
-     * @return int Executor pool size.
-     */
-    public int getExecutorPoolSize() {
-        return executorPoolSize;
-    }
-
-    /**
-     * Sets Client side Executor pool size.
-     *
-     * @param executorPoolSize pool size
-     * @return configured {@link com.hazelcast.client.config.ClientConfig} for chaining
-     */
-    public ClientConfig setExecutorPoolSize(int executorPoolSize) {
-        this.executorPoolSize = executorPoolSize;
-        return this;
-    }
-
-    /**
      * Gets list of {@link com.hazelcast.client.config.ProxyFactoryConfig}
      *
      * @return list of {@link com.hazelcast.client.config.ProxyFactoryConfig}
@@ -908,7 +883,7 @@ public class ClientConfig {
     @Override
     public int hashCode() {
         return Objects.hash(backupAckToClientEnabled, classLoader, clusterName, configPatternMatcher, connectionStrategyConfig,
-                executorPoolSize, flakeIdGeneratorConfigMap, instanceName, labels, listenerConfigs, loadBalancer,
+                flakeIdGeneratorConfigMap, instanceName, labels, listenerConfigs, loadBalancer,
                 managedContext, metricsConfig, nativeMemoryConfig, nearCacheConfigMap, networkConfig, properties,
                 proxyFactoryConfigs, queryCacheConfigs, reliableTopicConfigMap, securityConfig, serializationConfig,
                 userCodeDeploymentConfig, userContext);
@@ -931,7 +906,6 @@ public class ClientConfig {
                 && Objects.equals(clusterName, other.clusterName)
                 && Objects.equals(configPatternMatcher, other.configPatternMatcher)
                 && Objects.equals(connectionStrategyConfig, other.connectionStrategyConfig)
-                && executorPoolSize == other.executorPoolSize
                 && Objects.equals(flakeIdGeneratorConfigMap, other.flakeIdGeneratorConfigMap)
                 && Objects.equals(instanceName, other.instanceName) && Objects.equals(labels, other.labels)
                 && Objects.equals(listenerConfigs, other.listenerConfigs) && Objects.equals(loadBalancer, other.loadBalancer)
@@ -957,7 +931,6 @@ public class ClientConfig {
                 + ", networkConfig=" + networkConfig
                 + ", loadBalancer=" + loadBalancer
                 + ", listenerConfigs=" + listenerConfigs
-                + ", executorPoolSize=" + executorPoolSize
                 + ", instanceName='" + instanceName + '\''
                 + ", configPatternMatcher=" + configPatternMatcher
                 + ", nearCacheConfigMap=" + nearCacheConfigMap

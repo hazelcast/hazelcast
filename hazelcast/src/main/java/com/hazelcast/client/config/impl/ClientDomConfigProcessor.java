@@ -62,7 +62,6 @@ import java.util.Map;
 import static com.hazelcast.client.config.impl.ClientConfigSections.BACKUP_ACK_TO_CLIENT;
 import static com.hazelcast.client.config.impl.ClientConfigSections.CLUSTER_NAME;
 import static com.hazelcast.client.config.impl.ClientConfigSections.CONNECTION_STRATEGY;
-import static com.hazelcast.client.config.impl.ClientConfigSections.EXECUTOR_POOL_SIZE;
 import static com.hazelcast.client.config.impl.ClientConfigSections.FLAKE_ID_GENERATOR;
 import static com.hazelcast.client.config.impl.ClientConfigSections.INSTANCE_NAME;
 import static com.hazelcast.client.config.impl.ClientConfigSections.LABELS;
@@ -149,8 +148,6 @@ public class ClientDomConfigProcessor extends AbstractDomConfigProcessor {
             handleNearCache(node);
         } else if (QUERY_CACHES.isEqual(nodeName)) {
             queryCacheConfigBuilderHelper.handleQueryCache(clientConfig, node);
-        } else if (EXECUTOR_POOL_SIZE.isEqual(nodeName)) {
-            handleExecutorPoolSize(node);
         } else if (INSTANCE_NAME.isEqual(nodeName)) {
             clientConfig.setInstanceName(getTextContent(node));
         } else if (CONNECTION_STRATEGY.isEqual(nodeName)) {
@@ -255,11 +252,6 @@ public class ClientDomConfigProcessor extends AbstractDomConfigProcessor {
             throw new InvalidConfigurationException("User code deployement can either be className or jarPath. "
                     + childNodeName + " is invalid");
         }
-    }
-
-    private void handleExecutorPoolSize(Node node) {
-        int poolSize = Integer.parseInt(getTextContent(node));
-        clientConfig.setExecutorPoolSize(poolSize);
     }
 
     protected void handleNearCache(Node node) {

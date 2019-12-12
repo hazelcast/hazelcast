@@ -83,16 +83,6 @@ public class InvalidConfigurationClientTest {
     }
 
     @Test
-    public void WhenValid_ExecutorPoolSize() {
-        buildConfig("executor-pool-size", "17");
-    }
-
-    @Test(expected = InvalidConfigurationException.class)
-    public void WhenInvalid_ExecutorPoolSize() {
-        buildConfig("executor-pool-size", "0");
-    }
-
-    @Test
     public void WhenValid_CredentialsClassName() {
         buildConfig("credentials-factory-class-name", "com.hazelcast.security.ICredentialsFactory");
         buildConfig("credentials-factory-class-name", " com.hazelcast.security.ICredentialsFactory");
@@ -234,7 +224,6 @@ public class InvalidConfigurationClientTest {
                 + "      <iam-role>TEST_IAM_ROLE</iam-role>\n"
                 + "    </aws>\n"
                 + "  </network>\n"
-                + "  <executor-pool-size>${executor-pool-size}</executor-pool-size>\n"
                 + "  <security>\n"
                 + "    <credentials-factory class-name='${credentials-factory-class-name}'/>\n"
                 + "  </security>\n"
@@ -270,7 +259,6 @@ public class InvalidConfigurationClientTest {
         properties.setProperty("aws-enabled", "true");
         properties.setProperty("aws-timeout", "10");
         properties.setProperty("inside-aws-enabled", "true");
-        properties.setProperty("executor-pool-size", "40");
         properties.setProperty("credentials-factory-class-name", "com.hazelcast.security.impl.DefaultCredentialsFactory");
         properties.setProperty("listener-class-name", "com.hazelcast.examples.MembershipListener");
         properties.setProperty("use-native-byte-order", "true");

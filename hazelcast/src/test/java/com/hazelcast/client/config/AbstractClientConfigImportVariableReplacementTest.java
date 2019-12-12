@@ -36,9 +36,6 @@ public abstract class AbstractClientConfigImportVariableReplacementTest extends 
     public abstract void testHazelcastElementOnlyAppearsOnce();
 
     @Test
-    public abstract void readVariables();
-
-    @Test
     public abstract void testImportResourceWithConfigReplacers() throws IOException;
 
     @Test

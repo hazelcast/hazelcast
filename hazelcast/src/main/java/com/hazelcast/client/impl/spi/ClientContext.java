@@ -35,6 +35,7 @@ import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.map.impl.MapService;
+import com.hazelcast.spi.impl.executionservice.TaskScheduler;
 import com.hazelcast.spi.properties.HazelcastProperties;
 
 import java.util.concurrent.ConcurrentHashMap;
@@ -57,7 +58,7 @@ public class ClientContext {
     private final LifecycleService lifecycleService;
     private final ClientClusterService clusterService;
     private final ClientListenerService listenerService;
-    private final ClientExecutionService executionService;
+    private final TaskScheduler executionService;
     private final ClientPartitionService partitionService;
     private final ClientQueryCacheContext queryCacheContext;
     private final ClientInvocationService invocationService;
@@ -179,7 +180,7 @@ public class ClientContext {
         return transactionManager;
     }
 
-    public ClientExecutionService getExecutionService() {
+    public TaskScheduler getExecutionService() {
         return executionService;
     }
 

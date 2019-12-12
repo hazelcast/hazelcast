@@ -24,7 +24,6 @@ import com.hazelcast.client.impl.ClientExtension;
 import com.hazelcast.client.impl.connection.nio.ClientPlainChannelInitializer;
 import com.hazelcast.client.impl.proxy.ClientMapProxy;
 import com.hazelcast.client.impl.proxy.NearCachedClientMapProxy;
-import com.hazelcast.client.impl.spi.ClientExecutionService;
 import com.hazelcast.client.impl.spi.ClientProxyFactory;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.config.SSLConfig;
@@ -48,6 +47,7 @@ import com.hazelcast.map.impl.MapService;
 import com.hazelcast.nio.SocketInterceptor;
 import com.hazelcast.partition.PartitioningStrategy;
 import com.hazelcast.partition.strategy.DefaultPartitioningStrategy;
+import com.hazelcast.spi.impl.executionservice.TaskScheduler;
 import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.spi.properties.HazelcastProperties;
 
@@ -177,7 +177,7 @@ public class DefaultClientExtension implements ClientExtension {
     @Override
     public NearCacheManager createNearCacheManager() {
         SerializationService ss = client.getSerializationService();
-        ClientExecutionService es = client.getClientExecutionService();
+        TaskScheduler es = client.getClientExecutionService();
         ClassLoader classLoader = client.getClientConfig().getClassLoader();
         HazelcastProperties properties = client.getProperties();
 

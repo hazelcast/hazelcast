@@ -33,7 +33,6 @@ public enum ClientConfigSections {
     LOAD_BALANCER("load-balancer", false),
     NEAR_CACHE("near-cache", true),
     QUERY_CACHES("query-caches", false),
-    EXECUTOR_POOL_SIZE("executor-pool-size", false),
     BACKUP_ACK_TO_CLIENT("backup-ack-to-client-enabled", false),
     INSTANCE_NAME("instance-name", false),
     CONNECTION_STRATEGY("connection-strategy", false),

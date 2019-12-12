@@ -53,7 +53,6 @@ import java.util.Map;
 import java.util.Random;
 import java.util.UUID;
 import java.util.concurrent.Callable;
-import java.util.concurrent.Executor;
 import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -409,10 +408,9 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
         for (Callable<T> task : tasks) {
             futures.add(submitToRandomInternal(toData(task), null, true));
         }
-        Executor userExecutor = getContext().getExecutionService().getUserExecutor();
         for (Future<T> future : futures) {
             Object value = retrieveResult(future);
-            result.add(newCompletedFuture(value, getSerializationService(), userExecutor));
+            result.add(newCompletedFuture(value, getSerializationService()));
         }
         return result;
     }
@@ -556,8 +554,7 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
         boolean sync = isSyncComputation(preventSync);
         if (sync) {
             Object response = retrieveResultFromMessage(f);
-            Executor userExecutor = getContext().getExecutionService().getUserExecutor();
-            return newCompletedFuture(response, getSerializationService(), userExecutor);
+            return newCompletedFuture(response, getSerializationService());
         } else {
             return new IExecutorDelegatingFuture<>(f, getContext(), uuid, defaultValue,
                     message -> ExecutorServiceSubmitToAddressCodec.decodeResponse(message).response, name, address);
@@ -570,8 +567,7 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
         boolean sync = isSyncComputation(preventSync);
         if (sync) {
             Object response = retrieveResultFromMessage(f);
-            Executor userExecutor = getContext().getExecutionService().getUserExecutor();
-            return newCompletedFuture(response, getSerializationService(), userExecutor);
+            return newCompletedFuture(response, getSerializationService());
         } else {
             return new IExecutorDelegatingFuture<>(f, getContext(), uuid, defaultValue,
                     message -> ExecutorServiceSubmitToPartitionCodec.decodeResponse(message).response, name, partitionId);

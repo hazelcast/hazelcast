@@ -109,7 +109,7 @@ public class ClientICMPManager implements ConnectionListener {
 
                 for (final ClientConnection connection : clientConnectionManager.getActiveConnections()) {
                     try {
-                        clientExecutionService.getUserExecutor().execute(new PeriodicPingTask(connection));
+                        clientExecutionService.execute(new PeriodicPingTask(connection));
                     } catch (Throwable e) {
                         logger.severe(e);
                     }

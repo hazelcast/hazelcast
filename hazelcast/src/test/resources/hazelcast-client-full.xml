@@ -157,9 +157,6 @@
             </discovery-strategy>
         </discovery-strategies>
     </network>
- 
-
-    <executor-pool-size>40</executor-pool-size>
 
     <security>
         <credentials-factory class-name="com.hazelcast.examples.MyCredentialsFactory">

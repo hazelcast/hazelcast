@@ -1517,7 +1517,6 @@
                     <xs:element name="reliable-topic" type="client-reliable-topic" minOccurs="0" maxOccurs="unbounded"/>
                     <xs:element name="metrics" type="client-metrics" minOccurs="0" maxOccurs="unbounded"/>
                 </xs:choice>
-                <xs:attribute name="executor-pool-size" type="xs:int" use="optional"/>
             </xs:extension>
         </xs:complexContent>
     </xs:complexType>

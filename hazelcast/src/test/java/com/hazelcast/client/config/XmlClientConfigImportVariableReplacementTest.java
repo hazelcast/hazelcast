@@ -80,17 +80,6 @@ public class XmlClientConfigImportVariableReplacementTest extends AbstractClient
         buildConfig(xml);
     }
 
-    @Override
-    @Test
-    public void readVariables() {
-        String xml = HAZELCAST_CLIENT_START_TAG
-                + "<executor-pool-size>${executor.pool.size}</executor-pool-size>"
-                + HAZELCAST_CLIENT_END_TAG;
-
-        ClientConfig config = buildConfig(xml, "executor.pool.size", "40");
-        assertEquals(40, config.getExecutorPoolSize());
-    }
-
     @Test
     @Override
     public void testImportResourceWithConfigReplacers() throws IOException {

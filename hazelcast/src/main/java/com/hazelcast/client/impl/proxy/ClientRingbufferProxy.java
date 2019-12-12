@@ -45,7 +45,6 @@ import com.hazelcast.spi.impl.InternalCompletableFuture;
 import javax.annotation.Nonnull;
 import java.util.Collection;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 
 import static com.hazelcast.internal.util.CollectionUtil.objectToDataCollection;
@@ -204,9 +203,7 @@ public class ClientRingbufferProxy<E> extends ClientProxy implements Ringbuffer<
         try {
             capacity();
         } catch (Throwable e) {
-            //in case of exception return the exception via future to behave consistently to member
-            ExecutorService userExecutor = getContext().getExecutionService().getUserExecutor();
-            return completedExceptionally(e, userExecutor);
+            return completedExceptionally(e);
         }
 
         checkTrue(maxCount <= capacity, "the maxCount should be smaller than or equal to the capacity");
