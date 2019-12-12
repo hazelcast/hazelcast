@@ -103,7 +103,7 @@ public class RestClusterBadRequestTest extends HazelcastTestSupport {
     public final OverridePropertyRule overridePropertyRule = set(HAZELCAST_TEST_USE_NETWORK, "true");
 
     @Before
-    public void setupFactoryAndMock() {
+    public void setup() {
         factory = new TestHazelcastInstanceFactory(1);
         HazelcastInstance instance = factory.newHazelcastInstance(getConfig());
         communicator = new HTTPCommunicator(instance);

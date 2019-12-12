@@ -352,6 +352,7 @@ public class RestTest {
     public void testBad_PostRequest() throws IOException {
         ConnectionResponse resp = communicator.postBadRequestURI();
         assertEquals(HTTP_BAD_REQUEST, resp.responseCode);
+        assertJsonContains(resp.response, "status", "fail", "message", "Missing map name");
     }
 
     @Test
