@@ -103,7 +103,7 @@ public class ConnectionRetryConfig {
     }
 
     /**
-     * Timeout value in seconds for the client to give up to connect to the current cluster
+     * Timeout value in milliseconds for the client to give up to connect to the current cluster
      * Depending on FailoverConfig, a client can shutdown or start trying on alternative cluster after reaching the timeout.
      *
      * @return clusterConnectTimeoutMillis

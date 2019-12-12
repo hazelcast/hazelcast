@@ -279,7 +279,12 @@ public class InternalPartitionServiceImpl implements InternalPartitionService,
                                     }
                                 } else {
                                     resetMasterTriggeredFlag();
-                                    logger.severe(throwable);
+                                    if(throwable instanceof MemberLeftException) {
+                                        //if member left, retry the first arrangement
+                                        firstArrangement();
+                                    } else {
+                                        logger.severe(throwable);
+                                    }
                                 }
                             });
 
