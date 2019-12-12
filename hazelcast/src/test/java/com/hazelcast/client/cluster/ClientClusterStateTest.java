@@ -16,7 +16,6 @@
 
 package com.hazelcast.client.cluster;
 
-import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.properties.ClientProperty;
 import com.hazelcast.client.test.TestHazelcastFactory;
@@ -32,7 +31,6 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
-import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -75,11 +73,6 @@ public class ClientClusterStateTest {
     @After
     public void after() {
         factory.terminateAll();
-    }
-
-    @AfterClass
-    public static void afterClass() {
-        HazelcastClient.shutdownAll();
     }
 
     @Test

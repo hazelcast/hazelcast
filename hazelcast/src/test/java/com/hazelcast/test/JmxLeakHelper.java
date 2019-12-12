@@ -27,16 +27,24 @@ import java.util.TreeSet;
  * Helper class which checks whether JMX beans of the given member were de-registered.
  */
 public final class JmxLeakHelper {
+    /** A flag to ignore the check one time. */
+    private static boolean ignoreOnce;
 
     private JmxLeakHelper() {
         // No-op.
     }
 
     public static void checkJmxBeans() {
+        if (ignoreOnce) {
+            ignoreOnce = false;
+
+            return;
+        }
+
         Collection<String> activeJmxBeans = getActiveJmxBeans();
 
         if (!activeJmxBeans.isEmpty()) {
-            StringBuilder errorMessage = new StringBuilder("Unregistered JMX beans:\n");
+            StringBuilder errorMessage = new StringBuilder("JMX beans are still registered:\n");
 
             for (String activeJmxBean : activeJmxBeans) {
                 errorMessage.append("\t").append(activeJmxBean).append("\n");
@@ -66,5 +74,9 @@ public final class JmxLeakHelper {
         } catch (Exception e) {
             throw new RuntimeException("Failed to check active JMX beans: " + e.getMessage(), e);
         }
+    }
+
+    public static void ignoreOnce() {
+        ignoreOnce = true;
     }
 }
