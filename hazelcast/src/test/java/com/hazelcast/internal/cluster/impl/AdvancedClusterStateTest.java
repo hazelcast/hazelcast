@@ -16,22 +16,24 @@
 
 package com.hazelcast.internal.cluster.impl;
 
-import com.hazelcast.cluster.ClusterState;
-import com.hazelcast.internal.longregister.LongRegisterService;
-import com.hazelcast.internal.longregister.operations.AddAndGetOperation;
-import com.hazelcast.config.Config;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.Cluster;
+import com.hazelcast.cluster.ClusterState;
+import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.instance.impl.DefaultNodeExtension;
 import com.hazelcast.instance.impl.HazelcastInstanceFactory;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.instance.impl.NodeExtension;
+import com.hazelcast.internal.longregister.LongRegisterService;
+import com.hazelcast.internal.longregister.operations.AddAndGetOperation;
 import com.hazelcast.internal.partition.InternalPartition;
 import com.hazelcast.internal.partition.InternalPartitionService;
-import com.hazelcast.cluster.Address;
-import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.internal.util.Clock;
+import com.hazelcast.internal.util.ExceptionUtil;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -46,8 +48,6 @@ import com.hazelcast.transaction.TransactionOptions.TransactionType;
 import com.hazelcast.transaction.impl.Transaction;
 import com.hazelcast.transaction.impl.TransactionLogRecord;
 import com.hazelcast.transaction.impl.TransactionManagerServiceImpl;
-import com.hazelcast.internal.util.Clock;
-import com.hazelcast.internal.util.ExceptionUtil;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -71,6 +71,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import static com.hazelcast.instance.impl.TestUtil.terminateInstance;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockito.Mockito.spy;
@@ -553,6 +554,23 @@ public class AdvancedClusterStateTest extends HazelcastTestSupport {
                 assertTrue("Version should be positive: " + partitionService, partitionStateVersion > 0);
             }
         }
+    }
+
+    @Test
+    public void test_PartitionInitialization_whenMasterLeft() {
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
+        HazelcastInstance[] instances = factory.newInstances();
+        HazelcastInstance master = instances[0];
+        HazelcastInstance hz2 = instances[1];
+        assertClusterSizeEventually(instances.length, instances);
+
+
+        InternalPartitionService partitionService = getNode(hz2).getPartitionService();
+        partitionService.firstArrangement();
+
+        spawn(() -> master.getLifecycleService().terminate());
+
+        assertTrueEventually(() -> assertNotEquals(0, partitionService.getPartitionStateVersion()));
     }
 
     @Test
