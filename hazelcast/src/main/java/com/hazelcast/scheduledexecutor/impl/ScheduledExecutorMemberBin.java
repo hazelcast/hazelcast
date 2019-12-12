@@ -29,14 +29,11 @@ public class ScheduledExecutorMemberBin
 
     private final ILogger logger;
 
-    private final NodeEngine nodeEngine;
-
     private final ConstructorFunction<String, ScheduledExecutorContainer> containerConstructorFunction;
 
     public ScheduledExecutorMemberBin(NodeEngine nodeEngine, DistributedScheduledExecutorService service) {
         super(nodeEngine);
         this.logger = nodeEngine.getLogger(getClass());
-        this.nodeEngine = nodeEngine;
         this.containerConstructorFunction = name -> {
             if (logger.isFinestEnabled()) {
                 logger.finest("[Partition: -1] Create new scheduled executor container with name: " + name);

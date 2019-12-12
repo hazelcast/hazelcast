@@ -122,16 +122,21 @@ public class ScheduledTaskDescriptor
      *
      * <p> When suspended, a task (if ever scheduled before), maintains its statistics and its actual runState,
      * however its associated {@link java.util.concurrent.Future} is cancelled and nullified. Upon future, rescheduling,
-     * it will acquire be assigned on a different Future. <p> Task ownership is also restored to default,
+     * it will be assigned on a different Future. <p> Task ownership is also restored to default,
      * which will be fixed when migrations finish and a new master is selected.
+     *
+     * @return <code>true</code> if the task was actually scheduled
      */
-    void suspend() {
+    boolean suspend() {
         // Result is not set, allowing task to get re-scheduled, if/when needed.
 
         if (future != null) {
             this.future.cancel(true);
             this.future = null;
+            return true;
         }
+
+        return false;
     }
 
     boolean cancel(boolean mayInterrupt) {

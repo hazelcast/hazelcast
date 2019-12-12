@@ -39,7 +39,7 @@ public class PartitionCapacityPermit
             throw new RejectedExecutionException(
                     "Maximum capacity (" + capacity + ") of tasks reached for partition (" + partition + ") "
                             + "and scheduled executor (" + name + "). "
-                            + "Reminder that tasks must be disposed if not needed.");
+                            + "Reminder, that tasks must be disposed if not needed.");
         }
 
         --permits;

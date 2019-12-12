@@ -23,10 +23,12 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.scheduledexecutor.IScheduledExecutorService;
 
+import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.config.ScheduledExecutorConfig.CapacityPolicy.PER_NODE;
+import static com.hazelcast.config.ScheduledExecutorConfig.CapacityPolicy.getById;
 import static com.hazelcast.internal.util.Preconditions.checkNotNegative;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.internal.util.Preconditions.checkPositive;
@@ -194,7 +196,8 @@ public class ScheduledExecutorConfig implements IdentifiedDataSerializable, Name
      *
      * @param capacityPolicy
      */
-    public ScheduledExecutorConfig setCapacityPolicy(CapacityPolicy capacityPolicy) {
+    public ScheduledExecutorConfig setCapacityPolicy(@Nonnull CapacityPolicy capacityPolicy) {
+        checkNotNull(capacityPolicy);
         this.capacityPolicy = capacityPolicy;
         return this;
     }
@@ -269,7 +272,7 @@ public class ScheduledExecutorConfig implements IdentifiedDataSerializable, Name
         out.writeInt(poolSize);
         out.writeUTF(splitBrainProtectionName);
         out.writeObject(mergePolicyConfig);
-        out.writeInt(capacityPolicy.ordinal());
+        out.writeByte(capacityPolicy.getId());
     }
 
     @Override
@@ -280,7 +283,7 @@ public class ScheduledExecutorConfig implements IdentifiedDataSerializable, Name
         poolSize = in.readInt();
         splitBrainProtectionName = in.readUTF();
         mergePolicyConfig = in.readObject();
-        capacityPolicy = CapacityPolicy.values()[in.readInt()];
+        capacityPolicy = getById(in.readByte());
     }
 
     @SuppressWarnings({"checkstyle:npathcomplexity"})
@@ -333,11 +336,12 @@ public class ScheduledExecutorConfig implements IdentifiedDataSerializable, Name
      * Capacity policy options
      */
     public enum CapacityPolicy {
+
         /**
          * Capacity policy that counts tasks per Hazelcast instance node/member,
          * and rejects new ones when {@link #capacity} value is reached
          */
-        PER_NODE,
+        PER_NODE((byte) 0),
 
         /**
          * Capacity policy that counts tasks per partition, and rejects new ones when {@link #capacity} value is reached.
@@ -349,7 +353,29 @@ public class ScheduledExecutorConfig implements IdentifiedDataSerializable, Name
          * This policy has no effect when scheduling is done using the OnMember APIs
          * eg. {@link IScheduledExecutorService#scheduleOnMember(Runnable, Member, long, TimeUnit)}
          */
-        PER_PARTITION
+        PER_PARTITION((byte) 1);
 
+        /**
+         * Unique identifier for a policy, can be used for de/serialization purposes
+         */
+        private final byte id;
+
+        CapacityPolicy(byte id) {
+            this.id = id;
+        }
+
+        public byte getId() {
+            return id;
+        }
+
+        public static CapacityPolicy getById(final byte id) {
+            for (CapacityPolicy policy : values()) {
+                if (policy.id == id) {
+                    return policy;
+                }
+            }
+
+            return null;
+        }
     }
 }

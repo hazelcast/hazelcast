@@ -89,7 +89,7 @@ public class ScheduledExecutorContainer {
 
     public ScheduledFuture schedule(TaskDefinition definition) {
         checkNotDuplicateTask(definition.getName());
-        permit.acquire();
+        acquirePermit(false);
         return createContextAndSchedule(definition);
     }
 
@@ -150,7 +150,7 @@ public class ScheduledExecutorContainer {
 
         descriptor.cancel(true);
         tasks.remove(taskName);
-        permit.release();
+        releasePermit();
     }
 
     public void enqueueSuspended(TaskDefinition definition) {
@@ -164,10 +164,6 @@ public class ScheduledExecutorContainer {
 
         boolean keyExists = tasks.containsKey(descriptor.getDefinition().getName());
         if (force || !keyExists) {
-            if (!keyExists) {
-                permit.acquireQuietly();
-            }
-
             tasks.put(descriptor.getDefinition().getName(), descriptor);
         }
     }
@@ -237,6 +233,7 @@ public class ScheduledExecutorContainer {
                 if (descriptor.shouldSchedule()) {
                     doSchedule(descriptor);
                 }
+                acquirePermit(true);
             } catch (Exception e) {
                 throw rethrow(e);
             }
@@ -289,6 +286,18 @@ public class ScheduledExecutorContainer {
         return null;
     }
 
+    private void releasePermit() {
+        permit.release();
+    }
+
+    private void acquirePermit(boolean quietly) {
+        if (quietly) {
+            permit.acquireQuietly();
+        } else {
+            permit.acquire();
+        }
+    }
+
     ScheduledFuture createContextAndSchedule(TaskDefinition definition) {
         if (logger.isFinestEnabled()) {
             log(FINEST, "Creating new task context for " + definition);
@@ -339,9 +348,11 @@ public class ScheduledExecutorContainer {
             // to the Executor's Future, hence, we have no access on the runner thread to interrupt. In this case
             // the line below is only cancelling future runs.
             try {
-                descriptor.suspend();
+                if (descriptor.suspend()) {
+                    releasePermit();
+                }
                 if (logger.isFinestEnabled()) {
-                    log(FINEST, descriptor.getDefinition().getName(), "Cancelled");
+                    log(FINEST, descriptor.getDefinition().getName(), "Suspended");
                 }
             } catch (Exception ex) {
                 throw rethrow(ex);

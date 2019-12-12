@@ -160,14 +160,7 @@ public class DistributedScheduledExecutorService
     }
 
     CapacityPermit permitFor(String name, ScheduledExecutorConfig config) {
-        CapacityPermit permit = permits.get(name);
-        if (permit == null) {
-            CapacityPermit newPermit = new MemberCapacityPermit(name, config.getCapacity());
-            permit = permits.putIfAbsent(name, newPermit);
-            permit = (permit == null) ? newPermit : permit;
-        }
-
-        return permit;
+        return permits.computeIfAbsent(name, n -> new MemberCapacityPermit(n, config.getCapacity()));
     }
 
     void addLossListener(ScheduledFutureProxy future) {
