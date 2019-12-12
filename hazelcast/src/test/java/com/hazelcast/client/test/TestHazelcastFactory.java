@@ -17,19 +17,19 @@
 package com.hazelcast.client.test;
 
 import com.hazelcast.client.HazelcastClient;
-import com.hazelcast.client.config.impl.ClientAliasedDiscoveryConfigUtils;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.XmlClientConfigBuilder;
-import com.hazelcast.client.impl.connection.AddressProvider;
-import com.hazelcast.client.impl.connection.Addresses;
+import com.hazelcast.client.config.impl.ClientAliasedDiscoveryConfigUtils;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.clientside.HazelcastClientProxy;
+import com.hazelcast.client.impl.connection.AddressProvider;
+import com.hazelcast.client.impl.connection.Addresses;
 import com.hazelcast.client.properties.ClientProperty;
 import com.hazelcast.client.util.AddressHelper;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.config.DiscoveryStrategyConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.impl.OutOfMemoryErrorDispatcher;
-import com.hazelcast.cluster.Address;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.test.TestEnvironment;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -80,8 +80,6 @@ public class TestHazelcastFactory extends TestHazelcastInstanceFactory {
             client.start();
             clients.add(client);
             OutOfMemoryErrorDispatcher.registerClient(client);
-
-            System.out.println(">>> CLIENT: " + client.getName());
 
             return new HazelcastClientProxy(client);
         } finally {

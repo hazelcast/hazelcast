@@ -60,6 +60,8 @@ public final class LifecycleServiceImpl implements LifecycleService {
     private final BuildInfo buildInfo;
     private final ExecutorService executor;
 
+    private final Object shutdownMux = new Object();
+
     public LifecycleServiceImpl(HazelcastClientInstanceImpl client) {
         this.client = client;
 
@@ -159,16 +161,18 @@ public final class LifecycleServiceImpl implements LifecycleService {
     }
 
     private void doShutdown() {
-        if (!active.compareAndSet(true, false)) {
-            return;
+        synchronized (shutdownMux) {
+            if (!active.compareAndSet(true, false)) {
+                return;
+            }
+
+            fireLifecycleEvent(SHUTTING_DOWN);
+            HazelcastClient.shutdown(client.getName());
+            client.doShutdown();
+            fireLifecycleEvent(SHUTDOWN);
+
+            shutdownExecutor();
         }
-
-        fireLifecycleEvent(SHUTTING_DOWN);
-        HazelcastClient.shutdown(client.getName());
-        client.doShutdown();
-        fireLifecycleEvent(SHUTDOWN);
-
-        shutdownExecutor();
     }
 
     private void shutdownExecutor() {

@@ -27,7 +27,7 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.map.IMap;
 import com.hazelcast.spi.exception.TargetDisconnectedException;
-import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
@@ -50,7 +50,7 @@ import static com.hazelcast.test.HazelcastTestSupport.warmUpPartitions;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-@RunWith(HazelcastParallelClassRunner.class)
+@RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class ClientClusterStateTest {
 
@@ -151,7 +151,10 @@ public class ClientClusterStateTest {
         warmUpPartitions(instances);
         waitAllForSafeState(instances);
 
-        HazelcastInstance client = factory.newHazelcastClient();
+        ClientConfig clientConfig = new ClientConfig();
+        clientConfig.getConnectionStrategyConfig().getConnectionRetryConfig().setClusterConnectTimeoutMillis(1_000);
+
+        HazelcastInstance client = factory.newHazelcastClient(clientConfig);
         final IMap<Object, Object> map = client.getMap(randomMapName());
 
         final HashMap values = new HashMap<Double, Double>();
