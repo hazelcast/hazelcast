@@ -33,8 +33,9 @@ import com.hazelcast.logging.LoggingService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.executionservice.ExecutionService;
 import com.hazelcast.spi.impl.executionservice.impl.ExecutionServiceImpl;
-import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
+import com.hazelcast.test.JmxLeakHelper;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.hamcrest.CoreMatchers;
@@ -71,7 +72,7 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 import static org.mockito.MockitoAnnotations.initMocks;
 
-@RunWith(HazelcastParallelClassRunner.class)
+@RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class MetricsServiceTest extends HazelcastTestSupport {
     @Rule
@@ -123,6 +124,14 @@ public class MetricsServiceTest extends HazelcastTestSupport {
 
     @After
     public void tearDown() {
+        // Destroy JMX beans created during testing.
+        MetricsService metricsService = new MetricsService(nodeEngineMock, () -> metricsRegistry);
+        metricsService.init(nodeEngineMock, new Properties());
+        metricsService.shutdown(true);
+
+        JmxLeakHelper.checkJmxBeans();
+
+        // Stop executor service.
         if (executionService != null) {
             executionService.shutdown();
         }

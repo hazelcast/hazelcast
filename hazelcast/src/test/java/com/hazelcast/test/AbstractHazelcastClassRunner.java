@@ -309,6 +309,9 @@ public abstract class AbstractHazelcastClassRunner extends AbstractParameterized
                     throw new IllegalStateException(message);
                 }
 
+                // check for leftover JMX beans
+                JmxLeakHelper.checkJmxBeans();
+
                 // check for leftover CachingProvider instances
                 int registrySize = getCachingProviderRegistrySize();
                 if (registrySize > 0) {

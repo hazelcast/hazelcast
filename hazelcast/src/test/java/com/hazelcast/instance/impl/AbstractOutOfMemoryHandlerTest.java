@@ -38,7 +38,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public abstract class AbstractOutOfMemoryHandlerTest extends HazelcastTestSupport {
-    private static final AtomicInteger INSTANCE_ID_COUTNER = new AtomicInteger();
+    private static final AtomicInteger INSTANCE_ID_COUNTER = new AtomicInteger();
 
     protected HazelcastInstanceImpl hazelcastInstance;
     protected HazelcastInstanceImpl hazelcastInstanceThrowsException;
@@ -62,7 +62,7 @@ public abstract class AbstractOutOfMemoryHandlerTest extends HazelcastTestSuppor
         NodeContext nodeContext = new TestNodeContext();
         NodeContext nodeContextWithThrowable = new TestNodeContext(new FailingNetworkingService());
 
-        int instanceId = INSTANCE_ID_COUTNER.incrementAndGet();
+        int instanceId = INSTANCE_ID_COUNTER.incrementAndGet();
 
         String instanceName = "OutOfMemoryHandlerHelper" + instanceId;
         String instanceThrowsExceptionName = "OutOfMemoryHandlerHelperThrowsException" + instanceId;

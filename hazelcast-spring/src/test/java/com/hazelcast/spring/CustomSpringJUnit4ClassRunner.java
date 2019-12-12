@@ -19,6 +19,7 @@ package com.hazelcast.spring;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.spi.properties.ClusterProperty;
+import com.hazelcast.test.JmxLeakHelper;
 import com.hazelcast.test.TestLoggingUtils;
 import org.junit.runner.notification.RunNotifier;
 import org.junit.runners.model.FrameworkMethod;
@@ -75,6 +76,8 @@ public class CustomSpringJUnit4ClassRunner extends SpringJUnit4ClassRunner {
                     Hazelcast.shutdownAll();
                     throw new IllegalStateException(message);
                 }
+
+                JmxLeakHelper.checkJmxBeans();
             }
         };
     }

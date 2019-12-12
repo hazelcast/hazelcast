@@ -150,7 +150,7 @@ public class JmxPublisher implements MetricsPublisher {
 
     // package-visible for test
     @SuppressWarnings("checkstyle:BooleanExpressionComplexity")
-    public static String escapeObjectNameValue(String name) {
+    static String escapeObjectNameValue(String name) {
         if (name.indexOf(',') < 0
                 && name.indexOf('=') < 0
                 && name.indexOf(':') < 0
