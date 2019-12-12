@@ -44,6 +44,7 @@ import com.hazelcast.util.executor.ExecutorType;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -336,7 +337,7 @@ public class MembershipManager {
         }
 
         clusterService.getClusterJoinManager().insertIntoRecentlyJoinedMemberSet(addedMembers);
-        sendMembershipEvents(currentMemberMap.getMembers(), addedMembers);
+        sendMembershipEvents(currentMemberMap.getMembers(), addedMembers, !clusterService.isJoined());
 
         removeFromMissingMembers(members);
 
@@ -745,8 +746,8 @@ public class MembershipManager {
         node.getNodeExtension().onMemberListChange();
     }
 
-    void sendMembershipEvents(Collection<MemberImpl> currentMembers, Collection<MemberImpl> newMembers) {
-        Set<Member> eventMembers = new LinkedHashSet<Member>(currentMembers);
+    void sendMembershipEvents(Collection<MemberImpl> currentMembers, Collection<MemberImpl> newMembers, boolean sortMembers) {
+        List<Member> eventMembers = new ArrayList<Member>(currentMembers);
         if (!newMembers.isEmpty()) {
             for (MemberImpl newMember : newMembers) {
                 // sync calls
@@ -755,9 +756,25 @@ public class MembershipManager {
 
                 // async events
                 eventMembers.add(newMember);
+                if (sortMembers) {
+                    sortMembersInMembershipOrder(eventMembers);
+                }
                 sendMembershipEventNotifications(newMember, unmodifiableSet(new LinkedHashSet<Member>(eventMembers)), true);
             }
         }
+    }
+
+    private void sortMembersInMembershipOrder(List<Member> members) {
+        final MemberMap memberMap = getMemberMap();
+        Collections.sort(members, new Comparator<Member>() {
+            @Override
+            public int compare(Member m1, Member m2) {
+                if (m1.equals(m2)) {
+                    return 0;
+                }
+                return memberMap.isBeforeThan(m1.getAddress(), m2.getAddress()) ? -1 : 1;
+            }
+        });
     }
 
     private void sendMembershipEventNotifications(MemberImpl member, Set<Member> members, final boolean added) {
