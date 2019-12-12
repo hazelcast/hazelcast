@@ -16,7 +16,9 @@
 
 package com.hazelcast.query.impl;
 
+import com.hazelcast.core.TypeConverter;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.query.Predicate;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -32,7 +34,7 @@ import static java.util.Collections.emptySet;
 /**
  * Store indexes rankly.
  */
-public class OrderedIndexStore extends BaseIndexStore {
+public class OrderedIndexStore extends BaseSingleValueIndexStore {
 
     private final ConcurrentSkipListMap<Comparable, Map<Data, QueryableEntry>> recordMap =
             new ConcurrentSkipListMap<Comparable, Map<Data, QueryableEntry>>(Comparables.COMPARATOR);
@@ -90,6 +92,16 @@ public class OrderedIndexStore extends BaseIndexStore {
         } finally {
             releaseWriteLock();
         }
+    }
+
+    @Override
+    public boolean canEvaluate(Class<? extends Predicate> predicateClass) {
+        return false;
+    }
+
+    @Override
+    public Set<QueryableEntry> evaluate(Predicate predicate, TypeConverter converter) {
+        throw new UnsupportedOperationException();
     }
 
     @Override

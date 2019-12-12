@@ -271,7 +271,7 @@ public abstract class VisitorTestSupport {
 
     }
 
-    protected static class CustomPredicate implements Predicate {
+    public static class CustomPredicate implements Predicate {
 
         @Override
         public boolean apply(Map.Entry mapEntry) {

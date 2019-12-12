@@ -25,7 +25,6 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.IndexAwarePredicate;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.impl.getters.Extractors;
-import com.hazelcast.query.impl.predicates.PredicateUtils;
 import com.hazelcast.spi.serialization.SerializationService;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
@@ -125,27 +124,21 @@ public class Indexes {
             return index;
         }
 
-        String[] components = PredicateUtils.parseOutCompositeIndexComponents(name);
-        if (components == null) {
-            name = PredicateUtils.canonicalizeAttribute(name);
-        } else {
-            name = PredicateUtils.constructCanonicalCompositeIndexName(components);
-        }
-
-        index = indexesByName.get(name);
+        IndexDefinition definition = IndexDefinition.parse(name, ordered);
+        index = indexesByName.get(definition.getName());
         if (index != null) {
             return index;
         }
 
-        index = indexProvider.createIndex(name, components, ordered, extractors, serializationService, indexCopyBehavior,
+        index = indexProvider.createIndex(definition, extractors, serializationService, indexCopyBehavior,
                 stats.createPerIndexStats(ordered, usesCachedQueryableEntries));
 
-        indexesByName.put(name, index);
+        indexesByName.put(definition.getName(), index);
         attributeIndexRegistry.register(index);
         converterCache.invalidate(index);
 
         indexes = indexesByName.values().toArray(EMPTY_INDEXES);
-        if (components != null) {
+        if (definition.getComponents().length > 1) {
             InternalIndex[] oldCompositeIndexes = compositeIndexes;
             InternalIndex[] newCompositeIndexes = Arrays.copyOf(oldCompositeIndexes, oldCompositeIndexes.length + 1);
             newCompositeIndexes[oldCompositeIndexes.length] = index;
@@ -170,13 +163,8 @@ public class Indexes {
             return;
         }
 
-        String[] components = PredicateUtils.parseOutCompositeIndexComponents(name);
-        if (components == null) {
-            name = PredicateUtils.canonicalizeAttribute(name);
-        } else {
-            name = PredicateUtils.constructCanonicalCompositeIndexName(components);
-        }
-        if (definitions.containsKey(name) || indexesByName.containsKey(name)) {
+        IndexDefinition definition = IndexDefinition.parse(name, ordered);
+        if (definitions.containsKey(definition.getName()) || indexesByName.containsKey(definition.getName())) {
             return;
         }
 

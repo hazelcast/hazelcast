@@ -20,7 +20,6 @@ import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.util.IterationType;
 
 import java.util.AbstractSet;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -32,23 +31,18 @@ public class QueryResultCollection<E> extends AbstractSet<E> {
     private final IterationType iterationType;
     private final boolean binary;
 
-    public QueryResultCollection(SerializationService serializationService,
-                                 IterationType iterationType,
-                                 boolean binary,
-                                 boolean unique) {
+    public QueryResultCollection(SerializationService serializationService, IterationType iterationType, boolean binary,
+                                 boolean distinct, QueryResult queryResult) {
         this.serializationService = serializationService;
         this.iterationType = iterationType;
         this.binary = binary;
-        this.rows = unique ? new HashSet<QueryResultRow>() : new ArrayList<QueryResultRow>();
-    }
-
-    public QueryResultCollection(SerializationService serializationService,
-                                 IterationType iterationType,
-                                 boolean binary,
-                                 boolean unique,
-                                 QueryResult queryResult) {
-        this(serializationService, iterationType, binary, unique);
-        addAllRows(queryResult.getRows());
+        if (distinct) {
+            // convert to a set
+            this.rows = new HashSet<QueryResultRow>(queryResult.getRows());
+        } else {
+            // reuse the existing underlying list
+            this.rows = queryResult.getRows();
+        }
     }
 
     // just for testing
@@ -58,10 +52,6 @@ public class QueryResultCollection<E> extends AbstractSet<E> {
 
     public IterationType getIterationType() {
         return iterationType;
-    }
-
-    public void addAllRows(Collection<QueryResultRow> collection) {
-        rows.addAll(collection);
     }
 
     @Override

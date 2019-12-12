@@ -22,9 +22,6 @@ import com.hazelcast.query.impl.OrResultSet;
 import com.hazelcast.query.impl.QueryableEntry;
 
 import java.util.Collection;
-import java.util.HashSet;
-import java.util.Set;
-import java.util.regex.Pattern;
 
 import static com.hazelcast.query.impl.AbstractIndex.NULL;
 
@@ -32,15 +29,11 @@ public final class PredicateUtils {
 
     private static final int EXPECTED_AVERAGE_COMPONENT_NAME_LENGTH = 16;
 
-    private static final int MAX_INDEX_COMPONENTS = 255;
-
     private static final String THIS_DOT = "this.";
 
     private static final String KEY_HASH = "__key#";
 
     private static final String KEY_DOT = "__key.";
-
-    private static final Pattern COMMA_PATTERN = Pattern.compile("\\s*,\\s*");
 
     private PredicateUtils() {
     }
@@ -109,48 +102,6 @@ public final class PredicateUtils {
             return KEY_DOT + attribute.substring(KEY_HASH.length());
         }
         return attribute;
-    }
-
-    /**
-     * Parses the given index name into components.
-     *
-     * @param name the index name to parse.
-     * @return the parsed components or {@code null} if the given index name
-     * doesn't describe a composite index components.
-     * @throws IllegalArgumentException if the given index name is empty.
-     * @throws IllegalArgumentException if the given index name contains empty
-     *                                  components.
-     * @throws IllegalArgumentException if the given index name contains
-     *                                  duplicate components.
-     * @throws IllegalArgumentException if the given index name has more than
-     *                                  255 components.
-     * @see #constructCanonicalCompositeIndexName
-     */
-    public static String[] parseOutCompositeIndexComponents(String name) {
-        String[] components = COMMA_PATTERN.split(name, -1);
-
-        if (components.length == 1) {
-            return null;
-        }
-
-        if (components.length > MAX_INDEX_COMPONENTS) {
-            throw new IllegalArgumentException("Too many composite index attributes: " + name);
-        }
-
-        Set<String> seenComponents = new HashSet<String>(components.length);
-        for (int i = 0; i < components.length; ++i) {
-            String component = PredicateUtils.canonicalizeAttribute(components[i]);
-            components[i] = component;
-
-            if (component.isEmpty()) {
-                throw new IllegalArgumentException("Empty composite index attribute: " + name);
-            }
-            if (!seenComponents.add(component)) {
-                throw new IllegalArgumentException("Duplicate composite index attribute: " + name);
-            }
-        }
-
-        return components;
     }
 
     /**

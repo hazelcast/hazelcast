@@ -31,6 +31,7 @@ import com.hazelcast.query.QueryException;
 import com.hazelcast.query.SampleTestObjects.Employee;
 import com.hazelcast.query.SampleTestObjects.Value;
 import com.hazelcast.query.impl.Index;
+import com.hazelcast.query.impl.IndexDefinition;
 import com.hazelcast.query.impl.IndexImpl;
 import com.hazelcast.query.impl.QueryContext;
 import com.hazelcast.query.impl.QueryEntry;
@@ -313,8 +314,8 @@ public class PredicatesTest extends HazelcastTestSupport {
 
     @Test
     public void testNotEqualsPredicateDoesNotUseIndex() {
-        Index dummyIndex =
-                new IndexImpl("foo", null, false, ss, Extractors.newBuilder(ss).build(), COPY_ON_READ, PerIndexStats.EMPTY);
+        Index dummyIndex = new IndexImpl(IndexDefinition.parse("foo", false), ss, Extractors.newBuilder(ss).build(), COPY_ON_READ,
+                PerIndexStats.EMPTY);
         QueryContext mockQueryContext = mock(QueryContext.class);
         when(mockQueryContext.getIndex(anyString())).thenReturn(dummyIndex);
 
