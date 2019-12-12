@@ -95,8 +95,10 @@ public class DataInputNavigableJsonAdapter extends NavigableJsonInputAdapter {
 
         static final ThreadLocal<CharsetDecoder> DECODER_THREAD_LOCAL = ThreadLocal.withInitial(Bits.UTF_8::newDecoder);
 
+        private final CharsetDecoder decoder;
         private final ByteBuffer inputBuffer;
-        // required to support read() for multibyte characters
+        // required to support read() for surrogate pairs
+        private final char[] buffer = new char[2];
         private boolean hasLeftoverChar;
         private int leftoverChar;
 
@@ -104,17 +106,18 @@ public class DataInputNavigableJsonAdapter extends NavigableJsonInputAdapter {
             byte[] data = obtainBytes(input);
             inputBuffer = ByteBuffer.wrap(data);
             inputBuffer.position(input.position());
+            decoder = Thread.currentThread() instanceof OperationThread
+                    ? DECODER_THREAD_LOCAL.get()
+                    : Bits.UTF_8.newDecoder();
         }
 
-        // default read() implementation does not handle multibyte chars well
+        // default read() implementation does not handle surrogate pairs well
         @Override
         public int read() throws IOException {
             if (hasLeftoverChar) {
                 hasLeftoverChar = false;
                 return leftoverChar;
             }
-
-            char[] buffer = new char[2];
             int charsRead = read(buffer, 0, 2);
             switch (charsRead) {
                 case -1:
@@ -130,34 +133,51 @@ public class DataInputNavigableJsonAdapter extends NavigableJsonInputAdapter {
             }
         }
 
+        @SuppressWarnings({"checkstyle:npathcomplexity", "checkstyle:cyclomaticcomplexity"})
         @Override
         public int read(char[] cbuf, int off, int len) throws IOException {
-            final CharsetDecoder decoder = Thread.currentThread() instanceof OperationThread
-                    ? DECODER_THREAD_LOCAL.get()
-                    : Bits.UTF_8.newDecoder();
-            decoder.reset();
             if (off < 0 || (off + len) > cbuf.length) {
                 throw new IndexOutOfBoundsException();
+            }
+            if (len == 0) {
+                return 0;
+            }
+
+            int countRead = 0;
+            if (hasLeftoverChar) {
+                cbuf[off] = (char) leftoverChar;
+                hasLeftoverChar = false;
+                off++;
+                len--;
+                countRead++;
+            }
+            if (len == 0) {
+                return countRead;
             }
             if (!inputBuffer.hasRemaining()) {
                 return -1;
             }
+            decoder.reset();
+            if (len == 1) {
+                int charRead = read();
+                if (charRead == -1) {
+                    return countRead == 0 ? -1 : countRead;
+                }
+                cbuf[off] = (char) charRead;
+                return countRead + 1;
+            }
+
             CharBuffer charbuffer = CharBuffer.wrap(cbuf, off, len);
             CoderResult result = decoder.decode(inputBuffer, charbuffer, true);
             if (result.isError()) {
                 result.throwException();
             }
             if (result.isUnderflow()) {
-                // return number of characters read
                 if (!inputBuffer.hasRemaining()) {
                     decoder.flush(charbuffer);
                 }
-                return charbuffer.position() - off;
-            } else {
-                // result is overflow:
-                // the given cbuf did not fit all characters, inputBuffer still has bytes remaining
-                return charbuffer.position() - off;
             }
+            return countRead + charbuffer.position() - off;
         }
 
         private byte[] obtainBytes(BufferObjectDataInput input) {

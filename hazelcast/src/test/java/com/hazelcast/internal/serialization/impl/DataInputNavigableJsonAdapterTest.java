@@ -83,10 +83,10 @@ public class DataInputNavigableJsonAdapterTest {
     @Test
     public void testSamplesWhenReadingOne()
             throws IOException {
-        for (int i = 0; i < SAMPLE_BYTES.length; i++) {
-            input = new ByteArrayObjectDataInput(SAMPLE_BYTES[i], serializationService, DEFAULT_BYTE_ORDER);
+        for (byte[] sample : SAMPLE_BYTES) {
+            input = new ByteArrayObjectDataInput(sample, serializationService, DEFAULT_BYTE_ORDER);
             DataInputNavigableJsonAdapter.UTF8Reader reader = new DataInputNavigableJsonAdapter.UTF8Reader(input);
-            assertReadOne(reader, SAMPLE_BYTES[i]);
+            assertReadOne(reader, sample);
         }
     }
 
@@ -110,10 +110,23 @@ public class DataInputNavigableJsonAdapterTest {
         }
     }
 
-    // ensure that when UTF8Reader instances are created & used from several threads safely
-    // UTF8Reader is not thread safe, but caches CharsetDecoders in ThreadLocals
     @Test
-    public void testConcurrently() throws InterruptedException {
+    public void testMixedRead_whenMultiReadFirst() throws IOException {
+        for (byte[] sample : SAMPLE_BYTES) {
+            assertReadMixed(sample, false);
+        }
+    }
+
+    @Test
+    public void testMixedRead_whenSingleReadFirst() throws IOException {
+        for (byte[] sample : SAMPLE_BYTES) {
+            assertReadMixed(sample, true);
+        }
+    }
+
+    @Test
+    public void testCreateAndUseConcurrently() throws InterruptedException {
+        // UTF8Reader is not thread safe; the purpose is to ensure no
         int concurrency = 8;
         CountDownLatch latch = new CountDownLatch(1);
         Thread[] threads = new Thread[concurrency];
@@ -164,6 +177,33 @@ public class DataInputNavigableJsonAdapterTest {
         buffer.rewind();
         String actual = buffer.toString();
         assertEquals(expected, actual);
+    }
+
+    private void assertReadMixed(byte[] sample, boolean singleReadFirst)
+            throws IOException {
+        String expected = new String(sample, UTF_8);
+        input = new ByteArrayObjectDataInput(sample, serializationService, DEFAULT_BYTE_ORDER);
+        DataInputNavigableJsonAdapter.UTF8Reader reader = new DataInputNavigableJsonAdapter.UTF8Reader(input);
+        char[] chars = new char[expected.length()];
+        int charsRead = 0;
+        while (charsRead < expected.length()) {
+            int count;
+            if (charsRead % 2 == 0 ^ singleReadFirst) {
+                count = reader.read(chars, charsRead, 1);
+            } else {
+                count = reader.read();
+                if (count != -1) {
+                    chars[charsRead] = (char) count;
+                    count = 1;
+                }
+            }
+            if (count == -1) {
+                break;
+            }
+            charsRead += count;
+        }
+        assertEquals(chars.length, charsRead);
+        assertEquals(expected, new String(chars));
     }
 
     private void assertMalformed(DataInputNavigableJsonAdapter.UTF8Reader reader)
