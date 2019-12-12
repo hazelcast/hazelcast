@@ -20,6 +20,7 @@ import com.hazelcast.cache.ICache;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.collection.IList;
+import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.jet.JetInstance;
@@ -45,6 +46,7 @@ import java.io.PrintWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Map;
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -56,6 +58,7 @@ import static com.hazelcast.jet.Util.idToString;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 public abstract class JetTestSupport extends HazelcastTestSupport {
 
@@ -220,7 +223,7 @@ public abstract class JetTestSupport extends HazelcastTestSupport {
         logger.info("First snapshot found (id=" + snapshotId[0] + ")");
     }
 
-    public void waitForNextSnapshot(JobRepository jr, long jobId, int timeoutSeconds) {
+    public void waitForNextSnapshot(JobRepository jr, long jobId, int timeoutSeconds, boolean allowEmptySnapshot) {
         long originalSnapshotId = jr.getJobExecutionRecord(jobId).snapshotId();
         // wait until there is at least one more snapshot
         long[] snapshotId = {-1};
@@ -230,9 +233,25 @@ public abstract class JetTestSupport extends HazelcastTestSupport {
             snapshotId[0] = record.snapshotId();
             assertTrue("No more snapshots produced after restart in " + timeoutSeconds + " seconds",
                     snapshotId[0] > originalSnapshotId);
-            assertTrue("stats are 0", record.snapshotStats().numBytes() > 0);
+            assertTrue("stats are 0", allowEmptySnapshot || record.snapshotStats().numBytes() > 0);
         }, timeoutSeconds);
         logger.info("Next snapshot found (id=" + snapshotId[0] + ", previous id=" + originalSnapshotId + ")");
+    }
+
+    /**
+     * Clean up the cluster and make it ready to run a next test. If we fail
+     * to, shut it down so that next tests don't run on a messed-up cluster.
+     *
+     * @param instancesToShutDown cluster instances, must contain at least
+     *                            one instance
+     */
+    public void cleanUpCluster(JetInstance ... instancesToShutDown) {
+        for (Job job : instancesToShutDown[0].getJobs()) {
+            ditchJob(job, instancesToShutDown);
+        }
+        for (DistributedObject o : instancesToShutDown[0].getHazelcastInstance().getDistributedObjects()) {
+            o.destroy();
+        }
     }
 
     /**
@@ -277,6 +296,19 @@ public abstract class JetTestSupport extends HazelcastTestSupport {
                 + (instancesToShutDown.length > 0 ? ", shutting the cluster down" : ""));
         for (JetInstance instance : instancesToShutDown) {
             instance.getHazelcastInstance().getLifecycleService().terminate();
+        }
+    }
+
+    /**
+     * Cancel the job and wait until it cancels using Job.join(), ignoring the
+     * CancellationException.
+     */
+    public static void cancelAndJoin(@Nonnull Job job) {
+        job.cancel();
+        try {
+            job.join();
+            fail("join didn't fail with CancellationException");
+        } catch (CancellationException ignored) {
         }
     }
 }

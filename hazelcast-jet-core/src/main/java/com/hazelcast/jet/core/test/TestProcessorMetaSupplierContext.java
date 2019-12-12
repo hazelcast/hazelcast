@@ -25,6 +25,8 @@ import com.hazelcast.logging.Logger;
 
 import javax.annotation.Nonnull;
 
+import static com.hazelcast.jet.config.ProcessingGuarantee.NONE;
+
 /**
  * {@link ProcessorMetaSupplier.Context} implementation suitable to be used
  * in tests.
@@ -42,7 +44,7 @@ public class TestProcessorMetaSupplierContext implements ProcessorMetaSupplier.C
     private int totalParallelism = 1;
     private int localParallelism = 1;
     private String vertexName = "testVertex";
-    private ProcessingGuarantee processingGuarantee;
+    private ProcessingGuarantee processingGuarantee = NONE;
 
     @Nonnull @Override
     public JetInstance jetInstance() {

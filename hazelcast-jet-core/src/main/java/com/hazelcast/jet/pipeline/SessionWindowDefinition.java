@@ -29,8 +29,8 @@ public class SessionWindowDefinition extends WindowDefinition {
     }
 
     @Override
-    public SessionWindowDefinition setEarlyResultsPeriod(long earlyResultPeriod) {
-        return (SessionWindowDefinition) super.setEarlyResultsPeriod(earlyResultPeriod);
+    public SessionWindowDefinition setEarlyResultsPeriod(long earlyResultPeriodMs) {
+        return (SessionWindowDefinition) super.setEarlyResultsPeriod(earlyResultPeriodMs);
     }
 
     /**

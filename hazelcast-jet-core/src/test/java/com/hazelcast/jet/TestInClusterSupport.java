@@ -18,7 +18,6 @@ package com.hazelcast.jet;
 
 import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.Config;
-import com.hazelcast.core.DistributedObject;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.JetTestSupport;
@@ -105,15 +104,8 @@ public abstract class TestInClusterSupport extends JetTestSupport {
 
     @After
     public void after() throws Exception {
-        Future future = spawn(() -> {
-            for (Job job : allJetInstances()[0].getJobs()) {
-                ditchJob(job, allJetInstances());
-            }
-            for (DistributedObject o : allJetInstances()[0].getHazelcastInstance().getDistributedObjects()) {
-                o.destroy();
-            }
-        });
-
+        Future future = spawn(() ->
+                cleanUpCluster(allJetInstances()));
         future.get(1, TimeUnit.MINUTES);
     }
 

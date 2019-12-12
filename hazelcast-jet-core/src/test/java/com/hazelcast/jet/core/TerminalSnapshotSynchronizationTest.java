@@ -20,7 +20,7 @@ import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.TestProcessors.NoOutputSourceP;
-import com.hazelcast.jet.impl.operation.SnapshotOperation;
+import com.hazelcast.jet.impl.operation.SnapshotPhase1Operation;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import org.junit.After;
 import org.junit.Before;
@@ -60,7 +60,7 @@ public class TerminalSnapshotSynchronizationTest extends JetTestSupport {
     @After
     public void after() {
         // to not affect other tests in this VM
-        SnapshotOperation.postponeResponses = false;
+        SnapshotPhase1Operation.postponeResponses = false;
     }
 
     @Test
@@ -68,13 +68,13 @@ public class TerminalSnapshotSynchronizationTest extends JetTestSupport {
         Job job = setup(true);
 
         // When
-        SnapshotOperation.postponeResponses = true;
+        SnapshotPhase1Operation.postponeResponses = true;
         job.restart();
 
         // Then
         assertJobStatusEventually(job, JobStatus.COMPLETING, 5);
         assertTrueAllTheTime(() -> assertEquals(JobStatus.COMPLETING, job.getStatus()), 5);
-        SnapshotOperation.postponeResponses = false;
+        SnapshotPhase1Operation.postponeResponses = false;
         assertJobStatusEventually(job, RUNNING, 5);
     }
 
@@ -84,7 +84,7 @@ public class TerminalSnapshotSynchronizationTest extends JetTestSupport {
         assertTrueEventually(() -> assertEquals(NODE_COUNT, NoOutputSourceP.initCount.get()), 10);
 
         // When
-        SnapshotOperation.postponeResponses = true;
+        SnapshotPhase1Operation.postponeResponses = true;
         job.restart();
 
         // Then

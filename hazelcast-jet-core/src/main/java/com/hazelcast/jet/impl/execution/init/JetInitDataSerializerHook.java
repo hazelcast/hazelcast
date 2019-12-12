@@ -41,8 +41,9 @@ import com.hazelcast.jet.impl.operation.JoinSubmittedJobOperation;
 import com.hazelcast.jet.impl.operation.NotifyMemberShutdownOperation;
 import com.hazelcast.jet.impl.operation.PrepareForPassiveClusterOperation;
 import com.hazelcast.jet.impl.operation.ResumeJobOperation;
-import com.hazelcast.jet.impl.operation.SnapshotOperation;
-import com.hazelcast.jet.impl.operation.SnapshotOperation.SnapshotOperationResult;
+import com.hazelcast.jet.impl.operation.SnapshotPhase2Operation;
+import com.hazelcast.jet.impl.operation.SnapshotPhase1Operation;
+import com.hazelcast.jet.impl.operation.SnapshotPhase1Operation.SnapshotPhase1Result;
 import com.hazelcast.jet.impl.operation.StartExecutionOperation;
 import com.hazelcast.jet.impl.operation.SubmitJobOperation;
 import com.hazelcast.jet.impl.operation.TerminateExecutionOperation;
@@ -68,7 +69,7 @@ public final class JetInitDataSerializerHook implements DataSerializerHook {
     public static final int COMPLETE_EXECUTION_OP = 7;
     public static final int SUBMIT_JOB_OP = 8;
     public static final int GET_JOB_STATUS_OP = 9;
-    public static final int SNAPSHOT_OPERATION = 10;
+    public static final int SNAPSHOT_PHASE1_OPERATION = 10;
     public static final int JOB_EXECUTION_RECORD = 11;
     public static final int SESSION_WINDOW_P_WINDOWS = 12;
     public static final int SLIDING_WINDOW_P_SNAPSHOT_KEY = 13;
@@ -83,7 +84,7 @@ public final class JetInitDataSerializerHook implements DataSerializerHook {
     public static final int TERMINATE_JOB_OP = 22;
     public static final int ASYNC_SNAPSHOT_WRITER_SNAPSHOT_DATA_KEY = 23;
     public static final int ASYNC_SNAPSHOT_WRITER_SNAPSHOT_DATA_VALUE_TERMINATOR = 24;
-    public static final int SNAPSHOT_OPERATION_RESULT = 25;
+    public static final int SNAPSHOT_PHASE1_RESULT = 25;
     public static final int RESUME_JOB_OP = 26;
     public static final int NOTIFY_MEMBER_SHUTDOWN_OP = 27;
     public static final int GET_JOB_SUMMARY_LIST_OP = 28;
@@ -94,6 +95,7 @@ public final class JetInitDataSerializerHook implements DataSerializerHook {
     public static final int AGGREGATE_OP_AGGREGATOR = 33;
     public static final int GET_JOB_METRICS_OP = 34;
     public static final int GET_LOCAL_JOB_METRICS_OP = 35;
+    public static final int SNAPSHOT_PHASE2_OPERATION = 36;
 
     public static final int FACTORY_ID = FactoryIdHelper.getFactoryId(JET_IMPL_DS_FACTORY, JET_IMPL_DS_FACTORY_ID);
 
@@ -132,8 +134,8 @@ public final class JetInitDataSerializerHook implements DataSerializerHook {
                     return new SubmitJobOperation();
                 case GET_JOB_STATUS_OP:
                     return new GetJobStatusOperation();
-                case SNAPSHOT_OPERATION:
-                    return new SnapshotOperation();
+                case SNAPSHOT_PHASE1_OPERATION:
+                    return new SnapshotPhase1Operation();
                 case JOB_EXECUTION_RECORD:
                     return new JobExecutionRecord();
                 case SESSION_WINDOW_P_WINDOWS:
@@ -162,8 +164,8 @@ public final class JetInitDataSerializerHook implements DataSerializerHook {
                     return new AsyncSnapshotWriterImpl.SnapshotDataKey();
                 case ASYNC_SNAPSHOT_WRITER_SNAPSHOT_DATA_VALUE_TERMINATOR:
                     return AsyncSnapshotWriterImpl.SnapshotDataValueTerminator.INSTANCE;
-                case SNAPSHOT_OPERATION_RESULT:
-                    return new SnapshotOperationResult();
+                case SNAPSHOT_PHASE1_RESULT:
+                    return new SnapshotPhase1Result();
                 case RESUME_JOB_OP:
                     return new ResumeJobOperation();
                 case NOTIFY_MEMBER_SHUTDOWN_OP:
@@ -184,6 +186,8 @@ public final class JetInitDataSerializerHook implements DataSerializerHook {
                     return new GetJobMetricsOperation();
                 case GET_LOCAL_JOB_METRICS_OP:
                     return new GetLocalJobMetricsOperation();
+                case SNAPSHOT_PHASE2_OPERATION:
+                    return new SnapshotPhase2Operation();
                 default:
                     throw new IllegalArgumentException("Unknown type id " + typeId);
             }

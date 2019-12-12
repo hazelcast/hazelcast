@@ -60,7 +60,7 @@ public interface Outbox {
      * same instance might be used by a downstream processor in different
      * thread, causing concurrent access.
      * <p>
-     * Outbox is not thread safe, see {@link Outbox Thread safety} in class
+     * Outbox is not thread safe, see {@link Outbox Thread safety} in its class
      * javadoc.
      *
      * @param ordinal output ordinal number or -1 to offer to all ordinals
@@ -73,7 +73,7 @@ public interface Outbox {
      * Offers the item to all supplied edge ordinals. See {@link #offer(int,
      * Object)} for more details.
      * <p>
-     * Outbox is not thread safe, see {@link Outbox Thread safety} in class
+     * Outbox is not thread safe, see {@link Outbox Thread safety} in its class
      * javadoc.
      *
      * @return {@code true} if the outbox accepted the item
@@ -97,7 +97,7 @@ public interface Outbox {
      * Keys and values offered to snapshot are serialized and can be further
      * mutated as soon as this method returns.
      * <p>
-     * Outbox is not thread safe, see {@link Outbox Thread safety} in class
+     * Outbox is not thread safe, see {@link Outbox Thread safety} in its class
      * javadoc.
      *
      * @return {@code true} if the outbox accepted the item
@@ -109,7 +109,7 @@ public interface Outbox {
      * Offers the item to all edges. See {@link #offer(int, Object)} for more
      * details.
      * <p>
-     * Outbox is not thread safe, see {@link Outbox Thread safety} in class
+     * Outbox is not thread safe, see {@link Outbox Thread safety} in its class
      * javadoc.
      *
      * @return {@code true} if the outbox accepted the item
@@ -124,7 +124,7 @@ public interface Outbox {
      * must be offered again. If it returns false, it is safe to offer a new
      * item.
      * <p>
-     * Outbox is not thread safe, see {@link Outbox Thread safety} in class
+     * Outbox is not thread safe, see {@link Outbox Thread safety} in its class
      * javadoc.
      */
     boolean hasUnfinishedItem();

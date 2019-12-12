@@ -19,9 +19,14 @@ package com.hazelcast.jet.core;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Job;
+import com.hazelcast.jet.config.JobConfig;
+import com.hazelcast.jet.core.TestProcessors.DummyStatefulP;
 import com.hazelcast.jet.core.TestProcessors.MockP;
 import com.hazelcast.jet.impl.execution.init.JetInitDataSerializerHook;
+import com.hazelcast.jet.impl.operation.SnapshotPhase1Operation;
 import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.PacketFiltersUtil;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -38,6 +43,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Function;
 
+import static com.hazelcast.jet.config.ProcessingGuarantee.EXACTLY_ONCE;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.peel;
 import static com.hazelcast.test.PacketFiltersUtil.rejectOperationsBetween;
 import static com.hazelcast.test.PacketFiltersUtil.resetPacketFiltersFrom;
@@ -57,6 +63,12 @@ public class CancellationTest extends JetTestSupport {
         FaultyProcessor.failNow = false;
         BlockingProcessor.hasStarted = false;
         BlockingProcessor.isDone = false;
+    }
+
+    @After
+    public void after() {
+        // to not affect other tests in this VM
+        SnapshotPhase1Operation.postponeResponses = false;
     }
 
     @Test
@@ -331,6 +343,31 @@ public class CancellationTest extends JetTestSupport {
         for (Future future : futures) {
             future.get();
         }
+    }
+
+    @Test
+    public void when_cancelledDuringSnapshotPhase1_then_cancelled() {
+        JetInstance jet = createJetMember();
+        SnapshotPhase1Operation.postponeResponses = true;
+        DAG dag = new DAG();
+        dag.newVertex("blocking", DummyStatefulP::new).localParallelism(1);
+        Job job = jet.newJob(dag, new JobConfig().setSnapshotIntervalMillis(100).setProcessingGuarantee(EXACTLY_ONCE));
+        sleepSeconds(2); // wait for the job to start and attempt the 1st snapshot
+        cancelAndJoin(job);
+    }
+
+    @Test
+    public void when_cancelledDuringSnapshotPhase2_then_cancelled() {
+        JetInstance jet = createJetMember();
+        createJetMember();
+        PacketFiltersUtil.dropOperationsFrom(jet.getHazelcastInstance(), JetInitDataSerializerHook.FACTORY_ID,
+                singletonList(JetInitDataSerializerHook.SNAPSHOT_PHASE2_OPERATION));
+
+        DAG dag = new DAG();
+        dag.newVertex("blocking", DummyStatefulP::new).localParallelism(1);
+        Job job = jet.newJob(dag, new JobConfig().setSnapshotIntervalMillis(100).setProcessingGuarantee(EXACTLY_ONCE));
+        sleepSeconds(2); // wait for the job to start and attempt the 1st snapshot
+        cancelAndJoin(job);
     }
 
     private static void assertExecutionStarted() {

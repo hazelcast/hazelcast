@@ -20,8 +20,6 @@ import com.hazelcast.jet.Job;
 import com.hazelcast.jet.core.Processor.Context;
 import org.junit.Test;
 
-import java.util.concurrent.CancellationException;
-
 import static com.hazelcast.jet.aggregate.AggregateOperations.counting;
 import static org.apache.activemq.transport.amqp.AmqpWireFormat.DEFAULT_IDLE_TIMEOUT;
 import static org.junit.Assert.assertEquals;
@@ -74,10 +72,6 @@ public class StreamSourceTest extends PipelineTestSupport {
             fail("test not designed for idleTimeout=" + idleTimeout);
         }
 
-        job.cancel();
-        try {
-            job.join();
-        } catch (CancellationException ignored) {
-        }
+        cancelAndJoin(job);
     }
 }

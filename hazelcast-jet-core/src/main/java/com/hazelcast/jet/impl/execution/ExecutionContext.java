@@ -30,7 +30,8 @@ import com.hazelcast.jet.impl.exception.JobTerminateRequestedException;
 import com.hazelcast.jet.impl.exception.TerminatedWithSnapshotException;
 import com.hazelcast.jet.impl.execution.init.ExecutionPlan;
 import com.hazelcast.jet.impl.metrics.RawJobMetrics;
-import com.hazelcast.jet.impl.operation.SnapshotOperation.SnapshotOperationResult;
+import com.hazelcast.jet.impl.operation.SnapshotPhase1Operation.SnapshotPhase1Result;
+import com.hazelcast.jet.impl.util.LoggingUtil;
 import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.NodeEngine;
@@ -114,7 +115,8 @@ public class ExecutionContext implements DynamicMetricsProvider {
 
         metricsEnabled = jobConfig.isMetricsEnabled() && nodeEngine.getConfig().getMetricsConfig().isEnabled();
         plan.initialize(nodeEngine, jobId, executionId, snapshotContext);
-        snapshotContext.initTaskletCount(plan.getStoreSnapshotTaskletCount(), plan.getHigherPriorityVertexCount());
+        snapshotContext.initTaskletCount(plan.getProcessorTaskletCount(), plan.getStoreSnapshotTaskletCount(),
+                plan.getHigherPriorityVertexCount());
         receiverMap = unmodifiableMap(plan.getReceiverMap());
         senderMap = unmodifiableMap(plan.getSenderMap());
         tasklets = plan.getTasklets();
@@ -207,18 +209,33 @@ public class ExecutionContext implements DynamicMetricsProvider {
     }
 
     /**
-     * Starts a new snapshot by incrementing the current snapshot id
+     * Starts the phase 1 of a new snapshot.
      */
-    public CompletableFuture<SnapshotOperationResult> beginSnapshot(long snapshotId, String mapName,
-                                                                  boolean isTerminal) {
+    public CompletableFuture<SnapshotPhase1Result> beginSnapshotPhase1(long snapshotId, String mapName, int flags) {
         synchronized (executionLock) {
             if (cancellationFuture.isDone()) {
                 throw new CancellationException();
             } else if (executionFuture != null && executionFuture.isDone()) {
                 // if execution is done, there are 0 processors to take snapshots. Therefore we're done now.
-                return CompletableFuture.completedFuture(new SnapshotOperationResult(0, 0, 0, null));
+                return CompletableFuture.completedFuture(new SnapshotPhase1Result(0, 0, 0, null));
             }
-            return snapshotContext.startNewSnapshot(snapshotId, mapName, isTerminal);
+            return snapshotContext.startNewSnapshotPhase1(snapshotId, mapName, flags);
+        }
+    }
+
+    /**
+     * Starts the phase 2 of the current snapshot.
+     */
+    public CompletableFuture<Void> beginSnapshotPhase2(long snapshotId, boolean success) {
+        LoggingUtil.logFine(logger, "Starting snapshot %d phase 2 for %s on member", snapshotId, jobNameAndExecutionId());
+        synchronized (executionLock) {
+            if (cancellationFuture.isDone()) {
+                throw new CancellationException();
+            } else if (executionFuture != null && executionFuture.isDone()) {
+                // if execution is done, there are 0 processors to take snapshots. Therefore we're done now.
+                return CompletableFuture.completedFuture(null);
+            }
+            return snapshotContext.startNewSnapshotPhase2(snapshotId, success);
         }
     }
 
@@ -264,7 +281,7 @@ public class ExecutionContext implements DynamicMetricsProvider {
 
     public RawJobMetrics getJobMetrics() {
         return jobMetrics;
-    }
+}
 
     public void setJobMetrics(RawJobMetrics jobMetrics) {
         this.jobMetrics = jobMetrics;

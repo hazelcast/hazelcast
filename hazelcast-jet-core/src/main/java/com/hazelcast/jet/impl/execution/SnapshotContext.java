@@ -17,8 +17,10 @@
 package com.hazelcast.jet.impl.execution;
 
 import com.hazelcast.jet.config.ProcessingGuarantee;
-import com.hazelcast.jet.impl.operation.SnapshotOperation;
-import com.hazelcast.jet.impl.operation.SnapshotOperation.SnapshotOperationResult;
+import com.hazelcast.jet.core.Processor;
+import com.hazelcast.jet.impl.operation.SnapshotPhase2Operation;
+import com.hazelcast.jet.impl.operation.SnapshotPhase1Operation;
+import com.hazelcast.jet.impl.operation.SnapshotPhase1Operation.SnapshotPhase1Result;
 import com.hazelcast.logging.ILogger;
 
 import java.util.concurrent.CancellationException;
@@ -37,30 +39,39 @@ public class SnapshotContext {
     private final ProcessingGuarantee guarantee;
 
     /**
-     * If true, the job should terminate after the snapshot is processed.
+     * Flags of the last begun snapshot.
      */
-    private volatile boolean isTerminal;
+    private volatile int snapshotFlags;
 
     /**
      * Current number of {@link StoreSnapshotTasklet}s in the job. It's
      * decremented as the tasklets complete (this is when they receive
      * DONE_ITEM and after all pending async ops completed).
      */
-    private int numTasklets = Integer.MIN_VALUE;
+    private int numSsTasklets = Integer.MIN_VALUE;
+
+    /**
+     * Current number of {@link ProcessorTasklet}s in the job. It's
+     * decremented as the tasklets complete.
+     */
+    private int numPTasklets = Integer.MIN_VALUE;
 
     /**
      * Current number of {@link StoreSnapshotTasklet}s in the job connected
      * to higher priority vertices. It's decremented when higher priority
      * tasklet completes. Snapshot is postponed until this counter is 0.
      */
-    private int numHigherPriorityTasklets = Integer.MIN_VALUE;
+    private int numPrioritySsTasklets = Integer.MIN_VALUE;
 
     /**
-     * Remaining number of {@link StoreSnapshotTasklet}s in currently created
-     * snapshot. When it is decremented to 0, the snapshot is complete and new
-     * one can start.
+     * Used to count remaining participants in both phase 1 and 2 of the
+     * snapshot. In phase 1 it's the remaining number of {@link
+     * StoreSnapshotTasklet}, in phase 2 it's the number of remaining {@link
+     * ProcessorTasklet}s. When it is decremented to 0, the phase is complete
+     * and the member replies to the master to start the next phase or next
+     * snapshot.
      * <p>
-     * It's in the range 0..numTasklets (inclusive).
+     * It's in the range 0..numSsTasklets (inclusive) or 0..numPTasklets.
      */
     private final AtomicInteger numRemainingTasklets = new AtomicInteger();
 
@@ -74,11 +85,22 @@ public class SnapshotContext {
      * it and when they see higher value, they start a snapshot with that
      * ID. {@code -1} means no snapshot was ever started for this job.
      */
-    private volatile long activeSnapshotId;
+    private volatile long activeSnapshotIdPhase1;
+
+    /**
+     * Snapshot id of current active snapshot. All processors read it and when
+     * they see higher value, they call {@link Processor#snapshotCommitFinish}.
+     */
+    private volatile long activeSnapshotIdPhase2;
+
+    /**
+     * Success state for the phase 2 of the snapshot.
+     */
+    private volatile boolean lastPhase1Successful;
 
     /**
      * The snapshotId of the snapshot that should be performed. It's equal to
-     * {@link #activeSnapshotId} most of the time, except for the case when the
+     * {@link #activeSnapshotIdPhase1} most of the time, except for the case when the
      * snapshot was postponed due to higher priority tasklets still running, in
      * which case it's larger by 1.
      */
@@ -92,10 +114,20 @@ public class SnapshotContext {
     private volatile String currentMapName;
 
     /**
-     * Future which will be created when a snapshot starts and completed and
-     * nulled out when the snapshot completes.
+     * Future which will be created when phase 1 starts and completed and
+     * nulled out when the phase 1 completes.
      */
-    private volatile CompletableFuture<SnapshotOperationResult> future;
+    private volatile CompletableFuture<SnapshotPhase1Result> phase1Future;
+
+    /**
+     * Future which will be created when phase 2 starts and completed and
+     * nulled out when the phase 2 completes.
+     * <p>
+     * It will return a collection of errors from the phase 2:
+     * vertexId#globalProcessorIndex -> error. Successful vertices are not
+     * present.
+     */
+    private volatile CompletableFuture<Void> phase2Future;
 
     private final AtomicLong totalBytes = new AtomicLong();
     private final AtomicLong totalKeys = new AtomicLong();
@@ -106,16 +138,23 @@ public class SnapshotContext {
                            ProcessingGuarantee guarantee
     ) {
         this.jobNameAndExecutionId = jobNameAndExecutionId;
-        this.activeSnapshotId = currentSnapshotId = activeSnapshotId;
+        this.activeSnapshotIdPhase1 = activeSnapshotIdPhase2 = currentSnapshotId = activeSnapshotId;
         this.guarantee = guarantee;
         this.logger = logger;
     }
 
     /**
-     * Id of the last started snapshot
+     * Id of the last started snapshot, phase 1.
      */
-    long activeSnapshotId() {
-        return activeSnapshotId;
+    long activeSnapshotIdPhase1() {
+        return activeSnapshotIdPhase1;
+    }
+
+    /**
+     * Id of the last started snapshot, phase 2.
+     */
+    long activeSnapshotIdPhase2() {
+        return activeSnapshotIdPhase2;
     }
 
     public long currentSnapshotId() {
@@ -131,69 +170,127 @@ public class SnapshotContext {
     }
 
     boolean isTerminalSnapshot() {
-        return isTerminal;
+        return SnapshotFlags.isTerminal(snapshotFlags);
+    }
+
+    public boolean isExportOnly() {
+        return SnapshotFlags.isExportOnly(snapshotFlags);
+    }
+
+    boolean isLastPhase1Successful() {
+        return lastPhase1Successful;
     }
 
     ProcessingGuarantee processingGuarantee() {
         return guarantee;
     }
 
-    synchronized void initTaskletCount(int totalTaskletCount, int highPriorityTaskletCount) {
-        assert this.numTasklets == Integer.MIN_VALUE : "Tasklet count already set once.";
-        assert totalTaskletCount >= highPriorityTaskletCount :
-                "totalTaskletCount=" + totalTaskletCount + ", highPriorityTaskletCount=" + highPriorityTaskletCount;
-        assert totalTaskletCount > 0 : "totalTaskletCount=" + totalTaskletCount;
-        assert highPriorityTaskletCount >= 0 : "highPriorityTaskletCount=" + highPriorityTaskletCount;
+    synchronized void initTaskletCount(int numPTasklets, int numSsTasklets, int numPrioritySsTasklets) {
+        assert this.numSsTasklets == Integer.MIN_VALUE && this.numPTasklets == Integer.MIN_VALUE
+                : "Tasklet count already set";
+        assert numSsTasklets >= 1
+                && numPrioritySsTasklets >= 0
+                && numSsTasklets >= numPrioritySsTasklets
+                && numPTasklets >= numSsTasklets
+                : "numPTasklets=" + numPTasklets + ", numSsTasklets=" + numSsTasklets + ", numPrioritySsTasklets="
+                        + numPrioritySsTasklets;
 
-        this.numTasklets = totalTaskletCount;
-        this.numHigherPriorityTasklets = highPriorityTaskletCount;
+        this.numSsTasklets = numSsTasklets;
+        this.numPTasklets = numPTasklets;
+        this.numPrioritySsTasklets = numPrioritySsTasklets;
     }
 
     /**
      * This method is called when the member received {@link
-     * SnapshotOperation}.
+     * SnapshotPhase1Operation}.
      */
-    synchronized CompletableFuture<SnapshotOperationResult> startNewSnapshot(
-            long snapshotId, String mapName, boolean isTerminal) {
+    synchronized CompletableFuture<SnapshotPhase1Result> startNewSnapshotPhase1(
+            long snapshotId, String mapName, int flags) {
         if (snapshotId == currentSnapshotId) {
             // This is possible when a SnapshotOperation is retried. We will throw because we
             // don't know the result of the previous snapshot (it may have failed) and this is rare
             // if not impossible.
-            throw new RuntimeException("new snapshotId equal to previous, operation possibly retried. Previous="
+            throw new RuntimeException("new snapshotId equal to previous, operation probably retried. Previous="
                     + currentSnapshotId + ", new=" + snapshotId);
         }
         assert snapshotId == currentSnapshotId + 1
                 : "New snapshotId for " + jobNameAndExecutionId + " not incremented by 1. " +
                         "Previous=" + currentSnapshotId + ", new=" + snapshotId;
-        assert currentSnapshotId == activeSnapshotId : "last snapshot was postponed but not started";
-        assert numTasklets >= 0 : "numTasklets=" + numTasklets;
+        assert currentSnapshotId == activeSnapshotIdPhase1 : "last snapshot was postponed but not started";
+        assert numSsTasklets >= 0 : "numSsTasklets=" + numSsTasklets;
+        assert phase1Future == null : "phase 1 already in progress";
+        assert phase2Future == null : "phase 2 still ongoing";
+        assert snapshotId == activeSnapshotIdPhase2 + 1
+                : "snapshotId=" + snapshotId + ", activeSnapshotIdPhase2=" + activeSnapshotIdPhase2;
         if (isCancelled) {
             throw new CancellationException("execution cancelled");
         }
-        this.isTerminal = isTerminal;
+        this.snapshotFlags = flags;
 
-        boolean success = numRemainingTasklets.compareAndSet(0, numTasklets);
+        boolean success = numRemainingTasklets.compareAndSet(0, numSsTasklets);
         assert success : "numRemainingTasklets wasn't 0, but " + numRemainingTasklets.get();
 
         currentSnapshotId = snapshotId;
         currentMapName = mapName;
 
-        if (numHigherPriorityTasklets == 0) {
+        if (numPrioritySsTasklets == 0) {
             // if there are no higher priority tasklets, start the snapshot immediately
-            activeSnapshotId = currentSnapshotId;
+            activeSnapshotIdPhase1 = currentSnapshotId;
         } else {
             // the snapshot will be started once all higher priority sources are done
             // see #taskletDone()
             logger.info("Snapshot " + snapshotId + " for " + jobNameAndExecutionId + " is postponed" +
                     " until all higher priority vertices are completed (number of such vertices = "
-                    + numHigherPriorityTasklets + ')');
+                    + numPrioritySsTasklets + ')');
         }
-        if (numTasklets == 0) {
+        if (numSsTasklets == 0) {
             // member is already done with the job and master didn't know it yet - we are immediately successful
-            return completedFuture(new SnapshotOperationResult(0, 0, 0, null));
+            return completedFuture(new SnapshotPhase1Result(0, 0, 0, null));
         }
-        future = new CompletableFuture<>();
-        return future;
+        phase1Future = new CompletableFuture<>();
+        return phase1Future;
+    }
+
+    /**
+     * This method is called when the member received {@link
+     * SnapshotPhase2Operation}.
+     */
+    synchronized CompletableFuture<Void> startNewSnapshotPhase2(long snapshotId, boolean success) {
+        if (snapshotId == activeSnapshotIdPhase2) {
+            // this is possible in case when the operation packet was lost and retried
+            logger.warning("Second request for phase 2 for snapshot " + snapshotId);
+            CompletableFuture<Void> res = this.phase2Future;
+            if (res == null) {
+                // if there's no ongoing phase 2, we don't know what was the response. We reply with
+                // 100% success. For regular snapshots the failures are ignored. They are reported to
+                // the user only for exported snapshot. We neglect that.
+                res = completedFuture(null);
+            }
+            return res;
+        }
+        assert snapshotId == activeSnapshotIdPhase1 : "requested phase 2 for snapshot ID " + snapshotId
+                + ", but phase 1 snapshot ID is " + activeSnapshotIdPhase1;
+        assert phase1Future == null : "phase 1 still ongoing";
+        assert phase2Future == null : "phase 2 already in progress";
+        assert snapshotId > activeSnapshotIdPhase2
+                : "new snapshotId for phase 2 not larger than previous. Previous=" + activeSnapshotIdPhase2 + ", new="
+                        + snapshotId;
+        assert numPTasklets >= 0 : "numPTasklets=" + numPTasklets;
+        if (isCancelled) {
+            throw new CancellationException("execution cancelled");
+        }
+        this.lastPhase1Successful = success;
+        assert numPrioritySsTasklets == 0 : "numPrioritySsTasklets=" + numPrioritySsTasklets;
+
+        boolean casSuccess = numRemainingTasklets.compareAndSet(0, numPTasklets);
+        assert casSuccess : "numRemainingTasklets wasn't 0, but " + numRemainingTasklets.get();
+        activeSnapshotIdPhase2 = snapshotId;
+        if (numPTasklets == 0) {
+            // member is already done with the job and master didn't know it yet - we are immediately successful
+            return completedFuture(null);
+        }
+        phase2Future = new CompletableFuture<>();
+        return phase2Future;
     }
 
     /**
@@ -205,28 +302,55 @@ public class SnapshotContext {
      *                               tasklet did or did not do the current
      *                               snapshot.
      */
-    synchronized void taskletDone(long lastCompletedSnapshotId, boolean isHigherPrioritySource) {
-        assert numTasklets > 0 : "numTasklets=" + numTasklets;
-        assert lastCompletedSnapshotId <= activeSnapshotId : "activeSnapshotId=" + activeSnapshotId
+    synchronized void storeSnapshotTaskletDone(long lastCompletedSnapshotId, boolean isHigherPrioritySource) {
+        assert numSsTasklets > 0 : "numSsTasklets=" + numSsTasklets;
+        assert lastCompletedSnapshotId <= activeSnapshotIdPhase1 : "activeSnapshotIdPhase1=" + activeSnapshotIdPhase1
                 + ", tasklet.lastCompletedSnapshotId=" + lastCompletedSnapshotId;
 
-        numTasklets--;
+        numSsTasklets--;
         if (isHigherPrioritySource) {
-            assert numHigherPriorityTasklets > 0 : "numHigherPriorityTasklets=" + numHigherPriorityTasklets;
-            numHigherPriorityTasklets--;
+            assert numPrioritySsTasklets > 0 : "numPrioritySsTasklets=" + numPrioritySsTasklets;
+            numPrioritySsTasklets--;
             // after all higher priority vertices are done we can start the snapshot
-            if (numHigherPriorityTasklets == 0 && activeSnapshotId < currentSnapshotId) {
-                activeSnapshotId = currentSnapshotId;
-                logger.info("Postponed snapshot " + activeSnapshotId + " for " + jobNameAndExecutionId + " started");
+            if (numPrioritySsTasklets == 0 && activeSnapshotIdPhase1 < currentSnapshotId) {
+                activeSnapshotIdPhase1 = currentSnapshotId;
+                logger.info("Postponed snapshot " + activeSnapshotIdPhase1 + " for " + jobNameAndExecutionId
+                        + " started");
             }
         }
-        assert numHigherPriorityTasklets <= numTasklets : "numHigherPriorityTasklets > numTasklets";
+        assert numPrioritySsTasklets <= numSsTasklets : "numPrioritySsTasklets > numSsTasklets";
         assert lastCompletedSnapshotId <= currentSnapshotId : "tasklet completed a snapshot that didn't start yet";
 
         if (lastCompletedSnapshotId < currentSnapshotId) {
             // if tasklet is done before it was aware of the current snapshot, we
             // treat it as if it already completed the snapshot without any data
-            snapshotDoneForTasklet(0, 0, 0);
+            phase1DoneForTasklet(0, 0, 0);
+        } else {
+            assert lastCompletedSnapshotId == activeSnapshotIdPhase1
+                            && lastCompletedSnapshotId == activeSnapshotIdPhase2
+                    : "lastCompletedSnapshotId=" + lastCompletedSnapshotId + ", activeSnapshotIdPhase1="
+                            + activeSnapshotIdPhase1 + ", activeSnapshotIdPhase2=" + activeSnapshotIdPhase2;
+        }
+    }
+
+    synchronized void processorTaskletDone() {
+        assert numPTasklets > 0 : "numPTasklets=" + numPTasklets;
+        numPTasklets--;
+    }
+
+    /**
+     * Called when phase 1 of current snapshot is done in {@link
+     * StoreSnapshotTasklet} (it received barriers from all its processors and
+     * all async flush operations are done).
+     */
+    void phase1DoneForTasklet(long numBytes, long numKeys, long numChunks) {
+        totalBytes.addAndGet(numBytes);
+        totalKeys.addAndGet(numKeys);
+        totalChunks.addAndGet(numChunks);
+        int newRemainingTasklets = numRemainingTasklets.decrementAndGet();
+        assert newRemainingTasklets >= 0 : "newRemainingTasklets=" + newRemainingTasklets;
+        if (newRemainingTasklets == 0) {
+            handlePhase1Done();
         }
     }
 
@@ -235,14 +359,11 @@ public class SnapshotContext {
      * (it received barriers from all its processors and all async flush
      * operations are done).
      */
-    void snapshotDoneForTasklet(long numBytes, long numKeys, long numChunks) {
-        totalBytes.addAndGet(numBytes);
-        totalKeys.addAndGet(numKeys);
-        totalChunks.addAndGet(numChunks);
+    void phase2DoneForTasklet() {
         int newRemainingTasklets = numRemainingTasklets.decrementAndGet();
         assert newRemainingTasklets >= 0 : "newRemainingTasklets=" + newRemainingTasklets;
         if (newRemainingTasklets == 0) {
-            handleSnapshotDone();
+            handlePhase2Done();
         }
     }
 
@@ -252,27 +373,39 @@ public class SnapshotContext {
      * will be allowed to start.
      */
     synchronized void cancel() {
-        if (future != null) {
+        if (phase1Future != null) {
             reportError(new CancellationException("execution cancelled"));
-            handleSnapshotDone();
+            handlePhase1Done();
+        }
+        if (phase2Future != null) {
+            handlePhase2Done();
         }
         isCancelled = true;
     }
 
-    private synchronized void handleSnapshotDone() {
+    private synchronized void handlePhase1Done() {
         if (isCancelled) {
-            assert future == null : "future=" + future;
+            assert phase1Future == null : "phase1Future=" + phase1Future;
             return;
         }
-        future.complete(
-                new SnapshotOperationResult(totalBytes.get(), totalKeys.get(), totalChunks.get(), snapshotError.get()));
+        phase1Future.complete(
+                new SnapshotPhase1Result(totalBytes.get(), totalKeys.get(), totalChunks.get(), snapshotError.get()));
 
-        future = null;
+        phase1Future = null;
         snapshotError.set(null);
         totalBytes.set(0);
         totalKeys.set(0);
         totalChunks.set(0);
         currentMapName = null;
+    }
+
+    private synchronized void handlePhase2Done() {
+        if (isCancelled) {
+            assert phase2Future == null : "phase2Future=" + phase2Future;
+            return;
+        }
+        phase2Future.complete(null);
+        phase2Future = null;
     }
 
     void reportError(Throwable ex) {

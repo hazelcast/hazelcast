@@ -287,7 +287,6 @@ public class TransformStatefulPTest {
 
     @Test
     public void mapStateful_lateEvent() {
-        // TODO [viliam]
         SupplierEx<Processor> supplier = Processors.mapStatefulP(
                 1000,
                 jetEvent -> 0L,

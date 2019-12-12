@@ -147,8 +147,7 @@ public class JobTest extends SimpleTestInClusterSupport {
         NoOutputSourceP.executionStarted.await();
 
         // Then
-        job.cancel();
-        joinAndExpectCancellation(job);
+        cancelAndJoin(job);
 
         NoOutputSourceP.proceedLatch.countDown();
         assertJobStatusEventually(job, FAILED);
@@ -187,8 +186,7 @@ public class JobTest extends SimpleTestInClusterSupport {
         // Then
         assertJobStatusEventually(trackedJob, RUNNING);
 
-        submittedJob.cancel();
-        joinAndExpectCancellation(submittedJob);
+        cancelAndJoin(submittedJob);
     }
 
     @Test
@@ -206,8 +204,7 @@ public class JobTest extends SimpleTestInClusterSupport {
         // Then
         assertJobStatusEventually(trackedJob, RUNNING);
 
-        submittedJob.cancel();
-        joinAndExpectCancellation(submittedJob);
+        cancelAndJoin(submittedJob);
     }
 
     @Test
@@ -227,8 +224,7 @@ public class JobTest extends SimpleTestInClusterSupport {
         // Then
         assertJobStatusEventually(trackedJob, RUNNING);
 
-        submittedJob.cancel();
-        joinAndExpectCancellation(submittedJob);
+        cancelAndJoin(submittedJob);
     }
 
     @Test

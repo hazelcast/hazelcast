@@ -19,7 +19,7 @@ package com.hazelcast.jet.impl.execution;
 import com.hazelcast.internal.serialization.impl.HeapData;
 import com.hazelcast.jet.config.ProcessingGuarantee;
 import com.hazelcast.jet.core.JetTestSupport;
-import com.hazelcast.jet.impl.operation.SnapshotOperation.SnapshotOperationResult;
+import com.hazelcast.jet.impl.operation.SnapshotPhase1Operation.SnapshotPhase1Result;
 import com.hazelcast.jet.impl.util.MockAsyncSnapshotWriter;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -63,7 +63,7 @@ public class StoreSnapshotTaskletTest extends JetTestSupport {
     private void init(List<Object> inputData) {
         ssContext = new SnapshotContext(Logger.getLogger(SnapshotContext.class), "test job", 1,
                 ProcessingGuarantee.EXACTLY_ONCE);
-        ssContext.initTaskletCount(1, 0);
+        ssContext.initTaskletCount(1, 1, 0);
         inputData = new ArrayList<>(inputData);
         // serialize input data
         for (int i = 0; i < inputData.size(); i++) {
@@ -119,7 +119,7 @@ public class StoreSnapshotTaskletTest extends JetTestSupport {
     public void when_barrier_then_snapshotDone() {
         // When
         init(singletonList(new SnapshotBarrier(2, false)));
-        ssContext.startNewSnapshot(2, "map", false);
+        ssContext.startNewSnapshotPhase1(2, "map", 0);
         assertEquals(MADE_PROGRESS, sst.call());
         assertEquals(MADE_PROGRESS, sst.call());
 
@@ -132,7 +132,7 @@ public class StoreSnapshotTaskletTest extends JetTestSupport {
         // When
         Entry<String, String> entry = entry("k", "v");
         init(asList(entry, new SnapshotBarrier(2, false)));
-        ssContext.startNewSnapshot(2, "map", false);
+        ssContext.startNewSnapshotPhase1(2, "map", 0);
         assertEquals(2, sst.pendingSnapshotId);
         assertEquals(MADE_PROGRESS, sst.call());
         mockSsWriter.hasPendingFlushes = false;
@@ -147,7 +147,7 @@ public class StoreSnapshotTaskletTest extends JetTestSupport {
     public void when_notAbleToFlush_then_tryAgain() {
         // When
         init(singletonList(new SnapshotBarrier(2, false)));
-        ssContext.startNewSnapshot(2, "map", false);
+        ssContext.startNewSnapshotPhase1(2, "map", 0);
         mockSsWriter.ableToFlushRemaining = false;
         assertEquals(MADE_PROGRESS, sst.call());
         assertEquals(NO_PROGRESS, sst.call());
@@ -166,7 +166,7 @@ public class StoreSnapshotTaskletTest extends JetTestSupport {
         // When
         Entry<String, String> entry = entry("k", "v");
         init(asList(entry, new SnapshotBarrier(2, false)));
-        ssContext.startNewSnapshot(2, "map", false);
+        ssContext.startNewSnapshotPhase1(2, "map", 0);
         assertEquals(MADE_PROGRESS, sst.call());
         assertEquals(NO_PROGRESS, sst.call());
         assertTrue(mockSsWriter.hasPendingFlushes);
@@ -184,7 +184,7 @@ public class StoreSnapshotTaskletTest extends JetTestSupport {
         init(singletonList(new SnapshotBarrier(2, false)));
         RuntimeException mockFailure = new RuntimeException("mock failure");
         mockSsWriter.failure = mockFailure;
-        CompletableFuture<SnapshotOperationResult> future = ssContext.startNewSnapshot(2, "map", false);
+        CompletableFuture<SnapshotPhase1Result> future = ssContext.startNewSnapshotPhase1(2, "map", 0);
         assertEquals(MADE_PROGRESS, sst.call());
         assertFalse(future.isDone());
         assertEquals(MADE_PROGRESS, sst.call());

@@ -549,6 +549,12 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
                              .count();
     }
 
+    public int getProcessorTaskletCount() {
+        return (int) tasklets.stream()
+                             .filter(t -> t instanceof ProcessorTasklet)
+                             .count();
+    }
+
     public int getHigherPriorityVertexCount() {
         return (int) vertices.stream()
                              .filter(VertexDef::isHigherPrioritySource)

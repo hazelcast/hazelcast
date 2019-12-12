@@ -34,12 +34,10 @@ import java.util.List;
 import java.util.Map.Entry;
 import java.util.Queue;
 import java.util.concurrent.atomic.AtomicLongArray;
-import java.util.function.Function;
 import java.util.stream.IntStream;
 
 import static com.hazelcast.internal.util.Preconditions.checkNotNegative;
 import static com.hazelcast.jet.Util.entry;
-import static java.util.function.Function.identity;
 
 /**
  * {@code Outbox} implementation suitable to be used in tests.
@@ -49,7 +47,7 @@ import static java.util.function.Function.identity;
 public final class TestOutbox implements OutboxInternal {
 
     private final Queue<Object>[] buckets;
-    private final Queue<Entry<Data, Data>> snapshotQueue = new ArrayDeque<>();
+    private final Queue<Entry<Object, Object>> snapshotQueue = new ArrayDeque<>();
     private final OutboxImpl outbox;
     private final SerializationService serializationService;
 
@@ -82,7 +80,7 @@ public final class TestOutbox implements OutboxInternal {
         Arrays.setAll(outstreams, i ->
                 i < edgeCapacities.length
                     ? e -> addToQueue(buckets[i], edgeCapacities[i], e)
-                    : e -> addToQueue(snapshotQueue, snapshotCapacity, (Entry<Data, Data>) e));
+                    : e -> addToQueue(snapshotQueue, snapshotCapacity, deserializeSnapshotEntry((Entry<Data, Data>) e)));
 
         serializationService = new DefaultSerializationServiceBuilder().build();
         outbox = new OutboxImpl(outstreams, snapshotCapacity > 0, new ProgressTracker(), serializationService,
@@ -137,7 +135,7 @@ public final class TestOutbox implements OutboxInternal {
      * data, if you need deserialized data, you might prefer to use
      * {@link #drainSnapshotQueueAndReset}.
      */
-    public Queue<Entry<Data, Data>> snapshotQueue() {
+    public Queue<Entry<Object, Object>> snapshotQueue() {
         return snapshotQueue;
     }
 
@@ -152,7 +150,7 @@ public final class TestOutbox implements OutboxInternal {
      * @param logItems whether to log drained items to {@code System.out}
      */
     public <T> void drainQueueAndReset(int queueOrdinal, Collection<T> target, boolean logItems) {
-        drainInternal(queue(queueOrdinal), target, identity(), logItems, "Output-" + queueOrdinal);
+        drainInternal(queue(queueOrdinal), target, logItems, "Output-" + queueOrdinal);
     }
 
     /**
@@ -179,18 +177,19 @@ public final class TestOutbox implements OutboxInternal {
      * @param target target list
      * @param logItems whether to log drained items to {@code System.out}
      */
+    @SuppressWarnings("unchecked")
     public <K, V> void drainSnapshotQueueAndReset(Collection<? super Entry<K, V>> target, boolean logItems) {
-        drainInternal(snapshotQueue(), target, this::deserializeSnapshotEntry, logItems, "Output-ss");
+        drainInternal(snapshotQueue(), (Collection) target, logItems, "Output-ss");
     }
 
     private <K, V> Entry<K, V> deserializeSnapshotEntry(Entry<Data, Data> t) {
         return entry(serializationService.toObject(t.getKey()), serializationService.toObject(t.getValue()));
     }
 
-    private <T, R> void drainInternal(Queue<? extends T> q, Collection<? super R> target, Function<T, R> mapFn,
+    private <T> void drainInternal(Queue<? extends T> q, Collection<? super T> target,
                                       boolean logItems, String prefix) {
         for (T o; (o = q.poll()) != null; ) {
-            target.add(mapFn.apply(o));
+            target.add(o);
             if (logItems) {
                 System.out.println(LocalTime.now() + " " + prefix + ": " + o);
             }

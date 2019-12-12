@@ -66,6 +66,8 @@ public final class TestProcessors {
 
         MockP.initCount.set(0);
         MockP.closeCount.set(0);
+        MockP.saveToSnapshotCalled = false;
+        MockP.onSnapshotCompletedCalled = false;
 
         NoOutputSourceP.proceedLatch = new CountDownLatch(1);
         NoOutputSourceP.executionStarted = new CountDownLatch(totalParallelism);
@@ -270,12 +272,17 @@ public final class TestProcessors {
 
         static AtomicInteger initCount = new AtomicInteger();
         static AtomicInteger closeCount = new AtomicInteger();
+        static volatile boolean onSnapshotCompletedCalled;
+        static volatile boolean saveToSnapshotCalled;
 
         private Throwable initError;
         private Throwable processError;
         private Throwable completeError;
         private Throwable closeError;
+        private Throwable onSnapshotCompleteError;
+        private Throwable saveToSnapshotError;
         private boolean isCooperative;
+        private boolean streaming;
 
         @Override
         public boolean isCooperative() {
@@ -297,6 +304,16 @@ public final class TestProcessors {
             return this;
         }
 
+        public MockP setOnSnapshotCompleteError(Throwable e) {
+            this.onSnapshotCompleteError = e;
+            return this;
+        }
+
+        public MockP setSaveToSnapshotError(Throwable e) {
+            this.saveToSnapshotError = e;
+            return this;
+        }
+
         public MockP setCloseError(Throwable closeError) {
             this.closeError = closeError;
             return this;
@@ -304,6 +321,11 @@ public final class TestProcessors {
 
         public MockP nonCooperative() {
             isCooperative = false;
+            return this;
+        }
+
+        public MockP streaming() {
+            streaming = true;
             return this;
         }
 
@@ -327,6 +349,24 @@ public final class TestProcessors {
         public boolean complete() {
             if (completeError != null) {
                 throw sneakyThrow(completeError);
+            }
+            return !streaming;
+        }
+
+        @Override
+        public boolean saveToSnapshot() {
+            saveToSnapshotCalled = true;
+            if (saveToSnapshotError != null) {
+                throw sneakyThrow(saveToSnapshotError);
+            }
+            return true;
+        }
+
+        @Override
+        public boolean snapshotCommitFinish(boolean success) {
+            onSnapshotCompletedCalled = true;
+            if (onSnapshotCompleteError != null) {
+                throw sneakyThrow(onSnapshotCompleteError);
             }
             return true;
         }

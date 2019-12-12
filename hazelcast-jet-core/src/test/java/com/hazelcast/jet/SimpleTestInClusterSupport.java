@@ -70,6 +70,9 @@ public abstract class SimpleTestInClusterSupport extends JetTestSupport {
 
     @After
     public void supportAfter() {
+        if (instances == null) {
+            return;
+        }
         // after each test ditch all jobs and objects
         for (Job job : instances[0].getJobs()) {
             ditchJob(job, instances());
@@ -80,7 +83,7 @@ public abstract class SimpleTestInClusterSupport extends JetTestSupport {
     }
 
     @AfterClass
-    public static void tearDown() throws Exception {
+    public static void supportAfterClass() throws Exception {
         spawn(() -> factory.terminateAll())
                 .get(1, TimeUnit.MINUTES);
 

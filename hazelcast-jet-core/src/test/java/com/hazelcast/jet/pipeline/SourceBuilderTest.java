@@ -44,7 +44,6 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.CancellationException;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.LongStream;
@@ -371,11 +370,7 @@ public class SourceBuilderTest extends PipelineStreamTestSupport {
         // wait until more results are added
         int oldSize = result.size();
         assertTrueEventually(() -> assertTrue("no more results added to the list", result.size() > oldSize));
-        job.cancel();
-        try {
-            job.join();
-        } catch (CancellationException ignored) {
-        }
+        cancelAndJoin(job);
 
         // results should contain a monotonic sequence of results, each with count=windowSize
         Iterator<WindowResult<Long>> iterator = result.iterator();
@@ -420,11 +415,7 @@ public class SourceBuilderTest extends PipelineStreamTestSupport {
         assertTrueEventually(() -> assertTrue("no more results added to the list",
                 result.size() > sizeAfterSecondRestart));
 
-        job.cancel();
-        try {
-            job.join();
-        } catch (CancellationException ignored) {
-        }
+        cancelAndJoin(job);
 
         // results should contain a monotonic sequence of results, each with count=windowSize
         Iterator<WindowResult<Long>> iterator = result.iterator();
@@ -459,11 +450,7 @@ public class SourceBuilderTest extends PipelineStreamTestSupport {
         // wait until more results are added
         int oldSize = result.size();
         assertTrueEventually(() -> assertTrue("no more results added to the list", result.size() > oldSize));
-        job.cancel();
-        try {
-            job.join();
-        } catch (CancellationException ignored) {
-        }
+        cancelAndJoin(job);
 
         Iterator<WindowResult<Long>> iterator = result.iterator();
 

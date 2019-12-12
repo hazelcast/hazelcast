@@ -39,7 +39,6 @@ import java.util.ArrayList;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.TreeMap;
-import java.util.concurrent.CancellationException;
 import java.util.stream.Collectors;
 
 import static com.hazelcast.jet.config.ProcessingGuarantee.EXACTLY_ONCE;
@@ -131,12 +130,7 @@ public class ManualRestartTest extends JetTestSupport {
         Job job = client.newJob(dag);
         job.cancel();
 
-        try {
-            job.join();
-            fail();
-        } catch (CancellationException ignored) {
-            logger.info("Cancellation exception caught");
-        }
+        cancelAndJoin(job);
 
         // Then, the job cannot restart
         exception.expect(IllegalStateException.class);

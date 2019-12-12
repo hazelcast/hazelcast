@@ -26,7 +26,7 @@ import javax.annotation.Nonnull;
  */
 public abstract class WindowDefinition {
 
-    private long earlyResultPeriod;
+    private long earlyResultPeriodMs;
 
     /**
      * Returns the {@linkplain #setEarlyResultsPeriod early results period} for
@@ -36,7 +36,7 @@ public abstract class WindowDefinition {
      * @since 3.1
      */
     public long earlyResultsPeriod() {
-        return earlyResultPeriod;
+        return earlyResultPeriodMs;
     }
 
     /**
@@ -60,14 +60,14 @@ public abstract class WindowDefinition {
      * <p>
      * The default value is zero, which means "don't emit early results".
      *
-     * @param earlyResultPeriod the period in milliseconds from one start of the emission of early
-     *                          results to the next one
+     * @param earlyResultPeriodMs the period in milliseconds from one start of
+     *                           the emission of early results to the next one
      * @return {@code this}
      *
      * @since 3.1
      */
-    public WindowDefinition setEarlyResultsPeriod(long earlyResultPeriod) {
-        this.earlyResultPeriod = earlyResultPeriod;
+    public WindowDefinition setEarlyResultsPeriod(long earlyResultPeriodMs) {
+        this.earlyResultPeriodMs = earlyResultPeriodMs;
         return this;
     }
 

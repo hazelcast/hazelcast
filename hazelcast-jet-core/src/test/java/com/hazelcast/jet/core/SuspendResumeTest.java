@@ -43,7 +43,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 
 @RunWith(HazelcastSerialClassRunner.class)
 public class SuspendResumeTest extends JetTestSupport {
@@ -220,13 +219,8 @@ public class SuspendResumeTest extends JetTestSupport {
         NoOutputSourceP.executionStarted.await();
         job.suspend();
         assertJobStatusEventually(job, SUSPENDED);
-        // When
-        job.cancel();
-        // Then
-        try {
-            job.join();
-            fail("job.join() should have failed");
-        } catch (CancellationException ignored) { }
+        // When-Then
+        cancelAndJoin(job);
         assertJobStatusEventually(job, FAILED);
 
         // check that job resources are deleted

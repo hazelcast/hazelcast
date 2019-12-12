@@ -38,8 +38,8 @@ public class SlidingWindowDefinition extends WindowDefinition {
     }
 
     @Override
-    public SlidingWindowDefinition setEarlyResultsPeriod(long earlyResultPeriod) {
-        return (SlidingWindowDefinition) super.setEarlyResultsPeriod(earlyResultPeriod);
+    public SlidingWindowDefinition setEarlyResultsPeriod(long earlyResultPeriodMs) {
+        return (SlidingWindowDefinition) super.setEarlyResultsPeriod(earlyResultPeriodMs);
     }
 
     /**

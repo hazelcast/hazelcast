@@ -147,6 +147,10 @@ public abstract class AbstractJobProxy<T> implements Job {
         terminate(TerminationMode.RESTART_GRACEFUL);
     }
 
+    public void restart(boolean graceful) {
+        terminate(graceful ? TerminationMode.RESTART_GRACEFUL : TerminationMode.RESTART_FORCEFUL);
+    }
+
     @Override
     public void suspend() {
         terminate(TerminationMode.SUSPEND_GRACEFUL);

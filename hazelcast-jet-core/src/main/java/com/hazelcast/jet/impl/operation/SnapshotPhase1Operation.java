@@ -30,7 +30,7 @@ import java.util.concurrent.TimeUnit;
 import static com.hazelcast.jet.impl.util.LoggingUtil.logFine;
 import static java.util.Objects.requireNonNull;
 
-public class SnapshotOperation extends AsyncJobOperation {
+public class SnapshotPhase1Operation extends AsyncJobOperation {
 
     /** If set to true, responses to SnapshotOperation will be postponed until set back to false. */
     // for test
@@ -40,36 +40,37 @@ public class SnapshotOperation extends AsyncJobOperation {
     private long executionId;
     private long snapshotId;
     private String mapName;
-    private boolean isTerminal;
+    private int flags;
 
     // for deserialization
-    public SnapshotOperation() {
+    public SnapshotPhase1Operation() {
     }
 
-    public SnapshotOperation(long jobId, long executionId, long snapshotId, String mapName, boolean isTerminal) {
+    public SnapshotPhase1Operation(long jobId, long executionId, long snapshotId, String mapName, int flags) {
         super(jobId);
         this.executionId = executionId;
         this.snapshotId = snapshotId;
         this.mapName = mapName;
-        this.isTerminal = isTerminal;
+        this.flags = flags;
     }
 
     @Override
-    protected CompletableFuture<SnapshotOperationResult> doRun() {
+    protected CompletableFuture<SnapshotPhase1Result> doRun() {
         JetService service = getService();
         ExecutionContext ctx = service.getJobExecutionService().assertExecutionContext(
                 getCallerAddress(), jobId(), executionId, getClass().getSimpleName()
         );
-        CompletableFuture<SnapshotOperationResult> future = ctx.beginSnapshot(snapshotId, mapName, isTerminal)
-                .exceptionally(exc -> new SnapshotOperationResult(0, 0, 0, exc))
+        CompletableFuture<SnapshotPhase1Result> future =
+            ctx.beginSnapshotPhase1(snapshotId, mapName, flags)
+                .exceptionally(exc -> new SnapshotPhase1Result(0, 0, 0, exc))
                 .thenApply(result -> {
                     if (result.getError() == null) {
                         logFine(getLogger(),
-                                "Snapshot %s for %s finished successfully on member",
+                                "Snapshot %s phase 1 for %s finished successfully on member",
                                 snapshotId, ctx.jobNameAndExecutionId());
                     } else {
-                        getLogger().warning(String.format("Snapshot %d for %s finished with an error on member: %s",
-                                snapshotId, ctx.jobNameAndExecutionId(), result.getError()));
+                        getLogger().warning(String.format("Snapshot %d phase 1 for %s finished with an error on member: " +
+                                        "%s", snapshotId, ctx.jobNameAndExecutionId(), result.getError()));
                     }
                     return result;
                 });
@@ -79,13 +80,13 @@ public class SnapshotOperation extends AsyncJobOperation {
         }
 
         return future.thenCompose(result -> {
-            CompletableFuture<SnapshotOperationResult> f2 = new CompletableFuture<>();
+            CompletableFuture<SnapshotPhase1Result> f2 = new CompletableFuture<>();
             tryCompleteLater(result, f2);
             return f2;
         });
     }
 
-    private void tryCompleteLater(SnapshotOperationResult result, CompletableFuture<SnapshotOperationResult> future) {
+    private void tryCompleteLater(SnapshotPhase1Result result, CompletableFuture<SnapshotPhase1Result> future) {
         getNodeEngine().getExecutionService().schedule(() -> {
             if (postponeResponses) {
                 tryCompleteLater(result, future);
@@ -97,7 +98,7 @@ public class SnapshotOperation extends AsyncJobOperation {
 
     @Override
     public int getClassId() {
-        return JetInitDataSerializerHook.SNAPSHOT_OPERATION;
+        return JetInitDataSerializerHook.SNAPSHOT_PHASE1_OPERATION;
     }
 
     @Override
@@ -106,7 +107,7 @@ public class SnapshotOperation extends AsyncJobOperation {
         out.writeLong(executionId);
         out.writeLong(snapshotId);
         out.writeUTF(mapName);
-        out.writeBoolean(isTerminal);
+        out.writeInt(flags);
     }
 
     @Override
@@ -115,22 +116,23 @@ public class SnapshotOperation extends AsyncJobOperation {
         executionId = in.readLong();
         snapshotId = in.readLong();
         mapName = in.readUTF();
-        isTerminal = in.readBoolean();
+        flags = in.readInt();
     }
 
     /**
-     * The result of SnapshotOperation with snapshot statistics and error.
+     * The result of {@link SnapshotPhase1Operation} with snapshot statistics
+     * and error.
      */
-    public static final class SnapshotOperationResult implements IdentifiedDataSerializable {
+    public static final class SnapshotPhase1Result implements IdentifiedDataSerializable {
         private long numBytes;
         private long numKeys;
         private long numChunks;
         private String error;
 
-        public SnapshotOperationResult() {
+        public SnapshotPhase1Result() {
         }
 
-        public SnapshotOperationResult(long numBytes, long numKeys, long numChunks, Throwable error) {
+        public SnapshotPhase1Result(long numBytes, long numKeys, long numChunks, Throwable error) {
             this.numBytes = numBytes;
             this.numKeys = numKeys;
             this.numChunks = numChunks;
@@ -158,7 +160,7 @@ public class SnapshotOperation extends AsyncJobOperation {
          * subtotals and if the other result has an error, it will store it
          * into this, unless this result already has one.
          */
-        public void merge(SnapshotOperationResult other) {
+        public void merge(SnapshotPhase1Result other) {
             numBytes += other.numBytes;
             numKeys += other.numKeys;
             numChunks += other.numChunks;
@@ -184,7 +186,7 @@ public class SnapshotOperation extends AsyncJobOperation {
 
         @Override
         public int getClassId() {
-            return JetInitDataSerializerHook.SNAPSHOT_OPERATION_RESULT;
+            return JetInitDataSerializerHook.SNAPSHOT_PHASE1_RESULT;
         }
 
         @Override

@@ -72,6 +72,13 @@ public class ProgressTracker {
         isDone = false;
     }
 
+    /**
+     * Marks the progress as done.
+     */
+    public void done() {
+        isDone = true;
+    }
+
     public boolean isDone() {
         return isDone;
     }

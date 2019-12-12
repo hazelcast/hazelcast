@@ -320,6 +320,11 @@ public class JobExecutionRecord implements IdentifiedDataSerializable {
             return endTime;
         }
 
+        /**
+         * The time elapsed between phase-1 start and phase-1 success. Doesn't
+         * include phase-2 - phase-2 isn't required for the snapshot to be
+         * successful.
+         */
         public long duration() {
             return endTime - startTime;
         }

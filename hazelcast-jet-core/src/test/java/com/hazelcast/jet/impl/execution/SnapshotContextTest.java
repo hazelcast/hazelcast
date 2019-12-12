@@ -17,7 +17,7 @@
 package com.hazelcast.jet.impl.execution;
 
 import com.hazelcast.jet.config.ProcessingGuarantee;
-import com.hazelcast.jet.impl.operation.SnapshotOperation.SnapshotOperationResult;
+import com.hazelcast.jet.impl.operation.SnapshotPhase1Operation.SnapshotPhase1Result;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import org.junit.Test;
@@ -78,24 +78,24 @@ public class SnapshotContextTest {
         SnapshotContext ssContext =
                 new SnapshotContext(mock(ILogger.class), "test job", 9, ProcessingGuarantee.EXACTLY_ONCE);
 
-        ssContext.initTaskletCount(taskletCount, numHigherPriority);
-        CompletableFuture<SnapshotOperationResult> future = null;
+        ssContext.initTaskletCount(taskletCount, taskletCount, numHigherPriority);
+        CompletableFuture<SnapshotPhase1Result> future = null;
         if (snapshotStarted == SnapshotStarted.BEFORE) {
-            future = ssContext.startNewSnapshot(10, "map", false);
-            assertEquals("activeSnapshotId initially", numHigherPriority > 0 ? 9 : 10, ssContext.activeSnapshotId());
+            future = ssContext.startNewSnapshotPhase1(10, "map", 0);
+            assertEquals("activeSnapshotId initially", numHigherPriority > 0 ? 9 : 10,
+                    ssContext.activeSnapshotIdPhase1());
         }
 
         if (taskletDone == TaskletDone.NOT_DONE) {
-            ssContext.snapshotDoneForTasklet(0, 0, 0);
+            ssContext.phase1DoneForTasklet(0, 0, 0);
         } else if (taskletDone == TaskletDone.DONE_BEFORE_CURRENT_SNAPSHOT) {
-            ssContext.taskletDone(9, numHigherPriority > 0);
+            ssContext.storeSnapshotTaskletDone(9, numHigherPriority > 0);
         } else if (taskletDone == TaskletDone.DONE_AFTER_CURRENT_SNAPSHOT) {
-            ssContext.snapshotDoneForTasklet(0, 0, 0);
-            ssContext.taskletDone(10, numHigherPriority > 0);
+            ssContext.phase1DoneForTasklet(0, 0, 0);
         }
 
         if (snapshotStarted == SnapshotStarted.AFTER) {
-            future = ssContext.startNewSnapshot(10, "map", false);
+            future = ssContext.startNewSnapshotPhase1(10, "map", 0);
         }
 
         assertNotNull("future == null", future);
@@ -103,7 +103,9 @@ public class SnapshotContextTest {
                 future.isDone() == (taskletCount == 1));
         assertEquals("numRemainingTasklets", taskletCount - 1, ssContext.getNumRemainingTasklets().get());
         assertEquals("activeSnapshotId at the end",
-                taskletDone == TaskletDone.NOT_DONE && numHigherPriority > 0 ? 9 : 10, ssContext.activeSnapshotId());
+                taskletDone == TaskletDone.NOT_DONE && numHigherPriority > 0
+                        ? 9
+                        : 10, ssContext.activeSnapshotIdPhase1());
     }
 
     private enum SnapshotStarted {

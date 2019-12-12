@@ -31,7 +31,6 @@ import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.Enumeration;
 import java.util.Map;
-import java.util.concurrent.CancellationException;
 import java.util.function.Function;
 
 import static com.hazelcast.jet.core.JobStatus.RUNNING;
@@ -92,11 +91,7 @@ public abstract class AbstractDeploymentTest extends JetTestSupport {
 
         Job job = getJetInstance().newJob(dag, jobConfig);
         assertJobStatusEventually(job, RUNNING);
-        job.cancel();
-        try {
-            job.join();
-        } catch (CancellationException ignored) {
-        }
+        cancelAndJoin(job);
         if (LoadPersonIsolated.assertionErrorInClose != null) {
             throw LoadPersonIsolated.assertionErrorInClose;
         }

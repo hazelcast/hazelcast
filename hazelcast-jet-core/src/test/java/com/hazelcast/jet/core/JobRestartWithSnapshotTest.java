@@ -202,7 +202,7 @@ public class JobRestartWithSnapshotTest extends JetTestSupport {
         int timeout = (int) (MILLISECONDS.toSeconds(config.getSnapshotIntervalMillis() * 3) + 2);
 
         waitForFirstSnapshot(jobRepository, job.getId(), timeout, false);
-        waitForNextSnapshot(jobRepository, job.getId(), timeout);
+        waitForNextSnapshot(jobRepository, job.getId(), timeout, false);
         // wait a little more to emit something, so that it will be overwritten in the sink map
         Thread.sleep(300);
 
@@ -211,8 +211,8 @@ public class JobRestartWithSnapshotTest extends JetTestSupport {
         // Now the job should detect member shutdown and restart from snapshot.
         // Let's wait until the next snapshot appears.
         waitForNextSnapshot(jobRepository, job.getId(),
-                (int) (MILLISECONDS.toSeconds(config.getSnapshotIntervalMillis()) + 10));
-        waitForNextSnapshot(jobRepository, job.getId(), timeout);
+                (int) (MILLISECONDS.toSeconds(config.getSnapshotIntervalMillis()) + 10), false);
+        waitForNextSnapshot(jobRepository, job.getId(), timeout, false);
 
         job.join();
 

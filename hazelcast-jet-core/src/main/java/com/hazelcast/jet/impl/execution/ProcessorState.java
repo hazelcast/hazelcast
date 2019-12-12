@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.impl.execution;
 
+import com.hazelcast.jet.core.Inbox;
 import com.hazelcast.jet.core.Processor;
 
 /**
@@ -30,9 +31,14 @@ enum ProcessorState {
     PROCESS_WATERMARK,
 
     /**
-     * Making calls to {@link Processor#tryProcess()} and {@link
-     * Processor#process(int, com.hazelcast.jet.core.Inbox)} until the inbox
-     * is empty.
+     * Making calls to the zero-argument {@link Processor#tryProcess()} method
+     * until it returns true.
+     */
+    NULLARY_PROCESS,
+
+    /**
+     * Making calls to {@link Processor#process(int, Inbox)} until the inbox is
+     * empty.
      */
     PROCESS_INBOX,
 
@@ -55,9 +61,35 @@ enum ProcessorState {
     SAVE_SNAPSHOT,
 
     /**
+     * Making calls to {@link Processor#snapshotCommitPrepare()} until it
+     * returns {@code true}.
+     */
+    SNAPSHOT_PREPARE_COMMIT,
+
+    /**
      * Waiting for the outbox to accept the {@link SnapshotBarrier}.
      */
     EMIT_BARRIER,
+
+    /**
+     * Making calls to {@link Processor#snapshotCommitFinish(boolean)} until it
+     * returns {@code true}.
+     */
+    ON_SNAPSHOT_COMPLETED,
+
+    /**
+     * Processor completed after a phase 1 of a snapshot and is not doing
+     * anything, but it cannot be done until a phase 2 is done - this state is
+     * waiting for a phase 2.
+     */
+    WAITING_FOR_SNAPSHOT_COMPLETED,
+
+    /**
+     * Same as {@link #ON_SNAPSHOT_COMPLETED}, but after the processor
+     * completed. It follows after {@link #WAITING_FOR_SNAPSHOT_COMPLETED} and
+     * is followed by {@link #EMIT_DONE_ITEM}.
+     */
+    FINAL_ON_SNAPSHOT_COMPLETED,
 
     /**
      * Waiting for the outbox to accept the {@code DONE_ITEM}.

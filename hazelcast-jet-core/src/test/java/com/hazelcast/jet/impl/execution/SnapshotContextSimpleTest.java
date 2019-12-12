@@ -17,7 +17,7 @@
 package com.hazelcast.jet.impl.execution;
 
 import com.hazelcast.jet.config.ProcessingGuarantee;
-import com.hazelcast.jet.impl.operation.SnapshotOperation.SnapshotOperationResult;
+import com.hazelcast.jet.impl.operation.SnapshotPhase1Operation.SnapshotPhase1Result;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import org.junit.Rule;
@@ -45,69 +45,99 @@ public class SnapshotContextSimpleTest {
     @Test
     public void when_cancelledInitially_then_cannotStartNewSnapshot() {
         /// When
-        ssContext.initTaskletCount(1, 0);
+        ssContext.initTaskletCount(1, 1, 0);
         ssContext.cancel();
 
         // Then
         exception.expect(CancellationException.class);
-        ssContext.startNewSnapshot(10, "map", false);
+        ssContext.startNewSnapshotPhase1(10, "map", 0);
     }
 
     @Test
-    public void when_cancelledAfterSnapshotDone_then_cannotStartNewSnapshot() {
-        ssContext.initTaskletCount(1, 0);
-        CompletableFuture<SnapshotOperationResult> future = ssContext.startNewSnapshot(10, "map", false);
+    public void when_cancelledAfterPhase1_then_cannotStartPhase2() {
+        ssContext.initTaskletCount(1, 1, 0);
+        CompletableFuture<SnapshotPhase1Result> future = ssContext.startNewSnapshotPhase1(10, "map", 0);
 
         /// When
-        ssContext.snapshotDoneForTasklet(1, 1, 1);
+        ssContext.phase1DoneForTasklet(1, 1, 1);
         assertTrue(future.isDone());
         ssContext.cancel();
 
         // Then
         exception.expect(CancellationException.class);
-        ssContext.startNewSnapshot(11, "map", false);
+        ssContext.startNewSnapshotPhase2(10, true);
     }
 
     @Test
-    public void when_cancelledMidSnapshot_then_futureCompleted_and_taskletDoneSucceeds() {
-        ssContext.initTaskletCount(3, 0);
-        CompletableFuture<SnapshotOperationResult> future = ssContext.startNewSnapshot(10, "map", false);
+    public void when_cancelledMidPhase1_then_futureCompleted() {
+        ssContext.initTaskletCount(3, 3, 0);
+        CompletableFuture<SnapshotPhase1Result> future = ssContext.startNewSnapshotPhase1(10, "map", 0);
 
         // When
-        ssContext.snapshotDoneForTasklet(1, 1, 1);
+        ssContext.phase1DoneForTasklet(1, 1, 1);
         assertFalse(future.isDone());
         ssContext.cancel();
 
         // Then1
         assertTrue(future.isDone());
-
-        // Then2
-        ssContext.taskletDone(10, false);
     }
 
     @Test
-    public void when_cancelledMidSnapshot_then_snapshotDoneForTaskletSucceeds() {
-        ssContext.initTaskletCount(2, 0);
-        CompletableFuture<SnapshotOperationResult> future = ssContext.startNewSnapshot(10, "map", false);
+    public void when_cancelledMidPhase2_then_futureCompleted() {
+        ssContext.initTaskletCount(1, 1, 0);
+        ssContext.startNewSnapshotPhase1(10, "map", 0);
+        ssContext.phase1DoneForTasklet(1, 1, 1);
+        CompletableFuture<Void> future = ssContext.startNewSnapshotPhase2(10, true);
 
         // When
-        ssContext.snapshotDoneForTasklet(1, 1, 1);
+        assertFalse(future.isDone());
+        ssContext.cancel();
+
+        // Then1
+        assertTrue(future.isDone());
+    }
+
+    @Test
+    public void when_cancelledMidPhase1_then_phase1DoneForTaskletSucceeds() {
+        ssContext.initTaskletCount(2, 2, 0);
+        CompletableFuture<SnapshotPhase1Result> future = ssContext.startNewSnapshotPhase1(10, "map", 0);
+
+        // When
+        ssContext.phase1DoneForTasklet(1, 1, 1);
         assertFalse(future.isDone());
         ssContext.cancel();
 
         // Then
-        ssContext.snapshotDoneForTasklet(1, 1, 1);
+        ssContext.phase1DoneForTasklet(1, 1, 1);
+        assertTrue(future.isDone());
+    }
+
+    @Test
+    public void when_cancelledMidPhase2_then_phase2DoneForTaskletSucceeds() {
+        ssContext.initTaskletCount(2, 1, 0);
+        ssContext.startNewSnapshotPhase1(10, "map", 0);
+        ssContext.phase1DoneForTasklet(1, 1, 1);
+        CompletableFuture<Void> future = ssContext.startNewSnapshotPhase2(10, true);
+
+        // When
+        ssContext.phase2DoneForTasklet();
+        assertFalse(future.isDone());
+        ssContext.cancel();
+
+        // Then
+        ssContext.phase2DoneForTasklet();
+        assertTrue(future.isDone());
     }
 
     @Test
     public void test_taskletDoneWhilePostponed() {
-        ssContext.initTaskletCount(2, 2);
-        CompletableFuture<SnapshotOperationResult> future = ssContext.startNewSnapshot(10, "map", false);
-        assertEquals(9, ssContext.activeSnapshotId());
-        ssContext.taskletDone(9, true);
-        assertEquals(9, ssContext.activeSnapshotId());
-        ssContext.taskletDone(9, true);
-        assertEquals(10, ssContext.activeSnapshotId());
+        ssContext.initTaskletCount(2, 2, 2);
+        CompletableFuture<SnapshotPhase1Result> future = ssContext.startNewSnapshotPhase1(10, "map", 0);
+        assertEquals(9, ssContext.activeSnapshotIdPhase1());
+        ssContext.storeSnapshotTaskletDone(9, true);
+        assertEquals(9, ssContext.activeSnapshotIdPhase1());
+        ssContext.storeSnapshotTaskletDone(9, true);
+        assertEquals(10, ssContext.activeSnapshotIdPhase1());
         assertTrue(future.isDone());
     }
 }
