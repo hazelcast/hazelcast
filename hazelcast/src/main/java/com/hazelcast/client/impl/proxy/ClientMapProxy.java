@@ -87,6 +87,7 @@ import com.hazelcast.client.impl.protocol.codec.MapUnlockCodec;
 import com.hazelcast.client.impl.protocol.codec.MapValuesCodec;
 import com.hazelcast.client.impl.protocol.codec.MapValuesWithPagingPredicateCodec;
 import com.hazelcast.client.impl.protocol.codec.MapValuesWithPredicateCodec;
+import com.hazelcast.client.impl.protocol.codec.holder.PagingPredicateHolder;
 import com.hazelcast.client.impl.querycache.ClientQueryCacheContext;
 import com.hazelcast.client.impl.spi.ClientContext;
 import com.hazelcast.client.impl.spi.ClientPartitionService;
@@ -1231,13 +1232,7 @@ public class ClientMapProxy<K, V> extends ClientProxy
     public Set<K> keySet(@Nonnull Predicate<K, V> predicate) {
         checkNotNull(predicate, NULL_PREDICATE_IS_NOT_ALLOWED);
         if (containsPagingPredicate(predicate)) {
-            PagingPredicate pagingPredicate = unwrapPagingPredicate(predicate);
-            if (pagingPredicate.getComparator() == null) {
-                return keySetWithPagingPredicate(predicate);
-            } else {
-                // custom comparator may act on keys and values at the same time
-                return entrySetWithPagingPredicate(predicate, IterationType.KEY);
-            }
+            return keySetWithPagingPredicate(predicate);
         }
 
         ClientMessage request = MapKeySetWithPredicateCodec.encodeRequest(name, toData(predicate));
@@ -1258,8 +1253,8 @@ public class ClientMapProxy<K, V> extends ClientProxy
         PagingPredicateImpl pagingPredicate = unwrapPagingPredicate(predicate);
         pagingPredicate.setIterationType(IterationType.KEY);
 
-        ClientMessage request = MapKeySetWithPagingPredicateCodec.encodeRequest(name, toData(predicate));
-
+        PagingPredicateHolder pagingPredicateHolder = PagingPredicateHolder.of(pagingPredicate, getSerializationService());
+        ClientMessage request = MapKeySetWithPagingPredicateCodec.encodeRequest(name, pagingPredicateHolder);
         ClientMessage response = invokeWithPredicate(request, predicate);
         MapKeySetWithPagingPredicateCodec.ResponseParameters resultParameters = MapKeySetWithPagingPredicateCodec
                 .decodeResponse(response);
@@ -1277,8 +1272,7 @@ public class ClientMapProxy<K, V> extends ClientProxy
             entries.add(new AbstractMap.SimpleImmutableEntry(key, null));
         }
 
-        PagingPredicateImpl<K, V> resultPredicate = serializationService.toObject(resultParameters.predicate);
-        pagingPredicate.setAnchorList(resultPredicate.getAnchorList());
+        pagingPredicate.setAnchorList(resultParameters.anchorDataList.asAnchorList(serializationService));
 
         return (Set<K>) new ResultSet(entries, IterationType.KEY);
     }
@@ -1288,7 +1282,7 @@ public class ClientMapProxy<K, V> extends ClientProxy
     public Set<Entry<K, V>> entrySet(@Nonnull Predicate predicate) {
         checkNotNull(predicate, NULL_PREDICATE_IS_NOT_ALLOWED);
         if (containsPagingPredicate(predicate)) {
-            return entrySetWithPagingPredicate(predicate, IterationType.ENTRY);
+            return entrySetWithPagingPredicate(predicate);
         }
         ClientMessage request = MapEntriesWithPredicateCodec.encodeRequest(name, toData(predicate));
 
@@ -1305,11 +1299,12 @@ public class ClientMapProxy<K, V> extends ClientProxy
         return setBuilder.build();
     }
 
-    private Set entrySetWithPagingPredicate(Predicate predicate, IterationType iterationType) {
+    private Set entrySetWithPagingPredicate(Predicate predicate) {
         PagingPredicateImpl pagingPredicate = unwrapPagingPredicate(predicate);
         pagingPredicate.setIterationType(IterationType.ENTRY);
 
-        ClientMessage request = MapEntriesWithPagingPredicateCodec.encodeRequest(name, toData(predicate));
+        PagingPredicateHolder pagingPredicateHolder = PagingPredicateHolder.of(pagingPredicate, getSerializationService());
+        ClientMessage request = MapEntriesWithPagingPredicateCodec.encodeRequest(name, pagingPredicateHolder);
 
         ClientMessage response = invokeWithPredicate(request, predicate);
         MapEntriesWithPagingPredicateCodec.ResponseParameters resultParameters = MapEntriesWithPagingPredicateCodec
@@ -1320,18 +1315,17 @@ public class ClientMapProxy<K, V> extends ClientProxy
         }
 
         SerializationService serializationService = getSerializationService();
+
         int size = resultParameters.response.size();
         List<Map.Entry> entries = new ArrayList<>(size);
         for (int i = 0; i < size; i++) {
-            Entry<Data, Data> dataEntry = resultParameters.response.get(i);
-            K key = serializationService.toObject(dataEntry.getKey());
-            V value = serializationService.toObject(dataEntry.getValue());
-            Map.Entry<K, V> entry = new AbstractMap.SimpleImmutableEntry<>(key, value);
-            entries.add(entry);
+            Entry<Data, Data> entryData = resultParameters.response.get(i);
+            K key = serializationService.toObject(entryData.getKey());
+            V value = serializationService.toObject(entryData.getValue());
+            entries.add(new AbstractMap.SimpleImmutableEntry(key, value));
         }
 
-        PagingPredicateImpl<K, V> resultPredicate = serializationService.toObject(resultParameters.predicate);
-        pagingPredicate.setAnchorList(resultPredicate.getAnchorList());
+        pagingPredicate.setAnchorList(resultParameters.anchorDataList.asAnchorList(serializationService));
 
         return new ResultSet(entries, IterationType.ENTRY);
     }
@@ -1366,27 +1360,29 @@ public class ClientMapProxy<K, V> extends ClientProxy
         PagingPredicateImpl pagingPredicate = unwrapPagingPredicate(predicate);
         pagingPredicate.setIterationType(IterationType.VALUE);
 
-        ClientMessage request = MapValuesWithPagingPredicateCodec.encodeRequest(name, toData(predicate));
+        PagingPredicateHolder pagingPredicateHolder = PagingPredicateHolder.of(pagingPredicate, getSerializationService());
+        ClientMessage request = MapValuesWithPagingPredicateCodec.encodeRequest(name, pagingPredicateHolder);
+
         ClientMessage response = invokeWithPredicate(request, predicate);
         MapValuesWithPagingPredicateCodec.ResponseParameters resultParameters = MapValuesWithPagingPredicateCodec
                 .decodeResponse(response);
+
+        SerializationService serializationService = getSerializationService();
 
         if (resultParameters.response.isEmpty()) {
             return (Collection<V>) new ResultSet();
         }
 
-        SerializationService serializationService = getSerializationService();
+        int size = resultParameters.response.size();
+        List<Map.Entry> entries = new ArrayList<>(size);
+        for (int i = 0; i < size; i++) {
+            K key = serializationService.toObject(resultParameters.response.get(i));
+            entries.add(new AbstractMap.SimpleImmutableEntry(key, null));
+        }
 
-        List<Map.Entry> entries = new ArrayList<>(resultParameters.response.size());
-        resultParameters.response.forEach(valueData -> {
-            Object value = serializationService.toObject(valueData);
-            entries.add(new AbstractMap.SimpleImmutableEntry(null, value));
-        });
+        pagingPredicate.setAnchorList(resultParameters.anchorDataList.asAnchorList(serializationService));
 
-        PagingPredicateImpl<K, V> resultPredicate = serializationService.toObject(resultParameters.predicate);
-        pagingPredicate.setAnchorList(resultPredicate.getAnchorList());
-
-        return (Collection<V>) new ResultSet(entries, IterationType.VALUE);
+        return (Set<V>) new ResultSet(entries, IterationType.VALUE);
     }
 
     @Override

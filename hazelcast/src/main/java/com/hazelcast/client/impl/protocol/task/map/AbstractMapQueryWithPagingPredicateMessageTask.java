@@ -17,42 +17,50 @@
 package com.hazelcast.client.impl.protocol.task.map;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.codec.holder.PagingPredicateHolder;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.util.SortingUtil;
 import com.hazelcast.map.impl.LazyMapEntry;
 import com.hazelcast.map.impl.query.QueryResultRow;
 import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.query.PagingPredicate;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.impl.predicates.PagingPredicateImpl;
 
-import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
-import static com.hazelcast.query.impl.predicates.PredicateUtils.unwrapPagingPredicate;
-
 public abstract class AbstractMapQueryWithPagingPredicateMessageTask<P> extends DefaultMapQueryMessageTask<P> {
+    private PagingPredicateImpl pagingPredicate;
 
     protected AbstractMapQueryWithPagingPredicateMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
-    protected Map.Entry<PagingPredicateImpl, List<Map.Entry<Data, Data>>> getSortedPageEntries(Collection<QueryResultRow> result,
-                                                                                               Data predicateData) {
+    protected List<Map.Entry<Data, Data>> getSortedPageEntries(Collection<QueryResultRow> result,
+                                                               PagingPredicate pagingPredicate) {
         ArrayList<Map.Entry> accumulatedList = new ArrayList<>(result.size());
 
         // TODO: The following lines will be replaced by k-way merge sort algorithm as described at
         //  https://github.com/hazelcast/hazelcast/issues/12205
         result.forEach(row -> accumulatedList.add(new LazyMapEntry<>(row.getKey(), row.getValue(), serializationService)));
 
-        Predicate predicate = serializationService.toObject(predicateData);
-        PagingPredicateImpl pagingPredicate = unwrapPagingPredicate(predicate);
+        PagingPredicateImpl pagingPredicateImpl = (PagingPredicateImpl) getPredicate();
 
-        List<Map.Entry<Data, Data>> entries = SortingUtil.getSortedSubList(accumulatedList, pagingPredicate);
-        return new AbstractMap.SimpleImmutableEntry(pagingPredicate, entries);
+        return SortingUtil.getSortedSubList(accumulatedList, pagingPredicateImpl);
     }
+
+    @Override
+    protected Predicate getPredicate() {
+        if (pagingPredicate == null) {
+            pagingPredicate = getPagingPredicateHolder().asPagingPredicate(serializationService);
+        }
+        return pagingPredicate;
+    }
+
+    protected abstract PagingPredicateHolder getPagingPredicateHolder();
 
 }

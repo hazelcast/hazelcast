@@ -18,12 +18,13 @@ package com.hazelcast.client.impl.protocol.task.map;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.MapKeySetWithPagingPredicateCodec;
+import com.hazelcast.client.impl.protocol.codec.holder.AnchorDataListHolder;
+import com.hazelcast.client.impl.protocol.codec.holder.PagingPredicateHolder;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.util.IterationType;
 import com.hazelcast.map.impl.query.QueryResultRow;
 import com.hazelcast.internal.serialization.Data;
-import com.hazelcast.query.Predicate;
 import com.hazelcast.query.impl.predicates.PagingPredicateImpl;
 
 import java.util.AbstractMap;
@@ -41,19 +42,18 @@ public class MapKeySetWithPagingPredicateMessageTask
 
     @Override
     protected Object reduce(Collection<QueryResultRow> result) {
-        Map.Entry<PagingPredicateImpl, List<Map.Entry<Data, Data>>> sortResult = getSortedPageEntries(result,
-                parameters.predicate);
+        PagingPredicateImpl pagingPredicate = (PagingPredicateImpl) getPredicate();
+        List<Map.Entry<Data, Data>> entriesData = getSortedPageEntries(result, pagingPredicate);
 
-        List<Map.Entry<Data, Data>> entries = sortResult.getValue();
-        List<Data> keyList = new ArrayList<>(entries.size());
-        entries.forEach(entry -> keyList.add(entry.getKey()));
+        List<Data> keyList = new ArrayList<>(entriesData.size());
+        entriesData.forEach(entry -> keyList.add(entry.getKey()));
 
-        return new AbstractMap.SimpleImmutableEntry(sortResult.getKey(), keyList);
+        return new AbstractMap.SimpleImmutableEntry(pagingPredicate.getAnchorList(), keyList);
     }
 
     @Override
-    protected Predicate getPredicate() {
-        return serializationService.toObject(parameters.predicate);
+    protected PagingPredicateHolder getPagingPredicateHolder() {
+        return parameters.predicate;
     }
 
     @Override
@@ -68,8 +68,10 @@ public class MapKeySetWithPagingPredicateMessageTask
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        Map.Entry<PagingPredicateImpl, List<Data>> result = (Map.Entry<PagingPredicateImpl, List<Data>>) response;
-        return MapKeySetWithPagingPredicateCodec.encodeResponse(result.getValue(), serializationService.toData(result.getKey()));
+        Map.Entry<List<Map.Entry<Integer, Map.Entry>>, List<Data>> result =
+                (Map.Entry<List<Map.Entry<Integer, Map.Entry>>, List<Data>>) response;
+        AnchorDataListHolder anchorDataListHolder = AnchorDataListHolder.of(result.getKey(), serializationService);
+        return MapKeySetWithPagingPredicateCodec.encodeResponse(result.getValue(), anchorDataListHolder);
     }
 
     @Override

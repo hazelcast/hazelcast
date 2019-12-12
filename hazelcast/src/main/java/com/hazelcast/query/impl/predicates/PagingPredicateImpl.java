@@ -126,6 +126,16 @@ public class PagingPredicateImpl<K, V>
         this.comparator = comparator;
     }
 
+    public PagingPredicateImpl(List<Map.Entry<Integer, Map.Entry<K, V>>> anchorList, Predicate<K, V> predicate,
+                               Comparator<Map.Entry<K, V>> comparator, int pageSize, int page, IterationType iterationType) {
+        this.anchorList = anchorList;
+        this.predicate = predicate;
+        this.comparator = comparator;
+        this.pageSize = pageSize;
+        this.page = page;
+        this.iterationType = iterationType;
+    }
+
     /**
      * Creates a shallow copy of the given original paging predicate while
      * replacing its inner predicate with the given predicate.

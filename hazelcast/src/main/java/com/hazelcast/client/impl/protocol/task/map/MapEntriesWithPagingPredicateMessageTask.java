@@ -18,14 +18,16 @@ package com.hazelcast.client.impl.protocol.task.map;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.MapEntriesWithPagingPredicateCodec;
+import com.hazelcast.client.impl.protocol.codec.holder.AnchorDataListHolder;
+import com.hazelcast.client.impl.protocol.codec.holder.PagingPredicateHolder;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.util.IterationType;
 import com.hazelcast.map.impl.query.QueryResultRow;
 import com.hazelcast.internal.serialization.Data;
-import com.hazelcast.query.Predicate;
 import com.hazelcast.query.impl.predicates.PagingPredicateImpl;
 
+import java.util.AbstractMap;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -39,12 +41,15 @@ public class MapEntriesWithPagingPredicateMessageTask
 
     @Override
     protected Object reduce(Collection<QueryResultRow> result) {
-        return getSortedPageEntries(result, parameters.predicate);
+        PagingPredicateImpl pagingPredicate = (PagingPredicateImpl) getPredicate();
+        List<Map.Entry<Data, Data>> entriesData = getSortedPageEntries(result, pagingPredicate);
+
+        return new AbstractMap.SimpleImmutableEntry(pagingPredicate.getAnchorList(), entriesData);
     }
 
     @Override
-    protected Predicate getPredicate() {
-        return serializationService.toObject(parameters.predicate);
+    protected PagingPredicateHolder getPagingPredicateHolder() {
+        return parameters.predicate;
     }
 
     @Override
@@ -59,10 +64,10 @@ public class MapEntriesWithPagingPredicateMessageTask
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        Map.Entry<PagingPredicateImpl, List<Map.Entry<Data, Data>>> responseEntry =
-                (Map.Entry<PagingPredicateImpl, List<Map.Entry<Data, Data>>>) response;
-        return MapEntriesWithPagingPredicateCodec
-                .encodeResponse(responseEntry.getValue(), serializationService.toData(responseEntry.getKey()));
+        Map.Entry<List<Map.Entry<Integer, Map.Entry>>, List<Map.Entry<Data, Data>>> result =
+                (Map.Entry<List<Map.Entry<Integer, Map.Entry>>, List<Map.Entry<Data, Data>>>) response;
+        AnchorDataListHolder anchorDataListHolder = AnchorDataListHolder.of(result.getKey(), serializationService);
+        return MapEntriesWithPagingPredicateCodec.encodeResponse(result.getValue(), anchorDataListHolder);
     }
 
     @Override
