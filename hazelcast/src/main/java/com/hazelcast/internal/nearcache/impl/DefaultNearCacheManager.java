@@ -21,10 +21,10 @@ import com.hazelcast.config.NearCachePreloaderConfig;
 import com.hazelcast.internal.adapter.DataStructureAdapter;
 import com.hazelcast.internal.nearcache.NearCache;
 import com.hazelcast.internal.nearcache.NearCacheManager;
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.nearcache.NearCacheStats;
 import com.hazelcast.spi.impl.executionservice.TaskScheduler;
 import com.hazelcast.spi.properties.HazelcastProperties;
-import com.hazelcast.internal.serialization.SerializationService;
 
 import java.util.Collection;
 import java.util.HashSet;
@@ -45,8 +45,8 @@ public class DefaultNearCacheManager implements NearCacheManager {
     protected final SerializationService serializationService;
 
     private final Object mutex = new Object();
-    private final Queue<ScheduledFuture> preloadTaskFutures = new ConcurrentLinkedQueue<ScheduledFuture>();
-    private final ConcurrentMap<String, NearCache> nearCacheMap = new ConcurrentHashMap<String, NearCache>();
+    private final Queue<ScheduledFuture> preloadTaskFutures = new ConcurrentLinkedQueue<>();
+    private final ConcurrentMap<String, NearCache> nearCacheMap = new ConcurrentHashMap<>();
 
     private volatile ScheduledFuture storageTaskFuture;
 
@@ -143,9 +143,10 @@ public class DefaultNearCacheManager implements NearCacheManager {
 
     @Override
     public void destroyAllNearCaches() {
-        for (NearCache nearCache : new HashSet<NearCache>(nearCacheMap.values())) {
+        for (NearCache nearCache : new HashSet<>(nearCacheMap.values())) {
             destroyNearCache(nearCache.getName());
         }
+
         for (ScheduledFuture preloadTaskFuture : preloadTaskFutures) {
             preloadTaskFuture.cancel(true);
         }
@@ -173,6 +174,7 @@ public class DefaultNearCacheManager implements NearCacheManager {
     }
 
     private class PreloadTask implements Runnable {
+
         private final NearCache nearCache;
         private final DataStructureAdapter adapter;
 

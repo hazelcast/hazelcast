@@ -16,33 +16,36 @@
 
 package com.hazelcast.client.impl.statistics;
 
+import com.hazelcast.client.impl.spi.ClientContext;
+import com.hazelcast.client.impl.spi.ProxyManager;
 import com.hazelcast.internal.metrics.DynamicMetricsProvider;
 import com.hazelcast.internal.metrics.MetricDescriptor;
 import com.hazelcast.internal.metrics.MetricsCollectionContext;
 import com.hazelcast.internal.monitor.impl.NearCacheStatsImpl;
-import com.hazelcast.internal.nearcache.NearCacheManager;
-
-import java.util.Collection;
 
 class NearCacheMetricsProvider implements DynamicMetricsProvider {
 
-    private final Collection<NearCacheManager> nearCacheManagers;
+    private final ProxyManager proxyManager;
 
-    NearCacheMetricsProvider(Collection<NearCacheManager> nearCacheManagers) {
-        this.nearCacheManagers = nearCacheManagers;
+    NearCacheMetricsProvider(ProxyManager proxyManager) {
+        this.proxyManager = proxyManager;
     }
 
     @Override
     public void provideDynamicMetrics(MetricDescriptor descriptor, MetricsCollectionContext context) {
-
         descriptor.withPrefix("nearcache");
-        nearCacheManagers.stream()
-            .flatMap(nearCacheManager -> nearCacheManager.listAllNearCaches().stream())
-            .forEach(nearCache -> {
-                String nearCacheName = nearCache.getName();
 
-                NearCacheStatsImpl nearCacheStats = (NearCacheStatsImpl) nearCache.getNearCacheStats();
-                context.collect(descriptor.copy().withDiscriminator("name", nearCacheName), nearCacheStats);
-            });
+        ClientContext clientContext = proxyManager.getContext();
+        if (clientContext == null) {
+            return;
+        }
+
+        clientContext.getNearCacheManagers().values().stream()
+                .flatMap(nearCacheManager -> nearCacheManager.listAllNearCaches().stream())
+                .forEach(nearCache -> {
+                    String nearCacheName = nearCache.getName();
+                    NearCacheStatsImpl nearCacheStats = (NearCacheStatsImpl) nearCache.getNearCacheStats();
+                    context.collect(descriptor.copy().withDiscriminator("name", nearCacheName), nearCacheStats);
+                });
     }
 }

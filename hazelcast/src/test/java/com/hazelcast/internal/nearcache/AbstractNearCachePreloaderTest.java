@@ -17,9 +17,9 @@
 package com.hazelcast.internal.nearcache;
 
 import com.hazelcast.config.EvictionConfig;
-import com.hazelcast.config.MaxSizePolicy;
 import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.InMemoryFormat;
+import com.hazelcast.config.MaxSizePolicy;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.internal.adapter.DataStructureAdapter;
@@ -339,7 +339,7 @@ public abstract class AbstractNearCachePreloaderTest<NK, NV> extends HazelcastTe
 
     @Test(timeout = 10 * MINUTE)
     public void testCreateAndDestroyDataStructure_withSameName() {
-        String name = randomMapName("createDestroyNearCache");
+        String name = randomMapName("createDestroyNearCache-" + getClass().getName());
         nearCacheConfig.setName(name);
 
         NearCacheTestContext<Object, String, NK, NV> context = createContext(true);
@@ -354,7 +354,7 @@ public abstract class AbstractNearCachePreloaderTest<NK, NV> extends HazelcastTe
 
     @Test(timeout = 10 * MINUTE)
     public void testCreateAndDestroyDataStructure_withDifferentNames() {
-        String name = randomMapName("createDestroyNearCache");
+        String name = randomMapName("createDestroyNearCache-" + getClass().getName());
         nearCacheConfig.setName(name + "*");
 
         NearCacheTestContext<Object, String, NK, NV> context = createContext(true);
