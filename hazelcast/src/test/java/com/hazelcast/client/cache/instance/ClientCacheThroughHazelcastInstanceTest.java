@@ -22,7 +22,7 @@ import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
@@ -33,7 +33,7 @@ import javax.cache.spi.CachingProvider;
 
 import static com.hazelcast.cache.CacheTestSupport.createClientCachingProvider;
 
-@RunWith(HazelcastParallelClassRunner.class)
+@RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class ClientCacheThroughHazelcastInstanceTest extends CacheThroughHazelcastInstanceTest {
 
@@ -62,10 +62,12 @@ public class ClientCacheThroughHazelcastInstanceTest extends CacheThroughHazelca
         }
         instanceFactory = new TestHazelcastFactory();
         ownerInstance = instanceFactory.newHazelcastInstance(config);
+
+        ClientConfig clientConfig = new ClientConfig();
+        clientConfig.getConnectionStrategyConfig().getConnectionRetryConfig().setClusterConnectTimeoutMillis(1000);
         if (config.getClassLoader() != null) {
             final ClassLoader tccl = Thread.currentThread().getContextClassLoader();
             try {
-                ClientConfig clientConfig = new ClientConfig();
                 clientConfig.setClassLoader(config.getClassLoader());
                 Thread.currentThread().setContextClassLoader(config.getClassLoader());
                 return instanceFactory.newHazelcastClient(clientConfig);
@@ -73,7 +75,7 @@ public class ClientCacheThroughHazelcastInstanceTest extends CacheThroughHazelca
                 Thread.currentThread().setContextClassLoader(tccl);
             }
         } else {
-            return instanceFactory.newHazelcastClient();
+            return instanceFactory.newHazelcastClient(clientConfig);
         }
     }
 

@@ -80,6 +80,9 @@ public class TestHazelcastFactory extends TestHazelcastInstanceFactory {
             client.start();
             clients.add(client);
             OutOfMemoryErrorDispatcher.registerClient(client);
+
+            System.out.println(">>> CLIENT: " + client.getName());
+
             return new HazelcastClientProxy(client);
         } finally {
             currentThread.setContextClassLoader(tccl);
