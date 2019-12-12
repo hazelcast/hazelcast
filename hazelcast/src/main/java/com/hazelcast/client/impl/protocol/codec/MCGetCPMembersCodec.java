@@ -34,19 +34,18 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  */
 
 /**
- * Polls events available on member. Once read, events are removed from
- * member's internal queue.
+ * Returns the current list of CP members.
  */
-@Generated("b965aff03513393add2d1af86d2b17d0")
-public final class MCPollMCEventsCodec {
-    //hex: 0x201800
-    public static final int REQUEST_MESSAGE_TYPE = 2103296;
-    //hex: 0x201801
-    public static final int RESPONSE_MESSAGE_TYPE = 2103297;
+@Generated("9c0b406eaa8da9ba71e3e1cf7d9793ce")
+public final class MCGetCPMembersCodec {
+    //hex: 0x201900
+    public static final int REQUEST_MESSAGE_TYPE = 2103552;
+    //hex: 0x201901
+    public static final int RESPONSE_MESSAGE_TYPE = 2103553;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
 
-    private MCPollMCEventsCodec() {
+    private MCGetCPMembersCodec() {
     }
 
     @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
@@ -55,15 +54,15 @@ public final class MCPollMCEventsCodec {
 
     public static ClientMessage encodeRequest() {
         ClientMessage clientMessage = ClientMessage.createForEncode();
-        clientMessage.setRetryable(false);
-        clientMessage.setOperationName("MC.PollMCEvents");
+        clientMessage.setRetryable(true);
+        clientMessage.setOperationName("MC.GetCPMembers");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
         clientMessage.add(initialFrame);
         return clientMessage;
     }
 
-    public static MCPollMCEventsCodec.RequestParameters decodeRequest(ClientMessage clientMessage) {
+    public static MCGetCPMembersCodec.RequestParameters decodeRequest(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         RequestParameters request = new RequestParameters();
         //empty initial frame
@@ -75,27 +74,27 @@ public final class MCPollMCEventsCodec {
     public static class ResponseParameters {
 
         /**
-         * List of events.
+         * List of CP members
          */
-        public java.util.List<com.hazelcast.internal.management.dto.MCEventDTO> events;
+        public java.util.List<java.util.Map.Entry<java.util.UUID, com.hazelcast.cluster.Address>> cpMembers;
     }
 
-    public static ClientMessage encodeResponse(java.util.Collection<com.hazelcast.internal.management.dto.MCEventDTO> events) {
+    public static ClientMessage encodeResponse(java.util.Collection<java.util.Map.Entry<java.util.UUID, com.hazelcast.cluster.Address>> cpMembers) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, RESPONSE_MESSAGE_TYPE);
         clientMessage.add(initialFrame);
 
-        ListMultiFrameCodec.encode(clientMessage, events, MCEventCodec::encode);
+        EntryListUUIDAddressCodec.encode(clientMessage, cpMembers);
         return clientMessage;
     }
 
-    public static MCPollMCEventsCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
+    public static MCGetCPMembersCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         ResponseParameters response = new ResponseParameters();
         //empty initial frame
         iterator.next();
-        response.events = ListMultiFrameCodec.decode(iterator, MCEventCodec::decode);
+        response.cpMembers = EntryListUUIDAddressCodec.decode(iterator);
         return response;
     }
 
