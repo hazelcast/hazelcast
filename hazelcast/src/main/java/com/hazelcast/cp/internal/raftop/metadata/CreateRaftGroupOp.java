@@ -51,18 +51,20 @@ public class CreateRaftGroupOp extends MetadataRaftGroupOp implements Indetermin
 
     private String groupName;
     private Collection<RaftEndpoint> members;
+    private long groupId;
 
     public CreateRaftGroupOp() {
     }
 
-    public CreateRaftGroupOp(String groupName, Collection<RaftEndpoint> members) {
+    public CreateRaftGroupOp(String groupName, Collection<RaftEndpoint> members, long groupId) {
         this.groupName = groupName;
         this.members = members;
+        this.groupId = groupId;
     }
 
     @Override
     public Object run(MetadataRaftGroupManager metadataGroupManager, long commitIndex) {
-        return metadataGroupManager.createRaftGroup(groupName, members, commitIndex);
+        return metadataGroupManager.createRaftGroup(groupName, members, groupId);
     }
 
     @Override
@@ -87,6 +89,7 @@ public class CreateRaftGroupOp extends MetadataRaftGroupOp implements Indetermin
         for (RaftEndpoint member : members) {
             out.writeObject(member);
         }
+        out.writeLong(groupId);
     }
 
     @Override
@@ -98,11 +101,13 @@ public class CreateRaftGroupOp extends MetadataRaftGroupOp implements Indetermin
             RaftEndpoint member = in.readObject();
             members.add(member);
         }
+        groupId = in.readLong();
     }
 
     @Override
     protected void toString(StringBuilder sb) {
         sb.append(", groupName=").append(groupName)
-          .append(", members=").append(members);
+          .append(", members=").append(members)
+          .append(", groupIndex=").append(groupId);
     }
 }
