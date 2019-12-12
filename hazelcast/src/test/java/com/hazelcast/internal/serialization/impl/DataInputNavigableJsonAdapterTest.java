@@ -126,7 +126,8 @@ public class DataInputNavigableJsonAdapterTest {
 
     @Test
     public void testCreateAndUseConcurrently() throws InterruptedException {
-        // UTF8Reader is not thread safe; the purpose is to ensure no
+        // UTF8Reader is not thread safe; the purpose of the test
+        // is to ensure there is no interference across UTF8Reader instances
         int concurrency = 8;
         CountDownLatch latch = new CountDownLatch(1);
         Thread[] threads = new Thread[concurrency];

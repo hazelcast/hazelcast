@@ -98,7 +98,6 @@ public class DataInputNavigableJsonAdapter extends NavigableJsonInputAdapter {
         private final CharsetDecoder decoder;
         private final ByteBuffer inputBuffer;
         // required to support read() for surrogate pairs
-        private final char[] buffer = new char[2];
         private boolean hasLeftoverChar;
         private int leftoverChar;
 
@@ -118,6 +117,7 @@ public class DataInputNavigableJsonAdapter extends NavigableJsonInputAdapter {
                 hasLeftoverChar = false;
                 return leftoverChar;
             }
+            char[] buffer = new char[2];
             int charsRead = read(buffer, 0, 2);
             switch (charsRead) {
                 case -1:
@@ -187,6 +187,7 @@ public class DataInputNavigableJsonAdapter extends NavigableJsonInputAdapter {
                 throw new IllegalArgumentException("All BufferObjectDataInput are instances of ByteArrayObjectDataInput");
             }
         }
+
         @Override
         public void close() throws IOException {
 
