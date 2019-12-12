@@ -34,11 +34,11 @@ import com.hazelcast.internal.nearcache.NearCacheManager;
 import com.hazelcast.internal.nearcache.impl.invalidation.RepairingHandler;
 import com.hazelcast.internal.nearcache.impl.invalidation.RepairingTask;
 import com.hazelcast.internal.nio.Connection;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.util.CollectionUtil;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.LocalMapStats;
-import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
 
@@ -50,7 +50,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.core.EntryEventType.INVALIDATION;
@@ -146,8 +145,7 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
         final Object ncKey = toNearCacheKey(key);
         Object value = getCachedValue(ncKey, false);
         if (value != NOT_CACHED) {
-            ExecutorService executor = getContext().getExecutionService().getUserExecutor();
-            return newCompletedFuture(value, getSerializationService(), executor);
+            return newCompletedFuture(value, getSerializationService());
         }
 
         Data keyData = toData(ncKey);

@@ -266,13 +266,6 @@ public class ClientConfigXmlGeneratorTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void executorPoolSize() {
-        clientConfig.setExecutorPoolSize(randomInt());
-        ClientConfig actual = newConfigViaGenerator();
-        assertEquals(clientConfig.getExecutorPoolSize(), actual.getExecutorPoolSize());
-    }
-
-    @Test
     public void credentialsFactory() {
         Properties props = new Properties();
         props.setProperty("foo", "bar");

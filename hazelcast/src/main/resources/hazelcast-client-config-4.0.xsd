@@ -31,8 +31,6 @@
                 <xs:element name="backup-ack-to-client-enabled" type="xs:boolean" minOccurs="0" maxOccurs="1" default="true"/>
                 <xs:element name="properties" type="properties" minOccurs="0" maxOccurs="1"/>
                 <xs:element name="network" type="network" minOccurs="0" maxOccurs="1"/>
-                <xs:element name="executor-pool-size" type="executor-pool-size" minOccurs="0" maxOccurs="1"
-                            default="100"/>
                 <xs:element name="security" type="security" minOccurs="0" maxOccurs="1"/>
                 <xs:element name="listeners" type="listeners" minOccurs="0" maxOccurs="1"/>
                 <xs:element name="serialization" type="serialization" minOccurs="0" maxOccurs="1"/>
@@ -233,11 +231,6 @@
         </xs:complexType>
     </xs:element>
     <!--NETWORK END-->
-    <xs:simpleType name="executor-pool-size">
-        <xs:restriction base="xs:int">
-            <xs:minInclusive value="1"/>
-        </xs:restriction>
-    </xs:simpleType>
     <xs:complexType name="proxy-factories">
         <xs:sequence>
             <xs:element name="proxy-factory" type="proxy-factory" minOccurs="0" maxOccurs="unbounded"/>

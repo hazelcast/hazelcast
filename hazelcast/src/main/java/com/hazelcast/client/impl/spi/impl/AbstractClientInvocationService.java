@@ -21,13 +21,13 @@ import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.connection.ClientConnectionManager;
 import com.hazelcast.client.impl.connection.nio.ClientConnection;
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.spi.ClientExecutionService;
 import com.hazelcast.client.impl.spi.ClientInvocationService;
 import com.hazelcast.client.impl.spi.ClientPartitionService;
 import com.hazelcast.client.impl.spi.EventHandler;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.exception.TargetDisconnectedException;
+import com.hazelcast.spi.impl.executionservice.TaskScheduler;
 import com.hazelcast.spi.impl.sequence.CallIdFactory;
 import com.hazelcast.spi.impl.sequence.CallIdSequence;
 import com.hazelcast.spi.properties.HazelcastProperties;
@@ -121,7 +121,7 @@ public abstract class AbstractClientInvocationService implements ClientInvocatio
         connectionManager = client.getConnectionManager();
         partitionService = client.getClientPartitionService();
         responseHandlerSupplier.start();
-        ClientExecutionService executionService = client.getClientExecutionService();
+        TaskScheduler executionService = client.getClientExecutionService();
         long cleanResourcesMillis = client.getProperties().getPositiveMillisOrDefault(CLEAN_RESOURCES_MILLIS);
         executionService.scheduleWithRepetition(new CleanResourcesTask(), cleanResourcesMillis,
                 cleanResourcesMillis, MILLISECONDS);

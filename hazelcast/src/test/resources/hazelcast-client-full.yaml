@@ -140,8 +140,6 @@ hazelcast-client:
             key-int: 123
             key-boolean: true
 
-  executor-pool-size: 40
-
   security:
     credentials: com.hazelcast.security.UsernamePasswordCredentials
     credentials-factory:

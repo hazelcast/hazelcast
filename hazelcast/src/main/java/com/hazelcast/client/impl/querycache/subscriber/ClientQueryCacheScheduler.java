@@ -16,8 +16,8 @@
 
 package com.hazelcast.client.impl.querycache.subscriber;
 
-import com.hazelcast.client.impl.spi.ClientExecutionService;
 import com.hazelcast.map.impl.querycache.QueryCacheScheduler;
+import com.hazelcast.spi.impl.executionservice.TaskScheduler;
 
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
@@ -29,9 +29,9 @@ import java.util.concurrent.TimeUnit;
  */
 public class ClientQueryCacheScheduler implements QueryCacheScheduler {
 
-    private final ClientExecutionService executionService;
+    private final TaskScheduler executionService;
 
-    public ClientQueryCacheScheduler(ClientExecutionService executionService) {
+    public ClientQueryCacheScheduler(TaskScheduler executionService) {
         this.executionService = executionService;
     }
 

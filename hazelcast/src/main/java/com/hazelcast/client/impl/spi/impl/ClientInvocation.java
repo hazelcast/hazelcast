@@ -21,7 +21,6 @@ import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.connection.nio.ClientConnection;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.spi.ClientClusterService;
-import com.hazelcast.client.impl.spi.ClientExecutionService;
 import com.hazelcast.client.impl.spi.EventHandler;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
@@ -32,11 +31,11 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.exception.RetryableException;
 import com.hazelcast.spi.exception.TargetDisconnectedException;
 import com.hazelcast.spi.exception.TargetNotMemberException;
+import com.hazelcast.spi.impl.executionservice.TaskScheduler;
 import com.hazelcast.spi.impl.operationservice.impl.BaseInvocation;
 import com.hazelcast.spi.impl.sequence.CallIdSequence;
 
 import java.io.IOException;
-import java.util.concurrent.Executor;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
@@ -61,7 +60,7 @@ public class ClientInvocation extends BaseInvocation implements Runnable {
     private final ILogger logger;
     private final ClientClusterService clientClusterService;
     private final AbstractClientInvocationService invocationService;
-    private final ClientExecutionService executionService;
+    private final TaskScheduler executionService;
     private volatile ClientMessage clientMessage;
     private final CallIdSequence callIdSequence;
     private final Address address;
@@ -352,10 +351,6 @@ public class ClientInvocation extends BaseInvocation implements Runnable {
             return clientMessage.isRetryable() || invocationService.isRedoOperation();
         }
         return false;
-    }
-
-    public Executor getUserExecutor() {
-        return executionService.getUserExecutor();
     }
 
     @Override

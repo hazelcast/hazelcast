@@ -146,7 +146,6 @@ public class HazelcastClientBeanDefinitionParser extends AbstractHazelcastBeanDe
         @SuppressWarnings("checkstyle:cyclomaticcomplexity")
         AbstractBeanDefinition createConfigBean(Node rootNode) {
             handleCommonBeanAttributes(rootNode, builder, parserContext);
-            handleClientAttributes(rootNode);
             for (Node node : childElements(rootNode)) {
                 String nodeName = cleanNodeName(node);
                 if ("cluster-name".equals(nodeName)) {
@@ -284,20 +283,6 @@ public class HazelcastClientBeanDefinitionParser extends AbstractHazelcastBeanDe
             userCodeDeploymentConfig.addPropertyValue("classNames", classNames);
 
             configBuilder.addPropertyValue("userCodeDeploymentConfig", userCodeDeploymentConfig.getBeanDefinition());
-        }
-
-        private void handleClientAttributes(Node node) {
-            NamedNodeMap attributes = node.getAttributes();
-            if (attributes != null) {
-                for (int a = 0; a < attributes.getLength(); a++) {
-                    Node att = attributes.item(a);
-                    String name = att.getNodeName();
-                    String value = att.getNodeValue();
-                    if ("executor-pool-size".equals(name)) {
-                        configBuilder.addPropertyValue("executorPoolSize", value);
-                    }
-                }
-            }
         }
 
         private void handleNetwork(Node node) {

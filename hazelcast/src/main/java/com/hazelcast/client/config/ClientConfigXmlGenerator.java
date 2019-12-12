@@ -108,10 +108,6 @@ public final class ClientConfigXmlGenerator {
         gen.appendProperties(clientConfig.getProperties());
         //Network
         network(gen, clientConfig.getNetworkConfig());
-        //ExecutorPoolSize
-        if (clientConfig.getExecutorPoolSize() > 0) {
-            gen.node("executor-pool-size", clientConfig.getExecutorPoolSize());
-        }
         //Backup Ack To Client
         gen.node("backup-ack-to-client-enabled", clientConfig.isBackupAckToClientEnabled());
         //Security

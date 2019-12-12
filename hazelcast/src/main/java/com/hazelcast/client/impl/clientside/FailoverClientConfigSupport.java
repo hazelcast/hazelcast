@@ -199,9 +199,6 @@ public final class FailoverClientConfigSupport {
 
         checkValidAlternativeForNetwork(mainConfig, alternativeConfig);
 
-        if (mainConfig.getExecutorPoolSize() != alternativeConfig.getExecutorPoolSize()) {
-            throwInvalidConfigurationException(mainClusterName, alterNativeClusterName, "executorPoolSize");
-        }
         if (notEqual(mainConfig.getProperties(), alternativeConfig.getProperties())) {
             throwInvalidConfigurationException(mainClusterName, alterNativeClusterName, "properties");
         }

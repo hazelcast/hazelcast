@@ -25,7 +25,6 @@ import com.hazelcast.core.HazelcastException;
 import com.hazelcast.internal.util.RootCauseMatcher;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
-
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
@@ -108,17 +107,6 @@ public class YamlClientConfigImportVariableReplacementTest extends AbstractClien
                 + "hazelcast-client: {}";
 
         buildConfig(yaml);
-    }
-
-    @Override
-    @Test
-    public void readVariables() {
-        String yaml = ""
-                + "hazelcast-client:\n"
-                + "  executor-pool-size: ${executor.pool.size}";
-
-        ClientConfig config = buildConfig(yaml, "executor.pool.size", "40");
-        assertEquals(40, config.getExecutorPoolSize());
     }
 
     @Test

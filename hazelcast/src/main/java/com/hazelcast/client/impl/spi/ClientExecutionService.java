@@ -19,7 +19,6 @@ package com.hazelcast.client.impl.spi;
 import com.hazelcast.spi.impl.executionservice.TaskScheduler;
 
 import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutorService;
 
 /**
  * Executor service for Hazelcast clients.
@@ -30,10 +29,5 @@ import java.util.concurrent.ExecutorService;
  * When user code needs to run getUserExecutor() should be utilized
  */
 public interface ClientExecutionService extends TaskScheduler {
-
-    /**
-     * @return executorService that alien (user code) runs on
-     */
-    ExecutorService getUserExecutor();
 
 }

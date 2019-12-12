@@ -498,7 +498,7 @@ public class ClientRegressionWithMockNetworkTest extends HazelcastTestSupport {
     @Test
     public void testDeadlock_WhenDoingOperationFromListeners() {
         hazelcastFactory.newHazelcastInstance();
-        final HazelcastInstance client = hazelcastFactory.newHazelcastClient(new ClientConfig().setExecutorPoolSize(1));
+        final HazelcastInstance client = hazelcastFactory.newHazelcastClient(new ClientConfig());
 
         final int putCount = 1000;
 
@@ -527,7 +527,7 @@ public class ClientRegressionWithMockNetworkTest extends HazelcastTestSupport {
         HazelcastInstance instance = hazelcastFactory.newHazelcastInstance();
         final ClientConfig clientConfig = new ClientConfig();
         clientConfig.getConnectionStrategyConfig().getConnectionRetryConfig().setClusterConnectTimeoutMillis(Long.MAX_VALUE);
-        HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig.setExecutorPoolSize(1));
+        HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig);
 
         CountDownLatch disconnectedLatch = new CountDownLatch(1);
         CountDownLatch finishedLatch = new CountDownLatch(1);
@@ -557,7 +557,7 @@ public class ClientRegressionWithMockNetworkTest extends HazelcastTestSupport {
         HazelcastInstance instance = hazelcastFactory.newHazelcastInstance();
         ClientConfig clientConfig = new ClientConfig();
         clientConfig.getConnectionStrategyConfig().getConnectionRetryConfig().setClusterConnectTimeoutMillis(Long.MAX_VALUE);
-        HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig.setExecutorPoolSize(1));
+        HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig);
 
         CountDownLatch disconnectedLatch = new CountDownLatch(1);
         CountDownLatch finishedLatch = new CountDownLatch(1);
@@ -598,8 +598,7 @@ public class ClientRegressionWithMockNetworkTest extends HazelcastTestSupport {
                 .setEvictionConfig(evictionConfig);
 
         ClientConfig clientConfig = new ClientConfig()
-                .addNearCacheConfig(nearCacheConfig)
-                .setExecutorPoolSize(1);
+                .addNearCacheConfig(nearCacheConfig);
 
         CountDownLatch disconnectedLatch = new CountDownLatch(1);
         CountDownLatch finishedLatch = new CountDownLatch(1);
