@@ -34,68 +34,68 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  */
 
 /**
- * Polls events available on member. Once read, events are removed from
- * member's internal queue.
+ * Removes the given unreachable CP member from the active CP members
+ * list and all CP groups it belongs to.
  */
-@Generated("b965aff03513393add2d1af86d2b17d0")
-public final class MCPollMCEventsCodec {
-    //hex: 0x201800
-    public static final int REQUEST_MESSAGE_TYPE = 2103296;
-    //hex: 0x201801
-    public static final int RESPONSE_MESSAGE_TYPE = 2103297;
-    private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+@Generated("e8e0ee4462eb61334fef78c548b4ba98")
+public final class MCRemoveCPMemberCodec {
+    //hex: 0x201B00
+    public static final int REQUEST_MESSAGE_TYPE = 2104064;
+    //hex: 0x201B01
+    public static final int RESPONSE_MESSAGE_TYPE = 2104065;
+    private static final int REQUEST_CP_MEMBER_UUID_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_CP_MEMBER_UUID_FIELD_OFFSET + UUID_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
 
-    private MCPollMCEventsCodec() {
+    private MCRemoveCPMemberCodec() {
     }
 
     @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
     public static class RequestParameters {
+
+        /**
+         * UUID of the unreachable CP member
+         */
+        public java.util.UUID cpMemberUuid;
     }
 
-    public static ClientMessage encodeRequest() {
+    public static ClientMessage encodeRequest(java.util.UUID cpMemberUuid) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
-        clientMessage.setOperationName("MC.PollMCEvents");
+        clientMessage.setOperationName("MC.RemoveCPMember");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
+        encodeUUID(initialFrame.content, REQUEST_CP_MEMBER_UUID_FIELD_OFFSET, cpMemberUuid);
         clientMessage.add(initialFrame);
         return clientMessage;
     }
 
-    public static MCPollMCEventsCodec.RequestParameters decodeRequest(ClientMessage clientMessage) {
+    public static MCRemoveCPMemberCodec.RequestParameters decodeRequest(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         RequestParameters request = new RequestParameters();
-        //empty initial frame
-        iterator.next();
+        ClientMessage.Frame initialFrame = iterator.next();
+        request.cpMemberUuid = decodeUUID(initialFrame.content, REQUEST_CP_MEMBER_UUID_FIELD_OFFSET);
         return request;
     }
 
     @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
     public static class ResponseParameters {
-
-        /**
-         * List of events.
-         */
-        public java.util.List<com.hazelcast.internal.management.dto.MCEventDTO> events;
     }
 
-    public static ClientMessage encodeResponse(java.util.Collection<com.hazelcast.internal.management.dto.MCEventDTO> events) {
+    public static ClientMessage encodeResponse() {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, RESPONSE_MESSAGE_TYPE);
         clientMessage.add(initialFrame);
 
-        ListMultiFrameCodec.encode(clientMessage, events, MCEventCodec::encode);
         return clientMessage;
     }
 
-    public static MCPollMCEventsCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
+    public static MCRemoveCPMemberCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         ResponseParameters response = new ResponseParameters();
         //empty initial frame
         iterator.next();
-        response.events = ListMultiFrameCodec.decode(iterator, MCEventCodec::decode);
         return response;
     }
 

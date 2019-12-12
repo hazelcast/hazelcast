@@ -223,7 +223,7 @@ public class ManagementCenterServiceTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testGetTimedMemberState() {
+    public void getTimedMemberState() {
         assertTrueEventually(() -> {
             Optional<String> timedMemberStateJson = managementCenterService.getTimedMemberState(members[2])
                     .get(ASSERT_TRUE_EVENTUALLY_TIMEOUT, SECONDS);
@@ -232,7 +232,7 @@ public class ManagementCenterServiceTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testGetClusterMetadata() throws Exception {
+    public void getClusterMetadata() throws Exception {
         MCClusterMetadata metadata = resolve(managementCenterService.getClusterMetadata(members[0]));
         assertEquals(ACTIVE, metadata.getCurrentState());
         assertEquals(BuildInfoProvider.getBuildInfo().getVersion(), metadata.getMemberVersion());
@@ -251,7 +251,7 @@ public class ManagementCenterServiceTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testShutdownCluster() {
+    public void shutdownCluster() {
         managementCenterService.shutdownCluster();
 
         assertTrueEventually(() -> assertTrue(
@@ -328,6 +328,7 @@ public class ManagementCenterServiceTest extends HazelcastTestSupport {
         assertContains(result, "0");
     }
 
+    @Test
     public void pollMCEvents() throws Exception {
         List<MCEventDTO> events = resolve(managementCenterService.pollMCEvents(members[2]));
         assertEquals(0, events.size());

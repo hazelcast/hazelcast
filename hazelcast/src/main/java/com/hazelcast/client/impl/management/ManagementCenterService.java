@@ -27,6 +27,7 @@ import com.hazelcast.client.impl.protocol.codec.MCChangeClusterVersionCodec;
 import com.hazelcast.client.impl.protocol.codec.MCChangeWanReplicationStateCodec;
 import com.hazelcast.client.impl.protocol.codec.MCCheckWanConsistencyCodec;
 import com.hazelcast.client.impl.protocol.codec.MCClearWanQueuesCodec;
+import com.hazelcast.client.impl.protocol.codec.MCGetCPMembersCodec;
 import com.hazelcast.client.impl.protocol.codec.MCGetClusterMetadataCodec;
 import com.hazelcast.client.impl.protocol.codec.MCGetMapConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.MCGetMemberConfigCodec;
@@ -36,7 +37,10 @@ import com.hazelcast.client.impl.protocol.codec.MCGetTimedMemberStateCodec;
 import com.hazelcast.client.impl.protocol.codec.MCMatchMCConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.MCPollMCEventsCodec;
 import com.hazelcast.client.impl.protocol.codec.MCPromoteLiteMemberCodec;
+import com.hazelcast.client.impl.protocol.codec.MCPromoteToCPMemberCodec;
 import com.hazelcast.client.impl.protocol.codec.MCReadMetricsCodec;
+import com.hazelcast.client.impl.protocol.codec.MCRemoveCPMemberCodec;
+import com.hazelcast.client.impl.protocol.codec.MCResetCPSubsystemCodec;
 import com.hazelcast.client.impl.protocol.codec.MCRunConsoleCommandCodec;
 import com.hazelcast.client.impl.protocol.codec.MCRunGcCodec;
 import com.hazelcast.client.impl.protocol.codec.MCRunScriptCodec;
@@ -45,8 +49,12 @@ import com.hazelcast.client.impl.protocol.codec.MCShutdownMemberCodec;
 import com.hazelcast.client.impl.protocol.codec.MCUpdateMapConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.MCWanSyncMapCodec;
 import com.hazelcast.client.impl.spi.impl.ClientInvocation;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.cluster.Member;
+import com.hazelcast.cp.CPMember;
+import com.hazelcast.cp.CPSubsystemManagementService;
+import com.hazelcast.cp.internal.CPMemberInfo;
 import com.hazelcast.internal.management.TimedMemberState;
 import com.hazelcast.internal.management.dto.ClientBwListDTO;
 import com.hazelcast.internal.management.dto.MCEventDTO;
@@ -60,14 +68,14 @@ import com.hazelcast.wan.WanPublisherState;
 import com.hazelcast.wan.impl.AddWanConfigResult;
 import com.hazelcast.wan.impl.WanSyncType;
 
+import javax.annotation.Nonnull;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
-
-import javax.annotation.Nonnull;
+import java.util.stream.Collectors;
 
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.wan.impl.WanSyncType.ALL_MAPS;
@@ -76,6 +84,7 @@ import static com.hazelcast.wan.impl.WanSyncType.SINGLE_MAP;
 /**
  * Only works for smart clients, i.e. doesn't work for unisocket clients.
  */
+@SuppressWarnings({"checkstyle:methodcount"})
 public class ManagementCenterService {
 
     /**
@@ -404,7 +413,6 @@ public class ManagementCenterService {
      * @param member       target member
      * @param eTag         ETag of the new config
      * @param clientBwList new config for client B/W list filtering
-     * @return operation future object
      */
     @Nonnull
     public CompletableFuture<Void> applyMCConfig(Member member, String eTag, ClientBwListDTO clientBwList) {
@@ -743,6 +751,104 @@ public class ManagementCenterService {
                 invocation.invoke(),
                 serializationService,
                 clientMessage -> MCPollMCEventsCodec.decodeResponse(clientMessage).events
+        );
+    }
+
+    /**
+     * Returns the current list of CP members.
+     *
+     * @return list of CP members
+     *
+     * @see CPSubsystemManagementService#getCPMembers()
+     */
+    @Nonnull
+    public CompletableFuture<List<CPMember>> getCPMembers() {
+        ClientInvocation invocation = new ClientInvocation(
+                client,
+                MCGetCPMembersCodec.encodeRequest(),
+                null);
+
+        return new ClientDelegatingFuture<>(
+                invocation.invoke(),
+                serializationService,
+                clientMessage -> MCGetCPMembersCodec.decodeResponse(clientMessage).cpMembers
+                        .stream()
+                        .map(e -> new CPMemberInfo(e.getKey(), e.getValue()))
+                        .collect(Collectors.toList())
+        );
+    }
+
+    /**
+     * Promotes the given member to the CP role.
+     *
+     * @param member member to be promoted
+     *
+     * @see CPSubsystemManagementService#promoteToCPMember()
+     */
+    @Nonnull
+    public CompletableFuture<Void> promoteToCPMember(Member member) {
+        checkNotNull(member);
+
+        ClientInvocation invocation = new ClientInvocation(
+                client,
+                MCPromoteToCPMemberCodec.encodeRequest(),
+                null,
+                member.getAddress());
+
+        return new ClientDelegatingFuture<>(
+                invocation.invoke(),
+                serializationService,
+                clientMessage -> null
+        );
+    }
+
+    /**
+     * Removes the given unreachable CP member from the active CP members list
+     * and all CP groups it belongs to.
+     *
+     * @param cpMemberUuid UUID of unreachable member
+     *
+     * @see CPSubsystemManagementService#removeCPMember(UUID)
+     */
+    @Nonnull
+    public CompletableFuture<Void> removeCPMember(UUID cpMemberUuid) {
+        checkNotNull(cpMemberUuid);
+
+        ClientInvocation invocation = new ClientInvocation(
+                client,
+                MCRemoveCPMemberCodec.encodeRequest(cpMemberUuid),
+                null);
+
+        return new ClientDelegatingFuture<>(
+                invocation.invoke(),
+                serializationService,
+                clientMessage -> null
+        );
+    }
+
+    /**
+     * Wipes and resets the whole CP Subsystem state and initializes it
+     * as if the Hazelcast cluster is starting up initially.
+     *
+     * @see CPSubsystemManagementService#reset()
+     */
+    @Nonnull
+    public CompletableFuture<Void> resetCPSubsystem() {
+        // this operation must be executed on master
+        Address masterAddress = client.getClientClusterService().getMasterAddress();
+        if (masterAddress == null) {
+            throw new IllegalStateException("Master member is not known yet.");
+        }
+        ClientInvocation invocation = new ClientInvocation(
+                client,
+                MCResetCPSubsystemCodec.encodeRequest(),
+                null,
+                masterAddress);
+
+        return new ClientDelegatingFuture<>(
+                invocation.invoke(),
+                serializationService,
+                clientMessage -> null
         );
     }
 }
