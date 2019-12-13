@@ -170,18 +170,36 @@ public class DefaultNodeExtension implements NodeExtension {
     }
 
     @Override
-    public void printNodeInfo() {
+    public final void printNodeInfo() {
         BuildInfo buildInfo = node.getBuildInfo();
 
+        printBannersBeforeNodeInfo();
+
+        String build = constructBuildString(buildInfo);
+        printNodeInfoInternal(buildInfo, build);
+    }
+
+    protected void printBannersBeforeNodeInfo() {
+    }
+
+    protected String constructBuildString(BuildInfo buildInfo) {
         String build = buildInfo.getBuild();
         String revision = buildInfo.getRevision();
         if (!revision.isEmpty()) {
             build += " - " + revision;
         }
-        systemLogger.info("Hazelcast " + buildInfo.getVersion()
+        return build;
+    }
+
+    private void printNodeInfoInternal(BuildInfo buildInfo, String build) {
+        systemLogger.info(getEditionString() + " " + buildInfo.getVersion()
                 + " (" + build + ") starting at " + node.getThisAddress());
         systemLogger.info("Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.");
         systemLogger.fine("Configured Hazelcast Serialization version: " + buildInfo.getSerializationVersion());
+    }
+
+    protected String getEditionString() {
+        return "Hazelcast";
     }
 
     @Override
