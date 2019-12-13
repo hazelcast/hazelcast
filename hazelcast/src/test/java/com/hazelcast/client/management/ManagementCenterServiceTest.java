@@ -22,6 +22,7 @@ import com.hazelcast.client.impl.management.MCMapConfig;
 import com.hazelcast.client.impl.management.ManagementCenterService;
 import com.hazelcast.client.impl.management.UpdateMapConfigParameters;
 import com.hazelcast.client.test.TestHazelcastFactory;
+import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.EvictionPolicy;
@@ -59,6 +60,7 @@ import static com.hazelcast.config.MapConfig.DEFAULT_MAX_IDLE_SECONDS;
 import static com.hazelcast.config.MapConfig.DEFAULT_MAX_SIZE;
 import static com.hazelcast.config.MapConfig.DEFAULT_TTL_SECONDS;
 import static com.hazelcast.config.MaxSizePolicy.PER_NODE;
+import static com.hazelcast.internal.cluster.impl.AdvancedClusterStateTest.changeClusterStateEventually;
 import static com.hazelcast.internal.management.events.EventMetadata.EventType.WAN_SYNC_STARTED;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 import static java.util.Arrays.stream;
@@ -252,6 +254,9 @@ public class ManagementCenterServiceTest extends HazelcastTestSupport {
 
     @Test
     public void shutdownCluster() {
+        // make sure the cluster is in stable state to prevent shutdown() failures
+        changeClusterStateEventually(hazelcastInstances[0], ClusterState.PASSIVE);
+
         managementCenterService.shutdownCluster();
 
         assertTrueEventually(() -> assertTrue(
