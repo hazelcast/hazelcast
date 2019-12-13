@@ -152,7 +152,7 @@ public class ClientClusterStateTest {
         waitAllForSafeState(instances);
 
         ClientConfig clientConfig = new ClientConfig();
-        clientConfig.getConnectionStrategyConfig().getConnectionRetryConfig().setClusterConnectTimeoutMillis(1_000);
+        clientConfig.getConnectionStrategyConfig().getConnectionRetryConfig().setClusterConnectTimeoutMillis(10_000);
 
         HazelcastInstance client = factory.newHazelcastClient(clientConfig);
         final IMap<Object, Object> map = client.getMap(randomMapName());

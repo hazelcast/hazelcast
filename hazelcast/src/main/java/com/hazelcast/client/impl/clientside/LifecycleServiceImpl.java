@@ -60,7 +60,7 @@ public final class LifecycleServiceImpl implements LifecycleService {
     private final BuildInfo buildInfo;
     private final ExecutorService executor;
 
-    /** Monitor which ensures that all client componets are down when shutdown() is finished. */
+    /** Monitor which ensures that all client components are down when shutdown() is finished. */
     private final Object shutdownMux = new Object();
 
     public LifecycleServiceImpl(HazelcastClientInstanceImpl client) {
