@@ -2,39 +2,14 @@ package com.hazelcast.client.impl.protocol.task.management;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.MCTriggerHotRestartBackupCodec;
-import com.hazelcast.client.impl.protocol.task.AbstractInvocationMessageTask;
+import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.management.ManagementCenterService;
-import com.hazelcast.internal.management.operation.AbstractManagementOperation;
 import com.hazelcast.internal.nio.Connection;
-import com.hazelcast.spi.impl.operationservice.InvocationBuilder;
-import com.hazelcast.spi.impl.operationservice.Operation;
 
 import java.security.Permission;
 
-import static com.hazelcast.internal.management.ManagementDataSerializerHook.HOT_RESTART_BACKUP_OPERATION;
-
-class HotRestartBackupOperation extends AbstractManagementOperation {
-
-    private final Node node;
-
-    HotRestartBackupOperation(Node node) {
-        this.node = node;
-    }
-
-    @Override
-    public void run()
-            throws Exception {
-        node.getNodeExtension().getHotRestartService().backup();
-    }
-
-    @Override
-    public int getClassId() {
-        return HOT_RESTART_BACKUP_OPERATION;
-    }
-}
-
-public class HotRestartBackupMessageTask extends AbstractInvocationMessageTask<MCTriggerHotRestartBackupCodec.RequestParameters> {
+public class HotRestartBackupMessageTask extends AbstractCallableMessageTask<MCTriggerHotRestartBackupCodec.RequestParameters> {
 
     private final Node node;
 
@@ -44,14 +19,10 @@ public class HotRestartBackupMessageTask extends AbstractInvocationMessageTask<M
     }
 
     @Override
-    protected InvocationBuilder getInvocationBuilder(Operation op) {
-        return nodeEngine.getOperationService().createInvocationBuilder(getServiceName(),
-                op, nodeEngine.getThisAddress());
-    }
-
-    @Override
-    protected Operation prepareOperation() {
-        return new HotRestartBackupOperation(node);
+    protected Object call()
+            throws Exception {
+        node.getNodeExtension().getHotRestartService().backup();
+        return null;
     }
 
     @Override
