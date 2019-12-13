@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Inserts the specified collection of elements into this queue, waiting up to the specified wait time if necessary
  * for space to become available.
  */
-@Generated("802e38a889d2e966496274f4d0e5e864")
+@Generated("6529493900c91828c23a3e64ff0c924a")
 public final class TransactionalQueueAddAllCodec {
     //hex: 0x120600
     public static final int REQUEST_MESSAGE_TYPE = 1181184;
@@ -74,7 +74,7 @@ public final class TransactionalQueueAddAllCodec {
         /**
          * The elements to add
          */
-        public java.util.List<com.hazelcast.nio.serialization.Data> items;
+        public java.util.List<com.hazelcast.internal.serialization.Data> items;
 
         /**
          * How long to wait before giving up, in milliseconds
@@ -82,7 +82,7 @@ public final class TransactionalQueueAddAllCodec {
         public long timeout;
     }
 
-    public static ClientMessage encodeRequest(java.lang.String name, java.util.UUID txnId, long threadId, java.util.Collection<com.hazelcast.nio.serialization.Data> items, long timeout) {
+    public static ClientMessage encodeRequest(java.lang.String name, java.util.UUID txnId, long threadId, java.util.Collection<com.hazelcast.internal.serialization.Data> items, long timeout) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
         clientMessage.setOperationName("TransactionalQueue.AddAll");

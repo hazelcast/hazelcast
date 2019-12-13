@@ -57,7 +57,7 @@ public final class TransactionalQueueOfferCodec {
     public static class RequestParameters {
 
         /**
-         * Name of the Transcational Queue
+         * Name of the Transactional Queue
          */
         public java.lang.String name;
 
