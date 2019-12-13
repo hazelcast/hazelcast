@@ -51,7 +51,6 @@ public class ClientDelegatingFuture<V> extends DelegatingCompletableFuture<V> {
 
     private static final AtomicReferenceFieldUpdater<ClientDelegatingFuture, Object> DECODED_RESPONSE =
             AtomicReferenceFieldUpdater.newUpdater(ClientDelegatingFuture.class, Object.class, "decodedResponse");
-    private static final Object VOID = "VOID";
 
     final boolean deserializeResponse;
     private final ClientMessageDecoder clientMessageDecoder;
@@ -113,15 +112,22 @@ public class ClientDelegatingFuture<V> extends DelegatingCompletableFuture<V> {
             return (V) result;
         }
 
+        // if there already is a deserialized value set, use it.
+        if (deserializedValue != VOID) {
+            return (V) deserializedValue;
+        }
+
         ClientMessage clientMessage = (ClientMessage) object;
         Object decoded = decodeResponse(clientMessage);
         if (deserializeResponse) {
-            return serializationService.toObject(decoded);
+            decoded = serializationService.toObject(decoded);
         }
+        cacheDeserializedValue(decoded);
+
         return (V) decoded;
     }
 
-        private Object resolveAny(Object o) {
+    private Object resolveAny(Object o) {
         if (o instanceof ClientMessage) {
             return resolve(o);
         }

@@ -51,20 +51,22 @@ import static com.hazelcast.internal.util.ExceptionUtil.sneakyThrow;
  */
 @SuppressWarnings("checkstyle:methodcount")
 public class DelegatingCompletableFuture<V> extends InternalCompletableFuture<V> {
-    private static final AtomicReferenceFieldUpdater<DelegatingCompletableFuture, Object> DESERIALIZED_VALUE
-            = AtomicReferenceFieldUpdater.newUpdater(DelegatingCompletableFuture.class,
-            Object.class, "deserializedValue");
 
-    private static final Object VOID = new Object() {
+    protected static final Object VOID = new Object() {
         @Override
         public String toString() {
             return "void";
         }
     };
 
+    private static final AtomicReferenceFieldUpdater<DelegatingCompletableFuture, Object> DESERIALIZED_VALUE
+            = AtomicReferenceFieldUpdater.newUpdater(DelegatingCompletableFuture.class,
+            Object.class, "deserializedValue");
+
     protected final CompletableFuture future;
     protected final InternalSerializationService serializationService;
     protected final Object result;
+
     protected volatile Object deserializedValue = VOID;
 
     public DelegatingCompletableFuture(@Nonnull SerializationService serializationService,
@@ -153,18 +155,23 @@ public class DelegatingCompletableFuture<V> extends InternalCompletableFuture<V>
             //todo do we need to call dispose data here
             serializationService.disposeData(data);
 
-            // now we need to try to set the value for other users.
-            for (; ; ) {
-                Object current = deserializedValue;
-                if (current != VOID) {
-                    object = current;
-                    break;
-                } else if (DESERIALIZED_VALUE.compareAndSet(this, VOID, object)) {
-                    break;
-                }
-            }
+            object = cacheDeserializedValue(object);
         }
         return (V) object;
+    }
+
+    protected Object cacheDeserializedValue(Object object) {
+        for (; ; ) {
+            Object current = deserializedValue;
+            if (current != VOID) {
+                object = current;
+                break;
+            } else if (DESERIALIZED_VALUE.compareAndSet(this, VOID, object)) {
+                break;
+            }
+        }
+
+        return object;
     }
 
     @Override
