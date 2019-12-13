@@ -23,11 +23,14 @@ import com.hazelcast.internal.json.JsonValue;
 import com.hazelcast.internal.nio.Bits;
 import com.hazelcast.internal.nio.BufferObjectDataInput;
 import com.hazelcast.query.impl.getters.JsonPathCursor;
+import com.hazelcast.spi.impl.operationexecutor.impl.OperationThread;
 
-import java.io.DataInput;
-import java.io.EOFException;
 import java.io.IOException;
 import java.io.Reader;
+import java.nio.ByteBuffer;
+import java.nio.CharBuffer;
+import java.nio.charset.CharsetDecoder;
+import java.nio.charset.CoderResult;
 
 public class DataInputNavigableJsonAdapter extends NavigableJsonInputAdapter {
 
@@ -88,32 +91,101 @@ public class DataInputNavigableJsonAdapter extends NavigableJsonInputAdapter {
         return input.readByte() == '"';
     }
 
-    private static class UTF8Reader extends Reader {
+    static class UTF8Reader extends Reader {
 
-        private final DataInput input;
+        static final ThreadLocal<CharsetDecoder> DECODER_THREAD_LOCAL = ThreadLocal.withInitial(Bits.UTF_8::newDecoder);
 
-        UTF8Reader(DataInput input) {
-            this.input = input;
+        private final CharsetDecoder decoder;
+        private final ByteBuffer inputBuffer;
+        // required to support read() for surrogate pairs
+        private boolean hasLeftoverChar;
+        private int leftoverChar;
+
+        UTF8Reader(BufferObjectDataInput input) {
+            byte[] data = obtainBytes(input);
+            inputBuffer = ByteBuffer.wrap(data);
+            inputBuffer.position(input.position());
+            decoder = Thread.currentThread() instanceof OperationThread
+                    ? DECODER_THREAD_LOCAL.get()
+                    : Bits.UTF_8.newDecoder();
         }
 
+        // default read() implementation does not handle surrogate pairs well
+        @Override
+        public int read() throws IOException {
+            if (hasLeftoverChar) {
+                hasLeftoverChar = false;
+                return leftoverChar;
+            }
+            char[] buffer = new char[2];
+            int charsRead = read(buffer, 0, 2);
+            switch (charsRead) {
+                case -1:
+                    return -1;
+                case 2:
+                    leftoverChar = buffer[1];
+                    hasLeftoverChar = true;
+                    return buffer[0];
+                case 1:
+                    return buffer[0];
+                default:
+                    throw new IllegalStateException("Unexpected result from read: " + charsRead);
+            }
+        }
+
+        @SuppressWarnings({"checkstyle:npathcomplexity", "checkstyle:cyclomaticcomplexity"})
         @Override
         public int read(char[] cbuf, int off, int len) throws IOException {
             if (off < 0 || (off + len) > cbuf.length) {
                 throw new IndexOutOfBoundsException();
             }
-            int i = 0;
-            try {
-                for (i = 0; i < len; i++) {
-                    byte firstByte = input.readByte();
-                    char c = Bits.readUtf8Char(input, firstByte);
-                    cbuf[off + i] = c;
+            if (len == 0) {
+                return 0;
+            }
+
+            int countRead = 0;
+            if (hasLeftoverChar) {
+                cbuf[off] = (char) leftoverChar;
+                hasLeftoverChar = false;
+                off++;
+                len--;
+                countRead++;
+            }
+            if (len == 0) {
+                return countRead;
+            }
+            if (!inputBuffer.hasRemaining()) {
+                return -1;
+            }
+            decoder.reset();
+            if (len == 1) {
+                int charRead = read();
+                if (charRead == -1) {
+                    return countRead == 0 ? -1 : countRead;
                 }
-            } catch (EOFException e) {
-                if (i == 0) {
-                    return -1;
+                cbuf[off] = (char) charRead;
+                return countRead + 1;
+            }
+
+            CharBuffer charbuffer = CharBuffer.wrap(cbuf, off, len);
+            CoderResult result = decoder.decode(inputBuffer, charbuffer, true);
+            if (result.isError()) {
+                result.throwException();
+            }
+            if (result.isUnderflow()) {
+                if (!inputBuffer.hasRemaining()) {
+                    decoder.flush(charbuffer);
                 }
             }
-            return i;
+            return countRead + charbuffer.position() - off;
+        }
+
+        private byte[] obtainBytes(BufferObjectDataInput input) {
+            if (input instanceof ByteArrayObjectDataInput) {
+                return ((ByteArrayObjectDataInput) input).data;
+            } else {
+                throw new IllegalArgumentException("All BufferObjectDataInput are instances of ByteArrayObjectDataInput");
+            }
         }
 
         @Override
