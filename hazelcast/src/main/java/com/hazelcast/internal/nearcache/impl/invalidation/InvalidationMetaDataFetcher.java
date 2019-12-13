@@ -28,6 +28,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.ExecutionException;
 
 import static com.hazelcast.internal.util.MapUtil.createHashMap;
 import static java.lang.String.format;
@@ -48,7 +49,8 @@ public abstract class InvalidationMetaDataFetcher {
         this.logger = logger;
     }
 
-    public final void init(RepairingHandler handler) throws Exception {
+    // returns true if handler is initialized properly, otherwise false
+    public final boolean init(RepairingHandler handler) {
         MetadataHolder resultHolder = new MetadataHolder();
         List<String> dataStructureNames = Collections.singletonList(handler.getName());
         Map<Member, InternalCompletableFuture> futureByMember = fetchMembersMetadataFor(dataStructureNames);
@@ -56,11 +58,17 @@ public abstract class InvalidationMetaDataFetcher {
             Member member = entry.getKey();
             InternalCompletableFuture future = entry.getValue();
 
-            extractMemberMetadata(member, future, resultHolder);
+            try {
+                extractMemberMetadata(member, future, resultHolder);
+            } catch (Exception e) {
+                handleExceptionWhileProcessingMetadata(member, e);
+                return false;
+            }
 
             initUuid(resultHolder.partitionUuidList, handler);
             initSequence(resultHolder.namePartitionSequenceList, handler);
         }
+        return true;
     }
 
     public final void fetchMetadata(ConcurrentMap<String, RepairingHandler> handlers) {
@@ -120,7 +128,8 @@ public abstract class InvalidationMetaDataFetcher {
     }
 
     protected void handleExceptionWhileProcessingMetadata(Member member, Exception e) {
-        if (e instanceof IllegalStateException) {
+        if (e instanceof IllegalStateException
+            || (e instanceof ExecutionException && e.getCause() instanceof IllegalStateException)) {
             // log at finest when
             // HazelcastInstanceNotActive, HazelcastClientNotActive or HazelcastClientOffline exception
             logger.finest(e);
