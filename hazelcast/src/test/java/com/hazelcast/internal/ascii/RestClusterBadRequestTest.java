@@ -48,7 +48,6 @@ import static com.hazelcast.internal.ascii.HTTPCommunicator.URI_CP_MEMBERS_URL;
 import static com.hazelcast.internal.ascii.HTTPCommunicator.URI_FORCESTART_CLUSTER_URL;
 import static com.hazelcast.internal.ascii.HTTPCommunicator.URI_HOT_RESTART_BACKUP_CLUSTER_URL;
 import static com.hazelcast.internal.ascii.HTTPCommunicator.URI_HOT_RESTART_BACKUP_INTERRUPT_CLUSTER_URL;
-import static com.hazelcast.internal.ascii.HTTPCommunicator.URI_LICENSE_INFO;
 import static com.hazelcast.internal.ascii.HTTPCommunicator.URI_LOCAL_CP_MEMBER_URL;
 import static com.hazelcast.internal.ascii.HTTPCommunicator.URI_PARTIALSTART_CLUSTER_URL;
 import static com.hazelcast.internal.ascii.HTTPCommunicator.URI_RESET_CP_SUBSYSTEM_URL;
@@ -86,7 +85,6 @@ public class RestClusterBadRequestTest extends HazelcastTestSupport {
             URI_WAN_STOP_PUBLISHER,
             URI_WAN_RESUME_PUBLISHER,
             URI_WAN_CONSISTENCY_CHECK_MAP,
-            URI_LICENSE_INFO,
             URI_RESET_CP_SUBSYSTEM_URL,
             URI_CP_GROUPS_URL,
             URI_CP_MEMBERS_URL,

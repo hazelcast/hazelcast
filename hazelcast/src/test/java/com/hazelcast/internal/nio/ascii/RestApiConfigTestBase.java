@@ -75,7 +75,7 @@ public abstract class RestApiConfigTestBase extends AbstractTextProtocolsTestBas
             new TestUrl(HEALTH_CHECK, GET, "/hazelcast/health/cluster-safe", "HTTP/1.1 200"),
             new TestUrl(HEALTH_CHECK, GET, "/hazelcast/health/migration-queue-size", "HTTP/1.1 200"),
             new TestUrl(HEALTH_CHECK, GET, "/hazelcast/health/cluster-size", "HTTP/1.1 200"),
-            new TestUrl(DATA, POST, "/hazelcast/rest/maps/", "HTTPTestFullApplicationContext/1.1 400"),
+            new TestUrl(DATA, POST, "/hazelcast/rest/maps/", "HTTP/1.1 400"),
             new TestUrl(DATA, GET, "/hazelcast/rest/maps/", "HTTP/1.1 400"),
             new TestUrl(DATA, DELETE, "/hazelcast/rest/maps/", "HTTP/1.1 200"),
             new TestUrl(DATA, POST, "/hazelcast/rest/queues/", "HTTP/1.1 400"),
