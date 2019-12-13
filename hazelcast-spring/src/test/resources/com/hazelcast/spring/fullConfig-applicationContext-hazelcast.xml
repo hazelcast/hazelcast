@@ -203,6 +203,7 @@
                     <hz:endpoint-group name="HOT_RESTART" enabled="true"/>
                     <hz:endpoint-group name="WAN" enabled="true"/>
                     <hz:endpoint-group name="DATA" enabled="true"/>
+                    <hz:endpoint-group name="CP" enabled="true"/>
                 </hz:rest-api>
                 <hz:memcache-protocol enabled="true"/>
             </hz:network>

@@ -4095,6 +4095,7 @@
             <xs:enumeration value="HOT_RESTART"/>
             <xs:enumeration value="WAN"/>
             <xs:enumeration value="DATA"/>
+            <xs:enumeration value="CP"/>
         </xs:restriction>
     </xs:simpleType>
 

@@ -33,6 +33,7 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestAwareInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
+import org.apache.http.NoHttpResponseException;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -56,7 +57,6 @@ import static com.hazelcast.test.HazelcastTestSupport.randomName;
 import static com.hazelcast.test.HazelcastTestSupport.randomString;
 import static com.hazelcast.test.HazelcastTestSupport.sleepAtLeastSeconds;
 import static java.net.HttpURLConnection.HTTP_BAD_REQUEST;
-import static java.net.HttpURLConnection.HTTP_NOT_FOUND;
 import static java.net.HttpURLConnection.HTTP_OK;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -318,28 +318,24 @@ public class RestTest {
         assertEquals(HTTP_OK, response);
     }
 
-    @Test
+    @Test(expected = NoHttpResponseException.class)
     public void testUndefined_HeadRequest() throws IOException {
-        int response = communicator.headRequestToUndefinedURI().responseCode;
-        assertEquals(HTTP_NOT_FOUND, response);
+        communicator.headRequestToUndefinedURI();
     }
 
-    @Test
+    @Test(expected = NoHttpResponseException.class)
     public void testUndefined_GetRequest() throws IOException {
-        int response = communicator.getRequestToUndefinedURI().responseCode;
-        assertEquals(HTTP_NOT_FOUND, response);
+        communicator.getRequestToUndefinedURI();
     }
 
-    @Test
+    @Test(expected = NoHttpResponseException.class)
     public void testUndefined_PostRequest() throws IOException {
-        int response = communicator.postRequestToUndefinedURI().responseCode;
-        assertEquals(HTTP_NOT_FOUND, response);
+        communicator.postRequestToUndefinedURI();
     }
 
-    @Test
+    @Test(expected = NoHttpResponseException.class)
     public void testUndefined_DeleteRequest() throws IOException {
-        int response = communicator.deleteRequestToUndefinedURI().responseCode;
-        assertEquals(HTTP_NOT_FOUND, response);
+        communicator.deleteRequestToUndefinedURI();
     }
 
     @Test
