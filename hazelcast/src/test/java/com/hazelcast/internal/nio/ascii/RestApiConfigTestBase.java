@@ -16,14 +16,6 @@
 
 package com.hazelcast.internal.nio.ascii;
 
-import static com.hazelcast.test.HazelcastTestSupport.assertTrueEventually;
-import static com.hazelcast.test.HazelcastTestSupport.getAddress;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-
-import java.io.IOException;
-import java.net.UnknownHostException;
-
 import com.hazelcast.config.Config;
 import com.hazelcast.config.RestApiConfig;
 import com.hazelcast.config.RestEndpointGroup;
@@ -31,12 +23,19 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.internal.cluster.Versions;
 
+import java.io.IOException;
+import java.net.UnknownHostException;
+
 import static com.hazelcast.config.RestEndpointGroup.CLUSTER_READ;
 import static com.hazelcast.config.RestEndpointGroup.CLUSTER_WRITE;
 import static com.hazelcast.config.RestEndpointGroup.DATA;
 import static com.hazelcast.config.RestEndpointGroup.HEALTH_CHECK;
 import static com.hazelcast.config.RestEndpointGroup.HOT_RESTART;
 import static com.hazelcast.config.RestEndpointGroup.WAN;
+import static com.hazelcast.test.HazelcastTestSupport.assertTrueEventually;
+import static com.hazelcast.test.HazelcastTestSupport.getAddress;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * Shared code for HTTP REST API and Memcache protocol testing.
@@ -76,15 +75,15 @@ public abstract class RestApiConfigTestBase extends AbstractTextProtocolsTestBas
             new TestUrl(HEALTH_CHECK, GET, "/hazelcast/health/cluster-safe", "HTTP/1.1 200"),
             new TestUrl(HEALTH_CHECK, GET, "/hazelcast/health/migration-queue-size", "HTTP/1.1 200"),
             new TestUrl(HEALTH_CHECK, GET, "/hazelcast/health/cluster-size", "HTTP/1.1 200"),
-            new TestUrl(DATA, POST, "/hazelcast/rest/maps/", "HTTP/1.1 400"),
+            new TestUrl(DATA, POST, "/hazelcast/rest/maps/", "HTTPTestFullApplicationContext/1.1 400"),
             new TestUrl(DATA, GET, "/hazelcast/rest/maps/", "HTTP/1.1 400"),
             new TestUrl(DATA, DELETE, "/hazelcast/rest/maps/", "HTTP/1.1 200"),
             new TestUrl(DATA, POST, "/hazelcast/rest/queues/", "HTTP/1.1 400"),
             new TestUrl(DATA, GET, "/hazelcast/rest/queues/", "HTTP/1.1 400"),
             new TestUrl(DATA, DELETE, "/hazelcast/rest/queues/", "HTTP/1.1 400"),
-            new TestUrl(CLUSTER_WRITE, POST, "/hazelcast/1", "HTTP/1.1 404"),
-            new TestUrl(CLUSTER_WRITE, GET, "/hazelcast/1", "HTTP/1.1 404"),
-            new TestUrl(CLUSTER_WRITE, DELETE, "/hazelcast/1", "HTTP/1.1 404"),
+            new TestUrl(CLUSTER_WRITE, POST, "/hazelcast/1", ""),
+            new TestUrl(CLUSTER_WRITE, GET, "/hazelcast/1", ""),
+            new TestUrl(CLUSTER_WRITE, DELETE, "/hazelcast/1", ""),
     };
 
     /**
