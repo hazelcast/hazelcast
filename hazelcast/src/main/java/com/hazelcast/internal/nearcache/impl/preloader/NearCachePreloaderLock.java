@@ -78,7 +78,7 @@ class NearCachePreloaderLock {
         } catch (IOException e) {
             logger.severe("Problem while releasing the lock and closing channel on " + lockFile, e);
         } finally {
-            lockFile.deleteOnExit();
+            lockFile.delete();
         }
     }
 

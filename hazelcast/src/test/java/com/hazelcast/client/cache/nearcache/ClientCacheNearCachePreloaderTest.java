@@ -68,8 +68,8 @@ public class ClientCacheNearCachePreloaderTest extends AbstractNearCachePreloade
 
     @Before
     public void setUp() {
-        nearCacheConfig = getNearCacheConfig(DEFAULT_MEMORY_FORMAT, DEFAULT_SERIALIZE_KEYS, DEFAULT_INVALIDATE_ON_CHANGE,
-                KEY_COUNT, storeFile.getParent());
+        nearCacheConfig = getNearCacheConfig(DEFAULT_MEMORY_FORMAT,
+                DEFAULT_SERIALIZE_KEYS, DEFAULT_INVALIDATE_ON_CHANGE, KEY_COUNT, storeFile.getParent());
     }
 
     @Override

@@ -87,10 +87,10 @@ public class ClientContext {
         this.queryCacheContext = client.getQueryCacheContext();
         this.clientExtension = client.getClientExtension();
 
-        registerTasksTo(client);
+        registerDisposalTasksTo(client);
     }
 
-    private void registerTasksTo(HazelcastClientInstanceImpl client) {
+    private void registerDisposalTasksTo(HazelcastClientInstanceImpl client) {
         client.disposeOnClusterChange(() -> {
             nearCacheManagers.values().forEach(NearCacheManager::clearAllNearCaches);
         });

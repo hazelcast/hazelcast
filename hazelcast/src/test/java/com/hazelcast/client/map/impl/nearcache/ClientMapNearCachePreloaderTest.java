@@ -19,7 +19,6 @@ package com.hazelcast.client.map.impl.nearcache;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.impl.clientside.HazelcastClientProxy;
 import com.hazelcast.client.impl.proxy.ClientMapProxy;
-import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.adapter.DataStructureAdapter;
@@ -53,12 +52,10 @@ public class ClientMapNearCachePreloaderTest extends AbstractNearCachePreloaderT
     protected final File storeFile = new File("nearCache-" + defaultNearCache + ".store").getAbsoluteFile();
     protected final File storeLockFile = new File(storeFile.getName() + ".lock").getAbsoluteFile();
 
-    private final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
-
     @Before
     public void setUp() {
-        nearCacheConfig = getNearCacheConfig(DEFAULT_MEMORY_FORMAT, DEFAULT_SERIALIZE_KEYS, DEFAULT_INVALIDATE_ON_CHANGE,
-                KEY_COUNT, storeFile.getParent());
+        nearCacheConfig = getNearCacheConfig(DEFAULT_MEMORY_FORMAT,
+                DEFAULT_SERIALIZE_KEYS, DEFAULT_INVALIDATE_ON_CHANGE, KEY_COUNT, storeFile.getParent());
     }
 
     @Override
