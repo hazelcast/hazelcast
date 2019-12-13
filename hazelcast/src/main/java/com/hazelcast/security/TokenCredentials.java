@@ -15,9 +15,6 @@
  */
 package com.hazelcast.security;
 
-import com.hazelcast.internal.serialization.impl.HeapData;
-import com.hazelcast.internal.serialization.Data;
-
 /**
  * {@link Credentials} type for custom authentication (token based).
  */
@@ -27,12 +24,4 @@ public interface TokenCredentials extends Credentials {
      * Returns the token as a byte array.
      */
     byte[] getToken();
-
-    /**
-     * Returns the token represented as {@link Data}. The default implementation wraps the token bytes into a on-heap Data
-     * instance.
-     */
-    default Data asData() {
-        return new HeapData(getToken());
-    }
 }
