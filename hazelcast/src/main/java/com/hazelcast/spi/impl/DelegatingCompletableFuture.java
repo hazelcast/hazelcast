@@ -426,6 +426,11 @@ public class DelegatingCompletableFuture<V> extends InternalCompletableFuture<V>
         return future.toString();
     }
 
+    // used for testing
+    public V getDeserializedValue() {
+        return (V) deserializedValue;
+    }
+
     static class DeserializingFunction<E, R> implements Function<E, R> {
         private final SerializationService serializationService;
         private final Function<E, R> delegate;
