@@ -25,7 +25,6 @@ import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.json.Json;
 import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.internal.management.dto.WanReplicationConfigDTO;
-import com.hazelcast.internal.management.operation.SetLicenseOperation;
 import com.hazelcast.internal.util.StringUtil;
 import com.hazelcast.version.Version;
 import com.hazelcast.wan.WanPublisherState;
@@ -34,7 +33,6 @@ import com.hazelcast.wan.impl.WanReplicationService;
 
 import java.io.UnsupportedEncodingException;
 import java.util.UUID;
-import java.util.concurrent.ExecutionException;
 
 import static com.hazelcast.cp.CPGroup.METADATA_CP_GROUP_NAME;
 import static com.hazelcast.internal.ascii.rest.HttpCommand.RES_400;
@@ -42,7 +40,6 @@ import static com.hazelcast.internal.ascii.rest.HttpCommand.RES_403;
 import static com.hazelcast.internal.ascii.rest.HttpCommandProcessor.ResponseType.FAIL;
 import static com.hazelcast.internal.ascii.rest.HttpCommandProcessor.ResponseType.SUCCESS;
 import static com.hazelcast.internal.util.ExceptionUtil.peel;
-import static com.hazelcast.internal.util.InvocationUtil.invokeOnStableClusterSerial;
 import static com.hazelcast.internal.util.StringUtil.lowerCaseInternal;
 import static com.hazelcast.internal.util.StringUtil.stringToBytes;
 import static com.hazelcast.internal.util.StringUtil.upperCaseInternal;
@@ -565,22 +562,8 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
         handle(command);
     }
 
-    private void handleSetLicense(HttpPostCommand cmd) throws Throwable {
-        String[] params = decodeParamsAndAuthenticate(cmd, 3);
-        try {
-            final int retryCount = 100;
-            // assumes that both groupName and password are present
-            String licenseKey = params[2];
-            invokeOnStableClusterSerial(getNode().nodeEngine,
-                    () -> new SetLicenseOperation(licenseKey), retryCount).get();
-            prepareResponse(cmd, responseOnSetLicenseSuccess());
-        } catch (ExecutionException executionException) {
-            throw executionException.getCause();
-        }
+    protected void handleSetLicense(HttpPostCommand cmd) throws Throwable {
+        // NO-OP in OS
+        prepareResponse(cmd, response(SUCCESS));
     }
-
-    protected JsonObject responseOnSetLicenseSuccess() {
-        return response(SUCCESS);
-    }
-
 }
