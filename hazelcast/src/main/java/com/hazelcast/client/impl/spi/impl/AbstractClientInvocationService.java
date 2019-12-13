@@ -22,7 +22,6 @@ import com.hazelcast.client.impl.connection.ClientConnectionManager;
 import com.hazelcast.client.impl.connection.nio.ClientConnection;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.spi.ClientInvocationService;
-import com.hazelcast.client.impl.spi.ClientPartitionService;
 import com.hazelcast.client.impl.spi.EventHandler;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.logging.ILogger;
@@ -55,7 +54,7 @@ public abstract class AbstractClientInvocationService implements ClientInvocatio
     protected final HazelcastClientInstanceImpl client;
 
     protected ClientConnectionManager connectionManager;
-    protected ClientPartitionService partitionService;
+    protected ClientPartitionServiceImpl partitionService;
     final ILogger invocationLogger;
 
     @Probe(name = "pendingCalls", level = MANDATORY)
@@ -119,7 +118,7 @@ public abstract class AbstractClientInvocationService implements ClientInvocatio
 
     public void start() {
         connectionManager = client.getConnectionManager();
-        partitionService = client.getClientPartitionService();
+        partitionService = (ClientPartitionServiceImpl) client.getClientPartitionService();
         responseHandlerSupplier.start();
         TaskScheduler executionService = client.getTaskScheduler();
         long cleanResourcesMillis = client.getProperties().getPositiveMillisOrDefault(CLEAN_RESOURCES_MILLIS);

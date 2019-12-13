@@ -25,7 +25,6 @@ import com.hazelcast.client.impl.spi.EventHandler;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.internal.nio.Connection;
-import com.hazelcast.spi.exception.TargetNotMemberException;
 
 import java.io.IOException;
 import java.util.UUID;
@@ -86,16 +85,15 @@ public class SmartClientInvocationService extends AbstractClientInvocationServic
 
     @Override
     public void invokeOnPartitionOwner(ClientInvocation invocation, int partitionId) throws IOException {
-        final Address owner = partitionService.getPartitionOwner(partitionId);
-        if (owner == null) {
-            throw new IOException("Partition does not have an owner. partitionId: " + partitionId);
+        Address partitionOwner = partitionService.getPartitionOwner(partitionId);
+        if (partitionOwner == null) {
+            if (invocationLogger.isFinestEnabled()) {
+                invocationLogger.finest("Partition owner is not assigned yet, Retrying on random target");
+            }
+            invokeOnRandomTarget(invocation);
+            return;
         }
-        if (!isMember(owner)) {
-            throw new TargetNotMemberException("Partition owner '" + owner + "' is not a member.");
-        }
-        invocation.getClientMessage().setPartitionId(partitionId);
-        Connection connection = getConnection(owner);
-        send0(invocation, (ClientConnection) connection);
+        invokeOnTarget(invocation, partitionOwner);
     }
 
     @Override
@@ -110,7 +108,11 @@ public class SmartClientInvocationService extends AbstractClientInvocationServic
     @Override
     public void invokeOnTarget(ClientInvocation invocation, Address target) throws IOException {
         if (!isMember(target)) {
-            throw new TargetNotMemberException("Target '" + target + "' is not a member.");
+            if (invocationLogger.isFinestEnabled()) {
+                invocationLogger.finest("Target : " + target + " is not in the member list, Retrying on random target");
+            }
+            invokeOnRandomTarget(invocation);
+            return;
         }
         Connection connection = getConnection(target);
         invokeOnConnection(invocation, (ClientConnection) connection);

@@ -191,6 +191,7 @@ public class ClientHeartbeatTest extends ClientTestSupport {
         ClientConfig clientConfig = new ClientConfig();
         clientConfig.setProperty(ClientProperty.HEARTBEAT_TIMEOUT.getName(), String.valueOf(HEARTBEAT_TIMEOUT_MILLIS));
         clientConfig.setProperty(ClientProperty.HEARTBEAT_INTERVAL.getName(), "500");
+        clientConfig.getConnectionStrategyConfig().getConnectionRetryConfig().setClusterConnectTimeoutMillis(5000);
         return clientConfig;
     }
 
