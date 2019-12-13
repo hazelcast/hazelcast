@@ -33,6 +33,7 @@ import com.hazelcast.client.impl.protocol.codec.MCGetMemberConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.MCGetSystemPropertiesCodec;
 import com.hazelcast.client.impl.protocol.codec.MCGetThreadDumpCodec;
 import com.hazelcast.client.impl.protocol.codec.MCGetTimedMemberStateCodec;
+import com.hazelcast.client.impl.protocol.codec.MCInterruptHotRestartBackupCodec;
 import com.hazelcast.client.impl.protocol.codec.MCMatchMCConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.MCPollMCEventsCodec;
 import com.hazelcast.client.impl.protocol.codec.MCPromoteLiteMemberCodec;
@@ -42,6 +43,9 @@ import com.hazelcast.client.impl.protocol.codec.MCRunGcCodec;
 import com.hazelcast.client.impl.protocol.codec.MCRunScriptCodec;
 import com.hazelcast.client.impl.protocol.codec.MCShutdownClusterCodec;
 import com.hazelcast.client.impl.protocol.codec.MCShutdownMemberCodec;
+import com.hazelcast.client.impl.protocol.codec.MCTriggerForceStartCodec;
+import com.hazelcast.client.impl.protocol.codec.MCTriggerHotRestartBackupCodec;
+import com.hazelcast.client.impl.protocol.codec.MCTriggerPartialStartCodec;
 import com.hazelcast.client.impl.protocol.codec.MCUpdateMapConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.MCWanSyncMapCodec;
 import com.hazelcast.client.impl.spi.impl.ClientInvocation;
@@ -60,14 +64,13 @@ import com.hazelcast.wan.WanPublisherState;
 import com.hazelcast.wan.impl.AddWanConfigResult;
 import com.hazelcast.wan.impl.WanSyncType;
 
+import javax.annotation.Nonnull;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
-
-import javax.annotation.Nonnull;
 
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.wan.impl.WanSyncType.ALL_MAPS;
@@ -480,6 +483,67 @@ public class ManagementCenterService {
 
         return new ClientDelegatingFuture<>(
                 invocation.invoke(),
+                serializationService,
+                clientMessage -> null
+        );
+    }
+
+    /**
+     * Triggers a partial restart process
+     *
+     * @return True if the partial restart was successfully initiated, false otherwise
+     */
+    @Nonnull
+    public CompletableFuture<Boolean> triggerPartialStart() {
+        ClientInvocation invocation = new ClientInvocation(client, MCTriggerPartialStartCodec.encodeRequest(), null);
+
+        return new ClientDelegatingFuture<>(
+                invocation.invoke(),
+                serializationService,
+                clientMessage -> MCTriggerPartialStartCodec.decodeResponse(clientMessage).result
+        );
+    }
+
+    /**
+     * Forces the cluster to start
+     *
+     * @return True if the forced start was successfully initiated, false otherwise
+     */
+    @Nonnull
+    public CompletableFuture<Boolean> triggerForceStart() {
+        ClientInvocation invocation = new ClientInvocation(client, MCTriggerForceStartCodec.encodeRequest(), null);
+
+        return new ClientDelegatingFuture<>(invocation.invoke(),
+                serializationService,
+                clientMessage -> MCTriggerForceStartCodec.decodeResponse(clientMessage).result
+        );
+    }
+
+    /**
+     * Triggers the hot restart backup process
+     *
+     * @return an empty {@code CompletableFuture} after the hot restart process started
+     */
+    @Nonnull
+    public CompletableFuture<Void> triggerHotRestartBackup() {
+        ClientInvocation invocation = new ClientInvocation(client, MCTriggerHotRestartBackupCodec.encodeRequest(), null);
+
+        return new ClientDelegatingFuture<>(invocation.invoke(),
+                serializationService,
+                clientMessage -> null
+        );
+    }
+
+    /**
+     * Interrupts the hot restart backup process
+     *
+     * @return an empty {@code CompletableFuture} after the hot restart process got interrupted
+     */
+    @Nonnull
+    public CompletableFuture<Void> interruptHotRestartBackup() {
+        ClientInvocation invocation = new ClientInvocation(client, MCInterruptHotRestartBackupCodec.encodeRequest(), null);
+
+        return new ClientDelegatingFuture<>(invocation.invoke(),
                 serializationService,
                 clientMessage -> null
         );
