@@ -118,6 +118,6 @@ public class MembershipEvent extends EventObject {
                 throw new IllegalStateException();
         }
 
-        return format("MembershipEvent {member=%s,type=%s}", member, type);
+        return format("MembershipEvent {member=%s, type=%s, members=%s}", member, type, members);
     }
 }

@@ -16,6 +16,7 @@
 
 package com.hazelcast.cluster;
 
+import com.hazelcast.cluster.ClusterMembershipListenerTest.MembershipListenerImpl;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.LifecycleEvent;
@@ -37,6 +38,7 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.test.SplitBrainTestSupport.blockCommunicationBetween;
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
@@ -142,6 +144,36 @@ public class SplitMergeTest extends HazelcastTestSupport {
         mergeBack(h2, getAddress(h1));
 
         lifecycleListener.assertStates(LifecycleState.MERGING, LifecycleState.MERGE_FAILED);
+    }
+
+    @Test
+    public void test_membershipListener_whenMergeSuccess() {
+        HazelcastInstance h1 = factory.newHazelcastInstance(newConfig());
+        HazelcastInstance h2 = factory.newHazelcastInstance(newConfig());
+
+        // add membership listeners
+        MembershipListenerImpl listener1 = new MembershipListenerImpl();
+        h1.getCluster().addMembershipListener(listener1);
+        MembershipListenerImpl listener2 = new MembershipListenerImpl();
+        h2.getCluster().addMembershipListener(listener2);
+
+        // create split
+        closeConnectionBetween(h1, h2);
+        assertClusterSizeEventually(1, h1, h2);
+
+        // merge back
+        mergeBack(h2, getAddress(h1));
+        assertClusterSizeEventually(2, h1, h2);
+
+        assertSizeEventually(2, listener1.events);
+        MembershipEvent event = listener1.getEvent(1);
+        assertEquals(h2.getCluster().getLocalMember(), event.getMember());
+        assertArrayEquals(h1.getCluster().getMembers().toArray(), event.getMembers().toArray());
+
+        assertSizeEventually(2, listener2.events);
+        MembershipEvent event2 = listener2.getEvent(1);
+        assertEquals(h1.getCluster().getLocalMember(), event2.getMember());
+        assertArrayEquals(h2.getCluster().getMembers().toArray(), event2.getMembers().toArray());
     }
 
     private void mergeBack(HazelcastInstance hz, Address to) {
