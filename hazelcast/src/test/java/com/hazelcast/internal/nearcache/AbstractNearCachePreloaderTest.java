@@ -16,6 +16,7 @@
 
 package com.hazelcast.internal.nearcache;
 
+import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.InMemoryFormat;
@@ -87,6 +88,8 @@ public abstract class AbstractNearCachePreloaderTest<NK, NV> extends HazelcastTe
 
     protected final String defaultNearCache = randomName();
 
+    protected final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
+
     private final File preloadFile10kInt = getFileFromResources("nearcache-10k-int.store");
     private final File preloadFile10kString = getFileFromResources("nearcache-10k-string.store");
     private final File preloadFileEmpty = getFileFromResources("nearcache-empty.store");
@@ -95,9 +98,13 @@ public abstract class AbstractNearCachePreloaderTest<NK, NV> extends HazelcastTe
     private final File preloadFileNegativeFileFormat = getFileFromResources("nearcache-negative-fileformat.store");
 
     @After
-    public void deleteFiles() {
-        deleteQuietly(getStoreFile());
-        deleteQuietly(getStoreLockFile());
+    public void tearDown() throws Exception {
+        try {
+            hazelcastFactory.shutdownAll();
+        } finally {
+            deleteQuietly(getStoreFile());
+            deleteQuietly(getStoreLockFile());
+        }
     }
 
     /**

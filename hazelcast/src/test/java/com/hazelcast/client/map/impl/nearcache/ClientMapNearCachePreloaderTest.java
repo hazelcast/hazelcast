@@ -29,12 +29,11 @@ import com.hazelcast.internal.nearcache.NearCache;
 import com.hazelcast.internal.nearcache.NearCacheManager;
 import com.hazelcast.internal.nearcache.NearCacheTestContext;
 import com.hazelcast.internal.nearcache.NearCacheTestContextBuilder;
-import com.hazelcast.map.IMap;
 import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.map.IMap;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.After;
 import org.junit.Before;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -60,11 +59,6 @@ public class ClientMapNearCachePreloaderTest extends AbstractNearCachePreloaderT
     public void setUp() {
         nearCacheConfig = getNearCacheConfig(DEFAULT_MEMORY_FORMAT, DEFAULT_SERIALIZE_KEYS, DEFAULT_INVALIDATE_ON_CHANGE,
                 KEY_COUNT, storeFile.getParent());
-    }
-
-    @After
-    public void tearDown() {
-        hazelcastFactory.shutdownAll();
     }
 
     @Override
