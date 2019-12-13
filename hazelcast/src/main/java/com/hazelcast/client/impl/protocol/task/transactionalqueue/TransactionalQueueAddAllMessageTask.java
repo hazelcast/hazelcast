@@ -28,6 +28,7 @@ import com.hazelcast.transaction.TransactionContext;
 import com.hazelcast.transaction.TransactionalQueue;
 
 import java.security.Permission;
+import java.util.concurrent.TimeUnit;
 
 public class TransactionalQueueAddAllMessageTask
         extends AbstractTransactionalMessageTask<TransactionalQueueAddAllCodec.RequestParameters> {
@@ -40,7 +41,7 @@ public class TransactionalQueueAddAllMessageTask
     protected Object innerCall() throws Exception {
         final TransactionContext context = endpoint.getTransactionContext(parameters.txnId);
         final TransactionalQueue queue = context.getQueue(parameters.name);
-        return queue.addAll(parameters.items);
+        return queue.addAll(parameters.items, parameters.timeout, TimeUnit.MILLISECONDS);
     }
 
     @Override

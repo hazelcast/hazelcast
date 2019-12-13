@@ -128,7 +128,8 @@ public class ClientTxnQueueProxy<E> extends ClientTxnProxy implements Transactio
     @Override
     public boolean addAll(Collection<? extends E> collection, long timeout, @Nonnull TimeUnit unit) {
         List<Data> items = collection.stream().map(this::toData).collect(Collectors.toList());
-        ClientMessage request = TransactionalQueueAddAllCodec.encodeRequest(name, getTransactionId(), getThreadId(), items, unit.toMillis(timeout));
+        ClientMessage request = TransactionalQueueAddAllCodec.encodeRequest(
+            name, getTransactionId(), getThreadId(), items, unit.toMillis(timeout));
         ClientMessage response = invoke(request);
         return TransactionalQueueAddAllCodec.decodeResponse(response).response;
     }
