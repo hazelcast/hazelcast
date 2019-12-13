@@ -17,14 +17,13 @@
 package com.hazelcast.map.impl.iterator;
 
 import com.hazelcast.internal.iteration.IterationPointer;
-import com.hazelcast.internal.serialization.SerializationService;
-import com.hazelcast.map.IMap;
-import com.hazelcast.map.impl.query.Query;
 import com.hazelcast.internal.serialization.Data;
-import com.hazelcast.projection.Projection;
-import com.hazelcast.query.Predicate;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.util.IterationType;
+import com.hazelcast.map.IMap;
+import com.hazelcast.map.impl.query.Query;
+import com.hazelcast.projection.Projection;
+import com.hazelcast.query.Predicate;
 
 import java.util.Iterator;
 import java.util.List;

@@ -16,6 +16,7 @@
 
 package com.hazelcast.map.impl.query;
 
+import com.hazelcast.internal.iteration.IterationPointer;
 import com.hazelcast.internal.util.executor.ManagedExecutorService;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.impl.QueryableEntriesSegment;

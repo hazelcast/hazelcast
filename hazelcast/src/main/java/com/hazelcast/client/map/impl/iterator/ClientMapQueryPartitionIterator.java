@@ -24,13 +24,12 @@ import com.hazelcast.client.impl.spi.ClientContext;
 import com.hazelcast.client.impl.spi.impl.ClientInvocation;
 import com.hazelcast.client.impl.spi.impl.ClientInvocationFuture;
 import com.hazelcast.internal.iteration.IterationPointer;
-import com.hazelcast.internal.serialization.SerializationService;
-import com.hazelcast.map.impl.iterator.AbstractMapQueryPartitionIterator;
 import com.hazelcast.internal.serialization.Data;
-import com.hazelcast.projection.Projection;
-import com.hazelcast.query.Predicate;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.util.ExceptionUtil;
+import com.hazelcast.map.impl.iterator.AbstractMapQueryPartitionIterator;
+import com.hazelcast.projection.Projection;
+import com.hazelcast.query.Predicate;
 
 import java.util.Iterator;
 import java.util.List;

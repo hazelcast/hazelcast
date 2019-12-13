@@ -16,6 +16,7 @@
 
 package com.hazelcast.map.impl.iterator;
 
+import com.hazelcast.internal.iteration.IterationPointer;
 import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;

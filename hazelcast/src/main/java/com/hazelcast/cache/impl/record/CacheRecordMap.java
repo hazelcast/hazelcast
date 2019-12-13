@@ -19,6 +19,7 @@ package com.hazelcast.cache.impl.record;
 import com.hazelcast.cache.impl.CacheEntriesWithCursor;
 import com.hazelcast.cache.impl.CacheKeysWithCursor;
 import com.hazelcast.internal.eviction.EvictableStore;
+import com.hazelcast.internal.iteration.IterationPointer;
 import com.hazelcast.internal.serialization.Data;
 
 import java.util.Map;

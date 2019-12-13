@@ -17,7 +17,6 @@
 package com.hazelcast.map.impl.iterator;
 
 import com.hazelcast.internal.serialization.SerializationService;
-import com.hazelcast.map.IMap;
 import com.hazelcast.map.impl.operation.MapOperation;
 import com.hazelcast.map.impl.operation.MapOperationProvider;
 import com.hazelcast.map.impl.proxy.MapProxyImpl;

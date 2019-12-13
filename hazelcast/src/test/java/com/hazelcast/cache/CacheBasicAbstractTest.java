@@ -17,6 +17,7 @@
 package com.hazelcast.cache;
 
 import com.hazelcast.config.CacheConfig;
+import com.hazelcast.internal.iteration.IterationPointer;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.internal.util.SampleableConcurrentHashMap;

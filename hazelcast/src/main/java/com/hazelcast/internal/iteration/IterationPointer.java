@@ -74,8 +74,9 @@ public class IterationPointer {
 
     @Override
     public String toString() {
-        return "IterationPointer{" + "index=" + index +
-                ", size=" + size +
-                '}';
+        return "IterationPointer{"
+                + "index=" + index
+                + ", size=" + size
+                + '}';
     }
 }

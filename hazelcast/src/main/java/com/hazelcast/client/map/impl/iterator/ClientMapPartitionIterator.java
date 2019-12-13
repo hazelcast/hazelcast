@@ -27,6 +27,7 @@ import com.hazelcast.client.impl.spi.impl.ClientInvocationFuture;
 import com.hazelcast.internal.iteration.IterationPointer;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.util.ExceptionUtil;
+import com.hazelcast.map.impl.iterator.AbstractMapPartitionIterator;
 
 import java.util.List;
 
