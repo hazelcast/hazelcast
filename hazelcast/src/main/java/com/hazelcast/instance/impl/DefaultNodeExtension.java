@@ -170,7 +170,7 @@ public class DefaultNodeExtension implements NodeExtension {
     }
 
     @Override
-    public final void printNodeInfo() {
+    public void printNodeInfo() {
         BuildInfo buildInfo = node.getBuildInfo();
 
         printBannersBeforeNodeInfo();
