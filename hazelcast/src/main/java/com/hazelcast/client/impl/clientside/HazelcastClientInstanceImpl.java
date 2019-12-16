@@ -56,8 +56,8 @@ import com.hazelcast.client.impl.spi.impl.ClientTransactionManagerServiceImpl;
 import com.hazelcast.client.impl.spi.impl.ClientUserCodeDeploymentService;
 import com.hazelcast.client.impl.spi.impl.NonSmartClientInvocationService;
 import com.hazelcast.client.impl.spi.impl.SmartClientInvocationService;
-import com.hazelcast.client.impl.spi.impl.listener.ClientListenerServiceImpl;
 import com.hazelcast.client.impl.spi.impl.listener.ClientClusterViewListenerService;
+import com.hazelcast.client.impl.spi.impl.listener.ClientListenerServiceImpl;
 import com.hazelcast.client.impl.statistics.ClientStatisticsService;
 import com.hazelcast.client.util.RoundRobinLB;
 import com.hazelcast.cluster.Cluster;
@@ -187,7 +187,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
     private final ClientLockReferenceIdGenerator lockReferenceIdGenerator;
     private final ClientExceptionFactory clientExceptionFactory;
     private final ClientUserCodeDeploymentService userCodeDeploymentService;
-    private final ClientDiscoveryService clientDiscoveryService;
+    private final ClusterDiscoveryService clusterDiscoveryService;
     private final ClientProxySessionManager proxySessionManager;
     private final CPSubsystemImpl cpSubsystem;
     private final ManagementCenterService managementCenterService;
@@ -238,7 +238,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         loadBalancer = initLoadBalancer(config);
         transactionManager = new ClientTransactionManagerServiceImpl(this);
         partitionService = new ClientPartitionServiceImpl(this);
-        clientDiscoveryService = initClientDiscoveryService(externalAddressProvider);
+        clusterDiscoveryService = initClusterDiscoveryService(externalAddressProvider);
         connectionManager = (ClientConnectionManagerImpl) clientConnectionManagerFactory.createConnectionManager(this);
         invocationService = initInvocationService();
         listenerService = new ClientListenerServiceImpl(this);
@@ -269,7 +269,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         }
     }
 
-    private ClientDiscoveryService initClientDiscoveryService(AddressProvider externalAddressProvider) {
+    private ClusterDiscoveryService initClusterDiscoveryService(AddressProvider externalAddressProvider) {
         int tryCount;
         List<ClientConfig> configs;
         if (clientFailoverConfig == null) {
@@ -279,8 +279,8 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
             tryCount = clientFailoverConfig.getTryCount();
             configs = clientFailoverConfig.getClientConfigs();
         }
-        ClientDiscoveryServiceBuilder builder = new ClientDiscoveryServiceBuilder(tryCount, configs, loggingService,
-                externalAddressProvider, properties, clientExtension);
+        ClusterDiscoveryServiceBuilder builder = new ClusterDiscoveryServiceBuilder(tryCount, configs, loggingService,
+                externalAddressProvider, properties, clientExtension, getLifecycleService());
         return builder.build();
     }
 
@@ -407,7 +407,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
             } catch (Throwable t) {
                 ignore(t);
             }
-            rethrow(e);
+            throw rethrow(e);
         }
     }
 
@@ -763,7 +763,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
     public void doShutdown() {
         proxyManager.destroy();
         connectionManager.shutdown();
-        clientDiscoveryService.shutdown();
+        clusterDiscoveryService.shutdown();
         transactionManager.shutdown();
         invocationService.shutdown();
         executionService.shutdown();
@@ -787,8 +787,8 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         return clientExceptionFactory;
     }
 
-    public ClientDiscoveryService getClientDiscoveryService() {
-        return clientDiscoveryService;
+    public ClusterDiscoveryService getClusterDiscoveryService() {
+        return clusterDiscoveryService;
     }
 
     public ClientFailoverConfig getFailoverConfig() {

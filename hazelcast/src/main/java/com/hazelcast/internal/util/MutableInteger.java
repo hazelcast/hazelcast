@@ -29,6 +29,13 @@ public class MutableInteger {
     @SuppressWarnings("checkstyle:visibilitymodifier")
     public int value;
 
+    public MutableInteger() {
+    }
+
+    public MutableInteger(int value) {
+        this.value = value;
+    }
+
     public int getAndInc() {
         return value++;
     }

@@ -16,27 +16,28 @@
 
 package com.hazelcast.client.impl.clientside;
 
-import com.hazelcast.client.impl.ClientExtension;
-import com.hazelcast.client.config.impl.ClientAliasedDiscoveryConfigUtils;
 import com.hazelcast.client.config.ClientCloudConfig;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.ClientNetworkConfig;
 import com.hazelcast.client.config.ClientSecurityConfig;
 import com.hazelcast.client.config.SocketOptions;
+import com.hazelcast.client.config.impl.ClientAliasedDiscoveryConfigUtils;
+import com.hazelcast.client.impl.ClientExtension;
 import com.hazelcast.client.impl.connection.AddressProvider;
 import com.hazelcast.client.impl.spi.impl.DefaultAddressProvider;
 import com.hazelcast.client.impl.spi.impl.discovery.HazelcastCloudDiscovery;
 import com.hazelcast.client.impl.spi.impl.discovery.RemoteAddressProvider;
 import com.hazelcast.client.properties.ClientProperty;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.config.DiscoveryConfig;
 import com.hazelcast.config.DiscoveryStrategyConfig;
 import com.hazelcast.config.SSLConfig;
 import com.hazelcast.config.SocketInterceptorConfig;
 import com.hazelcast.config.security.StaticCredentialsFactory;
+import com.hazelcast.core.LifecycleService;
 import com.hazelcast.internal.config.DiscoveryConfigReadOnly;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
-import com.hazelcast.cluster.Address;
 import com.hazelcast.nio.SocketInterceptor;
 import com.hazelcast.security.ICredentialsFactory;
 import com.hazelcast.security.UsernamePasswordCredentials;
@@ -48,41 +49,43 @@ import com.hazelcast.spi.discovery.integration.DiscoveryServiceProvider;
 import com.hazelcast.spi.discovery.integration.DiscoveryServiceSettings;
 import com.hazelcast.spi.properties.HazelcastProperties;
 
+import javax.security.auth.callback.UnsupportedCallbackException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import javax.security.auth.callback.UnsupportedCallbackException;
-
 import static com.hazelcast.client.properties.ClientProperty.DISCOVERY_SPI_ENABLED;
 import static com.hazelcast.client.properties.ClientProperty.HAZELCAST_CLOUD_DISCOVERY_TOKEN;
 import static com.hazelcast.internal.config.AliasedDiscoveryConfigUtils.allUsePublicAddress;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
+import static java.util.Collections.unmodifiableList;
 
-class ClientDiscoveryServiceBuilder {
+class ClusterDiscoveryServiceBuilder {
 
+    private final int configsTryCount;
     private final LoggingService loggingService;
-    private final AddressProvider externalAddressProvider;
     private final HazelcastProperties properties;
     private final ClientExtension clientExtension;
     private final Collection<ClientConfig> configs;
-    private final int configsTryCount;
+    private final LifecycleService lifecycleService;
+    private final AddressProvider externalAddressProvider;
 
-    ClientDiscoveryServiceBuilder(int configsTryCount, List<ClientConfig> configs, LoggingService loggingService,
-                                  AddressProvider externalAddressProvider, HazelcastProperties properties,
-                                  ClientExtension clientExtension) {
+    ClusterDiscoveryServiceBuilder(int configsTryCount, List<ClientConfig> configs, LoggingService loggingService,
+                                   AddressProvider externalAddressProvider, HazelcastProperties properties,
+                                   ClientExtension clientExtension, LifecycleService lifecycleService) {
         this.configsTryCount = configsTryCount;
         this.configs = configs;
         this.loggingService = loggingService;
         this.externalAddressProvider = externalAddressProvider;
         this.properties = properties;
         this.clientExtension = clientExtension;
+        this.lifecycleService = lifecycleService;
     }
 
-    public ClientDiscoveryService build() {
-        ArrayList<CandidateClusterContext> contexts = new ArrayList<CandidateClusterContext>();
+    public ClusterDiscoveryService build() {
+        ArrayList<CandidateClusterContext> contexts = new ArrayList<>();
         for (ClientConfig config : configs) {
             ClientNetworkConfig networkConfig = config.getNetworkConfig();
             SocketInterceptor interceptor = initSocketInterceptor(networkConfig.getSocketInterceptorConfig());
@@ -106,7 +109,7 @@ class ClientDiscoveryServiceBuilder {
             contexts.add(new CandidateClusterContext(config.getClusterName(), provider, discoveryService, credentialsFactory,
                     interceptor, qualifier -> clientExtension.createChannelInitializer(sslConfig, socketOptions)));
         }
-        return new ClientDiscoveryService(configsTryCount, contexts);
+        return new ClusterDiscoveryService(unmodifiableList(contexts), configsTryCount, lifecycleService);
     }
 
     private AddressProvider createAddressProvider(ClientConfig clientConfig, DiscoveryService discoveryService) {
