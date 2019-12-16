@@ -31,10 +31,10 @@ import java.util.concurrent.atomic.AtomicLongFieldUpdater;
  */
 public abstract class AbstractNearCacheRecord<V> implements NearCacheRecord<V> {
     // primitive long typed fields: "reservationId", "sequence"
-    public static final int NUMBER_OF_LONG_FIELD_TYPES = 3;
+    public static final int NUMBER_OF_LONG_FIELD_TYPES = 2;
     // primitive int typed fields: "partitionId", "hits",
     // "lastAccessTime","expirationTime" and "creationTime"
-    public static final int NUMBER_OF_INTEGER_FIELD_TYPES = 4;
+    public static final int NUMBER_OF_INTEGER_FIELD_TYPES = 5;
     // primitive boolean typed field: "cachedAsNull"
     public static final int NUMBER_OF_BOOLEAN_FIELD_TYPES = 1;
 
