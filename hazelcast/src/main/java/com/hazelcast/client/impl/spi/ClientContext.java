@@ -58,7 +58,7 @@ public class ClientContext {
     private final LifecycleService lifecycleService;
     private final ClientClusterService clusterService;
     private final ClientListenerService listenerService;
-    private final TaskScheduler executionService;
+    private final TaskScheduler taskScheduler;
     private final ClientPartitionService partitionService;
     private final ClientQueryCacheContext queryCacheContext;
     private final ClientInvocationService invocationService;
@@ -75,7 +75,7 @@ public class ClientContext {
         this.clusterService = client.getClientClusterService();
         this.partitionService = client.getClientPartitionService();
         this.invocationService = client.getInvocationService();
-        this.executionService = client.getClientExecutionService();
+        this.taskScheduler = client.getClientExecutionService();
         this.listenerService = client.getListenerService();
         this.clientConnectionManager = client.getConnectionManager();
         this.lifecycleService = client.getLifecycleService();
@@ -117,8 +117,8 @@ public class ClientContext {
         return getOrPutIfAbsent(repairingTasks, serviceName, name -> {
             InvalidationMetaDataFetcher invalidationMetaDataFetcher = newMetaDataFetcher(serviceName);
             ILogger logger = loggingService.getLogger(RepairingTask.class);
-            return new RepairingTask(properties, invalidationMetaDataFetcher,
-                    executionService, serializationService, minimalPartitionService,
+            return new RepairingTask(properties, invalidationMetaDataFetcher, taskScheduler, serializationService,
+                    minimalPartitionService,
                     clientConnectionManager.getClientUuid(), logger);
         });
     }
@@ -180,8 +180,8 @@ public class ClientContext {
         return transactionManager;
     }
 
-    public TaskScheduler getExecutionService() {
-        return executionService;
+    public TaskScheduler getTaskScheduler() {
+        return taskScheduler;
     }
 
     public ClientListenerService getListenerService() {
