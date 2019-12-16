@@ -132,7 +132,7 @@ public class ClientStatisticsService {
         CompositeMetricsCollector compositeMetricsCollector = new CompositeMetricsCollector(clientMetricCollector,
                 publisherMetricsCollector);
 
-        client.getClientExecutionService().scheduleWithRepetition(() -> {
+        client.getTaskScheduler().scheduleWithRepetition(() -> {
             long collectionTimestamp = System.currentTimeMillis();
             metricsRegistry.collect(compositeMetricsCollector);
             publisherMetricsCollector.publishCollectedMetrics();

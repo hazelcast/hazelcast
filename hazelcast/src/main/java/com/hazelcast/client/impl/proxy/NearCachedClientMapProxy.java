@@ -166,7 +166,7 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
                 } else {
                     invalidateNearCache(ncKey);
                 }
-            }, getClient().getClientExecutionService());
+            }, getClient().getTaskScheduler());
         }
 
         return new ClientDelegatingFuture<>(getAsyncInternal(key),

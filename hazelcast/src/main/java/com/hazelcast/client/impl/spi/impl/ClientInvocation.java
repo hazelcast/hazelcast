@@ -84,7 +84,7 @@ public class ClientInvocation extends BaseInvocation implements Runnable {
         this.clientClusterService = client.getClientClusterService();
         this.lifecycleService = client.getLifecycleService();
         this.invocationService = (AbstractClientInvocationService) client.getInvocationService();
-        this.executionService = client.getClientExecutionService();
+        this.executionService = client.getTaskScheduler();
         this.objectName = objectName;
         this.clientMessage = clientMessage;
         this.partitionId = partitionId;

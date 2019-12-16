@@ -78,7 +78,7 @@ public class ClientProxySessionManager extends AbstractProxySessionManager {
 
     @Override
     protected ScheduledFuture<?> scheduleWithRepetition(Runnable task, long period, TimeUnit unit) {
-        return client.getClientExecutionService().scheduleWithRepetition(task, period, period, unit);
+        return client.getTaskScheduler().scheduleWithRepetition(task, period, period, unit);
     }
 
     @Override

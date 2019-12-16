@@ -75,7 +75,7 @@ public class ClientContext {
         this.clusterService = client.getClientClusterService();
         this.partitionService = client.getClientPartitionService();
         this.invocationService = client.getInvocationService();
-        this.taskScheduler = client.getClientExecutionService();
+        this.taskScheduler = client.getTaskScheduler();
         this.listenerService = client.getListenerService();
         this.clientConnectionManager = client.getConnectionManager();
         this.lifecycleService = client.getLifecycleService();

@@ -121,7 +121,7 @@ public abstract class AbstractClientInvocationService implements ClientInvocatio
         connectionManager = client.getConnectionManager();
         partitionService = client.getClientPartitionService();
         responseHandlerSupplier.start();
-        TaskScheduler executionService = client.getClientExecutionService();
+        TaskScheduler executionService = client.getTaskScheduler();
         long cleanResourcesMillis = client.getProperties().getPositiveMillisOrDefault(CLEAN_RESOURCES_MILLIS);
         executionService.scheduleWithRepetition(new CleanResourcesTask(), cleanResourcesMillis,
                 cleanResourcesMillis, MILLISECONDS);
