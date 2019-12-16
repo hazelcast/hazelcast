@@ -7355,6 +7355,127 @@ public class MemberCompatibilityTest_2_0 {
         compareClientMessages(fromFile, encoded);
     }
 
+    @Test
+    public void test_MCGetCPMembersCodec_decodeRequest() {
+        int fileClientMessageIndex = 815;
+        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
+        MCGetCPMembersCodec.RequestParameters parameters = MCGetCPMembersCodec.decodeRequest(fromFile);
+    }
+
+    @Test
+    public void test_MCGetCPMembersCodec_encodeResponse() {
+        int fileClientMessageIndex = 816;
+        ClientMessage encoded = MCGetCPMembersCodec.encodeResponse(aListOfUUIDToAddress);
+        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
+        compareClientMessages(fromFile, encoded);
+    }
+
+    @Test
+    public void test_MCPromoteToCPMemberCodec_decodeRequest() {
+        int fileClientMessageIndex = 817;
+        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
+        MCPromoteToCPMemberCodec.RequestParameters parameters = MCPromoteToCPMemberCodec.decodeRequest(fromFile);
+    }
+
+    @Test
+    public void test_MCPromoteToCPMemberCodec_encodeResponse() {
+        int fileClientMessageIndex = 818;
+        ClientMessage encoded = MCPromoteToCPMemberCodec.encodeResponse();
+        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
+        compareClientMessages(fromFile, encoded);
+    }
+
+    @Test
+    public void test_MCRemoveCPMemberCodec_decodeRequest() {
+        int fileClientMessageIndex = 819;
+        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
+        MCRemoveCPMemberCodec.RequestParameters parameters = MCRemoveCPMemberCodec.decodeRequest(fromFile);
+        assertTrue(isEqual(aUUID, parameters.cpMemberUuid));
+    }
+
+    @Test
+    public void test_MCRemoveCPMemberCodec_encodeResponse() {
+        int fileClientMessageIndex = 820;
+        ClientMessage encoded = MCRemoveCPMemberCodec.encodeResponse();
+        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
+        compareClientMessages(fromFile, encoded);
+    }
+
+    @Test
+    public void test_MCResetCPSubsystemCodec_decodeRequest() {
+        int fileClientMessageIndex = 821;
+        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
+        MCResetCPSubsystemCodec.RequestParameters parameters = MCResetCPSubsystemCodec.decodeRequest(fromFile);
+    }
+
+    @Test
+    public void test_MCResetCPSubsystemCodec_encodeResponse() {
+        int fileClientMessageIndex = 822;
+        ClientMessage encoded = MCResetCPSubsystemCodec.encodeResponse();
+        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
+        compareClientMessages(fromFile, encoded);
+    }
+
+    @Test
+    public void test_MCTriggerPartialStartCodec_decodeRequest() {
+        int fileClientMessageIndex = 823;
+        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
+        MCTriggerPartialStartCodec.RequestParameters parameters = MCTriggerPartialStartCodec.decodeRequest(fromFile);
+    }
+
+    @Test
+    public void test_MCTriggerPartialStartCodec_encodeResponse() {
+        int fileClientMessageIndex = 824;
+        ClientMessage encoded = MCTriggerPartialStartCodec.encodeResponse(aBoolean);
+        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
+        compareClientMessages(fromFile, encoded);
+    }
+
+    @Test
+    public void test_MCTriggerForceStartCodec_decodeRequest() {
+        int fileClientMessageIndex = 825;
+        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
+        MCTriggerForceStartCodec.RequestParameters parameters = MCTriggerForceStartCodec.decodeRequest(fromFile);
+    }
+
+    @Test
+    public void test_MCTriggerForceStartCodec_encodeResponse() {
+        int fileClientMessageIndex = 826;
+        ClientMessage encoded = MCTriggerForceStartCodec.encodeResponse(aBoolean);
+        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
+        compareClientMessages(fromFile, encoded);
+    }
+
+    @Test
+    public void test_MCTriggerHotRestartBackupCodec_decodeRequest() {
+        int fileClientMessageIndex = 827;
+        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
+        MCTriggerHotRestartBackupCodec.RequestParameters parameters = MCTriggerHotRestartBackupCodec.decodeRequest(fromFile);
+    }
+
+    @Test
+    public void test_MCTriggerHotRestartBackupCodec_encodeResponse() {
+        int fileClientMessageIndex = 828;
+        ClientMessage encoded = MCTriggerHotRestartBackupCodec.encodeResponse();
+        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
+        compareClientMessages(fromFile, encoded);
+    }
+
+    @Test
+    public void test_MCInterruptHotRestartBackupCodec_decodeRequest() {
+        int fileClientMessageIndex = 829;
+        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
+        MCInterruptHotRestartBackupCodec.RequestParameters parameters = MCInterruptHotRestartBackupCodec.decodeRequest(fromFile);
+    }
+
+    @Test
+    public void test_MCInterruptHotRestartBackupCodec_encodeResponse() {
+        int fileClientMessageIndex = 830;
+        ClientMessage encoded = MCInterruptHotRestartBackupCodec.encodeResponse();
+        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
+        compareClientMessages(fromFile, encoded);
+    }
+
      private void compareClientMessages(ClientMessage binaryMessage, ClientMessage encodedMessage) {
         ClientMessage.Frame binaryFrame, encodedFrame;
 

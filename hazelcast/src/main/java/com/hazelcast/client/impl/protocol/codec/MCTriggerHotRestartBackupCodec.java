@@ -34,19 +34,18 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  */
 
 /**
- * Polls events available on member. Once read, events are removed from
- * member's internal queue.
+ * Triggers hot restart backup
  */
-@Generated("b965aff03513393add2d1af86d2b17d0")
-public final class MCPollMCEventsCodec {
-    //hex: 0x201800
-    public static final int REQUEST_MESSAGE_TYPE = 2103296;
-    //hex: 0x201801
-    public static final int RESPONSE_MESSAGE_TYPE = 2103297;
+@Generated("4f4eced4dbf275f7116fd04bf37561e9")
+public final class MCTriggerHotRestartBackupCodec {
+    //hex: 0x201F00
+    public static final int REQUEST_MESSAGE_TYPE = 2105088;
+    //hex: 0x201F01
+    public static final int RESPONSE_MESSAGE_TYPE = 2105089;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
 
-    private MCPollMCEventsCodec() {
+    private MCTriggerHotRestartBackupCodec() {
     }
 
     @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
@@ -56,14 +55,14 @@ public final class MCPollMCEventsCodec {
     public static ClientMessage encodeRequest() {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
-        clientMessage.setOperationName("MC.PollMCEvents");
+        clientMessage.setOperationName("MC.TriggerHotRestartBackup");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
         clientMessage.add(initialFrame);
         return clientMessage;
     }
 
-    public static MCPollMCEventsCodec.RequestParameters decodeRequest(ClientMessage clientMessage) {
+    public static MCTriggerHotRestartBackupCodec.RequestParameters decodeRequest(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         RequestParameters request = new RequestParameters();
         //empty initial frame
@@ -73,29 +72,22 @@ public final class MCPollMCEventsCodec {
 
     @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
     public static class ResponseParameters {
-
-        /**
-         * List of events.
-         */
-        public java.util.List<com.hazelcast.internal.management.dto.MCEventDTO> events;
     }
 
-    public static ClientMessage encodeResponse(java.util.Collection<com.hazelcast.internal.management.dto.MCEventDTO> events) {
+    public static ClientMessage encodeResponse() {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, RESPONSE_MESSAGE_TYPE);
         clientMessage.add(initialFrame);
 
-        ListMultiFrameCodec.encode(clientMessage, events, MCEventCodec::encode);
         return clientMessage;
     }
 
-    public static MCPollMCEventsCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
+    public static MCTriggerHotRestartBackupCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         ResponseParameters response = new ResponseParameters();
         //empty initial frame
         iterator.next();
-        response.events = ListMultiFrameCodec.decode(iterator, MCEventCodec::decode);
         return response;
     }
 
