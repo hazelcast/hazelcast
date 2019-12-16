@@ -161,7 +161,7 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
     }
 
     public void sendLocalMembershipEvent() {
-        membershipManager.sendMembershipEvents(Collections.emptySet(), Collections.singleton(getLocalMember()));
+        membershipManager.sendMembershipEvents(Collections.emptySet(), Collections.singleton(getLocalMember()), false);
     }
 
     public void handleExplicitSuspicion(MembersViewMetadata expectedMembersViewMetadata, Address suspectedAddress) {

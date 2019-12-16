@@ -25,12 +25,10 @@ import com.hazelcast.internal.json.Json;
 import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.OverridePropertyRule;
-import com.hazelcast.test.TestHazelcastInstanceFactory;
+import com.hazelcast.test.TestAwareInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -50,7 +48,6 @@ import static com.hazelcast.internal.ascii.HTTPCommunicator.URI_CP_MEMBERS_URL;
 import static com.hazelcast.internal.ascii.HTTPCommunicator.URI_FORCESTART_CLUSTER_URL;
 import static com.hazelcast.internal.ascii.HTTPCommunicator.URI_HOT_RESTART_BACKUP_CLUSTER_URL;
 import static com.hazelcast.internal.ascii.HTTPCommunicator.URI_HOT_RESTART_BACKUP_INTERRUPT_CLUSTER_URL;
-import static com.hazelcast.internal.ascii.HTTPCommunicator.URI_LICENSE_INFO;
 import static com.hazelcast.internal.ascii.HTTPCommunicator.URI_LOCAL_CP_MEMBER_URL;
 import static com.hazelcast.internal.ascii.HTTPCommunicator.URI_PARTIALSTART_CLUSTER_URL;
 import static com.hazelcast.internal.ascii.HTTPCommunicator.URI_RESET_CP_SUBSYSTEM_URL;
@@ -63,8 +60,6 @@ import static com.hazelcast.internal.ascii.HTTPCommunicator.URI_WAN_RESUME_PUBLI
 import static com.hazelcast.internal.ascii.HTTPCommunicator.URI_WAN_STOP_PUBLISHER;
 import static com.hazelcast.internal.ascii.HTTPCommunicator.URI_WAN_SYNC_ALL_MAPS;
 import static com.hazelcast.internal.ascii.HTTPCommunicator.URI_WAN_SYNC_MAP;
-import static com.hazelcast.test.OverridePropertyRule.set;
-import static com.hazelcast.test.TestEnvironment.HAZELCAST_TEST_USE_NETWORK;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -90,21 +85,17 @@ public class RestClusterBadRequestTest extends HazelcastTestSupport {
             URI_WAN_STOP_PUBLISHER,
             URI_WAN_RESUME_PUBLISHER,
             URI_WAN_CONSISTENCY_CHECK_MAP,
-            URI_LICENSE_INFO,
             URI_RESET_CP_SUBSYSTEM_URL,
             URI_CP_GROUPS_URL,
             URI_CP_MEMBERS_URL,
             URI_LOCAL_CP_MEMBER_URL);
 
-    private TestHazelcastInstanceFactory factory;
+    private TestAwareInstanceFactory factory;
     private HTTPCommunicator communicator;
-
-    @Rule
-    public final OverridePropertyRule overridePropertyRule = set(HAZELCAST_TEST_USE_NETWORK, "true");
 
     @Before
     public void setup() {
-        factory = new TestHazelcastInstanceFactory(1);
+        factory = new TestAwareInstanceFactory();
         HazelcastInstance instance = factory.newHazelcastInstance(getConfig());
         communicator = new HTTPCommunicator(instance);
     }
@@ -126,7 +117,7 @@ public class RestClusterBadRequestTest extends HazelcastTestSupport {
 
     @After
     public void cleanup() {
-        factory.shutdownAll();
+        factory.terminateAll();
     }
 
     @Test

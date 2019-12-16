@@ -47,6 +47,6 @@ public class RestApiTextDecoder extends TextDecoder {
 
     private static RestApiFilter createFilter(TcpIpConnection connection) {
         IOService ioService = connection.getEndpointManager().getNetworkingService().getIoService();
-        return new RestApiFilter(ioService.getRestApiConfig(), TEXT_PARSERS);
+        return new RestApiFilter(ioService.getLoggingService(), ioService.getRestApiConfig(), TEXT_PARSERS);
     }
 }

@@ -48,7 +48,12 @@ public enum RestEndpointGroup {
     /**
      * Group of HTTP REST APIs for data manipulation in the cluster (e.g. IMap and IQueue operations).
      */
-    DATA(false);
+    DATA(false),
+
+    /**
+     * Groups of HTTP REST APIs for CP subsystem interaction
+     */
+    CP(false);
 
     private final boolean enabledByDefault;
 

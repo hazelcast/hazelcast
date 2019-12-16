@@ -63,6 +63,6 @@ public class InitialMembershipEvent extends EventObject {
 
     @Override
     public String toString() {
-        return "MembershipInitializeEvent {" + members + "}";
+        return "InitialMembershipEvent {" + members + "}";
     }
 }

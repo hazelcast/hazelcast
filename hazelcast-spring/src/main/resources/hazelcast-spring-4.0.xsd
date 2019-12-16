@@ -2657,6 +2657,7 @@
             <xs:enumeration value="WAN"/>
             <xs:enumeration value="DATA"/>
             <xs:enumeration value="MEMCACHE"/>
+            <xs:enumeration value="CP"/>
         </xs:restriction>
     </xs:simpleType>
 

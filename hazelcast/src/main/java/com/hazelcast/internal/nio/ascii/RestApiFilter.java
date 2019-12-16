@@ -16,12 +16,14 @@
 
 package com.hazelcast.internal.nio.ascii;
 
-import java.util.StringTokenizer;
-
 import com.hazelcast.config.RestApiConfig;
 import com.hazelcast.config.RestEndpointGroup;
 import com.hazelcast.internal.ascii.rest.HttpCommandProcessor;
 import com.hazelcast.internal.nio.tcp.TcpIpConnection;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.LoggingService;
+
+import java.util.StringTokenizer;
 
 /**
  * This class is a policy enforcement point for HTTP REST API. It checks incoming command lines and validates if the command can
@@ -29,10 +31,12 @@ import com.hazelcast.internal.nio.tcp.TcpIpConnection;
  */
 public class RestApiFilter implements TextProtocolFilter {
 
+    private final ILogger logger;
     private final RestApiConfig restApiConfig;
     private final TextParsers parsers;
 
-    RestApiFilter(RestApiConfig restApiConfig, TextParsers parsers) {
+    RestApiFilter(LoggingService loggingService, RestApiConfig restApiConfig, TextParsers parsers) {
+        this.logger = loggingService.getLogger(getClass());
         this.restApiConfig = restApiConfig;
         this.parsers = parsers;
     }
@@ -95,9 +99,18 @@ public class RestApiFilter implements TextProtocolFilter {
                 || requestUri.startsWith(HttpCommandProcessor.URI_INSTANCE)) {
             return RestEndpointGroup.CLUSTER_READ;
         }
-        if (requestUri.startsWith("/hazelcast/")) {
+        if (requestUri.startsWith(HttpCommandProcessor.URI_SHUTDOWN_CLUSTER_URL)
+                || requestUri.startsWith(HttpCommandProcessor.URI_SHUTDOWN_NODE_CLUSTER_URL)
+                || requestUri.startsWith(HttpCommandProcessor.URI_CHANGE_CLUSTER_STATE_URL)
+                || requestUri.startsWith(HttpCommandProcessor.URI_CLUSTER_VERSION_URL)
+                || requestUri.startsWith(HttpCommandProcessor.URI_LICENSE_INFO)) {
             return RestEndpointGroup.CLUSTER_WRITE;
         }
+        if (requestUri.startsWith(HttpCommandProcessor.URI_CP_SUBSYSTEM_BASE_URL)) {
+            return RestEndpointGroup.CP;
+        }
+
+        logger.warning("No REST group matching URI: " + requestUri);
         return null;
     }
 
