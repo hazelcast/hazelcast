@@ -79,9 +79,9 @@ Pull latest from repo `git pull origin master` and use Maven install (or package
 
 Hazelcast has 3 testing profiles:
 
-* **Default**: Type `mvn test` to run quick/integration tests (those can be run in-parallel without using network).
-* **Slow Tests**: Type `mvn test -P slow-test` to run tests those are either slow or cannot be run in-parallel.
-* **All Tests**: Type `mvn test -P all-tests` to run all test serially using network.
+* **Default**: Type `mvn test` to run quick/integration tests (those can be run in parallel without using network).
+* **Slow Tests**: Type `mvn test -P slow-test` to run tests that are either slow or cannot be run in parallel.
+* **All Tests**: Type `mvn test -P all-tests` to run all tests serially using network.
 
 ### Checkstyle and SpotBugs
 
@@ -98,7 +98,7 @@ mvn clean compile -P spotbugs
 
 ### Contributing to Hazelcast
 
-We encourage pull requests and process them promptly.
+We encourage Pull Requests and process them promptly.
 
 To contribute:
 
