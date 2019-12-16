@@ -96,5 +96,43 @@ public interface IConcurrentMap<K, V> extends java.util.concurrent.ConcurrentMap
     V applyIfPresent(K key, BiFunction<? super K, ? super V, ? extends V> mappingFunction);
 
 
+    /**
+     * {@inheritDoc}
+     *
+     * @implSpec
+     * The default implementation is equivalent to performing the following
+     * steps for this {@code map}, then returning the current value or
+     * {@code null} if absent:
+     *
+     * <pre> {@code
+     * V oldValue = map.get(key);
+     * V newValue = remappingFunction.apply(key, oldValue);
+     * if (oldValue != null ) {
+     *    if (newValue != null)
+     *       map.replace(key, oldValue, newValue);
+     *    else
+     *       map.remove(key, oldValue);
+     * } else {
+     *    if (newValue != null)
+     *       map.putIfAbsent(key, newValue);
+     *    else
+     *       return null;
+     * }
+     * }</pre>
+     *
+     * The default implementation may retry these steps when multiple
+     * threads attempt updates including potentially calling the remapping
+     * function multiple times.
+     *
+     * <p>This implementation assumes that the ConcurrentMap cannot contain null
+     * values and {@code get()} returning null unambiguously means the key is
+     * absent. Implementations which support null values <strong>must</strong>
+     * override this default implementation.
+     *
+     * @throws UnsupportedOperationException {@inheritDoc}
+     * @throws ClassCastException {@inheritDoc}
+     * @throws NullPointerException {@inheritDoc}
+     * @since 1.8
+     */
     V apply(K key, BiFunction<? super K, ? super V, ? extends V> remappingFunction);
 }

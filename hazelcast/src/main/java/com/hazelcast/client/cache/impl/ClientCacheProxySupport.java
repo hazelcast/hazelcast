@@ -96,7 +96,6 @@ import static com.hazelcast.client.cache.impl.ClientCacheProxySupportUtil.addCal
 import static com.hazelcast.client.cache.impl.ClientCacheProxySupportUtil.getSafely;
 import static com.hazelcast.client.cache.impl.ClientCacheProxySupportUtil.handleFailureOnCompletionListener;
 import static com.hazelcast.internal.util.CollectionUtil.objectToDataCollection;
-import static com.hazelcast.internal.util.ConcurrencyUtil.CALLER_RUNS;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrowAllowedTypeFirst;
 import static com.hazelcast.internal.util.ExceptionUtil.sneakyThrow;
@@ -388,8 +387,8 @@ abstract class ClientCacheProxySupport<K, V> extends ClientProxy implements ICac
         }
     }
 
-    protected InternalCompletableFuture<Boolean> removeAsync(K key, V oldValue,
-                                                             boolean hasOldValue, boolean withCompletionEvent) {
+    protected CompletableFuture<Boolean> removeAsync(K key, V oldValue,
+                                                     boolean hasOldValue, boolean withCompletionEvent) {
         long startNanos = nowInNanosOrDefault();
         ensureOpen();
         if (hasOldValue) {
@@ -409,9 +408,9 @@ abstract class ClientCacheProxySupport<K, V> extends ClientProxy implements ICac
         return callRemoveAsync(key, keyData, oldValueData, withCompletionEvent, callback);
     }
 
-    protected InternalCompletableFuture<Boolean> callRemoveAsync(K key, Data keyData, Data oldValueData,
-                                                                 boolean withCompletionEvent,
-                                                                 BiConsumer<Boolean, Throwable> callback) {
+    protected CompletableFuture<Boolean> callRemoveAsync(K key, Data keyData, Data oldValueData,
+                                                         boolean withCompletionEvent,
+                                                         BiConsumer<Boolean, Throwable> callback) {
         return addCallback(doRemoveOnServer(keyData, oldValueData, withCompletionEvent), callback);
     }
 
@@ -459,8 +458,8 @@ abstract class ClientCacheProxySupport<K, V> extends ClientProxy implements ICac
         }
     }
 
-    protected InternalCompletableFuture<Boolean> replaceAsync(K key, V oldValue, V newValue, ExpiryPolicy expiryPolicy,
-                                                              boolean hasOldValue, boolean withCompletionEvent) {
+    protected CompletableFuture<Boolean> replaceAsync(K key, V oldValue, V newValue, ExpiryPolicy expiryPolicy,
+                                                      boolean hasOldValue, boolean withCompletionEvent) {
         long startNanos = nowInNanosOrDefault();
         ensureOpen();
         if (hasOldValue) {
@@ -484,10 +483,10 @@ abstract class ClientCacheProxySupport<K, V> extends ClientProxy implements ICac
                 expiryPolicyData, withCompletionEvent, statsCallback);
     }
 
-    protected InternalCompletableFuture<Boolean> callReplaceAsync(K key, Data keyData, V newValue, Data newValueData,
-                                                                  Data oldValueData, Data expiryPolicyData,
-                                                                  boolean withCompletionEvent,
-                                                                  BiConsumer<Boolean, Throwable> statsCallback) {
+    protected CompletableFuture<Boolean> callReplaceAsync(K key, Data keyData, V newValue, Data newValueData,
+                                                          Data oldValueData, Data expiryPolicyData,
+                                                          boolean withCompletionEvent,
+                                                          BiConsumer<Boolean, Throwable> statsCallback) {
         return doReplaceOnServer(keyData, newValueData, oldValueData, expiryPolicyData, withCompletionEvent, statsCallback);
     }
 
@@ -498,16 +497,12 @@ abstract class ClientCacheProxySupport<K, V> extends ClientProxy implements ICac
         int completionId = withCompletionEvent ? nextCompletionId() : -1;
         ClientMessage request = CacheReplaceCodec.encodeRequest(nameWithPrefix, keyData, oldValueData, newValueData,
                 expiryPolicyData, completionId);
-        ClientInvocationFuture future = invoke(request, keyData, completionId);
-        ClientDelegatingFuture<Boolean> delegatingFuture
-                = newDelegatingFuture(future, message -> CacheReplaceCodec.decodeResponse(message).response);
 
-        if (statsCallback == null) {
-            return delegatingFuture;
-        } else {
-            delegatingFuture.whenCompleteAsync(statsCallback);
-            return delegatingFuture;
-        }
+        ClientDelegatingFuture<Boolean> delegatingFuture
+                = newDelegatingFuture(invoke(request, keyData, completionId),
+                message -> CacheReplaceCodec.decodeResponse(message).response);
+
+        return addCallback(delegatingFuture, statsCallback);
     }
 
     protected V getAndReplaceSync(K key, V oldValue, V newValue, ExpiryPolicy expiryPolicy,
@@ -545,26 +540,21 @@ abstract class ClientCacheProxySupport<K, V> extends ClientProxy implements ICac
         }
     }
 
-    private <T> ClientDelegatingFuture<T> doGetAndReplaceOnServer(Data keyData, Data newValueData,
-                                                                  Data expiryPolicyData,
-                                                                  boolean withCompletionEvent,
-                                                                  BiConsumer<T, Throwable> statsCallback) {
+    private <T> InternalCompletableFuture<T> doGetAndReplaceOnServer(Data keyData, Data newValueData,
+                                                                     Data expiryPolicyData,
+                                                                     boolean withCompletionEvent,
+                                                                     BiConsumer<T, Throwable> statsCallback) {
         int completionId = withCompletionEvent ? nextCompletionId() : -1;
         ClientMessage request = CacheGetAndReplaceCodec.encodeRequest(nameWithPrefix, keyData,
                 newValueData, expiryPolicyData, completionId);
         ClientInvocationFuture future = invoke(request, keyData, completionId);
         ClientDelegatingFuture<T> delegatingFuture
                 = newDelegatingFuture(future, message -> CacheGetAndReplaceCodec.decodeResponse(message).response);
-        if (statsCallback == null) {
-            return delegatingFuture;
-        } else {
-            delegatingFuture.whenCompleteAsync(statsCallback);
-            return delegatingFuture;
-        }
+        return addCallback(delegatingFuture, statsCallback);
     }
 
-    protected <T> InternalCompletableFuture<T> getAndReplaceAsync(K key, V oldValue, V newValue, ExpiryPolicy expiryPolicy,
-                                                                  boolean hasOldValue, boolean withCompletionEvent) {
+    protected <T> CompletableFuture<T> getAndReplaceAsync(K key, V oldValue, V newValue, ExpiryPolicy expiryPolicy,
+                                                          boolean hasOldValue, boolean withCompletionEvent) {
         long startNanos = nowInNanosOrDefault();
         ensureOpen();
         if (hasOldValue) {
@@ -587,11 +577,11 @@ abstract class ClientCacheProxySupport<K, V> extends ClientProxy implements ICac
                 expiryPolicyData, withCompletionEvent, statsCallback);
     }
 
-    protected <T> InternalCompletableFuture<T> callGetAndReplaceAsync(K key, Data keyData,
-                                                                      V newValue, Data newValueData,
-                                                                      Data expiryPolicyData,
-                                                                      boolean withCompletionEvent,
-                                                                      BiConsumer<T, Throwable> statsCallback) {
+    protected <T> CompletableFuture<T> callGetAndReplaceAsync(K key, Data keyData,
+                                                              V newValue, Data newValueData,
+                                                              Data expiryPolicyData,
+                                                              boolean withCompletionEvent,
+                                                              BiConsumer<T, Throwable> statsCallback) {
         return doGetAndReplaceOnServer(keyData, newValueData,
                 expiryPolicyData, withCompletionEvent, statsCallback);
     }
@@ -627,9 +617,9 @@ abstract class ClientCacheProxySupport<K, V> extends ClientProxy implements ICac
         return delegatingFuture.get();
     }
 
-    protected InternalCompletableFuture putAsyncInternal(K key, V value, ExpiryPolicy expiryPolicy,
-                                                         boolean isGet,
-                                                         boolean withCompletionEvent) {
+    protected CompletableFuture putAsyncInternal(K key, V value, ExpiryPolicy expiryPolicy,
+                                                 boolean isGet,
+                                                 boolean withCompletionEvent) {
         ensureOpen();
         validateNotNull(key, value);
         validateConfiguredTypes(cacheConfig, key, value);
@@ -643,20 +633,15 @@ abstract class ClientCacheProxySupport<K, V> extends ClientProxy implements ICac
                 isGet, withCompletionEvent, statsCallback);
     }
 
-    protected InternalCompletableFuture callPutAsync(K key, Data keyData, V value,
-                                                     Data valueData, Data expiryPolicyData,
-                                                     boolean isGet, boolean withCompletionEvent,
-                                                     BiConsumer<V, Throwable> statsCallback) {
+    protected CompletableFuture callPutAsync(K key, Data keyData, V value,
+                                             Data valueData, Data expiryPolicyData,
+                                             boolean isGet, boolean withCompletionEvent,
+                                             BiConsumer<V, Throwable> statsCallback) {
         ClientInvocationFuture invocationFuture = putInternal(keyData, valueData, expiryPolicyData, isGet, withCompletionEvent);
         InternalCompletableFuture future
                 = newDelegatingFuture(invocationFuture, message -> CachePutCodec.decodeResponse(message).response);
 
-        if (statsCallback == null) {
-            return future;
-        } else {
-            future.whenCompleteAsync(statsCallback, CALLER_RUNS);
-            return future;
-        }
+        return addCallback(future, statsCallback);
     }
 
     protected Boolean putIfAbsentSync(K key, V value, ExpiryPolicy expiryPolicy, boolean withCompletionEvent) {
@@ -687,9 +672,9 @@ abstract class ClientCacheProxySupport<K, V> extends ClientProxy implements ICac
         }
     }
 
-    protected InternalCompletableFuture<Boolean> putIfAbsentAsync(K key, V value,
-                                                                  ExpiryPolicy expiryPolicy,
-                                                                  boolean withCompletionEvent) {
+    protected CompletableFuture<Boolean> putIfAbsentAsync(K key, V value,
+                                                          ExpiryPolicy expiryPolicy,
+                                                          boolean withCompletionEvent) {
         long startNanos = nowInNanosOrDefault();
         ensureOpen();
         validateNotNull(key, value);
@@ -708,18 +693,13 @@ abstract class ClientCacheProxySupport<K, V> extends ClientProxy implements ICac
     }
 
     @SuppressWarnings("checkstyle:parameternumber")
-    protected InternalCompletableFuture<Boolean> callPutIfAbsentAsync(K key, Data keyData, V value, Data valueData,
-                                                                      Data expiryPolicyData, boolean withCompletionEvent,
-                                                                      BiConsumer<Boolean, Throwable> statsCallback) {
-        InternalCompletableFuture<Boolean> future
-                = doPutIfAbsentOnServer(keyData, valueData, expiryPolicyData, withCompletionEvent);
+    protected CompletableFuture<Boolean> callPutIfAbsentAsync(K key, Data keyData, V value, Data valueData,
+                                                              Data expiryPolicyData, boolean withCompletionEvent,
+                                                              BiConsumer<Boolean, Throwable> statsCallback) {
+        InternalCompletableFuture<Boolean> future = doPutIfAbsentOnServer(keyData, valueData,
+                expiryPolicyData, withCompletionEvent);
 
-        if (statsCallback == null) {
-            return future;
-        } else {
-            future.whenCompleteAsync(statsCallback);
-            return future;
-        }
+        return addCallback(future, statsCallback);
     }
 
     private InternalCompletableFuture<Boolean> doPutIfAbsentOnServer(Data keyData, Data valueData,

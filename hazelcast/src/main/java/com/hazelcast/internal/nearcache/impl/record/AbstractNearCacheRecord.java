@@ -30,10 +30,10 @@ import java.util.concurrent.atomic.AtomicLongFieldUpdater;
  *            by this {@link AbstractNearCacheRecord}
  */
 public abstract class AbstractNearCacheRecord<V> implements NearCacheRecord<V> {
-    // primitive long typed fields: "recordState", "sequence"
+    // primitive long typed fields: "reservationId", "sequence"
     public static final int NUMBER_OF_LONG_FIELD_TYPES = 3;
-    // primitive int typed fields: "partitionId", "accessHit",
-    // "accessTime","expirationTime" and "creationTime"
+    // primitive int typed fields: "partitionId", "hits",
+    // "lastAccessTime","expirationTime" and "creationTime"
     public static final int NUMBER_OF_INTEGER_FIELD_TYPES = 4;
     // primitive boolean typed field: "cachedAsNull"
     public static final int NUMBER_OF_BOOLEAN_FIELD_TYPES = 1;
@@ -41,7 +41,7 @@ public abstract class AbstractNearCacheRecord<V> implements NearCacheRecord<V> {
     private static final AtomicIntegerFieldUpdater<AbstractNearCacheRecord> HITS =
             AtomicIntegerFieldUpdater.newUpdater(AbstractNearCacheRecord.class, "hits");
     private static final AtomicLongFieldUpdater<AbstractNearCacheRecord> RECORD_STATE =
-            AtomicLongFieldUpdater.newUpdater(AbstractNearCacheRecord.class, "recordState");
+            AtomicLongFieldUpdater.newUpdater(AbstractNearCacheRecord.class, "reservationId");
 
     protected int creationTime;
 
@@ -53,7 +53,7 @@ public abstract class AbstractNearCacheRecord<V> implements NearCacheRecord<V> {
     protected volatile int lastAccessTime = TIME_NOT_SET;
     protected volatile int expirationTime;
     protected volatile long sequence;
-    protected volatile long recordState = READ_PERMITTED;
+    protected volatile long reservationId = READ_PERMITTED;
 
     public AbstractNearCacheRecord(V value, long creationTime, long expirationTime) {
         this.value = value;
@@ -128,7 +128,7 @@ public abstract class AbstractNearCacheRecord<V> implements NearCacheRecord<V> {
 
     @Override
     public long getReservationId() {
-        return recordState;
+        return reservationId;
     }
 
     @Override
@@ -174,7 +174,7 @@ public abstract class AbstractNearCacheRecord<V> implements NearCacheRecord<V> {
                 + ", expirationTime=" + expirationTime
                 + ", lastAccessTime=" + lastAccessTime
                 + ", hits=" + hits
-                + ", recordState=" + recordState
+                + ", recordState=" + reservationId
                 + ", value=" + value;
     }
 }

@@ -186,11 +186,11 @@ public class NearCachedClientCacheProxy<K, V> extends ClientCacheProxy<K, V> {
     }
 
     @Override
-    protected InternalCompletableFuture<V> callPutAsync(K key, Data keyData, V value, Data valueData,
-                                                        Data expiryPolicyData,
-                                                        boolean isGet, boolean withCompletionEvent,
-                                                        BiConsumer<V, Throwable> statsCallback) {
-        Supplier<InternalCompletableFuture<V>> remoteCallSupplier
+    protected CompletableFuture<V> callPutAsync(K key, Data keyData, V value, Data valueData,
+                                                Data expiryPolicyData,
+                                                boolean isGet, boolean withCompletionEvent,
+                                                BiConsumer<V, Throwable> statsCallback) {
+        Supplier<CompletableFuture<V>> remoteCallSupplier
                 = () -> NearCachedClientCacheProxy.super.callPutAsync(key, keyData, value, valueData,
                 expiryPolicyData, isGet, withCompletionEvent, null);
 
@@ -213,10 +213,10 @@ public class NearCachedClientCacheProxy<K, V> extends ClientCacheProxy<K, V> {
     }
 
     @Override
-    protected InternalCompletableFuture<Boolean> callPutIfAbsentAsync(K key, Data keyData, V value, Data valueData,
-                                                                      Data expiryPolicyData, boolean withCompletionEvent,
-                                                                      BiConsumer<Boolean, Throwable> statsCallback) {
-        Supplier<InternalCompletableFuture<Boolean>> remoteCallSupplier = ()
+    protected CompletableFuture<Boolean> callPutIfAbsentAsync(K key, Data keyData, V value, Data valueData,
+                                                              Data expiryPolicyData, boolean withCompletionEvent,
+                                                              BiConsumer<Boolean, Throwable> statsCallback) {
+        Supplier<CompletableFuture<Boolean>> remoteCallSupplier = ()
                 -> NearCachedClientCacheProxy.super.callPutIfAbsentAsync(key, keyData, value, valueData,
                 expiryPolicyData, withCompletionEvent, null);
 
@@ -239,11 +239,11 @@ public class NearCachedClientCacheProxy<K, V> extends ClientCacheProxy<K, V> {
     }
 
     @Override
-    protected InternalCompletableFuture<Boolean> callReplaceAsync(K key, Data keyData, V newValue,
-                                                                  Data newValueData, Data oldValueData,
-                                                                  Data expiryPolicyData, boolean withCompletionEvent,
-                                                                  BiConsumer<Boolean, Throwable> statsCallback) {
-        Supplier<InternalCompletableFuture<Boolean>> remoteCallSupplier = ()
+    protected CompletableFuture<Boolean> callReplaceAsync(K key, Data keyData, V newValue,
+                                                          Data newValueData, Data oldValueData,
+                                                          Data expiryPolicyData, boolean withCompletionEvent,
+                                                          BiConsumer<Boolean, Throwable> statsCallback) {
+        Supplier<CompletableFuture<Boolean>> remoteCallSupplier = ()
                 -> NearCachedClientCacheProxy.super.callReplaceAsync(key, keyData, newValue, newValueData,
                 oldValueData, expiryPolicyData, withCompletionEvent, null);
 
@@ -266,12 +266,12 @@ public class NearCachedClientCacheProxy<K, V> extends ClientCacheProxy<K, V> {
     }
 
     @Override
-    protected <T> InternalCompletableFuture<T> callGetAndReplaceAsync(K key, Data keyData,
-                                                                      V newValue, Data newValueData,
-                                                                      Data expiryPolicyData,
-                                                                      boolean withCompletionEvent,
-                                                                      BiConsumer<T, Throwable> statsCallback) {
-        Supplier<InternalCompletableFuture<T>> remoteCallSupplier
+    protected <T> CompletableFuture<T> callGetAndReplaceAsync(K key, Data keyData,
+                                                              V newValue, Data newValueData,
+                                                              Data expiryPolicyData,
+                                                              boolean withCompletionEvent,
+                                                              BiConsumer<T, Throwable> statsCallback) {
+        Supplier<CompletableFuture<T>> remoteCallSupplier
                 = () -> NearCachedClientCacheProxy.super.callGetAndReplaceAsync(key, keyData, newValue, newValueData,
                 expiryPolicyData, withCompletionEvent, null);
 
@@ -288,12 +288,13 @@ public class NearCachedClientCacheProxy<K, V> extends ClientCacheProxy<K, V> {
     }
 
     @Override
-    protected InternalCompletableFuture<Boolean> callRemoveAsync(K key, Data keyData, Data oldValueData,
-                                                                 boolean withCompletionEvent,
-                                                                 BiConsumer<Boolean, Throwable> statsCallback) {
-        InternalCompletableFuture<Boolean> future
+    protected CompletableFuture<Boolean> callRemoveAsync(K key, Data keyData, Data oldValueData,
+                                                         boolean withCompletionEvent,
+                                                         BiConsumer<Boolean, Throwable> statsCallback) {
+        CompletableFuture<Boolean> future
                 = super.callRemoveAsync(key, keyData, oldValueData, withCompletionEvent, null);
-        future.whenCompleteAsync((removed, throwable) -> {
+
+        return future.whenCompleteAsync((removed, throwable) -> {
             try {
                 if (statsCallback != null) {
                     statsCallback.accept(removed, throwable);
@@ -302,7 +303,6 @@ public class NearCachedClientCacheProxy<K, V> extends ClientCacheProxy<K, V> {
                 invalidateNearCache(toNearCacheKey(key, keyData));
             }
         });
-        return future;
     }
 
     @Nonnull
@@ -407,7 +407,7 @@ public class NearCachedClientCacheProxy<K, V> extends ClientCacheProxy<K, V> {
             Data keyData = (Data) resultingKeyValuePairs.get(i);
             Data valueData = (Data) resultingKeyValuePairs.get(i + 1);
 
-            Object ncKey = useObjectKey ? (K) reverseKeyMap.get(keyData) : keyData;
+            Object ncKey = useObjectKey ? reverseKeyMap.get(keyData) : keyData;
             if (useObjectKey) {
                 resultingKeyValuePairs.set(i, ncKey);
             }
@@ -839,14 +839,14 @@ public class NearCachedClientCacheProxy<K, V> extends ClientCacheProxy<K, V> {
      * @param <T>                   result of remote call
      * @return response of remote call
      */
-    private <T> InternalCompletableFuture<T> byUpdatingNearCacheAsync(Supplier<InternalCompletableFuture<T>> remoteCallSupplier,
-                                                                      K key, Data keyData, V value, Data valueData,
-                                                                      BiConsumer<T, Throwable> statsCallback,
-                                                                      boolean calledByBooleanMethod) {
+    private <T> CompletableFuture<T> byUpdatingNearCacheAsync(Supplier<CompletableFuture<T>> remoteCallSupplier,
+                                                              K key, Data keyData, V value, Data valueData,
+                                                              BiConsumer<T, Throwable> statsCallback,
+                                                              boolean calledByBooleanMethod) {
         Object nearCacheKey = toNearCacheKey(key, keyData);
         long reservationId = cacheOnUpdate
                 ? nearCache.tryReserveForCacheOnUpdate(nearCacheKey, keyData) : NOT_RESERVED;
-        InternalCompletableFuture<T> future = remoteCallSupplier.get();
+        CompletableFuture<T> future = remoteCallSupplier.get();
         if (reservationId != NOT_RESERVED) {
             future.whenCompleteAsync(new BiConsumer<T, Throwable>() {
                 private final AtomicBoolean executed = new AtomicBoolean();
