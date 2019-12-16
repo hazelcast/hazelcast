@@ -22,7 +22,6 @@ import com.hazelcast.client.cache.impl.ClientCacheProxy;
 import com.hazelcast.client.cache.impl.HazelcastClientCacheManager;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.impl.clientside.HazelcastClientProxy;
-import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.NearCacheConfig;
@@ -38,7 +37,6 @@ import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.After;
 import org.junit.Before;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -50,9 +48,9 @@ import java.io.File;
 import static com.hazelcast.cache.CacheTestSupport.createClientCachingProvider;
 import static com.hazelcast.cache.CacheTestSupport.createServerCachingProvider;
 import static com.hazelcast.cache.CacheUtil.getDistributedObjectName;
-import static com.hazelcast.config.MaxSizePolicy.USED_NATIVE_MEMORY_PERCENTAGE;
 import static com.hazelcast.config.EvictionPolicy.LRU;
 import static com.hazelcast.config.InMemoryFormat.NATIVE;
+import static com.hazelcast.config.MaxSizePolicy.USED_NATIVE_MEMORY_PERCENTAGE;
 import static com.hazelcast.config.NearCacheConfig.DEFAULT_INVALIDATE_ON_CHANGE;
 import static com.hazelcast.config.NearCacheConfig.DEFAULT_MEMORY_FORMAT;
 import static com.hazelcast.config.NearCacheConfig.DEFAULT_SERIALIZE_KEYS;
@@ -68,17 +66,10 @@ public class ClientCacheNearCachePreloaderTest extends AbstractNearCachePreloade
     protected final File storeFile = new File("nearCache-" + cacheFileName + ".store").getAbsoluteFile();
     protected final File storeLockFile = new File(storeFile.getName() + ".lock").getAbsoluteFile();
 
-    private final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
-
     @Before
     public void setUp() {
-        nearCacheConfig = getNearCacheConfig(DEFAULT_MEMORY_FORMAT, DEFAULT_SERIALIZE_KEYS, DEFAULT_INVALIDATE_ON_CHANGE,
-                KEY_COUNT, storeFile.getParent());
-    }
-
-    @After
-    public void tearDown() {
-        hazelcastFactory.shutdownAll();
+        nearCacheConfig = getNearCacheConfig(DEFAULT_MEMORY_FORMAT,
+                DEFAULT_SERIALIZE_KEYS, DEFAULT_INVALIDATE_ON_CHANGE, KEY_COUNT, storeFile.getParent());
     }
 
     @Override

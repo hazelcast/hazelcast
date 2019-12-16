@@ -17,6 +17,7 @@
 package com.hazelcast.internal.nearcache.impl.preloader;
 
 import com.hazelcast.core.HazelcastException;
+import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.logging.ILogger;
 
 import java.io.File;
@@ -78,7 +79,7 @@ class NearCachePreloaderLock {
         } catch (IOException e) {
             logger.severe("Problem while releasing the lock and closing channel on " + lockFile, e);
         } finally {
-            lockFile.deleteOnExit();
+            IOUtil.delete(lockFile);
         }
     }
 

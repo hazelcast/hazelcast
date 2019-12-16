@@ -56,8 +56,8 @@ import com.hazelcast.client.impl.spi.impl.ClientTransactionManagerServiceImpl;
 import com.hazelcast.client.impl.spi.impl.ClientUserCodeDeploymentService;
 import com.hazelcast.client.impl.spi.impl.NonSmartClientInvocationService;
 import com.hazelcast.client.impl.spi.impl.SmartClientInvocationService;
-import com.hazelcast.client.impl.spi.impl.listener.ClientListenerServiceImpl;
 import com.hazelcast.client.impl.spi.impl.listener.ClientClusterViewListenerService;
+import com.hazelcast.client.impl.spi.impl.listener.ClientListenerServiceImpl;
 import com.hazelcast.client.impl.statistics.ClientStatisticsService;
 import com.hazelcast.client.util.RoundRobinLB;
 import com.hazelcast.cluster.Cluster;
@@ -135,6 +135,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Queue;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -192,6 +193,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
     private final CPSubsystemImpl cpSubsystem;
     private final ManagementCenterService managementCenterService;
     private final ConcurrentLinkedQueue<Disposable> onClusterChangeDisposables = new ConcurrentLinkedQueue();
+    private final ConcurrentLinkedQueue<Disposable> onClientShutdownDisposables = new ConcurrentLinkedQueue();
 
     public HazelcastClientInstanceImpl(ClientConfig clientConfig,
                                        ClientFailoverConfig clientFailoverConfig,
@@ -413,6 +415,10 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
 
     public void disposeOnClusterChange(Disposable disposable) {
         onClusterChangeDisposables.add(disposable);
+    }
+
+    public void disposeOnClientShutdown(Disposable disposable) {
+        onClientShutdownDisposables.add(disposable);
     }
 
     public MetricsRegistryImpl getMetricsRegistry() {
@@ -761,6 +767,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
     }
 
     public void doShutdown() {
+        dispose(onClientShutdownDisposables);
         proxyManager.destroy();
         connectionManager.shutdown();
         clientDiscoveryService.shutdown();
@@ -772,6 +779,13 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         metricsRegistry.shutdown();
         diagnostics.shutdown();
         serializationService.dispose();
+    }
+
+    private static void dispose(Queue<Disposable> queue) {
+        Disposable disposable;
+        while ((disposable = queue.poll()) != null) {
+            disposable.dispose();
+        }
     }
 
     public ClientLockReferenceIdGenerator getLockReferenceIdGenerator() {
@@ -811,9 +825,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         ILogger logger = loggingService.getLogger(HazelcastInstance.class);
         logger.info("Resetting local state of the client, because of a cluster change ");
 
-        for (Disposable disposable : onClusterChangeDisposables) {
-            disposable.dispose();
-        }
+        dispose(onClusterChangeDisposables);
         //clear the member lists
         clusterService.reset();
         //clear partition service

@@ -30,11 +30,11 @@ import com.hazelcast.internal.nearcache.NearCacheManager;
 import com.hazelcast.internal.nearcache.impl.invalidation.InvalidationMetaDataFetcher;
 import com.hazelcast.internal.nearcache.impl.invalidation.MinimalPartitionService;
 import com.hazelcast.internal.nearcache.impl.invalidation.RepairingTask;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.map.impl.MapService;
-import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.spi.properties.HazelcastProperties;
 
 import java.util.concurrent.ConcurrentHashMap;
@@ -48,25 +48,25 @@ import static java.lang.String.format;
  */
 public class ClientContext {
 
-    private final InternalSerializationService serializationService;
-    private final ClientClusterService clusterService;
-    private final ClientPartitionService partitionService;
-    private final ClientInvocationService invocationService;
-    private final ClientExecutionService executionService;
-    private final ClientListenerService listenerService;
-    private final ClientConnectionManager clientConnectionManager;
-    private final LifecycleService lifecycleService;
-    private final ClientTransactionManagerService transactionManager;
+    private final String name;
     private final ProxyManager proxyManager;
     private final ClientConfig clientConfig;
     private final LoggingService loggingService;
     private final HazelcastProperties properties;
-    private final MinimalPartitionService minimalPartitionService;
+    private final ClientExtension clientExtension;
+    private final LifecycleService lifecycleService;
+    private final ClientClusterService clusterService;
+    private final ClientListenerService listenerService;
+    private final ClientExecutionService executionService;
+    private final ClientPartitionService partitionService;
     private final ClientQueryCacheContext queryCacheContext;
+    private final ClientInvocationService invocationService;
+    private final MinimalPartitionService minimalPartitionService;
+    private final ClientConnectionManager clientConnectionManager;
+    private final InternalSerializationService serializationService;
+    private final ClientTransactionManagerService transactionManager;
     private final ConcurrentMap<String, RepairingTask> repairingTasks = new ConcurrentHashMap<>();
     private final ConcurrentMap<String, NearCacheManager> nearCacheManagers = new ConcurrentHashMap<>();
-    private final ClientExtension clientExtension;
-    private final String name;
 
     public ClientContext(HazelcastClientInstanceImpl client) {
         this.name = client.getName();
@@ -87,10 +87,15 @@ public class ClientContext {
         this.queryCacheContext = client.getQueryCacheContext();
         this.clientExtension = client.getClientExtension();
 
-        client.getClientStatisticsService().watchNearCacheManagers(nearCacheManagers);
+        registerDisposalTasksTo(client);
+    }
+
+    private void registerDisposalTasksTo(HazelcastClientInstanceImpl client) {
         client.disposeOnClusterChange(() -> {
-            //reset near caches, clears all near cache data
             nearCacheManagers.values().forEach(NearCacheManager::clearAllNearCaches);
+        });
+        client.disposeOnClientShutdown(() -> {
+            nearCacheManagers.values().forEach(NearCacheManager::destroyAllNearCaches);
         });
     }
 
@@ -101,6 +106,10 @@ public class ClientContext {
     public NearCacheManager getNearCacheManager(String serviceName) {
         return getOrPutIfAbsent(nearCacheManagers, serviceName,
                 anyArg -> clientExtension.createNearCacheManager());
+    }
+
+    public ConcurrentMap<String, NearCacheManager> getNearCacheManagers() {
+        return nearCacheManagers;
     }
 
     public RepairingTask getRepairingTask(String serviceName) {

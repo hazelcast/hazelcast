@@ -22,6 +22,8 @@ import com.hazelcast.client.impl.connection.nio.ClientConnection;
 import com.hazelcast.client.impl.connection.nio.ClientConnectionManagerImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ClientStatisticsCodec;
+import com.hazelcast.client.impl.spi.ClientContext;
+import com.hazelcast.client.impl.spi.ProxyManager;
 import com.hazelcast.client.impl.spi.impl.ClientInvocation;
 import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.internal.metrics.Gauge;
@@ -33,7 +35,6 @@ import com.hazelcast.internal.metrics.impl.MetricsCompressor;
 import com.hazelcast.internal.metrics.impl.PublisherMetricsCollector;
 import com.hazelcast.internal.metrics.jmx.JmxPublisher;
 import com.hazelcast.internal.monitor.impl.NearCacheStatsImpl;
-import com.hazelcast.internal.nearcache.NearCacheManager;
 import com.hazelcast.internal.nio.ConnectionType;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
@@ -41,7 +42,6 @@ import com.hazelcast.security.Credentials;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.ConcurrentMap;
 
 import static java.util.concurrent.TimeUnit.SECONDS;
 
@@ -68,7 +68,6 @@ public class ClientStatisticsService {
 
     private PeriodicStatistics periodicStats;
 
-    private volatile ConcurrentMap<String, NearCacheManager> nearCacheManagers;
     private volatile PublisherMetricsCollector publisherMetricsCollector;
 
     public ClientStatisticsService(final HazelcastClientInstanceImpl clientInstance) {
@@ -94,6 +93,7 @@ public class ClientStatisticsService {
         }
 
         metricsRegistry.registerDynamicMetricsProvider(new ClusterConnectionMetricsProvider(client.getConnectionManager()));
+        client.getMetricsRegistry().registerDynamicMetricsProvider(new NearCacheMetricsProvider(client.getProxyManager()));
 
         long periodSeconds = metricsConfig.getCollectionFrequencySeconds();
 
@@ -153,7 +153,13 @@ public class ClientStatisticsService {
     }
 
     private void addNearCacheStats(final StringBuilder stats) {
-        nearCacheManagers
+        ProxyManager proxyManager = client.getProxyManager();
+        ClientContext context = proxyManager.getContext();
+        if (context == null) {
+            return;
+        }
+
+        context.getNearCacheManagers()
                 .values()
                 .stream()
                 .flatMap(nearCacheManager -> nearCacheManager.listAllNearCaches().stream())
@@ -327,13 +333,6 @@ public class ClientStatisticsService {
                 logger.finest("Could not send stats ", e);
             }
         }
-    }
-
-    // called only one time from ClientContext to register nearCacheManagers
-    public void watchNearCacheManagers(ConcurrentMap<String, NearCacheManager> nearCacheManagers) {
-        this.nearCacheManagers = nearCacheManagers;
-        client.getMetricsRegistry()
-                .registerDynamicMetricsProvider(new NearCacheMetricsProvider(nearCacheManagers.values()));
     }
 
     class PeriodicStatistics {

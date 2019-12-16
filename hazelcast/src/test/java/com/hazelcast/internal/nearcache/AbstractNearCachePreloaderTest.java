@@ -16,10 +16,11 @@
 
 package com.hazelcast.internal.nearcache;
 
+import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.EvictionConfig;
-import com.hazelcast.config.MaxSizePolicy;
 import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.InMemoryFormat;
+import com.hazelcast.config.MaxSizePolicy;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.internal.adapter.DataStructureAdapter;
@@ -80,12 +81,14 @@ public abstract class AbstractNearCachePreloaderTest<NK, NV> extends HazelcastTe
 
     protected static final int KEY_COUNT = 10023;
     protected static final int THREAD_COUNT = 10;
-    protected static final int CREATE_AND_DESTROY_RUNS = 5000;
+    protected static final int CREATE_AND_DESTROY_RUNS = 500;
 
     @Rule
     public ExpectedException expectedException = ExpectedException.none();
 
     protected final String defaultNearCache = randomName();
+
+    protected final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
 
     private final File preloadFile10kInt = getFileFromResources("nearcache-10k-int.store");
     private final File preloadFile10kString = getFileFromResources("nearcache-10k-string.store");
@@ -95,9 +98,13 @@ public abstract class AbstractNearCachePreloaderTest<NK, NV> extends HazelcastTe
     private final File preloadFileNegativeFileFormat = getFileFromResources("nearcache-negative-fileformat.store");
 
     @After
-    public void deleteFiles() {
-        deleteQuietly(getStoreFile());
-        deleteQuietly(getStoreLockFile());
+    public void tearDown() throws Exception {
+        try {
+            hazelcastFactory.shutdownAll();
+        } finally {
+            deleteQuietly(getStoreFile());
+            deleteQuietly(getStoreLockFile());
+        }
     }
 
     /**
@@ -339,7 +346,7 @@ public abstract class AbstractNearCachePreloaderTest<NK, NV> extends HazelcastTe
 
     @Test(timeout = 10 * MINUTE)
     public void testCreateAndDestroyDataStructure_withSameName() {
-        String name = randomMapName("createDestroyNearCache");
+        String name = "testCreateAndDestroyDataStructure_withSameName_" + getClass().getSimpleName();
         nearCacheConfig.setName(name);
 
         NearCacheTestContext<Object, String, NK, NV> context = createContext(true);
@@ -350,11 +357,12 @@ public abstract class AbstractNearCachePreloaderTest<NK, NV> extends HazelcastTe
             adapter.destroy();
             adapter = getDataStructure(context, name);
         }
+        adapter.destroy();
     }
 
     @Test(timeout = 10 * MINUTE)
     public void testCreateAndDestroyDataStructure_withDifferentNames() {
-        String name = randomMapName("createDestroyNearCache");
+        String name = "testCreateAndDestroyDataStructure_withDifferentNames_" + getClass().getSimpleName();
         nearCacheConfig.setName(name + "*");
 
         NearCacheTestContext<Object, String, NK, NV> context = createContext(true);
@@ -365,6 +373,7 @@ public abstract class AbstractNearCachePreloaderTest<NK, NV> extends HazelcastTe
             adapter.destroy();
             adapter = getDataStructure(context, name + i);
         }
+        adapter.destroy();
     }
 
     protected final NearCacheConfig getNearCacheConfig(InMemoryFormat inMemoryFormat, boolean serializeKeys,
