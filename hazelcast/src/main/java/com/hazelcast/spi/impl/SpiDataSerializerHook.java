@@ -71,13 +71,14 @@ public final class SpiDataSerializerHook implements DataSerializerHook {
     public static final int POST_JOIN_PROXY = 16;
     public static final int TRUE_EVENT_FILTER = 17;
     public static final int UNMODIFIABLE_LAZY_LIST = 18;
-    public static final int OPERATION_CONTROL = 19;
-    public static final int DISTRIBUTED_OBJECT_NS = 20;
-    public static final int REGISTRATION = 21;
-    public static final int NOOP_TENANT_CONTROL = 22;
-    public static final int USERNAME_PWD_CRED = 23;
-    public static final int SIMPLE_TOKEN_CRED = 24;
-    public static final int DISTRIBUTED_OBJECT_EVENT_PACKET = 25;
+    public static final int UNMODIFIABLE_LAZY_OBJECT_LIST = 19;
+    public static final int OPERATION_CONTROL = 20;
+    public static final int DISTRIBUTED_OBJECT_NS = 21;
+    public static final int REGISTRATION = 22;
+    public static final int NOOP_TENANT_CONTROL = 23;
+    public static final int USERNAME_PWD_CRED = 24;
+    public static final int SIMPLE_TOKEN_CRED = 25;
+    public static final int DISTRIBUTED_OBJECT_EVENT_PACKET = 26;
 
     private static final DataSerializableFactory FACTORY = createFactoryInternal();
 
@@ -129,6 +130,8 @@ public final class SpiDataSerializerHook implements DataSerializerHook {
                         return new TrueEventFilter();
                     case UNMODIFIABLE_LAZY_LIST:
                         return new UnmodifiableLazyList();
+                    case UNMODIFIABLE_LAZY_OBJECT_LIST:
+                        return new UnmodifiableLazyObjectList();
                     case OPERATION_CONTROL:
                         return new OperationControl();
                     case DISTRIBUTED_OBJECT_NS:

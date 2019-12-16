@@ -21,7 +21,15 @@ import com.hazelcast.internal.serialization.SerializationService;
 import java.util.List;
 
 public class UnmodifiableLazyObjectList extends UnmodifiableLazyList<Object> {
+    public UnmodifiableLazyObjectList() {
+    }
+
     public UnmodifiableLazyObjectList(List list, SerializationService serializationService) {
         super(list, serializationService);
+    }
+
+    @Override
+    public int getClassId() {
+        return SpiDataSerializerHook.UNMODIFIABLE_LAZY_OBJECT_LIST;
     }
 }
