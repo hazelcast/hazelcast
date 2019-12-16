@@ -24,7 +24,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.fastFor
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
-@Generated("529b7cb7f162ed6b6b5af675736bff84")
+@Generated("cac942551bab2774f21ec53e315a5b22")
 public final class AnchorDataListHolderCodec {
 
     private AnchorDataListHolderCodec() {
@@ -34,7 +34,7 @@ public final class AnchorDataListHolderCodec {
         clientMessage.add(BEGIN_FRAME.copy());
 
         ListIntegerCodec.encode(clientMessage, anchorDataListHolder.getAnchorPageList());
-        EntryListCodec.encode(clientMessage, anchorDataListHolder.getAnchorDataList(), DataCodec::encode, DataCodec::encode);
+        EntryListCodec.encode(clientMessage, anchorDataListHolder.getAnchorDataList(), DataCodec::encode, DataCodec::encodeNullable);
 
         clientMessage.add(END_FRAME.copy());
     }
@@ -44,7 +44,7 @@ public final class AnchorDataListHolderCodec {
         iterator.next();
 
         java.util.List<java.lang.Integer> anchorPageList = ListIntegerCodec.decode(iterator);
-        java.util.List<java.util.Map.Entry<com.hazelcast.internal.serialization.Data, com.hazelcast.internal.serialization.Data>> anchorDataList = EntryListCodec.decode(iterator, DataCodec::decode, DataCodec::decode);
+        java.util.List<java.util.Map.Entry<com.hazelcast.internal.serialization.Data, com.hazelcast.internal.serialization.Data>> anchorDataList = EntryListCodec.decode(iterator, DataCodec::decode, DataCodec::decodeNullable);
 
         fastForwardToEndFrame(iterator);
 

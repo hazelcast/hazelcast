@@ -25,7 +25,6 @@ import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.util.IterationType;
 import com.hazelcast.map.impl.query.QueryResultRow;
 import com.hazelcast.internal.serialization.Data;
-import com.hazelcast.query.impl.predicates.PagingPredicateImpl;
 
 import java.util.AbstractMap;
 import java.util.Collection;
@@ -42,8 +41,7 @@ public class MapEntriesWithPagingPredicateMessageTask
     @Override
     protected Object reduce(Collection<QueryResultRow> result) {
         List<Map.Entry<Data, Data>> entriesData = getSortedPageEntries(result);
-        PagingPredicateImpl pagingPredicate = (PagingPredicateImpl) getPredicate();
-        return new AbstractMap.SimpleImmutableEntry(pagingPredicate.getAnchorList(), entriesData);
+        return new AbstractMap.SimpleImmutableEntry(getPagingPredicate().getAnchorList(), entriesData);
     }
 
     @Override

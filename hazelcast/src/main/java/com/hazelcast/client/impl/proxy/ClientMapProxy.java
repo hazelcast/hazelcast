@@ -107,11 +107,9 @@ import com.hazelcast.core.ReadOnly;
 import com.hazelcast.internal.journal.EventJournalInitialSubscriberState;
 import com.hazelcast.internal.journal.EventJournalReader;
 import com.hazelcast.internal.monitor.impl.LocalMapStatsImpl;
-import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.util.CollectionUtil;
 import com.hazelcast.internal.util.IterationType;
-import com.hazelcast.internal.util.ResultSet;
 import com.hazelcast.internal.util.collection.ImmutableInflatableSet;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.EventJournalMapEvent;
@@ -123,7 +121,6 @@ import com.hazelcast.map.MapInterceptor;
 import com.hazelcast.map.MapPartitionLostEvent;
 import com.hazelcast.map.QueryCache;
 import com.hazelcast.map.impl.DataAwareEntryEvent;
-import com.hazelcast.map.impl.LazyMapEntry;
 import com.hazelcast.map.impl.ListenerAdapter;
 import com.hazelcast.map.impl.SimpleEntryView;
 import com.hazelcast.map.impl.querycache.subscriber.QueryCacheEndToEndProvider;
@@ -142,6 +139,8 @@ import com.hazelcast.ringbuffer.ReadResultSet;
 import com.hazelcast.ringbuffer.impl.ReadResultSetImpl;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.UnmodifiableLazyList;
+import com.hazelcast.spi.impl.UnmodifiableLazyObjectList;
+import com.hazelcast.spi.impl.UnmodifiableLazySet;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -1217,14 +1216,7 @@ public class ClientMapProxy<K, V> extends ClientProxy
         ClientMessage response = invoke(request);
         MapEntrySetCodec.ResponseParameters resultParameters = MapEntrySetCodec.decodeResponse(response);
 
-        ImmutableInflatableSet.ImmutableSetBuilder<Entry<K, V>> setBuilder =
-                ImmutableInflatableSet.newImmutableSetBuilder(resultParameters.response.size());
-        InternalSerializationService serializationService = getContext().getSerializationService();
-        for (Entry<Data, Data> row : resultParameters.response) {
-            LazyMapEntry<K, V> entry = new LazyMapEntry<>(row.getKey(), row.getValue(), serializationService);
-            setBuilder.add(entry);
-        }
-        return setBuilder.build();
+        return getEntriesAsImmutableLazySet(resultParameters.response);
     }
 
     @SuppressWarnings("unchecked")
@@ -1239,42 +1231,25 @@ public class ClientMapProxy<K, V> extends ClientProxy
         ClientMessage response = invokeWithPredicate(request, predicate);
         MapKeySetWithPredicateCodec.ResponseParameters resultParameters = MapKeySetWithPredicateCodec.decodeResponse(response);
 
-        ImmutableInflatableSet.ImmutableSetBuilder<K> setBuilder =
-                ImmutableInflatableSet.newImmutableSetBuilder(resultParameters.response.size());
-        for (Data data : resultParameters.response) {
-            K key = toObject(data);
-            setBuilder.add(key);
-        }
-        return setBuilder.build();
+        return (Set<K>) new UnmodifiableLazySet(resultParameters.response, getSerializationService());
     }
 
     @SuppressWarnings("unchecked")
-    private Set<K> keySetWithPagingPredicate(Predicate predicate) {
+    private Set keySetWithPagingPredicate(Predicate predicate) {
         PagingPredicateImpl pagingPredicate = unwrapPagingPredicate(predicate);
         pagingPredicate.setIterationType(IterationType.KEY);
 
-        PagingPredicateHolder pagingPredicateHolder = PagingPredicateHolder.of(pagingPredicate, getSerializationService());
+        PagingPredicateHolder pagingPredicateHolder = PagingPredicateHolder.of(predicate, getSerializationService());
         ClientMessage request = MapKeySetWithPagingPredicateCodec.encodeRequest(name, pagingPredicateHolder);
         ClientMessage response = invokeWithPredicate(request, predicate);
         MapKeySetWithPagingPredicateCodec.ResponseParameters resultParameters = MapKeySetWithPagingPredicateCodec
                 .decodeResponse(response);
 
-        if (resultParameters.response.isEmpty()) {
-            return (Set<K>) new ResultSet();
-        }
-
         SerializationService serializationService = getSerializationService();
-
-        int size = resultParameters.response.size();
-        List<Map.Entry> entries = new ArrayList<>(size);
-        for (int i = 0; i < size; i++) {
-            K key = serializationService.toObject(resultParameters.response.get(i));
-            entries.add(new AbstractMap.SimpleImmutableEntry(key, null));
-        }
 
         pagingPredicate.setAnchorList(resultParameters.anchorDataList.asAnchorList(serializationService));
 
-        return (Set<K>) new ResultSet(entries, IterationType.KEY);
+        return new UnmodifiableLazySet(resultParameters.response, serializationService);
     }
 
     @SuppressWarnings("unchecked")
@@ -1289,45 +1264,27 @@ public class ClientMapProxy<K, V> extends ClientProxy
         ClientMessage response = invokeWithPredicate(request, predicate);
         MapEntriesWithPredicateCodec.ResponseParameters resultParameters = MapEntriesWithPredicateCodec.decodeResponse(response);
 
-        ImmutableInflatableSet.ImmutableSetBuilder<Entry<K, V>> setBuilder =
-                ImmutableInflatableSet.newImmutableSetBuilder(resultParameters.response.size());
-        InternalSerializationService serializationService = getContext().getSerializationService();
-        for (Entry<Data, Data> row : resultParameters.response) {
-            LazyMapEntry<K, V> entry = new LazyMapEntry<>(row.getKey(), row.getValue(), serializationService);
-            setBuilder.add(entry);
-        }
-        return setBuilder.build();
+        return getEntriesAsImmutableLazySet(resultParameters.response);
+    }
+
+    private Set getEntriesAsImmutableLazySet(List<Entry<Data, Data>> entryDataList) {
+        return new UnmodifiableLazySet(entryDataList, getSerializationService());
     }
 
     private Set entrySetWithPagingPredicate(Predicate predicate) {
         PagingPredicateImpl pagingPredicate = unwrapPagingPredicate(predicate);
         pagingPredicate.setIterationType(IterationType.ENTRY);
 
-        PagingPredicateHolder pagingPredicateHolder = PagingPredicateHolder.of(pagingPredicate, getSerializationService());
+        PagingPredicateHolder pagingPredicateHolder = PagingPredicateHolder.of(predicate, getSerializationService());
         ClientMessage request = MapEntriesWithPagingPredicateCodec.encodeRequest(name, pagingPredicateHolder);
 
         ClientMessage response = invokeWithPredicate(request, predicate);
         MapEntriesWithPagingPredicateCodec.ResponseParameters resultParameters = MapEntriesWithPagingPredicateCodec
                 .decodeResponse(response);
 
-        if (resultParameters.response.isEmpty()) {
-            return new ResultSet();
-        }
+        pagingPredicate.setAnchorList(resultParameters.anchorDataList.asAnchorList(getSerializationService()));
 
-        SerializationService serializationService = getSerializationService();
-
-        int size = resultParameters.response.size();
-        List<Map.Entry> entries = new ArrayList<>(size);
-        for (int i = 0; i < size; i++) {
-            Entry<Data, Data> entryData = resultParameters.response.get(i);
-            K key = serializationService.toObject(entryData.getKey());
-            V value = serializationService.toObject(entryData.getValue());
-            entries.add(new AbstractMap.SimpleImmutableEntry(key, value));
-        }
-
-        pagingPredicate.setAnchorList(resultParameters.anchorDataList.asAnchorList(serializationService));
-
-        return new ResultSet(entries, IterationType.ENTRY);
+        return getEntriesAsImmutableLazySet(resultParameters.response);
     }
 
     @Override
@@ -1341,7 +1298,7 @@ public class ClientMapProxy<K, V> extends ClientProxy
         ClientMessage response = invokeWithPredicate(request, predicate);
         MapValuesWithPredicateCodec.ResponseParameters resultParameters = MapValuesWithPredicateCodec.decodeResponse(response);
 
-        return new UnmodifiableLazyList<>(resultParameters.response, getSerializationService());
+        return (Collection<V>) new UnmodifiableLazyObjectList(resultParameters.response, getSerializationService());
     }
 
     private ClientMessage invokeWithPredicate(ClientMessage request, Predicate predicate) {
@@ -1360,7 +1317,7 @@ public class ClientMapProxy<K, V> extends ClientProxy
         PagingPredicateImpl pagingPredicate = unwrapPagingPredicate(predicate);
         pagingPredicate.setIterationType(IterationType.VALUE);
 
-        PagingPredicateHolder pagingPredicateHolder = PagingPredicateHolder.of(pagingPredicate, getSerializationService());
+        PagingPredicateHolder pagingPredicateHolder = PagingPredicateHolder.of(predicate, getSerializationService());
         ClientMessage request = MapValuesWithPagingPredicateCodec.encodeRequest(name, pagingPredicateHolder);
 
         ClientMessage response = invokeWithPredicate(request, predicate);
@@ -1369,20 +1326,9 @@ public class ClientMapProxy<K, V> extends ClientProxy
 
         SerializationService serializationService = getSerializationService();
 
-        if (resultParameters.response.isEmpty()) {
-            return (Collection<V>) new ResultSet();
-        }
-
-        int size = resultParameters.response.size();
-        List<Map.Entry> entries = new ArrayList<>(size);
-        for (int i = 0; i < size; i++) {
-            K key = serializationService.toObject(resultParameters.response.get(i));
-            entries.add(new AbstractMap.SimpleImmutableEntry(key, null));
-        }
-
         pagingPredicate.setAnchorList(resultParameters.anchorDataList.asAnchorList(serializationService));
 
-        return (Set<V>) new ResultSet(entries, IterationType.VALUE);
+        return (Collection<V>) new UnmodifiableLazyObjectList(resultParameters.response, serializationService);
     }
 
     @Override

@@ -24,7 +24,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.fastFor
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
-@Generated("57840d95e0c8b2a670c147ed80e6dccf")
+@Generated("05de6aa2b6cc1873abec82b72f8aa859")
 public final class PagingPredicateHolderCodec {
     private static final int PAGE_SIZE_FIELD_OFFSET = 0;
     private static final int PAGE_FIELD_OFFSET = PAGE_SIZE_FIELD_OFFSET + INT_SIZE_IN_BYTES;
@@ -46,6 +46,7 @@ public final class PagingPredicateHolderCodec {
         AnchorDataListHolderCodec.encode(clientMessage, pagingPredicateHolder.getAnchorDataListHolder());
         CodecUtil.encodeNullable(clientMessage, pagingPredicateHolder.getPredicateData(), DataCodec::encode);
         CodecUtil.encodeNullable(clientMessage, pagingPredicateHolder.getComparatorData(), DataCodec::encode);
+        CodecUtil.encodeNullable(clientMessage, pagingPredicateHolder.getPartitionKeyData(), DataCodec::encode);
 
         clientMessage.add(END_FRAME.copy());
     }
@@ -62,9 +63,10 @@ public final class PagingPredicateHolderCodec {
         com.hazelcast.client.impl.protocol.codec.holder.AnchorDataListHolder anchorDataListHolder = AnchorDataListHolderCodec.decode(iterator);
         com.hazelcast.internal.serialization.Data predicateData = CodecUtil.decodeNullable(iterator, DataCodec::decode);
         com.hazelcast.internal.serialization.Data comparatorData = CodecUtil.decodeNullable(iterator, DataCodec::decode);
+        com.hazelcast.internal.serialization.Data partitionKeyData = CodecUtil.decodeNullable(iterator, DataCodec::decode);
 
         fastForwardToEndFrame(iterator);
 
-        return new com.hazelcast.client.impl.protocol.codec.holder.PagingPredicateHolder(anchorDataListHolder, predicateData, comparatorData, pageSize, page, iterationTypeId);
+        return new com.hazelcast.client.impl.protocol.codec.holder.PagingPredicateHolder(anchorDataListHolder, predicateData, comparatorData, pageSize, page, iterationTypeId, partitionKeyData);
     }
 }

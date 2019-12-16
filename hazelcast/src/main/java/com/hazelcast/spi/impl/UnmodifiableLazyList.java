@@ -25,11 +25,13 @@ import com.hazelcast.internal.util.UnmodifiableListIterator;
 
 import java.io.IOException;
 import java.util.AbstractList;
+import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
+import java.util.Map;
 import java.util.function.Predicate;
 
 import static com.hazelcast.internal.util.EmptyStatement.ignore;
@@ -187,6 +189,18 @@ public class UnmodifiableLazyList<E> extends AbstractList<E> implements Identifi
                     ignore(e);
                 }
                 return item;
+            } else if (o instanceof Map.Entry) {
+                Map.Entry entry = (Map.Entry) o;
+                Object key = serializationService.toObject(entry.getKey());
+                Object value = serializationService.toObject(entry.getValue());
+                AbstractMap.SimpleImmutableEntry item = new AbstractMap.SimpleImmutableEntry(key, value);
+                try {
+                    listIterator.set(item);
+                } catch (Exception e) {
+                    ignore(e);
+                }
+
+                return (E) item;
             }
             return (E) o;
         }

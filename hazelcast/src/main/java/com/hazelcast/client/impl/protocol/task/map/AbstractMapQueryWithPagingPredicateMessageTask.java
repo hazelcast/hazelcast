@@ -33,8 +33,10 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
+import static com.hazelcast.query.impl.predicates.PredicateUtils.unwrapPagingPredicate;
+
 public abstract class AbstractMapQueryWithPagingPredicateMessageTask<P> extends DefaultMapQueryMessageTask<P> {
-    private PagingPredicateImpl pagingPredicate;
+    private Predicate predicate;
 
     protected AbstractMapQueryWithPagingPredicateMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -48,17 +50,21 @@ public abstract class AbstractMapQueryWithPagingPredicateMessageTask<P> extends 
         result.forEach(
                 row -> accumulatedList.add(new CachedQueryEntry(serializationService, row.getKey(), row.getValue(), null)));
 
-        PagingPredicateImpl pagingPredicateImpl = (PagingPredicateImpl) getPredicate();
+        PagingPredicateImpl pagingPredicateImpl = getPagingPredicate();
 
         return SortingUtil.getSortedSubList(accumulatedList, pagingPredicateImpl);
     }
 
     @Override
     protected Predicate getPredicate() {
-        if (pagingPredicate == null) {
-            pagingPredicate = getPagingPredicateHolder().asPagingPredicate(serializationService);
+        if (predicate == null) {
+            predicate = getPagingPredicateHolder().asPredicate(serializationService);
         }
-        return pagingPredicate;
+        return predicate;
+    }
+
+    protected PagingPredicateImpl getPagingPredicate() {
+        return unwrapPagingPredicate(getPredicate());
     }
 
     protected abstract PagingPredicateHolder getPagingPredicateHolder();

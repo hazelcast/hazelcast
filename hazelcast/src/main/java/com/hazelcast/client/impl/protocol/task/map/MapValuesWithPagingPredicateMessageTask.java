@@ -26,7 +26,6 @@ import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.util.IterationType;
 import com.hazelcast.map.impl.query.QueryResultRow;
 import com.hazelcast.internal.serialization.Data;
-import com.hazelcast.query.impl.predicates.PagingPredicateImpl;
 
 import java.util.AbstractMap;
 import java.util.ArrayList;
@@ -48,8 +47,7 @@ public class MapValuesWithPagingPredicateMessageTask
         List<Data> valueList = new ArrayList<>(entriesData.size());
         entriesData.forEach(entry -> valueList.add(entry.getValue()));
 
-        PagingPredicateImpl pagingPredicate = (PagingPredicateImpl) getPredicate();
-        return new AbstractMap.SimpleImmutableEntry(pagingPredicate.getAnchorList(), valueList);
+        return new AbstractMap.SimpleImmutableEntry(getPagingPredicate().getAnchorList(), valueList);
     }
 
     @Override

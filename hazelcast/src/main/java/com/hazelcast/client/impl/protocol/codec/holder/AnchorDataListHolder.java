@@ -45,8 +45,7 @@ public class AnchorDataListHolder {
     public <K, V> List<Map.Entry<Integer, Map.Entry<K, V>>> asAnchorList(SerializationService serializationService) {
         List<Map.Entry<Integer, Map.Entry<K, V>>> anchorObjectList = new ArrayList<>(anchorDataList.size());
         Iterator<Map.Entry<Data, Data>> dataEntryIterator = anchorDataList.iterator();
-        for (Iterator<Integer> pageNumberIt = anchorPageList.iterator(); pageNumberIt.hasNext(); ) {
-            Integer pageNumber = pageNumberIt.next();
+        for (Integer pageNumber : anchorPageList) {
             Map.Entry<Data, Data> dataEntry = dataEntryIterator.next();
             K key = serializationService.toObject(dataEntry.getKey());
             V value = serializationService.toObject(dataEntry.getValue());
