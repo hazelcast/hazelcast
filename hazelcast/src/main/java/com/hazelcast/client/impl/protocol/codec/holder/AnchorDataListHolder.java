@@ -24,6 +24,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 public class AnchorDataListHolder {
     private List<Integer> anchorPageList;
@@ -70,4 +71,20 @@ public class AnchorDataListHolder {
         return new AnchorDataListHolder(pageList, anchorDataList);
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        AnchorDataListHolder that = (AnchorDataListHolder) o;
+        return anchorPageList.equals(that.anchorPageList) && anchorDataList.equals(that.anchorDataList);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(anchorPageList, anchorDataList);
+    }
 }

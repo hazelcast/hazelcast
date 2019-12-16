@@ -29,6 +29,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 public class PagingPredicateHolder {
     private AnchorDataListHolder anchorDataListHolder;
@@ -143,4 +144,23 @@ public class PagingPredicateHolder {
                 pagingPredicate.getPage(), pagingPredicate.getIterationType().getId(), partitionKeyData);
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        PagingPredicateHolder that = (PagingPredicateHolder) o;
+        return pageSize == that.pageSize && page == that.page && iterationTypeId == that.iterationTypeId && Objects
+                .equals(anchorDataListHolder, that.anchorDataListHolder) && predicateData.equals(that.predicateData)
+                && comparatorData.equals(that.comparatorData) && partitionKeyData.equals(that.partitionKeyData);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects
+                .hash(anchorDataListHolder, predicateData, comparatorData, pageSize, page, iterationTypeId, partitionKeyData);
+    }
 }
