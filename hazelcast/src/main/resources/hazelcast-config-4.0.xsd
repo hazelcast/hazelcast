@@ -3921,6 +3921,15 @@
                 </xs:annotation>
             </xs:element>
 
+            <xs:element name="epoch-start" type="xs:long" minOccurs="0" default="1514764800000">
+                <xs:annotation>
+                    <xs:documentation>
+                        Sets the offset of timestamp component. Time unit is milliseconds, default is 1514764800000
+                        (1.1.2018 0:00 UTC).
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            
             <xs:element name="id-offset" type="xs:long" minOccurs="0" default="0">
                 <xs:annotation>
                     <xs:documentation>
@@ -3951,6 +3960,52 @@
                 </xs:annotation>
             </xs:element>
 
+            <xs:element name="bits-timestamp" minOccurs="0" default="41">
+                <xs:annotation>
+                    <xs:documentation>
+                        Sets the timestamp component bit length, default 41 bits.
+                    </xs:documentation>
+                </xs:annotation>
+                <xs:simpleType>
+                    <xs:restriction base="xs:int">
+                        <xs:minInclusive value="1" />
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:element>
+
+            <xs:element name="bits-sequence" minOccurs="0" default="6">
+                <xs:annotation>
+                    <xs:documentation>
+                        Sets the sequence component bit length, default 6 bits.
+                    </xs:documentation>
+                </xs:annotation>
+                <xs:simpleType>
+                    <xs:restriction base="xs:int">
+                        <xs:minInclusive value="1" />
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:element>
+
+            <xs:element name="bits-node-id" minOccurs="0" default="16">
+                <xs:annotation>
+                    <xs:documentation>
+                        Sets the node id component bit length, default 16 bits.
+                    </xs:documentation>
+                </xs:annotation>
+                <xs:simpleType>
+                    <xs:restriction base="xs:int">
+                        <xs:minInclusive value="1" />
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:element>
+
+            <xs:element name="allowed-future-millis" type="xs:long" minOccurs="0" default="15000">
+                <xs:annotation>
+                    <xs:documentation>
+                        Sets how far to the future is it allowed to go to generate IDs, default 15 seconds.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
 
             <xs:element name="statistics-enabled" type="xs:boolean" minOccurs="0" maxOccurs="1" default="true">
                 <xs:annotation>

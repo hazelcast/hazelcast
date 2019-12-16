@@ -1918,6 +1918,9 @@
 
             This setting pertains only to newId() calls made on the member that configured it.
 
+        * <epoch-start>:
+            Sets the timestamp component bit length, default 41 bits.
+            
         * <id-offset>:
             Sets the offset that will be added to the returned IDs. Default value is 0. Setting might be
             useful when migrating from IdGenerator, default value works for all green-field projects.
@@ -1938,14 +1941,31 @@
             You create cluster B and for some time both will generate IDs and you want to have them unique.
             In this case, configure node ID offset for generators on cluster B.
 
+        * <bits-timestamp>:
+            Sets the timestamp component bit length, default 41 bits.
+                
+        * <bits-sequence>:
+            Sets the sequence component bit length, default 6 bits.
+            
+        * <bits-node-id>:
+            Sets the node id component bit length, default 16 bits.
+            
+        * <allowed-future-millis>:
+            Sets how far to the future is it allowed to go to generate IDs, default 15 seconds.
+            
         * <statistics-enabled>:
             When you enable it, you can retrieve the Flake ID generators statistics. Its default value is true.
     -->
     <flake-id-generator name="default">
         <prefetch-count>100</prefetch-count>
         <prefetch-validity-millis>600000</prefetch-validity-millis>
+        <epoch-start>1514764800000</epoch-start>
         <id-offset>0</id-offset>
         <node-id-offset>0</node-id-offset>
+        <bits-timestamp>41</bits-timestamp>
+        <bits-sequence>6</bits-sequence>
+        <bits-node-id>16</bits-node-id>
+        <allowed-future-millis>15000</allowed-future-millis>
         <statistics-enabled>true</statistics-enabled>
     </flake-id-generator>
 

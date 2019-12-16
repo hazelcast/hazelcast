@@ -822,8 +822,10 @@
                 </hz:encryption-at-rest>
             </hz:hot-restart-persistence>
 
-            <hz:flake-id-generator name="flakeIdGenerator*" prefetchCount="3" prefetchValidityMillis="10" idOffset="20"
-                                   nodeIdOffset="30" statistics-enabled="false" />
+            <hz:flake-id-generator name="flakeIdGenerator*" prefetchCount="3" prefetchValidityMillis="10"
+                                   epochStart="1514764800001" idOffset="20" nodeIdOffset="30"
+                                   bitsTimestamp="11" bitsSequence="22" bitsNodeId="33" allowedFutureMillis="20000"
+                                   statistics-enabled="false" />
 
             <hz:crdt-replication max-concurrent-replication-targets="10" replication-period-millis="2000" />
 

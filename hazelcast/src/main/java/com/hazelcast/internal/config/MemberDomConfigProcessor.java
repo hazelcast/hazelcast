@@ -1072,10 +1072,20 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
                 generatorConfig.setPrefetchCount(Integer.parseInt(value));
             } else if ("prefetch-validity-millis".equalsIgnoreCase(nodeName)) {
                 generatorConfig.setPrefetchValidityMillis(Long.parseLong(value));
+            } else if ("epoch-start".equalsIgnoreCase(nodeName)) {
+                generatorConfig.setEpochStart(Long.parseLong(value));
             } else if ("id-offset".equalsIgnoreCase(nodeName)) {
                 generatorConfig.setIdOffset(Long.parseLong(value));
             } else if ("node-id-offset".equalsIgnoreCase(nodeName)) {
                 generatorConfig.setNodeIdOffset(Long.parseLong(value));
+            } else if ("bits-timestamp".equalsIgnoreCase(nodeName)) {
+                generatorConfig.setBitsTimestamp(Integer.parseInt(value));
+            } else if ("bits-sequence".equalsIgnoreCase(nodeName)) {
+                generatorConfig.setBitsSequence(Integer.parseInt(value));
+            } else if ("bits-node-id".equalsIgnoreCase(nodeName)) {
+                generatorConfig.setBitsNodeId(Integer.parseInt(value));
+            } else if ("allowed-future-millis".equalsIgnoreCase(nodeName)) {
+                generatorConfig.setAllowedFutureMillis(Long.parseLong(value));
             } else if ("statistics-enabled".equals(nodeName)) {
                 generatorConfig.setStatisticsEnabled(getBooleanValue(value));
             }

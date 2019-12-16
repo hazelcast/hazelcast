@@ -3273,6 +3273,16 @@
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
+        <xs:attribute name="epochStart" type="xs:long" default="1514764800000" use="optional">
+            <xs:annotation>
+                <xs:documentation>
+                    Sets the offset of timestamp component. Time unit is milliseconds, default is 1514764800000 
+                    (1.1.2018 0:00 UTC).
+
+                    This setting pertains only to newId() calls made on the member that configured it.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
         <xs:attribute name="idOffset" type="xs:long" default="0" use="optional">
             <xs:annotation>
                 <xs:documentation>
@@ -3298,6 +3308,49 @@
                     Might be useful in A/B deployment scenarios where you have cluster A which you want to upgrade.
                     You create cluster B and for some time both will generate IDs and you want to have them unique.
                     In this case, configure node ID offset for generators on cluster B.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="bitsTimestamp" default="41" use="optional">
+            <xs:annotation>
+                <xs:documentation>
+                    Sets the timestamp component bit length, default 41 bits.
+                </xs:documentation>
+            </xs:annotation>
+            <xs:simpleType>
+                <xs:restriction base="xs:int">
+                    <xs:minInclusive value="1" />
+                </xs:restriction>
+            </xs:simpleType>
+        </xs:attribute>
+        <xs:attribute name="bitsSequence" default="6" use="optional">
+            <xs:annotation>
+                <xs:documentation>
+                    Sets the sequence component bit length, default 6 bits.
+                </xs:documentation>
+            </xs:annotation>
+            <xs:simpleType>
+                <xs:restriction base="xs:int">
+                    <xs:minInclusive value="1" />
+                </xs:restriction>
+            </xs:simpleType>
+        </xs:attribute>
+        <xs:attribute name="bitsNodeId" default="16" use="optional">
+            <xs:annotation>
+                <xs:documentation>
+                    Sets the node id component bit length, default 16 bits.
+                </xs:documentation>
+            </xs:annotation>
+            <xs:simpleType>
+                <xs:restriction base="xs:int">
+                    <xs:minInclusive value="1" />
+                </xs:restriction>
+            </xs:simpleType>
+        </xs:attribute>
+        <xs:attribute name="allowedFutureMillis" type="xs:long" default="15000" use="optional">
+            <xs:annotation>
+                <xs:documentation>
+                    Sets how far to the future is it allowed to go to generate IDs, default 15 seconds.
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>

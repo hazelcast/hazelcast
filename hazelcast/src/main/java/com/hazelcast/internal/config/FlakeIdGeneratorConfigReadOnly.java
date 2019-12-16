@@ -36,9 +36,14 @@ public class FlakeIdGeneratorConfigReadOnly extends FlakeIdGeneratorConfig {
     public FlakeIdGeneratorConfig setPrefetchCount(int prefetchCount) {
         throw throwReadOnly();
     }
-
+    
     @Override
     public FlakeIdGeneratorConfig setPrefetchValidityMillis(long prefetchValidityMs) {
+        throw throwReadOnly();
+    }
+
+    @Override
+    public FlakeIdGeneratorConfig setEpochStart(long epochStart) {
         throw throwReadOnly();
     }
 
@@ -49,6 +54,21 @@ public class FlakeIdGeneratorConfigReadOnly extends FlakeIdGeneratorConfig {
 
     @Override
     public FlakeIdGeneratorConfig setNodeIdOffset(long nodeIdOffset) {
+        throw throwReadOnly();
+    }
+
+    @Override
+    public FlakeIdGeneratorConfig setBitsTimestamp(int bitsTimestamp) {
+        throw throwReadOnly();
+    }
+
+    @Override
+    public FlakeIdGeneratorConfig setBitsSequence(int bitsSequence) {
+        throw throwReadOnly();
+    }
+
+    @Override
+    public FlakeIdGeneratorConfig setBitsNodeId(int bitsNodeId) {
         throw throwReadOnly();
     }
 
