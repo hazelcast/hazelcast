@@ -66,7 +66,7 @@ public class ManagementCenterService {
     private volatile ManagementCenterEventListener eventListener;
     private volatile String lastMCConfigETag;
     private volatile long lastTMSUpdateNanos;
-    private volatile long lastMCEventsPollNanos;
+    private volatile long lastMCEventsPollNanos = System.nanoTime();
 
     public ManagementCenterService(HazelcastInstanceImpl instance) {
         this.instance = instance;
