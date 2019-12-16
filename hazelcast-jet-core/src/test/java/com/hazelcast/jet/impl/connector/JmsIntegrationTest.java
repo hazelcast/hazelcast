@@ -270,10 +270,7 @@ public class JmsIntegrationTest extends PipelineTestSupport {
 
         Sink<String> sink = Sinks.<String>jmsQueueBuilder(() -> broker.createConnectionFactory())
                 .connectionFn(ConnectionFactory::createConnection)
-                .sessionFn(connection -> connection.createSession(false, AUTO_ACKNOWLEDGE))
                 .messageFn(Session::createTextMessage)
-                .sendFn(MessageProducer::send)
-                .flushFn(ConsumerEx.noop())
                 .destinationName(destinationName)
                 .build();
 
@@ -314,7 +311,6 @@ public class JmsIntegrationTest extends PipelineTestSupport {
 
         Sink<String> sink = Sinks.<String>jmsTopicBuilder(() -> broker.createConnectionFactory())
                 .connectionParams(null, null)
-                .sessionParams(false, AUTO_ACKNOWLEDGE)
                 .destinationName(destinationName)
                 .build();
 

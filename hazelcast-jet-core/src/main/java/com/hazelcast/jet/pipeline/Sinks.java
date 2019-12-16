@@ -787,9 +787,8 @@ public final class Sinks {
 
     /**
      * Convenience for {@link #jmsQueueBuilder(SupplierEx)}. Creates a
-     * connection without any authentication parameters and uses non-transacted
-     * sessions with {@code Session.AUTO_ACKNOWLEDGE} mode. If a received item
-     * is not an instance of {@code javax.jms.Message}, the sink wraps {@code
+     * connection without any authentication parameters. If a received item is
+     * not an instance of {@code javax.jms.Message}, the sink wraps {@code
      * item.toString()} into a {@link javax.jms.TextMessage}.
      *
      * @param factorySupplier supplier to obtain JMS connection factory
@@ -807,12 +806,13 @@ public final class Sinks {
 
     /**
      * Returns a builder object that offers a step-by-step fluent API to build
-     * a custom JMS queue sink for the Pipeline API. See javadoc on {@link
+     * a custom JMS queue sink for the Pipeline API. See javadoc for {@link
      * JmsSinkBuilder} methods for more details.
      * <p>
-     * Behavior on job restart: the processor is stateless. If the job is
-     * restarted, duplicate events can occur. If you need exactly-once behavior,
-     * you must ensure idempotence on the application level.
+     * Behavior on job restart: the processor is stateless. Items are written
+     * in auto-acknowledge mode. If the job is restarted, duplicate events can
+     * occur, giving you at-least-once guarantee. If you need exactly-once
+     * behavior, you must ensure idempotence on the consumer end.
      * <p>
      * IO failures should be handled by the JMS provider. If any JMS operation
      * throws an exception, the job will fail. Most of the providers offer a
@@ -854,9 +854,10 @@ public final class Sinks {
      * a custom JMS topic sink for the Pipeline API. See javadoc on {@link
      * JmsSinkBuilder} methods for more details.
      * <p>
-     * Behavior on job restart: the processor is stateless. If the job is
-     * restarted, duplicate events can occur. If you need exactly-once behavior,
-     * you must ensure idempotence on the application level.
+     * Behavior on job restart: the processor is stateless. Items are written
+     * in auto-acknowledge mode. If the job is restarted, duplicate events can
+     * occur, giving you at-least-once guarantee. If you need exactly-once
+     * behavior, you must ensure idempotence on the consumer end.
      * <p>
      * IO failures should be handled by the JMS provider. If any JMS operation
      * throws an exception, the job will fail. Most of the providers offer a

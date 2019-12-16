@@ -16,9 +16,7 @@
 
 package com.hazelcast.jet.pipeline;
 
-import com.hazelcast.function.BiConsumerEx;
 import com.hazelcast.function.BiFunctionEx;
-import com.hazelcast.function.ConsumerEx;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.function.SupplierEx;
 import com.hazelcast.jet.impl.connector.WriteJmsP;
@@ -27,7 +25,6 @@ import javax.annotation.Nonnull;
 import javax.jms.Connection;
 import javax.jms.ConnectionFactory;
 import javax.jms.Message;
-import javax.jms.MessageProducer;
 import javax.jms.Session;
 
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
@@ -46,15 +43,10 @@ public final class JmsSinkBuilder<T> {
     private final boolean isTopic;
 
     private FunctionEx<ConnectionFactory, Connection> connectionFn;
-    private FunctionEx<Connection, Session> sessionFn;
     private BiFunctionEx<Session, T, Message> messageFn;
-    private BiConsumerEx<MessageProducer, Message> sendFn;
-    private ConsumerEx<Session> flushFn;
 
     private String username;
     private String password;
-    private boolean transacted;
-    private int acknowledgeMode = Session.AUTO_ACKNOWLEDGE;
     private String destinationName;
 
     /**
@@ -93,34 +85,6 @@ public final class JmsSinkBuilder<T> {
     }
 
     /**
-     * Sets the session parameters. If {@code sessionFn} is provided, these
-     * parameters are ignored.
-     *
-     * @param transacted       if true, marks the session as transacted.
-     *                         Default value is false.
-     * @param acknowledgeMode  sets the acknowledge mode of the session,
-     *                         Default value is {@code Session.AUTO_ACKNOWLEDGE}
-     */
-    public JmsSinkBuilder<T> sessionParams(boolean transacted, int acknowledgeMode) {
-        this.transacted = transacted;
-        this.acknowledgeMode = acknowledgeMode;
-        return this;
-    }
-
-    /**
-     * Sets the function which creates a session from a connection.
-     * <p>
-     * If not provided, the builder creates a function which uses {@code
-     * Connection#createSession(boolean transacted, int acknowledgeMode)} to
-     * create the session. See {@link #sessionParams(boolean, int)}.
-     */
-    public JmsSinkBuilder<T> sessionFn(@Nonnull FunctionEx<Connection, Session> sessionFn) {
-        checkSerializable(sessionFn, "sessionFn");
-        this.sessionFn = sessionFn;
-        return this;
-    }
-
-    /**
      * Sets the name of the destination.
      */
     public JmsSinkBuilder<T> destinationName(@Nonnull String destinationName) {
@@ -142,61 +106,27 @@ public final class JmsSinkBuilder<T> {
     }
 
     /**
-     * Sets the function which sends the message via message producer.
-     * <p>
-     * If not provided, the builder creates a function which sends the message via
-     * {@code MessageProducer#send(Message message)}.
-     */
-    public JmsSinkBuilder<T> sendFn(BiConsumerEx<MessageProducer, Message> sendFn) {
-        checkSerializable(sendFn, "sendFn");
-        this.sendFn = sendFn;
-        return this;
-    }
-
-    /**
-     * Sets the function which flushes the session after a batch of messages is
-     * sent.
-     * <p>
-     * If not provided, the builder creates a no-op consumer.
-     */
-    public JmsSinkBuilder<T> flushFn(ConsumerEx<Session> flushFn) {
-        checkSerializable(flushFn, "flushFn");
-        this.flushFn = flushFn;
-        return this;
-    }
-
-    /**
      * Creates and returns the JMS {@link Sink} with the supplied components.
      */
     public Sink<T> build() {
         String usernameLocal = username;
         String passwordLocal = password;
-        boolean transactedLocal = transacted;
-        int acknowledgeModeLocal = acknowledgeMode;
 
         checkNotNull(destinationName);
         if (connectionFn == null) {
             connectionFn = factory -> factory.createConnection(usernameLocal, passwordLocal);
         }
-        if (sessionFn == null) {
-            sessionFn = connection -> connection.createSession(transactedLocal, acknowledgeModeLocal);
-        }
         if (messageFn == null) {
             messageFn = (session, item) ->
                     item instanceof Message ? (Message) item : session.createTextMessage(item.toString());
         }
-        if (sendFn == null) {
-            sendFn = MessageProducer::send;
-        }
-        if (flushFn == null) {
-            flushFn = ConsumerEx.noop();
-        }
 
         FunctionEx<ConnectionFactory, Connection> connectionFnLocal = connectionFn;
+        @SuppressWarnings("UnnecessaryLocalVariable") // it's necessary to not capture this in the lambda
         SupplierEx<ConnectionFactory> factorySupplierLocal = factorySupplier;
         SupplierEx<Connection> newConnectionFn = () -> connectionFnLocal.apply(factorySupplierLocal.get());
         return Sinks.fromProcessor(sinkName(),
-                WriteJmsP.supplier(newConnectionFn, sessionFn, messageFn, sendFn, flushFn, destinationName, isTopic));
+                WriteJmsP.supplier(destinationName, newConnectionFn, messageFn, isTopic));
     }
 
     private String sinkName() {

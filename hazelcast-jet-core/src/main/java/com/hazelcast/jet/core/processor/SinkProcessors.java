@@ -37,7 +37,6 @@ import com.hazelcast.map.EntryProcessor;
 import javax.annotation.Nonnull;
 import javax.jms.Connection;
 import javax.jms.Message;
-import javax.jms.MessageProducer;
 import javax.jms.Session;
 import java.io.BufferedWriter;
 import java.io.OutputStreamWriter;
@@ -296,14 +295,11 @@ public final class SinkProcessors {
      */
     @Nonnull
     public static <T> ProcessorMetaSupplier writeJmsQueueP(
+            @Nonnull String queueName,
             @Nonnull SupplierEx<? extends Connection> newConnectionFn,
-            @Nonnull FunctionEx<? super Connection, ? extends Session> newSessionFn,
-            @Nonnull BiFunctionEx<? super Session, ? super T, ? extends Message> messageFn,
-            @Nonnull BiConsumerEx<? super MessageProducer, ? super Message> sendFn,
-            @Nonnull ConsumerEx<? super Session> flushFn,
-            @Nonnull String name
+            @Nonnull BiFunctionEx<? super Session, ? super T, ? extends Message> messageFn
     ) {
-        return WriteJmsP.supplier(newConnectionFn, newSessionFn, messageFn, sendFn, flushFn, name, false);
+        return WriteJmsP.supplier(queueName, newConnectionFn, messageFn, false);
     }
 
     /**
@@ -311,14 +307,11 @@ public final class SinkProcessors {
      */
     @Nonnull
     public static <T> ProcessorMetaSupplier writeJmsTopicP(
+            @Nonnull String topicName,
             @Nonnull SupplierEx<? extends Connection> newConnectionFn,
-            @Nonnull FunctionEx<? super Connection, ? extends Session> newSessionFn,
-            @Nonnull BiFunctionEx<? super Session, ? super T, ? extends Message> messageFn,
-            @Nonnull BiConsumerEx<? super MessageProducer, ? super Message> sendFn,
-            @Nonnull ConsumerEx<? super Session> flushFn,
-            @Nonnull String name
+            @Nonnull BiFunctionEx<? super Session, ? super T, ? extends Message> messageFn
     ) {
-        return WriteJmsP.supplier(newConnectionFn, newSessionFn, messageFn, sendFn, flushFn, name, true);
+        return WriteJmsP.supplier(topicName, newConnectionFn, messageFn, true);
     }
 
     /**
