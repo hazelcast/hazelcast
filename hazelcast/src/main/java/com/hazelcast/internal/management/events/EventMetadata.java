@@ -18,6 +18,11 @@ package com.hazelcast.internal.management.events;
 
 import com.hazelcast.internal.json.JsonObject;
 
+import java.util.Map;
+
+import static java.util.Arrays.stream;
+import static java.util.stream.Collectors.toMap;
+
 public final class EventMetadata {
     private final EventType type;
     private final long timestamp;
@@ -40,6 +45,9 @@ public final class EventMetadata {
         WAN_SYNC_IGNORED(10),
         WAN_CONFIGURATION_EXTENDED(11);
 
+        private static final Map<Integer, EventType> CODE_MAPPING = stream(EventType.values())
+                .collect(toMap(EventType::getCode, eventType -> eventType));
+
         private final int code;
 
         EventType(int code) {
@@ -48,6 +56,24 @@ public final class EventMetadata {
 
         public int getCode() {
             return code;
+        }
+
+        @SuppressWarnings("unused")
+        // used by Management Center
+        public static EventType withCode(int code) {
+            EventType type = CODE_MAPPING.get(code);
+            if (type == null) {
+                throw new IllegalArgumentException("No EventType with code " + code);
+            }
+            return type;
+        }
+
+        @Override
+        public String toString() {
+            return "EventType{"
+                    + "name=" + name()
+                    + ", code=" + code
+                    + '}';
         }
     }
 
