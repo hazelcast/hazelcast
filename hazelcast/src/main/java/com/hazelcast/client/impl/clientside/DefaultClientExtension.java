@@ -177,10 +177,10 @@ public class DefaultClientExtension implements ClientExtension {
     @Override
     public NearCacheManager createNearCacheManager() {
         SerializationService ss = client.getSerializationService();
-        TaskScheduler es = client.getClientExecutionService();
+        TaskScheduler taskScheduler = client.getTaskScheduler();
         ClassLoader classLoader = client.getClientConfig().getClassLoader();
         HazelcastProperties properties = client.getProperties();
 
-        return new DefaultNearCacheManager(ss, es, classLoader, properties);
+        return new DefaultNearCacheManager(ss, taskScheduler, classLoader, properties);
     }
 }

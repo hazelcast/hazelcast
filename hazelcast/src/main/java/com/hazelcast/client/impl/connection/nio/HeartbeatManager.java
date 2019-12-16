@@ -52,12 +52,12 @@ public class HeartbeatManager implements Runnable {
         this.logger = client.getLoggingService().getLogger(HeartbeatManager.class);
         ClientIcmpPingConfig icmpPingConfig = client.getClientConfig().getNetworkConfig().getClientIcmpPingConfig();
         this.clientICMPManager = new ClientICMPManager(icmpPingConfig,
-                (ClientExecutionServiceImpl) client.getClientExecutionService(),
+                (ClientExecutionServiceImpl) client.getTaskScheduler(),
                 client.getLoggingService(), clientConnectionManager, this);
     }
 
     public void start() {
-        client.getClientExecutionService()
+        client.getTaskScheduler()
                 .scheduleWithRepetition(this, heartbeatInterval, heartbeatInterval, MILLISECONDS);
         clientICMPManager.start();
     }

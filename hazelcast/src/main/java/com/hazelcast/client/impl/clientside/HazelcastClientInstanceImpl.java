@@ -724,7 +724,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         return clusterService;
     }
 
-    public TaskScheduler getClientExecutionService() {
+    public TaskScheduler getTaskScheduler() {
         return executionService;
     }
 
