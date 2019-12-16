@@ -266,7 +266,7 @@ public abstract class SplitBrainTestSupport extends HazelcastTestSupport {
         // indicate that we need to unblacklist addresses from the joiner when split-brain will be healed
         unblacklistHint = true;
         // create a new Hazelcast instance which has blocked addresses blacklisted in its joiner
-        return factory.newHazelcastInstance(config(), addressesToBlock.toArray(new Address[0]));
+        return factory.newHazelcastInstance(newMemberAddress, config(), addressesToBlock.toArray(new Address[0]));
     }
 
     private void validateBrainsConfig(int[] clusterTopology) {
