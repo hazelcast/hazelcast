@@ -31,9 +31,9 @@ import org.junit.runner.RunWith;
 import javax.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -49,7 +49,6 @@ public class ClientClusterDiscoveryServiceTest {
     }
 
     private LifecycleService lifecycleService = new AlwaysUpLifecycleService();
-    private MutableInteger visitedIndex = new MutableInteger(-1);
 
     @Test
     public void test_oneIteration() {
@@ -119,24 +118,20 @@ public class ClientClusterDiscoveryServiceTest {
         }
         ClusterDiscoveryService discoveryService = new ClusterDiscoveryService(arrayList, 1, lifecycleService);
 
-        assertEquals(arrayList.get(2), searchAndGetNextCluster(2, discoveryService));
-        assertEquals(arrayList.get(3), searchAndGetNextCluster(3, discoveryService));
+        getNextCluster(discoveryService);
+
+        assertEquals(arrayList.get(2), getNextCluster(discoveryService));
+        assertEquals(arrayList.get(3), getNextCluster(discoveryService));
 
     }
 
-    private CandidateClusterContext searchAndGetNextCluster(int candidateIndex,
-                                                            ClusterDiscoveryService discoveryService) {
-        assert candidateIndex > 0;
-
-        final List<CandidateClusterContext> nextCluster = new ArrayList<>();
+    private CandidateClusterContext getNextCluster(ClusterDiscoveryService discoveryService) {
+        AtomicReference<CandidateClusterContext> currentCandidate = new AtomicReference<>();
         discoveryService.tryNextCluster((current, next) -> {
-            boolean foundNext = ++visitedIndex.value == candidateIndex - 1;
-            if (foundNext) {
-                nextCluster.add(next);
-            }
-            return foundNext;
+            currentCandidate.set(next);
+            return true;
         });
-        return nextCluster.get(0);
+        return currentCandidate.get();
     }
 
     @Test
@@ -172,10 +167,10 @@ public class ClientClusterDiscoveryServiceTest {
 
         assertEquals(first, discoveryService.current());
 
-        assertEquals(second, searchAndGetNextCluster(1, discoveryService));
+        assertEquals(second, getNextCluster(discoveryService));
         assertEquals(second, discoveryService.current());
 
-        assertEquals(first, searchAndGetNextCluster(2, discoveryService));
+        assertEquals(first, getNextCluster(discoveryService));
         assertEquals(first, discoveryService.current());
     }
 
@@ -191,7 +186,7 @@ public class ClientClusterDiscoveryServiceTest {
 
         for (int i = 1; i < 3; i++) {
             assertNotNull(discoveryService.current());
-            assertEquals(context, searchAndGetNextCluster(i, discoveryService));
+            assertEquals(context, getNextCluster(discoveryService));
         }
     }
 
