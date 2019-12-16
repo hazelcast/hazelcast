@@ -463,7 +463,6 @@ class RaftGroupMembershipManager {
         private void rebalanceLeaderships() {
             Map<RaftEndpoint, CPMember> members = getMembers();
             Collection<CPGroupId> groupIds = getCpGroupIds();
-            groupIds.remove(raftService.getMetadataGroupId());
 
             final int avgGroupsPerMember = groupIds.size() / members.size();
             final boolean overAvgAllowed = groupIds.size() % members.size() != 0;

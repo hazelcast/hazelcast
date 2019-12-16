@@ -21,9 +21,6 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.cp.CPGroupId;
 import com.hazelcast.cp.CPMember;
 import com.hazelcast.cp.internal.operation.GetLeadedGroupsOp;
-import com.hazelcast.cp.internal.raft.impl.RaftEndpoint;
-import com.hazelcast.cp.internal.raftop.metadata.CreateRaftGroupOp;
-import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -33,15 +30,13 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import static com.hazelcast.cp.internal.MetadataRaftGroupManager.INITIAL_METADATA_GROUP_ID;
 import static com.hazelcast.cp.internal.RaftGroupMembershipManager.LEADERSHIP_BALANCE_TASK_PERIOD;
+import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -56,66 +51,44 @@ public class CPGroupRebalanceTest extends HazelcastRaftTestSupport {
 
     @Test
     public void test() throws Exception {
-        int cpMemberCount = 7;
-        int groupSize = 3;
-        HazelcastInstance[] instances = newInstances(cpMemberCount, groupSize, 0);
+        int groupSize = 5;
+        int leadershipsPerMember = 10;
+        int groupCount = groupSize * leadershipsPerMember;
+
+        HazelcastInstance[] instances = newInstances(groupSize, groupSize, 0);
         waitUntilCPDiscoveryCompleted(instances);
 
-        int leadershipsPerMember = 11;
-        int extraGroups = 3;
-        int groupCount = cpMemberCount * leadershipsPerMember + extraGroups;
-
-        createRaftGroups(instances, groupSize, groupCount);
+        Collection<CPGroupId> groupIds = new ArrayList<>(groupCount);
+        RaftInvocationManager invocationManager = getRaftInvocationManager(instances[0]);
+        for (int i = 0; i < groupCount; i++) {
+            RaftGroupId groupId = invocationManager.createRaftGroup("group-" + i).joinInternal();
+            groupIds.add(groupId);
+        }
 
         HazelcastInstance metadataLeader = getLeaderInstance(instances, getMetadataGroupId(instances[0]));
-        Collection<CPMember> cpMembers = metadataLeader.getCPSubsystem().getCPSubsystemManagementService().getCPMembers()
-                                                       .toCompletableFuture().get();
+        Collection<CPMember> cpMembers =
+                metadataLeader.getCPSubsystem().getCPSubsystemManagementService().getCPMembers().toCompletableFuture().get();
 
-        rebalanceLeaderships(metadataLeader);
+        // Assert eventually since during the test
+        // a long pause can cause leadership change unexpectedly.
+        assertTrueEventually(() -> {
+            // Wait for leader election all groups
+            for (CPGroupId groupId : groupIds) {
+                waitAllForLeaderElection(instances, groupId);
+            }
 
-        Map<CPMember, Collection<CPGroupId>> leadershipsMap = getLeadershipsMap(metadataLeader, cpMembers);
+            rebalanceLeaderships(metadataLeader);
 
-        for (Entry<CPMember, Collection<CPGroupId>> entry : leadershipsMap.entrySet()) {
-            int count = entry.getValue().size();
-            assertBetween(leadershipsString(leadershipsMap), count, leadershipsPerMember - 1, leadershipsPerMember + extraGroups);
-        }
+            Map<CPMember, Collection<CPGroupId>> leadershipsMap = getLeadershipsMap(metadataLeader, cpMembers);
+            for (Entry<CPMember, Collection<CPGroupId>> entry : leadershipsMap.entrySet()) {
+                int count = entry.getValue().size();
+                assertEquals(leadershipsString(leadershipsMap), leadershipsPerMember, count);
+            }
+        });
     }
 
     private void rebalanceLeaderships(HazelcastInstance metadataLeader) {
         getRaftService(metadataLeader).getMetadataGroupManager().rebalanceGroupLeaderships();
-    }
-
-    private void createRaftGroups(HazelcastInstance[] instances, int groupSize, int groupCount) {
-        RaftInvocationManager invocationManager = getRaftInvocationManager(instances[0]);
-
-        RaftEndpoint[] endpoints = Arrays.stream(instances)
-                                         .map(instance -> instance.getCPSubsystem().getLocalCPMember())
-                                         .map(cpMember -> ((CPMemberInfo) cpMember).toRaftEndpoint())
-                                         .toArray(RaftEndpoint[]::new);
-        Collection<CPGroupId> groupIds = new ArrayList<>(groupCount);
-        Collection<InternalCompletableFuture<CPGroupSummary>> futures = new ArrayList<>(groupCount);
-
-        for (int i = 0; i < groupCount; i++) {
-            List<RaftEndpoint> groupMembers = new ArrayList<>(groupSize);
-            for (int j = 0; j < groupSize; j++) {
-                groupMembers.add(endpoints[(i + j) % endpoints.length]);
-            }
-
-            RaftOp op = new CreateRaftGroupOp("group-" + i, groupMembers);
-            InternalCompletableFuture<CPGroupSummary> f = invocationManager.invoke(INITIAL_METADATA_GROUP_ID, op);
-            futures.add(f);
-        }
-
-        for (InternalCompletableFuture<CPGroupSummary> future : futures) {
-            CPGroupSummary group = future.join();
-            invocationManager.triggerRaftNodeCreation(group);
-            groupIds.add(group.id());
-        }
-
-        for (CPGroupId groupId : groupIds) {
-            // await leader election
-            getLeaderInstance(instances, groupId);
-        }
     }
 
     private String leadershipsString(Map<CPMember, Collection<CPGroupId>> leadershipsMap) {
@@ -132,8 +105,8 @@ public class CPGroupRebalanceTest extends HazelcastRaftTestSupport {
 
         for (CPMember member : members) {
             Collection<CPGroupId> groups =
-                    operationService.<Collection<CPGroupId>>invokeOnTarget(null, new GetLeadedGroupsOp(),
-                            member.getAddress()).join();
+                    operationService.<Collection<CPGroupId>>invokeOnTarget(null, new GetLeadedGroupsOp(), member.getAddress())
+                            .join();
             leaderships.put(member, groups);
         }
         return leaderships;
