@@ -36,7 +36,10 @@ import java.util.function.Predicate;
 
 import static com.hazelcast.internal.util.EmptyStatement.ignore;
 
-public class UnmodifiableLazyList<E> extends AbstractList<E> implements IdentifiedDataSerializable {
+/**
+ * This is an unmodifiable lazy list which is not parametrized (no generic. needed for Jackson serializer).
+ */
+public class UnmodifiableLazyList extends AbstractList implements IdentifiedDataSerializable {
 
     private final transient SerializationService serializationService;
     private List list;
@@ -56,12 +59,12 @@ public class UnmodifiableLazyList<E> extends AbstractList<E> implements Identifi
     }
 
     @Override
-    public boolean add(E t) {
+    public boolean add(Object t) {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public boolean addAll(Collection<? extends E> c) {
+    public boolean addAll(Collection c) {
         throw new UnsupportedOperationException();
     }
 
@@ -71,12 +74,12 @@ public class UnmodifiableLazyList<E> extends AbstractList<E> implements Identifi
     }
 
     @Override
-    public boolean removeAll(Collection<?> c) {
+    public boolean removeAll(Collection c) {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public boolean removeIf(Predicate<? super E> filter) {
+    public boolean removeIf(Predicate filter) {
         throw new UnsupportedOperationException();
     }
 
@@ -86,15 +89,15 @@ public class UnmodifiableLazyList<E> extends AbstractList<E> implements Identifi
     }
 
     @Override
-    public boolean retainAll(Collection<?> coll) {
+    public boolean retainAll(Collection coll) {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public E get(int index) {
+    public Object get(int index) {
         Object o = list.get(index);
         if (o instanceof Data) {
-            E item = serializationService.toObject(o);
+            Object item = serializationService.toObject(o);
             try {
                 list.set(index, item);
             } catch (Exception e) {
@@ -102,26 +105,26 @@ public class UnmodifiableLazyList<E> extends AbstractList<E> implements Identifi
             }
             return item;
         }
-        return (E) o;
+        return o;
     }
 
     @Override
-    public Iterator<E> iterator() {
+    public Iterator iterator() {
         return listIterator(0);
     }
 
     @Override
-    public ListIterator<E> listIterator() {
+    public ListIterator listIterator() {
         return listIterator(0);
     }
 
     @Override
-    public ListIterator<E> listIterator(int index) {
+    public ListIterator listIterator(int index) {
         return new UnmodifiableLazyListIterator(list.listIterator(index));
     }
 
     @Override
-    public List<E> subList(int fromIndex, int toIndex) {
+    public List subList(int fromIndex, int toIndex) {
         return new UnmodifiableLazyList(list.subList(fromIndex, toIndex), serializationService);
     }
 
@@ -136,13 +139,13 @@ public class UnmodifiableLazyList<E> extends AbstractList<E> implements Identifi
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         int size = in.readInt();
-        list = new ArrayList<E>(size);
+        list = new ArrayList(size);
         for (int i = 0; i < size; i++) {
             list.add(in.readObject());
         }
     }
 
-    private class UnmodifiableLazyListIterator extends UnmodifiableListIterator<E> {
+    private class UnmodifiableLazyListIterator extends UnmodifiableListIterator {
 
         ListIterator listIterator;
 
@@ -156,7 +159,7 @@ public class UnmodifiableLazyList<E> extends AbstractList<E> implements Identifi
         }
 
         @Override
-        public E next() {
+        public Object next() {
             return deserializeAndSet(listIterator.next());
         }
 
@@ -166,7 +169,7 @@ public class UnmodifiableLazyList<E> extends AbstractList<E> implements Identifi
         }
 
         @Override
-        public E previous() {
+        public Object previous() {
             return deserializeAndSet(listIterator.previous());
         }
 
@@ -180,9 +183,9 @@ public class UnmodifiableLazyList<E> extends AbstractList<E> implements Identifi
             return listIterator.previousIndex();
         }
 
-        private E deserializeAndSet(Object o) {
+        private Object deserializeAndSet(Object o) {
             if (o instanceof Data) {
-                E item = serializationService.toObject(o);
+                Object item = serializationService.toObject(o);
                 try {
                     listIterator.set(item);
                 } catch (Exception e) {
@@ -200,9 +203,9 @@ public class UnmodifiableLazyList<E> extends AbstractList<E> implements Identifi
                     ignore(e);
                 }
 
-                return (E) item;
+                return item;
             }
-            return (E) o;
+            return o;
         }
 
     }

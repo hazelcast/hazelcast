@@ -385,7 +385,7 @@ class DefaultQueryCache<K, V> extends AbstractInternalQueryCache<K, V> {
         } else {
             doFullValueScan(predicate, resultingList);
         }
-        return new UnmodifiableLazyList<>(resultingList, serializationService);
+        return new UnmodifiableLazyList(resultingList, serializationService);
     }
 
     @Override

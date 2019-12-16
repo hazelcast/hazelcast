@@ -140,7 +140,7 @@ public class ListProxyImpl<E> extends AbstractCollectionProxyImpl<ListService, E
         SerializableList result = invoke(operation);
         List<Data> collection = result.getCollection();
         SerializationService serializationService = getNodeEngine().getSerializationService();
-        return new UnmodifiableLazyList<E>(collection, serializationService);
+        return new UnmodifiableLazyList(collection, serializationService);
     }
 
     @Override

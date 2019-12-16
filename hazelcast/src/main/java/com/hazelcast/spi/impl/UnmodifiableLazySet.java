@@ -25,10 +25,10 @@ import java.util.List;
 import java.util.function.Predicate;
 
 public class UnmodifiableLazySet extends AbstractSet<Object> {
-    private final UnmodifiableLazyObjectList list;
+    private final UnmodifiableLazyList list;
 
     public UnmodifiableLazySet(List dataList, SerializationService serializationService) {
-        list = new UnmodifiableLazyObjectList(dataList, serializationService);
+        list = new UnmodifiableLazyList(dataList, serializationService);
     }
 
     @Override

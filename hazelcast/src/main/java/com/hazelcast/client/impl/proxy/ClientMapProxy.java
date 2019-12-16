@@ -139,7 +139,6 @@ import com.hazelcast.ringbuffer.ReadResultSet;
 import com.hazelcast.ringbuffer.impl.ReadResultSetImpl;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.UnmodifiableLazyList;
-import com.hazelcast.spi.impl.UnmodifiableLazyObjectList;
 import com.hazelcast.spi.impl.UnmodifiableLazySet;
 
 import javax.annotation.Nonnull;
@@ -1206,7 +1205,7 @@ public class ClientMapProxy<K, V> extends ClientProxy
         ClientMessage request = MapValuesCodec.encodeRequest(name);
         ClientMessage response = invoke(request);
         MapValuesCodec.ResponseParameters resultParameters = MapValuesCodec.decodeResponse(response);
-        return new UnmodifiableLazyList<>(resultParameters.response, getSerializationService());
+        return new UnmodifiableLazyList(resultParameters.response, getSerializationService());
     }
 
     @Nonnull
@@ -1298,7 +1297,7 @@ public class ClientMapProxy<K, V> extends ClientProxy
         ClientMessage response = invokeWithPredicate(request, predicate);
         MapValuesWithPredicateCodec.ResponseParameters resultParameters = MapValuesWithPredicateCodec.decodeResponse(response);
 
-        return (Collection<V>) new UnmodifiableLazyObjectList(resultParameters.response, getSerializationService());
+        return (Collection<V>) new UnmodifiableLazyList(resultParameters.response, getSerializationService());
     }
 
     private ClientMessage invokeWithPredicate(ClientMessage request, Predicate predicate) {
@@ -1328,7 +1327,7 @@ public class ClientMapProxy<K, V> extends ClientProxy
 
         pagingPredicate.setAnchorList(resultParameters.anchorDataList.asAnchorList(serializationService));
 
-        return (Collection<V>) new UnmodifiableLazyObjectList(resultParameters.response, serializationService);
+        return (Collection<V>) new UnmodifiableLazyList(resultParameters.response, serializationService);
     }
 
     @Override
@@ -1476,7 +1475,7 @@ public class ClientMapProxy<K, V> extends ClientProxy
         MapProjectCodec.ResponseParameters resultParameters =
                 MapProjectCodec.decodeResponse(response);
 
-        return new UnmodifiableLazyList<>(resultParameters.response, getSerializationService());
+        return new UnmodifiableLazyList(resultParameters.response, getSerializationService());
     }
 
     @Override
@@ -1492,7 +1491,7 @@ public class ClientMapProxy<K, V> extends ClientProxy
         MapProjectWithPredicateCodec.ResponseParameters resultParameters =
                 MapProjectWithPredicateCodec.decodeResponse(response);
 
-        return new UnmodifiableLazyList<>(resultParameters.response, getSerializationService());
+        return new UnmodifiableLazyList(resultParameters.response, getSerializationService());
     }
 
     @Override
