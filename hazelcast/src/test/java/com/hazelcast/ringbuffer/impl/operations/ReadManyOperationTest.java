@@ -20,13 +20,13 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.RingbufferConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IFunction;
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.ringbuffer.Ringbuffer;
 import com.hazelcast.ringbuffer.StaleSequenceException;
 import com.hazelcast.ringbuffer.impl.ReadResultSetImpl;
 import com.hazelcast.ringbuffer.impl.RingbufferContainer;
 import com.hazelcast.ringbuffer.impl.RingbufferService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -91,14 +91,14 @@ public class ReadManyOperationTest extends HazelcastTestSupport {
         ReadResultSetImpl response = getReadResultSet(op);
         assertEquals(asList("tail"), response);
         assertEquals(1, response.readCount());
+        assertEquals(1, response.getNextSequenceToReadFrom());
     }
 
     @Test
-    public void whenOneAfterTail() throws Exception {
+    public void whenOneAfterTail() {
         ringbuffer.add("tail");
 
         ReadManyOperation op = getReadManyOperation(ringbuffer.tailSequence() + 1, 1, 1, null);
-        op.setNodeEngine(nodeEngine);
 
         // since there is an item, we don't need to wait
         boolean shouldWait = op.shouldWait();
@@ -106,14 +106,14 @@ public class ReadManyOperationTest extends HazelcastTestSupport {
 
         ReadResultSetImpl response = getReadResultSet(op);
         assertEquals(0, response.readCount());
+        assertEquals(0, response.getNextSequenceToReadFrom());
     }
 
     @Test
-    public void whenTooFarAfterTail() throws Exception {
+    public void whenTooFarAfterTail() {
         ringbuffer.add("tail");
 
         ReadManyOperation op = getReadManyOperation(ringbuffer.tailSequence() + 2, 1, 1, null);
-        op.setNodeEngine(nodeEngine);
 
         // since there is an item, we don't need to wait
         assertFalse(op.shouldWait());
@@ -122,9 +122,8 @@ public class ReadManyOperationTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void whenOneAfterTailAndBufferEmpty() throws Exception {
+    public void whenOneAfterTailAndBufferEmpty() {
         ReadManyOperation op = getReadManyOperation(ringbuffer.tailSequence() + 1, 1, 1, null);
-        op.setNodeEngine(nodeEngine);
 
         // since there is an item, we don't need to wait
         boolean shouldWait = op.shouldWait();
@@ -132,13 +131,13 @@ public class ReadManyOperationTest extends HazelcastTestSupport {
 
         ReadResultSetImpl response = getReadResultSet(op);
         assertEquals(0, response.readCount());
+        assertEquals(0, response.getNextSequenceToReadFrom());
         assertEquals(0, response.size());
     }
 
     @Test
-    public void whenOnTailAndBufferEmpty() throws Exception {
+    public void whenOnTailAndBufferEmpty() {
         ReadManyOperation op = getReadManyOperation(ringbuffer.tailSequence(), 1, 1, null);
-        op.setNodeEngine(nodeEngine);
 
         // since there is an item, we don't need to wait
         assertFalse(op.shouldWait());
@@ -153,7 +152,6 @@ public class ReadManyOperationTest extends HazelcastTestSupport {
         ringbuffer.add("item3");
 
         ReadManyOperation op = getReadManyOperation(ringbuffer.tailSequence() - 1, 1, 1, null);
-        op.setNodeEngine(nodeEngine);
 
         // since there is an item, we don't need to wait
         boolean shouldWait = op.shouldWait();
@@ -164,6 +162,7 @@ public class ReadManyOperationTest extends HazelcastTestSupport {
         ReadResultSetImpl response = getReadResultSet(op);
         assertEquals(asList("item2"), response);
         assertEquals(1, response.readCount());
+        assertEquals(2, response.getNextSequenceToReadFrom());
         assertEquals(1, response.size());
     }
 
@@ -185,11 +184,12 @@ public class ReadManyOperationTest extends HazelcastTestSupport {
         ReadResultSetImpl response = getReadResultSet(op);
         assertEquals(asList("item1"), response);
         assertEquals(1, response.readCount());
+        assertEquals(1, response.getNextSequenceToReadFrom());
         assertEquals(1, response.size());
     }
 
     @Test
-    public void whenBeforeHead() throws Exception {
+    public void whenBeforeHead() {
         ringbuffer.add("item1");
         ringbuffer.add("item2");
         ringbuffer.add("item3");
@@ -198,7 +198,6 @@ public class ReadManyOperationTest extends HazelcastTestSupport {
         ringbufferContainer.setHeadSequence(ringbufferContainer.tailSequence());
 
         ReadManyOperation op = getReadManyOperation(oldhead, 1, 1, null);
-        op.setNodeEngine(nodeEngine);
 
         assertFalse(op.shouldWait());
         expectedException.expect(StaleSequenceException.class);
@@ -206,10 +205,9 @@ public class ReadManyOperationTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void whenMinimumNumberOfItemsNotAvailable() throws Exception {
+    public void whenMinimumNumberOfItemsNotAvailable() {
         long startSequence = ringbuffer.tailSequence() + 1;
         ReadManyOperation op = getReadManyOperation(startSequence, 3, 3, null);
-        op.setNodeEngine(nodeEngine);
 
         assertTrue(op.shouldWait());
         assertEquals(startSequence, op.sequence);
@@ -217,59 +215,67 @@ public class ReadManyOperationTest extends HazelcastTestSupport {
 
         ringbuffer.add("item1");
         assertTrue(op.shouldWait());
+        ReadResultSetImpl response = getReadResultSet(op);
         assertEquals(startSequence + 1, op.sequence);
-        assertEquals(asList("item1"), op.getResponse());
+
+        assertEquals(asList("item1"), response);
+        assertEquals(1, response.getNextSequenceToReadFrom());
 
         ringbuffer.add("item2");
         assertTrue(op.shouldWait());
         assertEquals(startSequence + 2, op.sequence);
-        assertEquals(asList("item1", "item2"), op.getResponse());
+        assertEquals(asList("item1", "item2"), response);
+        assertEquals(2, response.getNextSequenceToReadFrom());
 
         ringbuffer.add("item3");
         assertFalse(op.shouldWait());
         assertEquals(startSequence + 3, op.sequence);
-        assertEquals(asList("item1", "item2", "item3"), op.getResponse());
+        assertEquals(asList("item1", "item2", "item3"), response);
+        assertEquals(3, response.getNextSequenceToReadFrom());
     }
 
     @Test
-    public void whenBelowMinimumAvailable() throws Exception {
+    public void whenBelowMinimumAvailable() {
         long startSequence = ringbuffer.tailSequence() + 1;
         ReadManyOperation op = getReadManyOperation(startSequence, 3, 3, null);
-        op.setNodeEngine(nodeEngine);
 
         ringbuffer.add("item1");
         ringbuffer.add("item2");
 
         assertTrue(op.shouldWait());
+        ReadResultSetImpl response = getReadResultSet(op);
         assertEquals(startSequence + 2, op.sequence);
-        assertEquals(asList("item1", "item2"), op.getResponse());
+
+        assertEquals(asList("item1", "item2"), response);
+        assertEquals(2, response.getNextSequenceToReadFrom());
 
         ringbuffer.add("item3");
         assertFalse(op.shouldWait());
         assertEquals(startSequence + 3, op.sequence);
-        assertEquals(asList("item1", "item2", "item3"), op.getResponse());
+        assertEquals(asList("item1", "item2", "item3"), response);
+        assertEquals(3, response.getNextSequenceToReadFrom());
     }
 
     @Test
-    public void whenMinimumNumberOfItemsAvailable() throws Exception {
+    public void whenMinimumNumberOfItemsAvailable() {
         long startSequence = ringbuffer.tailSequence() + 1;
         ReadManyOperation op = getReadManyOperation(startSequence, 3, 3, null);
-        op.setNodeEngine(nodeEngine);
 
         ringbuffer.add("item1");
         ringbuffer.add("item2");
         ringbuffer.add("item3");
 
         assertFalse(op.shouldWait());
+        ReadResultSetImpl response = getReadResultSet(op);
         assertEquals(startSequence + 3, op.sequence);
-        assertEquals(asList("item1", "item2", "item3"), op.getResponse());
+        assertEquals(asList("item1", "item2", "item3"), response);
+        assertEquals(3, response.getNextSequenceToReadFrom());
     }
 
     @Test
-    public void whenEnoughItemsAvailable() throws Exception {
+    public void whenEnoughItemsAvailable() {
         long startSequence = ringbuffer.tailSequence() + 1;
         ReadManyOperation op = getReadManyOperation(startSequence, 1, 3, null);
-        op.setNodeEngine(nodeEngine);
 
         ringbuffer.add("item1");
         ringbuffer.add("item2");
@@ -283,6 +289,7 @@ public class ReadManyOperationTest extends HazelcastTestSupport {
         assertEquals(startSequence + 3, op.sequence);
         assertEquals(asList("item1", "item2", "item3"), response);
         assertEquals(3, response.readCount());
+        assertEquals(3, response.getNextSequenceToReadFrom());
     }
 
     private ReadResultSetImpl getReadResultSet(ReadManyOperation op) {
@@ -290,18 +297,12 @@ public class ReadManyOperationTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void whenFilterProvidedAndNoItemsAvailable() throws Exception {
+    public void whenFilterProvidedAndNoItemsAvailable() {
         long startSequence = ringbuffer.tailSequence() + 1;
 
-        IFunction<String, Boolean> filter = new IFunction<String, Boolean>() {
-            @Override
-            public Boolean apply(String input) {
-                return input.startsWith("good");
-            }
-        };
+        IFunction<String, Boolean> filter = (IFunction<String, Boolean>) input -> input.startsWith("good");
 
         ReadManyOperation op = getReadManyOperation(startSequence, 3, 3, filter);
-        op.setNodeEngine(nodeEngine);
 
         assertTrue(op.shouldWait());
         ReadResultSetImpl response = getReadResultSet(op);
@@ -312,6 +313,7 @@ public class ReadManyOperationTest extends HazelcastTestSupport {
         assertTrue(op.shouldWait());
         assertEquals(startSequence + 1, op.sequence);
         assertEquals(1, response.readCount());
+        assertEquals(1, response.getNextSequenceToReadFrom());
         assertEquals(0, response.size());
 
 
@@ -320,45 +322,44 @@ public class ReadManyOperationTest extends HazelcastTestSupport {
         assertEquals(startSequence + 2, op.sequence);
         assertEquals(asList("good1"), response);
         assertEquals(2, response.readCount());
+        assertEquals(2, response.getNextSequenceToReadFrom());
 
         ringbuffer.add("bad2");
         assertTrue(op.shouldWait());
         assertEquals(startSequence + 3, op.sequence);
         assertEquals(asList("good1"), response);
         assertEquals(3, response.readCount());
+        assertEquals(3, response.getNextSequenceToReadFrom());
 
         ringbuffer.add("good2");
         assertTrue(op.shouldWait());
         assertEquals(startSequence + 4, op.sequence);
         assertEquals(asList("good1", "good2"), response);
         assertEquals(4, response.readCount());
+        assertEquals(4, response.getNextSequenceToReadFrom());
 
         ringbuffer.add("bad3");
         assertTrue(op.shouldWait());
         assertEquals(startSequence + 5, op.sequence);
         assertEquals(asList("good1", "good2"), response);
         assertEquals(5, response.readCount());
+        assertEquals(5, response.getNextSequenceToReadFrom());
 
         ringbuffer.add("good3");
         assertFalse(op.shouldWait());
         assertEquals(startSequence + 6, op.sequence);
         assertEquals(asList("good1", "good2", "good3"), response);
         assertEquals(6, response.readCount());
+        assertEquals(6, response.getNextSequenceToReadFrom());
     }
 
     @Test
-    public void whenFilterProvidedAndAllItemsAvailable() throws Exception {
+    public void whenFilterProvidedAndAllItemsAvailable() {
         long startSequence = ringbuffer.tailSequence() + 1;
 
-        IFunction<String, Boolean> filter = new IFunction<String, Boolean>() {
-            @Override
-            public Boolean apply(String input) {
-                return input.startsWith("good");
-            }
-        };
+        IFunction<String, Boolean> filter = (IFunction<String, Boolean>) input -> input.startsWith("good");
 
         ReadManyOperation op = getReadManyOperation(startSequence, 3, 3, filter);
-        op.setNodeEngine(nodeEngine);
 
         ringbuffer.add("bad1");
         ringbuffer.add("good1");
@@ -368,8 +369,10 @@ public class ReadManyOperationTest extends HazelcastTestSupport {
         ringbuffer.add("good3");
 
         assertFalse(op.shouldWait());
+        ReadResultSetImpl response = getReadResultSet(op);
         assertEquals(startSequence + 6, op.sequence);
-        assertEquals(asList("good1", "good2", "good3"), op.getResponse());
+        assertEquals(asList("good1", "good2", "good3"), response);
+        assertEquals(6, response.getNextSequenceToReadFrom());
     }
 
     private <T> ReadManyOperation<T> getReadManyOperation(long start, int min, int max, IFunction<T, Boolean> filter) {

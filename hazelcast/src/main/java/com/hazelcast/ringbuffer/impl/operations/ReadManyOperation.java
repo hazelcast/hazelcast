@@ -67,7 +67,7 @@ public class ReadManyOperation<O> extends AbstractRingBufferOperation
         RingbufferContainer ringbuffer = getRingBufferContainer();
         if (minSize == 0) {
             if (!ringbuffer.shouldWait(sequence)) {
-                sequence = ringbuffer.readMany(sequence, resultSet);
+                readMany(ringbuffer);
             }
 
             return false;
@@ -79,15 +79,20 @@ public class ReadManyOperation<O> extends AbstractRingBufferOperation
         }
 
         if (ringbuffer.isTooLargeSequence(sequence) || ringbuffer.isStaleSequence(sequence)) {
-            //no need to wait, let the operation continue and fail in beforeRun
+            // no need to wait, let the operation continue and fail in beforeRun
             return false;
         }
         if (sequence == ringbuffer.tailSequence() + 1) {
             // the sequence is not readable
             return true;
         }
-        sequence = ringbuffer.readMany(sequence, resultSet);
+        readMany(ringbuffer);
         return !resultSet.isMinSizeReached();
+    }
+
+    private void readMany(RingbufferContainer ringbuffer) {
+        sequence = ringbuffer.readMany(sequence, resultSet);
+        resultSet.setNextSequenceToReadFrom(sequence);
     }
 
     @Override

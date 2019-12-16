@@ -18,17 +18,16 @@ package com.hazelcast.ringbuffer.impl;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.RingbufferConfig;
-import com.hazelcast.core.IFunction;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.IFunction;
 import com.hazelcast.cp.IAtomicLong;
+import com.hazelcast.internal.util.RootCauseMatcher;
 import com.hazelcast.ringbuffer.ReadResultSet;
 import com.hazelcast.ringbuffer.Ringbuffer;
 import com.hazelcast.ringbuffer.StaleSequenceException;
 import com.hazelcast.spi.exception.DistributedObjectDestroyedException;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.internal.util.RootCauseMatcher;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
@@ -40,7 +39,6 @@ import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Random;
-import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
@@ -185,7 +183,7 @@ public abstract class RingbufferAbstractTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void size_whenSomeItemsAdded() throws Exception {
+    public void size_whenSomeItemsAdded() {
         // we are adding some items, but we don't go beyond the capacity
         // most of the testing already is done in the RingbufferContainerTest
 
@@ -292,7 +290,7 @@ public abstract class RingbufferAbstractTest extends HazelcastTestSupport {
 
 
     @Test(expected = NullPointerException.class)
-    public void add_whenNullItem() throws Exception {
+    public void add_whenNullItem() {
         ringbuffer.add(null);
     }
 
@@ -376,7 +374,7 @@ public abstract class RingbufferAbstractTest extends HazelcastTestSupport {
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void addAllAsync_whenEmpty() throws Exception {
+    public void addAllAsync_whenEmpty() {
         ringbuffer.addAllAsync(new LinkedList<>(), OVERWRITE);
     }
 
@@ -515,20 +513,10 @@ public abstract class RingbufferAbstractTest extends HazelcastTestSupport {
         final long tail = ringbuffer.tailSequence();
 
         // first we do the invocation. This invocation is going to block
-        final Future f = spawn(new Callable<String>() {
-            @Override
-            public String call() throws Exception {
-                return ringbuffer.readOne(tail + 1);
-            }
-        });
+        final Future<String> f = spawn(() -> ringbuffer.readOne(tail + 1));
 
         // then we check if the future is not going to complete.
-        assertTrueAllTheTime(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertFalse(f.isDone());
-            }
-        }, 2);
+        assertTrueAllTheTime(() -> assertFalse(f.isDone()), 2);
 
         // then we add the item
         ringbuffer.add("3");
@@ -573,12 +561,12 @@ public abstract class RingbufferAbstractTest extends HazelcastTestSupport {
     // ==================== asyncReadOrWait ==============================
 
     @Test
-    public void readManyAsync_whenReadingBeyondTail() throws ExecutionException, InterruptedException {
+    public void readManyAsync_whenReadingBeyondTail() throws InterruptedException {
         ringbuffer.add("1");
         ringbuffer.add("2");
 
         long seq = ringbuffer.tailSequence() + 2;
-        Future f = ringbuffer.readManyAsync(seq, 1, 1, null).toCompletableFuture();
+        Future<ReadResultSet<String>> f = ringbuffer.readManyAsync(seq, 1, 1, null).toCompletableFuture();
         try {
             f.get();
             fail();
@@ -601,6 +589,7 @@ public abstract class RingbufferAbstractTest extends HazelcastTestSupport {
 
         assertThat(f.get(), contains("1"));
         assertEquals(1, resultSet.readCount());
+        assertEquals(1, resultSet.getNextSequenceToReadFrom());
     }
 
     @Test
@@ -621,6 +610,7 @@ public abstract class RingbufferAbstractTest extends HazelcastTestSupport {
 
         assertThat(f.get(), contains("1", "2"));
         assertEquals(2, resultSet.readCount());
+        assertEquals(2, resultSet.getNextSequenceToReadFrom());
     }
 
     @Test
@@ -630,7 +620,10 @@ public abstract class RingbufferAbstractTest extends HazelcastTestSupport {
         Future<ReadResultSet<String>> f = ringbuffer.readManyAsync(0, 0, 10, null).toCompletableFuture();
 
         assertCompletesEventually(f);
-        assertThat(f.get(), contains("1"));
+        ReadResultSet<String> resultSet = f.get();
+        assertNotNull(resultSet);
+        assertThat(resultSet, contains("1"));
+        assertEquals(1, resultSet.getNextSequenceToReadFrom());
     }
 
     @Test
@@ -638,7 +631,10 @@ public abstract class RingbufferAbstractTest extends HazelcastTestSupport {
         Future<ReadResultSet<String>> f = ringbuffer.readManyAsync(0, 0, 10, null).toCompletableFuture();
 
         assertCompletesEventually(f);
-        assertEquals(0, f.get().readCount());
+        ReadResultSet<String> resultSet = f.get();
+        assertNotNull(resultSet);
+        assertEquals(0, resultSet.readCount());
+        assertEquals(0, resultSet.getNextSequenceToReadFrom());
     }
 
     @Test
@@ -656,23 +652,12 @@ public abstract class RingbufferAbstractTest extends HazelcastTestSupport {
         assertNotNull(resultSet);
         Assert.assertThat(f.get(), contains("item2", "item3"));
         assertEquals(2, resultSet.readCount());
+        assertEquals(3, resultSet.getNextSequenceToReadFrom());
     }
 
     @Test
     public void readManyAsync_whenEnoughItems_andObjectInMemoryFormat() throws ExecutionException, InterruptedException {
-        ringbuffer.add("item1");
-        ringbuffer.add("item2");
-        ringbuffer.add("item3");
-        ringbuffer.add("item4");
-
-        Future<ReadResultSet<String>> f = ringbuffer.readManyAsync(1, 1, 2, null).toCompletableFuture();
-        assertCompletesEventually(f);
-
-        ReadResultSet<String> resultSet = f.get();
-
-        assertNotNull(resultSet);
-        assertThat(f.get(), contains("item2", "item3"));
-        assertEquals(2, resultSet.readCount());
+        readManyAsync_whenEnoughItems();
     }
 
     public static class GoodStringFunction implements IFunction<String, Boolean>, Serializable {
@@ -700,20 +685,8 @@ public abstract class RingbufferAbstractTest extends HazelcastTestSupport {
         assertNotNull(resultSet);
         Assert.assertThat(f.get(), contains("good1", "good2", "good3"));
         assertEquals(6, resultSet.readCount());
+        assertEquals(6, resultSet.getNextSequenceToReadFrom());
     }
-
-    @Test
-    public void readManyAsync_emptyBatchAndNoItems() throws Exception {
-        Future<ReadResultSet<String>> f = ringbuffer.readManyAsync(0, 0, 10, null).toCompletableFuture();
-
-        assertCompletesEventually(f);
-
-        ReadResultSet<String> resultSet = f.get();
-
-        assertEquals(0, f.get().readCount());
-        assertEquals(0, resultSet.readCount());
-    }
-
 
     @Test
     public void readManyAsync_whenHitsStale_shouldNotBeBlocked() throws Exception {
@@ -726,16 +699,13 @@ public abstract class RingbufferAbstractTest extends HazelcastTestSupport {
     @Test
     public void readOne_whenHitsStale_shouldNotBeBlocked() {
         final CountDownLatch latch = new CountDownLatch(1);
-        Thread consumer = new Thread(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    ringbuffer.readOne(0);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                } catch (StaleSequenceException e) {
-                    latch.countDown();
-                }
+        Thread consumer = new Thread(() -> {
+            try {
+                ringbuffer.readOne(0);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            } catch (StaleSequenceException e) {
+                latch.countDown();
             }
         });
         consumer.start();
@@ -758,6 +728,7 @@ public abstract class RingbufferAbstractTest extends HazelcastTestSupport {
         assertThat(f.get(), contains("1", "2", "3"));
 
         assertEquals(3, resultSet.readCount());
+        assertEquals(3, resultSet.getNextSequenceToReadFrom());
     }
 
     @Test
@@ -774,6 +745,7 @@ public abstract class RingbufferAbstractTest extends HazelcastTestSupport {
         assertNotNull(resultSet);
         assertThat(f.get(), contains("1", "2"));
         assertEquals(2, resultSet.readCount());
+        assertEquals(2, resultSet.getNextSequenceToReadFrom());
     }
 
     @Test(expected = IllegalArgumentException.class)
@@ -796,15 +768,15 @@ public abstract class RingbufferAbstractTest extends HazelcastTestSupport {
         ringbuffer.readManyAsync(0, 5, 4, null);
     }
 
-    @Test
-    public void readManyAsync_whenMaxCountTooHigh() throws Exception {
-        ringbuffer.readManyAsync(0, 1, RingbufferProxy.MAX_BATCH_SIZE, null);
+    @Test(expected = IllegalArgumentException.class)
+    public void readManyAsync_whenMaxCountTooHigh() {
+        ringbuffer.readManyAsync(0, 1, RingbufferProxy.MAX_BATCH_SIZE + 1, null);
     }
 
     // ===================== destroy ==========================
 
     @Test
-    public void destroy() throws Exception {
+    public void destroy() {
         ringbuffer.add("1");
         ringbuffer.destroy();
 
@@ -814,16 +786,14 @@ public abstract class RingbufferAbstractTest extends HazelcastTestSupport {
     }
 
     @Test(expected = DistributedObjectDestroyedException.class)
-    public void destroy_whenBlockedThreads_thenDistributedObjectDestroyedException() throws Exception {
-        spawn(new Runnable() {
-            @Override
-            public void run() {
-                sleepSeconds(2);
-                ringbuffer.destroy();
-            }
+    public void destroy_whenBlockedThreads_thenDistributedObjectDestroyedException() {
+        spawn(() -> {
+            sleepSeconds(2);
+            ringbuffer.destroy();
         });
 
-        InternalCompletableFuture f = (InternalCompletableFuture) ringbuffer.readManyAsync(0, 1, 1, null);
+        InternalCompletableFuture<ReadResultSet<String>> f = (InternalCompletableFuture<ReadResultSet<String>>) ringbuffer
+                .readManyAsync(0, 1, 1, null);
         f.joinInternal();
     }
     // ===================== misc ==========================
