@@ -82,9 +82,8 @@ public class ReplicatedMapMBeanTest extends HazelcastTestSupport {
         replicatedMap.put("firstKey", "firstValue");
         replicatedMap.put("secondKey", "secondValue");
         replicatedMap.remove("secondKey");
+        replicatedMap.size();
         String value = replicatedMap.get("firstKey");
-        String values = invokeMethod("values");
-        String entries = invokeMethod("entrySet");
 
         long localEntryCount = getLongAttribute("localOwnedEntryCount");
         long localCreationTime = getLongAttribute("localCreationTime");
@@ -109,14 +108,12 @@ public class ReplicatedMapMBeanTest extends HazelcastTestSupport {
         int size = getIntegerAttribute("size");
 
         assertEquals("firstValue", value);
-        assertEquals("[firstValue,]", values);
-        assertEquals("[{key:firstKey, value:firstValue},]", entries);
 
         assertEquals(1, localEntryCount);
         assertTrue(localCreationTime >= started);
         assertTrue(localLastAccessTime >= started);
         assertTrue(localLastUpdateTime >= started);
-        assertEquals(3, localHits);
+        assertEquals(1, localHits);
 
         assertEquals(2, localPutOperationCount);
         assertEquals(1, localGetOperationCount);
@@ -135,12 +132,8 @@ public class ReplicatedMapMBeanTest extends HazelcastTestSupport {
         assertEquals(1, size);
 
         holder.invokeMBeanOperation(TYPE_NAME, objectName, "clear", null, null);
-        values = invokeMethod("values");
-        entries = invokeMethod("entrySet");
         size = getIntegerAttribute("size");
 
-        assertEquals("Empty", values);
-        assertEquals("Empty", entries);
         assertEquals(0, size);
     }
 
