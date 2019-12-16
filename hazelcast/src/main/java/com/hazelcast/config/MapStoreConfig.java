@@ -23,11 +23,13 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.properties.ClusterProperty;
 
+import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.util.Objects;
 import java.util.Properties;
 
-import static com.hazelcast.internal.util.Preconditions.isNotNull;
+import static com.hazelcast.internal.util.Preconditions.checkHasText;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 /**
  * Contains the configuration for a Map Store.
@@ -102,11 +104,8 @@ public class MapStoreConfig implements IdentifiedDataSerializable {
      *
      * @param className the name to set for the MapStore implementation class
      */
-    public MapStoreConfig setClassName(String className) {
-        if (className != null) {
-            setImplementation(null);
-        }
-        this.className = className;
+    public MapStoreConfig setClassName(@Nonnull String className) {
+        this.className = checkHasText(className, "Map store class name must contain text");
         return this;
     }
 
@@ -124,11 +123,9 @@ public class MapStoreConfig implements IdentifiedDataSerializable {
      *
      * @param factoryClassName the name to set for the MapStoreFactory implementation class
      */
-    public MapStoreConfig setFactoryClassName(String factoryClassName) {
-        if (factoryClassName != null) {
-            setFactoryImplementation(null);
-        }
-        this.factoryClassName = factoryClassName;
+    public MapStoreConfig setFactoryClassName(@Nonnull String factoryClassName) {
+        this.factoryClassName = checkNotNull(factoryClassName, "Map store factory class name cannot be null!");
+        this.factoryImplementation = null;
         return this;
     }
 
@@ -202,11 +199,9 @@ public class MapStoreConfig implements IdentifiedDataSerializable {
      * @param implementation the map store implementation object to set
      * @return this MapStoreConfig instance
      */
-    public MapStoreConfig setImplementation(Object implementation) {
-        if (implementation != null) {
-            setClassName(null);
-        }
-        this.implementation = implementation;
+    public MapStoreConfig setImplementation(@Nonnull Object implementation) {
+        this.implementation = checkNotNull(implementation, "Map store cannot be null!");
+        this.className = null;
         return this;
     }
 
@@ -225,11 +220,9 @@ public class MapStoreConfig implements IdentifiedDataSerializable {
      * @param factoryImplementation the factory implementation object
      * @return this MapStoreConfig instance
      */
-    public MapStoreConfig setFactoryImplementation(Object factoryImplementation) {
-        if (factoryImplementation != null) {
-            setFactoryClassName(null);
-        }
-        this.factoryImplementation = factoryImplementation;
+    public MapStoreConfig setFactoryImplementation(@Nonnull Object factoryImplementation) {
+        this.factoryImplementation = checkNotNull(factoryImplementation, "Map store factory cannot be null!");
+        this.factoryClassName = null;
         return this;
     }
 
@@ -272,7 +265,7 @@ public class MapStoreConfig implements IdentifiedDataSerializable {
      * @return this MapStoreConfig
      */
     public MapStoreConfig setProperties(Properties properties) {
-        this.properties = isNotNull(properties, "properties");
+        this.properties = checkNotNull(properties, "Map store config properties cannot be null!");
         return this;
     }
 

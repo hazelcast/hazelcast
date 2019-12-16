@@ -18,11 +18,12 @@ package com.hazelcast.config;
 
 import com.hazelcast.spi.MemberAddressProvider;
 
+import javax.annotation.Nonnull;
 import java.util.Objects;
 import java.util.Properties;
 
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
-
+import static com.hazelcast.internal.util.Preconditions.checkHasText;
 
 /**
  * Configuration for a custom {@link MemberAddressProvider} strategy.
@@ -56,11 +57,9 @@ public final class MemberAddressProviderConfig {
         return className;
     }
 
-    public MemberAddressProviderConfig setClassName(String className) {
-        if (className != null) {
-            setImplementation(null);
-        }
-        this.className = className;
+    public MemberAddressProviderConfig setClassName(@Nonnull String className) {
+        this.className = checkHasText(className, "Member address provider class name must contain text");
+        this.implementation = null;
         return this;
     }
 
@@ -78,11 +77,9 @@ public final class MemberAddressProviderConfig {
         return implementation;
     }
 
-    public MemberAddressProviderConfig setImplementation(MemberAddressProvider implementation) {
-        if (implementation != null) {
-            setClassName(null);
-        }
-        this.implementation = implementation;
+    public MemberAddressProviderConfig setImplementation(@Nonnull MemberAddressProvider implementation) {
+        this.implementation = checkNotNull(implementation, "Member address provider cannot be null!");
+        this.className = null;
         return this;
     }
 

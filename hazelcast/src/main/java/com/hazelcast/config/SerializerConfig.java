@@ -18,7 +18,11 @@ package com.hazelcast.config;
 
 import com.hazelcast.nio.serialization.Serializer;
 
+import javax.annotation.Nonnull;
 import java.util.Objects;
+
+import static com.hazelcast.internal.util.Preconditions.checkHasText;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 /**
  * Contains the serialization configuration for a particular class.
@@ -59,8 +63,10 @@ public class SerializerConfig {
      * @return SerializerConfig
      */
     public SerializerConfig setClass(final Class<? extends Serializer> clazz) {
-        String className = clazz == null ? null : clazz.getName();
-        return setClassName(className);
+        if (clazz != null) {
+            setClassName(clazz.getName());
+        }
+        return this;
     }
 
     /**
@@ -69,11 +75,9 @@ public class SerializerConfig {
      * @param className the class name of the serializer implementation
      * @return SerializationConfig
      */
-    public SerializerConfig setClassName(final String className) {
-        if (className != null) {
-            setImplementation(null);
-        }
-        this.className = className;
+    public SerializerConfig setClassName(final @Nonnull String className) {
+        this.className = checkHasText(className, "Serializer class name must contain text");
+        this.implementation = null;
         return this;
     }
 
@@ -96,11 +100,9 @@ public class SerializerConfig {
      * @param implementation the serializer instance
      * @return SerializerConfig
      */
-    public SerializerConfig setImplementation(final Serializer implementation) {
-        if (implementation != null) {
-            setClassName(null);
-        }
-        this.implementation = implementation;
+    public SerializerConfig setImplementation(final @Nonnull Serializer implementation) {
+        this.implementation = checkNotNull(implementation, "Serializer cannot be null");
+        this.className = null;
         return this;
     }
 
@@ -120,11 +122,9 @@ public class SerializerConfig {
      * @param typeClass type of the class that will be serialized via this implementation
      * @return SerializerConfig
      */
-    public SerializerConfig setTypeClass(final Class typeClass) {
-        if (typeClass != null) {
-            setTypeClassName(null);
-        }
-        this.typeClass = typeClass;
+    public SerializerConfig setTypeClass(final @Nonnull Class typeClass) {
+        this.typeClass = checkNotNull(typeClass, "Serializer type class cannot be null!");
+        this.typeClassName = null;
         return this;
     }
 
@@ -145,11 +145,9 @@ public class SerializerConfig {
      * @param typeClassName name of the class that will be serialized via this implementation
      * @return SerializerConfig
      */
-    public SerializerConfig setTypeClassName(final String typeClassName) {
-        if (typeClassName != null) {
-            setTypeClass(null);
-        }
-        this.typeClassName = typeClassName;
+    public SerializerConfig setTypeClassName(final @Nonnull String typeClassName) {
+        this.typeClassName = checkHasText(typeClassName, "Serializer type class name must contain text");
+        this.typeClass = null;
         return this;
     }
 

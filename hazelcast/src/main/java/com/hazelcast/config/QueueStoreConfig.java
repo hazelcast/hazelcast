@@ -23,11 +23,13 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
+import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.util.Objects;
 import java.util.Properties;
 
-import static com.hazelcast.internal.util.Preconditions.isNotNull;
+import static com.hazelcast.internal.util.Preconditions.checkHasText;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 /**
  * Configuration for the {@link QueueStore}.
@@ -57,11 +59,9 @@ public class QueueStoreConfig implements IdentifiedDataSerializable {
         return storeImplementation;
     }
 
-    public QueueStoreConfig setStoreImplementation(QueueStore storeImplementation) {
-        if (storeImplementation != null) {
-            setClassName(null);
-        }
-        this.storeImplementation = storeImplementation;
+    public QueueStoreConfig setStoreImplementation(@Nonnull QueueStore storeImplementation) {
+        this.storeImplementation = checkNotNull(storeImplementation, "Queue store cannot be null!");
+        this.className = null;
         return this;
     }
 
@@ -78,11 +78,9 @@ public class QueueStoreConfig implements IdentifiedDataSerializable {
         return className;
     }
 
-    public QueueStoreConfig setClassName(String className) {
-        if (className != null) {
-            setStoreImplementation(null);
-        }
-        this.className = className;
+    public QueueStoreConfig setClassName(@Nonnull String className) {
+        this.className = checkHasText(className, "Queue store class name must contain text");
+        this.storeImplementation = null;
         return this;
     }
 
@@ -91,7 +89,7 @@ public class QueueStoreConfig implements IdentifiedDataSerializable {
     }
 
     public QueueStoreConfig setProperties(Properties properties) {
-        this.properties = isNotNull(properties, "properties");
+        this.properties = checkNotNull(properties, "Queue store config properties cannot be null");
         return this;
     }
 
@@ -108,11 +106,9 @@ public class QueueStoreConfig implements IdentifiedDataSerializable {
         return factoryClassName;
     }
 
-    public QueueStoreConfig setFactoryClassName(String factoryClassName) {
-        if (factoryClassName != null) {
-            setFactoryImplementation(null);
-        }
-        this.factoryClassName = factoryClassName;
+    public QueueStoreConfig setFactoryClassName(@Nonnull String factoryClassName) {
+        this.factoryClassName = checkHasText(factoryClassName, "Queue factory store class name must contain text");
+        this.factoryImplementation = null;
         return this;
     }
 
@@ -120,11 +116,9 @@ public class QueueStoreConfig implements IdentifiedDataSerializable {
         return factoryImplementation;
     }
 
-    public QueueStoreConfig setFactoryImplementation(QueueStoreFactory factoryImplementation) {
-        if (factoryImplementation != null) {
-            setFactoryClassName(null);
-        }
-        this.factoryImplementation = factoryImplementation;
+    public QueueStoreConfig setFactoryImplementation(@Nonnull QueueStoreFactory factoryImplementation) {
+        this.factoryImplementation = checkNotNull(factoryImplementation, "Queue store factory cannot be null!");
+        this.factoryClassName = null;
         return this;
     }
 

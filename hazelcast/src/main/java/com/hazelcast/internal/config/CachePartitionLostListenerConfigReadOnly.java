@@ -20,6 +20,7 @@ import com.hazelcast.cache.impl.event.CachePartitionLostListener;
 import com.hazelcast.config.CachePartitionLostListenerConfig;
 import com.hazelcast.config.ListenerConfig;
 
+import javax.annotation.Nonnull;
 import java.util.EventListener;
 
 /**
@@ -40,7 +41,7 @@ public class CachePartitionLostListenerConfigReadOnly
     }
 
     @Override
-    public ListenerConfig setClassName(String className) {
+    public ListenerConfig setClassName(@Nonnull String className) {
         throw new UnsupportedOperationException("this config is read-only");
     }
 

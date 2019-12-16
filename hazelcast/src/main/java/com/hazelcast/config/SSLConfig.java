@@ -16,8 +16,12 @@
 
 package com.hazelcast.config;
 
+import javax.annotation.Nonnull;
 import java.util.Objects;
 import java.util.Properties;
+
+import static com.hazelcast.internal.util.Preconditions.checkHasText;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 /**
  * SSL configuration.
@@ -60,11 +64,9 @@ public final class SSLConfig {
      *
      * @param factoryClassName the name implementation class
      */
-    public SSLConfig setFactoryClassName(String factoryClassName) {
-        if (factoryClassName != null) {
-            setFactoryImplementation(null);
-        }
-        this.factoryClassName = factoryClassName;
+    public SSLConfig setFactoryClassName(@Nonnull String factoryClassName) {
+        this.factoryClassName = checkHasText(factoryClassName, "SSL context factory class name cannot be null!");
+        this.factoryImplementation = null;
         return this;
     }
 
@@ -96,11 +98,9 @@ public final class SSLConfig {
      * @param factoryImplementation the implementation object
      * @return this SSLConfig instance
      */
-    public SSLConfig setFactoryImplementation(Object factoryImplementation) {
-        if (factoryImplementation != null) {
-            setFactoryClassName(null);
-        }
-        this.factoryImplementation = factoryImplementation;
+    public SSLConfig setFactoryImplementation(@Nonnull Object factoryImplementation) {
+        this.factoryImplementation = checkNotNull(factoryImplementation, "SSL context factory cannot be null!");
+        this.factoryClassName = null;
         return this;
     }
 

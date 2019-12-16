@@ -24,12 +24,14 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
+import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.Objects;
 
-import static com.hazelcast.internal.util.Preconditions.checkNotNegative;
+import static com.hazelcast.internal.util.Preconditions.checkHasText;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.Preconditions.checkNotNegative;
 
 /**
  * Configuration for eviction.
@@ -196,8 +198,8 @@ public class EvictionConfig implements EvictionConfiguration, IdentifiedDataSeri
      *                            configured {@link EvictionPolicyComparator} implementation
      * @return this EvictionConfig instance
      */
-    public EvictionConfig setComparatorClassName(String comparatorClassName) {
-        this.comparatorClassName = checkNotNull(comparatorClassName,
+    public EvictionConfig setComparatorClassName(@Nonnull String comparatorClassName) {
+        this.comparatorClassName = checkHasText(comparatorClassName,
                 "Eviction policy comparator class name cannot be null!");
         this.comparator = null;
         return this;
@@ -228,7 +230,7 @@ public class EvictionConfig implements EvictionConfiguration, IdentifiedDataSeri
      * @see com.hazelcast.map.MapEvictionPolicyComparator
      * @see com.hazelcast.cache.CacheEvictionPolicyComparator
      */
-    public EvictionConfig setComparator(EvictionPolicyComparator comparator) {
+    public EvictionConfig setComparator(@Nonnull EvictionPolicyComparator comparator) {
         this.comparator = checkNotNull(comparator,
                 "Eviction policy comparator cannot be null!");
         this.comparatorClassName = null;

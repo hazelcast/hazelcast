@@ -23,10 +23,14 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.discovery.DiscoveryStrategyFactory;
 import com.hazelcast.internal.util.MapUtil;
 
+import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+
+import static com.hazelcast.internal.util.Preconditions.checkHasText;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 /**
  * This configuration class describes a {@link com.hazelcast.spi.discovery.DiscoveryStrategy}
@@ -81,19 +85,15 @@ public class DiscoveryStrategyConfig implements IdentifiedDataSerializable {
         return className;
     }
 
-    public DiscoveryStrategyConfig setClassName(String className) {
-        if (className != null) {
-            setDiscoveryStrategyFactory(null);
-        }
-        this.className = className;
+    public DiscoveryStrategyConfig setClassName(@Nonnull String className) {
+        this.className = checkHasText(className, "Discovery strategy factory class name must contain text");
+        this.discoveryStrategyFactory = null;
         return this;
     }
 
-    public DiscoveryStrategyConfig setDiscoveryStrategyFactory(DiscoveryStrategyFactory discoveryStrategyFactory) {
-        if (discoveryStrategyFactory != null) {
-            setClassName(null);
-        }
-        this.discoveryStrategyFactory = discoveryStrategyFactory;
+    public DiscoveryStrategyConfig setDiscoveryStrategyFactory(@Nonnull DiscoveryStrategyFactory discoveryStrategyFactory) {
+        this.discoveryStrategyFactory = checkNotNull(discoveryStrategyFactory, "Discovery strategy factory cannot be null!");
+        this.className = null;
         return this;
     }
 

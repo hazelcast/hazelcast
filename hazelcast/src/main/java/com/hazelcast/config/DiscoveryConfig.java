@@ -24,11 +24,15 @@ import com.hazelcast.spi.discovery.DiscoveryStrategy;
 import com.hazelcast.spi.discovery.NodeFilter;
 import com.hazelcast.spi.discovery.integration.DiscoveryServiceProvider;
 
+import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
+
+import static com.hazelcast.internal.util.Preconditions.checkHasText;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 /**
  * This configuration class describes the top-level config of the discovery
@@ -72,11 +76,9 @@ public class DiscoveryConfig implements IdentifiedDataSerializable {
         return nodeFilter;
     }
 
-    public DiscoveryConfig setNodeFilter(NodeFilter nodeFilter) {
-        if (nodeFilter != null) {
-            setNodeFilterClass(null);
-        }
-        this.nodeFilter = nodeFilter;
+    public DiscoveryConfig setNodeFilter(@Nonnull NodeFilter nodeFilter) {
+        this.nodeFilter = checkNotNull(nodeFilter, "Node filter cannot be null!");
+        this.nodeFilterClass = null;
         return this;
     }
 
@@ -84,11 +86,9 @@ public class DiscoveryConfig implements IdentifiedDataSerializable {
         return nodeFilterClass;
     }
 
-    public DiscoveryConfig setNodeFilterClass(String nodeFilterClass) {
-        if (nodeFilterClass != null) {
-            setNodeFilter(null);
-        }
-        this.nodeFilterClass = nodeFilterClass;
+    public DiscoveryConfig setNodeFilterClass(@Nonnull String nodeFilterClass) {
+        this.nodeFilterClass = checkHasText(nodeFilterClass, "Node filter class name must contain text");
+        this.nodeFilter = null;
         return this;
     }
 

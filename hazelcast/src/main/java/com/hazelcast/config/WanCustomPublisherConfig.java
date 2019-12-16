@@ -61,13 +61,13 @@ public class WanCustomPublisherConfig extends AbstractWanPublisherConfig {
     }
 
     @Override
-    public WanCustomPublisherConfig setClassName(String className) {
+    public WanCustomPublisherConfig setClassName(@Nonnull String className) {
         super.setClassName(className);
         return this;
     }
 
     @Override
-    public WanCustomPublisherConfig setImplementation(WanPublisher implementation) {
+    public WanCustomPublisherConfig setImplementation(@Nonnull WanPublisher implementation) {
         super.setImplementation(implementation);
         return this;
     }

@@ -18,8 +18,12 @@ package com.hazelcast.config;
 
 import com.hazelcast.nio.SocketInterceptor;
 
+import javax.annotation.Nonnull;
 import java.util.Objects;
 import java.util.Properties;
+
+import static com.hazelcast.internal.util.Preconditions.checkHasText;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 /**
  * Contains the configuration for interceptor socket.
@@ -56,11 +60,9 @@ public class SocketInterceptorConfig {
      * @param className the name of the {@link SocketInterceptor} implementation class to set
      * @return this SocketInterceptorConfig instance
      */
-    public SocketInterceptorConfig setClassName(String className) {
-        if (className != null) {
-            setImplementation(null);
-        }
-        this.className = className;
+    public SocketInterceptorConfig setClassName(@Nonnull String className) {
+        this.className = checkHasText(className, "Socket interceptor class name must contain text");
+        this.implementation = null;
         return this;
     }
 
@@ -70,11 +72,9 @@ public class SocketInterceptorConfig {
      * @param implementation the {@link SocketInterceptor} implementation object to set
      * @return this SocketInterceptorConfig instance
      */
-    public SocketInterceptorConfig setImplementation(Object implementation) {
-        if (implementation != null) {
-            setClassName(null);
-        }
-        this.implementation = implementation;
+    public SocketInterceptorConfig setImplementation(@Nonnull Object implementation) {
+        this.implementation = checkNotNull(implementation, "Socket interceptor cannot be null!");
+        this.className = null;
         return this;
     }
 

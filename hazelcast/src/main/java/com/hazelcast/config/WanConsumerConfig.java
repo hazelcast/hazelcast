@@ -22,10 +22,14 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.wan.WanConsumer;
 
+import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
+
+import static com.hazelcast.internal.util.Preconditions.checkHasText;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 /**
  * Config for processing WAN events received from a target cluster.
@@ -92,11 +96,9 @@ public class WanConsumerConfig implements IdentifiedDataSerializable {
      * @return this config
      * @see #setImplementation(WanConsumer)
      */
-    public WanConsumerConfig setClassName(String className) {
-        if (className != null) {
-            setImplementation(null);
-        }
-        this.className = className;
+    public WanConsumerConfig setClassName(@Nonnull String className) {
+        this.className = checkHasText(className, "Wan consumer class name must contain text");
+        this.implementation = null;
         return this;
     }
 
@@ -120,11 +122,9 @@ public class WanConsumerConfig implements IdentifiedDataSerializable {
      * @return this config
      * @see #setClassName(String)
      */
-    public WanConsumerConfig setImplementation(WanConsumer implementation) {
-        if (implementation != null) {
-            setClassName(null);
-        }
-        this.implementation = implementation;
+    public WanConsumerConfig setImplementation(@Nonnull WanConsumer implementation) {
+        this.implementation = checkNotNull(implementation, "Wan consumer cannot be null!");
+        this.className = null;
         return this;
     }
 

@@ -18,7 +18,11 @@ package com.hazelcast.client.config;
 
 import com.hazelcast.client.impl.spi.ClientProxyFactory;
 
+import javax.annotation.Nonnull;
 import java.util.Objects;
+
+import static com.hazelcast.internal.util.Preconditions.checkHasText;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 /**
  * This class is related to SPI. To register custom services to java client.
@@ -62,8 +66,9 @@ public class ProxyFactoryConfig {
      *
      * @param className of proxy factory
      */
-    public ProxyFactoryConfig setClassName(String className) {
-        this.className = className;
+    public ProxyFactoryConfig setClassName(@Nonnull String className) {
+        this.className = checkHasText(className, "Client proxy factory class name must contain text");
+        this.factoryImpl = null;
         return this;
     }
 
@@ -94,8 +99,9 @@ public class ProxyFactoryConfig {
      *
      * @param factoryImpl of proxy factory
      */
-    public ProxyFactoryConfig setFactoryImpl(ClientProxyFactory factoryImpl) {
-        this.factoryImpl = factoryImpl;
+    public ProxyFactoryConfig setFactoryImpl(@Nonnull ClientProxyFactory factoryImpl) {
+        this.factoryImpl = checkNotNull(factoryImpl, "Client proxy factory cannot be null!");
+        this.className = null;
         return this;
     }
 

@@ -27,6 +27,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 
+import static com.hazelcast.internal.util.Preconditions.checkHasText;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 /**
@@ -97,11 +98,9 @@ public abstract class AbstractWanPublisherConfig implements IdentifiedDataSerial
      * @param className the name of the class implementation for the WAN replication
      * @return this config
      */
-    public AbstractWanPublisherConfig setClassName(String className) {
-        if (className != null) {
-            setImplementation(null);
-        }
-        this.className = className;
+    public AbstractWanPublisherConfig setClassName(@Nonnull String className) {
+        this.className = checkHasText(className, "Wan publisher class name must contain text!");
+        this.implementation = null;
         return this;
     }
 
@@ -118,11 +117,9 @@ public abstract class AbstractWanPublisherConfig implements IdentifiedDataSerial
      * @param implementation the implementation for the WAN replication
      * @return this config
      */
-    public AbstractWanPublisherConfig setImplementation(WanPublisher implementation) {
-        if (implementation != null) {
-            setClassName(null);
-        }
-        this.implementation = implementation;
+    public AbstractWanPublisherConfig setImplementation(@Nonnull WanPublisher implementation) {
+        this.implementation = checkNotNull(implementation, "Wan publisher cannot be null!");
+        this.className = null;
         return this;
     }
 

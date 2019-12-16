@@ -21,12 +21,13 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
+import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.util.EventListener;
 import java.util.Objects;
 
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.internal.util.Preconditions.checkHasText;
-import static com.hazelcast.internal.util.Preconditions.isNotNull;
 
 /**
  * Contains the configuration for an {@link EventListener}. The configuration
@@ -90,8 +91,8 @@ public class ListenerConfig implements IdentifiedDataSerializable {
      * @see #setImplementation(java.util.EventListener)
      * @see #getClassName()
      */
-    public ListenerConfig setClassName(String className) {
-        this.className = checkHasText(className, "className must contain text");
+    public ListenerConfig setClassName(@Nonnull String className) {
+        this.className = checkHasText(className, "Event listener class name must contain text");
         this.implementation = null;
         return this;
     }
@@ -118,7 +119,7 @@ public class ListenerConfig implements IdentifiedDataSerializable {
      * @see #getImplementation()
      */
     public ListenerConfig setImplementation(EventListener implementation) {
-        this.implementation = isNotNull(implementation, "implementation");
+        this.implementation = checkNotNull(implementation, "Event listener cannot be null!");
         this.className = null;
         return this;
     }

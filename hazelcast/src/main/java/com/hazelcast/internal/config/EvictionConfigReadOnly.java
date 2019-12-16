@@ -21,6 +21,8 @@ import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.MaxSizePolicy;
 import com.hazelcast.spi.eviction.EvictionPolicyComparator;
 
+import javax.annotation.Nonnull;
+
 /**
  * Read only version of {@link com.hazelcast.config.EvictionConfig}.
  */
@@ -46,12 +48,12 @@ public class EvictionConfigReadOnly extends EvictionConfig {
     }
 
     @Override
-    public EvictionConfig setComparatorClassName(String comparatorClassName) {
+    public EvictionConfig setComparatorClassName(@Nonnull String comparatorClassName) {
         throw new UnsupportedOperationException("This config is read-only");
     }
 
     @Override
-    public EvictionConfig setComparator(EvictionPolicyComparator comparator) {
+    public EvictionConfig setComparator(@Nonnull EvictionPolicyComparator comparator) {
         throw new UnsupportedOperationException("This config is read-only");
     }
 }

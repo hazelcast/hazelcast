@@ -23,11 +23,13 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.ringbuffer.RingbufferStore;
 import com.hazelcast.ringbuffer.RingbufferStoreFactory;
 
+import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.util.Objects;
 import java.util.Properties;
 
-import static com.hazelcast.internal.util.Preconditions.isNotNull;
+import static com.hazelcast.internal.util.Preconditions.checkHasText;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 /**
  * Configuration for the {@link RingbufferStore}.
@@ -57,11 +59,9 @@ public class RingbufferStoreConfig implements IdentifiedDataSerializable {
         return storeImplementation;
     }
 
-    public RingbufferStoreConfig setStoreImplementation(RingbufferStore storeImplementation) {
-        if (storeImplementation != null) {
-            setClassName(null);
-        }
-        this.storeImplementation = storeImplementation;
+    public RingbufferStoreConfig setStoreImplementation(@Nonnull RingbufferStore storeImplementation) {
+        this.storeImplementation = checkNotNull(storeImplementation, "Ringbuffer store cannot be null!");
+        this.className = null;
         return this;
     }
 
@@ -78,11 +78,9 @@ public class RingbufferStoreConfig implements IdentifiedDataSerializable {
         return className;
     }
 
-    public RingbufferStoreConfig setClassName(String className) {
-        if (className != null) {
-            setStoreImplementation(null);
-        }
-        this.className = className;
+    public RingbufferStoreConfig setClassName(@Nonnull String className) {
+        this.className = checkHasText(className, "Ringbuffer store class name must contain text");
+        this.storeImplementation = null;
         return this;
     }
 
@@ -91,7 +89,7 @@ public class RingbufferStoreConfig implements IdentifiedDataSerializable {
     }
 
     public RingbufferStoreConfig setProperties(Properties properties) {
-        this.properties = isNotNull(properties, "properties");
+        this.properties = checkNotNull(properties, "Ringbuffer store config properties cannot be null!");
         return this;
     }
 
@@ -108,11 +106,9 @@ public class RingbufferStoreConfig implements IdentifiedDataSerializable {
         return factoryClassName;
     }
 
-    public RingbufferStoreConfig setFactoryClassName(String factoryClassName) {
-        if (factoryClassName != null) {
-            setFactoryImplementation(null);
-        }
-        this.factoryClassName = factoryClassName;
+    public RingbufferStoreConfig setFactoryClassName(@Nonnull String factoryClassName) {
+        this.factoryClassName = checkHasText(factoryClassName, "Ringbuffer store factory class name must contain text");
+        this.factoryImplementation = null;
         return this;
     }
 
@@ -120,11 +116,9 @@ public class RingbufferStoreConfig implements IdentifiedDataSerializable {
         return factoryImplementation;
     }
 
-    public RingbufferStoreConfig setFactoryImplementation(RingbufferStoreFactory factoryImplementation) {
-        if (factoryImplementation != null) {
-            setFactoryClassName(null);
-        }
-        this.factoryImplementation = factoryImplementation;
+    public RingbufferStoreConfig setFactoryImplementation(@Nonnull RingbufferStoreFactory factoryImplementation) {
+        this.factoryImplementation = checkNotNull(factoryImplementation, "Ringbuffer store factory cannot be null");
+        this.factoryClassName = null;
         return this;
     }
 
