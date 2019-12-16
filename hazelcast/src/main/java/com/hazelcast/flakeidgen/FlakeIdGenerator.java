@@ -30,8 +30,8 @@ import com.hazelcast.internal.cluster.ClusterService;
  * members, which makes the generator safe even in split-brain scenario (for caveats,
  * {@link ClusterService#getMemberListJoinVersion() see here}).
  * <p>
- * Timestamp component is in milliseconds since 1.1.2018, 0:00 UTC and has 41 bits. This caps
- * the useful lifespan of the generator to little less than 70 years (until ~2088). The sequence component
+ * Default timestamp component is in milliseconds since 1.1.2018, 0:00 UTC and has 41 bits. This caps
+ * the useful lifespan of the generator to little less than 70 years (until ~2088). Default sequence component
  * is 6 bits. If more than 64 IDs are requested in single millisecond, IDs will gracefully overflow to the next
  * millisecond and uniqueness is guaranteed in this case. The implementation does not allow overflowing
  * by more than 15 seconds, if IDs are requested at higher rate, the call will block. Note, however, that
@@ -40,7 +40,7 @@ import com.hazelcast.internal.cluster.ClusterService;
  * <p>
  * <b>Node ID overflow</b>
  * <p>
- * Node ID component of the ID has 16 bits. Members with member list join version higher than
+ * Default node ID component of the ID has 16 bits. Members with member list join version higher than
  * 2^16 won't be able to generate IDs, but functionality will be preserved by forwarding to another
  * member. It is possible to generate IDs on any member or client as long as there is at least one
  * member with join version smaller than 2^16 in the cluster. The remedy is to restart the cluster:

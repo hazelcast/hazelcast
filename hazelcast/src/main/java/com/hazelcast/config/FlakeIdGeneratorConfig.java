@@ -47,10 +47,35 @@ public class FlakeIdGeneratorConfig implements IdentifiedDataSerializable, Named
      * Default value for {@link #getPrefetchValidityMillis()}.
      */
     public static final long DEFAULT_PREFETCH_VALIDITY_MILLIS = 600000;
+    
+    /**
+     * {@code 1514764800000} is the value {@code System.currentTimeMillis()} would return on
+     * 1.1.2018 0:00 UTC.
+     */
+    @SuppressWarnings("checkstyle:magicnumber")
+    public static final long DEFAULT_EPOCH_START = 1514764800000L;
+
+    /**
+     * Timestamp component bit length, default 41 bits. Default value for {@link #getBitsTimestamp()}.
+     */
+    public static final int DEFAULT_BITS_TIMESTAMP = 41;
+    /**
+     * Sequence component bit length, default 6 bits. Default value for {@link #getBitsSequence()}.
+     */
+    public static final int DEFAULT_BITS_SEQUENCE = 6;
+    /**
+     * Node ID component bit length, default 16 bits. Default value for {@link #getBitsNodeId()}.
+     */
+    public static final int DEFAULT_BITS_NODE_ID = 16;
+    /** 
+     * How far to the future is it allowed to go to generate IDs, default 15 seconds. Default value for {@link #getAllowedFutureMillis()}.
+     */
+    public static final long DEFAULT_ALLOWED_FUTURE_MILLIS = 15000;
+
 
     /**
      * Maximum value for prefetch count. The limit is ~10% of the time we allow the IDs to be from the future
-     * (see {@link com.hazelcast.flakeidgen.impl.FlakeIdGeneratorProxy#ALLOWED_FUTURE_MILLIS}).
+     * (see {@link #DEFAULT_ALLOWED_FUTURE_MILLIS}).
      * <p>
      * The reason to limit the prefetch count is that a single call to {@link FlakeIdGenerator#newId()} might
      * be blocked if the future allowance is exceeded: we want to avoid a single call for large batch to block
@@ -61,8 +86,13 @@ public class FlakeIdGeneratorConfig implements IdentifiedDataSerializable, Named
     private String name;
     private int prefetchCount = DEFAULT_PREFETCH_COUNT;
     private long prefetchValidityMillis = DEFAULT_PREFETCH_VALIDITY_MILLIS;
+    private long epochStart = DEFAULT_EPOCH_START;
     private long idOffset;
     private long nodeIdOffset;
+    private int bitsTimestamp = DEFAULT_BITS_TIMESTAMP;
+    private int bitsSequence = DEFAULT_BITS_SEQUENCE;
+    private int bitsNodeId = DEFAULT_BITS_NODE_ID;
+    private long allowedFutureMillis = DEFAULT_ALLOWED_FUTURE_MILLIS;
     private boolean statisticsEnabled = true;
 
     // for deserialization
@@ -80,8 +110,13 @@ public class FlakeIdGeneratorConfig implements IdentifiedDataSerializable, Named
         this.name = other.name;
         this.prefetchCount = other.prefetchCount;
         this.prefetchValidityMillis = other.prefetchValidityMillis;
+        this.epochStart = other.epochStart;
         this.idOffset = other.idOffset;
         this.nodeIdOffset = other.nodeIdOffset;
+        this.bitsTimestamp = other.bitsTimestamp;
+        this.bitsSequence = other.bitsSequence;
+        this.bitsNodeId = other.bitsNodeId;
+        this.allowedFutureMillis = other.allowedFutureMillis;
         this.statisticsEnabled = other.statisticsEnabled;
     }
 
@@ -152,6 +187,27 @@ public class FlakeIdGeneratorConfig implements IdentifiedDataSerializable, Named
     }
 
     /**
+     * Sets the offset of timestamp component in milliseconds. 
+     * <p>
+     * This setting pertains only to {@link FlakeIdGenerator#newId newId} calls made on the member
+     * that configured it.
+     *
+     * @param epochStart the desired epoch start
+     * @return this instance for fluent API
+     */
+    public FlakeIdGeneratorConfig setEpochStart(long epochStart) {
+        this.epochStart = epochStart;
+        return this;
+    }
+
+    /**
+     * @see #setEpochStart(long)
+     */
+    public long getEpochStart() {
+        return epochStart;
+    }
+
+    /**
      * @see #setIdOffset(long)
      */
     public long getIdOffset() {
@@ -204,6 +260,81 @@ public class FlakeIdGeneratorConfig implements IdentifiedDataSerializable, Named
     }
 
     /**
+     * @see #setBitsTimestamp(int)
+     */
+    public int getBitsTimestamp() {
+        return bitsTimestamp;
+    }
+
+    /**
+     * Sets the bit length of timestamp component.
+     *
+     * @param bitsTimestamp timestamp component bit length
+     * @return this instance for fluent API
+     */
+    public FlakeIdGeneratorConfig setBitsTimestamp(int bitsTimestamp) {
+        checkNotNegative(bitsTimestamp, "timestamp bit length must be non-negative");
+        this.bitsTimestamp = bitsTimestamp;
+        return this;
+    }
+
+    /**
+     * @see #setBitsSequence(int)
+     */
+    public int getBitsSequence() {
+        return bitsSequence;
+    }
+
+    /**
+     * Sets the bit length of sequence component.
+     *
+     * @param bitsSequence sequence component bit length
+     * @return this instance for fluent API
+     */
+    public FlakeIdGeneratorConfig setBitsSequence(int bitsSequence) {
+        checkNotNegative(bitsSequence, "sequence bit length must be non-negative");
+        this.bitsSequence = bitsSequence;
+        return this;
+    }
+
+    /**
+     * @see #setBitsNodeId(int)
+     */
+    public int getBitsNodeId() {
+        return bitsNodeId;
+    }
+
+    /**
+     * Sets the bit length of node id component.
+     *
+     * @param bitsNodeId node id component bit length
+     * @return this instance for fluent API
+     */
+    public FlakeIdGeneratorConfig setBitsNodeId(int bitsNodeId) {
+        checkNotNegative(bitsNodeId, "node id bit length must be non-negative");
+        this.bitsNodeId = bitsNodeId;
+        return this;
+    }
+
+    /**
+     * @see #setAllowedFutureMillis(long)
+     */
+    public long getAllowedFutureMillis() {
+        return allowedFutureMillis;
+    }
+
+    /**
+     * Sets how far to the future is it allowed to go to generate IDs.
+     * @param allowedFutureMillis value in milliseconds
+     * @return this instance for fluent API
+     */
+    public FlakeIdGeneratorConfig setAllowedFutureMillis(long allowedFutureMillis) {
+        checkNotNegative(allowedFutureMillis, "allowedFutureMillis must be non-negative");
+        this.allowedFutureMillis = allowedFutureMillis;
+        return this;
+    }
+
+    /**
      * @see #setStatisticsEnabled(boolean)
      */
     public boolean isStatisticsEnabled() {
@@ -236,15 +367,20 @@ public class FlakeIdGeneratorConfig implements IdentifiedDataSerializable, Named
 
         return prefetchCount == that.prefetchCount
                 && prefetchValidityMillis == that.prefetchValidityMillis
+                && epochStart == that.epochStart
                 && idOffset == that.idOffset
                 && nodeIdOffset == that.nodeIdOffset
+                && bitsTimestamp == that.bitsTimestamp
+                && bitsSequence == that.bitsSequence
+                && bitsNodeId == that.bitsNodeId
+                && allowedFutureMillis == that.allowedFutureMillis
                 && (name != null ? name.equals(that.name) : that.name == null)
                 && statisticsEnabled == that.statisticsEnabled;
     }
 
     @Override
     public int hashCode() {
-        return Arrays.hashCode(new Object[]{name, prefetchCount, prefetchValidityMillis, idOffset, statisticsEnabled});
+        return Arrays.hashCode(new Object[]{name, prefetchCount, prefetchValidityMillis, epochStart, idOffset, bitsTimestamp, bitsSequence, bitsNodeId, allowedFutureMillis, statisticsEnabled});
     }
 
     @Override
@@ -253,8 +389,13 @@ public class FlakeIdGeneratorConfig implements IdentifiedDataSerializable, Named
                 + "name='" + name + '\''
                 + ", prefetchCount=" + prefetchCount
                 + ", prefetchValidityMillis=" + prefetchValidityMillis
+                + ", epochStart=" + epochStart
                 + ", idOffset=" + idOffset
                 + ", nodeIdOffset=" + nodeIdOffset
+                + ", bitsTimestamp=" + bitsTimestamp
+                + ", bitsSequence=" + bitsSequence
+                + ", bitsNodeId=" + bitsNodeId
+                + ", allowedFutureMillis=" + allowedFutureMillis
                 + ", statisticsEnabled=" + statisticsEnabled
                 + '}';
     }
@@ -274,8 +415,13 @@ public class FlakeIdGeneratorConfig implements IdentifiedDataSerializable, Named
         out.writeUTF(name);
         out.writeInt(prefetchCount);
         out.writeLong(prefetchValidityMillis);
+        out.writeLong(epochStart);
         out.writeLong(idOffset);
         out.writeLong(nodeIdOffset);
+        out.writeInt(bitsTimestamp);
+        out.writeInt(bitsSequence);
+        out.writeInt(bitsNodeId);
+        out.writeLong(allowedFutureMillis);
         out.writeBoolean(statisticsEnabled);
     }
 
@@ -284,8 +430,13 @@ public class FlakeIdGeneratorConfig implements IdentifiedDataSerializable, Named
         name = in.readUTF();
         prefetchCount = in.readInt();
         prefetchValidityMillis = in.readLong();
+        epochStart = in.readLong();
         idOffset = in.readLong();
         nodeIdOffset = in.readLong();
+        bitsTimestamp = in.readInt();
+        bitsSequence = in.readInt();
+        bitsNodeId = in.readInt();
+        allowedFutureMillis = in.readLong();
         statisticsEnabled = in.readBoolean();
     }
 }

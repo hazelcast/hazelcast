@@ -44,21 +44,7 @@ public class FlakeIdGeneratorProxy
         extends AbstractDistributedObject<FlakeIdGeneratorService>
         implements FlakeIdGenerator {
 
-    public static final int BITS_TIMESTAMP = 41;
-    public static final int BITS_SEQUENCE = 6;
-    public static final int BITS_NODE_ID = 16;
-
     /** The difference between two IDs from a sequence on single member */
-    public static final long INCREMENT = 1 << BITS_NODE_ID;
-    /** How far to the future is it allowed to go to generate IDs. */
-    static final long ALLOWED_FUTURE_MILLIS = 15000;
-
-    /**
-     * {@code 1514764800000} is the value {@code System.currentTimeMillis()} would return on
-     * 1.1.2018 0:00 UTC.
-     */
-    @SuppressWarnings("checkstyle:magicnumber")
-    static final long EPOCH_START = 1514764800000L;
     static final long NODE_ID_UPDATE_INTERVAL_NS = SECONDS.toNanos(2);
 
     private static final int NODE_ID_NOT_YET_SET = -1;
@@ -68,8 +54,13 @@ public class FlakeIdGeneratorProxy
     private final UUID source;
     private final long epochStart;
     private final long nodeIdOffset;
+    private final int bitsTimestamp;
+    private final int bitsSequence;
+    private final int bitsNodeId;
+    private final long allowedFutureMillis;
     private volatile int nodeId = NODE_ID_NOT_YET_SET;
     private volatile long nextNodeIdUpdate = Long.MIN_VALUE;
+    private final long increment;
     private final ILogger logger;
 
     /**
@@ -93,7 +84,12 @@ public class FlakeIdGeneratorProxy
         this.source = source;
 
         FlakeIdGeneratorConfig config = nodeEngine.getConfig().findFlakeIdGeneratorConfig(getName());
-        epochStart = EPOCH_START - (config.getIdOffset() >> (BITS_SEQUENCE + BITS_NODE_ID));
+        bitsTimestamp = config.getBitsTimestamp();
+        bitsSequence = config.getBitsSequence();
+        bitsNodeId = config.getBitsNodeId();
+        allowedFutureMillis = config.getAllowedFutureMillis();
+        increment = 1 << bitsNodeId;
+        epochStart = config.getEpochStart() - (config.getIdOffset() >> (bitsSequence + bitsNodeId));
         nodeIdOffset = config.getNodeIdOffset();
         batcher = new AutoBatcher(config.getPrefetchCount(), config.getPrefetchValidityMillis(),
                 new AutoBatcher.IdBatchSupplier() {
@@ -141,7 +137,7 @@ public class FlakeIdGeneratorProxy
                                                            .invokeOnTarget(getServiceName(), op, target.getAddress());
             try {
                 long base = future.joinInternal();
-                return new IdBatchAndWaitTime(new IdBatch(base, INCREMENT, batchSize), 0);
+                return new IdBatchAndWaitTime(new IdBatch(base, increment, batchSize), 0);
             } catch (NodeIdOutOfRangeException e) {
                 outOfRangeMembers.add(target.getUuid());
                 randomMember = null;
@@ -172,12 +168,12 @@ public class FlakeIdGeneratorProxy
         if (nodeId == NODE_ID_OUT_OF_RANGE) {
             throw new NodeIdOutOfRangeException("NodeID overflow, this member cannot generate IDs");
         }
-        assert (nodeId & -1 << BITS_NODE_ID) == 0  : "nodeId out of range: " + nodeId;
+        assert (nodeId & -1 << bitsNodeId) == 0  : "nodeId out of range: " + nodeId;
         now -= epochStart;
-        if (now < -(1L << BITS_TIMESTAMP) || now >= (1L << BITS_TIMESTAMP)) {
+        if (now < -(1L << bitsTimestamp) || now >= (1L << bitsTimestamp)) {
             throw new HazelcastException("Current time out of allowed range");
         }
-        now <<= BITS_SEQUENCE;
+        now <<= bitsSequence;
         long oldGeneratedValue;
         long base;
         do {
@@ -185,11 +181,11 @@ public class FlakeIdGeneratorProxy
             base = Math.max(now, oldGeneratedValue);
         } while (!generatedValue.compareAndSet(oldGeneratedValue, base + batchSize));
 
-        long waitTime = Math.max(0, ((base + batchSize - now) >> BITS_SEQUENCE) - ALLOWED_FUTURE_MILLIS);
-        base = base << BITS_NODE_ID | nodeId;
+        long waitTime = Math.max(0, ((base + batchSize - now) >> bitsSequence) - allowedFutureMillis);
+        base = base << bitsNodeId | nodeId;
 
         getService().updateStatsForBatch(name, batchSize);
-        return new IdBatchAndWaitTime(new IdBatch(base, INCREMENT, batchSize), waitTime);
+        return new IdBatchAndWaitTime(new IdBatch(base, increment, batchSize), waitTime);
     }
 
     /**
@@ -218,7 +214,7 @@ public class FlakeIdGeneratorProxy
                 nodeId = newNodeId;
 
                 // If our node ID is out of range, assign NODE_ID_OUT_OF_RANGE to nodeId
-                if ((nodeId & -1 << BITS_NODE_ID) != 0) {
+                if ((nodeId & -1 << bitsNodeId) != 0) {
                     outOfRangeMembers.add(getNodeEngine().getClusterService().getLocalMember().getUuid());
                     logger.severe("Node ID is out of range (" + nodeId + "), this member won't be able to generate IDs. "
                             + "Cluster restart is recommended.");
