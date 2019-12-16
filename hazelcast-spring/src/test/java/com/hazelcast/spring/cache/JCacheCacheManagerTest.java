@@ -16,6 +16,7 @@
 
 package com.hazelcast.spring.cache;
 
+import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.spring.CustomSpringJUnit4ClassRunner;
@@ -58,6 +59,7 @@ public class JCacheCacheManagerTest {
     @BeforeClass
     @AfterClass
     public static void start() {
+        HazelcastClient.shutdownAll();
         Hazelcast.shutdownAll();
     }
 

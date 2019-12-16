@@ -62,10 +62,13 @@ public class ClientCacheThroughHazelcastInstanceTest extends CacheThroughHazelca
         }
         instanceFactory = new TestHazelcastFactory();
         ownerInstance = instanceFactory.newHazelcastInstance(config);
+
+        ClientConfig clientConfig = new ClientConfig();
+        clientConfig.getConnectionStrategyConfig().getConnectionRetryConfig().setClusterConnectTimeoutMillis(10_000);
+
         if (config.getClassLoader() != null) {
             final ClassLoader tccl = Thread.currentThread().getContextClassLoader();
             try {
-                ClientConfig clientConfig = new ClientConfig();
                 clientConfig.setClassLoader(config.getClassLoader());
                 Thread.currentThread().setContextClassLoader(config.getClassLoader());
                 return instanceFactory.newHazelcastClient(clientConfig);
@@ -73,7 +76,7 @@ public class ClientCacheThroughHazelcastInstanceTest extends CacheThroughHazelca
                 Thread.currentThread().setContextClassLoader(tccl);
             }
         } else {
-            return instanceFactory.newHazelcastClient();
+            return instanceFactory.newHazelcastClient(clientConfig);
         }
     }
 

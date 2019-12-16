@@ -140,7 +140,11 @@ public class TestHazelcastInstanceFactory {
         if (isMockNetwork) {
             config = initOrCreateConfig(config);
             NodeContext nodeContext = registry.createNodeContext(address);
-            return HazelcastInstanceFactory.newHazelcastInstance(config, instanceName, nodeContext);
+            HazelcastInstance hazelcastInstance =
+                HazelcastInstanceFactory.newHazelcastInstance(config, instanceName, nodeContext);
+            registerTestMetricsPublisher(hazelcastInstance);
+
+            return hazelcastInstance;
         }
         throw new UnsupportedOperationException("Explicit address is only available for mock network setup!");
     }
@@ -183,7 +187,11 @@ public class TestHazelcastInstanceFactory {
                     blockedAddresses == null
                             ? Collections.emptySet()
                             : new HashSet<>(asList(blockedAddresses)));
-            return HazelcastInstanceFactory.newHazelcastInstance(config, instanceName, nodeContext);
+            HazelcastInstance hazelcastInstance =
+                HazelcastInstanceFactory.newHazelcastInstance(config, instanceName, nodeContext);
+            registerTestMetricsPublisher(hazelcastInstance);
+
+            return hazelcastInstance;
         }
         throw new UnsupportedOperationException("Explicit address is only available for mock network setup!");
     }
