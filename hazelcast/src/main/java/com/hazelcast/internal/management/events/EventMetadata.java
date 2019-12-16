@@ -32,6 +32,8 @@ public final class EventMetadata {
         this.timestamp = timestamp;
     }
 
+    // WARNING: Used by Management Center. Do not rename any enum, change its code
+    // or remove an existing enum, only add new ones.
     public enum EventType {
         WAN_CONSISTENCY_CHECK_STARTED(1),
         WAN_CONSISTENCY_CHECK_FINISHED(2),
