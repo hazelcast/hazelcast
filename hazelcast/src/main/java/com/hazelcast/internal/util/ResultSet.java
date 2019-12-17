@@ -34,8 +34,8 @@ public class ResultSet extends AbstractSet<Map.Entry> {
     private final List<Map.Entry> entries;
     private final IterationType iterationType;
 
-    public ResultSet(List<Map.Entry> entries, IterationType iterationType) {
-        this.entries = entries;
+    public ResultSet(List<? extends Map.Entry> entries, IterationType iterationType) {
+        this.entries = (List<Map.Entry>) entries;
         this.iterationType = iterationType;
     }
 

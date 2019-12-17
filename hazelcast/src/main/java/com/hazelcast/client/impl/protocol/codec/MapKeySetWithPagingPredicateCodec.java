@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * TODO DOC
  */
-@Generated("fbe27536230b58008220c95a8d6d9f3a")
+@Generated("f2fdecddf9b0e61a54033649c6775f9a")
 public final class MapKeySetWithPagingPredicateCodec {
     //hex: 0x013400
     public static final int REQUEST_MESSAGE_TYPE = 78848;
@@ -59,10 +59,10 @@ public final class MapKeySetWithPagingPredicateCodec {
         /**
          * specified query criteria.
          */
-        public com.hazelcast.internal.serialization.Data predicate;
+        public com.hazelcast.client.impl.protocol.codec.holder.PagingPredicateHolder predicate;
     }
 
-    public static ClientMessage encodeRequest(java.lang.String name, com.hazelcast.internal.serialization.Data predicate) {
+    public static ClientMessage encodeRequest(java.lang.String name, com.hazelcast.client.impl.protocol.codec.holder.PagingPredicateHolder predicate) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(true);
         clientMessage.setOperationName("Map.KeySetWithPagingPredicate");
@@ -70,7 +70,7 @@ public final class MapKeySetWithPagingPredicateCodec {
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
         clientMessage.add(initialFrame);
         StringCodec.encode(clientMessage, name);
-        DataCodec.encode(clientMessage, predicate);
+        PagingPredicateHolderCodec.encode(clientMessage, predicate);
         return clientMessage;
     }
 
@@ -80,7 +80,7 @@ public final class MapKeySetWithPagingPredicateCodec {
         //empty initial frame
         iterator.next();
         request.name = StringCodec.decode(iterator);
-        request.predicate = DataCodec.decode(iterator);
+        request.predicate = PagingPredicateHolderCodec.decode(iterator);
         return request;
     }
 
@@ -91,15 +91,21 @@ public final class MapKeySetWithPagingPredicateCodec {
          * result keys for the query.
          */
         public java.util.List<com.hazelcast.internal.serialization.Data> response;
+
+        /**
+         * The updated anchor list.
+         */
+        public com.hazelcast.client.impl.protocol.codec.holder.AnchorDataListHolder anchorDataList;
     }
 
-    public static ClientMessage encodeResponse(java.util.Collection<com.hazelcast.internal.serialization.Data> response) {
+    public static ClientMessage encodeResponse(java.util.Collection<com.hazelcast.internal.serialization.Data> response, com.hazelcast.client.impl.protocol.codec.holder.AnchorDataListHolder anchorDataList) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, RESPONSE_MESSAGE_TYPE);
         clientMessage.add(initialFrame);
 
         ListMultiFrameCodec.encode(clientMessage, response, DataCodec::encode);
+        AnchorDataListHolderCodec.encode(clientMessage, anchorDataList);
         return clientMessage;
     }
 
@@ -109,6 +115,7 @@ public final class MapKeySetWithPagingPredicateCodec {
         //empty initial frame
         iterator.next();
         response.response = ListMultiFrameCodec.decode(iterator, DataCodec::decode);
+        response.anchorDataList = AnchorDataListHolderCodec.decode(iterator);
         return response;
     }
 

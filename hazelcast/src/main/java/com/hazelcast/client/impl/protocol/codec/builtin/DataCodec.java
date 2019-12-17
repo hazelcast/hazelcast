@@ -20,6 +20,9 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.internal.serialization.impl.HeapData;
 import com.hazelcast.internal.serialization.Data;
 
+import static com.hazelcast.client.impl.protocol.ClientMessage.NULL_FRAME;
+import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.nextFrameIsNullEndFrame;
+
 public final class DataCodec {
 
     private DataCodec() {
@@ -29,12 +32,24 @@ public final class DataCodec {
         clientMessage.add(new ClientMessage.Frame(data.toByteArray()));
     }
 
+    public static void encodeNullable(ClientMessage clientMessage, Data data) {
+        if (data == null) {
+            clientMessage.add(NULL_FRAME.copy());
+        } else {
+            clientMessage.add(new ClientMessage.Frame(data.toByteArray()));
+        }
+    }
+
     public static Data decode(ClientMessage.Frame frame) {
         return new HeapData(frame.content);
     }
 
     public static Data decode(ClientMessage.ForwardFrameIterator iterator) {
         return decode(iterator.next());
+    }
+
+    public static Data decodeNullable(ClientMessage.ForwardFrameIterator iterator) {
+        return nextFrameIsNullEndFrame(iterator) ? null : decode(iterator.next());
     }
 
 }

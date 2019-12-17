@@ -39,7 +39,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * in the collection, and vice-versa. This method is always executed by a distributed query, so it may throw a
  * QueryResultSizeExceededException if query result size limit is configured.
  */
-@Generated("0d62f70c18edef3a464d038bcb8056ab")
+@Generated("4879ff71792ebad2f76bc2d2688ba63d")
 public final class MapValuesWithPagingPredicateCodec {
     //hex: 0x013500
     public static final int REQUEST_MESSAGE_TYPE = 79104;
@@ -62,10 +62,10 @@ public final class MapValuesWithPagingPredicateCodec {
         /**
          * specified query criteria.
          */
-        public com.hazelcast.internal.serialization.Data predicate;
+        public com.hazelcast.client.impl.protocol.codec.holder.PagingPredicateHolder predicate;
     }
 
-    public static ClientMessage encodeRequest(java.lang.String name, com.hazelcast.internal.serialization.Data predicate) {
+    public static ClientMessage encodeRequest(java.lang.String name, com.hazelcast.client.impl.protocol.codec.holder.PagingPredicateHolder predicate) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(true);
         clientMessage.setOperationName("Map.ValuesWithPagingPredicate");
@@ -73,7 +73,7 @@ public final class MapValuesWithPagingPredicateCodec {
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
         clientMessage.add(initialFrame);
         StringCodec.encode(clientMessage, name);
-        DataCodec.encode(clientMessage, predicate);
+        PagingPredicateHolderCodec.encode(clientMessage, predicate);
         return clientMessage;
     }
 
@@ -83,7 +83,7 @@ public final class MapValuesWithPagingPredicateCodec {
         //empty initial frame
         iterator.next();
         request.name = StringCodec.decode(iterator);
-        request.predicate = DataCodec.decode(iterator);
+        request.predicate = PagingPredicateHolderCodec.decode(iterator);
         return request;
     }
 
@@ -93,16 +93,22 @@ public final class MapValuesWithPagingPredicateCodec {
         /**
          * values for the query.
          */
-        public java.util.List<java.util.Map.Entry<com.hazelcast.internal.serialization.Data, com.hazelcast.internal.serialization.Data>> response;
+        public java.util.List<com.hazelcast.internal.serialization.Data> response;
+
+        /**
+         * The updated anchor list.
+         */
+        public com.hazelcast.client.impl.protocol.codec.holder.AnchorDataListHolder anchorDataList;
     }
 
-    public static ClientMessage encodeResponse(java.util.Collection<java.util.Map.Entry<com.hazelcast.internal.serialization.Data, com.hazelcast.internal.serialization.Data>> response) {
+    public static ClientMessage encodeResponse(java.util.Collection<com.hazelcast.internal.serialization.Data> response, com.hazelcast.client.impl.protocol.codec.holder.AnchorDataListHolder anchorDataList) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, RESPONSE_MESSAGE_TYPE);
         clientMessage.add(initialFrame);
 
-        EntryListCodec.encode(clientMessage, response, DataCodec::encode, DataCodec::encode);
+        ListMultiFrameCodec.encode(clientMessage, response, DataCodec::encode);
+        AnchorDataListHolderCodec.encode(clientMessage, anchorDataList);
         return clientMessage;
     }
 
@@ -111,7 +117,8 @@ public final class MapValuesWithPagingPredicateCodec {
         ResponseParameters response = new ResponseParameters();
         //empty initial frame
         iterator.next();
-        response.response = EntryListCodec.decode(iterator, DataCodec::decode, DataCodec::decode);
+        response.response = ListMultiFrameCodec.decode(iterator, DataCodec::decode);
+        response.anchorDataList = AnchorDataListHolderCodec.decode(iterator);
         return response;
     }
 

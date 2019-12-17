@@ -1351,13 +1351,13 @@ public class MemberCompatibilityTest_2_0 {
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         MapKeySetWithPagingPredicateCodec.RequestParameters parameters = MapKeySetWithPagingPredicateCodec.decodeRequest(fromFile);
         assertTrue(isEqual(aString, parameters.name));
-        assertTrue(isEqual(aData, parameters.predicate));
+        assertTrue(isEqual(aPagingPredicateHolder, parameters.predicate));
     }
 
     @Test
     public void test_MapKeySetWithPagingPredicateCodec_encodeResponse() {
         int fileClientMessageIndex = 147;
-        ClientMessage encoded = MapKeySetWithPagingPredicateCodec.encodeResponse(aListOfData);
+        ClientMessage encoded = MapKeySetWithPagingPredicateCodec.encodeResponse(aListOfData, anAnchorDataListHolder);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
     }
@@ -1368,13 +1368,13 @@ public class MemberCompatibilityTest_2_0 {
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         MapValuesWithPagingPredicateCodec.RequestParameters parameters = MapValuesWithPagingPredicateCodec.decodeRequest(fromFile);
         assertTrue(isEqual(aString, parameters.name));
-        assertTrue(isEqual(aData, parameters.predicate));
+        assertTrue(isEqual(aPagingPredicateHolder, parameters.predicate));
     }
 
     @Test
     public void test_MapValuesWithPagingPredicateCodec_encodeResponse() {
         int fileClientMessageIndex = 149;
-        ClientMessage encoded = MapValuesWithPagingPredicateCodec.encodeResponse(aListOfDataToData);
+        ClientMessage encoded = MapValuesWithPagingPredicateCodec.encodeResponse(aListOfData, anAnchorDataListHolder);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
     }
@@ -1385,13 +1385,13 @@ public class MemberCompatibilityTest_2_0 {
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         MapEntriesWithPagingPredicateCodec.RequestParameters parameters = MapEntriesWithPagingPredicateCodec.decodeRequest(fromFile);
         assertTrue(isEqual(aString, parameters.name));
-        assertTrue(isEqual(aData, parameters.predicate));
+        assertTrue(isEqual(aPagingPredicateHolder, parameters.predicate));
     }
 
     @Test
     public void test_MapEntriesWithPagingPredicateCodec_encodeResponse() {
         int fileClientMessageIndex = 151;
-        ClientMessage encoded = MapEntriesWithPagingPredicateCodec.encodeResponse(aListOfDataToData);
+        ClientMessage encoded = MapEntriesWithPagingPredicateCodec.encodeResponse(aListOfDataToData, anAnchorDataListHolder);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
     }
@@ -7351,67 +7351,6 @@ public class MemberCompatibilityTest_2_0 {
     public void test_MCPollMCEventsCodec_encodeResponse() {
         int fileClientMessageIndex = 814;
         ClientMessage encoded = MCPollMCEventsCodec.encodeResponse(aListOfMCEvents);
-        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
-        compareClientMessages(fromFile, encoded);
-    }
-
-    @Test
-    public void test_MCGetCPMembersCodec_decodeRequest() {
-        int fileClientMessageIndex = 815;
-        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
-        MCGetCPMembersCodec.RequestParameters parameters = MCGetCPMembersCodec.decodeRequest(fromFile);
-    }
-
-    @Test
-    public void test_MCGetCPMembersCodec_encodeResponse() {
-        int fileClientMessageIndex = 816;
-        ClientMessage encoded = MCGetCPMembersCodec.encodeResponse(aListOfUUIDToAddress);
-        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
-        compareClientMessages(fromFile, encoded);
-    }
-
-    @Test
-    public void test_MCPromoteToCPMemberCodec_decodeRequest() {
-        int fileClientMessageIndex = 817;
-        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
-        MCPromoteToCPMemberCodec.RequestParameters parameters = MCPromoteToCPMemberCodec.decodeRequest(fromFile);
-    }
-
-    @Test
-    public void test_MCPromoteToCPMemberCodec_encodeResponse() {
-        int fileClientMessageIndex = 818;
-        ClientMessage encoded = MCPromoteToCPMemberCodec.encodeResponse();
-        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
-        compareClientMessages(fromFile, encoded);
-    }
-
-    @Test
-    public void test_MCRemoveCPMemberCodec_decodeRequest() {
-        int fileClientMessageIndex = 819;
-        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
-        MCRemoveCPMemberCodec.RequestParameters parameters = MCRemoveCPMemberCodec.decodeRequest(fromFile);
-        assertTrue(isEqual(aUUID, parameters.cpMemberUuid));
-    }
-
-    @Test
-    public void test_MCRemoveCPMemberCodec_encodeResponse() {
-        int fileClientMessageIndex = 820;
-        ClientMessage encoded = MCRemoveCPMemberCodec.encodeResponse();
-        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
-        compareClientMessages(fromFile, encoded);
-    }
-
-    @Test
-    public void test_MCResetCPSubsystemCodec_decodeRequest() {
-        int fileClientMessageIndex = 821;
-        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
-        MCResetCPSubsystemCodec.RequestParameters parameters = MCResetCPSubsystemCodec.decodeRequest(fromFile);
-    }
-
-    @Test
-    public void test_MCResetCPSubsystemCodec_encodeResponse() {
-        int fileClientMessageIndex = 822;
-        ClientMessage encoded = MCResetCPSubsystemCodec.encodeResponse();
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
     }

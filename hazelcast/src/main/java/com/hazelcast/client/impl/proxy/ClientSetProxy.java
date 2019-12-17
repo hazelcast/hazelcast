@@ -212,7 +212,7 @@ public class ClientSetProxy<E> extends PartitionSpecificClientProxy implements I
         ClientMessage response = invokeOnPartition(request);
         SetGetAllCodec.ResponseParameters resultParameters = SetGetAllCodec.decodeResponse(response);
         List<Data> resultCollection = resultParameters.response;
-        return new UnmodifiableLazyList<E>(resultCollection, getSerializationService());
+        return new UnmodifiableLazyList(resultCollection, getSerializationService());
     }
 
     @Override

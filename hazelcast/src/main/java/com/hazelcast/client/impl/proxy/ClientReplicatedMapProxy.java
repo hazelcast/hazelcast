@@ -454,7 +454,7 @@ public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements Repli
         ClientMessage request = ReplicatedMapValuesCodec.encodeRequest(name);
         ClientMessage response = invokeOnPartition(request, targetPartitionId);
         ReplicatedMapValuesCodec.ResponseParameters result = ReplicatedMapValuesCodec.decodeResponse(response);
-        return new UnmodifiableLazyList<>(result.response, getSerializationService());
+        return new UnmodifiableLazyList(result.response, getSerializationService());
     }
 
     @Nonnull

@@ -218,7 +218,7 @@ public abstract class AbstractCollectionProxyImpl<S extends RemoteService, E> ex
         SerializableList result = invoke(operation);
         List<Data> collection = result.getCollection();
         SerializationService serializationService = getNodeEngine().getSerializationService();
-        return new UnmodifiableLazyList<E>(collection, serializationService);
+        return new UnmodifiableLazyList(collection, serializationService);
     }
 
     public @Nonnull

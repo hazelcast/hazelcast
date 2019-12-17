@@ -61,7 +61,7 @@ public class ClientTxnMultiMapProxy<K, V> extends ClientTxnProxy implements Tran
 
         ClientMessage response = invoke(request);
         List<Data> collection = TransactionalMultiMapGetCodec.decodeResponse(response).response;
-        return new UnmodifiableLazyList<V>(collection, getSerializationService());
+        return new UnmodifiableLazyList(collection, getSerializationService());
     }
 
     @Override
@@ -78,7 +78,7 @@ public class ClientTxnMultiMapProxy<K, V> extends ClientTxnProxy implements Tran
                 .encodeRequest(name, getTransactionId(), getThreadId(), toData(key));
         ClientMessage response = invoke(request);
         List<Data> collection = TransactionalMultiMapRemoveCodec.decodeResponse(response).response;
-        return new UnmodifiableLazyList<V>(collection, getSerializationService());
+        return new UnmodifiableLazyList(collection, getSerializationService());
     }
 
     @Override

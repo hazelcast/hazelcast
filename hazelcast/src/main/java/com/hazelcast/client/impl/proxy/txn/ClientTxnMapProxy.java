@@ -228,7 +228,7 @@ public class ClientTxnMapProxy<K, V> extends ClientTxnProxy implements Transacti
         ClientMessage request = TransactionalMapValuesCodec.encodeRequest(name, getTransactionId(), getThreadId());
         ClientMessage response = invoke(request);
         List dataValues = TransactionalMapValuesCodec.decodeResponse(response).response;
-        return new UnmodifiableLazyList<V>(dataValues, getSerializationService());
+        return new UnmodifiableLazyList(dataValues, getSerializationService());
     }
 
     @Override
