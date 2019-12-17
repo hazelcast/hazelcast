@@ -29,7 +29,6 @@ import com.hazelcast.durableexecutor.impl.DurableExecutorContainer;
 import com.hazelcast.executor.ExecutorServiceTestSupport;
 import com.hazelcast.partition.PartitionAware;
 import com.hazelcast.spi.properties.ClusterProperty;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -107,11 +106,11 @@ public class DurableExecutorServiceTest extends ExecutorServiceTestSupport {
     public void testDestroyCleansAllContainers() throws Exception {
         final String executorName = randomMapName();
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(NODE_COUNT);
-        final HazelcastInstance[] instances = factory.newInstances();
+        final HazelcastInstance[] instances = factory.newInstances(smallInstanceConfig());
 
         DurableExecutorService service = instances[0].getDurableExecutorService(executorName);
 
-        List<Future<String>> futures = new ArrayList<Future<String>>(TASK_COUNT);
+        List<Future<String>> futures = new ArrayList<>(TASK_COUNT);
         for (int i = 0; i < TASK_COUNT; i++) {
             futures.add(service.submit(new DummyCallable()));
         }
@@ -119,22 +118,25 @@ public class DurableExecutorServiceTest extends ExecutorServiceTestSupport {
             future.get();
         }
         service.destroy();
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                for (int i = 0; i < NODE_COUNT; i++) {
-                    DistributedDurableExecutorService internalService = getNodeEngineImpl(instances[i]).getService(DistributedDurableExecutorService.SERVICE_NAME);
-                    boolean allEmpty = true;
-                    StringBuilder failMessage = new StringBuilder();
-                    for (int partitionId = 0; partitionId < getNode(instances[i]).getProperties().getInteger(PARTITION_COUNT); partitionId++) {
-                        DurableExecutorContainer container = getDurableExecutorContainer(internalService, partitionId, executorName);
-                        if (container != null) {
-                            failMessage.append(String.format("Partition %d\n", partitionId));
-                            allEmpty = false;
-                        }
+        assertTrueEventually(() -> {
+            for (int i = 0; i < NODE_COUNT; i++) {
+                DistributedDurableExecutorService internalService = getNodeEngineImpl(instances[i])
+                        .getService(DistributedDurableExecutorService.SERVICE_NAME);
+                boolean allEmpty = true;
+                StringBuilder failMessage = new StringBuilder();
+                for (int partitionId = 0;
+                     partitionId < getNode(instances[i]).getProperties().getInteger(PARTITION_COUNT);
+                     partitionId++) {
+                    DurableExecutorContainer container = getDurableExecutorContainer(internalService, partitionId, executorName);
+                    if (container != null) {
+                        failMessage.append(String.format("Partition %d owned by %s\n", partitionId,
+                                getPartitionService(instances[0]).getPartition(partitionId).getOwnerOrNull()));
+                        allEmpty = false;
                     }
-                    assertTrue(String.format("Some partitions has non-null containers for executor %s:\n%s", executorName, failMessage.toString()), allEmpty);
                 }
+                assertTrue(String.format("Some partitions have non-null containers for executor %s:\n%s",
+                        executorName,
+                        failMessage.toString()), allEmpty);
             }
         }, 30);
     }
