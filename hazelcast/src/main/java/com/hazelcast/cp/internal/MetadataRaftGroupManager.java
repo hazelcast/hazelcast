@@ -30,12 +30,14 @@ import com.hazelcast.cp.internal.raft.impl.RaftNode;
 import com.hazelcast.cp.internal.raft.impl.RaftNodeImpl;
 import com.hazelcast.cp.internal.raftop.metadata.CreateRaftNodeOp;
 import com.hazelcast.cp.internal.raftop.metadata.DestroyRaftNodesOp;
+import com.hazelcast.cp.internal.raftop.metadata.GetRaftGroupIdsOp;
 import com.hazelcast.cp.internal.raftop.metadata.InitMetadataRaftGroupOp;
 import com.hazelcast.cp.internal.raftop.metadata.PublishActiveCPMembersOp;
 import com.hazelcast.cp.internal.util.Tuple2;
 import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.ExecutionService;
+import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationService;
@@ -43,6 +45,7 @@ import com.hazelcast.spi.exception.RetryableHazelcastException;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationservice.impl.RaftInvocationContext;
 import com.hazelcast.util.Clock;
+import com.hazelcast.util.RandomPicker;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.util.ArrayList;
@@ -66,6 +69,8 @@ import static com.hazelcast.cp.CPGroup.CPGroupStatus.DESTROYED;
 import static com.hazelcast.cp.CPGroup.CPGroupStatus.DESTROYING;
 import static com.hazelcast.cp.CPGroup.METADATA_CP_GROUP_NAME;
 import static com.hazelcast.cp.internal.MembershipChangeSchedule.CPGroupMembershipChange;
+import static com.hazelcast.util.FutureUtil.IGNORE_ALL_EXCEPTIONS;
+import static com.hazelcast.util.FutureUtil.waitWithDeadline;
 import static com.hazelcast.util.Preconditions.checkFalse;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 import static com.hazelcast.util.Preconditions.checkState;
@@ -86,6 +91,8 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 public class MetadataRaftGroupManager implements SnapshotAwareService<MetadataRaftGroupSnapshot>  {
 
     public static final RaftGroupId INITIAL_METADATA_GROUP_ID = new RaftGroupId(METADATA_CP_GROUP_NAME, 0, 0);
+    private static final int RANDOM_COMMIT_RANGE = 20;
+    private static final int RANDOM_COMMIT_TIMEOUT_SECS = 60;
 
     enum MetadataRaftGroupInitStatus {
         IN_PROGRESS,
@@ -1147,17 +1154,45 @@ public class MetadataRaftGroupManager implements SnapshotAwareService<MetadataRa
 
                 RaftOp op = new InitMetadataRaftGroupOp(localCPMemberCandidate, discoveredCPMembers, metadataGroupId.seed());
                 raftService.getInvocationManager().invoke(metadataGroupId, op).get();
-                // By default, we use the same member UUID for both AP and CP members.
-                // But it's not guaranteed to be same. For example;
-                // - During a split-brain merge, AP member UUID is renewed but CP member UUID remains the same.
-                // - While promoting a member to CP when Hot Restart is enabled, CP member doesn't use the AP member's UUID
-                // but instead generates a new UUID.
+                /*
+                By default, we use the same member UUID for both AP and CP members.
+                But it's not guaranteed to be same. For example;
+                - During a split-brain merge, AP member UUID is renewed but CP member UUID remains the same.
+                - While promoting a member to CP when Hot Restart is enabled, CP member doesn't use the AP member's UUID
+                but instead generates a new UUID.
+                 */
                 localCPMember.set(localCPMemberCandidate);
             } catch (Exception e) {
                 logger.severe("Could not initialize METADATA CP group with CP members: " + metadataMembers, e);
                 raftService.destroyRaftNode(metadataGroupId);
                 return false;
             }
+
+            /*
+            We have 2 fields in CPGroupId: seed and commitIndex. When a new CP group is
+            created, commit index of its CP group id denotes on which commit of
+            the Metadata CP group this custom CP group is created. In addition to this,
+            the seed field is incremented when CP Subsystem is reset. By this way, we
+            ensure uniqueness of <seed, commit index> pairs of CP group ids. However, if
+            the whole Hazelcast cluster is restarted, the seed will be 0 again. This can
+            cause the Default CP group id to be same with the one in the previous Hazelcast
+            cluster because usually the Default CP group is created on the same Metadata CP
+            group commit index (=5). If this happens, CP proxies that are created for
+            the Default CP group of the previous Hazelcast cluster can continue to talk to
+            the Default CP group created on the new Hazelcast cluster, which means we lose
+            our consistency guarantees.
+
+            To reduce the possibility of the issue, we perform a few random no-op commits
+            on the Metadata CP group to advance its commit index.
+             */
+
+            List<InternalCompletableFuture> futures = new ArrayList<InternalCompletableFuture>();
+            for (int i = 0, j = RandomPicker.getInt(1, RANDOM_COMMIT_RANGE); i < j; i++) {
+                futures.add(raftService.getInvocationManager().invoke(metadataGroupId, new GetRaftGroupIdsOp()));
+            }
+
+            waitWithDeadline(futures, RANDOM_COMMIT_TIMEOUT_SECS, SECONDS, IGNORE_ALL_EXCEPTIONS);
+
             return true;
         }
 
