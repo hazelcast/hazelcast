@@ -1072,7 +1072,7 @@ abstract class MapProxySupport<K, V>
 
     @Override
     public void flush() {
-        // TODO: add a feature to mancenter to sync cache to db completely
+        // TODO: add a feature to Management Center to sync cache to db completely
         try {
             MapOperation mapFlushOperation = operationProvider.createMapFlushOperation(name);
             BinaryOperationFactory operationFactory = new BinaryOperationFactory(mapFlushOperation, getNodeEngine());

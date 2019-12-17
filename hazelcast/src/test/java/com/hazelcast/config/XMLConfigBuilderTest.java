@@ -787,9 +787,9 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
                 + HAZELCAST_END_TAG;
 
         Config config = buildConfig(xml);
-        ManagementCenterConfig manCenterCfg = config.getManagementCenterConfig();
+        ManagementCenterConfig mcConfig = config.getManagementCenterConfig();
 
-        assertFalse(manCenterCfg.isScriptingEnabled());
+        assertFalse(mcConfig.isScriptingEnabled());
     }
 
     @Override
@@ -801,9 +801,9 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
                 + HAZELCAST_END_TAG;
 
         Config config = buildConfig(xml);
-        ManagementCenterConfig manCenterCfg = config.getManagementCenterConfig();
+        ManagementCenterConfig mcConfig = config.getManagementCenterConfig();
 
-        assertTrue(manCenterCfg.isScriptingEnabled());
+        assertTrue(mcConfig.isScriptingEnabled());
     }
 
     @Override
@@ -812,9 +812,9 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         String xml = HAZELCAST_START_TAG + HAZELCAST_END_TAG;
 
         Config config = buildConfig(xml);
-        ManagementCenterConfig manCenterCfg = config.getManagementCenterConfig();
+        ManagementCenterConfig mcConfig = config.getManagementCenterConfig();
 
-        assertTrue(manCenterCfg.isScriptingEnabled());
+        assertTrue(mcConfig.isScriptingEnabled());
     }
 
     @Override
