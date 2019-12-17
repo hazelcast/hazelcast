@@ -23,10 +23,10 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import java.io.IOException;
-import java.util.ArrayDeque;
 import java.util.ArrayList;
-import java.util.Deque;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import static com.hazelcast.jet.impl.util.ImdgUtil.readList;
 import static com.hazelcast.jet.impl.util.ImdgUtil.writeList;
@@ -83,11 +83,10 @@ public class VertexDef implements IdentifiedDataSerializable {
     }
 
     /**
-     * Returns true in any of the following cases:<ul>
-     *     <li>this vertex is a higher-priority source for some of its
-     *         downstream vertices
-     *     <li>this vertex' output is connected by a snapshot restore edge*
-     *     <li>it sits upstream of a vertex meeting the other conditions
+     * Returns IDs of vertices that meet one of the following criteria:<ul>
+     *     <li>it's a higher-priority source for some of its downstream vertices
+     *     <li>its output is connected by a snapshot restore edge*
+     *     <li>it sits upstream of a vertex meeting the above conditions
      * </ul>
      *
      * (*) We consider all snapshot-restoring vertices to be higher priority
@@ -97,20 +96,29 @@ public class VertexDef implements IdentifiedDataSerializable {
      * otherwise.
      * Fixes https://github.com/hazelcast/hazelcast-jet/pull/1101
      */
-    boolean isHigherPrioritySource() {
-        Deque<EdgeDef> stack = new ArrayDeque<>();
-        stack.addAll(outboundEdges);
-        while (!stack.isEmpty()) {
-            EdgeDef outboundEdge = stack.pop();
-            VertexDef downstream = outboundEdge.destVertex();
-            if (downstream.inboundEdges.stream()
-                                       .anyMatch(edge -> edge.priority() > outboundEdge.priority())
-                    || outboundEdge.isSnapshotRestoreEdge()) {
-                return true;
+    static Set<Integer> getHigherPriorityVertices(List<VertexDef> vertices) {
+        // We assume the vertices are in topological order. We iterate in the reverse order, this way
+        // when we observe a parent, all children should have been observed.
+        // That order is asserted in `seenVertices`
+        Set<Integer> res = new HashSet<>();
+        Set<Integer> seenVertices = new HashSet<>();
+        for (int i = vertices.size(); i-- > 0; ) {
+            VertexDef v = vertices.get(i);
+            assert seenVertices.add(v.vertexId()) : "duplicate vertex id";
+            for (EdgeDef outboundEdge : v.outboundEdges) {
+                VertexDef downstream = outboundEdge.destVertex();
+                assert seenVertices.contains(downstream.vertexId()) : "missing child";
+                if (res.contains(downstream.vertexId())
+                        || outboundEdge.isSnapshotRestoreEdge()
+                        || downstream.inboundEdges.stream()
+                                .anyMatch(edge -> edge.priority() > outboundEdge.priority())) {
+                    boolean unique = res.add(v.id);
+                    assert unique;
+                    break;
+                }
             }
-            stack.addAll(downstream.outboundEdges);
         }
-        return false;
+        return res;
     }
 
     public static boolean isSnapshotVertex(String vertexName) {

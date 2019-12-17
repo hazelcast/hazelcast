@@ -36,6 +36,7 @@ import org.junit.Test;
 import java.lang.reflect.Field;
 import java.util.Arrays;
 import java.util.Map;
+import java.util.Set;
 
 import static com.hazelcast.jet.config.ProcessingGuarantee.EXACTLY_ONCE;
 import static com.hazelcast.jet.core.Edge.between;
@@ -126,8 +127,9 @@ public class VertexDef_HigherPrioritySourceTest extends SimpleTestInClusterSuppo
         ExecutionPlan plan = executionPlans.values().iterator().next();
         SnapshotContext ssContext = new SnapshotContext(mock(ILogger.class), "job", 0, EXACTLY_ONCE);
         plan.initialize(nodeEngineImpl, 0, 0, ssContext);
+        Set<Integer> higherPriorityVertices = VertexDef.getHigherPriorityVertices(plan.getVertices());
         String actualHigherPriorityVertices = plan.getVertices().stream()
-                .filter(VertexDef::isHigherPrioritySource)
+                .filter(v -> higherPriorityVertices.contains(v.vertexId()))
                 .map(VertexDef::name)
                 .sorted()
                 .collect(joining("\n"));
