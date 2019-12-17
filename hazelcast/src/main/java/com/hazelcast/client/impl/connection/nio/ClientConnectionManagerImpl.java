@@ -26,8 +26,8 @@ import com.hazelcast.client.config.ClientConnectionStrategyConfig;
 import com.hazelcast.client.config.ClientNetworkConfig;
 import com.hazelcast.client.config.ConnectionRetryConfig;
 import com.hazelcast.client.impl.clientside.CandidateClusterContext;
-import com.hazelcast.client.impl.clientside.ClientDiscoveryService;
 import com.hazelcast.client.impl.clientside.ClientLoggingService;
+import com.hazelcast.client.impl.clientside.ClusterDiscoveryService;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.clientside.LifecycleServiceImpl;
 import com.hazelcast.client.impl.connection.AddressProvider;
@@ -137,7 +137,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
     private final ScheduledExecutorService clusterConnectionExecutor;
     private final boolean shuffleMemberList;
     private final WaitStrategy waitStrategy;
-    private final ClientDiscoveryService discoveryService;
+    private final ClusterDiscoveryService clusterDiscoveryService;
     private final AtomicInteger connectionCount = new AtomicInteger();
     private final boolean asyncStart;
     private final ClientConnectionStrategyConfig.ReconnectMode reconnectMode;
@@ -168,7 +168,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
         this.failoverConfigProvided = client.getFailoverConfig() != null;
         this.clusterConnectionExecutor = createExecutorService();
         this.shuffleMemberList = client.getProperties().getBoolean(SHUFFLE_MEMBER_LIST);
-        this.discoveryService = client.getClientDiscoveryService();
+        this.clusterDiscoveryService = client.getClusterDiscoveryService();
         this.isSmartRoutingEnabled = client.getClientConfig().getNetworkConfig().isSmartRouting();
         this.waitStrategy = initializeWaitStrategy(client.getClientConfig());
         ClientConnectionStrategyConfig connectionStrategyConfig = client.getClientConfig().getConnectionStrategyConfig();
@@ -298,7 +298,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
         stopNetworking();
         connectionListeners.clear();
         heartbeat.shutdown();
-        discoveryService.current().destroy();
+        clusterDiscoveryService.current().destroy();
     }
 
     protected void stopNetworking() {
@@ -306,7 +306,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
     }
 
     private void connectToCluster() {
-        CandidateClusterContext currentClusterContext = discoveryService.current();
+        CandidateClusterContext currentClusterContext = clusterDiscoveryService.current();
         currentClusterContext.start();
 
         if (asyncStart) {
@@ -317,49 +317,49 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
     }
 
     private void connectToClusterAsync() {
-        clusterConnectionExecutor.submit(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    connectToClusterSync();
-                } catch (Throwable e) {
-                    logger.warning("Could not connect to any cluster, shutting down the client: " + e.getMessage());
-                    shutdownWithExternalThread();
-                }
+        clusterConnectionExecutor.submit(() -> {
+            try {
+                connectToClusterSync();
+            } catch (Throwable e) {
+                logger.warning("Could not connect to any cluster, shutting down the client: " + e.getMessage());
+                shutdownWithExternalThread();
             }
         });
     }
 
     private void connectToClusterSync() {
-        CandidateClusterContext currentClusterContext = discoveryService.current();
-        logger.info("Trying to connect to cluster with client name: " + currentClusterContext.getClusterName());
-        if (connectToCandidate(currentClusterContext)) {
+        CandidateClusterContext currentCluster = clusterDiscoveryService.current();
+        logger.info("Trying to connect to cluster with client name: " + currentCluster.getClusterName());
+        if (connectToCandidate(currentCluster)) {
             return;
         }
 
-        // we reset the search so that we will iterate the list try-count times, each time we start searching for a new cluster
-        discoveryService.resetSearch();
+        clusterDiscoveryService.tryNextCluster(this::destroyCurrentAndTryNext);
 
-        while (discoveryService.hasNext() && client.getLifecycleService().isRunning()) {
-            discoveryService.current().destroy();
-            client.onClusterChange();
-            CandidateClusterContext candidateClusterContext = discoveryService.next();
-            candidateClusterContext.start();
-            ((ClientLoggingService) client.getLoggingService()).updateClusterName(candidateClusterContext.getClusterName());
-
-            logger.info("Trying to connect to next cluster with client name: " + candidateClusterContext.getClusterName());
-
-            if (connectToCandidate(candidateClusterContext)) {
-                client.waitForInitialMembershipEvents();
-                fireLifecycleEvent(LifecycleEvent.LifecycleState.CLIENT_CHANGED_CLUSTER);
-                return;
-            }
-        }
         if (!client.getLifecycleService().isRunning()) {
             throw new IllegalStateException("Client is being shutdown.");
         } else {
             throw new IllegalStateException("Unable to connect to any cluster.");
         }
+    }
+
+    private Boolean destroyCurrentAndTryNext(CandidateClusterContext current, CandidateClusterContext next) {
+        current.destroy();
+
+        client.onClusterChange();
+
+        next.start();
+
+        ((ClientLoggingService) client.getLoggingService()).updateClusterName(next.getClusterName());
+
+        logger.info("Trying to connect to next cluster with client name: " + next.getClusterName());
+
+        if (ClientConnectionManagerImpl.this.connectToCandidate(next)) {
+            client.waitForInitialMembershipEvents();
+            ClientConnectionManagerImpl.this.fireLifecycleEvent(LifecycleEvent.LifecycleState.CLIENT_CHANGED_CLUSTER);
+            return true;
+        }
+        return false;
     }
 
     private Connection connect(Address address) {
@@ -447,7 +447,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
             addresses = (LinkedHashSet<Address>) shuffle(addresses);
         }
 
-        LinkedHashSet<Address> providedAddresses = new LinkedHashSet<Address>();
+        LinkedHashSet<Address> providedAddresses = new LinkedHashSet<>();
         try {
             Addresses result = addressProvider.loadAddresses();
             if (shuffleMemberList) {
@@ -463,7 +463,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
         } catch (NullPointerException e) {
             throw e;
         } catch (Exception e) {
-            logger.warning("Exception from AddressProvider: " + discoveryService, e);
+            logger.warning("Exception from AddressProvider: " + clusterDiscoveryService, e);
         }
 
         addresses.addAll(providedAddresses);
@@ -597,7 +597,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
 
     @SuppressWarnings("unchecked")
     protected ClientConnection createSocketConnection(Address target) {
-        CandidateClusterContext currentClusterContext = discoveryService.current();
+        CandidateClusterContext currentClusterContext = clusterDiscoveryService.current();
         SocketChannel socketChannel = null;
         try {
             socketChannel = SocketChannel.open();
@@ -628,7 +628,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
     }
 
     private Address translate(Address target) {
-        CandidateClusterContext currentClusterContext = discoveryService.current();
+        CandidateClusterContext currentClusterContext = clusterDiscoveryService.current();
         AddressProvider addressProvider = currentClusterContext.getAddressProvider();
         try {
             Address translatedAddress = addressProvider.translate(target);
@@ -820,7 +820,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
         InternalSerializationService ss = client.getSerializationService();
         byte serializationVersion = ss.getVersion();
 
-        CandidateClusterContext currentClusterContext = discoveryService.current();
+        CandidateClusterContext currentClusterContext = clusterDiscoveryService.current();
         Credentials credentials = currentClusterContext.getCredentialsFactory().newCredentials();
         String clusterName = currentClusterContext.getClusterName();
         currentCredentials = credentials;
@@ -898,7 +898,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
                 fireLifecycleEvent(LifecycleEvent.LifecycleState.CLIENT_CONNECTED);
             }
         } catch (Exception e) {
-            String clusterName = discoveryService.current().getClusterName();
+            String clusterName = clusterDiscoveryService.current().getClusterName();
             logger.warning("Got exception when trying to send state to cluster. ", e);
             if (targetClusterId.equals(clusterId)) {
                 logger.warning("Retrying sending state to cluster with uuid" + targetClusterId + ", name " + clusterName);

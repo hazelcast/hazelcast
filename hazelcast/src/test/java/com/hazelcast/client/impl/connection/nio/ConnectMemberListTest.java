@@ -19,7 +19,7 @@ package com.hazelcast.client.impl.connection.nio;
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.impl.clientside.CandidateClusterContext;
-import com.hazelcast.client.impl.clientside.ClientDiscoveryService;
+import com.hazelcast.client.impl.clientside.ClusterDiscoveryService;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.properties.ClientProperty;
 import com.hazelcast.client.test.ClientTestSupport;
@@ -77,9 +77,8 @@ public class ConnectMemberListTest extends ClientTestSupport {
 
     private Collection<Address> getPossibleMemberAddresses(HazelcastInstance client) {
         HazelcastClientInstanceImpl instanceImpl = getHazelcastClientInstanceImpl(client);
-        ClientDiscoveryService clientDiscoveryService = instanceImpl.getClientDiscoveryService();
-        clientDiscoveryService.resetSearch();
-        CandidateClusterContext clusterContext = clientDiscoveryService.current();
+        ClusterDiscoveryService clusterDiscoveryService = instanceImpl.getClusterDiscoveryService();
+        CandidateClusterContext clusterContext = clusterDiscoveryService.current();
         ClientConnectionManagerImpl connectionManager = (ClientConnectionManagerImpl) instanceImpl.getConnectionManager();
         return connectionManager.getPossibleMemberAddresses(clusterContext.getAddressProvider());
     }

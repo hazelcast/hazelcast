@@ -76,4 +76,11 @@ public class CandidateClusterContext {
     public ChannelInitializerProvider getChannelInitializerProvider() {
         return channelInitializerProvider;
     }
+
+    @Override
+    public String toString() {
+        return "CandidateClusterContext{"
+                + "clusterName='" + clusterName + '\''
+                + '}';
+    }
 }
