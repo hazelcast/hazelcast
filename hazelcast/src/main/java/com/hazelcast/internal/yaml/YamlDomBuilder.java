@@ -77,13 +77,15 @@ public final class YamlDomBuilder {
             return buildScalar(parent, nodeName, sourceNode);
         } else {
             throw new YamlException("An unsupported scalar type is encountered: " + nodeName + " is an instance of "
-                    + sourceNode.getClass().getName() + ". The supported types are String, Integer, Double and Boolean.");
+                    + sourceNode.getClass().getName()
+                    + ". The supported types are String, Integer, Long, Double and Boolean.");
         }
     }
 
     private static boolean isSupportedScalarType(Object sourceNode) {
         return sourceNode instanceof String
                 || sourceNode instanceof Integer
+                || sourceNode instanceof Long
                 || sourceNode instanceof Double
                 || sourceNode instanceof Boolean;
     }
