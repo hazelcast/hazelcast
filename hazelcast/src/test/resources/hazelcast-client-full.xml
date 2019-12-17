@@ -49,7 +49,6 @@
     <cluster-name>my-cluster</cluster-name>
 
     <instance-name>CLIENT_NAME</instance-name>
-    <license-key>HAZELCAST_ENTERPRISE_LICENSE_KEY</license-key>
     <properties>
         <property name="hazelcast.client.shuffle.member.list">true</property>
         <property name="hazelcast.client.heartbeat.timeout">60000</property>
