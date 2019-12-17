@@ -115,7 +115,7 @@ public class ManagementCenterServiceIntegrationTest extends HazelcastTestSupport
     }
 
     @Test
-    public void testMCEvents_ignoresEvents_noPollAtAll() {
+    public void testMCEvents_storesEvents_noPollAtAll() {
         mcs.log(new TestEvent());
         mcs.log(new TestEvent());
 
