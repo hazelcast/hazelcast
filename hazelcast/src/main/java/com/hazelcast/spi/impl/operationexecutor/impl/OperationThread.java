@@ -43,7 +43,6 @@ import static com.hazelcast.internal.metrics.MetricDescriptorConstants.OPERATION
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.OPERATION_METRIC_THREAD_ERROR_COUNT;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.OPERATION_PREFIX_THREAD;
 import static com.hazelcast.internal.metrics.MetricTarget.MANAGEMENT_CENTER;
-import static com.hazelcast.internal.networking.nio.NioThread.THREAD_AFFINITY;
 import static com.hazelcast.internal.util.counters.SwCounter.newSwCounter;
 
 /**
