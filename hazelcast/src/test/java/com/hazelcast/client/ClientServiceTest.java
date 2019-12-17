@@ -17,15 +17,12 @@
 package com.hazelcast.client;
 
 import com.hazelcast.client.config.ClientConfig;
-import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
-import com.hazelcast.client.impl.connection.ClientConnectionManager;
 import com.hazelcast.client.impl.spi.impl.ClientExecutionServiceImpl;
 import com.hazelcast.client.test.ClientTestSupport;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.core.EntryAdapter;
-import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.LifecycleEvent;
 import com.hazelcast.core.LifecycleListener;
@@ -511,21 +508,4 @@ public class ClientServiceTest extends ClientTestSupport {
         }, 4);
     }
 
-    @Test
-    public void testAddingListenersOpenConnectionsToAllCluster() {
-        int memberCount = 4;
-        for (int i = 0; i < memberCount; i++) {
-            hazelcastFactory.newHazelcastInstance();
-        }
-
-        HazelcastClientInstanceImpl client = getHazelcastClientInstanceImpl(hazelcastFactory.newHazelcastClient());
-        ClientConnectionManager connectionManager = client.getConnectionManager();
-        IMap<Object, Object> map = client.getMap("test");
-        UUID uuid = map.addEntryListener(mock(EntryListener.class), false);
-
-        assertEquals(memberCount, connectionManager.getActiveConnections().size());
-
-        map.removeEntryListener(uuid);
-
-    }
 }

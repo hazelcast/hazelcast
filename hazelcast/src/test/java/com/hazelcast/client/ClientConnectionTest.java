@@ -17,22 +17,22 @@
 package com.hazelcast.client;
 
 import com.hazelcast.client.config.ClientConfig;
-import com.hazelcast.client.impl.connection.ClientConnectionManager;
 import com.hazelcast.client.impl.clientside.ClientTestUtil;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
+import com.hazelcast.client.impl.connection.ClientConnectionManager;
 import com.hazelcast.client.properties.ClientProperty;
+import com.hazelcast.client.test.ClientTestSupport;
 import com.hazelcast.client.test.TestHazelcastFactory;
+import com.hazelcast.cluster.Address;
+import com.hazelcast.cluster.Member;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IExecutorService;
 import com.hazelcast.core.LifecycleEvent;
 import com.hazelcast.core.LifecycleListener;
-import com.hazelcast.cluster.Member;
-import com.hazelcast.cluster.Address;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.nio.ConnectionListener;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
@@ -54,7 +54,7 @@ import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class ClientConnectionTest extends HazelcastTestSupport {
+public class ClientConnectionTest extends ClientTestSupport {
 
     private final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
 
@@ -252,4 +252,28 @@ public class ClientConnectionTest extends HazelcastTestSupport {
         });
     }
 
+    @Test
+    public void testClientOpenClusterToAllEventually() {
+        int memberCount = 4;
+        for (int i = 0; i < memberCount; i++) {
+            hazelcastFactory.newHazelcastInstance();
+        }
+
+        HazelcastInstance client = hazelcastFactory.newHazelcastClient();
+        makeSureConnectedToServers(client, memberCount);
+
+    }
+
+    @Test
+    public void testClientOpenClusterToAllEventually_onAsyncMode() {
+        int memberCount = 4;
+        for (int i = 0; i < memberCount; i++) {
+            hazelcastFactory.newHazelcastInstance();
+        }
+
+        ClientConfig clientConfig = new ClientConfig();
+        clientConfig.getConnectionStrategyConfig().setAsyncStart(true);
+        HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig);
+        makeSureConnectedToServers(client, memberCount);
+    }
 }
