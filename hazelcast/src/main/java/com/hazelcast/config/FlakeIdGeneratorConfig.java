@@ -25,6 +25,7 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.Objects;
 
 import static com.hazelcast.internal.util.Preconditions.checkNotNegative;
 import static com.hazelcast.internal.util.Preconditions.checkTrue;
@@ -47,7 +48,7 @@ public class FlakeIdGeneratorConfig implements IdentifiedDataSerializable, Named
      * Default value for {@link #getPrefetchValidityMillis()}.
      */
     public static final long DEFAULT_PREFETCH_VALIDITY_MILLIS = 600000;
-    
+
     /**
      * {@code 1514764800000} is the value {@code System.currentTimeMillis()} would return on
      * 1.1.2018 0:00 UTC.
@@ -67,8 +68,9 @@ public class FlakeIdGeneratorConfig implements IdentifiedDataSerializable, Named
      * Node ID component bit length, default 16 bits. Default value for {@link #getBitsNodeId()}.
      */
     public static final int DEFAULT_BITS_NODE_ID = 16;
-    /** 
-     * How far to the future is it allowed to go to generate IDs, default 15 seconds. Default value for {@link #getAllowedFutureMillis()}.
+    /**
+     * How far to the future is it allowed to go to generate IDs, default 15 seconds.
+     * Default value for {@link #getAllowedFutureMillis()}.
      */
     public static final long DEFAULT_ALLOWED_FUTURE_MILLIS = 15000;
 
@@ -187,7 +189,7 @@ public class FlakeIdGeneratorConfig implements IdentifiedDataSerializable, Named
     }
 
     /**
-     * Sets the offset of timestamp component in milliseconds. 
+     * Sets the offset of timestamp component in milliseconds.
      * <p>
      * This setting pertains only to {@link FlakeIdGenerator#newId newId} calls made on the member
      * that configured it.
@@ -325,6 +327,7 @@ public class FlakeIdGeneratorConfig implements IdentifiedDataSerializable, Named
 
     /**
      * Sets how far to the future is it allowed to go to generate IDs.
+     *
      * @param allowedFutureMillis value in milliseconds
      * @return this instance for fluent API
      */
@@ -355,6 +358,7 @@ public class FlakeIdGeneratorConfig implements IdentifiedDataSerializable, Named
     }
 
     @Override
+    @SuppressWarnings("checkstyle:cyclomaticcomplexity")
     public boolean equals(Object o) {
         if (this == o) {
             return true;
@@ -374,13 +378,23 @@ public class FlakeIdGeneratorConfig implements IdentifiedDataSerializable, Named
                 && bitsSequence == that.bitsSequence
                 && bitsNodeId == that.bitsNodeId
                 && allowedFutureMillis == that.allowedFutureMillis
-                && (name != null ? name.equals(that.name) : that.name == null)
+                && (Objects.equals(name, that.name))
                 && statisticsEnabled == that.statisticsEnabled;
     }
 
     @Override
     public int hashCode() {
-        return Arrays.hashCode(new Object[]{name, prefetchCount, prefetchValidityMillis, epochStart, idOffset, bitsTimestamp, bitsSequence, bitsNodeId, allowedFutureMillis, statisticsEnabled});
+        return Arrays.hashCode(new Object[]{
+                name,
+                prefetchCount,
+                prefetchValidityMillis,
+                epochStart,
+                idOffset,
+                bitsTimestamp,
+                bitsSequence,
+                bitsNodeId,
+                allowedFutureMillis,
+                statisticsEnabled});
     }
 
     @Override

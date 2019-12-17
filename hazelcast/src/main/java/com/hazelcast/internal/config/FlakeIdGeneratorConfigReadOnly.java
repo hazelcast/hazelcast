@@ -36,7 +36,7 @@ public class FlakeIdGeneratorConfigReadOnly extends FlakeIdGeneratorConfig {
     public FlakeIdGeneratorConfig setPrefetchCount(int prefetchCount) {
         throw throwReadOnly();
     }
-    
+
     @Override
     public FlakeIdGeneratorConfig setPrefetchValidityMillis(long prefetchValidityMs) {
         throw throwReadOnly();
