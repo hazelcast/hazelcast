@@ -119,7 +119,7 @@ public class ManagementCenterServiceIntegrationTest extends HazelcastTestSupport
         mcs.log(new TestEvent());
         mcs.log(new TestEvent());
 
-        assertEquals(0, mcs.pollMCEvents().size());
+        assertEquals(2, mcs.pollMCEvents().size());
     }
 
     @Test
