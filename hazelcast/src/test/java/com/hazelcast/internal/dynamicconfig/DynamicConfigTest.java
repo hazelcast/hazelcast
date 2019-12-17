@@ -44,6 +44,7 @@ import com.hazelcast.config.ListConfig;
 import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapPartitionLostListenerConfig;
+import com.hazelcast.config.MaxSizePolicy;
 import com.hazelcast.config.MergePolicyConfig;
 import com.hazelcast.config.MerkleTreeConfig;
 import com.hazelcast.config.MetadataPolicy;
@@ -90,7 +91,6 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.config.MaxSizePolicy.ENTRY_COUNT;
-import static com.hazelcast.config.MaxSizePolicy.PER_NODE;
 import static com.hazelcast.config.MultiMapConfig.ValueCollectionType.LIST;
 import static com.hazelcast.test.TestConfigUtils.NON_DEFAULT_BACKUP_COUNT;
 import static org.junit.Assert.assertEquals;
@@ -206,7 +206,8 @@ public class DynamicConfigTest extends HazelcastTestSupport {
     @Test
     public void testScheduledExecutorConfig() {
         ScheduledExecutorConfig config = new ScheduledExecutorConfig(name, 2, 3, 10, null,
-                new MergePolicyConfig(NON_DEFAULT_MERGE_POLICY, NON_DEFAULT_MERGE_BATCH_SIZE));
+                new MergePolicyConfig(NON_DEFAULT_MERGE_POLICY, NON_DEFAULT_MERGE_BATCH_SIZE),
+                ScheduledExecutorConfig.CapacityPolicy.PER_NODE);
 
         driver.getConfig().addScheduledExecutorConfig(config);
 
@@ -862,7 +863,7 @@ public class DynamicConfigTest extends HazelcastTestSupport {
         mapConfig.getEvictionConfig()
                 .setEvictionPolicy(EvictionPolicy.RANDOM)
                 .setSize(4096)
-                .setMaxSizePolicy(PER_NODE);
+                .setMaxSizePolicy(MaxSizePolicy.PER_NODE);
         return mapConfig;
     }
 

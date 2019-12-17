@@ -50,6 +50,7 @@ import java.util.UUID;
 import java.util.WeakHashMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.hazelcast.internal.config.ConfigValidator.checkScheduledExecutorConfig;
 import static com.hazelcast.internal.util.ConcurrencyUtil.getOrPutSynchronized;
@@ -69,6 +70,9 @@ public class DistributedScheduledExecutorService
     public static final String SERVICE_NAME = "hz:impl:scheduledExecutorService";
     public static final int MEMBER_BIN = -1;
     public static final CapacityPermit NOOP_PERMIT = new NoopCapacityPermit();
+
+    //Testing only
+    static final AtomicBoolean FAIL_MIGRATIONS = new AtomicBoolean(false);
 
     private static final Object NULL_OBJECT = new Object();
 
@@ -211,6 +215,10 @@ public class DistributedScheduledExecutorService
 
     @Override
     public void beforeMigration(PartitionMigrationEvent event) {
+        if (FAIL_MIGRATIONS.getAndSet(false)) {
+            throw new RuntimeException();
+        }
+
         ScheduledExecutorPartition partition = partitions[event.getPartitionId()];
         if (event.getMigrationEndpoint() == MigrationEndpoint.SOURCE && event.getCurrentReplicaIndex() == 0) {
             // this is the partition owner at the beginning of the migration

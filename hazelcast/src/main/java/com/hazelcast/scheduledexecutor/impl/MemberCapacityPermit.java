@@ -17,19 +17,19 @@
 package com.hazelcast.scheduledexecutor.impl;
 
 import java.util.concurrent.RejectedExecutionException;
-import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class MemberCapacityPermit
     implements CapacityPermit {
 
     private final String name;
     private final int capacity;
-    private AtomicLong permits;
+    private AtomicInteger permits;
 
     MemberCapacityPermit(String name, int permits) {
         this.name = name;
         this.capacity = permits;
-        this.permits = new AtomicLong(permits);
+        this.permits = new AtomicInteger(permits);
     }
 
     @Override
@@ -55,5 +55,10 @@ public class MemberCapacityPermit
     @Override
     public void release() {
         permits.incrementAndGet();
+    }
+
+    @Override
+    public int totalAcquired() {
+        return capacity - permits.get();
     }
 }

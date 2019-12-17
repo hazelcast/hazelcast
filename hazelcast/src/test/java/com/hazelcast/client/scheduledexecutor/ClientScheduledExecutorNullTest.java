@@ -18,7 +18,7 @@ package com.hazelcast.client.scheduledexecutor;
 
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.scheduledexecutor.AbstractScheduledExecutorNullTest;
+import com.hazelcast.scheduledexecutor.impl.AbstractScheduledExecutorNullTest;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;

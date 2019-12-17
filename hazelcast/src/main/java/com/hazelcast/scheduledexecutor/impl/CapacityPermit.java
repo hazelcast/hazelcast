@@ -41,4 +41,9 @@ public interface CapacityPermit {
      * Releases a permit back to pool for future use
      */
     void release();
+
+    /**
+     * @return the total number of acquired permits
+     */
+    int totalAcquired();
 }

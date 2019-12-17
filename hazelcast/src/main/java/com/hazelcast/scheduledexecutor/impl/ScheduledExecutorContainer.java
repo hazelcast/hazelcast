@@ -19,6 +19,8 @@ package com.hazelcast.scheduledexecutor.impl;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.scheduledexecutor.DuplicateTaskException;
+import com.hazelcast.scheduledexecutor.IScheduledExecutorService;
+import com.hazelcast.scheduledexecutor.IScheduledFuture;
 import com.hazelcast.scheduledexecutor.ScheduledTaskHandler;
 import com.hazelcast.scheduledexecutor.ScheduledTaskStatistics;
 import com.hazelcast.scheduledexecutor.StaleTaskException;
@@ -68,6 +70,24 @@ public class ScheduledExecutorContainer {
 
     private final int durability;
 
+    /**
+     * Permits are acquired through two different places
+     * a. When a task is scheduled by the user-facing API
+     *      ie. {@link IScheduledExecutorService#schedule(Runnable, long, TimeUnit)}
+     *      whereas the permit policy is enforced, rejecting new tasks once the capacity is reached.
+     * b. When a task is promoted (ie. migration finished)
+     *      whereas the permit policy is not-enforced, meaning that actual task count might be more than the configured capacity,
+     *      but that is purposefully done to prevent any data-loss during node/cluster failures.
+     *
+     * Permits are released similarly through two different places
+     * a. When a task is disposed by user-facing API
+     *      ie. {@link IScheduledFuture#dispose()} or {@link IScheduledExecutorService#destroy()}
+     * b. When a task is suspended (ie. migration started / roll-backed)
+     * Note: Permit releases are done, only if the task was previously active
+     *  (ie. {@link ScheduledTaskDescriptor#status == {@link Status#ACTIVE}}
+     *
+     * As a result, {@link #tasks} size will be inconsistent with the number of acquired permits at times.
+     */
     private final CapacityPermit permit;
 
     ScheduledExecutorContainer(String name, int partitionId, NodeEngine nodeEngine, CapacityPermit permit,
@@ -146,11 +166,12 @@ public class ScheduledExecutorContainer {
         checkNotStaleTask(taskName);
         log(FINEST, taskName, "Disposing");
 
-        ScheduledTaskDescriptor descriptor = tasks.get(taskName);
+        ScheduledTaskDescriptor descriptor = tasks.remove(taskName);
+        if (descriptor.isActive()) {
+            releasePermit();
+        }
 
         descriptor.cancel(true);
-        tasks.remove(taskName);
-        releasePermit();
     }
 
     public void enqueueSuspended(TaskDefinition definition) {
@@ -230,10 +251,16 @@ public class ScheduledExecutorContainer {
         for (ScheduledTaskDescriptor descriptor : tasks.values()) {
             try {
                 log(FINEST, descriptor.getDefinition().getName(), "Attempting promotion");
-                if (descriptor.shouldSchedule()) {
+                boolean wasActive = descriptor.isActive();
+                if (descriptor.canBeScheduled()) {
                     doSchedule(descriptor);
                 }
-                acquirePermit(true);
+
+                if (!wasActive) {
+                    acquirePermit(true);
+                }
+
+                descriptor.setActive();
             } catch (Exception e) {
                 throw rethrow(e);
             }

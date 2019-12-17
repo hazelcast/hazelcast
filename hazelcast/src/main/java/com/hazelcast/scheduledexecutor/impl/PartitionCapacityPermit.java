@@ -54,4 +54,9 @@ public class PartitionCapacityPermit
     public void release() {
         ++permits;
     }
+
+    @Override
+    public int totalAcquired() {
+        return capacity - permits;
+    }
 }

@@ -75,11 +75,11 @@ public class ScheduledExecutorConfig implements IdentifiedDataSerializable, Name
     }
 
     public ScheduledExecutorConfig(String name, int durability, int capacity, int poolSize) {
-        this(name, durability, capacity, poolSize, null, new MergePolicyConfig());
+        this(name, durability, capacity, poolSize, null, new MergePolicyConfig(), PER_NODE);
     }
 
     public ScheduledExecutorConfig(String name, int durability, int capacity, int poolSize, String splitBrainProtectionName,
-                                   MergePolicyConfig mergePolicyConfig) {
+                                   MergePolicyConfig mergePolicyConfig, CapacityPolicy capacityPolicy) {
         this.name = name;
         this.durability = durability;
         this.poolSize = poolSize;
@@ -90,7 +90,7 @@ public class ScheduledExecutorConfig implements IdentifiedDataSerializable, Name
 
     public ScheduledExecutorConfig(ScheduledExecutorConfig config) {
         this(config.getName(), config.getDurability(), config.getCapacity(), config.getPoolSize(),
-                config.getSplitBrainProtectionName(), config.getMergePolicyConfig());
+                config.getSplitBrainProtectionName(), config.getMergePolicyConfig(), config.getCapacityPolicy());
     }
 
     /**

@@ -30,4 +30,9 @@ public class NoopCapacityPermit
     @Override
     public void release() {
     }
+
+    @Override
+    public int totalAcquired() {
+        return Integer.MIN_VALUE;
+    }
 }
