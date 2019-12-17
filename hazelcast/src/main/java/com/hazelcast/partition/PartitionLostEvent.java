@@ -34,12 +34,8 @@ public interface PartitionLostEvent extends PartitionEvent {
 
     /**
      * Returns true if all replicas of a partition are lost
-     *
-     * @return true if all replicas of a partition are lost
      */
-    public boolean allReplicasInPartitionLost() {
-        return lostBackupCount == InternalPartition.MAX_BACKUP_COUNT;
-    }
+    boolean allReplicasInPartitionLost();
 
     /**
      * Returns the address of the node that dispatches the event
