@@ -93,6 +93,18 @@ public class CachedQueryEntry<K, V> extends QueryableEntry<K, V> {
         return valueData;
     }
 
+    public Object getByPrioritizingDataValue() {
+        if (valueData != null) {
+            return valueData;
+        }
+
+        if (valueObject != null) {
+            return valueObject;
+        }
+
+        return null;
+    }
+
     @Override
     protected Object getTargetObject(boolean key) {
         Object targetObject;

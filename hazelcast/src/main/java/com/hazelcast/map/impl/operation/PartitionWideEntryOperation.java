@@ -19,13 +19,13 @@ package com.hazelcast.map.impl.operation;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.ManagedContext;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.MapEntries;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.query.impl.QueryableEntry;
@@ -166,7 +166,7 @@ public class PartitionWideEntryOperation extends MapOperation
             if (eventType != null) {
                 outComes.add(dataKey);
                 outComes.add(operator.getOldValue());
-                outComes.add(operator.getNewValue());
+                outComes.add(operator.getByPreferringDataNewValue());
                 outComes.add(eventType);
             }
         }, false);
@@ -181,7 +181,7 @@ public class PartitionWideEntryOperation extends MapOperation
                 Object newValue = outComes.poll();
                 EntryEventType eventType = (EntryEventType) outComes.poll();
 
-                operator.init(dataKey, oldValue, newValue, null, eventType)
+                operator.init(dataKey, oldValue, newValue, null, eventType, null)
                         .doPostOperateOps();
 
             } while (!outComes.isEmpty());
