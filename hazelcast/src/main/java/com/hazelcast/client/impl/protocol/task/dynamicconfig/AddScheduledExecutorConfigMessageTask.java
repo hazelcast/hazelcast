@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,9 +18,11 @@ package com.hazelcast.client.impl.protocol.task.dynamicconfig;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddScheduledExecutorConfigCodec;
+import com.hazelcast.config.MergePolicyConfig;
 import com.hazelcast.config.ScheduledExecutorConfig;
-import com.hazelcast.instance.Node;
-import com.hazelcast.nio.Connection;
+import com.hazelcast.instance.impl.Node;
+import com.hazelcast.internal.dynamicconfig.DynamicConfigurationAwareConfig;
+import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 public class AddScheduledExecutorConfigMessageTask
@@ -42,13 +44,26 @@ public class AddScheduledExecutorConfigMessageTask
 
     @Override
     protected IdentifiedDataSerializable getConfig() {
-        ScheduledExecutorConfig config = new ScheduledExecutorConfig(parameters.name, parameters.durability,
-                parameters.capacity, parameters.poolSize);
+        ScheduledExecutorConfig config = new ScheduledExecutorConfig();
+        config.setPoolSize(parameters.poolSize);
+        config.setDurability(parameters.durability);
+        config.setCapacity(parameters.capacity);
+        config.setName(parameters.name);
+        MergePolicyConfig mergePolicyConfig = mergePolicyConfig(parameters.mergePolicy, parameters.mergeBatchSize);
+        config.setMergePolicyConfig(mergePolicyConfig);
         return config;
     }
 
     @Override
     public String getMethodName() {
         return "addScheduledExecutorConfig";
+    }
+
+    @Override
+    protected boolean checkStaticConfigDoesNotExist(IdentifiedDataSerializable config) {
+        DynamicConfigurationAwareConfig nodeConfig = (DynamicConfigurationAwareConfig) nodeEngine.getConfig();
+        ScheduledExecutorConfig scheduledExecutorConfig = (ScheduledExecutorConfig) config;
+        return nodeConfig.checkStaticConfigDoesNotExist(nodeConfig.getStaticConfig().getScheduledExecutorConfigs(),
+                scheduledExecutorConfig.getName(), scheduledExecutorConfig);
     }
 }

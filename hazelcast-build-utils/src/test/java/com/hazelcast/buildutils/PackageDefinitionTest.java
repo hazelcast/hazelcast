@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,7 @@ package com.hazelcast.buildutils;
 
 import com.hazelcast.buildutils.HazelcastManifestTransformer.PackageDefinition;
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
 import org.junit.Test;
@@ -27,6 +27,7 @@ import org.junit.runner.RunWith;
 
 import java.util.Set;
 
+import static com.hazelcast.test.HazelcastTestSupport.assumeDifferentHashCodes;
 import static java.lang.String.format;
 import static java.util.Collections.emptySet;
 import static java.util.Collections.singleton;
@@ -37,7 +38,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class PackageDefinitionTest {
 
     private Set<String> uses = emptySet();
@@ -116,6 +117,7 @@ public class PackageDefinitionTest {
         assertEquals(packageDefinition.hashCode(), packageDefinitionOtherResolutionOptional.hashCode());
         assertEquals(packageDefinition.hashCode(), packageDefinitionOtherVersion.hashCode());
 
+        assumeDifferentHashCodes();
         assertNotEquals(packageDefinition.hashCode(), packageDefinitionOtherPackageName.hashCode());
     }
 

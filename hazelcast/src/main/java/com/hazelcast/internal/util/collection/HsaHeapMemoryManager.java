@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,7 +23,7 @@ import com.hazelcast.internal.memory.MemoryManager;
 import static java.lang.System.arraycopy;
 
 /**
- * Memory manager backed by {@code long[][]}. Supports the minimum function needod for {@link LongSetHsa}:
+ * Memory manager backed by {@code long[][]}. Supports the minimum function needed for {@link LongSetHsa}:
  * <ul>
  *     <li>A maximum of two blocks can be allocated at any time.</li>
  *     <li>All addresses and sizes must be 8 byte-aligned.</li>

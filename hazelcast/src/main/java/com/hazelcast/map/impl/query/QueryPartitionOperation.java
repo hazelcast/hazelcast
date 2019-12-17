@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,14 +20,14 @@ import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.operation.MapOperation;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.spi.PartitionAwareOperation;
-import com.hazelcast.spi.ReadonlyOperation;
+import com.hazelcast.query.impl.Indexes;
+import com.hazelcast.spi.impl.operationservice.PartitionAwareOperation;
+import com.hazelcast.spi.impl.operationservice.ReadonlyOperation;
 
 import java.io.IOException;
 
-import static com.hazelcast.config.InMemoryFormat.NATIVE;
-
-public class QueryPartitionOperation extends MapOperation implements PartitionAwareOperation, ReadonlyOperation {
+public class QueryPartitionOperation extends MapOperation
+        implements PartitionAwareOperation, ReadonlyOperation {
 
     private Query query;
     private Result result;
@@ -41,18 +41,15 @@ public class QueryPartitionOperation extends MapOperation implements PartitionAw
     }
 
     @Override
-    public void run() throws Exception {
+    protected void runInternal() {
         QueryRunner queryRunner = mapServiceContext.getMapQueryRunner(getName());
-        boolean isNativeMemoryFormat = mapContainer.getMapConfig().getInMemoryFormat().equals(NATIVE);
-        // Native handling only for RU compatibility purposes, can be deleted in 3.10 master
-        // An old member may send a QueryOperation (and not HDQueryOperation) to an HD member.
-        // In this case we want to handle it in the most efficient way.
-        if (isNativeMemoryFormat) {
-            // partition-index scan or partition-scan
-            result = queryRunner.runPartitionIndexOrPartitionScanQueryOnGivenOwnedPartition(query, getPartitionId());
-        } else {
-            // partition scan only, since global index
-            result = queryRunner.runPartitionScanQueryOnGivenOwnedPartition(query, getPartitionId());
+        result = queryRunner.runPartitionIndexOrPartitionScanQueryOnGivenOwnedPartition(query, getPartitionId());
+
+        // we have to increment query count here manually since we are not even
+        // trying to use indexes
+        Indexes indexes = mapServiceContext.getMapContainer(getName()).getIndexes();
+        if (indexes != null) {
+            indexes.getIndexesStats().incrementQueryCount();
         }
     }
 
@@ -74,7 +71,7 @@ public class QueryPartitionOperation extends MapOperation implements PartitionAw
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MapDataSerializerHook.QUERY_PARTITION;
     }
 }

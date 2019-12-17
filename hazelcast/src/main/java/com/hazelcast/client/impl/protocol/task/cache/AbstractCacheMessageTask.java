@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,12 +24,8 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.task.AbstractPartitionMessageTask;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.config.InMemoryFormat;
-import com.hazelcast.config.LegacyCacheConfig;
-import com.hazelcast.instance.BuildInfo;
-import com.hazelcast.instance.Node;
-import com.hazelcast.nio.Connection;
-import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.instance.impl.Node;
+import com.hazelcast.internal.nio.Connection;
 
 import java.security.Permission;
 
@@ -72,20 +68,5 @@ public abstract class AbstractCacheMessageTask<P>
     @Override
     public Permission getRequiredPermission() {
         return null;
-    }
-
-    protected Data serializeCacheConfig(Object response) {
-        Data responseData = null;
-        if (BuildInfo.UNKNOWN_HAZELCAST_VERSION == getClientVersion()) {
-            boolean compatibilityEnabled = nodeEngine.getProperties().getBoolean(GroupProperty.COMPATIBILITY_3_6_CLIENT_ENABLED);
-            if (compatibilityEnabled) {
-                responseData = nodeEngine.toData(response == null ? null : new LegacyCacheConfig((CacheConfig) response));
-            }
-        }
-
-        if (null == responseData) {
-            responseData = nodeEngine.toData(response);
-        }
-        return responseData;
     }
 }

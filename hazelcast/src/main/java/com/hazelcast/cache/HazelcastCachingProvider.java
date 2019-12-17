@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,45 +17,135 @@
 package com.hazelcast.cache;
 
 import com.hazelcast.cache.impl.HazelcastServerCachingProvider;
+import com.hazelcast.client.cache.impl.HazelcastClientCachingProvider;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.logging.ILogger;
-import com.hazelcast.logging.Logger;
-import com.hazelcast.nio.ClassLoaderUtil;
-import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.spi.properties.ClusterProperty;
 
 import javax.cache.CacheException;
 import javax.cache.CacheManager;
+import javax.cache.Caching;
 import javax.cache.configuration.OptionalFeature;
 import javax.cache.spi.CachingProvider;
 import java.net.URI;
 import java.util.Properties;
 
 /**
- * This class is the Hazelcast JCache public {@link javax.cache.spi.CachingProvider} implementation. This provider
- * class acts as the commonly used entry point for the JCache SPI to register Hazelcast JCache as an eligible JCache
- * implementation.
- * <p>Main purpose of this provider implementation is to delegate to the user-selected internal
- * {@link javax.cache.spi.CachingProvider} implementation.</p>
- * <p>Hazelcast uses two internal {@link javax.cache.spi.CachingProvider}s depending on the environment:
+ * Hazelcast implementation of JCache {@link javax.cache.spi.CachingProvider}.
+ * <p>
+ * This provider class is registered as a {@link CachingProvider} implementation.
+ * When Hazelcast is the only {@link CachingProvider} on the classpath,
+ * using {@link Caching#getCachingProvider()} will instantiate and return
+ * an instance of this class.
+ * <p>
+ * This provider implementation delegates to a {@code CachingProvider} backed
+ * by either a member- or a client-side {@link HazelcastInstance}:
  * <ul>
- * <li>{@link com.hazelcast.cache.impl.HazelcastServerCachingProvider}</li>
- * <li>{@link com.hazelcast.client.cache.impl.HazelcastClientCachingProvider}</li>
+ * <li>{@code com.hazelcast.cache.impl.HazelcastServerCachingProvider} is the
+ * member-side {@link CachingProvider} implementation</li>
+ * <li>{@code com.hazelcast.client.cache.impl.HazelcastClientCachingProvider} is the
+ * client-side {@link CachingProvider} implementation</li>
+ * </ul>
+ * <h3>Provider Type Selection</h3>
+ * <p>When using {@link Caching#getCachingProvider()} without a class name argument,
+ * this provider is instantiated. The choice between member- or client-side provider
+ * is made by inspecting the value of system property
+ * {@code hazelcast.jcache.provider.type}:
+ * <ul>
+ *     <li>If no value was set, then the client-side caching provider is selected</li>
+ *     <li>If a value was set, then value {@code server} selects the member-side caching
+ *     provider, while value {@code client} selects the client-side provider. Other values
+ *     result in a {@link CacheException} being thrown.</li>
  * </ul>
  * </p>
- * <p>
- * <h3>Provider Type Selection:</h3>
- * The first step is to check whether a selection exists using the system property
- * <tt>hazelcast.jcache.provider.type</tt> with values of <tt>client</tt> or <tt>server</tt>.
- * If no selection exists, then the default behavior for selecting the internal provider type is based on
- * which dependency is found on the classpath. Client and server provider classes are searched on the classpath. If
- * both {@link javax.cache.spi.CachingProvider} implementations are found (client and server), the client
- * provider has precedence. To select the server provider, use the above mentioned property.
+ * <p>When using one of {@code Caching#getCachingProvider} variants with an explicit
+ * class name argument, then:
+ * <ul>
+ *     <li>using {@code com.hazelcast.cache.HazelcastCachingProvider} as class name
+ *     is identical to using {@link Caching#getCachingProvider()}; choice between
+ *     member- or client-side caching provider is performed via system property
+ *     {@code hazelcast.jcache.provider.type} as described above.</li>
+ *     <li>using {@value #SERVER_CACHING_PROVIDER} as
+ *     class name will return a member-side caching provider</li>
+ *     <li>using {@value #CLIENT_CACHING_PROVIDER} as
+ *     class name will return a client-side caching provider</li>
+ * </ul>
+ * </p>
+ * <h3>Creating or reusing HazelcastInstances with CacheManagers</h3>
+ * Arguments used with {@link CachingProvider#getCacheManager(URI, ClassLoader, Properties)}
+ * and its variants control whether a {@code HazelcastInstance} will be created or reused
+ * to back the {@link CacheManager} being created:
+ * <ul>
+ *     <li>Property {@code hazelcast.config.location} specifies a URI to locate a Hazelcast
+ *     member or client configuration file. Supports {@code classpath:}, {@code file:},
+ *     {@code http:} and {@code https:} URI schemes.
+ *     <b>Examples</b>: {@code classpath:com/acme/hazelcast.xml}
+ *     will locate {@code hazelcast.xml} in package {@code com.acme},
+ *     {@code http://internal.acme.com/hazelcast.xml} will locate the configuration from
+ *     the given HTTP URL.</li>
+ *     <li>Property {@code hazelcast.instance.name} specifies the instance name of a running
+ *     {@code HazelcastInstance}. If no instance is found running by that name, then a new
+ *     {@code HazelcastInstance} is started with a default configuration and the given
+ *     instance name.</li>
+ *     <li>In any {@code CachingProvider#getCacheManager} variant that accepts a
+ *     {@link URI} as argument, and if no properties were provided or properties did not result
+ *     in resolving a specific {@code HazelcastInstance}, then the {@code URI} argument is
+ *     interpreted as a Hazelcast config location as follows:
+ *      <ol>
+ *          <li>if {@code URI} starts with one of supported schemes ({@code classpath:}, {@code http:},
+ *          {@code https:}, {@code file:}), then a Hazelcast XML configuration is loaded from that location.</li>
+ *          <li>otherwise, {@code URI} is interpreted as a system property. If {@link System#getProperty(String)
+ *          System.getProperty(URI)} returns a value that starts with one of supported schemes above, then
+ *          a Hazelcast XML configuration is loaded from that location.</li>
+ *          <li>if {@code URI} or its resolved value as a system property does not start with a supported
+ *          URI scheme, a default {@code HazelcastInstance} named {@value #SHARED_JCACHE_INSTANCE_NAME} is
+ *          created or used, if it already exists.</li>
+ *      </ol>
+ *     </li>
+ * </ul>
+ * Convenience methods {@link #propertiesByLocation(String)} and {@link #propertiesByInstanceName(String)}
+ * will create an appropriate {@link Properties} instance for use with
+ * {@link #getCacheManager(URI, ClassLoader, Properties)}.
+ * <h3>Examples</h3>
+ * <p><b>Obtain a member-side caching provider backed by an existing HazelcastInstance.</b>
+ * In this example the member-side caching provider is selected by setting the value of
+ * system property {@code hazelcast.jcache.provider.type} to value "{@code server}". An existing
+ * {@code HazelcastInstance} is referenced by instance name in the {@code Properties} provided as
+ * argument to {@link CachingProvider#getCacheManager(URI, ClassLoader, Properties)}.
+ * <blockquote><pre>
+ * Config config = new Config();
+ * config.setInstanceName("hz-jcache");
+ * HazelcastInstance member = Hazelcast.newHazelcastInstance(config);
+ *
+ * System.setProperty("hazelcast.jcache.provider.type", "server");
+ * CachingProvider provider = Caching.getCachingProvider();
+ * CacheManager manager = provider.getCacheManager(null, null, HazelcastCachingProvider.propertiesByInstanceName("hz-jcache"));
+ * Cache cache = manager.createCache("sessions", new MutableConfiguration());
+ * cache.put("a", "b");
+ * </pre>
+ * </blockquote>
+ * </p>
+ * <p><b>Obtain a client-side caching provider, starting a default client {@code HazelcastInstance}</b>
+ * In this example the client-side caching provider is selected as default option. A new
+ * client-side {@code HazelcastInstance} is created with default configuration once
+ * {@link CachingProvider#getCacheManager()} is called.
+ * <blockquote><pre>
+ * // start a Hazelcast member for the client to connect to
+ * HazelcastInstance member = Hazelcast.newHazelcastInstance();
+ *
+ * // obtain a client-side (default) CachingProvider
+ * CachingProvider provider = Caching.getCachingProvider();
+ * // obtain the default CacheManager; since there is no JCache-backing client-side
+ * // HazelcastInstance started, this will start a new instance
+ * CacheManager manager = provider.getCacheManager();
+ * Cache cache = manager.createCache("sessions", new MutableConfiguration());
+ * cache.put("a", "b");
+ * </pre>
+ * </blockquote>
  * </p>
  *
  * @since 3.4
  */
-public final class HazelcastCachingProvider
-        implements CachingProvider {
+public final class HazelcastCachingProvider implements CachingProvider {
 
     /**
      * Hazelcast config location property
@@ -72,40 +162,42 @@ public final class HazelcastCachingProvider
      */
     public static final String HAZELCAST_INSTANCE_ITSELF = "hazelcast.instance.itself";
 
-    private static final String CLIENT_CACHING_PROVIDER_CLASS = "com.hazelcast.client.cache.impl.HazelcastClientCachingProvider";
-    private static final ILogger LOGGER = Logger.getLogger(HazelcastCachingProvider.class);
+    /**
+     * Class name of the member-side Caching Provider
+     */
+    public static final String SERVER_CACHING_PROVIDER = "com.hazelcast.cache.impl.HazelcastServerCachingProvider";
+    /**
+     * Class name of the client-side Caching Provider
+     */
+    public static final String CLIENT_CACHING_PROVIDER = "com.hazelcast.client.cache.impl.HazelcastClientCachingProvider";
+
+    /**
+     * Name of default {@link HazelcastInstance} which may be started when
+     * obtaining the default {@link CachingProvider}.
+     */
+    public static final String SHARED_JCACHE_INSTANCE_NAME = "_hzinstance_jcache_shared";
+
+    private static final String PROVIDER_TYPE_CLIENT = "client";
+    private static final String PROVIDER_TYPE_SERVER = "server";
 
     private final CachingProvider delegate;
 
     public HazelcastCachingProvider() {
         CachingProvider cp = null;
-        String providerType = GroupProperty.JCACHE_PROVIDER_TYPE.getSystemProperty();
+        String providerType = ClusterProperty.JCACHE_PROVIDER_TYPE.getSystemProperty();
         if (providerType != null) {
-            if ("client".equals(providerType)) {
-                cp = createClientProvider();
-            }
-            if ("server".equals(providerType)) {
+            if (PROVIDER_TYPE_CLIENT.equals(providerType)) {
+                cp = new HazelcastClientCachingProvider();
+            } else if (PROVIDER_TYPE_SERVER.equals(providerType)) {
                 cp = new HazelcastServerCachingProvider();
-            }
-            if (cp == null) {
-                throw new CacheException("CacheProvider cannot created with the provided type:" + providerType);
+            } else {
+                throw new CacheException("Unknown CachingProvider type \"" + providerType + "\". Use "
+                        + "\"client\" or \"server\" as provider type.");
             }
         } else {
-            cp = createClientProvider();
-            if (cp == null) {
-                cp = new HazelcastServerCachingProvider();
-            }
+            cp = new HazelcastClientCachingProvider();
         }
         delegate = cp;
-    }
-
-    private CachingProvider createClientProvider() {
-        try {
-            return ClassLoaderUtil.newInstance(getClass().getClassLoader(), CLIENT_CACHING_PROVIDER_CLASS);
-        } catch (Exception e) {
-            LOGGER.finest("Could not load client CachingProvider! Fallback to server one... " + e.toString());
-        }
-        return null;
     }
 
     /**
@@ -115,7 +207,7 @@ public final class HazelcastCachingProvider
      * @return properties instance pre-configured with the configuration location
      */
     public static Properties propertiesByLocation(String configFileLocation) {
-        final Properties properties = new Properties();
+        Properties properties = new Properties();
         properties.setProperty(HAZELCAST_CONFIG_LOCATION, configFileLocation);
         return properties;
     }
@@ -127,7 +219,7 @@ public final class HazelcastCachingProvider
      * @return the properties instance pre-configured with the instance name
      */
     public static Properties propertiesByInstanceName(String instanceName) {
-        final Properties properties = new Properties();
+        Properties properties = new Properties();
         properties.setProperty(HAZELCAST_INSTANCE_NAME, instanceName);
         return properties;
     }
@@ -139,7 +231,7 @@ public final class HazelcastCachingProvider
      * @return the properties instance pre-configured with the instance itself
      */
     public static Properties propertiesByInstanceItself(HazelcastInstance instance) {
-        final Properties properties = new Properties();
+        Properties properties = new Properties();
         properties.put(HAZELCAST_INSTANCE_ITSELF, instance);
         return properties;
     }

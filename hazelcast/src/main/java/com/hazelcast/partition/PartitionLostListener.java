@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,33 +16,54 @@
 
 package com.hazelcast.partition;
 
-import com.hazelcast.core.Partition;
-import com.hazelcast.core.PartitionService;
-
 import java.util.EventListener;
 
 /**
- * PartitionLostListener provides the ability to be notified upon a possible data loss when a partition has no owner and backups.
+ * PartitionLostListener provides the ability to be notified upon a
+ * possible data loss when a partition loses a replica.
  * <p>
- * <b>IMPORTANT:</b> Please note that it may dispatch false-positive partition lost events when partial network split errors
- * occur.
+ * When the cluster is initialized, each node becomes owner of some of the
+ * partitions and of a backup of some other partitions. We call the replica on the
+ * partition owner a "primary replica" and on the backup nodes "backup replicas".
+ * Partition replicas are ordered. A primary replica node keeps all data
+ * that is mapped to the partition. If a Hazelcast data structure is
+ * configured with 1 backup, its data is put into the primary replica and
+ * the first backup replica. Similarly, data of a Hazelcast data structure
+ * that is configured with 2 backups is put into the primary replica, the
+ * first backup replica and the second backup replica and so on.
  * <p>
- * Partition loss detection algorithm works as follows:
- * When the cluster is initialized, each node becomes owner of some of the partitions, and backup of the some other partitions.
- * On a node failure, the first backup node becomes owner for a partition and all other backup nodes are shifted up in the
- * partition backup order. Therefore, some nodes sync themselves from the new partition owner node since they are shifted up in
- * the partition table and do not contain the backup data yet. Whey they issue a partition sync request, they set themselves in
- * a custom state that indicates that a node is waiting for a partition sync for a particular backup. When the sync operation is
- * completed, that sync flag is reset.
+ * When a node fails, primary replicas of its partitions are lost. In this
+ * case, ownership of each partition owned by the unreachable node is
+ * transferred to the first available backup node. After this point, other
+ * backup nodes sync themselves from the new partition owner node in order
+ * to populate the missing backup data. This sync only happens when backup
+ * partition replica versions are not equal to the primary ones.
  * <p>
- * Lets say the owner of the partition crashes before it sends backup data to sync-waiting partitions.
- * The first backup which will become the owner of the partition checks its replica-sync flags. If they are set, it detects that
- * the owner failed before the backup node completes the sync process and issues a partition lost event.
+ * In this context the partition loss detection algorithm works as follows:
+ * {@link PartitionLostEvent#getLostBackupCount()} denotes the replica
+ * index up to which partition replicas are lost:<ul>
+ * <li>0 means that only the primary replica is lost. In other words, the node
+ * which owns the partition is unreachable, hence removed from the cluster.
+ * If there is a data structure configured with no backups, its data is
+ * lost for this partition.
+ * <li>1 means that both the primary replica and the first backup replica are
+ * lost. In other words, the partition owner node and the first backup node
+ * have became unreachable. If a data structure is configured with less
+ * than 2 backups, its data is lost for this partition.
+ * <li>The idea works same for higher backup counts.
+ * </ul>
+ *
+ * Please note that node failures that do not involve a primary replica
+ * do not lead to partition lost events. For instance, if a backup node
+ * crashes when owner of the partition is still alive, a partition lost
+ * event is not fired. In this case, Hazelcast tries to assign a new backup
+ * replica to populate the missing backup.
  *
  * @see Partition
  * @see PartitionService
  * @since 3.5
  */
+@FunctionalInterface
 public interface PartitionLostListener extends EventListener {
 
     /**

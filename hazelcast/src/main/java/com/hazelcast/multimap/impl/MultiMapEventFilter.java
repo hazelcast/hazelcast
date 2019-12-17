@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,18 +16,18 @@
 
 package com.hazelcast.multimap.impl;
 
+import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.spi.EventFilter;
+import com.hazelcast.spi.impl.eventservice.EventFilter;
 
 import java.io.IOException;
 
 public class MultiMapEventFilter implements EventFilter, IdentifiedDataSerializable {
 
     boolean includeValue;
-
     Data key;
 
     public MultiMapEventFilter() {
@@ -49,13 +49,13 @@ public class MultiMapEventFilter implements EventFilter, IdentifiedDataSerializa
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeBoolean(includeValue);
-        out.writeData(key);
+        IOUtil.writeData(out, key);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         includeValue = in.readBoolean();
-        key = in.readData();
+        key = IOUtil.readData(in);
     }
 
     @Override
@@ -73,14 +73,12 @@ public class MultiMapEventFilter implements EventFilter, IdentifiedDataSerializa
         }
 
         MultiMapEventFilter that = (MultiMapEventFilter) o;
-
         if (includeValue != that.includeValue) {
             return false;
         }
         if (key != null ? !key.equals(that.key) : that.key != null) {
             return false;
         }
-
         return true;
     }
 
@@ -97,7 +95,7 @@ public class MultiMapEventFilter implements EventFilter, IdentifiedDataSerializa
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MultiMapDataSerializerHook.MULTIMAP_EVENT_FILTER;
     }
 }

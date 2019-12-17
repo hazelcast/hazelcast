@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,22 +16,19 @@
 
 package com.hazelcast.map.impl.querycache.subscriber.record;
 
-import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.serialization.SerializationService;
+import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.internal.serialization.SerializationService;
 
 /**
  * Represents a record with {@link Data} key and value.
  */
 class DataQueryCacheRecord extends AbstractQueryCacheRecord {
 
-    private final Data keyData;
-
     private final Data valueData;
 
     private final SerializationService serializationService;
 
-    public DataQueryCacheRecord(Data keyData, Data valueData, SerializationService serializationService) {
-        this.keyData = keyData;
+    DataQueryCacheRecord(Data valueData, SerializationService serializationService) {
         this.valueData = valueData;
         this.serializationService = serializationService;
     }
@@ -41,8 +38,4 @@ class DataQueryCacheRecord extends AbstractQueryCacheRecord {
         return serializationService.toObject(valueData);
     }
 
-    @Override
-    public final Data getKey() {
-        return keyData;
-    }
 }

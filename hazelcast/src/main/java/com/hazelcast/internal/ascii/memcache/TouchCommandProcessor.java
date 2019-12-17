@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -42,7 +42,7 @@ public class TouchCommandProcessor extends MemcacheCommandProcessor<TouchCommand
         String mapName = DEFAULT_MAP_NAME;
         int index = key.indexOf(':');
         if (index != -1) {
-            mapName = MAP_NAME_PRECEDER + key.substring(0, index);
+            mapName = MAP_NAME_PREFIX + key.substring(0, index);
             key = key.substring(index + 1);
         }
         int ttl = textCommandService.getAdjustedTTLSeconds(touchCommand.getExpiration());

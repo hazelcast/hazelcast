@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -53,9 +53,9 @@ public class PortablePredicatesTest {
     @Test
     public void testPortablePredicate() {
         PortableData data = createData("1", "Clark", "Kent", "Superman", 100);
-        assertTrue(new SqlPredicate("strength >= 75").apply(toQueryEntry("1", data)));
-        assertTrue(new SqlPredicate("firstName like C% and lastName like K%").apply(toQueryEntry("1", data)));
-        assertFalse(new SqlPredicate("character == 'Bizarro'").apply(toQueryEntry("1", data)));
+        assertTrue(Predicates.sql("strength >= 75").apply(toQueryEntry("1", data)));
+        assertTrue(Predicates.sql("firstName like C% and lastName like K%").apply(toQueryEntry("1", data)));
+        assertFalse(Predicates.sql("character == 'Bizarro'").apply(toQueryEntry("1", data)));
     }
 
     private PortableData createData(String id, String firstName, String lastName, String character, long strength) {
@@ -69,7 +69,8 @@ public class PortablePredicatesTest {
     }
 
     private QueryEntry toQueryEntry(Object key, Object value) {
-        return new QueryEntry(serializationService, serializationService.toData(key), value, Extractors.empty());
+        return new QueryEntry(serializationService, serializationService.toData(key), value,
+                Extractors.newBuilder(serializationService).build());
     }
 
     class TestPortableFactory implements PortableFactory {

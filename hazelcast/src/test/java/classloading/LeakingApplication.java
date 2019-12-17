@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,15 +25,18 @@ import java.util.Random;
  */
 public final class LeakingApplication {
 
+    private LeakingApplication() {
+    }
+
     public static void init(Boolean doCleanup) {
-        ThreadLocalRandom.localRandom.get();
+        ThreadLocalRandom.LOCAL_RANDOM.get();
         if (doCleanup) {
             cleanup();
         }
     }
 
     public static void cleanup() {
-        ThreadLocalRandom.localRandom.remove();
+        ThreadLocalRandom.LOCAL_RANDOM.remove();
     }
 
     private static class ThreadLocalRandom extends Random {
@@ -44,7 +47,7 @@ public final class LeakingApplication {
          * <p>
          * Never override {@link ThreadLocal#initialValue()} in production code!
          */
-        private static final ThreadLocal<ThreadLocalRandom> localRandom =
+        private static final ThreadLocal<ThreadLocalRandom> LOCAL_RANDOM =
                 new ThreadLocal<ThreadLocalRandom>() {
                     protected ThreadLocalRandom initialValue() {
                         return new ThreadLocalRandom();

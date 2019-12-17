@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,18 +16,7 @@
 
 package com.hazelcast.partition;
 
-import com.hazelcast.core.Partition;
-import com.hazelcast.core.PartitionService;
-import com.hazelcast.internal.partition.InternalPartition;
-import com.hazelcast.nio.Address;
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.DataSerializable;
-import com.hazelcast.nio.serialization.SerializableByConvention;
-
-import java.io.IOException;
-
-import static com.hazelcast.nio.serialization.SerializableByConvention.Reason.PUBLIC_API;
+import com.hazelcast.cluster.Address;
 
 /**
  * The event that is fired when a partition lost its owner and all backups.
@@ -36,44 +25,12 @@ import static com.hazelcast.nio.serialization.SerializableByConvention.Reason.PU
  * @see PartitionService
  * @see PartitionLostListener
  */
-@SerializableByConvention(PUBLIC_API)
-public class PartitionLostEvent implements DataSerializable, PartitionEvent {
-
-    private int partitionId;
-
-    private int lostBackupCount;
-
-    private Address eventSource;
-
-    public PartitionLostEvent() {
-    }
-
-    public PartitionLostEvent(int partitionId, int lostBackupCount, Address eventSource) {
-        this.partitionId = partitionId;
-        this.lostBackupCount = lostBackupCount;
-        this.eventSource = eventSource;
-    }
+public interface PartitionLostEvent extends PartitionEvent {
 
     /**
-     * Returns the lost partition ID.
-     *
-     * @return the lost partition ID.
+     * Returns the number of lost backups for the partition. 0: the owner, 1: first backup, 2: second backup...
      */
-    @Override
-    public int getPartitionId() {
-        return partitionId;
-    }
-
-    /**
-     * Returns the number of lost backups for the partition. O: the owner, 1: first backup, 2: second backup ...
-     * If all replicas of a partition is lost, {@link InternalPartition#MAX_BACKUP_COUNT} is returned.
-     *
-     * @return the number of lost backups for the partition.
-     * If all replicas of a partition is lost, {@link InternalPartition#MAX_BACKUP_COUNT} is returned.
-     */
-    public int getLostBackupCount() {
-        return lostBackupCount;
-    }
+    int getLostBackupCount();
 
     /**
      * Returns true if all replicas of a partition are lost
@@ -89,27 +46,5 @@ public class PartitionLostEvent implements DataSerializable, PartitionEvent {
      *
      * @return the address of the node that dispatches the event
      */
-    public Address getEventSource() {
-        return eventSource;
-    }
-
-    @Override
-    public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeInt(partitionId);
-        out.writeInt(lostBackupCount);
-        out.writeObject(eventSource);
-    }
-
-    @Override
-    public void readData(ObjectDataInput in) throws IOException {
-        partitionId = in.readInt();
-        lostBackupCount = in.readInt();
-        eventSource = in.readObject();
-    }
-
-    @Override
-    public String toString() {
-        return getClass().getName() + "{partitionId=" + partitionId + ", lostBackupCount=" + lostBackupCount + ", eventSource="
-                + eventSource + '}';
-    }
+    Address getEventSource();
 }

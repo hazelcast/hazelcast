@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,15 +17,16 @@
 package com.hazelcast.map.impl.eviction;
 
 import com.hazelcast.map.impl.recordstore.RecordStore;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.internal.serialization.Data;
 
 import static java.lang.Integer.getInteger;
 
 /**
  * Evicts a {@link RecordStore}.
  * <p>
- * When the {@link RecordStore} needs to be evicted according to {@link Evictor#checkEvictable},
- * {@link Evictor} removes records from {@link RecordStore}.
+ * When the {@link RecordStore} needs to be evicted
+ * according to {@link Evictor#checkEvictable}, {@link
+ * Evictor} removes records from {@link RecordStore}.
  */
 public interface Evictor {
 
@@ -36,8 +37,18 @@ public interface Evictor {
         }
 
         @Override
+        public void forceEvictByPercentage(RecordStore recordStore, double evictionPercentage) {
+
+        }
+
+        @Override
         public boolean checkEvictable(RecordStore recordStore) {
             return false;
+        }
+
+        @Override
+        public String toString() {
+            return "Null Evictor implementation";
         }
     };
 
@@ -50,10 +61,21 @@ public interface Evictor {
     /**
      * Evict supplied record-store.
      *
-     * @param recordStore     the recordStore
-     * @param excludedKey this key has lowest priority to be selected for eviction and it is nullable.
+     * @param recordStore the recordStore
+     * @param excludedKey this key has lowest priority
+     *                    to be selected for eviction and it is nullable.
      */
     void evict(RecordStore recordStore, Data excludedKey);
+
+    /**
+     * Evicts provided record store forcibly. This type
+     * of eviction is used when regular eviction is not
+     * enough to provide free space for newly added entries.
+     *
+     * @param recordStore        the record store
+     * @param evictionPercentage percentage of the entries to evict from the record store
+     */
+    void forceEvictByPercentage(RecordStore recordStore, double evictionPercentage);
 
     /**
      * Check whether the supplied record-store needs eviction.

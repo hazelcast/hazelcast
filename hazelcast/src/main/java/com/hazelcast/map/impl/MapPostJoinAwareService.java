@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,8 +22,8 @@ import com.hazelcast.map.impl.querycache.publisher.MapPublisherRegistry;
 import com.hazelcast.map.impl.querycache.publisher.PartitionAccumulatorRegistry;
 import com.hazelcast.map.impl.querycache.publisher.PublisherContext;
 import com.hazelcast.map.impl.querycache.publisher.PublisherRegistry;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.PostJoinAwareService;
+import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.internal.services.PostJoinAwareService;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -34,25 +34,25 @@ class MapPostJoinAwareService implements PostJoinAwareService {
 
     private final MapServiceContext mapServiceContext;
 
-    public MapPostJoinAwareService(MapServiceContext mapServiceContext) {
+    MapPostJoinAwareService(MapServiceContext mapServiceContext) {
         this.mapServiceContext = mapServiceContext;
     }
 
     @Override
     public Operation getPostJoinOperation() {
-        PostJoinMapOperation o = new PostJoinMapOperation();
+        PostJoinMapOperation postJoinOp = new PostJoinMapOperation();
         final Map<String, MapContainer> mapContainers = mapServiceContext.getMapContainers();
         for (MapContainer mapContainer : mapContainers.values()) {
-            o.addMapIndex(mapServiceContext, mapContainer);
-            o.addMapInterceptors(mapContainer);
+            postJoinOp.addMapInterceptors(mapContainer);
         }
         List<AccumulatorInfo> infoList = getAccumulatorInfoList();
-        o.setInfoList(infoList);
-        return o;
+        postJoinOp.setInfoList(infoList);
+        postJoinOp.setNodeEngine(mapServiceContext.getNodeEngine());
+        return postJoinOp;
     }
 
     private List<AccumulatorInfo> getAccumulatorInfoList() {
-        List<AccumulatorInfo> infoList = new ArrayList<AccumulatorInfo>();
+        List<AccumulatorInfo> infoList = new ArrayList<>();
 
         PublisherContext publisherContext = mapServiceContext.getQueryCacheContext().getPublisherContext();
         MapPublisherRegistry mapPublisherRegistry = publisherContext.getMapPublisherRegistry();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,17 +21,17 @@ import com.hazelcast.collection.impl.collection.CollectionDataSerializerHook;
 import com.hazelcast.collection.impl.collection.CollectionItem;
 import com.hazelcast.collection.impl.collection.TxCollectionItem;
 import com.hazelcast.config.ListConfig;
-import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.spi.impl.NodeEngine;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
 
-import static com.hazelcast.util.MapUtil.createHashMap;
+import static com.hazelcast.internal.util.MapUtil.createHashMap;
+import static java.util.Collections.sort;
 
 public class ListContainer extends CollectionContainer {
 
@@ -156,7 +156,7 @@ public class ListContainer extends CollectionContainer {
         }
         final ArrayList<Data> sub = new ArrayList<Data>(list.size());
         for (CollectionItem item : list) {
-            sub.add((Data) item.getValue());
+            sub.add(item.getValue());
         }
         return sub;
     }
@@ -166,7 +166,9 @@ public class ListContainer extends CollectionContainer {
         if (itemList == null) {
             if (itemMap != null && !itemMap.isEmpty()) {
                 itemList = new ArrayList<CollectionItem>(itemMap.values());
-                Collections.sort(itemList);
+                sort(itemList);
+                CollectionItem lastItem = itemList.get(itemList.size() - 1);
+                setId(lastItem.getItemId() + ID_PROMOTION_OFFSET);
                 itemMap.clear();
             } else {
                 itemList = new ArrayList<CollectionItem>(INITIAL_CAPACITY);
@@ -177,7 +179,7 @@ public class ListContainer extends CollectionContainer {
     }
 
     @Override
-    protected Map<Long, CollectionItem> getMap() {
+    public Map<Long, CollectionItem> getMap() {
         if (itemMap == null) {
             if (itemList != null && !itemList.isEmpty()) {
                 itemMap = createHashMap(itemList.size());
@@ -198,13 +200,10 @@ public class ListContainer extends CollectionContainer {
         if (itemList != null) {
             itemList.clear();
         }
-        if (itemMap != null) {
-            itemMap.clear();
-        }
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return CollectionDataSerializerHook.LIST_CONTAINER;
     }
 }

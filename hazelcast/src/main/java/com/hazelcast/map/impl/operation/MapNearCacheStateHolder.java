@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,8 +26,8 @@ import com.hazelcast.map.impl.nearcache.MapNearCacheManager;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.spi.ObjectNamespace;
-import com.hazelcast.spi.ServiceNamespace;
+import com.hazelcast.internal.services.ObjectNamespace;
+import com.hazelcast.internal.services.ServiceNamespace;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -56,7 +56,7 @@ public class MapNearCacheStateHolder implements IdentifiedDataSerializable {
     public MapNearCacheStateHolder() {
     }
 
-    public MapNearCacheStateHolder(MapReplicationOperation mapReplicationOperation) {
+    public void setMapReplicationOperation(MapReplicationOperation mapReplicationOperation) {
         this.mapReplicationOperation = mapReplicationOperation;
     }
 
@@ -66,7 +66,7 @@ public class MapNearCacheStateHolder implements IdentifiedDataSerializable {
         MetaDataGenerator metaData = getPartitionMetaDataGenerator(mapService);
 
         int partitionId = container.getPartitionId();
-        partitionUuid = metaData.getUuidOrNull(partitionId);
+        partitionUuid = metaData.getOrCreateUuid(partitionId);
 
         for (ServiceNamespace namespace : namespaces) {
             if (mapNameSequencePairs == emptyList()) {
@@ -139,7 +139,7 @@ public class MapNearCacheStateHolder implements IdentifiedDataSerializable {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MAP_NEAR_CACHE_STATE_HOLDER;
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,14 +16,12 @@
 
 package com.hazelcast.map.impl.journal;
 
-import com.hazelcast.internal.cluster.Versions;
-import com.hazelcast.journal.EventJournalInitialSubscriberState;
+import com.hazelcast.internal.journal.EventJournalInitialSubscriberState;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.operation.MapOperation;
-import com.hazelcast.spi.ObjectNamespace;
-import com.hazelcast.spi.PartitionAwareOperation;
-import com.hazelcast.spi.ReadonlyOperation;
-import com.hazelcast.version.Version;
+import com.hazelcast.internal.services.ObjectNamespace;
+import com.hazelcast.spi.impl.operationservice.PartitionAwareOperation;
+import com.hazelcast.spi.impl.operationservice.ReadonlyOperation;
 
 /**
  * Performs the initial subscription to the map event journal.
@@ -32,7 +30,9 @@ import com.hazelcast.version.Version;
  *
  * @since 3.9
  */
-public class MapEventJournalSubscribeOperation extends MapOperation implements PartitionAwareOperation, ReadonlyOperation {
+public class MapEventJournalSubscribeOperation extends MapOperation
+        implements PartitionAwareOperation, ReadonlyOperation {
+
     private EventJournalInitialSubscriberState response;
     private ObjectNamespace namespace;
 
@@ -44,23 +44,18 @@ public class MapEventJournalSubscribeOperation extends MapOperation implements P
     }
 
     @Override
-    public void beforeRun() throws Exception {
-        super.beforeRun();
+    protected void innerBeforeRun() throws Exception {
+        super.innerBeforeRun();
 
-        final Version clusterVersion = getNodeEngine().getClusterService().getClusterVersion();
-        if (clusterVersion.isLessThan(Versions.V3_9)) {
-            throw new UnsupportedOperationException(
-                    "Event journal actions are not available when cluster version is " + clusterVersion);
-        }
         namespace = getServiceNamespace();
         if (!mapServiceContext.getEventJournal().hasEventJournal(namespace)) {
             throw new UnsupportedOperationException(
-                    "Cannot subscribe to event journal because it is either not configured or disabled for map " + name);
+                    "Cannot subscribe to event journal because it is either not configured or disabled for map '" + name + '\'');
         }
     }
 
     @Override
-    public void run() {
+    protected void runInternal() {
         final MapEventJournal eventJournal = mapServiceContext.getEventJournal();
         final long newestSequence = eventJournal.newestSequence(namespace, getPartitionId());
         final long oldestSequence = eventJournal.oldestSequence(namespace, getPartitionId());
@@ -73,7 +68,7 @@ public class MapEventJournalSubscribeOperation extends MapOperation implements P
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MapDataSerializerHook.EVENT_JOURNAL_SUBSCRIBE_OPERATION;
     }
 }

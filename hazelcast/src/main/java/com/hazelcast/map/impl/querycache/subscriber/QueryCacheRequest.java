@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,129 +16,115 @@
 
 package com.hazelcast.map.impl.querycache.subscriber;
 
-import com.hazelcast.core.IMap;
+import com.hazelcast.config.QueryCacheConfig;
+import com.hazelcast.map.IMap;
 import com.hazelcast.map.impl.querycache.QueryCacheContext;
 import com.hazelcast.map.listener.MapListener;
+import com.hazelcast.query.PagingPredicate;
 import com.hazelcast.query.Predicate;
+
+import static com.hazelcast.internal.util.Preconditions.checkHasText;
+import static com.hazelcast.internal.util.Preconditions.checkNotInstanceOf;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 /**
  * Represents a user request for creating a {@link com.hazelcast.map.QueryCache QueryCache}.
  */
-public interface QueryCacheRequest {
+public class QueryCacheRequest {
 
-    /**
-     * Setter for underlying {@link IMap} for this {@link com.hazelcast.map.QueryCache QueryCache}.
-     *
-     * @param map underlying {@link IMap}
-     * @return this request object.
-     */
-    QueryCacheRequest forMap(IMap map);
+    private IMap map;
+    private String mapName;
+    private String cacheName;
+    private Predicate predicate;
+    private MapListener listener;
+    private Boolean includeValue;
+    private QueryCacheContext context;
+    private QueryCacheConfig queryCacheConfig;
+    private boolean isUrgent;
 
-    /**
-     * Setter for name of the {@link com.hazelcast.map.QueryCache QueryCache}.
-     *
-     * @param cacheId name of {@link com.hazelcast.map.QueryCache QueryCache}
-     * @return this request object.
-     */
-    QueryCacheRequest withCacheId(String cacheId);
+    QueryCacheRequest() {
+    }
 
+    public static QueryCacheRequest newQueryCacheRequest() {
+        return new QueryCacheRequest();
+    }
 
-    /**
-     * Sets the user given name for the {@link com.hazelcast.map.QueryCache QueryCache}.
-     *
-     * @param cacheName name of {@link com.hazelcast.map.QueryCache QueryCache}
-     * @return this request object.
-     */
-    QueryCacheRequest withCacheName(String cacheName);
+    public QueryCacheRequest forMap(IMap map) {
+        this.map = checkNotNull(map, "map cannot be null");
+        this.mapName = map.getName();
+        return this;
+    }
 
-    /**
-     * Setter for the predicate which will be used to filter underlying {@link IMap}
-     * of this {@link com.hazelcast.map.QueryCache QueryCache}.
-     *
-     * @param predicate the predicate
-     * @return this request object.
-     */
-    QueryCacheRequest withPredicate(Predicate predicate);
+    public QueryCacheRequest withCacheName(String cacheName) {
+        this.cacheName = checkHasText(cacheName, "cacheName");
+        return this;
+    }
 
-    /**
-     * Setter for the listener which will be used to listen the {@link com.hazelcast.map.QueryCache QueryCache}.
-     *
-     * @param listener the listener
-     * @return this request object.
-     */
-    QueryCacheRequest withListener(MapListener listener);
+    public QueryCacheRequest withPredicate(Predicate predicate) {
+        checkNotInstanceOf(PagingPredicate.class, predicate, "predicate");
 
-    /**
-     * Setter for the {@link com.hazelcast.map.QueryCache QueryCache} for deciding
-     * whether the implementation should cache values of entries.
-     *
-     * @param includeValue {@code true} for caching values in the {@link com.hazelcast.map.QueryCache QueryCache}
-     *                     otherwise {@code false} to cache only keys.
-     * @return this request object.
-     */
-    QueryCacheRequest withIncludeValue(Boolean includeValue);
+        this.predicate = predicate;
+        return this;
+    }
 
-    /**
-     * The {@link QueryCacheContext} on this node/client.
-     *
-     * @param context the {@link QueryCacheContext}
-     * @return this request object.
-     */
-    QueryCacheRequest withContext(QueryCacheContext context);
+    public QueryCacheRequest withListener(MapListener listener) {
+        this.listener = listener;
+        return this;
+    }
 
-    /**
-     * Returns underlying {@link IMap}.
-     *
-     * @return underlying {@link IMap}
-     */
-    IMap getMap();
+    public QueryCacheRequest withIncludeValue(Boolean includeValue) {
+        this.includeValue = includeValue;
+        return this;
+    }
 
-    /**
-     * Returns name of underlying {@link IMap}.
-     *
-     * @return name of underlying {@link IMap}
-     */
-    String getMapName();
+    public QueryCacheRequest withContext(QueryCacheContext context) {
+        this.context = checkNotNull(context, "context can not be null");
+        return this;
+    }
 
-    /**
-     * Returns name of the {@link com.hazelcast.map.QueryCache QueryCache} to be created.
-     *
-     * @return name of the {@link com.hazelcast.map.QueryCache QueryCache} to be created.
-     */
-    String getCacheId();
+    public QueryCacheRequest withQueryCacheConfig(QueryCacheConfig queryCacheConfig) {
+        this.queryCacheConfig = checkNotNull(queryCacheConfig, "queryCacheConfig can not be null");
+        return this;
+    }
 
-    /**
-     * Returns the name which is given by the user.
-     *
-     * @return user given name of the {@link com.hazelcast.map.QueryCache QueryCache} to be created.
-     */
-    String getCacheName();
+    public QueryCacheRequest urgent(boolean urgent) {
+        this.isUrgent = urgent;
+        return this;
+    }
 
-    /**
-     * Returns predicate which is set.
-     *
-     * @return the predicate.
-     */
-    Predicate getPredicate();
+    public IMap getMap() {
+        return map;
+    }
 
-    /**
-     * Returns the listener for the {@link com.hazelcast.map.QueryCache QueryCache} to be created.
-     *
-     * @return the listener.
-     */
-    MapListener getListener();
+    public String getMapName() {
+        return mapName;
+    }
 
-    /**
-     * Returns {@code true} if values will be cached otherwise {@code false}.
-     *
-     * @return {@code true} if values will be cached otherwise {@code false}
-     */
-    Boolean isIncludeValue();
+    public String getCacheName() {
+        return cacheName;
+    }
 
-    /**
-     * Returns the {@link QueryCacheContext} on this node/client.
-     *
-     * @return the {@link QueryCacheContext} on this node/client.
-     */
-    QueryCacheContext getContext();
+    public Predicate getPredicate() {
+        return predicate;
+    }
+
+    public MapListener getListener() {
+        return listener;
+    }
+
+    public Boolean isIncludeValue() {
+        return includeValue;
+    }
+
+    public QueryCacheContext getContext() {
+        return context;
+    }
+
+    public QueryCacheConfig getQueryCacheConfig() {
+        return queryCacheConfig;
+    }
+
+    public boolean isUrgent() {
+        return isUrgent;
+    }
 }

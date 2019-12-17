@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,14 +17,14 @@
 package com.hazelcast.map;
 
 import com.hazelcast.core.HazelcastException;
-import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.spi.properties.ClusterProperty;
 
 import static java.lang.String.format;
 
 /**
  * This exception is thrown when a query exceeds a configurable result size limit.
  *
- * @see GroupProperty#QUERY_RESULT_SIZE_LIMIT
+ * @see ClusterProperty#QUERY_RESULT_SIZE_LIMIT
  */
 public class QueryResultSizeExceededException extends HazelcastException {
 
@@ -36,14 +36,14 @@ public class QueryResultSizeExceededException extends HazelcastException {
         super("This exception has been thrown to prevent an OOME on this Hazelcast instance."
                 + " An OOME might occur when a query collects large data sets from the whole cluster,"
                 + " e.g. by calling IMap.values(), IMap.keySet() or IMap.entrySet()."
-                + " See GroupProperty.QUERY_RESULT_SIZE_LIMIT for further details.");
+                + " See ClusterProperty.QUERY_RESULT_SIZE_LIMIT for further details.");
     }
 
     public QueryResultSizeExceededException(int maxResultLimit, String optionalMessage) {
         super(format("This exception has been thrown to prevent an OOME on this Hazelcast instance."
                         + " An OOME might occur when a query collects large data sets from the whole cluster,"
                         + " e.g. by calling IMap.values(), IMap.keySet() or IMap.entrySet()."
-                        + " See GroupProperty.QUERY_RESULT_SIZE_LIMIT for further details."
+                        + " See ClusterProperty.QUERY_RESULT_SIZE_LIMIT for further details."
                         + " The configured query result size limit is %d items.%s",
                 maxResultLimit, optionalMessage));
     }

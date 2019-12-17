@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,6 +25,7 @@ import java.util.EventListener;
  * @see HazelcastInstance#getLifecycleService()
  *
  */
+@FunctionalInterface
 public interface LifecycleListener extends EventListener {
     /**
      * Called when instance's state changes. No blocking calls should be made in this method.

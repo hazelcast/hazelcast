@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,12 +21,12 @@ import com.hazelcast.cache.ICache;
 import com.hazelcast.core.ManagedContext;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.spi.EventRegistration;
-import com.hazelcast.spi.ListenerWrapperEventFilter;
-import com.hazelcast.spi.NotifiableEventListener;
-import com.hazelcast.spi.serialization.SerializationService;
+import com.hazelcast.spi.impl.eventservice.EventRegistration;
+import com.hazelcast.internal.services.ListenerWrapperEventFilter;
+import com.hazelcast.internal.services.NotifiableEventListener;
+import com.hazelcast.internal.serialization.SerializationService;
 
 import javax.cache.configuration.CacheEntryListenerConfiguration;
 import javax.cache.configuration.Factory;
@@ -47,7 +47,7 @@ import java.util.HashSet;
  * types into a single listener.
  * <p>JCache has multiple {@link CacheEntryListener} sub-interfaces for each event type. This adapter
  * implementation delegates to the correct subtype using the event type.</p>
- * <p/>
+ * <p>
  * <p>Another responsibility of this implementation is filtering events by using the already configured
  * event filters.</p>
  *
@@ -187,14 +187,28 @@ public class CacheEventListenerAdaptor<K, V>
     private Iterable<CacheEntryEvent<? extends K, ? extends V>> createCacheEntryEvent(Collection<CacheEventData> keys) {
         HashSet<CacheEntryEvent<? extends K, ? extends V>> evt = new HashSet<CacheEntryEvent<? extends K, ? extends V>>();
         for (CacheEventData cacheEventData : keys) {
-            final EventType eventType = CacheEventType.convertToEventType(cacheEventData.getCacheEventType());
-            final K key = toObject(cacheEventData.getDataKey());
-            final V newValue = toObject(cacheEventData.getDataValue());
+            EventType eventType = CacheEventType.convertToEventType(cacheEventData.getCacheEventType());
+            K key = toObject(cacheEventData.getDataKey());
+            boolean hasNewValue = !(eventType == EventType.REMOVED || eventType == EventType.EXPIRED);
+            final V newValue;
             final V oldValue;
             if (isOldValueRequired) {
-                oldValue = toObject(cacheEventData.getDataOldValue());
+                if (hasNewValue) {
+                    newValue = toObject(cacheEventData.getDataValue());
+                    oldValue = toObject(cacheEventData.getDataOldValue());
+                } else {
+                    // according to contract of CacheEntryEvent#getValue
+                    oldValue = toObject(cacheEventData.getDataValue());
+                    newValue = oldValue;
+                }
             } else {
-                oldValue = null;
+                if (hasNewValue) {
+                    newValue = toObject(cacheEventData.getDataValue());
+                    oldValue = null;
+                } else {
+                    newValue = null;
+                    oldValue = null;
+                }
             }
             final CacheEntryEventImpl<K, V> event =
                     new CacheEntryEventImpl<K, V>(source, eventType, key, newValue, oldValue);
@@ -249,7 +263,7 @@ public class CacheEventListenerAdaptor<K, V>
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return CacheDataSerializerHook.CACHE_EVENT_LISTENER_ADAPTOR;
     }
 

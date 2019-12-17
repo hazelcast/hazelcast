@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,7 @@
 package com.hazelcast.config;
 
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Rule;
 import org.junit.Test;
@@ -34,7 +34,7 @@ import java.util.Random;
 import static com.hazelcast.config.XMLConfigBuilderTest.HAZELCAST_START_TAG;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class InvalidConfigurationTest {
 
     @Rule
@@ -127,17 +127,6 @@ public class InvalidConfigurationTest {
     }
 
     @Test
-    public void testWhenValid_MapEvictionPolicy() {
-        buildConfig("map-eviction-policy", "NONE");
-    }
-
-    @Test
-    public void testWhenInvalid_MapEvictionPercentage() {
-        expectInvalid();
-        buildConfig("map-eviction-percentage", "101");
-    }
-
-    @Test
     public void testWhenInvalid_MultiMapBackupCount() {
         expectInvalid();
         buildConfig("multimap-backup-count", getInvalidBackupCount());
@@ -187,76 +176,49 @@ public class InvalidConfigurationTest {
     }
 
     @Test
-    public void testWhenInvalid_SemaphoreInitialPermits() {
-        expectInvalid();
-        buildConfig("semaphore-initial-permits", "-1");
-    }
-
-    @Test
-    public void testWhenInvalid_SemaphoreBackupCount() {
-        expectInvalid();
-        buildConfig("semaphore-backup-count", getInvalidBackupCount());
-    }
-
-    @Test
-    public void testWhenValid_SemaphoreBackupCount() {
-        buildConfig("semaphore-backup-count", getValidBackupCount());
-    }
-
-    @Test
-    public void testWhenInvalid_AsyncSemaphoreBackupCount() {
-        expectInvalid();
-        buildConfig("semaphore-async-backup-count", getInvalidBackupCount());
-    }
-
-    @Test
-    public void testWhenValid_AsyncSemaphoreBackupCount() {
-        buildConfig("semaphore-async-backup-count", getValidBackupCount());
-    }
-
-    @Test
     public void testWhenInvalidTcpIpConfiguration() {
         expectInvalid();
-        buildConfig(HAZELCAST_START_TAG +
-                "<network\n>" +
-                "<join>\n" +
-                "<tcp-ip enabled=\"true\">\n" +
-                "<required-member>127.0.0.1</required-member>\n" +
-                "<required-member>128.0.0.1</required-member>\n" +
-                "</tcp-ip>\n" +
-                "</join>\n" +
-                "</network>\n" +
-                "</hazelcast>\n");
+        buildConfig(HAZELCAST_START_TAG
+                + "<network\n>"
+                + "<join>\n"
+                + "<tcp-ip enabled=\"true\">\n"
+                + "<required-member>127.0.0.1</required-member>\n"
+                + "<required-member>128.0.0.1</required-member>\n"
+                + "</tcp-ip>\n"
+                + "</join>\n"
+                + "</network>\n"
+                + "</hazelcast>\n");
     }
 
     @Test
     public void invalidConfigurationTest_WhenOrderIsDifferent() {
-        buildConfig(HAZELCAST_START_TAG +
-                "<list name=\"default\">\n" +
-                "<statistics-enabled>false</statistics-enabled>\n" +
-                "<max-size>0</max-size>\n" +
-                "<backup-count>1</backup-count>\n" +
-                "<async-backup-count>0</async-backup-count>\n" +
-                "</list>\n" +
-                "</hazelcast>\n");
-        buildConfig(HAZELCAST_START_TAG +
-                "<list name=\"default\">\n" +
-                "<backup-count>1</backup-count>\n" +
-                "<async-backup-count>0</async-backup-count>\n" +
-                "<statistics-enabled>false</statistics-enabled>\n" +
-                "<max-size>0</max-size>\n" +
-                "</list>\n" +
-                "</hazelcast>\n");
+        buildConfig(HAZELCAST_START_TAG
+                + "<list name=\"default\">\n"
+                + "<statistics-enabled>false</statistics-enabled>\n"
+                + "<max-size>0</max-size>\n"
+                + "<backup-count>1</backup-count>\n"
+                + "<async-backup-count>0</async-backup-count>\n"
+                + "</list>\n"
+                + "</hazelcast>\n");
+        buildConfig(HAZELCAST_START_TAG
+                + "<list name=\"default\">\n"
+                + "<backup-count>1</backup-count>\n"
+                + "<async-backup-count>0</async-backup-count>\n"
+                + "<statistics-enabled>false</statistics-enabled>\n"
+                + "<max-size>0</max-size>\n"
+                + "</list>\n"
+                + "</hazelcast>\n");
     }
 
     @Test
-    public void testWhenDoctypeAddedToXml() {
+    public void testWhenDocTypeAddedToXml() {
 //        expectInvalid("DOCTYPE is disallowed when the feature " +
 //                "\"http://apache.org/xml/features/disallow-doctype-decl\" set to true.");
         rule.expect(InvalidConfigurationException.class);
-        buildConfig("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
-                "<!DOCTYPE hazelcast [ <!ENTITY e1 \"0123456789\"> ] >\n" +
-                HAZELCAST_START_TAG + "</hazelcast>");
+        buildConfig("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
+                + "<!DOCTYPE hazelcast [ <!ENTITY e1 \"0123456789\"> ] >\n"
+                + HAZELCAST_START_TAG
+                + "</hazelcast>");
     }
 
     public void testWhenInvalid_CacheBackupCount() {
@@ -340,10 +302,10 @@ public class InvalidConfigurationTest {
     @Test
     public void testWhenInvalid_BothOfEvictionPolicyAndComparatorClassNameConfigured() {
         expectInvalid();
-        Map<String, String> props = new HashMap<String, String>() {{
-            put("cache-eviction-policy", "LFU");
-            put("cache-eviction-policy-comparator-class-name", "my-comparator");
-        }};
+        Map<String, String> props = new HashMap<String, String>();
+        props.put("cache-eviction-policy", "LFU");
+        props.put("cache-eviction-policy-comparator-class-name", "my-comparator");
+
         buildConfig(props);
     }
 
@@ -406,7 +368,6 @@ public class InvalidConfigurationTest {
         properties.setProperty("map-time-to-live-seconds", "0");
         properties.setProperty("map-max-idle-seconds", "0");
         properties.setProperty("map-eviction-policy", "NONE");
-        properties.setProperty("map-eviction-percentage", "25");
 
         properties.setProperty("cache-in-memory-format", "BINARY");
         properties.setProperty("cache-backup-count", "0");
@@ -444,98 +405,86 @@ public class InvalidConfigurationTest {
     }
 
     private static String getDraftXml() {
-        return HAZELCAST_START_TAG +
-                " <network>\n" +
-                "<join>\n" +
-                "<multicast enabled=\"${multicast-enabled}\">\n" +
-                "</multicast>\n" +
-                "<tcp-ip enabled=\"${tcp-ip-enabled}\">\n" +
-                "</tcp-ip>\n" +
-                "</join>\n" +
-                "</network>\n" +
+        return HAZELCAST_START_TAG
+                + " <network>\n"
+                + "<join>\n"
+                + "<multicast enabled=\"${multicast-enabled}\">\n"
+                + "</multicast>\n"
+                + "<tcp-ip enabled=\"${tcp-ip-enabled}\">\n"
+                + "</tcp-ip>\n"
+                + "</join>\n"
+                + "</network>\n"
 
-                "<queue name=\"default\">\n" +
-                "<quorum-ref>quorumRuleWithThreeMembers</quorum-ref>" +
-                "<max-size>0</max-size>\n" +
-                "<backup-count>${queue-backup-count}</backup-count>\n" +
-                "<async-backup-count>${queue-async-backup-count}</async-backup-count>\n" +
-                "<empty-queue-ttl>${empty-queue-ttl}</empty-queue-ttl>\n" +
-                "</queue>\n" +
+                + "<queue name=\"default\">\n"
+                + "<split-brain-protection-ref>splitBrainProtectionRuleWithThreeMembers</split-brain-protection-ref>"
+                + "<backup-count>${queue-backup-count}</backup-count>\n"
+                + "<async-backup-count>${queue-async-backup-count}</async-backup-count>\n"
+                + "<empty-queue-ttl>${empty-queue-ttl}</empty-queue-ttl>\n"
+                + "</queue>\n"
 
-                "<map name=\"default\">\n" +
-                "<in-memory-format>${map-in-memory-format}</in-memory-format>\n" +
-                "<backup-count>${map-backup-count}</backup-count>\n" +
-                "<async-backup-count>${map-async-backup-count}</async-backup-count>\n" +
-                "<time-to-live-seconds>${map-time-to-live-seconds}</time-to-live-seconds>\n" +
-                "<max-idle-seconds>${map-max-idle-seconds}</max-idle-seconds>\n" +
-                "<eviction-policy>${map-eviction-policy}</eviction-policy>\n" +
-                "<eviction-percentage>${map-eviction-percentage}</eviction-percentage>\n" +
-                "</map>\n" +
+                + "<map name=\"default\">\n"
+                + "<in-memory-format>${map-in-memory-format}</in-memory-format>\n"
+                + "<backup-count>${map-backup-count}</backup-count>\n"
+                + "<async-backup-count>${map-async-backup-count}</async-backup-count>\n"
+                + "<time-to-live-seconds>${map-time-to-live-seconds}</time-to-live-seconds>\n"
+                + "<max-idle-seconds>${map-max-idle-seconds}</max-idle-seconds>\n"
+                + "<eviction size=\"0\" eviction-policy=\"${map-eviction-policy}\"/>"
+                + "</map>\n"
 
-                "<cache name=\"default\">\n" +
-                "<key-type class-name=\"${cache-key-type-class-name}\"/>\n" +
-                "<value-type class-name=\"${cache-value-type-class-name}\"/>\n" +
-                "<in-memory-format>${cache-in-memory-format}</in-memory-format>\n" +
-                "<statistics-enabled>${cache-statistics-enabled}</statistics-enabled>\n" +
-                "<management-enabled>${cache-management-enabled}</management-enabled>\n" +
-                "<backup-count>${cache-backup-count}</backup-count>\n" +
-                "<async-backup-count>${cache-async-backup-count}</async-backup-count>\n" +
-                "<read-through>${cache-read-through}</read-through>\n" +
-                "<write-through>${cache-write-through}</write-through>\n" +
-                "<cache-loader-factory class-name=\"${cache-loader-factory-class-name}\"/>\n" +
-                "<cache-writer-factory class-name=\"${cache-writer-factory-class-name}\"/>\n" +
-                "<expiry-policy-factory class-name=\"${expiry-policy-factory-class-name}\"/>\n" +
-                "<eviction size=\"${cache-eviction-size}\"" +
-                " max-size-policy=\"${cache-eviction-max-size-policy}\"" +
-                " eviction-policy=\"${cache-eviction-policy}\"" +
-                " comparator-class-name=\"${cache-eviction-policy-comparator-class-name}\"/>\n" +
-                "</cache>\n" +
+                + "<cache name=\"default\">\n"
+                + "<key-type class-name=\"${cache-key-type-class-name}\"/>\n"
+                + "<value-type class-name=\"${cache-value-type-class-name}\"/>\n"
+                + "<in-memory-format>${cache-in-memory-format}</in-memory-format>\n"
+                + "<statistics-enabled>${cache-statistics-enabled}</statistics-enabled>\n"
+                + "<management-enabled>${cache-management-enabled}</management-enabled>\n"
+                + "<backup-count>${cache-backup-count}</backup-count>\n"
+                + "<async-backup-count>${cache-async-backup-count}</async-backup-count>\n"
+                + "<read-through>${cache-read-through}</read-through>\n"
+                + "<write-through>${cache-write-through}</write-through>\n"
+                + "<cache-loader-factory class-name=\"${cache-loader-factory-class-name}\"/>\n"
+                + "<cache-writer-factory class-name=\"${cache-writer-factory-class-name}\"/>\n"
+                + "<expiry-policy-factory class-name=\"${expiry-policy-factory-class-name}\"/>\n"
+                + "<eviction size=\"${cache-eviction-size}\""
+                + " max-size-policy=\"${cache-eviction-max-size-policy}\""
+                + " eviction-policy=\"${cache-eviction-policy}\""
+                + " comparator-class-name=\"${cache-eviction-policy-comparator-class-name}\"/>\n"
+                + "</cache>\n"
 
-                "<cache name=\"cacheWithTimedExpiryPolicyFactory\">\n" +
-                "<expiry-policy-factory>\n" +
-                "<timed-expiry-policy-factory" +
-                " expiry-policy-type=\"${cache-expiry-policy-type}\"" +
-                " duration-amount=\"${cache-expiry-policy-duration-amount}\"" +
-                " time-unit=\"${cache-expiry-policy-time-unit}\"/>" +
-                "</expiry-policy-factory>\n" +
-                "</cache>\n" +
+                + "<cache name=\"cacheWithTimedExpiryPolicyFactory\">\n"
+                + "<expiry-policy-factory>\n"
+                + "<timed-expiry-policy-factory"
+                + " expiry-policy-type=\"${cache-expiry-policy-type}\""
+                + " duration-amount=\"${cache-expiry-policy-duration-amount}\""
+                + " time-unit=\"${cache-expiry-policy-time-unit}\"/>"
+                + "</expiry-policy-factory>\n"
+                + "</cache>\n"
 
-                "<multimap name=\"default\">\n" +
-                "<backup-count>${multimap-backup-count}</backup-count>\n" +
-                "<value-collection-type>${multimap-value-collection-type}</value-collection-type>\n" +
-                "<statistics-enabled>${multimap-statistics-enabled}</statistics-enabled>\n" +
-                "<binary>${multimap-binary}</binary>\n" +
-                "</multimap>\n" +
+                + "<multimap name=\"default\">\n"
+                + "<backup-count>${multimap-backup-count}</backup-count>\n"
+                + "<value-collection-type>${multimap-value-collection-type}</value-collection-type>\n"
+                + "<statistics-enabled>${multimap-statistics-enabled}</statistics-enabled>\n"
+                + "<binary>${multimap-binary}</binary>\n"
+                + "</multimap>\n"
 
-                "<list name=\"default\">\n" +
-                "<backup-count>${list-backup-count}</backup-count>\n" +
-                "</list>\n" +
+                + "<list name=\"default\">\n"
+                + "<backup-count>${list-backup-count}</backup-count>\n"
+                + "</list>\n"
 
-                "<set name=\"default\">\n" +
-                "<backup-count>${set-backup-count}</backup-count>\n" +
-                "</set>\n" +
+                + "<set name=\"default\">\n"
+                + "<backup-count>${set-backup-count}</backup-count>\n"
+                + "</set>\n"
 
-                "<semaphore name=\"default\">\n" +
-                "<initial-permits>${semaphore-initial-permits}</initial-permits>\n" +
-                "<backup-count>${semaphore-backup-count}</backup-count>\n" +
-                "<async-backup-count>${semaphore-async-backup-count}</async-backup-count>\n" +
-                "</semaphore>\n" +
+                + "    <ringbuffer name=\"default\">\n"
+                + "        <capacity>10000</capacity>\n"
+                + "        <time-to-live-seconds>30</time-to-live-seconds>\n"
+                + "        <backup-count>1</backup-count>\n"
+                + "        <async-backup-count>0</async-backup-count>\n"
+                + "        <in-memory-format>BINARY</in-memory-format>\n"
+                + "        <ringbuffer-store enabled=\"true\">\n"
+                + "            <class-name>com.hazelcast.RingbufferStoreImpl</class-name>\n"
+                + "        </ringbuffer-store>\n"
+                + "    </ringbuffer>"
 
-                "<lock name=\"default\">\n" +
-                "<quorum-ref>quorumRuleWithThreeMembers</quorum-ref>\n" +
-                "</lock>" +
-
-                "    <ringbuffer name=\"default\">\n" +
-                "        <capacity>10000</capacity>\n" +
-                "        <time-to-live-seconds>30</time-to-live-seconds>\n" +
-                "        <backup-count>1</backup-count>\n" +
-                "        <async-backup-count>0</async-backup-count>\n" +
-                "        <in-memory-format>BINARY</in-memory-format>\n" +
-                "        <ringbuffer-store enabled=\"true\">\n" +
-                "            <class-name>com.hazelcast.RingbufferStoreImpl</class-name>\n" +
-                "        </ringbuffer-store>\n" +
-                "    </ringbuffer>" +
-
-                "</hazelcast>\n";
+                + "</hazelcast>\n";
     }
 }

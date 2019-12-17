@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,8 +18,8 @@ package com.hazelcast.spring.cache;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceAware;
-import com.hazelcast.instance.Node;
-import com.hazelcast.spi.NodeAware;
+import com.hazelcast.instance.impl.Node;
+import com.hazelcast.internal.services.NodeAware;
 import com.hazelcast.spring.context.SpringAware;
 
 import javax.annotation.Resource;
@@ -33,13 +33,13 @@ public class JCacheExpiryPolicyFactory implements Factory<ExpiryPolicy>, Hazelca
     public static final AtomicBoolean HAZELCAST_INSTANCE_INJECTED = new AtomicBoolean();
     public static final AtomicBoolean NODE_INJECTED = new AtomicBoolean();
 
-    public static JCacheExpiryPolicyFactory INSTANCE;
+    public static JCacheExpiryPolicyFactory instance;
 
     @Resource(name = "dummy")
     private IJCacheDummyBean dummyBean;
 
     public JCacheExpiryPolicyFactory() {
-        INSTANCE = this;
+        instance = this;
     }
 
     @Override

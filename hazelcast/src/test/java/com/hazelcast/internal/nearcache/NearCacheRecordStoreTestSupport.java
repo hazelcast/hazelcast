@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,22 +18,23 @@ package com.hazelcast.internal.nearcache;
 
 import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.InMemoryFormat;
+import com.hazelcast.config.MaxSizePolicy;
 import com.hazelcast.config.NearCacheConfig;
-import com.hazelcast.monitor.NearCacheStats;
+import com.hazelcast.nearcache.NearCacheStats;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
-public abstract class NearCacheRecordStoreTestSupport extends CommonNearCacheTestSupport {
+abstract class NearCacheRecordStoreTestSupport extends CommonNearCacheTestSupport {
 
-    protected void putAndGetRecord(InMemoryFormat inMemoryFormat) {
-        NearCacheRecordStore<Integer, String> nearCacheRecordStore = createNearCacheRecordStore(
-                createNearCacheConfig(DEFAULT_NEAR_CACHE_NAME, inMemoryFormat), inMemoryFormat);
+    void putAndGetRecord(InMemoryFormat inMemoryFormat) {
+        NearCacheConfig nearCacheConfig = createNearCacheConfig(DEFAULT_NEAR_CACHE_NAME, inMemoryFormat);
+        NearCacheRecordStore<Integer, String> nearCacheRecordStore = createNearCacheRecordStore(nearCacheConfig, inMemoryFormat);
 
         for (int i = 0; i < DEFAULT_RECORD_COUNT; i++) {
-            nearCacheRecordStore.put(i, null, "Record-" + i);
+            nearCacheRecordStore.put(i, null, "Record-" + i, null);
         }
 
         assertEquals(DEFAULT_RECORD_COUNT, nearCacheRecordStore.size());
@@ -43,12 +44,12 @@ public abstract class NearCacheRecordStoreTestSupport extends CommonNearCacheTes
         }
     }
 
-    protected void putAndRemoveRecord(InMemoryFormat inMemoryFormat) {
+    void putAndRemoveRecord(InMemoryFormat inMemoryFormat) {
         NearCacheConfig nearCacheConfig = createNearCacheConfig(DEFAULT_NEAR_CACHE_NAME, inMemoryFormat);
         NearCacheRecordStore<Integer, String> nearCacheRecordStore = createNearCacheRecordStore(nearCacheConfig, inMemoryFormat);
 
         for (int i = 0; i < DEFAULT_RECORD_COUNT; i++) {
-            nearCacheRecordStore.put(i, null, "Record-" + i);
+            nearCacheRecordStore.put(i, null, "Record-" + i, null);
             // ensure that they are stored
             assertNotNull(nearCacheRecordStore.get(i));
         }
@@ -56,19 +57,19 @@ public abstract class NearCacheRecordStoreTestSupport extends CommonNearCacheTes
         assertEquals(DEFAULT_RECORD_COUNT, nearCacheRecordStore.size());
 
         for (int i = 0; i < DEFAULT_RECORD_COUNT; i++) {
-            nearCacheRecordStore.remove(i);
+            nearCacheRecordStore.invalidate(i);
             assertNull(nearCacheRecordStore.get(i));
         }
 
         assertEquals(0, nearCacheRecordStore.size());
     }
 
-    protected void clearRecordsOrDestroyStore(InMemoryFormat inMemoryFormat, boolean destroy) {
+    void clearRecordsOrDestroyStore(InMemoryFormat inMemoryFormat, boolean destroy) {
         NearCacheConfig nearCacheConfig = createNearCacheConfig(DEFAULT_NEAR_CACHE_NAME, inMemoryFormat);
         NearCacheRecordStore<Integer, String> nearCacheRecordStore = createNearCacheRecordStore(nearCacheConfig, inMemoryFormat);
 
         for (int i = 0; i < DEFAULT_RECORD_COUNT; i++) {
-            nearCacheRecordStore.put(i, null, "Record-" + i);
+            nearCacheRecordStore.put(i, null, "Record-" + i, null);
             // ensure that they are stored
             assertNotNull(nearCacheRecordStore.get(i));
         }
@@ -82,7 +83,7 @@ public abstract class NearCacheRecordStoreTestSupport extends CommonNearCacheTes
         assertEquals(0, nearCacheRecordStore.size());
     }
 
-    protected void statsCalculated(InMemoryFormat inMemoryFormat) {
+    void statsCalculated(InMemoryFormat inMemoryFormat) {
         long creationStartTime = System.currentTimeMillis();
         NearCacheConfig nearCacheConfig = createNearCacheConfig(DEFAULT_NEAR_CACHE_NAME, inMemoryFormat);
         NearCacheRecordStore<Integer, String> nearCacheRecordStore = createNearCacheRecordStore(nearCacheConfig, inMemoryFormat);
@@ -93,7 +94,7 @@ public abstract class NearCacheRecordStoreTestSupport extends CommonNearCacheTes
         int expectedMisses = 0;
 
         for (int i = 0; i < DEFAULT_RECORD_COUNT; i++) {
-            nearCacheRecordStore.put(i, null, "Record-" + i);
+            nearCacheRecordStore.put(i, null, "Record-" + i, null);
             expectedEntryCount++;
         }
 
@@ -111,29 +112,36 @@ public abstract class NearCacheRecordStoreTestSupport extends CommonNearCacheTes
         // Note that System.currentTimeMillis() is not monotonically increasing.
         // Below assertions can fail anytime but for testing purposes we can use `assertTrueEventually`.
         long nearCacheStatsCreationTime = nearCacheStats.getCreationTime();
-        assertTrue("nearCacheStatsCreationTime=" + nearCacheStatsCreationTime
-                + ", and creationStartTime=" + creationStartTime, nearCacheStatsCreationTime >= creationStartTime);
-        assertTrue("nearCacheStatsCreationTime=" + nearCacheStatsCreationTime
-                + ", and creationEndTime=" + creationEndTime, nearCacheStatsCreationTime <= creationEndTime);
+        assertTrue("nearCacheStatsCreationTime=" + nearCacheStatsCreationTime + ", and creationStartTime=" + creationStartTime,
+                nearCacheStatsCreationTime >= creationStartTime);
+        assertTrue("nearCacheStatsCreationTime=" + nearCacheStatsCreationTime + ", and creationEndTime=" + creationEndTime,
+                nearCacheStatsCreationTime <= creationEndTime);
         assertEquals(expectedHits, nearCacheStats.getHits());
         assertEquals(expectedMisses, nearCacheStats.getMisses());
         assertEquals(expectedEntryCount, nearCacheStats.getOwnedEntryCount());
         switch (inMemoryFormat) {
+            case NATIVE:
             case BINARY:
                 assertTrue(memoryCostWhenFull > 0);
                 break;
             case OBJECT:
                 assertEquals(0, memoryCostWhenFull);
+                break;
+            default:
+                // NOP
         }
 
+        int sizeBefore = nearCacheRecordStore.size();
         for (int i = 0; i < DEFAULT_RECORD_COUNT; i++) {
-            if (nearCacheRecordStore.remove(i * 3)) {
-                expectedEntryCount--;
-            }
+            nearCacheRecordStore.invalidate(i * 3);
         }
+        int sizeAfter = nearCacheRecordStore.size();
+        int invalidatedSize = sizeBefore - sizeAfter;
+        expectedEntryCount -= invalidatedSize;
 
         assertEquals(expectedEntryCount, nearCacheStats.getOwnedEntryCount());
         switch (inMemoryFormat) {
+            case NATIVE:
             case BINARY:
                 assertTrue(nearCacheStats.getOwnedEntryMemoryCost() > 0);
                 assertTrue(nearCacheStats.getOwnedEntryMemoryCost() < memoryCostWhenFull);
@@ -141,29 +149,24 @@ public abstract class NearCacheRecordStoreTestSupport extends CommonNearCacheTes
             case OBJECT:
                 assertEquals(0, nearCacheStats.getOwnedEntryMemoryCost());
                 break;
+            default:
+                // NOP
         }
 
         nearCacheRecordStore.clear();
-
-        switch (inMemoryFormat) {
-            case BINARY:
-            case OBJECT:
-                assertEquals(0, nearCacheStats.getOwnedEntryMemoryCost());
-                break;
-        }
+        assertEquals(0, nearCacheStats.getOwnedEntryMemoryCost());
     }
 
-    protected void ttlEvaluated(InMemoryFormat inMemoryFormat) {
+    void ttlEvaluated(InMemoryFormat inMemoryFormat) {
         int ttlSeconds = 3;
 
-        NearCacheConfig nearCacheConfig = createNearCacheConfig(DEFAULT_NEAR_CACHE_NAME, inMemoryFormat);
-        nearCacheConfig.setTimeToLiveSeconds(ttlSeconds);
+        NearCacheConfig nearCacheConfig = createNearCacheConfig(DEFAULT_NEAR_CACHE_NAME, inMemoryFormat)
+                .setTimeToLiveSeconds(ttlSeconds);
 
-        NearCacheRecordStore<Integer, String> nearCacheRecordStore = createNearCacheRecordStore(
-                nearCacheConfig, inMemoryFormat);
+        NearCacheRecordStore<Integer, String> nearCacheRecordStore = createNearCacheRecordStore(nearCacheConfig, inMemoryFormat);
 
         for (int i = 0; i < DEFAULT_RECORD_COUNT; i++) {
-            nearCacheRecordStore.put(i, null, "Record-" + i);
+            nearCacheRecordStore.put(i, null, "Record-" + i, null);
         }
 
         for (int i = 0; i < DEFAULT_RECORD_COUNT; i++) {
@@ -177,17 +180,16 @@ public abstract class NearCacheRecordStoreTestSupport extends CommonNearCacheTes
         }
     }
 
-    protected void maxIdleTimeEvaluatedSuccessfully(InMemoryFormat inMemoryFormat) {
+    void maxIdleTimeEvaluatedSuccessfully(InMemoryFormat inMemoryFormat) {
         int maxIdleSeconds = 3;
 
-        NearCacheConfig nearCacheConfig = createNearCacheConfig(DEFAULT_NEAR_CACHE_NAME, inMemoryFormat);
-        nearCacheConfig.setMaxIdleSeconds(maxIdleSeconds);
+        NearCacheConfig nearCacheConfig = createNearCacheConfig(DEFAULT_NEAR_CACHE_NAME, inMemoryFormat)
+                .setMaxIdleSeconds(maxIdleSeconds);
 
-        NearCacheRecordStore<Integer, String> nearCacheRecordStore = createNearCacheRecordStore(
-                nearCacheConfig, inMemoryFormat);
+        NearCacheRecordStore<Integer, String> nearCacheRecordStore = createNearCacheRecordStore(nearCacheConfig, inMemoryFormat);
 
         for (int i = 0; i < DEFAULT_RECORD_COUNT; i++) {
-            nearCacheRecordStore.put(i, null, "Record-" + i);
+            nearCacheRecordStore.put(i, null, "Record-" + i, null);
         }
 
         for (int i = 0; i < DEFAULT_RECORD_COUNT; i++) {
@@ -201,7 +203,7 @@ public abstract class NearCacheRecordStoreTestSupport extends CommonNearCacheTes
         }
     }
 
-    protected void expiredRecordsCleanedUpSuccessfully(InMemoryFormat inMemoryFormat, boolean useIdleTime) {
+    void expiredRecordsCleanedUpSuccessfully(InMemoryFormat inMemoryFormat, boolean useIdleTime) {
         int cleanUpThresholdSeconds = 3;
 
         NearCacheConfig nearCacheConfig = createNearCacheConfig(DEFAULT_NEAR_CACHE_NAME, inMemoryFormat);
@@ -211,11 +213,10 @@ public abstract class NearCacheRecordStoreTestSupport extends CommonNearCacheTes
             nearCacheConfig.setTimeToLiveSeconds(cleanUpThresholdSeconds);
         }
 
-        NearCacheRecordStore<Integer, String> nearCacheRecordStore = createNearCacheRecordStore(
-                nearCacheConfig, inMemoryFormat);
+        NearCacheRecordStore<Integer, String> nearCacheRecordStore = createNearCacheRecordStore(nearCacheConfig, inMemoryFormat);
 
         for (int i = 0; i < DEFAULT_RECORD_COUNT; i++) {
-            nearCacheRecordStore.put(i, null, "Record-" + i);
+            nearCacheRecordStore.put(i, null, "Record-" + i, null);
         }
 
         sleepSeconds(cleanUpThresholdSeconds + 1);
@@ -229,14 +230,13 @@ public abstract class NearCacheRecordStoreTestSupport extends CommonNearCacheTes
         assertEquals(0, nearCacheStats.getOwnedEntryMemoryCost());
     }
 
-    protected void createNearCacheWithMaxSizePolicy(InMemoryFormat inMemoryFormat, EvictionConfig.MaxSizePolicy maxSizePolicy,
-                                                    int size) {
-        NearCacheConfig nearCacheConfig = createNearCacheConfig(DEFAULT_NEAR_CACHE_NAME, inMemoryFormat);
+    void createNearCacheWithMaxSizePolicy(InMemoryFormat inMemoryFormat, MaxSizePolicy maxSizePolicy, int size) {
+        EvictionConfig evictionConfig = new EvictionConfig()
+                .setMaxSizePolicy(maxSizePolicy)
+                .setSize(size);
 
-        EvictionConfig evictionConfig = new EvictionConfig();
-        evictionConfig.setMaximumSizePolicy(maxSizePolicy);
-        evictionConfig.setSize(size);
-        nearCacheConfig.setEvictionConfig(evictionConfig);
+        NearCacheConfig nearCacheConfig = createNearCacheConfig(DEFAULT_NEAR_CACHE_NAME, inMemoryFormat)
+                .setEvictionConfig(evictionConfig);
 
         createNearCacheRecordStore(nearCacheConfig, inMemoryFormat);
     }

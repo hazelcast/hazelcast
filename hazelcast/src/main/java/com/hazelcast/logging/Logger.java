@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,12 +16,38 @@
 
 package com.hazelcast.logging;
 
-import com.hazelcast.nio.ClassLoaderUtil;
-import com.hazelcast.util.StringUtil;
+import com.hazelcast.internal.nio.ClassLoaderUtil;
+import com.hazelcast.internal.util.StringUtil;
 
+/**
+ * Provides static utilities to access the global shared logging machinery.
+ * <p>
+ * Note: if possible, avoid logging in the global shared context exposed by the utilities of this class,
+ * use {@link LoggingService} instead.
+ */
 public final class Logger {
 
+    /**
+     * The goal of this field is to share the common global factory instance to allow access to it from the static context and
+     * from the {@link LoggingService} context.
+     * <ul>
+     * <li>If the class of the factory is configured using {@code hazelcast.logging.class} in {@link System#getProperties}, all
+     * {@link com.hazelcast.core.HazelcastInstance HazelcastInstance}s will share this single instance.
+     * <li>If the type of the factory is configured using {@code hazelcast.logging.type} in {@link System#getProperties} and
+     * {@link #getLogger(String) getLogger} is invoked before the first call to {@link #newLoggerFactory}, all
+     * {@link com.hazelcast.core.HazelcastInstance HazelcastInstance}s that have the same logging type configured will share
+     * this single instance.
+     * <li>If the first invocation of {@link #newLoggerFactory} is done before a call to {@link #getLogger(String) getLogger},
+     * this field will store a factory constructed during this first invocation of {@link #newLoggerFactory}, which is typically
+     * done during the construction of the first {@link com.hazelcast.core.HazelcastInstance HazelcastInstance}. In this case,
+     * this factory instance will be shared with all {@link com.hazelcast.core.HazelcastInstance HazelcastInstance}s having the
+     * same logging type configured, all other {@link com.hazelcast.core.HazelcastInstance HazelcastInstance}s will receive their
+     * own logging factories.
+     * </ul>
+     */
     private static volatile LoggerFactory loggerFactory;
+
+    private static String loggerFactoryClassOrType;
 
     private static final Object FACTORY_LOCK = new Object();
 
@@ -29,103 +55,212 @@ public final class Logger {
     }
 
     /**
-     * @param clazz class to take the logger name from
-     * @return the logger
-     * Use LoggingService instead if possible. Do not log in static context if possible.
+     * Obtains a {@link ILogger logger} for the given {@code clazz}.
+     *
+     * @param clazz the class to obtain the logger for.
+     * @return the obtained logger.
      */
     public static ILogger getLogger(Class clazz) {
         return getLogger(clazz.getName());
     }
 
     /**
-     * @param name name of the logger
-     * @return the logger
-     * Use LoggingService instead if possible. Do not log in static context if possible.
+     * Obtains a {@link ILogger logger} of the given {@code name}.
+     *
+     * @param name the name of the logger to obtain.
+     * @return the obtained logger.
      */
     public static ILogger getLogger(String name) {
-        LoggerFactory loggerFactoryToUse = loggerFactory;
-        // fast-track when factory is initialized
-        if (loggerFactoryToUse != null) {
-            return loggerFactoryToUse.getLogger(name);
+        // try the fast path first
+        LoggerFactory existingFactory = loggerFactory;
+        if (existingFactory != null) {
+            return existingFactory.getLogger(name);
         }
 
         synchronized (FACTORY_LOCK) {
-            if (loggerFactory == null) {
-                // init static logger with user-specified custom logger class
-                String loggerClass = System.getProperty("hazelcast.logging.class");
-                if (!StringUtil.isNullOrEmpty(loggerClass)) {
-                    // ok, there is a custom logging factory class -> let's use it now and store it for next time
-                    loggerFactoryToUse = loadLoggerFactory(loggerClass);
-                    loggerFactory = loggerFactoryToUse;
-                } else {
-                    String loggerType = System.getProperty("hazelcast.logging.type");
-                    loggerFactoryToUse = newLoggerFactory(loggerType);
-                    // store the factory only when the type was set explicitly. we do not want to store default type.
-                    if (!StringUtil.isNullOrEmpty(loggerType)) {
-                        loggerFactory = loggerFactoryToUse;
-                    }
+            existingFactory = loggerFactory;
+            if (existingFactory != null) {
+                return existingFactory.getLogger(name);
+            }
+
+            LoggerFactory createdFactory = null;
+
+            final String loggingClass = System.getProperty("hazelcast.logging.class");
+            if (!StringUtil.isNullOrEmpty(loggingClass)) {
+                createdFactory = tryToCreateLoggerFactory(loggingClass);
+            }
+
+            if (createdFactory != null) {
+                // hazelcast.logging.class property overrides everything, so it's safe to store the factory for reuse
+                loggerFactory = createdFactory;
+                loggerFactoryClassOrType = loggingClass;
+            } else {
+                final String loggingType = System.getProperty("hazelcast.logging.type");
+                createdFactory = createLoggerFactory(loggingType);
+
+                if (!StringUtil.isNullOrEmpty(loggingType)) {
+                    // hazelcast.logging.type property is the recommended way of configuring the logging, in most setups
+                    // the configured value should match with the value passed to newLoggerFactory(), so we store the created
+                    // factory for reuse
+                    loggerFactory = createdFactory;
+                    loggerFactoryClassOrType = loggingType;
                 }
             }
+
+            return createdFactory.getLogger(name);
         }
-        // loggerFactory was initialized by other thread before we acquired the lock -> loggerFactoryToUse was left to null
-        if (loggerFactoryToUse == null) {
-            loggerFactoryToUse = loggerFactory;
-        }
-        return loggerFactoryToUse.getLogger(name);
     }
 
+    /**
+     * @return the no operation logger, which ignores all logging requests.
+     */
     public static ILogger noLogger() {
         return new NoLogFactory.NoLogger();
     }
 
-    @SuppressWarnings("checkstyle:npathcomplexity")
-    public static LoggerFactory newLoggerFactory(String loggerType) {
-        LoggerFactory loggerFactory = null;
-        String loggerClass = System.getProperty("hazelcast.logging.class");
-        if (loggerClass != null) {
-            loggerFactory = loadLoggerFactory(loggerClass);
-        }
+    /**
+     * Creates a {@link LoggerFactory logger factory} instance of the given preferred type.
+     * <p>
+     * The type of the created logger factory doesn't necessarily match the given preferred type. For example, if
+     * {@code hazelcast.logging.class} system property is set, the configured logger factory class will be used
+     * despite the given preferred type. Also, if factory instance construction is failed for some reason,
+     * {@link StandardLoggerFactory} instance will be returned instead.
+     *
+     * @param preferredType the preferred type of the logger factory to create.
+     * @return the created logger factory.
+     */
+    public static LoggerFactory newLoggerFactory(String preferredType) {
+        // creation of a new logger factory is not a performance critical operation, so we can afford doing it under the lock
+        // and perform many non-cached accesses to volatile loggerFactory field to simplify the code
 
-        if (loggerFactory == null) {
-            if (loggerType != null) {
-                if ("log4j".equals(loggerType)) {
-                    loggerFactory = loadLoggerFactory("com.hazelcast.logging.Log4jFactory");
-                } else if ("log4j2".equals(loggerType)) {
-                    loggerFactory = loadLoggerFactory("com.hazelcast.logging.Log4j2Factory");
-                } else if ("slf4j".equals(loggerType)) {
-                    loggerFactory = loadLoggerFactory("com.hazelcast.logging.Slf4jFactory");
-                } else if ("jdk".equals(loggerType)) {
-                    loggerFactory = new StandardLoggerFactory();
-                } else if ("none".equals(loggerType)) {
-                    loggerFactory = new NoLogFactory();
-                }
+        synchronized (FACTORY_LOCK) {
+            LoggerFactory obtainedFactory;
+
+            obtainedFactory = tryToObtainFactoryByConfiguredClass();
+            if (obtainedFactory != null) {
+                return obtainedFactory;
             }
-        }
 
-        if (loggerFactory == null) {
-            loggerFactory = new StandardLoggerFactory();
-        }
-
-        // init static field as early as possible
-        if (Logger.loggerFactory == null) {
-            //noinspection SynchronizationOnStaticField
-            synchronized (FACTORY_LOCK) {
-                if (Logger.loggerFactory == null) {
-                    Logger.loggerFactory = loggerFactory;
-                }
+            obtainedFactory = tryToObtainFactoryByPreferredType(preferredType);
+            if (obtainedFactory != null) {
+                return obtainedFactory;
             }
-        }
 
-        return loggerFactory;
+            assert StringUtil.isNullOrEmpty(preferredType);
+            obtainedFactory = obtainFactoryByRecoveringFromNullOrEmptyPreferredType();
+
+            return obtainedFactory;
+        }
     }
 
-    private static LoggerFactory loadLoggerFactory(String className) {
+    private static LoggerFactory tryToObtainFactoryByConfiguredClass() {
+        final String loggingClass = System.getProperty("hazelcast.logging.class");
+
+        if (!StringUtil.isNullOrEmpty(loggingClass)) {
+            if (sharedFactoryIsCompatibleWith(loggingClass)) {
+                return loggerFactory;
+            }
+
+            final LoggerFactory createdFactory = tryToCreateLoggerFactory(loggingClass);
+            if (createdFactory != null) {
+                if (loggerFactory == null) {
+                    loggerFactory = createdFactory;
+                    loggerFactoryClassOrType = loggingClass;
+                }
+                return createdFactory;
+            }
+        }
+
+        return null;
+    }
+
+    private static LoggerFactory tryToObtainFactoryByPreferredType(String preferredType) {
+        if (!StringUtil.isNullOrEmpty(preferredType)) {
+            if (sharedFactoryIsCompatibleWith(preferredType)) {
+                return loggerFactory;
+            }
+
+            final LoggerFactory createdFactory = createLoggerFactory(preferredType);
+            if (loggerFactory == null) {
+                loggerFactory = createdFactory;
+                loggerFactoryClassOrType = preferredType;
+            }
+            return createdFactory;
+        }
+
+        return null;
+    }
+
+    private static LoggerFactory obtainFactoryByRecoveringFromNullOrEmptyPreferredType() {
+        if (loggerFactory != null) {
+            return loggerFactory;
+        }
+
+        final String loggingType = System.getProperty("hazelcast.logging.type");
+        if (!StringUtil.isNullOrEmpty(loggingType)) {
+            final LoggerFactory createdFactory = createLoggerFactory(loggingType);
+            loggerFactory = createdFactory;
+            loggerFactoryClassOrType = loggingType;
+            return createdFactory;
+        }
+
+        final LoggerFactory createdFactory = new StandardLoggerFactory();
+        loggerFactory = createdFactory;
+        loggerFactoryClassOrType = "jdk";
+        return createdFactory;
+    }
+
+    private static boolean sharedFactoryIsCompatibleWith(String requiredClassOrType) {
+        return loggerFactory != null && !StringUtil.isNullOrEmpty(loggerFactoryClassOrType) && loggerFactoryClassOrType
+                .equals(requiredClassOrType);
+    }
+
+    private static LoggerFactory createLoggerFactory(String preferredType) {
+        LoggerFactory createdFactory;
+
+        if ("log4j".equals(preferredType)) {
+            createdFactory = tryToCreateLoggerFactory("com.hazelcast.logging.Log4jFactory");
+        } else if ("log4j2".equals(preferredType)) {
+            createdFactory = tryToCreateLoggerFactory("com.hazelcast.logging.Log4j2Factory");
+        } else if ("slf4j".equals(preferredType)) {
+            createdFactory = tryToCreateLoggerFactory("com.hazelcast.logging.Slf4jFactory");
+        } else if ("jdk".equals(preferredType)) {
+            createdFactory = new StandardLoggerFactory();
+        } else if ("none".equals(preferredType)) {
+            createdFactory = new NoLogFactory();
+        } else {
+            if (!StringUtil.isNullOrEmpty(preferredType)) {
+                logError("Unexpected logging type '" + preferredType + "', falling back to JDK logging.", null);
+            }
+            createdFactory = new StandardLoggerFactory();
+        }
+
+        if (createdFactory == null) {
+            logError("Falling back to JDK logging.", null);
+            createdFactory = new StandardLoggerFactory();
+        }
+
+        return createdFactory;
+    }
+
+    private static LoggerFactory tryToCreateLoggerFactory(String className) {
         try {
             return ClassLoaderUtil.newInstance(null, className);
         } catch (Exception e) {
-            // since we don't have a logger available, lets log it to the System.err
-            e.printStackTrace();
+            logError("Failed to create '" + className + "' logger factory:", e);
             return null;
         }
     }
+
+    private static void logError(String message, Throwable cause) {
+        // We may try to use the existing shared logger factory here, but in
+        // this case the error may end up in a pretty unexpected place. Just log
+        // to stderr.
+
+        System.err.println(message);
+        if (cause != null) {
+            cause.printStackTrace();
+        }
+    }
+
 }

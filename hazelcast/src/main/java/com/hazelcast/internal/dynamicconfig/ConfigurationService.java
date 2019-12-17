@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,24 +16,21 @@
 
 package com.hazelcast.internal.dynamicconfig;
 
-import com.hazelcast.config.AtomicLongConfig;
-import com.hazelcast.config.AtomicReferenceConfig;
 import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.CardinalityEstimatorConfig;
 import com.hazelcast.config.DurableExecutorConfig;
-import com.hazelcast.config.EventJournalConfig;
 import com.hazelcast.config.ExecutorConfig;
-import com.hazelcast.config.ReliableIdGeneratorConfig;
+import com.hazelcast.config.FlakeIdGeneratorConfig;
+import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.config.ListConfig;
-import com.hazelcast.config.LockConfig;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MultiMapConfig;
+import com.hazelcast.config.PNCounterConfig;
 import com.hazelcast.config.QueueConfig;
 import com.hazelcast.config.ReliableTopicConfig;
 import com.hazelcast.config.ReplicatedMapConfig;
 import com.hazelcast.config.RingbufferConfig;
 import com.hazelcast.config.ScheduledExecutorConfig;
-import com.hazelcast.config.SemaphoreConfig;
 import com.hazelcast.config.SetConfig;
 import com.hazelcast.config.TopicConfig;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
@@ -54,8 +51,9 @@ public interface ConfigurationService {
      * Registers a dynamic configurations to all cluster members.
      *
      * @param config configuration to register
-     * @throws com.hazelcast.config.ConfigurationException when static configuration already contains the same config
-     *                                                     with the same name
+     * @throws InvalidConfigurationException when static configuration already
+     *                                       contains the same config with the
+     *                                       same name
      */
     void broadcastConfig(IdentifiedDataSerializable config);
 
@@ -92,6 +90,14 @@ public interface ConfigurationService {
     CardinalityEstimatorConfig findCardinalityEstimatorConfig(String name);
 
     /**
+     * Finds existing PN counter config.
+     *
+     * @param name name of the config
+     * @return PN counter config or {@code null} when requested PN counter configuration does not exist
+     */
+    PNCounterConfig findPNCounterConfig(String name);
+
+    /**
      * Finds existing Executor config.
      *
      * @param name name of the config
@@ -116,42 +122,12 @@ public interface ConfigurationService {
     DurableExecutorConfig findDurableExecutorConfig(String name);
 
     /**
-     * Finds existing Semaphore config.
-     *
-     * @param name name of the config
-     * @return Semaphore config or {@code null} when requested Semaphore configuration does not exist
-     */
-    SemaphoreConfig findSemaphoreConfig(String name);
-
-    /**
      * Finds existing Ringbuffer config.
      *
      * @param name name of the config
      * @return Ringbuffer config or {@code null} when requested Ringbuffer configuration does not exist
      */
     RingbufferConfig findRingbufferConfig(String name);
-
-    /**
-     * Finds existing AtomicLong config.
-     *
-     * @return AtomicLong Config or {@code null} when requested AtomicLong configuration does not exist
-     */
-    AtomicLongConfig findAtomicLongConfig(String name);
-
-    /**
-     * Finds existing AtomicReference config.
-     *
-     * @return AtomicReference Config or {@code null} when requested AtomicReference configuration does not exist
-     */
-    AtomicReferenceConfig findAtomicReferenceConfig(String name);
-
-    /**
-     * Finds existing Lock config.
-     *
-     * @param name name of the config
-     * @return Lock config or {@code null} when requested Lock configuration does not exist
-     */
-    LockConfig findLockConfig(String name);
 
     /**
      * Finds existing List config.
@@ -202,28 +178,12 @@ public interface ConfigurationService {
     CacheSimpleConfig findCacheSimpleConfig(String name);
 
     /**
-     * Finds existing CacheEventJournal config.
+     * Finds existing FlakeIdGeneratorConfig config.
      *
      * @param name name of the config
-     * @return CacheEventJournal config or {@code null} when requested CacheEventJournal configuration does not exist
+     * @return FlakeIdGenerator config or {@code null} when requested FlakeIdGenerator configuration does not exist
      */
-    EventJournalConfig findCacheEventJournalConfig(String name);
-
-    /**
-     * Finds existing MapEventJournal config.
-     *
-     * @param name name of the config
-     * @return MapEventJournal config or {@code null} when requested MapEventJournal configuration does not exist
-     */
-    EventJournalConfig findMapEventJournalConfig(String name);
-
-    /**
-     * Finds existing ReliableIdGeneratorConfig config.
-     *
-     * @param name name of the config
-     * @return ReliableIdGenerator config or {@code null} when requested ReliableIdGenerator configuration does not exist
-     */
-    ReliableIdGeneratorConfig findReliableIdGeneratorConfig(String name);
+    FlakeIdGeneratorConfig findFlakeIdGeneratorConfig(String name);
 
     /**
      * Returns all registered map configurations.
@@ -231,13 +191,6 @@ public interface ConfigurationService {
      * @return registered map configurations
      */
     Map<String, MapConfig> getMapConfigs();
-
-    /**
-     * Returns all registered lock configurations.
-     *
-     * @return registered lock configurations
-     */
-    Map<String, LockConfig> getLockConfigs();
 
     /**
      * Returns all registered queue configurations.
@@ -282,20 +235,6 @@ public interface ConfigurationService {
     Map<String, RingbufferConfig> getRingbufferConfigs();
 
     /**
-     * Returns all registered AtomicLong configurations.
-     *
-     * @return registered AtomicLong configurations
-     */
-    Map<String, AtomicLongConfig> getAtomicLongConfigs();
-
-    /**
-     * Returns all registered AtomicReference configurations.
-     *
-     * @return registered AtomicReference configurations
-     */
-    Map<String, AtomicReferenceConfig> getAtomicReferenceConfigs();
-
-    /**
      * Returns all registered topic configurations.
      *
      * @return registered topic configurations
@@ -338,11 +277,11 @@ public interface ConfigurationService {
     Map<String, CardinalityEstimatorConfig> getCardinalityEstimatorConfigs();
 
     /**
-     * Returns all registered semaphore configurations.
+     * Returns all registered PN counter configurations.
      *
-     * @return registered semaphore configurations
+     * @return registered PN counter configurations
      */
-    Map<String, SemaphoreConfig> getSemaphoreConfigs();
+    Map<String, PNCounterConfig> getPNCounterConfigs();
 
     /**
      * Returns all registered cache configurations.
@@ -352,23 +291,9 @@ public interface ConfigurationService {
     Map<String, CacheSimpleConfig> getCacheSimpleConfigs();
 
     /**
-     * Returns all registered CacheEventJournal configurations.
+     * Returns all registered FlakeIdGenerator configurations.
      *
-     * @return registered CacheEventJournal configurations
+     * @return registered FlakeIdGenerator configurations
      */
-    Map<String, EventJournalConfig> getCacheEventJournalConfigs();
-
-    /**
-     * Returns all registered MapEventJournal configurations.
-     *
-     * @return registered MapEventJournal configurations
-     */
-    Map<String, EventJournalConfig> getMapEventJournalConfigs();
-
-    /**
-     * Returns all registered ReliableIdGenerator configurations.
-     *
-     * @return registered ReliableIdGenerator configurations
-     */
-    Map<String, ReliableIdGeneratorConfig> getReliableIdGeneratorConfigs();
+    Map<String, FlakeIdGeneratorConfig> getFlakeIdGeneratorConfigs();
 }

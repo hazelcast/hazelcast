@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,7 @@ package com.hazelcast.map;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.partition.AbstractPartitionLostListenerTest;
 import com.hazelcast.test.AssertTask;
-import com.hazelcast.test.HazelcastParametersRunnerFactory;
+import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
 import com.hazelcast.test.annotation.SlowTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -38,7 +38,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(Parameterized.class)
-@Parameterized.UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
+@Parameterized.UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
 @Category(SlowTest.class)
 public class MapPartitionLostListenerStressTest extends AbstractPartitionLostListenerTest {
 
@@ -56,7 +56,7 @@ public class MapPartitionLostListenerStressTest extends AbstractPartitionLostLis
                 {3, true, NodeLeaveType.SHUTDOWN, false},
                 {3, true, NodeLeaveType.TERMINATE, true},
                 {3, false, NodeLeaveType.SHUTDOWN, false},
-                {3, false, NodeLeaveType.TERMINATE, true}
+                {3, false, NodeLeaveType.TERMINATE, true},
         });
     }
 
@@ -120,7 +120,8 @@ public class MapPartitionLostListenerStressTest extends AbstractPartitionLostLis
     }
 
     private List<TestEventCollectingMapPartitionLostListener> registerListeners(HazelcastInstance instance) {
-        List<TestEventCollectingMapPartitionLostListener> listeners = new ArrayList<TestEventCollectingMapPartitionLostListener>();
+        List<TestEventCollectingMapPartitionLostListener> listeners
+                = new ArrayList<TestEventCollectingMapPartitionLostListener>();
         for (int i = 0; i < getNodeCount(); i++) {
             TestEventCollectingMapPartitionLostListener listener = new TestEventCollectingMapPartitionLostListener(i);
             instance.getMap(getIthMapName(i)).addPartitionLostListener(listener);

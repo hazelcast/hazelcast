@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,11 +17,12 @@
 package com.hazelcast.cache.impl.maxsize.impl;
 
 import com.hazelcast.cache.impl.record.CacheRecordMap;
+import com.hazelcast.config.MaxSizePolicy;
 import com.hazelcast.internal.eviction.EvictionChecker;
 
 /**
  * Cache max-size policy implementation for
- * {@link com.hazelcast.config.EvictionConfig.MaxSizePolicy#ENTRY_COUNT}
+ * {@link MaxSizePolicy#ENTRY_COUNT}
  */
 public class EntryCountCacheEvictionChecker
         implements EvictionChecker {

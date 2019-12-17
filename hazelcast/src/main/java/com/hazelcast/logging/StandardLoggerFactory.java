@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,7 +31,7 @@ public class StandardLoggerFactory extends LoggerFactorySupport implements Logge
     static class StandardLogger extends AbstractLogger {
         private final Logger logger;
 
-        public StandardLogger(Logger logger) {
+        StandardLogger(Logger logger) {
             this.logger = logger;
         }
 

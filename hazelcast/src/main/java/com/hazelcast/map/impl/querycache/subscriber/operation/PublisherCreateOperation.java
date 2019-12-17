@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,9 +18,9 @@ package com.hazelcast.map.impl.querycache.subscriber.operation;
 
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.MapService;
-import com.hazelcast.map.impl.operation.MapOperation;
-import com.hazelcast.map.impl.query.MapQueryEngine;
+import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.query.Query;
+import com.hazelcast.map.impl.query.QueryEngine;
 import com.hazelcast.map.impl.query.QueryResult;
 import com.hazelcast.map.impl.query.QueryResultRow;
 import com.hazelcast.map.impl.query.Target;
@@ -37,32 +37,31 @@ import com.hazelcast.map.impl.querycache.publisher.QueryCacheListenerRegistry;
 import com.hazelcast.map.impl.querycache.utils.QueryCacheUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.ExecutionService;
-import com.hazelcast.spi.InternalCompletableFuture;
-import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.OperationService;
-import com.hazelcast.util.FutureUtil;
-import com.hazelcast.util.IterationType;
+import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.spi.impl.operationservice.AbstractNamedOperation;
+import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.spi.impl.operationservice.OperationService;
+import com.hazelcast.internal.util.ExceptionUtil;
+import com.hazelcast.internal.util.FutureUtil;
+import com.hazelcast.internal.util.IterationType;
+import com.hazelcast.internal.util.collection.Int2ObjectHashMap;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutorService;
+import java.util.Map;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
-import static com.hazelcast.util.FutureUtil.returnWithDeadline;
+import static com.hazelcast.internal.util.FutureUtil.returnWithDeadline;
 
 /**
- * An idempotent create operation which creates publisher side functionality.
- * And also responsible for running initial snapshot creation phase.
+ * An idempotent create operation which creates
+ * publisher side functionality. And also responsible
+ * for running initial snapshot creation phase.
  */
-public class PublisherCreateOperation extends MapOperation {
+public class PublisherCreateOperation extends AbstractNamedOperation {
 
     private static final long ACCUMULATOR_READ_OPERATION_TIMEOUT_MINUTES = 5;
 
@@ -79,7 +78,7 @@ public class PublisherCreateOperation extends MapOperation {
     }
 
     @Override
-    public void run() throws Exception {
+    public void run() {
         boolean populate = info.isPopulate();
         if (populate) {
             info.setPublishable(false);
@@ -138,7 +137,11 @@ public class PublisherCreateOperation extends MapOperation {
         PublisherContext publisherContext = getPublisherContext();
         MapPublisherRegistry mapPublisherRegistry = publisherContext.getMapPublisherRegistry();
         PublisherRegistry publisherRegistry = mapPublisherRegistry.getOrCreate(mapName);
+        // If InternalQueryCache#recreate is called, we forcibly
+        // remove and recreate registration matching with cacheId
+        publisherRegistry.remove(cacheId);
         PartitionAccumulatorRegistry partitionAccumulatorRegistry = publisherRegistry.getOrCreate(cacheId);
+
         partitionAccumulatorRegistry.setUuid(getCallerUuid());
     }
 
@@ -148,59 +151,97 @@ public class PublisherCreateOperation extends MapOperation {
     }
 
     private QueryCacheContext getContext() {
-        return mapServiceContext.getQueryCacheContext();
+        return getMapServiceContext().getQueryCacheContext();
     }
 
-    private QueryResult createSnapshot() throws Exception {
-        QueryResult queryResult = runInitialQuery();
-        replayEventsOnResultSet(queryResult);
-        return queryResult;
+    private MapServiceContext getMapServiceContext() {
+        MapService mapService = getService();
+        return mapService.getMapServiceContext();
+    }
+
+    private QueryResult createSnapshot() {
+        try {
+            QueryResult queryResult = runInitialQuery();
+            replayEventsOverResultSet(queryResult);
+            return queryResult;
+        } catch (Throwable t) {
+            throw ExceptionUtil.rethrow(t);
+        }
     }
 
     private QueryResult runInitialQuery() {
-        MapQueryEngine queryEngine = mapServiceContext.getMapQueryEngine(name);
+        QueryEngine queryEngine = getMapServiceContext().getQueryEngine(name);
         IterationType iterationType = info.isIncludeValue() ? IterationType.ENTRY : IterationType.KEY;
         Query query = Query.of().mapName(name).predicate(info.getPredicate()).iterationType(iterationType).build();
         return queryEngine.execute(query, Target.LOCAL_NODE);
     }
 
     /**
-     * Replay the events on returned result-set which are generated during `runInitialQuery` call.
+     * Replay events over the result set of initial query. These events are
+     * received events during execution of the initial query.
      */
-    private void replayEventsOnResultSet(final QueryResult queryResult) throws Exception {
-        Collection<Object> resultCollection = readAccumulators();
-        for (Object result : resultCollection) {
-            if (result == null) {
+    private void replayEventsOverResultSet(QueryResult queryResult) throws Exception {
+        Map<Integer, Future<Object>> future = readAccumulators();
+        for (Map.Entry<Integer, Future<Object>> entry : future.entrySet()) {
+            int partitionId = entry.getKey();
+            Object eventsInOneAcc = entry.getValue().get();
+            if (eventsInOneAcc == null) {
                 continue;
             }
-            Object toObject = mapServiceContext.toObject(result);
-            List<QueryCacheEventData> eventDataList = (List<QueryCacheEventData>) toObject;
+            eventsInOneAcc = getContext().toObject(eventsInOneAcc);
+            List<QueryCacheEventData> eventDataList = (List<QueryCacheEventData>) eventsInOneAcc;
             for (QueryCacheEventData eventData : eventDataList) {
-                QueryResultRow entry = createQueryResultEntry(eventData);
-                add(queryResult, entry);
+                if (eventData.getDataKey() == null) {
+                    // this means a map-wide event like clear-all or evict-all
+                    // is inside the accumulator buffers
+                    removePartitionResults(queryResult, partitionId);
+                } else {
+                    add(queryResult, newQueryResultRow(eventData));
+                }
             }
         }
     }
 
-    private Collection<Object> readAccumulators() {
+    /**
+     * Remove matching entries from given result set with the given
+     * partition ID.
+     */
+    private void removePartitionResults(QueryResult queryResult, int partitionId) {
+        List<QueryResultRow> rows = queryResult.getRows();
+        rows.removeIf(resultRow -> getPartitionId(resultRow) == partitionId);
+    }
+
+    private int getPartitionId(QueryResultRow resultRow) {
+        return getNodeEngine().getPartitionService().getPartitionId(resultRow.getKey());
+    }
+
+    private Map<Integer, Future<Object>> readAccumulators() {
         String mapName = info.getMapName();
         String cacheId = info.getCacheId();
 
         Collection<Integer> partitionIds = getPartitionIdsOfAccumulators();
         if (partitionIds.isEmpty()) {
-            return Collections.emptyList();
+            return Collections.emptyMap();
         }
 
-        List<Future<Object>> lsFutures = new ArrayList<Future<Object>>(partitionIds.size());
-        NodeEngine nodeEngine = getNodeEngine();
-        ExecutorService executor = nodeEngine.getExecutionService().getExecutor(ExecutionService.QUERY_EXECUTOR);
+        Map<Integer, Future<Object>> futuresByPartitionId
+                = new Int2ObjectHashMap<>(partitionIds.size());
         for (Integer partitionId : partitionIds) {
-            PartitionCallable task = new PartitionCallable(mapName, cacheId, partitionId);
-            Future<Object> future = executor.submit(task);
-            lsFutures.add(future);
+            futuresByPartitionId.put(partitionId,
+                    readAndResetAccumulator(mapName, cacheId, partitionId));
         }
 
-        return getResult(lsFutures);
+        waitResult(futuresByPartitionId.values());
+        return futuresByPartitionId;
+    }
+
+    /**
+     * Read and reset the accumulator of query cache inside the given partition.
+     */
+    private Future<Object> readAndResetAccumulator(String mapName, String cacheId, Integer partitionId) {
+        Operation operation = new ReadAndResetAccumulatorOperation(mapName, cacheId);
+        OperationService operationService = getNodeEngine().getOperationService();
+        return operationService.invokeOnPartition(MapService.SERVICE_NAME, operation, partitionId);
     }
 
     private void add(QueryResult result, QueryResultRow row) {
@@ -208,14 +249,14 @@ public class PublisherCreateOperation extends MapOperation {
         // values of the entries may be different if keyData-s are equal
         // so this `if` checks the existence of keyData in the set. If it is there, just removing it and adding
         // `the new row with the same keyData but possibly with the new value`.
-        // TODO
+        // TODO can cause duplicate event receive on client side
         //if (queryResultSet.contains(row)) {
         //    queryResultSet.remove(row);
         //}
         result.addRow(row);
     }
 
-    private QueryResultRow createQueryResultEntry(QueryCacheEventData eventData) {
+    private QueryResultRow newQueryResultRow(QueryCacheEventData eventData) {
         Data dataKey = eventData.getDataKey();
         Data dataNewValue = eventData.getDataNewValue();
         return new QueryResultRow(dataKey, dataNewValue);
@@ -228,32 +269,7 @@ public class PublisherCreateOperation extends MapOperation {
         return QueryCacheUtil.getAccumulators(context, mapName, cacheId).keySet();
     }
 
-    /**
-     * Reads the accumulator in a partition.
-     */
-    private final class PartitionCallable implements Callable<Object> {
-
-        private final int partitionId;
-        private final String mapName;
-        private final String cacheId;
-
-        PartitionCallable(String mapName, String cacheId, int partitionId) {
-            this.mapName = mapName;
-            this.cacheId = cacheId;
-            this.partitionId = partitionId;
-        }
-
-        @Override
-        public Object call() throws Exception {
-            Operation operation = new ReadAndResetAccumulatorOperation(mapName, cacheId);
-            OperationService operationService = getNodeEngine().getOperationService();
-            InternalCompletableFuture<Object> future
-                    = operationService.invokeOnPartition(MapService.SERVICE_NAME, operation, partitionId);
-            return future.get();
-        }
-    }
-
-    private static Collection<Object> getResult(List<Future<Object>> lsFutures) {
+    private static Collection<Object> waitResult(Collection<Future<Object>> lsFutures) {
         return returnWithDeadline(lsFutures, ACCUMULATOR_READ_OPERATION_TIMEOUT_MINUTES,
                 TimeUnit.MINUTES, FutureUtil.RETHROW_EVERYTHING);
     }
@@ -264,7 +280,7 @@ public class PublisherCreateOperation extends MapOperation {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MapDataSerializerHook.PUBLISHER_CREATE;
     }
 }

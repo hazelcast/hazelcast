@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,15 +16,16 @@
 
 package com.hazelcast.client.impl.protocol.task;
 
-import com.hazelcast.client.impl.client.ClientPrincipal;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ClientAuthenticationCustomCodec;
-import com.hazelcast.core.Member;
-import com.hazelcast.instance.Node;
-import com.hazelcast.nio.Address;
-import com.hazelcast.nio.Connection;
+import com.hazelcast.instance.impl.Node;
+import com.hazelcast.cluster.Address;
+import com.hazelcast.internal.nio.Connection;
+import com.hazelcast.security.SimpleTokenCredentials;
 
-import java.util.List;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.UUID;
 
 /**
  * Custom Authentication with custom credential impl
@@ -37,29 +38,24 @@ public class AuthenticationCustomCredentialsMessageTask
     }
 
     @Override
-    protected boolean isOwnerConnection() {
-        return parameters.isOwnerConnection;
-    }
-
-    @Override
     protected String getClientType() {
         return parameters.clientType;
     }
 
     @Override
+    @SuppressWarnings("checkstyle:npathcomplexity")
     protected ClientAuthenticationCustomCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
         ClientAuthenticationCustomCodec.RequestParameters parameters = ClientAuthenticationCustomCodec
                 .decodeRequest(clientMessage);
-        String uuid = parameters.uuid;
-        String ownerUuid = parameters.ownerUuid;
-        if (uuid != null && uuid.length() > 0) {
-            principal = new ClientPrincipal(uuid, ownerUuid);
-        }
-        credentials = serializationService.toObject(parameters.credentials);
+        UUID uuid = parameters.uuid;
+        assert uuid != null;
+        clientUuid = uuid;
+        clusterName = parameters.clusterName;
+        credentials = new SimpleTokenCredentials(parameters.credentials);
         clientSerializationVersion = parameters.serializationVersion;
-        if (parameters.clientHazelcastVersionExist) {
-            clientVersion = parameters.clientHazelcastVersion;
-        }
+        clientVersion = parameters.clientHazelcastVersion;
+        clientName = parameters.clientName;
+        labels = Collections.unmodifiableSet(new HashSet<>(parameters.labels));
         return parameters;
     }
 
@@ -69,11 +65,11 @@ public class AuthenticationCustomCredentialsMessageTask
     }
 
     @Override
-    protected ClientMessage encodeAuth(byte status, Address thisAddress, String uuid, String ownerUuid, byte version,
-                                       List<Member> cleanedUpMembers) {
+    protected ClientMessage encodeAuth(byte status, Address thisAddress, UUID uuid, byte version,
+                                       int partitionCount, UUID clusterId) {
         return ClientAuthenticationCustomCodec
-                .encodeResponse(status, thisAddress, uuid, ownerUuid, version, getMemberBuildInfo().getVersion(),
-                        cleanedUpMembers);
+                .encodeResponse(status, thisAddress, uuid, version,
+                        getMemberBuildInfo().getVersion(), partitionCount, clusterId);
     }
 
     @Override

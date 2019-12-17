@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,27 +19,27 @@ package com.hazelcast.cache;
 import com.hazelcast.cache.impl.CachePartitionEventData;
 import com.hazelcast.cache.impl.CachePartitionSegment;
 import com.hazelcast.cache.impl.CacheService;
-import com.hazelcast.cache.impl.HazelcastServerCachingProvider;
 import com.hazelcast.cache.impl.operation.CacheReplicationOperation;
 import com.hazelcast.cache.impl.record.CacheRecord;
 import com.hazelcast.cache.impl.record.CacheRecordFactory;
+import com.hazelcast.cluster.Address;
+import com.hazelcast.cluster.Member;
+import com.hazelcast.cluster.impl.MemberImpl;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.Member;
-import com.hazelcast.instance.HazelcastInstanceImpl;
-import com.hazelcast.instance.HazelcastInstanceProxy;
-import com.hazelcast.instance.MemberImpl;
+import com.hazelcast.instance.impl.HazelcastInstanceImpl;
+import com.hazelcast.instance.impl.HazelcastInstanceProxy;
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.serialization.SerializationServiceBuilder;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
-import com.hazelcast.nio.Address;
-import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.ServiceNamespace;
+import com.hazelcast.internal.services.ServiceNamespace;
+import com.hazelcast.internal.util.Clock;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.version.MemberVersion;
 import org.junit.After;
@@ -57,13 +57,14 @@ import java.lang.reflect.Field;
 import java.net.UnknownHostException;
 import java.util.Collection;
 
+import static com.hazelcast.cache.CacheTestSupport.createServerCachingProvider;
 import static org.junit.Assert.assertEquals;
 
 /**
  * Serialization test class for JCache
  */
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class CacheSerializationTest extends HazelcastTestSupport {
 
     SerializationService service;
@@ -104,7 +105,7 @@ public class CacheSerializationTest extends HazelcastTestSupport {
         HazelcastInstance hazelcastInstance = factory.newHazelcastInstance();
 
         try {
-            CachingProvider provider = HazelcastServerCachingProvider.createCachingProvider(hazelcastInstance);
+            CachingProvider provider = createServerCachingProvider(hazelcastInstance);
             CacheManager manager = provider.getCacheManager();
 
             CompleteConfiguration configuration = new MutableConfiguration();
@@ -160,7 +161,7 @@ public class CacheSerializationTest extends HazelcastTestSupport {
 
     private CacheRecord createRecord(InMemoryFormat format, String value) {
         CacheRecordFactory factory = new CacheRecordFactory(format, service);
-        return factory.newRecord(value);
+        return factory.newRecordWithExpiry(value, Clock.currentTimeMillis(), -1);
     }
 
 }

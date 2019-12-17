@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,10 +16,11 @@
 
 package com.hazelcast.map.impl.query;
 
+import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import java.io.IOException;
@@ -63,20 +64,20 @@ public class QueryResultRow implements IdentifiedDataSerializable, Map.Entry<Dat
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MapDataSerializerHook.QUERY_RESULT_ROW;
     }
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeData(key);
-        out.writeData(value);
+        IOUtil.writeData(out, key);
+        IOUtil.writeData(out, value);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        key = in.readData();
-        value = in.readData();
+        key = IOUtil.readData(in);
+        value = IOUtil.readData(in);
     }
 
     @Override

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,10 +16,12 @@
 
 package com.hazelcast.map.impl.querycache.publisher;
 
-import com.hazelcast.core.IFunction;
 import com.hazelcast.map.impl.querycache.QueryCacheContext;
 import com.hazelcast.map.impl.querycache.accumulator.AccumulatorInfoSupplier;
-import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.impl.NodeEngine;
+
+import java.util.UUID;
+import java.util.function.Function;
 
 /**
  * Context for a publisher.
@@ -58,7 +60,7 @@ public interface PublisherContext {
      *
      * @return a helper function in order to register listener to {@code IMap}
      */
-    IFunction<String, String> getListenerRegistrator();
+    Function<String, UUID> getListenerRegistrator();
 
     /**
      * Returns {@link QueryCacheContext} on this node.
@@ -80,7 +82,7 @@ public interface PublisherContext {
      *
      * @param uuid client or node UUID of subscriber.
      */
-    void handleDisconnectedSubscriber(String uuid);
+    void handleDisconnectedSubscriber(UUID uuid);
 
     /**
      * Handles a reconnected subscriber. This method will be used
@@ -89,7 +91,7 @@ public interface PublisherContext {
      * @param uuid client or node UUID of subscriber.
      * @see #handleDisconnectedSubscriber
      */
-    void handleConnectedSubscriber(String uuid);
+    void handleConnectedSubscriber(UUID uuid);
 
     /**
      * Flushes this publisher context.

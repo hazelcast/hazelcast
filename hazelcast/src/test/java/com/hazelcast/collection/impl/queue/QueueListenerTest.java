@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,32 +16,34 @@
 
 package com.hazelcast.collection.impl.queue;
 
+import com.hazelcast.collection.IQueue;
+import com.hazelcast.collection.ItemEvent;
+import com.hazelcast.collection.ItemListener;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.ItemListenerConfig;
 import com.hazelcast.config.QueueConfig;
 import com.hazelcast.core.DistributedObjectEvent;
 import com.hazelcast.core.DistributedObjectListener;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IQueue;
-import com.hazelcast.core.ItemEvent;
-import com.hazelcast.core.ItemListener;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class QueueListenerTest extends HazelcastTestSupport {
 
     private static final String QUEUE_NAME = "Q";
@@ -110,11 +112,17 @@ public class QueueListenerTest extends HazelcastTestSupport {
         for (int i = 0; i < TOTAL_QUEUE_PUT / 2; i++) {
             queue.put(i);
         }
-        factory.newHazelcastInstance(config);
+        HazelcastInstance second = factory.newHazelcastInstance(config);
+        assertTrueEventually(() -> {
+            assertEquals(2,
+                    getNodeEngineImpl(instance).getEventService().getRegistrations(QueueService.SERVICE_NAME, QUEUE_NAME).size());
+            assertEquals(2,
+                    getNodeEngineImpl(second).getEventService().getRegistrations(QueueService.SERVICE_NAME, QUEUE_NAME).size());
+        });
         for (int i = 0; i < TOTAL_QUEUE_PUT / 4; i++) {
             queue.put(i);
         }
-        assertTrue(countdownItemListener.added.await(3, TimeUnit.SECONDS));
+        assertOpenEventually(countdownItemListener.added);
     }
 
     @Test
@@ -124,7 +132,7 @@ public class QueueListenerTest extends HazelcastTestSupport {
         IQueue<String> queue = instance.getQueue(queueName);
 
         TestItemListener listener = new TestItemListener(TOTAL_QUEUE_PUT);
-        String listenerId = queue.addItemListener(listener, true);
+        UUID listenerId = queue.addItemListener(listener, true);
 
         for (int i = 0; i < TOTAL_QUEUE_PUT / 2; i++) {
             queue.offer("item-" + i);

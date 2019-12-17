@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,44 +17,14 @@
 package com.hazelcast.internal.serialization.impl;
 
 import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.StreamSerializer;
 
 import java.io.IOException;
-import java.util.Iterator;
 import java.util.LinkedList;
 
-import static com.hazelcast.nio.Bits.NULL_ARRAY_LENGTH;
-
 /**
- * The {@link java.util.LinkedList} serializer
+ * The {@link LinkedList} serializer
  */
-public class LinkedListStreamSerializer implements StreamSerializer<LinkedList> {
-
-    @Override
-    public void write(ObjectDataOutput out, LinkedList linkedList) throws IOException {
-        int size = linkedList == null ? NULL_ARRAY_LENGTH : linkedList.size();
-        out.writeInt(size);
-        if (size > 0) {
-            Iterator iterator = linkedList.iterator();
-            while (iterator.hasNext()) {
-                out.writeObject(iterator.next());
-            }
-        }
-    }
-
-    @Override
-    public LinkedList read(ObjectDataInput in) throws IOException {
-        int size = in.readInt();
-        LinkedList result = null;
-        if (size > NULL_ARRAY_LENGTH) {
-            result = new LinkedList();
-            for (int i = 0; i < size; i++) {
-                result.add(i, in.readObject());
-            }
-        }
-        return result;
-    }
+public class LinkedListStreamSerializer<E> extends AbstractCollectionStreamSerializer<LinkedList<E>> {
 
     @Override
     public int getTypeId() {
@@ -62,6 +32,11 @@ public class LinkedListStreamSerializer implements StreamSerializer<LinkedList> 
     }
 
     @Override
-    public void destroy() {
+    public LinkedList<E> read(ObjectDataInput in) throws IOException {
+        int size = in.readInt();
+
+        LinkedList<E> collection = new LinkedList<>();
+
+        return deserializeEntries(in, size, collection);
     }
 }

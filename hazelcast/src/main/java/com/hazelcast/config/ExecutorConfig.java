@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.internal.config.ConfigDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
@@ -25,7 +26,7 @@ import java.io.IOException;
 /**
  * Contains the configuration for an {@link com.hazelcast.core.IExecutorService}.
  */
-public class ExecutorConfig implements IdentifiedDataSerializable {
+public class ExecutorConfig implements IdentifiedDataSerializable, NamedConfig {
 
     /**
      * The number of executor threads per Member for the Executor based on this configuration.
@@ -45,7 +46,7 @@ public class ExecutorConfig implements IdentifiedDataSerializable {
 
     private boolean statisticsEnabled = true;
 
-    private transient ExecutorConfigReadOnly readOnly;
+    private String splitBrainProtectionName;
 
     public ExecutorConfig() {
     }
@@ -64,19 +65,7 @@ public class ExecutorConfig implements IdentifiedDataSerializable {
         this.poolSize = config.poolSize;
         this.queueCapacity = config.queueCapacity;
         this.statisticsEnabled = config.statisticsEnabled;
-    }
-
-    /**
-     * Gets immutable version of this configuration.
-     *
-     * @return immutable version of this configuration
-     * @deprecated this method will be removed in 4.0; it is meant for internal usage only
-     */
-    public ExecutorConfigReadOnly getAsReadOnly() {
-        if (readOnly == null) {
-            readOnly = new ExecutorConfigReadOnly(this);
-        }
-        return readOnly;
+        this.splitBrainProtectionName = config.splitBrainProtectionName;
     }
 
     /**
@@ -162,12 +151,34 @@ public class ExecutorConfig implements IdentifiedDataSerializable {
         return this;
     }
 
+    /**
+     * Returns the split brain protection name for operations.
+     *
+     * @return the split brain protection name
+     */
+    public String getSplitBrainProtectionName() {
+        return splitBrainProtectionName;
+    }
+
+    /**
+     * Sets the split brain protection name for operations.
+     *
+     * @param splitBrainProtectionName the split brain protection name
+     * @return the updated configuration
+     */
+    public ExecutorConfig setSplitBrainProtectionName(String splitBrainProtectionName) {
+        this.splitBrainProtectionName = splitBrainProtectionName;
+        return this;
+    }
+
+
     @Override
     public String toString() {
         return "ExecutorConfig{"
                 + "name='" + name + '\''
                 + ", poolSize=" + poolSize
                 + ", queueCapacity=" + queueCapacity
+                + ", splitBrainProtectionName=" + splitBrainProtectionName
                 + '}';
     }
 
@@ -177,7 +188,7 @@ public class ExecutorConfig implements IdentifiedDataSerializable {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ConfigDataSerializerHook.EXECUTOR_CONFIG;
     }
 
@@ -187,6 +198,7 @@ public class ExecutorConfig implements IdentifiedDataSerializable {
         out.writeInt(poolSize);
         out.writeInt(queueCapacity);
         out.writeBoolean(statisticsEnabled);
+        out.writeUTF(splitBrainProtectionName);
     }
 
     @Override
@@ -195,9 +207,11 @@ public class ExecutorConfig implements IdentifiedDataSerializable {
         poolSize = in.readInt();
         queueCapacity = in.readInt();
         statisticsEnabled = in.readBoolean();
+        splitBrainProtectionName = in.readUTF();
     }
 
     @Override
+    @SuppressWarnings("checkstyle:npathcomplexity")
     public final boolean equals(Object o) {
         if (this == o) {
             return true;
@@ -217,6 +231,10 @@ public class ExecutorConfig implements IdentifiedDataSerializable {
         if (statisticsEnabled != that.statisticsEnabled) {
             return false;
         }
+        if (splitBrainProtectionName != null ? !splitBrainProtectionName.equals(that.splitBrainProtectionName)
+                : that.splitBrainProtectionName != null) {
+            return false;
+        }
         return name.equals(that.name);
     }
 
@@ -226,6 +244,7 @@ public class ExecutorConfig implements IdentifiedDataSerializable {
         result = 31 * result + poolSize;
         result = 31 * result + queueCapacity;
         result = 31 * result + (statisticsEnabled ? 1 : 0);
+        result = 31 * result + (splitBrainProtectionName != null ? splitBrainProtectionName.hashCode() : 0);
         return result;
     }
 }

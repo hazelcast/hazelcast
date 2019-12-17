@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,12 +17,14 @@
 package com.hazelcast.client;
 
 import com.hazelcast.core.HazelcastException;
+import com.hazelcast.spi.impl.operationservice.WrappableException;
 
 /**
  * This exception is thrown when an exception that is coming from server is not recognized by the protocol.
  * Class name of the original exception is included in the exception
  */
-public class UndefinedErrorCodeException extends HazelcastException {
+public class UndefinedErrorCodeException extends HazelcastException
+        implements WrappableException<UndefinedErrorCodeException> {
 
     private final String className;
 
@@ -32,9 +34,24 @@ public class UndefinedErrorCodeException extends HazelcastException {
     }
 
     /**
+     * Construct a new {@code UndefinedErrorCodeException} with {@code other} as its
+     * cause and {@code other}'s message.
+     * @param other
+     */
+    private UndefinedErrorCodeException(UndefinedErrorCodeException other) {
+        super(other.getMessage(), other);
+        this.className = other.className;
+    }
+
+    /**
      * @return name of the original class name
      */
     public String getOriginClassName() {
         return className;
+    }
+
+    @Override
+    public UndefinedErrorCodeException wrap() {
+        return new UndefinedErrorCodeException(this);
     }
 }

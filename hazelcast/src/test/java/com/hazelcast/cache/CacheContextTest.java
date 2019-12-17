@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,15 +18,14 @@ package com.hazelcast.cache;
 
 import com.hazelcast.cache.impl.CacheContext;
 import com.hazelcast.cache.impl.CacheService;
-import com.hazelcast.cache.impl.HazelcastServerCachingProvider;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.instance.TestUtil;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -44,56 +43,52 @@ import javax.cache.event.CacheEntryListenerException;
 import javax.cache.spi.CachingProvider;
 import java.io.Serializable;
 
+import static com.hazelcast.cache.CacheTestSupport.createServerCachingProvider;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class CacheContextTest extends HazelcastTestSupport {
+
+    private static final String CACHE_NAME = "MyCache";
+    private static final String CACHE_NAME_WITH_PREFIX = "/hz/" + CACHE_NAME;
 
     protected HazelcastInstance driverInstance;
     protected HazelcastInstance hazelcastInstance1;
     protected HazelcastInstance hazelcastInstance2;
+    protected CachingProvider provider;
 
-    protected CachingProvider initAndGetCachingProvider() {
+    @Before
+    public void setup() {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
         hazelcastInstance1 = factory.newHazelcastInstance();
         hazelcastInstance2 = factory.newHazelcastInstance();
+
         driverInstance = hazelcastInstance1;
-        return HazelcastServerCachingProvider.createCachingProvider(driverInstance);
+        provider = createServerCachingProvider(driverInstance);
     }
 
-    public static class TestListener
-            implements CacheEntryCreatedListener<String, String>, Serializable {
-
-        @Override
-        public void onCreated(Iterable<CacheEntryEvent<? extends String, ? extends String>> cacheEntryEvents)
-                throws CacheEntryListenerException {
-        }
-
+    @Test
+    public void cacheEntryListenerCountIncreasedAfterRegisterAndDecreasedAfterDeregister() {
+        cacheEntryListenerCountIncreasedAndDecreasedCorrectly(DecreaseType.DEREGISTER);
     }
 
-    protected CacheService getCacheService(HazelcastInstance instance) {
-        return TestUtil.getNode(instance).getNodeEngine().getService(CacheService.SERVICE_NAME);
+    @Test
+    public void cacheEntryListenerCountIncreasedAfterRegisterAndDecreasedAfterShutdown() {
+        cacheEntryListenerCountIncreasedAndDecreasedCorrectly(DecreaseType.SHUTDOWN);
     }
 
-    protected enum DecreaseType {
-
-        DEREGISTER,
-        SHUTDOWN,
-        TERMINATE
-
+    @Test
+    public void cacheEntryListenerCountIncreasedAfterRegisterAndDecreasedAfterTerminate() {
+        cacheEntryListenerCountIncreasedAndDecreasedCorrectly(DecreaseType.TERMINATE);
     }
 
     protected void cacheEntryListenerCountIncreasedAndDecreasedCorrectly(DecreaseType decreaseType) {
-        final String CACHE_NAME = "MyCache";
-        final String CACHE_NAME_WITH_PREFIX = "/hz/" + CACHE_NAME;
-
-        CachingProvider provider = initAndGetCachingProvider();
         CacheManager cacheManager = provider.getCacheManager();
-        CacheEntryListenerConfiguration<String, String> cacheEntryListenerConfig =
-                new MutableCacheEntryListenerConfiguration<String, String>(
-                        FactoryBuilder.factoryOf(new TestListener()), null, true, true);
+        CacheEntryListenerConfiguration<String, String> cacheEntryListenerConfig
+                = new MutableCacheEntryListenerConfiguration<String, String>(
+                FactoryBuilder.factoryOf(new TestListener()), null, true, true);
         CompleteConfiguration<String, String> cacheConfig = new MutableConfiguration<String, String>();
         Cache<String, String> cache = cacheManager.createCache(CACHE_NAME, cacheConfig);
 
@@ -104,14 +99,14 @@ public class CacheContextTest extends HazelcastTestSupport {
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertNotNull(cacheService1.getCacheContext(CACHE_NAME_WITH_PREFIX));
             }
         });
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertNotNull(cacheService2.getCacheContext(CACHE_NAME_WITH_PREFIX));
             }
         });
@@ -121,13 +116,13 @@ public class CacheContextTest extends HazelcastTestSupport {
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertEquals(1, cacheContext1.getCacheEntryListenerCount());
             }
         });
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertEquals(1, cacheContext2.getCacheEntryListenerCount());
             }
         });
@@ -148,31 +143,33 @@ public class CacheContextTest extends HazelcastTestSupport {
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertEquals(0, cacheContext1.getCacheEntryListenerCount());
             }
         });
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertEquals(0, cacheContext2.getCacheEntryListenerCount());
             }
         });
     }
 
-    @Test
-    public void cacheEntryListenerCountIncreasedAfterRegisterAndDecreasedAfterDeregister() {
-        cacheEntryListenerCountIncreasedAndDecreasedCorrectly(DecreaseType.DEREGISTER);
+    private CacheService getCacheService(HazelcastInstance instance) {
+        return getNodeEngineImpl(instance).getService(CacheService.SERVICE_NAME);
     }
 
-    @Test
-    public void cacheEntryListenerCountIncreasedAfterRegisterAndDecreasedAfterShutdown() {
-        cacheEntryListenerCountIncreasedAndDecreasedCorrectly(DecreaseType.SHUTDOWN);
+    protected enum DecreaseType {
+        DEREGISTER,
+        SHUTDOWN,
+        TERMINATE
     }
 
-    @Test
-    public void cacheEntryListenerCountIncreasedAfterRegisterAndDecreasedAfterTerminate() {
-        cacheEntryListenerCountIncreasedAndDecreasedCorrectly(DecreaseType.TERMINATE);
-    }
+    public static class TestListener implements CacheEntryCreatedListener<String, String>, Serializable {
 
+        @Override
+        public void onCreated(Iterable<CacheEntryEvent<? extends String, ? extends String>> cacheEntryEvents)
+                throws CacheEntryListenerException {
+        }
+    }
 }

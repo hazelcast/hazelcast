@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,17 +17,17 @@
 package com.hazelcast.internal.partition;
 
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.instance.Node;
+import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
 import com.hazelcast.internal.partition.impl.PartitionReplicaManager;
 import com.hazelcast.internal.partition.impl.PartitionServiceState;
 import com.hazelcast.internal.partition.impl.ReplicaFragmentSyncInfo;
-import com.hazelcast.nio.Address;
-import com.hazelcast.spi.ServiceNamespace;
+import com.hazelcast.cluster.Address;
+import com.hazelcast.internal.services.ServiceNamespace;
 import com.hazelcast.spi.impl.PartitionSpecificRunnable;
-import com.hazelcast.spi.partition.IPartition;
-import com.hazelcast.util.scheduler.ScheduledEntry;
+import com.hazelcast.internal.util.scheduler.ScheduledEntry;
 
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -40,25 +40,43 @@ import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-import static com.hazelcast.instance.TestUtil.getNode;
+import static com.hazelcast.instance.impl.TestUtil.getNode;
 import static com.hazelcast.internal.partition.InternalPartition.MAX_REPLICA_COUNT;
 import static com.hazelcast.test.HazelcastTestSupport.assertOpenEventually;
+import static com.hazelcast.test.starter.HazelcastProxyFactory.proxyObjectForStarter;
+import static com.hazelcast.test.starter.HazelcastStarterUtils.rethrowGuardianException;
+import static com.hazelcast.test.starter.ReflectionUtils.getDelegateFromMock;
+import static com.hazelcast.test.starter.ReflectionUtils.getFieldValueReflectively;
+import static java.lang.reflect.Proxy.isProxyClass;
 
+@SuppressWarnings("WeakerAccess")
 public final class TestPartitionUtils {
 
     private TestPartitionUtils() {
     }
 
     public static PartitionServiceState getPartitionServiceState(HazelcastInstance instance) {
-        return getPartitionServiceState(getNode(instance));
-    }
-
-    public static PartitionServiceState getPartitionServiceState(Node node) {
-        if (node == null) {
+        try {
+            Node node = getNode(instance);
+            InternalPartitionService partitionService = node.getPartitionService();
+            if (isProxyClass(instance.getClass())) {
+                try {
+                    // this is very ugly, but because of a direct field access to Node.nodeEngine in the MigrationManager
+                    // constructor, we cannot properly mock or proxy the PartitionReplicaStateChecker class
+                    Object delegate = getDelegateFromMock(partitionService);
+                    Object partitionReplicaStateChecker = getFieldValueReflectively(delegate, "partitionReplicaStateChecker");
+                    Method method = partitionReplicaStateChecker.getClass().getMethod("getPartitionServiceState");
+                    Object result = method.invoke(partitionReplicaStateChecker);
+                    return (PartitionServiceState) proxyObjectForStarter(TestPartitionUtils.class.getClassLoader(), result);
+                } catch (Exception e) {
+                    throw rethrowGuardianException(e);
+                }
+            } else {
+                return partitionService.getPartitionReplicaStateChecker().getPartitionServiceState();
+            }
+        } catch (IllegalArgumentException e) {
             return PartitionServiceState.SAFE;
         }
-        InternalPartitionServiceImpl partitionService = (InternalPartitionServiceImpl) node.getPartitionService();
-        return partitionService.getPartitionReplicaStateChecker().getPartitionServiceState();
     }
 
     public static Map<Integer, PartitionReplicaVersionsView> getAllReplicaVersions(List<HazelcastInstance> instances) {
@@ -70,8 +88,7 @@ public final class TestPartitionUtils {
     }
 
     public static Map<Integer, PartitionReplicaVersionsView> getOwnedReplicaVersions(Node node) {
-        Map<Integer, PartitionReplicaVersionsView> ownedReplicaVersions =
-                new HashMap<Integer, PartitionReplicaVersionsView>();
+        Map<Integer, PartitionReplicaVersionsView> ownedReplicaVersions = new HashMap<Integer, PartitionReplicaVersionsView>();
         collectOwnedReplicaVersions(node, ownedReplicaVersions);
         return ownedReplicaVersions;
     }
@@ -122,7 +139,7 @@ public final class TestPartitionUtils {
 
         for (HazelcastInstance instance : instances) {
             Node node = getNode(instance);
-            if (node != null && node.isMaster()) {
+            if (node.isMaster()) {
                 return getAllReplicaAddresses(node);
             }
         }

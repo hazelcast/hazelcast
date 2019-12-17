@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,7 @@ package com.hazelcast.spi.impl.proxyservice.impl.operations;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.SpiDataSerializerHook;
 import com.hazelcast.spi.impl.proxyservice.impl.ProxyServiceImpl;
 
@@ -41,7 +41,7 @@ public class DistributedObjectDestroyOperation
 
     @Override
     public void run() throws Exception {
-        ProxyServiceImpl proxyService = getService();
+        ProxyServiceImpl proxyService = getNodeEngine().getService(ProxyServiceImpl.SERVICE_NAME);
         proxyService.destroyLocalDistributedObject(serviceName, name, false);
     }
 
@@ -54,15 +54,14 @@ public class DistributedObjectDestroyOperation
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeUTF(serviceName);
-        out.writeObject(name);
-        // writing as object for backward-compatibility
+        out.writeUTF(name);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         serviceName = in.readUTF();
-        name = in.readObject();
+        name = in.readUTF();
     }
 
     @Override
@@ -71,7 +70,7 @@ public class DistributedObjectDestroyOperation
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return SpiDataSerializerHook.DIST_OBJECT_DESTROY;
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,17 +16,18 @@
 
 package com.hazelcast.map.impl.operation;
 
+import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.Operation;
+import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.spi.impl.operationservice.Operation;
 
 import java.io.IOException;
 import java.util.Set;
 
-import static com.hazelcast.util.SetUtil.createHashSet;
+import static com.hazelcast.internal.util.SetUtil.createHashSet;
 
 public class MultipleEntryOperationFactory extends AbstractMapOperationFactory {
 
@@ -53,7 +54,7 @@ public class MultipleEntryOperationFactory extends AbstractMapOperationFactory {
         out.writeUTF(name);
         out.writeInt(keys.size());
         for (Data key : keys) {
-            out.writeData(key);
+            IOUtil.writeData(out, key);
         }
         out.writeObject(entryProcessor);
     }
@@ -64,14 +65,14 @@ public class MultipleEntryOperationFactory extends AbstractMapOperationFactory {
         int size = in.readInt();
         this.keys = createHashSet(size);
         for (int i = 0; i < size; i++) {
-            Data key = in.readData();
+            Data key = IOUtil.readData(in);
             keys.add(key);
         }
         this.entryProcessor = in.readObject();
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MapDataSerializerHook.MULTIPLE_ENTRY_FACTORY;
     }
 }

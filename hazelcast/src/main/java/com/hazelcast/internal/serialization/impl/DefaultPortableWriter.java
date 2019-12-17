@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 
 package com.hazelcast.internal.serialization.impl;
 
-import com.hazelcast.nio.BufferObjectDataOutput;
+import com.hazelcast.internal.nio.BufferObjectDataOutput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.ClassDefinition;
 import com.hazelcast.nio.serialization.FieldDefinition;
@@ -28,9 +28,9 @@ import com.hazelcast.nio.serialization.PortableWriter;
 import java.io.IOException;
 import java.util.Set;
 
-import static com.hazelcast.nio.Bits.INT_SIZE_IN_BYTES;
-import static com.hazelcast.nio.Bits.NULL_ARRAY_LENGTH;
-import static com.hazelcast.util.SetUtil.createHashSet;
+import static com.hazelcast.internal.nio.Bits.INT_SIZE_IN_BYTES;
+import static com.hazelcast.internal.nio.Bits.NULL_ARRAY_LENGTH;
+import static com.hazelcast.internal.util.SetUtil.createHashSet;
 
 public class DefaultPortableWriter implements PortableWriter {
 
@@ -40,10 +40,10 @@ public class DefaultPortableWriter implements PortableWriter {
     private final int begin;
     private final int offset;
     private final Set<String> writtenFields;
+
     private boolean raw;
 
-    public DefaultPortableWriter(PortableSerializer serializer, BufferObjectDataOutput out, ClassDefinition cd)
-            throws IOException {
+    DefaultPortableWriter(PortableSerializer serializer, BufferObjectDataOutput out, ClassDefinition cd) throws IOException {
         this.serializer = serializer;
         this.out = out;
         this.cd = cd;
@@ -161,8 +161,7 @@ public class DefaultPortableWriter implements PortableWriter {
     }
 
     @Override
-    public void writeBooleanArray(String fieldName, boolean[] booleans)
-            throws IOException {
+    public void writeBooleanArray(String fieldName, boolean[] booleans) throws IOException {
         setPosition(fieldName, FieldType.BOOLEAN_ARRAY);
         out.writeBooleanArray(booleans);
     }
@@ -204,8 +203,7 @@ public class DefaultPortableWriter implements PortableWriter {
     }
 
     @Override
-    public void writeUTFArray(String fieldName, String[] values)
-            throws IOException {
+    public void writeUTFArray(String fieldName, String[] values) throws IOException {
         setPosition(fieldName, FieldType.UTF_ARRAY);
         out.writeUTFArray(values);
     }
@@ -222,7 +220,7 @@ public class DefaultPortableWriter implements PortableWriter {
         if (len > 0) {
             final int offset = out.position();
             out.writeZeroBytes(len * 4);
-            for (int i = 0; i < portables.length; i++) {
+            for (int i = 0; i < len; i++) {
                 Portable portable = portables[i];
                 checkPortableAttributes(fd, portable);
                 int position = out.position();

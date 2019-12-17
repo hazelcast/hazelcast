@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,11 +16,11 @@
 
 package com.hazelcast.internal.networking.nio.iobalancer;
 
-import com.hazelcast.internal.networking.nio.MigratableHandler;
+import com.hazelcast.internal.networking.nio.MigratablePipeline;
 import com.hazelcast.internal.networking.nio.NioThread;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
 import org.junit.Test;
@@ -32,87 +32,87 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class LoadTrackerTest {
 
-    private NioThread selector1;
-    private NioThread selector2;
+    private NioThread owner1;
+    private NioThread owner2;
 
-    private NioThread[] selectors;
+    private NioThread[] owner3;
     private LoadTracker loadTracker;
 
     @Before
     public void setUp() {
-        selector1 = mock(NioThread.class);
-        selector2 = mock(NioThread.class);
-        selectors = new NioThread[]{selector1, selector2};
+        owner1 = mock(NioThread.class);
+        owner2 = mock(NioThread.class);
+        owner3 = new NioThread[]{owner1, owner2};
 
         ILogger logger = mock(ILogger.class);
         when(logger.isFinestEnabled()).thenReturn(true);
 
-        loadTracker = new LoadTracker(selectors, logger);
+        loadTracker = new LoadTracker(owner3, logger);
     }
 
     @Test
     public void testUpdateImbalance() throws Exception {
-        MigratableHandler selector1Handler1 = mock(MigratableHandler.class);
-        when(selector1Handler1.getLoad()).thenReturn(0L)
+        MigratablePipeline owner1Pipeline1 = mock(MigratablePipeline.class);
+        when(owner1Pipeline1.load()).thenReturn(0L)
                 .thenReturn(100L);
-        when(selector1Handler1.getOwner())
-                .thenReturn(selector1);
-        loadTracker.addHandler(selector1Handler1);
+        when(owner1Pipeline1.owner())
+                .thenReturn(owner1);
+        loadTracker.addPipeline(owner1Pipeline1);
 
-        MigratableHandler selector2Handler1 = mock(MigratableHandler.class);
-        when(selector2Handler1.getLoad())
+        MigratablePipeline owner2Pipeline1 = mock(MigratablePipeline.class);
+        when(owner2Pipeline1.load())
                 .thenReturn(0L)
                 .thenReturn(200L);
-        when(selector2Handler1.getOwner())
-                .thenReturn(selector2);
-        loadTracker.addHandler(selector2Handler1);
+        when(owner2Pipeline1.owner())
+                .thenReturn(owner2);
+        loadTracker.addPipeline(owner2Pipeline1);
 
-        MigratableHandler selector2Handler3 = mock(MigratableHandler.class);
-        when(selector2Handler3.getLoad())
+        MigratablePipeline owner2Pipeline3 = mock(MigratablePipeline.class);
+        when(owner2Pipeline3.load())
                 .thenReturn(0L)
                 .thenReturn(100L);
-        when(selector2Handler3.getOwner())
-                .thenReturn(selector2);
-        loadTracker.addHandler(selector2Handler3);
+        when(owner2Pipeline3.owner())
+                .thenReturn(owner2);
+        loadTracker.addPipeline(owner2Pipeline3);
 
         LoadImbalance loadImbalance = loadTracker.updateImbalance();
-        assertEquals(0, loadImbalance.minimumEvents);
-        assertEquals(0, loadImbalance.maximumEvents);
+        assertEquals(0, loadImbalance.minimumLoad);
+        assertEquals(0, loadImbalance.maximumLoad);
 
         loadTracker.updateImbalance();
-        assertEquals(100, loadImbalance.minimumEvents);
-        assertEquals(300, loadImbalance.maximumEvents);
-        assertEquals(selector1, loadImbalance.destinationSelector);
-        assertEquals(selector2, loadImbalance.sourceSelector);
+        assertEquals(100, loadImbalance.minimumLoad);
+        assertEquals(300, loadImbalance.maximumLoad);
+        assertEquals(owner1, loadImbalance.dstOwner);
+        assertEquals(owner2, loadImbalance.srcOwner);
     }
 
     // there is no point in selecting a selector with a single handler as source.
     @Test
-    public void testUpdateImbalance_notUsingSingleHandlerSelectorAsSource() throws Exception {
-        MigratableHandler selector1Handler1 = mock(MigratableHandler.class);
+    public void testUpdateImbalance_notUsingSinglePipelineOwnerAsSource() throws Exception {
+        MigratablePipeline owmer1Pipeline1 = mock(MigratablePipeline.class);
         // the first selector has a handler with a large number of events
-        when(selector1Handler1.getLoad()).thenReturn(10000L);
-        when(selector1Handler1.getOwner()).thenReturn(selector1);
-        loadTracker.addHandler(selector1Handler1);
+        when(owmer1Pipeline1.load()).thenReturn(10000L);
+        when(owmer1Pipeline1.owner()).thenReturn(owner1);
+        loadTracker.addPipeline(owmer1Pipeline1);
 
-        MigratableHandler selector2Handler = mock(MigratableHandler.class);
-        when(selector2Handler.getLoad()).thenReturn(200L);
-        when(selector2Handler.getOwner()).thenReturn(selector2);
-        loadTracker.addHandler(selector2Handler);
+        MigratablePipeline owner2Pipeline = mock(MigratablePipeline.class);
+        when(owner2Pipeline.load()).thenReturn(200L);
+        when(owner2Pipeline.owner()).thenReturn(owner2);
+        loadTracker.addPipeline(owner2Pipeline);
 
-        MigratableHandler selector2Handler2 = mock(MigratableHandler.class);
-        when(selector2Handler2.getLoad()).thenReturn(200L);
-        when(selector2Handler2.getOwner()).thenReturn(selector2);
-        loadTracker.addHandler(selector2Handler2);
+        MigratablePipeline owner2Pipeline2 = mock(MigratablePipeline.class);
+        when(owner2Pipeline2.load()).thenReturn(200L);
+        when(owner2Pipeline2.owner()).thenReturn(owner2);
+        loadTracker.addPipeline(owner2Pipeline2);
 
         LoadImbalance loadImbalance = loadTracker.updateImbalance();
 
-        assertEquals(400, loadImbalance.minimumEvents);
-        assertEquals(400, loadImbalance.maximumEvents);
-        assertEquals(selector2, loadImbalance.destinationSelector);
-        assertEquals(selector2, loadImbalance.sourceSelector);
+        assertEquals(400, loadImbalance.minimumLoad);
+        assertEquals(400, loadImbalance.maximumLoad);
+        assertEquals(owner2, loadImbalance.dstOwner);
+        assertEquals(owner2, loadImbalance.srcOwner);
     }
 }

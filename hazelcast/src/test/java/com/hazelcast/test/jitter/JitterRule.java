@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,8 +24,8 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 
 import static com.hazelcast.test.JenkinsDetector.isOnJenkins;
-import static com.hazelcast.util.QuickMath.nextPowerOfTwo;
-import static com.hazelcast.util.StringUtil.LINE_SEPARATOR;
+import static com.hazelcast.internal.util.QuickMath.nextPowerOfTwo;
+import static com.hazelcast.internal.util.StringUtil.LINE_SEPARATOR;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
@@ -47,7 +47,7 @@ public class JitterRule implements TestRule {
      * Number of buckets to be created. Jitter monitor records a floating window
      * where the length of the window can be calculated as
      * {@code AGGREGATION_INTERVAL_MILLIS * CAPACITY}
-     *
+     * <p>
      * It has to be a power of two.
      */
     public static final int CAPACITY = nextPowerOfTwo(720);

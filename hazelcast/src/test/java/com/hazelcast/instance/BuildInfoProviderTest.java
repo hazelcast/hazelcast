@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,10 +24,9 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.util.Properties;
-import java.util.regex.Pattern;
-
+import static com.hazelcast.instance.BuildInfoProvider.HAZELCAST_INTERNAL_OVERRIDE_ENTERPRISE;
 import static com.hazelcast.instance.BuildInfoProvider.HAZELCAST_INTERNAL_OVERRIDE_VERSION;
+import static com.hazelcast.internal.util.StringUtil.VERSION_PATTERN;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -35,9 +34,6 @@ import static org.junit.Assert.assertTrue;
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
 public class BuildInfoProviderTest extends HazelcastTestSupport {
-
-    // major.minor.patch-RC-SNAPSHOT
-    private static final Pattern VERSION_PATTERN = Pattern.compile("^[\\d]+\\.[\\d]+(\\.[\\d]+)?(\\-[\\w]+)?(\\-SNAPSHOT)?$");
 
     @After
     public void cleanup() {
@@ -47,29 +43,6 @@ public class BuildInfoProviderTest extends HazelcastTestSupport {
     @Test
     public void testConstructor() {
         assertUtilityConstructor(BuildInfoProvider.class);
-    }
-
-    @Test
-    public void testVersionPattern() {
-        assertTrue(VERSION_PATTERN.matcher("3.1").matches());
-        assertTrue(VERSION_PATTERN.matcher("3.1-SNAPSHOT").matches());
-        assertTrue(VERSION_PATTERN.matcher("3.1-RC").matches());
-        assertTrue(VERSION_PATTERN.matcher("3.1-RC1-SNAPSHOT").matches());
-        assertTrue(VERSION_PATTERN.matcher("3.1.1").matches());
-        assertTrue(VERSION_PATTERN.matcher("3.1.1-RC").matches());
-        assertTrue(VERSION_PATTERN.matcher("3.1.1-SNAPSHOT").matches());
-        assertTrue(VERSION_PATTERN.matcher("3.1.1-RC1-SNAPSHOT").matches());
-
-        assertFalse(VERSION_PATTERN.matcher("${project.version}").matches());
-        assertFalse(VERSION_PATTERN.matcher("project.version").matches());
-        assertFalse(VERSION_PATTERN.matcher("3").matches());
-        assertFalse(VERSION_PATTERN.matcher("3.RC").matches());
-        assertFalse(VERSION_PATTERN.matcher("3.SNAPSHOT").matches());
-        assertFalse(VERSION_PATTERN.matcher("3-RC").matches());
-        assertFalse(VERSION_PATTERN.matcher("3-SNAPSHOT").matches());
-        assertFalse(VERSION_PATTERN.matcher("3.").matches());
-        assertFalse(VERSION_PATTERN.matcher("3.1.RC").matches());
-        assertFalse(VERSION_PATTERN.matcher("3.1.SNAPSHOT").matches());
     }
 
     @Test
@@ -125,5 +98,27 @@ public class BuildInfoProviderTest extends HazelcastTestSupport {
         BuildInfo buildInfo = BuildInfoProvider.getBuildInfo();
         assertEquals("99.99.99", buildInfo.getVersion());
         System.clearProperty(HAZELCAST_INTERNAL_OVERRIDE_VERSION);
+    }
+
+    @Test
+    public void testOverrideEdition() {
+        System.setProperty(HAZELCAST_INTERNAL_OVERRIDE_ENTERPRISE, "true");
+        BuildInfo buildInfo = BuildInfoProvider.getBuildInfo();
+        assertTrue(buildInfo.isEnterprise());
+        System.clearProperty(HAZELCAST_INTERNAL_OVERRIDE_ENTERPRISE);
+    }
+
+    @Test
+    public void testEdition_whenNotOverridden() {
+        BuildInfo buildInfo = BuildInfoProvider.getBuildInfo();
+        assertFalse(buildInfo.isEnterprise());
+    }
+
+    @Test
+    public void testCommitId() {
+        BuildInfo buildInfo = BuildInfoProvider.getBuildInfo();
+        String revision = buildInfo.getRevision();
+        String commitId = buildInfo.getCommitId();
+        assertTrue(commitId.startsWith(revision));
     }
 }

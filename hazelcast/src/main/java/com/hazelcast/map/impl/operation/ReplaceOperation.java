@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,9 +17,10 @@
 package com.hazelcast.map.impl.operation;
 
 import com.hazelcast.map.impl.MapDataSerializerHook;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.spi.impl.operationservice.MutatingOperation;
 
-public class ReplaceOperation extends BasePutOperation {
+public class ReplaceOperation extends BasePutOperation implements MutatingOperation {
 
     private boolean successful;
 
@@ -31,9 +32,9 @@ public class ReplaceOperation extends BasePutOperation {
     }
 
     @Override
-    public void run() {
+    protected void runInternal() {
         Object oldValue = recordStore.replace(dataKey, dataValue);
-        dataOldValue = mapServiceContext.toData(oldValue);
+        this.oldValue = mapServiceContext.toData(oldValue);
         successful = oldValue != null;
     }
 
@@ -43,20 +44,20 @@ public class ReplaceOperation extends BasePutOperation {
     }
 
     @Override
-    public void afterRun() {
+    protected void afterRunInternal() {
         if (successful) {
-            super.afterRun();
+            super.afterRunInternal();
         }
     }
 
 
     @Override
     public Object getResponse() {
-        return dataOldValue;
+        return oldValue;
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MapDataSerializerHook.REPLACE;
     }
 }

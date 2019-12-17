@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,18 +17,20 @@
 package com.hazelcast.cache.impl.record;
 
 import com.hazelcast.cache.impl.CacheDataSerializerHook;
+import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.internal.serialization.Data;
 
 import java.io.IOException;
 
 /**
  * Implementation of {@link com.hazelcast.cache.impl.record.CacheRecord} where value has an internal serialized format.
  */
-public class CacheDataRecord extends AbstractCacheRecord<Data> {
+public class CacheDataRecord extends AbstractCacheRecord<Data, Data> {
 
     private Data value;
+    private Data expiryPolicy;
 
     // Deserialization constructor
     public CacheDataRecord() {
@@ -50,19 +52,31 @@ public class CacheDataRecord extends AbstractCacheRecord<Data> {
     }
 
     @Override
+    public void setExpiryPolicy(Data expiryPolicy) {
+        this.expiryPolicy = expiryPolicy;
+    }
+
+    @Override
+    public Data getExpiryPolicy() {
+        return expiryPolicy;
+    }
+
+    @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         super.writeData(out);
-        out.writeData(value);
+        IOUtil.writeData(out, value);
+        IOUtil.writeData(out, expiryPolicy);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         super.readData(in);
-        value = in.readData();
+        value = IOUtil.readData(in);
+        expiryPolicy = IOUtil.readData(in);
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return CacheDataSerializerHook.CACHE_DATA_RECORD;
     }
 }

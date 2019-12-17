@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,7 @@ package com.hazelcast.spring.context;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IMap;
+import com.hazelcast.map.IMap;
 import com.hazelcast.spring.CustomSpringJUnit4ClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.AfterClass;
@@ -39,7 +39,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static com.hazelcast.util.ExceptionUtil.sneakyThrow;
+import static com.hazelcast.internal.util.ExceptionUtil.sneakyThrow;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -126,29 +126,29 @@ public class TestManagedContext {
     @Test
     public void testRunnableTask_withScheduledExecutor_onLocalMember() throws Exception {
         instance1.getScheduledExecutorService("test")
-                 .scheduleOnMember(new SomeRunnableTask(), instance1.getCluster().getLocalMember(), 0, TimeUnit.SECONDS)
-                 .get();
+                .scheduleOnMember(new SomeRunnableTask(), instance1.getCluster().getLocalMember(), 0, TimeUnit.SECONDS)
+                .get();
     }
 
     @Test
     public void testRunnableTask_withScheduledExecutor_onRemoteMember() throws Exception {
         instance1.getScheduledExecutorService("test")
-                 .scheduleOnMember(new SomeRunnableTask(), instance2.getCluster().getLocalMember(), 0, TimeUnit.SECONDS)
-                 .get();
+                .scheduleOnMember(new SomeRunnableTask(), instance2.getCluster().getLocalMember(), 0, TimeUnit.SECONDS)
+                .get();
     }
 
     @Test
     public void testCallableTask_withScheduledExecutor_onLocalMember() throws Exception {
         instance1.getScheduledExecutorService("test")
-                 .scheduleOnMember(new SomeCallableTask(), instance1.getCluster().getLocalMember(), 0, TimeUnit.SECONDS)
-                 .get();
+                .scheduleOnMember(new SomeCallableTask(), instance1.getCluster().getLocalMember(), 0, TimeUnit.SECONDS)
+                .get();
     }
 
     @Test
     public void testCallableTask_withScheduledExecutor_onRemoteMember() throws Exception {
         instance1.getScheduledExecutorService("test")
-                 .scheduleOnMember(new SomeCallableTask(), instance2.getCluster().getLocalMember(), 0, TimeUnit.SECONDS)
-                 .get();
+                .scheduleOnMember(new SomeCallableTask(), instance2.getCluster().getLocalMember(), 0, TimeUnit.SECONDS)
+                .get();
     }
 
     @Test

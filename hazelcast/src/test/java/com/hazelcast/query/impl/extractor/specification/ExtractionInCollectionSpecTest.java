@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,15 +20,15 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.query.QueryException;
 import com.hazelcast.query.impl.extractor.AbstractExtractionTest;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.internal.util.UuidUtil;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
 import java.util.Collection;
-import java.util.UUID;
 
 import static com.hazelcast.config.InMemoryFormat.BINARY;
 import static com.hazelcast.config.InMemoryFormat.OBJECT;
@@ -51,16 +51,16 @@ import static org.junit.Assume.assumeThat;
 
 /**
  * Specification test that verifies the behavior of corner-cases extraction in arrays and collections.
- * <p/>
+ * <p>
  * Extraction mechanism: IN-BUILT REFLECTION EXTRACTION
- * <p/>
+ * <p>
  * This test is parametrised on two axes (see the parametrisationData() method):
  * - in memory format
  * - indexing
  * - extraction in collections and arrays
  */
 @RunWith(Parameterized.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class ExtractionInCollectionSpecTest extends AbstractExtractionTest {
 
     private static final Person BOND = person("Bond",
@@ -112,7 +112,7 @@ public class ExtractionInCollectionSpecTest extends AbstractExtractionTest {
     protected void doWithMap() {
         // init fully populated object to handle nulls properly
         if (mv == PORTABLE) {
-            String key = UUID.randomUUID().toString();
+            String key = UuidUtil.newUnsecureUuidString();
             map.put(key, KRUEGER.getPortable());
             map.remove(key);
         }

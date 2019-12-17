@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,30 +16,37 @@
 
 package com.hazelcast.config;
 
-import static org.junit.Assert.assertSame;
-
-import java.util.Locale;
-
+import com.hazelcast.config.MultiMapConfig.ValueCollectionType;
+import com.hazelcast.internal.config.MultiMapConfigReadOnly;
+import com.hazelcast.spi.merge.DiscardMergePolicy;
+import com.hazelcast.spi.merge.HigherHitsMergePolicy;
+import com.hazelcast.spi.merge.PutIfAbsentMergePolicy;
+import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.annotation.ParallelJVMTest;
+import com.hazelcast.test.annotation.QuickTest;
+import nl.jqno.equalsverifier.EqualsVerifier;
+import nl.jqno.equalsverifier.Warning;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import com.hazelcast.config.MultiMapConfig.ValueCollectionType;
-import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.annotation.ParallelTest;
-import com.hazelcast.test.annotation.QuickTest;
+import java.util.Locale;
+
+import static com.hazelcast.test.HazelcastTestSupport.assumeDifferentHashCodes;
+import static org.junit.Assert.assertSame;
 
 /**
  * Tests for {@link MultiMapConfig} class.
  */
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class MultiMapConfigTest {
+
+    private MultiMapConfig multiMapConfig = new MultiMapConfig();
 
     @Test
     public void testValueCollectionTypeSelection() {
         Locale locale = Locale.getDefault();
-        MultiMapConfig multiMapConfig = new MultiMapConfig();
         multiMapConfig.setValueCollectionType("list");
         try {
             assertSame(ValueCollectionType.LIST, multiMapConfig.getValueCollectionType());
@@ -48,5 +55,30 @@ public class MultiMapConfigTest {
         } finally {
             Locale.setDefault(locale);
         }
+    }
+
+    @Test
+    public void testMergePolicy() {
+        MergePolicyConfig mergePolicyConfig = new MergePolicyConfig()
+                .setPolicy(HigherHitsMergePolicy.class.getName())
+                .setBatchSize(2342);
+
+        multiMapConfig.setMergePolicyConfig(mergePolicyConfig);
+
+        assertSame(mergePolicyConfig, multiMapConfig.getMergePolicyConfig());
+    }
+
+    @Test
+    public void testEqualsAndHashCode() {
+        assumeDifferentHashCodes();
+        EqualsVerifier.forClass(MultiMapConfig.class)
+                .suppress(Warning.NONFINAL_FIELDS, Warning.NULL_FIELDS)
+                .withPrefabValues(MultiMapConfigReadOnly.class,
+                        new MultiMapConfigReadOnly(new MultiMapConfig("red")),
+                        new MultiMapConfigReadOnly(new MultiMapConfig("black")))
+                .withPrefabValues(MergePolicyConfig.class,
+                        new MergePolicyConfig(PutIfAbsentMergePolicy.class.getName(), 100),
+                        new MergePolicyConfig(DiscardMergePolicy.class.getName(), 200))
+                .verify();
     }
 }

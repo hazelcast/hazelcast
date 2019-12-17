@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 package com.hazelcast.core;
 
 import com.hazelcast.config.Config;
+import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
@@ -78,7 +79,7 @@ public class HazelcastTest extends HazelcastTestSupport {
     @Test
     public void getOrCreateHazelcastInstance_noneExisting() {
         Config config = new Config(randomString());
-        config.getGroupConfig().setName(randomString());
+        config.setClusterName(randomString());
 
         HazelcastInstance hz = Hazelcast.getOrCreateHazelcastInstance(config);
 
@@ -91,7 +92,7 @@ public class HazelcastTest extends HazelcastTestSupport {
     @Test
     public void getOrCreateHazelcastInstance_existing() {
         Config config = new Config(randomString());
-        config.getGroupConfig().setName(randomString());
+        config.setClusterName(randomString());
 
         HazelcastInstance hz1 = Hazelcast.newHazelcastInstance(config);
 
@@ -114,7 +115,7 @@ public class HazelcastTest extends HazelcastTestSupport {
         assertTrue(hc1 == hc3);
     }
 
-    @Test(expected = DuplicateInstanceNameException.class)
+    @Test(expected = InvalidConfigurationException.class)
     public void testNewInstanceByNameFail() {
         Config config = new Config();
         config.setInstanceName("test");

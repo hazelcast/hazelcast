@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,17 +16,19 @@
 
 package com.hazelcast.client.impl;
 
-import com.hazelcast.client.ClientEndpoint;
-import com.hazelcast.client.impl.client.ClientPrincipal;
-import com.hazelcast.core.ClientType;
+import com.hazelcast.client.Client;
+import com.hazelcast.client.impl.statistics.ClientStatistics;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
-import com.hazelcast.instance.BuildInfo;
+import com.hazelcast.internal.metrics.MetricConsumer;
+import com.hazelcast.internal.metrics.MetricDescriptor;
+import com.hazelcast.internal.metrics.MetricTarget;
+import com.hazelcast.internal.metrics.MetricsCollectionContext;
+import com.hazelcast.internal.metrics.impl.MetricsCompressor;
+import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.nio.Connection;
-import com.hazelcast.nio.tcp.TcpIpConnection;
 import com.hazelcast.security.Credentials;
-import com.hazelcast.spi.EventService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.spi.impl.eventservice.EventService;
 import com.hazelcast.transaction.TransactionContext;
 import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.impl.xa.XATransactionContextImpl;
@@ -36,46 +38,48 @@ import javax.security.auth.login.LoginContext;
 import javax.security.auth.login.LoginException;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
+import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.atomic.AtomicReference;
+
+import static com.hazelcast.internal.metrics.MetricTarget.MANAGEMENT_CENTER;
 
 /**
- * The {@link com.hazelcast.client.ClientEndpoint} and {@link com.hazelcast.core.Client} implementation.
+ * The {@link com.hazelcast.client.impl.ClientEndpoint} and {@link Client} implementation.
  */
 public final class ClientEndpointImpl implements ClientEndpoint {
+    private static final String METRICS_TAG_CLIENT = "client";
+    private static final String METRICS_TAG_TIMESTAMP = "timestamp";
 
-    private final ClientEngineImpl clientEngine;
+    private final ClientEngine clientEngine;
+    private final ILogger logger;
     private final NodeEngineImpl nodeEngine;
     private final Connection connection;
-    private final ConcurrentMap<String, TransactionContext> transactionContextMap
-            = new ConcurrentHashMap<String, TransactionContext>();
-    private final ConcurrentHashMap<String, Callable> removeListenerActions = new ConcurrentHashMap<String, Callable>();
+    private final ConcurrentMap<UUID, TransactionContext> transactionContextMap
+            = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<UUID, Callable> removeListenerActions = new ConcurrentHashMap<>();
     private final SocketAddress socketAddress;
     private final long creationTime;
 
     private LoginContext loginContext;
-    private ClientPrincipal principal;
-    private boolean firstConnection;
+    private UUID clientUuid;
     private Credentials credentials;
     private volatile boolean authenticated;
-    private int clientVersion;
-    private String clientVersionString;
-    private long authenticationCorrelationId;
-    private volatile String stats;
+    private String clientVersion;
+    private final AtomicReference<ClientStatistics> statsRef = new AtomicReference<>();
+    private String clientName;
+    private Set<String> labels;
 
-    public ClientEndpointImpl(ClientEngineImpl clientEngine, NodeEngineImpl nodeEngine, Connection connection) {
+    public ClientEndpointImpl(ClientEngine clientEngine, NodeEngineImpl nodeEngine, Connection connection) {
         this.clientEngine = clientEngine;
+        this.logger = clientEngine.getLogger(getClass());
         this.nodeEngine = nodeEngine;
         this.connection = connection;
-        if (connection instanceof TcpIpConnection) {
-            TcpIpConnection tcpIpConnection = (TcpIpConnection) connection;
-            socketAddress = tcpIpConnection.getRemoteSocketAddress();
-        } else {
-            socketAddress = null;
-        }
-        this.clientVersion = BuildInfo.UNKNOWN_HAZELCAST_VERSION;
-        this.clientVersionString = "Unknown";
+        this.socketAddress = connection.getRemoteSocketAddress();
+        this.clientVersion = "Unknown";
         this.creationTime = System.currentTimeMillis();
     }
 
@@ -85,8 +89,8 @@ public final class ClientEndpointImpl implements ClientEndpoint {
     }
 
     @Override
-    public String getUuid() {
-        return principal != null ? principal.getUuid() : null;
+    public UUID getUuid() {
+        return clientUuid;
     }
 
     @Override
@@ -104,25 +108,15 @@ public final class ClientEndpointImpl implements ClientEndpoint {
         return loginContext != null ? loginContext.getSubject() : null;
     }
 
-    public boolean isFirstConnection() {
-        return firstConnection;
-    }
-
     @Override
-    public void authenticated(ClientPrincipal principal, Credentials credentials, boolean firstConnection,
-                              String clientVersion, long authCorrelationId) {
-        this.principal = principal;
-        this.firstConnection = firstConnection;
+    public void authenticated(UUID clientUuid, Credentials credentials, String clientVersion,
+                              long authCorrelationId, String clientName, Set<String> labels) {
+        this.clientUuid = clientUuid;
         this.credentials = credentials;
         this.authenticated = true;
-        this.authenticationCorrelationId = authCorrelationId;
         this.setClientVersion(clientVersion);
-    }
-
-    @Override
-    public void authenticated(ClientPrincipal principal) {
-        this.principal = principal;
-        this.authenticated = true;
+        this.clientName = clientName;
+        this.labels = labels;
     }
 
     @Override
@@ -131,24 +125,24 @@ public final class ClientEndpointImpl implements ClientEndpoint {
     }
 
     @Override
-    public int getClientVersion() {
-        return clientVersion;
-    }
-
-    @Override
     public void setClientVersion(String version) {
-        clientVersionString = version;
-        clientVersion = BuildInfo.calculateVersion(version);
+        clientVersion = version;
     }
 
     @Override
-    public void setClientStatistics(String stats) {
-        this.stats = stats;
+    public void setClientStatistics(ClientStatistics stats) {
+        statsRef.set(stats);
     }
 
     @Override
-    public String getClientStatistics() {
-        return stats;
+    public String getClientAttributes() {
+        ClientStatistics statistics = statsRef.get();
+        return statistics != null ? statistics.clientAttributes() : null;
+    }
+
+    @Override
+    public ClientStatistics getClientStatistics() {
+        return statsRef.get();
     }
 
     @Override
@@ -157,38 +151,22 @@ public final class ClientEndpointImpl implements ClientEndpoint {
     }
 
     @Override
-    public ClientType getClientType() {
-        ClientType type;
-        switch (connection.getType()) {
-            case JAVA_CLIENT:
-                type = ClientType.JAVA;
-                break;
-            case CSHARP_CLIENT:
-                type = ClientType.CSHARP;
-                break;
-            case CPP_CLIENT:
-                type = ClientType.CPP;
-                break;
-            case PYTHON_CLIENT:
-                type = ClientType.PYTHON;
-                break;
-            case RUBY_CLIENT:
-                type = ClientType.RUBY;
-                break;
-            case NODEJS_CLIENT:
-                type = ClientType.NODEJS;
-                break;
-            case BINARY_CLIENT:
-                type = ClientType.OTHER;
-                break;
-            default:
-                throw new IllegalArgumentException("Invalid connection type: " + connection.getType());
-        }
-        return type;
+    public String getClientType() {
+        return connection.getConnectionType();
     }
 
     @Override
-    public TransactionContext getTransactionContext(String txnId) {
+    public String getName() {
+        return clientName;
+    }
+
+    @Override
+    public Set<String> getLabels() {
+        return labels;
+    }
+
+    @Override
+    public TransactionContext getTransactionContext(UUID txnId) {
         final TransactionContext transactionContext = transactionContextMap.get(txnId);
         if (transactionContext == null) {
             throw new TransactionException("No transaction context found for txnId:" + txnId);
@@ -207,28 +185,23 @@ public final class ClientEndpointImpl implements ClientEndpoint {
     }
 
     @Override
-    public void removeTransactionContext(String txnId) {
+    public void removeTransactionContext(UUID txnId) {
         transactionContextMap.remove(txnId);
     }
 
     @Override
-    public void addListenerDestroyAction(final String service, final String topic, final String id) {
+    public void addListenerDestroyAction(final String service, final String topic, final UUID id) {
         final EventService eventService = clientEngine.getEventService();
-        addDestroyAction(id, new Callable<Boolean>() {
-            @Override
-            public Boolean call() {
-                return eventService.deregisterListener(service, topic, id);
-            }
-        });
+        addDestroyAction(id, () -> eventService.deregisterListener(service, topic, id));
     }
 
     @Override
-    public void addDestroyAction(String registrationId, Callable<Boolean> removeAction) {
+    public void addDestroyAction(UUID registrationId, Callable<Boolean> removeAction) {
         removeListenerActions.put(registrationId, removeAction);
     }
 
     @Override
-    public boolean removeDestroyAction(String id) {
+    public boolean removeDestroyAction(UUID id) {
         return removeListenerActions.remove(id) != null;
     }
 
@@ -238,7 +211,7 @@ public final class ClientEndpointImpl implements ClientEndpoint {
             try {
                 removeAction.call();
             } catch (Exception e) {
-                getLogger().warning("Exception during remove listener action", e);
+                logger.warning("Exception during remove listener action", e);
             }
         }
         removeListenerActions.clear();
@@ -259,32 +232,55 @@ public final class ClientEndpointImpl implements ClientEndpoint {
             try {
                 context.rollbackTransaction();
             } catch (HazelcastInstanceNotActiveException e) {
-                getLogger().finest(e);
+                logger.finest(e);
             } catch (Exception e) {
-                getLogger().warning(e);
+                logger.warning(e);
             }
         }
         authenticated = false;
-    }
-
-    private ILogger getLogger() {
-        return clientEngine.getLogger(getClass());
     }
 
     @Override
     public String toString() {
         return "ClientEndpoint{"
                 + "connection=" + connection
-                + ", principal='" + principal
-                + ", firstConnection=" + firstConnection
+                + ", clientUuid='" + clientUuid
                 + ", authenticated=" + authenticated
-                + ", clientVersion=" + clientVersionString
+                + ", clientVersion=" + clientVersion
                 + ", creationTime=" + creationTime
-                + ", latest statistics=" + stats
+                + ", latest clientAttributes=" + getClientAttributes()
                 + '}';
     }
 
-    public long getAuthenticationCorrelationId() {
-        return authenticationCorrelationId;
+    @Override
+    public void provideDynamicMetrics(MetricDescriptor descriptor, MetricsCollectionContext context) {
+        ClientStatistics clientStatistics = statsRef.get();
+        if (clientStatistics != null && clientStatistics.metricsBlob() != null) {
+            long timestamp = clientStatistics.timestamp();
+            byte[] metricsBlob = clientStatistics.metricsBlob();
+            MetricConsumer consumer = new MetricConsumer() {
+                @Override
+                public void consumeLong(MetricDescriptor descriptor, long value) {
+                    context.collect(enhanceDescriptor(descriptor, timestamp), value);
+                }
+
+                @Override
+                public void consumeDouble(MetricDescriptor descriptor, double value) {
+                    context.collect(enhanceDescriptor(descriptor, timestamp), value);
+                }
+
+                private MetricDescriptor enhanceDescriptor(MetricDescriptor descriptor, long timestamp) {
+                    return descriptor
+                        // we exclude all metric targets here besides MANAGEMENT_CENTER
+                        // since we want to send the client-side metrics only to MC
+                        .withExcludedTargets(MetricTarget.ALL_TARGETS)
+                        .withIncludedTarget(MANAGEMENT_CENTER)
+                        // we add "client" and "timestamp" tags for MC
+                        .withTag(METRICS_TAG_CLIENT, getUuid().toString())
+                        .withTag(METRICS_TAG_TIMESTAMP, Long.toString(timestamp));
+                }
+            };
+            MetricsCompressor.extractMetrics(metricsBlob, consumer);
+        }
     }
 }

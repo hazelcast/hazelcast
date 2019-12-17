@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,24 +18,28 @@ package com.hazelcast.query.impl.predicates;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.BinaryInterface;
+import com.hazelcast.internal.serialization.BinaryInterface;
 import com.hazelcast.query.Predicate;
+import com.hazelcast.query.impl.Comparables;
 import com.hazelcast.query.impl.Index;
-import com.hazelcast.query.impl.IndexImpl;
 import com.hazelcast.query.impl.QueryContext;
 import com.hazelcast.query.impl.QueryableEntry;
 
 import java.io.IOException;
-import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
+
+import static com.hazelcast.query.impl.predicates.PredicateUtils.isNull;
 
 /**
  * Equal Predicate
  */
 @BinaryInterface
-public class EqualPredicate extends AbstractIndexAwarePredicate implements NegatablePredicate {
+public class EqualPredicate extends AbstractIndexAwarePredicate implements NegatablePredicate, RangePredicate {
 
-    protected Comparable value;
+    private static final long serialVersionUID = 1L;
+
+    Comparable value;
 
     public EqualPredicate() {
     }
@@ -51,16 +55,17 @@ public class EqualPredicate extends AbstractIndexAwarePredicate implements Negat
 
     @Override
     public Set<QueryableEntry> filter(QueryContext queryContext) {
-        Index index = getIndex(queryContext);
+        Index index = matchIndex(queryContext, QueryContext.IndexMatchHint.PREFER_UNORDERED);
         return index.getRecords(value);
     }
 
-    protected boolean applyForSingleAttributeValue(Map.Entry mapEntry, Comparable attributeValue) {
+    protected boolean applyForSingleAttributeValue(Comparable attributeValue) {
         if (attributeValue == null) {
-            return value == null || value == IndexImpl.NULL;
+            return isNull(value);
         }
-        value = convert(mapEntry, attributeValue, value);
-        return attributeValue.equals(value);
+        value = convert(attributeValue, value);
+        attributeValue = (Comparable) convertEnumValue(attributeValue);
+        return Comparables.equal(attributeValue, value);
     }
 
     @Override
@@ -76,6 +81,38 @@ public class EqualPredicate extends AbstractIndexAwarePredicate implements Negat
     }
 
     @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (!super.equals(o)) {
+            return false;
+        }
+        if (!(o instanceof EqualPredicate)) {
+            return false;
+        }
+
+        EqualPredicate that = (EqualPredicate) o;
+        if (!that.canEqual(this)) {
+            return false;
+        }
+
+        return Objects.equals(value, that.value);
+    }
+
+    @Override
+    public boolean canEqual(Object other) {
+        return (other instanceof EqualPredicate);
+    }
+
+    @Override
+    public int hashCode() {
+        int result = super.hashCode();
+        result = 31 * result + (value != null ? value.hashCode() : 0);
+        return result;
+    }
+
+    @Override
     public String toString() {
         return attributeName + "=" + value;
     }
@@ -86,7 +123,33 @@ public class EqualPredicate extends AbstractIndexAwarePredicate implements Negat
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return PredicateDataSerializerHook.EQUAL_PREDICATE;
     }
+
+    @Override
+    public String getAttribute() {
+        return attributeName;
+    }
+
+    @Override
+    public Comparable getFrom() {
+        return value;
+    }
+
+    @Override
+    public boolean isFromInclusive() {
+        return true;
+    }
+
+    @Override
+    public Comparable getTo() {
+        return value;
+    }
+
+    @Override
+    public boolean isToInclusive() {
+        return true;
+    }
+
 }

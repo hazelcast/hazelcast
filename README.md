@@ -11,7 +11,7 @@ enterprise-ready and developer-friendly in-memory data grid solution.
 * Distributed implementation of `java.util.concurrent.ExecutorService`.
 * Distributed `MultiMap` for one-to-many relationships.
 * Distributed `Topic` for publish/subscribe messaging.
-* Distributed Query, MapReduce and Aggregators.
+* Distributed Query and Aggregators.
 * Synchronous (write-through) and asynchronous (write-behind) persistence.
 * Transaction support.
 * Specification compliant JCache implementation.
@@ -79,26 +79,26 @@ Pull latest from repo `git pull origin master` and use Maven install (or package
 
 Hazelcast has 3 testing profiles:
 
-* **Default**: Type `mvn test` to run quick/integration tests (those can be run in-parallel without using network).
-* **Slow Tests**: Type `mvn test -P slow-test` to run tests those are either slow or cannot be run in-parallel.
-* **All Tests**: Type `mvn test -P all-tests` to run all test serially using network.
+* **Default**: Type `mvn test` to run quick/integration tests (those can be run in parallel without using network).
+* **Slow Tests**: Type `mvn test -P slow-test` to run tests that are either slow or cannot be run in parallel.
+* **All Tests**: Type `mvn test -P all-tests` to run all tests serially using network.
 
-### Checkstyle and Findbugs
+### Checkstyle and SpotBugs
 
-In each Pull Request, we do static analyzing on the changes.
-Run the following commands locally to check if your contribution is checkstyle and findbugs compatible.
-
-```
-mvn clean compile -P findbugs
-```
+Hazelcast uses static code analysis tools to check if a Pull Request is ready for merge.
+Run the following commands locally to check if your contribution is Checkstyle and SpotBugs compatible.
 
 ```
 mvn clean validate -P checkstyle
 ```
 
+```
+mvn clean compile -P spotbugs
+```
+
 ### Contributing to Hazelcast
 
-We encourage pull requests and process them promptly.
+We encourage Pull Requests and process them promptly.
 
 To contribute:
 
@@ -120,6 +120,6 @@ Hazelcast is available under the Apache 2 License. Please see the [Licensing sec
 
 #### Copyright
 
-Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
 
 Visit [www.hazelcast.com](http://www.hazelcast.com/) for more info.

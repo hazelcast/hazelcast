@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,23 +23,21 @@ import com.hazelcast.map.MapInterceptor;
  */
 public interface MapServiceContextInterceptorSupport {
 
-    void interceptAfterGet(String mapName, Object value);
+    Object interceptGet(InterceptorRegistry interceptorRegistry, Object value);
 
-    Object interceptPut(String mapName, Object oldValue, Object newValue);
+    void interceptAfterGet(InterceptorRegistry interceptorRegistry, Object value);
 
-    void interceptAfterPut(String mapName, Object newValue);
+    Object interceptPut(InterceptorRegistry interceptorRegistry, Object oldValue, Object newValue);
 
-    Object interceptRemove(String mapName, Object value);
+    void interceptAfterPut(InterceptorRegistry interceptorRegistry, Object newValue);
 
-    void interceptAfterRemove(String mapName, Object value);
+    Object interceptRemove(InterceptorRegistry interceptorRegistry, Object value);
+
+    void interceptAfterRemove(InterceptorRegistry interceptorRegistry, Object value);
 
     String generateInterceptorId(String mapName, MapInterceptor interceptor);
 
     void addInterceptor(String id, String mapName, MapInterceptor interceptor);
 
-    void removeInterceptor(String mapName, String id);
-
-    Object interceptGet(String mapName, Object value);
-
-    boolean hasInterceptor(String mapName);
+    boolean removeInterceptor(String mapName, String id);
 }

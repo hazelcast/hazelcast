@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 package com.hazelcast.security;
 
 import com.hazelcast.config.PermissionConfig;
+import com.hazelcast.internal.nio.Connection;
 
 import javax.security.auth.Subject;
 import javax.security.auth.login.LoginContext;
@@ -35,21 +36,27 @@ public interface SecurityContext {
 
     /**
      * Creates member {@link LoginContext}.
-     *
+     * @param clusterName cluster name received from the connecting member
      * @param credentials member credentials
+     * @param connection member connection
+     *
      * @return {@link LoginContext}
-     * @throws LoginException
+     * @throws LoginException in case of any exceptional case
      */
-    LoginContext createMemberLoginContext(Credentials credentials) throws LoginException;
+    LoginContext createMemberLoginContext(String clusterName, Credentials credentials, Connection connection)
+            throws LoginException;
 
     /**
      * Creates client {@link LoginContext}.
      *
+     * @param clusterName cluster name reported on the client protocol
      * @param credentials client credentials
+     * @param connection client connection
      * @return {@link LoginContext}
-     * @throws LoginException
+     * @throws LoginException in case of any exceptional case
      */
-    LoginContext createClientLoginContext(Credentials credentials) throws LoginException;
+    LoginContext createClientLoginContext(String clusterName, Credentials credentials, Connection connection)
+            throws LoginException;
 
     /**
      * Returns current {@link ICredentialsFactory}.
@@ -63,7 +70,7 @@ public interface SecurityContext {
      *
      * @param subject the current subject
      * @param permission the specified permission for the subject
-     * @throws AccessControlException
+     * @throws AccessControlException if the specified permission has not been granted to the subject
      */
     void checkPermission(Subject subject, Permission permission) throws AccessControlException;
 
@@ -76,7 +83,7 @@ public interface SecurityContext {
      * @param objectName
      * @param methodName
      * @param parameters
-     * @throws AccessControlException
+     * @throws AccessControlException if access is denied
      */
     void interceptBefore(Credentials credentials, String serviceName, String objectName,
                          String methodName, Object[] parameters) throws AccessControlException;
@@ -101,6 +108,16 @@ public interface SecurityContext {
      * @return result of callable
      */
     <V> SecureCallable<V> createSecureCallable(Subject subject, Callable<V> callable);
+
+    /**
+     * Creates secure callable that runs in a sandbox.
+     *
+     * @param <V>      return type of callable
+     * @param subject
+     * @param runnable
+     * @return Will always return null after {@link Runnable} finishes running.
+     */
+    <V> SecureCallable<?> createSecureCallable(Subject subject, Runnable runnable);
 
     /**
      * Destroys {@link SecurityContext} and all security elements.

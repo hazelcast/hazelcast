@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,19 +16,24 @@
 
 package com.hazelcast.spi.impl.eventservice.impl;
 
-import com.hazelcast.nio.Packet;
-import com.hazelcast.util.executor.StripedRunnable;
+import com.hazelcast.cluster.Address;
+import com.hazelcast.internal.nio.Packet;
+import com.hazelcast.replicatedmap.ReplicatedMapCantBeCreatedOnLiteMemberException;
+import com.hazelcast.internal.util.executor.StripedRunnable;
+
+import static com.hazelcast.internal.util.EmptyStatement.ignore;
 
 /**
  * An extension of the {@link EventProcessor} which logs and swallows any exception while processing the event.
  * The {@link #orderKey} for this processor is equal to the packet partition ID. This means that when running
- * inside a {@link com.hazelcast.util.executor.StripedExecutor}, all events for the same partition ID will be ordered.
+ * inside a {@link com.hazelcast.internal.util.executor.StripedExecutor}, all events for the same partition ID will be ordered.
  *
- * @see EventServiceImpl#sendEvent(com.hazelcast.nio.Address, EventEnvelope, int)
+ * @see EventServiceImpl#sendEvent(Address, EventEnvelope, int)
  */
 public class RemoteEventProcessor extends EventProcessor implements StripedRunnable {
-    private EventServiceImpl eventService;
-    private Packet packet;
+
+    private final EventServiceImpl eventService;
+    private final Packet packet;
 
     public RemoteEventProcessor(EventServiceImpl eventService, Packet packet) {
         super(eventService, null, packet.getPartitionId());
@@ -39,8 +44,13 @@ public class RemoteEventProcessor extends EventProcessor implements StripedRunna
     @Override
     public void run() {
         try {
-            EventEnvelope eventEnvelope = (EventEnvelope) eventService.nodeEngine.toObject(packet);
+            EventEnvelope eventEnvelope = eventService.nodeEngine.toObject(packet);
             process(eventEnvelope);
+        } catch (ReplicatedMapCantBeCreatedOnLiteMemberException e) {
+            // this happens when there is a lite member in the cluster
+            // and a data member creates a ReplicatedMap proxy
+            // (this is totally expected and doesn't need logging)
+            ignore(e);
         } catch (Exception e) {
             eventService.logger.warning("Error while logging processing event", e);
         }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,27 +31,31 @@ public class PortableDataStructure {
         static final int FACTORY_ID = 1;
         static final int ID = 5;
 
-        public String name;
-        public EnginePortable engine;
-        public Portable[] wheels;
-        public String[] model;
+        String name;
+        EnginePortable engine;
+        Portable[] wheels;
+        String[] model;
 
-        public CarPortable(String name, EnginePortable engine) {
+        CarPortable(String name, EnginePortable engine) {
             this.name = name;
             this.engine = engine;
-            this.wheels = new Portable[]{new WheelPortable("FL"), new WheelPortable("FR"),
-                    new WheelPortable("RL"), new WheelPortable("RR")};
+            this.wheels = new Portable[]{
+                    new WheelPortable("FL"),
+                    new WheelPortable("FR"),
+                    new WheelPortable("RL"),
+                    new WheelPortable("RR"),
+            };
             this.model = new String[]{"911", "GT"};
         }
 
-        public CarPortable(String name, EnginePortable engine, WheelPortable... wheels) {
+        CarPortable(String name, EnginePortable engine, WheelPortable... wheels) {
             this.name = name;
             this.engine = engine;
             this.wheels = wheels;
             this.model = new String[]{"911", "GT"};
         }
 
-        public CarPortable() {
+        CarPortable() {
         }
 
         public int getFactoryId() {
@@ -89,7 +93,6 @@ public class PortableDataStructure {
                 return false;
             }
             return engine != null ? engine.equals(that.engine) : that.engine == null;
-
         }
 
         @Override
@@ -101,17 +104,19 @@ public class PortableDataStructure {
     }
 
     static class EnginePortable implements Portable, Comparable<EnginePortable> {
+
         static final int FACTORY_ID = 1;
         static final int ID = 8;
-        public Integer power;
-        public ChipPortable chip;
 
-        public EnginePortable(int power) {
+        Integer power;
+        ChipPortable chip;
+
+        EnginePortable(int power) {
             this.power = power;
             this.chip = new ChipPortable();
         }
 
-        public EnginePortable() {
+        EnginePortable() {
             this.chip = new ChipPortable();
         }
 
@@ -158,15 +163,17 @@ public class PortableDataStructure {
     }
 
     static class ChipPortable implements Portable, Comparable<ChipPortable> {
+
         static final int FACTORY_ID = 1;
         static final int ID = 6;
-        public Integer power;
 
-        public ChipPortable(int power) {
+        Integer power;
+
+        ChipPortable(int power) {
             this.power = power;
         }
 
-        public ChipPortable() {
+        ChipPortable() {
             this.power = 15;
         }
 
@@ -196,7 +203,6 @@ public class PortableDataStructure {
             }
             ChipPortable that = (ChipPortable) o;
             return power.equals(that.power);
-
         }
 
         @Override
@@ -211,21 +217,23 @@ public class PortableDataStructure {
     }
 
     static class WheelPortable implements Portable, Comparable<WheelPortable> {
+
         static final int FACTORY_ID = 1;
         static final int ID = 7;
-        public String name;
-        public ChipPortable chip;
-        public Portable chips[];
-        public int serial[];
 
-        public WheelPortable(String name) {
+        String name;
+        ChipPortable chip;
+        Portable[] chips;
+        int[] serial;
+
+        WheelPortable(String name) {
             this.name = name;
             this.chip = new ChipPortable(100);
             this.chips = new Portable[]{new ChipPortable(20), new ChipPortable(40)};
             this.serial = new int[]{41, 12, 79, 18, 102};
         }
 
-        public WheelPortable() {
+        WheelPortable() {
         }
 
         public int getFactoryId() {
@@ -278,11 +286,13 @@ public class PortableDataStructure {
     }
 
     static class XPortable implements Portable, Comparable<XPortable> {
+
         static final int FACTORY_ID = 1;
         static final int ID = 10;
-        public Portable chips[];
 
-        public XPortable() {
+        Portable[] chips;
+
+        XPortable() {
             this.chips = new Portable[]{new YPortable()};
         }
 
@@ -319,11 +329,13 @@ public class PortableDataStructure {
     }
 
     static class YPortable implements Portable, Comparable<YPortable> {
+
         static final int FACTORY_ID = 1;
         static final int ID = 9;
-        public int serial[];
 
-        public YPortable() {
+        int[] serial;
+
+        YPortable() {
             this.serial = new int[]{41};
         }
 
@@ -360,6 +372,7 @@ public class PortableDataStructure {
     }
 
     static class CarPortableFactory implements PortableFactory {
+
         static final int ID = 1;
 
         @Override
@@ -381,5 +394,4 @@ public class PortableDataStructure {
             }
         }
     }
-
 }

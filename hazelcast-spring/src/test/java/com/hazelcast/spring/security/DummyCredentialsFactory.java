@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,21 +16,27 @@
 
 package com.hazelcast.spring.security;
 
-import com.hazelcast.config.GroupConfig;
+import javax.security.auth.callback.CallbackHandler;
+
 import com.hazelcast.security.Credentials;
 import com.hazelcast.security.ICredentialsFactory;
-
-import java.util.Properties;
+import com.hazelcast.security.UsernamePasswordCredentials;
 
 public class DummyCredentialsFactory implements ICredentialsFactory {
 
+    private final Credentials credentials;
+
+    public DummyCredentialsFactory(String username, String password) {
+        credentials = new UsernamePasswordCredentials(username, password);
+    }
+
     @Override
-    public void configure(GroupConfig groupConfig, Properties properties) {
+    public void configure(CallbackHandler callbackHandler) {
     }
 
     @Override
     public Credentials newCredentials() {
-        return null;
+        return credentials;
     }
 
     @Override

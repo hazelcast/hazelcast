@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,9 +17,9 @@
 package com.hazelcast.internal.serialization.impl;
 
 import com.hazelcast.internal.serialization.InternalSerializationService;
-import com.hazelcast.nio.Bits;
+import com.hazelcast.internal.nio.Bits;
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Before;
@@ -27,6 +27,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.io.IOException;
 import java.nio.ByteOrder;
 import java.util.Arrays;
 
@@ -43,33 +44,33 @@ import static org.mockito.Mockito.verify;
  * ByteArrayObjectDataOutput Tester.
  */
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class ByteArrayObjectDataOutputTest {
 
     private InternalSerializationService mockSerializationService;
     private ByteArrayObjectDataOutput out;
 
-    private static byte[] TEST_DATA = new byte[]{1, 2, 3};
+    private static final byte[] TEST_DATA = new byte[]{1, 2, 3};
 
     @Before
-    public void before() throws Exception {
+    public void before() {
         mockSerializationService = mock(InternalSerializationService.class);
         out = new ByteArrayObjectDataOutput(10, mockSerializationService, ByteOrder.BIG_ENDIAN);
     }
 
     @After
-    public void after() throws Exception {
+    public void after() {
         out.close();
     }
 
     @Test
-    public void testWriteForPositionB() throws Exception {
+    public void testWriteForPositionB() {
         out.write(1, 5);
         assertEquals(5, out.buffer[1]);
     }
 
     @Test
-    public void testWriteForBOffLen() throws Exception {
+    public void testWriteForBOffLen() {
         byte[] zeroBytes = new byte[20];
         out.write(zeroBytes, 0, 20);
         byte[] bytes = Arrays.copyOfRange(out.buffer, 0, 20);
@@ -79,18 +80,23 @@ public class ByteArrayObjectDataOutputTest {
     }
 
     @Test(expected = IndexOutOfBoundsException.class)
-    public void testWriteForBOffLen_negativeOff() throws Exception {
+    public void testWriteForBOffLen_negativeOff() {
         out.write(TEST_DATA, -1, 3);
     }
 
     @Test(expected = IndexOutOfBoundsException.class)
-    public void testWriteForBOffLen_negativeLen() throws Exception {
+    public void testWriteForBOffLen_negativeLen() {
         out.write(TEST_DATA, 0, -3);
     }
 
     @Test(expected = IndexOutOfBoundsException.class)
-    public void testWriteForBOffLen_OffLenHigherThenSize() throws Exception {
+    public void testWriteForBOffLen_OffLenHigherThenSize() {
         out.write(TEST_DATA, 0, -3);
+    }
+
+    @Test(expected = NullPointerException.class)
+    public void testWrite_whenBufferIsNull() {
+        out.write(null, 0, 0);
     }
 
     @Test
@@ -290,7 +296,16 @@ public class ByteArrayObjectDataOutputTest {
     }
 
     @Test
-    public void testEnsureAvailable() throws Exception {
+    public void testWriteShortForPositionVAndByteOrder() throws IOException {
+        short expected = 42;
+        out.pos = 2;
+        out.writeShort(42, LITTLE_ENDIAN);
+        short actual = Bits.readShortL(out.buffer, 2);
+        assertEquals(expected, actual);
+    }
+
+    @Test
+    public void testEnsureAvailable() {
         out.buffer = null;
         out.ensureAvailable(5);
 
@@ -298,7 +313,7 @@ public class ByteArrayObjectDataOutputTest {
     }
 
     @Test
-    public void testEnsureAvailable_smallLen() throws Exception {
+    public void testEnsureAvailable_smallLen() {
         out.buffer = null;
         out.ensureAvailable(1);
 
@@ -312,29 +327,29 @@ public class ByteArrayObjectDataOutputTest {
     }
 
     @Test
-    public void testPosition() throws Exception {
+    public void testPosition() {
         out.pos = 21;
         assertEquals(21, out.position());
     }
 
     @Test
-    public void testPositionNewPos() throws Exception {
+    public void testPositionNewPos() {
         out.position(1);
         assertEquals(1, out.pos);
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void testPositionNewPos_negativePos() throws Exception {
+    public void testPositionNewPos_negativePos() {
         out.position(-1);
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void testPositionNewPos_highPos() throws Exception {
+    public void testPositionNewPos_highPos() {
         out.position(out.buffer.length + 1);
     }
 
     @Test
-    public void testAvailable() throws Exception {
+    public void testAvailable() {
         int available = out.available();
         out.buffer = null;
         int availableWhenBufferNull = out.available();
@@ -344,7 +359,7 @@ public class ByteArrayObjectDataOutputTest {
     }
 
     @Test
-    public void testToByteArray() throws Exception {
+    public void testToByteArray() {
         byte[] arrayWhenPosZero = out.toByteArray();
         out.buffer = null;
         byte[] arrayWhenBufferNull = out.toByteArray();
@@ -354,35 +369,35 @@ public class ByteArrayObjectDataOutputTest {
     }
 
     @Test
-    public void testClear() throws Exception {
+    public void testClear() {
         out.clear();
         assertEquals(0, out.position());
         assertEquals(10, out.available());
     }
 
     @Test
-    public void testClear_bufferNull() throws Exception {
+    public void testClear_bufferNull() {
         out.buffer = null;
         out.clear();
         assertNull(out.buffer);
     }
 
     @Test
-    public void testClear_bufferLen_lt_initX8() throws Exception {
+    public void testClear_bufferLen_lt_initX8() {
         out.ensureAvailable(10 * 10);
         out.clear();
         assertEquals(10 * 8, out.available());
     }
 
     @Test
-    public void testClose() throws Exception {
+    public void testClose() {
         out.close();
         assertEquals(0, out.position());
         assertNull(out.buffer);
     }
 
     @Test
-    public void testGetByteOrder() throws Exception {
+    public void testGetByteOrder() {
         ByteArrayObjectDataOutput outLE = new ByteArrayObjectDataOutput(10, mockSerializationService, LITTLE_ENDIAN);
         ByteArrayObjectDataOutput outBE = new ByteArrayObjectDataOutput(10, mockSerializationService, BIG_ENDIAN);
 
@@ -391,8 +406,7 @@ public class ByteArrayObjectDataOutputTest {
     }
 
     @Test
-    public void testToString() throws Exception {
+    public void testToString() {
         assertNotNull(out.toString());
     }
-
-} 
+}

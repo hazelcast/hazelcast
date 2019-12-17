@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,8 @@
 package com.hazelcast.query;
 
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IMap;
+import com.hazelcast.map.IMap;
+import com.hazelcast.query.PredicateBuilder.EntryObject;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
@@ -38,7 +39,7 @@ public class PredicateBuilderTest extends HazelcastTestSupport {
     public void get_keyAttribute() {
         HazelcastInstance hz = createHazelcastInstance();
 
-        EntryObject entryObject = new PredicateBuilder().getEntryObject();
+        EntryObject entryObject = Predicates.newPredicateBuilder().getEntryObject();
         Predicate predicate = entryObject.key().get("id").equal("10").and(entryObject.get("name").equal("value1"));
 
         IMap<Id, Value> hazelcastLookupMap = hz.getMap("someMap");
@@ -56,7 +57,7 @@ public class PredicateBuilderTest extends HazelcastTestSupport {
     public void get_key() {
         HazelcastInstance hz = createHazelcastInstance();
 
-        EntryObject entryObject = new PredicateBuilder().getEntryObject();
+        EntryObject entryObject = Predicates.newPredicateBuilder().getEntryObject();
         Predicate predicate = entryObject.key().equal(10L);
 
         IMap<Integer, Integer> hazelcastLookupMap = hz.getMap("someMap");
@@ -73,7 +74,7 @@ public class PredicateBuilderTest extends HazelcastTestSupport {
     public void get_this() {
         HazelcastInstance hz = createHazelcastInstance();
 
-        EntryObject entryObject = new PredicateBuilder().getEntryObject();
+        EntryObject entryObject = Predicates.newPredicateBuilder().getEntryObject();
         Predicate predicate = entryObject.get("this").equal(1L);
 
         IMap<Integer, Integer> hazelcastLookupMap = hz.getMap("someMap");
@@ -90,7 +91,7 @@ public class PredicateBuilderTest extends HazelcastTestSupport {
     public void get_attribute() {
         HazelcastInstance hz = createHazelcastInstance();
 
-        EntryObject entryObject = new PredicateBuilder().getEntryObject();
+        EntryObject entryObject = Predicates.newPredicateBuilder().getEntryObject();
         Predicate predicate = entryObject.get("id").equal("10");
 
         IMap<Integer, Id> hazelcastLookupMap = hz.getMap("someMap");
@@ -104,7 +105,7 @@ public class PredicateBuilderTest extends HazelcastTestSupport {
         assertContains(result, new Id("10"));
     }
 
-    private static class Id implements Serializable {
+    private static final class Id implements Serializable {
 
         private String id;
 
@@ -138,7 +139,7 @@ public class PredicateBuilderTest extends HazelcastTestSupport {
         }
     }
 
-    private static class Value implements Serializable {
+    private static final class Value implements Serializable {
 
         private String name;
 

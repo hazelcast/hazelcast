@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,6 +35,7 @@ public final class GeneratedBuildProperties {
     public static final String VERSION = "${project.version}";
     public static final String BUILD = "${timestamp}";
     public static final String REVISION = "${git.commit.id.abbrev}";
+    public static final String COMMIT_ID = "${git.commit.id}";
     public static final String DISTRIBUTION = "${hazelcast.distribution}";
     public static final String SERIALIZATION_VERSION = "${hazelcast.serialization.version}";
 

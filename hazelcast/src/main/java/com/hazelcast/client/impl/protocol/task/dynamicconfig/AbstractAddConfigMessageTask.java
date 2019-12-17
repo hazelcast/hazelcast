@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,23 +19,23 @@ package com.hazelcast.client.impl.protocol.task.dynamicconfig;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.task.AbstractMessageTask;
 import com.hazelcast.config.ListenerConfig;
-import com.hazelcast.core.ExecutionCallback;
-import com.hazelcast.core.ICompletableFuture;
-import com.hazelcast.instance.Node;
+import com.hazelcast.config.MergePolicyConfig;
+import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.dynamicconfig.ClusterWideConfigurationService;
-import com.hazelcast.nio.Connection;
+import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.security.permission.ConfigPermission;
 
 import java.security.Permission;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.BiConsumer;
 
 /**
  * Base implementation for dynamic add***Config methods.
  */
 public abstract class AbstractAddConfigMessageTask<P> extends AbstractMessageTask<P>
-        implements ExecutionCallback<Object> {
+        implements BiConsumer<Object, Throwable> {
 
     private static final ConfigPermission CONFIG_PERMISSION = new ConfigPermission();
 
@@ -69,18 +69,25 @@ public abstract class AbstractAddConfigMessageTask<P> extends AbstractMessageTas
     public final void processMessage() {
         IdentifiedDataSerializable config = getConfig();
         ClusterWideConfigurationService service = getService(ClusterWideConfigurationService.SERVICE_NAME);
-        ICompletableFuture<Object> future = service.broadcastConfigAsync(config);
-        future.andThen(this);
+        if (checkStaticConfigDoesNotExist(config)) {
+            service.broadcastConfigAsync(config)
+                   .whenCompleteAsync(this);
+        } else {
+            sendResponse(null);
+        }
     }
 
     @Override
-    public void onResponse(Object response) {
-        sendResponse(response);
+    public void accept(Object response, Throwable throwable) {
+        if (throwable == null) {
+            sendResponse(response);
+        } else {
+            handleProcessingFailure(throwable);
+        }
     }
 
-    @Override
-    public void onFailure(Throwable t) {
-        handleProcessingFailure(t);
+    protected MergePolicyConfig mergePolicyConfig(String mergePolicy, int batchSize) {
+        return new MergePolicyConfig(mergePolicy, batchSize);
     }
 
     protected List<? extends ListenerConfig> adaptListenerConfigs(List<ListenerConfigHolder> listenerConfigHolders) {
@@ -96,4 +103,6 @@ public abstract class AbstractAddConfigMessageTask<P> extends AbstractMessageTas
     }
 
     protected abstract IdentifiedDataSerializable getConfig();
+
+    protected abstract boolean checkStaticConfigDoesNotExist(IdentifiedDataSerializable config);
 }

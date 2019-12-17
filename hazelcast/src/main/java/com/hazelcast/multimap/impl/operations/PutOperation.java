@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,19 +17,21 @@
 package com.hazelcast.multimap.impl.operations;
 
 import com.hazelcast.core.EntryEventType;
+import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.multimap.impl.MultiMapContainer;
 import com.hazelcast.multimap.impl.MultiMapDataSerializerHook;
 import com.hazelcast.multimap.impl.MultiMapRecord;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.Operation;
+import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.spi.impl.operationservice.MutatingOperation;
 
 import java.io.IOException;
 import java.util.Collection;
 import java.util.List;
 
-public class PutOperation extends MultiMapBackupAwareOperation {
+public class PutOperation extends AbstractBackupAwareMultiMapOperation implements MutatingOperation {
 
     private Data value;
     private int index = -1;
@@ -65,6 +67,7 @@ public class PutOperation extends MultiMapBackupAwareOperation {
     @Override
     public void afterRun() throws Exception {
         if (Boolean.TRUE.equals(response)) {
+            getOrCreateContainer().update();
             publishEvent(EntryEventType.ADDED, dataKey, value, null);
         }
     }
@@ -88,18 +91,18 @@ public class PutOperation extends MultiMapBackupAwareOperation {
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeInt(index);
-        out.writeData(value);
+        IOUtil.writeData(out, value);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         index = in.readInt();
-        value = in.readData();
+        value = IOUtil.readData(in);
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MultiMapDataSerializerHook.PUT;
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,14 +16,15 @@
 
 package com.hazelcast.map.impl.query;
 
-import com.hazelcast.spi.serialization.SerializationService;
-import com.hazelcast.util.IterationType;
+import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.util.IterationType;
 
 import java.util.AbstractSet;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.function.Predicate;
 
 public class QueryResultCollection<E> extends AbstractSet<E> {
 
@@ -32,21 +33,21 @@ public class QueryResultCollection<E> extends AbstractSet<E> {
     private final IterationType iterationType;
     private final boolean binary;
 
-    public QueryResultCollection(SerializationService serializationService, IterationType iterationType, boolean binary,
+    public QueryResultCollection(SerializationService serializationService,
+                                 IterationType iterationType,
+                                 boolean binary,
                                  boolean unique) {
         this.serializationService = serializationService;
         this.iterationType = iterationType;
         this.binary = binary;
-        if (unique) {
-            rows = new HashSet<QueryResultRow>();
-        } else {
-            rows = new ArrayList<QueryResultRow>();
-        }
+        this.rows = unique ? new HashSet<>() : new ArrayList<>();
     }
 
-    public QueryResultCollection(SerializationService serializationService, IterationType iterationType, boolean binary,
-                                 boolean unique, QueryResult queryResult) {
-
+    public QueryResultCollection(SerializationService serializationService,
+                                 IterationType iterationType,
+                                 boolean binary,
+                                 boolean unique,
+                                 QueryResult queryResult) {
         this(serializationService, iterationType, binary, unique);
         addAllRows(queryResult.getRows());
     }
@@ -72,5 +73,35 @@ public class QueryResultCollection<E> extends AbstractSet<E> {
     @Override
     public int size() {
         return rows.size();
+    }
+
+    @Override
+    public boolean addAll(Collection<? extends E> c) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public boolean remove(Object o) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public boolean removeAll(Collection<?> c) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public boolean removeIf(Predicate<? super E> filter) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public boolean retainAll(Collection<?> coll) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void clear() {
+        throw new UnsupportedOperationException();
     }
 }

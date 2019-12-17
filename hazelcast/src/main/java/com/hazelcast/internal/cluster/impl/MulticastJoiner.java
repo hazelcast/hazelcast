@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,18 +17,19 @@
 package com.hazelcast.internal.cluster.impl;
 
 import com.hazelcast.config.NetworkConfig;
-import com.hazelcast.instance.Node;
+import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.cluster.impl.SplitBrainJoinMessage.SplitBrainMergeCheckResult;
-import com.hazelcast.nio.Address;
-import com.hazelcast.spi.properties.GroupProperty;
-import com.hazelcast.util.Clock;
-import com.hazelcast.util.EmptyStatement;
-import com.hazelcast.util.RandomPicker;
+import com.hazelcast.cluster.Address;
+import com.hazelcast.internal.util.Clock;
+import com.hazelcast.internal.util.RandomPicker;
 
 import java.util.concurrent.BlockingDeque;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+
+import static com.hazelcast.config.ConfigAccessor.getActiveMemberNetworkConfig;
+import static java.lang.Thread.currentThread;
 
 public class MulticastJoiner extends AbstractJoiner {
 
@@ -43,7 +44,7 @@ public class MulticastJoiner extends AbstractJoiner {
 
     // this deque is used as a stack, the SplitBrainMulticastListener adds to its head and the periodic split brain handler job
     // also polls from its head.
-    private final BlockingDeque<SplitBrainJoinMessage> splitBrainJoinMessages = new LinkedBlockingDeque<SplitBrainJoinMessage>();
+    private final BlockingDeque<SplitBrainJoinMessage> splitBrainJoinMessages = new LinkedBlockingDeque<>();
 
     public MulticastJoiner(Node node) {
         super(node);
@@ -97,7 +98,7 @@ public class MulticastJoiner extends AbstractJoiner {
             try {
                 Thread.sleep(JOIN_RETRY_INTERVAL);
             } catch (InterruptedException e) {
-                EmptyStatement.ignore(e);
+                currentThread().interrupt();
             }
 
             if (isBlacklisted(master)) {
@@ -124,12 +125,6 @@ public class MulticastJoiner extends AbstractJoiner {
                     continue;
                 }
 
-                if (splitBrainMsg.getMemberCount() == 1) {
-                    // if the other cluster has just single member, that may be a newly starting node instead of a split node
-                    // wait 2 times 'WAIT_SECONDS_BEFORE_JOIN' seconds before processing merge JoinRequest
-                    Thread.sleep(2 * node.getProperties().getMillis(GroupProperty.WAIT_SECONDS_BEFORE_JOIN));
-                }
-
                 SplitBrainJoinMessage request = node.createSplitBrainJoinMessage();
                 SplitBrainMergeCheckResult result = sendSplitBrainJoinMessageAndCheckResponse(targetAddress, request);
                 if (result == SplitBrainMergeCheckResult.LOCAL_NODE_SHOULD_MERGE) {
@@ -144,6 +139,7 @@ public class MulticastJoiner extends AbstractJoiner {
                 }
             }
         } catch (InterruptedException e) {
+            currentThread().interrupt();
             logger.fine(e);
         } catch (Exception e) {
             logger.warning(e);
@@ -201,7 +197,7 @@ public class MulticastJoiner extends AbstractJoiner {
     }
 
     private int calculateTryCount() {
-        final NetworkConfig networkConfig = config.getNetworkConfig();
+        final NetworkConfig networkConfig = getActiveMemberNetworkConfig(config);
         long timeoutMillis = TimeUnit.SECONDS.toMillis(networkConfig.getJoin().getMulticastConfig().getMulticastTimeoutSeconds());
         int avgPublishInterval = (PUBLISH_INTERVAL_MAX + PUBLISH_INTERVAL_MIN) / 2;
         int tryCount = (int) timeoutMillis / avgPublishInterval;

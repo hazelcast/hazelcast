@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,15 +19,17 @@ package com.hazelcast.cardinality.impl;
 import com.hazelcast.cardinality.CardinalityEstimator;
 import com.hazelcast.cardinality.impl.operations.AggregateOperation;
 import com.hazelcast.cardinality.impl.operations.EstimateOperation;
-import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.AbstractDistributedObject;
-import com.hazelcast.spi.InternalCompletableFuture;
-import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.Operation;
+import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.spi.impl.AbstractDistributedObject;
+import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.spi.impl.operationservice.impl.InvocationFuture;
 
-import static com.hazelcast.util.Preconditions.checkNotNull;
+import javax.annotation.Nonnull;
 
-class CardinalityEstimatorProxy
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
+
+public class CardinalityEstimatorProxy
         extends AbstractDistributedObject<CardinalityEstimatorService>
         implements CardinalityEstimator {
 
@@ -38,6 +40,10 @@ class CardinalityEstimatorProxy
         super(nodeEngine, service);
         this.name = name;
         this.partitionId = nodeEngine.getPartitionService().getPartitionId(getNameAsPartitionAwareData());
+    }
+
+    public int getPartitionId() {
+        return partitionId;
     }
 
     @Override
@@ -51,18 +57,18 @@ class CardinalityEstimatorProxy
     }
 
     @Override
-    public void add(Object obj) {
-        addAsync(obj).join();
+    public void add(@Nonnull Object obj) {
+        addAsync(obj).joinInternal();
     }
 
     @Override
     public long estimate() {
-        return estimateAsync().join();
+        return estimateAsync().joinInternal();
     }
 
     @Override
-    public InternalCompletableFuture<Void> addAsync(Object obj) {
-        checkNotNull(obj, "Object is null.");
+    public InvocationFuture<Void> addAsync(@Nonnull Object obj) {
+        checkNotNull(obj, "Object must not be null");
         Data data = getNodeEngine().getSerializationService().toData(obj);
         Operation operation = new AggregateOperation(name, data.hash64())
                 .setPartitionId(partitionId);
@@ -70,7 +76,7 @@ class CardinalityEstimatorProxy
     }
 
     @Override
-    public InternalCompletableFuture<Long> estimateAsync() {
+    public InvocationFuture<Long> estimateAsync() {
         Operation operation = new EstimateOperation(name)
                 .setPartitionId(partitionId);
         return invokeOnPartition(operation);

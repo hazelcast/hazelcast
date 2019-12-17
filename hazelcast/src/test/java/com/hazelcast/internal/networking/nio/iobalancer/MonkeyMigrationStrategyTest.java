@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,13 +16,13 @@
 
 package com.hazelcast.internal.networking.nio.iobalancer;
 
-import com.hazelcast.internal.networking.nio.MigratableHandler;
+import com.hazelcast.internal.networking.nio.MigratablePipeline;
 import com.hazelcast.internal.networking.nio.NioThread;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.util.ItemCounter;
+import com.hazelcast.internal.util.ItemCounter;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -42,17 +42,17 @@ import static org.junit.Assert.fail;
 import static org.mockito.Mockito.mock;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class MonkeyMigrationStrategyTest extends HazelcastTestSupport {
     private MigrationStrategy strategy;
 
-    private Map<NioThread, Set<MigratableHandler>> selectorToHandlers;
-    private ItemCounter<MigratableHandler> handlerEventsCounter;
+    private Map<NioThread, Set<MigratablePipeline>> ownerPipelines;
+    private ItemCounter<MigratablePipeline> pipelineLoadCounter;
     private LoadImbalance imbalance;
 
     @Test
-    public void imbalanceDetected_shouldReturnFalseWhenNoHandlerExist() {
-        selectorToHandlers.put(imbalance.sourceSelector, Collections.<MigratableHandler>emptySet());
+    public void imbalanceDetected_shouldReturnFalseWhenNoPipelineExist() {
+        ownerPipelines.put(imbalance.srcOwner, Collections.<MigratablePipeline>emptySet());
 
         boolean imbalanceDetected = strategy.imbalanceDetected(imbalance);
         assertFalse(imbalanceDetected);
@@ -60,58 +60,58 @@ public class MonkeyMigrationStrategyTest extends HazelcastTestSupport {
 
     @Before
     public void setUp() {
-        selectorToHandlers = new HashMap<NioThread, Set<MigratableHandler>>();
-        handlerEventsCounter = new ItemCounter<MigratableHandler>();
-        imbalance = new LoadImbalance(selectorToHandlers, handlerEventsCounter);
-        imbalance.sourceSelector = mock(NioThread.class);
+        ownerPipelines = new HashMap<NioThread, Set<MigratablePipeline>>();
+        pipelineLoadCounter = new ItemCounter<MigratablePipeline>();
+        imbalance = new LoadImbalance(ownerPipelines, pipelineLoadCounter);
+        imbalance.srcOwner = mock(NioThread.class);
 
         this.strategy = new MonkeyMigrationStrategy();
     }
 
     @Test
-    public void imbalanceDetected_shouldReturnTrueWhenHandlerExist() {
-        MigratableHandler handler = mock(MigratableHandler.class);
+    public void imbalanceDetected_shouldReturnTrueWhenPipelineExist() {
+        MigratablePipeline pipeline = mock(MigratablePipeline.class);
 
-        selectorToHandlers.put(imbalance.sourceSelector, setOf(handler));
+        ownerPipelines.put(imbalance.srcOwner, setOf(pipeline));
         boolean imbalanceDetected = strategy.imbalanceDetected(imbalance);
         assertTrue(imbalanceDetected);
     }
 
     @Test
-    public void findHandlerToMigrate_shouldWorkEvenWithASingleHandlerAvailable() {
-        MigratableHandler handler = mock(MigratableHandler.class);
+    public void findPipelineToMigrate_shouldWorkEvenWithASinglePipelineAvailable() {
+        MigratablePipeline pipeline = mock(MigratablePipeline.class);
 
-        selectorToHandlers.put(imbalance.sourceSelector, setOf(handler));
-        MigratableHandler handlerToMigrate = strategy.findHandlerToMigrate(imbalance);
-        assertEquals(handler, handlerToMigrate);
+        ownerPipelines.put(imbalance.srcOwner, setOf(pipeline));
+        MigratablePipeline pipelineToMigrate = strategy.findPipelineToMigrate(imbalance);
+        assertEquals(pipeline, pipelineToMigrate);
     }
 
     @Test
-    public void findHandlerToMigrate_shouldBeFair() {
+    public void findPipelineToMigrate_shouldBeFair() {
         int iterationCount = 10000;
         double toleranceFactor = 0.25d;
 
-        MigratableHandler handler1 = mock(MigratableHandler.class);
-        MigratableHandler handler2 = mock(MigratableHandler.class);
-        selectorToHandlers.put(imbalance.sourceSelector, setOf(handler1, handler2));
+        MigratablePipeline pipeline1 = mock(MigratablePipeline.class);
+        MigratablePipeline pipeline2 = mock(MigratablePipeline.class);
+        ownerPipelines.put(imbalance.srcOwner, setOf(pipeline1, pipeline2));
 
-        assertFairSelection(iterationCount, toleranceFactor, handler1, handler2);
+        assertFairSelection(iterationCount, toleranceFactor, pipeline1, pipeline2);
     }
 
-    private void assertFairSelection(int iterationCount, double toleranceFactor, MigratableHandler handler1, MigratableHandler handler2) {
-        int handler1Count = 0;
-        int handler2Count = 0;
+    private void assertFairSelection(int iterationCount, double toleranceFactor, MigratablePipeline pipeline1, MigratablePipeline pipeline2) {
+        int pipeline1Count = 0;
+        int pipeline2Count = 0;
         for (int i = 0; i < iterationCount; i++) {
-            MigratableHandler candidate = strategy.findHandlerToMigrate(imbalance);
-            if (candidate == handler1) {
-                handler1Count++;
-            } else if (candidate == handler2) {
-                handler2Count++;
+            MigratablePipeline candidate = strategy.findPipelineToMigrate(imbalance);
+            if (candidate == pipeline1) {
+                pipeline1Count++;
+            } else if (candidate == pipeline2) {
+                pipeline2Count++;
             } else {
-                fail("No handler selected");
+                fail("No pipeline selected");
             }
         }
-        int diff = abs(handler1Count - handler2Count);
+        int diff = abs(pipeline1Count - pipeline2Count);
         assertTrue(diff < (iterationCount * toleranceFactor));
     }
 

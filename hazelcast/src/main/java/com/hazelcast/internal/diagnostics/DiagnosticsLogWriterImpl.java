@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,8 +22,8 @@ import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.TimeZone;
 
-import static com.hazelcast.util.StringUtil.LINE_SEPARATOR;
-import static com.hazelcast.util.StringUtil.LOCALE_INTERNAL;
+import static com.hazelcast.internal.util.StringUtil.LINE_SEPARATOR;
+import static com.hazelcast.internal.util.StringUtil.LOCALE_INTERNAL;
 import static java.util.Calendar.DAY_OF_MONTH;
 import static java.util.Calendar.HOUR_OF_DAY;
 import static java.util.Calendar.MINUTE;
@@ -32,7 +32,8 @@ import static java.util.Calendar.SECOND;
 import static java.util.Calendar.YEAR;
 
 /**
- * A writer like structure dedicated for the {@link DiagnosticsPlugin} rendering.
+ * A writer like structure dedicated for the {@link DiagnosticsPlugin}
+ * rendering.
  */
 public class DiagnosticsLogWriterImpl implements DiagnosticsLogWriter {
 

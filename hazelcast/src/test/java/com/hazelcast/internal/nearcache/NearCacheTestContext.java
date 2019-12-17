@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,8 +22,9 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.adapter.DataStructureAdapter;
 import com.hazelcast.internal.adapter.DataStructureLoader;
 import com.hazelcast.internal.nearcache.impl.invalidation.RepairingTask;
-import com.hazelcast.monitor.NearCacheStats;
-import com.hazelcast.spi.serialization.SerializationService;
+import com.hazelcast.nearcache.NearCacheStats;
+import com.hazelcast.internal.monitor.impl.NearCacheStatsImpl;
+import com.hazelcast.internal.serialization.SerializationService;
 
 import javax.cache.CacheManager;
 
@@ -44,25 +45,25 @@ public class NearCacheTestContext<K, V, NK, NV> {
 
     /**
      * The {@link HazelcastInstance} which has the configured Near Cache.
-     *
+     * <p>
      * In a scenario with Hazelcast client and member, this will be the client.
      */
     public final HazelcastInstance nearCacheInstance;
     /**
      * The {@link HazelcastInstance} which holds backing data structure for the Near Cache.
-     *
+     * <p>
      * In a scenario with Hazelcast client and member, this will be the member.
      */
     public final HazelcastInstance dataInstance;
     /**
      * The {@link DataStructureAdapter} which has the configured Near Cache.
-     *
+     * <p>
      * In a scenario with Hazelcast client and member, this will be the near cached data structure on the client.
      */
     public final DataStructureAdapter<K, V> nearCacheAdapter;
     /**
      * The {@link DataStructureAdapter} which has the original data.
-     *
+     * <p>
      * In a scenario with Hazelcast client and member, this will be the original data structure on the member.
      */
     public final DataStructureAdapter<K, V> dataAdapter;
@@ -74,7 +75,7 @@ public class NearCacheTestContext<K, V, NK, NV> {
     /**
      * The {@link NearCacheStats} of the configured Near Cache.
      */
-    public final NearCacheStats stats;
+    public final NearCacheStatsImpl stats;
     /**
      * The {@link NearCacheManager} which manages the configured Near Cache.
      */
@@ -96,16 +97,13 @@ public class NearCacheTestContext<K, V, NK, NV> {
      * The {@link DataStructureLoader} which loads entries into the data structure.
      */
     public final DataStructureLoader loader;
-    /**
-     * The {@link NearCacheInvalidationListener} which monitors invalidation events.
-     */
-    public final NearCacheInvalidationListener invalidationListener;
 
     /**
      * The {@link RepairingTask} from the Near Cache instance.
      */
     public final RepairingTask repairingTask;
 
+    @SuppressWarnings("checkstyle:parameternumber")
     NearCacheTestContext(NearCacheConfig nearCacheConfig,
                          SerializationService serializationService,
                          HazelcastInstance nearCacheInstance,
@@ -118,7 +116,6 @@ public class NearCacheTestContext<K, V, NK, NV> {
                          HazelcastServerCacheManager memberCacheManager,
                          boolean hasLocalData,
                          DataStructureLoader loader,
-                         NearCacheInvalidationListener invalidationListener,
                          RepairingTask repairingTask) {
         this.nearCacheConfig = nearCacheConfig;
         this.serializationService = serializationService;
@@ -129,14 +126,13 @@ public class NearCacheTestContext<K, V, NK, NV> {
         this.dataAdapter = dataAdapter;
 
         this.nearCache = nearCache;
-        this.stats = (nearCache == null) ? null : nearCache.getNearCacheStats();
+        this.stats = (nearCache == null) ? null : (NearCacheStatsImpl) nearCache.getNearCacheStats();
         this.nearCacheManager = nearCacheManager;
         this.cacheManager = cacheManager;
         this.memberCacheManager = memberCacheManager;
 
         this.hasLocalData = hasLocalData;
         this.loader = loader;
-        this.invalidationListener = invalidationListener;
         this.repairingTask = repairingTask;
     }
 }

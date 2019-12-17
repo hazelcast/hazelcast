@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,14 +18,14 @@ package com.hazelcast.map.impl.querycache.event.sequence;
 
 /**
  * General contract of a sequence-number provider for a partition.
- * <p/>
+ * <p>
  * Each partition has its own sequence-number on publisher-side. For every generated event, this sequence will be
  * incremented by one and set to that event before sending it to the subscriber side.
- * <p/>
+ * <p>
  * On subscriber side, this sequence is used to keep track of published events; upon arrival of an event, there
  * is a pre-condition check to decide whether that the arrived event has the next-expected-sequence-number for the
  * relevant partition. If the event has next-sequence, it is applied to the query-cache.
- * <p/>
+ * <p>
  * Implementations of this interface should be thread-safe.
  */
 public interface PartitionSequencer {

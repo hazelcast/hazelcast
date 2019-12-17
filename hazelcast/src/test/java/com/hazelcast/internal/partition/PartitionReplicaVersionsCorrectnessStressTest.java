@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,12 +17,12 @@
 package com.hazelcast.internal.partition;
 
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.instance.Node;
-import com.hazelcast.nio.Address;
+import com.hazelcast.instance.impl.Node;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.partition.AbstractPartitionLostListenerTest;
-import com.hazelcast.spi.DistributedObjectNamespace;
-import com.hazelcast.spi.ServiceNamespace;
-import com.hazelcast.test.HazelcastParametersRunnerFactory;
+import com.hazelcast.internal.services.DistributedObjectNamespace;
+import com.hazelcast.internal.services.ServiceNamespace;
+import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
 import com.hazelcast.test.annotation.SlowTest;
 import org.hamcrest.Matchers;
 import org.junit.Test;
@@ -45,7 +45,7 @@ import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
 
 @RunWith(Parameterized.class)
-@Parameterized.UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
+@Parameterized.UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
 @Category(SlowTest.class)
 public class PartitionReplicaVersionsCorrectnessStressTest extends AbstractPartitionLostListenerTest {
 
@@ -56,18 +56,12 @@ public class PartitionReplicaVersionsCorrectnessStressTest extends AbstractParti
     @Parameterized.Parameters(name = "numberOfNodesToCrash:{0},nodeCount:{1},nodeLeaveType:{2}")
     public static Collection<Object[]> parameters() {
         return Arrays.asList(new Object[][]{
-                {1, 7, NodeLeaveType.SHUTDOWN},
-                {1, 7, NodeLeaveType.TERMINATE},
+                {1, 5, NodeLeaveType.SHUTDOWN},
+                {1, 5, NodeLeaveType.TERMINATE},
                 {3, 7, NodeLeaveType.SHUTDOWN},
                 {3, 7, NodeLeaveType.TERMINATE},
                 {6, 7, NodeLeaveType.SHUTDOWN},
                 {6, 7, NodeLeaveType.TERMINATE},
-                {1, 10, NodeLeaveType.SHUTDOWN},
-                {1, 10, NodeLeaveType.TERMINATE},
-                {3, 10, NodeLeaveType.SHUTDOWN},
-                {3, 10, NodeLeaveType.TERMINATE},
-                {6, 10, NodeLeaveType.SHUTDOWN},
-                {6, 10, NodeLeaveType.TERMINATE}
         });
     }
 
@@ -100,12 +94,13 @@ public class PartitionReplicaVersionsCorrectnessStressTest extends AbstractParti
 
         String log = "Surviving: " + survivingInstances + " Terminating: " + terminatingInstances;
 
-        Map<Integer, PartitionReplicaVersionsView> replicaVersionsByPartitionId = TestPartitionUtils.getAllReplicaVersions(instances);
+        Map<Integer, PartitionReplicaVersionsView> replicaVersionsByPartitionId
+                = TestPartitionUtils.getAllReplicaVersions(instances);
         Map<Integer, List<Address>> partitionReplicaAddresses = TestPartitionUtils.getAllReplicaAddresses(instances);
         Map<Integer, Integer> minSurvivingReplicaIndexByPartitionId = getMinReplicaIndicesByPartitionId(survivingInstances);
 
-        stopInstances(terminatingInstances, nodeLeaveType);
-        waitAllForSafeStateAndDumpPartitionServiceOnFailure(survivingInstances, 300);
+        stopInstances(terminatingInstances, nodeLeaveType, SAFE_STATE_TIMEOUT_SECONDS);
+        waitAllForSafeStateAndDumpPartitionServiceOnFailure(survivingInstances, SAFE_STATE_TIMEOUT_SECONDS);
 
         validateReplicaVersions(log, numberOfNodesToStop, survivingInstances, replicaVersionsByPartitionId,
                 partitionReplicaAddresses, minSurvivingReplicaIndexByPartitionId);
@@ -151,8 +146,8 @@ public class PartitionReplicaVersionsCorrectnessStressTest extends AbstractParti
     }
 
     private void verifyReplicaVersions(PartitionReplicaVersionsView initialReplicaVersions,
-            PartitionReplicaVersionsView replicaVersions, int minSurvivingReplicaIndex, String message) {
-
+                                       PartitionReplicaVersionsView replicaVersions,
+                                       int minSurvivingReplicaIndex, String message) {
         Set<String> lostMapNames = new HashSet<String>();
         for (int i = 0; i < minSurvivingReplicaIndex; i++) {
             lostMapNames.add(getIthMapName(i));
@@ -174,7 +169,7 @@ public class PartitionReplicaVersionsCorrectnessStressTest extends AbstractParti
     }
 
     private void verifyReplicaVersions(long[] initialReplicaVersions, long[] replicaVersions,
-            int minSurvivingReplicaIndex, String message) {
+                                       int minSurvivingReplicaIndex, String message) {
         final long[] expected = Arrays.copyOf(initialReplicaVersions, initialReplicaVersions.length);
 
         boolean verified;
@@ -192,5 +187,4 @@ public class PartitionReplicaVersionsCorrectnessStressTest extends AbstractParti
     private void shiftLeft(final long[] versions, final int toIndex, final long version) {
         Arrays.fill(versions, 0, toIndex, version);
     }
-
 }

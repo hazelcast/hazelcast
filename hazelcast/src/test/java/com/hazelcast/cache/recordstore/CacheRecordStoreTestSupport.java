@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,16 +24,20 @@ import com.hazelcast.config.CacheConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.instance.Node;
-import com.hazelcast.instance.TestUtil;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
-import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.serialization.SerializationService;
+import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import org.junit.After;
 import org.junit.Before;
+
+import javax.cache.expiry.Duration;
+import javax.cache.expiry.ExpiryPolicy;
+import javax.cache.expiry.TouchedExpiryPolicy;
+
+import java.util.Collections;
 
 import static org.junit.Assert.assertTrue;
 
@@ -71,18 +75,12 @@ public abstract class CacheRecordStoreTestSupport
     }
 
     protected ICacheService getCacheService(HazelcastInstance instance) {
-        Node node = TestUtil.getNode(instance);
-        return node.getNodeEngine().getService(ICacheService.SERVICE_NAME);
-    }
-
-    protected NodeEngine getNodeEngine(HazelcastInstance instance) {
-        Node node = TestUtil.getNode(instance);
-        return node.getNodeEngine();
+        return getNodeEngineImpl(instance).getService(ICacheService.SERVICE_NAME);
     }
 
     protected ICacheRecordStore createCacheRecordStore(HazelcastInstance instance, String cacheName,
                                                        int partitionId, InMemoryFormat inMemoryFormat) {
-        NodeEngine nodeEngine = getNodeEngine(instance);
+        NodeEngine nodeEngine = getNodeEngineImpl(instance);
         ICacheService cacheService = getCacheService(instance);
         CacheConfig cacheConfig = createCacheConfig(cacheName, inMemoryFormat);
         cacheService.putCacheConfigIfAbsent(cacheConfig);
@@ -118,6 +116,35 @@ public abstract class CacheRecordStoreTestSupport
         } else {
             throw new IllegalArgumentException("Unsupported in-memory format: " + inMemoryFormat);
         }
+    }
+
+    protected void putAndSetExpiryPolicyFromRecordStore(ICacheRecordStore cacheRecordStore, InMemoryFormat inMemoryFormat) {
+        SerializationService serializationService = new DefaultSerializationServiceBuilder().build();
+        ExpiryPolicy expiryPolicy = new TouchedExpiryPolicy(Duration.ETERNAL);
+        Data policyData = serializationService.toData(expiryPolicy);
+
+        for (int i = 0; i < CACHE_RECORD_COUNT; i++) {
+            Data keyData = serializationService.toData(i);
+
+            cacheRecordStore.put(keyData, "value-" + i, null, null, -1);
+            cacheRecordStore.setExpiryPolicy(Collections.singleton(keyData), policyData, null);
+        }
+
+        if (inMemoryFormat == InMemoryFormat.BINARY || inMemoryFormat == InMemoryFormat.NATIVE) {
+            for (int i = 0; i < CACHE_RECORD_COUNT; i++) {
+                assertTrue(Data.class.isAssignableFrom(
+                        cacheRecordStore.getExpiryPolicy(serializationService.toData(i)).getClass()));
+            }
+        } else if (inMemoryFormat == InMemoryFormat.OBJECT) {
+            for (int i = 0; i < CACHE_RECORD_COUNT; i++) {
+                assertTrue(ExpiryPolicy.class.isAssignableFrom(
+                        cacheRecordStore.getExpiryPolicy(serializationService.toData(i)).getClass()));
+            }
+        } else {
+            throw new IllegalArgumentException("Unsupported in-memory format: " + inMemoryFormat);
+        }
+
+
     }
 
 }

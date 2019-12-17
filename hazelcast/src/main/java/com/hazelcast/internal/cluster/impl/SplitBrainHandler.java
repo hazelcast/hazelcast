@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,8 +17,8 @@
 package com.hazelcast.internal.cluster.impl;
 
 import com.hazelcast.cluster.ClusterState;
-import com.hazelcast.cluster.Joiner;
-import com.hazelcast.instance.Node;
+import com.hazelcast.internal.cluster.Joiner;
+import com.hazelcast.instance.impl.Node;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -27,7 +27,7 @@ final class SplitBrainHandler implements Runnable {
     private final Node node;
     private final AtomicBoolean inProgress = new AtomicBoolean(false);
 
-    public SplitBrainHandler(Node node) {
+    SplitBrainHandler(Node node) {
         this.node = node;
     }
 

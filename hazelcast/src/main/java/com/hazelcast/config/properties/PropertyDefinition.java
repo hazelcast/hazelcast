@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -54,7 +54,8 @@ public interface PropertyDefinition {
      * Returns an optional validator to validate a value before finalizing the
      * configuration.
      *
-     * @return {@code true} if validation passed, {@code false} otherwise
+     * @return the optional validator. Is allowed to be <code>null</code> in case
+     * there is no validation required.
      */
     ValueValidator validator();
 

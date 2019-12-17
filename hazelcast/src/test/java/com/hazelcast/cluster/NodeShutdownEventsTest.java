@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,48 +18,43 @@ package com.hazelcast.cluster;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.ListenerConfig;
-import com.hazelcast.core.Hazelcast;
-import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.LifecycleEvent;
 import com.hazelcast.core.LifecycleListener;
-import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.HazelcastTestSupport;
+import com.hazelcast.test.TestHazelcastInstanceFactory;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.After;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.util.concurrent.CountDownLatch;
 
-import static com.hazelcast.test.HazelcastTestSupport.assertOpenEventually;
+import static org.junit.Assert.fail;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
-public class NodeShutdownEventsTest {
-
-    @After
-    public void shutdown() {
-        Hazelcast.shutdownAll();
-    }
+@Category({QuickTest.class, ParallelJVMTest.class})
+public class NodeShutdownEventsTest extends HazelcastTestSupport {
 
     /**
-     * When a node fails due to a join time out, it will be shutdowned.
+     * When a node fails during join, it will be shut down.
      * In that scenario we are expecting lifecycle events (SHUTTING_DOWN & SHUTDOWN)
      * to be fired locally.
      */
     @Test
-    public void testNodeShutdown_firesLifecycleEvents_afterJoinFailure() throws Exception {
+    public void testNodeShutdown_firesLifecycleEvents_afterJoinFailure() {
         // Only expecting SHUTTING_DOWN & SHUTDOWN events so latch count should be 2.
         final CountDownLatch shutdownEventCount = new CountDownLatch(2);
 
-        final Config config1 = new Config();
+        // Having different partition counts is cause of the join failure.
+        Config config1 = new Config()
+                .setProperty(ClusterProperty.PARTITION_COUNT.getName(), "111");
 
-        final Config config2 = new Config();
-        // force join failure.
-        config2.setProperty(GroupProperty.MAX_JOIN_SECONDS.getName(), "-100");
-        // add lifecycle listener.
+        Config config2 = new Config()
+                .setProperty(ClusterProperty.PARTITION_COUNT.getName(), "222");
+
         final ListenerConfig listenerConfig = new ListenerConfig();
         listenerConfig.setImplementation(new LifecycleListener() {
             @Override
@@ -73,15 +68,16 @@ public class NodeShutdownEventsTest {
         });
         config2.addListenerConfig(listenerConfig);
 
-        final HazelcastInstance node1 = Hazelcast.newHazelcastInstance(config1);
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
+        factory.newHazelcastInstance(config1);
+
         try {
-            final HazelcastInstance node2 = Hazelcast.newHazelcastInstance(config2);
+            factory.newHazelcastInstance(config2);
+            fail("Second node should fail during join");
         } catch (IllegalStateException e) {
-            // ignore IllegalStateException since we are only testing lifecyle events.
+            // ignore IllegalStateException since we are only testing lifecycle events.
         }
 
         assertOpenEventually(shutdownEventCount);
     }
-
-
 }

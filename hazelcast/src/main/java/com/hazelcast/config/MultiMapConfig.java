@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,22 +16,27 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.internal.config.ConfigDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.util.StringUtil;
+import com.hazelcast.spi.merge.SplitBrainMergeTypeProvider;
+import com.hazelcast.spi.merge.SplitBrainMergeTypes;
+import com.hazelcast.internal.util.StringUtil;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-import static com.hazelcast.util.Preconditions.checkAsyncBackupCount;
-import static com.hazelcast.util.Preconditions.checkBackupCount;
+import static com.hazelcast.internal.util.Preconditions.checkAsyncBackupCount;
+import static com.hazelcast.internal.util.Preconditions.checkBackupCount;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 /**
  * Configuration for MultiMap.
  */
-public class MultiMapConfig implements IdentifiedDataSerializable {
+@SuppressWarnings("checkstyle:methodcount")
+public class MultiMapConfig implements SplitBrainMergeTypeProvider, IdentifiedDataSerializable, NamedConfig {
 
     /**
      * The default number of synchronous backups for this MultiMap.
@@ -50,12 +55,13 @@ public class MultiMapConfig implements IdentifiedDataSerializable {
 
     private String name;
     private String valueCollectionType = DEFAULT_VALUE_COLLECTION_TYPE.toString();
-    private List<EntryListenerConfig> listenerConfigs;
+    private List<EntryListenerConfig> listenerConfigs = new ArrayList<EntryListenerConfig>();
     private boolean binary = true;
     private int backupCount = DEFAULT_SYNC_BACKUP_COUNT;
     private int asyncBackupCount = DEFAULT_ASYNC_BACKUP_COUNT;
     private boolean statisticsEnabled = true;
-    private MultiMapConfigReadOnly readOnly;
+    private String splitBrainProtectionName;
+    private MergePolicyConfig mergePolicyConfig = new MergePolicyConfig();
 
     public MultiMapConfig() {
     }
@@ -64,27 +70,16 @@ public class MultiMapConfig implements IdentifiedDataSerializable {
         setName(name);
     }
 
-    public MultiMapConfig(MultiMapConfig defConfig) {
-        this.name = defConfig.getName();
-        this.valueCollectionType = defConfig.valueCollectionType;
-        this.binary = defConfig.binary;
-        this.backupCount = defConfig.backupCount;
-        this.asyncBackupCount = defConfig.asyncBackupCount;
-        this.statisticsEnabled = defConfig.statisticsEnabled;
-        this.listenerConfigs = new ArrayList<EntryListenerConfig>(defConfig.getEntryListenerConfigs());
-    }
-
-    /**
-     * Gets immutable version of this configuration.
-     *
-     * @return Immutable version of this configuration
-     * @deprecated this method will be removed in 4.0; it is meant for internal usage only
-     */
-    public MultiMapConfigReadOnly getAsReadOnly() {
-        if (readOnly == null) {
-            readOnly = new MultiMapConfigReadOnly(this);
-        }
-        return readOnly;
+    public MultiMapConfig(MultiMapConfig config) {
+        this.name = config.getName();
+        this.valueCollectionType = config.valueCollectionType;
+        this.listenerConfigs.addAll(config.listenerConfigs);
+        this.binary = config.binary;
+        this.backupCount = config.backupCount;
+        this.asyncBackupCount = config.asyncBackupCount;
+        this.statisticsEnabled = config.statisticsEnabled;
+        this.splitBrainProtectionName = config.splitBrainProtectionName;
+        this.mergePolicyConfig = config.mergePolicyConfig;
     }
 
     /**
@@ -168,9 +163,6 @@ public class MultiMapConfig implements IdentifiedDataSerializable {
      * @return the list of entry listeners for this MultiMap
      */
     public List<EntryListenerConfig> getEntryListenerConfigs() {
-        if (listenerConfigs == null) {
-            listenerConfigs = new ArrayList<EntryListenerConfig>();
-        }
         return listenerConfigs;
     }
 
@@ -203,17 +195,6 @@ public class MultiMapConfig implements IdentifiedDataSerializable {
 
     public MultiMapConfig setBinary(boolean binary) {
         this.binary = binary;
-        return this;
-    }
-
-    @Deprecated
-    public int getSyncBackupCount() {
-        return backupCount;
-    }
-
-    @Deprecated
-    public MultiMapConfig setSyncBackupCount(int syncBackupCount) {
-        this.backupCount = syncBackupCount;
         return this;
     }
 
@@ -295,6 +276,50 @@ public class MultiMapConfig implements IdentifiedDataSerializable {
         return this;
     }
 
+    /**
+     * Returns the split brain protection name for operations.
+     *
+     * @return the split brain protection name
+     */
+    public String getSplitBrainProtectionName() {
+        return splitBrainProtectionName;
+    }
+
+    /**
+     * Sets the split brain protection name for operations.
+     *
+     * @param splitBrainProtectionName the split brain protection name
+     * @return the updated configuration
+     */
+    public MultiMapConfig setSplitBrainProtectionName(String splitBrainProtectionName) {
+        this.splitBrainProtectionName = splitBrainProtectionName;
+        return this;
+    }
+
+    /**
+     * Gets the {@link MergePolicyConfig} for this MultiMap.
+     *
+     * @return the {@link MergePolicyConfig} for this MultiMap
+     */
+    public MergePolicyConfig getMergePolicyConfig() {
+        return mergePolicyConfig;
+    }
+
+    /**
+     * Sets the {@link MergePolicyConfig} for this MultiMap.
+     *
+     * @return the updated MultiMapConfig
+     */
+    public MultiMapConfig setMergePolicyConfig(MergePolicyConfig mergePolicyConfig) {
+        this.mergePolicyConfig = checkNotNull(mergePolicyConfig, "mergePolicyConfig cannot be null");
+        return this;
+    }
+
+    @Override
+    public Class getProvidedMergeTypes() {
+        return SplitBrainMergeTypes.MultiMapMergeTypes.class;
+    }
+
     public String toString() {
         return "MultiMapConfig{"
                 + "name='" + name + '\''
@@ -303,6 +328,8 @@ public class MultiMapConfig implements IdentifiedDataSerializable {
                 + ", binary=" + binary
                 + ", backupCount=" + backupCount
                 + ", asyncBackupCount=" + asyncBackupCount
+                + ", splitBrainProtectionName=" + splitBrainProtectionName
+                + ", mergePolicyConfig=" + mergePolicyConfig
                 + '}';
     }
 
@@ -312,7 +339,7 @@ public class MultiMapConfig implements IdentifiedDataSerializable {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ConfigDataSerializerHook.MULTIMAP_CONFIG;
     }
 
@@ -320,7 +347,7 @@ public class MultiMapConfig implements IdentifiedDataSerializable {
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeUTF(name);
         out.writeUTF(valueCollectionType);
-        if (listenerConfigs == null) {
+        if (listenerConfigs == null || listenerConfigs.isEmpty()) {
             out.writeBoolean(false);
         } else {
             out.writeBoolean(true);
@@ -333,6 +360,8 @@ public class MultiMapConfig implements IdentifiedDataSerializable {
         out.writeInt(backupCount);
         out.writeInt(asyncBackupCount);
         out.writeBoolean(statisticsEnabled);
+        out.writeUTF(splitBrainProtectionName);
+        out.writeObject(mergePolicyConfig);
     }
 
     @Override
@@ -352,20 +381,21 @@ public class MultiMapConfig implements IdentifiedDataSerializable {
         backupCount = in.readInt();
         asyncBackupCount = in.readInt();
         statisticsEnabled = in.readBoolean();
+        splitBrainProtectionName = in.readUTF();
+        mergePolicyConfig = in.readObject();
     }
 
     @Override
     @SuppressWarnings({"checkstyle:cyclomaticcomplexity", "checkstyle:npathcomplexity"})
-    public boolean equals(Object o) {
+    public final boolean equals(Object o) {
         if (this == o) {
             return true;
         }
-        if (o == null || getClass() != o.getClass()) {
+        if (!(o instanceof MultiMapConfig)) {
             return false;
         }
 
         MultiMapConfig that = (MultiMapConfig) o;
-
         if (binary != that.binary) {
             return false;
         }
@@ -378,25 +408,36 @@ public class MultiMapConfig implements IdentifiedDataSerializable {
         if (statisticsEnabled != that.statisticsEnabled) {
             return false;
         }
-        if (!name.equals(that.name)) {
+        if (name != null ? !name.equals(that.name) : that.name != null) {
             return false;
         }
         if (valueCollectionType != null
-                ? !valueCollectionType.equals(that.valueCollectionType) : that.valueCollectionType != null) {
+                ? !valueCollectionType.equals(that.valueCollectionType)
+                : that.valueCollectionType != null) {
             return false;
         }
-        return listenerConfigs != null ? listenerConfigs.equals(that.listenerConfigs) : that.listenerConfigs == null;
+        if (listenerConfigs != null ? !listenerConfigs.equals(that.listenerConfigs) : that.listenerConfigs != null) {
+            return false;
+        }
+        if (splitBrainProtectionName != null ? !splitBrainProtectionName.equals(that.splitBrainProtectionName)
+                : that.splitBrainProtectionName != null) {
+            return false;
+        }
+        return mergePolicyConfig != null ? mergePolicyConfig.equals(that.mergePolicyConfig) : that.mergePolicyConfig == null;
     }
 
     @Override
-    public int hashCode() {
-        int result = name.hashCode();
+    @SuppressWarnings("checkstyle:npathcomplexity")
+    public final int hashCode() {
+        int result = name != null ? name.hashCode() : 0;
         result = 31 * result + (valueCollectionType != null ? valueCollectionType.hashCode() : 0);
         result = 31 * result + (listenerConfigs != null ? listenerConfigs.hashCode() : 0);
         result = 31 * result + (binary ? 1 : 0);
         result = 31 * result + backupCount;
         result = 31 * result + asyncBackupCount;
         result = 31 * result + (statisticsEnabled ? 1 : 0);
+        result = 31 * result + (splitBrainProtectionName != null ? splitBrainProtectionName.hashCode() : 0);
+        result = 31 * result + (mergePolicyConfig != null ? mergePolicyConfig.hashCode() : 0);
         return result;
     }
 }

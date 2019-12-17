@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,7 @@
 package com.hazelcast.spi.discovery.multicast.impl;
 
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.nio.Address;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.spi.discovery.DiscoveryNode;
 
 import java.io.ByteArrayOutputStream;
@@ -27,6 +27,8 @@ import java.io.ObjectOutputStream;
 import java.net.DatagramPacket;
 import java.net.InetAddress;
 import java.net.MulticastSocket;
+
+import static java.lang.Thread.currentThread;
 
 public class MulticastDiscoverySender implements Runnable {
 
@@ -82,6 +84,7 @@ public class MulticastDiscoverySender implements Runnable {
         try {
             Thread.sleep(SLEEP_DURATION);
         } catch (InterruptedException e) {
+            currentThread().interrupt();
             logger.finest("Thread sleeping interrupted. This may due to graceful shutdown.");
         }
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,14 +17,12 @@
 package com.hazelcast.cache;
 
 import com.hazelcast.config.CacheConfig;
-import com.hazelcast.core.ICompletableFuture;
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
-import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.serialization.SerializationService;
+import com.hazelcast.internal.util.SampleableConcurrentHashMap;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.test.AssertTask;
-import com.hazelcast.util.EmptyStatement;
-import com.hazelcast.util.ExceptionUtil;
-import com.hazelcast.util.SampleableConcurrentHashMap;
+import org.junit.Assert;
 import org.junit.Test;
 
 import javax.cache.Cache;
@@ -32,10 +30,14 @@ import javax.cache.CacheManager;
 import javax.cache.configuration.FactoryBuilder;
 import javax.cache.configuration.MutableCacheEntryListenerConfiguration;
 import javax.cache.configuration.MutableConfiguration;
+import javax.cache.event.CacheEntryEvent;
+import javax.cache.event.CacheEntryExpiredListener;
+import javax.cache.event.CacheEntryListenerException;
 import javax.cache.expiry.CreatedExpiryPolicy;
 import javax.cache.expiry.Duration;
 import javax.cache.expiry.ExpiryPolicy;
 import javax.cache.expiry.ModifiedExpiryPolicy;
+import javax.cache.expiry.TouchedExpiryPolicy;
 import javax.cache.processor.EntryProcessor;
 import javax.cache.processor.EntryProcessorException;
 import javax.cache.processor.EntryProcessorResult;
@@ -54,6 +56,7 @@ import java.util.NoSuchElementException;
 import java.util.Properties;
 import java.util.Random;
 import java.util.Set;
+import java.util.concurrent.CompletionStage;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
@@ -62,6 +65,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.LockSupport;
 
+import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 import static com.hazelcast.logging.Logger.getLogger;
 import static java.lang.String.format;
 import static org.junit.Assert.assertEquals;
@@ -111,54 +115,52 @@ public abstract class CacheBasicAbstractTest extends CacheTestSupport {
     }
 
     @Test
-    public void testAsyncGetPutRemove() throws ExecutionException, InterruptedException {
+    public void testAsyncGetPutRemove() throws Exception {
         final ICache<String, String> cache = createCache();
         final String key = "key";
+
         cache.put(key, "value1");
-        Future future = cache.getAsync(key);
-        assertEquals("value1", future.get());
+        CompletionStage future = cache.getAsync(key);
+        assertEquals("value1", future.toCompletableFuture().get());
 
         cache.putAsync(key, "value2");
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertEquals("value2", cache.get(key));
-            }
+        assertTrueEventually(() -> {
+            assertEquals("value2", cache.get(key));
         });
 
         future = cache.getAndPutAsync(key, "value3");
-        assertEquals("value2", future.get());
+        assertEquals("value2", future.toCompletableFuture().get());
         assertEquals("value3", cache.get(key));
 
         future = cache.removeAsync("key2");
-        assertFalse((Boolean) future.get());
+        assertFalse((Boolean) future.toCompletableFuture().get());
         future = cache.removeAsync(key);
-        assertTrue((Boolean) future.get());
+        assertTrue((Boolean) future.toCompletableFuture().get());
 
         cache.put(key, "value4");
         future = cache.getAndRemoveAsync("key2");
-        assertNull(future.get());
+        assertNull(future.toCompletableFuture().get());
         future = cache.getAndRemoveAsync(key);
-        assertEquals("value4", future.get());
+        assertEquals("value4", future.toCompletableFuture().get());
     }
 
     @Test
-    public void testPutIfAbsentAsync_success() throws InterruptedException, ExecutionException {
+    public void testPutIfAbsentAsync_success() throws Exception {
         ICache<String, String> cache = createCache();
         String key = randomString();
 
-        ICompletableFuture<Boolean> iCompletableFuture = cache.putIfAbsentAsync(key, randomString());
-        assertTrue(iCompletableFuture.get());
+        CompletionStage<Boolean> stage = cache.putIfAbsentAsync(key, randomString());
+        assertTrue(stage.toCompletableFuture().get());
     }
 
     @Test
-    public void testPutIfAbsentAsync_fail() throws ExecutionException, InterruptedException {
+    public void testPutIfAbsentAsync_fail() throws Exception {
         ICache<String, String> cache = createCache();
         String key = randomString();
         cache.put(key, randomString());
 
-        ICompletableFuture<Boolean> iCompletableFuture = cache.putIfAbsentAsync(key, randomString());
-        assertFalse(iCompletableFuture.get());
+        CompletionStage<Boolean> stage = cache.putIfAbsentAsync(key, randomString());
+        assertFalse(stage.toCompletableFuture().get());
     }
 
     @Test
@@ -170,22 +172,22 @@ public abstract class CacheBasicAbstractTest extends CacheTestSupport {
         cache.putIfAbsentAsync(key, randomString(), expiryPolicy);
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertNull(cache.get(key));
             }
         });
     }
 
     @Test
-    public void testGetAndReplaceAsync() throws InterruptedException, ExecutionException {
+    public void testGetAndReplaceAsync() throws Exception {
         ICache<String, String> cache = createCache();
         String key = randomString();
         String oldValue = randomString();
         String newValue = randomString();
         cache.put(key, oldValue);
 
-        ICompletableFuture<String> iCompletableFuture = cache.getAndReplaceAsync(key, newValue);
-        assertEquals(iCompletableFuture.get(), oldValue);
+        CompletionStage<String> stage = cache.getAndReplaceAsync(key, newValue);
+        assertEquals(stage.toCompletableFuture().get(), oldValue);
         assertEquals(cache.get(key), newValue);
     }
 
@@ -216,18 +218,14 @@ public abstract class CacheBasicAbstractTest extends CacheTestSupport {
         assertEquals(0, cache.size());
     }
 
-    protected ExpiryPolicy ttlToExpiryPolicy(long ttl, TimeUnit timeUnit) {
-        return new ModifiedExpiryPolicy(new Duration(timeUnit, ttl));
-    }
-
     @Test
-    public void testPutWithTtl() throws ExecutionException, InterruptedException {
+    public void testPutWithTtl() throws Exception {
         final ICache<String, String> cache = createCache();
         final String key = "key";
         cache.put(key, "value1", ttlToExpiryPolicy(1, TimeUnit.SECONDS));
 
         assertTrueEventually(new AssertTask() {
-            public void run() throws Exception {
+            public void run() {
                 assertNull(cache.get(key));
             }
         });
@@ -236,7 +234,7 @@ public abstract class CacheBasicAbstractTest extends CacheTestSupport {
         cache.putAsync(key, "value1", ttlToExpiryPolicy(1, TimeUnit.SECONDS));
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertNull(cache.get(key));
             }
         });
@@ -247,23 +245,28 @@ public abstract class CacheBasicAbstractTest extends CacheTestSupport {
         assertEquals("value2", value);
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertNull(cache.get(key));
             }
         });
         assertEquals(0, cache.size());
 
         cache.put(key, "value4");
-        Future future = cache.getAndPutAsync(key, "value5", ttlToExpiryPolicy(1, TimeUnit.SECONDS));
-        assertEquals("value4", future.get());
+        CompletionStage stage = cache.getAndPutAsync(key, "value5", ttlToExpiryPolicy(1, TimeUnit.SECONDS));
+        assertEquals("value4", stage.toCompletableFuture().get());
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertNull(cache.get(key));
             }
         });
         assertEquals(0, cache.size());
+    }
+
+    @SuppressWarnings("SameParameterValue")
+    private ExpiryPolicy ttlToExpiryPolicy(long ttl, TimeUnit timeUnit) {
+        return new ModifiedExpiryPolicy(new Duration(timeUnit, ttl));
     }
 
     @Test
@@ -295,6 +298,55 @@ public abstract class CacheBasicAbstractTest extends CacheTestSupport {
     }
 
     @Test
+    public void testExpiration() {
+        CacheConfig<Integer, String> config = new CacheConfig<Integer, String>();
+        final SimpleExpiryListener<Integer, String> listener = new SimpleExpiryListener<Integer, String>();
+        MutableCacheEntryListenerConfiguration<Integer, String> listenerConfiguration =
+                new MutableCacheEntryListenerConfiguration<Integer, String>(
+                        FactoryBuilder.factoryOf(listener), null, true, true);
+
+        config.addCacheEntryListenerConfiguration(listenerConfiguration);
+        config.setExpiryPolicyFactory(FactoryBuilder.factoryOf(new HazelcastExpiryPolicy(100, 100, 100)));
+
+        Cache<Integer, String> instanceCache = createCache(config);
+
+        instanceCache.put(1, "value");
+
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run()
+                    throws Exception {
+                assertEquals(1, listener.expired.get());
+            }
+        });
+    }
+
+    @Test
+    public void testExpiration_entryWithOwnTtl() {
+        CacheConfig<Integer, String> config = new CacheConfig<Integer, String>();
+        final SimpleExpiryListener<Integer, String> listener = new SimpleExpiryListener<Integer, String>();
+        MutableCacheEntryListenerConfiguration<Integer, String> listenerConfiguration
+                = new MutableCacheEntryListenerConfiguration<Integer, String>(
+                        FactoryBuilder.factoryOf(listener), null, true, true);
+
+        config.addCacheEntryListenerConfiguration(listenerConfiguration);
+        config.setExpiryPolicyFactory(FactoryBuilder.factoryOf(new HazelcastExpiryPolicy(Duration.ETERNAL, Duration.ETERNAL,
+                Duration.ETERNAL)));
+
+        ICache<Integer, String> instanceCache = createCache(config);
+
+        instanceCache.put(1, "value", ttlToExpiryPolicy(1, TimeUnit.SECONDS));
+
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run()
+                    throws Exception {
+                assertEquals(1, listener.expired.get());
+            }
+        });
+    }
+
+    @Test
     public void testIteratorRemove() {
         ICache<Integer, Integer> cache = createCache();
         int size = 1111;
@@ -322,6 +374,16 @@ public abstract class CacheBasicAbstractTest extends CacheTestSupport {
         if (iterator.hasNext()) {
             iterator.remove();
         }
+    }
+
+    @Test
+    public void testIteratorDuringInsertion_withoutEviction() {
+        testIteratorDuringInsertion(true);
+    }
+
+    @Test
+    public void testIteratorDuringInsertion_withEviction() {
+        testIteratorDuringInsertion(false);
     }
 
     @SuppressWarnings("WhileLoopReplaceableByForEach")
@@ -372,13 +434,13 @@ public abstract class CacheBasicAbstractTest extends CacheTestSupport {
     }
 
     @Test
-    public void testIteratorDuringInsertion_withoutEviction() {
-        testIteratorDuringInsertion(true);
+    public void testIteratorDuringUpdate_withoutEviction() {
+        testIteratorDuringUpdate(true);
     }
 
     @Test
-    public void testIteratorDuringInsertion_withEviction() {
-        testIteratorDuringInsertion(false);
+    public void testIteratorDuringUpdate_withEviction() {
+        testIteratorDuringUpdate(false);
     }
 
     @SuppressWarnings("WhileLoopReplaceableByForEach")
@@ -408,9 +470,9 @@ public abstract class CacheBasicAbstractTest extends CacheTestSupport {
             Iterator<Cache.Entry<Integer, Integer>> iterator = cache.iterator();
             while (iterator.hasNext()) {
                 Cache.Entry<Integer, Integer> e = iterator.next();
-                Integer key = e.getKey();
-                Integer value = e.getValue();
-                assertTrue("key: " + key + ", value: " + value, key == Math.abs(value));
+                int key = e.getKey();
+                int value = e.getValue();
+                assertEquals("key: " + key + ", value: " + value, key, Math.abs(value));
                 i++;
             }
             if (withoutEviction) {
@@ -427,13 +489,13 @@ public abstract class CacheBasicAbstractTest extends CacheTestSupport {
     }
 
     @Test
-    public void testIteratorDuringUpdate_withoutEviction() {
-        testIteratorDuringUpdate(true);
+    public void testIteratorDuringRemoval_withoutEviction() {
+        testIteratorDuringRemoval(true);
     }
 
     @Test
-    public void testIteratorDuringUpdate_withEviction() {
-        testIteratorDuringUpdate(true);
+    public void testIteratorDuringRemoval_withEviction() {
+        testIteratorDuringRemoval(false);
     }
 
     @SuppressWarnings("WhileLoopReplaceableByForEach")
@@ -482,51 +544,49 @@ public abstract class CacheBasicAbstractTest extends CacheTestSupport {
     }
 
     @Test
-    public void testIteratorDuringRemoval_withoutEviction() {
-        testIteratorDuringRemoval(true);
-    }
-
-    @Test
-    public void testIteratorDuringRemoval_withEviction() {
-        testIteratorDuringRemoval(false);
-    }
-
-    @Test
-    public void testRemoveAsync() throws ExecutionException, InterruptedException {
+    public void testRemoveAsync() {
         ICache<String, String> cache = createCache();
         String key = randomString();
         String value = randomString();
 
         cache.put(key, value);
-        ICompletableFuture<Boolean> future = cache.removeAsync(key);
-        assertTrue(future.get());
+        CompletionStage<Boolean> stage = cache.removeAsync(key);
+        stage.thenAccept(Assert::assertTrue);
+
+        stage.toCompletableFuture().join();
     }
 
     @Test
-    public void testRemoveAsyncWhenEntryNotFound() throws ExecutionException, InterruptedException {
+    public void testRemoveAsyncWhenEntryNotFound() {
         ICache<String, String> cache = createCache();
 
-        ICompletableFuture<Boolean> future = cache.removeAsync(randomString());
-        assertFalse(future.get());
+        cache.removeAsync(randomString()).thenAccept(Assert::assertFalse).toCompletableFuture().join();
     }
 
     @Test
-    public void testRemoveAsync_withOldValue() throws ExecutionException, InterruptedException {
+    public void testRemoveAsync_withOldValue() {
         ICache<String, String> cache = createCache();
         String key = randomString();
         String value = randomString();
 
         cache.put(key, value);
-        ICompletableFuture<Boolean> future = cache.removeAsync(key, value);
-        assertTrue(future.get());
+        cache.removeAsync(key, value)
+             .thenAccept(Assert::assertTrue)
+             .toCompletableFuture().join();
     }
 
     @Test
-    public void testRemoveAsyncWhenEntryNotFound_withOldValue() throws ExecutionException, InterruptedException {
+    public void testRemoveAsyncWhenEntryNotFound_withOldValue() throws Exception {
         ICache<String, String> cache = createCache();
 
-        ICompletableFuture<Boolean> future = cache.removeAsync(randomString(), randomString());
-        assertFalse(future.get());
+        cache.removeAsync(randomString(), randomString())
+             .thenAccept(Assert::assertFalse)
+             .toCompletableFuture().join();
+    }
+
+    @Test
+    public void testGetCacheWithNullName() {
+        assertNull(cacheManager.getCache(null));
     }
 
     @Test
@@ -534,11 +594,11 @@ public abstract class CacheBasicAbstractTest extends CacheTestSupport {
         String cacheName = randomString();
 
         CacheConfig<Integer, String> config = createCacheConfig();
-        final CacheFromDifferentNodesTest.SimpleEntryListener<Integer, String> listener =
-                new CacheFromDifferentNodesTest.SimpleEntryListener<Integer, String>();
-        MutableCacheEntryListenerConfiguration<Integer, String> listenerConfiguration =
-                new MutableCacheEntryListenerConfiguration<Integer, String>(
-                        FactoryBuilder.factoryOf(listener), null, true, true);
+        final CacheFromDifferentNodesTest.SimpleEntryListener<Integer, String> listener
+                = new CacheFromDifferentNodesTest.SimpleEntryListener<Integer, String>();
+        MutableCacheEntryListenerConfiguration<Integer, String> listenerConfiguration
+                = new MutableCacheEntryListenerConfiguration<Integer, String>(
+                FactoryBuilder.factoryOf(listener), null, true, true);
 
         config.addCacheEntryListenerConfiguration(listenerConfiguration);
 
@@ -550,8 +610,7 @@ public abstract class CacheBasicAbstractTest extends CacheTestSupport {
         cache.put(key, value);
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run()
-                    throws Exception {
+            public void run() {
                 assertEquals(1, listener.created.get());
             }
         });
@@ -561,8 +620,7 @@ public abstract class CacheBasicAbstractTest extends CacheTestSupport {
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run()
-                    throws Exception {
+            public void run() {
                 assertEquals(1, listener.removed.get());
             }
         });
@@ -573,11 +631,11 @@ public abstract class CacheBasicAbstractTest extends CacheTestSupport {
         String cacheName = randomString();
 
         CacheConfig<Integer, String> config = createCacheConfig();
-        final CacheFromDifferentNodesTest.SimpleEntryListener<Integer, String> listener =
-                new CacheFromDifferentNodesTest.SimpleEntryListener<Integer, String>();
-        MutableCacheEntryListenerConfiguration<Integer, String> listenerConfiguration =
-                new MutableCacheEntryListenerConfiguration<Integer, String>(
-                        FactoryBuilder.factoryOf(listener), null, true, true);
+        final CacheFromDifferentNodesTest.SimpleEntryListener<Integer, String> listener
+                = new CacheFromDifferentNodesTest.SimpleEntryListener<Integer, String>();
+        MutableCacheEntryListenerConfiguration<Integer, String> listenerConfiguration
+                = new MutableCacheEntryListenerConfiguration<Integer, String>(
+                FactoryBuilder.factoryOf(listener), null, true, true);
 
         config.addCacheEntryListenerConfiguration(listenerConfiguration);
 
@@ -589,7 +647,7 @@ public abstract class CacheBasicAbstractTest extends CacheTestSupport {
         cache.put(key1, value1);
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertEquals(1, listener.created.get());
             }
         });
@@ -599,7 +657,7 @@ public abstract class CacheBasicAbstractTest extends CacheTestSupport {
         cache.put(key2, value2);
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertEquals(2, listener.created.get());
             }
         });
@@ -610,7 +668,7 @@ public abstract class CacheBasicAbstractTest extends CacheTestSupport {
         cache.removeAll(keys);
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertEquals(2, listener.removed.get());
             }
         });
@@ -706,13 +764,14 @@ public abstract class CacheBasicAbstractTest extends CacheTestSupport {
     public void getAndOperateOnCacheAfterClose() {
         String cacheName = randomString();
         ICache<Integer, Integer> cache = createCache(cacheName);
+
         cache.close();
-        assertTrue(cache.isClosed());
-        assertFalse(cache.isDestroyed());
+        assertTrue("The cache should be closed", cache.isClosed());
+        assertFalse("The cache should be destroyed", cache.isDestroyed());
 
         Cache<Object, Object> cacheAfterClose = cacheManager.getCache(cacheName);
-        assertNotNull(cacheAfterClose);
-        assertFalse(cacheAfterClose.isClosed());
+        assertNotNull("Expected cacheAfterClose not to be null", cacheAfterClose);
+        assertFalse("The cacheAfterClose should not be closed", cacheAfterClose.isClosed());
 
         cache.put(1, 1);
     }
@@ -721,25 +780,27 @@ public abstract class CacheBasicAbstractTest extends CacheTestSupport {
     public void getButCantOperateOnCacheAfterDestroy() {
         String cacheName = randomString();
         ICache<Integer, Integer> cache = createCache(cacheName);
+
         cache.destroy();
-        assertTrue(cache.isClosed());
-        assertTrue(cache.isDestroyed());
+        assertTrue("The cache should be closed", cache.isClosed());
+        assertTrue("The cache should be destroyed", cache.isDestroyed());
 
         Cache<Object, Object> cacheAfterDestroy = cacheManager.getCache(cacheName);
-        assertNull(cacheAfterDestroy);
-        assertTrue(cache.isClosed());
-        assertTrue(cache.isDestroyed());
+        assertNull("Expected cacheAfterDestroy to be null", cacheAfterDestroy);
 
         try {
             cache.put(1, 1);
-            fail("Since cache is destroyed, operation on cache must with failed with 'IllegalStateException'");
-        } catch (IllegalStateException e) {
+            fail("Since the cache is destroyed, an operation on the cache has to fail with 'IllegalStateException'");
+        } catch (IllegalStateException expected) {
             // expect this exception since cache is closed and destroyed
         } catch (Throwable t) {
             t.printStackTrace();
-            fail("Since cache is destroyed, operation on cache must with failed with 'IllegalStateException', "
-                    + "not with " + t.getMessage());
+            fail("Since the cache is destroyed, an operation on the cache has to fail with 'IllegalStateException',"
+                    + " but failed with " + t.getMessage());
         }
+
+        assertTrue("The existing cache should still be closed", cache.isClosed());
+        assertTrue("The existing cache should still be destroyed", cache.isDestroyed());
     }
 
     @Test
@@ -788,18 +849,18 @@ public abstract class CacheBasicAbstractTest extends CacheTestSupport {
         }
     }
 
-    private static abstract class AbstractCacheWorker {
+    private abstract static class AbstractCacheWorker {
 
         private final Random random = new Random();
         private final CountDownLatch firstIterationDone = new CountDownLatch(1);
         private final AtomicBoolean isRunning = new AtomicBoolean(true);
         private final CacheWorkerThread thread = new CacheWorkerThread();
 
-        public AbstractCacheWorker() {
+        AbstractCacheWorker() {
             thread.start();
         }
 
-        public void awaitFirstIteration() {
+        void awaitFirstIteration() {
             try {
                 firstIterationDone.await();
             } catch (InterruptedException e) {
@@ -823,7 +884,7 @@ public abstract class CacheBasicAbstractTest extends CacheTestSupport {
                     doRun(random);
                     LockSupport.parkNanos(1);
                 } catch (Exception e) {
-                    EmptyStatement.ignore(e);
+                    ignore(e);
                 }
                 firstIterationDone.countDown();
 
@@ -832,7 +893,7 @@ public abstract class CacheBasicAbstractTest extends CacheTestSupport {
                         doRun(random);
                         LockSupport.parkNanos(1);
                     } catch (Exception e) {
-                        EmptyStatement.ignore(e);
+                        ignore(e);
                     }
                 }
             }
@@ -844,9 +905,9 @@ public abstract class CacheBasicAbstractTest extends CacheTestSupport {
     // https://github.com/hazelcast/hazelcast/issues/7236
     @Test
     public void expiryTimeShouldNotBeChangedOnUpdateWhenCreatedExpiryPolicyIsUsed() {
-        final int CREATED_EXPIRY_TIME_IN_MSEC = 100;
+        final int createdExpiryTimeMillis = 100;
 
-        Duration duration = new Duration(TimeUnit.MILLISECONDS, CREATED_EXPIRY_TIME_IN_MSEC);
+        Duration duration = new Duration(TimeUnit.MILLISECONDS, createdExpiryTimeMillis);
         CacheConfig<Integer, String> cacheConfig = new CacheConfig<Integer, String>();
         cacheConfig.setExpiryPolicyFactory(CreatedExpiryPolicy.factoryOf(duration));
 
@@ -854,26 +915,112 @@ public abstract class CacheBasicAbstractTest extends CacheTestSupport {
         cache.put(1, "value");
         cache.put(1, "value");
 
-        sleepAtLeastMillis(CREATED_EXPIRY_TIME_IN_MSEC + 1);
+        sleepAtLeastMillis(createdExpiryTimeMillis + 1);
 
         assertNull(cache.get(1));
     }
 
     @Test
-    public void removeCacheFromOwnerCacheManagerWhenCacheIsDestroyed() {
-        ICache cache = createCache();
-
-        assertTrue(isCacheExist(cache));
-
-        cache.destroy();
-
-        assertFalse(isCacheExist(cache));
+    public void testSetExpiryPolicyReturnsTrue() {
+        ICache<Integer, String> cache = createCache();
+        cache.put(1, "value");
+        assertTrue(cache.setExpiryPolicy(1, new TouchedExpiryPolicy(Duration.FIVE_MINUTES)));
     }
 
-    private boolean isCacheExist(ICache cache) {
-        Iterator<String> cacheNamesIter = cacheManager.getCacheNames().iterator();
-        while (cacheNamesIter.hasNext()) {
-            String cacheName = cacheNamesIter.next();
+    @Test
+    public void testSetExpiryPolicyReturnsFalse_whenKeyDoesNotExist() {
+        ICache<Integer, String> cache = createCache();
+        assertFalse(cache.setExpiryPolicy(1, new TouchedExpiryPolicy(Duration.FIVE_MINUTES)));
+    }
+
+    @Test
+    public void testSetExpiryPolicyReturnsFalse_whenKeyIsAlreadyExpired() {
+        ICache<Integer, String> cache = createCache();
+        cache.put(1, "value", new CreatedExpiryPolicy(new Duration(TimeUnit.SECONDS, 1)));
+        sleepAtLeastSeconds(2);
+        assertFalse(cache.setExpiryPolicy(1, new TouchedExpiryPolicy(Duration.FIVE_MINUTES)));
+    }
+
+    @Test
+    public void testRecordExpiryPolicyTakesPrecedenceOverCachePolicy() {
+        final int updatedTtlMillis = 1000;
+
+        CacheConfig<Integer, String> cacheConfig = new CacheConfig<Integer, String>();
+        cacheConfig.setExpiryPolicyFactory(TouchedExpiryPolicy.factoryOf(Duration.ONE_DAY));
+
+        ICache<Integer, String> cache = createCache(cacheConfig);
+        cache.put(1, "value");
+        cache.setExpiryPolicy(1, new TouchedExpiryPolicy(new Duration(TimeUnit.MILLISECONDS, updatedTtlMillis)));
+
+        sleepAtLeastMillis(updatedTtlMillis + 1);
+
+        assertNull(cache.get(1));
+    }
+
+    @Test
+    public void testRecordExpiryPolicyTakesPrecedenceOverPolicyAtCreation() {
+        final int updatedTtlMillis = 1000;
+
+        ICache<Integer, String> cache = createCache();
+        cache.put(1, "value", new TouchedExpiryPolicy(Duration.ONE_DAY));
+        cache.setExpiryPolicy(1, new TouchedExpiryPolicy(new Duration(TimeUnit.MILLISECONDS, updatedTtlMillis)));
+
+        sleepAtLeastMillis(updatedTtlMillis + 1);
+
+        assertNull(cache.get(1));
+    }
+
+    @Test
+    public void testRecordExpiryPolicyTakesPrecedence() {
+        final int ttlMillis = 1000;
+        Duration modifiedDuration = new Duration(TimeUnit.MILLISECONDS, ttlMillis);
+
+        ICache<Integer, String> cache = createCache();
+        cache.put(1, "value");
+        cache.setExpiryPolicy(1, TouchedExpiryPolicy.factoryOf(modifiedDuration).create());
+
+        sleepAtLeastMillis(ttlMillis + 1);
+
+        assertNull(cache.get(1));
+    }
+
+    @Test
+    public void test_whenExpiryPolicyIsOverridden_thenNewPolicyIsInEffect() {
+        final int ttlMillis = 1000;
+
+        ICache<Integer, String> cache = createCache();
+        cache.put(1, "value");
+        cache.setExpiryPolicy(1, new TouchedExpiryPolicy(new Duration(TimeUnit.MILLISECONDS, ttlMillis)));
+        cache.setExpiryPolicy(1, new TouchedExpiryPolicy(Duration.ETERNAL));
+
+        sleepAtLeastMillis(ttlMillis + 1);
+
+        assertEquals("value", cache.get(1));
+    }
+
+    @Test
+    public void test_CustomExpiryPolicyIsUsedWhenEntryIsUpdated() {
+        ICache<Integer, String> cache = createCache();
+        cache.put(1, "value");
+        cache.setExpiryPolicy(1, new HazelcastExpiryPolicy(10000, 10000, 10000));
+        sleepAtLeastSeconds(5);
+        cache.put(1, "value2");
+        sleepAtLeastSeconds(5);
+
+        assertEquals("value2", cache.get(1));
+    }
+
+    @Test
+    public void removeCacheFromOwnerCacheManagerWhenCacheIsDestroyed() {
+        ICache cache = createCache();
+        assertTrue("Expected the cache to be found in the CacheManager", cacheExistsInCacheManager(cache));
+
+        cache.destroy();
+        assertFalse("Expected the cache not to be found in the CacheManager", cacheExistsInCacheManager(cache));
+    }
+
+    private boolean cacheExistsInCacheManager(ICache cache) {
+        for (String cacheName : cacheManager.getCacheNames()) {
             if (cacheName.equals(cache.getName())) {
                 return true;
             }
@@ -911,7 +1058,7 @@ public abstract class CacheBasicAbstractTest extends CacheTestSupport {
         assertEquals(cache1, cache2);
 
         // attempt to overwrite existing cache1's CacheManager -> fails with IllegalStateException
-        Cache cache3 = cacheManagerFooClassLoader.getCache("the-cache");
+        cacheManagerFooClassLoader.getCache("the-cache");
     }
 
     @Test
@@ -954,29 +1101,46 @@ public abstract class CacheBasicAbstractTest extends CacheTestSupport {
         assertEquals(1, illegalStateExceptionCount.get());
     }
 
-    private Cache createCacheConcurrently(CountDownLatch latch, CacheManager cacheManager,
-                                          AtomicInteger illegalStateExceptionCount) {
+    private static void createCacheConcurrently(CountDownLatch latch, CacheManager cacheManager,
+                                                AtomicInteger illegalStateExceptionCount) {
         try {
             latch.await();
             CacheConfig cacheConfig = new CacheConfig("the-cache");
-            return cacheManager.createCache("the-cache", cacheConfig);
+            cacheManager.createCache("the-cache", cacheConfig);
         } catch (IllegalStateException e) {
             illegalStateExceptionCount.incrementAndGet();
-            throw ExceptionUtil.rethrow(e);
+            throw rethrow(e);
         } catch (Exception e) {
-            throw ExceptionUtil.rethrow(e);
+            throw rethrow(e);
         }
     }
 
     public static class MaliciousClassLoader extends ClassLoader {
 
-        public MaliciousClassLoader(ClassLoader parent) {
+        MaliciousClassLoader(ClassLoader parent) {
             super(parent);
         }
 
         @Override
         public String toString() {
             return "foo";
+        }
+    }
+
+    public static class SimpleExpiryListener<K, V>
+            implements CacheEntryExpiredListener<K, V>, Serializable {
+
+        public AtomicInteger expired = new AtomicInteger();
+
+        public SimpleExpiryListener() {
+        }
+
+        @Override
+        public void onExpired(Iterable<CacheEntryEvent<? extends K, ? extends V>> cacheEntryEvents)
+                throws CacheEntryListenerException {
+            for (CacheEntryEvent<? extends K, ? extends V> cacheEntryEvent : cacheEntryEvents) {
+                expired.incrementAndGet();
+            }
         }
     }
 }

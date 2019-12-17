@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,18 +21,17 @@ import com.hazelcast.cache.impl.CacheDataSerializerHook;
 import com.hazelcast.cache.impl.ICacheRecordStore;
 import com.hazelcast.cache.impl.ICacheService;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.spi.BackupOperation;
-import com.hazelcast.spi.ObjectNamespace;
-import com.hazelcast.spi.ServiceNamespaceAware;
-import com.hazelcast.spi.impl.AbstractNamedOperation;
-import com.hazelcast.spi.impl.MutatingOperation;
+import com.hazelcast.spi.impl.operationservice.BackupOperation;
+import com.hazelcast.internal.services.ObjectNamespace;
+import com.hazelcast.internal.services.ServiceNamespaceAware;
+import com.hazelcast.spi.impl.operationservice.AbstractNamedOperation;
 
 /**
  * Backup operation of {@link com.hazelcast.cache.impl.operation.CacheClearOperation}.
  * <p>It simply clears the records.</p>
  */
 public class CacheClearBackupOperation extends AbstractNamedOperation
-        implements BackupOperation, ServiceNamespaceAware, IdentifiedDataSerializable, MutatingOperation {
+        implements BackupOperation, ServiceNamespaceAware, IdentifiedDataSerializable {
 
     private transient ICacheRecordStore cache;
 
@@ -83,7 +82,7 @@ public class CacheClearBackupOperation extends AbstractNamedOperation
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return CacheDataSerializerHook.CLEAR_BACKUP;
     }
 

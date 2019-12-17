@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,25 +25,22 @@ import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.journal.MapEventJournal;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.VersionAware;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.nio.serialization.impl.Versioned;
 import com.hazelcast.ringbuffer.impl.RingbufferContainer;
 import com.hazelcast.ringbuffer.impl.RingbufferService;
-import com.hazelcast.spi.ObjectNamespace;
-import com.hazelcast.spi.Operation;
+import com.hazelcast.internal.services.ObjectNamespace;
+import com.hazelcast.spi.impl.operationservice.Operation;
 
 import java.io.IOException;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import static com.hazelcast.internal.cluster.Versions.V3_9;
 import static com.hazelcast.ringbuffer.impl.RingbufferDataSerializerHook.F_ID;
 import static com.hazelcast.ringbuffer.impl.RingbufferDataSerializerHook.REPLICATION_OPERATION;
 import static com.hazelcast.ringbuffer.impl.RingbufferService.SERVICE_NAME;
-import static com.hazelcast.util.MapUtil.createHashMap;
+import static com.hazelcast.internal.util.MapUtil.createHashMap;
 
-public class ReplicationOperation extends Operation implements IdentifiedDataSerializable, Versioned {
+public class ReplicationOperation extends Operation implements IdentifiedDataSerializable {
 
     private Map<ObjectNamespace, RingbufferContainer> migrationData;
 
@@ -89,12 +86,12 @@ public class ReplicationOperation extends Operation implements IdentifiedDataSer
             final MapService mapService = getNodeEngine().getService(MapService.SERVICE_NAME);
             final MapEventJournal journal = mapService.getMapServiceContext().getEventJournal();
             final EventJournalConfig journalConfig = journal.getEventJournalConfig(ns);
-            return journal.toRingbufferConfig(journalConfig);
+            return journal.toRingbufferConfig(journalConfig, ns);
         } else if (CacheService.SERVICE_NAME.equals(serviceName)) {
             final CacheService cacheService = getNodeEngine().getService(CacheService.SERVICE_NAME);
             final CacheEventJournal journal = cacheService.getEventJournal();
             final EventJournalConfig journalConfig = journal.getEventJournalConfig(ns);
-            return journal.toRingbufferConfig(journalConfig);
+            return journal.toRingbufferConfig(journalConfig, ns);
         } else {
             throw new IllegalArgumentException("Unsupported ringbuffer service name " + serviceName);
         }
@@ -111,7 +108,7 @@ public class ReplicationOperation extends Operation implements IdentifiedDataSer
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return REPLICATION_OPERATION;
     }
 
@@ -120,11 +117,7 @@ public class ReplicationOperation extends Operation implements IdentifiedDataSer
         out.writeInt(migrationData.size());
         for (Entry<ObjectNamespace, RingbufferContainer> entry : migrationData.entrySet()) {
             final ObjectNamespace ns = entry.getKey();
-            if (isGreaterOrEqualV39(out)) {
-                out.writeObject(ns);
-            } else {
-                out.writeUTF(ns.getObjectName());
-            }
+            out.writeObject(ns);
             RingbufferContainer container = entry.getValue();
             container.writeData(out);
         }
@@ -135,16 +128,10 @@ public class ReplicationOperation extends Operation implements IdentifiedDataSer
         int mapSize = in.readInt();
         migrationData = createHashMap(mapSize);
         for (int i = 0; i < mapSize; i++) {
-            final ObjectNamespace namespace = isGreaterOrEqualV39(in)
-                    ? (ObjectNamespace) in.readObject()
-                    : RingbufferService.getRingbufferNamespace(in.readUTF());
+            final ObjectNamespace namespace = in.readObject();
             final RingbufferContainer container = new RingbufferContainer(namespace, getPartitionId());
             container.readData(in);
             migrationData.put(namespace, container);
         }
-    }
-
-    private static boolean isGreaterOrEqualV39(VersionAware versionAware) {
-        return versionAware.getVersion().isGreaterOrEqual(V3_9);
     }
 }

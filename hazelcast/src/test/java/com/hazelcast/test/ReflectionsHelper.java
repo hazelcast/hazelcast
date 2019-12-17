@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,6 +27,7 @@ import org.reflections.util.ClasspathHelper;
 import org.reflections.util.ConfigurationBuilder;
 import org.reflections.util.FilterBuilder;
 
+import java.lang.reflect.Modifier;
 import java.net.URL;
 import java.util.Collection;
 import java.util.Iterator;
@@ -36,8 +37,9 @@ import java.util.Set;
 import static java.util.Collections.singletonList;
 
 /**
- * Initialize once org.reflections library to avoid duplicate work scanning the classpath from individual tests.
+ * Initialize the org.reflections library once to avoid duplicate work on scanning the classpath from individual tests.
  */
+@SuppressWarnings("WeakerAccess")
 public final class ReflectionsHelper {
 
     public static final Reflections REFLECTIONS;
@@ -50,14 +52,14 @@ public final class ReflectionsHelper {
             URL url = iterator.next();
             // detect hazelcast-VERSION-tests.jar & $SOMEPATH/hazelcast/target/test-classes/ and exclude it from classpath
             // also exclude hazelcast-license-extractor artifact
-            if (url.toString().contains("-tests.jar") || url.toString().contains("target/test-classes") ||
-                    url.toString().contains("hazelcast-license-extractor")) {
+            if (url.toString().contains("-tests.jar") || url.toString().contains("target/test-classes")
+                    || url.toString().contains("hazelcast-license-extractor")) {
                 iterator.remove();
             }
         }
         HierarchyTraversingSubtypesScanner subtypesScanner = new HierarchyTraversingSubtypesScanner();
         subtypesScanner.setResultFilter(new FilterBuilder().exclude("java\\.lang\\.(Object|Enum)")
-                                                           .exclude("com\\.hazelcast\\.com\\.eclipsesource.*"));
+                .exclude("com\\.hazelcast\\.internal\\.json.*"));
         REFLECTIONS = new ReflectionsTransitive(new ConfigurationBuilder().addUrls(comHazelcastPackageURLs)
                 .addScanners(subtypesScanner, new TypeAnnotationsScanner())
                 .setMetadataAdapter(new JavaReflectionAdapter()));
@@ -66,7 +68,23 @@ public final class ReflectionsHelper {
     private ReflectionsHelper() {
     }
 
-    // Overrides default implementation of getSubTypesOf to obtain also transitive subtypes of given class
+    /**
+     * Removes abstract classes and interfaces from the given set.
+     */
+    public static void filterNonConcreteClasses(Set<? extends Class> classes) {
+        Iterator<? extends Class> iterator = classes.iterator();
+        while (iterator.hasNext()) {
+            Class<?> klass = iterator.next();
+            if (klass.isInterface() || Modifier.isAbstract(klass.getModifiers())) {
+                iterator.remove();
+            }
+        }
+    }
+
+    /**
+     * Overrides the default implementation of {@link Reflections#getSubTypesOf(Class)}
+     * to also obtain transitive subtypes of the given class.
+     */
     public static class ReflectionsTransitive extends Reflections {
 
         public ReflectionsTransitive(Configuration configuration) {
@@ -79,30 +97,38 @@ public final class ReflectionsHelper {
                     store.getAll(
                             HierarchyTraversingSubtypesScanner.class.getSimpleName(),
                             singletonList(type.getName())),
-                            configuration.getClassLoaders()));
+                    configuration.getClassLoaders()));
         }
     }
 
-    public static class HierarchyTraversingSubtypesScanner extends AbstractScanner{
+    public static class HierarchyTraversingSubtypesScanner extends AbstractScanner {
+
         /**
-         * creates new HierarchyTraversingSubtypesScanner. will exclude direct Object subtypes
+         * Creates new HierarchyTraversingSubtypesScanner.
+         * <p>
+         * Excludes direct Object subtypes.
          */
         public HierarchyTraversingSubtypesScanner() {
-            this(true); //exclude direct Object subtypes by default
+            // exclude direct Object subtypes by default
+            this(true);
         }
 
         /**
-         * creates new HierarchyTraversingSubtypesScanner.
-         * @param excludeObjectClass if false, include direct {@link Object} subtypes in results.
+         * Creates a new HierarchyTraversingSubtypesScanner.
+         *
+         * @param excludeObjectClass excludes direct {@link Object} subtypes in results if {@code true}
          */
         public HierarchyTraversingSubtypesScanner(boolean excludeObjectClass) {
             if (excludeObjectClass) {
-                filterResultsBy(new FilterBuilder().exclude(Object.class.getName())); //exclude direct Object subtypes
+                // exclude direct Object subtypes
+                filterResultsBy(new FilterBuilder().exclude(Object.class.getName()));
             }
         }
 
-        // depending on Reflections configuration, cls is either a regular Class or a javassist ClassFile
-        @SuppressWarnings({"unchecked"})
+        /**
+         * @param cls depending on the Reflections configuration, this is either a regular Class or a javassist ClassFile
+         */
+        @SuppressWarnings("unchecked")
         public void scan(final Object cls) {
             String className = getMetadataAdapter().getClassName(cls);
 
@@ -114,7 +140,7 @@ public final class ReflectionsHelper {
 
             // apart from this class' direct supertype and directly declared interfaces, also scan the class
             // hierarchy up until Object class
-            Class superKlass = ((Class)cls).getSuperclass();
+            Class superKlass = ((Class) cls).getSuperclass();
             while (superKlass != null) {
                 scanClassAndInterfaces(superKlass, className);
                 superKlass = superKlass.getSuperclass();

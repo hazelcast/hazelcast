@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,64 +16,73 @@
 
 package com.hazelcast.map.impl.operation;
 
-import com.hazelcast.core.EntryEventType;
-import com.hazelcast.core.EntryView;
-import com.hazelcast.map.impl.EntryViews;
+import com.hazelcast.internal.nio.IOUtil;
+import com.hazelcast.map.IMap;
 import com.hazelcast.map.impl.MapDataSerializerHook;
-import com.hazelcast.map.impl.event.MapEventPublisher;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.BackupAwareOperation;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.PartitionAwareOperation;
-import com.hazelcast.spi.impl.MutatingOperation;
+import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.spi.impl.operationservice.BackupAwareOperation;
+import com.hazelcast.spi.impl.operationservice.MutatingOperation;
+import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.spi.impl.operationservice.PartitionAwareOperation;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import static com.hazelcast.util.CollectionUtil.isEmpty;
-import static com.hazelcast.util.Preconditions.checkFalse;
-import static com.hazelcast.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.CollectionUtil.isEmpty;
+import static com.hazelcast.internal.util.Preconditions.checkFalse;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 /**
- * Puts records to map which are loaded from map store by {@link com.hazelcast.core.IMap#loadAll}
+ * Puts records to map which are loaded from map store by {@link IMap#loadAll}
  */
-public class PutFromLoadAllOperation extends MapOperation implements PartitionAwareOperation, MutatingOperation,
-        BackupAwareOperation {
+public class PutFromLoadAllOperation extends MapOperation
+        implements PartitionAwareOperation, MutatingOperation, BackupAwareOperation {
 
-    private List<Data> keyValueSequence;
+    private List<Data> loadingSequence;
     private List<Data> invalidationKeys;
+    private boolean includesExpirationTime;
 
     public PutFromLoadAllOperation() {
-        keyValueSequence = Collections.emptyList();
+        loadingSequence = Collections.emptyList();
+        includesExpirationTime = false;
     }
 
-    public PutFromLoadAllOperation(String name, List<Data> keyValueSequence) {
+    public PutFromLoadAllOperation(String name, List<Data> loadingSequence, boolean includesExpirationTime) {
         super(name);
-        checkFalse(isEmpty(keyValueSequence), "key-value sequence cannot be empty or null");
-        this.keyValueSequence = keyValueSequence;
+        checkFalse(isEmpty(loadingSequence), "key-value sequence cannot be empty or null");
+        this.loadingSequence = loadingSequence;
+        this.includesExpirationTime = includesExpirationTime;
     }
 
     @Override
-    public void run() throws Exception {
-        boolean hasInterceptor = mapServiceContext.hasInterceptor(name);
+    protected void runInternal() {
+        boolean hasInterceptor = !mapContainer.getInterceptorRegistry()
+                .getInterceptors().isEmpty();
 
-        List<Data> keyValueSequence = this.keyValueSequence;
-        for (int i = 0; i < keyValueSequence.size(); i += 2) {
-            Data key = keyValueSequence.get(i);
-            Data dataValue = keyValueSequence.get(i + 1);
+        List<Data> loadingSequence = this.loadingSequence;
+        for (int i = 0; i < loadingSequence.size(); ) {
+            Data key = loadingSequence.get(i++);
+            Data dataValue = loadingSequence.get(i++);
 
             checkNotNull(key, "Key loaded by a MapLoader cannot be null.");
 
             // here object conversion is for interceptors.
             Object value = hasInterceptor ? mapServiceContext.toObject(dataValue) : dataValue;
-            Object previousValue = recordStore.putFromLoad(key, value);
-            // the following check is for the case when the putFromLoad does not put the data due to various reasons
-            // one of the reasons may be size eviction threshold has been reached
+
+            if (includesExpirationTime) {
+                long expirationTime = (long) mapServiceContext.toObject(loadingSequence.get(i++));
+                recordStore.putFromLoad(key, value, expirationTime, getCallerAddress());
+            } else {
+                recordStore.putFromLoad(key, value, getCallerAddress());
+            }
+            // the following check is for the case when the putFromLoad does not put
+            // the data due to various reasons one of the reasons may be size
+            // eviction threshold has been reached
             if (value != null && !recordStore.existInMemory(key)) {
                 continue;
             }
@@ -82,13 +91,13 @@ public class PutFromLoadAllOperation extends MapOperation implements PartitionAw
             if (value != null) {
                 callAfterPutInterceptors(value);
             }
-            Record record = recordStore.getRecord(key);
+
             if (isPostProcessing(recordStore)) {
+                Record record = recordStore.getRecord(key);
                 checkNotNull(record, "Value loaded by a MapLoader cannot be null.");
                 value = record.getValue();
             }
-            publishEntryEvent(key, previousValue, value);
-            publishWanReplicationEvent(key, value, record);
+            publishLoadAsWanUpdate(key, value);
             addInvalidation(key);
         }
     }
@@ -99,39 +108,27 @@ public class PutFromLoadAllOperation extends MapOperation implements PartitionAw
         }
 
         if (invalidationKeys == null) {
-            invalidationKeys = new ArrayList<Data>(keyValueSequence.size() / 2);
+            if (includesExpirationTime) {
+                invalidationKeys = new ArrayList<>(loadingSequence.size() / 3);
+            } else {
+                invalidationKeys = new ArrayList<>(loadingSequence.size() / 2);
+            }
         }
 
         invalidationKeys.add(key);
     }
 
-
     private void callAfterPutInterceptors(Object value) {
-        mapService.getMapServiceContext().interceptAfterPut(name, value);
-    }
-
-    private void publishEntryEvent(Data key, Object previousValue, Object newValue) {
-        final EntryEventType eventType = previousValue == null ? EntryEventType.ADDED : EntryEventType.UPDATED;
-        mapEventPublisher.publishEvent(getCallerAddress(), name, eventType, key, previousValue, newValue);
-    }
-
-    private void publishWanReplicationEvent(Data key, Object value, Record record) {
-        if (record == null || !mapContainer.isWanReplicationEnabled()) {
-            return;
-        }
-
-        MapEventPublisher mapEventPublisher = mapServiceContext.getMapEventPublisher();
-        value = mapServiceContext.toData(value);
-        EntryView entryView = EntryViews.createSimpleEntryView(key, value, record);
-        mapEventPublisher.publishWanReplicationUpdate(name, entryView);
+        mapService.getMapServiceContext()
+                .interceptAfterPut(mapContainer.getInterceptorRegistry(), value);
     }
 
     @Override
-    public void afterRun() throws Exception {
+    protected void afterRunInternal() {
         invalidateNearCache(invalidationKeys);
         evict(null);
 
-        super.afterRun();
+        super.afterRunInternal();
     }
 
     @Override
@@ -141,7 +138,7 @@ public class PutFromLoadAllOperation extends MapOperation implements PartitionAw
 
     @Override
     public boolean shouldBackup() {
-        return !keyValueSequence.isEmpty();
+        return !loadingSequence.isEmpty();
     }
 
     @Override
@@ -156,38 +153,40 @@ public class PutFromLoadAllOperation extends MapOperation implements PartitionAw
 
     @Override
     public Operation getBackupOperation() {
-        return new PutFromLoadAllBackupOperation(name, keyValueSequence);
+        return new PutFromLoadAllBackupOperation(name, loadingSequence, includesExpirationTime);
     }
 
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        final List<Data> keyValueSequence = this.keyValueSequence;
+        out.writeBoolean(includesExpirationTime);
+        final List<Data> keyValueSequence = this.loadingSequence;
         final int size = keyValueSequence.size();
         out.writeInt(size);
         for (Data data : keyValueSequence) {
-            out.writeData(data);
+            IOUtil.writeData(out, data);
         }
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
+        this.includesExpirationTime = in.readBoolean();
         final int size = in.readInt();
         if (size < 1) {
-            keyValueSequence = Collections.emptyList();
+            loadingSequence = Collections.emptyList();
         } else {
-            final List<Data> tmpKeyValueSequence = new ArrayList<Data>(size);
+            final List<Data> tmpKeyValueSequence = new ArrayList<>(size);
             for (int i = 0; i < size; i++) {
-                final Data data = in.readData();
+                final Data data = IOUtil.readData(in);
                 tmpKeyValueSequence.add(data);
             }
-            keyValueSequence = tmpKeyValueSequence;
+            loadingSequence = tmpKeyValueSequence;
         }
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MapDataSerializerHook.PUT_FROM_LOAD_ALL;
     }
 }

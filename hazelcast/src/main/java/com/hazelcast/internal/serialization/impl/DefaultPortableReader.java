@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,8 @@
 
 package com.hazelcast.internal.serialization.impl;
 
-import com.hazelcast.nio.Bits;
-import com.hazelcast.nio.BufferObjectDataInput;
+import com.hazelcast.internal.nio.Bits;
+import com.hazelcast.internal.nio.BufferObjectDataInput;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.serialization.ClassDefinition;
 import com.hazelcast.nio.serialization.FieldType;
@@ -38,9 +38,9 @@ import java.util.Set;
 import static com.hazelcast.internal.serialization.impl.PortableUtils.getPortableArrayCellPosition;
 
 /**
- * Can't be accessed concurrently
+ * Can't be accessed concurrently.
  */
-public class DefaultPortableReader extends ValueReader implements PortableReader {
+public class DefaultPortableReader implements ValueReader, PortableReader {
 
     private static final MultiResult NULL_EMPTY_TARGET_MULTIRESULT;
 
@@ -109,7 +109,7 @@ public class DefaultPortableReader extends ValueReader implements PortableReader
         return in;
     }
 
-    final void end() throws IOException {
+    final void end() {
         in.position(finalPosition);
     }
 
@@ -697,7 +697,7 @@ public class DefaultPortableReader extends ValueReader implements PortableReader
                 in.position(position.getStreamPosition());
                 return (T) serializer.readAndInitialize(in, position.getFactoryId(), position.getClassId());
             default:
-                throw new IllegalArgumentException("Unsupported type " + position.getType());
+                throw new IllegalArgumentException("Unsupported type: " + position.getType());
         }
     }
 
@@ -767,7 +767,7 @@ public class DefaultPortableReader extends ValueReader implements PortableReader
     private void validateNotMultiPosition(PortablePosition position) {
         if (position.isMultiPosition()) {
             throw new IllegalArgumentException("The method expected a single result but multiple results have been returned."
-                    + "Did you use the [any] quantifier? If so, use the readArray method family.");
+                    + " Did you use the [any] quantifier? If so, use the readArray method family.");
         }
     }
 
@@ -777,9 +777,9 @@ public class DefaultPortableReader extends ValueReader implements PortableReader
             returnedType = returnedType != null ? returnedType.getSingleType() : null;
         }
         if (expectedType != returnedType) {
-            throw new IllegalArgumentException("Wrong type read! Actual:" + returnedType.name() + " Expected: "
-                    + expectedType.name() + ". Did you you a correct read method? E.g. readInt() for int.");
+            String name = returnedType != null ? returnedType.name() : null;
+            throw new IllegalArgumentException("Wrong type read! Actual: " + name + " Expected: " + expectedType.name()
+                    + ". Did you use a correct read method? E.g. readInt() for int.");
         }
     }
-
 }

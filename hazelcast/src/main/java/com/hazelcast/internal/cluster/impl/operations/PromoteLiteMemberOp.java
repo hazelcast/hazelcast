@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,9 @@ import com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.internal.cluster.impl.MembersView;
 import com.hazelcast.internal.cluster.impl.MembershipManager;
-import com.hazelcast.nio.Address;
+import com.hazelcast.cluster.Address;
+
+import java.util.UUID;
 
 /**
  * Promotes caller lite member to a normal member. Should be executed on only master node.
@@ -38,10 +40,10 @@ public class PromoteLiteMemberOp extends AbstractClusterOperation {
     public void run() throws Exception {
         ClusterServiceImpl service = getService();
         Address callerAddress = getCallerAddress();
-        String callerUuid = getCallerUuid();
+        UUID callerUuid = getCallerUuid();
 
         MembershipManager membershipManager = service.getMembershipManager();
-        response = membershipManager.promoteToNormalMember(callerAddress, callerUuid);
+        response = membershipManager.promoteToDataMember(callerAddress, callerUuid);
     }
 
     @Override
@@ -55,7 +57,7 @@ public class PromoteLiteMemberOp extends AbstractClusterOperation {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ClusterDataSerializerHook.PROMOTE_LITE_MEMBER;
     }
 }

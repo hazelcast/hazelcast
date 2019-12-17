@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,19 +16,19 @@
 
 package com.hazelcast.internal.networking.nio.iobalancer;
 
-import com.hazelcast.internal.networking.nio.MigratableHandler;
+import com.hazelcast.internal.networking.nio.MigratablePipeline;
 import com.hazelcast.internal.networking.nio.NioThread;
 
 /**
- * Decides if a {@link MigratableHandler handler} migration should be attempted
- * and which handler to choose.
+ * Decides if a {@link MigratablePipeline pipeline} migration should be attempted
+ * and which pipeline to choose.
  *
  * @see IOBalancer
  */
 interface MigrationStrategy {
 
     /**
-     * Looks for imbalance in {@link MigratableHandler handler} to {@link NioThread ioThread}
+     * Looks for imbalance in {@link MigratablePipeline pipeline} to {@link NioThread ioThread}
      * mapping.
      *
      * @param imbalance
@@ -37,10 +37,10 @@ interface MigrationStrategy {
     boolean imbalanceDetected(LoadImbalance imbalance);
 
     /**
-     * Finds a {@link MigratableHandler handler} to migrate
+     * Finds a {@link MigratablePipeline pipeline} to migrate
      *
      * @param imbalance
      * @return Handler to migrate or <code>null</code> if no suitable candidate is found
      */
-    MigratableHandler findHandlerToMigrate(LoadImbalance imbalance);
+    MigratablePipeline findPipelineToMigrate(LoadImbalance imbalance);
 }

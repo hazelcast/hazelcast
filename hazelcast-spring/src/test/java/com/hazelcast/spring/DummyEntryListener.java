@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,7 @@ package com.hazelcast.spring;
 
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryListener;
-import com.hazelcast.core.MapEvent;
+import com.hazelcast.map.MapEvent;
 
 public class DummyEntryListener implements EntryListener {
 
@@ -40,6 +40,11 @@ public class DummyEntryListener implements EntryListener {
     @Override
     public void entryEvicted(EntryEvent event) {
         //System.err.println("Evicted: " + event);
+    }
+
+    @Override
+    public void entryExpired(EntryEvent event) {
+        //System.err.println("Expired: " + event);
     }
 
     @Override

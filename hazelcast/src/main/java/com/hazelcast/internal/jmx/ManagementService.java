@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,19 +19,19 @@ package com.hazelcast.internal.jmx;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.DistributedObjectEvent;
 import com.hazelcast.core.DistributedObjectListener;
-import com.hazelcast.instance.HazelcastInstanceImpl;
-import com.hazelcast.instance.HazelcastInstanceProxy;
+import com.hazelcast.instance.impl.HazelcastInstanceImpl;
+import com.hazelcast.instance.impl.HazelcastInstanceProxy;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.spi.properties.ClusterProperty;
 
 import javax.management.MBeanServer;
 import javax.management.MalformedObjectNameException;
 import javax.management.ObjectName;
-
 import java.lang.management.ManagementFactory;
 import java.util.Hashtable;
 import java.util.List;
 import java.util.Set;
+import java.util.UUID;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
@@ -50,13 +50,13 @@ public class ManagementService implements DistributedObjectListener {
     final HazelcastInstanceImpl instance;
     private final boolean enabled;
     private final ILogger logger;
-    private final String registrationId;
+    private final UUID registrationId;
     private final InstanceMBean instanceMBean;
 
     public ManagementService(HazelcastInstanceImpl instance) {
         this.instance = instance;
         this.logger = instance.getLoggingService().getLogger(getClass());
-        this.enabled = instance.node.getProperties().getBoolean(GroupProperty.ENABLE_JMX);
+        this.enabled = instance.node.getProperties().getBoolean(ClusterProperty.ENABLE_JMX);
         if (!enabled) {
             this.instanceMBean = null;
             this.registrationId = null;
@@ -67,7 +67,7 @@ public class ManagementService implements DistributedObjectListener {
         MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
         InstanceMBean instanceMBean;
         try {
-            instanceMBean = new InstanceMBean(instance, this);
+            instanceMBean = createInstanceMBean(instance);
             mbs.registerMBean(instanceMBean, instanceMBean.objectName);
         } catch (Exception e) {
             instanceMBean = null;
@@ -79,6 +79,10 @@ public class ManagementService implements DistributedObjectListener {
         for (final DistributedObject distributedObject : instance.getDistributedObjects()) {
             registerDistributedObject(distributedObject);
         }
+    }
+
+    protected InstanceMBean createInstanceMBean(HazelcastInstanceImpl instance) {
+        return new InstanceMBean(instance, this);
     }
 
     public InstanceMBean getInstanceMBean() {
@@ -194,8 +198,7 @@ public class ManagementService implements DistributedObjectListener {
     }
 
     public static String quote(String text) {
-        return Pattern.compile("[:\",=*?]")
-                .matcher(text)
-                .find() ? ObjectName.quote(text) : text;
+        return Pattern.compile("[:\",=*?]").matcher(text).find() || text.indexOf('\n') >= 0
+                ? ObjectName.quote(text) : text;
     }
 }

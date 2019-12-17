@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,156 +17,389 @@
 package com.hazelcast.map.merge;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.core.EntryView;
+import com.hazelcast.config.InMemoryFormat;
+import com.hazelcast.config.MergePolicyConfig;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IMap;
-import com.hazelcast.core.LifecycleEvent;
-import com.hazelcast.core.LifecycleListener;
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.map.IMap;
+import com.hazelcast.spi.merge.DiscardMergePolicy;
+import com.hazelcast.spi.merge.HigherHitsMergePolicy;
+import com.hazelcast.spi.merge.LatestAccessMergePolicy;
+import com.hazelcast.spi.merge.LatestUpdateMergePolicy;
+import com.hazelcast.spi.merge.PassThroughMergePolicy;
+import com.hazelcast.spi.merge.PutIfAbsentMergePolicy;
+import com.hazelcast.spi.merge.SplitBrainMergePolicy;
+import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.SplitBrainTestSupport;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.test.backup.BackupAccessor;
+import com.hazelcast.test.backup.TestBackupUtils;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
+import org.junit.runners.Parameterized.Parameter;
+import org.junit.runners.Parameterized.Parameters;
+import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
-import java.io.IOException;
-import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.Collection;
 
+import static com.hazelcast.config.InMemoryFormat.BINARY;
+import static com.hazelcast.config.InMemoryFormat.OBJECT;
+import static com.hazelcast.test.backup.TestBackupUtils.assertBackupEntryEqualsEventually;
+import static com.hazelcast.test.backup.TestBackupUtils.assertBackupEntryNullEventually;
+import static com.hazelcast.test.backup.TestBackupUtils.assertBackupSizeEventually;
+import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
- * Given:
- * 3-members cluster, maps configured with custom merge policy that subtracts merging from existing value (if exists)
- * or the merging value itself
+ * Tests different split-brain scenarios for {@link IMap}.
  * <p>
- * When:
- * cluster splits in two sub-clusters with {1, 2} members respectively, on each brain put values:
- * on first brain, keys 0..1999 -> value 1
- * on second brain, keys 1000..2999 -> value 3
+ * Most merge policies are tested with {@link InMemoryFormat#BINARY} only, since they don't check the value.
  * <p>
- * Then:
- * custom merge policy's merge method is invoked for all entries of the map, assert final map values as follows:
- * keys 0..999 -> value 1 (merged, no existing value)
- * keys 1000..1999 -> value 2 (merged, result of (3-1))
- * keys 2000..2999 -> value 3 (not merged)
+ * The {@link MergeIntegerValuesMergePolicy} is tested with both in-memory formats, since it's using the value to merge.
+ * <p>
+ * The {@link DiscardMergePolicy}, {@link PassThroughMergePolicy} and {@link PutIfAbsentMergePolicy} are also
+ * tested with a data structure, which is only created in the smaller cluster.
  */
-@RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@RunWith(Parameterized.class)
+@UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
+@Category({QuickTest.class, ParallelJVMTest.class})
+@SuppressWarnings("WeakerAccess")
 public class MapSplitBrainTest extends SplitBrainTestSupport {
 
-    private static final String TEST_MAPS_PREFIX = "MapSplitBrainTest";
-    private static final CopyOnWriteArrayList<SubtractingMergePolicy> MERGE_POLICY_INSTANCES
-            = new CopyOnWriteArrayList<SubtractingMergePolicy>();
+    private static final int[] BRAINS = new int[]{3, 3};
 
-    private final CountDownLatch clusterMergedLatch = new CountDownLatch(1);
-    private final AtomicInteger countOfMerges = new AtomicInteger();
+    @Parameters(name = "format:{0}, mergePolicy:{1}")
+    public static Collection<Object[]> parameters() {
+        return asList(new Object[][]{
+                {BINARY, DiscardMergePolicy.class},
+                {BINARY, HigherHitsMergePolicy.class},
+                {BINARY, LatestAccessMergePolicy.class},
+                {BINARY, LatestUpdateMergePolicy.class},
+                {BINARY, PassThroughMergePolicy.class},
+                {BINARY, PutIfAbsentMergePolicy.class},
 
-    private String testMapName;
+                {BINARY, MergeIntegerValuesMergePolicy.class},
+                {OBJECT, MergeIntegerValuesMergePolicy.class},
+        });
+    }
+
+    @Parameter
+    public InMemoryFormat inMemoryFormat;
+
+    @Parameter(value = 1)
+    public Class<? extends SplitBrainMergePolicy> mergePolicyClass;
+
+    protected String mapNameA = randomMapName("mapA-");
+    protected String mapNameB = randomMapName("mapB-");
+
+    private IMap<Object, Object> mapA1;
+    private IMap<Object, Object> mapA2;
+    private IMap<Object, Object> mapB1;
+    private IMap<Object, Object> mapB2;
+    private BackupAccessor<Object, Object> backupMapA;
+    private BackupAccessor<Object, Object> backupMapB;
+    private MergeLifecycleListener mergeLifecycleListener;
 
     @Override
     protected int[] brains() {
-        // first half merges into second half
-        return new int[]{1, 2};
+        return BRAINS;
     }
 
     @Override
     protected Config config() {
+        MergePolicyConfig mergePolicyConfig = new MergePolicyConfig()
+                .setPolicy(mergePolicyClass.getName())
+                .setBatchSize(10);
+
         Config config = super.config();
-        config.getMapConfig(TEST_MAPS_PREFIX + "*")
-                .setMergePolicy(SubtractingMergePolicy.class.getName());
+        config.getMapConfig(mapNameA)
+                .setInMemoryFormat(inMemoryFormat)
+                .setMergePolicyConfig(mergePolicyConfig)
+                .setBackupCount(1)
+                .setAsyncBackupCount(0)
+                .setStatisticsEnabled(false);
+        config.getMapConfig(mapNameB)
+                .setInMemoryFormat(inMemoryFormat)
+                .setMergePolicyConfig(mergePolicyConfig)
+                .setBackupCount(1)
+                .setAsyncBackupCount(0)
+                .setStatisticsEnabled(false);
         return config;
     }
 
     @Override
     protected void onBeforeSplitBrainCreated(HazelcastInstance[] instances) {
-        testMapName = TEST_MAPS_PREFIX + randomMapName();
+        waitAllForSafeState(instances);
 
-        instances[0].getLifecycleService().addLifecycleListener(new MergedLifecycleListener());
+        BackupAccessor<Object, Object> accessor = TestBackupUtils.newMapAccessor(instances, mapNameA);
+        assertEquals("backupMap should contain 0 entries", 0, accessor.size());
     }
 
     @Override
     protected void onAfterSplitBrainCreated(HazelcastInstance[] firstBrain, HazelcastInstance[] secondBrain) {
-        // put value 1 for keys 0..1999 on first brain
-        IMap<Integer, Integer> mapOnFirstBrain = firstBrain[0].getMap(testMapName);
-        for (int i = 0; i < 2000; i++) {
-            mapOnFirstBrain.put(i, 1);
+        mergeLifecycleListener = new MergeLifecycleListener(secondBrain.length);
+        for (HazelcastInstance instance : secondBrain) {
+            instance.getLifecycleService().addLifecycleListener(mergeLifecycleListener);
         }
 
-        // put value 3 for keys 1000..2999 on second brain
-        IMap<Integer, Integer> mapOnSecondBrain = secondBrain[0].getMap(testMapName);
-        for (int i = 1000; i < 3000; i++) {
-            mapOnSecondBrain.put(i, 3);
+        mapA1 = firstBrain[0].getMap(mapNameA);
+        mapA2 = secondBrain[0].getMap(mapNameA);
+        mapB2 = secondBrain[0].getMap(mapNameB);
+
+        if (mergePolicyClass == DiscardMergePolicy.class) {
+            afterSplitDiscardMergePolicy();
+        } else if (mergePolicyClass == HigherHitsMergePolicy.class) {
+            afterSplitHigherHitsMergePolicy();
+        } else if (mergePolicyClass == LatestAccessMergePolicy.class) {
+            afterSplitLatestAccessMergePolicy();
+        } else if (mergePolicyClass == LatestUpdateMergePolicy.class) {
+            afterSplitLatestUpdateMergePolicy();
+        } else if (mergePolicyClass == PassThroughMergePolicy.class) {
+            afterSplitPassThroughMergePolicy();
+        } else if (mergePolicyClass == PutIfAbsentMergePolicy.class) {
+            afterSplitPutIfAbsentMergePolicy();
+        } else if (mergePolicyClass == MergeIntegerValuesMergePolicy.class) {
+            afterSplitCustomMergePolicy();
+        } else {
+            fail();
         }
     }
 
     @Override
     protected void onAfterSplitBrainHealed(HazelcastInstance[] instances) {
-        assertOpenEventually(clusterMergedLatch, 30);
-        // map on smaller, merging cluster has 2000 entries (0..1999), so 2000 merges should have happened
-        assertEquals(2000, countOfMerges.get());
-        IMap<Integer, Integer> map = instances[0].getMap(testMapName);
-        // final map should have:
-        // keys 0..999: value 1
-        // keys 1000..1999: value 2
-        // keys 2000..2999: value 3
-        for (int i = 0; i < 3000; i++) {
-            try {
-                assertEquals(i / 1000 + 1, (long) map.get(i));
-            } catch (Exception e) {
-                System.out.println(">>>> " + i);
-                e.printStackTrace();
-            }
+        // wait until merge completes
+        mergeLifecycleListener.await();
+
+        mapB1 = instances[0].getMap(mapNameB);
+
+        backupMapA = TestBackupUtils.newMapAccessor(instances, mapNameA);
+        backupMapB = TestBackupUtils.newMapAccessor(instances, mapNameB);
+
+        if (mergePolicyClass == DiscardMergePolicy.class) {
+            afterMergeDiscardMergePolicy();
+        } else if (mergePolicyClass == HigherHitsMergePolicy.class) {
+            afterMergeHigherHitsMergePolicy();
+        } else if (mergePolicyClass == LatestAccessMergePolicy.class) {
+            afterMergeLatestAccessMergePolicy();
+        } else if (mergePolicyClass == LatestUpdateMergePolicy.class) {
+            afterMergeLatestUpdateMergePolicy();
+        } else if (mergePolicyClass == PassThroughMergePolicy.class) {
+            afterMergePassThroughMergePolicy();
+        } else if (mergePolicyClass == PutIfAbsentMergePolicy.class) {
+            afterMergePutIfAbsentMergePolicy();
+        } else if (mergePolicyClass == MergeIntegerValuesMergePolicy.class) {
+            afterMergeCustomMergePolicy();
+        } else {
+            fail();
         }
     }
 
-    /**
-     * Subtracts the integer value of the merging entry from the existing entry (if one exists).
-     */
-    public static class SubtractingMergePolicy implements MapMergePolicy {
+    private void afterSplitDiscardMergePolicy() {
+        mapA1.put("key1", "value1");
 
-        final AtomicInteger counter;
+        mapA2.put("key1", "DiscardedValue1");
+        mapA2.put("key2", "DiscardedValue2");
 
-        public SubtractingMergePolicy() {
-            this.counter = new AtomicInteger();
-            MERGE_POLICY_INSTANCES.add(this);
-        }
-
-        @Override
-        public void writeData(ObjectDataOutput out)
-                throws IOException {
-        }
-
-        @Override
-        public void readData(ObjectDataInput in)
-                throws IOException {
-        }
-
-        @Override
-        public Object merge(String mapName, EntryView mergingEntry, EntryView existingEntry) {
-            counter.incrementAndGet();
-            Integer existingValue = (Integer) existingEntry.getValue();
-            Integer mergingValue = (Integer) mergingEntry.getValue();
-            if (existingValue != null) {
-                return existingValue - mergingValue;
-            } else {
-                return mergingEntry.getValue();
-            }
-        }
+        mapB2.put("key", "DiscardedValue");
     }
 
-    class MergedLifecycleListener implements LifecycleListener {
-        @Override
-        public void stateChanged(LifecycleEvent event) {
-            if (event.getState() == LifecycleEvent.LifecycleState.MERGED) {
-                for (SubtractingMergePolicy mergePolicy : MERGE_POLICY_INSTANCES) {
-                    countOfMerges.addAndGet(mergePolicy.counter.get());
-                }
-                clusterMergedLatch.countDown();
-            }
-        }
+    private void afterMergeDiscardMergePolicy() {
+        assertEquals("value1", mapA1.get("key1"));
+        assertEquals("value1", mapA2.get("key1"));
+        assertBackupEntryEqualsEventually("key1", "value1", backupMapA);
+
+        assertNull(mapA1.get("key2"));
+        assertNull(mapA2.get("key2"));
+        assertBackupEntryNullEventually("key2", backupMapA);
+
+        assertEquals(1, mapA1.size());
+        assertEquals(1, mapA2.size());
+        assertBackupSizeEventually(1, backupMapA);
+
+        assertNull(mapB1.get("key"));
+        assertNull(mapB2.get("key"));
+        assertBackupEntryNullEventually("key", backupMapB);
+
+        assertTrue(mapB1.isEmpty());
+        assertTrue(mapB2.isEmpty());
+        assertBackupSizeEventually(0, backupMapB);
+    }
+
+    private void afterSplitHigherHitsMergePolicy() {
+        mapA1.put("key1", "higherHitsValue1");
+        mapA1.put("key2", "value2");
+
+        // increase hits number
+        assertEquals("higherHitsValue1", mapA1.get("key1"));
+        assertEquals("higherHitsValue1", mapA1.get("key1"));
+
+        mapA2.put("key1", "value1");
+        mapA2.put("key2", "higherHitsValue2");
+
+        // increase hits number
+        assertEquals("higherHitsValue2", mapA2.get("key2"));
+        assertEquals("higherHitsValue2", mapA2.get("key2"));
+    }
+
+    private void afterMergeHigherHitsMergePolicy() {
+        assertEquals("higherHitsValue1", mapA1.get("key1"));
+        assertEquals("higherHitsValue1", mapA2.get("key1"));
+        assertBackupEntryEqualsEventually("key1", "higherHitsValue1", backupMapA);
+
+        assertEquals("higherHitsValue2", mapA1.get("key2"));
+        assertEquals("higherHitsValue2", mapA2.get("key2"));
+        assertBackupEntryEqualsEventually("key2", "higherHitsValue2", backupMapA);
+
+        assertEquals(2, mapA1.size());
+        assertEquals(2, mapA2.size());
+        assertBackupSizeEventually(2, backupMapA);
+    }
+
+    private void afterSplitLatestAccessMergePolicy() {
+        mapA1.put("key1", "value1");
+        // access to record
+        assertEquals("value1", mapA1.get("key1"));
+
+        // prevent updating at the same time
+        sleepAtLeastMillis(1000);
+
+        mapA2.put("key1", "LatestAccessedValue1");
+        // access to record
+        assertEquals("LatestAccessedValue1", mapA2.get("key1"));
+
+        mapA2.put("key2", "value2");
+        // access to record
+        assertEquals("value2", mapA2.get("key2"));
+
+        // prevent updating at the same time
+        sleepAtLeastMillis(1000);
+
+        mapA1.put("key2", "LatestAccessedValue2");
+        // access to record
+        assertEquals("LatestAccessedValue2", mapA1.get("key2"));
+    }
+
+    private void afterMergeLatestAccessMergePolicy() {
+        assertEquals("LatestAccessedValue1", mapA1.get("key1"));
+        assertEquals("LatestAccessedValue1", mapA2.get("key1"));
+        assertBackupEntryEqualsEventually("key1", "LatestAccessedValue1", backupMapA);
+
+        assertEquals("LatestAccessedValue2", mapA1.get("key2"));
+        assertEquals("LatestAccessedValue2", mapA2.get("key2"));
+        assertBackupEntryEqualsEventually("key2", "LatestAccessedValue2", backupMapA);
+
+        assertEquals(2, mapA1.size());
+        assertEquals(2, mapA2.size());
+        assertBackupSizeEventually(2, backupMapA);
+    }
+
+    private void afterSplitLatestUpdateMergePolicy() {
+        mapA1.put("key1", "value1");
+
+        // prevent updating at the same time
+        sleepAtLeastMillis(1000);
+
+        mapA2.put("key1", "LatestUpdatedValue1");
+        mapA2.put("key2", "value2");
+
+        // prevent updating at the same time
+        sleepAtLeastMillis(1000);
+
+        mapA1.put("key2", "LatestUpdatedValue2");
+    }
+
+    private void afterMergeLatestUpdateMergePolicy() {
+        assertEquals("LatestUpdatedValue1", mapA1.get("key1"));
+        assertEquals("LatestUpdatedValue1", mapA2.get("key1"));
+        assertBackupEntryEqualsEventually("key1", "LatestUpdatedValue1", backupMapA);
+
+        assertEquals("LatestUpdatedValue2", mapA1.get("key2"));
+        assertEquals("LatestUpdatedValue2", mapA2.get("key2"));
+        assertBackupEntryEqualsEventually("key2", "LatestUpdatedValue2", backupMapA);
+
+        assertEquals(2, mapA1.size());
+        assertEquals(2, mapA2.size());
+        assertBackupSizeEventually(2, backupMapA);
+    }
+
+    private void afterSplitPassThroughMergePolicy() {
+        mapA1.put("key1", "value1");
+
+        mapA2.put("key1", "PassThroughValue1");
+        mapA2.put("key2", "PassThroughValue2");
+
+        mapB2.put("key", "PutIfAbsentValue");
+    }
+
+    private void afterMergePassThroughMergePolicy() {
+        assertEquals("PassThroughValue1", mapA1.get("key1"));
+        assertEquals("PassThroughValue1", mapA2.get("key1"));
+        assertBackupEntryEqualsEventually("key1", "PassThroughValue1", backupMapA);
+
+        assertEquals("PassThroughValue2", mapA1.get("key2"));
+        assertEquals("PassThroughValue2", mapA2.get("key2"));
+        assertBackupEntryEqualsEventually("key2", "PassThroughValue2", backupMapA);
+
+        assertEquals(2, mapA1.size());
+        assertEquals(2, mapA2.size());
+        assertBackupSizeEventually(2, backupMapA);
+
+        assertEquals("PutIfAbsentValue", mapB1.get("key"));
+        assertEquals("PutIfAbsentValue", mapB2.get("key"));
+        assertBackupEntryEqualsEventually("key", "PutIfAbsentValue", backupMapB);
+
+        assertEquals(1, mapB1.size());
+        assertEquals(1, mapB2.size());
+        assertBackupSizeEventually(1, backupMapB);
+    }
+
+    private void afterSplitPutIfAbsentMergePolicy() {
+        mapA1.put("key1", "PutIfAbsentValue1");
+
+        mapA2.put("key1", "value");
+        mapA2.put("key2", "PutIfAbsentValue2");
+
+        mapB2.put("key", "PutIfAbsentValue");
+    }
+
+    private void afterMergePutIfAbsentMergePolicy() {
+        assertEquals("PutIfAbsentValue1", mapA1.get("key1"));
+        assertEquals("PutIfAbsentValue1", mapA2.get("key1"));
+        assertBackupEntryEqualsEventually("key1", "PutIfAbsentValue1", backupMapA);
+
+        assertEquals("PutIfAbsentValue2", mapA1.get("key2"));
+        assertEquals("PutIfAbsentValue2", mapA2.get("key2"));
+        assertBackupEntryEqualsEventually("key2", "PutIfAbsentValue2", backupMapA);
+
+        assertEquals(2, mapA1.size());
+        assertEquals(2, mapA2.size());
+        assertBackupSizeEventually(2, backupMapA);
+
+        assertEquals("PutIfAbsentValue", mapB1.get("key"));
+        assertEquals("PutIfAbsentValue", mapB2.get("key"));
+        assertBackupEntryEqualsEventually("key", "PutIfAbsentValue", backupMapB);
+
+        assertEquals(1, mapB1.size());
+        assertEquals(1, mapB2.size());
+        assertBackupSizeEventually(1, backupMapB);
+    }
+
+    private void afterSplitCustomMergePolicy() {
+        mapA1.put("key", "value");
+        mapA2.put("key", 1);
+    }
+
+    private void afterMergeCustomMergePolicy() {
+        assertEquals(1, mapA1.get("key"));
+        assertEquals(1, mapA2.get("key"));
+        assertBackupEntryEqualsEventually("key", 1, backupMapA);
+
+        assertEquals(1, mapA1.size());
+        assertEquals(1, mapA2.size());
+        assertBackupSizeEventually(1, backupMapA);
     }
 }

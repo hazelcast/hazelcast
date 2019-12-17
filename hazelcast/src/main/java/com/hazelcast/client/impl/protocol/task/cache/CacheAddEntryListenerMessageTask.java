@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,23 +21,26 @@ import com.hazelcast.cache.impl.CacheEventData;
 import com.hazelcast.cache.impl.CacheEventListener;
 import com.hazelcast.cache.impl.CacheEventSet;
 import com.hazelcast.cache.impl.CacheService;
-import com.hazelcast.client.ClientEndpoint;
+import com.hazelcast.client.impl.ClientEndpoint;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.CacheAddEntryListenerCodec;
-import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
-import com.hazelcast.instance.Node;
+import com.hazelcast.client.impl.protocol.task.AbstractAddListenerMessageTask;
+import com.hazelcast.instance.impl.Node;
+import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.serialization.impl.HeapData;
-import com.hazelcast.nio.Connection;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.internal.services.ListenerWrapperEventFilter;
+import com.hazelcast.internal.services.NotifiableEventListener;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.CachePermission;
-import com.hazelcast.spi.EventRegistration;
-import com.hazelcast.spi.ListenerWrapperEventFilter;
-import com.hazelcast.spi.NotifiableEventListener;
+import com.hazelcast.spi.impl.eventservice.EventRegistration;
 
 import java.security.Permission;
 import java.util.Set;
-import java.util.concurrent.Callable;
+import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
+
+import static com.hazelcast.spi.impl.InternalCompletableFuture.newCompletedFuture;
 
 /**
  * Client request which registers an event listener on behalf of the client and delegates the received events
@@ -46,27 +49,28 @@ import java.util.concurrent.Callable;
  * @see CacheService#registerListener(String, CacheEventListener, boolean localOnly)
  */
 public class CacheAddEntryListenerMessageTask
-        extends AbstractCallableMessageTask<CacheAddEntryListenerCodec.RequestParameters> {
+        extends AbstractAddListenerMessageTask<CacheAddEntryListenerCodec.RequestParameters> {
 
     public CacheAddEntryListenerMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
     @Override
-    protected Object call() {
-        ClientEndpoint endpoint = getEndpoint();
+    protected CompletableFuture<UUID> processInternal() {
         final CacheService service = getService(CacheService.SERVICE_NAME);
         CacheEntryListener cacheEntryListener = new CacheEntryListener(endpoint, this);
 
-        final String registrationId =
-                service.registerListener(parameters.name, cacheEntryListener, cacheEntryListener, parameters.localOnly);
-        endpoint.addDestroyAction(registrationId, new Callable<Boolean>() {
-            @Override
-            public Boolean call() throws Exception {
-                return service.deregisterListener(parameters.name, registrationId);
-            }
-        });
-        return registrationId;
+        if (parameters.localOnly) {
+            return newCompletedFuture(service.registerLocalListener(parameters.name, cacheEntryListener, cacheEntryListener));
+        }
+
+        return service.registerListenerAsync(parameters.name, cacheEntryListener, cacheEntryListener);
+    }
+
+    @Override
+    protected void addDestroyAction(UUID registrationId) {
+        final CacheService service = getService(CacheService.SERVICE_NAME);
+        endpoint.addDestroyAction(registrationId, () -> service.deregisterListener(parameters.name, registrationId));
     }
 
     private static final class CacheEntryListener
@@ -146,7 +150,7 @@ public class CacheAddEntryListenerMessageTask
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return CacheAddEntryListenerCodec.encodeResponse((String) response);
+        return CacheAddEntryListenerCodec.encodeResponse((UUID) response);
     }
 
     @Override

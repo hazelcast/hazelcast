@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +16,9 @@
 
 package com.hazelcast.spi.impl.servicemanager;
 
-import com.hazelcast.spi.ConfigurableService;
-import com.hazelcast.spi.CoreService;
-import com.hazelcast.spi.ManagedService;
+import com.hazelcast.internal.services.ConfigurableService;
+import com.hazelcast.internal.services.CoreService;
+import com.hazelcast.internal.services.ManagedService;
 
 /**
  * Contains the name of the service and the actual service.

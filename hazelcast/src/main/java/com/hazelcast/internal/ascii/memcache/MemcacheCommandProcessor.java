@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,9 +21,10 @@ import com.hazelcast.internal.ascii.TextCommandService;
 
 import static java.lang.System.arraycopy;
 
+@SuppressWarnings("checkstyle:magicnumber")
 public abstract class MemcacheCommandProcessor<T> extends AbstractTextCommandProcessor<T> {
 
-    public static final String MAP_NAME_PRECEDER = "hz_memcache_";
+    public static final String MAP_NAME_PREFIX = "hz_memcache_";
     public static final String DEFAULT_MAP_NAME = "hz_memcache_default";
 
     protected MemcacheCommandProcessor(TextCommandService textCommandService) {
@@ -47,8 +48,8 @@ public abstract class MemcacheCommandProcessor<T> extends AbstractTextCommandPro
             return -1;
         }
         int r = 0;
-        for (int i = 0; i < v.length; i++) {
-            int t = (int) v[i];
+        for (byte b : v) {
+            int t = (int) b;
             t = t >= 0 ? t : t + 256;
             r = r * 256 + t;
         }
@@ -61,5 +62,4 @@ public abstract class MemcacheCommandProcessor<T> extends AbstractTextCommandPro
         arraycopy(b, 0, c, a.length, b.length);
         return c;
     }
-
 }

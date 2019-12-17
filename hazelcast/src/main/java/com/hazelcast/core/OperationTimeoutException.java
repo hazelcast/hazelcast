@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,7 @@ package com.hazelcast.core;
 /**
  * An unchecked version of {@link java.util.concurrent.TimeoutException}.
  * <p>
- * Some of the Hazelcast operations may throw an <tt>OperationTimeoutException</tt>.
+ * Some of the Hazelcast operations may throw an <code>OperationTimeoutException</code>.
  * Hazelcast uses OperationTimeoutException to pass TimeoutException up through interfaces
  * that don't have TimeoutException in their signatures.
  * </p>

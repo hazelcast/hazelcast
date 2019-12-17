@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,54 +17,48 @@
 package com.hazelcast.client.impl.protocol.task.cache;
 
 import com.hazelcast.cache.impl.CacheService;
-import com.hazelcast.cache.impl.operation.CacheCreateConfigOperation;
+import com.hazelcast.cache.impl.ICacheService;
+import com.hazelcast.cache.impl.PreJoinCacheConfig;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.CacheCreateConfigCodec;
+import com.hazelcast.client.impl.protocol.codec.holder.CacheConfigHolder;
+import com.hazelcast.client.impl.protocol.task.AbstractMessageTask;
 import com.hazelcast.config.CacheConfig;
-import com.hazelcast.config.LegacyCacheConfig;
-import com.hazelcast.instance.BuildInfo;
-import com.hazelcast.instance.Node;
-import com.hazelcast.nio.Connection;
-import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.instance.impl.Node;
+import com.hazelcast.internal.nio.Connection;
+import com.hazelcast.spi.impl.InternalCompletableFuture;
+import com.hazelcast.spi.merge.SplitBrainMergePolicyProvider;
 
 import java.security.Permission;
+import java.util.function.BiConsumer;
+
+import static com.hazelcast.internal.config.ConfigValidator.checkCacheConfig;
 
 /**
- * This client request  specifically calls {@link CacheCreateConfigOperation} on the server side.
+ * Creates the given CacheConfig on all members of the cluster.
  *
- * @see CacheCreateConfigOperation
+ * @see ICacheService#createCacheConfigOnAllMembers(PreJoinCacheConfig)
  */
 public class CacheCreateConfigMessageTask
-        extends AbstractCacheMessageTask<CacheCreateConfigCodec.RequestParameters> {
+        extends AbstractMessageTask<CacheCreateConfigCodec.RequestParameters>
+        implements BiConsumer<Object, Throwable> {
 
     public CacheCreateConfigMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
     @Override
-    protected Operation prepareOperation() {
-        CacheConfig cacheConfig = extractCacheConfigFromMessage();
+    protected void processMessage() {
+        // parameters.cacheConfig is not nullable by protocol definition, hence no need for null check
+        CacheConfig cacheConfig = parameters.cacheConfig.asCacheConfig(serializationService);
+        CacheService cacheService = getService(CacheService.SERVICE_NAME);
 
-        return new CacheCreateConfigOperation(cacheConfig, parameters.createAlsoOnOthers);
-    }
+        SplitBrainMergePolicyProvider mergePolicyProvider = nodeEngine.getSplitBrainMergePolicyProvider();
+        checkCacheConfig(cacheConfig, mergePolicyProvider);
 
-    private CacheConfig extractCacheConfigFromMessage() {
-        int clientVersion = getClientVersion();
-        CacheConfig cacheConfig = null;
-        if (BuildInfo.UNKNOWN_HAZELCAST_VERSION == clientVersion) {
-            boolean compatibilityEnabled = nodeEngine.getProperties().getBoolean(GroupProperty.COMPATIBILITY_3_6_CLIENT_ENABLED);
-            if (compatibilityEnabled) {
-                LegacyCacheConfig legacyCacheConfig = nodeEngine.toObject(parameters.cacheConfig, LegacyCacheConfig.class);
-                if (null == legacyCacheConfig) {
-                    return null;
-                }
-                return legacyCacheConfig.getConfigAndReset();
-            }
-        }
-
-        return (CacheConfig) nodeEngine.toObject(parameters.cacheConfig);
+        InternalCompletableFuture future =
+                cacheService.createCacheConfigOnAllMembersAsync(PreJoinCacheConfig.of(cacheConfig));
+        future.whenCompleteAsync(this);
     }
 
     @Override
@@ -74,8 +68,8 @@ public class CacheCreateConfigMessageTask
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        Data responseData = serializeCacheConfig(response);
-        return CacheCreateConfigCodec.encodeResponse(responseData);
+        CacheConfig cacheConfig = (CacheConfig) response;
+        return CacheCreateConfigCodec.encodeResponse(CacheConfigHolder.of(cacheConfig, serializationService));
     }
 
     @Override
@@ -101,5 +95,14 @@ public class CacheCreateConfigMessageTask
     @Override
     public Object[] getParameters() {
         return null;
+    }
+
+    @Override
+    public void accept(Object response, Throwable throwable) {
+        if (throwable == null) {
+            sendResponse(response);
+        } else {
+            handleProcessingFailure(throwable);
+        }
     }
 }

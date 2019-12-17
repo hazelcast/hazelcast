@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,9 +30,7 @@ public class DistributedObjectEvent {
     protected DistributedObject distributedObject;
 
     private EventType eventType;
-
     private String serviceName;
-
     private String objectName;
 
     /**
@@ -70,16 +68,6 @@ public class DistributedObjectEvent {
     }
 
     /**
-     * Returns the identifier of related DistributedObject.
-     *
-     * @return the identifier of DistributedObject
-     * @deprecated since 3.5. Please use {@link #getObjectName()} instead.
-     */
-    public Object getObjectId() {
-        return getObjectName();
-    }
-
-    /**
      * Returns the name of related DistributedObject.
      *
      * @return the name of DistributedObject
@@ -103,10 +91,17 @@ public class DistributedObjectEvent {
     }
 
     /**
-     * Type of event.
+     * Type of the DistributedObjectEvent.
      */
     public enum EventType {
-        CREATED, DESTROYED
+        /**
+         * Event if a DistributedObjectEvent is created.
+         */
+        CREATED,
+        /**
+         * Event if a DistributedObjectEvent is destroyed.
+         */
+        DESTROYED
     }
 
     @Override

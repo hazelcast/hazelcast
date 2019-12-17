@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,14 +16,13 @@
 
 package com.hazelcast.cache;
 
-import com.hazelcast.cache.impl.HazelcastServerCachingProvider;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Before;
@@ -50,12 +49,13 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 
+import static com.hazelcast.cache.CacheTestSupport.createServerCachingProvider;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class CacheReadWriteThroughTest extends HazelcastTestSupport {
 
     protected TestHazelcastInstanceFactory factory;
@@ -67,7 +67,7 @@ public class CacheReadWriteThroughTest extends HazelcastTestSupport {
     }
 
     protected CachingProvider createCachingProvider(HazelcastInstance instance) {
-        return HazelcastServerCachingProvider.createCachingProvider(instance);
+        return createServerCachingProvider(instance);
     }
 
     protected TestHazelcastInstanceFactory createInstanceFactory(int instanceCount) {
@@ -82,13 +82,23 @@ public class CacheReadWriteThroughTest extends HazelcastTestSupport {
         return instance;
     }
 
+    /**
+     * Hook for adding additional setup steps in child classes.
+     */
+    protected void onSetup() {
+    }
+
     @Before
     public void setup() {
+        onSetup();
         factory = createInstanceFactory(2);
         hz = getInstance();
         cachingProvider = createCachingProvider(hz);
     }
 
+    /**
+     * Hook for adding additional teardown steps in child classes.
+     */
     protected void onTearDown() {
     }
 

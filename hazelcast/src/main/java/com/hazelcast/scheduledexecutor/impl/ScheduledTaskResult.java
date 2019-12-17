@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -63,9 +63,7 @@ public class ScheduledTaskResult
         return cancelled;
     }
 
-    void checkErroneousState()
-            throws ExecutionException {
-
+    void checkErroneousState() {
         if (wasCancelled()) {
             throw new CancellationException();
         } else if (exception != null) {
@@ -79,7 +77,7 @@ public class ScheduledTaskResult
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ScheduledExecutorDataSerializerHook.TASK_RESOLUTION;
     }
 
@@ -102,12 +100,11 @@ public class ScheduledTaskResult
     }
 
     @Override
-    public String
-    toString() {
+    public String toString() {
         return "ScheduledTaskResult{"
-                + "result=" + result + ", "
-                + "exception=" + exception + ", "
-                + "cancelled=" + cancelled
+                + "result=" + result
+                + ", exception=" + exception
+                + ", cancelled=" + cancelled
                 + '}';
     }
 

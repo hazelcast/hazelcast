@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,13 +16,13 @@
 
 package com.hazelcast.memory;
 
-import static com.hazelcast.util.QuickMath.divideByAndRoundToInt;
+import static com.hazelcast.internal.util.QuickMath.divideByAndRoundToInt;
 
 /**
  * MemoryUnit represents memory size at a given unit of
  * granularity and provides utility methods to convert across units.
  *
- * @see com.hazelcast.memory.MemorySize
+ * @see MemorySize
  * @since 3.4
  */
 public enum MemoryUnit {

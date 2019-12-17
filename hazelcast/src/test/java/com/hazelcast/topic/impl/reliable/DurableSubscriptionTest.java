@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,12 +17,12 @@
 package com.hazelcast.topic.impl.reliable;
 
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.ITopic;
-import com.hazelcast.core.Message;
+import com.hazelcast.topic.ITopic;
+import com.hazelcast.topic.Message;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.topic.ReliableMessageListener;
 import org.junit.Test;
@@ -30,13 +30,14 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class DurableSubscriptionTest extends HazelcastTestSupport {
 
     @Test
@@ -46,7 +47,7 @@ public class DurableSubscriptionTest extends HazelcastTestSupport {
         ITopic<String> topic = local.getReliableTopic("topic");
         final DurableMessageListener<String> listener = new DurableMessageListener<String>();
 
-        String id = topic.addMessageListener(listener);
+        UUID id = topic.addMessageListener(listener);
         topic.publish("item1");
 
         assertTrueEventually(new AssertTask() {
@@ -77,7 +78,7 @@ public class DurableSubscriptionTest extends HazelcastTestSupport {
     public void beginFromStart() {
     }
 
-    public class DurableMessageListener<V> implements ReliableMessageListener<V> {
+    public static class DurableMessageListener<V> implements ReliableMessageListener<V> {
 
         public final List<V> objects = new CopyOnWriteArrayList<V>();
         public final List<Long> sequences = new CopyOnWriteArrayList<Long>();

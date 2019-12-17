@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -51,6 +51,12 @@ public class SwCounterTest {
         assertEquals(10, counter.inc(10));
         assertEquals(10, counter.inc(0));
         assertEquals(0, counter.inc(-10));
+    }
+
+    @Test
+    public void set() {
+        counter.set(100_000);
+        assertEquals(100_000, counter.get());
     }
 
     @Test

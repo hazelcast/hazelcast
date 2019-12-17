@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,10 +18,11 @@ package com.hazelcast.nio.serialization;
 
 import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.config.SerializerConfig;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.PortableContext;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
-import com.hazelcast.spi.serialization.SerializationService;
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
@@ -106,7 +107,8 @@ public class PortableTest {
     }
 
     static ClassDefinition createNamedPortableClassDefinition(int portableVersion) {
-        ClassDefinitionBuilder builder = new ClassDefinitionBuilder(PORTABLE_FACTORY_ID, TestSerializationConstants.NAMED_PORTABLE, portableVersion);
+        ClassDefinitionBuilder builder
+                = new ClassDefinitionBuilder(PORTABLE_FACTORY_ID, TestSerializationConstants.NAMED_PORTABLE, portableVersion);
         builder.addUTFField("name");
         builder.addIntField("myint");
         return builder.build();
@@ -205,7 +207,8 @@ public class PortableTest {
                         new ClassDefinitionBuilder(PORTABLE_FACTORY_ID, TestSerializationConstants.NAMED_PORTABLE, portableVersion)
                                 .addUTFField("name").addIntField("myint").build());
 
-        SerializationService serializationService = new DefaultSerializationServiceBuilder().setConfig(serializationConfig).build();
+        SerializationService serializationService
+                = new DefaultSerializationServiceBuilder().setConfig(serializationConfig).build();
         RawDataPortable p = new RawDataPortable(System.currentTimeMillis(), "test chars".toCharArray(),
                 new NamedPortable("named portable", 34567),
                 9876, "Testing raw portable", new ByteArrayDataSerializable("test bytes".getBytes()));
@@ -375,8 +378,9 @@ public class PortableTest {
                                 return new TestObject1();
                             case 2:
                                 return new TestObject2();
+                            default:
+                                return null;
                         }
-                        return null;
                     }
                 })
                 .build();
@@ -495,10 +499,10 @@ public class PortableTest {
 
         private Portable[] portables;
 
-        public TestObject1() {
+        TestObject1() {
         }
 
-        public TestObject1(Portable[] p) {
+        TestObject1(Portable[] p) {
             portables = p;
         }
 
@@ -527,7 +531,7 @@ public class PortableTest {
 
         private String shortString;
 
-        public TestObject2() {
+        TestObject2() {
             shortString = "Hello World";
         }
 
@@ -573,8 +577,9 @@ public class PortableTest {
                     return new ObjectCarryingPortable();
                 case TestSerializationConstants.ALL_FIELD_OBJECT_PORTABLE:
                     return new SerializationV1Portable();
+                default:
+                    return null;
             }
-            return null;
         }
     }
 
@@ -584,8 +589,9 @@ public class PortableTest {
             switch (typeId) {
                 case TestSerializationConstants.SAMPLE_IDENTIFIED_DATA_SERIALIZABLE:
                     return new SampleIdentifiedDataSerializable();
+                default:
+                    return null;
             }
-            return null;
         }
     }
 
@@ -664,8 +670,9 @@ public class PortableTest {
                                 return new ChildGenericPortable1();
                             case ChildGenericPortable2.CLASS_ID:
                                 return new ChildGenericPortable2();
+                            default:
+                                throw new IllegalArgumentException();
                         }
-                        throw new IllegalArgumentException();
                     }
                 }).build();
 

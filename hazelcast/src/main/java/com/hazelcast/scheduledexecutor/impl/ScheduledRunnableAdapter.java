@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,22 +17,21 @@
 package com.hazelcast.scheduledexecutor.impl;
 
 import com.hazelcast.core.ManagedContext;
-import com.hazelcast.core.PartitionAware;
-import com.hazelcast.instance.Node;
+import com.hazelcast.partition.PartitionAware;
+import com.hazelcast.instance.impl.Node;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.scheduledexecutor.NamedTask;
 import com.hazelcast.scheduledexecutor.StatefulTask;
-import com.hazelcast.spi.NodeAware;
+import com.hazelcast.internal.services.NodeAware;
 
 import java.io.IOException;
 import java.util.Map;
 import java.util.concurrent.Callable;
 
 public class ScheduledRunnableAdapter<V>
-        implements IdentifiedDataSerializable, Callable<V>,
-                   NodeAware, PartitionAware, NamedTask, StatefulTask {
+        implements IdentifiedDataSerializable, Callable<V>, NodeAware, PartitionAware, NamedTask, StatefulTask {
 
     private Runnable task;
 
@@ -52,7 +51,8 @@ public class ScheduledRunnableAdapter<V>
     }
 
     @Override
-    public V call() throws Exception {
+    public V call()
+            throws Exception {
         task.run();
         return null;
     }
@@ -95,12 +95,14 @@ public class ScheduledRunnableAdapter<V>
     }
 
     @Override
-    public void writeData(ObjectDataOutput out) throws IOException {
+    public void writeData(ObjectDataOutput out)
+            throws IOException {
         out.writeObject(task);
     }
 
     @Override
-    public void readData(ObjectDataInput in) throws IOException {
+    public void readData(ObjectDataInput in)
+            throws IOException {
         task = in.readObject();
     }
 
@@ -110,7 +112,7 @@ public class ScheduledRunnableAdapter<V>
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ScheduledExecutorDataSerializerHook.RUNNABLE_ADAPTER;
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,10 @@
 
 package com.hazelcast.aggregation;
 
+import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -36,8 +38,10 @@ import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertThat;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class CountAggregationTest {
+
+    private final InternalSerializationService ss = new DefaultSerializationServiceBuilder().build();
 
     @Test(timeout = TimeoutInMillis.MINUTE)
     public void testCountAggregator() {
@@ -63,7 +67,7 @@ public class CountAggregationTest {
 
         Aggregator<Map.Entry<Person, Person>, Long> aggregation = Aggregators.count("age");
         for (Person person : values) {
-            aggregation.accumulate(createExtractableEntryWithValue(person));
+            aggregation.accumulate(createExtractableEntryWithValue(person, ss));
         }
 
         Aggregator<Map.Entry<BigDecimal, BigDecimal>, Long> resultAggregation = Aggregators.count("age");
@@ -99,7 +103,7 @@ public class CountAggregationTest {
 
         Aggregator<Map.Entry<Person, Person>, Long> aggregation = Aggregators.count("age");
         for (Person person : values) {
-            aggregation.accumulate(createExtractableEntryWithValue(person));
+            aggregation.accumulate(createExtractableEntryWithValue(person, ss));
         }
 
         Aggregator<Map.Entry<BigDecimal, BigDecimal>, Long> resultAggregation = Aggregators.count("age");

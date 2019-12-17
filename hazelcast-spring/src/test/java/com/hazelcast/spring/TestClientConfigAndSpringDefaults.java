@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,9 @@
 
 package com.hazelcast.spring;
 
+import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.config.ClientConfig;
-import com.hazelcast.client.impl.HazelcastClientProxy;
+import com.hazelcast.client.impl.clientside.HazelcastClientProxy;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.AfterClass;
@@ -45,6 +46,7 @@ public class TestClientConfigAndSpringDefaults {
     @BeforeClass
     @AfterClass
     public static void start() {
+        HazelcastClient.shutdownAll();
         Hazelcast.shutdownAll();
     }
 
@@ -57,7 +59,6 @@ public class TestClientConfigAndSpringDefaults {
     public void testDefaults() {
         ClientConfig defaults = new ClientConfig();
 
-        assertEquals(defaults.isSmartRouting(), clientConfig.isSmartRouting());
         assertEquals(defaults.getNetworkConfig().isSmartRouting(), clientConfig.getNetworkConfig().isSmartRouting());
         assertEquals(defaults.getNetworkConfig().getConnectionTimeout(), clientConfig.getNetworkConfig().getConnectionTimeout());
     }

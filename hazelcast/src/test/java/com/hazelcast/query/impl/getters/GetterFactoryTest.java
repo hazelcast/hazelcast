@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,7 @@
 package com.hazelcast.query.impl.getters;
 
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
 import org.junit.Test;
@@ -34,7 +34,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertSame;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class GetterFactoryTest {
 
     private Field outerNameField;
@@ -250,7 +250,8 @@ public class GetterFactoryTest {
         OuterObject object = new OuterObject("name", InnerObject.emptyInner("inner"));
 
         Getter parentGetter = GetterFactory.newFieldGetter(object, null, innersCollectionField, "[any]");
-        Getter innerObjectNameGetter = GetterFactory.newFieldGetter(object, parentGetter, innerAttributesCollectionField, "[any]");
+        Getter innerObjectNameGetter
+                = GetterFactory.newFieldGetter(object, parentGetter, innerAttributesCollectionField, "[any]");
 
         assertSame(NullMultiValueGetter.NULL_MULTIVALUE_GETTER, innerObjectNameGetter);
     }
@@ -261,7 +262,8 @@ public class GetterFactoryTest {
         OuterObject object = new OuterObject("name", InnerObject.emptyInner("inner"));
 
         Getter parentGetter = GetterFactory.newMethodGetter(object, null, innersCollectionMethod, "[any]");
-        Getter innerObjectNameGetter = GetterFactory.newMethodGetter(object, parentGetter, innerAttributesCollectionMethod, "[any]");
+        Getter innerObjectNameGetter
+                = GetterFactory.newMethodGetter(object, parentGetter, innerAttributesCollectionMethod, "[any]");
 
         assertSame(NullMultiValueGetter.NULL_MULTIVALUE_GETTER, innerObjectNameGetter);
     }
@@ -272,7 +274,8 @@ public class GetterFactoryTest {
         OuterObject object = new OuterObject("name", InnerObject.nullInner("inner"));
 
         Getter parentGetter = GetterFactory.newFieldGetter(object, null, innersCollectionField, "[any]");
-        Getter innerObjectNameGetter = GetterFactory.newFieldGetter(object, parentGetter, innerAttributesCollectionField, "[any]");
+        Getter innerObjectNameGetter
+                = GetterFactory.newFieldGetter(object, parentGetter, innerAttributesCollectionField, "[any]");
 
         assertSame(NullMultiValueGetter.NULL_MULTIVALUE_GETTER, innerObjectNameGetter);
     }
@@ -283,7 +286,8 @@ public class GetterFactoryTest {
         OuterObject object = new OuterObject("name", InnerObject.nullInner("inner"));
 
         Getter parentGetter = GetterFactory.newMethodGetter(object, null, innersCollectionMethod, "[any]");
-        Getter innerObjectNameGetter = GetterFactory.newMethodGetter(object, parentGetter, innerAttributesCollectionMethod, "[any]");
+        Getter innerObjectNameGetter
+                = GetterFactory.newMethodGetter(object, parentGetter, innerAttributesCollectionMethod, "[any]");
 
         assertSame(NullMultiValueGetter.NULL_MULTIVALUE_GETTER, innerObjectNameGetter);
     }
@@ -294,7 +298,8 @@ public class GetterFactoryTest {
         OuterObject object = new OuterObject("name", new InnerObject("inner", 0, 1, 2, 3));
 
         Getter parentGetter = GetterFactory.newFieldGetter(object, null, innersCollectionField, "[any]");
-        Getter innerObjectNameGetter = GetterFactory.newFieldGetter(object, parentGetter, innerAttributesCollectionField, "[any]");
+        Getter innerObjectNameGetter
+                = GetterFactory.newFieldGetter(object, parentGetter, innerAttributesCollectionField, "[any]");
 
         Class returnType = innerObjectNameGetter.getReturnType();
         assertEquals(Integer.class, returnType);
@@ -306,7 +311,8 @@ public class GetterFactoryTest {
         OuterObject object = new OuterObject("name", new InnerObject("inner", 0, 1, 2, 3));
 
         Getter parentGetter = GetterFactory.newMethodGetter(object, null, innersCollectionMethod, "[any]");
-        Getter innerObjectNameGetter = GetterFactory.newMethodGetter(object, parentGetter, innerAttributesCollectionMethod, "[any]");
+        Getter innerObjectNameGetter
+                = GetterFactory.newMethodGetter(object, parentGetter, innerAttributesCollectionMethod, "[any]");
 
         Class returnType = innerObjectNameGetter.getReturnType();
         assertEquals(Integer.class, returnType);
@@ -318,7 +324,8 @@ public class GetterFactoryTest {
         OuterObject object = new OuterObject("name", null, new InnerObject("inner", 0, 1, 2, 3));
 
         Getter parentGetter = GetterFactory.newFieldGetter(object, null, innersCollectionField, "[any]");
-        Getter innerObjectNameGetter = GetterFactory.newFieldGetter(object, parentGetter, innerAttributesCollectionField, "[any]");
+        Getter innerObjectNameGetter
+                = GetterFactory.newFieldGetter(object, parentGetter, innerAttributesCollectionField, "[any]");
 
         Class returnType = innerObjectNameGetter.getReturnType();
         assertEquals(Integer.class, returnType);
@@ -330,7 +337,8 @@ public class GetterFactoryTest {
         OuterObject object = new OuterObject("name", null, new InnerObject("inner", 0, 1, 2, 3));
 
         Getter parentGetter = GetterFactory.newMethodGetter(object, null, innersCollectionMethod, "[any]");
-        Getter innerObjectNameGetter = GetterFactory.newMethodGetter(object, parentGetter, innerAttributesCollectionMethod, "[any]");
+        Getter innerObjectNameGetter
+                = GetterFactory.newMethodGetter(object, parentGetter, innerAttributesCollectionMethod, "[any]");
 
         Class returnType = innerObjectNameGetter.getReturnType();
         assertEquals(Integer.class, returnType);
@@ -342,7 +350,8 @@ public class GetterFactoryTest {
         OuterObject object = new OuterObject("name", new InnerObject("inner", null, 0, 1, 2, 3));
 
         Getter parentGetter = GetterFactory.newFieldGetter(object, null, innersCollectionField, "[any]");
-        Getter innerObjectNameGetter = GetterFactory.newFieldGetter(object, parentGetter, innerAttributesCollectionField, "[any]");
+        Getter innerObjectNameGetter
+                = GetterFactory.newFieldGetter(object, parentGetter, innerAttributesCollectionField, "[any]");
 
         Class returnType = innerObjectNameGetter.getReturnType();
         assertEquals(Integer.class, returnType);
@@ -354,7 +363,8 @@ public class GetterFactoryTest {
         OuterObject object = new OuterObject("name", new InnerObject("inner", null, 0, 1, 2, 3));
 
         Getter parentGetter = GetterFactory.newMethodGetter(object, null, innersCollectionMethod, "[any]");
-        Getter innerObjectNameGetter = GetterFactory.newMethodGetter(object, parentGetter, innerAttributesCollectionMethod, "[any]");
+        Getter innerObjectNameGetter
+                = GetterFactory.newMethodGetter(object, parentGetter, innerAttributesCollectionMethod, "[any]");
 
         Class returnType = innerObjectNameGetter.getReturnType();
         assertEquals(Integer.class, returnType);
@@ -366,7 +376,8 @@ public class GetterFactoryTest {
         OuterObject object = new OuterObject("name", null, new InnerObject("inner", null, 0, 1, 2, 3));
 
         Getter parentGetter = GetterFactory.newFieldGetter(object, null, innersCollectionField, "[any]");
-        Getter innerObjectNameGetter = GetterFactory.newFieldGetter(object, parentGetter, innerAttributesCollectionField, "[any]");
+        Getter innerObjectNameGetter
+                = GetterFactory.newFieldGetter(object, parentGetter, innerAttributesCollectionField, "[any]");
 
         Class returnType = innerObjectNameGetter.getReturnType();
         assertEquals(Integer.class, returnType);
@@ -378,7 +389,8 @@ public class GetterFactoryTest {
         OuterObject object = new OuterObject("name", null, new InnerObject("inner", null, 0, 1, 2, 3));
 
         Getter parentGetter = GetterFactory.newMethodGetter(object, null, innersCollectionMethod, "[any]");
-        Getter innerObjectNameGetter = GetterFactory.newMethodGetter(object, parentGetter, innerAttributesCollectionMethod, "[any]");
+        Getter innerObjectNameGetter
+                = GetterFactory.newMethodGetter(object, parentGetter, innerAttributesCollectionMethod, "[any]");
 
         Class returnType = innerObjectNameGetter.getReturnType();
         assertEquals(Integer.class, returnType);

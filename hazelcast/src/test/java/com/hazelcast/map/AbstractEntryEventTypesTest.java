@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,22 +18,21 @@ package com.hazelcast.map;
 
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IMap;
 import com.hazelcast.map.listener.EntryAddedListener;
 import com.hazelcast.map.listener.EntryRemovedListener;
 import com.hazelcast.map.listener.EntryUpdatedListener;
 import com.hazelcast.map.listener.MapListener;
 import com.hazelcast.query.Predicate;
-import com.hazelcast.query.SqlPredicate;
+import com.hazelcast.query.Predicates;
 import com.hazelcast.test.HazelcastTestSupport;
 import org.junit.Test;
 
 import java.io.Serializable;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static java.util.Arrays.asList;
 import static org.junit.runners.Parameterized.Parameter;
 import static org.junit.runners.Parameterized.Parameters;
 
@@ -45,8 +44,9 @@ public abstract class AbstractEntryEventTypesTest extends HazelcastTestSupport {
 
     @Parameters(name = "includeValues: {0}")
     public static Collection<Object[]> data() {
-        return Arrays.asList(new Object[][]{
-                {true}, {false}
+        return asList(new Object[][]{
+                {true},
+                {false},
         });
     }
 
@@ -54,7 +54,7 @@ public abstract class AbstractEntryEventTypesTest extends HazelcastTestSupport {
     public boolean includeValue;
 
     @SuppressWarnings("unchecked")
-    final Predicate<Integer, Person> predicate = new SqlPredicate("age > 50");
+    final Predicate<Integer, Person> predicate = Predicates.sql("age > 50");
 
     final AtomicInteger eventCounter = new AtomicInteger();
     HazelcastInstance instance;

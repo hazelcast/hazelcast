@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,33 +17,35 @@
 package com.hazelcast.executor.impl.operations;
 
 import com.hazelcast.core.ManagedContext;
+import com.hazelcast.internal.nio.IOUtil;
+import com.hazelcast.internal.util.UUIDSerializationUtil;
 import com.hazelcast.executor.impl.DistributedExecutorService;
 import com.hazelcast.executor.impl.ExecutorDataSerializerHook;
-import com.hazelcast.executor.impl.RunnableAdapter;
-import com.hazelcast.instance.HazelcastInstanceImpl;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.spi.CallStatus;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.serialization.SerializationService;
+import com.hazelcast.spi.impl.operationservice.CallStatus;
+import com.hazelcast.spi.impl.operationservice.NamedOperation;
+import com.hazelcast.spi.impl.operationservice.Offload;
+import com.hazelcast.spi.impl.operationservice.Operation;
 
+import javax.annotation.Nonnull;
 import java.io.IOException;
-import java.util.concurrent.Callable;
+import java.util.UUID;
 
-import static com.hazelcast.spi.CallStatus.OFFLOADED;
-
-abstract class AbstractCallableTaskOperation extends Operation implements IdentifiedDataSerializable {
+abstract class AbstractCallableTaskOperation extends Operation implements NamedOperation, IdentifiedDataSerializable {
 
     protected String name;
-    protected String uuid;
+    protected UUID uuid;
     private Data callableData;
 
-    public AbstractCallableTaskOperation() {
+    AbstractCallableTaskOperation() {
     }
 
-    public AbstractCallableTaskOperation(String name, String uuid, Data callableData) {
+    AbstractCallableTaskOperation(String name,
+                                  UUID uuid,
+                                  @Nonnull Data callableData) {
         this.name = name;
         this.uuid = uuid;
         this.callableData = callableData;
@@ -51,30 +53,12 @@ abstract class AbstractCallableTaskOperation extends Operation implements Identi
 
     @Override
     public final CallStatus call() {
-        Callable callable = loadCallable();
-        DistributedExecutorService service = getService();
-        service.execute(name, uuid, callable, this);
-        return OFFLOADED;
+        return new OffloadImpl();
     }
 
-    private Callable loadCallable() {
-        ManagedContext managedContext = getManagedContext();
-
-        Callable callable = getNodeEngine().toObject(callableData);
-        if (callable instanceof RunnableAdapter) {
-            RunnableAdapter adapter = (RunnableAdapter) callable;
-            Runnable runnable = (Runnable) managedContext.initialize(adapter.getRunnable());
-            adapter.setRunnable(runnable);
-        } else {
-            callable = (Callable) managedContext.initialize(callable);
-        }
-        return callable;
-    }
-
-    private ManagedContext getManagedContext() {
-        HazelcastInstanceImpl hazelcastInstance = (HazelcastInstanceImpl) getNodeEngine().getHazelcastInstance();
-        SerializationService serializationService = hazelcastInstance.getSerializationService();
-        return serializationService.getManagedContext();
+    @Override
+    public String getName() {
+        return name;
     }
 
     @Override
@@ -85,15 +69,15 @@ abstract class AbstractCallableTaskOperation extends Operation implements Identi
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         out.writeUTF(name);
-        out.writeUTF(uuid);
-        out.writeData(callableData);
+        UUIDSerializationUtil.writeUUID(out, uuid);
+        IOUtil.writeData(out, callableData);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         name = in.readUTF();
-        uuid = in.readUTF();
-        callableData = in.readData();
+        uuid = UUIDSerializationUtil.readUUID(in);
+        callableData = IOUtil.readData(in);
     }
 
     @Override
@@ -106,5 +90,25 @@ abstract class AbstractCallableTaskOperation extends Operation implements Identi
     @Override
     public int getFactoryId() {
         return ExecutorDataSerializerHook.F_ID;
+    }
+
+    private class OffloadImpl extends Offload {
+        OffloadImpl() {
+            super(AbstractCallableTaskOperation.this);
+        }
+
+        @Override
+        public void start() {
+            DistributedExecutorService service = getService();
+            service.execute(name, uuid, loadTask(), AbstractCallableTaskOperation.this);
+        }
+
+        private <T> T loadTask() {
+            ManagedContext managedContext = serializationService.getManagedContext();
+
+            Object object = serializationService.toObject(callableData);
+            managedContext.initialize(object);
+            return (T) object;
+        }
     }
 }

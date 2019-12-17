@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 
 package com.hazelcast.internal.networking.nio.iobalancer;
 
-import com.hazelcast.internal.networking.nio.MigratableHandler;
+import com.hazelcast.internal.networking.nio.MigratablePipeline;
 
 import java.util.Iterator;
 import java.util.Random;
@@ -24,9 +24,9 @@ import java.util.Set;
 
 /**
  * IOBalancer Migration Strategy intended to be used by stress tests only. It always tries to
- * select a random {@link MigratableHandler handler} to be migrated.
+ * select a random {@link MigratablePipeline pipeline} to be migrated.
  *
- * It stresses the handler migration mechanism increasing a chance to reveal possible race-conditions.
+ * It stresses the pipeline migration mechanism increasing a chance to reveal possible race-conditions.
  */
 class MonkeyMigrationStrategy implements MigrationStrategy {
 
@@ -34,17 +34,17 @@ class MonkeyMigrationStrategy implements MigrationStrategy {
 
     @Override
     public boolean imbalanceDetected(LoadImbalance imbalance) {
-        Set<? extends MigratableHandler> candidates = imbalance.getHandlersOwnerBy(imbalance.sourceSelector);
-        //only attempts to migrate if at least 1 handler exists
-        return (candidates.size() > 0);
+        Set<? extends MigratablePipeline> candidates = imbalance.getPipelinesOwnedBy(imbalance.srcOwner);
+        //only attempts to migrate if at least 1 pipeline exists
+        return candidates.size() > 0;
     }
 
     @Override
-    public MigratableHandler findHandlerToMigrate(LoadImbalance imbalance) {
-        Set<? extends MigratableHandler> candidates = imbalance.getHandlersOwnerBy(imbalance.sourceSelector);
-        int handlerCount = candidates.size();
-        int selected = random.nextInt(handlerCount);
-        Iterator<? extends MigratableHandler> iterator = candidates.iterator();
+    public MigratablePipeline findPipelineToMigrate(LoadImbalance imbalance) {
+        Set<? extends MigratablePipeline> candidates = imbalance.getPipelinesOwnedBy(imbalance.srcOwner);
+        int pipelineCount = candidates.size();
+        int selected = random.nextInt(pipelineCount);
+        Iterator<? extends MigratablePipeline> iterator = candidates.iterator();
         for (int i = 0; i < selected; i++) {
             iterator.next();
         }

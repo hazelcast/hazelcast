@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,8 @@
 
 package com.hazelcast.config;
 
-import com.hazelcast.util.StringUtil;
+import com.hazelcast.security.jsm.HazelcastRuntimePermission;
+import com.hazelcast.internal.util.StringUtil;
 
 import java.util.Collection;
 import java.util.HashSet;
@@ -24,6 +25,7 @@ import java.util.HashSet;
 /**
  * Contains configuration for Network.
  */
+@SuppressWarnings("checkstyle:methodcount")
 public class NetworkConfig {
 
     /**
@@ -60,6 +62,12 @@ public class NetworkConfig {
     private SSLConfig sslConfig;
 
     private MemberAddressProviderConfig memberAddressProviderConfig = new MemberAddressProviderConfig();
+
+    private IcmpFailureDetectorConfig icmpFailureDetectorConfig;
+
+    private RestApiConfig restApiConfig = new RestApiConfig();
+
+    private MemcacheProtocolConfig memcacheProtocolConfig = new MemcacheProtocolConfig();
 
     public NetworkConfig() {
         String os = StringUtil.lowerCaseInternal(System.getProperty("os.name"));
@@ -112,12 +120,14 @@ public class NetworkConfig {
      *
      * @param portCount the maximum number of ports allowed to use
      * @see #setPortAutoIncrement(boolean) for more information
+     * @return this configuration
      */
-    public void setPortCount(int portCount) {
+    public NetworkConfig setPortCount(int portCount) {
         if (portCount < 1) {
             throw new IllegalArgumentException("port count can't be smaller than 0");
         }
         this.portCount = portCount;
+        return this;
     }
 
     /**
@@ -308,8 +318,14 @@ public class NetworkConfig {
      *
      * @return the SSLConfig
      * @see #setSSLConfig(SSLConfig)
+     * @throws SecurityException If a security manager exists and the calling method doesn't have corresponding
+     *         {@link HazelcastRuntimePermission}
      */
     public SSLConfig getSSLConfig() {
+        SecurityManager sm = System.getSecurityManager();
+        if (sm != null) {
+            sm.checkPermission(new HazelcastRuntimePermission("com.hazelcast.config.NetworkConfig.getSSLConfig"));
+        }
         return sslConfig;
     }
 
@@ -319,8 +335,14 @@ public class NetworkConfig {
      * @param sslConfig the SSLConfig
      * @return the updated NetworkConfig
      * @see #getSSLConfig()
+     * @throws SecurityException If a security manager exists and the calling method doesn't have corresponding
+     *         {@link HazelcastRuntimePermission}
      */
     public NetworkConfig setSSLConfig(SSLConfig sslConfig) {
+        SecurityManager sm = System.getSecurityManager();
+        if (sm != null) {
+            sm.checkPermission(new HazelcastRuntimePermission("com.hazelcast.config.NetworkConfig.setSSLConfig"));
+        }
         this.sslConfig = sslConfig;
         return this;
     }
@@ -331,6 +353,47 @@ public class NetworkConfig {
 
     public NetworkConfig setMemberAddressProviderConfig(MemberAddressProviderConfig memberAddressProviderConfig) {
         this.memberAddressProviderConfig = memberAddressProviderConfig;
+        return this;
+    }
+
+    /**
+     * Sets the {@link IcmpFailureDetectorConfig}. The value can be {@code null} if this detector isn't needed.
+     *
+     * @param icmpFailureDetectorConfig the IcmpFailureDetectorConfig to set
+     * @return the updated NetworkConfig
+     * @see #getIcmpFailureDetectorConfig()
+     */
+    public NetworkConfig setIcmpFailureDetectorConfig(final IcmpFailureDetectorConfig icmpFailureDetectorConfig) {
+        this.icmpFailureDetectorConfig = icmpFailureDetectorConfig;
+        return this;
+    }
+
+    /**
+     * Returns the current {@link IcmpFailureDetectorConfig}. It is possible that null is returned if no
+     * IcmpFailureDetectorConfig has been set.
+     *
+     * @return the IcmpFailureDetectorConfig
+     * @see #setIcmpFailureDetectorConfig(IcmpFailureDetectorConfig)
+     */
+    public IcmpFailureDetectorConfig getIcmpFailureDetectorConfig() {
+        return icmpFailureDetectorConfig;
+    }
+
+    public RestApiConfig getRestApiConfig() {
+        return restApiConfig;
+    }
+
+    public NetworkConfig setRestApiConfig(RestApiConfig restApiConfig) {
+        this.restApiConfig = restApiConfig;
+        return this;
+    }
+
+    public MemcacheProtocolConfig getMemcacheProtocolConfig() {
+        return memcacheProtocolConfig;
+    }
+
+    public NetworkConfig setMemcacheProtocolConfig(MemcacheProtocolConfig memcacheProtocolConfig) {
+        this.memcacheProtocolConfig = memcacheProtocolConfig;
         return this;
     }
 
@@ -346,6 +409,9 @@ public class NetworkConfig {
                 + ", sslConfig=" + sslConfig
                 + ", socketInterceptorConfig=" + socketInterceptorConfig
                 + ", symmetricEncryptionConfig=" + symmetricEncryptionConfig
+                + ", icmpFailureDetectorConfig=" + icmpFailureDetectorConfig
+                + ", restApiConfig=" + restApiConfig
+                + ", memcacheProtocolConfig=" + memcacheProtocolConfig
                 + '}';
     }
 }

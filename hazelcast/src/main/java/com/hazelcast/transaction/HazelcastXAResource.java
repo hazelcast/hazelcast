@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package com.hazelcast.transaction;
 
 import com.hazelcast.core.DistributedObject;
 
+import javax.annotation.Nonnull;
 import javax.transaction.xa.XAResource;
 
 /**
@@ -31,7 +32,7 @@ public interface HazelcastXAResource extends XAResource, DistributedObject {
      * @return TransactionContext associated with the current thread
      * @throws IllegalStateException if no context found
      */
-    TransactionContext getTransactionContext();
+    @Nonnull TransactionContext getTransactionContext();
 
 
 }

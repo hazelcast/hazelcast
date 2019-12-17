@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,8 +19,8 @@ package com.hazelcast.collection.impl.txnlist;
 import com.hazelcast.collection.impl.collection.CollectionItem;
 import com.hazelcast.collection.impl.list.ListService;
 import com.hazelcast.collection.impl.txncollection.AbstractTransactionalCollectionProxy;
-import com.hazelcast.core.TransactionalList;
-import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.transaction.TransactionalList;
+import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.transaction.impl.Transaction;
 
 import java.util.Collection;

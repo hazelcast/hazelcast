@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,7 @@
 package com.hazelcast.cardinality.impl.hyperloglog.impl;
 
 import com.hazelcast.cardinality.impl.CardinalityEstimatorDataSerializerHook;
-import com.hazelcast.nio.Bits;
+import com.hazelcast.internal.nio.Bits;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 
@@ -26,20 +26,23 @@ import java.util.Arrays;
 
 /**
  * 1. http://static.googleusercontent.com/media/research.google.com/en//pubs/archive/40671.pdf
+ * <p>The implementation is using a fixed p' = 25 which according to [1] provides very high accuracy
+ * for the range of cardinalities where the sparse representation is used.
  */
 @SuppressWarnings("checkstyle:magicnumber")
-public class SparseHyperLogLogEncoder implements HyperLogLogEncoder  {
+public class SparseHyperLogLogEncoder
+        implements HyperLogLogEncoder {
 
-    private static final long P_PRIME_FENCE_MASK = 0x8000000000L;
+    private static final int P_PRIME = 25;
+    private static final int P_PRIME_MASK = 0x1ffffff;
+    private static final long P_PRIME_FENCE_MASK = 0x4000000000L;
+
     private static final int DEFAULT_TEMP_CAPACITY = 200;
 
     private int p;
     private int pMask;
-    private int pPrime;
-    private int pPrimeMask;
+    private int pFenseMask;
     private long pDiffMask;
-    private long pDiffEncodedMask;
-
     private VariableLengthDiffArray register;
 
     private int[] temp;
@@ -49,20 +52,18 @@ public class SparseHyperLogLogEncoder implements HyperLogLogEncoder  {
     public SparseHyperLogLogEncoder() {
     }
 
-    public SparseHyperLogLogEncoder(final int p, final int pPrime) {
-        init(p, pPrime, new VariableLengthDiffArray());
+    SparseHyperLogLogEncoder(final int p) {
+        init(p, new VariableLengthDiffArray());
     }
 
-    public void init(int p, int pPrime, VariableLengthDiffArray register) {
+    public void init(int p, VariableLengthDiffArray register) {
         this.p = p;
-        this.pPrime = pPrime;
-        this.pPrimeMask = (1 << pPrime) - 1;
-        this.mPrime = 1 << pPrime;
-        this.temp = new int[DEFAULT_TEMP_CAPACITY];
-
         this.pMask = ((1 << p) - 1);
-        this.pDiffMask = pPrimeMask ^ pMask;
-        this.pDiffEncodedMask = (1L << (pPrime - p)) - 1;
+        this.pFenseMask = 1 << (64 - p) - 1;
+        this.pDiffMask = P_PRIME_MASK ^ pMask;
+
+        this.mPrime = 1 << P_PRIME;
+        this.temp = new int[DEFAULT_TEMP_CAPACITY];
         this.register = register;
     }
 
@@ -85,12 +86,18 @@ public class SparseHyperLogLogEncoder implements HyperLogLogEncoder  {
     }
 
     @Override
+    public HyperLogLogEncoder merge(HyperLogLogEncoder encoder) {
+        HyperLogLogEncoder dense = asDense();
+        return dense.merge(encoder);
+    }
+
+    @Override
     public int getFactoryId() {
         return CardinalityEstimatorDataSerializerHook.F_ID;
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return CardinalityEstimatorDataSerializerHook.HLL_SPARSE_ENC;
     }
 
@@ -98,7 +105,6 @@ public class SparseHyperLogLogEncoder implements HyperLogLogEncoder  {
     public void writeData(ObjectDataOutput out) throws IOException {
         mergeAndResetTmp();
         out.writeInt(p);
-        out.writeInt(pPrime);
         out.writeInt(register.total);
         out.writeInt(register.mark);
         out.writeInt(register.prev);
@@ -108,12 +114,11 @@ public class SparseHyperLogLogEncoder implements HyperLogLogEncoder  {
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         int p = in.readInt();
-        int pPrime = in.readInt();
         int total = in.readInt();
         int mark = in.readInt();
         int prev = in.readInt();
         byte[] bytes = in.readByteArray();
-        init(p, pPrime, new VariableLengthDiffArray(bytes, total, mark, prev));
+        init(p, new VariableLengthDiffArray(bytes, total, mark, prev));
     }
 
     @Override
@@ -126,7 +131,9 @@ public class SparseHyperLogLogEncoder implements HyperLogLogEncoder  {
         return register.mark + (DEFAULT_TEMP_CAPACITY * Bits.INT_SIZE_IN_BYTES);
     }
 
-    public HyperLogLogEncoder asDense() {
+    HyperLogLogEncoder asDense() {
+        mergeAndResetTmp();
+
         byte[] dense = new byte[1 << this.p];
         for (int hash : register.explode()) {
             int index = decodeHashPIndex(hash);
@@ -137,42 +144,46 @@ public class SparseHyperLogLogEncoder implements HyperLogLogEncoder  {
     }
 
     private int encodeHash(long hash) {
-        int index = (int) (hash & pPrimeMask) << (32 - pPrime);
         if ((hash & pDiffMask) == 0) {
-            return index | Long.numberOfTrailingZeros((hash >>> pPrime) | P_PRIME_FENCE_MASK) << 1 | 0x1;
+            int newHash = (int) (hash & P_PRIME_MASK) << (32 - P_PRIME);
+            return newHash | (Long.numberOfTrailingZeros((hash >>> P_PRIME) | P_PRIME_FENCE_MASK) + 1) << 1 | 0x1;
         }
 
-        return ((index >>> (32 - pPrime)) & pPrimeMask) << 1;
+        return (int) (hash & P_PRIME_MASK) << 1;
     }
 
     private int decodeHashPPrimeIndex(int hash) {
         if (!hasRunOfZerosEncoded(hash)) {
-            return ((hash >> 1) & pPrimeMask) & mPrime - 1;
+            return ((hash >> 1) & P_PRIME_MASK) & mPrime - 1;
         }
 
-        return (hash >> (32 - pPrime) & pPrimeMask) & mPrime - 1;
+        return (hash >> (32 - P_PRIME) & P_PRIME_MASK) & mPrime - 1;
     }
 
     private int decodeHashPIndex(long hash) {
         if (!hasRunOfZerosEncoded(hash)) {
-            return (int) ((hash >>> 1)) & pMask;
-        }
-
-        return (int) (hash >>> (32 - pPrime)) & pMask;
-    }
-
-    private byte decodeHashRunOfZeros(long hash) {
-        if (!hasRunOfZerosEncoded(hash)) {
             // |-25bits-||-1bit-
-            // (p - p') || 0
-            int pDiff = (int) ((hash >>> 1) & pDiffEncodedMask);
-            return (byte) (Integer.numberOfTrailingZeros(pDiff) + 1);
+            return (int) ((hash >>> 1)) & pMask;
         }
 
         // |-25bits-||-6bits-||-1bit-|
         // (p - p') || p(w') || 1
-        int pW = (int) (hash & ((1 << (32 - pPrime)) - 1)) >>> 1;
-        return (byte) (pW + (pPrime - p) + 1);
+        return (int) (hash >>> 7) & pMask;
+    }
+
+    private byte decodeHashRunOfZeros(int hash) {
+        int stripedZeroFlag = hash >>> 1;
+
+        if (!hasRunOfZerosEncoded(hash)) {
+            // |-25bits-||-1bit-
+            // (p - p') || 0
+            return (byte) (Long.numberOfTrailingZeros(stripedZeroFlag >>> p | pFenseMask) + 1);
+        }
+
+        // |-25bits-||-6bits-||-1bit-|
+        // (p - p') || p(w') || 1
+        int pW = stripedZeroFlag & ((1 << 6) - 1);
+        return (byte) (pW + (P_PRIME - p));
     }
 
     private boolean hasRunOfZerosEncoded(long hash) {

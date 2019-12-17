@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,17 +17,16 @@
 package com.hazelcast.collection.impl.queue;
 
 import com.hazelcast.config.QueueStoreConfig;
-import com.hazelcast.core.QueueStore;
-import com.hazelcast.core.QueueStoreFactory;
+import com.hazelcast.collection.QueueStore;
+import com.hazelcast.collection.QueueStoreFactory;
 import com.hazelcast.internal.diagnostics.Diagnostics;
 import com.hazelcast.internal.diagnostics.StoreLatencyPlugin;
 import com.hazelcast.internal.serialization.impl.HeapData;
-import com.hazelcast.nio.ClassLoaderUtil;
-import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.internal.nio.ClassLoaderUtil;
+import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.spi.serialization.SerializationService;
-import com.hazelcast.util.EmptyStatement;
+import com.hazelcast.internal.serialization.SerializationService;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -35,8 +34,9 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
 
-import static com.hazelcast.util.MapUtil.createHashMap;
-import static com.hazelcast.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.EmptyStatement.ignore;
+import static com.hazelcast.internal.util.MapUtil.createHashMap;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 /**
  * Wrapper for the Queue Store.
@@ -121,10 +121,9 @@ public final class QueueStoreWrapper implements QueueStore<Data> {
         try {
             store = ClassLoaderUtil.newInstance(classLoader, storeConfig.getClassName());
         } catch (Exception ignored) {
-            EmptyStatement.ignore(ignored);
+            ignore(ignored);
         }
         return store;
-
     }
 
     private static QueueStore getQueueStoreFactory(String name, QueueStoreConfig storeConfig, ClassLoader classLoader) {
@@ -134,10 +133,9 @@ public final class QueueStoreWrapper implements QueueStore<Data> {
         QueueStoreFactory factory = storeConfig.getFactoryImplementation();
         if (factory == null) {
             try {
-                factory = ClassLoaderUtil.newInstance(classLoader,
-                        storeConfig.getFactoryClassName());
+                factory = ClassLoaderUtil.newInstance(classLoader, storeConfig.getFactoryClassName());
             } catch (Exception ignored) {
-                EmptyStatement.ignore(ignored);
+                ignore(ignored);
             }
         }
         return factory == null ? null : factory.newQueueStore(name, storeConfig.getProperties());

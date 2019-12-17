@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,7 @@ package com.hazelcast.spi.discovery.integration;
 import com.hazelcast.spi.discovery.DiscoveryStrategy;
 
 /**
- * <p>The <tt>DiscoveryMode</tt> describes how the {@link DiscoveryStrategy} is going
+ * <p>The <code>DiscoveryMode</code> describes how the {@link DiscoveryStrategy} is going
  * to behave on discovery requests. Depending on the current environment it will
  * either be setup to run in client or server mode.</p>
  * <p>Implementors of {@link DiscoveryStrategy}s are free to change behavior as necessary.

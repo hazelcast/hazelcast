@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,14 +16,16 @@
 
 package com.hazelcast.replicatedmap.impl.operation;
 
-import com.hazelcast.nio.Address;
+import com.hazelcast.cluster.Address;
+import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapEventPublishingService;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
 import com.hazelcast.replicatedmap.impl.record.ReplicatedRecordStore;
-import com.hazelcast.spi.PartitionAwareOperation;
+import com.hazelcast.spi.impl.operationservice.PartitionAwareOperation;
+import com.hazelcast.spi.impl.operationservice.MutatingOperation;
 
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
@@ -31,7 +33,7 @@ import java.util.concurrent.TimeUnit;
 /**
  * Puts a key to the replicated map.
  */
-public class PutOperation extends AbstractReplicatedMapOperation implements PartitionAwareOperation {
+public class PutOperation extends AbstractReplicatedMapOperation implements PartitionAwareOperation, MutatingOperation {
 
     private transient ReplicatedMapService service;
     private transient Data oldValue;
@@ -76,21 +78,21 @@ public class PutOperation extends AbstractReplicatedMapOperation implements Part
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         out.writeUTF(name);
-        out.writeData(key);
-        out.writeData(value);
+        IOUtil.writeData(out, key);
+        IOUtil.writeData(out, value);
         out.writeLong(ttl);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         name = in.readUTF();
-        key = in.readData();
-        value = in.readData();
+        key = IOUtil.readData(in);
+        value = IOUtil.readData(in);
         ttl = in.readLong();
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ReplicatedMapDataSerializerHook.PUT;
     }
 }

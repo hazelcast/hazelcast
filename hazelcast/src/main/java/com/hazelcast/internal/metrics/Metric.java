@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,8 +17,8 @@
 package com.hazelcast.internal.metrics;
 
 /**
- * A Metric is a 'quantitative measure' of something for example the number of operations pending, number of operations
- * per second being executed etc.
+ * A Metric is a 'quantitative measure' of something for example the number of
+ * operations pending, number of operations per second being executed etc.
  *
  * Each metric is uniquely identified using a name. See {@link #getName()}.
  *
@@ -30,8 +30,9 @@ package com.hazelcast.internal.metrics;
  *     <li>a {@link DoubleProbeFunction}</li>
  * </ol>
  *
- * If the Metric is obtained before a probe is registered, the Metric is without probe. As long as no probe is available,
- * every time the metrics needs a value, it will look up the probe in the {@link MetricsRegistry}.
+ * If the Metric is obtained before a probe is registered, the Metric is without
+ * probe. As long as no probe is available, every time the metrics needs a value,
+ * it will look up the probe in the {@link MetricsRegistry}.
  */
 public interface Metric {
 

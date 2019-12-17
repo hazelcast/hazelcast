@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,15 +16,15 @@
 
 package com.hazelcast.internal.cluster.fd;
 
-import com.hazelcast.core.Member;
+import com.hazelcast.cluster.Member;
 import com.hazelcast.instance.BuildInfoProvider;
-import com.hazelcast.instance.MemberImpl;
-import com.hazelcast.nio.Address;
+import com.hazelcast.cluster.impl.MemberImpl;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.spi.properties.HazelcastProperties;
-import com.hazelcast.test.HazelcastParametersRunnerFactory;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.util.Clock;
+import com.hazelcast.internal.util.Clock;
 import com.hazelcast.version.MemberVersion;
 import org.junit.Before;
 import org.junit.Test;
@@ -39,7 +39,7 @@ import java.util.Collection;
 import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 
-import static com.hazelcast.util.UuidUtil.newUnsecureUuidString;
+import static com.hazelcast.internal.util.UuidUtil.newUnsecureUUID;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.hamcrest.Matchers.lessThan;
 import static org.junit.Assert.assertEquals;
@@ -49,30 +49,34 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 @RunWith(Parameterized.class)
-@Parameterized.UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Parameterized.UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class ClusterFailureDetectorTest {
 
-    private static long HEARTBEAT_TIMEOUT = TimeUnit.SECONDS.toMillis(1);
+    private static final long HEARTBEAT_TIMEOUT = TimeUnit.SECONDS.toMillis(1);
 
     @Parameterized.Parameters(name = "fd:{0}")
-    public static Collection<Object> parameters() {
-        return Arrays.asList(new Object[]{"deadline", "phi-accrual"});
+    public static Collection<ClusterFailureDetectorType> parameters() {
+        return Arrays.asList(ClusterFailureDetectorType.values());
     }
 
     @Parameterized.Parameter
-    public String failureDetectorType;
+    public ClusterFailureDetectorType failureDetectorType;
 
     private ClusterFailureDetector failureDetector;
 
     @Before
     public void setup() {
-        if ("deadline".equals(failureDetectorType))  {
-            failureDetector = new DeadlineClusterFailureDetector(HEARTBEAT_TIMEOUT);
-        } else if ("phi-accrual".equals(failureDetectorType)) {
-            failureDetector = new PhiAccrualClusterFailureDetector(HEARTBEAT_TIMEOUT, 1, new HazelcastProperties(new Properties()));
-        } else {
-            throw new IllegalArgumentException(failureDetectorType);
+        switch (failureDetectorType) {
+            case DEADLINE:
+                failureDetector = new DeadlineClusterFailureDetector(HEARTBEAT_TIMEOUT);
+                break;
+            case PHI_ACCRUAL:
+                failureDetector
+                        = new PhiAccrualClusterFailureDetector(HEARTBEAT_TIMEOUT, 1, new HazelcastProperties(new Properties()));
+                break;
+            default:
+                throw new IllegalArgumentException(failureDetectorType.toString());
         }
     }
 
@@ -214,7 +218,10 @@ public class ClusterFailureDetectorTest {
 
     private static Member newMember(int port) {
         MemberVersion memberVersion = MemberVersion.of(BuildInfoProvider.getBuildInfo().getVersion());
-        return new MemberImpl(newAddress(port), memberVersion, false, newUnsecureUuidString());
+        return new MemberImpl.Builder(newAddress(port))
+                .version(memberVersion)
+                .uuid(newUnsecureUUID())
+                .build();
     }
 
     private static Address newAddress(int port) {

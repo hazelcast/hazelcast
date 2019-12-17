@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,8 @@ package com.hazelcast.transaction.impl.operations;
 import com.hazelcast.spi.impl.AllowedDuringPassiveState;
 import com.hazelcast.transaction.impl.TransactionLogRecord;
 
-import java.util.List;
+import java.util.Collection;
+import java.util.UUID;
 
 import static com.hazelcast.transaction.impl.TransactionDataSerializerHook.REPLICATE_ALLOWED_DURING_PASSIVE_STATE_TX_BACKUP_LOG;
 
@@ -30,13 +31,13 @@ public final class ReplicateAllowedDuringPassiveStateTxBackupLogOperation
     public ReplicateAllowedDuringPassiveStateTxBackupLogOperation() {
     }
 
-    public ReplicateAllowedDuringPassiveStateTxBackupLogOperation(List<TransactionLogRecord> logs, String callerUuid,
-                                                                  String txnId, long timeoutMillis, long startTime) {
+    public ReplicateAllowedDuringPassiveStateTxBackupLogOperation(Collection<TransactionLogRecord> logs, UUID callerUuid,
+                                                                  UUID txnId, long timeoutMillis, long startTime) {
         super(logs, callerUuid, txnId, timeoutMillis, startTime);
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return REPLICATE_ALLOWED_DURING_PASSIVE_STATE_TX_BACKUP_LOG;
     }
 

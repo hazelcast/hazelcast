@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,16 +25,20 @@ import com.hazelcast.internal.memory.MemoryAllocator;
 public interface HashSlotArray16byteKey extends HashSlotArray {
 
     /**
-     * Ensures that there is a mapping from {@code (key1, key2)} to a slot in the array.
-     * The {@code abs} of the returned integer is the address of the slot's value block.
-     * The returned integer is positive if a new slot had to be assigned and negative
-     * if the slot was already assigned.
+     * Ensures that there is a mapping from {@code (key1, key2)} to a slot in the
+     * array.
+     * The returned object contains the slot value block address and whether a new
+     * slot had to be assigned. The hash slot array implementation keeps a reference
+     * to the returned object and will always return the same instance, albeit with
+     * updated fields on each new invocation.
+     * This means the returned object is valid until the next invocation of this
+     * method.
      *
      * @param key1 key part 1
      * @param key2 key part 2
-     * @return address of value block
+     * @return the value block assignment result
      */
-    long ensure(long key1, long key2);
+    SlotAssignmentResult ensure(long key1, long key2);
 
     /**
      * Returns the address of the value block mapped by {@code (key1, key2)}.

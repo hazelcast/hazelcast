@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,7 @@ package com.hazelcast.map.impl.tx;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IMap;
+import com.hazelcast.map.IMap;
 import com.hazelcast.internal.adapter.TransactionalMapDataStructureAdapter;
 import com.hazelcast.internal.nearcache.AbstractNearCacheLeakTest;
 import com.hazelcast.internal.nearcache.NearCache;
@@ -28,12 +28,12 @@ import com.hazelcast.internal.nearcache.NearCacheTestContext;
 import com.hazelcast.internal.nearcache.NearCacheTestContextBuilder;
 import com.hazelcast.internal.nearcache.impl.invalidation.RepairingTask;
 import com.hazelcast.map.impl.nearcache.MapNearCacheManager;
-import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.properties.GroupProperty;
-import com.hazelcast.test.HazelcastParametersRunnerFactory;
+import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.transaction.TransactionalMap;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.experimental.categories.Category;
@@ -46,16 +46,16 @@ import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 import java.util.Collection;
 
 import static com.hazelcast.internal.nearcache.NearCacheTestUtils.createNearCacheConfig;
+import static com.hazelcast.internal.nearcache.NearCacheTestUtils.getBaseConfig;
 import static com.hazelcast.internal.nearcache.NearCacheTestUtils.getMapNearCacheManager;
-import static com.hazelcast.map.impl.nearcache.MapInvalidationListener.createInvalidationEventHandler;
 import static java.util.Arrays.asList;
 
 /**
- * Basic Near Cache tests for {@link com.hazelcast.core.TransactionalMap} on Hazelcast members.
+ * Basic Near Cache tests for {@link TransactionalMap} on Hazelcast members.
  */
 @RunWith(Parameterized.class)
-@UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
-@Category({QuickTest.class, ParallelTest.class})
+@UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class TxnMapNearCacheLeakTest extends AbstractNearCacheLeakTest<Data, String> {
 
     @Parameter
@@ -89,14 +89,12 @@ public class TxnMapNearCacheLeakTest extends AbstractNearCacheLeakTest<Data, Str
     }
 
     @Override
-    protected <K, V> NearCacheTestContext<K, V, Data, String> createContext(int size) {
-        Config config = createConfig(false);
+    protected <K, V> NearCacheTestContext<K, V, Data, String> createContext() {
+        Config config = getConfig(false);
 
         HazelcastInstance dataInstance = hazelcastFactory.newHazelcastInstance(config);
         TransactionalMapDataStructureAdapter<K, V> dataAdapter
                 = new TransactionalMapDataStructureAdapter<K, V>(dataInstance, DEFAULT_NEAR_CACHE_NAME);
-
-        populateDataAdapter(dataAdapter, size);
 
         NearCacheTestContextBuilder<K, V, Data, String> builder = createNearCacheContextBuilder();
         return builder
@@ -106,7 +104,7 @@ public class TxnMapNearCacheLeakTest extends AbstractNearCacheLeakTest<Data, Str
     }
 
     @Override
-    protected void populateNearCache(NearCacheTestContext<Integer, Integer, Data, String> context, int size) {
+    protected void populateNearCache(NearCacheTestContext<Integer, Integer, ?, ?> context, int size) {
         IMap<Integer, Integer> map = ((TransactionalMapDataStructureAdapter<Integer, Integer>) context.nearCacheAdapter).getMap();
         for (int i = 0; i < size; i++) {
             map.get(i);
@@ -114,9 +112,13 @@ public class TxnMapNearCacheLeakTest extends AbstractNearCacheLeakTest<Data, Str
         }
     }
 
-    protected Config createConfig(boolean withNearCache) {
-        Config config = getConfig()
-                .setProperty(GroupProperty.PARTITION_COUNT.getName(), PARTITION_COUNT);
+    @Override
+    protected Config getConfig() {
+        return getBaseConfig();
+    }
+
+    protected Config getConfig(boolean withNearCache) {
+        Config config = getConfig();
 
         if (withNearCache) {
             config.getMapConfig(DEFAULT_NEAR_CACHE_NAME).setNearCacheConfig(nearCacheConfig);
@@ -125,10 +127,10 @@ public class TxnMapNearCacheLeakTest extends AbstractNearCacheLeakTest<Data, Str
     }
 
     private <K, V> NearCacheTestContextBuilder<K, V, Data, String> createNearCacheContextBuilder() {
-        Config configWithNearCache = createConfig(true);
+        Config configWithNearCache = getConfig(true);
 
         HazelcastInstance nearCacheInstance = hazelcastFactory.newHazelcastInstance(configWithNearCache);
-        IMap<K, V> nearCacheMap = nearCacheInstance.getMap(DEFAULT_NEAR_CACHE_NAME);
+        nearCacheInstance.getMap(DEFAULT_NEAR_CACHE_NAME);
 
         NearCacheManager nearCacheManager = getMapNearCacheManager(nearCacheInstance);
         NearCache<Data, String> nearCache = nearCacheManager.getNearCache(DEFAULT_NEAR_CACHE_NAME);
@@ -140,7 +142,6 @@ public class TxnMapNearCacheLeakTest extends AbstractNearCacheLeakTest<Data, Str
                 .setNearCacheAdapter(new TransactionalMapDataStructureAdapter<K, V>(nearCacheInstance, DEFAULT_NEAR_CACHE_NAME))
                 .setNearCache(nearCache)
                 .setNearCacheManager(nearCacheManager)
-                .setInvalidationListener(createInvalidationEventHandler(nearCacheMap))
                 .setRepairingTask(repairingTask);
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,8 +18,8 @@ package com.hazelcast.xa;
 
 import com.atomikos.icatch.jta.UserTransactionManager;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IMap;
-import com.hazelcast.core.TransactionalMap;
+import com.hazelcast.map.IMap;
+import com.hazelcast.transaction.TransactionalMap;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.test.HazelcastSerialClassRunner;
@@ -56,20 +56,17 @@ import static org.junit.Assert.assertTrue;
 @Category(QuickTest.class)
 public class HazelcastXATest extends HazelcastTestSupport {
 
-    static final Random random = new Random(System.currentTimeMillis());
-    static final ILogger logger = Logger.getLogger(HazelcastXATest.class);
+    private static final Random RANDOM = new Random(System.currentTimeMillis());
+    private static final ILogger LOGGER = Logger.getLogger(HazelcastXATest.class);
 
-    UserTransactionManager tm = null;
+    private UserTransactionManager tm;
 
     public void cleanAtomikosLogs() {
         try {
             File currentDir = new File(".");
             final File[] tmLogs = currentDir.listFiles(new FilenameFilter() {
                 public boolean accept(File dir, String name) {
-                    if (name.endsWith(".epoch") || name.startsWith("tmlog")) {
-                        return true;
-                    }
-                    return false;
+                    return name.endsWith(".epoch") || name.startsWith("tmlog");
                 }
             });
             for (File tmLog : tmLogs) {
@@ -104,8 +101,8 @@ public class HazelcastXATest extends HazelcastTestSupport {
         TransactionContext context = xaResource.getTransactionContext();
         boolean error = false;
         try {
-            final TransactionalMap m = context.getMap("m");
-            m.put("key", "value");
+            TransactionalMap<String, String> map = context.getMap("m");
+            map.put("key", "value");
             throw new RuntimeException("Exception for rolling back");
         } catch (Exception e) {
             error = true;
@@ -145,9 +142,6 @@ public class HazelcastXATest extends HazelcastTestSupport {
     /**
      * Start two nodes.
      * One node in a new thread prepares tx and shutdowns. Check if remaining node can recover tx or not.
-     * <p/>
-     *
-     * @throws XAException
      */
     @Test
     public void testRecovery_singleInstanceRemaining() throws XAException {
@@ -215,7 +209,6 @@ public class HazelcastXATest extends HazelcastTestSupport {
         assertTrue(resource1.isSameRM(resource2));
     }
 
-
     @Test
     public void testParallel() throws Exception {
         final HazelcastInstance instance = createHazelcastInstance();
@@ -230,7 +223,7 @@ public class HazelcastXATest extends HazelcastTestSupport {
                     try {
                         txn(instance);
                     } catch (Exception e) {
-                        logger.severe("Exception during txn", e);
+                        LOGGER.severe("Exception during txn", e);
                     } finally {
                         latch.countDown();
                     }
@@ -238,9 +231,9 @@ public class HazelcastXATest extends HazelcastTestSupport {
             });
         }
         assertOpenEventually(latch, 20);
-        final IMap m = instance.getMap("m");
+        final IMap map = instance.getMap("m");
         for (int i = 0; i < 10; i++) {
-            assertFalse(m.isLocked(i));
+            assertFalse(map.isLocked(i));
         }
     }
 
@@ -263,10 +256,10 @@ public class HazelcastXATest extends HazelcastTestSupport {
         boolean error = false;
         try {
             TransactionContext context = xaResource.getTransactionContext();
-            TransactionalMap m = context.getMap("m");
-            m.put(random.nextInt(10), "value");
+            TransactionalMap<Integer, String> map = context.getMap("m");
+            map.put(RANDOM.nextInt(10), "value");
         } catch (Exception e) {
-            logger.severe("Exception during transaction", e);
+            LOGGER.severe("Exception during transaction", e);
             error = true;
         } finally {
             close(error, xaResource);
@@ -292,7 +285,5 @@ public class HazelcastXATest extends HazelcastTestSupport {
         } else {
             tm.commit();
         }
-
     }
-
 }

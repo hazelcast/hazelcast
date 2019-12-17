@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,8 @@
 
 package com.hazelcast.internal.partition.impl;
 
-import com.hazelcast.nio.Address;
-import com.hazelcast.spi.ServiceNamespace;
+import com.hazelcast.internal.partition.PartitionReplica;
+import com.hazelcast.internal.services.ServiceNamespace;
 
 /**
  * The information for a replica synchronization - which partition and replica index needs synchronization and what is
@@ -29,10 +29,12 @@ public final class ReplicaFragmentSyncInfo {
     final int partitionId;
     final ServiceNamespace namespace;
     final int replicaIndex;
-    final Address target;
+
+    // Intentionally not used in equals and hashCode.
+    final PartitionReplica target;
 
     ReplicaFragmentSyncInfo(int partitionId, ServiceNamespace namespace, int replicaIndex,
-            Address target) {
+            PartitionReplica target) {
         this.partitionId = partitionId;
         this.namespace = namespace;
         this.replicaIndex = replicaIndex;

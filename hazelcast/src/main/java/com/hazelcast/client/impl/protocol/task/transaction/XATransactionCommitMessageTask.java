@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,8 +19,9 @@ package com.hazelcast.client.impl.protocol.task.transaction;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.XATransactionCommitCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
-import com.hazelcast.instance.Node;
-import com.hazelcast.nio.Connection;
+import com.hazelcast.client.impl.protocol.task.TransactionalMessageTask;
+import com.hazelcast.instance.impl.Node;
+import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.security.permission.TransactionPermission;
 import com.hazelcast.transaction.TransactionContext;
 import com.hazelcast.transaction.TransactionException;
@@ -29,9 +30,11 @@ import com.hazelcast.transaction.impl.xa.TransactionAccessor;
 import com.hazelcast.transaction.impl.xa.XAService;
 
 import java.security.Permission;
+import java.util.UUID;
 
 public class XATransactionCommitMessageTask
-        extends AbstractCallableMessageTask<XATransactionCommitCodec.RequestParameters> {
+        extends AbstractCallableMessageTask<XATransactionCommitCodec.RequestParameters>
+        implements TransactionalMessageTask {
     public XATransactionCommitMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
@@ -48,7 +51,7 @@ public class XATransactionCommitMessageTask
 
     @Override
     protected Object call() throws Exception {
-        String transactionId = parameters.transactionId;
+        UUID transactionId = parameters.transactionId;
         TransactionContext transactionContext = endpoint.getTransactionContext(transactionId);
         if (transactionContext == null) {
             throw new TransactionException("No transaction context with given transactionId: " + transactionId);

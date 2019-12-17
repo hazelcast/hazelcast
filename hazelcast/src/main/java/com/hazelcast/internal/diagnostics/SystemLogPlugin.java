@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,21 +16,22 @@
 
 package com.hazelcast.internal.diagnostics;
 
+import com.hazelcast.cluster.Member;
+import com.hazelcast.cluster.MembershipAdapter;
+import com.hazelcast.cluster.MembershipEvent;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.LifecycleEvent;
 import com.hazelcast.core.LifecycleListener;
-import com.hazelcast.core.Member;
-import com.hazelcast.core.MembershipAdapter;
-import com.hazelcast.core.MembershipEvent;
-import com.hazelcast.core.MigrationEvent;
-import com.hazelcast.core.MigrationListener;
-import com.hazelcast.instance.NodeExtension;
+import com.hazelcast.instance.impl.NodeExtension;
 import com.hazelcast.internal.cluster.ClusterVersionListener;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.nio.Address;
-import com.hazelcast.nio.Connection;
-import com.hazelcast.nio.ConnectionListenable;
-import com.hazelcast.nio.ConnectionListener;
+import com.hazelcast.cluster.Address;
+import com.hazelcast.internal.nio.Connection;
+import com.hazelcast.internal.nio.ConnectionListenable;
+import com.hazelcast.internal.nio.ConnectionListener;
+import com.hazelcast.partition.MigrationState;
+import com.hazelcast.partition.MigrationListener;
+import com.hazelcast.partition.ReplicaMigrationEvent;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.spi.properties.HazelcastProperty;
@@ -61,14 +62,14 @@ public class SystemLogPlugin extends DiagnosticsPlugin {
      * If this plugin is enabled.
      */
     public static final HazelcastProperty ENABLED
-            = new HazelcastProperty(Diagnostics.PREFIX + ".systemlog.enabled", "true");
+            = new HazelcastProperty("hazelcast.diagnostics.systemlog.enabled", "true");
 
     /**
      * If logging partition migration is enabled. Because there can be so many partitions, logging the partition migration
      * can be very noisy.
      */
     public static final HazelcastProperty LOG_PARTITIONS
-            = new HazelcastProperty(Diagnostics.PREFIX + ".systemlog.partitions", "false");
+            = new HazelcastProperty("hazelcast.diagnostics.systemlog.partitions", "false");
 
     /**
      * Currently the Diagnostic is scheduler based, so each task gets to run as often at is has been configured. This works
@@ -87,7 +88,7 @@ public class SystemLogPlugin extends DiagnosticsPlugin {
 
     public SystemLogPlugin(NodeEngineImpl nodeEngine) {
         this(nodeEngine.getProperties(),
-                nodeEngine.getNode().connectionManager,
+                nodeEngine.getNode().networkingService.getAggregateEndpointManager(),
                 nodeEngine.getHazelcastInstance(),
                 nodeEngine.getLogger(SystemLogPlugin.class),
                 nodeEngine.getNode().getNodeExtension());
@@ -157,8 +158,10 @@ public class SystemLogPlugin extends DiagnosticsPlugin {
                 render(writer, (LifecycleEvent) item);
             } else if (item instanceof MembershipEvent) {
                 render(writer, (MembershipEvent) item);
-            } else if (item instanceof MigrationEvent) {
-                render(writer, (MigrationEvent) item);
+            } else if (item instanceof MigrationState) {
+                render(writer, (MigrationState) item);
+            } else if (item instanceof ReplicaMigrationEvent) {
+                render(writer, (ReplicaMigrationEvent) item);
             } else if (item instanceof ConnectionEvent) {
                 ConnectionEvent event = (ConnectionEvent) item;
                 render(writer, event);
@@ -213,25 +216,31 @@ public class SystemLogPlugin extends DiagnosticsPlugin {
         writer.endSection();
     }
 
-    private void render(DiagnosticsLogWriter writer, MigrationEvent event) {
-        switch (event.getStatus()) {
-            case STARTED:
-                writer.startSection("MigrationStarted");
-                break;
-            case COMPLETED:
-                writer.startSection("MigrationCompleted");
-                break;
-            case FAILED:
-                writer.startSection("MigrationFailed");
-                break;
-            default:
-                return;
+    private void render(DiagnosticsLogWriter writer, MigrationState migrationState) {
+        writer.startSection("MigrationState");
+        writer.writeKeyValueEntryAsDateTime("startTime", migrationState.getStartTime());
+        writer.writeKeyValueEntry("plannedMigrations", migrationState.getPlannedMigrations());
+        writer.writeKeyValueEntry("completedMigrations", migrationState.getCompletedMigrations());
+        writer.writeKeyValueEntry("remainingMigrations", migrationState.getRemainingMigrations());
+        writer.writeKeyValueEntry("totalElapsedTime(ms)", migrationState.getTotalElapsedTime());
+        writer.endSection();
+    }
+
+    private void render(DiagnosticsLogWriter writer, ReplicaMigrationEvent event) {
+        if (event.isSuccess()) {
+            writer.startSection("MigrationCompleted");
+        } else {
+            writer.startSection("MigrationFailed");
         }
 
-        Member oldOwner = event.getOldOwner();
-        writer.writeKeyValueEntry("oldOwner", oldOwner == null ? "null" : oldOwner.getAddress().toString());
-        writer.writeKeyValueEntry("newOwner", event.getNewOwner().getAddress().toString());
+        Member source = event.getSource();
+        writer.writeKeyValueEntry("source", source == null ? "null" : source.getAddress().toString());
+        writer.writeKeyValueEntry("destination", event.getDestination().getAddress().toString());
         writer.writeKeyValueEntry("partitionId", event.getPartitionId());
+        writer.writeKeyValueEntry("replicaIndex", event.getReplicaIndex());
+        writer.writeKeyValueEntry("elapsedTime(ms)", event.getReplicaIndex());
+
+        render(writer,  event.getMigrationState());
         writer.endSection();
     }
 
@@ -246,7 +255,7 @@ public class SystemLogPlugin extends DiagnosticsPlugin {
         Connection connection = event.connection;
         writer.writeEntry(connection.toString());
 
-        writer.writeKeyValueEntry("type", connection.getType().name());
+        writer.writeKeyValueEntry("type", connection.getConnectionType());
         writer.writeKeyValueEntry("isAlive", connection.isAlive());
 
         if (!event.added) {
@@ -322,17 +331,22 @@ public class SystemLogPlugin extends DiagnosticsPlugin {
 
     private class MigrationListenerImpl implements MigrationListener {
         @Override
-        public void migrationStarted(MigrationEvent event) {
+        public void migrationStarted(MigrationState state) {
+            logQueue.add(state);
+        }
+
+        @Override
+        public void migrationFinished(MigrationState state) {
+            logQueue.add(state);
+        }
+
+        @Override
+        public void replicaMigrationCompleted(ReplicaMigrationEvent event) {
             logQueue.add(event);
         }
 
         @Override
-        public void migrationCompleted(MigrationEvent event) {
-            logQueue.add(event);
-        }
-
-        @Override
-        public void migrationFailed(MigrationEvent event) {
+        public void replicaMigrationFailed(ReplicaMigrationEvent event) {
             logQueue.add(event);
         }
     }

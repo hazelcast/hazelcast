@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,17 +16,15 @@
 
 package com.hazelcast.durableexecutor;
 
-import com.hazelcast.core.ICompletableFuture;
-import com.hazelcast.spi.annotation.Beta;
+import java.util.concurrent.CompletionStage;
+import java.util.concurrent.Future;
 
 /**
  * A Future where one can obtain the task ID for tracking the response.
  *
- * @param <V>
- * @since 3.7
+ * @param <V> The result type returned by this Future's {@code get} method
  */
-@Beta
-public interface DurableExecutorServiceFuture<V> extends ICompletableFuture<V> {
+public interface DurableExecutorServiceFuture<V> extends CompletionStage<V>, Future<V> {
 
     /**
      * A unique ID for the executing task

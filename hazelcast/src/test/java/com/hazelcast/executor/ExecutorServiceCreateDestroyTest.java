@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,11 +18,11 @@ package com.hazelcast.executor;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IExecutorService;
-import com.hazelcast.core.Member;
+import com.hazelcast.cluster.Member;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
 import org.junit.Test;
@@ -42,7 +42,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.LockSupport;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class ExecutorServiceCreateDestroyTest extends HazelcastTestSupport {
 
     private static final int INSTANCE_COUNT = 3;
@@ -62,7 +62,7 @@ public class ExecutorServiceCreateDestroyTest extends HazelcastTestSupport {
     public void test_createSubmit_thenDestroy() throws Exception {
         test_createUse_thenDestroy(new ExecutorServiceCommand() {
             @Override
-            Collection<Future> submit(IExecutorService ex, Callable task) {
+            <T> Collection<Future<T>> submit(IExecutorService ex, Callable<T> task) {
                 return Collections.singleton(ex.submit(task));
             }
         });
@@ -72,8 +72,8 @@ public class ExecutorServiceCreateDestroyTest extends HazelcastTestSupport {
     public void test_createSubmitAllMembers_thenDestroy() throws Exception {
         test_createUse_thenDestroy(new ExecutorServiceCommand() {
             @Override
-            Collection<Future> submit(IExecutorService ex, Callable task) {
-                Map<Member, Future> futures = ex.submitToAllMembers(task);
+            <T> Collection<Future<T>> submit(IExecutorService ex, Callable<T> task) {
+                Map<Member, Future<T>> futures = ex.submitToAllMembers(task);
                 return futures.values();
             }
         });
@@ -104,11 +104,11 @@ public class ExecutorServiceCreateDestroyTest extends HazelcastTestSupport {
         }
     }
 
-    private static abstract class ExecutorServiceCommand {
+    private abstract static class ExecutorServiceCommand {
         final void run(IExecutorService ex) throws Exception {
             try {
-                Collection<Future> futures = submit(ex, new VoidCallableTask());
-                for (Future future : futures) {
+                Collection<Future<Void>> futures = submit(ex, new VoidCallableTask());
+                for (Future<Void> future : futures) {
                     future.get();
                 }
             } catch (RejectedExecutionException ignored) {
@@ -121,7 +121,7 @@ public class ExecutorServiceCreateDestroyTest extends HazelcastTestSupport {
             }
         }
 
-        abstract Collection<Future> submit(IExecutorService ex, Callable task);
+        abstract <T> Collection<Future<T>> submit(IExecutorService ex, Callable<T> task);
     }
 
     private static class VoidCallableTask implements Callable<Void>, Serializable {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,10 +18,10 @@ package com.hazelcast.query.impl;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.InMemoryFormat;
-import com.hazelcast.config.MapAttributeConfig;
+import com.hazelcast.config.AttributeConfig;
 import com.hazelcast.config.MapConfig;
-import com.hazelcast.core.IMap;
-import com.hazelcast.instance.HazelcastInstanceProxy;
+import com.hazelcast.map.IMap;
+import com.hazelcast.instance.impl.HazelcastInstanceProxy;
 import com.hazelcast.nio.serialization.impl.DefaultPortableReaderQuickTest.TestPortableFactory;
 import com.hazelcast.query.Predicates;
 import com.hazelcast.query.extractor.ValueCollector;
@@ -70,13 +70,13 @@ public class QueryPerformanceBenchmark extends HazelcastTestSupport {
     @Setup
     public void setup() {
         // object map
-        MapAttributeConfig nameWithExtractor = new MapAttributeConfig()
+        AttributeConfig nameWithExtractor = new AttributeConfig()
                 .setName("nameWithExtractor")
-                .setExtractor("com.hazelcast.query.impl.QueryPerformanceTest$NameExtractor");
+                .setExtractorClassName("com.hazelcast.query.impl.QueryPerformanceTest$NameExtractor");
 
-        MapAttributeConfig limbNameWithExtractor = new MapAttributeConfig()
+        AttributeConfig limbNameWithExtractor = new AttributeConfig()
                 .setName("limbNameWithExtractor")
-                .setExtractor("com.hazelcast.query.impl.QueryPerformanceTest$LimbNameExtractor");
+                .setExtractorClassName("com.hazelcast.query.impl.QueryPerformanceTest$LimbNameExtractor");
 
         MapConfig objectMapConfig = new MapConfig()
                 .setName("objectMap")
@@ -85,22 +85,22 @@ public class QueryPerformanceBenchmark extends HazelcastTestSupport {
         MapConfig objectMapWithExtractorConfig = new MapConfig()
                 .setName("objectMapWithExtractor")
                 .setInMemoryFormat(InMemoryFormat.OBJECT)
-                .addMapAttributeConfig(nameWithExtractor)
-                .addMapAttributeConfig(limbNameWithExtractor);
+                .addAttributeConfig(nameWithExtractor)
+                .addAttributeConfig(limbNameWithExtractor);
 
         // portable map
-        MapAttributeConfig portableNameWithExtractor = new MapAttributeConfig()
+        AttributeConfig portableNameWithExtractor = new AttributeConfig()
                 .setName("nameWithExtractor")
-                .setExtractor("com.hazelcast.query.impl.QueryPerformanceTest$PortableNameExtractor");
+                .setExtractorClassName("com.hazelcast.query.impl.QueryPerformanceTest$PortableNameExtractor");
 
-        MapAttributeConfig portableLimbNameWithExtractor = new MapAttributeConfig()
+        AttributeConfig portableLimbNameWithExtractor = new AttributeConfig()
                 .setName("limbNameWithExtractor")
-                .setExtractor("com.hazelcast.query.impl.QueryPerformanceTest$PortableLimbNameExtractor");
+                .setExtractorClassName("com.hazelcast.query.impl.QueryPerformanceTest$PortableLimbNameExtractor");
 
         MapConfig portableMapConfig = new MapConfig()
                 .setName("portableMapWithExtractor")
-                .addMapAttributeConfig(portableNameWithExtractor)
-                .addMapAttributeConfig(portableLimbNameWithExtractor);
+                .addAttributeConfig(portableNameWithExtractor)
+                .addAttributeConfig(portableLimbNameWithExtractor);
 
         // config
         Config config = new Config()
@@ -117,16 +117,16 @@ public class QueryPerformanceBenchmark extends HazelcastTestSupport {
         objectMapWithExtractor = hz.getMap("objectMapWithExtractor");
         portableMapWithExtractor = hz.getMap("portableMapWithExtractor");
 
-        Person BOND = person("Bond",
+        Person bond = person("Bond",
                 limb("left-hand", tattoos(), finger("thumb"), finger(null)),
                 limb("right-hand", tattoos("knife"), finger("middle"), finger("index"))
         );
 
         for (int i = 0; i <= 1000; i++) {
-            portableMap.put(String.valueOf(i), BOND.getPortable());
-            portableMapWithExtractor.put(String.valueOf(i), BOND.getPortable());
-            objectMap.put(String.valueOf(i), BOND);
-            objectMapWithExtractor.put(String.valueOf(i), BOND);
+            portableMap.put(String.valueOf(i), bond.getPortable());
+            portableMapWithExtractor.put(String.valueOf(i), bond.getPortable());
+            objectMap.put(String.valueOf(i), bond);
+            objectMapWithExtractor.put(String.valueOf(i), bond);
         }
     }
 
@@ -209,28 +209,28 @@ public class QueryPerformanceBenchmark extends HazelcastTestSupport {
         new Runner(opt).run();
     }
 
-    public static class NameExtractor extends ValueExtractor<Person, Object> {
+    public static class NameExtractor implements ValueExtractor<Person, Object> {
         @Override
         public void extract(Person target, Object argument, ValueCollector collector) {
             collector.addObject(target.getName());
         }
     }
 
-    public static class LimbNameExtractor extends ValueExtractor<Person, Object> {
+    public static class LimbNameExtractor implements ValueExtractor<Person, Object> {
         @Override
         public void extract(Person target, Object argument, ValueCollector collector) {
             collector.addObject(target.getFirstLimb().getName());
         }
     }
 
-    public static class PortableNameExtractor extends ValueExtractor<ValueReader, Object> {
+    public static class PortableNameExtractor implements ValueExtractor<ValueReader, Object> {
         @Override
         public void extract(ValueReader target, Object argument, ValueCollector collector) {
             target.read("name", collector);
         }
     }
 
-    public static class PortableLimbNameExtractor extends ValueExtractor<ValueReader, Object> {
+    public static class PortableLimbNameExtractor implements ValueExtractor<ValueReader, Object> {
         @Override
         public void extract(ValueReader target, Object argument, ValueCollector collector) {
             target.read("firstLimb.name", collector);

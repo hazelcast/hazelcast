@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,7 @@
 package com.hazelcast.map.impl.operation;
 
 import com.hazelcast.map.impl.MapDataSerializerHook;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.internal.serialization.Data;
 
 public class RemoveOperation extends BaseRemoveOperation {
 
@@ -26,20 +26,20 @@ public class RemoveOperation extends BaseRemoveOperation {
     public RemoveOperation() {
     }
 
-    public RemoveOperation(String name, Data dataKey, boolean disableWanReplicationEvent) {
-        super(name, dataKey, disableWanReplicationEvent);
+    public RemoveOperation(String name, Data dataKey) {
+        super(name, dataKey);
     }
 
     @Override
-    public void run() {
-        dataOldValue = mapServiceContext.toData(recordStore.remove(dataKey));
+    protected void runInternal() {
+        dataOldValue = mapServiceContext.toData(recordStore.remove(dataKey, getCallerProvenance()));
         successful = dataOldValue != null;
     }
 
     @Override
-    public void afterRun() {
+    protected void afterRunInternal() {
         if (successful) {
-            super.afterRun();
+            super.afterRunInternal();
         }
     }
 
@@ -49,7 +49,7 @@ public class RemoveOperation extends BaseRemoveOperation {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MapDataSerializerHook.REMOVE;
     }
 }

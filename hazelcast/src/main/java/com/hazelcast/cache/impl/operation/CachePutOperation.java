@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,27 +16,25 @@
 
 package com.hazelcast.cache.impl.operation;
 
-import com.hazelcast.cache.CacheEntryView;
 import com.hazelcast.cache.impl.CacheDataSerializerHook;
-import com.hazelcast.cache.impl.CacheEntryViews;
-import com.hazelcast.cache.impl.event.CacheWanEventPublisher;
+import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.Operation;
+import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.spi.impl.operationservice.Operation;
 
 import javax.cache.expiry.ExpiryPolicy;
 import java.io.IOException;
 
 /**
  * Operation implementation for
- * {@link com.hazelcast.cache.impl.ICacheRecordStore#put(Data, Object, ExpiryPolicy, String, int)} and
- * {@link com.hazelcast.cache.impl.ICacheRecordStore#getAndPut(Data, Object, ExpiryPolicy, String, int)}.
- * @see com.hazelcast.cache.impl.ICacheRecordStore#put(Data, Object, ExpiryPolicy, String, int)
- * @see com.hazelcast.cache.impl.ICacheRecordStore#getAndPut(Data, Object, ExpiryPolicy, String, int)
+ * {@link com.hazelcast.cache.impl.ICacheRecordStore#put(Data, Object, ExpiryPolicy, java.util.UUID, int)} and
+ * {@link com.hazelcast.cache.impl.ICacheRecordStore#getAndPut(Data, Object, ExpiryPolicy, java.util.UUID, int)}.
+ *
+ * @see com.hazelcast.cache.impl.ICacheRecordStore#put(Data, Object, ExpiryPolicy, java.util.UUID, int)
+ * @see com.hazelcast.cache.impl.ICacheRecordStore#getAndPut(Data, Object, ExpiryPolicy, java.util.UUID, int)
  */
-public class CachePutOperation
-        extends AbstractMutatingCacheOperation {
+public class CachePutOperation extends MutatingCacheOperation {
 
     private Data value;
     // getAndPut
@@ -58,20 +56,16 @@ public class CachePutOperation
     public void run()
             throws Exception {
         if (get) {
-            response = cache.getAndPut(key, value, expiryPolicy, getCallerUuid(), completionId);
-            backupRecord = cache.getRecord(key);
+            response = recordStore.getAndPut(key, value, expiryPolicy, getCallerUuid(), completionId);
+            backupRecord = recordStore.getRecord(key);
         } else {
-            backupRecord = cache.put(key, value, expiryPolicy, getCallerUuid(), completionId);
+            backupRecord = recordStore.put(key, value, expiryPolicy, getCallerUuid(), completionId);
         }
     }
 
     @Override
     public void afterRun() throws Exception {
-        if (cache.isWanReplicationEnabled()) {
-            CacheEntryView<Data, Data> entryView = CacheEntryViews.createDefaultEntryView(key, value, backupRecord);
-            CacheWanEventPublisher publisher = cacheService.getCacheWanEventPublisher();
-            publisher.publishWanReplicationUpdate(name, entryView);
-        }
+        publishWanUpdate(key, backupRecord);
         super.afterRun();
     }
 
@@ -95,7 +89,7 @@ public class CachePutOperation
         super.writeInternal(out);
         out.writeBoolean(get);
         out.writeObject(expiryPolicy);
-        out.writeData(value);
+        IOUtil.writeData(out, value);
     }
 
     @Override
@@ -104,11 +98,11 @@ public class CachePutOperation
         super.readInternal(in);
         get = in.readBoolean();
         expiryPolicy = in.readObject();
-        value = in.readData();
+        value = IOUtil.readData(in);
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return CacheDataSerializerHook.PUT;
     }
 

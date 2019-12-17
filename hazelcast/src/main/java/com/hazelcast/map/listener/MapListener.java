@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,31 +19,34 @@ package com.hazelcast.map.listener;
 import java.util.EventListener;
 
 /**
- * A marker interface which is used to get notified upon a map or an entry event.
- * <p/>
- * Specifically:
+ * <p>A marker interface which is used to get
+ * notified upon a map or an entry event.
+ * <p>Specifically:
  * <ul>
  * <li>
- * A map event is fired as a result of a map-wide operations like e.g. {@link com.hazelcast.core.EntryEventType#CLEAR_ALL}.
+ * A map event is fired as a result of map-wide operations. This
+ * kind of operations possibly run on multiple map entries, like
+ * e.g. {@link com.hazelcast.core.EntryEventType#CLEAR_ALL}.
  * {@link com.hazelcast.core.EntryEventType#EVICT_ALL}.
  * </li>
  * <li>
- * An entry event is fired after the changes that affects a specific entry e.g. {@link com.hazelcast.core.EntryEventType#ADDED},
+ * An entry event is fired after an operation on a single entry
+ * like e.g. {@link com.hazelcast.core.EntryEventType#ADDED},
  * {@link com.hazelcast.core.EntryEventType#UPDATED}
  * </li>
  * </ul>
- * <p/>
- * An implementer of this interface should extend one of the sub-interfaces of it
- * to receive a corresponding event.
+ * <p>An implementer of this interface should extend one of its
+ * sub-interfaces to receive a corresponding event.
  *
  * @see MapClearedListener
  * @see MapEvictedListener
  * @see EntryAddedListener
  * @see EntryEvictedListener
+ * @see EntryExpiredListener
  * @see EntryRemovedListener
  * @see EntryMergedListener
  * @see EntryUpdatedListener
- *
+ * @see EntryLoadedListener
  * @since 3.5
  */
 public interface MapListener extends EventListener {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,27 +18,24 @@ package com.hazelcast.multimap.impl.txn;
 
 import com.hazelcast.multimap.impl.MultiMapContainer;
 import com.hazelcast.multimap.impl.MultiMapDataSerializerHook;
-import com.hazelcast.multimap.impl.operations.MultiMapBackupAwareOperation;
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.Operation;
+import com.hazelcast.multimap.impl.operations.AbstractBackupAwareMultiMapOperation;
+import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.transaction.TransactionException;
 
-import java.io.IOException;
+import java.util.concurrent.TimeUnit;
 
-public class TxnPrepareOperation extends MultiMapBackupAwareOperation {
+public class TxnPrepareOperation extends AbstractBackupAwareMultiMapOperation {
 
-    private static final long LOCK_EXTENSION_TIME_IN_MILLIS = 10000L;
-    private long ttl;
+    static final long LOCK_EXTENSION_TIME_IN_MILLIS = TimeUnit.SECONDS.toMillis(10);
 
     public TxnPrepareOperation() {
     }
 
-    public TxnPrepareOperation(int partitionId, String name, Data dataKey, long ttl, long threadId) {
+    public TxnPrepareOperation(int partitionId, String name, Data dataKey, long threadId) {
         super(name, dataKey, threadId);
+
         setPartitionId(partitionId);
-        this.ttl = ttl;
     }
 
     @Override
@@ -64,23 +61,11 @@ public class TxnPrepareOperation extends MultiMapBackupAwareOperation {
 
     @Override
     public Operation getBackupOperation() {
-        return new TxnPrepareBackupOperation(name, dataKey, getCallerUuid(), threadId);
+        return new TxnPrepareBackupOperation(name, dataKey, threadId, getCallerUuid());
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MultiMapDataSerializerHook.TXN_PREPARE;
-    }
-
-    @Override
-    protected void writeInternal(ObjectDataOutput out) throws IOException {
-        super.writeInternal(out);
-        out.writeLong(ttl);
-    }
-
-    @Override
-    protected void readInternal(ObjectDataInput in) throws IOException {
-        super.readInternal(in);
-        ttl = in.readLong();
     }
 }

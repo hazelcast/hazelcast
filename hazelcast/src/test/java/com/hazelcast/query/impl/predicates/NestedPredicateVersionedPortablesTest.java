@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,17 +17,16 @@
 package com.hazelcast.query.impl.predicates;
 
 import com.hazelcast.config.Config;
+import com.hazelcast.config.IndexType;
 import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IMap;
-import com.hazelcast.nio.serialization.PortableFactory;
+import com.hazelcast.map.IMap;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.nio.serialization.VersionedPortable;
-import com.hazelcast.query.EntryObject;
 import com.hazelcast.query.Predicate;
-import com.hazelcast.query.PredicateBuilder;
-import com.hazelcast.query.SqlPredicate;
+import com.hazelcast.query.PredicateBuilder.EntryObject;
+import com.hazelcast.query.Predicates;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
@@ -57,16 +56,14 @@ public class NestedPredicateVersionedPortablesTest extends HazelcastTestSupport 
     }
 
     public SerializationConfig setUpFactory(Config config) {
-        return config.getSerializationConfig().addPortableFactory(1, new PortableFactory() {
-            public VersionedPortable create(int classId) {
-                switch (classId) {
-                    case 1:
-                        return new Body();
-                    case 2:
-                        return new Limb();
-                    default:
-                        throw new IllegalStateException("Wrong class ID");
-                }
+        return config.getSerializationConfig().addPortableFactory(1, (classId) -> {
+            switch (classId) {
+                case 1:
+                    return new Body();
+                case 2:
+                    return new Limb();
+                default:
+                    throw new IllegalStateException("Wrong class ID");
             }
         });
     }
@@ -79,40 +76,40 @@ public class NestedPredicateVersionedPortablesTest extends HazelcastTestSupport 
     @Test
     public void addingIndexes() {
         // single-attribute index
-        map.addIndex("name", true);
+        map.addIndex(IndexType.SORTED, "name");
         // nested-attribute index
-        map.addIndex("limb.name", true);
+        map.addIndex(IndexType.SORTED, "limb.name");
     }
 
     @Test
-    public void singleAttributeQuery_versionedProtables_predicates() throws Exception {
+    public void singleAttributeQuery_versionedProtables_predicates() {
         // GIVEN
         map.put(1, new NestedPredicateVersionedPortablesTest.Body("body1", new NestedPredicateVersionedPortablesTest.Limb("hand")));
         map.put(2, new NestedPredicateVersionedPortablesTest.Body("body2", new NestedPredicateVersionedPortablesTest.Limb("leg")));
 
         // WHEN
-        EntryObject e = new PredicateBuilder().getEntryObject();
+        EntryObject e = Predicates.newPredicateBuilder().getEntryObject();
         Predicate predicate = e.get("limb.name").equal("hand");
         Collection<NestedPredicateVersionedPortablesTest.Body> values = map.values(predicate);
 
         // THEN
         assertEquals(1, values.size());
-        assertEquals("body1", values.toArray(new NestedPredicateVersionedPortablesTest.Body[values.size()])[0].getName());
+        assertEquals("body1", values.toArray(new Body[0])[0].getName());
 
     }
 
     @Test
-    public void nestedAttributeQuery_distributedSql() throws Exception {
+    public void nestedAttributeQuery_distributedSql() {
         // GIVEN
         map.put(1, new NestedPredicateVersionedPortablesTest.Body("body1", new NestedPredicateVersionedPortablesTest.Limb("hand")));
         map.put(2, new NestedPredicateVersionedPortablesTest.Body("body2", new NestedPredicateVersionedPortablesTest.Limb("leg")));
 
         // WHEN
-        Collection<NestedPredicateVersionedPortablesTest.Body> values = map.values(new SqlPredicate("limb.name == 'leg'"));
+        Collection<NestedPredicateVersionedPortablesTest.Body> values = map.values(Predicates.sql("limb.name == 'leg'"));
 
         // THEN
         assertEquals(1, values.size());
-        assertEquals("body2", values.toArray(new NestedPredicateVersionedPortablesTest.Body[values.size()])[0].getName());
+        assertEquals("body2", values.toArray(new Body[0])[0].getName());
     }
 
 
@@ -147,7 +144,6 @@ public class NestedPredicateVersionedPortablesTest extends HazelcastTestSupport 
             }
 
             Body body = (Body) o;
-
             if (name != null ? !name.equals(body.name) : body.name != null) {
                 return false;
             }
@@ -164,10 +160,10 @@ public class NestedPredicateVersionedPortablesTest extends HazelcastTestSupport 
 
         @Override
         public String toString() {
-            return "Body{" +
-                    "name='" + name + '\'' +
-                    ", limb=" + limb +
-                    '}';
+            return "Body{"
+                    + "name='" + name + '\''
+                    + ", limb=" + limb
+                    + '}';
         }
 
         @Override
@@ -223,7 +219,6 @@ public class NestedPredicateVersionedPortablesTest extends HazelcastTestSupport 
             }
 
             Limb limb = (Limb) o;
-
             return !(name != null ? !name.equals(limb.name) : limb.name != null);
         }
 
@@ -234,9 +229,9 @@ public class NestedPredicateVersionedPortablesTest extends HazelcastTestSupport 
 
         @Override
         public String toString() {
-            return "Limb{" +
-                    "name='" + name + '\'' +
-                    '}';
+            return "Limb{"
+                    + "name='" + name + '\''
+                    + '}';
         }
 
         @Override

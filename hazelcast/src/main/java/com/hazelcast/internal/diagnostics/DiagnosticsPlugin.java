@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,11 +21,14 @@ import com.hazelcast.logging.ILogger;
 /**
  * Plugin for the {@link Diagnostics}.
  * <p>
- * The plugin will not be called concurrently, unless threads are introduced outside of the {@link Diagnostics}.
+ * The plugin will not be called concurrently, unless threads are introduced
+ * outside of the {@link Diagnostics}.
  * <p>
- * There is a happens before relation between {@link #onStart()} and {@link #run(DiagnosticsLogWriter)}, and therefor
- * there is no need to make variables volatile. The source of the happens-before relation is the scheduler.queue inside
- * of the {@link Diagnostics} or the AtomicReference in case of static plugins.
+ * There is a happens-before relation between {@link #onStart()} and
+ * {@link #run(DiagnosticsLogWriter)}, and therefore there is no need to make
+ * variables volatile. The source of the happens-before relation is the
+ * scheduler.queue inside of the {@link Diagnostics} or the AtomicReference in
+ * case of static plugins.
  */
 public abstract class DiagnosticsPlugin {
 
@@ -50,8 +53,10 @@ public abstract class DiagnosticsPlugin {
      * <p>
      * If a monitor is disabled, 0 is returned.
      * <p>
-     * If a monitor should run only once, a negative value is returned. This is useful for 'static' monitors like the
-     * {@link SystemPropertiesPlugin} that run at the beginning of a log file but their contents will not change.
+     * If a monitor should run only once, a negative value is returned. This is
+     * useful for 'static' monitors like the {@link SystemPropertiesPlugin}
+     * that run at the beginning of a log file but their contents will not
+     * change.
      *
      * @return the period in millis.
      */

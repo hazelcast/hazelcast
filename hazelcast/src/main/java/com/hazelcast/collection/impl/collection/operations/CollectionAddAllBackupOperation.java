@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,18 +18,18 @@ package com.hazelcast.collection.impl.collection.operations;
 
 import com.hazelcast.collection.impl.collection.CollectionContainer;
 import com.hazelcast.collection.impl.collection.CollectionDataSerializerHook;
+import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.BackupOperation;
-import com.hazelcast.spi.impl.MutatingOperation;
+import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.spi.impl.operationservice.BackupOperation;
 
 import java.io.IOException;
 import java.util.Map;
 
-import static com.hazelcast.util.MapUtil.createHashMap;
+import static com.hazelcast.internal.util.MapUtil.createHashMap;
 
-public class CollectionAddAllBackupOperation extends CollectionOperation implements BackupOperation, MutatingOperation {
+public class CollectionAddAllBackupOperation extends CollectionOperation implements BackupOperation {
 
     protected Map<Long, Data> valueMap;
 
@@ -48,7 +48,7 @@ public class CollectionAddAllBackupOperation extends CollectionOperation impleme
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return CollectionDataSerializerHook.COLLECTION_ADD_ALL_BACKUP;
     }
 
@@ -58,7 +58,7 @@ public class CollectionAddAllBackupOperation extends CollectionOperation impleme
         out.writeInt(valueMap.size());
         for (Map.Entry<Long, Data> entry : valueMap.entrySet()) {
             out.writeLong(entry.getKey());
-            out.writeData(entry.getValue());
+            IOUtil.writeData(out, entry.getValue());
         }
     }
 
@@ -69,7 +69,7 @@ public class CollectionAddAllBackupOperation extends CollectionOperation impleme
         valueMap = createHashMap(size);
         for (int i = 0; i < size; i++) {
             final long itemId = in.readLong();
-            final Data value = in.readData();
+            final Data value = IOUtil.readData(in);
             valueMap.put(itemId, value);
         }
     }

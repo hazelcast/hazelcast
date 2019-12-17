@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -56,11 +56,9 @@ public class TestReplicatedMapApplicationContext {
     public void testReplicatedMapConfig() {
         ReplicatedMapConfig replicatedMapConfig = instance.getConfig().getReplicatedMapConfig("replicatedMap");
         assertNotNull(replicatedMapConfig);
-        assertEquals(3, replicatedMapConfig.getConcurrencyLevel());
         assertEquals("OBJECT", InMemoryFormat.OBJECT.name());
         assertTrue(replicatedMapConfig.isAsyncFillup());
         assertFalse(replicatedMapConfig.isStatisticsEnabled());
-        assertEquals(10, replicatedMapConfig.getReplicationDelayMillis());
 
         List<ListenerConfig> listenerConfigs = replicatedMapConfig.getListenerConfigs();
         assertEquals(1, listenerConfigs.size());

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,15 +16,15 @@
 
 package com.hazelcast.core;
 
-import com.hazelcast.nio.serialization.BinaryInterface;
+import com.hazelcast.internal.serialization.BinaryInterface;
 
 import java.io.Serializable;
 
 /**
  * Represents a function that accepts one argument and produces a result.
- *
+ * <p>
  * This class is called IFunction instead of Function to prevent clashes with the one in Java 8.
- *
+ * <p>
  * Serialized instances of this interface are used in client-member communication, so changing an implementation's binary format
  * will render it incompatible with its previous versions.
  *
@@ -32,8 +32,8 @@ import java.io.Serializable;
  * @param <R> a result
  * @since 3.2
  */
-
 @BinaryInterface
+@FunctionalInterface
 public interface IFunction<T, R> extends Serializable {
 
     R apply(T input);

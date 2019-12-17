@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,7 +29,7 @@ class LazySet<K, V, R> implements Set<R> {
     private final InternalReplicatedMapStorage<K, V> storage;
     private final IteratorFactory<K, V, R> iteratorFactory;
 
-    public LazySet(IteratorFactory<K, V, R> iteratorFactory, InternalReplicatedMapStorage<K, V> storage) {
+    LazySet(IteratorFactory<K, V, R> iteratorFactory, InternalReplicatedMapStorage<K, V> storage) {
         this.iteratorFactory = iteratorFactory;
         this.storage = storage;
     }
@@ -51,26 +51,29 @@ class LazySet<K, V, R> implements Set<R> {
 
     @Override
     public Iterator<R> iterator() {
-        final Iterator<Map.Entry<K, ReplicatedRecord<K, V>>> iterator = storage.entrySet().iterator();
+        Iterator<Map.Entry<K, ReplicatedRecord<K, V>>> iterator = storage.entrySet().iterator();
         return iteratorFactory.create(iterator);
     }
 
     @Override
     public Object[] toArray() {
-        List<Object> result = new ArrayList<Object>(storage.values().size());
-        Iterator<R> iterator = iterator();
-        while (iterator.hasNext()) {
-            result.add(iterator.next());
+        List<Object> result = new ArrayList<>(storage.values().size());
+        for (R r : this) {
+            // we cannot use addAll() here, since it results in StackOverflowError
+            //noinspection UseBulkOperation
+            result.add(r);
         }
-        return result.toArray(new Object[result.size()]);
+        return result.toArray(new Object[0]);
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public <T> T[] toArray(T[] a) {
-        List<Object> result = new ArrayList<Object>(storage.values().size());
-        Iterator<R> iterator = iterator();
-        while (iterator.hasNext()) {
-            result.add(iterator.next());
+        List<Object> result = new ArrayList<>(storage.values().size());
+        for (R r : this) {
+            // we cannot use addAll() here, since it results in StackOverflowError
+            //noinspection UseBulkOperation
+            result.add(r);
         }
         if (a.length != result.size()) {
             a = (T[]) Array.newInstance(a.getClass().getComponentType(), result.size());

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 
 package com.hazelcast.map.impl.operation;
 
-import com.hazelcast.map.EntryBackupProcessor;
+import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -31,7 +31,8 @@ public class PartitionWideEntryWithPredicateBackupOperation extends PartitionWid
     public PartitionWideEntryWithPredicateBackupOperation() {
     }
 
-    public PartitionWideEntryWithPredicateBackupOperation(String name, EntryBackupProcessor entryProcessor,
+    public PartitionWideEntryWithPredicateBackupOperation(String name,
+                                                          EntryProcessor entryProcessor,
                                                           Predicate predicate) {
         super(name, entryProcessor);
         this.predicate = predicate;
@@ -55,7 +56,7 @@ public class PartitionWideEntryWithPredicateBackupOperation extends PartitionWid
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MapDataSerializerHook.PARTITION_WIDE_PREDICATE_ENTRY_BACKUP;
     }
 }

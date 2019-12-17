@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,8 @@ package com.hazelcast.osgi.impl;
 
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
-import com.hazelcast.nio.ClassLoaderUtil;
+import com.hazelcast.internal.nio.ClassLoaderUtil;
+import com.hazelcast.internal.nio.IOUtil;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
 
@@ -44,7 +45,7 @@ http://svn.apache.org/repos/asf/felix/trunk/mishell/src/main/java/org/apache/fel
  * This class acts as a delegate for all the available ScriptEngineManagers. Unluckily, the standard did not
  * define it as an interface, so we need to extend it to allow polymorphism. However, no calls to super are used.
  * It wraps all available ScriptEngineManagers in the OSGi ServicePlatform into a merged ScriptEngineManager.
- * <p/>
+ * <p>
  * Internally, what this class does is creating ScriptEngineManagers for each bundle
  * that contains a ScriptEngineFactory and includes a META-INF/services/javax.script.ScriptEngineFactory file.
  * It assumes that the file contains a list of {@link ScriptEngineFactory} classes. For each bundle, it creates a
@@ -52,13 +53,13 @@ http://svn.apache.org/repos/asf/felix/trunk/mishell/src/main/java/org/apache/fel
  * into @link OSGiScriptEngineFactory objects to deal with problems of context class loader:
  * Those scripting engines that rely on the ContextClassloader for finding resources need to use this wrapper
  * and the @link OSGiScriptFactory. Mainly, jruby does.
- * <p/>
+ * <p>
  * Note that even if no context classloader issues arose, it would still be needed to search manually for the
  * factories and either use them directly (losing the mimeType/extension/shortName mechanisms for finding engines
  * or manually registering them) or still use this class, which would be smarter. In the latter case,
  * it would only be needed to remove the hack that temporarily sets the context classloader to the appropriate,
  * bundle-related, class loader.
- * <p/>
+ * <p>
  * Caveats:
  * <ul><li>
  * All factories are wrapped with an {@link OSGiScriptEngineFactory}. As Engines are not wrapped,
@@ -113,9 +114,8 @@ public class OSGiScriptEngineManager extends ScriptEngineManager {
      * (...)//do stuff
      * osgiManager=(OSGiScriptEngineManager)manager;//cast to ease reading
      * osgiManager.reloadManagers();
-     * <p/>
+     *
      * manager.setBindings(new OSGiBindings());//or you can use your own bindings implementation
-     * <p/>
      * </code>
      */
     public void reloadManagers() {
@@ -309,16 +309,20 @@ public class OSGiScriptEngineManager extends ScriptEngineManager {
             }
             while (urls.hasMoreElements()) {
                 URL u = (URL) urls.nextElement();
-                BufferedReader reader = new BufferedReader(
-                        new InputStreamReader(u.openStream(), "UTF-8"));
-                String line;
-                while ((line = reader.readLine()) != null) {
-                    line = line.trim();
-                    if (!line.startsWith("#") && line.length() > 0) {
-                        factoryCandidates.add(line);
+                BufferedReader reader = null;
+                try {
+                    reader = new BufferedReader(
+                            new InputStreamReader(u.openStream(), "UTF-8"));
+                    String line;
+                    while ((line = reader.readLine()) != null) {
+                        line = line.trim();
+                        if (!line.startsWith("#") && line.length() > 0) {
+                            factoryCandidates.add(line);
+                        }
                     }
+                } finally {
+                    IOUtil.closeResource(reader);
                 }
-                reader.close();
             }
         }
 

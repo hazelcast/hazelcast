@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,48 +18,30 @@ package com.hazelcast.map.impl.record;
 
 import com.hazelcast.config.CacheDeserializedValues;
 import com.hazelcast.config.MapConfig;
-import com.hazelcast.core.PartitioningStrategy;
-import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.serialization.SerializationService;
+import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.serialization.Data;
 
 public class DataRecordFactory implements RecordFactory<Data> {
 
-    private final SerializationService serializationService;
-    private final PartitioningStrategy partitionStrategy;
-    private final CacheDeserializedValues cacheDeserializedValues;
     private final boolean statisticsEnabled;
+    private final SerializationService ss;
+    private final CacheDeserializedValues cacheDeserializedValues;
 
-    public DataRecordFactory(MapConfig config, SerializationService serializationService,
-                             PartitioningStrategy partitionStrategy) {
-        this.serializationService = serializationService;
-        this.partitionStrategy = partitionStrategy;
+    public DataRecordFactory(MapConfig config, SerializationService ss) {
+        this.ss = ss;
         this.statisticsEnabled = config.isStatisticsEnabled();
         this.cacheDeserializedValues = config.getCacheDeserializedValues();
     }
 
     @Override
     public Record<Data> newRecord(Object value) {
-        assert value != null : "value can not be null";
+        Data valueData = ss.toData(value);
 
-        final Data data = serializationService.toData(value, partitionStrategy);
         switch (cacheDeserializedValues) {
             case NEVER:
-                return statisticsEnabled ? new DataRecordWithStats(data) : new DataRecord(data);
+                return statisticsEnabled ? new DataRecordWithStats(valueData) : new DataRecord(valueData);
             default:
-                return statisticsEnabled ? new CachedDataRecordWithStats(data) : new CachedDataRecord(data);
+                return statisticsEnabled ? new CachedDataRecordWithStats(valueData) : new CachedDataRecord(valueData);
         }
-    }
-
-    @Override
-    public void setValue(Record<Data> record, Object value) {
-        assert value != null : "value can not be null";
-
-        final Data v;
-        if (value instanceof Data) {
-            v = (Data) value;
-        } else {
-            v = serializationService.toData(value, partitionStrategy);
-        }
-        record.setValue(v);
     }
 }

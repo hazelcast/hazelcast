@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,15 +18,14 @@ package com.hazelcast.spi.impl.proxyservice.impl;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.DataSerializable;
-import com.hazelcast.nio.serialization.BinaryInterface;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.spi.impl.SpiDataSerializerHook;
 
 import java.io.IOException;
 
 import static com.hazelcast.core.DistributedObjectEvent.EventType;
 
-@BinaryInterface
-public final class DistributedObjectEventPacket implements DataSerializable {
+public final class DistributedObjectEventPacket implements IdentifiedDataSerializable {
 
     private EventType eventType;
     private String serviceName;
@@ -57,15 +56,14 @@ public final class DistributedObjectEventPacket implements DataSerializable {
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeBoolean(eventType == EventType.CREATED);
         out.writeUTF(serviceName);
-        // writing as object for backward-compatibility
-        out.writeObject(name);
+        out.writeUTF(name);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         eventType = in.readBoolean() ? EventType.CREATED : EventType.DESTROYED;
         serviceName = in.readUTF();
-        name = in.readObject();
+        name = in.readUTF();
     }
 
     @Override
@@ -75,5 +73,15 @@ public final class DistributedObjectEventPacket implements DataSerializable {
                 + ", serviceName='" + serviceName + '\''
                 + ", name=" + name
                 + '}';
+    }
+
+    @Override
+    public int getFactoryId() {
+        return SpiDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getClassId() {
+        return SpiDataSerializerHook.DISTRIBUTED_OBJECT_EVENT_PACKET;
     }
 }

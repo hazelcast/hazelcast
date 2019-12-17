@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,43 +19,41 @@ package com.hazelcast.ringbuffer.impl;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.core.IFunction;
-import com.hazelcast.internal.cluster.Versions;
+import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.nio.serialization.impl.Versioned;
 import com.hazelcast.projection.Projection;
 import com.hazelcast.ringbuffer.ReadResultSet;
 import com.hazelcast.spi.impl.SerializationServiceSupport;
-import com.hazelcast.spi.serialization.SerializationService;
-import com.hazelcast.util.function.Predicate;
+import com.hazelcast.internal.serialization.SerializationService;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
 import java.util.AbstractList;
+import java.util.List;
+import java.util.function.Predicate;
 
 import static com.hazelcast.ringbuffer.impl.RingbufferDataSerializerHook.F_ID;
 import static com.hazelcast.ringbuffer.impl.RingbufferDataSerializerHook.READ_RESULT_SET;
-import static com.hazelcast.util.Preconditions.checkNotNegative;
-import static com.hazelcast.util.Preconditions.checkTrue;
 
 /**
  * A list for the {@link com.hazelcast.ringbuffer.impl.operations.ReadManyOperation}.
  * <p>
- * The problem with a regular list is that if you store Data objects, then on the receiving side you get
- * a list with data objects. If you hand this list out to the caller, you have a problem because he sees
- * data objects instead of deserialized objects.
- * <p>
- * The predicate, filter and projection may be {@code null} in which case all elements are returned
- * and no projection is applied.
+ * The problem with a regular list is that if you store Data objects, then
+ * on the receiving side you get a list with data objects. If you hand this
+ * list out to the caller, you have a problem because he sees data objects
+ * instead of deserialized objects.
+ * The predicate, filter and projection may be {@code null} in which case
+ * all elements are returned and no projection is applied.
  *
  * @param <O> deserialized ringbuffer type
  * @param <E> result set type, is equal to {@code O} if the projection
  *            is {@code null} or returns the same type as the parameter
  */
 public class ReadResultSetImpl<O, E> extends AbstractList<E>
-        implements IdentifiedDataSerializable, HazelcastInstanceAware, ReadResultSet<E>, Versioned {
+        implements IdentifiedDataSerializable, HazelcastInstanceAware, ReadResultSet<E> {
 
     protected transient SerializationService serializationService;
     private transient int minSize;
@@ -68,11 +66,14 @@ public class ReadResultSetImpl<O, E> extends AbstractList<E>
     private long[] seqs;
     private int size;
     private int readCount;
+    private long nextSeq;
 
     public ReadResultSetImpl() {
     }
 
-    public ReadResultSetImpl(int minSize, int maxSize, SerializationService serializationService, IFunction<O, Boolean> filter) {
+    public ReadResultSetImpl(int minSize, int maxSize,
+                             SerializationService serializationService,
+                             IFunction<O, Boolean> filter) {
         this.minSize = minSize;
         this.maxSize = maxSize;
         this.items = new Data[maxSize];
@@ -81,8 +82,19 @@ public class ReadResultSetImpl<O, E> extends AbstractList<E>
         this.filter = filter;
     }
 
-    public ReadResultSetImpl(int minSize, int maxSize, SerializationService serializationService,
-                             Predicate<? super O> predicate, Projection<? super O, E> projection) {
+    @SuppressFBWarnings("EI_EXPOSE_REP2")
+    public ReadResultSetImpl(int readCount, List<Data> items, long[] seqs, long nextSeq) {
+        this.readCount = readCount;
+        this.items = items.toArray(new Data[0]);
+        this.size = items.size();
+        this.seqs = seqs;
+        this.nextSeq = nextSeq;
+    }
+
+    public ReadResultSetImpl(int minSize, int maxSize,
+                             SerializationService serializationService,
+                             Predicate<? super O> predicate,
+                             Projection<? super O, E> projection) {
         this(minSize, maxSize, serializationService, null);
         this.predicate = predicate;
         this.projection = projection;
@@ -117,19 +129,21 @@ public class ReadResultSetImpl<O, E> extends AbstractList<E>
 
     @Override
     public E get(int index) {
-        checkNotNegative(index, "index should not be negative");
-        checkTrue(index < size, "index should not be equal or larger than size");
-
+        rangeCheck(index);
         final Data item = items[index];
         return serializationService.toObject(item);
     }
 
     @Override
     public long getSequence(int index) {
-        if (seqs == null) {
-            throw new UnsupportedOperationException("Sequence IDs are not available when the cluster version is lower than 3.9");
-        }
+        rangeCheck(index);
         return seqs.length > index ? seqs[index] : -1;
+    }
+
+    private void rangeCheck(int index) {
+        if (index < 0 || index >= size) {
+            throw new IllegalArgumentException("index=" + index + ", size=" + size);
+        }
     }
 
     /**
@@ -187,8 +201,17 @@ public class ReadResultSetImpl<O, E> extends AbstractList<E>
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return READ_RESULT_SET;
+    }
+
+    @Override
+    public long getNextSequenceToReadFrom() {
+        return nextSeq;
+    }
+
+    public void setNextSequenceToReadFrom(long nextSeq) {
+        this.nextSeq = nextSeq;
     }
 
     @Override
@@ -196,11 +219,10 @@ public class ReadResultSetImpl<O, E> extends AbstractList<E>
         out.writeInt(readCount);
         out.writeInt(size);
         for (int k = 0; k < size; k++) {
-            out.writeData(items[k]);
+            IOUtil.writeData(out, items[k]);
         }
-        if (out.getVersion().isGreaterOrEqual(Versions.V3_9)) {
-            out.writeLongArray(seqs);
-        }
+        out.writeLongArray(seqs);
+        out.writeLong(nextSeq);
     }
 
     @Override
@@ -209,10 +231,9 @@ public class ReadResultSetImpl<O, E> extends AbstractList<E>
         size = in.readInt();
         items = new Data[size];
         for (int k = 0; k < size; k++) {
-            items[k] = in.readData();
+            items[k] = IOUtil.readData(in);
         }
-        if (in.getVersion().isGreaterOrEqual(Versions.V3_9)) {
-            seqs = in.readLongArray();
-        }
+        seqs = in.readLongArray();
+        nextSeq = in.readLong();
     }
 }

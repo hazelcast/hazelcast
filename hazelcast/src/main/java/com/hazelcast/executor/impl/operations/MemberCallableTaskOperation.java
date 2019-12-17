@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,18 +18,24 @@ package com.hazelcast.executor.impl.operations;
 
 import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.executor.impl.ExecutorDataSerializerHook;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.spi.ExceptionAction;
+import com.hazelcast.spi.impl.operationservice.ExceptionAction;
 import com.hazelcast.spi.exception.TargetNotMemberException;
+import com.hazelcast.spi.impl.operationservice.MutatingOperation;
+
+import javax.annotation.Nonnull;
+import java.util.UUID;
 
 public final class MemberCallableTaskOperation extends AbstractCallableTaskOperation
-        implements IdentifiedDataSerializable {
+        implements IdentifiedDataSerializable, MutatingOperation {
 
     public MemberCallableTaskOperation() {
     }
 
-    public MemberCallableTaskOperation(String name, String uuid, Data callableData) {
+    public MemberCallableTaskOperation(String name,
+                                       UUID uuid,
+                                       @Nonnull Data callableData) {
         super(name, uuid, callableData);
     }
 
@@ -42,7 +48,7 @@ public final class MemberCallableTaskOperation extends AbstractCallableTaskOpera
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ExecutorDataSerializerHook.MEMBER_CALLABLE_TASK;
     }
 }

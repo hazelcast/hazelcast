@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,21 +18,21 @@ package com.hazelcast.map.impl.querycache.subscriber;
 
 import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.QueryCacheConfig;
-import com.hazelcast.internal.eviction.EvictionListener;
 import com.hazelcast.internal.eviction.EvictionChecker;
+import com.hazelcast.internal.eviction.EvictionListener;
 import com.hazelcast.internal.eviction.impl.evaluator.EvictionPolicyEvaluator;
 import com.hazelcast.internal.eviction.impl.strategy.sampling.SamplingEvictionStrategy;
 import com.hazelcast.map.impl.querycache.subscriber.record.QueryCacheRecord;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.internal.serialization.Data;
 
-import static com.hazelcast.internal.config.ConfigValidator.checkEvictionConfig;
+import static com.hazelcast.internal.config.ConfigValidator.checkCacheEvictionConfig;
 import static com.hazelcast.internal.eviction.EvictionChecker.EVICT_ALWAYS;
 import static com.hazelcast.internal.eviction.EvictionPolicyEvaluatorProvider.getEvictionPolicyEvaluator;
 
 /**
  * Contains eviction specific functionality of a {@link QueryCacheRecordStore}.
  */
-public class EvictionOperator {
+class EvictionOperator {
     // It could be the current size of the CQC is over a configured limit. This can happen e.g. when multiple threads
     // are inserting entries concurrently. However each eviction cycle can remove at most 1 entry -> we run multiple
     // eviction cycles when the current size is over the configured eviction threshold. This property controls maximum
@@ -48,15 +48,15 @@ public class EvictionOperator {
     private final EvictionListener<Data, QueryCacheRecord> listener;
     private final ClassLoader classLoader;
 
-    public EvictionOperator(QueryCacheRecordHashMap cache,
-                            QueryCacheConfig config,
-                            EvictionListener<Data, QueryCacheRecord> listener,
-                            ClassLoader classLoader) {
+    EvictionOperator(QueryCacheRecordHashMap cache,
+                     QueryCacheConfig config,
+                     EvictionListener<Data, QueryCacheRecord> listener,
+                     ClassLoader classLoader) {
         this.cache = cache;
         this.evictionConfig = config.getEvictionConfig();
         this.evictionChecker = createCacheEvictionChecker();
         this.evictionPolicyEvaluator = createEvictionPolicyEvaluator();
-        this.evictionStrategy = createEvictionStrategy();
+        this.evictionStrategy = SamplingEvictionStrategy.INSTANCE;
         this.listener = listener;
         this.classLoader = classLoader;
     }
@@ -77,20 +77,11 @@ public class EvictionOperator {
     }
 
     private EvictionChecker createCacheEvictionChecker() {
-        return new EvictionChecker() {
-            @Override
-            public boolean isEvictionRequired() {
-                return cache.size() >= evictionConfig.getSize();
-            }
-        };
+        return () -> cache.size() >= evictionConfig.getSize();
     }
 
     private EvictionPolicyEvaluator<Data, QueryCacheRecord> createEvictionPolicyEvaluator() {
-        checkEvictionConfig(evictionConfig, false);
+        checkCacheEvictionConfig(evictionConfig);
         return getEvictionPolicyEvaluator(evictionConfig, classLoader);
-    }
-
-    private SamplingEvictionStrategy<Data, QueryCacheRecord, QueryCacheRecordHashMap> createEvictionStrategy() {
-        return SamplingEvictionStrategy.INSTANCE;
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,16 +16,19 @@
 
 package com.hazelcast.internal.dynamicconfig;
 
-import com.hazelcast.config.CredentialsFactoryConfig;
 import com.hazelcast.config.LoginModuleConfig;
+import com.hazelcast.config.OnJoinPermissionOperationName;
 import com.hazelcast.config.PermissionConfig;
 import com.hazelcast.config.PermissionPolicyConfig;
 import com.hazelcast.config.SecurityConfig;
 import com.hazelcast.config.SecurityInterceptorConfig;
+import com.hazelcast.config.security.RealmConfig;
+import com.hazelcast.security.ICredentialsFactory;
 import com.hazelcast.security.SecurityService;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -56,7 +59,7 @@ public class DynamicSecurityConfig extends SecurityConfig {
     }
 
     @Override
-    public void setSecurityInterceptorConfigs(List<SecurityInterceptorConfig> securityInterceptorConfigs) {
+    public SecurityConfig setSecurityInterceptorConfigs(List<SecurityInterceptorConfig> securityInterceptorConfigs) {
         throw new UnsupportedOperationException("Unsupported operation");
     }
 
@@ -71,39 +74,10 @@ public class DynamicSecurityConfig extends SecurityConfig {
     }
 
     @Override
-    public SecurityConfig addMemberLoginModuleConfig(LoginModuleConfig loginModuleConfig) {
-        throw new UnsupportedOperationException("Unsupported operation");
-    }
-
-    @Override
-    public SecurityConfig addClientLoginModuleConfig(LoginModuleConfig loginModuleConfig) {
-        throw new UnsupportedOperationException("Unsupported operation");
-    }
-
-    @Override
     public SecurityConfig addClientPermissionConfig(PermissionConfig permissionConfig) {
         throw new UnsupportedOperationException("Unsupported operation");
     }
 
-    @Override
-    public List<LoginModuleConfig> getClientLoginModuleConfigs() {
-        return staticSecurityConfig.getClientLoginModuleConfigs();
-    }
-
-    @Override
-    public SecurityConfig setClientLoginModuleConfigs(List<LoginModuleConfig> loginModuleConfigs) {
-        throw new UnsupportedOperationException("Unsupported operation");
-    }
-
-    @Override
-    public List<LoginModuleConfig> getMemberLoginModuleConfigs() {
-        return staticSecurityConfig.getMemberLoginModuleConfigs();
-    }
-
-    @Override
-    public SecurityConfig setMemberLoginModuleConfigs(List<LoginModuleConfig> memberLoginModuleConfigs) {
-        throw new UnsupportedOperationException("Unsupported operation");
-    }
 
     @Override
     public PermissionPolicyConfig getClientPolicyConfig() {
@@ -112,6 +86,21 @@ public class DynamicSecurityConfig extends SecurityConfig {
 
     @Override
     public SecurityConfig setClientPolicyConfig(PermissionPolicyConfig policyConfig) {
+        throw new UnsupportedOperationException("Unsupported operation");
+    }
+
+    @Override
+    public SecurityConfig setClientBlockUnmappedActions(boolean clientBlockUnmappedActions) {
+        throw new UnsupportedOperationException("Unsupported operation");
+    }
+
+    @Override
+    public Map<String, RealmConfig> getRealmConfigs() {
+        return staticSecurityConfig.getRealmConfigs();
+    }
+
+    @Override
+    public void setRealmConfigs(Map<String, RealmConfig> realmConfigs) {
         throw new UnsupportedOperationException("Unsupported operation");
     }
 
@@ -127,6 +116,11 @@ public class DynamicSecurityConfig extends SecurityConfig {
         return Collections.unmodifiableSet(permissionConfigs);
     }
 
+    @Override
+    public boolean getClientBlockUnmappedActions() {
+        return staticSecurityConfig.getClientBlockUnmappedActions();
+    }
+
     /**
      *  Updates client permission configuration cluster-wide.
      */
@@ -140,12 +134,94 @@ public class DynamicSecurityConfig extends SecurityConfig {
     }
 
     @Override
-    public CredentialsFactoryConfig getMemberCredentialsConfig() {
-        return staticSecurityConfig.getMemberCredentialsConfig();
+    public OnJoinPermissionOperationName getOnJoinPermissionOperation() {
+        return staticSecurityConfig.getOnJoinPermissionOperation();
     }
 
     @Override
-    public SecurityConfig setMemberCredentialsConfig(CredentialsFactoryConfig credentialsFactoryConfig) {
+    public SecurityConfig setOnJoinPermissionOperation(OnJoinPermissionOperationName onJoinPermissionOperation) {
         throw new UnsupportedOperationException("Unsupported operation");
     }
+
+    @Override
+    public SecurityConfig addRealmConfig(String realmName, RealmConfig realmConfig) {
+        throw new UnsupportedOperationException("Unsupported operation");
+    }
+
+    @Override
+    public RealmConfig getRealmConfig(String realmName) {
+        throw new UnsupportedOperationException("Unsupported operation");
+    }
+
+    @Override
+    public String getMemberRealm() {
+        return staticSecurityConfig.getMemberRealm();
+    }
+
+    @Override
+    public SecurityConfig setMemberRealm(String memberRealm) {
+        throw new UnsupportedOperationException("Unsupported operation");
+    }
+
+    @Override
+    public String getClientRealm() {
+        return staticSecurityConfig.getClientRealm();
+    }
+
+    @Override
+    public SecurityConfig setClientRealm(String clientRealm) {
+        throw new UnsupportedOperationException("Unsupported operation");
+    }
+
+    @Override
+    public SecurityConfig setMemberRealmConfig(String realmName, RealmConfig realmConfig) {
+        throw new UnsupportedOperationException("Unsupported operation");
+    }
+
+    @Override
+    public ICredentialsFactory getRealmCredentialsFactory(String realmName) {
+        return staticSecurityConfig.getRealmCredentialsFactory(realmName);
+    }
+
+    @Override
+    public LoginModuleConfig[] getRealmLoginModuleConfigs(String realmName) {
+        return staticSecurityConfig.getRealmLoginModuleConfigs(realmName);
+    }
+
+    @Override
+    public SecurityConfig setClientRealmConfig(String realmName, RealmConfig realmConfig) {
+        throw new UnsupportedOperationException("Unsupported operation");
+    }
+
+    @Override
+    public boolean isRealm(String name) {
+        return staticSecurityConfig.isRealm(name);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        if (!super.equals(o)) {
+            return false;
+        }
+
+        DynamicSecurityConfig that = (DynamicSecurityConfig) o;
+
+        return staticSecurityConfig != null
+                ? staticSecurityConfig.equals(that.staticSecurityConfig)
+                : that.staticSecurityConfig == null;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = super.hashCode();
+        result = 31 * result + (staticSecurityConfig != null ? staticSecurityConfig.hashCode() : 0);
+        return result;
+    }
+
 }

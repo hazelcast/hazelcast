@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,12 +16,11 @@
 
 package com.hazelcast.map.impl.record;
 
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.internal.serialization.Data;
 
-import static com.hazelcast.util.JVMUtil.REFERENCE_COST_IN_BYTES;
+import static com.hazelcast.internal.util.JVMUtil.REFERENCE_COST_IN_BYTES;
 
 class DataRecord extends AbstractRecord<Data> {
-
     protected volatile Data value;
 
     DataRecord(Data value) {
@@ -33,7 +32,9 @@ class DataRecord extends AbstractRecord<Data> {
 
     @Override
     public long getCost() {
-        return super.getCost() + REFERENCE_COST_IN_BYTES + (value == null ? 0 : value.getHeapCost());
+        return super.getCost()
+                + REFERENCE_COST_IN_BYTES
+                + (value == null ? 0 : value.getHeapCost());
     }
 
     @Override
@@ -61,9 +62,7 @@ class DataRecord extends AbstractRecord<Data> {
         }
 
         DataRecord that = (DataRecord) o;
-
         return value.equals(that.value);
-
     }
 
     @Override
@@ -71,5 +70,13 @@ class DataRecord extends AbstractRecord<Data> {
         int result = super.hashCode();
         result = 31 * result + value.hashCode();
         return result;
+    }
+
+    @Override
+    public String toString() {
+        return "DataRecord{"
+                + "value=" + value
+                + ", " + super.toString()
+                + "} ";
     }
 }

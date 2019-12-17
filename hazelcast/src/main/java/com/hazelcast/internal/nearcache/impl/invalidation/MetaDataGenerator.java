@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,15 +16,15 @@
 
 package com.hazelcast.internal.nearcache.impl.invalidation;
 
-import com.hazelcast.util.ConstructorFunction;
+import com.hazelcast.internal.util.ConstructorFunction;
 
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicLongArray;
 
-import static com.hazelcast.util.ConcurrencyUtil.getOrPutIfAbsent;
-import static com.hazelcast.util.UuidUtil.newUnsecureUUID;
+import static com.hazelcast.internal.util.ConcurrencyUtil.getOrPutIfAbsent;
+import static com.hazelcast.internal.util.UuidUtil.newUnsecureUUID;
 
 /**
  * Responsible for partition-sequence and partition UUID generation.
@@ -36,7 +36,6 @@ import static com.hazelcast.util.UuidUtil.newUnsecureUUID;
  * One instance per service is created. Used on member side.
  */
 public class MetaDataGenerator {
-
 
     private final int partitionCount;
     private final ConstructorFunction<String, AtomicLongArray> sequenceGeneratorConstructor
@@ -110,6 +109,10 @@ public class MetaDataGenerator {
 
     public void regenerateUuid(int partitionId) {
         uuids.put(partitionId, uuidConstructor.createNew(partitionId));
+    }
+
+    public void resetSequence(String name, int partitionId) {
+        sequenceGenerator(name).set(partitionId, 0);
     }
 
     // used for testing

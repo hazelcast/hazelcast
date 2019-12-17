@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,11 +16,12 @@
 
 package com.hazelcast.multimap.impl.txn;
 
+import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.multimap.impl.MultiMapDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.Operation;
+import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.transaction.impl.TransactionLogRecord;
 
 import java.io.IOException;
@@ -31,8 +32,8 @@ import java.util.List;
 
 public class MultiMapTransactionLogRecord implements TransactionLogRecord {
 
-    // todo: probably better to switch to an ArrayList to reduce litter.
-    private final List<Operation> opList = new LinkedList<Operation>();
+    // TODO: probably better to switch to an ArrayList to reduce litter
+    private final List<Operation> opList = new LinkedList<>();
     private int partitionId;
     private String name;
     private Data key;
@@ -52,7 +53,7 @@ public class MultiMapTransactionLogRecord implements TransactionLogRecord {
 
     @Override
     public Operation newPrepareOperation() {
-        return new TxnPrepareOperation(partitionId, name, key, ttl, threadId);
+        return new TxnPrepareOperation(partitionId, name, key, threadId);
     }
 
     @Override
@@ -73,7 +74,7 @@ public class MultiMapTransactionLogRecord implements TransactionLogRecord {
         for (Operation op : opList) {
             out.writeObject(op);
         }
-        out.writeData(key);
+        IOUtil.writeData(out, key);
         out.writeLong(ttl);
         out.writeLong(threadId);
     }
@@ -86,7 +87,7 @@ public class MultiMapTransactionLogRecord implements TransactionLogRecord {
         for (int i = 0; i < size; i++) {
             opList.add((Operation) in.readObject());
         }
-        key = in.readData();
+        key = IOUtil.readData(in);
         ttl = in.readLong();
         threadId = in.readLong();
     }
@@ -113,13 +114,13 @@ public class MultiMapTransactionLogRecord implements TransactionLogRecord {
         } else if (op instanceof TxnRemoveAllOperation) {
             TxnRemoveAllOperation removeAllOperation = (TxnRemoveAllOperation) op;
             Collection<Long> recordIds = removeAllOperation.getRecordIds();
-            Iterator<Operation> iter = opList.iterator();
-            while (iter.hasNext()) {
-                Operation opp = iter.next();
+            Iterator<Operation> iterator = opList.iterator();
+            while (iterator.hasNext()) {
+                Operation opp = iterator.next();
                 if (opp instanceof TxnPutOperation) {
                     TxnPutOperation putOperation = (TxnPutOperation) opp;
                     if (recordIds.remove(putOperation.getRecordId())) {
-                        iter.remove();
+                        iterator.remove();
                     }
                 }
             }
@@ -162,7 +163,7 @@ public class MultiMapTransactionLogRecord implements TransactionLogRecord {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MultiMapDataSerializerHook.MULTIMAP_TRANSACTION_LOG_RECORD;
     }
 }

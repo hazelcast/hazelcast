@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,25 +16,26 @@
 
 package com.hazelcast.map.impl.nearcache;
 
+import com.hazelcast.client.impl.proxy.NearCachedClientMapProxy;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.config.NearCacheConfig;
-import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IMap;
-import com.hazelcast.core.MapStoreAdapter;
 import com.hazelcast.instance.BuildInfoProvider;
+import com.hazelcast.internal.monitor.impl.NearCacheStatsImpl;
 import com.hazelcast.internal.nearcache.NearCache;
-import com.hazelcast.map.AbstractEntryProcessor;
+import com.hazelcast.map.EntryProcessor;
+import com.hazelcast.map.IMap;
+import com.hazelcast.map.LocalMapStats;
+import com.hazelcast.map.MapStoreAdapter;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.proxy.NearCachedMapProxyImpl;
-import com.hazelcast.map.listener.EntryEvictedListener;
-import com.hazelcast.monitor.NearCacheStats;
-import com.hazelcast.monitor.impl.NearCacheStatsImpl;
+import com.hazelcast.map.listener.EntryExpiredListener;
+import com.hazelcast.nearcache.NearCacheStats;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -45,13 +46,12 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 
-import static com.hazelcast.config.EvictionConfig.MaxSizePolicy.ENTRY_COUNT;
+import static com.hazelcast.config.MaxSizePolicy.ENTRY_COUNT;
 import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
-import static com.hazelcast.spi.properties.GroupProperty.MAP_INVALIDATION_MESSAGE_BATCH_FREQUENCY_SECONDS;
-import static com.hazelcast.spi.properties.GroupProperty.MAP_INVALIDATION_MESSAGE_BATCH_SIZE;
-import static com.hazelcast.spi.properties.GroupProperty.PARTITION_COUNT;
+import static com.hazelcast.spi.properties.ClusterProperty.MAP_INVALIDATION_MESSAGE_BATCH_FREQUENCY_SECONDS;
+import static com.hazelcast.spi.properties.ClusterProperty.MAP_INVALIDATION_MESSAGE_BATCH_SIZE;
+import static com.hazelcast.spi.properties.ClusterProperty.PARTITION_COUNT;
 import static java.lang.String.format;
 import static java.util.concurrent.Executors.newFixedThreadPool;
 import static org.junit.Assert.assertEquals;
@@ -59,7 +59,7 @@ import static org.junit.Assert.assertTrue;
 
 public class NearCacheTestSupport extends HazelcastTestSupport {
 
-    protected static final int MAX_CACHE_SIZE = 5000;
+    protected static final int MAX_CACHE_SIZE = 1000;
     protected static final int MAX_TTL_SECONDS = 2;
     protected static final int MAX_IDLE_SECONDS = 1;
 
@@ -91,55 +91,45 @@ public class NearCacheTestSupport extends HazelcastTestSupport {
         assertEquals("we expect one miss more", statsBeforeEviction.getMisses() + 1, stats.getMisses());
     }
 
-    protected void assertNearCacheExpiration(final IMap<Integer, Integer> map, final int size, int expireSeconds) {
-        final NearCacheStats statsBeforeExpiration = getNearCacheStatsCopy(map);
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertTrue(format("we expected to have all map entries in the Near Cache or already expired (%s)",
-                        statsBeforeExpiration),
-                        statsBeforeExpiration.getOwnedEntryCount() + statsBeforeExpiration.getExpirations() >= size);
-            }
-        });
+    protected void assertNearCacheExpiration(final IMap<Integer, Integer> map, final int size) {
+        assertTrueEventually(() -> {
+            NearCache nearCache = getBackingNearCache(map);
+            NearCacheStats stats = getNearCacheStats(map);
 
-        sleepSeconds(expireSeconds + 1);
+            // make assertions over near cache's backing map size.
+            long nearCacheSize = nearCache.size();
+            assertEquals(format("Expected zero near cache size but found: %d, [%s] ",
+                    nearCacheSize, stats), 0, nearCacheSize);
 
-        final AtomicInteger invocationCounter = new AtomicInteger();
-        assertTrueEventually(new AssertTask() {
-            public void run() {
-                // map.get() triggers Near Cache eviction/expiration process,
-                // but we need to call this on every assert since the Near Cache has a cooldown for expiration cleanups
-                map.get(0);
-                long invocations = invocationCounter.incrementAndGet();
+            // make assertions over near cache stats.
+            long ownedEntryCount = stats.getOwnedEntryCount();
+            assertEquals(format("Expected no owned entry but found: %d, [%s]",
+                    ownedEntryCount, stats), 0, ownedEntryCount);
 
-                NearCacheStats stats = getNearCacheStatsCopy(map);
-                long hits = stats.getHits();
-                long misses = stats.getMisses();
-                long oldHits = statsBeforeExpiration.getHits();
-                long oldMisses = statsBeforeExpiration.getMisses();
+            long ownedEntryMemoryCost = stats.getOwnedEntryMemoryCost();
+            assertEquals(format("Expected zero memory cost but found: %d, [%s]",
+                    ownedEntryMemoryCost, stats), 0, ownedEntryMemoryCost);
 
-                assertEquals(format("we expect just the 'trigger entry' to be left in the Near Cache (%s)", stats),
-                        1, stats.getOwnedEntryCount());
-                assertTrue(format("we expect hits between %d and %d (%s)", oldHits, oldHits + invocations, stats),
-                        hits >= oldHits && hits <= oldHits + invocations);
-                assertTrue(format("we expect misses between %d and %d (%s)", oldMisses, oldMisses + invocations, stats),
-                        misses >= oldMisses && misses <= oldMisses + invocations);
-                assertTrue(format("we expect at least %d entries to be expired from the Near Cache (%s)", size, stats),
-                        stats.getExpirations() >= size);
-                assertEquals(format("we expect no entries to be evicted (%s)", stats), 0, stats.getEvictions());
-            }
+            long expiredCount = stats.getExpirations();
+            assertEquals(format("Expected to see all entries as expired but found: %d, [%s]",
+                    expiredCount, stats), size, expiredCount);
+
+            long evictedCount = stats.getEvictions();
+            assertEquals(format("Expiration should not trigger eviction stat but found: %d, [%s]",
+                    evictedCount, stats), 0, evictedCount);
         });
     }
 
-    private void populateNearCacheEventually(final IMap<Integer, Integer> map, final int size) {
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                populateNearCache(map, size);
-                long ownedEntryCount = getNearCacheStats(map).getOwnedEntryCount();
-                assertEquals("Near Cache has not reached expected size", size, ownedEntryCount);
-            }
-        });
+    private NearCache getBackingNearCache(IMap<Integer, Integer> map) {
+        NearCache nearCache;
+        if (map instanceof NearCachedMapProxyImpl) {
+            nearCache = ((NearCachedMapProxyImpl<Integer, Integer>) map).getNearCache();
+        } else if (map instanceof NearCachedClientMapProxy) {
+            nearCache = ((NearCachedClientMapProxy<Integer, Integer>) map).getNearCache();
+        } else {
+            throw new UnsupportedOperationException("Unknown proxy found for " + map);
+        }
+        return nearCache;
     }
 
     /**
@@ -148,7 +138,7 @@ public class NearCacheTestSupport extends HazelcastTestSupport {
      * Depending on the parameters the following memory costs are asserted:
      * <ul>
      * <li>{@link NearCacheStats#getOwnedEntryMemoryCost()}</li>
-     * <li>{@link com.hazelcast.monitor.LocalMapStats#getHeapCost()}</li>
+     * <li>{@link LocalMapStats#getHeapCost()}</li>
      * </ul>
      *
      * @param map         the {@link IMap} with a Near Cache to be tested
@@ -195,7 +185,8 @@ public class NearCacheTestSupport extends HazelcastTestSupport {
     protected NearCacheConfig newNearCacheConfigWithEntryCountEviction(EvictionPolicy evictionPolicy, int size) {
         return newNearCacheConfig()
                 .setCacheLocalEntries(true)
-                .setEvictionConfig(new EvictionConfig(size, ENTRY_COUNT, evictionPolicy));
+                .setEvictionConfig(new EvictionConfig().setSize(size)
+                        .setMaxSizePolicy(ENTRY_COUNT).setEvictionPolicy(evictionPolicy));
     }
 
     protected NearCacheConfig newNearCacheConfig() {
@@ -235,13 +226,8 @@ public class NearCacheTestSupport extends HazelcastTestSupport {
         assertOpenEventually(latch);
     }
 
-    protected void addEntryEvictedListener(IMap<Integer, Integer> map, final CountDownLatch latch) {
-        map.addLocalEntryListener(new EntryEvictedListener<Integer, Integer>() {
-            @Override
-            public void entryEvicted(EntryEvent<Integer, Integer> event) {
-                latch.countDown();
-            }
-        });
+    protected void addEntryExpiredListener(IMap<Integer, Integer> map, final CountDownLatch latch) {
+        map.addLocalEntryListener((EntryExpiredListener<Integer, Integer>) event -> latch.countDown());
     }
 
     protected void populateMapWithExpirableEntries(IMap<Integer, Integer> map, int mapSize, long ttl, TimeUnit timeunit) {
@@ -361,9 +347,9 @@ public class NearCacheTestSupport extends HazelcastTestSupport {
         }
     }
 
-    public static class IncrementEntryProcessor extends AbstractEntryProcessor<Integer, Integer> {
+    public static class IncrementEntryProcessor implements EntryProcessor<Integer, Integer, Integer> {
         @Override
-        public Object process(Map.Entry<Integer, Integer> entry) {
+        public Integer process(Map.Entry<Integer, Integer> entry) {
             int currentValue = entry.getValue();
             int newValue = currentValue + 1000;
             entry.setValue(newValue);

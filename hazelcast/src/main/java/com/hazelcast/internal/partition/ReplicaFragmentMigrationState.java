@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,11 +17,13 @@
 package com.hazelcast.internal.partition;
 
 import com.hazelcast.internal.partition.impl.PartitionDataSerializerHook;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.ServiceNamespace;
+import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.internal.services.ServiceNamespace;
+import com.hazelcast.spi.impl.operationservice.TargetAware;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -34,7 +36,7 @@ import java.util.Map;
  *
  * @since 3.9
  */
-public class ReplicaFragmentMigrationState implements IdentifiedDataSerializable {
+public class ReplicaFragmentMigrationState implements IdentifiedDataSerializable, TargetAware {
 
     private Map<ServiceNamespace, long[]> namespaces;
 
@@ -63,7 +65,7 @@ public class ReplicaFragmentMigrationState implements IdentifiedDataSerializable
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return PartitionDataSerializerHook.REPLICA_FRAGMENT_MIGRATION_STATE;
     }
 
@@ -83,18 +85,26 @@ public class ReplicaFragmentMigrationState implements IdentifiedDataSerializable
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         int namespaceSize = in.readInt();
-        namespaces = new HashMap<ServiceNamespace, long[]>(namespaceSize);
+        namespaces = new HashMap<>(namespaceSize);
         for (int i = 0; i < namespaceSize; i++) {
             ServiceNamespace namespace = in.readObject();
             long[] replicaVersions = in.readLongArray();
             namespaces.put(namespace, replicaVersions);
         }
         int migrationOperationSize = in.readInt();
-        migrationOperations = new ArrayList<Operation>(migrationOperationSize);
+        migrationOperations = new ArrayList<>(migrationOperationSize);
         for (int i = 0; i < migrationOperationSize; i++) {
             Operation migrationOperation = in.readObject();
             migrationOperations.add(migrationOperation);
         }
     }
 
+    @Override
+    public void setTarget(Address address) {
+        for (Operation op : migrationOperations) {
+            if (op instanceof TargetAware) {
+                ((TargetAware) op).setTarget(address);
+            }
+        }
+    }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,8 +24,8 @@ import java.io.InputStream;
 import java.lang.reflect.Field;
 import java.util.Properties;
 
-import static com.hazelcast.nio.IOUtil.closeResource;
-import static com.hazelcast.util.EmptyStatement.ignore;
+import static com.hazelcast.internal.nio.IOUtil.closeResource;
+import static com.hazelcast.internal.util.EmptyStatement.ignore;
 
 /**
  * Provides information about current Hazelcast build.
@@ -33,6 +33,7 @@ import static com.hazelcast.util.EmptyStatement.ignore;
 public final class BuildInfoProvider {
 
     public static final String HAZELCAST_INTERNAL_OVERRIDE_VERSION = "hazelcast.internal.override.version";
+    public static final String HAZELCAST_INTERNAL_OVERRIDE_ENTERPRISE = "hazelcast.internal.override.enterprise";
     private static final String HAZELCAST_INTERNAL_OVERRIDE_BUILD = "hazelcast.build";
 
     private static final ILogger LOGGER;
@@ -119,16 +120,17 @@ public final class BuildInfoProvider {
         String build = readStaticStringField(clazz, "BUILD");
         String revision = readStaticStringField(clazz, "REVISION");
         String distribution = readStaticStringField(clazz, "DISTRIBUTION");
+        String commitId = readStaticStringField(clazz, "COMMIT_ID");
 
-        if (!revision.isEmpty() && revision.equals("${git.commit.id.abbrev}")) {
-            revision = "";
-        }
+        revision = checkMissingExpressionValue(revision, "${git.commit.id.abbrev}");
+        commitId = checkMissingExpressionValue(commitId, "${git.commit.id}");
+
         int buildNumber = Integer.parseInt(build);
         boolean enterprise = !"Hazelcast".equals(distribution);
 
         String serialVersionString = readStaticStringField(clazz, "SERIALIZATION_VERSION");
         byte serialVersion = Byte.parseByte(serialVersionString);
-        return overrides.apply(version, build, revision, buildNumber, enterprise, serialVersion, upstreamBuildInfo);
+        return overrides.apply(version, build, revision, buildNumber, enterprise, serialVersion, commitId, upstreamBuildInfo);
     }
 
     //todo: move elsewhere
@@ -143,19 +145,29 @@ public final class BuildInfoProvider {
         }
     }
 
+    private static String checkMissingExpressionValue(String value, String expression) {
+        if (!value.isEmpty() && value.equals(expression)) {
+            return "";
+        } else {
+            return value;
+        }
+    }
+
     private static final class Overrides {
-        private static final Overrides DISABLED = new Overrides(null, -1);
+        private static final Overrides DISABLED = new Overrides(null, -1, null);
 
         private String version;
         private int buildNo;
+        private Boolean enterprise;
 
-        private Overrides(String version, int build) {
+        private Overrides(String version, int build, Boolean enterprise) {
             this.version = version;
             this.buildNo = build;
+            this.enterprise = enterprise;
         }
 
         private BuildInfo apply(String version, String build, String revision, int buildNumber,
-                                boolean enterprise, byte serialVersion, BuildInfo upstreamBuildInfo) {
+                                boolean enterprise, byte serialVersion, String commitId, BuildInfo upstreamBuildInfo) {
             if (buildNo != -1) {
                 build = String.valueOf(buildNo);
                 buildNumber = buildNo;
@@ -164,20 +176,31 @@ public final class BuildInfoProvider {
                 LOGGER.info("Overriding hazelcast version with system property value " + this.version);
                 version = this.version;
             }
-            return new BuildInfo(version, build, revision, buildNumber, enterprise, serialVersion, upstreamBuildInfo);
+            if (this.enterprise != null) {
+                LOGGER.info("Overriding hazelcast enterprise flag with system property value " + this.enterprise);
+                enterprise = this.enterprise;
+            }
+            return new BuildInfo(version, build, revision, buildNumber, enterprise, serialVersion,
+                    commitId, upstreamBuildInfo);
 
         }
 
         private static boolean isEnabled() {
             return System.getProperty(HAZELCAST_INTERNAL_OVERRIDE_BUILD) != null
-                    || System.getProperty(HAZELCAST_INTERNAL_OVERRIDE_VERSION) != null;
+                    || System.getProperty(HAZELCAST_INTERNAL_OVERRIDE_VERSION) != null
+                    || System.getProperty(HAZELCAST_INTERNAL_OVERRIDE_ENTERPRISE) != null;
         }
 
         private static Overrides fromProperties() {
             String version = System.getProperty(HAZELCAST_INTERNAL_OVERRIDE_VERSION);
             int build = Integer.getInteger(HAZELCAST_INTERNAL_OVERRIDE_BUILD, -1);
+            Boolean enterprise = null;
+            String enterpriseOverride = System.getProperty(HAZELCAST_INTERNAL_OVERRIDE_ENTERPRISE);
+            if (enterpriseOverride != null) {
+                enterprise = Boolean.valueOf(enterpriseOverride);
+            }
 
-            return new Overrides(version, build);
+            return new Overrides(version, build, enterprise);
         }
     }
 

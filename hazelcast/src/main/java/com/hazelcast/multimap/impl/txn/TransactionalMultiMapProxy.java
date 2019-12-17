@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,8 +18,8 @@ package com.hazelcast.multimap.impl.txn;
 
 import com.hazelcast.multimap.impl.MultiMapRecord;
 import com.hazelcast.multimap.impl.MultiMapService;
-import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.impl.Transaction;
 
@@ -28,10 +28,7 @@ import java.util.Collection;
 
 public class TransactionalMultiMapProxy<K, V> extends TransactionalMultiMapProxySupport<K, V> {
 
-    public TransactionalMultiMapProxy(NodeEngine nodeEngine,
-                                      MultiMapService service,
-                                      String name,
-                                      Transaction tx) {
+    public TransactionalMultiMapProxy(NodeEngine nodeEngine, MultiMapService service, String name, Transaction tx) {
         super(nodeEngine, service, name, tx);
     }
 

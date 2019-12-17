@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,9 +17,8 @@
 package com.hazelcast.cache.impl.record;
 
 import com.hazelcast.config.InMemoryFormat;
-import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.serialization.SerializationService;
-import com.hazelcast.util.Clock;
+import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.internal.serialization.SerializationService;
 
 /**
  * Provides factory for {@link com.hazelcast.cache.impl.record.CacheRecord}.
@@ -35,10 +34,6 @@ public class CacheRecordFactory<R extends CacheRecord> {
     public CacheRecordFactory(InMemoryFormat inMemoryFormat, SerializationService serializationService) {
         this.inMemoryFormat = inMemoryFormat;
         this.serializationService = serializationService;
-    }
-
-    public R newRecord(Object value) {
-        return newRecordWithExpiry(value, Clock.currentTimeMillis(), -1);
     }
 
     public R newRecordWithExpiry(Object value, long creationTime, long expiryTime) {
@@ -74,11 +69,10 @@ public class CacheRecordFactory<R extends CacheRecord> {
      * at the specified time.
      *
      * @param expirationTime the expiration time
-     * @param now the time in milliseconds (since the Epoc)
+     * @param now            the time in milliseconds (since the Epoc)
      * @return true if the value will expire at the specified time
      */
     public static boolean isExpiredAt(long expirationTime, long now) {
         return expirationTime > -1 && expirationTime <= now;
     }
-
 }

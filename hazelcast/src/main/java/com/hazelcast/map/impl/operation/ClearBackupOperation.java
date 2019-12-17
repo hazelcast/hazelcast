@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,10 +17,9 @@
 package com.hazelcast.map.impl.operation;
 
 import com.hazelcast.map.impl.MapDataSerializerHook;
-import com.hazelcast.spi.BackupOperation;
-import com.hazelcast.spi.impl.MutatingOperation;
+import com.hazelcast.spi.impl.operationservice.BackupOperation;
 
-public class ClearBackupOperation extends MapOperation implements BackupOperation, MutatingOperation {
+public class ClearBackupOperation extends MapOperation implements BackupOperation {
 
     public ClearBackupOperation() {
         this(null);
@@ -32,14 +31,14 @@ public class ClearBackupOperation extends MapOperation implements BackupOperatio
     }
 
     @Override
-    public void run() {
+    protected void runInternal() {
         if (recordStore != null) {
             recordStore.clear();
         }
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MapDataSerializerHook.CLEAR_BACKUP;
     }
 }

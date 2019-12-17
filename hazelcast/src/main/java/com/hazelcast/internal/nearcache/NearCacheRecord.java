@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -65,17 +65,17 @@ public interface NearCacheRecord<V> extends Expirable, Evictable<V> {
      *
      * @param hit the access hit count for this {@link Evictable}
      */
-    void setAccessHit(int hit);
+    void setHits(int hit);
 
     /**
      * Increases the access hit count of this {@link Evictable} by {@code 1}.
      */
-    void incrementAccessHit();
+    void incrementHits();
 
     /**
      * Resets the access hit count of this {@link Evictable} to {@code 0}.
      */
-    void resetAccessHit();
+    void resetHits();
 
     /**
      * Checks whether the maximum idle time is passed with respect to the provided time

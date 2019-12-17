@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,12 +20,13 @@ import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.internal.serialization.impl.SerializationServiceV1;
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import static com.hazelcast.test.HazelcastTestSupport.assumeDifferentHashCodes;
 import static com.hazelcast.version.MemberVersion.MAJOR_MINOR_VERSION_COMPARATOR;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -33,11 +34,13 @@ import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class MemberVersionTest {
 
     private static final String VERSION_3_8_SNAPSHOT_STRING = "3.8-SNAPSHOT";
     private static final String VERSION_3_8_1_RC1_STRING = "3.8.1-RC1";
+    private static final String VERSION_3_8_1_BETA_1_STRING = "3.8.1-beta-1";
+    private static final String VERSION_3_8_BETA_2_STRING = "3.8-beta-2";
     private static final String VERSION_3_8_2_STRING = "3.8.2";
     private static final String VERSION_3_9_0_STRING = "3.9.0";
     private static final String VERSION_UNKNOWN_STRING = "0.0.0";
@@ -58,6 +61,8 @@ public class MemberVersionTest {
         assertTrue(MemberVersion.UNKNOWN.isUnknown());
         assertFalse(MemberVersion.of(VERSION_3_8_SNAPSHOT_STRING).isUnknown());
         assertFalse(MemberVersion.of(VERSION_3_8_1_RC1_STRING).isUnknown());
+        assertFalse(MemberVersion.of(VERSION_3_8_1_BETA_1_STRING).isUnknown());
+        assertFalse(MemberVersion.of(VERSION_3_8_BETA_2_STRING).isUnknown());
         assertFalse(MemberVersion.of(VERSION_3_8_2_STRING).isUnknown());
     }
 
@@ -70,6 +75,20 @@ public class MemberVersionTest {
     public void testVersionOf_whenVersionStringIsSnapshot() {
         MemberVersion expected = MemberVersion.of(3, 8, 0);
         assertEquals(expected, MemberVersion.of(VERSION_3_8_SNAPSHOT_STRING));
+    }
+
+    @Test
+    public void testVersionOf_whenVersionStringIsBeta() {
+        assertEquals(MemberVersion.of(3, 8, 0), MemberVersion.of(VERSION_3_8_BETA_2_STRING));
+        assertEquals(MemberVersion.of(3, 8, 1), MemberVersion.of(VERSION_3_8_1_BETA_1_STRING));
+    }
+
+    @Test
+    public void test_constituents_whenVersionStringIsBeta() {
+        final MemberVersion expected = MemberVersion.of(VERSION_3_8_BETA_2_STRING);
+        assertEquals(3, expected.getMajor());
+        assertEquals(8, expected.getMinor());
+        assertEquals(0, expected.getPatch());
     }
 
     @Test
@@ -121,6 +140,7 @@ public class MemberVersionTest {
         assertEquals(version.hashCode(), version.hashCode());
         assertEquals(version.hashCode(), versionSameAttributes.hashCode());
 
+        assumeDifferentHashCodes();
         assertNotEquals(version.hashCode(), versionOtherMajor.hashCode());
         assertNotEquals(version.hashCode(), versionOtherMinor.hashCode());
         assertNotEquals(version.hashCode(), versionOtherPath.hashCode());

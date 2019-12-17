@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,10 +16,11 @@
 
 package com.hazelcast.nio.serialization;
 
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.spi.serialization.SerializationService;
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Assert;
@@ -28,10 +29,13 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.io.IOException;
+import java.util.Comparator;
 import java.util.Random;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Delayed;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 @RunWith(HazelcastSerialClassRunner.class)
@@ -50,8 +54,9 @@ public class SerializationConcurrencyTest {
                         return new PortablePerson();
                     case 2:
                         return new PortableAddress();
+                    default:
+                        throw new IllegalArgumentException();
                 }
-                throw new IllegalArgumentException();
             }
         };
         final SerializationService ss = new DefaultSerializationServiceBuilder()
@@ -89,7 +94,8 @@ public class SerializationConcurrencyTest {
                             Data dataPortableAddress = ss.toData(portableAddress);
                             Assert.assertEquals(portableAddress, ss.toObject(dataPortableAddress));
 
-                            PortablePerson portablePerson = new PortablePerson(63 + rnd(), 167L + rnd(), "ahmet", portableAddress);
+                            PortablePerson portablePerson = new PortablePerson(
+                                    63 + rnd(), 167L + rnd(), "ahmet", portableAddress);
                             Data dataPortablePerson = ss.toData(portablePerson);
                             Assert.assertEquals(portablePerson, ss.toObject(dataPortablePerson));
                         }
@@ -169,7 +175,7 @@ public class SerializationConcurrencyTest {
         }
     }
 
-    public static class Person implements DataSerializable {
+    public static class Person implements DataSerializable, Delayed {
 
         private int age;
 
@@ -190,6 +196,10 @@ public class SerializationConcurrencyTest {
             this.weight = weight;
             this.name = name;
             this.address = address;
+        }
+
+        public int getAge() {
+            return age;
         }
 
         @Override
@@ -251,6 +261,24 @@ public class SerializationConcurrencyTest {
             result = 31 * result + (name != null ? name.hashCode() : 0);
             result = 31 * result + (address != null ? address.hashCode() : 0);
             return result;
+        }
+
+        @Override
+        public int compareTo(Delayed o) {
+            Person other = (Person) o;
+
+            return Integer.compare(age, other.age);
+        }
+
+        @Override
+        public long getDelay(TimeUnit unit) {
+            return 0;
+        }
+
+        @Override
+        public String toString() {
+            return "Person{" + "age=" + age + ", height=" + height + ", weight=" + weight + ", name='" + name + '\''
+                    + ", address=" + address + '}';
         }
     }
 
@@ -317,7 +345,65 @@ public class SerializationConcurrencyTest {
         }
     }
 
-    public static class PortablePerson implements Portable {
+    public static class PortablePersonComparator implements Comparator<PortablePerson>, Portable {
+        public static final int CLASS_ID = 4;
+
+        @Override
+        public int getFactoryId() {
+            return FACTORY_ID;
+        }
+
+        @Override
+        public int getClassId() {
+            return CLASS_ID;
+        }
+
+        @Override
+        public void writePortable(PortableWriter writer)
+                throws IOException {
+        }
+
+        @Override
+        public void readPortable(PortableReader reader)
+                throws IOException {
+        }
+
+        @Override
+        public int compare(PortablePerson o1, PortablePerson o2) {
+            return Integer.compare(o1.age, o2.age);
+        }
+    }
+
+    public static class PortableIntegerComparator implements Comparator<Integer>, Portable {
+        public static final int CLASS_ID = 3;
+
+        @Override
+        public int compare(Integer o1, Integer o2) {
+            return o1.compareTo(o2);
+        }
+
+        @Override
+        public int getFactoryId() {
+            return FACTORY_ID;
+        }
+
+        @Override
+        public int getClassId() {
+            return CLASS_ID;
+        }
+
+        @Override
+        public void writePortable(PortableWriter writer)
+                throws IOException {
+        }
+
+        @Override
+        public void readPortable(PortableReader reader)
+                throws IOException {
+        }
+    }
+
+    public static class PortablePerson implements Portable, Delayed {
 
         private int age;
 
@@ -397,6 +483,18 @@ public class SerializationConcurrencyTest {
         @Override
         public int getFactoryId() {
             return FACTORY_ID;
+        }
+
+        @Override
+        public long getDelay(TimeUnit unit) {
+            return 0;
+        }
+
+        @Override
+        public int compareTo(Delayed o) {
+            PortablePerson other = (PortablePerson) o;
+
+            return Integer.compare(age, other.age);
         }
     }
 }

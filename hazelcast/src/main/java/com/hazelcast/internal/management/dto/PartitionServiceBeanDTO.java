@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,13 +16,13 @@
 
 package com.hazelcast.internal.management.dto;
 
-import com.eclipsesource.json.JsonObject;
-import com.hazelcast.instance.HazelcastInstanceImpl;
-import com.hazelcast.internal.management.JsonSerializable;
+import com.hazelcast.cluster.Address;
+import com.hazelcast.instance.impl.HazelcastInstanceImpl;
+import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.internal.partition.InternalPartitionService;
-import com.hazelcast.nio.Address;
+import com.hazelcast.json.internal.JsonSerializable;
 
-import static com.hazelcast.util.JsonUtil.getInt;
+import static com.hazelcast.internal.util.JsonUtil.getInt;
 
 /**
  * A Serializable DTO for {@link com.hazelcast.internal.jmx.PartitionServiceMBean}.

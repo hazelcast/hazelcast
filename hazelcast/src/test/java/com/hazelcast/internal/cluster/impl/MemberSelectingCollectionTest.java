@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,13 +16,13 @@
 
 package com.hazelcast.internal.cluster.impl;
 
-import com.hazelcast.core.Member;
-import com.hazelcast.core.MemberSelector;
-import com.hazelcast.instance.MemberImpl;
-import com.hazelcast.nio.Address;
+import com.hazelcast.cluster.Member;
+import com.hazelcast.cluster.MemberSelector;
+import com.hazelcast.cluster.impl.MemberImpl;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.version.MemberVersion;
 import org.junit.Before;
@@ -38,14 +38,14 @@ import static com.hazelcast.cluster.memberselector.MemberSelectors.DATA_MEMBER_S
 import static com.hazelcast.cluster.memberselector.MemberSelectors.LITE_MEMBER_SELECTOR;
 import static com.hazelcast.cluster.memberselector.MemberSelectors.NON_LOCAL_MEMBER_SELECTOR;
 import static com.hazelcast.cluster.memberselector.MemberSelectors.and;
-import static com.hazelcast.util.UuidUtil.newUnsecureUuidString;
+import static com.hazelcast.internal.util.UuidUtil.newUnsecureUUID;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class MemberSelectingCollectionTest extends HazelcastTestSupport {
 
     private static final MemberSelector NO_OP_MEMBER_SELECTOR = new MemberSelector() {
@@ -68,10 +68,17 @@ public class MemberSelectingCollectionTest extends HazelcastTestSupport {
     @Before
     public void before()
             throws Exception {
-        thisMember = new MemberImpl(new Address("localhost", 5701), MemberVersion.of("3.8.0"), true, newUnsecureUuidString(), null, true);
-        liteMember = new MemberImpl(new Address("localhost", 5702), MemberVersion.of("3.8.0"), false, newUnsecureUuidString(), null, true);
-        dataMember = new MemberImpl(new Address("localhost", 5704), MemberVersion.of("3.8.0"), false, newUnsecureUuidString(), null, false);
-        nonExistingMember = new MemberImpl(new Address("localhost", 5705), MemberVersion.of("3.8.0"), false, newUnsecureUuidString(), null, false);
+        MemberVersion version = MemberVersion.of("3.8.0");
+        thisMember
+                = new MemberImpl.Builder(new Address("localhost", 5701)).version(version).localMember(true)
+                .uuid(newUnsecureUUID()).liteMember(true).build();
+        liteMember
+                = new MemberImpl.Builder(new Address("localhost", 5702)).version(version).uuid(newUnsecureUUID())
+                .liteMember(true).build();
+        dataMember
+                = new MemberImpl.Builder(new Address("localhost", 5704)).version(version).uuid(newUnsecureUUID()).build();
+        nonExistingMember
+                = new MemberImpl.Builder(new Address("localhost", 5705)).version(version).uuid(newUnsecureUUID()).build();
 
         members = createMembers();
     }

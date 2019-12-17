@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,18 +18,17 @@ package com.hazelcast.nio.serialization.compatibility;
 
 import com.hazelcast.nio.serialization.ByteArraySerializer;
 
-import java.io.IOException;
 import java.nio.ByteBuffer;
 
 public class CustomByteArraySerializer implements ByteArraySerializer<CustomByteArraySerializable> {
 
     @Override
     public int getTypeId() {
-        return ReferenceObjects.CUSTOM_BYTE_ARRAY_SERILAZABLE_ID;
+        return ReferenceObjects.CUSTOM_BYTE_ARRAY_SERIALIZABLE_ID;
     }
 
     @Override
-    public byte[] write(CustomByteArraySerializable object) throws IOException {
+    public byte[] write(CustomByteArraySerializable object) {
         byte[] bytes = new byte[10];
         ByteBuffer wrap = ByteBuffer.wrap(bytes);
         wrap.putInt(object.i);
@@ -38,7 +37,7 @@ public class CustomByteArraySerializer implements ByteArraySerializer<CustomByte
     }
 
     @Override
-    public CustomByteArraySerializable read(byte[] buffer) throws IOException {
+    public CustomByteArraySerializable read(byte[] buffer) {
         ByteBuffer wrap = ByteBuffer.wrap(buffer);
         return new CustomByteArraySerializable(wrap.getInt(), wrap.getFloat());
     }

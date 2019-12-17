@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,7 @@ package com.hazelcast.security;
 import java.security.AccessControlException;
 
 /**
- * This interface allows to intercept requests which produced by an API call like map.put, queue.offer ...
+ * This interface allows to intercept requests which were produced by an API call like map.put, queue.offer...
  */
 public interface SecurityInterceptor {
 
@@ -30,7 +30,7 @@ public interface SecurityInterceptor {
      * @param objectName
      * @param methodName
      * @param parameters
-     * @throws AccessControlException
+     * @throws AccessControlException if access is denied
      */
     void before(Credentials credentials, String objectType, String objectName, String methodName,
                 Parameters parameters) throws AccessControlException;

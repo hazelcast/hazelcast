@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,10 +21,11 @@ import com.hazelcast.config.XmlConfigBuilder;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
-import com.hazelcast.core.IMap;
-import com.hazelcast.core.Member;
-import com.hazelcast.core.Partition;
+import com.hazelcast.map.IMap;
+import com.hazelcast.cluster.Member;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.partition.Partition;
+import com.hazelcast.spi.properties.ClusterProperty;
 
 import java.util.LinkedList;
 import java.util.List;
@@ -54,11 +55,6 @@ public final class SimpleMapTest {
     private final int putPercentage;
     private final boolean load;
 
-    static {
-        System.setProperty("hazelcast.phone.home.enabled", "false");
-        System.setProperty("java.net.preferIPv4Stack", "true");
-    }
-
     private SimpleMapTest(final int threadCount, final int entryCount, final int valueSize,
                           final int getPercentage, final int putPercentage, final boolean load) {
         this.threadCount = threadCount;
@@ -67,7 +63,9 @@ public final class SimpleMapTest {
         this.getPercentage = getPercentage;
         this.putPercentage = putPercentage;
         this.load = load;
-        Config cfg = new XmlConfigBuilder().build();
+        Config cfg = new XmlConfigBuilder().build()
+                .setProperty(ClusterProperty.PHONE_HOME_ENABLED.getName(), "false")
+                .setProperty(ClusterProperty.PREFER_IPv4_STACK.getName(), "true");
 
         instance = Hazelcast.newHazelcastInstance(cfg);
         logger = instance.getLoggingService().getLogger("SimpleMapTest");

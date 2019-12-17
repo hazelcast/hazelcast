@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,8 +20,8 @@ import com.hazelcast.collection.impl.collection.CollectionContainer;
 import com.hazelcast.collection.impl.collection.CollectionDataSerializerHook;
 import com.hazelcast.collection.impl.collection.CollectionItem;
 import com.hazelcast.config.SetConfig;
-import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.spi.impl.NodeEngine;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -30,11 +30,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import static com.hazelcast.util.MapUtil.createHashMap;
+import static com.hazelcast.internal.util.MapUtil.createHashMap;
+import static com.hazelcast.internal.util.SetUtil.createHashSet;
 
 public class SetContainer extends CollectionContainer {
 
     private static final int INITIAL_CAPACITY = 1000;
+
     private Set<CollectionItem> itemSet;
     private SetConfig config;
 
@@ -75,7 +77,15 @@ public class SetContainer extends CollectionContainer {
     public Set<CollectionItem> getCollection() {
         if (itemSet == null) {
             if (itemMap != null && !itemMap.isEmpty()) {
-                itemSet = new HashSet<CollectionItem>(itemMap.values());
+                itemSet = createHashSet(itemMap.size());
+                long maxItemId = Long.MIN_VALUE;
+                for (CollectionItem collectionItem : itemMap.values()) {
+                    if (collectionItem.getItemId() > maxItemId) {
+                        maxItemId = collectionItem.getItemId();
+                    }
+                    itemSet.add(collectionItem);
+                }
+                setId(maxItemId + ID_PROMOTION_OFFSET);
                 itemMap.clear();
             } else {
                 itemSet = new HashSet<CollectionItem>(INITIAL_CAPACITY);
@@ -86,7 +96,7 @@ public class SetContainer extends CollectionContainer {
     }
 
     @Override
-    protected Map<Long, CollectionItem> getMap() {
+    public Map<Long, CollectionItem> getMap() {
         if (itemMap == null) {
             if (itemSet != null && !itemSet.isEmpty()) {
                 itemMap = createHashMap(itemSet.size());
@@ -110,7 +120,7 @@ public class SetContainer extends CollectionContainer {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return CollectionDataSerializerHook.SET_CONTAINER;
     }
 }

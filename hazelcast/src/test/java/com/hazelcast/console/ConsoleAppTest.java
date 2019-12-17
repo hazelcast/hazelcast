@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,15 +16,11 @@
 
 package com.hazelcast.console;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
-
-import java.io.ByteArrayOutputStream;
-import java.io.PrintStream;
-import java.io.UnsupportedEncodingException;
-
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.map.IMap;
+import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.HazelcastTestSupport;
+import com.hazelcast.test.annotation.QuickTest;
 import org.hamcrest.CoreMatchers;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -33,17 +29,20 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IMap;
-import com.hazelcast.test.HazelcastSerialClassRunner;
-import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.annotation.QuickTest;
+import java.io.ByteArrayOutputStream;
+import java.io.PrintStream;
+import java.io.UnsupportedEncodingException;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Tests for demo console application.
  */
 @RunWith(HazelcastSerialClassRunner.class)
-@Category({ QuickTest.class })
+@Category({QuickTest.class})
 public class ConsoleAppTest extends HazelcastTestSupport {
 
     private static final PrintStream systemOutOrig = System.out;
@@ -120,17 +119,34 @@ public class ConsoleAppTest extends HazelcastTestSupport {
     }
 
     /**
+     * Tests m.delete operation.
+     */
+    @Test
+    public void mapDelete() {
+        HazelcastInstance hz = createHazelcastInstance();
+        ConsoleApp consoleApp = new ConsoleApp(hz);
+        IMap<String, String> map = hz.getMap("default");
+        map.put("a", "valueOfA");
+        map.put("b", "valueOfB");
+        resetSystemOut();
+        consoleApp.handleCommand("m.delete b");
+        assertTextInSystemOut("true"); // result of successful operation
+        assertEquals("Unexpected map size", 1, map.size());
+        assertFalse("Unexpected entry in the map", map.containsKey("b"));
+    }
+
+    /**
      * Tests m.get operation.
      */
     @Test
     public void mapGet() {
         HazelcastInstance hz = createHazelcastInstance();
         ConsoleApp consoleApp = new ConsoleApp(hz);
-        hz.<String, String> getMap("default").put("testGetKey", "testGetValue");
+        hz.<String, String>getMap("default").put("testGetKey", "testGetValue");
         consoleApp.handleCommand("m.get testGetKey");
         assertTextInSystemOut("testGetValue");
     }
-    
+
     /**
      * Tests m.putmany operation.
      */
@@ -150,7 +166,7 @@ public class ConsoleAppTest extends HazelcastTestSupport {
 
     /**
      * Asserts that given substring in in standard output buffer. Calling this method resets the buffer.
-     * 
+     *
      * @param substring
      */
     private void assertTextInSystemOut(String substring) {
@@ -171,7 +187,7 @@ public class ConsoleAppTest extends HazelcastTestSupport {
 
     /**
      * Clears standard output buffer.
-     * 
+     *
      * @return original content of the standard output
      */
     private static String resetSystemOut() {

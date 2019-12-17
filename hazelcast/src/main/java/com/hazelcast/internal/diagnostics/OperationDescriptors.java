@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,8 @@
 
 package com.hazelcast.internal.diagnostics;
 
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.OperationFactory;
+import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.spi.impl.operationservice.OperationFactory;
 import com.hazelcast.spi.impl.operationservice.impl.operations.Backup;
 import com.hazelcast.spi.impl.operationservice.impl.operations.PartitionIteratingOperation;
 
@@ -27,8 +27,9 @@ import java.util.concurrent.ConcurrentMap;
 /**
  * Converts an operation class into something readable.
  * <p>
- * In most cases the class name is sufficient, but there are certain operations like {@link Backup}
- * and {@link PartitionIteratingOperation} where one needs to see inside the content of an operation.
+ * In most cases the class name is sufficient, but there are certain
+ * operations like {@link Backup} and {@link PartitionIteratingOperation} where
+ * one needs to see inside the content of an operation.
  */
 public final class OperationDescriptors {
 

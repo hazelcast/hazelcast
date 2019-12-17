@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,7 @@
 package com.hazelcast.map;
 
 /**
- * Exception thrown when a write-behind {@link com.hazelcast.core.MapStore} rejects to accept a new element.
+ * Exception thrown when a write-behind {@link MapStore} rejects to accept a new element.
  * Used when {@link com.hazelcast.config.MapStoreConfig#writeCoalescing} is set to {@code false}.
  */
 public class ReachedMaxSizeException extends RuntimeException {

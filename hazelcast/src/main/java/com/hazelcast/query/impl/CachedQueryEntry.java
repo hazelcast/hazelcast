@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,8 @@
 
 package com.hazelcast.query.impl;
 
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.InternalSerializationService;
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.query.impl.getters.Extractors;
 
@@ -38,16 +38,18 @@ public class CachedQueryEntry<K, V> extends QueryableEntry<K, V> {
     public CachedQueryEntry() {
     }
 
-    public CachedQueryEntry(InternalSerializationService serializationService, Data key, Object value, Extractors extractors) {
-        init(serializationService, key, value, extractors);
+    public CachedQueryEntry(InternalSerializationService ss,
+                            Data key, Object value, Extractors extractors) {
+        init(ss, key, value, extractors);
     }
 
     @SuppressWarnings("unchecked")
-    public void init(InternalSerializationService serializationService, Data key, Object value, Extractors extractors) {
+    public CachedQueryEntry<K, V> init(InternalSerializationService ss,
+                                       Data key, Object value, Extractors extractors) {
         if (key == null) {
             throw new IllegalArgumentException("keyData cannot be null");
         }
-        this.serializationService = serializationService;
+        this.serializationService = ss;
         this.keyData = key;
         this.keyObject = null;
 
@@ -59,6 +61,7 @@ public class CachedQueryEntry<K, V> extends QueryableEntry<K, V> {
             this.valueData = null;
         }
         this.extractors = extractors;
+        return this;
     }
 
     @Override
@@ -95,14 +98,14 @@ public class CachedQueryEntry<K, V> extends QueryableEntry<K, V> {
         Object targetObject;
         if (key) {
             // keyData is never null
-            if (keyData.isPortable()) {
+            if (keyData.isPortable() || keyData.isJson()) {
                 targetObject = keyData;
             } else {
                 targetObject = getKey();
             }
         } else {
             if (valueObject == null) {
-                if (valueData.isPortable()) {
+                if (valueData.isPortable() || valueData.isJson()) {
                     targetObject = valueData;
                 } else {
                     targetObject = getValue();

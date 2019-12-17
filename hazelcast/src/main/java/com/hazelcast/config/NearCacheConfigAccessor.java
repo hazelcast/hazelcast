@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,7 +35,7 @@ public final class NearCacheConfigAccessor {
 
         EvictionConfig evictionConfig = nearCacheConfig.getEvictionConfig();
         if (nearCacheConfig.getInMemoryFormat() != InMemoryFormat.NATIVE && !evictionConfig.sizeConfigured) {
-            evictionConfig.setSize(EvictionConfig.DEFAULT_MAX_ENTRY_COUNT_FOR_ON_HEAP_MAP);
+            evictionConfig.setSize(MapConfig.DEFAULT_MAX_SIZE);
         }
     }
 }

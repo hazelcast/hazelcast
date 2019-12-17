@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,7 @@ import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.query.Predicates;
 import com.hazelcast.query.QueryException;
 import com.hazelcast.query.impl.extractor.AbstractExtractionTest;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -47,15 +47,15 @@ import static java.util.Arrays.asList;
 
 /**
  * Specification test that verifies the behavior of corner-cases extraction in single-value attributes.
- * <p/>
+ * <p>
  * Extraction mechanism: IN-BUILT REFLECTION EXTRACTION
- * <p/>
+ * <p>
  * This test is parametrised on two axes (see the parametrisationData() method):
  * - in memory format
  * - indexing
  */
 @RunWith(Parameterized.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class ExtractionInSingleValueSpecTest extends AbstractExtractionTest {
 
     private static final Person BOND = person("Bond",
@@ -72,6 +72,10 @@ public class ExtractionInSingleValueSpecTest extends AbstractExtractionTest {
             limb(null, new ArrayList<String>(), new Finger[]{})
     );
 
+    public ExtractionInSingleValueSpecTest(InMemoryFormat inMemoryFormat, Index index, Multivalue multivalue) {
+        super(inMemoryFormat, index, multivalue);
+    }
+
     protected Configurator getInstanceConfigurator() {
         return new Configurator() {
             @Override
@@ -79,10 +83,6 @@ public class ExtractionInSingleValueSpecTest extends AbstractExtractionTest {
                 config.getSerializationConfig().addPortableFactory(ComplexTestDataStructure.PersonPortableFactory.ID, new ComplexTestDataStructure.PersonPortableFactory());
             }
         };
-    }
-
-    public ExtractionInSingleValueSpecTest(InMemoryFormat inMemoryFormat, Index index, Multivalue multivalue) {
-        super(inMemoryFormat, index, multivalue);
     }
 
     @Test

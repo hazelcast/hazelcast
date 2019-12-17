@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,6 @@ import com.hazelcast.map.impl.querycache.QueryCacheConfigurator;
 import com.hazelcast.map.impl.querycache.QueryCacheEventService;
 
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -44,14 +43,14 @@ public class NodeQueryCacheConfigurator extends AbstractQueryCacheConfigurator {
     }
 
     @Override
-    public QueryCacheConfig getOrCreateConfiguration(String mapName, String cacheName) {
+    public QueryCacheConfig getOrCreateConfiguration(String mapName, String cacheName, String cacheId) {
         MapConfig mapConfig = config.getMapConfig(mapName);
 
         QueryCacheConfig queryCacheConfig = findQueryCacheConfigFromMapConfig(mapConfig, cacheName);
 
-        if (null != queryCacheConfig) {
+        if (queryCacheConfig != null) {
             setPredicateImpl(queryCacheConfig);
-            setEntryListener(mapName, cacheName, queryCacheConfig);
+            setEntryListener(mapName, cacheId, queryCacheConfig);
             return queryCacheConfig;
         }
 
@@ -61,18 +60,25 @@ public class NodeQueryCacheConfigurator extends AbstractQueryCacheConfigurator {
     }
 
     @Override
-    public QueryCacheConfig getOrNull(String mapName, String cacheName) {
+    public QueryCacheConfig getOrNull(String mapName, String cacheName, String cacheId) {
         MapConfig mapConfig = config.getMapConfigOrNull(mapName);
-        if (null == mapConfig) {
+        if (mapConfig == null) {
             return null;
         }
 
-        return findQueryCacheConfigFromMapConfig(mapConfig, cacheName);
+        QueryCacheConfig queryCacheConfig = findQueryCacheConfigFromMapConfig(mapConfig, cacheName);
+        if (queryCacheConfig != null) {
+            setPredicateImpl(queryCacheConfig);
+            setEntryListener(mapName, cacheId, queryCacheConfig);
+            return queryCacheConfig;
+        }
+
+        return queryCacheConfig;
     }
 
     private QueryCacheConfig findQueryCacheConfigFromMapConfig(MapConfig mapConfig, String cacheName) {
         List<QueryCacheConfig> queryCacheConfigs = mapConfig.getQueryCacheConfigs();
-        Map<String, QueryCacheConfig> allQueryCacheConfigs = new HashMap<String, QueryCacheConfig>(queryCacheConfigs.size());
+        Map<String, QueryCacheConfig> allQueryCacheConfigs = new HashMap<>(queryCacheConfigs.size());
         for (QueryCacheConfig queryCacheConfig : queryCacheConfigs) {
             allQueryCacheConfigs.put(queryCacheConfig.getName(), queryCacheConfig);
         }
@@ -87,12 +93,6 @@ public class NodeQueryCacheConfigurator extends AbstractQueryCacheConfigurator {
         if (queryCacheConfigs == null || queryCacheConfigs.isEmpty()) {
             return;
         }
-        Iterator<QueryCacheConfig> iterator = queryCacheConfigs.iterator();
-        while (iterator.hasNext()) {
-            QueryCacheConfig config = iterator.next();
-            if (config.getName().equals(cacheName)) {
-                iterator.remove();
-            }
-        }
+        queryCacheConfigs.removeIf(config -> config.getName().equals(cacheName));
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,9 +23,10 @@ import com.hazelcast.internal.util.hashslot.HashSlotArray;
 import com.hazelcast.internal.util.hashslot.HashSlotCursor12byteKey;
 import com.hazelcast.internal.util.hashslot.HashSlotCursor16byteKey;
 import com.hazelcast.internal.util.hashslot.HashSlotCursor8byteKey;
+import com.hazelcast.internal.util.hashslot.SlotAssignmentResult;
 
 import static com.hazelcast.internal.memory.MemoryAllocator.NULL_ADDRESS;
-import static com.hazelcast.util.HashUtil.fastLongMix;
+import static com.hazelcast.internal.util.HashUtil.fastLongMix;
 
 /**
  * Implementation of {@link HashSlotArray}, common to all its subtype implementations.
@@ -75,7 +76,7 @@ public abstract class HashSlotArrayBase implements HashSlotArray {
      * Base address of the memory region containing the hash slots. Preceded by a header that stores metadata
      * ({@code capacity}, {@code size}, and {@code expandAt}).
      */
-    private long baseAddress;
+    private long baseAddress = HEADER_SIZE;
 
     /**
      * The initial capacity of a newly created array.
@@ -97,6 +98,13 @@ public abstract class HashSlotArrayBase implements HashSlotArray {
      * The array will be expanded as needed to enforce this limit.
      */
     private final float loadFactor;
+
+    /**
+     * Flyweight return object for the {@link #ensure0(long, long)} that contains
+     * information about the slot assignment - the slot address and if the key
+     * was already present in the map or if the slot is newly assigned.
+     */
+    private final SlotAssignmentResultImpl slotAssignmentResult = new SlotAssignmentResultImpl();
 
     /**
      * Constructs a new {@code HashSlotArrayImpl} with the given initial capacity and the load factor.
@@ -210,7 +218,7 @@ public abstract class HashSlotArrayBase implements HashSlotArray {
 
     // These protected final methods will be called from the subclasses
 
-    protected final long ensure0(long key1, long key2) {
+    protected final SlotAssignmentResult ensure0(long key1, long key2) {
         assertValid();
         final long size = size();
         if (size == expansionThreshold()) {
@@ -219,13 +227,17 @@ public abstract class HashSlotArrayBase implements HashSlotArray {
         long slot = keyHash(key1, key2) & mask();
         while (isSlotAssigned(slot)) {
             if (equal(key1OfSlot(slot), key2OfSlot(slot), key1, key2)) {
-                return -valueAddrOfSlot(slot);
+                slotAssignmentResult.setAddress(valueAddrOfSlot(slot));
+                slotAssignmentResult.setNew(false);
+                return slotAssignmentResult;
             }
             slot = (slot + 1) & mask();
         }
         setSize(size + 1);
         putKey(baseAddress, slot, key1, key2);
-        return valueAddrOfSlot(slot);
+        slotAssignmentResult.setAddress(valueAddrOfSlot(slot));
+        slotAssignmentResult.setNew(true);
+        return slotAssignmentResult;
     }
 
     protected final long get0(long key1, long key2) {
@@ -325,7 +337,8 @@ public abstract class HashSlotArrayBase implements HashSlotArray {
     }
 
     protected final void assertValid() {
-        assert baseAddress >= HEADER_SIZE : "This instance doesn't point to a valid hashtable";
+        assert baseAddress - HEADER_SIZE != NULL_ADDRESS
+                : "This instance doesn't point to a valid hashtable. Base address = " + baseAddress;
     }
 
     protected final MemoryAllocator malloc() {

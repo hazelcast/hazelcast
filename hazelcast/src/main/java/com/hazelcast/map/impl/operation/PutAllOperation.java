@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,19 +17,19 @@
 package com.hazelcast.map.impl.operation;
 
 import com.hazelcast.core.EntryEventType;
-import com.hazelcast.core.EntryView;
+import com.hazelcast.map.IMap;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.MapEntries;
 import com.hazelcast.map.impl.record.Record;
-import com.hazelcast.map.impl.record.RecordInfo;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.BackupAwareOperation;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.PartitionAwareOperation;
-import com.hazelcast.spi.impl.MutatingOperation;
+import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.spi.impl.operationservice.BackupAwareOperation;
+import com.hazelcast.spi.impl.operationservice.MutatingOperation;
+import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.spi.impl.operationservice.PartitionAwareOperation;
 
+import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -37,26 +37,28 @@ import java.util.Map;
 
 import static com.hazelcast.core.EntryEventType.ADDED;
 import static com.hazelcast.core.EntryEventType.UPDATED;
-import static com.hazelcast.map.impl.EntryViews.createSimpleEntryView;
-import static com.hazelcast.map.impl.record.Records.buildRecordInfo;
-import static com.hazelcast.map.impl.recordstore.RecordStore.DEFAULT_TTL;
+import static com.hazelcast.map.impl.record.Record.UNSET;
 
 /**
- * Inserts the {@link MapEntries} for a single partition to the local {@link com.hazelcast.map.impl.recordstore.RecordStore}.
+ * Inserts the {@link MapEntries} for a single partition to the
+ * local {@link com.hazelcast.map.impl.recordstore.RecordStore}.
  * <p>
- * Used to reduce the number of remote invocations of an {@link com.hazelcast.core.IMap#putAll(Map)} call.
+ * Used to reduce the number of remote invocations
+ * of an {@link IMap#putAll(Map)} call.
  */
-public class PutAllOperation extends MapOperation implements PartitionAwareOperation, BackupAwareOperation, MutatingOperation {
+public class PutAllOperation extends MapOperation
+        implements PartitionAwareOperation, BackupAwareOperation, MutatingOperation {
 
+    private transient int currentIndex;
     private MapEntries mapEntries;
 
-    private boolean hasMapListener;
-    private boolean hasWanReplication;
-    private boolean hasBackups;
-    private boolean hasInvalidation;
+    private transient boolean hasMapListener;
+    private transient boolean hasWanReplication;
+    private transient boolean hasBackups;
+    private transient boolean hasInvalidation;
 
-    private List<RecordInfo> backupRecordInfos;
-    private List<Data> invalidationKeys;
+    private transient List backupPairs;
+    private transient List<Data> invalidationKeys;
 
     public PutAllOperation() {
     }
@@ -67,76 +69,85 @@ public class PutAllOperation extends MapOperation implements PartitionAwareOpera
     }
 
     @Override
-    public void run() {
+    public void innerBeforeRun() throws Exception {
+        super.innerBeforeRun();
+
         hasMapListener = mapEventPublisher.hasEventListener(name);
-        hasWanReplication = hasWanReplication();
+        hasWanReplication = mapContainer.isWanReplicationEnabled();
         hasBackups = hasBackups();
         hasInvalidation = mapContainer.hasInvalidationListener();
 
         if (hasBackups) {
-            backupRecordInfos = new ArrayList<RecordInfo>(mapEntries.size());
+            backupPairs = new ArrayList(2 * mapEntries.size());
         }
         if (hasInvalidation) {
-            invalidationKeys = new ArrayList<Data>(mapEntries.size());
-        }
-
-        for (int i = 0; i < mapEntries.size(); i++) {
-            put(mapEntries.getKey(i), mapEntries.getValue(i));
+            invalidationKeys = new ArrayList<>(mapEntries.size());
         }
     }
 
-    private boolean hasWanReplication() {
-        return (mapContainer.getWanReplicationPublisher() != null && mapContainer.getWanMergePolicy() != null);
+    @Override
+    protected void runInternal() {
+        // if currentIndex is not zero, this is a
+        // continuation of the operation after a NativeOOME
+        int size = mapEntries.size();
+        while (currentIndex < size) {
+            put(mapEntries.getKey(currentIndex), mapEntries.getValue(currentIndex));
+            currentIndex++;
+        }
+    }
+
+    // protected for testing purposes
+    protected void put(Data dataKey, Data dataValue) {
+        Object oldValue = putToRecordStore(dataKey, dataValue);
+
+        dataValue = getValueOrPostProcessedValue(dataKey, dataValue);
+        mapServiceContext.interceptAfterPut(mapContainer.getInterceptorRegistry(), dataValue);
+
+        if (hasMapListener) {
+            EntryEventType eventType = (oldValue == null ? ADDED : UPDATED);
+            mapEventPublisher.publishEvent(getCallerAddress(), name,
+                    eventType, dataKey, oldValue, dataValue);
+        }
+
+        if (hasWanReplication) {
+            publishWanUpdate(dataKey, dataValue);
+        }
+
+        if (hasInvalidation) {
+            invalidationKeys.add(dataKey);
+        }
+
+        if (hasBackups) {
+            backupPairs.add(dataKey);
+            backupPairs.add(dataValue);
+        }
+
+        evict(dataKey);
     }
 
     private boolean hasBackups() {
         return (mapContainer.getTotalBackupCount() > 0);
     }
 
-    private void put(Data dataKey, Data dataValue) {
-        Object oldValue = putToRecordStore(dataKey, dataValue);
-        dataValue = getValueOrPostProcessedValue(dataKey, dataValue);
-        mapServiceContext.interceptAfterPut(name, dataValue);
-
-        if (hasMapListener) {
-            EntryEventType eventType = (oldValue == null ? ADDED : UPDATED);
-            mapEventPublisher.publishEvent(getCallerAddress(), name, eventType, dataKey, oldValue, dataValue);
-        }
-
-        Record record = (hasWanReplication || hasBackups) ? recordStore.getRecord(dataKey) : null;
-        if (hasWanReplication) {
-            EntryView entryView = createSimpleEntryView(dataKey, dataValue, record);
-            mapEventPublisher.publishWanReplicationUpdate(name, entryView);
-        }
-        if (hasBackups) {
-            RecordInfo replicationInfo = buildRecordInfo(record);
-            backupRecordInfos.add(replicationInfo);
-        }
-
-        evict(dataKey);
-        if (hasInvalidation) {
-            invalidationKeys.add(dataKey);
-        }
-    }
-
     /**
-     * The method recordStore.put() tries to fetch the old value from the MapStore,
-     * which can lead to a serious performance degradation if loading from MapStore is expensive.
-     * We prevent this by calling recordStore.set() if no map listeners are registered.
+     * The method recordStore.put() tries to fetch the old value from
+     * the MapStore, which can lead to a serious performance degradation
+     * if loading from MapStore is expensive. We prevent this by
+     * calling recordStore.set() if no map listeners are registered.
      */
     private Object putToRecordStore(Data dataKey, Data dataValue) {
         if (hasMapListener) {
-            return recordStore.put(dataKey, dataValue, DEFAULT_TTL);
+            return recordStore.put(dataKey, dataValue, UNSET, UNSET);
         }
-        recordStore.set(dataKey, dataValue, DEFAULT_TTL);
+        recordStore.set(dataKey, dataValue, UNSET, UNSET);
         return null;
     }
 
     @Override
-    public void afterRun() throws Exception {
+    protected void afterRunInternal() {
         invalidateNearCache(invalidationKeys);
 
-        super.afterRun();
+        super.afterRunInternal();
     }
 
     private Data getValueOrPostProcessedValue(Data dataKey, Data dataValue) {
@@ -169,24 +180,47 @@ public class PutAllOperation extends MapOperation implements PartitionAwareOpera
 
     @Override
     public Operation getBackupOperation() {
-        return new PutAllBackupOperation(name, mapEntries, backupRecordInfos);
+        return new PutAllBackupOperation(name,
+                toBackupListByRemovingEvictedRecords(), false);
+    }
+
+    /**
+     * Since records may get evicted on NOOME after
+     * they have been put. We are re-checking
+     * backup pair list to eliminate evicted entries.
+     *
+     * @return list of existing records which can
+     * safely be transferred to backup replica.
+     */
+    @Nonnull
+    private List toBackupListByRemovingEvictedRecords() {
+        List toBackupList = new ArrayList(backupPairs.size());
+        for (int i = 0; i < backupPairs.size(); i += 2) {
+            Data dataKey = ((Data) backupPairs.get(i));
+            Record record = recordStore.getRecord(dataKey);
+            if (record != null) {
+                toBackupList.add(dataKey);
+                toBackupList.add(backupPairs.get(i + 1));
+                toBackupList.add(record);
+            }
+        }
+        return toBackupList;
     }
 
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        mapEntries.writeData(out);
+        out.writeObject(mapEntries);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        mapEntries = new MapEntries();
-        mapEntries.readData(in);
+        mapEntries = in.readObject();
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MapDataSerializerHook.PUT_ALL;
     }
 }

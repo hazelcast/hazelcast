@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,7 @@ package com.hazelcast.cardinality.impl.hyperloglog.impl;
 
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -32,7 +32,7 @@ import static org.junit.Assert.assertEquals;
  * Checks the consistency of {@link DenseHyperLogLogConstants} with hashcodes.
  */
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class DenseHyperLogLogConstantsTest extends HazelcastTestSupport {
 
     private static final int THRESHOLD_HASHCODE = -1946099911;
@@ -86,7 +86,7 @@ public class DenseHyperLogLogConstantsTest extends HazelcastTestSupport {
 
     /**
      * Asserts {@code double[][]} arrays by an array of hash codes per sub-array.
-     *
+     * <p>
      * The method {@link Arrays#hashCode(Object[])} is not constant for {@code double[][]} arrays.
      * So we compare each sub-array on its own with {@link Arrays#hashCode(double[])}.
      */

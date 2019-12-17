@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,8 +19,8 @@ package com.hazelcast.cache;
 import javax.cache.event.EventType;
 
 /**
- * Hazelcast JCache implementation's internal event types. This enum type is an extension to {@link EventType}
- * to define more event types.
+ * Hazelcast JCache implementation's internal event types. This enum
+ * type is an extension to {@link EventType} to define more event types.
  */
 public enum CacheEventType {
 
@@ -70,9 +70,13 @@ public enum CacheEventType {
      */
     PARTITION_LOST(9);
 
+    private static final int MIN_TYPE_ID = CREATED.type;
+    private static final int MAX_TYPE_ID = PARTITION_LOST.type;
+    private static final CacheEventType[] CACHED_VALUES = values();
+
     private int type;
 
-    private CacheEventType(final int type) {
+    CacheEventType(final int type) {
         this.type = type;
     }
 
@@ -84,11 +88,10 @@ public enum CacheEventType {
     }
 
     public static CacheEventType getByType(final int eventType) {
-        for (CacheEventType entryEventType : values()) {
-            if (entryEventType.type == eventType) {
-                return entryEventType;
-            }
+        if (MIN_TYPE_ID <= eventType && eventType <= MAX_TYPE_ID) {
+            return CACHED_VALUES[eventType - 1];
         }
+
         return null;
     }
 

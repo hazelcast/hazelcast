@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,11 +20,12 @@ import com.hazelcast.internal.memory.MemoryManager;
 import com.hazelcast.internal.util.hashslot.HashSlotArray12byteKey;
 import com.hazelcast.internal.util.hashslot.HashSlotArray8byteKey;
 import com.hazelcast.internal.util.hashslot.HashSlotCursor12byteKey;
+import com.hazelcast.internal.util.hashslot.SlotAssignmentResult;
 
-import static com.hazelcast.nio.Bits.INT_SIZE_IN_BYTES;
-import static com.hazelcast.util.HashUtil.fastIntMix;
-import static com.hazelcast.util.HashUtil.fastLongMix;
-import static com.hazelcast.util.QuickMath.modPowerOfTwo;
+import static com.hazelcast.internal.nio.Bits.INT_SIZE_IN_BYTES;
+import static com.hazelcast.internal.util.HashUtil.fastIntMix;
+import static com.hazelcast.internal.util.HashUtil.fastLongMix;
+import static com.hazelcast.internal.util.QuickMath.modPowerOfTwo;
 
 /**
  * Implementation of {@link HashSlotArray8byteKey} as a restriction of {@link HashSlotArrayBase}
@@ -64,11 +65,14 @@ public final class HashSlotArray12byteKeyImpl extends HashSlotArrayBase implemen
 
     /**
      * {@inheritDoc}
+     * <p>
+     * Whenever this method returns a newly assigned slot, the caller must ensure
+     * that the null-sentinel value at the returned address is overwritten with
+     * a non-sentinel value.
      *
-     * Whenever this method returns a positive value, the caller must ensure that the null-sentinel value
-     * at the returned address is overwritten with a non-sentinel value.
+     * @see SlotAssignmentResult#isNew()
      */
-    @Override public long ensure(long key1, int key2) {
+    @Override public SlotAssignmentResult ensure(long key1, int key2) {
         return super.ensure0(key1, key2);
     }
 

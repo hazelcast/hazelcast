@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,10 +16,9 @@
 
 package com.hazelcast.aggregation;
 
-import com.hazelcast.config.MapAttributeConfig;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.map.impl.MapEntrySimple;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.query.impl.getters.Extractors;
 
@@ -27,7 +26,6 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -45,8 +43,8 @@ final class TestSamples {
         return new MapEntrySimple<T, T>(value, value);
     }
 
-    static <T> Map.Entry<T, T> createExtractableEntryWithValue(T value) {
-        return new ExtractableEntry<T, T>(value, value);
+    static <T> Map.Entry<T, T> createExtractableEntryWithValue(T value, InternalSerializationService ss) {
+        return new ExtractableEntry<T, T>(value, value, ss);
     }
 
     static List<Integer> sampleIntegers() {
@@ -200,8 +198,8 @@ final class TestSamples {
         private K key;
         private V value;
 
-        ExtractableEntry(K key, V value) {
-            this.extractors = new Extractors(Collections.<MapAttributeConfig>emptyList(), null);
+        ExtractableEntry(K key, V value, InternalSerializationService ss) {
+            this.extractors = Extractors.newBuilder(ss).build();
             this.key = key;
             this.value = value;
         }

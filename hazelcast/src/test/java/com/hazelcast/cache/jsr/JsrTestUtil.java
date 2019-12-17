@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,7 @@ package com.hazelcast.cache.jsr;
 
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
-import com.hazelcast.instance.HazelcastInstanceFactory;
+import com.hazelcast.instance.impl.HazelcastInstanceFactory;
 
 import javax.cache.Caching;
 import javax.cache.spi.CachingProvider;
@@ -27,7 +27,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
-import static com.hazelcast.test.HazelcastTestSupport.assertThatIsNoParallelTest;
+import static com.hazelcast.test.HazelcastTestSupport.assertThatIsNotMultithreadedTest;
 import static java.lang.String.format;
 import static org.junit.Assert.fail;
 
@@ -49,7 +49,7 @@ public final class JsrTestUtil {
     }
 
     public static void setup() {
-        assertThatIsNoParallelTest();
+        assertThatIsNotMultithreadedTest();
         setSystemProperties("server");
     }
 
@@ -88,7 +88,6 @@ public final class JsrTestUtil {
         setSystemProperty("CacheManagerImpl", "com.hazelcast.cache.HazelcastCacheManager");
         setSystemProperty("javax.cache.Cache", "com.hazelcast.cache.ICache");
         setSystemProperty("javax.cache.Cache.Entry", "com.hazelcast.cache.impl.CacheEntry");
-        setSystemProperty("org.jsr107.tck.management.agentId", "TCKMbeanServer");
         setSystemProperty("javax.cache.annotation.CacheInvocationContext",
                 "javax.cache.annotation.impl.cdi.CdiCacheKeyInvocationContextImpl");
     }

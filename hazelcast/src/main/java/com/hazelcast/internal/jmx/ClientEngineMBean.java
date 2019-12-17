@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,16 +16,16 @@
 
 package com.hazelcast.internal.jmx;
 
-import com.hazelcast.client.ClientEngine;
+import com.hazelcast.client.impl.ClientEngine;
 import com.hazelcast.core.HazelcastInstance;
 
 import java.util.Map;
 
 import static com.hazelcast.internal.jmx.ManagementService.quote;
-import static com.hazelcast.util.MapUtil.createHashMap;
+import static com.hazelcast.internal.util.MapUtil.createHashMap;
 
 /**
- * Management bean for {@link com.hazelcast.client.ClientEngine}
+ * Management bean for {@link com.hazelcast.client.impl.ClientEngine}
  */
 @ManagedDescription("HazelcastInstance.ClientEngine")
 public class ClientEngineMBean extends HazelcastMBean<ClientEngine> {

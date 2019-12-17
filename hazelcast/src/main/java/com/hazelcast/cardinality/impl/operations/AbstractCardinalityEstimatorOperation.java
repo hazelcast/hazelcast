@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,18 +22,20 @@ import com.hazelcast.cardinality.impl.CardinalityEstimatorService;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.PartitionAwareOperation;
+import com.hazelcast.spi.impl.operationservice.NamedOperation;
+import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.spi.impl.operationservice.PartitionAwareOperation;
 
 import java.io.IOException;
 
 public abstract class AbstractCardinalityEstimatorOperation
         extends Operation
-        implements PartitionAwareOperation, IdentifiedDataSerializable {
+        implements NamedOperation, PartitionAwareOperation, IdentifiedDataSerializable {
 
     protected String name;
 
-    AbstractCardinalityEstimatorOperation() { }
+    AbstractCardinalityEstimatorOperation() {
+    }
 
     AbstractCardinalityEstimatorOperation(String name) {
         this.name = name;
@@ -49,20 +51,23 @@ public abstract class AbstractCardinalityEstimatorOperation
         return CardinalityEstimatorDataSerializerHook.F_ID;
     }
 
+    @Override
+    public String getName() {
+        return name;
+    }
+
     public CardinalityEstimatorContainer getCardinalityEstimatorContainer() {
         CardinalityEstimatorService service = getService();
         return service.getCardinalityEstimatorContainer(name);
     }
 
     @Override
-    protected void writeInternal(ObjectDataOutput out)
-            throws IOException {
+    protected void writeInternal(ObjectDataOutput out) throws IOException {
         out.writeUTF(name);
     }
 
     @Override
-    protected void readInternal(ObjectDataInput in)
-            throws IOException {
+    protected void readInternal(ObjectDataInput in) throws IOException {
         this.name = in.readUTF();
     }
 

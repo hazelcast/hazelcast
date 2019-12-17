@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 
 package com.hazelcast.query.impl.predicates;
 
-import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.spi.properties.HazelcastProperty;
 
@@ -39,7 +39,7 @@ public final class QueryOptimizerFactory {
      * Creates new QueryOptimizer. The exact implementation depends on {@link HazelcastProperties}.
      */
     public static QueryOptimizer newOptimizer(HazelcastProperties properties) {
-        HazelcastProperty property = GroupProperty.QUERY_OPTIMIZER_TYPE;
+        HazelcastProperty property = ClusterProperty.QUERY_OPTIMIZER_TYPE;
         String string = properties.getString(property);
         Type type;
         try {
@@ -59,7 +59,7 @@ public final class QueryOptimizerFactory {
         StringBuilder sb = new StringBuilder("Unknown Optimizer Type: ")
                 .append(type)
                 .append(". Use property '")
-                .append(GroupProperty.QUERY_OPTIMIZER_TYPE.getName())
+                .append(ClusterProperty.QUERY_OPTIMIZER_TYPE.getName())
                 .append("' to select optimizer. ")
                 .append("Available optimizers: ");
         Type[] values = Type.values();

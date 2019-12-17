@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,24 +16,23 @@
 
 package com.hazelcast.cache.impl.operation;
 
-import com.hazelcast.cache.CacheEntryView;
 import com.hazelcast.cache.impl.CacheDataSerializerHook;
-import com.hazelcast.cache.impl.CacheEntryViews;
+import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.Operation;
+import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.spi.impl.operationservice.Operation;
 
 import javax.cache.expiry.ExpiryPolicy;
 import java.io.IOException;
 
 /**
  * Operator implementation for cache replace functionality.
- * @see com.hazelcast.cache.impl.ICacheRecordStore#replace(Data, Object, ExpiryPolicy, String, int)
- * @see com.hazelcast.cache.impl.ICacheRecordStore#replace(Data, Object, Object, ExpiryPolicy, String, int)
+ *
+ * @see com.hazelcast.cache.impl.ICacheRecordStore#replace(Data, Object, ExpiryPolicy, java.util.UUID, int)
+ * @see com.hazelcast.cache.impl.ICacheRecordStore#replace(Data, Object, Object, ExpiryPolicy, java.util.UUID, int)
  */
-public class CacheReplaceOperation
-        extends AbstractMutatingCacheOperation {
+public class CacheReplaceOperation extends MutatingCacheOperation {
 
     private Data newValue;
     // replace if same
@@ -55,23 +54,21 @@ public class CacheReplaceOperation
     public void run()
             throws Exception {
         if (oldValue == null) {
-            response = cache.replace(key, newValue, expiryPolicy, getCallerUuid(), completionId);
+            response = recordStore.replace(key, newValue, expiryPolicy, getCallerUuid(), completionId);
         } else {
-            response = cache.replace(key, oldValue, newValue, expiryPolicy, getCallerUuid(), completionId);
+            response = recordStore.replace(key, oldValue, newValue, expiryPolicy, getCallerUuid(), completionId);
         }
         if (Boolean.TRUE.equals(response)) {
-            backupRecord = cache.getRecord(key);
+            backupRecord = recordStore.getRecord(key);
         }
     }
 
     @Override
     public void afterRun() throws Exception {
         if (Boolean.TRUE.equals(response)) {
-            if (cache.isWanReplicationEnabled()) {
-                CacheEntryView<Data, Data> entryView = CacheEntryViews.createDefaultEntryView(key, newValue, backupRecord);
-                wanEventPublisher.publishWanReplicationUpdate(name, entryView);
-            }
+            publishWanUpdate(key, backupRecord);
         }
+
         super.afterRun();
     }
 
@@ -93,8 +90,8 @@ public class CacheReplaceOperation
     protected void writeInternal(ObjectDataOutput out)
             throws IOException {
         super.writeInternal(out);
-        out.writeData(newValue);
-        out.writeData(oldValue);
+        IOUtil.writeData(out, newValue);
+        IOUtil.writeData(out, oldValue);
         out.writeObject(expiryPolicy);
     }
 
@@ -102,13 +99,13 @@ public class CacheReplaceOperation
     protected void readInternal(ObjectDataInput in)
             throws IOException {
         super.readInternal(in);
-        newValue = in.readData();
-        oldValue = in.readData();
+        newValue = IOUtil.readData(in);
+        oldValue = IOUtil.readData(in);
         expiryPolicy = in.readObject();
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return CacheDataSerializerHook.REPLACE;
     }
 

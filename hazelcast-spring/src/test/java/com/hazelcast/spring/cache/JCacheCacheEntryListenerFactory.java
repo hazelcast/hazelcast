@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,35 +16,31 @@
 
 package com.hazelcast.spring.cache;
 
-import com.hazelcast.cache.impl.CacheCreateUseDestroyTest;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceAware;
-import com.hazelcast.instance.Node;
-import com.hazelcast.spi.NodeAware;
+import com.hazelcast.instance.impl.Node;
+import com.hazelcast.internal.services.NodeAware;
 import com.hazelcast.spring.context.SpringAware;
 
 import javax.annotation.Resource;
 import javax.cache.configuration.Factory;
 import javax.cache.event.CacheEntryListener;
-import javax.cache.integration.CacheLoaderException;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 @SpringAware
 public class JCacheCacheEntryListenerFactory implements Factory<CacheEntryListener>,
-                                                        HazelcastInstanceAware, NodeAware {
+        HazelcastInstanceAware, NodeAware {
 
     public static final AtomicBoolean HAZELCAST_INSTANCE_INJECTED = new AtomicBoolean();
     public static final AtomicBoolean NODE_INJECTED = new AtomicBoolean();
 
-    public static JCacheCacheEntryListenerFactory INSTANCE;
+    public static JCacheCacheEntryListenerFactory instance;
 
     @Resource(name = "dummy")
     private IJCacheDummyBean dummyBean;
 
     public JCacheCacheEntryListenerFactory() {
-        INSTANCE = this;
+        instance = this;
     }
 
     @Override

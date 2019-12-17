@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,14 +19,13 @@ package com.hazelcast.internal.networking.nio.iobalancer;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.instance.HazelcastInstanceFactory;
+import com.hazelcast.instance.impl.HazelcastInstanceFactory;
 import com.hazelcast.internal.ascii.HTTPCommunicator;
-import com.hazelcast.internal.networking.nio.NioEventLoopGroup;
-import com.hazelcast.nio.Address;
-import com.hazelcast.nio.Protocols;
-import com.hazelcast.nio.tcp.TcpIpConnectionManager;
-import com.hazelcast.spi.properties.GroupProperty;
-import com.hazelcast.test.AssertTask;
+import com.hazelcast.internal.networking.nio.NioNetworking;
+import com.hazelcast.cluster.Address;
+import com.hazelcast.internal.nio.NetworkingService;
+import com.hazelcast.internal.nio.Protocols;
+import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.NightlyTest;
@@ -54,50 +53,44 @@ public class IOBalancerMemoryLeakTest extends HazelcastTestSupport {
     @Test
     public void testMemoryLeak_with_RestConnections() throws IOException {
         Config config = new Config();
-        config.getGroupConfig().setName(randomName());
-        config.setProperty(GroupProperty.REST_ENABLED.getName(), "true");
-        config.setProperty(GroupProperty.IO_BALANCER_INTERVAL_SECONDS.getName(), "1");
+        config.setClusterName(randomName());
+        config.getNetworkConfig().getRestApiConfig().setEnabled(true);
+        config.setProperty(ClusterProperty.IO_BALANCER_INTERVAL_SECONDS.getName(), "1");
 
         HazelcastInstance instance = Hazelcast.newHazelcastInstance(config);
         HTTPCommunicator communicator = new HTTPCommunicator(instance);
-        TcpIpConnectionManager connectionManager = (TcpIpConnectionManager) getConnectionManager(instance);
         for (int i = 0; i < 100; i++) {
             communicator.getClusterInfo();
         }
-        final IOBalancer ioBalancer = getIoBalancer(connectionManager);
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                int inHandlerSize = ioBalancer.getInLoadTracker().getHandlers().size();
-                int outHandlerSize = ioBalancer.getOutLoadTracker().getHandlers().size();
-                assertEquals(0, inHandlerSize);
-                assertEquals(0, outHandlerSize);
-            }
+        final IOBalancer ioBalancer = getIoBalancer(instance);
+        assertTrueEventually(() -> {
+            int inPipelineSize = ioBalancer.getInLoadTracker().getPipelines().size();
+            int outPipelineSize = ioBalancer.getOutLoadTracker().getPipelines().size();
+            assertEquals(0, inPipelineSize);
+            assertEquals(0, outPipelineSize);
         });
     }
 
     @Test
-    public void testMemoryLeak_with_SocketConnections() throws IOException {
+    public void testMemoryLeak_with_SocketConnections() {
         Config config = new Config();
-        config.getGroupConfig().setName(randomName());
-        config.setProperty(GroupProperty.IO_BALANCER_INTERVAL_SECONDS.getName(), "1");
+        config.setClusterName(randomName());
+        config.setProperty(ClusterProperty.IO_BALANCER_INTERVAL_SECONDS.getName(), "1");
         HazelcastInstance instance = Hazelcast.newHazelcastInstance(config);
         final Address address = instance.getCluster().getLocalMember().getAddress();
         int threadCount = 10;
         final int connectionCountPerThread = 100;
 
-        Runnable runnable = new Runnable() {
-            public void run() {
-                for (int i = 0; i < connectionCountPerThread; i++) {
-                    Socket socket;
-                    try {
-                        socket = new Socket(address.getHost(), address.getPort());
-                        socket.getOutputStream().write(Protocols.CLUSTER.getBytes());
-                        sleepMillis(1000);
-                        socket.close();
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
+        Runnable runnable = () -> {
+            for (int i = 0; i < connectionCountPerThread; i++) {
+                Socket socket;
+                try {
+                    socket = new Socket(address.getHost(), address.getPort());
+                    socket.getOutputStream().write(Protocols.CLUSTER.getBytes());
+                    sleepMillis(1000);
+                    socket.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
                 }
             }
         };
@@ -110,31 +103,28 @@ public class IOBalancerMemoryLeakTest extends HazelcastTestSupport {
 
         assertJoinable(threads);
 
-        TcpIpConnectionManager connectionManager = (TcpIpConnectionManager) getConnectionManager(instance);
-        final IOBalancer ioBalancer = getIoBalancer(connectionManager);
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                LoadTracker inLoadTracker = ioBalancer.getInLoadTracker();
-                LoadTracker outLoadTracker = ioBalancer.getOutLoadTracker();
-                int inHandlerSize = inLoadTracker.getHandlers().size();
-                int outHandlerSize = outLoadTracker.getHandlers().size();
-                int inHandlerEventsCount = inLoadTracker.getHandlerEventsCounter().keySet().size();
-                int outHandlerEventsCount = outLoadTracker.getHandlerEventsCounter().keySet().size();
-                int inLastEventsCount = inLoadTracker.getLastEventCounter().keySet().size();
-                int outLastEventsCount = outLoadTracker.getLastEventCounter().keySet().size();
-                assertEquals(0, inHandlerSize);
-                assertEquals(0, outHandlerSize);
-                assertEquals(0, inHandlerEventsCount);
-                assertEquals(0, outHandlerEventsCount);
-                assertEquals(0, inLastEventsCount);
-                assertEquals(0, outLastEventsCount);
-            }
+        final IOBalancer ioBalancer = getIoBalancer(instance);
+        assertTrueEventually(() -> {
+            LoadTracker inLoadTracker = ioBalancer.getInLoadTracker();
+            LoadTracker outLoadTracker = ioBalancer.getOutLoadTracker();
+            int inPipelineSize = inLoadTracker.getPipelines().size();
+            int outPipelineSize = outLoadTracker.getPipelines().size();
+            int inLoadCount = inLoadTracker.getPipelineLoadCount().keySet().size();
+            int outLoadCount = outLoadTracker.getPipelineLoadCount().keySet().size();
+            int inLastLoadCount = inLoadTracker.getLastLoadCounter().keySet().size();
+            int outLastLoadCount = outLoadTracker.getLastLoadCounter().keySet().size();
+            assertEquals(0, inPipelineSize);
+            assertEquals(0, outPipelineSize);
+            assertEquals(0, inLoadCount);
+            assertEquals(0, outLoadCount);
+            assertEquals(0, inLastLoadCount);
+            assertEquals(0, outLastLoadCount);
         });
     }
 
-    private static IOBalancer getIoBalancer(TcpIpConnectionManager connectionManager) {
-        NioEventLoopGroup threadingModel = (NioEventLoopGroup)connectionManager.getEventLoopGroup();
+    private static IOBalancer getIoBalancer(HazelcastInstance instance) {
+        NetworkingService ns = getNode(instance).getNetworkingService();
+        NioNetworking threadingModel = (NioNetworking) ns.getNetworking();
         return threadingModel.getIOBalancer();
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 package com.hazelcast.internal.nearcache.impl.preloader;
 
 import com.hazelcast.core.HazelcastException;
+import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.logging.ILogger;
 
 import java.io.File;
@@ -26,7 +27,7 @@ import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
 import java.nio.channels.OverlappingFileLockException;
 
-import static com.hazelcast.nio.IOUtil.closeResource;
+import static com.hazelcast.internal.nio.IOUtil.closeResource;
 
 class NearCachePreloaderLock {
 
@@ -78,7 +79,7 @@ class NearCachePreloaderLock {
         } catch (IOException e) {
             logger.severe("Problem while releasing the lock and closing channel on " + lockFile, e);
         } finally {
-            lockFile.deleteOnExit();
+            IOUtil.delete(lockFile);
         }
     }
 

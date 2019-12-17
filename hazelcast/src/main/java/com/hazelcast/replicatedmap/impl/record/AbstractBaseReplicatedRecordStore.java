@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,19 +17,20 @@
 package com.hazelcast.replicatedmap.impl.record;
 
 import com.hazelcast.config.ReplicatedMapConfig;
-import com.hazelcast.monitor.impl.LocalReplicatedMapStatsImpl;
+import com.hazelcast.internal.monitor.impl.LocalReplicatedMapStatsImpl;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapEvictionProcessor;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
-import com.hazelcast.spi.EventService;
-import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.partition.IPartitionService;
-import com.hazelcast.spi.serialization.SerializationService;
-import com.hazelcast.util.scheduler.EntryTaskScheduler;
-import com.hazelcast.util.scheduler.EntryTaskSchedulerFactory;
-import com.hazelcast.util.scheduler.ScheduleType;
-import com.hazelcast.util.scheduler.ScheduledEntry;
+import com.hazelcast.spi.impl.eventservice.EventService;
+import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.internal.partition.IPartitionService;
+import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.util.scheduler.EntryTaskScheduler;
+import com.hazelcast.internal.util.scheduler.EntryTaskSchedulerFactory;
+import com.hazelcast.internal.util.scheduler.ScheduleType;
+import com.hazelcast.internal.util.scheduler.ScheduledEntry;
 
 import java.util.HashSet;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
@@ -42,17 +43,19 @@ import java.util.concurrent.atomic.AtomicReference;
  */
 public abstract class AbstractBaseReplicatedRecordStore<K, V> implements ReplicatedRecordStore {
 
-    protected final AtomicReference<InternalReplicatedMapStorage<K, V>> storageRef;
-    protected final ReplicatedMapService replicatedMapService;
-    protected final ReplicatedMapConfig replicatedMapConfig;
-    protected final NodeEngine nodeEngine;
-    protected final SerializationService serializationService;
-    protected final IPartitionService partitionService;
-    protected final AtomicBoolean isLoaded = new AtomicBoolean(false);
-    protected final EntryTaskScheduler<Object, Object> ttlEvictionScheduler;
-    protected final EventService eventService;
-    protected final String name;
     protected int partitionId;
+
+    protected final String name;
+    protected final NodeEngine nodeEngine;
+    protected final EventService eventService;
+    protected final IPartitionService partitionService;
+    protected final ReplicatedMapConfig replicatedMapConfig;
+    protected final SerializationService serializationService;
+    protected final ReplicatedMapService replicatedMapService;
+    protected final AtomicReference<InternalReplicatedMapStorage<K, V>> storageRef;
+    protected final AtomicBoolean isLoaded = new AtomicBoolean(false);
+
+    private final EntryTaskScheduler<Object, Object> ttlEvictionScheduler;
 
     protected AbstractBaseReplicatedRecordStore(String name, ReplicatedMapService replicatedMapService, int partitionId) {
         this.name = name;
@@ -63,8 +66,8 @@ public abstract class AbstractBaseReplicatedRecordStore<K, V> implements Replica
         this.eventService = nodeEngine.getEventService();
         this.replicatedMapService = replicatedMapService;
         this.replicatedMapConfig = replicatedMapService.getReplicatedMapConfig(name);
-        this.storageRef = new AtomicReference<InternalReplicatedMapStorage<K, V>>();
-        this.storageRef.set(new InternalReplicatedMapStorage<K, V>());
+        this.storageRef = new AtomicReference<>();
+        this.storageRef.set(new InternalReplicatedMapStorage<>());
         this.ttlEvictionScheduler = EntryTaskSchedulerFactory
                 .newScheduler(nodeEngine.getExecutionService().getGlobalTaskScheduler(),
                         new ReplicatedMapEvictionProcessor(this, nodeEngine, partitionId), ScheduleType.POSTPONE);
@@ -78,21 +81,40 @@ public abstract class AbstractBaseReplicatedRecordStore<K, V> implements Replica
         return storageRef;
     }
 
+    // only used for testing purposes
+    public EntryTaskScheduler getTtlEvictionScheduler() {
+        return ttlEvictionScheduler;
+    }
+
+    @Override
+    public int getPartitionId() {
+        return partitionId;
+    }
+
     @Override
     public String getName() {
         return name;
     }
 
     public LocalReplicatedMapStatsImpl getStats() {
-        return replicatedMapService.getLocalMapStatsImpl(name);
+        return replicatedMapService.getLocalReplicatedMapStatsImpl(name);
     }
 
     @Override
     public void destroy() {
-        InternalReplicatedMapStorage storage = storageRef.getAndSet(new InternalReplicatedMapStorage<K, V>());
+        InternalReplicatedMapStorage storage = storageRef.getAndSet(new InternalReplicatedMapStorage<>());
         if (storage != null) {
             storage.clear();
         }
+        ttlEvictionScheduler.cancelAll();
+    }
+
+    protected InternalReplicatedMapStorage<K, V> clearInternal() {
+        InternalReplicatedMapStorage<K, V> storage = getStorage();
+        storage.clear();
+        getStats().incrementOtherOperations();
+        ttlEvictionScheduler.cancelAll();
+        return storage;
     }
 
     @Override
@@ -106,7 +128,7 @@ public abstract class AbstractBaseReplicatedRecordStore<K, V> implements Replica
     }
 
     public Set<ReplicatedRecord> getRecords() {
-        return new HashSet<ReplicatedRecord>(storageRef.get().values());
+        return new HashSet<>(storageRef.get().values());
     }
 
     @Override
@@ -139,14 +161,10 @@ public abstract class AbstractBaseReplicatedRecordStore<K, V> implements Replica
         }
 
         AbstractBaseReplicatedRecordStore that = (AbstractBaseReplicatedRecordStore) o;
-        if (name != null ? !name.equals(that.name) : that.name != null) {
+        if (!Objects.equals(name, that.name)) {
             return false;
         }
-        if (!storageRef.get().equals(that.storageRef.get())) {
-            return false;
-        }
-
-        return true;
+        return storageRef.get().equals(that.storageRef.get());
     }
 
     @Override

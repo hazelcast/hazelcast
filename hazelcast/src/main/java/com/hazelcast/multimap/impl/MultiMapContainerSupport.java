@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,30 +17,27 @@
 package com.hazelcast.multimap.impl;
 
 import com.hazelcast.config.MultiMapConfig;
-import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.spi.impl.NodeEngine;
 
 import java.util.Collection;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 import static com.hazelcast.multimap.impl.ValueCollectionFactory.createCollection;
+import static com.hazelcast.internal.util.MapUtil.createConcurrentHashMap;
 
 /**
  * Contains various {@link com.hazelcast.multimap.impl.MultiMapContainer} support methods.
  */
 abstract class MultiMapContainerSupport {
 
+    protected final ConcurrentMap<Data, MultiMapValue> multiMapValues = createConcurrentHashMap(1000);
+
     protected final String name;
-
     protected final NodeEngine nodeEngine;
-
     protected final MultiMapConfig config;
 
-    protected final ConcurrentMap<Data, MultiMapValue> multiMapValues
-            = new ConcurrentHashMap<Data, MultiMapValue>(1000);
-
-    protected MultiMapContainerSupport(String name, NodeEngine nodeEngine) {
+    MultiMapContainerSupport(String name, NodeEngine nodeEngine) {
         this.name = name;
         this.nodeEngine = nodeEngine;
         this.config = nodeEngine.getConfig().findMultiMapConfig(name);

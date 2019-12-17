@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,13 +20,13 @@ import java.util.Map;
 import java.util.concurrent.Callable;
 
 /**
- * An interface to provide means for saving & loading state for {@link Runnable} and {@link java.util.concurrent.Callable}
- * tasks scheduled with an {@link IScheduledExecutorService}. When task implements this interface, the Scheduled Executor
- * will be able to handle state of the task among the replicas in an event of Migration or Node failure.
+ * An interface to provide means for saving &amp; loading state for {@link Runnable} and {@link java.util.concurrent.Callable}
+ * tasks scheduled with an {@link IScheduledExecutorService}. When task implements this interface, the Scheduled Executor will
+ * be able to handle state of the task among the replicas in an event of Migration or Node failure.
  *
  * Example:
  * <pre>
- * public class CleanUpTask implements Runnable, StatefulTask<String, Integer>, HazelcastInstanceAware {
+ * public class CleanUpTask implements Runnable, StatefulTask&lt;String, Integer&gt;, HazelcastInstanceAware {
  *
  *      private transient HazelcastInstance instance;
  *
@@ -43,11 +43,11 @@ import java.util.concurrent.Callable;
  *      private int cleanUpInvalidRecordsAndReturnCount() {
  *      }
  *
- *      public void save(Map<String, Integer> snapshot) {
+ *      public void save(Map&lt;String, Integer&gt; snapshot) {
  *          snapshot.put("recordsDeletedSoFar", recordsDeletedSoFar);
  *      }
  *
- *      public void load(Map<String, Integer> snapshot) {
+ *      public void load(Map&lt;String, Integer&gt; snapshot) {
  *          if (state.containsKey("recordsDeletedSoFar")) {
  *              recordsDeletedSoFar = snapshot.get("recordsDeletedSoFar");
  *          }
@@ -61,29 +61,26 @@ import java.util.concurrent.Callable;
 public interface StatefulTask<K, V> {
 
     /**
-     * Task callback to capture its state on the provided map.
-     * This is invoked after each invocation of {@link Runnable#run()} or {@link Callable#call()}
-     * to capture a snapshot of the state and publish to replicas. If two or more replicas of the
-     * same task run at the same time and publish their states, then only the one running on the owner
-     * member will be allowed to update the replicas.
+     * Task callback to capture its state on the provided map. This is invoked after each invocation of {@link Runnable#run()} or
+     * {@link Callable#call()} to capture a snapshot of the state and publish to replicas. If two or more replicas of the same
+     * task run at the same time and publish their states, then only the one running on the owner member will be allowed to update
+     * the replicas.
      *
-     * <b>Note: </b> The state of the cluster is not known or guaranteed during task's execution, thus,
-     * publication of the task's state to replicas is done on best-effort basis.
+     * <b>Note: </b> The state of the cluster is not known or guaranteed during task's execution, thus, publication of the task's
+     * state to replicas is done on best-effort basis.
      *
-     * Called immediately after run() or call() of the {@link Runnable}
-     * or {@link java.util.concurrent.Callable} respectively.
+     * Called immediately after run() or call() of the {@link Runnable} or {@link java.util.concurrent.Callable} respectively.
      *
      * @param snapshot The {@link Map} responsible for holding a snapshot of the current state.
-    */
+     */
     void save(Map<K, V> snapshot);
 
     /**
-     * Task callback to initialize its inner state, after a replica promotion, from the given map.
-     * This is invoked once per task's lifecycle in a single member, before invocation of
-     * {@link Runnable#run()} or {@link Callable#call()} to setup task's state as published from
-     * the previous owner of the task in the cluster.
+     * Task callback to initialize its inner state, after a replica promotion, from the given map. This is invoked once per task's
+     * lifecycle in a single member, before invocation of {@link Runnable#run()} or {@link Callable#call()} to setup task's state
+     * as published from the previous owner of the task in the cluster.
      *
-     * <tt>load</tt> will not be called if the snapshot is empty.
+     * <code>load</code> will not be called if the snapshot is empty.
      *
      * @param snapshot The {@link Map} responsible for providing a snapshot of the task's state.
      */

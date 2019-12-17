@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +16,13 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.collection.IQueue;
+import com.hazelcast.internal.config.ConfigDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.spi.merge.SplitBrainMergeTypeProvider;
+import com.hazelcast.spi.merge.SplitBrainMergeTypes;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -26,13 +30,15 @@ import java.util.List;
 
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.readNullableList;
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.writeNullableList;
-import static com.hazelcast.util.Preconditions.checkAsyncBackupCount;
-import static com.hazelcast.util.Preconditions.checkBackupCount;
+import static com.hazelcast.internal.util.Preconditions.checkAsyncBackupCount;
+import static com.hazelcast.internal.util.Preconditions.checkBackupCount;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 /**
- * Contains the configuration for an {@link com.hazelcast.core.IQueue}.
+ * Contains the configuration for an {@link IQueue}.
  */
-public class QueueConfig implements IdentifiedDataSerializable {
+@SuppressWarnings("checkstyle:methodcount")
+public class QueueConfig implements SplitBrainMergeTypeProvider, IdentifiedDataSerializable, NamedConfig {
 
     /**
      * Default value for the maximum size of the Queue.
@@ -62,8 +68,8 @@ public class QueueConfig implements IdentifiedDataSerializable {
     private int emptyQueueTtl = DEFAULT_EMPTY_QUEUE_TTL;
     private QueueStoreConfig queueStoreConfig;
     private boolean statisticsEnabled = true;
-    private String quorumName;
-    private transient QueueConfigReadOnly readOnly;
+    private String splitBrainProtectionName;
+    private MergePolicyConfig mergePolicyConfig = new MergePolicyConfig();
 
     public QueueConfig() {
     }
@@ -80,22 +86,10 @@ public class QueueConfig implements IdentifiedDataSerializable {
         this.maxSize = config.maxSize;
         this.emptyQueueTtl = config.emptyQueueTtl;
         this.statisticsEnabled = config.statisticsEnabled;
-        this.quorumName = config.quorumName;
+        this.splitBrainProtectionName = config.splitBrainProtectionName;
+        this.mergePolicyConfig = config.mergePolicyConfig;
         this.queueStoreConfig = config.queueStoreConfig != null ? new QueueStoreConfig(config.queueStoreConfig) : null;
         this.listenerConfigs = new ArrayList<ItemListenerConfig>(config.getItemListenerConfigs());
-    }
-
-    /**
-     * Gets immutable version of this configuration.
-     *
-     * @return immutable version of this configuration
-     * @deprecated this method will be removed in 4.0; it is meant for internal usage only
-     */
-    public QueueConfigReadOnly getAsReadOnly() {
-        if (readOnly == null) {
-            readOnly = new QueueConfigReadOnly(this);
-        }
-        return readOnly;
     }
 
     /**
@@ -292,23 +286,47 @@ public class QueueConfig implements IdentifiedDataSerializable {
     }
 
     /**
-     * Returns the quorum name for queue operations.
+     * Returns the split brain protection name for queue operations.
      *
-     * @return the quorum name
+     * @return the split brain protection name
      */
-    public String getQuorumName() {
-        return quorumName;
+    public String getSplitBrainProtectionName() {
+        return splitBrainProtectionName;
     }
 
     /**
-     * Sets the quorum name for queue operations.
+     * Sets the split brain protection name for queue operations.
      *
-     * @param quorumName the quorum name
+     * @param splitBrainProtectionName the split brain protection name
      * @return the updated queue configuration
      */
-    public QueueConfig setQuorumName(String quorumName) {
-        this.quorumName = quorumName;
+    public QueueConfig setSplitBrainProtectionName(String splitBrainProtectionName) {
+        this.splitBrainProtectionName = splitBrainProtectionName;
         return this;
+    }
+
+    /**
+     * Gets the {@link MergePolicyConfig} for this queue.
+     *
+     * @return the {@link MergePolicyConfig} for this queue
+     */
+    public MergePolicyConfig getMergePolicyConfig() {
+        return mergePolicyConfig;
+    }
+
+    /**
+     * Sets the {@link MergePolicyConfig} for this queue.
+     *
+     * @return the updated queue configuration
+     */
+    public QueueConfig setMergePolicyConfig(MergePolicyConfig mergePolicyConfig) {
+        this.mergePolicyConfig = checkNotNull(mergePolicyConfig, "mergePolicyConfig cannot be null");
+        return this;
+    }
+
+    @Override
+    public Class getProvidedMergeTypes() {
+        return SplitBrainMergeTypes.QueueMergeTypes.class;
     }
 
     @Override
@@ -322,6 +340,7 @@ public class QueueConfig implements IdentifiedDataSerializable {
                 + ", emptyQueueTtl=" + emptyQueueTtl
                 + ", queueStoreConfig=" + queueStoreConfig
                 + ", statisticsEnabled=" + statisticsEnabled
+                + ", mergePolicyConfig=" + mergePolicyConfig
                 + '}';
     }
 
@@ -331,7 +350,7 @@ public class QueueConfig implements IdentifiedDataSerializable {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ConfigDataSerializerHook.QUEUE_CONFIG;
     }
 
@@ -345,7 +364,8 @@ public class QueueConfig implements IdentifiedDataSerializable {
         out.writeInt(emptyQueueTtl);
         out.writeObject(queueStoreConfig);
         out.writeBoolean(statisticsEnabled);
-        out.writeUTF(quorumName);
+        out.writeUTF(splitBrainProtectionName);
+        out.writeObject(mergePolicyConfig);
     }
 
     @Override
@@ -358,7 +378,8 @@ public class QueueConfig implements IdentifiedDataSerializable {
         emptyQueueTtl = in.readInt();
         queueStoreConfig = in.readObject();
         statisticsEnabled = in.readBoolean();
-        quorumName = in.readUTF();
+        splitBrainProtectionName = in.readUTF();
+        mergePolicyConfig = in.readObject();
     }
 
     @Override
@@ -393,11 +414,14 @@ public class QueueConfig implements IdentifiedDataSerializable {
         if (!getItemListenerConfigs().equals(that.getItemListenerConfigs())) {
             return false;
         }
-        if (queueStoreConfig != null
-                ? !queueStoreConfig.equals(that.queueStoreConfig) : that.queueStoreConfig != null) {
+        if (queueStoreConfig != null ? !queueStoreConfig.equals(that.queueStoreConfig) : that.queueStoreConfig != null) {
             return false;
         }
-        return quorumName != null ? quorumName.equals(that.quorumName) : that.quorumName == null;
+        if (splitBrainProtectionName != null ? !splitBrainProtectionName.equals(that.splitBrainProtectionName)
+                : that.splitBrainProtectionName != null) {
+            return false;
+        }
+        return mergePolicyConfig != null ? mergePolicyConfig.equals(that.mergePolicyConfig) : that.mergePolicyConfig == null;
     }
 
     @Override
@@ -410,7 +434,8 @@ public class QueueConfig implements IdentifiedDataSerializable {
         result = 31 * result + emptyQueueTtl;
         result = 31 * result + (queueStoreConfig != null ? queueStoreConfig.hashCode() : 0);
         result = 31 * result + (statisticsEnabled ? 1 : 0);
-        result = 31 * result + (quorumName != null ? quorumName.hashCode() : 0);
+        result = 31 * result + (splitBrainProtectionName != null ? splitBrainProtectionName.hashCode() : 0);
+        result = 31 * result + (mergePolicyConfig != null ? mergePolicyConfig.hashCode() : 0);
         return result;
     }
 }

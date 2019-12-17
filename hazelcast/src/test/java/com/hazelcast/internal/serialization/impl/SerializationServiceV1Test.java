@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,14 +18,14 @@ package com.hazelcast.internal.serialization.impl;
 
 import com.hazelcast.executor.impl.operations.CancellationOperation;
 import com.hazelcast.internal.serialization.InternalSerializationService;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.spi.OperationAccessor;
+import com.hazelcast.spi.impl.operationservice.OperationAccessor;
 import com.hazelcast.test.AbstractTestOperation;
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.util.UuidUtil;
+import com.hazelcast.internal.util.UuidUtil;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -36,13 +36,13 @@ import org.junit.runner.RunWith;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class SerializationServiceV1Test {
-
-    private SerializationServiceV1 serializationService;
 
     @Rule
     public ExpectedException expectedException = ExpectedException.none();
+
+    private SerializationServiceV1 serializationService;
 
     @Before
     public void setup() {
@@ -53,8 +53,8 @@ public class SerializationServiceV1Test {
 
     @Test
     public void test_callid_on_correct_stream_position() throws Exception {
-        CancellationOperation operation = new CancellationOperation(UuidUtil.newUnsecureUuidString(), true);
-        operation.setCallerUuid(UuidUtil.newUnsecureUuidString());
+        CancellationOperation operation = new CancellationOperation(UuidUtil.newUnsecureUUID(), true);
+        operation.setCallerUuid(UuidUtil.newUnsecureUUID());
         OperationAccessor.setCallId(operation, 12345);
 
         Data data = serializationService.toData(operation);
@@ -109,7 +109,7 @@ public class SerializationServiceV1Test {
         }
 
         @Override
-        public int getId() {
+        public int getClassId() {
             return 42;
         }
     }

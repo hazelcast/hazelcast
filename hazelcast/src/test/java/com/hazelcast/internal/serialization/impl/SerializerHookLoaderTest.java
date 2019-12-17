@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,7 @@ import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.nio.serialization.SampleIdentifiedDataSerializable;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -38,14 +38,13 @@ import static org.junit.Assert.assertNull;
  * SerializerHookLoader Tester.
  */
 @RunWith(HazelcastSerialClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class SerializerHookLoaderTest extends HazelcastTestSupport {
-
 
     private ClassLoader classLoader = getClass().getClassLoader();
 
     @Test
-    public void testLoad_withDefaultConstructor() throws Exception {
+    public void testLoad_withDefaultConstructor() {
         SerializerConfig serializerConfig = new SerializerConfig();
         serializerConfig.setClassName("com.hazelcast.internal.serialization.impl.TestSerializerHook$TestSerializer");
         serializerConfig.setTypeClassName("com.hazelcast.nio.serialization.SampleIdentifiedDataSerializable");
@@ -59,7 +58,7 @@ public class SerializerHookLoaderTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testLoad_withParametrizedConstructor() throws Exception {
+    public void testLoad_withParametrizedConstructor() {
         SerializerConfig serializerConfig = new SerializerConfig();
         serializerConfig.setClassName("com.hazelcast.internal.serialization.impl.TestSerializerHook$TestSerializerWithTypeConstructor");
         serializerConfig.setTypeClassName("com.hazelcast.nio.serialization.SampleIdentifiedDataSerializable");
@@ -76,7 +75,7 @@ public class SerializerHookLoaderTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testLoad_withParametrizedConstructorAndCompatibilitySwitchOn() throws Exception {
+    public void testLoad_withParametrizedConstructorAndCompatibilitySwitchOn() {
         String propName = "hazelcast.compat.serializers.use.default.constructor.only";
         String origProperty = System.getProperty(propName);
         try {
@@ -91,7 +90,8 @@ public class SerializerHookLoaderTest extends HazelcastTestSupport {
             SerializerHookLoader hook = new SerializerHookLoader(serializationConfig, classLoader);
             Map<Class, Object> serializers = hook.getSerializers();
 
-            TestSerializerHook.TestSerializerWithTypeConstructor serializer = (TestSerializerHook.TestSerializerWithTypeConstructor)
+            TestSerializerHook.TestSerializerWithTypeConstructor serializer
+                    = (TestSerializerHook.TestSerializerWithTypeConstructor)
                     serializers.get(SampleIdentifiedDataSerializable.class);
             assertNull(serializer.getClazz());
         } finally {
@@ -104,7 +104,7 @@ public class SerializerHookLoaderTest extends HazelcastTestSupport {
     }
 
     @Test(expected = HazelcastSerializationException.class)
-    public void testLoad_implException() throws Exception {
+    public void testLoad_implException() {
         SerializerConfig serializerConfig = new SerializerConfig();
         serializerConfig.setClassName("NOT FOUND CLASS");
         serializerConfig.setTypeClassName("com.hazelcast.nio.serialization.SampleIdentifiedDataSerializable");
@@ -116,7 +116,7 @@ public class SerializerHookLoaderTest extends HazelcastTestSupport {
     }
 
     @Test(expected = HazelcastSerializationException.class)
-    public void testLoad_typeException() throws Exception {
+    public void testLoad_typeException() {
         SerializerConfig serializerConfig = new SerializerConfig();
         serializerConfig.setClassName("com.hazelcast.internal.serialization.impl.TestSerializerHook$TestSerializer");
         serializerConfig.setTypeClassName("NOT FOUND CLASS");
@@ -126,5 +126,4 @@ public class SerializerHookLoaderTest extends HazelcastTestSupport {
 
         new SerializerHookLoader(serializationConfig, classLoader);
     }
-
-} 
+}

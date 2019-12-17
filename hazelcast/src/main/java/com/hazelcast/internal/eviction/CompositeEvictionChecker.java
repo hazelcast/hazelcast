@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 
 package com.hazelcast.internal.eviction;
 
-import com.hazelcast.util.Preconditions;
+import com.hazelcast.internal.util.Preconditions;
 
 /**
  * {@link EvictionChecker} implementation for composing
@@ -34,7 +34,7 @@ public abstract class CompositeEvictionChecker
     /**
      * Operator for composing results of given {@link EvictionChecker} instances.
      */
-    public static enum CompositionOperator {
+    public enum CompositionOperator {
 
         /**
          * Result is <tt>true</tt> if results of <b>all</b> given {@link EvictionChecker} instances

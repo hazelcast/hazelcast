@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,10 +36,10 @@ public interface HazelcastInternalOSGiService
             + (BuildInfoProvider.getBuildInfo().isEnterprise() ? "EE" : "OSS");
 
     /**
-     * Default group name to be used when grouping is not disabled with
+     * Default cluster name to be used when grouping is not disabled with
      * {@link HazelcastOSGiService#HAZELCAST_OSGI_GROUPING_DISABLED}.
      */
-    String DEFAULT_GROUP_NAME = DEFAULT_ID;
+    String DEFAULT_CLUSTER_NAME = DEFAULT_ID;
 
     /**
      * Returns the state of the service about if it is active or not.

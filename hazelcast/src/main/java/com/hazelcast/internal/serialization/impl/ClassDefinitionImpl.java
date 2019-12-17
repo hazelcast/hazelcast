@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,8 +27,8 @@ import java.util.Set;
 
 public class ClassDefinitionImpl implements ClassDefinition {
 
-    private int factoryId;
-    private int classId;
+    private final int factoryId;
+    private final int classId;
     private int version = -1;
     private final Map<String, FieldDefinition> fieldDefinitionsMap = new LinkedHashMap<String, FieldDefinition>();
 
@@ -114,8 +114,6 @@ public class ClassDefinitionImpl implements ClassDefinition {
         }
     }
 
-    //CHECKSTYLE:OFF
-    //Generated equals method has too high NPath Complexity
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -136,7 +134,6 @@ public class ClassDefinitionImpl implements ClassDefinition {
         }
         return fieldDefinitionsMap.equals(that.fieldDefinitionsMap);
     }
-    //CHECKSTYLE:ON
 
     @Override
     public int hashCode() {

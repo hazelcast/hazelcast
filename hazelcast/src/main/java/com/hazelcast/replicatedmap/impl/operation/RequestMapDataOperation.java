@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,17 +17,19 @@
 package com.hazelcast.replicatedmap.impl.operation;
 
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.nio.Address;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.replicatedmap.impl.PartitionContainer;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
 import com.hazelcast.replicatedmap.impl.record.RecordMigrationInfo;
 import com.hazelcast.replicatedmap.impl.record.ReplicatedRecord;
 import com.hazelcast.replicatedmap.impl.record.ReplicatedRecordStore;
-import com.hazelcast.spi.OperationService;
-import com.hazelcast.spi.serialization.SerializationService;
+import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.spi.impl.operationservice.OperationService;
+import com.hazelcast.internal.serialization.SerializationService;
 
 import java.io.IOException;
 import java.util.Iterator;
@@ -35,7 +37,7 @@ import java.util.Set;
 
 import static com.hazelcast.replicatedmap.impl.ReplicatedMapService.INVOCATION_TRY_COUNT;
 import static com.hazelcast.replicatedmap.impl.ReplicatedMapService.SERVICE_NAME;
-import static com.hazelcast.util.SetUtil.createHashSet;
+import static com.hazelcast.internal.util.SetUtil.createHashSet;
 
 /**
  * Collects and sends the replicated map data from the executing node to the caller via
@@ -43,7 +45,7 @@ import static com.hazelcast.util.SetUtil.createHashSet;
  */
 public class RequestMapDataOperation extends AbstractSerializableOperation {
 
-    String name;
+    private String name;
 
     public RequestMapDataOperation() {
     }
@@ -55,38 +57,39 @@ public class RequestMapDataOperation extends AbstractSerializableOperation {
     @Override
     public void run() throws Exception {
         ILogger logger = getLogger();
-        int partitionId = getPartitionId();
         Address callerAddress = getCallerAddress();
+        int partitionId = getPartitionId();
+        NodeEngine nodeEngine = getNodeEngine();
         if (logger.isFineEnabled()) {
-            logger.fine("Caller { " + callerAddress + " } requested copy of map: " + name
-                    + " partitionId=" + partitionId);
+            logger.fine("Caller " + callerAddress + " requested copy of replicated map '" + name
+                    + "' (partitionId " + partitionId + ") from " + nodeEngine.getThisAddress());
         }
         ReplicatedMapService service = getService();
         PartitionContainer container = service.getPartitionContainer(partitionId);
         ReplicatedRecordStore store = container.getOrCreateRecordStore(name);
         store.setLoaded(true);
 
-        if (getNodeEngine().getThisAddress().equals(callerAddress)) {
+        if (nodeEngine.getThisAddress().equals(callerAddress)) {
             return;
         }
 
         long version = store.getVersion();
         Set<RecordMigrationInfo> recordSet = getRecordSet(store);
-        SyncReplicatedMapDataOperation op = new SyncReplicatedMapDataOperation(name, recordSet, version);
-        op.setPartitionId(partitionId);
-        op.setValidateTarget(false);
-        OperationService operationService = getNodeEngine().getOperationService();
+        Operation op = new SyncReplicatedMapDataOperation(name, recordSet, version)
+                .setPartitionId(partitionId)
+                .setValidateTarget(false);
+        OperationService operationService = nodeEngine.getOperationService();
         operationService.createInvocationBuilder(SERVICE_NAME, op, callerAddress)
                 .setTryCount(INVOCATION_TRY_COUNT)
                 .invoke();
     }
 
     private Set<RecordMigrationInfo> getRecordSet(ReplicatedRecordStore store) {
+        SerializationService serializationService = getNodeEngine().getSerializationService();
         Set<RecordMigrationInfo> recordSet = createHashSet(store.size());
         Iterator<ReplicatedRecord> iterator = store.recordIterator();
         while (iterator.hasNext()) {
             ReplicatedRecord record = iterator.next();
-            SerializationService serializationService = getNodeEngine().getSerializationService();
             Data dataKey = serializationService.toData(record.getKeyInternal());
             Data dataValue = serializationService.toData(record.getValueInternal());
             recordSet.add(new RecordMigrationInfo(dataKey, dataValue, record.getTtlMillis()));
@@ -105,7 +108,7 @@ public class RequestMapDataOperation extends AbstractSerializableOperation {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ReplicatedMapDataSerializerHook.REQUEST_MAP_DATA;
     }
 }

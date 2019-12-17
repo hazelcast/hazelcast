@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,39 +16,46 @@
 
 package com.hazelcast.map.impl.tx;
 
+import com.hazelcast.internal.util.UUIDSerializationUtil;
 import com.hazelcast.map.impl.MapDataSerializerHook;
-import com.hazelcast.map.impl.operation.MutatingKeyBasedMapOperation;
+import com.hazelcast.map.impl.operation.KeyBasedMapOperation;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.BackupOperation;
-import com.hazelcast.spi.impl.MutatingOperation;
+import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.spi.impl.operationservice.BackupOperation;
 import com.hazelcast.transaction.TransactionException;
 
 import java.io.IOException;
+import java.util.UUID;
 
 /**
  * An operation to prepare transaction by locking the key on key backup owner.
  */
-public class TxnPrepareBackupOperation extends MutatingKeyBasedMapOperation implements BackupOperation, MutatingOperation {
+public class TxnPrepareBackupOperation extends KeyBasedMapOperation implements BackupOperation {
 
     private static final long LOCK_TTL_MILLIS = 10000L;
-    private String lockOwner;
-    private long lockThreadId;
 
-    protected TxnPrepareBackupOperation(String name, Data dataKey, String lockOwner, long lockThreadId) {
+    private UUID lockOwnerUuid;
+    private UUID transactionId;
+
+    protected TxnPrepareBackupOperation(String name, Data dataKey, UUID lockOwnerUuid,
+                                        long lockThreadId, UUID transactionId) {
         super(name, dataKey);
-        this.lockOwner = lockOwner;
-        this.lockThreadId = lockThreadId;
+        this.lockOwnerUuid = lockOwnerUuid;
+        this.threadId = lockThreadId;
+        this.transactionId = transactionId;
     }
 
     public TxnPrepareBackupOperation() {
     }
 
     @Override
-    public void run() throws Exception {
-        if (!recordStore.txnLock(getKey(), lockOwner, lockThreadId, getCallId(), LOCK_TTL_MILLIS, true)) {
-            throw new TransactionException("Lock is not owned by the transaction! Caller: " + lockOwner
+    protected void runInternal() {
+        wbqCapacityCounter().increment(transactionId, true);
+
+        if (!recordStore.txnLock(getKey(), lockOwnerUuid, threadId, getCallId(), LOCK_TTL_MILLIS, true)) {
+            wbqCapacityCounter().decrement(transactionId);
+            throw new TransactionException("Lock is not owned by the transaction! Caller: " + lockOwnerUuid
                     + ", Owner: " + recordStore.getLockOwnerInfo(getKey()));
         }
     }
@@ -61,19 +68,19 @@ public class TxnPrepareBackupOperation extends MutatingKeyBasedMapOperation impl
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        out.writeUTF(lockOwner);
-        out.writeLong(lockThreadId);
+        UUIDSerializationUtil.writeUUID(out, lockOwnerUuid);
+        UUIDSerializationUtil.writeUUID(out, transactionId);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        lockOwner = in.readUTF();
-        lockThreadId = in.readLong();
+        lockOwnerUuid = UUIDSerializationUtil.readUUID(in);
+        transactionId = UUIDSerializationUtil.readUUID(in);
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MapDataSerializerHook.TXN_PREPARE_BACKUP;
     }
 }

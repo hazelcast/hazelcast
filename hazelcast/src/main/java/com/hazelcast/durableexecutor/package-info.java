@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,7 +15,7 @@
  */
 
 /**
- * <p>This package contains DurableExecutorService functionality for Hazelcast.<br/>
+ * <p>This package contains DurableExecutorService functionality for Hazelcast.<br>
  * The DurableExecutorService extends the {@link java.util.concurrent.ExecutorService} and provides additional methods like
  * executing tasks on a member who is owner of a specific key. DurableExecutorService also provides a way to retrieve the result
  * of an execution with the given taskId.

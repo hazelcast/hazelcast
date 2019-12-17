@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,8 +29,8 @@ import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.eventservice.impl.LocalEventDispatcher;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.spi.properties.HazelcastProperty;
-import com.hazelcast.util.ItemCounter;
-import com.hazelcast.util.executor.StripedExecutor;
+import com.hazelcast.internal.util.ItemCounter;
+import com.hazelcast.internal.util.executor.StripedExecutor;
 
 import java.text.NumberFormat;
 import java.util.ArrayList;
@@ -39,13 +39,13 @@ import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.BlockingQueue;
 
-import static com.hazelcast.internal.diagnostics.Diagnostics.PREFIX;
 import static java.lang.Math.min;
 import static java.lang.String.format;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
- * The EventQueuePlugin checks the event queue and samples the event types if the size is above a certain threshold.
+ * The EventQueuePlugin checks the event queue and samples the event types if
+ * the size is above a certain threshold.
  * <p>
  * This is very useful to figure out why the event queue is running full.
  */
@@ -54,26 +54,27 @@ public class EventQueuePlugin extends DiagnosticsPlugin {
     /**
      * The period in seconds this plugin runs.
      * <p>
-     * With the EventQueuePlugin one can see what is going on inside the event queue.
-     * It makes use of sampling to give some impression of the content.
+     * With the EventQueuePlugin one can see what is going on inside the event
+     * queue. It makes use of sampling to give some impression of the content.
      * <p>
      * If set to 0, the plugin is disabled.
      */
     public static final HazelcastProperty PERIOD_SECONDS
-            = new HazelcastProperty(PREFIX + ".event.queue.period.seconds", 0, SECONDS);
+            = new HazelcastProperty("hazelcast.diagnostics.event.queue.period.seconds", 0, SECONDS);
 
     /**
      * The minimum number of events in the queue before it is being sampled.
      */
     public static final HazelcastProperty THRESHOLD
-            = new HazelcastProperty(PREFIX + ".event.queue.threshold", 1000);
+            = new HazelcastProperty("hazelcast.diagnostics.event.queue.threshold", 1000);
 
     /**
-     * The number of samples to take from the event queue. Increasing the number of samples gives
-     * more accuracy of the content, but it will come at greater price.
+     * The number of samples to take from the event queue. Increasing the number
+     * of samples gives more accuracy of the content, but it will come at greater
+     * price.
      */
     public static final HazelcastProperty SAMPLES
-            = new HazelcastProperty(PREFIX + ".event.queue.samples", 100);
+            = new HazelcastProperty("hazelcast.diagnostics.event.queue.samples", 100);
 
     private final ItemCounter<String> occurrenceMap = new ItemCounter<String>();
     private final Random random = new Random();
@@ -130,7 +131,7 @@ public class EventQueuePlugin extends DiagnosticsPlugin {
     }
 
     private List<BlockingQueue<Runnable>> getEventQueues() {
-        return eventExecutor.getWorkQueues();
+        return eventExecutor.getTaskQueues();
     }
 
     private void scan(DiagnosticsLogWriter writer, BlockingQueue<Runnable> eventQueue, int index) {

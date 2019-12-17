@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ package com.hazelcast.map.impl.operation;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.spi.impl.operationservice.MutatingOperation;
 
 import java.io.IOException;
 
@@ -27,7 +28,7 @@ import java.io.IOException;
  * partition of the map key loader with the
  * {@link com.hazelcast.map.impl.MapKeyLoader.Role#SENDER} role.
  */
-public class LoadMapOperation extends MapOperation {
+public class LoadMapOperation extends MapOperation implements MutatingOperation {
 
     private boolean replaceExistingValues;
 
@@ -40,7 +41,7 @@ public class LoadMapOperation extends MapOperation {
     }
 
     @Override
-    public void run() throws Exception {
+    protected void runInternal() {
         recordStore.loadAll(replaceExistingValues);
     }
 
@@ -57,7 +58,7 @@ public class LoadMapOperation extends MapOperation {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MapDataSerializerHook.LOAD_MAP;
     }
 }

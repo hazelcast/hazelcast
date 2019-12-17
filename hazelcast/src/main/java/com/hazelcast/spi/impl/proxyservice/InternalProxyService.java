@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,13 +16,13 @@
 
 package com.hazelcast.spi.impl.proxyservice;
 
-import com.hazelcast.spi.ProxyService;
-
 /**
- * The API for the internal {@link com.hazelcast.spi.ProxyService}.
+ * The API for the internal {@link ProxyService}.
  *
  * The ProxyService is responsible for managing proxies and it part of the SPI. The InternalProxyService extends this
  * interface and additional methods we don't want to expose in the SPI, we can add here.
  */
 public interface InternalProxyService extends ProxyService {
+
+    void destroyLocalDistributedObject(String serviceName, String name, boolean fireEvent);
 }

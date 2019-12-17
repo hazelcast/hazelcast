@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,10 +17,10 @@
 package com.hazelcast.multimap.impl.txn;
 
 import com.hazelcast.multimap.impl.MultiMapDataSerializerHook;
-import com.hazelcast.multimap.impl.operations.MultiMapKeyBasedOperation;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.multimap.impl.operations.AbstractKeyBasedMultiMapOperation;
+import com.hazelcast.internal.serialization.Data;
 
-public class TxnGenerateRecordIdOperation extends MultiMapKeyBasedOperation {
+public class TxnGenerateRecordIdOperation extends AbstractKeyBasedMultiMapOperation {
 
     public TxnGenerateRecordIdOperation() {
     }
@@ -35,7 +35,7 @@ public class TxnGenerateRecordIdOperation extends MultiMapKeyBasedOperation {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MultiMapDataSerializerHook.TXN_GENERATE_RECORD_ID;
     }
 }

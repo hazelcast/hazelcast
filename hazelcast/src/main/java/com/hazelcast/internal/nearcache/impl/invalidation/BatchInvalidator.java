@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,27 +17,28 @@
 package com.hazelcast.internal.nearcache.impl.invalidation;
 
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IFunction;
 import com.hazelcast.core.LifecycleEvent;
 import com.hazelcast.core.LifecycleListener;
 import com.hazelcast.core.LifecycleService;
-import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.EventRegistration;
-import com.hazelcast.spi.ExecutionService;
-import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.util.ConstructorFunction;
+import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.spi.impl.eventservice.EventRegistration;
+import com.hazelcast.spi.impl.executionservice.ExecutionService;
+import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.internal.util.ConstructorFunction;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Function;
 
 import static com.hazelcast.core.LifecycleEvent.LifecycleState.SHUTTING_DOWN;
-import static com.hazelcast.util.ConcurrencyUtil.getOrPutIfAbsent;
+import static com.hazelcast.internal.util.ConcurrencyUtil.getOrPutIfAbsent;
 import static java.lang.Thread.currentThread;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
@@ -51,27 +52,26 @@ public class BatchInvalidator extends Invalidator {
     /**
      * Creates an invalidation-queue per data-structure-name.
      */
-    private final ConstructorFunction<String, InvalidationQueue> invalidationQueueConstructor
-            = new ConstructorFunction<String, InvalidationQueue>() {
+    private final ConstructorFunction<String, InvalidationQueue<Invalidation>> invalidationQueueConstructor
+            = new ConstructorFunction<String, InvalidationQueue<Invalidation>>() {
         @Override
-        public InvalidationQueue createNew(String dataStructureName) {
-            return new InvalidationQueue();
+        public InvalidationQueue<Invalidation> createNew(String dataStructureName) {
+            return new InvalidationQueue<Invalidation>();
         }
     };
 
     /**
      * data-structure-name to invalidation-queue mappings.
      */
-    private final ConcurrentMap<String, InvalidationQueue> invalidationQueues
-            = new ConcurrentHashMap<String, InvalidationQueue>();
+    private final ConcurrentMap<String, InvalidationQueue<Invalidation>> invalidationQueues = new ConcurrentHashMap<>();
 
     private final int batchSize;
     private final int batchFrequencySeconds;
-    private final String nodeShutdownListenerId;
+    private final UUID nodeShutdownListenerId;
     private final AtomicBoolean runningBackgroundTask = new AtomicBoolean(false);
 
     public BatchInvalidator(String serviceName, int batchSize, int batchFrequencySeconds,
-                            IFunction<EventRegistration, Boolean> eventFilter, NodeEngine nodeEngine) {
+                            Function<EventRegistration, Boolean> eventFilter, NodeEngine nodeEngine) {
         super(serviceName, eventFilter, nodeEngine);
 
         this.batchSize = batchSize;
@@ -81,7 +81,7 @@ public class BatchInvalidator extends Invalidator {
     }
 
     @Override
-    protected Invalidation newInvalidation(Data key, String dataStructureName, String sourceUuid, int partitionId) {
+    protected Invalidation newInvalidation(Data key, String dataStructureName, UUID sourceUuid, int partitionId) {
         checkBackgroundTaskIsRunning();
         return super.newInvalidation(key, dataStructureName, sourceUuid, partitionId);
     }
@@ -89,7 +89,7 @@ public class BatchInvalidator extends Invalidator {
     @Override
     protected void invalidateInternal(Invalidation invalidation, int orderKey) {
         String dataStructureName = invalidation.getName();
-        InvalidationQueue invalidationQueue = invalidationQueueOf(dataStructureName);
+        InvalidationQueue<Invalidation> invalidationQueue = invalidationQueueOf(dataStructureName);
         invalidationQueue.offer(invalidation);
 
         if (invalidationQueue.size() >= batchSize) {
@@ -97,11 +97,11 @@ public class BatchInvalidator extends Invalidator {
         }
     }
 
-    private InvalidationQueue invalidationQueueOf(String dataStructureName) {
+    private InvalidationQueue<Invalidation> invalidationQueueOf(String dataStructureName) {
         return getOrPutIfAbsent(invalidationQueues, dataStructureName, invalidationQueueConstructor);
     }
 
-    private void pollAndSendInvalidations(String dataStructureName, InvalidationQueue invalidationQueue) {
+    private void pollAndSendInvalidations(String dataStructureName, InvalidationQueue<Invalidation> invalidationQueue) {
         assert invalidationQueue != null;
 
         if (!invalidationQueue.tryAcquire()) {
@@ -156,15 +156,15 @@ public class BatchInvalidator extends Invalidator {
     /**
      * Sends remaining invalidation events in this invalidator's queues to the recipients.
      */
-    private String registerNodeShutdownListener() {
+    private UUID registerNodeShutdownListener() {
         HazelcastInstance node = nodeEngine.getHazelcastInstance();
         LifecycleService lifecycleService = node.getLifecycleService();
         return lifecycleService.addLifecycleListener(new LifecycleListener() {
             @Override
             public void stateChanged(LifecycleEvent event) {
                 if (event.getState() == SHUTTING_DOWN) {
-                    Set<Map.Entry<String, InvalidationQueue>> entries = invalidationQueues.entrySet();
-                    for (Map.Entry<String, InvalidationQueue> entry : entries) {
+                    Set<Map.Entry<String, InvalidationQueue<Invalidation>>> entries = invalidationQueues.entrySet();
+                    for (Map.Entry<String, InvalidationQueue<Invalidation>> entry : entries) {
                         pollAndSendInvalidations(entry.getKey(), entry.getValue());
                     }
                 }
@@ -192,12 +192,12 @@ public class BatchInvalidator extends Invalidator {
 
         @Override
         public void run() {
-            for (Map.Entry<String, InvalidationQueue> entry : invalidationQueues.entrySet()) {
+            for (Map.Entry<String, InvalidationQueue<Invalidation>> entry : invalidationQueues.entrySet()) {
                 if (currentThread().isInterrupted()) {
                     break;
                 }
                 String name = entry.getKey();
-                InvalidationQueue invalidationQueue = entry.getValue();
+                InvalidationQueue<Invalidation> invalidationQueue = entry.getValue();
                 if (invalidationQueue.size() > 0) {
                     pollAndSendInvalidations(name, invalidationQueue);
                 }
@@ -206,7 +206,7 @@ public class BatchInvalidator extends Invalidator {
     }
 
     @Override
-    public void destroy(String dataStructureName, String sourceUuid) {
+    public void destroy(String dataStructureName, UUID sourceUuid) {
         invalidationQueues.remove(dataStructureName);
         super.destroy(dataStructureName, sourceUuid);
     }

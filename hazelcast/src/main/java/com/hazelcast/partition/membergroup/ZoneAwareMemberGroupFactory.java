@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 
 package com.hazelcast.partition.membergroup;
 
-import com.hazelcast.core.Member;
+import com.hazelcast.cluster.Member;
 import com.hazelcast.spi.discovery.DiscoveryStrategy;
 import com.hazelcast.spi.partitiongroup.PartitionGroupMetaData;
 
@@ -39,9 +39,9 @@ public class ZoneAwareMemberGroupFactory extends BackupSafeMemberGroupFactory im
         Map<String, MemberGroup> groups = new HashMap<String, MemberGroup>();
         for (Member member : allMembers) {
 
-            final String zoneInfo = member.getStringAttribute(PartitionGroupMetaData.PARTITION_GROUP_ZONE);
-            final String rackInfo = member.getStringAttribute(PartitionGroupMetaData.PARTITION_GROUP_RACK);
-            final String hostInfo = member.getStringAttribute(PartitionGroupMetaData.PARTITION_GROUP_HOST);
+            final String zoneInfo = member.getAttribute(PartitionGroupMetaData.PARTITION_GROUP_ZONE);
+            final String rackInfo = member.getAttribute(PartitionGroupMetaData.PARTITION_GROUP_RACK);
+            final String hostInfo = member.getAttribute(PartitionGroupMetaData.PARTITION_GROUP_HOST);
 
             if (zoneInfo == null && rackInfo == null && hostInfo == null) {
                 throw new IllegalArgumentException("Not enough metadata information is provided. "

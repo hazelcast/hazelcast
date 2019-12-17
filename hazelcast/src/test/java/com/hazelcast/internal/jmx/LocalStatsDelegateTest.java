@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,16 +17,16 @@
 package com.hazelcast.internal.jmx;
 
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IMap;
+import com.hazelcast.map.IMap;
 import com.hazelcast.internal.jmx.suppliers.LocalMapStatsSupplier;
 import com.hazelcast.internal.jmx.suppliers.StatsSupplier;
-import com.hazelcast.monitor.LocalMapStats;
+import com.hazelcast.map.LocalMapStats;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.NightlyTest;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.util.UuidUtil;
+import com.hazelcast.internal.util.UuidUtil;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -39,7 +39,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastSerialClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class LocalStatsDelegateTest extends HazelcastTestSupport {
 
     private AtomicBoolean done;
@@ -120,7 +120,7 @@ public class LocalStatsDelegateTest extends HazelcastTestSupport {
         private IMap map;
         private AtomicBoolean done;
 
-        public MapPutThread(IMap map, AtomicBoolean done) {
+        MapPutThread(IMap map, AtomicBoolean done) {
             this.map = map;
             this.done = done;
         }
@@ -136,20 +136,21 @@ public class LocalStatsDelegateTest extends HazelcastTestSupport {
     }
 
     private class MapStatsThread implements Runnable {
+
         private LocalStatsDelegate localStatsDelegate;
         private AtomicBoolean done;
 
-        private boolean stress = false;
+        private boolean stress;
 
         private int sleepMs;
 
-        public MapStatsThread(LocalStatsDelegate localMapStatsDelegate, AtomicBoolean done, int sleepMs) {
+        MapStatsThread(LocalStatsDelegate localMapStatsDelegate, AtomicBoolean done, int sleepMs) {
             this.localStatsDelegate = localMapStatsDelegate;
             this.done = done;
             this.sleepMs = sleepMs;
         }
 
-        public MapStatsThread(LocalStatsDelegate localMapStatsDelegate, AtomicBoolean done, boolean stress, int sleepMs) {
+        MapStatsThread(LocalStatsDelegate localMapStatsDelegate, AtomicBoolean done, boolean stress, int sleepMs) {
             this.localStatsDelegate = localMapStatsDelegate;
             this.done = done;
             this.stress = stress;

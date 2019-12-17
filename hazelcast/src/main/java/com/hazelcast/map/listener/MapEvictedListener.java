@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,19 +16,21 @@
 
 package com.hazelcast.map.listener;
 
-import com.hazelcast.core.MapEvent;
+import com.hazelcast.map.MapEvent;
+import com.hazelcast.map.IMap;
 
 /**
- * Invoked after all entries are evicted by {@link com.hazelcast.core.IMap#evictAll()}.
+ * Invoked after all entries are evicted by {@link IMap#evictAll()}.
  *
  * @since 3.5
  */
+@FunctionalInterface
 public interface MapEvictedListener extends MapListener {
 
     /**
-     * Invoked when all entries are evicted by {@link com.hazelcast.core.IMap#evictAll()}.
+     * Invoked when all entries are evicted by {@link IMap#evictAll()}.
      *
-     * @param event the map event invoked when all entries are evicted by {@link com.hazelcast.core.IMap#evictAll()}
+     * @param event the map event invoked when all entries are evicted by {@link IMap#evictAll()}
      */
     void mapEvicted(MapEvent event);
 }

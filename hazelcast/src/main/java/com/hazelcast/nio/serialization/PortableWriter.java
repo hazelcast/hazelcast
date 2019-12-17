@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,7 +31,7 @@ public interface PortableWriter {
      *
      * @param fieldName name of the field
      * @param value     int value to be written
-     * @throws IOException
+     * @throws IOException in case of any exceptional case
      */
     void writeInt(String fieldName, int value) throws IOException;
 
@@ -40,7 +40,7 @@ public interface PortableWriter {
      *
      * @param fieldName name of the field
      * @param value     long value to be written
-     * @throws IOException
+     * @throws IOException in case of any exceptional case
      */
     void writeLong(String fieldName, long value) throws IOException;
 
@@ -49,7 +49,7 @@ public interface PortableWriter {
      *
      * @param fieldName name of the field
      * @param value     utf string value to be written
-     * @throws IOException
+     * @throws IOException in case of any exceptional case
      */
     void writeUTF(String fieldName, String value) throws IOException;
 
@@ -58,7 +58,7 @@ public interface PortableWriter {
      *
      * @param fieldName name of the field
      * @param value     int value to be written
-     * @throws IOException
+     * @throws IOException in case of any exceptional case
      */
     void writeBoolean(String fieldName, boolean value) throws IOException;
 
@@ -67,7 +67,7 @@ public interface PortableWriter {
      *
      * @param fieldName name of the field
      * @param value     int value to be written
-     * @throws IOException
+     * @throws IOException in case of any exceptional case
      */
     void writeByte(String fieldName, byte value) throws IOException;
 
@@ -76,7 +76,7 @@ public interface PortableWriter {
      *
      * @param fieldName name of the field
      * @param value     int value to be written
-     * @throws IOException
+     * @throws IOException in case of any exceptional case
      */
     void writeChar(String fieldName, int value) throws IOException;
 
@@ -85,7 +85,7 @@ public interface PortableWriter {
      *
      * @param fieldName name of the field
      * @param value     int value to be written
-     * @throws IOException
+     * @throws IOException in case of any exceptional case
      */
     void writeDouble(String fieldName, double value) throws IOException;
 
@@ -94,7 +94,7 @@ public interface PortableWriter {
      *
      * @param fieldName name of the field
      * @param value     int value to be written
-     * @throws IOException
+     * @throws IOException in case of any exceptional case
      */
     void writeFloat(String fieldName, float value) throws IOException;
 
@@ -103,7 +103,7 @@ public interface PortableWriter {
      *
      * @param fieldName name of the field
      * @param value     int value to be written
-     * @throws IOException
+     * @throws IOException in case of any exceptional case
      */
     void writeShort(String fieldName, short value) throws IOException;
 
@@ -112,7 +112,7 @@ public interface PortableWriter {
      *
      * @param fieldName name of the field
      * @param portable  Portable to be written
-     * @throws IOException
+     * @throws IOException in case of any exceptional case
      */
     void writePortable(String fieldName, Portable portable) throws IOException;
 
@@ -122,7 +122,7 @@ public interface PortableWriter {
      * @param fieldName name of the field
      * @param factoryId factory ID of related portable class
      * @param classId   class ID of related portable class
-     * @throws IOException
+     * @throws IOException in case of any exceptional case
      */
     void writeNullPortable(String fieldName, int factoryId, int classId) throws IOException;
 
@@ -131,7 +131,7 @@ public interface PortableWriter {
      *
      * @param fieldName name of the field
      * @param bytes     byte array to be written
-     * @throws IOException
+     * @throws IOException in case of any exceptional case
      */
     void writeByteArray(String fieldName, byte[] bytes) throws IOException;
 
@@ -140,7 +140,7 @@ public interface PortableWriter {
      *
      * @param fieldName name of the field
      * @param booleans     boolean array to be written
-     * @throws IOException
+     * @throws IOException in case of any exceptional case
      */
     void writeBooleanArray(String fieldName, boolean[] booleans) throws IOException;
 
@@ -149,7 +149,7 @@ public interface PortableWriter {
      *
      * @param fieldName name of the field
      * @param chars     char array to be written
-     * @throws IOException
+     * @throws IOException in case of any exceptional case
      */
     void writeCharArray(String fieldName, char[] chars) throws IOException;
 
@@ -158,7 +158,7 @@ public interface PortableWriter {
      *
      * @param fieldName name of the field
      * @param ints      int array to be written
-     * @throws IOException
+     * @throws IOException in case of any exceptional case
      */
     void writeIntArray(String fieldName, int[] ints) throws IOException;
 
@@ -167,7 +167,7 @@ public interface PortableWriter {
      *
      * @param fieldName name of the field
      * @param longs     long array to be written
-     * @throws IOException
+     * @throws IOException in case of any exceptional case
      */
     void writeLongArray(String fieldName, long[] longs) throws IOException;
 
@@ -176,7 +176,7 @@ public interface PortableWriter {
      *
      * @param fieldName name of the field
      * @param values    double array to be written
-     * @throws IOException
+     * @throws IOException in case of any exceptional case
      */
     void writeDoubleArray(String fieldName, double[] values) throws IOException;
 
@@ -185,7 +185,7 @@ public interface PortableWriter {
      *
      * @param fieldName name of the field
      * @param values    float array to be written
-     * @throws IOException
+     * @throws IOException in case of any exceptional case
      */
     void writeFloatArray(String fieldName, float[] values) throws IOException;
 
@@ -194,7 +194,7 @@ public interface PortableWriter {
      *
      * @param fieldName name of the field
      * @param values    short array to be written
-     * @throws IOException
+     * @throws IOException in case of any exceptional case
      */
     void writeShortArray(String fieldName, short[] values) throws IOException;
 
@@ -203,7 +203,7 @@ public interface PortableWriter {
      *
      * @param fieldName name of the field
      * @param values    String array to be written
-     * @throws IOException
+     * @throws IOException in case of any exceptional case
      */
     void writeUTFArray(String fieldName, String[] values) throws IOException;
 
@@ -212,7 +212,7 @@ public interface PortableWriter {
      *
      * @param fieldName name of the field
      * @param portables portable array to be written
-     * @throws IOException
+     * @throws IOException in case of any exceptional case
      */
     void writePortableArray(String fieldName, Portable[] portables) throws IOException;
 
@@ -222,7 +222,7 @@ public interface PortableWriter {
      * in IOException
      *
      * @return ObjectDataOutput
-     * @throws IOException
+     * @throws IOException in case of any exceptional case
      */
     ObjectDataOutput getRawDataOutput() throws IOException;
 }

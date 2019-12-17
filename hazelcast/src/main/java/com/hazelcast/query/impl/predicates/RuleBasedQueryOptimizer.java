@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,29 +17,34 @@
 package com.hazelcast.query.impl.predicates;
 
 import com.hazelcast.query.Predicate;
-import com.hazelcast.query.VisitablePredicate;
 import com.hazelcast.query.impl.Indexes;
 
 /**
  * Rule based optimizer. It chains {@link Visitor}s to rewrite query.
- *
  */
 public final class RuleBasedQueryOptimizer implements QueryOptimizer {
-    private final Visitor betweenVisitor = new BetweenVisitor();
-    private final Visitor flatteningVisitor = new FlatteningVisitor();
-    private final Visitor orToInVisitor = new OrToInVisitor();
 
+    private final Visitor flatteningVisitor = new FlatteningVisitor();
+    private final Visitor rangeVisitor = new RangeVisitor();
+    private final Visitor orToInVisitor = new OrToInVisitor();
+    private final Visitor compositeIndexVisitor = new CompositeIndexVisitor();
+
+    @SuppressWarnings("unchecked")
     public <K, V> Predicate<K, V> optimize(Predicate<K, V> predicate, Indexes indexes) {
         Predicate optimized = predicate;
         if (optimized instanceof VisitablePredicate) {
             optimized = ((VisitablePredicate) optimized).accept(flatteningVisitor, indexes);
         }
         if (optimized instanceof VisitablePredicate) {
-            optimized = ((VisitablePredicate) optimized).accept(betweenVisitor, indexes);
+            optimized = ((VisitablePredicate) optimized).accept(rangeVisitor, indexes);
         }
         if (optimized instanceof VisitablePredicate) {
             optimized = ((VisitablePredicate) optimized).accept(orToInVisitor, indexes);
         }
+        if (optimized instanceof VisitablePredicate) {
+            optimized = ((VisitablePredicate) optimized).accept(compositeIndexVisitor, indexes);
+        }
         return optimized;
     }
+
 }

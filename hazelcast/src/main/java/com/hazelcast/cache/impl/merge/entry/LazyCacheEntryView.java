@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,7 @@
 package com.hazelcast.cache.impl.merge.entry;
 
 import com.hazelcast.cache.CacheEntryView;
-import com.hazelcast.spi.serialization.SerializationService;
+import com.hazelcast.internal.serialization.SerializationService;
 
 /**
  * An implementation of {@link com.hazelcast.cache.CacheEntryView}
@@ -28,6 +28,7 @@ public class LazyCacheEntryView<K, V>
 
     private Object key;
     private Object value;
+    private Object expiryPolicy;
     private long creationTime;
     private long expirationTime;
     private long lastAccessTime;
@@ -35,13 +36,13 @@ public class LazyCacheEntryView<K, V>
     private SerializationService serializationService;
 
     public LazyCacheEntryView(Object key, Object value, long creationTime,
-                              long expirationTime, long lastAccessTime, long accessHit) {
+                              long expirationTime, long lastAccessTime, long accessHit, Object expiryPolicy) {
         // `null` `serializationService` means, use raw type without any conversion
-        this(key, value, creationTime, expirationTime, lastAccessTime, accessHit, null);
+        this(key, value, creationTime, expirationTime, lastAccessTime, accessHit, expiryPolicy, null);
     }
 
     public LazyCacheEntryView(Object key, Object value, long creationTime,
-                              long expirationTime, long lastAccessTime, long accessHit,
+                              long expirationTime, long lastAccessTime, long accessHit, Object expiryPolicy,
                               SerializationService serializationService) {
         this.key = key;
         this.value = value;
@@ -49,6 +50,7 @@ public class LazyCacheEntryView<K, V>
         this.expirationTime = expirationTime;
         this.lastAccessTime = lastAccessTime;
         this.accessHit = accessHit;
+        this.expiryPolicy = expiryPolicy;
         this.serializationService = serializationService;
     }
 
@@ -71,6 +73,14 @@ public class LazyCacheEntryView<K, V>
     }
 
     @Override
+    public Object getExpiryPolicy() {
+        if (serializationService != null) {
+            expiryPolicy = serializationService.toObject(expiryPolicy);
+        }
+        return expiryPolicy;
+    }
+
+    @Override
     public long getCreationTime() {
         return creationTime;
     }
@@ -86,7 +96,7 @@ public class LazyCacheEntryView<K, V>
     }
 
     @Override
-    public long getAccessHit() {
+    public long getHits() {
         return accessHit;
     }
 

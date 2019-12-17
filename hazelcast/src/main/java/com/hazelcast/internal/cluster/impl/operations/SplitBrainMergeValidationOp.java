@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,8 +17,8 @@
 package com.hazelcast.internal.cluster.impl.operations;
 
 import com.hazelcast.cluster.ClusterState;
-import com.hazelcast.core.Member;
-import com.hazelcast.instance.Node;
+import com.hazelcast.cluster.Member;
+import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
@@ -35,7 +35,7 @@ import static com.hazelcast.internal.cluster.impl.SplitBrainJoinMessage.SplitBra
 import static com.hazelcast.internal.cluster.impl.SplitBrainJoinMessage.SplitBrainMergeCheckResult.REMOTE_NODE_SHOULD_MERGE;
 
 /**
- * Validate whether clusters may merge to recover from a split brain, based on configuration & cluster version.
+ * Validate whether clusters may merge to recover from a split brain, based on configuration &amp; cluster version.
  */
 public class SplitBrainMergeValidationOp extends AbstractJoinOperation {
 
@@ -97,14 +97,14 @@ public class SplitBrainMergeValidationOp extends AbstractJoinOperation {
         }
 
         if (!node.isRunning()) {
-            logger.info("Ignoring join check from " + getCallerAddress() + ", because this node is not active...");
+            logger.info("Ignoring join check from " + getCallerAddress() + " because this node is not active...");
             return false;
         }
 
         final ClusterState clusterState = clusterService.getClusterState();
         if (!clusterState.isJoinAllowed()) {
-            logger.info("Ignoring join check from " + getCallerAddress() + ", because cluster is in "
-                    + clusterState + " state ...");
+            logger.info("Ignoring join check from " + getCallerAddress() + " because cluster is in "
+                    + clusterState + " state...");
             return false;
         }
 
@@ -124,10 +124,7 @@ public class SplitBrainMergeValidationOp extends AbstractJoinOperation {
             }
             return true;
         } else {
-            // ping master to check if it's still valid
-            service.getClusterHeartbeatManager().sendMasterConfirmation();
-            logger.info("Ignoring join check from " + getCallerAddress()
-                    + ", because this node is not master...");
+            logger.info("Ignoring join check from " + getCallerAddress() + ", because this node is not master...");
             return false;
         }
     }
@@ -181,17 +178,16 @@ public class SplitBrainMergeValidationOp extends AbstractJoinOperation {
 
     @Override
     protected void readInternal(final ObjectDataInput in) throws IOException {
-        request = new SplitBrainJoinMessage();
-        request.readData(in);
+        request = in.readObject();
     }
 
     @Override
     protected void writeInternal(final ObjectDataOutput out) throws IOException {
-        request.writeData(out);
+        out.writeObject(request);
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ClusterDataSerializerHook.SPLIT_BRAIN_MERGE_VALIDATION;
     }
 }

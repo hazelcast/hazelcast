@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,9 +17,10 @@
 package com.hazelcast.client.impl.protocol;
 
 import com.hazelcast.client.UndefinedErrorCodeException;
+import com.hazelcast.client.impl.clientside.ClientExceptionFactory;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -28,7 +29,7 @@ import org.junit.runner.RunWith;
 import static junit.framework.TestCase.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class ClientProtocolErrorCodesTest extends HazelcastTestSupport {
 
     @Test
@@ -38,13 +39,13 @@ public class ClientProtocolErrorCodesTest extends HazelcastTestSupport {
 
     @Test
     public void testUndefinedException() {
+        ClientExceptions exceptions = new ClientExceptions(false);
         ClientExceptionFactory exceptionFactory = new ClientExceptionFactory(false);
         class MyException extends Exception {
         }
 
-        ClientMessage exceptionMessage = exceptionFactory.createExceptionMessage(new MyException());
-        ClientMessage responseMessage = ClientMessage.createForDecode(exceptionMessage.buffer(), 0);
-        Throwable resurrectedThrowable = exceptionFactory.createException(responseMessage);
+        ClientMessage exceptionMessage = exceptions.createExceptionMessage(new MyException());
+        Throwable resurrectedThrowable = exceptionFactory.createException(exceptionMessage);
         assertEquals(UndefinedErrorCodeException.class, resurrectedThrowable.getClass());
     }
 }

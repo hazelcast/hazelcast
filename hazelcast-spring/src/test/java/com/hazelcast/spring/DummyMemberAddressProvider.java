@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,8 @@
 
 package com.hazelcast.spring;
 
-import com.hazelcast.nio.Address;
+import com.hazelcast.instance.EndpointQualifier;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.spi.MemberAddressProvider;
 
 import java.net.InetSocketAddress;
@@ -47,6 +48,16 @@ public class DummyMemberAddressProvider implements MemberAddressProvider {
         } catch (UnknownHostException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    @Override
+    public InetSocketAddress getBindAddress(EndpointQualifier qualifier) {
+        return getBindAddress();
+    }
+
+    @Override
+    public InetSocketAddress getPublicAddress(EndpointQualifier qualifier) {
+        return getPublicAddress();
     }
 
     public Properties getProperties() {

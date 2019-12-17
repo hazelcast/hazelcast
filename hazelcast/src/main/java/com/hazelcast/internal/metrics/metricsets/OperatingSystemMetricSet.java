@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,20 +19,25 @@ package com.hazelcast.internal.metrics.metricsets;
 import com.hazelcast.internal.metrics.DoubleProbeFunction;
 import com.hazelcast.internal.metrics.LongProbeFunction;
 import com.hazelcast.internal.metrics.MetricsRegistry;
+import com.hazelcast.internal.util.OperatingSystemMXBeanSupport;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
 
 import java.lang.management.ManagementFactory;
 import java.lang.management.OperatingSystemMXBean;
 import java.lang.reflect.Method;
+import java.util.logging.Level;
 
 import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
-import static com.hazelcast.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 /**
  * A Metric set for exposing {@link java.lang.management.OperatingSystemMXBean} metrics.
  */
 public final class OperatingSystemMetricSet {
 
-    private static final double PERCENTAGE_MULTIPLIER = 100d;
+    private static final ILogger LOGGER = Logger.getLogger(OperatingSystemMetricSet.class);
+    private static final long PERCENTAGE_MULTIPLIER = 100;
     private static final Object[] EMPTY_ARGS = new Object[0];
 
     private OperatingSystemMetricSet() {
@@ -56,44 +61,41 @@ public final class OperatingSystemMetricSet {
         registerMethod(metricsRegistry, mxBean, "getTotalSwapSpaceSize", "os.totalSwapSpaceSize");
         registerMethod(metricsRegistry, mxBean, "getMaxFileDescriptorCount", "os.maxFileDescriptorCount");
         registerMethod(metricsRegistry, mxBean, "getOpenFileDescriptorCount", "os.openFileDescriptorCount");
-        registerMethod(metricsRegistry, mxBean, "getProcessCpuLoad", "os.processCpuLoad");
-        registerMethod(metricsRegistry, mxBean, "getSystemCpuLoad", "os.systemCpuLoad");
 
-        metricsRegistry.register(mxBean, "os.systemLoadAverage", MANDATORY,
-                new DoubleProbeFunction<OperatingSystemMXBean>() {
-                    @Override
-                    public double get(OperatingSystemMXBean bean) {
-                        return PERCENTAGE_MULTIPLIER * bean.getSystemLoadAverage();
-                    }
-                }
+        // value will be between 0.0 and 1.0 or a negative value, if not available
+        registerMethod(metricsRegistry, mxBean, "getProcessCpuLoad", "os.processCpuLoad", PERCENTAGE_MULTIPLIER);
+
+        // value will be between 0.0 and 1.0 or a negative value, if not available
+        registerMethod(metricsRegistry, mxBean, "getSystemCpuLoad", "os.systemCpuLoad", PERCENTAGE_MULTIPLIER);
+
+        metricsRegistry.registerStaticProbe(mxBean, "os.systemLoadAverage", MANDATORY,
+                OperatingSystemMXBean::getSystemLoadAverage
         );
     }
 
-    // This method doesn't depend on the OperatingSystemMXBean so it can be tested. Due to not knowing
-    // the exact OperatingSystemMXBean class it is very difficult to get this class tested.
     static void registerMethod(MetricsRegistry metricsRegistry, Object osBean, String methodName, String name) {
-        final Method method = getMethod(osBean, methodName);
+        if (OperatingSystemMXBeanSupport.GET_FREE_PHYSICAL_MEMORY_SIZE_DISABLED
+                && methodName.equals("getFreePhysicalMemorySize")) {
+            metricsRegistry.registerStaticProbe(osBean, name, MANDATORY, (LongProbeFunction<Object>) source -> -1);
+        } else {
+            registerMethod(metricsRegistry, osBean, methodName, name, 1);
+        }
+    }
+
+    private static void registerMethod(MetricsRegistry metricsRegistry, Object osBean, String methodName, String name,
+                                       final long multiplier) {
+        final Method method = getMethod(osBean, methodName, name);
 
         if (method == null) {
             return;
         }
 
         if (long.class.equals(method.getReturnType())) {
-            metricsRegistry.register(osBean, name, MANDATORY,
-                    new LongProbeFunction() {
-                        @Override
-                        public long get(Object bean) throws Exception {
-                            return (Long) method.invoke(bean, EMPTY_ARGS);
-                        }
-                    });
+            metricsRegistry.registerStaticProbe(osBean, name, MANDATORY,
+                    (LongProbeFunction) bean -> (Long) method.invoke(bean, EMPTY_ARGS) * multiplier);
         } else {
-            metricsRegistry.register(osBean, name, MANDATORY,
-                    new DoubleProbeFunction() {
-                        @Override
-                        public double get(Object bean) throws Exception {
-                            return (Double) method.invoke(bean, EMPTY_ARGS);
-                        }
-                    });
+            metricsRegistry.registerStaticProbe(osBean, name, MANDATORY,
+                    (DoubleProbeFunction) bean -> (Double) method.invoke(bean, EMPTY_ARGS) * multiplier);
         }
     }
 
@@ -102,14 +104,19 @@ public final class OperatingSystemMetricSet {
      *
      * @param source     the source object.
      * @param methodName the name of the method to retrieve.
+     * @param name       the probe name
      * @return the method
      */
-    private static Method getMethod(Object source, String methodName) {
+    private static Method getMethod(Object source, String methodName, String name) {
         try {
-            Method method = source.getClass().getDeclaredMethod(methodName);
+            Method method = source.getClass().getMethod(methodName);
             method.setAccessible(true);
             return method;
         } catch (Exception e) {
+            if (LOGGER.isFinestEnabled()) {
+                LOGGER.log(Level.FINEST,
+                        "Unable to register OperatingSystemMXBean method " + methodName + " used for probe " + name, e);
+            }
             return null;
         }
     }

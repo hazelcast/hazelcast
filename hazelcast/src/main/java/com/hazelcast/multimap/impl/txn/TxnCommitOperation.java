@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,23 +17,26 @@
 package com.hazelcast.multimap.impl.txn;
 
 import com.hazelcast.multimap.impl.MultiMapDataSerializerHook;
-import com.hazelcast.multimap.impl.operations.MultiMapBackupAwareOperation;
+import com.hazelcast.multimap.impl.operations.AbstractBackupAwareMultiMapOperation;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.BackupAwareOperation;
-import com.hazelcast.spi.Notifier;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.WaitNotifyKey;
+import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.spi.impl.operationservice.BackupAwareOperation;
+import com.hazelcast.spi.impl.operationservice.Notifier;
+import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.spi.impl.operationservice.WaitNotifyKey;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-public class TxnCommitOperation extends MultiMapBackupAwareOperation implements Notifier {
+import static com.hazelcast.spi.impl.operationexecutor.OperationRunner.runDirect;
+
+public class TxnCommitOperation extends AbstractBackupAwareMultiMapOperation implements Notifier {
 
     private List<Operation> opList;
-    private boolean notify = true;
+
+    private transient boolean notify = true;
 
     public TxnCommitOperation() {
     }
@@ -50,9 +53,7 @@ public class TxnCommitOperation extends MultiMapBackupAwareOperation implements 
             op.setNodeEngine(getNodeEngine())
                     .setServiceName(getServiceName())
                     .setPartitionId(getPartitionId());
-            op.beforeRun();
-            op.run();
-            op.afterRun();
+            runDirect(op);
         }
         getOrCreateContainer().unlock(dataKey, getCallerUuid(), threadId, getCallId());
     }
@@ -87,7 +88,7 @@ public class TxnCommitOperation extends MultiMapBackupAwareOperation implements 
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MultiMapDataSerializerHook.TXN_COMMIT;
     }
 

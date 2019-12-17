@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,8 +22,9 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.replicatedmap.impl.PartitionContainer;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
 import com.hazelcast.replicatedmap.impl.record.ReplicatedRecordStore;
-import com.hazelcast.spi.OperationService;
-import com.hazelcast.spi.PartitionAwareOperation;
+import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.spi.impl.operationservice.OperationService;
+import com.hazelcast.spi.impl.operationservice.PartitionAwareOperation;
 
 import java.io.IOException;
 import java.util.Map;
@@ -32,7 +33,7 @@ import java.util.concurrent.ConcurrentMap;
 
 import static com.hazelcast.replicatedmap.impl.ReplicatedMapService.INVOCATION_TRY_COUNT;
 import static com.hazelcast.replicatedmap.impl.ReplicatedMapService.SERVICE_NAME;
-import static com.hazelcast.util.MapUtil.createConcurrentHashMap;
+import static com.hazelcast.internal.util.MapUtil.createConcurrentHashMap;
 
 /**
  * Checks whether replica version is in sync with the primary.
@@ -69,17 +70,15 @@ public class CheckReplicaVersionOperation extends AbstractSerializableOperation 
             ReplicatedRecordStore store = stores.get(name);
             if (store == null) {
                 if (logger.isFineEnabled()) {
-                    logger.fine("Missing store on the replica ! map: " + name
-                            + " owner version:" + version + " partitionId=" + partitionId);
+                    logger.fine("Missing store on the replica of replicated map '" + name
+                            + "' (partitionId " + partitionId + ") (owner version " + version + ")");
                 }
-
                 requestDataFromOwner(name);
             } else if (store.isStale(version)) {
                 if (logger.isFineEnabled()) {
-                    logger.fine("Stale replica! map: "  + name + " owner version: " + version
-                            + " replica version: " + store.getVersion() + " partitionId=" + partitionId);
+                    logger.fine("Stale replica on replicated map '" + name + "' (partitionId " + partitionId
+                            + ") (owner version " + version + ") (replica version " + store.getVersion() + ")");
                 }
-
                 requestDataFromOwner(name);
             }
         }
@@ -87,9 +86,9 @@ public class CheckReplicaVersionOperation extends AbstractSerializableOperation 
 
     private void requestDataFromOwner(String name) {
         OperationService operationService = getNodeEngine().getOperationService();
-        RequestMapDataOperation requestMapDataOperation = new RequestMapDataOperation(name);
+        Operation op = new RequestMapDataOperation(name);
         operationService
-                .createInvocationBuilder(SERVICE_NAME, requestMapDataOperation, getPartitionId())
+                .createInvocationBuilder(SERVICE_NAME, op, getPartitionId())
                 .setTryCount(INVOCATION_TRY_COUNT)
                 .invoke();
     }
@@ -105,7 +104,7 @@ public class CheckReplicaVersionOperation extends AbstractSerializableOperation 
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
-        versions = new ConcurrentHashMap<String, Long>();
+        versions = new ConcurrentHashMap<>();
         int size = in.readInt();
         for (int i = 0; i < size; i++) {
             String name = in.readUTF();
@@ -115,7 +114,7 @@ public class CheckReplicaVersionOperation extends AbstractSerializableOperation 
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ReplicatedMapDataSerializerHook.CHECK_REPLICA_VERSION;
     }
 }

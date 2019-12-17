@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,10 +20,10 @@ import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.BackupAwareOperation;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.impl.MutatingOperation;
+import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.spi.impl.operationservice.BackupAwareOperation;
+import com.hazelcast.spi.impl.operationservice.MutatingOperation;
+import com.hazelcast.spi.impl.operationservice.Operation;
 
 import java.io.IOException;
 
@@ -43,17 +43,17 @@ public class EvictOperation extends LockAwareOperation implements MutatingOperat
     }
 
     @Override
-    public void run() {
+    protected void runInternal() {
         dataValue = mapServiceContext.toData(recordStore.evict(dataKey, false));
         evicted = dataValue != null;
     }
 
     @Override
-    public void afterRun() {
+    protected void afterRunInternal() {
         if (!evicted) {
             return;
         }
-        mapServiceContext.interceptAfterRemove(name, dataValue);
+        mapServiceContext.interceptAfterRemove(mapContainer.getInterceptorRegistry(), dataValue);
         mapEventPublisher.publishEvent(getCallerAddress(), name, EVICTED, dataKey, dataValue, null);
         invalidateNearCache(dataKey);
     }
@@ -109,7 +109,7 @@ public class EvictOperation extends LockAwareOperation implements MutatingOperat
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MapDataSerializerHook.EVICT;
     }
 }

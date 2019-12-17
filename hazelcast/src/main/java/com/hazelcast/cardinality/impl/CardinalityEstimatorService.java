@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,19 +16,28 @@
 
 package com.hazelcast.cardinality.impl;
 
+import com.hazelcast.cardinality.impl.hyperloglog.HyperLogLog;
+import com.hazelcast.cardinality.impl.operations.MergeOperation;
 import com.hazelcast.cardinality.impl.operations.ReplicationOperation;
 import com.hazelcast.config.CardinalityEstimatorConfig;
-import com.hazelcast.spi.ManagedService;
-import com.hazelcast.spi.MigrationAwareService;
-import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.PartitionMigrationEvent;
-import com.hazelcast.spi.PartitionReplicationEvent;
-import com.hazelcast.spi.RemoteService;
-import com.hazelcast.spi.partition.IPartitionService;
-import com.hazelcast.spi.partition.MigrationEndpoint;
-import com.hazelcast.util.ConstructorFunction;
+import com.hazelcast.internal.services.ManagedService;
+import com.hazelcast.internal.services.RemoteService;
+import com.hazelcast.internal.services.SplitBrainHandlerService;
+import com.hazelcast.internal.services.SplitBrainProtectionAwareService;
+import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.spi.impl.merge.AbstractContainerMerger;
+import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.spi.merge.SplitBrainMergePolicy;
+import com.hazelcast.spi.merge.SplitBrainMergeTypes.CardinalityEstimatorMergeTypes;
+import com.hazelcast.internal.partition.IPartitionService;
+import com.hazelcast.internal.partition.MigrationAwareService;
+import com.hazelcast.internal.partition.MigrationEndpoint;
+import com.hazelcast.internal.partition.PartitionMigrationEvent;
+import com.hazelcast.internal.partition.PartitionReplicationEvent;
+import com.hazelcast.internal.util.ConstructorFunction;
+import com.hazelcast.internal.util.ContextMutexFactory;
 
+import java.util.Collection;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Properties;
@@ -36,12 +45,14 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 import static com.hazelcast.partition.strategy.StringPartitioningStrategy.getPartitionKey;
-import static com.hazelcast.util.ConcurrencyUtil.getOrPutIfAbsent;
-import static com.hazelcast.util.MapUtil.createHashMap;
-import static com.hazelcast.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.ConcurrencyUtil.getOrPutIfAbsent;
+import static com.hazelcast.internal.util.ConcurrencyUtil.getOrPutSynchronized;
+import static com.hazelcast.internal.util.MapUtil.createHashMap;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 public class CardinalityEstimatorService
-        implements ManagedService, RemoteService, MigrationAwareService {
+        implements ManagedService, RemoteService, MigrationAwareService, SplitBrainProtectionAwareService,
+        SplitBrainHandlerService {
 
     public static final String SERVICE_NAME = "hz:impl:cardinalityEstimatorService";
 
@@ -50,6 +61,8 @@ public class CardinalityEstimatorService
      * of an approximate final size.
      */
     private static final double SIZING_FUDGE_FACTOR = 1.3;
+
+    private static final Object NULL_OBJECT = new Object();
 
     private NodeEngine nodeEngine;
     private final ConcurrentMap<String, CardinalityEstimatorContainer> containers =
@@ -62,6 +75,18 @@ public class CardinalityEstimatorService
                     return new CardinalityEstimatorContainer(config.getBackupCount(), config.getAsyncBackupCount());
                 }
             };
+
+    private final ConcurrentMap<String, Object> splitBrainProtectionConfigCache = new ConcurrentHashMap<String, Object>();
+    private final ContextMutexFactory splitBrainProtectionConfigCacheMutexFactory = new ContextMutexFactory();
+    private final ConstructorFunction<String, Object> splitBrainProtectionConfigConstructor =
+            new ConstructorFunction<String, Object>() {
+        @Override
+        public Object createNew(String name) {
+            CardinalityEstimatorConfig config = nodeEngine.getConfig().findCardinalityEstimatorConfig(name);
+            String splitBrainProtectionName = config.getSplitBrainProtectionName();
+            return splitBrainProtectionName == null ? NULL_OBJECT : splitBrainProtectionName;
+        }
+    };
 
     public void addCardinalityEstimator(String name, CardinalityEstimatorContainer container) {
         checkNotNull(name, "Name can't be null");
@@ -90,13 +115,14 @@ public class CardinalityEstimatorService
     }
 
     @Override
-    public CardinalityEstimatorProxy createDistributedObject(String objectName) {
+    public CardinalityEstimatorProxy createDistributedObject(String objectName, boolean local) {
         return new CardinalityEstimatorProxy(objectName, nodeEngine, this);
     }
 
     @Override
-    public void destroyDistributedObject(String objectName) {
+    public void destroyDistributedObject(String objectName, boolean local) {
         containers.remove(objectName);
+        splitBrainProtectionConfigCache.remove(objectName);
     }
 
     @Override
@@ -151,5 +177,52 @@ public class CardinalityEstimatorService
         IPartitionService partitionService = nodeEngine.getPartitionService();
         String partitionKey = getPartitionKey(name);
         return partitionService.getPartitionId(partitionKey);
+    }
+
+    @Override
+    public String getSplitBrainProtectionName(String name) {
+        Object splitBrainProtectionName = getOrPutSynchronized(splitBrainProtectionConfigCache, name,
+                splitBrainProtectionConfigCacheMutexFactory, splitBrainProtectionConfigConstructor);
+        return splitBrainProtectionName == NULL_OBJECT ? null : (String) splitBrainProtectionName;
+    }
+
+    @Override
+    public Runnable prepareMergeRunnable() {
+        CardinalityEstimatorContainerCollector collector = new CardinalityEstimatorContainerCollector(nodeEngine, containers);
+        collector.run();
+        return new Merger(collector);
+    }
+
+    private class Merger
+            extends AbstractContainerMerger<CardinalityEstimatorContainer, HyperLogLog, CardinalityEstimatorMergeTypes> {
+
+        Merger(CardinalityEstimatorContainerCollector collector) {
+            super(collector, nodeEngine);
+        }
+
+        @Override
+        protected String getLabel() {
+            return "cardinality estimator";
+        }
+
+        @Override
+        public void runInternal() {
+            CardinalityEstimatorContainerCollector collector = (CardinalityEstimatorContainerCollector) this.collector;
+            Map<Integer, Collection<CardinalityEstimatorContainer>> containerMap = collector.getCollectedContainers();
+            for (Map.Entry<Integer, Collection<CardinalityEstimatorContainer>> entry : containerMap.entrySet()) {
+                // TODO: batching support (tkountis)
+                int partitionId = entry.getKey();
+                Collection<CardinalityEstimatorContainer> containerList = entry.getValue();
+
+                for (CardinalityEstimatorContainer container : containerList) {
+                    String containerName = collector.getContainerName(container);
+                    SplitBrainMergePolicy<HyperLogLog, CardinalityEstimatorMergeTypes> mergePolicy
+                            = getMergePolicy(collector.getMergePolicyConfig(container));
+
+                    MergeOperation operation = new MergeOperation(containerName, mergePolicy, container.hll);
+                    invoke(SERVICE_NAME, operation, partitionId);
+                }
+            }
+        }
     }
 }

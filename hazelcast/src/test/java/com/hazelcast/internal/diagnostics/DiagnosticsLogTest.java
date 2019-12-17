@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,17 +18,14 @@ package com.hazelcast.internal.diagnostics;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.instance.Node;
 import com.hazelcast.internal.metrics.LongProbeFunction;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.ProbeLevel;
-import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.AfterClass;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -38,12 +35,12 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
-import java.lang.reflect.Field;
 import java.util.LinkedList;
 import java.util.List;
 
-import static com.hazelcast.nio.IOUtil.deleteQuietly;
-import static com.hazelcast.util.StringUtil.LINE_SEPARATOR;
+import static com.hazelcast.internal.diagnostics.AbstractDiagnosticsPluginTest.cleanupDiagnosticFiles;
+import static com.hazelcast.internal.nio.IOUtil.closeResource;
+import static com.hazelcast.internal.util.StringUtil.LINE_SEPARATOR;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
@@ -52,6 +49,7 @@ import static org.junit.Assert.assertTrue;
 @Category(QuickTest.class)
 public class DiagnosticsLogTest extends HazelcastTestSupport {
 
+    private Diagnostics diagnostics;
     private DiagnosticsLogFile diagnosticsLogFile;
     private MetricsRegistry metricsRegistry;
 
@@ -65,51 +63,48 @@ public class DiagnosticsLogTest extends HazelcastTestSupport {
 
         HazelcastInstance hz = createHazelcastInstance(config);
 
-        Diagnostics diagnostics = getDiagnostics(hz);
-
+        diagnostics = AbstractDiagnosticsPluginTest.getDiagnostics(hz);
         diagnosticsLogFile = diagnostics.diagnosticsLogFile;
         metricsRegistry = getMetricsRegistry(hz);
     }
 
-    @AfterClass
-    public static void afterClass() {
-        String userDir = System.getProperty("user.dir");
-
-        File[] files = new File(userDir).listFiles();
-        if (files != null) {
-            for (File file : files) {
-                String name = file.getName();
-                if (name.startsWith("diagnostics-") && name.endsWith(".log")) {
-                    deleteQuietly(file);
-                }
-            }
-        }
+    @After
+    public void teardown() {
+        cleanupDiagnosticFiles(diagnostics);
     }
 
     @Test
-    public void testDisabledByDefault() {
-        HazelcastProperties hazelcastProperties = new HazelcastProperties(new Config());
-        assertFalse(hazelcastProperties.getBoolean(Diagnostics.ENABLED));
+    public void testLogFileContent() {
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() {
+                String content = loadLogfile(diagnosticsLogFile.file);
+                assertNotNull(content);
+
+                assertContains(content, "SystemProperties[");
+                assertContains(content, "BuildInfo[");
+                assertContains(content, "ConfigProperties[");
+                assertContains(content, "Metric[");
+            }
+        });
     }
 
     @Test
     public void testRollover() {
+        // we register 50 probes to quickly fill up the diagnostics log file
         String id = generateRandomString(10000);
-
-        final List<File> files = new LinkedList<File>();
-
-        LongProbeFunction f = new LongProbeFunction() {
+        LongProbeFunction probe = new LongProbeFunction() {
             @Override
             public long get(Object source) {
                 return 0;
             }
         };
-
-        for (int k = 0; k < 10; k++) {
-            metricsRegistry.register(this, id + k, ProbeLevel.MANDATORY, f);
+        for (int k = 0; k < 50; k++) {
+            metricsRegistry.registerStaticProbe(this, id + k, ProbeLevel.MANDATORY, probe);
         }
 
         // we run for some time to make sure we get enough rollovers
+        final List<File> files = new LinkedList<File>();
         while (files.size() < 3) {
             final File file = diagnosticsLogFile.file;
             if (file != null) {
@@ -139,66 +134,35 @@ public class DiagnosticsLogTest extends HazelcastTestSupport {
         });
     }
 
-    private static void assertNotExist(File file) {
-        assertFalse("file:" + file + " should not exist", file.exists());
-    }
-
-    private static void assertExist(File file) {
-        assertTrue("file:" + file + " should exist", file.exists());
-    }
-
-    @Test
-    public void test() {
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                String content = loadLogfile();
-                assertNotNull(content);
-
-                assertContains(content, "SystemProperties[");
-                assertContains(content, "BuildInfo[");
-                assertContains(content, "ConfigProperties[");
-                assertContains(content, "Metric[");
-            }
-        });
-    }
-
-    private String loadLogfile() {
-        File file = diagnosticsLogFile.file;
+    private static String loadLogfile(File file) {
         if (file == null || !file.exists()) {
             return null;
         }
 
+        BufferedReader br = null;
         try {
-            BufferedReader br = new BufferedReader(new FileReader(file));
-            try {
-                StringBuilder sb = new StringBuilder();
-                String line = br.readLine();
+            br = new BufferedReader(new FileReader(file));
+            StringBuilder sb = new StringBuilder();
+            String line = br.readLine();
 
-                while (line != null) {
-                    sb.append(line);
-                    sb.append(LINE_SEPARATOR);
-                    line = br.readLine();
-                }
-                return sb.toString();
-            } finally {
-                br.close();
+            while (line != null) {
+                sb.append(line);
+                sb.append(LINE_SEPARATOR);
+                line = br.readLine();
             }
+            return sb.toString();
         } catch (IOException e) {
             throw new RuntimeException(e);
+        } finally {
+            closeResource(br);
         }
     }
 
-    public Diagnostics getDiagnostics(HazelcastInstance hazelcastInstance) {
-        Node node = getNode(hazelcastInstance);
-        NodeEngineImpl nodeEngine = node.nodeEngine;
+    private static void assertExist(File file) {
+        assertTrue("file " + file.getAbsolutePath() + " should exist", file.exists());
+    }
 
-        try {
-            Field field = NodeEngineImpl.class.getDeclaredField("diagnostics");
-            field.setAccessible(true);
-            return (Diagnostics) field.get(nodeEngine);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
+    private static void assertNotExist(File file) {
+        assertFalse("file " + file.getAbsolutePath() + " should not exist", file.exists());
     }
 }

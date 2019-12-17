@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,20 +17,98 @@
 package com.hazelcast.query.impl;
 
 /**
- * Provides the context of Query.
+ * Provides the context for queries execution.
  */
 public class QueryContext {
-    private final Indexes indexes;
 
+    protected Indexes indexes;
+
+    /**
+     * Creates a new query context with the given available indexes.
+     *
+     * @param indexes the indexes available for the query context.
+     */
     public QueryContext(Indexes indexes) {
         this.indexes = indexes;
     }
 
-    public Index getIndex(String attributeName) {
-        if (indexes == null) {
-            return null;
-        } else {
-            return indexes.getIndex(attributeName);
-        }
+    /**
+     * Creates a new query context unattached to any indexes.
+     */
+    QueryContext() {
     }
+
+    /**
+     * Attaches this index context to the given indexes.
+     *
+     * @param indexes the indexes to attach to.
+     */
+    void attachTo(Indexes indexes) {
+        this.indexes = indexes;
+    }
+
+    /**
+     * Applies the collected per-query stats, if any.
+     */
+    void applyPerQueryStats() {
+        // do nothing
+    }
+
+    /**
+     * Obtains the index available for the given attribute in this query
+     * context.
+     *
+     * @param attribute the attribute to obtain the index for.
+     * @return the obtained index or {@code null} if there is no index available
+     * for the given attribute.
+     */
+    public Index getIndex(String attribute) {
+        return matchIndex(attribute, IndexMatchHint.NONE);
+    }
+
+    /**
+     * Matches an index for the given pattern and match hint.
+     *
+     * @param pattern   the pattern to match an index for. May be either an
+     *                  attribute name or an exact index name.
+     * @param matchHint the match hint.
+     * @return the matched index or {@code null} if nothing matched.
+     * @see QueryContext.IndexMatchHint
+     */
+    public Index matchIndex(String pattern, IndexMatchHint matchHint) {
+        return indexes.matchIndex(pattern, matchHint);
+    }
+
+    /**
+     * Defines possible index matching hints.
+     */
+    public enum IndexMatchHint {
+
+        /**
+         * Match pattern is interpreted as an attribute name. An index is
+         * matched without any preferences of ordered indexes over unordered
+         * ones and vice versa.
+         */
+        NONE,
+
+        /**
+         * Match pattern is interpreted as an attribute name. An index is
+         * matched with a preference of unordered indexes over ordered ones.
+         */
+        PREFER_UNORDERED,
+
+        /**
+         * Match pattern interpreted is as an attribute name. An index is
+         * matched with a preference of ordered indexes over unordered ones.
+         */
+        PREFER_ORDERED,
+
+        /**
+         * Match pattern is interpreted as a full index name and may specify a
+         * composite index name.
+         */
+        EXACT_NAME
+
+    }
+
 }

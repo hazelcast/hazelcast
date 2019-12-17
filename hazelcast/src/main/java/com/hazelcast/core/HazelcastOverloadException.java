@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,14 +16,14 @@
 
 package com.hazelcast.core;
 
-import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.spi.properties.ClusterProperty;
 
 /**
  * A {@link com.hazelcast.core.HazelcastException} that is thrown when the system won't handle more load due to
  * an overload.
  *
  * This exception is thrown when backpressure is enabled. For more information see
- * {@link GroupProperty#BACKPRESSURE_ENABLED}.
+ * {@link ClusterProperty#BACKPRESSURE_ENABLED}.
  */
 public class HazelcastOverloadException extends HazelcastException {
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,25 +16,37 @@
 
 package com.hazelcast.cache;
 
-import com.hazelcast.internal.eviction.EvictionPolicyComparator;
+import com.hazelcast.spi.eviction.EvictionPolicyComparator;
 
 /**
- * Cache specific {@link EvictionPolicyComparator} for comparing
- * {@link CacheEntryView}s to be evicted.
+ * {@link ICache} specific {@link EvictionPolicyComparator}
+ * for comparing {@link CacheEntryView}s to be evicted.
+ *
+ * Implementors of the comparator have to implement {@code equals} and {@code hashCode} methods
+ * to support correct config comparison.
  *
  * @param <K> type of the key
  * @param <V> type of the value
- *
  * @see EvictionPolicyComparator
  * @see CacheEntryView
  */
-public abstract class CacheEvictionPolicyComparator<K, V>
+@FunctionalInterface
+public interface CacheEvictionPolicyComparator<K, V>
         extends EvictionPolicyComparator<K, V, CacheEntryView<K, V>> {
 
     /**
-     * {@inheritDoc}
+     * Compares the given {@link CacheEntryView} instances and
+     * returns the result. The result should be one of
+     * <ul>
+     *   <li>-1: first entry has higher priority to be evicted</li>
+     *   <li> 1: second entry has higher priority to be evicted</li>
+     *   <li> 0: both entries have same priority</li>
+     * </ul>
+     *
+     * @param o1 the first {@link CacheEntryView} instance to be compared
+     * @param o2 the second {@link CacheEntryView} instance to be compared
+     * @return the result of comparison
      */
     @Override
-    public abstract int compare(CacheEntryView<K, V> e1, CacheEntryView<K, V> e2);
-
+    int compare(CacheEntryView<K, V> o1, CacheEntryView<K, V> o2);
 }

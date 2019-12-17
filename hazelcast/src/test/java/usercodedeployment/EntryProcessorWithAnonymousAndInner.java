@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,26 +16,21 @@
 
 package usercodedeployment;
 
-import com.hazelcast.map.AbstractEntryProcessor;
+import com.hazelcast.map.EntryProcessor;
 
 import java.util.Map;
 
-public class EntryProcessorWithAnonymousAndInner extends AbstractEntryProcessor<Integer, Integer> {
+public class EntryProcessorWithAnonymousAndInner implements EntryProcessor<Integer, Integer, Integer> {
 
     private static final long serialVersionUID = 8936595533044945435L;
 
     @Override
-    public Object process(final Map.Entry<Integer, Integer> entry) {
+    public Integer process(final Map.Entry<Integer, Integer> entry) {
         Integer origValue = entry.getValue();
         final Integer newValue = origValue + 1;
 
         final Test test = new Test(entry);
-        Runnable runnable = new Runnable() {
-            @Override
-            public void run() {
-                test.set(newValue);
-            }
-        };
+        Runnable runnable = () -> test.set(newValue);
         runnable.run();
 
         return newValue;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,14 +16,12 @@
 
 package com.hazelcast.query.impl;
 
-import com.hazelcast.query.extractor.ArgumentParser;
-
 /**
  * ArgumentParser that's used by default. It simply passes the given object through - without doing any parsing.
  *
  * @see ArgumentParser
  */
-public class DefaultArgumentParser extends ArgumentParser<Object, Object> {
+public class DefaultArgumentParser implements ArgumentParser<Object, Object> {
 
     @Override
     public Object parse(Object input) {

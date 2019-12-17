@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,17 +18,13 @@ package com.hazelcast.internal.partition;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.instance.Node;
-import com.hazelcast.nio.Address;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import org.junit.Test;
 
 import java.util.Collection;
 import java.util.Collections;
-
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
 
 public abstract class AbstractPartitionAssignmentsCorrectnessTest extends PartitionCorrectnessTestSupport {
 
@@ -41,8 +37,10 @@ public abstract class AbstractPartitionAssignmentsCorrectnessTest extends Partit
 
         int size = 1;
         while (size < (nodeCount + 1)) {
-            startNodes(config, backupCount + 1);
+            Collection<HazelcastInstance> instances = startNodes(config, backupCount + 1);
             size += (backupCount + 1);
+
+            assertClusterSizeEventually(size, instances);
 
             terminateNodes(backupCount);
             size -= backupCount;
@@ -81,28 +79,9 @@ public abstract class AbstractPartitionAssignmentsCorrectnessTest extends Partit
     static void assertPartitionAssignmentsEventually(final TestHazelcastInstanceFactory factory) {
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertPartitionAssignments(factory);
             }
         });
-    }
-
-    static void assertPartitionAssignments(TestHazelcastInstanceFactory factory) {
-        Collection<HazelcastInstance> instances = factory.getAllHazelcastInstances();
-        final int replicaCount = Math.min(instances.size(), InternalPartition.MAX_REPLICA_COUNT);
-
-        for (HazelcastInstance hz : instances) {
-            Node node = getNode(hz);
-            InternalPartitionService partitionService = node.getPartitionService();
-            InternalPartition[] partitions = partitionService.getInternalPartitions();
-
-            for (InternalPartition partition : partitions) {
-                for (int i = 0; i < replicaCount; i++) {
-                    Address replicaAddress = partition.getReplicaAddress(i);
-                    assertNotNull("Replica " + i + " is not found in " + partition, replicaAddress);
-                    assertTrue("Not member: " + replicaAddress, node.getClusterService().getMember(replicaAddress) != null);
-                }
-            }
-        }
     }
 }

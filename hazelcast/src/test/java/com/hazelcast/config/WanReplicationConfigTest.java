@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,52 +16,58 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
-import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.serialization.SerializationService;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
+import static com.hazelcast.config.WanBatchPublisherConfigTest.assertWanPublisherConfig;
 import static com.hazelcast.config.WanConsumerConfigTest.assertWanConsumerConfig;
-import static com.hazelcast.config.WanPublisherConfigTest.assertWanPublisherConfig;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class WanReplicationConfigTest {
 
     private WanReplicationConfig config = new WanReplicationConfig();
 
     @Test
     public void testSerialization() {
-        Map<String, Comparable> properties = new HashMap<String, Comparable>();
+        Map<String, Comparable> properties = new HashMap<>();
         properties.put("key", "value");
 
         WanConsumerConfig wanConsumerConfig = new WanConsumerConfig();
         wanConsumerConfig.setProperties(properties);
         wanConsumerConfig.setClassName("className");
-        wanConsumerConfig.setImplementation("implementation");
+        wanConsumerConfig.setImplementation(new DummyWanConsumer());
 
-        WanPublisherConfig wanPublisherConfig1 = new WanPublisherConfig();
-        WanPublisherConfig wanPublisherConfig2 = new WanPublisherConfig();
+        WanBatchPublisherConfig wanPublisherConfig1 = new WanBatchPublisherConfig();
+        WanBatchPublisherConfig wanPublisherConfig2 = new WanBatchPublisherConfig();
 
-        List<WanPublisherConfig> publisherConfigs = new LinkedList<WanPublisherConfig>();
+        List<WanBatchPublisherConfig> publisherConfigs = new LinkedList<>();
         publisherConfigs.add(wanPublisherConfig1);
 
         config.setName("name");
-        config.setWanConsumerConfig(wanConsumerConfig);
-        config.setWanPublisherConfigs(publisherConfigs);
-        config.addWanPublisherConfig(wanPublisherConfig2);
+        config.setConsumerConfig(wanConsumerConfig);
+        config.setBatchPublisherConfigs(publisherConfigs);
+        config.addBatchReplicationPublisherConfig(wanPublisherConfig2);
+
+        ArrayList<WanCustomPublisherConfig> customPublishers = new ArrayList<>(1);
+        customPublishers.add(new WanCustomPublisherConfig());
+        config.setCustomPublisherConfigs(customPublishers);
+        config.addCustomPublisherConfig(new WanCustomPublisherConfig());
 
         SerializationService serializationService = new DefaultSerializationServiceBuilder().build();
         Data serialized = serializationService.toData(config);
@@ -83,9 +89,11 @@ public class WanReplicationConfigTest {
 
     private static void assertWanReplicationConfig(WanReplicationConfig expected, WanReplicationConfig actual) {
         assertEquals(expected.getName(), actual.getName());
-        assertWanConsumerConfig(expected.getWanConsumerConfig(), actual.getWanConsumerConfig());
-        Iterator<WanPublisherConfig> expectedWanPublisherConfigIterator = expected.getWanPublisherConfigs().iterator();
-        Iterator<WanPublisherConfig> actualWanPublisherConfigIterator = actual.getWanPublisherConfigs().iterator();
+        assertWanConsumerConfig(expected.getConsumerConfig(), actual.getConsumerConfig());
+        Iterator<WanBatchPublisherConfig> expectedWanPublisherConfigIterator
+                = expected.getBatchPublisherConfigs().iterator();
+        Iterator<WanBatchPublisherConfig> actualWanPublisherConfigIterator
+                = actual.getBatchPublisherConfigs().iterator();
         while (expectedWanPublisherConfigIterator.hasNext()) {
             assertWanPublisherConfig(expectedWanPublisherConfigIterator.next(), actualWanPublisherConfigIterator.next());
         }

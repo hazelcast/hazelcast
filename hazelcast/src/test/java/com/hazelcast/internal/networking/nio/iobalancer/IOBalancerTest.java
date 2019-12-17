@@ -1,12 +1,28 @@
+/*
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.hazelcast.internal.networking.nio.iobalancer;
 
 import com.hazelcast.instance.BuildInfoProvider;
-import com.hazelcast.internal.networking.nio.MigratableHandler;
+import com.hazelcast.internal.networking.nio.MigratablePipeline;
 import com.hazelcast.internal.networking.nio.NioThread;
 import com.hazelcast.logging.LoggingService;
-import com.hazelcast.logging.LoggingServiceImpl;
+import com.hazelcast.logging.impl.LoggingServiceImpl;
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -16,7 +32,7 @@ import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class IOBalancerTest {
     private final LoggingService loggingService = new LoggingServiceImpl("somegroup", "log4j2", BuildInfoProvider.getBuildInfo());
 
@@ -24,25 +40,23 @@ public class IOBalancerTest {
     @Test
     public void whenChannelAdded_andDisabled_thenSkipTaskCreation() {
         IOBalancer ioBalancer = new IOBalancer(new NioThread[1], new NioThread[1], "foo", 1, loggingService);
-        MigratableHandler readHandler = mock(MigratableHandler.class);
-        MigratableHandler writeHandler = mock(MigratableHandler.class);
+        MigratablePipeline inboundPipeline = mock(MigratablePipeline.class);
+        MigratablePipeline outboundPipeline = mock(MigratablePipeline.class);
 
-        ioBalancer.channelAdded(readHandler, writeHandler);
+        ioBalancer.channelAdded(inboundPipeline, outboundPipeline);
 
-        assertTrue(ioBalancer.getInLoadTracker().tasks.isEmpty());
-        assertTrue(ioBalancer.getOutLoadTracker().tasks.isEmpty());
+        assertTrue(ioBalancer.getWorkQueue().isEmpty());
     }
 
     // https://github.com/hazelcast/hazelcast/issues/11501
     @Test
     public void whenChannelRemoved_andDisabled_thenSkipTaskCreation() {
         IOBalancer ioBalancer = new IOBalancer(new NioThread[1], new NioThread[1], "foo", 1, loggingService);
-        MigratableHandler readHandler = mock(MigratableHandler.class);
-        MigratableHandler writeHandler = mock(MigratableHandler.class);
+        MigratablePipeline inboundPipeline = mock(MigratablePipeline.class);
+        MigratablePipeline outboundPipelines = mock(MigratablePipeline.class);
 
-        ioBalancer.channelRemoved(readHandler, writeHandler);
+        ioBalancer.channelRemoved(inboundPipeline, outboundPipelines);
 
-        assertTrue(ioBalancer.getInLoadTracker().tasks.isEmpty());
-        assertTrue(ioBalancer.getOutLoadTracker().tasks.isEmpty());
+        assertTrue(ioBalancer.getWorkQueue().isEmpty());
     }
 }

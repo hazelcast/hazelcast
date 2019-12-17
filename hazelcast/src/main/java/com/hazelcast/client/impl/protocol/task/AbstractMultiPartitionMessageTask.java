@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,38 +16,39 @@
 
 package com.hazelcast.client.impl.protocol.task;
 
-import com.hazelcast.client.ClientEndpoint;
 import com.hazelcast.client.impl.operations.OperationFactoryWrapper;
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.instance.Node;
-import com.hazelcast.nio.Connection;
-import com.hazelcast.spi.OperationFactory;
-import com.hazelcast.spi.impl.operationservice.InternalOperationService;
+import com.hazelcast.instance.impl.Node;
+import com.hazelcast.internal.nio.Connection;
+import com.hazelcast.internal.util.collection.PartitionIdSet;
+import com.hazelcast.spi.impl.operationservice.OperationFactory;
+import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 
-import java.util.Collection;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 
-public abstract class AbstractMultiPartitionMessageTask<P> extends AbstractCallableMessageTask<P> {
+public abstract class AbstractMultiPartitionMessageTask<P>
+        extends AbstractAsyncMessageTask<P, Map<Integer, Object>> {
 
     protected AbstractMultiPartitionMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
     @Override
-    protected Object call() throws Exception {
-        ClientEndpoint endpoint = getEndpoint();
+    protected CompletableFuture<Map<Integer, Object>> processInternal() {
         OperationFactory operationFactory = new OperationFactoryWrapper(createOperationFactory(), endpoint.getUuid());
-
-        final InternalOperationService operationService = nodeEngine.getOperationService();
-        Map<Integer, Object> map = operationService.invokeOnPartitions(getServiceName(), operationFactory, getPartitions());
-        return reduce(map);
+        OperationServiceImpl operationService = nodeEngine.getOperationService();
+        return operationService.invokeOnPartitionsAsync(getServiceName(), operationFactory, getPartitions());
     }
 
+    public abstract PartitionIdSet getPartitions();
 
     protected abstract OperationFactory createOperationFactory();
 
     protected abstract Object reduce(Map<Integer, Object> map);
 
-    public abstract Collection<Integer> getPartitions();
-
+    @Override
+    protected Object processResponseBeforeSending(Map<Integer, Object> response) {
+        return reduce(response);
+    }
 }

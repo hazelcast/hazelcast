@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,7 +15,7 @@
  */
 
 /**
- * <p>This package contains IExecutorService functionality for Hazelcast.<br/>
+ * <p>This package contains IExecutorService functionality for Hazelcast.<br>
  * The IExecutorService extends the {@link java.util.concurrent.ExecutorService} and provides all kinds
  * of additional methods related to distributed systems. You can execute a task on a particular member, all members
  * or a subset of members. You can also execute a task on a member which own a particular partition. This is very

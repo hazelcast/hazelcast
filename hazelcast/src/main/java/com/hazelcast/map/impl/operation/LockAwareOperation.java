@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,12 +16,12 @@
 
 package com.hazelcast.map.impl.operation;
 
-import com.hazelcast.concurrent.lock.LockWaitNotifyKey;
-import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.BlockingOperation;
-import com.hazelcast.spi.WaitNotifyKey;
+import com.hazelcast.internal.locksupport.LockWaitNotifyKey;
+import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.spi.impl.operationservice.BlockingOperation;
+import com.hazelcast.spi.impl.operationservice.WaitNotifyKey;
 
-public abstract class LockAwareOperation extends MutatingKeyBasedMapOperation implements BlockingOperation {
+public abstract class LockAwareOperation extends KeyBasedMapOperation implements BlockingOperation {
 
     protected LockAwareOperation() {
     }
@@ -30,12 +30,8 @@ public abstract class LockAwareOperation extends MutatingKeyBasedMapOperation im
         super(name, dataKey);
     }
 
-    protected LockAwareOperation(String name, Data dataKey, long ttl) {
-        super(name, dataKey, ttl);
-    }
-
-    protected LockAwareOperation(String name, Data dataKey, Data dataValue, long ttl) {
-        super(name, dataKey, dataValue, ttl);
+    public LockAwareOperation(String name, Data dataKey, Data dataValue) {
+        super(name, dataKey, dataValue);
     }
 
     @Override

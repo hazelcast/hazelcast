@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,17 +19,16 @@ package com.hazelcast.map;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IMap;
-import com.hazelcast.core.TransactionalMap;
+import com.hazelcast.spi.properties.ClusterProperty;
+import com.hazelcast.transaction.TransactionalMap;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.impl.query.QueryResultSizeLimiter;
 import com.hazelcast.query.Predicate;
-import com.hazelcast.query.TruePredicate;
-import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.query.Predicates;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.transaction.TransactionContext;
-import com.hazelcast.util.ExceptionUtil;
+import com.hazelcast.internal.util.ExceptionUtil;
 
 import java.util.Set;
 
@@ -64,11 +63,11 @@ abstract class MapUnboundedReturnValuesTestSupport extends HazelcastTestSupport 
     /**
      * Extensive test which ensures that the {@link QueryResultSizeExceededException} will not be thrown under the configured
      * limit.
-     * <p/>
+     * <p>
      * This test fills the map below the configured limit to ensure that the exception is not triggered yet. Then it fills up the
      * map and periodically checks via {@link IMap#keySet()} if the exception is thrown. If the exception is triggered all other
      * methods from {@link IMap} are executed to ensure they trigger the exception, too.
-     * <p/>
+     * <p>
      * This method fails if the exception is already thrown at {@link #lowerLimit} or if it is not thrown at {@link #upperLimit}.
      *
      * @param partitionCount  number of partitions the created cluster
@@ -88,10 +87,10 @@ abstract class MapUnboundedReturnValuesTestSupport extends HazelcastTestSupport 
 
     /**
      * Quick test which just calls the {@link IMap} methods once and check for the {@link QueryResultSizeExceededException}.
-     * <p/>
+     * <p>
      * This test fills the map to an amount where the exception is safely triggered. Then all {@link IMap} methods are called
      * and checked if they trigger the exception.
-     * <p/>
+     * <p>
      * This methods fails if any of the called methods does not trigger the exception.
      *
      * @param partitionCount  number of partitions the created cluster
@@ -113,10 +112,10 @@ abstract class MapUnboundedReturnValuesTestSupport extends HazelcastTestSupport 
 
     /**
      * Test which calls {@link TransactionalMap} methods which are expected to throw {@link QueryResultSizeExceededException}.
-     * <p/>
+     * <p>
      * This test fills the map to an amount where the exception is safely triggered. Then all {@link TransactionalMap} methods are
      * called which should trigger the exception.
-     * <p/>
+     * <p>
      * This methods fails if any of the called methods does not trigger the exception.
      *
      * @param partitionCount  number of partitions the created cluster
@@ -146,9 +145,9 @@ abstract class MapUnboundedReturnValuesTestSupport extends HazelcastTestSupport 
 
     private Config createConfig(int partitionCount, int limit, int preCheckTrigger) {
         Config config = getConfig();
-        config.setProperty(GroupProperty.PARTITION_COUNT.getName(), valueOf(partitionCount));
-        config.setProperty(GroupProperty.QUERY_RESULT_SIZE_LIMIT.getName(), valueOf(limit));
-        config.setProperty(GroupProperty.QUERY_MAX_LOCAL_PARTITION_LIMIT_FOR_PRE_CHECK.getName(), valueOf(preCheckTrigger));
+        config.setProperty(ClusterProperty.PARTITION_COUNT.getName(), valueOf(partitionCount));
+        config.setProperty(ClusterProperty.QUERY_RESULT_SIZE_LIMIT.getName(), valueOf(limit));
+        config.setProperty(ClusterProperty.QUERY_MAX_LOCAL_PARTITION_LIMIT_FOR_PRE_CHECK.getName(), valueOf(preCheckTrigger));
         return config;
     }
 
@@ -211,11 +210,11 @@ abstract class MapUnboundedReturnValuesTestSupport extends HazelcastTestSupport 
     /**
      * Extensive test which ensures that the {@link QueryResultSizeExceededException} will not be thrown under the configured
      * limit.
-     * <p/>
+     * <p>
      * This method requires the map to be filled to an amount where the exception is not triggered yet. This method then fills the
      * map and calls {@link IMap#keySet()} periodically to determine the limit on which the exception is thrown for the first
      * time. After that it runs {@link #internalRunQuick()} to ensure that all methods will trigger at this limit.
-     * <p/>
+     * <p>
      * This method fails if the exception is already thrown at {@link #lowerLimit} or if it is not thrown at {@link #upperLimit}.
      */
     private void internalRunWithLowerBoundCheck(KeyType keyType) {
@@ -253,30 +252,30 @@ abstract class MapUnboundedReturnValuesTestSupport extends HazelcastTestSupport 
 
     /**
      * Quick run which just executes the {@link IMap} methods once and check for the {@link QueryResultSizeExceededException}.
-     * <p/>
+     * <p>
      * This method requires the map to be filled to an amount where the exception is safely triggered. The local running methods
      * {@link IMap#localKeySet()} and {@link IMap#localKeySet(Predicate)} are excluded, since they may need a higher fill rate to
      * succeed.
-     * <p/>
+     * <p>
      * This methods fails if any of the called methods does not trigger the exception.
      */
     private void internalRunQuick() {
         try {
-            map.values(TruePredicate.INSTANCE);
+            map.values(Predicates.alwaysTrue());
             failExpectedException("IMap.values(predicate)");
         } catch (QueryResultSizeExceededException e) {
             checkException(e);
         }
 
         try {
-            map.keySet(TruePredicate.INSTANCE);
+            map.keySet(Predicates.alwaysTrue());
             failExpectedException("IMap.keySet(predicate)");
         } catch (QueryResultSizeExceededException e) {
             checkException(e);
         }
 
         try {
-            map.entrySet(TruePredicate.INSTANCE);
+            map.entrySet(Predicates.alwaysTrue());
             failExpectedException("IMap.entrySet(predicate)");
         } catch (QueryResultSizeExceededException e) {
             checkException(e);
@@ -306,9 +305,9 @@ abstract class MapUnboundedReturnValuesTestSupport extends HazelcastTestSupport 
 
     /**
      * Quick run on the {@link IMap#localKeySet()} and {@link IMap#localKeySet(Predicate)} methods.
-     * <p/>
+     * <p>
      * Requires the map to be filled so the exception is triggered even locally.
-     * <p/>
+     * <p>
      * This methods fails if any of the called methods does not trigger the exception.
      */
     private void internalRunLocalKeySet() {
@@ -320,7 +319,7 @@ abstract class MapUnboundedReturnValuesTestSupport extends HazelcastTestSupport 
         }
 
         try {
-            map.localKeySet(TruePredicate.INSTANCE);
+            map.localKeySet(Predicates.alwaysTrue());
             failExpectedException("IMap.localKeySet(predicate)");
         } catch (QueryResultSizeExceededException e) {
             checkException(e);
@@ -329,9 +328,9 @@ abstract class MapUnboundedReturnValuesTestSupport extends HazelcastTestSupport 
 
     /**
      * Calls {@link TransactionalMap} methods once which are expected to throw {@link QueryResultSizeExceededException}.
-     * <p/>
+     * <p>
      * This method requires the map to be filled to an amount where the exception is safely triggered.
-     * <p/>
+     * <p>
      * This methods fails if any of the called methods does not trigger the exception.
      */
     private void internalRunTxn() {
@@ -340,14 +339,14 @@ abstract class MapUnboundedReturnValuesTestSupport extends HazelcastTestSupport 
         TransactionalMap<Object, Integer> txnMap = transactionContext.getMap(map.getName());
 
         try {
-            txnMap.values(TruePredicate.INSTANCE);
+            txnMap.values(Predicates.alwaysTrue());
             failExpectedException("TransactionalMap.values(predicate)");
         } catch (QueryResultSizeExceededException e) {
             checkException(e);
         }
 
         try {
-            txnMap.keySet(TruePredicate.INSTANCE);
+            txnMap.keySet(Predicates.alwaysTrue());
             failExpectedException("TransactionalMap.keySet(predicate)");
         } catch (QueryResultSizeExceededException e) {
             checkException(e);

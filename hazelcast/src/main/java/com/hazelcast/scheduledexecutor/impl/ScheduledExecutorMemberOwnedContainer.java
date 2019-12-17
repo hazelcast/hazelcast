@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,10 +17,10 @@
 package com.hazelcast.scheduledexecutor.impl;
 
 import com.hazelcast.scheduledexecutor.ScheduledTaskHandler;
-import com.hazelcast.spi.InvocationBuilder;
-import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.OperationService;
+import com.hazelcast.spi.impl.operationservice.InvocationBuilder;
+import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.spi.impl.operationservice.OperationService;
 
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ScheduledFuture;
@@ -29,19 +29,18 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import static com.hazelcast.scheduledexecutor.impl.DistributedScheduledExecutorService.SERVICE_NAME;
 
 /**
- * Container for member owned Schedulers.
- * Member operations don't adhere to the same threading model as partition ones, and they require some
- * guarding around them.
+ * Container for member owned Schedulers. Member operations don't adhere to the same threading model as partition ones, and they
+ * require some guarding around them.
  */
-public class ScheduledExecutorMemberOwnedContainer extends ScheduledExecutorContainer {
+public class ScheduledExecutorMemberOwnedContainer
+        extends ScheduledExecutorContainer {
 
     private static final int MEMBER_DURABILITY = 0;
 
     private final AtomicBoolean memberPartitionLock = new AtomicBoolean();
 
     ScheduledExecutorMemberOwnedContainer(String name, int capacity, NodeEngine nodeEngine) {
-        super(name, -1, nodeEngine, MEMBER_DURABILITY, capacity,
-                new ConcurrentHashMap<String, ScheduledTaskDescriptor>());
+        super(name, -1, nodeEngine, MEMBER_DURABILITY, capacity, new ConcurrentHashMap<String, ScheduledTaskDescriptor>());
     }
 
     @Override

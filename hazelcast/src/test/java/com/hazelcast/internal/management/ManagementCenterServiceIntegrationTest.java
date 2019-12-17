@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,115 +16,142 @@
 
 package com.hazelcast.internal.management;
 
-import com.eclipsesource.json.JsonObject;
-import com.hazelcast.config.Config;
-import com.hazelcast.core.Hazelcast;
-import com.hazelcast.monitor.TimedMemberState;
-import com.hazelcast.test.AssertTask;
-import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.client.test.TestHazelcastFactory;
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.internal.json.Json;
+import com.hazelcast.internal.json.JsonObject;
+import com.hazelcast.internal.json.ParseException;
+import com.hazelcast.internal.management.events.Event;
+import com.hazelcast.internal.management.events.EventMetadata;
+import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.annotation.SlowTest;
-import org.apache.http.HttpEntity;
-import org.apache.http.HttpResponse;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.client.methods.HttpUriRequest;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClientBuilder;
-import org.apache.http.util.EntityUtils;
-import org.eclipse.jetty.server.Server;
-import org.eclipse.jetty.servlet.ServletHandler;
+import com.hazelcast.test.annotation.ParallelJVMTest;
+import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.io.IOException;
-import java.net.ServerSocket;
+import java.util.List;
 
-import static java.lang.String.format;
+import static com.hazelcast.internal.util.StringUtil.isNullOrEmpty;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNotSame;
+import static org.junit.Assert.assertSame;
 
-@RunWith(HazelcastSerialClassRunner.class)
-@Category(SlowTest.class)
+@RunWith(HazelcastParallelClassRunner.class)
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class ManagementCenterServiceIntegrationTest extends HazelcastTestSupport {
 
-    private static final String clusterName = "Session Integration (AWS discovery)";
-    private int portNum;
-    private Server jettyServer;
+    private static final String CLUSTER_NAME = "mc-service-tests";
+
+    private TestHazelcastFactory factory;
+    private HazelcastInstance instance;
+    private ManagementCenterService mcs;
 
     @Before
-    public void setUp() throws Exception {
-        portNum = availablePort();
-        jettyServer = new Server(portNum);
-        ServletHandler handler = new ServletHandler();
-        handler.addServletWithMapping(MancenterServlet.class, "/mancen/*");
-        jettyServer.setHandler(handler);
-        jettyServer.start();
+    public void setUp() {
+        factory = new TestHazelcastFactory(1);
+        instance = factory.newHazelcastInstance(getConfig().setClusterName(CLUSTER_NAME));
 
-        Hazelcast.newHazelcastInstance(getManagementCenterConfig());
+        assertTrueEventually(() -> {
+            ManagementCenterService mcs = getNode(instance).getManagementCenterService();
+            assertNotNull(mcs);
+            this.mcs = mcs;
+        });
     }
 
     @After
-    public void tearDown() throws Exception {
-        Hazelcast.shutdownAll();
-        jettyServer.stop();
+    public void tearDown() {
+        factory.shutdownAll();
     }
 
     @Test
-    public void testTimedMemberStateNotNull() {
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                CloseableHttpClient client = HttpClientBuilder.create().disableRedirectHandling().build();
-                HttpUriRequest request = new HttpGet("http://localhost:" + portNum + "/mancen/memberStateCheck");
-                HttpResponse response = client.execute(request);
-                HttpEntity entity = response.getEntity();
-                String responseString = EntityUtils.toString(entity);
-                assertNotEquals("", responseString);
+    public void testTimedMemberState_returnsNotNull() {
+        String responseString = mcs.getTimedMemberStateJson().orElse(null);
+        assertFalse(isNullOrEmpty(responseString));
 
-                JsonObject object = JsonObject.readFrom(responseString);
-                TimedMemberState memberState = new TimedMemberState();
-                memberState.fromJson(object);
-                assertEquals(clusterName, memberState.getClusterName());
-            }
-        });
-    }
-
-    @Test
-    public void testGetTaskUrlEncodes() {
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                CloseableHttpClient client = HttpClientBuilder.create().disableRedirectHandling().build();
-                HttpUriRequest request = new HttpGet("http://localhost:" + portNum + "/mancen/getClusterName");
-                HttpResponse response = client.execute(request);
-                HttpEntity entity = response.getEntity();
-                String responseString = EntityUtils.toString(entity);
-                assertEquals(clusterName, responseString);
-            }
-        });
-    }
-
-    private int availablePort() throws IOException {
-        while (true) {
-            int port = (int) (65536 * Math.random());
-            try {
-                ServerSocket socket = new ServerSocket(port);
-                socket.close();
-                return port;
-            } catch (Exception ignore) {
-                // try next port
-            }
+        JsonObject object;
+        try {
+            object = Json.parse(responseString).asObject();
+        } catch (ParseException e) {
+            throw new AssertionError("Failed to parse JSON: " + responseString);
         }
+        TimedMemberState memberState = new TimedMemberState();
+        memberState.fromJson(object.get("timedMemberState").asObject());
+        assertEquals(CLUSTER_NAME, memberState.getClusterName());
     }
 
-    private Config getManagementCenterConfig() {
-        Config config = new Config();
-        config.getGroupConfig().setName(clusterName).setPassword("1234");
-        config.getManagementCenterConfig().setEnabled(true);
-        config.getManagementCenterConfig().setUrl(format("http://localhost:%d%s/", portNum, "/mancen"));
-        return config;
+    @Test
+    public void testTimedMemberState_usesCache_shortTimeFrame() {
+        String responseOne = mcs.getTimedMemberStateJson().orElse(null);
+        String responseTwo = mcs.getTimedMemberStateJson().orElse(null);
+        assertSame(responseOne, responseTwo);
     }
+
+    @Test
+    public void testTimedMemberState_ignoresCache_longTimeFrame() {
+        String responseOne = mcs.getTimedMemberStateJson().orElse(null);
+        sleepSeconds(2);
+        String responseTwo = mcs.getTimedMemberStateJson().orElse(null);
+        assertNotSame(responseOne, responseTwo);
+    }
+
+    @Test
+    public void testMCEvents_storesEvents_recentPoll() {
+        mcs.pollMCEvents();
+
+        TestEvent expectedEvent = new TestEvent();
+        mcs.log(expectedEvent);
+        mcs.log(new TestEvent());
+        mcs.log(new TestEvent());
+
+        List<Event> actualEvents = mcs.pollMCEvents();
+        assertEquals(3, actualEvents.size());
+        assertEquals(expectedEvent, actualEvents.get(0));
+    }
+
+    @Test
+    public void testMCEvents_storesEvents_noPollAtAll() {
+        mcs.log(new TestEvent());
+        mcs.log(new TestEvent());
+
+        assertEquals(2, mcs.pollMCEvents().size());
+    }
+
+    @Test
+    public void testMCEvents_clearsEventQueue_noRecentPoll() {
+        mcs.pollMCEvents();
+        mcs.log(new TestEvent());
+        mcs.log(new TestEvent());
+
+        mcs.onMCEventWindowExceeded();
+        assertEquals(0, mcs.pollMCEvents().size());
+
+        mcs.log(new TestEvent());
+        assertEquals(1, mcs.pollMCEvents().size());
+    }
+
+    private static class TestEvent implements Event {
+
+        @Override
+        public EventMetadata.EventType getType() {
+            return EventMetadata.EventType.WAN_SYNC_STARTED;
+        }
+
+        @Override
+        public long getTimestamp() {
+            return 42;
+        }
+
+        @Override
+        public JsonObject toJson() {
+            return null;
+        }
+
+    }
+
 }

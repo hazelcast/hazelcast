@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,16 +19,14 @@ package com.hazelcast.map.impl.operation;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.BackupOperation;
-import com.hazelcast.util.Clock;
+import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.spi.impl.operationservice.BackupOperation;
 
 import java.io.IOException;
 
-public class EvictBackupOperation extends MutatingKeyBasedMapOperation implements BackupOperation {
+public class EvictBackupOperation extends KeyBasedMapOperation implements BackupOperation {
 
     protected boolean unlockKey;
-    protected boolean disableWanReplicationEvent;
 
     public EvictBackupOperation() {
     }
@@ -37,19 +35,8 @@ public class EvictBackupOperation extends MutatingKeyBasedMapOperation implement
         super(name, dataKey);
     }
 
-    public EvictBackupOperation(String name, Data dataKey, boolean unlockKey) {
-        super(name, dataKey);
-        this.unlockKey = unlockKey;
-    }
-
-    public EvictBackupOperation(String name, Data dataKey, boolean unlockKey, boolean disableWanReplicationEvent) {
-        super(name, dataKey);
-        this.unlockKey = unlockKey;
-        this.disableWanReplicationEvent = disableWanReplicationEvent;
-    }
-
     @Override
-    public void run() {
+    protected void runInternal() {
         recordStore.evict(dataKey, true);
         if (unlockKey) {
             recordStore.forceUnlock(dataKey);
@@ -57,10 +44,8 @@ public class EvictBackupOperation extends MutatingKeyBasedMapOperation implement
     }
 
     @Override
-    public void afterRun() throws Exception {
-        if (!disableWanReplicationEvent && mapContainer.isWanReplicationEnabled()) {
-            mapEventPublisher.publishWanReplicationRemoveBackup(name, dataKey, Clock.currentTimeMillis());
-        }
+    protected void afterRunInternal() {
+        publishWanRemove(dataKey);
     }
 
     @Override
@@ -69,7 +54,7 @@ public class EvictBackupOperation extends MutatingKeyBasedMapOperation implement
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MapDataSerializerHook.EVICT_BACKUP;
     }
 
@@ -77,14 +62,12 @@ public class EvictBackupOperation extends MutatingKeyBasedMapOperation implement
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeBoolean(unlockKey);
-        out.writeBoolean(disableWanReplicationEvent);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         unlockKey = in.readBoolean();
-        disableWanReplicationEvent = in.readBoolean();
     }
 
 }

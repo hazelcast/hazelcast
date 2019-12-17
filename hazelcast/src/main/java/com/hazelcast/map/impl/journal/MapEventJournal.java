@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,9 +17,9 @@
 package com.hazelcast.map.impl.journal;
 
 import com.hazelcast.config.EventJournalConfig;
-import com.hazelcast.journal.EventJournal;
-import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.ObjectNamespace;
+import com.hazelcast.internal.journal.EventJournal;
+import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.internal.services.ObjectNamespace;
 
 /**
  * The event journal is a container for events related to a data structure.
@@ -104,6 +104,20 @@ public interface MapEventJournal extends EventJournal<InternalEventJournalMapEve
      * @param value         the entry value
      */
     void writeEvictEvent(EventJournalConfig journalConfig, ObjectNamespace namespace, int partitionId, Data key, Object value);
+
+    /**
+     * Writes an {@link com.hazelcast.core.EntryEventType#LOADED} to the event journal.
+     * If there is no event journal configured for this map, the method will do nothing.
+     * If an event is added to the event journal, all parked operations waiting for
+     * new events on that journal will be unparked.
+     *
+     * @param journalConfig the event journal config for the map in which the event occurred
+     * @param namespace     the map namespace
+     * @param partitionId   the entry key partition
+     * @param key           the entry key
+     * @param value         the entry value
+     */
+    void writeLoadEvent(EventJournalConfig journalConfig, ObjectNamespace namespace, int partitionId, Data key, Object value);
 
     /**
      * Returns {@code true} if the object has a configured and enabled event journal.

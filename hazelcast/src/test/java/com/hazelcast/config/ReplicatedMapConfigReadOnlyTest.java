@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,9 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.internal.config.ReplicatedMapConfigReadOnly;
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -26,31 +27,16 @@ import org.junit.runner.RunWith;
 import java.util.Collections;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class ReplicatedMapConfigReadOnlyTest {
 
     private ReplicatedMapConfig getReadOnlyConfig() {
-        return new ReplicatedMapConfig().getAsReadOnly();
-    }
-
-    @Test(expected = UnsupportedOperationException.class)
-    public void testSetReplicatorExecutorService() {
-        getReadOnlyConfig().setReplicatorExecutorService(null);
+        return new ReplicatedMapConfigReadOnly(new ReplicatedMapConfig());
     }
 
     @Test(expected = UnsupportedOperationException.class)
     public void testSetName() {
         getReadOnlyConfig().setName("anyName");
-    }
-
-    @Test(expected = UnsupportedOperationException.class)
-    public void testSetReplicationDelayMillis() {
-        getReadOnlyConfig().setReplicationDelayMillis(23);
-    }
-
-    @Test(expected = UnsupportedOperationException.class)
-    public void testSetConcurrencyLevel() {
-        getReadOnlyConfig().setConcurrencyLevel(42);
     }
 
     @Test(expected = UnsupportedOperationException.class)
@@ -74,7 +60,12 @@ public class ReplicatedMapConfigReadOnlyTest {
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void testSetMergePolicy() {
-        getReadOnlyConfig().setMergePolicy("MyMergePolicy");
+    public void testSetSplitBrainProtectionName() {
+        getReadOnlyConfig().setSplitBrainProtectionName("mySplitBrainProtection");
+    }
+
+    @Test(expected = UnsupportedOperationException.class)
+    public void testSetMergePolicyConfig() {
+        getReadOnlyConfig().setMergePolicyConfig(new MergePolicyConfig());
     }
 }

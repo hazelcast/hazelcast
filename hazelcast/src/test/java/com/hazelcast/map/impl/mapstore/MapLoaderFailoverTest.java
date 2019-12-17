@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,18 +17,19 @@
 package com.hazelcast.map.impl.mapstore;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.config.GroupConfig;
 import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IMap;
-import com.hazelcast.core.MapLoader;
-import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.map.IMap;
+import com.hazelcast.map.MapLoader;
+import com.hazelcast.spi.properties.ClusterProperty;
+import com.hazelcast.test.ChangeLoggingRule;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
+import org.junit.ClassRule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -41,8 +42,12 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class MapLoaderFailoverTest extends HazelcastTestSupport {
+
+    // debug logging for https://github.com/hazelcast/hazelcast/issues/7959#issuecomment-533283947
+    @ClassRule
+    public static ChangeLoggingRule changeLoggingRule = new ChangeLoggingRule("log4j2-debug-map.xml");
 
     private static final int MAP_STORE_ENTRY_COUNT = 10000;
     private static final int BATCH_SIZE = 100;
@@ -128,7 +133,7 @@ public class MapLoaderFailoverTest extends HazelcastTestSupport {
         IMap<Object, Object> map = nodes[0].getMap(mapName);
 
         // trigger loading and pause half way through
-        Future<Object> asyncVal = map.getAsync(1);
+        Future<Object> asyncVal = map.getAsync(1).toCompletableFuture();
         pausingLoader.awaitPause();
 
         hz3.getLifecycleService().terminate();
@@ -136,7 +141,23 @@ public class MapLoaderFailoverTest extends HazelcastTestSupport {
 
         pausingLoader.resume();
 
-        assertEquals(1, asyncVal.get());
+        // workaround for a known MapLoader issue documented in #12384
+        //
+        // in short, there is an edge case in which the get operation is
+        // processed before loading the partition holding the given key
+        // restarts on the previously replica node, after the owner node
+        // died during the load process
+        // for the details, see the issue
+        //
+        // we do this workaround since the goal of the test is to verify
+        // that loadAll() eventually loads all records even if a node
+        // dies in the middle of loading
+        Object getResult = asyncVal.get();
+        if (getResult == null) {
+            getResult = map.get(1);
+        }
+
+        assertEquals(1, getResult);
         assertSizeEventually(MAP_STORE_ENTRY_COUNT, map);
         assertTrue(mapLoader.getLoadedValueCount() >= MAP_STORE_ENTRY_COUNT);
         assertEquals(2, mapLoader.getLoadAllKeysInvocations());
@@ -179,10 +200,9 @@ public class MapLoaderFailoverTest extends HazelcastTestSupport {
     }
 
     private Config newConfig(String mapName, MapStoreConfig.InitialLoadMode loadMode, int backups, MapLoader loader) {
-        Config config = new Config()
-                .setGroupConfig(new GroupConfig(getClass().getSimpleName()))
-                .setProperty(GroupProperty.MAP_LOAD_CHUNK_SIZE.getName(), Integer.toString(BATCH_SIZE))
-                .setProperty(GroupProperty.PARTITION_COUNT.getName(), "13");
+        Config config = new Config().setClusterName(getClass().getSimpleName())
+                .setProperty(ClusterProperty.MAP_LOAD_CHUNK_SIZE.getName(), Integer.toString(BATCH_SIZE))
+                .setProperty(ClusterProperty.PARTITION_COUNT.getName(), "13");
 
         MapStoreConfig mapStoreConfig = new MapStoreConfig()
                 .setInitialLoadMode(loadMode)

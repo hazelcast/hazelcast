@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,14 +16,26 @@
 
 package com.hazelcast.map.impl;
 
+import com.hazelcast.config.CacheDeserializedValues;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.EventJournalConfig;
+import com.hazelcast.config.IndexConfig;
+import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.config.MapConfig;
+import com.hazelcast.config.WanReplicationConfig;
+import com.hazelcast.config.WanConsumerConfig;
 import com.hazelcast.config.WanReplicationRef;
-import com.hazelcast.core.IFunction;
-import com.hazelcast.core.PartitioningStrategy;
+import com.hazelcast.config.WanSyncConfig;
+import com.hazelcast.internal.nio.ClassLoaderUtil;
+import com.hazelcast.internal.partition.IPartitionService;
 import com.hazelcast.internal.serialization.InternalSerializationService;
-import com.hazelcast.map.eviction.MapEvictionPolicy;
+import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.services.ObjectNamespace;
+import com.hazelcast.internal.services.PostJoinAwareService;
+import com.hazelcast.internal.util.ConstructorFunction;
+import com.hazelcast.internal.util.ExceptionUtil;
+import com.hazelcast.internal.util.MemoryInfoAccessor;
+import com.hazelcast.internal.util.RuntimeMemoryInfoAccessor;
 import com.hazelcast.map.impl.eviction.EvictionChecker;
 import com.hazelcast.map.impl.eviction.Evictor;
 import com.hazelcast.map.impl.eviction.EvictorImpl;
@@ -33,132 +45,136 @@ import com.hazelcast.map.impl.query.QueryEntryFactory;
 import com.hazelcast.map.impl.record.DataRecordFactory;
 import com.hazelcast.map.impl.record.ObjectRecordFactory;
 import com.hazelcast.map.impl.record.RecordFactory;
-import com.hazelcast.map.merge.MapMergePolicy;
-import com.hazelcast.nio.ClassLoaderUtil;
-import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.SerializableByConvention;
+import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.partition.PartitioningStrategy;
 import com.hazelcast.query.impl.Index;
-import com.hazelcast.query.impl.IndexInfo;
 import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.query.impl.getters.Extractors;
-import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.ObjectNamespace;
-import com.hazelcast.spi.partition.IPartitionService;
-import com.hazelcast.spi.serialization.SerializationService;
-import com.hazelcast.util.ConstructorFunction;
-import com.hazelcast.util.ExceptionUtil;
-import com.hazelcast.util.MemoryInfoAccessor;
-import com.hazelcast.util.RuntimeMemoryInfoAccessor;
-import com.hazelcast.wan.WANReplicationQueueFullException;
-import com.hazelcast.wan.WanReplicationPublisher;
-import com.hazelcast.wan.WanReplicationService;
+import com.hazelcast.spi.eviction.EvictionPolicyComparator;
+import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.spi.merge.SplitBrainMergePolicy;
+import com.hazelcast.wan.impl.DelegatingWanScheme;
+import com.hazelcast.wan.impl.WanReplicationService;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Function;
 
+import static com.hazelcast.config.ConsistencyCheckStrategy.MERKLE_TREES;
 import static com.hazelcast.config.InMemoryFormat.NATIVE;
 import static com.hazelcast.config.InMemoryFormat.OBJECT;
+import static com.hazelcast.internal.eviction.EvictionPolicyEvaluatorProvider.getEvictionPolicyComparator;
 import static com.hazelcast.map.impl.eviction.Evictor.NULL_EVICTOR;
 import static com.hazelcast.map.impl.mapstore.MapStoreContextFactory.createMapStoreContext;
+import static com.hazelcast.spi.properties.ClusterProperty.MAP_EVICTION_BATCH_SIZE;
 import static java.lang.System.getProperty;
 
 /**
- * Map container for a map with a specific name. Contains config and supporting structures for
- * all of the maps' functionalities.
+ * Map container for a map with a specific name. Contains config and
+ * supporting structures for all of the maps' functionalities.
  */
-@SuppressWarnings("WeakerAccess")
+@SuppressWarnings({"WeakerAccess", "checkstyle:classfanoutcomplexity"})
 public class MapContainer {
 
     protected final String name;
-    protected final String quorumName;
-    protected final MapServiceContext mapServiceContext;
-    protected final Extractors extractors;
-    protected final PartitioningStrategy partitioningStrategy;
-    protected final MapStoreContext mapStoreContext;
-    protected final SerializationService serializationService;
-    protected final QueryEntryFactory queryEntryFactory;
-    protected final InterceptorRegistry interceptorRegistry = new InterceptorRegistry();
-    protected final IFunction<Object, Data> toDataFunction = new ObjectToData();
-    protected final ConstructorFunction<Void, RecordFactory> recordFactoryConstructor;
-    // on-heap indexes are global, meaning there is only one index per map, stored in the mapContainer,
-    // so if globalIndexes is null it means that global index is not in use
+    protected final String splitBrainProtectionName;
+    // on-heap indexes are global, meaning there is only one index per map,
+    // stored in the mapContainer, so if globalIndexes is null it means that
+    // global index is not in use
     protected final Indexes globalIndexes;
-
-    // RU_COMPAT_38
-    /**
-     * Definitions of indexes that need to be added on partition threads
-     *
-     * @see MapIndexSynchronizer
-     * @see com.hazelcast.map.impl.operation.SynchronizeIndexesForPartitionTask
-     * @see com.hazelcast.map.impl.operation.PostJoinMapOperation
-     * @see com.hazelcast.map.impl.operation.MapReplicationStateHolder
-     */
-    protected final Set<IndexInfo> partitionIndexesToAdd = new ConcurrentSkipListSet<IndexInfo>();
-
+    protected final Extractors extractors;
+    protected final MapStoreContext mapStoreContext;
+    protected final ObjectNamespace objectNamespace;
+    protected final MapServiceContext mapServiceContext;
+    protected final QueryEntryFactory queryEntryFactory;
+    protected final EventJournalConfig eventJournalConfig;
+    protected final PartitioningStrategy partitioningStrategy;
+    protected final InternalSerializationService serializationService;
+    protected final Function<Object, Data> toDataFunction = new ObjectToData();
+    protected final InterceptorRegistry interceptorRegistry = new InterceptorRegistry();
+    protected final ConstructorFunction<Void, RecordFactory> recordFactoryConstructor;
     /**
      * Holds number of registered {@link InvalidationListener} from clients.
      */
     protected final AtomicInteger invalidationListenerCount = new AtomicInteger();
 
-    protected final ObjectNamespace objectNamespace;
+    protected SplitBrainMergePolicy wanMergePolicy;
+    protected DelegatingWanScheme wanReplicationDelegate;
 
-    protected WanReplicationPublisher wanReplicationPublisher;
-    protected MapMergePolicy wanMergePolicy;
-
-    protected volatile Evictor evictor;
     protected volatile MapConfig mapConfig;
-    protected final EventJournalConfig eventJournalConfig;
+    private volatile Evictor evictor;
 
+    private boolean persistWanReplicatedData;
 
     /**
      * Operations which are done in this constructor should obey the rules defined
-     * in the method comment {@link com.hazelcast.spi.PostJoinAwareService#getPostJoinOperation()}
+     * in the method comment {@link PostJoinAwareService#getPostJoinOperation()}
      * Otherwise undesired situations, like deadlocks, may appear.
      */
+    @SuppressWarnings("checkstyle:executablestatementcount")
     public MapContainer(final String name, final Config config, final MapServiceContext mapServiceContext) {
         this.name = name;
         this.mapConfig = config.findMapConfig(name);
-        this.eventJournalConfig = config.findMapEventJournalConfig(name);
+        this.eventJournalConfig = mapConfig.getEventJournalConfig();
         this.mapServiceContext = mapServiceContext;
         NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
         this.partitioningStrategy = createPartitioningStrategy();
-        this.quorumName = mapConfig.getQuorumName();
-        this.serializationService = nodeEngine.getSerializationService();
+        this.splitBrainProtectionName = mapConfig.getSplitBrainProtectionName();
+        this.serializationService = ((InternalSerializationService) nodeEngine.getSerializationService());
         this.recordFactoryConstructor = createRecordFactoryConstructor(serializationService);
-        this.queryEntryFactory = new QueryEntryFactory(mapConfig.getCacheDeserializedValues());
         this.objectNamespace = MapService.getObjectNamespace(name);
-        initWanReplication(nodeEngine);
-        this.extractors = new Extractors(mapConfig.getMapAttributeConfigs(), config.getClassLoader());
-        if (shouldUseGlobalIndex(mapConfig)) {
-            this.globalIndexes = new Indexes((InternalSerializationService) serializationService,
-                    mapServiceContext.getIndexProvider(mapConfig), extractors,
-                    true, mapServiceContext.getIndexCopyBehavior());
-        } else {
-            this.globalIndexes = null;
-        }
+        this.extractors = Extractors.newBuilder(serializationService)
+                .setAttributeConfigs(mapConfig.getAttributeConfigs())
+                .setClassLoader(nodeEngine.getConfigClassLoader())
+                .build();
+        this.queryEntryFactory = new QueryEntryFactory(mapConfig.getCacheDeserializedValues(),
+                serializationService, extractors);
+        this.globalIndexes = shouldUseGlobalIndex() ? createIndexes(true) : null;
         this.mapStoreContext = createMapStoreContext(this);
-        this.mapStoreContext.start();
+        initWanReplication(mapServiceContext.getNodeEngine());
+    }
+
+    public void init() {
         initEvictor();
+        mapStoreContext.start();
+    }
+
+    /**
+     * @param global set {@code true} to create global indexes, otherwise set
+     *               {@code false} to have partitioned indexes
+     * @return a new Indexes object
+     */
+    public Indexes createIndexes(boolean global) {
+        return Indexes.newBuilder(serializationService, mapServiceContext.getIndexCopyBehavior())
+                .global(global)
+                .extractors(extractors)
+                .statsEnabled(mapConfig.isStatisticsEnabled())
+                .indexProvider(mapServiceContext.getIndexProvider(mapConfig))
+                .usesCachedQueryableEntries(mapConfig.getCacheDeserializedValues() != CacheDeserializedValues.NEVER)
+                .build();
+    }
+
+    public final void initEvictor() {
+        NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
+        EvictionPolicyComparator evictionPolicyComparator
+                = getEvictionPolicyComparator(mapConfig.getEvictionConfig(), nodeEngine.getConfigClassLoader());
+
+        evictor = evictionPolicyComparator != null
+                ? newEvictor(evictionPolicyComparator, nodeEngine.getProperties().getInteger(MAP_EVICTION_BATCH_SIZE),
+                nodeEngine.getPartitionService()) : NULL_EVICTOR;
     }
 
     // this method is overridden
-    public void initEvictor() {
-        MapEvictionPolicy mapEvictionPolicy = mapConfig.getMapEvictionPolicy();
-        if (mapEvictionPolicy == null) {
-            evictor = NULL_EVICTOR;
-        } else {
-            MemoryInfoAccessor memoryInfoAccessor = getMemoryInfoAccessor();
-            EvictionChecker evictionChecker = new EvictionChecker(memoryInfoAccessor, mapServiceContext);
-            IPartitionService partitionService = mapServiceContext.getNodeEngine().getPartitionService();
-            evictor = new EvictorImpl(mapEvictionPolicy, evictionChecker, partitionService);
-        }
+    protected Evictor newEvictor(EvictionPolicyComparator evictionPolicyComparator,
+                                 int evictionBatchSize, IPartitionService partitionService) {
+        EvictionChecker evictionChecker = new EvictionChecker(getMemoryInfoAccessor(), mapServiceContext);
+
+        return new EvictorImpl(evictionPolicyComparator, evictionChecker, evictionBatchSize, partitionService);
     }
 
-    protected boolean shouldUseGlobalIndex(MapConfig mapConfig) {
+    public boolean shouldUseGlobalIndex() {
         // for non-native memory populate a single global index
         return !mapConfig.getInMemoryFormat().equals(NATIVE);
     }
@@ -183,17 +199,14 @@ public class MapContainer {
 
     // overridden in different context
     ConstructorFunction<Void, RecordFactory> createRecordFactoryConstructor(final SerializationService serializationService) {
-        return new ConstructorFunction<Void, RecordFactory>() {
-            @Override
-            public RecordFactory createNew(Void notUsedArg) {
-                switch (mapConfig.getInMemoryFormat()) {
-                    case BINARY:
-                        return new DataRecordFactory(mapConfig, serializationService, partitioningStrategy);
-                    case OBJECT:
-                        return new ObjectRecordFactory(mapConfig, serializationService);
-                    default:
-                        throw new IllegalArgumentException("Invalid storage format: " + mapConfig.getInMemoryFormat());
-                }
+        return anyArg -> {
+            switch (mapConfig.getInMemoryFormat()) {
+                case BINARY:
+                    return new DataRecordFactory(mapConfig, serializationService);
+                case OBJECT:
+                    return new ObjectRecordFactory(mapConfig, serializationService);
+                default:
+                    throw new IllegalArgumentException("Invalid storage format: " + mapConfig.getInMemoryFormat());
             }
         };
     }
@@ -204,9 +217,50 @@ public class MapContainer {
             return;
         }
         String wanReplicationRefName = wanReplicationRef.getName();
+
+        Config config = nodeEngine.getConfig();
+        if (!mapConfig.getMerkleTreeConfig().isEnabled()
+                && hasPublisherWithMerkleTreeSync(config, wanReplicationRefName)) {
+            throw new InvalidConfigurationException(
+                    "Map " + name + " has disabled merkle trees but the WAN replication scheme "
+                            + wanReplicationRefName + " has publishers that use merkle trees."
+                            + " Please enable merkle trees for the map.");
+        }
+
         WanReplicationService wanReplicationService = nodeEngine.getWanReplicationService();
-        wanReplicationPublisher = wanReplicationService.getWanReplicationPublisher(wanReplicationRefName);
-        wanMergePolicy = mapServiceContext.getMergePolicyProvider().getMergePolicy(wanReplicationRef.getMergePolicy());
+        wanReplicationDelegate = wanReplicationService.getWanReplicationPublishers(wanReplicationRefName);
+        wanMergePolicy = nodeEngine.getSplitBrainMergePolicyProvider().getMergePolicy(wanReplicationRef.getMergePolicy());
+
+        WanReplicationConfig wanReplicationConfig = config.getWanReplicationConfig(wanReplicationRefName);
+        if (wanReplicationConfig != null) {
+            WanConsumerConfig wanConsumerConfig = wanReplicationConfig.getConsumerConfig();
+            if (wanConsumerConfig != null) {
+                persistWanReplicatedData = wanConsumerConfig.isPersistWanReplicatedData();
+            }
+        }
+    }
+
+    /**
+     * Returns {@code true} if at least one of the WAN publishers has
+     * Merkle tree consistency check configured for the given WAN
+     * replication configuration
+     *
+     * @param config                configuration
+     * @param wanReplicationRefName The name of the WAN replication
+     * @return {@code true} if there is at least one publisher has Merkle
+     * tree configured
+     */
+    private boolean hasPublisherWithMerkleTreeSync(Config config, String wanReplicationRefName) {
+        WanReplicationConfig replicationConfig = config.getWanReplicationConfig(wanReplicationRefName);
+        if (replicationConfig == null) {
+            return false;
+        }
+        return replicationConfig.getBatchPublisherConfigs()
+                .stream()
+                .anyMatch(c -> {
+                    WanSyncConfig syncConfig = c.getSyncConfig();
+                    return syncConfig != null && MERKLE_TREES.equals(syncConfig.getConsistencyCheckStrategy());
+                });
     }
 
     private PartitioningStrategy createPartitioningStrategy() {
@@ -234,27 +288,20 @@ public class MapContainer {
         return globalIndexes != null;
     }
 
-    public WanReplicationPublisher getWanReplicationPublisher() {
-        return wanReplicationPublisher;
+    public DelegatingWanScheme getWanReplicationDelegate() {
+        return wanReplicationDelegate;
     }
 
-    public MapMergePolicy getWanMergePolicy() {
+    public SplitBrainMergePolicy getWanMergePolicy() {
         return wanMergePolicy;
     }
 
     public boolean isWanReplicationEnabled() {
-        return wanReplicationPublisher != null && wanMergePolicy != null;
+        return wanReplicationDelegate != null && wanMergePolicy != null;
     }
 
-    /**
-     * Checks if WAN replication is enabled and if the WAN queues have reached their capacity.
-     *
-     * @throws WANReplicationQueueFullException if WAN replication is enabled and queue capacity has been reached
-     */
-    public void checkWanReplicationQueues() {
-        if (isWanReplicationEnabled()) {
-            wanReplicationPublisher.checkWanReplicationQueues();
-        }
+    public boolean isWanRepublishingEnabled() {
+        return isWanReplicationEnabled() && mapConfig.getWanReplicationRef().isRepublishingEnabled();
     }
 
     public int getTotalBackupCount() {
@@ -297,11 +344,11 @@ public class MapContainer {
         return name;
     }
 
-    public String getQuorumName() {
-        return quorumName;
+    public String getSplitBrainProtectionName() {
+        return splitBrainProtectionName;
     }
 
-    public IFunction<Object, Data> toData() {
+    public Function<Object, Data> toData() {
         return toDataFunction;
     }
 
@@ -310,7 +357,7 @@ public class MapContainer {
     }
 
     public QueryableEntry newQueryEntry(Data key, Object value) {
-        return queryEntryFactory.newEntry((InternalSerializationService) serializationService, key, value, extractors);
+        return queryEntryFactory.newEntry(key, value);
     }
 
     public Evictor getEvictor() {
@@ -344,47 +391,37 @@ public class MapContainer {
 
     // callback called when the MapContainer is de-registered from MapService and destroyed - basically on map-destroy
     public void onDestroy() {
-        partitionIndexesToAdd.clear();
     }
 
     public boolean shouldCloneOnEntryProcessing(int partitionId) {
-        return getIndexes(partitionId).hasIndex() && OBJECT.equals(mapConfig.getInMemoryFormat());
+        return getIndexes(partitionId).haveAtLeastOneIndex() && OBJECT.equals(mapConfig.getInMemoryFormat());
     }
 
     public ObjectNamespace getObjectNamespace() {
         return objectNamespace;
     }
 
-    public Map<String, Boolean> getIndexDefinitions() {
-        Map<String, Boolean> definitions = new HashMap<String, Boolean>();
+    public Map<String, IndexConfig> getIndexDefinitions() {
+        Map<String, IndexConfig> definitions = new HashMap<>();
         if (isGlobalIndexEnabled()) {
             for (Index index : globalIndexes.getIndexes()) {
-                definitions.put(index.getAttributeName(), index.isOrdered());
+                definitions.put(index.getName(), index.getConfig());
             }
         } else {
             for (PartitionContainer container : mapServiceContext.getPartitionContainers()) {
                 for (Index index : container.getIndexes(name).getIndexes()) {
-                    definitions.put(index.getAttributeName(), index.isOrdered());
+                    definitions.put(index.getName(), index.getConfig());
                 }
             }
         }
         return definitions;
     }
 
-    public void addPartitionIndexToAdd(IndexInfo indexInfo) {
-        partitionIndexesToAdd.add(indexInfo);
+    public boolean isPersistWanReplicatedData() {
+        return persistWanReplicatedData;
     }
 
-    public Set<IndexInfo> getPartitionIndexesToAdd() {
-        return partitionIndexesToAdd;
-    }
-
-    public void clearPartitionIndexesToAdd() {
-        partitionIndexesToAdd.clear();
-    }
-
-    @SerializableByConvention
-    private class ObjectToData implements IFunction<Object, Data> {
+    private class ObjectToData implements Function<Object, Data> {
         @Override
         public Data apply(Object input) {
             SerializationService ss = mapStoreContext.getSerializationService();

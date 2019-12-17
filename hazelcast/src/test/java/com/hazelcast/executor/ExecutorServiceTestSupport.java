@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,8 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.hazelcast.executor;
 
+import com.hazelcast.cluster.Member;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.DurableExecutorConfig;
 import com.hazelcast.config.ExecutorConfig;
@@ -22,21 +24,27 @@ import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.core.IExecutorService;
-import com.hazelcast.core.Member;
 import com.hazelcast.core.MultiExecutionCallback;
-import com.hazelcast.core.PartitionAware;
 import com.hazelcast.durableexecutor.DurableExecutorService;
-import com.hazelcast.spi.impl.executionservice.InternalExecutionService;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.partition.PartitionAware;
+import com.hazelcast.spi.impl.executionservice.ExecutionService;
 import com.hazelcast.test.HazelcastTestSupport;
 
+import java.io.IOException;
 import java.io.Serializable;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 
 import static org.junit.Assert.fail;
 
@@ -74,13 +82,13 @@ public class ExecutorServiceTestSupport extends HazelcastTestSupport {
         return key;
     }
 
-    InternalExecutionService getExecutionService(HazelcastInstance instance) {
+    ExecutionService getExecutionService(HazelcastInstance instance) {
         return getNode(instance).getNodeEngine().getExecutionService();
     }
 
     public static class CountDownLatchAwaitingCallable implements Callable<String> {
 
-        public static String RESULT = "Success";
+        static final String RESULT = "Success";
 
         private final CountDownLatch latch;
 
@@ -95,7 +103,7 @@ public class ExecutorServiceTestSupport extends HazelcastTestSupport {
         }
     }
 
-    public static class CountingDownExecutionCallback<T> implements ExecutionCallback<T> {
+    public static class CountingDownExecutionCallback<T> implements BiConsumer<T, Throwable>, ExecutionCallback<T> {
 
         private final AtomicReference<Object> result = new AtomicReference<Object>();
         private final CountDownLatch latch;
@@ -120,9 +128,19 @@ public class ExecutorServiceTestSupport extends HazelcastTestSupport {
         @Override
         public void onFailure(Throwable t) {
             if (!result.compareAndSet(null, t)) {
-                System.out.println("Failure received after result is set. Failure: " + t + " Result: " + result.get());
+                System.out.println("Failure received after result is set. Failure: "
+                        + t + " Result: " + result.get());
             }
             latch.countDown();
+        }
+
+        @Override
+        public void accept(T response, Throwable throwable) {
+            if (throwable == null) {
+                onResponse(response);
+            } else {
+                onFailure(throwable);
+            }
         }
 
         public CountDownLatch getLatch() {
@@ -136,7 +154,7 @@ public class ExecutorServiceTestSupport extends HazelcastTestSupport {
 
     public static class BasicTestCallable implements Callable<String>, Serializable, PartitionAware {
 
-        public static String RESULT = "Task completed";
+        public static final String RESULT = "Task completed";
 
         @Override
         public String call() {
@@ -146,6 +164,38 @@ public class ExecutorServiceTestSupport extends HazelcastTestSupport {
         @Override
         public Object getPartitionKey() {
             return "key";
+        }
+    }
+
+    public static class DummyCallable implements Callable<String>, Serializable {
+
+        @Override
+        public String call() throws Exception {
+            return "Completed";
+        }
+    }
+
+    public static class SerializationCountingCallable implements Callable<Void>, DataSerializable {
+
+        private AtomicInteger serializationCount = new AtomicInteger();
+
+        @Override
+        public void writeData(ObjectDataOutput out) throws IOException {
+            serializationCount.incrementAndGet();
+        }
+
+        @Override
+        public void readData(ObjectDataInput in) throws IOException {
+
+        }
+
+        @Override
+        public Void call() throws Exception {
+            return null;
+        }
+
+        public int getSerializationCount() {
+            return serializationCount.get();
         }
     }
 
@@ -227,12 +277,12 @@ public class ExecutorServiceTestSupport extends HazelcastTestSupport {
 
     public static class IncrementAtomicLongIfMemberUUIDNotMatchRunnable implements Runnable, Serializable, HazelcastInstanceAware {
 
-        private final String uuid;
+        private final UUID uuid;
         private final String name;
 
         private HazelcastInstance instance;
 
-        public IncrementAtomicLongIfMemberUUIDNotMatchRunnable(String uuid, String name) {
+        public IncrementAtomicLongIfMemberUUIDNotMatchRunnable(UUID uuid, String name) {
             this.uuid = uuid;
             this.name = name;
         }
@@ -245,13 +295,13 @@ public class ExecutorServiceTestSupport extends HazelcastTestSupport {
         @Override
         public void run() {
             if (!instance.getCluster().getLocalMember().getUuid().equals(uuid)) {
-                instance.getAtomicLong(name).incrementAndGet();
+                instance.getCPSubsystem().getAtomicLong(name).incrementAndGet();
             }
         }
     }
 
     @SuppressWarnings("unused")
-    public static class NullResponseCountingCallback<T> implements ExecutionCallback<T> {
+    public static class NullResponseCountingCallback<T> implements Consumer<T>, ExecutionCallback<T> {
 
         private final AtomicInteger nullResponseCount = new AtomicInteger(0);
 
@@ -259,6 +309,11 @@ public class ExecutorServiceTestSupport extends HazelcastTestSupport {
 
         public NullResponseCountingCallback(int count) {
             this.responseLatch = new CountDownLatch(count);
+        }
+
+        @Override
+        public void accept(T t) {
+            onResponse(t);
         }
 
         @Override
@@ -317,13 +372,19 @@ public class ExecutorServiceTestSupport extends HazelcastTestSupport {
         }
     }
 
-    public static class BooleanSuccessResponseCountingCallback implements ExecutionCallback<Boolean> {
+    public static class BooleanSuccessResponseCountingCallback
+            implements Consumer<Boolean>, ExecutionCallback<Boolean> {
 
         private final AtomicInteger successResponseCount = new AtomicInteger(0);
         private final CountDownLatch responseLatch;
 
         public BooleanSuccessResponseCountingCallback(int count) {
             this.responseLatch = new CountDownLatch(count);
+        }
+
+        @Override
+        public void accept(Boolean response) {
+            onResponse(response);
         }
 
         @Override
@@ -364,7 +425,7 @@ public class ExecutorServiceTestSupport extends HazelcastTestSupport {
 
         @Override
         public void run() {
-            instance.getAtomicLong(name).incrementAndGet();
+            instance.getCPSubsystem().getAtomicLong(name).incrementAndGet();
         }
     }
 
@@ -384,22 +445,22 @@ public class ExecutorServiceTestSupport extends HazelcastTestSupport {
         }
 
         public void run() {
-            instance.getAtomicLong(name).incrementAndGet();
+            instance.getCPSubsystem().getAtomicLong(name).incrementAndGet();
         }
 
         @Override
         public Long call() throws Exception {
-            return instance.getAtomicLong(name).incrementAndGet();
+            return instance.getCPSubsystem().getAtomicLong(name).incrementAndGet();
         }
     }
 
     public static class MemberUUIDCheckCallable implements Callable<Boolean>, HazelcastInstanceAware, Serializable {
 
-        private final String uuid;
+        private final UUID uuid;
 
         private HazelcastInstance instance;
 
-        public MemberUUIDCheckCallable(String uuid) {
+        public MemberUUIDCheckCallable(UUID uuid) {
             this.uuid = uuid;
         }
 

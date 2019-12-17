@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,9 +20,9 @@ import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.partition.service.TestGetOperation;
 import com.hazelcast.internal.partition.service.TestPutOperation;
-import com.hazelcast.nio.Address;
-import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.OperationService;
+import com.hazelcast.cluster.Address;
+import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.spi.impl.operationservice.OperationService;
 import org.junit.Test;
 import org.junit.runners.Parameterized;
 
@@ -38,6 +38,7 @@ import java.util.concurrent.TimeUnit;
 
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
@@ -80,7 +81,7 @@ public abstract class AbstractGracefulShutdownCorrectnessTest extends PartitionC
             shutdownNodes(shutdownNodeCount);
             size -= shutdownNodeCount;
 
-            assertSizeAndData();
+            assertSizeAndDataEventually();
         }
     }
 
@@ -106,7 +107,7 @@ public abstract class AbstractGracefulShutdownCorrectnessTest extends PartitionC
             addresses = shutdownNodes(shutdownNodeCount);
             size -= shutdownNodeCount;
 
-            assertSizeAndData();
+            assertSizeAndDataEventually();
         }
     }
 
@@ -147,6 +148,7 @@ public abstract class AbstractGracefulShutdownCorrectnessTest extends PartitionC
 
         for (int p = 0; p < partitionCount; p++) {
             Integer actual = (Integer) operationService.invokeOnPartition(null, new TestGetOperation(), p).join();
+            assertNotNull(actual);
             assertEquals(value, actual.intValue());
         }
     }

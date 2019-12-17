@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,7 +28,7 @@ import com.hazelcast.map.impl.querycache.publisher.PublisherAccumulatorHandler;
 import java.util.Iterator;
 import java.util.concurrent.TimeUnit;
 
-import static com.hazelcast.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 /**
  * This class implements basic functionality of an {@link Accumulator}.
@@ -40,10 +40,10 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
  */
 public class BasicAccumulator<E extends Sequenced> extends AbstractAccumulator<E> {
 
-    protected final ILogger logger = Logger.getLogger(getClass());
     protected final AccumulatorHandler<E> handler;
+    protected final ILogger logger = Logger.getLogger(getClass());
 
-    public BasicAccumulator(QueryCacheContext context, AccumulatorInfo info) {
+    protected BasicAccumulator(QueryCacheContext context, AccumulatorInfo info) {
         super(context, info);
         this.handler = createAccumulatorHandler(context, info);
     }
@@ -107,7 +107,7 @@ public class BasicAccumulator<E extends Sequenced> extends AbstractAccumulator<E
     @Override
     public Iterator<E> iterator() {
         CyclicBuffer<E> buffer = getBuffer();
-        return new ReadOnlyIterator<E>(buffer);
+        return new ReadOnlyIterator<>(buffer);
     }
 
     @Override
@@ -132,8 +132,8 @@ public class BasicAccumulator<E extends Sequenced> extends AbstractAccumulator<E
 
     @Override
     public void reset() {
-        buffer.reset();
-        partitionSequencer.reset();
+        handler.reset();
+        super.reset();
     }
 
     private E readNextExpiredOrNull(long now, long delay, TimeUnit unit) {
@@ -156,7 +156,7 @@ public class BasicAccumulator<E extends Sequenced> extends AbstractAccumulator<E
     }
 
     @SuppressWarnings("unchecked")
-    private AccumulatorHandler<E> createAccumulatorHandler(QueryCacheContext context, AccumulatorInfo info) {
+    protected AccumulatorHandler<E> createAccumulatorHandler(QueryCacheContext context, AccumulatorInfo info) {
         QueryCacheEventService queryCacheEventService = context.getQueryCacheEventService();
         AccumulatorProcessor<Sequenced> processor = createAccumulatorProcessor(info, queryCacheEventService);
         return (AccumulatorHandler<E>) new PublisherAccumulatorHandler(context, processor);

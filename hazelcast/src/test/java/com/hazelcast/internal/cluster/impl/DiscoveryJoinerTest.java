@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,11 +17,13 @@
 package com.hazelcast.internal.cluster.impl;
 
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.instance.TestUtil;
-import com.hazelcast.nio.Address;
+import com.hazelcast.instance.impl.Node;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.spi.discovery.DiscoveryNode;
 import com.hazelcast.spi.discovery.SimpleDiscoveryNode;
 import com.hazelcast.spi.discovery.integration.DiscoveryService;
+import com.hazelcast.spi.properties.ClusterProperty;
+import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
@@ -32,13 +34,18 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
+import static com.hazelcast.instance.impl.TestUtil.getNode;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.when;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
@@ -47,7 +54,7 @@ public class DiscoveryJoinerTest {
     @Mock
     private DiscoveryService service = mock(DiscoveryService.class);
 
-    List<DiscoveryNode> discoveryNodes;
+    private List<DiscoveryNode> discoveryNodes;
     private TestHazelcastInstanceFactory factory;
     private HazelcastInstance hz;
 
@@ -70,18 +77,56 @@ public class DiscoveryJoinerTest {
     }
 
     @Test
-    public void test_DiscoveryJoiner_returns_public_address() throws Exception {
-        DiscoveryJoiner joiner = new DiscoveryJoiner(TestUtil.getNode(hz), service, true);
+    public void test_DiscoveryJoiner_returns_public_address() {
+        DiscoveryJoiner joiner = new DiscoveryJoiner(getNode(hz), service, true);
         doReturn(discoveryNodes).when(service).discoverNodes();
         Collection<Address> addresses = joiner.getPossibleAddresses();
         assertEquals("[[127.0.0.1]:50001, [127.0.0.1]:50002]", addresses.toString());
     }
 
     @Test
-    public void test_DiscoveryJoiner_returns_private_address() throws Exception {
-        DiscoveryJoiner joiner = new DiscoveryJoiner(TestUtil.getNode(hz), service, false);
+    public void test_DiscoveryJoiner_returns_private_address() {
+        DiscoveryJoiner joiner = new DiscoveryJoiner(getNode(hz), service, false);
         doReturn(discoveryNodes).when(service).discoverNodes();
         Collection<Address> addresses = joiner.getPossibleAddresses();
         assertEquals("[[127.0.0.2]:50001, [127.0.0.2]:50002]", addresses.toString());
+    }
+
+    @Test
+    public void test_DiscoveryJoinerJoin_whenTargetMemberSet() {
+        Node node = getNode(hz);
+        node.config.getNetworkConfig().getJoin().getTcpIpConfig().setRequiredMember("127.0.0.1");
+        DiscoveryJoiner joiner = new DiscoveryJoiner(node, service, true);
+        doReturn(discoveryNodes).when(service).discoverNodes();
+
+        joiner.join();
+        assertTrue(node.getClusterService().isJoined());
+    }
+
+    @Test
+    public void test_DiscoveryJoinerJoin_whenTargetMemberHasSameAddressAsNode() throws UnknownHostException {
+        Node node = getNode(hz);
+        String hostAddress = node.getThisAddress().getInetAddress().getHostAddress();
+        node.config.getNetworkConfig().getJoin().getTcpIpConfig().setRequiredMember(hostAddress);
+
+        List<DiscoveryNode> nodes = new ArrayList<DiscoveryNode>();
+        nodes.add(new SimpleDiscoveryNode(node.getThisAddress(), node.getThisAddress()));
+
+        DiscoveryJoiner joiner = new DiscoveryJoiner(node, service, true);
+        doReturn(nodes).when(service).discoverNodes();
+
+        joiner.join();
+        assertTrue(node.getClusterService().isJoined());
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void test_DiscoveryJoinerConstructor_throws_whenTryCountInvalid() {
+        Node node = spy(getNode(hz));
+        HazelcastProperties properties = mock(HazelcastProperties.class);
+
+        when(node.getProperties()).thenReturn(properties);
+        when(properties.getInteger(ClusterProperty.TCP_JOIN_PORT_TRY_COUNT)).thenReturn(0);
+
+        new DiscoveryJoiner(node, service, false);
     }
 }

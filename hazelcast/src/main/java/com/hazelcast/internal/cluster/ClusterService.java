@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,19 +16,20 @@
 
 package com.hazelcast.internal.cluster;
 
-import com.hazelcast.core.Cluster;
-import com.hazelcast.core.Member;
-import com.hazelcast.core.MemberSelector;
-import com.hazelcast.instance.MemberImpl;
-import com.hazelcast.nio.Address;
-import com.hazelcast.spi.CoreService;
+import com.hazelcast.cluster.Cluster;
+import com.hazelcast.cluster.Member;
+import com.hazelcast.cluster.MemberSelector;
+import com.hazelcast.cluster.impl.MemberImpl;
+import com.hazelcast.cluster.Address;
+import com.hazelcast.internal.services.CoreService;
 
 import java.util.Collection;
+import java.util.UUID;
 
 /**
  * A service responsible for member related functionality, e.g. members joining, leaving etc.
  * <p>
- * This API is an internal API; the end user will use the {@link com.hazelcast.core.Cluster} interface.
+ * This API is an internal API; the end user will use the {@link Cluster} interface.
  */
 public interface ClusterService extends CoreService, Cluster {
 
@@ -43,10 +44,20 @@ public interface ClusterService extends CoreService, Cluster {
     /**
      * Gets the member with the given UUID.
      *
-     * @param UUID the UUID of the member
+     * @param uuid the UUID of the member
      * @return the found member, or {@code null} if not found (if the UUID is {@code null}, {@code null} is returned)
      */
-    MemberImpl getMember(String uuid);
+    MemberImpl getMember(UUID uuid);
+
+    /**
+     * Gets the member with the given UUID and address.
+     *
+     * @param address the address of the member
+     * @param uuid the UUID of the member
+     * @return the found member, or {@code null} if not found
+     * (if the UUID and/or address is {@code null}, {@code null} is returned)
+     */
+    MemberImpl getMember(Address address, UUID uuid);
 
     /**
      * Gets the collection of members.
@@ -58,10 +69,10 @@ public interface ClusterService extends CoreService, Cluster {
     Collection<MemberImpl> getMemberImpls();
 
     /**
-     * Returns a collection of the members that satisfy the given {@link com.hazelcast.core.MemberSelector}.
+     * Returns a collection of the members that satisfy the given {@link MemberSelector}.
      *
-     * @param selector {@link com.hazelcast.core.MemberSelector} instance to filter members to return
-     * @return members that satisfy the given {@link com.hazelcast.core.MemberSelector}
+     * @param selector {@link MemberSelector} instance to filter members to return
+     * @return members that satisfy the given {@link MemberSelector}
      */
     Collection<Member> getMembers(MemberSelector selector);
 
@@ -113,10 +124,10 @@ public interface ClusterService extends CoreService, Cluster {
     int getSize();
 
     /**
-     * Gets the number of members that satisfy the given {@link com.hazelcast.core.MemberSelector} instance.
+     * Gets the number of members that satisfy the given {@link MemberSelector} instance.
      *
-     * @param selector {@link com.hazelcast.core.MemberSelector} instance that filters members to be counted
-     * @return the number of members that satisfy the given {@link com.hazelcast.core.MemberSelector} instance
+     * @param selector {@link MemberSelector} instance that filters members to be counted
+     * @return the number of members that satisfy the given {@link MemberSelector} instance
      */
     int getSize(MemberSelector selector);
 
@@ -134,7 +145,7 @@ public interface ClusterService extends CoreService, Cluster {
      *
      * @return unique UUID for cluster
      */
-    String getClusterId();
+    UUID getClusterId();
 
     /**
      * Returns the current version of member list.
@@ -146,24 +157,16 @@ public interface ClusterService extends CoreService, Cluster {
     /**
      * Returns the member list join version of the local member instance.
      * <p>
-     * The join algorithm is specifically designed to ensure that member list join version is unique for each
-     * member in the cluster, even during a network-split situation:<ul>
-     *     <li>If two members join at the same time, they will appear on different version of member list
-     *     <li>If a new member claims mastership, it makes a jump in the member list version based on its
-     *     index in the member list multiplied by the value of the
-     *     {@link com.hazelcast.spi.properties.GroupProperty#MASTERSHIP_CLAIM_MEMBER_LIST_VERSION_INCREMENT}
-     *     configuration property. This is to protect against the possibility that the original master is still
-     *     running in a separate network partition.
-     * </ul>
-     * The solution provides uniqueness guarantee of member list join version numbers with the following
-     * limitations:<ul>
-     *    <li>When there is a split-brain issue, the number of member list changes that can occur in the
-     *    sub-clusters are capped by the abovementioned configuration parameter.
-     *    <li>When there is a split-brain issue, if further splits occur in the already split sub-clusters, the
-     *    uniqueness guarantee can be lost.
-     * </ul>
-     * The value returned from this method can be cached. Even though it can change later, both values are
-     * unique.
+     * The join algorithm assigns different member list join versions to each member in the cluster.
+     * If two members join at the same time, they will appear on different version of member list.
+     * <p>
+     * The uniqueness guarantee of member list join versions is provided except the following scenario:
+     * when there is a split-brain issue, if a new node joins to any sub-cluster,
+     * it can get a duplicate member list join version, i.e., its member list join version
+     * can be assigned to another node in the other sub-cluster(s).
+     * <p>
+     * When duplicate member list join version is assigned during network split, the returned value can
+     * change to make it unique again. Therefore the caller should call this method repeatedly.
      *
      * @throws IllegalStateException if the local instance is not joined or the cluster just upgraded to 3.10,
      *      but local member has not yet learned its join version from the master node.

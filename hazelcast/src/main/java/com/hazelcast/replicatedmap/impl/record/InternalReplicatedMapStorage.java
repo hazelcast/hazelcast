@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,7 +32,7 @@ import java.util.concurrent.ConcurrentMap;
 public class InternalReplicatedMapStorage<K, V> {
 
     private final ConcurrentMap<K, ReplicatedRecord<K, V>> storage =
-            new ConcurrentHashMap<K, ReplicatedRecord<K, V>>(1000, 0.75f, 1);
+            new ConcurrentHashMap<>(1000, 0.75f, 1);
 
     private long version;
 

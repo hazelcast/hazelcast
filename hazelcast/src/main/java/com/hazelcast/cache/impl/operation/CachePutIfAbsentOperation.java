@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,25 +16,23 @@
 
 package com.hazelcast.cache.impl.operation;
 
-import com.hazelcast.cache.CacheEntryView;
 import com.hazelcast.cache.impl.CacheDataSerializerHook;
-import com.hazelcast.cache.impl.CacheEntryViews;
+import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.Operation;
+import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.spi.impl.operationservice.Operation;
 
 import javax.cache.expiry.ExpiryPolicy;
 import java.io.IOException;
 
 /**
  * Operation implementation for calling
- * {@link com.hazelcast.cache.impl.ICacheRecordStore#putIfAbsent(Data, Object, ExpiryPolicy, String, int)}.
+ * {@link com.hazelcast.cache.impl.ICacheRecordStore#putIfAbsent(Data, Object, ExpiryPolicy, java.util.UUID, int)}.
  *
- * @see com.hazelcast.cache.impl.ICacheRecordStore#putIfAbsent(Data, Object, ExpiryPolicy, String, int)
+ * @see com.hazelcast.cache.impl.ICacheRecordStore#putIfAbsent(Data, Object, ExpiryPolicy, java.util.UUID, int)
  */
-public class CachePutIfAbsentOperation
-        extends AbstractMutatingCacheOperation {
+public class CachePutIfAbsentOperation extends MutatingCacheOperation {
 
     private Data value;
     private ExpiryPolicy expiryPolicy;
@@ -52,19 +50,16 @@ public class CachePutIfAbsentOperation
     @Override
     public void run()
             throws Exception {
-        response = cache.putIfAbsent(key, value, expiryPolicy, getCallerUuid(), completionId);
+        response = recordStore.putIfAbsent(key, value, expiryPolicy, getCallerUuid(), completionId);
         if (Boolean.TRUE.equals(response)) {
-            backupRecord = cache.getRecord(key);
+            backupRecord = recordStore.getRecord(key);
         }
     }
 
     @Override
     public void afterRun() throws Exception {
         if (Boolean.TRUE.equals(response)) {
-            if (cache.isWanReplicationEnabled()) {
-                CacheEntryView<Data, Data> entryView = CacheEntryViews.createDefaultEntryView(key, value, backupRecord);
-                wanEventPublisher.publishWanReplicationUpdate(name, entryView);
-            }
+            publishWanUpdate(key, backupRecord);
         }
         super.afterRun();
     }
@@ -88,7 +83,7 @@ public class CachePutIfAbsentOperation
             throws IOException {
         super.writeInternal(out);
         out.writeObject(expiryPolicy);
-        out.writeData(value);
+        IOUtil.writeData(out, value);
     }
 
     @Override
@@ -96,11 +91,11 @@ public class CachePutIfAbsentOperation
             throws IOException {
         super.readInternal(in);
         expiryPolicy = in.readObject();
-        value = in.readData();
+        value = IOUtil.readData(in);
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return CacheDataSerializerHook.PUT_IF_ABSENT;
     }
 

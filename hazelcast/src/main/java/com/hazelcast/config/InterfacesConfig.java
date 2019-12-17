@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -79,6 +79,30 @@ public class InterfacesConfig {
         clear();
         this.interfaceSet.addAll(interfaces);
         return this;
+    }
+
+    @Override
+    public final boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || !(o instanceof InterfacesConfig)) {
+            return false;
+        }
+
+        InterfacesConfig that = (InterfacesConfig) o;
+
+        if (enabled != that.enabled) {
+            return false;
+        }
+        return interfaceSet.equals(that.interfaceSet);
+    }
+
+    @Override
+    public final int hashCode() {
+        int result = (enabled ? 1 : 0);
+        result = 31 * result + interfaceSet.hashCode();
+        return result;
     }
 
     @Override

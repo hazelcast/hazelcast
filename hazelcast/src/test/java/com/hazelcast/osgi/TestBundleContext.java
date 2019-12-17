@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -112,7 +112,7 @@ class TestBundleContext implements BundleContext {
         synchronized (mutex) {
             List<ServiceReference> serviceReferences = serviceReferenceMap.get(clazz);
             if (serviceReferences != null && !serviceReferences.isEmpty()) {
-                return serviceReferences.toArray(new ServiceReference[serviceReferences.size()]);
+                return serviceReferences.toArray(new ServiceReference[0]);
             }
         }
         return null;
@@ -124,7 +124,7 @@ class TestBundleContext implements BundleContext {
         synchronized (mutex) {
             List<ServiceReference> serviceReferences = serviceReferenceMap.get(clazz);
             if (serviceReferences != null && !serviceReferences.isEmpty()) {
-                return serviceReferences.toArray(new ServiceReference[serviceReferences.size()]);
+                return serviceReferences.toArray(new ServiceReference[0]);
             }
         }
         return null;
@@ -139,7 +139,7 @@ class TestBundleContext implements BundleContext {
                 allServiceReferences.addAll(serviceReferences);
             }
         }
-        return allServiceReferences.toArray(new ServiceReference[allServiceReferences.size()]);
+        return allServiceReferences.toArray(new ServiceReference[0]);
     }
 
     @Override

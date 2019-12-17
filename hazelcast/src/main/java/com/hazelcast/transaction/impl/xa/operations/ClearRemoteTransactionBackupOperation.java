@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,10 +16,11 @@
 
 package com.hazelcast.transaction.impl.xa.operations;
 
+import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.BackupOperation;
+import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.spi.impl.operationservice.BackupOperation;
 import com.hazelcast.transaction.impl.TransactionDataSerializerHook;
 import com.hazelcast.transaction.impl.xa.SerializableXID;
 import com.hazelcast.transaction.impl.xa.XAService;
@@ -58,16 +59,16 @@ ClearRemoteTransactionBackupOperation extends AbstractXAOperation implements Bac
 
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
-        out.writeData(xidData);
+        IOUtil.writeData(out, xidData);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
-        xidData = in.readData();
+        xidData = IOUtil.readData(in);
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return TransactionDataSerializerHook.CLEAR_REMOTE_TX_BACKUP;
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,10 +16,11 @@
 
 package com.hazelcast.config;
 
-import com.hazelcast.config.CardinalityEstimatorConfig.CardinalityEstimatorConfigReadOnly;
+import com.hazelcast.internal.config.CardinalityEstimatorConfigReadOnly;
+import com.hazelcast.spi.merge.DiscardMergePolicy;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import nl.jqno.equalsverifier.EqualsVerifier;
 import nl.jqno.equalsverifier.Warning;
@@ -30,7 +31,7 @@ import org.junit.runner.RunWith;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class CardinalityEstimatorConfigTest extends HazelcastTestSupport {
 
     private CardinalityEstimatorConfig config = new CardinalityEstimatorConfig();
@@ -50,6 +51,19 @@ public class CardinalityEstimatorConfigTest extends HazelcastTestSupport {
         assertEquals(2, config.getBackupCount());
         assertEquals(3, config.getAsyncBackupCount());
         assertEquals(5, config.getTotalBackupCount());
+        assertEquals(CardinalityEstimatorConfig.DEFAULT_MERGE_POLICY_CONFIG, config.getMergePolicyConfig());
+    }
+
+    @Test
+    public void testConstructor_withNameAndBackupCounts_withMergePolicy() {
+        MergePolicyConfig mergePolicyConfig = new MergePolicyConfig("DiscardMergePolicy", 1000);
+        config = new CardinalityEstimatorConfig("myEstimator", 2, 3, mergePolicyConfig);
+
+        assertEquals("myEstimator", config.getName());
+        assertEquals(2, config.getBackupCount());
+        assertEquals(3, config.getAsyncBackupCount());
+        assertEquals(5, config.getTotalBackupCount());
+        assertEquals(mergePolicyConfig, config.getMergePolicyConfig());
     }
 
     @Test(expected = IllegalArgumentException.class)
@@ -128,12 +142,15 @@ public class CardinalityEstimatorConfigTest extends HazelcastTestSupport {
 
     @Test
     public void testEqualsAndHashCode() {
+        assumeDifferentHashCodes();
         EqualsVerifier.forClass(CardinalityEstimatorConfig.class)
-                      .allFieldsShouldBeUsedExcept("readOnly")
                       .suppress(Warning.NULL_FIELDS, Warning.NONFINAL_FIELDS)
                       .withPrefabValues(CardinalityEstimatorConfigReadOnly.class,
                               new CardinalityEstimatorConfigReadOnly(new CardinalityEstimatorConfig("red")),
                               new CardinalityEstimatorConfigReadOnly(new CardinalityEstimatorConfig("black")))
+                      .withPrefabValues(MergePolicyConfig.class,
+                              new MergePolicyConfig(),
+                              new MergePolicyConfig(DiscardMergePolicy.class.getSimpleName(), 10))
                       .verify();
     }
 }

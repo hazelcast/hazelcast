@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,69 +16,98 @@
 
 package com.hazelcast.replicatedmap.impl;
 
+import com.hazelcast.cluster.Address;
+import com.hazelcast.cluster.Member;
+import com.hazelcast.cluster.MemberSelector;
 import com.hazelcast.config.Config;
-import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.ListenerConfig;
+import com.hazelcast.config.MergePolicyConfig;
 import com.hazelcast.config.ReplicatedMapConfig;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.HazelcastInstanceAware;
-import com.hazelcast.core.Member;
-import com.hazelcast.core.MemberSelector;
 import com.hazelcast.internal.cluster.ClusterService;
+import com.hazelcast.internal.metrics.DynamicMetricsProvider;
+import com.hazelcast.internal.metrics.MetricDescriptor;
+import com.hazelcast.internal.metrics.MetricsCollectionContext;
+import com.hazelcast.internal.monitor.impl.LocalReplicatedMapStatsImpl;
+import com.hazelcast.internal.nio.ClassLoaderUtil;
 import com.hazelcast.internal.partition.InternalPartition;
+import com.hazelcast.internal.partition.MigrationAwareService;
+import com.hazelcast.internal.partition.PartitionMigrationEvent;
+import com.hazelcast.internal.partition.PartitionReplicationEvent;
 import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
-import com.hazelcast.internal.serialization.impl.HeapData;
-import com.hazelcast.monitor.LocalReplicatedMapStats;
-import com.hazelcast.monitor.impl.LocalReplicatedMapStatsImpl;
-import com.hazelcast.nio.Address;
-import com.hazelcast.nio.ClassLoaderUtil;
+import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.services.ManagedService;
+import com.hazelcast.internal.services.RemoteService;
+import com.hazelcast.internal.services.SplitBrainHandlerService;
+import com.hazelcast.internal.services.SplitBrainProtectionAwareService;
+import com.hazelcast.internal.services.StatisticsAwareService;
+import com.hazelcast.internal.util.ConstructorFunction;
+import com.hazelcast.internal.util.ContextMutexFactory;
+import com.hazelcast.replicatedmap.LocalReplicatedMapStats;
 import com.hazelcast.replicatedmap.ReplicatedMapCantBeCreatedOnLiteMemberException;
 import com.hazelcast.replicatedmap.impl.operation.CheckReplicaVersionOperation;
 import com.hazelcast.replicatedmap.impl.operation.ReplicationOperation;
-import com.hazelcast.replicatedmap.impl.record.ReplicatedRecord;
 import com.hazelcast.replicatedmap.impl.record.ReplicatedRecordStore;
-import com.hazelcast.replicatedmap.merge.MergePolicyProvider;
-import com.hazelcast.spi.EventPublishingService;
-import com.hazelcast.spi.ManagedService;
-import com.hazelcast.spi.MigrationAwareService;
-import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.OperationService;
-import com.hazelcast.spi.PartitionMigrationEvent;
-import com.hazelcast.spi.PartitionReplicationEvent;
-import com.hazelcast.spi.RemoteService;
-import com.hazelcast.spi.SplitBrainHandlerService;
-import com.hazelcast.spi.StatisticsAwareService;
+import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.spi.impl.eventservice.EventPublishingService;
 import com.hazelcast.spi.impl.eventservice.impl.TrueEventFilter;
-import com.hazelcast.util.ConcurrencyUtil;
-import com.hazelcast.util.ConstructorFunction;
-import com.hazelcast.util.ExceptionUtil;
+import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.spi.impl.operationservice.OperationService;
+import com.hazelcast.spi.merge.SplitBrainMergePolicyProvider;
+import com.hazelcast.spi.properties.ClusterProperty;
+import com.hazelcast.splitbrainprotection.SplitBrainProtectionOn;
+import com.hazelcast.splitbrainprotection.SplitBrainProtectionService;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.cluster.memberselector.MemberSelectors.DATA_MEMBER_SELECTOR;
+import static com.hazelcast.internal.config.ConfigValidator.checkReplicatedMapConfig;
+import static com.hazelcast.internal.metrics.impl.ProviderHelper.provide;
+import static com.hazelcast.internal.util.ConcurrencyUtil.getOrPutSynchronized;
+import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 
 /**
  * This is the main service implementation to handle proxy creation, event publishing, migration, anti-entropy and
  * manages the backing {@link PartitionContainer}s that actually hold the data
  */
+@SuppressWarnings("checkstyle:classfanoutcomplexity")
 public class ReplicatedMapService implements ManagedService, RemoteService, EventPublishingService<Object, Object>,
-        MigrationAwareService, SplitBrainHandlerService, StatisticsAwareService<LocalReplicatedMapStats> {
+                                             MigrationAwareService, SplitBrainHandlerService,
+                                             StatisticsAwareService<LocalReplicatedMapStats>,
+                                             SplitBrainProtectionAwareService, DynamicMetricsProvider {
 
     public static final String SERVICE_NAME = "hz:impl:replicatedMapService";
     public static final int INVOCATION_TRY_COUNT = 3;
 
     private static final int SYNC_INTERVAL_SECONDS = 30;
+
+    private static final Object NULL_OBJECT = new Object();
+
+    private final AntiEntropyTask antiEntropyTask = new AntiEntropyTask();
+
+    private final ConcurrentMap<String, Object> splitBrainProtectionConfigCache = new ConcurrentHashMap<>();
+    private final ContextMutexFactory splitBrainProtectionConfigCacheMutexFactory = new ContextMutexFactory();
+    private final ConstructorFunction<String, Object> splitBrainProtectionConfigConstructor =
+            new ConstructorFunction<String, Object>() {
+        @Override
+        public Object createNew(String name) {
+            ReplicatedMapConfig lockConfig = nodeEngine.getConfig().findReplicatedMapConfig(name);
+            String splitBrainProtectionName = lockConfig.getSplitBrainProtectionName();
+            return splitBrainProtectionName == null ? NULL_OBJECT : splitBrainProtectionName;
+        }
+    };
 
     private final Config config;
     private final NodeEngine nodeEngine;
@@ -86,17 +115,13 @@ public class ReplicatedMapService implements ManagedService, RemoteService, Even
     private final InternalPartitionServiceImpl partitionService;
     private final ClusterService clusterService;
     private final OperationService operationService;
+    private final SplitBrainProtectionService splitBrainProtectionService;
     private final ReplicatedMapEventPublishingService eventPublishingService;
     private final ReplicatedMapSplitBrainHandlerService splitBrainHandlerService;
-    private ConcurrentHashMap<String, LocalReplicatedMapStatsImpl> statsMap =
-            new ConcurrentHashMap<String, LocalReplicatedMapStatsImpl>();
-    private ConstructorFunction<String, LocalReplicatedMapStatsImpl> constructorFunction =
-            new ConstructorFunction<String, LocalReplicatedMapStatsImpl>() {
-                @Override
-                public LocalReplicatedMapStatsImpl createNew(String arg) {
-                    return new LocalReplicatedMapStatsImpl();
-                }
-            };
+    private final LocalReplicatedMapStatsProvider statsProvider;
+    private final SplitBrainMergePolicyProvider mergePolicyProvider;
+
+    private ScheduledFuture antiEntropyFuture;
 
     public ReplicatedMapService(NodeEngine nodeEngine) {
         this.nodeEngine = nodeEngine;
@@ -106,63 +131,28 @@ public class ReplicatedMapService implements ManagedService, RemoteService, Even
         this.operationService = nodeEngine.getOperationService();
         this.partitionContainers = new PartitionContainer[nodeEngine.getPartitionService().getPartitionCount()];
         this.eventPublishingService = new ReplicatedMapEventPublishingService(this);
-        this.splitBrainHandlerService = new ReplicatedMapSplitBrainHandlerService(this, new MergePolicyProvider(nodeEngine));
+        this.splitBrainHandlerService = new ReplicatedMapSplitBrainHandlerService(this);
+        this.splitBrainProtectionService = nodeEngine.getSplitBrainProtectionService();
+        this.mergePolicyProvider = nodeEngine.getSplitBrainMergePolicyProvider();
+        this.statsProvider = new LocalReplicatedMapStatsProvider(config, partitionContainers);
     }
 
     @Override
-    public void init(final NodeEngine nodeEngine, Properties properties) {
-        if (config.isLiteMember()) {
-            return;
-        }
-
+    public void init(NodeEngine nodeEngine, Properties properties) {
         for (int i = 0; i < nodeEngine.getPartitionService().getPartitionCount(); i++) {
             partitionContainers[i] = new PartitionContainer(this, i);
         }
-        nodeEngine.getExecutionService().getGlobalTaskScheduler().scheduleWithRepetition(new Runnable() {
-            @Override
-            public void run() {
-                triggerAntiEntropy();
-            }
-        }, 0, SYNC_INTERVAL_SECONDS, TimeUnit.SECONDS);
-    }
+        antiEntropyFuture = nodeEngine.getExecutionService().getGlobalTaskScheduler()
+                .scheduleWithRepetition(antiEntropyTask, 0, SYNC_INTERVAL_SECONDS, TimeUnit.SECONDS);
 
-    /**
-     * Send an operation to all replicas to check their replica versions for all partitions for which this node is the owner
-     */
-    public void triggerAntiEntropy() {
-        if (clusterService.getSize(DATA_MEMBER_SELECTOR) == 1) {
-            return;
-        }
-        Collection<Address> addresses = new ArrayList<Address>(getMemberAddresses(DATA_MEMBER_SELECTOR));
-        addresses.remove(nodeEngine.getThisAddress());
-        for (int i = 0; i < partitionContainers.length; i++) {
-            Address thisAddress = nodeEngine.getThisAddress();
-            InternalPartition partition = partitionService.getPartition(i, false);
-            Address ownerAddress = partition.getOwnerOrNull();
-            if (!thisAddress.equals(ownerAddress)) {
-                continue;
-            }
-            PartitionContainer partitionContainer = partitionContainers[i];
-            if (partitionContainer.isEmpty()) {
-                continue;
-            }
-            for (Address address : addresses) {
-                CheckReplicaVersionOperation checkReplicaVersionOperation = new CheckReplicaVersionOperation(partitionContainer);
-                checkReplicaVersionOperation.setPartitionId(i);
-                checkReplicaVersionOperation.setValidateTarget(false);
-                operationService.createInvocationBuilder(SERVICE_NAME, checkReplicaVersionOperation, address)
-                        .setTryCount(INVOCATION_TRY_COUNT)
-                        .invoke();
-            }
+        boolean dsMetricsEnabled = nodeEngine.getProperties().getBoolean(ClusterProperty.METRICS_DATASTRUCTURES);
+        if (dsMetricsEnabled) {
+            ((NodeEngineImpl) nodeEngine).getMetricsRegistry().registerDynamicMetricsProvider(this);
         }
     }
 
     @Override
     public void reset() {
-        if (config.isLiteMember()) {
-            return;
-        }
-
         for (int i = 0; i < nodeEngine.getPartitionService().getPartitionCount(); i++) {
             ConcurrentMap<String, ReplicatedRecordStore> stores = partitionContainers[i].getStores();
             for (ReplicatedRecordStore store : stores.values()) {
@@ -173,53 +163,46 @@ public class ReplicatedMapService implements ManagedService, RemoteService, Even
 
     @Override
     public void shutdown(boolean terminate) {
-        if (config.isLiteMember()) {
-            return;
-        }
-
         for (PartitionContainer container : partitionContainers) {
-            container.shutdown();
+            if (container != null) {
+                container.shutdown();
+            }
+        }
+        if (antiEntropyFuture != null) {
+            antiEntropyFuture.cancel(true);
         }
     }
 
-    public LocalReplicatedMapStatsImpl getLocalMapStatsImpl(String name) {
-        return ConcurrencyUtil.getOrPutIfAbsent(statsMap, name, constructorFunction);
+    /**
+     * Gets the {@link LocalReplicatedMapStatsImpl} implementation of {@link LocalReplicatedMapStats} for the provided
+     * {@param name} of the replicated map. This is used for operations that mutate replicated map's local statistics.
+     *
+     * @param name of the replicated map.
+     * @return replicated map's local statistics object.
+     */
+    public LocalReplicatedMapStatsImpl getLocalReplicatedMapStatsImpl(String name) {
+        return statsProvider.getLocalReplicatedMapStatsImpl(name);
     }
 
-    public LocalReplicatedMapStatsImpl createReplicatedMapStats(String name) {
-        LocalReplicatedMapStatsImpl stats = getLocalMapStatsImpl(name);
-        long hits = 0;
-        long count = 0;
-        long memoryUsage = 0;
-        boolean isBinary = (getReplicatedMapConfig(name).getInMemoryFormat() == InMemoryFormat.BINARY);
-        for (PartitionContainer container : partitionContainers) {
-            ReplicatedRecordStore store = container.getRecordStore(name);
-            if (store == null) {
-                continue;
-            }
-            Iterator<ReplicatedRecord> iterator = store.recordIterator();
-            while (iterator.hasNext()) {
-                ReplicatedRecord record = iterator.next();
-                stats.setLastAccessTime(Math.max(stats.getLastAccessTime(), record.getLastAccessTime()));
-                stats.setLastUpdateTime(Math.max(stats.getLastUpdateTime(), record.getUpdateTime()));
-                hits += record.getHits();
-                if (isBinary) {
-                    memoryUsage += ((HeapData) record.getValueInternal()).getHeapCost();
-                }
-                count++;
-            }
-        }
-        stats.setOwnedEntryCount(count);
-        stats.setHits(hits);
-        stats.setOwnedEntryMemoryCost(memoryUsage);
-        return stats;
+    /**
+     * Gets the replicated map's local statistics. If the statistics is disabled so method returns always the same object which is
+     * empty and immutable.
+     *
+     * @param name of the replicated map.
+     * @return replicated map's local statistics object.
+     */
+    public LocalReplicatedMapStats getLocalReplicatedMapStats(String name) {
+        return statsProvider.getLocalReplicatedMapStats(name);
     }
 
     @Override
-    public DistributedObject createDistributedObject(String objectName) {
-        if (config.isLiteMember()) {
+    public DistributedObject createDistributedObject(String objectName, boolean local) {
+        ReplicatedMapConfig replicatedMapConfig = getReplicatedMapConfig(objectName);
+        checkReplicatedMapConfig(replicatedMapConfig, mergePolicyProvider);
+        if (nodeEngine.getLocalMember().isLiteMember()) {
             throw new ReplicatedMapCantBeCreatedOnLiteMemberException(nodeEngine.getThisAddress());
         }
+
         for (int i = 0; i < nodeEngine.getPartitionService().getPartitionCount(); i++) {
             PartitionContainer partitionContainer = partitionContainers[i];
             if (partitionContainer == null) {
@@ -227,18 +210,19 @@ public class ReplicatedMapService implements ManagedService, RemoteService, Even
             }
             partitionContainer.getOrCreateRecordStore(objectName);
         }
-        return new ReplicatedMapProxy(nodeEngine, objectName, this);
+        return new ReplicatedMapProxy(nodeEngine, objectName, this, replicatedMapConfig);
     }
 
     @Override
-    public void destroyDistributedObject(String objectName) {
-        if (config.isLiteMember()) {
+    public void destroyDistributedObject(String objectName, boolean local) {
+        if (nodeEngine.getLocalMember().isLiteMember()) {
             return;
         }
 
         for (int i = 0; i < nodeEngine.getPartitionService().getPartitionCount(); i++) {
             partitionContainers[i].destroy(objectName);
         }
+        splitBrainProtectionConfigCache.remove(objectName);
     }
 
     @Override
@@ -246,9 +230,8 @@ public class ReplicatedMapService implements ManagedService, RemoteService, Even
         eventPublishingService.dispatchEvent(event, listener);
     }
 
-
     public ReplicatedMapConfig getReplicatedMapConfig(String name) {
-        return config.getReplicatedMapConfig(name).getAsReadOnly();
+        return config.findReplicatedMapConfig(name);
     }
 
     public ReplicatedRecordStore getReplicatedRecordStore(String name, boolean create, Object key) {
@@ -256,7 +239,7 @@ public class ReplicatedMapService implements ManagedService, RemoteService, Even
     }
 
     public ReplicatedRecordStore getReplicatedRecordStore(String name, boolean create, int partitionId) {
-        if (config.isLiteMember()) {
+        if (nodeEngine.getLocalMember().isLiteMember()) {
             throw new ReplicatedMapCantBeCreatedOnLiteMemberException(nodeEngine.getThisAddress());
         }
 
@@ -269,7 +252,7 @@ public class ReplicatedMapService implements ManagedService, RemoteService, Even
 
     public Collection<ReplicatedRecordStore> getAllReplicatedRecordStores(String name) {
         int partitionCount = nodeEngine.getPartitionService().getPartitionCount();
-        ArrayList<ReplicatedRecordStore> stores = new ArrayList<ReplicatedRecordStore>(partitionCount);
+        ArrayList<ReplicatedRecordStore> stores = new ArrayList<>(partitionCount);
         for (int i = 0; i < partitionCount; i++) {
             PartitionContainer partitionContainer = partitionContainers[i];
             if (partitionContainer == null) {
@@ -286,7 +269,7 @@ public class ReplicatedMapService implements ManagedService, RemoteService, Even
 
     private Collection<Address> getMemberAddresses(MemberSelector memberSelector) {
         Collection<Member> members = clusterService.getMembers(memberSelector);
-        Collection<Address> addresses = new ArrayList<Address>(members.size());
+        Collection<Address> addresses = new ArrayList<>(members.size());
         for (Member member : members) {
             addresses.add(member.getAddress());
         }
@@ -294,7 +277,7 @@ public class ReplicatedMapService implements ManagedService, RemoteService, Even
     }
 
     public void initializeListeners(String name) {
-        List<ListenerConfig> listenerConfigs = config.getReplicatedMapConfig(name).getListenerConfigs();
+        List<ListenerConfig> listenerConfigs = getReplicatedMapConfig(name).getListenerConfigs();
         for (ListenerConfig listenerConfig : listenerConfigs) {
             EntryListener listener = null;
             if (listenerConfig.getImplementation() != null) {
@@ -304,14 +287,14 @@ public class ReplicatedMapService implements ManagedService, RemoteService, Even
                     listener = ClassLoaderUtil.newInstance(nodeEngine.getConfigClassLoader(),
                             listenerConfig.getClassName());
                 } catch (Exception e) {
-                    throw ExceptionUtil.rethrow(e);
+                    throw rethrow(e);
                 }
             }
             if (listener != null) {
                 if (listener instanceof HazelcastInstanceAware) {
                     ((HazelcastInstanceAware) listener).setHazelcastInstance(nodeEngine.getHazelcastInstance());
                 }
-                eventPublishingService.addEventListener(listener, TrueEventFilter.INSTANCE, name);
+                eventPublishingService.addLocalEventListener(listener, TrueEventFilter.INSTANCE, name);
             }
         }
     }
@@ -330,17 +313,16 @@ public class ReplicatedMapService implements ManagedService, RemoteService, Even
 
     @Override
     public Operation prepareReplicationOperation(PartitionReplicationEvent event) {
-        if (config.isLiteMember()) {
+        if (nodeEngine.getLocalMember().isLiteMember()) {
             return null;
         }
-
         if (event.getReplicaIndex() > 0) {
             return null;
         }
 
-        final PartitionContainer container = partitionContainers[event.getPartitionId()];
-        final ReplicationOperation operation = new ReplicationOperation(nodeEngine.getSerializationService(),
-                container, event.getPartitionId());
+        PartitionContainer container = partitionContainers[event.getPartitionId()];
+        SerializationService serializationService = nodeEngine.getSerializationService();
+        ReplicationOperation operation = new ReplicationOperation(serializationService, container, event.getPartitionId());
         operation.setService(this);
         return operation.isEmpty() ? null : operation;
     }
@@ -368,11 +350,77 @@ public class ReplicatedMapService implements ManagedService, RemoteService, Even
     @Override
     public Map<String, LocalReplicatedMapStats> getStats() {
         Collection<String> maps = getNodeEngine().getProxyService().getDistributedObjectNames(SERVICE_NAME);
-        Map<String, LocalReplicatedMapStats> mapStats = new
-                HashMap<String, LocalReplicatedMapStats>(maps.size());
+        Map<String, LocalReplicatedMapStats> mapStats = new HashMap<>(maps.size());
         for (String map : maps) {
-            mapStats.put(map, createReplicatedMapStats(map));
+            mapStats.put(map, getLocalReplicatedMapStats(map));
         }
         return mapStats;
+    }
+
+    @Override
+    public String getSplitBrainProtectionName(String name) {
+        Object splitBrainProtectionName = getOrPutSynchronized(splitBrainProtectionConfigCache, name,
+                splitBrainProtectionConfigCacheMutexFactory, splitBrainProtectionConfigConstructor);
+        return splitBrainProtectionName == NULL_OBJECT ? null : (String) splitBrainProtectionName;
+    }
+
+    public void ensureNoSplitBrain(String distributedObjectName,
+                                   SplitBrainProtectionOn requiredSplitBrainProtectionPermissionType) {
+        splitBrainProtectionService.ensureNoSplitBrain(getSplitBrainProtectionName(distributedObjectName),
+                requiredSplitBrainProtectionPermissionType);
+    }
+
+    // needed for a test
+    public void triggerAntiEntropy() {
+        antiEntropyTask.triggerAntiEntropy();
+    }
+
+    public Object getMergePolicy(String name) {
+        MergePolicyConfig mergePolicyConfig = getReplicatedMapConfig(name).getMergePolicyConfig();
+        return mergePolicyProvider.getMergePolicy(mergePolicyConfig.getPolicy());
+    }
+
+    @Override
+    public void provideDynamicMetrics(MetricDescriptor descriptor, MetricsCollectionContext context) {
+        provide(descriptor, context, "replicatedMap", getStats());
+    }
+
+    private class AntiEntropyTask implements Runnable {
+
+        @Override
+        public void run() {
+            triggerAntiEntropy();
+        }
+
+        /**
+         * Sends an operation to all replicas to check their replica versions for all partitions for which this node is the owner.
+         */
+        void triggerAntiEntropy() {
+            if (nodeEngine.getLocalMember().isLiteMember() || clusterService.getSize(DATA_MEMBER_SELECTOR) == 1) {
+                return;
+            }
+            Collection<Address> addresses = new ArrayList<>(getMemberAddresses(DATA_MEMBER_SELECTOR));
+            addresses.remove(nodeEngine.getThisAddress());
+            for (int i = 0; i < partitionContainers.length; i++) {
+                Address thisAddress = nodeEngine.getThisAddress();
+                InternalPartition partition = partitionService.getPartition(i, false);
+                Address ownerAddress = partition.getOwnerOrNull();
+                if (!thisAddress.equals(ownerAddress)) {
+                    continue;
+                }
+                PartitionContainer partitionContainer = partitionContainers[i];
+                if (partitionContainer.isEmpty()) {
+                    continue;
+                }
+                for (Address address : addresses) {
+                    Operation operation = new CheckReplicaVersionOperation(partitionContainer)
+                            .setPartitionId(i)
+                            .setValidateTarget(false);
+                    operationService.createInvocationBuilder(SERVICE_NAME, operation, address)
+                            .setTryCount(INVOCATION_TRY_COUNT)
+                            .invoke();
+                }
+            }
+        }
     }
 }

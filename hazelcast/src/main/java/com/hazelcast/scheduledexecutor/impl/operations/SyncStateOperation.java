@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,19 +16,20 @@
 
 package com.hazelcast.scheduledexecutor.impl.operations;
 
-import com.hazelcast.nio.Address;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.scheduledexecutor.impl.ScheduledExecutorDataSerializerHook;
 import com.hazelcast.scheduledexecutor.impl.ScheduledTaskResult;
 import com.hazelcast.scheduledexecutor.impl.ScheduledTaskStatisticsImpl;
-import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.impl.operationservice.Operation;
 
 import java.io.IOException;
 import java.util.Map;
 
+import static com.hazelcast.internal.serialization.impl.SerializationUtil.readMap;
+import static com.hazelcast.internal.serialization.impl.SerializationUtil.writeMap;
 import static com.hazelcast.scheduledexecutor.impl.DistributedScheduledExecutorService.MEMBER_BIN;
-import static com.hazelcast.util.MapUtil.createHashMap;
 
 public class SyncStateOperation
         extends AbstractBackupAwareSchedulerOperation {
@@ -46,8 +47,8 @@ public class SyncStateOperation
     public SyncStateOperation() {
     }
 
-    public SyncStateOperation(String schedulerName, String taskName, Map state,
-                              ScheduledTaskStatisticsImpl stats, ScheduledTaskResult result) {
+    public SyncStateOperation(String schedulerName, String taskName, Map state, ScheduledTaskStatisticsImpl stats,
+                              ScheduledTaskResult result) {
         super(schedulerName);
         this.taskName = taskName;
         this.state = state;
@@ -83,7 +84,7 @@ public class SyncStateOperation
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ScheduledExecutorDataSerializerHook.SYNC_STATE_OP;
     }
 
@@ -92,11 +93,7 @@ public class SyncStateOperation
             throws IOException {
         super.writeInternal(out);
         out.writeUTF(taskName);
-        out.writeInt(state.size());
-        for (Map.Entry entry : state.entrySet()) {
-            out.writeObject(entry.getKey());
-            out.writeObject(entry.getValue());
-        }
+        writeMap(state, out);
         out.writeObject(stats);
         out.writeObject(result);
     }
@@ -106,11 +103,7 @@ public class SyncStateOperation
             throws IOException {
         super.readInternal(in);
         this.taskName = in.readUTF();
-        int stateSize = in.readInt();
-        this.state = createHashMap(stateSize);
-        for (int i = 0; i < stateSize; i++) {
-            this.state.put(in.readObject(), in.readObject());
-        }
+        this.state = readMap(in);
         this.stats = in.readObject();
         this.result = in.readObject();
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,40 +16,28 @@
 
 package com.hazelcast.cache.impl.operation;
 
-import com.hazelcast.cache.CacheEntryView;
-import com.hazelcast.cache.CacheNotExistsException;
 import com.hazelcast.cache.impl.CacheDataSerializerHook;
-import com.hazelcast.cache.impl.CacheEntryViews;
-import com.hazelcast.cache.impl.ICacheRecordStore;
-import com.hazelcast.cache.impl.ICacheService;
-import com.hazelcast.cache.impl.event.CacheWanEventPublisher;
 import com.hazelcast.cache.impl.record.CacheRecord;
+import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.spi.BackupOperation;
-import com.hazelcast.spi.ObjectNamespace;
-import com.hazelcast.spi.ServiceNamespaceAware;
-import com.hazelcast.spi.impl.AbstractNamedOperation;
-import com.hazelcast.spi.impl.MutatingOperation;
+import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.spi.impl.operationservice.BackupOperation;
 
 import java.io.IOException;
 import java.util.Map;
 
-import static com.hazelcast.util.MapUtil.createHashMap;
+import static com.hazelcast.internal.util.MapUtil.createHashMap;
 
 /**
  * Cache PutAllBackup Operation is the backup operation used by load all operation. Provides backup of
  * multiple entries.
+ *
  * @see com.hazelcast.cache.impl.operation.CacheLoadAllOperation
  */
-public class CachePutAllBackupOperation
-        extends AbstractNamedOperation
-        implements BackupOperation, ServiceNamespaceAware, IdentifiedDataSerializable, MutatingOperation {
+public class CachePutAllBackupOperation extends CacheOperation implements BackupOperation {
 
     private Map<Data, CacheRecord> cacheRecords;
-    private transient ICacheRecordStore cache;
 
     public CachePutAllBackupOperation() {
     }
@@ -60,95 +48,52 @@ public class CachePutAllBackupOperation
     }
 
     @Override
-    public void beforeRun()
-            throws Exception {
-        ICacheService service = getService();
-        try {
-            cache = service.getOrCreateRecordStore(name, getPartitionId());
-        } catch (CacheNotExistsException e) {
-            getLogger().finest("Error while getting a cache", e);
-        }
-    }
-
-    @Override
     public void run() throws Exception {
-        if (cache == null) {
+        if (recordStore == null) {
             return;
         }
         if (cacheRecords != null) {
             for (Map.Entry<Data, CacheRecord> entry : cacheRecords.entrySet()) {
                 CacheRecord record = entry.getValue();
-                cache.putRecord(entry.getKey(), record);
+                recordStore.putRecord(entry.getKey(), record, true);
 
-                publishWanEvent(entry.getKey(), record);
+                publishWanUpdate(entry.getKey(), record);
             }
         }
     }
 
-    private void publishWanEvent(Data key, CacheRecord record) {
-        if (cache.isWanReplicationEnabled()) {
-            ICacheService service = getService();
-            final CacheWanEventPublisher publisher = service.getCacheWanEventPublisher();
-            final CacheEntryView<Data, Data> view = CacheEntryViews.createDefaultEntryView(
-                    key, toData(record.getValue()), record);
-            publisher.publishWanReplicationUpdate(name, view);
-        }
-    }
-
-    private Data toData(Object o) {
-        return getNodeEngine().getSerializationService().toData(o);
-    }
-
     @Override
-    public ObjectNamespace getServiceNamespace() {
-        ICacheRecordStore recordStore = cache;
-        if (recordStore == null) {
-            ICacheService service = getService();
-            recordStore = service.getOrCreateRecordStore(name, getPartitionId());
-        }
-        return recordStore.getObjectNamespace();
-    }
-
-    @Override
-    protected void writeInternal(ObjectDataOutput out)
-            throws IOException {
+    protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeBoolean(cacheRecords != null);
         if (cacheRecords != null) {
             out.writeInt(cacheRecords.size());
             for (Map.Entry<Data, CacheRecord> entry : cacheRecords.entrySet()) {
-                final Data key = entry.getKey();
-                final CacheRecord record = entry.getValue();
-                out.writeData(key);
+                Data key = entry.getKey();
+                CacheRecord record = entry.getValue();
+                IOUtil.writeData(out, key);
                 out.writeObject(record);
             }
         }
     }
 
     @Override
-    protected void readInternal(ObjectDataInput in)
-            throws IOException {
+    protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        final boolean recordNotNull = in.readBoolean();
+        boolean recordNotNull = in.readBoolean();
         if (recordNotNull) {
             int size = in.readInt();
             cacheRecords = createHashMap(size);
             for (int i = 0; i < size; i++) {
-                final Data key = in.readData();
-                final CacheRecord record = in.readObject();
+                Data key = IOUtil.readData(in);
+                CacheRecord record = in.readObject();
                 cacheRecords.put(key, record);
             }
         }
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return CacheDataSerializerHook.PUT_ALL_BACKUP;
     }
-
-    @Override
-    public int getFactoryId() {
-        return CacheDataSerializerHook.F_ID;
-    }
-
 }

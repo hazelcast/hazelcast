@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,8 +18,11 @@ package com.hazelcast.spring;
 
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.spi.properties.ClusterProperty;
+import com.hazelcast.test.JmxLeakHelper;
 import com.hazelcast.test.TestLoggingUtils;
+import org.junit.runner.notification.RunNotifier;
+import org.junit.runners.model.FrameworkMethod;
 import org.junit.runners.model.InitializationError;
 import org.junit.runners.model.Statement;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
@@ -31,8 +34,8 @@ public class CustomSpringJUnit4ClassRunner extends SpringJUnit4ClassRunner {
     static {
         TestLoggingUtils.initializeLogging();
         System.setProperty("java.net.preferIPv4Stack", "true");
-        GroupProperty.WAIT_SECONDS_BEFORE_JOIN.setSystemProperty("1");
-        GroupProperty.PHONE_HOME_ENABLED.setSystemProperty("false");
+        ClusterProperty.WAIT_SECONDS_BEFORE_JOIN.setSystemProperty("1");
+        ClusterProperty.PHONE_HOME_ENABLED.setSystemProperty("false");
         System.setProperty("hazelcast.local.localAddress", "127.0.0.1");
     }
 
@@ -49,6 +52,17 @@ public class CustomSpringJUnit4ClassRunner extends SpringJUnit4ClassRunner {
     }
 
     @Override
+    protected void runChild(FrameworkMethod method, RunNotifier notifier) {
+        String testName = testName(method);
+        TestLoggingUtils.setThreadLocalTestMethodName(testName);
+        try {
+            super.runChild(method, notifier);
+        } finally {
+            TestLoggingUtils.removeThreadLocalTestMethodName();
+        }
+    }
+
+    @Override
     protected Statement withAfterClasses(Statement statement) {
         final Statement originalStatement = super.withAfterClasses(statement);
         return new Statement() {
@@ -62,6 +76,8 @@ public class CustomSpringJUnit4ClassRunner extends SpringJUnit4ClassRunner {
                     Hazelcast.shutdownAll();
                     throw new IllegalStateException(message);
                 }
+
+                JmxLeakHelper.checkJmxBeans();
             }
         };
     }

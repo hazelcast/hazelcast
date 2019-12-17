@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,50 +16,83 @@
 
 package com.hazelcast.map.impl.record;
 
-import com.hazelcast.util.Clock;
-
-import static com.hazelcast.nio.Bits.LONG_SIZE_IN_BYTES;
+import static com.hazelcast.internal.nio.Bits.INT_SIZE_IN_BYTES;
+import static com.hazelcast.map.impl.record.RecordReaderWriter.DATA_RECORD_WITH_STATS_READER_WRITER;
 
 /**
  * @param <V> type of {@link AbstractRecord}
  */
 abstract class AbstractRecordWithStats<V> extends AbstractRecord<V> {
 
-    protected long lastStoredTime;
-    protected long expirationTime;
+    private int lastStoredTime = UNSET;
+    private int expirationTime = UNSET;
 
     AbstractRecordWithStats() {
     }
 
     @Override
-    public final void onStore() {
-        lastStoredTime = Clock.currentTimeMillis();
-    }
-
-    @Override
     public long getCost() {
-        final int numberOfLongFields = 2;
-        return super.getCost() + numberOfLongFields * LONG_SIZE_IN_BYTES;
+        final int numberOfIntFields = 2;
+        return super.getCost() + numberOfIntFields * INT_SIZE_IN_BYTES;
     }
 
     @Override
     public long getExpirationTime() {
-        return expirationTime;
+        if (expirationTime == UNSET) {
+            return 0L;
+        }
+
+        if (expirationTime == Integer.MAX_VALUE) {
+            return Long.MAX_VALUE;
+        }
+
+        return recomputeWithBaseTime(expirationTime);
     }
 
     @Override
     public void setExpirationTime(long expirationTime) {
-        this.expirationTime = expirationTime;
+        this.expirationTime = expirationTime == Long.MAX_VALUE
+                ? Integer.MAX_VALUE
+                : stripBaseTime(expirationTime);
     }
 
     @Override
     public long getLastStoredTime() {
-        return lastStoredTime;
+        if (lastStoredTime == UNSET) {
+            return 0L;
+        }
+
+        return recomputeWithBaseTime(lastStoredTime);
     }
 
     @Override
     public void setLastStoredTime(long lastStoredTime) {
-        this.lastStoredTime = lastStoredTime;
+        this.lastStoredTime = stripBaseTime(lastStoredTime);
+    }
+
+    @Override
+    public int getRawLastStoredTime() {
+        return lastStoredTime;
+    }
+
+    @Override
+    public void setRawLastStoredTime(int time) {
+        this.lastStoredTime = time;
+    }
+
+    @Override
+    public int getRawExpirationTime() {
+        return expirationTime;
+    }
+
+    @Override
+    public void setRawExpirationTime(int time) {
+        this.expirationTime = time;
+    }
+
+    @Override
+    public RecordReaderWriter getMatchingRecordReaderWriter() {
+        return DATA_RECORD_WITH_STATS_READER_WRITER;
     }
 
     @Override
@@ -79,8 +112,16 @@ abstract class AbstractRecordWithStats<V> extends AbstractRecord<V> {
     @Override
     public int hashCode() {
         int result = super.hashCode();
-        result = 31 * result + (int) (lastStoredTime ^ (lastStoredTime >>> 32));
-        result = 31 * result + (int) (expirationTime ^ (expirationTime >>> 32));
+        result = 31 * result + lastStoredTime;
+        result = 31 * result + expirationTime;
         return result;
+    }
+
+    @Override
+    public String toString() {
+        return "AbstractRecordWithStats{"
+                + "lastStoredTime=" + lastStoredTime
+                + ", expirationTime=" + expirationTime
+                + "} " + super.toString();
     }
 }

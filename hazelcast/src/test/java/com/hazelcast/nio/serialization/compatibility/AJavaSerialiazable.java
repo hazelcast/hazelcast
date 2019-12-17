@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -46,11 +46,10 @@ public class AJavaSerialiazable implements Serializable {
             return false;
         }
         return Float.compare(that.f, f) == 0;
-
     }
 
     @Override
     public String toString() {
-        return "AJavaSerialiazable";
+        return "AJavaSerializable";
     }
 }

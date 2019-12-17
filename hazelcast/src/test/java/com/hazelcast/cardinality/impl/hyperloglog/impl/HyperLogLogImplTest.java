@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,10 +17,10 @@
 package com.hazelcast.cardinality.impl.hyperloglog.impl;
 
 import com.hazelcast.cardinality.impl.hyperloglog.HyperLogLog;
-import com.hazelcast.test.HazelcastParametersRunnerFactory;
+import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
 import com.hazelcast.test.annotation.SlowTest;
-import com.hazelcast.util.HashUtil;
-import com.hazelcast.util.collection.IntHashSet;
+import com.hazelcast.internal.util.HashUtil;
+import com.hazelcast.internal.util.collection.IntHashSet;
 import org.HdrHistogram.Histogram;
 import org.junit.Before;
 import org.junit.Test;
@@ -40,17 +40,16 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
 @RunWith(Parameterized.class)
-@UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
+@UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
 @Category(SlowTest.class)
 public class HyperLogLogImplTest {
 
-    private static final int PRIME_PRECISION = 25;
     private static final int DEFAULT_RUN_LENGTH = 10000000;
 
     @Parameters(name = "precision:{0}, errorRange:{1}")
     public static Collection<Object[]> parameters() {
         return asList(new Object[][]{
-                {11, 6.5f},
+                {11, 7.0f},
                 {12, 5.5f},
                 {13, 3.5f},
                 {14, 3.0f},
@@ -69,7 +68,7 @@ public class HyperLogLogImplTest {
 
     @Before
     public void setup() {
-        hyperLogLog = new HyperLogLogImpl(precision, PRIME_PRECISION);
+        hyperLogLog = new HyperLogLogImpl(precision);
     }
 
     @Test

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,6 @@ import com.hazelcast.logging.LoggingService;
 import com.hazelcast.spi.impl.operationexecutor.OperationExecutor;
 import com.hazelcast.spi.impl.operationexecutor.OperationRunner;
 import com.hazelcast.spi.properties.HazelcastProperties;
-import com.hazelcast.util.EmptyStatement;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.util.ArrayList;
@@ -30,17 +29,18 @@ import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
-import static com.hazelcast.spi.properties.GroupProperty.SLOW_OPERATION_DETECTOR_ENABLED;
-import static com.hazelcast.spi.properties.GroupProperty.SLOW_OPERATION_DETECTOR_LOG_PURGE_INTERVAL_SECONDS;
-import static com.hazelcast.spi.properties.GroupProperty.SLOW_OPERATION_DETECTOR_LOG_RETENTION_SECONDS;
-import static com.hazelcast.spi.properties.GroupProperty.SLOW_OPERATION_DETECTOR_STACK_TRACE_LOGGING_ENABLED;
-import static com.hazelcast.spi.properties.GroupProperty.SLOW_OPERATION_DETECTOR_THRESHOLD_MILLIS;
-import static com.hazelcast.util.ThreadUtil.createThreadName;
+import static com.hazelcast.spi.properties.ClusterProperty.SLOW_OPERATION_DETECTOR_ENABLED;
+import static com.hazelcast.spi.properties.ClusterProperty.SLOW_OPERATION_DETECTOR_LOG_PURGE_INTERVAL_SECONDS;
+import static com.hazelcast.spi.properties.ClusterProperty.SLOW_OPERATION_DETECTOR_LOG_RETENTION_SECONDS;
+import static com.hazelcast.spi.properties.ClusterProperty.SLOW_OPERATION_DETECTOR_STACK_TRACE_LOGGING_ENABLED;
+import static com.hazelcast.spi.properties.ClusterProperty.SLOW_OPERATION_DETECTOR_THRESHOLD_MILLIS;
+import static com.hazelcast.internal.util.EmptyStatement.ignore;
+import static com.hazelcast.internal.util.ThreadUtil.createThreadName;
 import static java.lang.String.format;
 
 /**
  * Monitors the {@link OperationRunner} instances of the {@link OperationExecutor} to see if operations are slow.
- * <p/>
+ * <p>
  * Slow operations are logged and can be accessed e.g. to write to a log file or report to management center.
  */
 public final class SlowOperationDetector {
@@ -50,8 +50,7 @@ public final class SlowOperationDetector {
     private static final long SLOW_OPERATION_THREAD_MAX_WAIT_TIME_TO_FINISH = TimeUnit.SECONDS.toMillis(10);
 
     private final ConcurrentHashMap<Integer, SlowOperationLog> slowOperationLogs
-            = new ConcurrentHashMap<Integer, SlowOperationLog>();
-    private final StringBuilder stackTraceStringBuilder = new StringBuilder();
+            = new ConcurrentHashMap<>();
 
     private final ILogger logger;
 
@@ -130,6 +129,7 @@ public final class SlowOperationDetector {
 
     private final class DetectorThread extends Thread {
 
+        private final StringBuilder stackTraceStringBuilder = new StringBuilder();
         private volatile boolean running = true;
 
         private DetectorThread(String hzName) {
@@ -203,16 +203,15 @@ public final class SlowOperationDetector {
         }
 
         private String getStackTraceOrNull(OperationRunner operationRunner, Object operation) {
+            StackTraceElement[] stackTraceElements = operationRunner.currentThread().getStackTrace();
+            // check if the operation is still the same, if not, we can't use this stacktrace
+            if (operationRunner.currentTask() != operation) {
+                return null;
+            }
             String prefix = "";
-            for (StackTraceElement stackTraceElement : operationRunner.currentThread().getStackTrace()) {
+            for (StackTraceElement stackTraceElement : stackTraceElements) {
                 stackTraceStringBuilder.append(prefix).append(stackTraceElement.toString());
                 prefix = "\n\t";
-            }
-
-            // check if the operation is still the same
-            if (operationRunner.currentTask() != operation) {
-                stackTraceStringBuilder.setLength(0);
-                return null;
             }
 
             String stackTrace = stackTraceStringBuilder.toString();
@@ -289,7 +288,7 @@ public final class SlowOperationDetector {
             try {
                 TimeUnit.NANOSECONDS.sleep(ONE_SECOND_IN_NANOS - (System.nanoTime() - nowNanos));
             } catch (Exception ignored) {
-                EmptyStatement.ignore(ignored);
+                ignore(ignored);
             }
         }
 
@@ -299,8 +298,7 @@ public final class SlowOperationDetector {
             try {
                 detectorThread.join(SLOW_OPERATION_THREAD_MAX_WAIT_TIME_TO_FINISH);
             } catch (InterruptedException ignored) {
-                EmptyStatement.ignore(ignored);
-                // TODO: Interrupt flag is consumed here
+                currentThread().interrupt();
             }
         }
     }

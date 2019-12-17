@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,12 +16,12 @@
 
 package com.hazelcast.replicatedmap.impl.operation;
 
+import com.hazelcast.map.impl.MapEntries;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
-import com.hazelcast.replicatedmap.impl.client.ReplicatedMapEntries;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.OperationFactory;
+import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.spi.impl.operationservice.OperationFactory;
 
 import java.io.IOException;
 
@@ -31,22 +31,20 @@ import java.io.IOException;
 public class PutAllOperationFactory implements OperationFactory {
 
     private String name;
-    private ReplicatedMapEntries entries;
+    private MapEntries entries;
 
-    @SuppressWarnings("unused")
     public PutAllOperationFactory() {
     }
 
-    public PutAllOperationFactory(String name, ReplicatedMapEntries entries) {
+    public PutAllOperationFactory(String name, MapEntries entries) {
         this.name = name;
         this.entries = entries;
     }
 
     @Override
     public Operation createOperation() {
-        PutAllOperation putAllOperation = new PutAllOperation(name, entries);
-        putAllOperation.setServiceName(ReplicatedMapService.SERVICE_NAME);
-        return putAllOperation;
+        return new PutAllOperation(name, entries)
+                .setServiceName(ReplicatedMapService.SERVICE_NAME);
     }
 
     @Override
@@ -67,7 +65,7 @@ public class PutAllOperationFactory implements OperationFactory {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ReplicatedMapDataSerializerHook.PUT_ALL_OP_FACTORY;
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,7 +29,7 @@ import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.
 import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.PREPEND;
 import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.REPLACE;
 import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.SET;
-import static com.hazelcast.util.StringUtil.stringToBytes;
+import static com.hazelcast.internal.util.StringUtil.stringToBytes;
 
 public class SetCommandProcessor extends MemcacheCommandProcessor<SetCommand> {
 
@@ -42,19 +42,19 @@ public class SetCommandProcessor extends MemcacheCommandProcessor<SetCommand> {
 
     /**
      * "set" means "store this data".
-     * <p/>
+     * <p>
      * "add" means "store this data, but only if the server *doesn't* already
      * hold data for this key".
-     * <p/>
+     * <p>
      * "replace" means "store this data, but only if the server *does*
      * already hold data for this key".
-     * <p/>
-     * <p/>
+     * <p>
+     * <p>
      * After sending the command line and the data block the client awaits
      * the reply, which may be:
-     * <p/>
+     * <p>
      * - "STORED\r\n", to indicate success.
-     * <p/>
+     * <p>
      * - "NOT_STORED\r\n" to indicate the data was not stored, but not
      * because of an error. This normally means that either that the
      * condition for an "add" or a "replace" command wasn't met, or that the
@@ -70,7 +70,7 @@ public class SetCommandProcessor extends MemcacheCommandProcessor<SetCommand> {
         String mapName = DEFAULT_MAP_NAME;
         int index = key.indexOf(':');
         if (index != -1) {
-            mapName = MAP_NAME_PRECEDER + key.substring(0, index);
+            mapName = MAP_NAME_PREFIX + key.substring(0, index);
             key = key.substring(index + 1);
         }
         Object value = new MemcacheEntry(setCommand.getKey(), setCommand.getValue(), setCommand.getFlag());

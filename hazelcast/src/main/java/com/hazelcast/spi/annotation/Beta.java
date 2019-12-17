@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,11 +23,14 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * An element annotated with this annotation is considered beta status.<br/>
+ * An element annotated with this annotation is considered beta status.
+ * <p>
  * Beta in this case means it is a fully new feature and in general is
- * ready for production use but can be subject to change in near future if
- * problems are found with the proposed API. In addition, it can contain
- * bugs and for this reason it should be used with caution.
+ * ready for production use, but can be subject to change in near
+ * future if problems are found with the proposed API.
+ * <p>
+ * In addition, it can contain bugs and for this reason it should be
+ * used with caution.
  */
 @Documented
 @Retention(RetentionPolicy.RUNTIME)

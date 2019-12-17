@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 
 package com.hazelcast.spring.cache;
 
-import com.hazelcast.core.IMap;
+import com.hazelcast.map.IMap;
 import com.hazelcast.core.OperationTimeoutException;
 import com.hazelcast.map.MapInterceptor;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -37,7 +37,7 @@ import static org.junit.Assert.assertTrue;
  *
  * @author Gokhan Oner
  */
-public abstract class AbstractHazelcastCacheReadTimeoutTest extends HazelcastTestSupport{
+public abstract class AbstractHazelcastCacheReadTimeoutTest extends HazelcastTestSupport {
 
     @Autowired
     private CacheManager cacheManager;
@@ -58,11 +58,11 @@ public abstract class AbstractHazelcastCacheReadTimeoutTest extends HazelcastTes
         this.delay100 = cacheManager.getCache("delay100");
 
         //delay > readTimeout, throws exception
-        ((IMap<?, ?>)this.delay150.getNativeCache()).addInterceptor(new DelayIMapGetInterceptor(200));
+        ((IMap<?, ?>) this.delay150.getNativeCache()).addInterceptor(new DelayIMapGetInterceptor(200));
         //delay < readTimeout, get returns before timeout
-        ((IMap<?, ?>)this.delay50.getNativeCache()).addInterceptor(new DelayIMapGetInterceptor(2));
+        ((IMap<?, ?>) this.delay50.getNativeCache()).addInterceptor(new DelayIMapGetInterceptor(2));
         //cache block get operations, readTimeout 0.
-        ((IMap<?, ?>)this.delayNo.getNativeCache()).addInterceptor(new DelayIMapGetInterceptor(300));
+        ((IMap<?, ?>) this.delayNo.getNativeCache()).addInterceptor(new DelayIMapGetInterceptor(300));
     }
 
     @Test
@@ -88,11 +88,11 @@ public abstract class AbstractHazelcastCacheReadTimeoutTest extends HazelcastTes
             //the exception can be thrown when the call is really slower than 50ms
             //it not that uncommon due non-determinism of JVM
 
-            long deltaMs =  TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - start);
+            long deltaMs = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - start);
             assertTrue(deltaMs >= 50);
             return;
         }
-        long time =  TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - start);
+        long time = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - start);
         assertTrue(time >= 2L);
     }
 
@@ -101,7 +101,7 @@ public abstract class AbstractHazelcastCacheReadTimeoutTest extends HazelcastTes
         String key = createRandomKey();
         long start = System.nanoTime();
         delayNo.get(key);
-        long time =  TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - start);
+        long time = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - start);
         assertTrue(time >= 300L);
     }
 
@@ -120,11 +120,11 @@ public abstract class AbstractHazelcastCacheReadTimeoutTest extends HazelcastTes
             //the exception can be thrown when the call is really slower than 50ms
             //it not that uncommon due non-determinism of JVM
 
-            long deltaMs =  TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - start);
+            long deltaMs = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - start);
             assertTrue(deltaMs >= 50);
             return;
         }
-        long time =  TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - start);
+        long time = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - start);
         assertTrue(time >= 2L);
     }
 
@@ -133,7 +133,7 @@ public abstract class AbstractHazelcastCacheReadTimeoutTest extends HazelcastTes
         String key = createRandomKey();
         long start = System.nanoTime();
         dummyTimeoutBean.getDelayNo(key);
-        long time =  TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - start);
+        long time = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - start);
         assertTrue(time >= 300L);
     }
 

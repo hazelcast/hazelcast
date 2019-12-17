@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,8 +19,9 @@ package com.hazelcast.multimap.impl.operations;
 import com.hazelcast.multimap.impl.MultiMapContainer;
 import com.hazelcast.multimap.impl.MultiMapDataSerializerHook;
 import com.hazelcast.multimap.impl.MultiMapService;
+import com.hazelcast.spi.impl.operationservice.ReadonlyOperation;
 
-public class EntrySetOperation extends MultiMapOperation {
+public class EntrySetOperation extends AbstractMultiMapOperation implements ReadonlyOperation {
 
     public EntrySetOperation() {
     }
@@ -37,7 +38,7 @@ public class EntrySetOperation extends MultiMapOperation {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MultiMapDataSerializerHook.ENTRY_SET;
     }
 }

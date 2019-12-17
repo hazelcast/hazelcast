@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,17 +17,14 @@
 package com.hazelcast.spi.impl.operationservice.impl;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.OperationTimeoutException;
-import com.hazelcast.spi.OperationService;
-import com.hazelcast.spi.properties.GroupProperty;
-import com.hazelcast.test.AssertTask;
+import com.hazelcast.spi.impl.InternalCompletableFuture;
+import com.hazelcast.spi.impl.operationservice.OperationService;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -36,21 +33,22 @@ import org.mockito.ArgumentCaptor;
 
 import java.util.LinkedList;
 import java.util.List;
-import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeoutException;
+import java.util.function.BiConsumer;
 
-import static com.hazelcast.spi.properties.GroupProperty.OPERATION_CALL_TIMEOUT_MILLIS;
+import static com.hazelcast.spi.properties.ClusterProperty.OPERATION_CALL_TIMEOUT_MILLIS;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class Invocation_TimeoutTest extends HazelcastTestSupport {
 
     private static final Object RESPONSE = "someresponse";
@@ -60,7 +58,7 @@ public class Invocation_TimeoutTest extends HazelcastTestSupport {
      * fails with a TimeoutException.
      */
     @Test
-    public void whenGetTimeout_thenTimeoutException() throws InterruptedException, ExecutionException, TimeoutException {
+    public void whenGetTimeout_thenTimeoutException() throws InterruptedException, ExecutionException {
         Config config = new Config();
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
         HazelcastInstance local = factory.newHazelcastInstance(config);
@@ -100,12 +98,7 @@ public class Invocation_TimeoutTest extends HazelcastTestSupport {
 
         List<Future> futures = new LinkedList<Future>();
         for (int k = 0; k < 10; k++) {
-            futures.add(spawn(new Callable<Object>() {
-                @Override
-                public Object call() throws Exception {
-                    return future.get();
-                }
-            }));
+            futures.add(spawn(() -> future.get()));
         }
 
         for (Future sf : futures) {
@@ -141,7 +134,7 @@ public class Invocation_TimeoutTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void async_whenLongRunningOperation() throws InterruptedException, ExecutionException, TimeoutException {
+    public void async_whenLongRunningOperation() {
         long callTimeout = 10000;
         Config config = new Config().setProperty(OPERATION_CALL_TIMEOUT_MILLIS.getName(), "" + callTimeout);
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
@@ -150,20 +143,15 @@ public class Invocation_TimeoutTest extends HazelcastTestSupport {
         warmUpPartitions(local, remote);
 
         OperationService opService = getOperationService(local);
-        ICompletableFuture<Object> future = opService.invokeOnPartition(
+        InternalCompletableFuture<Object> future = opService.invokeOnPartition(
                 null,
                 new SlowOperation(6 * callTimeout, RESPONSE),
                 getPartitionId(remote));
 
-        final ExecutionCallback<Object> callback = getExecutionCallbackMock();
-        future.andThen(callback);
+        final BiConsumer<Object, Throwable> callback = getExecutionCallbackMock();
+        future.whenCompleteAsync(callback);
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                verify(callback).onResponse(RESPONSE);
-            }
-        });
+        assertTrueEventually(() -> verify(callback).accept(RESPONSE, null));
     }
 
     // ==================== operation heartbeat timeout ==========================================================================
@@ -201,7 +189,7 @@ public class Invocation_TimeoutTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void async_whenHeartbeatTimeout_thenOperationTimeoutException() throws Exception {
+    public void async_whenHeartbeatTimeout_thenOperationTimeoutException() {
         long callTimeoutMs = 1000;
         Config config = new Config().setProperty(OPERATION_CALL_TIMEOUT_MILLIS.getName(), "" + callTimeoutMs);
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
@@ -211,13 +199,13 @@ public class Invocation_TimeoutTest extends HazelcastTestSupport {
 
         OperationService opService = getOperationService(local);
 
-        ICompletableFuture<Object> future = opService.invokeOnPartition(
+        InternalCompletableFuture<Object> future = opService.invokeOnPartition(
                 null,
                 new VoidOperation(),
                 getPartitionId(remote));
 
-        ExecutionCallback<Object> callback = getExecutionCallbackMock();
-        future.andThen(callback);
+        BiConsumer<Object, Throwable> callback = getExecutionCallbackMock();
+        future.whenCompleteAsync(callback);
 
         assertEventuallyFailsWithHeartbeatTimeout(callback);
     }
@@ -257,7 +245,7 @@ public class Invocation_TimeoutTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void async_whenEventuallyHeartbeatTimeout_thenOperationTimeoutException() throws Exception {
+    public void async_whenEventuallyHeartbeatTimeout_thenOperationTimeoutException() {
         long callTimeoutMs = 5000;
         Config config = new Config().setProperty(OPERATION_CALL_TIMEOUT_MILLIS.getName(), "" + callTimeoutMs);
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
@@ -267,13 +255,13 @@ public class Invocation_TimeoutTest extends HazelcastTestSupport {
 
         OperationService opService = getOperationService(local);
 
-        ICompletableFuture<Object> future = opService.invokeOnPartition(
+        InternalCompletableFuture<Object> future = opService.invokeOnPartition(
                 null,
                 new VoidOperation(callTimeoutMs * 5),
                 getPartitionId(remote));
 
-        final ExecutionCallback<Object> callback = getExecutionCallbackMock();
-        future.andThen(callback);
+        final BiConsumer<Object, Throwable> callback = getExecutionCallbackMock();
+        future.whenCompleteAsync(callback);
 
         assertEventuallyFailsWithHeartbeatTimeout(callback);
     }
@@ -311,7 +299,7 @@ public class Invocation_TimeoutTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void async_whenCallTimeout_thenOperationTimeoutException() throws Exception {
+    public void async_whenCallTimeout_thenOperationTimeoutException() {
         long callTimeoutMs = 60000;
         Config config = new Config().setProperty(OPERATION_CALL_TIMEOUT_MILLIS.getName(), "" + callTimeoutMs);
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
@@ -325,43 +313,37 @@ public class Invocation_TimeoutTest extends HazelcastTestSupport {
         long slowOperationDurationMs = (long) (callTimeoutMs * 1.1);
         opService.invokeOnPartition(new SlowOperation(slowOperationDurationMs).setPartitionId(partitionId));
 
-        ICompletableFuture<Object> future = opService.invokeOnPartition(new DummyOperation().setPartitionId(partitionId));
+        InternalCompletableFuture<Object> future = opService.invokeOnPartition(new DummyOperation().setPartitionId(partitionId));
 
-        ExecutionCallback<Object> callback = getExecutionCallbackMock();
-        future.andThen(callback);
+        BiConsumer<Object, Throwable> callback = getExecutionCallbackMock();
+        future.whenCompleteAsync(callback);
 
         assertEventuallyFailsWithCallTimeout(callback);
     }
 
     @SuppressWarnings("unchecked")
-    private static ExecutionCallback<Object> getExecutionCallbackMock() {
-        return mock(ExecutionCallback.class);
+    private static BiConsumer<Object, Throwable> getExecutionCallbackMock() {
+        return mock(BiConsumer.class);
     }
 
-    private static void assertEventuallyFailsWithHeartbeatTimeout(final ExecutionCallback callback) {
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                ArgumentCaptor<Throwable> argument = ArgumentCaptor.forClass(Throwable.class);
-                verify(callback).onFailure(argument.capture());
-                Throwable cause = argument.getValue();
-                assertInstanceOf(OperationTimeoutException.class, cause);
-                assertContains(cause.getMessage(), "operation-heartbeat-timeout");
-            }
+    private static void assertEventuallyFailsWithHeartbeatTimeout(final BiConsumer<Object, Throwable> callback) {
+        assertTrueEventually(() -> {
+            ArgumentCaptor<Throwable> argument = ArgumentCaptor.forClass(Throwable.class);
+            verify(callback).accept(isNull(), argument.capture());
+            Throwable cause = argument.getValue();
+            assertInstanceOf(OperationTimeoutException.class, cause);
+            assertContains(cause.getMessage(), "operation-heartbeat-timeout");
         });
     }
 
-    private static void assertEventuallyFailsWithCallTimeout(final ExecutionCallback callback) {
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                ArgumentCaptor<Throwable> argument = ArgumentCaptor.forClass(Throwable.class);
-                verify(callback).onFailure(argument.capture());
+    private static void assertEventuallyFailsWithCallTimeout(final BiConsumer<Object, Throwable> callback) {
+        assertTrueEventually(() -> {
+            ArgumentCaptor<Throwable> argument = ArgumentCaptor.forClass(Throwable.class);
+            verify(callback).accept(isNull(), argument.capture());
 
-                Throwable cause = argument.getValue();
-                assertInstanceOf(OperationTimeoutException.class, cause);
-                assertContains(cause.getMessage(), "operation-call-timeout");
-            }
+            Throwable cause = argument.getValue();
+            assertInstanceOf(OperationTimeoutException.class, cause);
+            assertContains(cause.getMessage(), "operation-call-timeout");
         });
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,12 +18,14 @@ package com.hazelcast.spring;
 
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.config.ClientConfig;
-import com.hazelcast.client.impl.HazelcastClientProxy;
-import com.hazelcast.config.DiscoveryConfig;
-import com.hazelcast.config.DiscoveryStrategyConfig;
+import com.hazelcast.client.impl.clientside.HazelcastClientProxy;
+import com.hazelcast.config.AwsConfig;
+import com.hazelcast.config.AzureConfig;
+import com.hazelcast.config.EurekaConfig;
+import com.hazelcast.config.GcpConfig;
+import com.hazelcast.config.KubernetesConfig;
 import com.hazelcast.config.SocketInterceptorConfig;
 import com.hazelcast.core.Hazelcast;
-import com.hazelcast.nio.ssl.TestKeyStoreUtil;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -34,11 +36,9 @@ import org.springframework.test.context.ContextConfiguration;
 
 import javax.annotation.Resource;
 import java.util.Collection;
-import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(CustomSpringJUnit4ClassRunner.class)
@@ -52,11 +52,8 @@ public class TestClientNetworkConfig {
     @BeforeClass
     @AfterClass
     public static void start() {
-        String keyStoreFilePath = TestKeyStoreUtil.getKeyStoreFilePath();
-        String trustStoreFilePath = TestKeyStoreUtil.getTrustStoreFilePath();
-
-        System.setProperty("test.keyStore", keyStoreFilePath);
-        System.setProperty("test.trustStore", trustStoreFilePath);
+        System.setProperty("test.keyStore", "private.jks");
+        System.setProperty("test.trustStore", "trust.jks");
 
         HazelcastClient.shutdownAll();
         Hazelcast.shutdownAll();
@@ -92,30 +89,54 @@ public class TestClientNetworkConfig {
     }
 
     @Test
-    public void smokeDiscoverySpiConfig() {
-        DiscoveryConfig discoveryConfig = client.getClientConfig().getNetworkConfig().getDiscoveryConfig();
-        assertNull(discoveryConfig.getDiscoveryServiceProvider());
-        assertTrue(discoveryConfig.getNodeFilter() instanceof DummyNodeFilter);
-        List<DiscoveryStrategyConfig> discoveryStrategyConfigs
-                = (List<DiscoveryStrategyConfig>) discoveryConfig.getDiscoveryStrategyConfigs();
-        assertEquals(4, discoveryStrategyConfigs.size());
-        DiscoveryStrategyConfig discoveryStrategyConfig = discoveryStrategyConfigs.get(0);
-        assertTrue(discoveryStrategyConfig.getDiscoveryStrategyFactory() instanceof DummyDiscoveryStrategyFactory);
-        assertEquals(3, discoveryStrategyConfig.getProperties().size());
-        assertEquals("foo", discoveryStrategyConfig.getProperties().get("key-string"));
-        assertEquals("123", discoveryStrategyConfig.getProperties().get("key-int"));
-        assertEquals("true", discoveryStrategyConfig.getProperties().get("key-boolean"));
+    public void smokeAwsConfig() {
+        AwsConfig aws = client.getClientConfig().getNetworkConfig().getAwsConfig();
+        assertFalse(aws.isEnabled());
+        assertEquals("sample-access-key", aws.getProperty("access-key"));
+        assertEquals("sample-secret-key", aws.getProperty("secret-key"));
+        assertEquals("sample-region", aws.getProperty("region"));
+        assertEquals("sample-header", aws.getProperty("host-header"));
+        assertEquals("sample-group", aws.getProperty("security-group-name"));
+        assertEquals("sample-tag-key", aws.getProperty("tag-key"));
+        assertEquals("sample-tag-value", aws.getProperty("tag-value"));
+        assertEquals("sample-role", aws.getProperty("iam-role"));
+    }
 
-        DiscoveryStrategyConfig discoveryStrategyConfig2 = discoveryStrategyConfigs.get(1);
-        assertEquals(DummyDiscoveryStrategy.class.getName(), discoveryStrategyConfig2.getClassName());
-        assertEquals(1, discoveryStrategyConfig2.getProperties().size());
-        assertEquals("foo2", discoveryStrategyConfig2.getProperties().get("key-string"));
+    @Test
+    public void smokeGcpConfig() {
+        GcpConfig gcp = client.getClientConfig().getNetworkConfig().getGcpConfig();
+        assertFalse(gcp.isEnabled());
+        assertEquals("us-east1-b,us-east1-c", gcp.getProperty("zones"));
+    }
 
-        DiscoveryStrategyConfig discoveryStrategyConfig3 = discoveryStrategyConfigs.get(2);
-        assertEquals(DummyDiscoveryStrategy.class.getName(), discoveryStrategyConfig3.getClassName());
+    @Test
+    public void smokeAzureConfig() {
+        AzureConfig azure = client.getClientConfig().getNetworkConfig().getAzureConfig();
+        assertFalse(azure.isEnabled());
+        assertEquals("CLIENT_ID", azure.getProperty("client-id"));
+        assertEquals("CLIENT_SECRET", azure.getProperty("client-secret"));
+        assertEquals("TENANT_ID", azure.getProperty("tenant-id"));
+        assertEquals("SUB_ID", azure.getProperty("subscription-id"));
+        assertEquals("HZLCAST001", azure.getProperty("cluster-id"));
+        assertEquals("RESOURCE-GROUP-NAME", azure.getProperty("group-name"));
+    }
 
-        DiscoveryStrategyConfig discoveryStrategyConfig4 = discoveryStrategyConfigs.get(3);
-        assertTrue(discoveryStrategyConfig4.getDiscoveryStrategyFactory() instanceof DummyDiscoveryStrategyFactory);
+    @Test
+    public void smokeKubernetesConfig() {
+        KubernetesConfig kubernetes = client.getClientConfig().getNetworkConfig().getKubernetesConfig();
+        assertFalse(kubernetes.isEnabled());
+        assertEquals("MY-KUBERNETES-NAMESPACE", kubernetes.getProperty("namespace"));
+        assertEquals("MY-SERVICE-NAME", kubernetes.getProperty("service-name"));
+        assertEquals("MY-SERVICE-LABEL-NAME", kubernetes.getProperty("service-label-name"));
+        assertEquals("MY-SERVICE-LABEL-VALUE", kubernetes.getProperty("service-label-value"));
+    }
+
+    @Test
+    public void smokeEurekaConfig() {
+        EurekaConfig eureka = client.getClientConfig().getNetworkConfig().getEurekaConfig();
+        assertFalse(eureka.isEnabled());
+        assertEquals("true", eureka.getProperty("self-registration"));
+        assertEquals("hazelcast", eureka.getProperty("namespace"));
     }
 
     @Test

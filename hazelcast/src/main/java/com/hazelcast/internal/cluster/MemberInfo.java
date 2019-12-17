@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +16,11 @@
 
 package com.hazelcast.internal.cluster;
 
-import com.hazelcast.instance.MemberImpl;
+import com.hazelcast.cluster.impl.MemberImpl;
+import com.hazelcast.internal.util.UUIDSerializationUtil;
+import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook;
-import com.hazelcast.nio.Address;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
@@ -28,45 +30,52 @@ import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 
-import static com.hazelcast.instance.MemberImpl.NA_MEMBER_LIST_JOIN_VERSION;
-import static com.hazelcast.internal.cluster.Versions.V3_10;
-import static com.hazelcast.util.MapUtil.createHashMap;
+import static com.hazelcast.instance.EndpointQualifier.MEMBER;
+import static com.hazelcast.cluster.impl.MemberImpl.NA_MEMBER_LIST_JOIN_VERSION;
+import static com.hazelcast.internal.serialization.impl.SerializationUtil.readMap;
+import static com.hazelcast.internal.serialization.impl.SerializationUtil.writeMap;
+import static com.hazelcast.internal.util.MapUtil.createHashMap;
+import static java.util.Collections.singletonMap;
 
 public class MemberInfo implements IdentifiedDataSerializable {
 
     private Address address;
-    private String uuid;
+    private UUID uuid;
     private boolean liteMember;
     private MemberVersion version;
-    private Map<String, Object> attributes;
+    private Map<String, String> attributes;
     private int memberListJoinVersion = NA_MEMBER_LIST_JOIN_VERSION;
+    // since 3.12
+    private Map<EndpointQualifier, Address> addressMap;
 
     public MemberInfo() {
     }
 
-    public MemberInfo(Address address, String uuid, Map<String, Object> attributes, MemberVersion version) {
-        this(address, uuid, attributes, false, version, NA_MEMBER_LIST_JOIN_VERSION);
+    public MemberInfo(Address address, UUID uuid, Map<String, String> attributes, boolean liteMember, MemberVersion version) {
+        this(address, uuid, attributes, liteMember, version, NA_MEMBER_LIST_JOIN_VERSION, Collections.emptyMap());
     }
 
-    public MemberInfo(Address address, String uuid, Map<String, Object> attributes, boolean liteMember, MemberVersion version) {
-        this(address, uuid, attributes, liteMember, version, NA_MEMBER_LIST_JOIN_VERSION);
+    public MemberInfo(Address address, UUID uuid, Map<String, String> attributes, boolean liteMember, MemberVersion version,
+                      Map<EndpointQualifier, Address> addressMap) {
+        this(address, uuid, attributes, liteMember, version, NA_MEMBER_LIST_JOIN_VERSION, addressMap);
     }
 
-    public MemberInfo(Address address, String uuid, Map<String, Object> attributes, boolean liteMember, MemberVersion version,
-                      int memberListJoinVersion) {
+    public MemberInfo(Address address, UUID uuid, Map<String, String> attributes, boolean liteMember, MemberVersion version,
+                      int memberListJoinVersion, Map<EndpointQualifier, Address> addressMap) {
         this.address = address;
         this.uuid = uuid;
-        this.attributes = attributes == null || attributes.isEmpty()
-                ? Collections.<String, Object>emptyMap() : new HashMap<String, Object>(attributes);
+        this.attributes = attributes == null || attributes.isEmpty() ? Collections.emptyMap() : new HashMap<>(attributes);
         this.liteMember = liteMember;
         this.version = version;
         this.memberListJoinVersion = memberListJoinVersion;
+        this.addressMap = addressMap;
     }
 
     public MemberInfo(MemberImpl member) {
         this(member.getAddress(), member.getUuid(), member.getAttributes(), member.isLiteMember(), member.getVersion(),
-                member.getMemberListJoinVersion());
+                member.getMemberListJoinVersion(), member.getAddressMap());
     }
 
     public Address getAddress() {
@@ -77,11 +86,11 @@ public class MemberInfo implements IdentifiedDataSerializable {
         return version;
     }
 
-    public String getUuid() {
+    public UUID getUuid() {
         return uuid;
     }
 
-    public Map<String, Object> getAttributes() {
+    public Map<String, String> getAttributes() {
         return attributes;
     }
 
@@ -93,17 +102,24 @@ public class MemberInfo implements IdentifiedDataSerializable {
         return memberListJoinVersion;
     }
 
+    public Map<EndpointQualifier, Address> getAddressMap() {
+        return addressMap;
+    }
+
     public MemberImpl toMember() {
-        return new MemberImpl(address, version, false, uuid, attributes, liteMember, memberListJoinVersion, null);
+        return new MemberImpl.Builder(singletonMap(MEMBER, address))
+                .version(version)
+                .uuid(uuid)
+                .attributes(attributes)
+                .liteMember(liteMember)
+                .memberListJoinVersion(memberListJoinVersion)
+                .build();
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        address = new Address();
-        address.readData(in);
-        if (in.readBoolean()) {
-            uuid = in.readUTF();
-        }
+        address = in.readObject();
+        uuid = UUIDSerializationUtil.readUUID(in);
         liteMember = in.readBoolean();
         int size = in.readInt();
         if (size > 0) {
@@ -111,35 +127,29 @@ public class MemberInfo implements IdentifiedDataSerializable {
         }
         for (int i = 0; i < size; i++) {
             String key = in.readUTF();
-            Object value = in.readObject();
+            String value = in.readUTF();
             attributes.put(key, value);
         }
         version = in.readObject();
-        if (in.getVersion().isGreaterOrEqual(V3_10)) {
-            memberListJoinVersion = in.readInt();
-        }
+        memberListJoinVersion = in.readInt();
+        addressMap = readMap(in);
     }
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        address.writeData(out);
-        boolean hasUuid = uuid != null;
-        out.writeBoolean(hasUuid);
-        if (hasUuid) {
-            out.writeUTF(uuid);
-        }
+        out.writeObject(address);
+        UUIDSerializationUtil.writeUUID(out, uuid);
         out.writeBoolean(liteMember);
         out.writeInt(attributes == null ? 0 : attributes.size());
         if (attributes != null) {
-            for (Map.Entry<String, Object> entry : attributes.entrySet()) {
+            for (Map.Entry<String, String> entry : attributes.entrySet()) {
                 out.writeUTF(entry.getKey());
-                out.writeObject(entry.getValue());
+                out.writeUTF(entry.getValue());
             }
         }
         out.writeObject(version);
-        if (out.getVersion().isGreaterOrEqual(V3_10)) {
-            out.writeInt(memberListJoinVersion);
-        }
+        out.writeInt(memberListJoinVersion);
+        writeMap(addressMap, out);
     }
 
     @Override
@@ -163,13 +173,10 @@ public class MemberInfo implements IdentifiedDataSerializable {
         }
         MemberInfo other = (MemberInfo) obj;
         if (address == null) {
-            if (other.address != null) {
-                return false;
-            }
-        } else if (!address.equals(other.address)) {
-            return false;
+            return other.address == null;
+        } else {
+            return address.equals(other.address);
         }
-        return true;
     }
 
     @Override
@@ -188,7 +195,7 @@ public class MemberInfo implements IdentifiedDataSerializable {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ClusterDataSerializerHook.MEMBER_INFO;
     }
 }

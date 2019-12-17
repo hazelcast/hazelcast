@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import com.hazelcast.internal.memory.MemoryManager;
 import com.hazelcast.internal.memory.impl.HeapMemoryManager;
 import com.hazelcast.internal.util.hashslot.HashSlotArray16byteKey;
 import com.hazelcast.internal.util.hashslot.HashSlotCursor16byteKey;
+import com.hazelcast.internal.util.hashslot.SlotAssignmentResult;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.RequireAssertEnabled;
 import com.hazelcast.test.annotation.QuickTest;
@@ -64,21 +65,24 @@ public class HashSlotArray16byteKeyNoValueTest {
     public void testPut() throws Exception {
         final long key1 = randomKey();
         final long key2 = randomKey();
-        final long valueAddress = hsa.ensure(key1, key2);
+        SlotAssignmentResult slot = hsa.ensure(key1, key2);
+        assertTrue(slot.isNew());
+        final long valueAddress = slot.address();
         assertNotEquals(NULL_ADDRESS, valueAddress);
 
-        final long valueAddress2 = hsa.ensure(key1, key2);
-        assertEquals(valueAddress, -valueAddress2);
+        slot = hsa.ensure(key1, key2);
+        assertFalse(slot.isNew());
+        assertEquals(valueAddress, slot.address());
     }
 
     @Test
     public void testGet() throws Exception {
         final long key1 = randomKey();
         final long key2 = randomKey();
-        final long valueAddress = hsa.ensure(key1, key2);
+        final SlotAssignmentResult slot = hsa.ensure(key1, key2);
 
         final long valueAddress2 = hsa.get(key1, key2);
-        assertEquals(valueAddress, valueAddress2);
+        assertEquals(slot.address(), valueAddress2);
     }
 
     @Test
@@ -123,7 +127,7 @@ public class HashSlotArray16byteKeyNoValueTest {
         for (int i = 1; i <= k; i++) {
             long key1 = (long) i;
             long key2 = key1 * factor;
-            assertTrue(hsa.ensure(key1, key2) > 0);
+            assertTrue(hsa.ensure(key1, key2).isNew());
         }
 
         for (int i = 1; i <= k; i++) {
@@ -142,7 +146,7 @@ public class HashSlotArray16byteKeyNoValueTest {
         for (int i = 1; i <= k; i++) {
             long key1 = (long) i;
             long key2 = key1 * factor;
-            assertTrue(hsa.ensure(key1, key2) > 0);
+            assertTrue(hsa.ensure(key1, key2).isNew());
         }
 
         for (int i = mod; i <= k; i += mod) {
@@ -267,11 +271,11 @@ public class HashSlotArray16byteKeyNoValueTest {
 
     @Test
     public void testCursor_valueAddress() {
-        final long valueAddress = hsa.ensure(randomKey(), randomKey());
+        final SlotAssignmentResult slot = hsa.ensure(randomKey(), randomKey());
 
         HashSlotCursor16byteKey cursor = hsa.cursor();
         cursor.advance();
-        assertEquals(valueAddress, cursor.valueAddress());
+        assertEquals(slot.address(), cursor.valueAddress());
     }
 
     @Test(expected = AssertionError.class)

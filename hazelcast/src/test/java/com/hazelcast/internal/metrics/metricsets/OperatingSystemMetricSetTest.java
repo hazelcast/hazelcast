@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,10 +19,12 @@ package com.hazelcast.internal.metrics.metricsets;
 import com.hazelcast.internal.metrics.DoubleGauge;
 import com.hazelcast.internal.metrics.LongGauge;
 import com.hazelcast.internal.metrics.impl.MetricsRegistryImpl;
-import com.hazelcast.logging.Logger;
+import com.hazelcast.internal.metrics.impl.TestMetricsReader;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
+import org.junit.AssumptionViolatedException;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -33,22 +35,22 @@ import java.lang.management.OperatingSystemMXBean;
 
 import static com.hazelcast.internal.metrics.ProbeLevel.INFO;
 import static com.hazelcast.internal.metrics.metricsets.OperatingSystemMetricSet.registerMethod;
+import static com.hazelcast.logging.Logger.getLogger;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assume.assumeTrue;
 
-// The operating system sensor pack is very hard to test because you never know the
-// concrete implementation of the OperatingSystemMXBean.
 @RunWith(HazelcastSerialClassRunner.class)
-@Category(QuickTest.class)
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class OperatingSystemMetricSetTest extends HazelcastTestSupport {
 
     private MetricsRegistryImpl metricsRegistry;
 
     @Before
     public void setup() {
-        metricsRegistry = new MetricsRegistryImpl(Logger.getLogger(MetricsRegistryImpl.class), INFO);
+        metricsRegistry = new MetricsRegistryImpl(getLogger(MetricsRegistryImpl.class), INFO);
         OperatingSystemMetricSet.register(metricsRegistry);
     }
 
@@ -58,30 +60,21 @@ public class OperatingSystemMetricSetTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testComSunManagementUnixOperatingSystem() {
+    public void testGenericSensors() {
         assertContainsSensor("os.systemLoadAverage");
-
-        assumeOperatingSystemMXBean("com.sun.management.UnixOperatingSystem");
-
-        assertContainsSensor("os.committedVirtualMemorySize");
-        assertContainsSensor("os.freePhysicalMemorySize");
-        assertContainsSensor("os.freeSwapSpaceSize");
-        assertContainsSensor("os.processCpuTime");
-        assertContainsSensor("os.totalPhysicalMemorySize");
-        assertContainsSensor("os.totalSwapSpaceSize");
-        assertContainsSensor("os.maxFileDescriptorCount");
-        assertContainsSensor("os.openFileDescriptorCount");
-
-        //only available on java 7+
-        //assertContainsSensor("os.processCpuLoad");
-        //assertContainsSensor("os.systemCpuLoad");
     }
 
     @Test
-    public void testSunManagementOperatingSystemImpl() {
-        assertContainsSensor("os.systemLoadAverage");
+    public void testComSunManagementUnixOperatingSystemMXBean() {
+        assumeOperatingSystemMXBeanType("com.sun.management.UnixOperatingSystemMXBean");
+        assertContainsSensor("os.maxFileDescriptorCount");
+        assertContainsSensor("os.openFileDescriptorCount");
 
-        assumeOperatingSystemMXBean("sun.management.OperatingSystemImpl");
+    }
+
+    @Test
+    public void testComSunManagementOperatingSystemMXBean() {
+        assumeOperatingSystemMXBeanType("com.sun.management.OperatingSystemMXBean");
 
         assertContainsSensor("os.committedVirtualMemorySize");
         assertContainsSensor("os.freePhysicalMemorySize");
@@ -89,24 +82,34 @@ public class OperatingSystemMetricSetTest extends HazelcastTestSupport {
         assertContainsSensor("os.processCpuTime");
         assertContainsSensor("os.totalPhysicalMemorySize");
         assertContainsSensor("os.totalSwapSpaceSize");
-        assertContainsSensor("os.maxFileDescriptorCount");
-        assertContainsSensor("os.openFileDescriptorCount");
 
+        assumeThatNoJDK6();
+        // only available in JDK 7+
         assertContainsSensor("os.processCpuLoad");
         assertContainsSensor("os.systemCpuLoad");
     }
 
     private void assertContainsSensor(String parameter) {
-        boolean contains = metricsRegistry.getNames().contains(parameter);
+        String metricName = "[metric=" + parameter + "]";
+        boolean contains = metricsRegistry.getNames().contains(metricName);
         assertTrue("sensor: " + parameter + " is not found", contains);
+        TestMetricsReader reader = new TestMetricsReader(metricsRegistry, parameter);
+        try {
+            Number value = reader.read();
+            assertNotNull(value);
+        } catch (Exception e) {
+            throw new RuntimeException("Unable to get a metric " + parameter, e);
+        }
     }
 
-    private void assumeOperatingSystemMXBean(String expected) {
+    private void assumeOperatingSystemMXBeanType(String expected) {
         OperatingSystemMXBean bean = ManagementFactory.getOperatingSystemMXBean();
-
-        String foundClass = bean.getClass().getName();
-
-        assumeTrue(foundClass + " is not usable", expected.equals(foundClass));
+        try {
+            Class<?> expectedInterface = Class.forName(expected);
+            assumeTrue(expectedInterface.isAssignableFrom(bean.getClass()));
+        } catch (ClassNotFoundException e) {
+            throw new AssumptionViolatedException("MXBean interface " + expected + " was not found");
+        }
     }
 
     @Test
@@ -120,7 +123,7 @@ public class OperatingSystemMetricSetTest extends HazelcastTestSupport {
 
     @Test
     public void registerMethod_whenLong() {
-        metricsRegistry = new MetricsRegistryImpl(Logger.getLogger(MetricsRegistryImpl.class), INFO);
+        metricsRegistry = new MetricsRegistryImpl(getLogger(MetricsRegistryImpl.class), INFO);
 
         FakeOperatingSystemBean fakeOperatingSystemBean = new FakeOperatingSystemBean();
         registerMethod(metricsRegistry, fakeOperatingSystemBean, "longMethod", "longMethod");
@@ -131,23 +134,23 @@ public class OperatingSystemMetricSetTest extends HazelcastTestSupport {
 
     @Test
     public void registerMethod_whenNotExist() {
-        metricsRegistry = new MetricsRegistryImpl(Logger.getLogger(MetricsRegistryImpl.class), INFO);
+        metricsRegistry = new MetricsRegistryImpl(getLogger(MetricsRegistryImpl.class), INFO);
 
         FakeOperatingSystemBean fakeOperatingSystemBean = new FakeOperatingSystemBean();
-        registerMethod(metricsRegistry, fakeOperatingSystemBean, "notexist", "notexist");
+        registerMethod(metricsRegistry, fakeOperatingSystemBean, "notExist", "notExist");
 
-        boolean parameterExist = metricsRegistry.getNames().contains("notexist");
+        boolean parameterExist = metricsRegistry.getNames().contains("notExist");
         assertFalse(parameterExist);
     }
 
-    public class FakeOperatingSystemBean {
-        double doubleMethod() {
+    public static class FakeOperatingSystemBean {
+
+        public double doubleMethod() {
             return 10;
         }
 
-        long longMethod() {
+        public long longMethod() {
             return 10;
         }
     }
-
 }

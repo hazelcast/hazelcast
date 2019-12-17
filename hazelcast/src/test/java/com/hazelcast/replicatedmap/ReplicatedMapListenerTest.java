@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,15 +22,14 @@ import com.hazelcast.config.ReplicatedMapConfig;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.MapEvent;
-import com.hazelcast.core.ReplicatedMap;
-import com.hazelcast.query.impl.FalsePredicate;
+import com.hazelcast.map.MapEvent;
+import com.hazelcast.query.Predicates;
 import com.hazelcast.query.impl.predicates.InstanceOfPredicate;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -43,7 +42,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class ReplicatedMapListenerTest extends HazelcastTestSupport {
 
     @Test
@@ -61,7 +60,7 @@ public class ReplicatedMapListenerTest extends HazelcastTestSupport {
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertEquals(1, listener.addCount.get());
                 assertEquals(3, listener.keys.peek());
             }
@@ -76,7 +75,7 @@ public class ReplicatedMapListenerTest extends HazelcastTestSupport {
         replicatedMap.put(1, 1);
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertEquals(1, listener.addCount.get());
             }
         });
@@ -91,7 +90,7 @@ public class ReplicatedMapListenerTest extends HazelcastTestSupport {
         replicatedMap.put(1, 2);
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertEquals(1, listener.updateCount.get());
             }
         });
@@ -106,7 +105,7 @@ public class ReplicatedMapListenerTest extends HazelcastTestSupport {
         sleepAtLeastSeconds(2);
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertEquals(1, listener.evictCount.get());
             }
         });
@@ -121,7 +120,7 @@ public class ReplicatedMapListenerTest extends HazelcastTestSupport {
         replicatedMap.remove(1);
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertEquals(1, listener.removeCount.get());
             }
         });
@@ -136,7 +135,7 @@ public class ReplicatedMapListenerTest extends HazelcastTestSupport {
         replicatedMap.clear();
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertEquals(1, listener.mapClearCount.get());
             }
         });
@@ -151,7 +150,7 @@ public class ReplicatedMapListenerTest extends HazelcastTestSupport {
         replicatedMap.put(2, 2);
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertEquals(1, listener.keys.size());
                 assertEquals(1, listener.keys.peek());
                 assertEquals(1, listener.addCount.get());
@@ -164,11 +163,11 @@ public class ReplicatedMapListenerTest extends HazelcastTestSupport {
     public void testListenWithPredicate() {
         ReplicatedMap<Object, Object> replicatedMap = createClusterAndGetRandomReplicatedMap();
         final EventCountingListener listener = new EventCountingListener();
-        replicatedMap.addEntryListener(listener, FalsePredicate.INSTANCE);
+        replicatedMap.addEntryListener(listener, Predicates.alwaysFalse());
         replicatedMap.put(2, 2);
         assertTrueFiveSeconds(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertEquals(0, listener.addCount.get());
             }
         });
@@ -184,7 +183,7 @@ public class ReplicatedMapListenerTest extends HazelcastTestSupport {
         replicatedMap.put(2, 2);
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertEquals(1, listener.keys.size());
                 assertEquals(2, listener.keys.peek());
                 assertEquals(1, listener.addCount.get());
@@ -238,6 +237,11 @@ public class ReplicatedMapListenerTest extends HazelcastTestSupport {
         }
 
         @Override
+        public void entryExpired(EntryEvent<Object, Object> event) {
+            throw new UnsupportedOperationException("Expired event is not published by replicated map");
+        }
+
+        @Override
         public void mapEvicted(MapEvent event) {
             mapEvictCount.incrementAndGet();
         }
@@ -249,14 +253,14 @@ public class ReplicatedMapListenerTest extends HazelcastTestSupport {
 
         @Override
         public String toString() {
-            return "EventCountingListener{" +
-                    "addCount=" + addCount +
-                    ", removeCount=" + removeCount +
-                    ", updateCount=" + updateCount +
-                    ", evictCount=" + evictCount +
-                    ", mapClearCount=" + mapClearCount +
-                    ", mapEvictCount=" + mapEvictCount +
-                    '}';
+            return "EventCountingListener{"
+                    + "addCount=" + addCount
+                    + ", removeCount=" + removeCount
+                    + ", updateCount=" + updateCount
+                    + ", evictCount=" + evictCount
+                    + ", mapClearCount=" + mapClearCount
+                    + ", mapEvictCount=" + mapEvictCount
+                    + '}';
         }
     }
 }

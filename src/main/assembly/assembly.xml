@@ -1,5 +1,5 @@
 <!--
-  ~ Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+  ~ Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
   ~ you may not use this file except in compliance with the License.
@@ -57,15 +57,23 @@
                 <exclude>**/.svn/**</exclude>
             </excludes>
         </fileSet>
+
         <fileSet>
-            <directory>hazelcast-documentation/target/</directory>
-            <outputDirectory>docs/manual</outputDirectory>
+            <directory>hazelcast-documentation/build/asciidoc/pdf</directory>
+            <outputDirectory>docs/manual/pdf</outputDirectory>
             <includes>
-                <include>pdf/hazelcast-documentation-${project.version}.pdf</include>
-                <include>html/**</include>
-                <include>html-single/**</include>
+                <include>**</include>
             </includes>
         </fileSet>
+
+        <fileSet>
+            <directory>hazelcast-documentation/build/asciidoc/html5</directory>
+            <outputDirectory>docs/manual/html-single</outputDirectory>
+            <includes>
+                <include>**</include>
+            </includes>
+        </fileSet>
+
         <fileSet>
             <directory>src/main/resources/</directory>
             <outputDirectory>/license/</outputDirectory>
@@ -95,6 +103,17 @@
             <includes>
                 <include>hazelcast.xml</include>
                 <include>hazelcast-full-example.xml</include>
+                <include>hazelcast-full-example.yaml</include>
+            </includes>
+        </fileSet>
+        <fileSet>
+            <directory>hazelcast-client/target/</directory>
+            <outputDirectory>/bin/</outputDirectory>
+            <includes>
+                <include>hazelcast-client-full-example.xml</include>
+                <include>hazelcast-client-full-example.yaml</include>
+                <include>hazelcast-client-failover-full-example.xml</include>
+                <include>hazelcast-client-failover-full-example.yaml</include>
             </includes>
         </fileSet>
         <fileSet>

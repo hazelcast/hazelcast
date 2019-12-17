@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,12 +19,13 @@ package com.hazelcast.map.impl.mapstore;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IMap;
-import com.hazelcast.core.MapStore;
+import com.hazelcast.map.IMap;
+import com.hazelcast.map.MapStore;
 import com.hazelcast.map.listener.EntryAddedListener;
+import com.hazelcast.map.listener.EntryLoadedListener;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -44,7 +45,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastSerialClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class LoadAllTest extends AbstractMapStoreTest {
 
     @Test(expected = NullPointerException.class)
@@ -160,12 +161,12 @@ public class LoadAllTest extends AbstractMapStoreTest {
         populateMap(map, itemCount);
         evictRange(map, 0, 700);
 
-        final CountDownLatch addEventCounter = new CountDownLatch(700);
-        addListener(map, addEventCounter);
+        final CountDownLatch loadEventCounter = new CountDownLatch(700);
+        addLoadedListener(map, loadEventCounter);
 
         map.loadAll(false);
 
-        assertOpenEventually(addEventCounter);
+        assertOpenEventually(loadEventCounter);
         assertEquals(itemCount, map.size());
     }
 
@@ -176,15 +177,15 @@ public class LoadAllTest extends AbstractMapStoreTest {
         final Config config = createNewConfig(mapName);
         final HazelcastInstance node = createHazelcastInstance(config);
         final IMap<Integer, Integer> map = node.getMap(mapName);
-        final CountDownLatch eventCounter = new CountDownLatch(itemCount);
+        final CountDownLatch loadedCounter = new CountDownLatch(itemCount);
         populateMap(map, itemCount);
         map.evictAll();
 
-        addListener(map, eventCounter);
+        addLoadedListener(map, loadedCounter);
 
         map.loadAll(true);
 
-        assertOpenEventually(eventCounter);
+        assertOpenEventually(loadedCounter);
         assertEquals(itemCount, map.size());
     }
 
@@ -239,6 +240,15 @@ public class LoadAllTest extends AbstractMapStoreTest {
         map.addEntryListener(new EntryAddedListener<Object, Object>() {
             @Override
             public void entryAdded(EntryEvent<Object, Object> event) {
+                counter.countDown();
+            }
+        }, true);
+    }
+
+    private static void addLoadedListener(IMap map, final CountDownLatch counter) {
+        map.addEntryListener(new EntryLoadedListener<Object, Object>() {
+            @Override
+            public void entryLoaded(EntryEvent<Object, Object> event) {
                 counter.countDown();
             }
         }, true);

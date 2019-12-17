@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,38 +18,24 @@ package com.hazelcast.client.impl.protocol.task.executorservice;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ExecutorServiceSubmitToPartitionCodec;
-import com.hazelcast.client.impl.protocol.task.AbstractInvocationMessageTask;
-import com.hazelcast.core.ExecutionCallback;
+import com.hazelcast.client.impl.protocol.task.AbstractPartitionMessageTask;
 import com.hazelcast.executor.impl.DistributedExecutorService;
 import com.hazelcast.executor.impl.operations.CallableTaskOperation;
-import com.hazelcast.instance.Node;
-import com.hazelcast.nio.Connection;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.instance.impl.Node;
+import com.hazelcast.internal.nio.Connection;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.security.SecurityContext;
-import com.hazelcast.spi.InvocationBuilder;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.impl.operationservice.InternalOperationService;
+import com.hazelcast.spi.impl.operationservice.Operation;
 
 import javax.security.auth.Subject;
 import java.security.Permission;
 import java.util.concurrent.Callable;
 
 public class ExecutorServiceSubmitToPartitionMessageTask
-        extends AbstractInvocationMessageTask<ExecutorServiceSubmitToPartitionCodec.RequestParameters>
-        implements ExecutionCallback {
+        extends AbstractPartitionMessageTask<ExecutorServiceSubmitToPartitionCodec.RequestParameters> {
 
     public ExecutorServiceSubmitToPartitionMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
-    }
-
-    @Override
-    protected InvocationBuilder getInvocationBuilder(Operation op) {
-        if (parameters.partitionId == -1) {
-            throw new IllegalArgumentException("Partition ID is -1");
-        }
-
-        final InternalOperationService operationService = nodeEngine.getOperationService();
-        return operationService.createInvocationBuilder(getServiceName(), op, parameters.partitionId);
     }
 
     @Override
@@ -57,9 +43,14 @@ public class ExecutorServiceSubmitToPartitionMessageTask
         SecurityContext securityContext = clientEngine.getSecurityContext();
         Data callableData = parameters.callable;
         if (securityContext != null) {
-            Subject subject = getEndpoint().getSubject();
-            Callable callable = serializationService.toObject(parameters.callable);
-            callable = securityContext.createSecureCallable(subject, callable);
+            Subject subject = endpoint.getSubject();
+            Object taskObject = serializationService.toObject(parameters.callable);
+            Callable callable;
+            if (taskObject instanceof Runnable) {
+                callable = securityContext.createSecureCallable(subject, (Runnable) taskObject);
+            } else {
+                callable = securityContext.createSecureCallable(subject, (Callable<? extends Object>) taskObject);
+            }
             callableData = serializationService.toData(callable);
         }
         return new CallableTaskOperation(parameters.name, parameters.uuid, callableData);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,7 @@ package com.hazelcast.internal.nearcache;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.internal.nearcache.impl.DefaultNearCache;
 import com.hazelcast.test.HazelcastSerialClassRunner;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -27,14 +27,14 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 @RunWith(HazelcastSerialClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class NearCacheTest extends NearCacheTestSupport {
 
     @Override
     protected NearCache<Integer, String> createNearCache(String name, NearCacheConfig nearCacheConfig,
                                                          ManagedNearCacheRecordStore nearCacheRecordStore) {
-        return new DefaultNearCache<Integer, String>(name, nearCacheConfig,
-                nearCacheRecordStore, ss, executionService.getGlobalTaskScheduler(), null);
+        return new DefaultNearCache<Integer, String>(name, nearCacheConfig, nearCacheRecordStore, ss,
+                executionService.getGlobalTaskScheduler(), null, properties);
     }
 
     @Test
@@ -80,11 +80,6 @@ public class NearCacheTest extends NearCacheTestSupport {
     @Test
     public void getNearCacheStatsFromNearCache() {
         doGetNearCacheStatsFromNearCache();
-    }
-
-    @Test
-    public void selectToSaveFromNearCache() {
-        doSelectToSaveFromNearCache();
     }
 
     @Test

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,13 +18,13 @@ package com.hazelcast.query.impl.extractor.predicates;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.InMemoryFormat;
-import com.hazelcast.config.MapAttributeConfig;
+import com.hazelcast.config.AttributeConfig;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.query.extractor.ValueCollector;
 import com.hazelcast.query.extractor.ValueExtractor;
 import com.hazelcast.query.impl.extractor.AbstractExtractionTest;
-import com.hazelcast.test.HazelcastParametersRunnerFactory;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -35,20 +35,20 @@ import static com.hazelcast.query.impl.extractor.predicates.SingleValueDataStruc
 
 /**
  * Tests whether all predicates work with the extraction in attributes that are not collections.
- *
+ * <p>
  * Extraction mechanism: CUSTOM EXTRACTORS.
- *
+ * <p>
  * The trick here is that each extractor is registered under the attribute name like "brain.iq".
  * It is illegal in the production usage, but it enables reusing the test cases from
  * SingleValueAllPredicatesReflectionTest without any code changes, so it is used here.
  * That is the reason why this test may extend the SingleValueAllPredicatesReflectionTest, and the only difference
  * is the registration of the Extractors.
- *
+ * <p>
  * This test is parametrised. See SingleValueAllPredicatesReflectionTest for more details.
  */
 @RunWith(Parameterized.class)
-@UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
-@Category({QuickTest.class, ParallelTest.class})
+@UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
+@Category({QuickTest.class, ParallelJVMTest.class})
 @SuppressWarnings("unused")
 public class SingleValueAllPredicatesExtractorTest extends SingleValueAllPredicatesReflectionTest {
 
@@ -63,27 +63,27 @@ public class SingleValueAllPredicatesExtractorTest extends SingleValueAllPredica
             public void doWithConfig(Config config, Multivalue mv) {
                 MapConfig mapConfig = config.getMapConfig("map");
 
-                MapAttributeConfig iqConfig = new AbstractExtractionTest.TestMapAttributeIndexConfig();
+                AttributeConfig iqConfig = new TestAttributeIndexConfig();
                 iqConfig.setName("brain.iq");
-                iqConfig.setExtractor("com.hazelcast.query.impl.extractor.predicates.SingleValueAllPredicatesExtractorTest$IqExtractor");
-                mapConfig.addMapAttributeConfig(iqConfig);
+                iqConfig.setExtractorClassName("com.hazelcast.query.impl.extractor.predicates.SingleValueAllPredicatesExtractorTest$IqExtractor");
+                mapConfig.addAttributeConfig(iqConfig);
 
-                MapAttributeConfig nameConfig = new AbstractExtractionTest.TestMapAttributeIndexConfig();
+                AttributeConfig nameConfig = new TestAttributeIndexConfig();
                 nameConfig.setName("brain.name");
-                nameConfig.setExtractor("com.hazelcast.query.impl.extractor.predicates.SingleValueAllPredicatesExtractorTest$NameExtractor");
-                mapConfig.addMapAttributeConfig(nameConfig);
+                nameConfig.setExtractorClassName("com.hazelcast.query.impl.extractor.predicates.SingleValueAllPredicatesExtractorTest$NameExtractor");
+                mapConfig.addAttributeConfig(nameConfig);
             }
         };
     }
 
-    public static class IqExtractor extends ValueExtractor<Person, Object> {
+    public static class IqExtractor implements ValueExtractor<Person, Object> {
         @Override
         public void extract(Person target, Object arguments, ValueCollector collector) {
             collector.addObject(target.brain.iq);
         }
     }
 
-    public static class NameExtractor extends ValueExtractor<Person, Object> {
+    public static class NameExtractor implements ValueExtractor<Person, Object> {
         @Override
         public void extract(Person target, Object arguments, ValueCollector collector) {
             collector.addObject(target.brain.name);

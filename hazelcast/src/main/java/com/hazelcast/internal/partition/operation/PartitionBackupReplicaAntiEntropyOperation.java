@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,9 +23,8 @@ import com.hazelcast.internal.partition.impl.PartitionReplicaManager;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.impl.Versioned;
-import com.hazelcast.spi.PartitionAwareOperation;
-import com.hazelcast.spi.ServiceNamespace;
+import com.hazelcast.spi.impl.operationservice.PartitionAwareOperation;
+import com.hazelcast.internal.services.ServiceNamespace;
 import com.hazelcast.spi.impl.AllowedDuringPassiveState;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 
@@ -39,7 +38,7 @@ import static com.hazelcast.internal.partition.impl.PartitionDataSerializerHook.
 // should not be an urgent operation. required to be in order with backup operations on target node
 public final class PartitionBackupReplicaAntiEntropyOperation
         extends AbstractPartitionOperation
-        implements PartitionAwareOperation, AllowedDuringPassiveState, Versioned {
+        implements PartitionAwareOperation, AllowedDuringPassiveState {
 
     private Map<ServiceNamespace, Long> versions;
     private boolean returnResponse;
@@ -54,7 +53,7 @@ public final class PartitionBackupReplicaAntiEntropyOperation
     }
 
     @Override
-    public void run() throws Exception {
+    public void run() {
         if (!isNodeStartCompleted()) {
             response = false;
             return;
@@ -149,7 +148,7 @@ public final class PartitionBackupReplicaAntiEntropyOperation
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         int len = in.readInt();
-        versions = new HashMap<ServiceNamespace, Long>(len);
+        versions = new HashMap<>(len);
         for (int i = 0; i < len; i++) {
             ServiceNamespace ns = in.readObject();
             long v = in.readLong();
@@ -165,7 +164,7 @@ public final class PartitionBackupReplicaAntiEntropyOperation
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return PARTITION_BACKUP_REPLICA_ANTI_ENTROPY;
     }
 }

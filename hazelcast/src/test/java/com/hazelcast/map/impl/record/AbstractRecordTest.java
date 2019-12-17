@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,22 +16,25 @@
 
 package com.hazelcast.map.impl.record;
 
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.internal.util.Clock;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import static com.hazelcast.map.impl.record.Record.UNSET;
+import static com.hazelcast.test.HazelcastTestSupport.assumeDifferentHashCodes;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class AbstractRecordTest {
 
     private static final Data KEY = mock(Data.class);
@@ -49,35 +52,27 @@ public class AbstractRecordTest {
     @Before
     public void setUp() throws Exception {
         record = new ObjectRecord(VALUE);
-        record.setKey(KEY);
 
         recordSameAttributes = new ObjectRecord();
-        recordSameAttributes.setKey(KEY);
         recordSameAttributes.setValue(VALUE);
 
         recordOtherVersion = new ObjectRecord(VALUE);
-        recordOtherVersion.setKey(KEY);
         recordOtherVersion.setVersion(42);
 
         recordOtherTtl = new ObjectRecord(VALUE);
-        recordOtherTtl.setKey(KEY);
         recordOtherTtl.setTtl(2342);
 
         recordOtherCreationTime = new ObjectRecord(VALUE);
-        recordOtherCreationTime.setKey(KEY);
-        recordOtherCreationTime.setCreationTime(152344145);
+        recordOtherCreationTime.setCreationTime(Clock.currentTimeMillis());
 
         recordOtherHits = new ObjectRecord(VALUE);
-        recordOtherHits.setKey(KEY);
         recordOtherHits.setHits(23);
 
         recordOtherLastAccessTime = new ObjectRecord(VALUE);
-        recordOtherLastAccessTime.setKey(KEY);
-        recordOtherLastAccessTime.setLastAccessTime(354712354);
+        recordOtherLastAccessTime.setLastAccessTime(Clock.currentTimeMillis());
 
         recordOtherLastUpdateTime = new ObjectRecord(VALUE);
-        recordOtherLastUpdateTime.setKey(KEY);
-        recordOtherLastUpdateTime.setLastUpdateTime(124241425);
+        recordOtherLastUpdateTime.setLastUpdateTime(Clock.currentTimeMillis() + 10000);
     }
 
     @Test
@@ -87,11 +82,11 @@ public class AbstractRecordTest {
 
     @Test
     public void testSetSequence_doesNothing() {
-        assertEquals(AbstractRecord.NOT_AVAILABLE, record.getSequence());
+        assertEquals(UNSET, record.getSequence());
 
         record.setSequence(1250293);
 
-        assertEquals(AbstractRecord.NOT_AVAILABLE, record.getSequence());
+        assertEquals(UNSET, record.getSequence());
     }
 
     @Test
@@ -115,6 +110,7 @@ public class AbstractRecordTest {
         assertEquals(record.hashCode(), record.hashCode());
         assertEquals(record.hashCode(), recordSameAttributes.hashCode());
 
+        assumeDifferentHashCodes();
         assertNotEquals(record.hashCode(), recordOtherVersion.hashCode());
         assertNotEquals(record.hashCode(), recordOtherTtl.hashCode());
         assertNotEquals(record.hashCode(), recordOtherCreationTime.hashCode());

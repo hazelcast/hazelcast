@@ -1,24 +1,42 @@
+/*
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.hazelcast.map;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IMap;
 import com.hazelcast.core.Offloadable;
 import com.hazelcast.core.ReadOnly;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.map.impl.LockAwareLazyMapEntry;
-import com.hazelcast.query.TruePredicate;
+import com.hazelcast.query.Predicates;
 import com.hazelcast.query.impl.getters.Extractors;
-import com.hazelcast.test.HazelcastParametersRunnerFactory;
+import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
+import org.junit.runners.Parameterized.Parameter;
+import org.junit.runners.Parameterized.Parameters;
+import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
 import java.util.Collection;
 import java.util.HashSet;
@@ -34,19 +52,20 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(Parameterized.class)
-@Parameterized.UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
-@Category({QuickTest.class, ParallelTest.class})
+@UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class EntryProcessorLockTest extends HazelcastTestSupport {
 
     public static final String MAP_NAME = "EntryProcessorLockTest";
 
-    @Parameterized.Parameter
+    @Parameter
     public InMemoryFormat inMemoryFormat;
 
-    @Parameterized.Parameters(name = "{index}: {0}")
+    @Parameters(name = "{index}: {0}")
     public static Collection<Object[]> data() {
         return asList(new Object[][]{
-                {BINARY}, {OBJECT}
+                {BINARY},
+                {OBJECT},
         });
     }
 
@@ -83,7 +102,7 @@ public class EntryProcessorLockTest extends HazelcastTestSupport {
         IMap<String, String> map = getInitializedMap();
 
         map.lock("key1");
-        Map<String, Object> result = map.executeOnEntries(new TestNonOffloadableEntryProcessor(), TruePredicate.INSTANCE);
+        Map<String, Object> result = map.executeOnEntries(new TestNonOffloadableEntryProcessor(), Predicates.alwaysTrue());
 
         assertTrue((Boolean) result.get("key1"));
         assertFalse((Boolean) result.get("key2"));
@@ -132,7 +151,7 @@ public class EntryProcessorLockTest extends HazelcastTestSupport {
     public void test_submitToKey_notOffloadable() throws ExecutionException, InterruptedException {
         IMap<String, String> map = getInitializedMap();
 
-        Boolean result = (Boolean) map.submitToKey("key1", new TestNonOffloadableEntryProcessor()).get();
+        Boolean result = (Boolean) map.submitToKey("key1", new TestNonOffloadableEntryProcessor()).toCompletableFuture().get();
 
         assertFalse(result);
     }
@@ -141,7 +160,7 @@ public class EntryProcessorLockTest extends HazelcastTestSupport {
     public void test_submitToKey_Offloadable() throws ExecutionException, InterruptedException {
         IMap<String, String> map = getInitializedMap();
 
-        Boolean result = (Boolean) map.submitToKey("key1", new TestOffloadableEntryProcessor()).get();
+        Boolean result = (Boolean) map.submitToKey("key1", new TestOffloadableEntryProcessor()).toCompletableFuture().get();
 
         assertNull(result);
     }
@@ -150,7 +169,8 @@ public class EntryProcessorLockTest extends HazelcastTestSupport {
     public void test_submitToKey_Offloadable_ReadOnly() throws ExecutionException, InterruptedException {
         IMap<String, String> map = getInitializedMap();
 
-        Boolean result = (Boolean) map.submitToKey("key1", new TestOffloadableReadOnlyEntryProcessor()).get();
+        Boolean result = (Boolean) map.submitToKey("key1", new TestOffloadableReadOnlyEntryProcessor())
+                                      .toCompletableFuture().get();
 
         assertNull(result);
     }
@@ -158,7 +178,8 @@ public class EntryProcessorLockTest extends HazelcastTestSupport {
     @Test
     public void test_Serialization_LockAwareLazyMapEntry_deserializesAs_LazyMapEntry() throws ExecutionException, InterruptedException {
         InternalSerializationService ss = getSerializationService(createHazelcastInstance(getConfig()));
-        LockAwareLazyMapEntry entry = new LockAwareLazyMapEntry(ss.toData("key"), "value", ss, Extractors.empty(), false);
+        LockAwareLazyMapEntry entry = new LockAwareLazyMapEntry(ss.toData("key"), "value", ss,
+                Extractors.newBuilder(ss).build(), false);
 
         LockAwareLazyMapEntry deserializedEntry = ss.toObject(ss.toData(entry));
 
@@ -175,7 +196,7 @@ public class EntryProcessorLockTest extends HazelcastTestSupport {
         }
 
         @Override
-        public EntryBackupProcessor getBackupProcessor() {
+        public EntryProcessor getBackupProcessor() {
             return null;
         }
     }
@@ -192,7 +213,7 @@ public class EntryProcessorLockTest extends HazelcastTestSupport {
         }
 
         @Override
-        public EntryBackupProcessor getBackupProcessor() {
+        public EntryProcessor getBackupProcessor() {
             return null;
         }
     }
@@ -209,7 +230,7 @@ public class EntryProcessorLockTest extends HazelcastTestSupport {
         }
 
         @Override
-        public EntryBackupProcessor getBackupProcessor() {
+        public EntryProcessor getBackupProcessor() {
             return null;
         }
     }

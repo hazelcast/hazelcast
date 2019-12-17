@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,8 +17,8 @@
 package com.hazelcast.cache.impl.operation;
 
 import com.hazelcast.cache.impl.CacheDataSerializerHook;
-import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.ReadonlyOperation;
+import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.spi.impl.operationservice.ReadonlyOperation;
 
 /**
  * Cache contains key operation, determines if the cache contains an entry for the specified key.
@@ -28,24 +28,22 @@ import com.hazelcast.spi.ReadonlyOperation;
  * (There can be at most one such mapping.)
  */
 public class CacheContainsKeyOperation
-        extends AbstractCacheOperation
-        implements ReadonlyOperation {
+        extends KeyBasedCacheOperation implements ReadonlyOperation {
 
     public CacheContainsKeyOperation() {
     }
 
     public CacheContainsKeyOperation(String name, Data key) {
-        super(name, key);
+        super(name, key, true);
     }
 
     @Override
-    public void run()
-            throws Exception {
-        response = cache.contains(key);
+    public void run() throws Exception {
+        response = recordStore != null && recordStore.contains(key);
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return CacheDataSerializerHook.CONTAINS_KEY;
     }
 }

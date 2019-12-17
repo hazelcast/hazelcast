@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,43 +16,47 @@
 
 package com.hazelcast.map.impl.operation;
 
-import com.hazelcast.concurrent.lock.LockWaitNotifyKey;
 import com.hazelcast.core.EntryEventType;
-import com.hazelcast.map.EntryBackupProcessor;
+import com.hazelcast.internal.locksupport.LockWaitNotifyKey;
+import com.hazelcast.internal.nio.IOUtil;
+import com.hazelcast.internal.util.UUIDSerializationUtil;
+import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.BackupAwareOperation;
-import com.hazelcast.spi.Notifier;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.WaitNotifyKey;
+import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.spi.impl.operationservice.BackupAwareOperation;
+import com.hazelcast.spi.impl.operationservice.Notifier;
+import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.spi.impl.operationservice.WaitNotifyKey;
 
 import java.io.IOException;
+import java.util.UUID;
 
 import static com.hazelcast.map.impl.operation.EntryOperator.operator;
 
 /**
- * Set & Unlock processing for the EntryOperation
+ * Set &amp; Unlock processing for the EntryOperation
  *
  * See the javadoc on {@link EntryOperation}
  */
-public class EntryOffloadableSetUnlockOperation extends MutatingKeyBasedMapOperation implements BackupAwareOperation, Notifier {
+public class EntryOffloadableSetUnlockOperation extends KeyBasedMapOperation
+        implements BackupAwareOperation, Notifier {
 
     protected Data newValue;
     protected Data oldValue;
-    protected String caller;
+    protected UUID caller;
     protected long begin;
     protected EntryEventType modificationType;
-    protected EntryBackupProcessor entryBackupProcessor;
+    protected EntryProcessor entryBackupProcessor;
 
     public EntryOffloadableSetUnlockOperation() {
     }
 
     public EntryOffloadableSetUnlockOperation(String name, EntryEventType modificationType, Data key, Data oldValue,
-                                              Data newValue, String caller, long threadId, long begin,
-                                              EntryBackupProcessor entryBackupProcessor) {
+                                              Data newValue, UUID caller, long threadId, long begin,
+                                              EntryProcessor entryBackupProcessor) {
         super(name, key, newValue);
         this.newValue = newValue;
         this.oldValue = oldValue;
@@ -64,7 +68,7 @@ public class EntryOffloadableSetUnlockOperation extends MutatingKeyBasedMapOpera
     }
 
     @Override
-    public void run() throws Exception {
+    protected void runInternal() {
         verifyLock();
         try {
             operator(this).init(dataKey, oldValue, newValue, null, modificationType)
@@ -134,7 +138,7 @@ public class EntryOffloadableSetUnlockOperation extends MutatingKeyBasedMapOpera
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MapDataSerializerHook.ENTRY_OFFLOADABLE_SET_UNLOCK;
     }
 
@@ -142,9 +146,9 @@ public class EntryOffloadableSetUnlockOperation extends MutatingKeyBasedMapOpera
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeUTF(modificationType != null ? modificationType.name() : "");
-        out.writeData(oldValue);
-        out.writeData(newValue);
-        out.writeUTF(caller);
+        IOUtil.writeData(out, oldValue);
+        IOUtil.writeData(out, newValue);
+        UUIDSerializationUtil.writeUUID(out, caller);
         out.writeLong(begin);
         out.writeObject(entryBackupProcessor);
     }
@@ -154,9 +158,9 @@ public class EntryOffloadableSetUnlockOperation extends MutatingKeyBasedMapOpera
         super.readInternal(in);
         String modificationTypeName = in.readUTF();
         modificationType = modificationTypeName.equals("") ? null : EntryEventType.valueOf(modificationTypeName);
-        oldValue = in.readData();
-        newValue = in.readData();
-        caller = in.readUTF();
+        oldValue = IOUtil.readData(in);
+        newValue = IOUtil.readData(in);
+        caller = UUIDSerializationUtil.readUUID(in);
         begin = in.readLong();
         entryBackupProcessor = in.readObject();
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,7 +27,7 @@ import com.hazelcast.scheduledexecutor.impl.ScheduledTaskDescriptor;
 import java.io.IOException;
 import java.util.Map;
 
-import static com.hazelcast.util.MapUtil.createHashMap;
+import static com.hazelcast.internal.util.MapUtil.createHashMap;
 
 public class ReplicationOperation
         extends AbstractSchedulerOperation {
@@ -42,7 +42,8 @@ public class ReplicationOperation
     }
 
     @Override
-    public void run() throws Exception {
+    public void run()
+            throws Exception {
         DistributedScheduledExecutorService service = getService();
         ScheduledExecutorPartition partition = service.getPartition(getPartitionId());
         for (Map.Entry<String, Map<String, ScheduledTaskDescriptor>> entry : map.entrySet()) {
@@ -52,14 +53,15 @@ public class ReplicationOperation
                 ScheduledTaskDescriptor descriptor = descriptorEntry.getValue();
 
                 if (!container.has(taskName)) {
-                    container.stash(descriptor);
+                    container.enqueueSuspended(descriptor, false);
                 }
             }
         }
     }
 
     @Override
-    protected void writeInternal(ObjectDataOutput out) throws IOException {
+    protected void writeInternal(ObjectDataOutput out)
+            throws IOException {
         out.writeInt(map.size());
         for (Map.Entry<String, Map<String, ScheduledTaskDescriptor>> entry : map.entrySet()) {
             out.writeUTF(entry.getKey());
@@ -72,7 +74,8 @@ public class ReplicationOperation
     }
 
     @Override
-    protected void readInternal(ObjectDataInput in) throws IOException {
+    protected void readInternal(ObjectDataInput in)
+            throws IOException {
         int size = in.readInt();
         map = createHashMap(size);
         for (int i = 0; i < size; i++) {
@@ -92,7 +95,7 @@ public class ReplicationOperation
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ScheduledExecutorDataSerializerHook.REPLICATION;
     }
 

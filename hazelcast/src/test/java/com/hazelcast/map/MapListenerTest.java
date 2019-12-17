@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,19 +16,18 @@
 
 package com.hazelcast.map;
 
+import com.hazelcast.config.Config;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceAware;
-import com.hazelcast.core.IMap;
 import com.hazelcast.map.listener.EntryAddedListener;
 import com.hazelcast.map.listener.EntryRemovedListener;
 import com.hazelcast.map.listener.EntryUpdatedListener;
-import com.hazelcast.query.SqlPredicate;
+import com.hazelcast.query.Predicates;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -41,20 +40,16 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static com.hazelcast.map.impl.event.MapEventPublisherImpl.LISTENER_WITH_PREDICATE_PRODUCES_NATURAL_EVENT_TYPES;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class MapListenerTest extends HazelcastTestSupport {
 
     private static final int AGE_THRESHOLD = 50;
 
-    static {
-        System.setProperty("hazelcast.map.entry.filtering.natural.event.types", "true");
-    }
-
     @Test
-    @Ignore("fails occasionally with wrong events count")
     public void testListener_eventCountsCorrect() throws Exception {
         // GIVEN
         HazelcastInstance hz = createHazelcastInstance();
@@ -62,7 +57,7 @@ public class MapListenerTest extends HazelcastTestSupport {
         // GIVEN MAP & LISTENER
         IMap<String, Person> map = hz.getMap("map");
         AllListener listener = new AllListener();
-        map.addEntryListener(listener, new SqlPredicate("age > " + AGE_THRESHOLD), true);
+        map.addEntryListener(listener, Predicates.sql("age > " + AGE_THRESHOLD), true);
 
         // GIVEN MAP EVENTS
         generateMapEvents(map, listener);
@@ -80,7 +75,7 @@ public class MapListenerTest extends HazelcastTestSupport {
         // GIVEN MAP & LISTENER
         IMap<String, Person> map = instances[0].getMap("map");
         MyEntryListener listener = new MyEntryListener();
-        map.addEntryListener(listener, new SqlPredicate("age > " + AGE_THRESHOLD), true);
+        map.addEntryListener(listener, Predicates.sql("age > " + AGE_THRESHOLD), true);
 
         // GIVEN MAP EVENTS
         generateMapEvents(map, null);
@@ -133,9 +128,12 @@ public class MapListenerTest extends HazelcastTestSupport {
     class AllListener implements EntryAddedListener<String, Person>, EntryRemovedListener<String, Person>,
             EntryUpdatedListener<String, Person> {
 
-        public final AtomicInteger entries, exits, entriesObserved, exitsObserved;
+        final AtomicInteger entries;
+        final AtomicInteger exits;
+        final AtomicInteger entriesObserved;
+        final AtomicInteger exitsObserved;
 
-        public AllListener() {
+        AllListener() {
             entries = new AtomicInteger();
             exits = new AtomicInteger();
             entriesObserved = new AtomicInteger();
@@ -154,11 +152,11 @@ public class MapListenerTest extends HazelcastTestSupport {
 
         @Override
         public void entryUpdated(EntryEvent<String, Person> event) {
-            if (event.getOldValue().getAge() > AGE_THRESHOLD &&
-                    event.getValue().getAge() <= AGE_THRESHOLD) {
+            if (event.getOldValue().getAge() > AGE_THRESHOLD
+                    && event.getValue().getAge() <= AGE_THRESHOLD) {
                 exitsObserved.incrementAndGet();
-            } else if (event.getOldValue().getAge() <= AGE_THRESHOLD &&
-                    event.getValue().getAge() > AGE_THRESHOLD) {
+            } else if (event.getOldValue().getAge() <= AGE_THRESHOLD
+                    && event.getValue().getAge() > AGE_THRESHOLD) {
                 entriesObserved.incrementAndGet();
             }
         }
@@ -169,12 +167,12 @@ public class MapListenerTest extends HazelcastTestSupport {
         private int age;
         private String name;
 
-        public Person(int age, String name) {
+        Person(int age, String name) {
             this.age = age;
             this.name = name;
         }
 
-        public Person(Person p) {
+        Person(Person p) {
             this.name = p.name;
             this.age = p.age;
         }
@@ -197,9 +195,9 @@ public class MapListenerTest extends HazelcastTestSupport {
 
         @Override
         public String toString() {
-            return "Person{" +
-                    "age=" + age +
-                    '}';
+            return "Person{"
+                    + "age=" + age
+                    + '}';
         }
     }
 
@@ -222,8 +220,7 @@ public class MapListenerTest extends HazelcastTestSupport {
         }
 
         private void act() {
-            int action = random.nextInt(10) < 6 ? ACTION_ADD :
-                    random.nextInt(10) < 8 ? ACTION_UPDATE_AGE : ACTION_REMOVE;
+            int action = random.nextInt(10) < 6 ? ACTION_ADD : random.nextInt(10) < 8 ? ACTION_UPDATE_AGE : ACTION_REMOVE;
             switch (action) {
                 case ACTION_ADD:
                     addPerson();
@@ -234,6 +231,8 @@ public class MapListenerTest extends HazelcastTestSupport {
                 case ACTION_REMOVE:
                     removePerson();
                     break;
+                default:
+                    throw new UnsupportedOperationException("Unsupported action: " + action);
             }
         }
 
@@ -290,4 +289,9 @@ public class MapListenerTest extends HazelcastTestSupport {
         }
     }
 
+    @Override
+    protected Config getConfig() {
+        return smallInstanceConfig()
+                    .setProperty(LISTENER_WITH_PREDICATE_PRODUCES_NATURAL_EVENT_TYPES.getName(), "true");
+    }
 }

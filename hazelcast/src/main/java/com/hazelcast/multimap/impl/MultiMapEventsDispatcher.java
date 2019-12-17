@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,9 +18,9 @@ package com.hazelcast.multimap.impl;
 
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryListener;
-import com.hazelcast.core.IMapEvent;
-import com.hazelcast.core.MapEvent;
-import com.hazelcast.core.Member;
+import com.hazelcast.map.IMapEvent;
+import com.hazelcast.map.MapEvent;
+import com.hazelcast.cluster.Member;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
@@ -39,7 +39,7 @@ class MultiMapEventsDispatcher {
     private final ClusterService clusterService;
     private final MultiMapService multiMapService;
 
-    public MultiMapEventsDispatcher(MultiMapService multiMapService, ClusterService clusterService) {
+    MultiMapEventsDispatcher(MultiMapService multiMapService, ClusterService clusterService) {
         this.multiMapService = multiMapService;
         this.clusterService = clusterService;
     }
@@ -59,12 +59,12 @@ class MultiMapEventsDispatcher {
     }
 
     private void dispatchMapEventData(EventData eventData, EntryListener listener) {
-        final MapEventData mapEventData = (MapEventData) eventData;
-        final Member member = getMemberOrNull(eventData);
+        MapEventData mapEventData = (MapEventData) eventData;
+        Member member = getMemberOrNull(eventData);
         if (member == null) {
             return;
         }
-        final MapEvent event = createMapEvent(mapEventData, member);
+        MapEvent event = createMapEvent(mapEventData, member);
         dispatch0(event, listener);
         incrementEventStats(event);
     }
@@ -75,16 +75,16 @@ class MultiMapEventsDispatcher {
     }
 
     private void dispatchEntryEventData(EventData eventData, EntryListener listener) {
-        final EntryEventData entryEventData = (EntryEventData) eventData;
-        final Member member = getMemberOrNull(eventData);
+        EntryEventData entryEventData = (EntryEventData) eventData;
+        Member member = getMemberOrNull(eventData);
 
-        final EntryEvent event = createDataAwareEntryEvent(entryEventData, member);
+        EntryEvent event = createDataAwareEntryEvent(entryEventData, member);
         dispatch0(event, listener);
         incrementEventStats(event);
     }
 
     private Member getMemberOrNull(EventData eventData) {
-        final Member member = clusterService.getMember(eventData.getCaller());
+        Member member = clusterService.getMember(eventData.getCaller());
         if (member == null) {
             if (logger.isInfoEnabled()) {
                 logger.info("Dropping event " + eventData + " from unknown address:" + eventData.getCaller());

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,9 +18,9 @@ package com.hazelcast.multimap.standalone;
 
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.Member;
-import com.hazelcast.core.MultiMap;
-import com.hazelcast.core.Partition;
+import com.hazelcast.cluster.Member;
+import com.hazelcast.multimap.MultiMap;
+import com.hazelcast.partition.Partition;
 
 import java.util.Random;
 import java.util.concurrent.ExecutorService;
@@ -28,33 +28,38 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Logger;
 
+import static com.hazelcast.test.HazelcastTestSupport.sleepSeconds;
+import static java.util.concurrent.Executors.newFixedThreadPool;
+
 /**
  * Tests for MultiMap
  */
 public final class SimpleMultiMapTest {
 
-
-    private static Logger logger = Logger.getLogger(SimpleMultiMapTest.class.getName());
-    private static HazelcastInstance instance = Hazelcast.newHazelcastInstance(null);
     private static final int STATS_SECONDS = 10;
+
+    private static final Logger LOGGER = Logger.getLogger(SimpleMultiMapTest.class.getName());
+    private static final Random RANDOM = new Random();
+
+    private static HazelcastInstance instance = Hazelcast.newHazelcastInstance(null);
     private static int threadCount = 40;
     private static int entryCount = 10 * 1000;
     private static int valueSize = 1000;
     private static int getPercentage = 40;
     private static int putPercentage = 40;
-    private static final Random RANDOM = new Random();
 
     private SimpleMultiMapTest() {
     }
 
     public static void main(String[] args) {
         boolean load = init(args);
-        ExecutorService es = Executors.newFixedThreadPool(threadCount);
+        ExecutorService es = newFixedThreadPool(threadCount);
         final MultiMap<String, byte[]> map = instance.getMultiMap("default");
         final AtomicInteger gets = new AtomicInteger(0);
         final AtomicInteger puts = new AtomicInteger(0);
         final AtomicInteger removes = new AtomicInteger(0);
         load(load, es, map);
+
         for (int i = 0; i < threadCount; i++) {
             es.execute(new Runnable() {
                 public void run() {
@@ -78,21 +83,16 @@ public final class SimpleMultiMapTest {
         Executors.newSingleThreadExecutor().execute(new Runnable() {
             public void run() {
                 while (true) {
-                    try {
-                        //noinspection BusyWait
-                        Thread.sleep(STATS_SECONDS * 1000);
-                        logger.info("cluster size:"
-                                + instance.getCluster().getMembers().size());
-                        int putCount = puts.getAndSet(0);
-                        int getCount = gets.getAndSet(0);
-                        int removeCount = removes.getAndSet(0);
-                        logger.info("TOTAL:" + (removeCount + putCount + getCount) / STATS_SECONDS);
-                        logger.info("PUTS:" + putCount / STATS_SECONDS);
-                        logger.info("GEtS:" + getCount / STATS_SECONDS);
-                        logger.info("REMOVES:" + removeCount / STATS_SECONDS);
-                    } catch (InterruptedException ignored) {
-                        return;
-                    }
+                    sleepSeconds(STATS_SECONDS);
+                    int putCount = puts.getAndSet(0);
+                    int getCount = gets.getAndSet(0);
+                    int removeCount = removes.getAndSet(0);
+
+                    LOGGER.info("cluster size: " + instance.getCluster().getMembers().size());
+                    LOGGER.info("TOTAL: " + (removeCount + putCount + getCount) / STATS_SECONDS);
+                    LOGGER.info("PUTS: " + putCount / STATS_SECONDS);
+                    LOGGER.info("GEtS: " + getCount / STATS_SECONDS);
+                    LOGGER.info("REMOVES: " + removeCount / STATS_SECONDS);
                 }
             }
         });
@@ -135,17 +135,17 @@ public final class SimpleMultiMapTest {
                 }
             }
         } else {
-            logger.info("Help: sh test.sh t200 v130 p10 g85 ");
-            logger.info("    // means 200 threads, value-size 130 bytes, 10% put, 85% get");
-            logger.info("");
+            LOGGER.info("Help: sh test.sh t200 v130 p10 g85 ");
+            LOGGER.info("    // means 200 threads, value-size 130 bytes, 10% put, 85% get");
+            LOGGER.info("");
         }
-        logger.info("Starting Test with ");
-        logger.info("      Thread Count: " + threadCount);
-        logger.info("       Entry Count: " + entryCount);
-        logger.info("        Value Size: " + valueSize);
-        logger.info("    Get Percentage: " + getPercentage);
-        logger.info("    Put Percentage: " + putPercentage);
-        logger.info(" Remove Percentage: " + (100 - (putPercentage + getPercentage)));
+        LOGGER.info("Starting Test with ");
+        LOGGER.info("      Thread Count: " + threadCount);
+        LOGGER.info("       Entry Count: " + entryCount);
+        LOGGER.info("        Value Size: " + valueSize);
+        LOGGER.info("    Get Percentage: " + getPercentage);
+        LOGGER.info("    Put Percentage: " + putPercentage);
+        LOGGER.info(" Remove Percentage: " + (100 - (putPercentage + getPercentage)));
         return load;
     }
 }

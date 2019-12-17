@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,7 +37,7 @@ public interface HazelcastOSGiService {
     String HAZELCAST_OSGI_REGISTER_DISABLED = "hazelcast.osgi.register.disabled";
 
     /**
-     * System property for disabling the behaviour that gives different group name
+     * System property for disabling the behaviour that gives different cluster name
      * to each Hazelcast bundle.
      */
     String HAZELCAST_OSGI_GROUPING_DISABLED = "hazelcast.osgi.grouping.disabled";

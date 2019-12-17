@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,10 +16,11 @@
 
 package com.hazelcast.map.impl.iterator;
 
+import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.internal.serialization.Data;
 
 import java.io.IOException;
 import java.util.List;
@@ -45,16 +46,16 @@ public class MapKeysWithCursor extends AbstractCursor<Data> {
 
     @Override
     void writeElement(ObjectDataOutput out, Data element) throws IOException {
-        out.writeData(element);
+        IOUtil.writeData(out, element);
     }
 
     @Override
     Data readElement(ObjectDataInput in) throws IOException {
-        return in.readData();
+        return IOUtil.readData(in);
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MapDataSerializerHook.KEYS_WITH_CURSOR;
     }
 }

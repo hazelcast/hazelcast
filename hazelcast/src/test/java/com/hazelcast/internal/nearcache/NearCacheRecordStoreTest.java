@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,39 +17,42 @@
 package com.hazelcast.internal.nearcache;
 
 import com.hazelcast.config.EvictionConfig;
-import com.hazelcast.config.EvictionConfig.MaxSizePolicy;
+import com.hazelcast.config.MaxSizePolicy;
 import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.test.AssertTask;
-import com.hazelcast.test.HazelcastParametersRunnerFactory;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
+import org.junit.runners.Parameterized.Parameter;
+import org.junit.runners.Parameterized.Parameters;
+import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
-import java.util.Arrays;
 import java.util.Collection;
 
+import static java.util.Arrays.asList;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(Parameterized.class)
-@Parameterized.UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
-@Category({QuickTest.class, ParallelTest.class})
+@UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class NearCacheRecordStoreTest extends NearCacheRecordStoreTestSupport {
 
-    @Parameterized.Parameter
-    public InMemoryFormat inMemoryFormat;
-
-    @Parameterized.Parameters(name = "format:{0}")
+    @Parameters(name = "format:{0}")
     public static Collection<Object[]> parameters() {
-        return Arrays.asList(new Object[][]{
+        return asList(new Object[][]{
                 {InMemoryFormat.BINARY},
                 {InMemoryFormat.OBJECT},
         });
     }
+
+    @Parameter
+    public InMemoryFormat inMemoryFormat;
 
     @Test
     public void putAndGetRecord() {
@@ -75,7 +78,7 @@ public class NearCacheRecordStoreTest extends NearCacheRecordStoreTestSupport {
     public void statsCalculated() {
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 statsCalculated(inMemoryFormat);
             }
         });
@@ -149,23 +152,19 @@ public class NearCacheRecordStoreTest extends NearCacheRecordStoreTestSupport {
     private void doEvictionWithEntryCountMaxSizePolicy(InMemoryFormat inMemoryFormat, EvictionPolicy evictionPolicy) {
         int maxSize = DEFAULT_RECORD_COUNT / 2;
 
-        NearCacheConfig nearCacheConfig = createNearCacheConfig(DEFAULT_NEAR_CACHE_NAME, inMemoryFormat);
+        EvictionConfig evictionConfig = new EvictionConfig()
+                .setMaxSizePolicy(MaxSizePolicy.ENTRY_COUNT)
+                .setSize(maxSize)
+                .setEvictionPolicy(evictionPolicy == null ? EvictionConfig.DEFAULT_EVICTION_POLICY : evictionPolicy);
 
-        if (evictionPolicy == null) {
-            evictionPolicy = EvictionConfig.DEFAULT_EVICTION_POLICY;
-        }
-        EvictionConfig evictionConfig = new EvictionConfig();
-        evictionConfig.setMaximumSizePolicy(MaxSizePolicy.ENTRY_COUNT);
-        evictionConfig.setSize(maxSize);
-        evictionConfig.setEvictionPolicy(evictionPolicy);
-        nearCacheConfig.setEvictionConfig(evictionConfig);
+        NearCacheConfig nearCacheConfig = createNearCacheConfig(DEFAULT_NEAR_CACHE_NAME, inMemoryFormat)
+                .setEvictionConfig(evictionConfig);
 
-        NearCacheRecordStore<Integer, String> nearCacheRecordStore
-                = createNearCacheRecordStore(nearCacheConfig, inMemoryFormat);
+        NearCacheRecordStore<Integer, String> nearCacheRecordStore = createNearCacheRecordStore(nearCacheConfig, inMemoryFormat);
 
         for (int i = 0; i < DEFAULT_RECORD_COUNT; i++) {
-            nearCacheRecordStore.put(i, null, "Record-" + i);
-            nearCacheRecordStore.doEvictionIfRequired();
+            nearCacheRecordStore.put(i, null, "Record-" + i, null);
+            nearCacheRecordStore.doEviction(false);
             assertTrue(maxSize >= nearCacheRecordStore.size());
         }
     }

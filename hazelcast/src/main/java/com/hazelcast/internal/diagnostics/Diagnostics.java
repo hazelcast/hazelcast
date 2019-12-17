@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package com.hazelcast.internal.diagnostics;
 
-import com.hazelcast.internal.metrics.ProbeLevel;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.spi.properties.HazelcastProperty;
@@ -30,42 +29,23 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static com.hazelcast.internal.diagnostics.DiagnosticsPlugin.DISABLED;
-import static com.hazelcast.util.Preconditions.checkNotNull;
-import static com.hazelcast.util.ThreadUtil.createThreadName;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.ThreadUtil.createThreadName;
 import static java.lang.String.format;
 import static java.lang.System.arraycopy;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 /**
- * The {@link Diagnostics} is a debugging tool that provides insight in all kinds of potential performance and stability issues.
- * The actual logic to provide such insights, is placed in the {@link DiagnosticsPlugin}.
+ * The {@link Diagnostics} is a debugging tool that provides insight in all kinds
+ * of potential performance and stability issues. The actual logic to provide such
+ * insights, is placed in the {@link DiagnosticsPlugin}.
  */
 @SuppressWarnings("WeakerAccess")
 public class Diagnostics {
 
-    public static final String PREFIX = "hazelcast.diagnostics";
-
     /**
-     * The minimum level for probes is MANDATORY, but it can be changed to INFO or DEBUG. A lower level will increase
-     * memory usage (probably just a few 100KB) and provides much greater detail on what is going on inside a HazelcastInstance.
-     * <p>
-     * By default only mandatory probes are being tracked
-     */
-    public static final HazelcastProperty METRICS_LEVEL
-            = new HazelcastProperty(PREFIX + ".metric.level", ProbeLevel.MANDATORY.name())
-            .setDeprecatedName("hazelcast.performance.metric.level");
-
-    /**
-     * If metrics should be tracked on distributed data-structures like IMap, IQueue etc.
-     * <p>
-     * By default these data-structures are not tracked, but in a future release this will probably be changed to {@code true}.
-     */
-    public static final HazelcastProperty METRICS_DISTRIBUTED_DATASTRUCTURES
-            = new HazelcastProperty(PREFIX + ".metric.distributed.datastructures", false);
-
-
-    /**
-     * Use the {@link Diagnostics} to see internal performance metrics and cluster related information.
+     * Use the {@link Diagnostics} to see internal performance metrics and cluster
+     * related information.
      * <p>
      * The performance monitor logs all metrics into the log file.
      * <p>
@@ -73,11 +53,11 @@ public class Diagnostics {
      * <p>
      * The default is {@code false}.
      */
-    public static final HazelcastProperty ENABLED = new HazelcastProperty(PREFIX + ".enabled", false)
-            .setDeprecatedName("hazelcast.performance.monitoring.enabled");
+    public static final HazelcastProperty ENABLED = new HazelcastProperty("hazelcast.diagnostics.enabled", false);
 
     /**
-     * The {@link DiagnosticsLogFile} uses a rolling file approach to prevent eating too much disk space.
+     * The {@link DiagnosticsLogFile} uses a rolling file approach to prevent
+     * eating too much disk space.
      * <p>
      * This property sets the maximum size in MB for a single file.
      * <p>
@@ -86,25 +66,27 @@ public class Diagnostics {
      * The default is 50.
      */
     @SuppressWarnings("checkstyle:magicnumber")
-    public static final HazelcastProperty MAX_ROLLED_FILE_SIZE_MB = new HazelcastProperty(PREFIX + ".max.rolled.file.size.mb", 50)
-            .setDeprecatedName("hazelcast.performance.monitor.max.rolled.file.size.mb");
-
+    public static final HazelcastProperty MAX_ROLLED_FILE_SIZE_MB
+            = new HazelcastProperty("hazelcast.diagnostics.max.rolled.file.size.mb", 50);
     /**
-     * The {@link DiagnosticsLogFile} uses a rolling file approach to prevent eating too much disk space.
+     * The {@link DiagnosticsLogFile} uses a rolling file approach to prevent
+     * eating too much disk space.
      * <p>
      * This property sets the maximum number of rolling files to keep on disk.
      * <p>
      * The default is 10.
      */
     @SuppressWarnings("checkstyle:magicnumber")
-    public static final HazelcastProperty MAX_ROLLED_FILE_COUNT = new HazelcastProperty(PREFIX + ".max.rolled.file.count", 10)
-            .setDeprecatedName("hazelcast.performance.monitor.max.rolled.file.count");
+    public static final HazelcastProperty MAX_ROLLED_FILE_COUNT
+            = new HazelcastProperty("hazelcast.diagnostics.max.rolled.file.count", 10);
 
     /**
-     * Configures if the epoch time should be included in the 'top' section. This makes it easy to determine the time in epoch
-     * format and prevents needing to parse the date-format section. The default is {@code false} since it will cause more noise.
+     * Configures if the epoch time should be included in the 'top' section.
+     * This makes it easy to determine the time in epoch format and prevents
+     * needing to parse the date-format section. The default is {@code false}
+     * since it will cause more noise.
      */
-    public static final HazelcastProperty INCLUDE_EPOCH_TIME = new HazelcastProperty(PREFIX + ".include.epoch", true);
+    public static final HazelcastProperty INCLUDE_EPOCH_TIME = new HazelcastProperty("hazelcast.diagnostics.include.epoch", true);
 
     /**
      * Configures the output directory of the performance log files.
@@ -112,7 +94,7 @@ public class Diagnostics {
      * Defaults to the 'user.dir'.
      */
     public static final HazelcastProperty DIRECTORY
-            = new HazelcastProperty(PREFIX + ".directory", "" + System.getProperty("user.dir"));
+            = new HazelcastProperty("hazelcast.diagnostics.directory", "" + System.getProperty("user.dir"));
 
     /**
      * Configures the prefix for the diagnostics file.
@@ -120,9 +102,9 @@ public class Diagnostics {
      * So instead of having e.g. 'diagnostics-...log' you get 'foobar-diagnostics-...log'.
      */
     public static final HazelcastProperty FILENAME_PREFIX
-            = new HazelcastProperty(PREFIX + ".filename.prefix");
+            = new HazelcastProperty("hazelcast.diagnostics.filename.prefix");
 
-    final AtomicReference<DiagnosticsPlugin[]> staticTasks = new AtomicReference<DiagnosticsPlugin[]>(
+    final AtomicReference<DiagnosticsPlugin[]> staticTasks = new AtomicReference<>(
             new DiagnosticsPlugin[0]
     );
     final String baseFileName;
@@ -130,12 +112,11 @@ public class Diagnostics {
     final String hzName;
     final HazelcastProperties properties;
     final boolean includeEpochTime;
-    final String directory;
+    final File directory;
 
     DiagnosticsLogFile diagnosticsLogFile;
 
-    private final ConcurrentMap<Class<? extends DiagnosticsPlugin>, DiagnosticsPlugin> pluginsMap
-            = new ConcurrentHashMap<Class<? extends DiagnosticsPlugin>, DiagnosticsPlugin>();
+    private final ConcurrentMap<Class<? extends DiagnosticsPlugin>, DiagnosticsPlugin> pluginsMap = new ConcurrentHashMap<>();
     private final boolean enabled;
 
     private ScheduledExecutorService scheduler;
@@ -147,7 +128,7 @@ public class Diagnostics {
         this.hzName = hzName;
         this.properties = properties;
         this.includeEpochTime = properties.getBoolean(INCLUDE_EPOCH_TIME);
-        this.directory = properties.getString(DIRECTORY);
+        this.directory = new File(properties.getString(DIRECTORY));
         this.enabled = properties.getBoolean(ENABLED);
     }
 
@@ -157,8 +138,9 @@ public class Diagnostics {
     }
 
     /**
-     * Gets the plugin for a given plugin class. This method should be used if the plugin instance is required within
-     * some data-structure outside of the Diagnostics.
+     * Gets the plugin for a given plugin class. This method should be used if
+     * the plugin instance is required within some data-structure outside of the
+     * Diagnostics.
      *
      * @param pluginClass the class of the DiagnosticsPlugin
      * @param <P>         type of the plugin

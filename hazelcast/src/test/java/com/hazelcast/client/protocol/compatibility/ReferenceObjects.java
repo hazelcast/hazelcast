@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,16 +16,14 @@
 
 package com.hazelcast.client.protocol.compatibility;
 
-import com.hazelcast.cache.CacheNotExistsException;
 import com.hazelcast.cache.impl.CacheEventData;
-import com.hazelcast.cache.impl.CacheEventDataImpl;
-import com.hazelcast.cache.CacheEventType;
-import com.hazelcast.cache.impl.event.CachePartitionLostEvent;
-import com.hazelcast.cache.impl.event.CachePartitionLostListener;
-import com.hazelcast.client.AuthenticationException;
 import com.hazelcast.client.impl.MemberImpl;
 import com.hazelcast.client.impl.client.DistributedObjectInfo;
-import com.hazelcast.client.impl.protocol.exception.MaxMessageSizeExceeded;
+import com.hazelcast.client.impl.protocol.codec.builtin.CustomTypeFactory;
+import com.hazelcast.client.impl.protocol.codec.holder.AnchorDataListHolder;
+import com.hazelcast.client.impl.protocol.codec.holder.CacheConfigHolder;
+import com.hazelcast.client.impl.protocol.codec.holder.PagingPredicateHolder;
+import com.hazelcast.client.impl.protocol.exception.ErrorHolder;
 import com.hazelcast.client.impl.protocol.task.dynamicconfig.EvictionConfigHolder;
 import com.hazelcast.client.impl.protocol.task.dynamicconfig.ListenerConfigHolder;
 import com.hazelcast.client.impl.protocol.task.dynamicconfig.MapStoreConfigHolder;
@@ -34,118 +32,45 @@ import com.hazelcast.client.impl.protocol.task.dynamicconfig.PredicateConfigHold
 import com.hazelcast.client.impl.protocol.task.dynamicconfig.QueryCacheConfigHolder;
 import com.hazelcast.client.impl.protocol.task.dynamicconfig.QueueStoreConfigHolder;
 import com.hazelcast.client.impl.protocol.task.dynamicconfig.RingbufferStoreConfigHolder;
+import com.hazelcast.cluster.Address;
+import com.hazelcast.cluster.Member;
+import com.hazelcast.config.AttributeConfig;
 import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.DurationConfig;
 import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.TimedExpiryPolicyFactoryConfig;
-import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.TimedExpiryPolicyFactoryConfig.ExpiryPolicyType;
 import com.hazelcast.config.CacheSimpleEntryListenerConfig;
-import com.hazelcast.config.ConfigurationException;
+import com.hazelcast.config.EventJournalConfig;
 import com.hazelcast.config.HotRestartConfig;
-import com.hazelcast.config.InvalidConfigurationException;
-import com.hazelcast.config.MapAttributeConfig;
-import com.hazelcast.config.MapIndexConfig;
+import com.hazelcast.config.IndexConfig;
+import com.hazelcast.config.MergePolicyConfig;
+import com.hazelcast.config.MerkleTreeConfig;
 import com.hazelcast.config.NearCachePreloaderConfig;
 import com.hazelcast.config.WanReplicationRef;
-import com.hazelcast.core.DuplicateInstanceNameException;
-import com.hazelcast.core.HazelcastException;
-import com.hazelcast.core.HazelcastInstanceNotActiveException;
-import com.hazelcast.core.HazelcastOverloadException;
-import com.hazelcast.core.Member;
-import com.hazelcast.core.MemberLeftException;
-import com.hazelcast.core.OperationTimeoutException;
-import com.hazelcast.durableexecutor.StaleTaskIdException;
-import com.hazelcast.internal.cluster.impl.ConfigMismatchException;
-import com.hazelcast.internal.eviction.EvictableEntryView;
-import com.hazelcast.internal.eviction.EvictionPolicyComparator;
-import com.hazelcast.internal.serialization.InternalSerializationService;
-import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
+import com.hazelcast.cp.internal.RaftGroupId;
+import com.hazelcast.internal.cluster.MemberInfo;
+import com.hazelcast.internal.management.dto.ClientBwListEntryDTO;
+import com.hazelcast.internal.management.dto.MCEventDTO;
 import com.hazelcast.internal.serialization.impl.HeapData;
-import com.hazelcast.map.QueryResultSizeExceededException;
-import com.hazelcast.map.ReachedMaxSizeException;
 import com.hazelcast.map.impl.SimpleEntryView;
 import com.hazelcast.map.impl.querycache.event.DefaultQueryCacheEventData;
 import com.hazelcast.map.impl.querycache.event.QueryCacheEventData;
-import com.hazelcast.mapreduce.JobPartitionState;
-import com.hazelcast.mapreduce.RemoteMapReduceException;
-import com.hazelcast.mapreduce.TopologyChangedException;
-import com.hazelcast.mapreduce.impl.task.JobPartitionStateImpl;
-import com.hazelcast.memory.NativeOutOfMemoryError;
-import com.hazelcast.nio.Address;
-import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.HazelcastSerializationException;
-import com.hazelcast.partition.NoDataMemberInClusterException;
-import com.hazelcast.query.QueryException;
-import com.hazelcast.query.TruePredicate;
-import com.hazelcast.quorum.QuorumException;
-import com.hazelcast.replicatedmap.ReplicatedMapCantBeCreatedOnLiteMemberException;
-import com.hazelcast.ringbuffer.StaleSequenceException;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.scheduledexecutor.ScheduledTaskHandler;
 import com.hazelcast.scheduledexecutor.impl.ScheduledTaskHandlerImpl;
-import com.hazelcast.spi.exception.CallerNotMemberException;
-import com.hazelcast.spi.exception.DistributedObjectDestroyedException;
-import com.hazelcast.spi.exception.PartitionMigratingException;
-import com.hazelcast.spi.exception.ResponseAlreadySentException;
-import com.hazelcast.spi.exception.RetryableHazelcastException;
-import com.hazelcast.spi.exception.RetryableIOException;
-import com.hazelcast.spi.exception.ServiceNotFoundException;
-import com.hazelcast.spi.exception.TargetDisconnectedException;
-import com.hazelcast.spi.exception.TargetNotMemberException;
-import com.hazelcast.spi.exception.WrongTargetException;
-import com.hazelcast.spi.serialization.SerializationService;
-import com.hazelcast.topic.TopicOverloadException;
-import com.hazelcast.transaction.TransactionException;
-import com.hazelcast.transaction.TransactionNotActiveException;
-import com.hazelcast.transaction.TransactionTimedOutException;
 import com.hazelcast.transaction.impl.xa.SerializableXID;
-import com.hazelcast.util.AddressUtil;
 import com.hazelcast.version.MemberVersion;
-import com.hazelcast.wan.WANReplicationQueueFullException;
 
-import javax.cache.CacheException;
-import javax.cache.integration.CacheLoaderException;
-import javax.cache.integration.CacheWriterException;
-import javax.cache.processor.EntryProcessorException;
-import javax.security.auth.callback.Callback;
-import javax.security.auth.callback.UnsupportedCallbackException;
-import javax.security.auth.login.LoginException;
-import javax.transaction.xa.XAException;
 import javax.transaction.xa.Xid;
-import java.io.EOFException;
-import java.io.IOException;
-import java.io.NotSerializableException;
-import java.io.Serializable;
-import java.io.UTFDataFormatException;
 import java.lang.reflect.Array;
-import java.net.SocketException;
-import java.net.URISyntaxException;
 import java.net.UnknownHostException;
-import java.security.AccessControlException;
 import java.util.AbstractMap;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.ConcurrentModificationException;
-import java.util.HashMap;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.NoSuchElementException;
-import java.util.Properties;
+import java.util.Objects;
 import java.util.UUID;
-import java.util.concurrent.CancellationException;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.RejectedExecutionException;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
-
-import static com.hazelcast.client.impl.protocol.task.dynamicconfig.ListenerConfigHolder.TYPE_CACHE_PARTITION_LOST_LISTENER_CONFIG;
-import static com.hazelcast.client.impl.protocol.task.dynamicconfig.ListenerConfigHolder.TYPE_ENTRY_LISTENER_CONFIG;
-import static com.hazelcast.client.impl.protocol.task.dynamicconfig.ListenerConfigHolder.TYPE_ITEM_LISTENER_CONFIG;
-import static com.hazelcast.client.impl.protocol.task.dynamicconfig.ListenerConfigHolder.TYPE_LISTENER_CONFIG;
-import static com.hazelcast.client.impl.protocol.task.dynamicconfig.ListenerConfigHolder.TYPE_MAP_PARTITION_LOST_LISTENER_CONFIG;
-import static com.hazelcast.client.impl.protocol.task.dynamicconfig.ListenerConfigHolder.TYPE_QUORUM_LISTENER_CONFIG;
 
 public class ReferenceObjects {
 
@@ -201,11 +126,11 @@ public class ReferenceObjects {
         if (a instanceof ListenerConfigHolder && b instanceof ListenerConfigHolder) {
             return isEqual((ListenerConfigHolder) a, (ListenerConfigHolder) b);
         }
-        if (a instanceof MapIndexConfig && b instanceof MapIndexConfig) {
-            return isEqual((MapIndexConfig) a, (MapIndexConfig) b);
+        if (a instanceof IndexConfig && b instanceof IndexConfig) {
+            return isEqual((IndexConfig) a, (IndexConfig) b);
         }
-        if (a instanceof MapAttributeConfig && b instanceof MapAttributeConfig) {
-            return isEqual((MapAttributeConfig) a, (MapAttributeConfig) b);
+        if (a instanceof AttributeConfig && b instanceof AttributeConfig) {
+            return isEqual((AttributeConfig) a, (AttributeConfig) b);
         }
         if (a instanceof QueryCacheConfigHolder && b instanceof QueryCacheConfigHolder) {
             return isEqual((QueryCacheConfigHolder) a, (QueryCacheConfigHolder) b);
@@ -214,6 +139,85 @@ public class ReferenceObjects {
             return isEqual((CacheSimpleEntryListenerConfig) a, (CacheSimpleEntryListenerConfig) b);
         }
         return a.equals(b);
+    }
+
+    public static boolean isEqual(CacheConfigHolder a, CacheConfigHolder b) {
+        if (a == b) {
+            return true;
+        }
+        if (b == null) {
+            return false;
+        }
+        if (!a.getName().equals(b.getName())) {
+            return false;
+        }
+        if (!Objects.equals(a.getManagerPrefix(), b.getManagerPrefix())) {
+            return false;
+        }
+        if (!Objects.equals(a.getUriString(), b.getUriString())) {
+            return false;
+        }
+        if (a.getBackupCount() != b.getBackupCount()) {
+            return false;
+        }
+        if (a.getAsyncBackupCount() != b.getAsyncBackupCount()) {
+            return false;
+        }
+        if (!a.getInMemoryFormat().equals(b.getInMemoryFormat())) {
+            return false;
+        }
+        if (!isEqual(a.getEvictionConfigHolder(), b.getEvictionConfigHolder())) {
+            return false;
+        }
+        if (!isEqual(a.getWanReplicationRef(), b.getWanReplicationRef())) {
+            return false;
+        }
+        if (!a.getKeyClassName().equals(b.getKeyClassName())) {
+            return false;
+        }
+        if (!a.getValueClassName().equals(b.getValueClassName())) {
+            return false;
+        }
+        if (!Objects.equals(a.getCacheLoaderFactory(), b.getCacheLoaderFactory())) {
+            return false;
+        }
+        if (!Objects.equals(a.getCacheWriterFactory(), b.getCacheWriterFactory())) {
+            return false;
+        }
+        if (!a.getExpiryPolicyFactory().equals(b.getExpiryPolicyFactory())) {
+            return false;
+        }
+        if (a.isReadThrough() != b.isReadThrough()) {
+            return false;
+        }
+        if (a.isWriteThrough() != b.isWriteThrough()) {
+            return false;
+        }
+        if (a.isStoreByValue() != b.isStoreByValue()) {
+            return false;
+        }
+        if (a.isManagementEnabled() != b.isManagementEnabled()) {
+            return false;
+        }
+        if (a.isStatisticsEnabled() != b.isStatisticsEnabled()) {
+            return false;
+        }
+        if (!isEqual(a.getHotRestartConfig(), b.getHotRestartConfig())) {
+            return false;
+        }
+        if (!isEqual(a.getEventJournalConfig(), b.getEventJournalConfig())) {
+            return false;
+        }
+        if (!Objects.equals(a.getSplitBrainProtectionName(), b.getSplitBrainProtectionName())) {
+            return false;
+        }
+        if (!Objects.equals(a.getListenerConfigurations(), b.getListenerConfigurations())) {
+            return false;
+        }
+        if (!isEqual(a.getMergePolicyConfig(), b.getMergePolicyConfig())) {
+            return false;
+        }
+        return a.isDisablePerEntryInvalidationEvents() == b.isDisablePerEntryInvalidationEvents();
     }
 
     public static boolean isEqual(WanReplicationRef a, WanReplicationRef b) {
@@ -321,32 +325,32 @@ public class ReferenceObjects {
     }
 
     public static boolean isEqual(ListenerConfigHolder a, ListenerConfigHolder b) {
-            if (a == b) {
-                return true;
-            }
-            if (b == null) {
-                return false;
-            }
+        if (a == b) {
+            return true;
+        }
+        if (b == null) {
+            return false;
+        }
 
-            if (a.isIncludeValue() != b.isIncludeValue()) {
-                return false;
-            }
-            if (a.isLocal() != b.isLocal()) {
-                return false;
-            }
-            if (a.getListenerType() != b.getListenerType()) {
-                return false;
-            }
-            if (a.getClassName() != null ? !a.getClassName().equals(b.getClassName())
-                    : b.getClassName() != null) {
-                return false;
-            }
-            return a.getListenerImplementation() != null
-                    ? a.getListenerImplementation().equals(b.getListenerImplementation())
-                    : b.getListenerImplementation() == null;
+        if (a.isIncludeValue() != b.isIncludeValue()) {
+            return false;
+        }
+        if (a.isLocal() != b.isLocal()) {
+            return false;
+        }
+        if (a.getListenerType() != b.getListenerType()) {
+            return false;
+        }
+        if (a.getClassName() != null ? !a.getClassName().equals(b.getClassName())
+                : b.getClassName() != null) {
+            return false;
+        }
+        return a.getListenerImplementation() != null
+                ? a.getListenerImplementation().equals(b.getListenerImplementation())
+                : b.getListenerImplementation() == null;
     }
 
-    public static boolean isEqual(MapIndexConfig a, MapIndexConfig that) {
+    public static boolean isEqual(IndexConfig a, IndexConfig that) {
         if (a == that) {
             return true;
         }
@@ -354,14 +358,18 @@ public class ReferenceObjects {
             return false;
         }
 
-        if (a.isOrdered() != that.isOrdered()) {
+        if (a.getType() != that.getType()) {
             return false;
         }
-        return a.getAttribute() != null ? a.getAttribute().equals(that.getAttribute())
-                : that.getAttribute() == null;
+
+        if (a.getName() != null ? !a.getName().equals(that.getName()) : that.getName() != null) {
+            return false;
+        }
+
+        return a.getAttributes() != null ? a.getAttributes().equals(that.getAttributes()) : that.getAttributes() == null;
     }
 
-    public static boolean isEqual(MapAttributeConfig a, MapAttributeConfig that) {
+    public static boolean isEqual(AttributeConfig a, AttributeConfig that) {
         if (a == that) {
             return true;
         }
@@ -372,8 +380,8 @@ public class ReferenceObjects {
         if (a.getName() != null ? !a.getName().equals(that.getName()) : that.getName() != null) {
             return false;
         }
-        return a.getExtractor() != null ? a.getExtractor().equals(that.getExtractor())
-                : that.getExtractor() == null;
+        return a.getExtractorClassName() != null ? a.getExtractorClassName().equals(that.getExtractorClassName())
+                : that.getExtractorClassName() == null;
     }
 
     public static boolean isEqual(MapStoreConfigHolder a, MapStoreConfigHolder b) {
@@ -388,9 +396,6 @@ public class ReferenceObjects {
             return false;
         }
         if (a.isWriteCoalescing() != b.isWriteCoalescing()) {
-            return false;
-        }
-        if (a.getWriteBatchSize() != b.getWriteBatchSize()) {
             return false;
         }
         if (a.getWriteBatchSize() != b.getWriteBatchSize()) {
@@ -610,242 +615,171 @@ public class ReferenceObjects {
     // when testing against them. Random values causes test failures.
     public static boolean aBoolean = true;
     public static byte aByte = 113;
-    public static int anInt = 56789;
+    public static int anInt = 25;
+    public static int anEnum = 1;
     public static long aLong = -50992225L;
-    public static String aString = "SampleString";
     public static UUID aUUID = new UUID(123456789, 987654321);
-    public static Throwable aThrowable = new HazelcastException(aString);
+    public static byte[] aByteArray = new byte[]{aByte};
+    public static long[] aLongArray = new long[]{aLong};
+    public static String aString = "localhost";
     public static Data aData = new HeapData("111313123131313131".getBytes());
+    public static List<Map.Entry<Integer, UUID>> aListOfIntegerToUUID
+            = Collections.singletonList(new AbstractMap.SimpleEntry<>(anInt, aUUID));
+    public static List<Map.Entry<Integer, Long>> aListOfIntegerToLong
+            = Collections.singletonList(new AbstractMap.SimpleEntry<>(anInt, aLong));
+    public static List<Map.Entry<UUID, Long>> aListOfUuidToLong
+            = Collections.singletonList(new AbstractMap.SimpleEntry<>(aUUID, aLong));
+    public static List<Integer> aListOfIntegers = Collections.singletonList(anInt);
+    public static List<Long> aListOfLongs = Collections.singletonList(aLong);
+    public static List<UUID> aListOfUUIDs = Collections.singletonList(aUUID);
     public static Address anAddress;
 
     static {
         try {
-            anAddress = new Address("127.0.0.1", 5701);
+            anAddress = new Address(aString, anInt);
         } catch (UnknownHostException e) {
             e.printStackTrace();
         }
     }
 
-    public static Member aMember = new MemberImpl(anAddress, MemberVersion.UNKNOWN, aString,
-            Collections.singletonMap(aString, (Object) aString), false);
-    public static Collection<Map.Entry<Address, List<Integer>>> aPartitionTable;
+    public static List<Map.Entry<UUID, Address>> aListOfUUIDToAddress
+            = Collections.singletonList(new AbstractMap.SimpleEntry<>(aUUID, anAddress));
+    public static Map<String, String> aMapOfStringToString = Collections.singletonMap(aString, aString);
+    public static List<String> aListOfStrings = Collections.singletonList(aString);
+    public static StackTraceElement aStackTraceElement = new StackTraceElement(aString, aString, aString, anInt);
+    public static List<StackTraceElement> aListOfStackTraceElements = Collections.singletonList(aStackTraceElement);
+    public static CacheEventData aCacheEventData
+            = CustomTypeFactory.createCacheEventData(aString, anEnum, aData, aData, aData, aBoolean);
+    public static DistributedObjectInfo aDistributedObjectInfo = new DistributedObjectInfo(aString, aString);
+    public static Member aMember = new MemberImpl(anAddress, aUUID, aMapOfStringToString, aBoolean);
+    public static DefaultQueryCacheEventData aQueryCacheEventData;
+    public static MCEventDTO aMCEvent = new MCEventDTO(aLong, anInt, aString);
+    public static List<MCEventDTO> aListOfMCEvents = Collections.singletonList(aMCEvent);
 
     static {
-        Map<Address, List<Integer>> partitionsMap = new HashMap<Address, List<Integer>>();
-        partitionsMap.put(anAddress, Collections.singletonList(1));
-        aPartitionTable = new LinkedList<Map.Entry<Address, List<Integer>>>(partitionsMap.entrySet());
+        aQueryCacheEventData = new DefaultQueryCacheEventData();
+        aQueryCacheEventData.setDataKey(aData);
+        aQueryCacheEventData.setDataNewValue(aData);
+        aQueryCacheEventData.setSequence(aLong);
+        aQueryCacheEventData.setEventType(anInt);
+        aQueryCacheEventData.setPartitionId(anInt);
     }
 
-    public static Collection<Map.Entry<Member, List<ScheduledTaskHandler>>> taskHandlers;
+    public static RaftGroupId aRaftGroupId = new RaftGroupId(aString, aLong, aLong);
+    public static ScheduledTaskHandler aScheduledTaskHandler = new ScheduledTaskHandlerImpl(anAddress, anInt, aString, aString);
+    public static SimpleEntryView<Data, Data> aSimpleEntryView = new SimpleEntryView<>(aData, aData);
 
     static {
-        Map<Member, List<ScheduledTaskHandler>> membersMap = new HashMap<Member, List<ScheduledTaskHandler>>();
-        ScheduledTaskHandler scheduledTaskHandler = ScheduledTaskHandlerImpl.of(anAddress, "sche", "task");
-        membersMap.put(aMember, Collections.singletonList(scheduledTaskHandler));
-        taskHandlers = new LinkedList<Map.Entry<Member, List<ScheduledTaskHandler>>>(membersMap.entrySet());
+        aSimpleEntryView.setCost(aLong);
+        aSimpleEntryView.setCreationTime(aLong);
+        aSimpleEntryView.setExpirationTime(aLong);
+        aSimpleEntryView.setHits(aLong);
+        aSimpleEntryView.setLastAccessTime(aLong);
+        aSimpleEntryView.setLastStoredTime(aLong);
+        aSimpleEntryView.setLastUpdateTime(aLong);
+        aSimpleEntryView.setVersion(aLong);
+        aSimpleEntryView.setTtl(aLong);
+        aSimpleEntryView.setMaxIdle(aLong);
     }
 
-    public static SimpleEntryView<Data, Data> anEntryView = new SimpleEntryView<Data, Data>(aData, aData);
-    public static Collection<JobPartitionState> jobPartitionStates = Collections
-            .singletonList((JobPartitionState) new JobPartitionStateImpl(anAddress, JobPartitionState.State.MAPPING));
-    public static List<DistributedObjectInfo> distributedObjectInfos = Collections
-            .singletonList(new DistributedObjectInfo(aString, aString));
-    public static QueryCacheEventData aQueryCacheEventData = new DefaultQueryCacheEventData();
-    public static Collection<QueryCacheEventData> queryCacheEventDatas = Collections.singletonList(aQueryCacheEventData);
-    public static Collection<CacheEventData> cacheEventDatas = Collections
-            .singletonList((CacheEventData) new CacheEventDataImpl(aString, CacheEventType.COMPLETED, aData, aData, aData, true));
-    public static Collection<Data> datas = Collections.singletonList(aData);
-    public static Collection<Member> members = Collections.singletonList(aMember);
-    public static Collection<String> strings = Collections.singletonList(aString);
-    public static Collection<Long> longs = Collections.singletonList(aLong);
-    public static Collection<UUID> uuids = Collections.singletonList(aUUID);
-    public static Xid anXid = new SerializableXID(1, aString.getBytes(), aString.getBytes());
-    public static List<Map.Entry<Data, Data>> aListOfEntry = Collections.<Map.Entry<Data, Data>>singletonList(
-            new AbstractMap.SimpleEntry<Data, Data>(aData, aData));
-    public static Map.Entry<String, byte[]> aStringToByteArrEntry =
-            new AbstractMap.SimpleEntry<String, byte[]>(aString, new byte[]{aByte});
-    public static List<Map.Entry<String, byte[]>> aListOfStringToByteArrEntry
-            = Arrays.asList(aStringToByteArrEntry, aStringToByteArrEntry);
-
-    public static List<Map.Entry<String, List<Map.Entry<Integer, Long>>>> aNamePartitionSequenceList;
-    public static long[] arrLongs = new long[] { aLong };
+    public static WanReplicationRef aWanReplicationRef = new WanReplicationRef(aString, aString, aListOfStrings, aBoolean);
+    public static Xid anXid = new SerializableXID(anInt, aByteArray, aByteArray);
+    public static ErrorHolder anErrorHolder = new ErrorHolder(anInt, aString, aString, aListOfStackTraceElements);
+    public static CacheSimpleEntryListenerConfig aCacheSimpleEntryListenerConfig;
 
     static {
-        List<Map.Entry<Integer, Long>> list = Collections.<Map.Entry<Integer, Long>>singletonList(
-                new AbstractMap.SimpleEntry<Integer, Long>(anInt, aLong));
-        aNamePartitionSequenceList = Collections.<Map.Entry<String, List<Map.Entry<Integer, Long>>>>singletonList(
-                new AbstractMap.SimpleEntry<String, List<Map.Entry<Integer, Long>>>(aString, list));
+        aCacheSimpleEntryListenerConfig = new CacheSimpleEntryListenerConfig();
+        aCacheSimpleEntryListenerConfig.setOldValueRequired(aBoolean);
+        aCacheSimpleEntryListenerConfig.setSynchronous(aBoolean);
+        aCacheSimpleEntryListenerConfig.setCacheEntryListenerFactory(aString);
+        aCacheSimpleEntryListenerConfig.setCacheEntryEventFilterFactory(aString);
     }
 
-    public static List<Map.Entry<Integer, UUID>> aPartitionUuidList = Collections.<Map.Entry<Integer, UUID>>singletonList(
-            new AbstractMap.SimpleEntry<Integer, UUID>(anInt, aUUID));
+    public static EventJournalConfig anEventJournalConfig;
 
     static {
-
+        anEventJournalConfig = new EventJournalConfig();
+        anEventJournalConfig.setEnabled(aBoolean);
+        anEventJournalConfig.setCapacity(anInt);
+        anEventJournalConfig.setTimeToLiveSeconds(anInt);
     }
 
-     private static final DefaultSerializationServiceBuilder defaultSerializationServiceBuilder = new DefaultSerializationServiceBuilder();
-     public static final SerializationService serializationService = defaultSerializationServiceBuilder
-                .setVersion(InternalSerializationService.VERSION_1).build();
-
-    public static RingbufferStoreConfigHolder ringbufferStore;
-    public static QueueStoreConfigHolder queueStoreConfig;
-
-    public static Properties props;
-    public static List<ListenerConfigHolder> listenerConfigs;
-
-    public static WanReplicationRef wanReplicationRef;
-    public static MapStoreConfigHolder mapStoreConfig;
-
-    public static EvictionConfigHolder evictionConfig;
-    public static NearCachePreloaderConfig nearCachePreloaderConfig;
-    public static NearCacheConfigHolder nearCacheConfig;
-    public static List<MapIndexConfig> mapIndexConfigs;
-    public static List<MapAttributeConfig> mapAttributeConfigs;
-    public static List<QueryCacheConfigHolder> queryCacheConfigs;
-    public static TimedExpiryPolicyFactoryConfig timedExpiryPolicyFactoryConfig;
-    public static HotRestartConfig hotRestartConfig;
-    public static List<CacheSimpleEntryListenerConfig> cacheEntryListenerConfigs;
+    public static EvictionConfigHolder anEvictionConfigHolder = new EvictionConfigHolder(anInt, aString, aString, aString, aData);
+    public static HotRestartConfig aHotRestartConfig;
 
     static {
-        props = new Properties();
-        props.setProperty("a", "b");
-
-        DefaultSerializationServiceBuilder defaultSerializationServiceBuilder = new DefaultSerializationServiceBuilder();
-        SerializationService serializationService = defaultSerializationServiceBuilder
-                .setVersion(InternalSerializationService.VERSION_1).build();
-        listenerConfigs = new ArrayList<ListenerConfigHolder>();
-        ListenerConfigHolder holder1 = new ListenerConfigHolder(TYPE_LISTENER_CONFIG, "listener.By.ClassName");
-        //noinspection RedundantCast
-        ListenerConfigHolder holder2 = new ListenerConfigHolder(TYPE_CACHE_PARTITION_LOST_LISTENER_CONFIG,
-                (Data) serializationService.toData(new TestCachePartitionLostEventListener()), true, false);
-        ListenerConfigHolder holder3 = new ListenerConfigHolder(TYPE_ENTRY_LISTENER_CONFIG, "listener.By.ClassName", true, true);
-        ListenerConfigHolder holder4 = new ListenerConfigHolder(TYPE_ITEM_LISTENER_CONFIG, "listener.By.ClassName");
-        ListenerConfigHolder holder5 = new ListenerConfigHolder(TYPE_MAP_PARTITION_LOST_LISTENER_CONFIG, "listener.By.ClassName");
-        ListenerConfigHolder holder6 = new ListenerConfigHolder(TYPE_QUORUM_LISTENER_CONFIG, "listener.By.ClassName");
-        listenerConfigs.add(holder1);
-        listenerConfigs.add(holder2);
-        listenerConfigs.add(holder3);
-        listenerConfigs.add(holder4);
-        listenerConfigs.add(holder5);
-        listenerConfigs.add(holder6);
-
-        Properties props = new Properties();
-        props.setProperty("a", "b");
-        ringbufferStore = new RingbufferStoreConfigHolder("com.hazelcast.RingbufferStore", null, null,null,
-                props, true);
-        queueStoreConfig = new QueueStoreConfigHolder("com.hazelcast.QueueStore", null, null, null, props, true);
-
-        wanReplicationRef = new WanReplicationRef("wan-target", "com.hazelcast.MergePolicy",
-                Collections.singletonList("com.hazelcast.WanFilter"), true);
-
-        mapStoreConfig = new MapStoreConfigHolder();
-        mapStoreConfig.setEnabled(true);
-        mapStoreConfig.setWriteCoalescing(true);
-        mapStoreConfig.setFactoryClassName("com.hazelcast.MapStoreFactory");
-        mapStoreConfig.setWriteDelaySeconds(101);
-        mapStoreConfig.setWriteBatchSize(20);
-        mapStoreConfig.setInitialLoadMode("EAGER");
-
-        EvictionPolicyComparator comparatorImpl = new EvictionPolicyComparator() {
-            @Override
-            public int compare(EvictableEntryView e1, EvictableEntryView e2) {
-                return 0;
-            }
-        };
-        evictionConfig = new EvictionConfigHolder(100, "ENTRY_COUNT", "LRU", "com.hazelcast.ComparatorClassName",
-                serializationService.toData(comparatorImpl));
-        nearCachePreloaderConfig = new NearCachePreloaderConfig(true, "/root/");
-        nearCacheConfig = new NearCacheConfigHolder("nearCache", "BINARY", false, true, 139, 156, evictionConfig,
-                false, "INVALIDATE", nearCachePreloaderConfig);
-
-        mapIndexConfigs = new ArrayList<MapIndexConfig>();
-        mapIndexConfigs.add(new MapIndexConfig("attr", false));
-
-        mapAttributeConfigs = new ArrayList<MapAttributeConfig>();
-        mapAttributeConfigs.add(new MapAttributeConfig("attr", "com.hazelcast.AttributeExtractor"));
-
-        queryCacheConfigs = new ArrayList<QueryCacheConfigHolder>();
-        QueryCacheConfigHolder queryCacheConfig = new QueryCacheConfigHolder();
-        queryCacheConfig.setPredicateConfigHolder(new PredicateConfigHolder("com.hazelcast.Predicate", "name LIKE 'Fred%'",
-                serializationService.toData(new TruePredicate())));
-        queryCacheConfig.setIndexConfigs(mapIndexConfigs);
-        queryCacheConfig.setListenerConfigs(listenerConfigs);
-        queryCacheConfig.setEvictionConfigHolder(evictionConfig);
-        queryCacheConfig.setInMemoryFormat("BINARY");
-        queryCacheConfig.setName("queryCacheName");
-        queryCacheConfig.setCoalesce(true);
-        queryCacheConfig.setPopulate(true);
-        queryCacheConfig.setDelaySeconds(10);
-        queryCacheConfig.setBatchSize(15);
-        queryCacheConfig.setBufferSize(3000);
-        queryCacheConfigs.add(queryCacheConfig);
-
-        timedExpiryPolicyFactoryConfig = new TimedExpiryPolicyFactoryConfig(ExpiryPolicyType.CREATED,
-                new DurationConfig(30, TimeUnit.SECONDS));
-
-        hotRestartConfig = new HotRestartConfig();
-        hotRestartConfig.setFsync(true);
-        hotRestartConfig.setEnabled(true);
-
-        cacheEntryListenerConfigs = new ArrayList<CacheSimpleEntryListenerConfig>();
-        CacheSimpleEntryListenerConfig cacheEntryListenerConfig = new CacheSimpleEntryListenerConfig();
-        cacheEntryListenerConfig.setCacheEntryEventFilterFactory("com.hazelcast.EntryEventFactory");
-        cacheEntryListenerConfig.setCacheEntryListenerFactory("com.hazelcast.EntryListenerFactory");
-        cacheEntryListenerConfig.setOldValueRequired(true);
-        cacheEntryListenerConfig.setSynchronous(true);
-        cacheEntryListenerConfigs.add(cacheEntryListenerConfig);
+        aHotRestartConfig = new HotRestartConfig();
+        aHotRestartConfig.setEnabled(aBoolean);
+        aHotRestartConfig.setFsync(aBoolean);
     }
 
-    public static class TestCachePartitionLostEventListener implements CachePartitionLostListener,
-                                                                       Serializable {
-        @Override
-        public void partitionLost(CachePartitionLostEvent event) {
+    public static ListenerConfigHolder aListenerConfigHolder = new ListenerConfigHolder(anInt, aData, aString, aBoolean, aBoolean);
+    public static AttributeConfig anAttributeConfig = new AttributeConfig(aString, aString);
+    public static IndexConfig anIndexConfig = CustomTypeFactory.createIndexConfig(aString, anEnum, aListOfStrings);
+    public static MapStoreConfigHolder aMapStoreConfigHolder = new MapStoreConfigHolder(aBoolean, aBoolean, anInt, anInt, aString, aData, aString, aData, aMapOfStringToString, aString);
 
-        }
-    }
-
-    public static Throwable[] throwables_1_0 = {new CacheException(aString), new CacheLoaderException(
-            aString), new CacheWriterException(aString), new EntryProcessorException(aString), new ArrayIndexOutOfBoundsException(
-            aString), new ArrayStoreException(aString), new AuthenticationException(aString), new CacheNotExistsException(
-            aString), new CallerNotMemberException(aString), new CancellationException(aString), new ClassCastException(
-            aString), new ClassNotFoundException(aString), new ConcurrentModificationException(
-            aString), new ConfigMismatchException(aString), new ConfigurationException(
-            aString), new DistributedObjectDestroyedException(aString), new DuplicateInstanceNameException(
-            aString), new EOFException(aString), new ExecutionException(new IOException()), new HazelcastException(
-            aString), new HazelcastInstanceNotActiveException(aString), new HazelcastOverloadException(
-            aString), new HazelcastSerializationException(aString), new IOException(aString), new IllegalArgumentException(
-            aString), new IllegalAccessException(aString), new IllegalAccessError(aString), new IllegalMonitorStateException(
-            aString), new IllegalStateException(aString), new IllegalThreadStateException(aString), new IndexOutOfBoundsException(
-            aString), new InterruptedException(aString), new AddressUtil.InvalidAddressException(
-            aString), new InvalidConfigurationException(aString), new MemberLeftException(
-            aString), new NegativeArraySizeException(aString), new NoSuchElementException(aString), new NotSerializableException(
-            aString), new NullPointerException(aString), new OperationTimeoutException(aString), new PartitionMigratingException(
-            aString), new QueryException(aString), new QueryResultSizeExceededException(aString), new QuorumException(
-            aString), new ReachedMaxSizeException(aString), new RejectedExecutionException(aString), new RemoteMapReduceException(
-            aString, Collections.<Exception>emptyList()), new ResponseAlreadySentException(
-            aString), new RetryableHazelcastException(aString), new RetryableIOException(aString), new RuntimeException(
-            aString), new SecurityException(aString), new SocketException(aString), new StaleSequenceException(aString,
-            1), new TargetDisconnectedException(aString), new TargetNotMemberException(aString), new TimeoutException(
-            aString), new TopicOverloadException(aString), new TopologyChangedException(aString), new TransactionException(
-            aString), new TransactionNotActiveException(aString), new TransactionTimedOutException(
-            aString), new URISyntaxException(aString, aString), new UTFDataFormatException(
-            aString), new UnsupportedOperationException(aString), new WrongTargetException(aString), new XAException(
-            aString), new AccessControlException(aString), new LoginException(aString), new UnsupportedCallbackException(
-            new Callback() {
-            }), new NoDataMemberInClusterException(aString), new ReplicatedMapCantBeCreatedOnLiteMemberException(
-            aString), new MaxMessageSizeExceeded(), new WANReplicationQueueFullException(aString), new AssertionError(
-            aString), new OutOfMemoryError(aString), new StackOverflowError(aString), new NativeOutOfMemoryError(aString)};
-
-    public static Throwable[] throwables_1_1 = {new StaleTaskIdException(aString), new ServiceNotFoundException(aString)};
-
-    public static Throwable[] throwables_1_2 = {};
-
-    public static Map<String, Throwable[]> throwables = new HashMap<String, Throwable[]>();
+    public static MerkleTreeConfig aMerkleTreeConfig;
 
     static {
-        throwables.put("1.0", throwables_1_0);
-        throwables.put("1.1", throwables_1_1);
-        throwables.put("1.2", throwables_1_2);
+        aMerkleTreeConfig = new MerkleTreeConfig();
+        aMerkleTreeConfig.setEnabled(aBoolean);
+        aMerkleTreeConfig.setDepth(anInt);
     }
+
+    public static NearCachePreloaderConfig aNearCachePreloaderConfig = new NearCachePreloaderConfig(aBoolean, aString);
+
+    static {
+        aNearCachePreloaderConfig.setStoreInitialDelaySeconds(anInt);
+        aNearCachePreloaderConfig.setStoreIntervalSeconds(anInt);
+    }
+
+    public static NearCacheConfigHolder aNearCacheConfigHolder = new NearCacheConfigHolder(aString, aString, aBoolean, aBoolean, anInt, anInt, anEvictionConfigHolder, aBoolean, aString, aNearCachePreloaderConfig);
+    public static PredicateConfigHolder aPredicateConfigHolder = new PredicateConfigHolder(aString, aString, aData);
+    public static List<ListenerConfigHolder> aListOfListenerConfigHolders = Collections.singletonList(aListenerConfigHolder);
+    public static List<IndexConfig> aListOfIndexConfigs = Collections.singletonList(anIndexConfig);
+    public static QueryCacheConfigHolder aQueryCacheConfigHolder = new QueryCacheConfigHolder(anInt, anInt, anInt, aBoolean, aBoolean, aBoolean, aString, aString, aPredicateConfigHolder, anEvictionConfigHolder, aListOfListenerConfigHolders, aListOfIndexConfigs);
+    public static QueueStoreConfigHolder aQueueStoreConfigHolder = new QueueStoreConfigHolder(aString, aString, aData, aData, aMapOfStringToString, aBoolean);
+    public static RingbufferStoreConfigHolder aRingbufferStoreConfigHolder = new RingbufferStoreConfigHolder(aString, aString, aData, aData, aMapOfStringToString, aBoolean);
+    public static DurationConfig aDurationConfig = CustomTypeFactory.createDurationConfig(aLong, anEnum);
+    public static TimedExpiryPolicyFactoryConfig aTimedExpiryPolicyFactoryConfig = CustomTypeFactory.createTimedExpiryPolicyFactoryConfig(anEnum, aDurationConfig);
+    public static ClientBwListEntryDTO aClientBwListEntry = CustomTypeFactory.createClientBwListEntry(anEnum, aString);
+    public static List<Map.Entry<String, String>> aListOfStringToString
+            = Collections.singletonList(new AbstractMap.SimpleEntry<>(aString, aString));
+    public static List<Map.Entry<String, byte[]>> aListOfStringToByteArray
+            = Collections.singletonList(new AbstractMap.SimpleEntry<>(aString, aByteArray));
+    public static List<Map.Entry<Long, byte[]>> aListOfLongToByteArray
+            = Collections.singletonList(new AbstractMap.SimpleEntry<>(aLong, aByteArray));
+    public static List<Map.Entry<String, List<Map.Entry<Integer, Long>>>> aListOfStringToListOfIntegerToLong
+            = Collections.singletonList(new AbstractMap.SimpleEntry<>(aString, aListOfIntegerToLong));
+    public static List<Map.Entry<Address, List<Integer>>> aListOfAddressToListOfIntegers
+            = Collections.singletonList(new AbstractMap.SimpleEntry<>(anAddress, aListOfIntegers));
+    public static List<Map.Entry<Data, Data>> aListOfDataToData
+            = Collections.singletonList(new AbstractMap.SimpleEntry<>(aData, aData));
+
+    public static List<Address> aListOfAddresses = Collections.singletonList(anAddress);
+    public static List<byte[]> aListOfByteArrays = Collections.singletonList(aByteArray);
+    public static List<CacheEventData> aListOfCacheEventData = Collections.singletonList(aCacheEventData);
+    public static List<CacheSimpleEntryListenerConfig> aListOfCacheSimpleEntryListenerConfigs
+            = Collections.singletonList(aCacheSimpleEntryListenerConfig);
+    public static List<Data> aListOfData = Collections.singletonList(aData);
+    public static List<DistributedObjectInfo> aListOfDistributedObjectInfo = Collections.singletonList(aDistributedObjectInfo);
+    public static List<AttributeConfig> aListOfAttributeConfigs = Collections.singletonList(anAttributeConfig);
+    public static List<Member> aListOfMembers = Collections.singletonList(aMember);
+    public static List<QueryCacheConfigHolder> aListOfQueryCacheConfigHolders = Collections.singletonList(aQueryCacheConfigHolder);
+    public static List<QueryCacheEventData> aListOfQueryCacheEventData = Collections.singletonList(aQueryCacheEventData);
+    public static List<ScheduledTaskHandler> aListOfScheduledTaskHandler = Collections.singletonList(aScheduledTaskHandler);
+    public static List<Xid> aListOfXids = Collections.singletonList(anXid);
+    public static List<Map.Entry<Member, List<ScheduledTaskHandler>>> aListOfMemberToListOfScheduledTaskHandlers
+            = Collections.singletonList(new AbstractMap.SimpleEntry<>(aMember, aListOfScheduledTaskHandler));
+    public static List<ClientBwListEntryDTO> aListOfClientBwListEntries = Collections.singletonList(aClientBwListEntry);
+    public static MergePolicyConfig aMergePolicyConfig = new MergePolicyConfig(aString, anInt);
+    public static CacheConfigHolder aCacheConfigHolder = new CacheConfigHolder(aString, aString, aString, anInt, anInt,
+            aString, anEvictionConfigHolder, aWanReplicationRef, aString, aString, aData, aData, aData, aBoolean,
+            aBoolean, aBoolean, aBoolean, aBoolean, aHotRestartConfig, anEventJournalConfig, aString, aListOfData,
+            aMergePolicyConfig, aBoolean, aListOfListenerConfigHolders);
+    private static MemberVersion aMemberVersion = new MemberVersion(anInt, anInt, anInt);
+    public static Collection<MemberInfo> aListOfMemberInfos = Collections.singletonList(new MemberInfo(anAddress, aUUID, aMapOfStringToString, aBoolean, aMemberVersion));
+    public static AnchorDataListHolder anAnchorDataListHolder = new AnchorDataListHolder(aListOfIntegers, aListOfDataToData);
+    public static PagingPredicateHolder aPagingPredicateHolder = new PagingPredicateHolder(anAnchorDataListHolder, aData, aData,
+            anInt, anInt, aByte, aData);
 }

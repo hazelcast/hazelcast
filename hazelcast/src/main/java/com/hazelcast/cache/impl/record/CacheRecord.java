@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,10 +27,10 @@ import com.hazelcast.internal.eviction.Expirable;
  *
  * @param <V> the type of the value stored by this {@link CacheRecord}
  */
-public interface CacheRecord<V> extends Expirable, Evictable<V> {
+public interface CacheRecord<V, E> extends Expirable, Evictable<V> {
 
     /**
-     * Represents invalid (not set) time for creation time, expiration time, access time, etc ...
+     * Represents invalid (not set) time for creation time, expiration time, access time, etc...
      */
     long TIME_NOT_AVAILABLE = -1;
 
@@ -53,23 +53,32 @@ public interface CacheRecord<V> extends Expirable, Evictable<V> {
      *
      * @param time the latest access time of this {@link Evictable} in milliseconds
      */
-    void setAccessTime(long time);
+    void setLastAccessTime(long time);
 
     /**
      * Sets the access hit count of this {@link Evictable}.
      *
      * @param hit the access hit count for this {@link Evictable}
      */
-    void setAccessHit(int hit);
+    void setHits(long hit);
 
     /**
      * Increases the access hit count of this {@link Evictable} as <code>1</code>.
      */
-    void incrementAccessHit();
+    void incrementHits();
 
     /**
-     * Resets the access hit count of this {@link Evictable} to <code>0</code>.
+     * Sets the expiry policy for this record.
+     *
+     * @param expiryPolicy
      */
-    void resetAccessHit();
+    void setExpiryPolicy(E expiryPolicy);
+
+    /**
+     * Gets the expiryPolicy associated with this record.
+     *
+     * @return
+     */
+    E getExpiryPolicy();
 
 }

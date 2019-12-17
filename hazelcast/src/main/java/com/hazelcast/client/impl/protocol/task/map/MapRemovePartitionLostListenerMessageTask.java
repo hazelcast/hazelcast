@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,11 +19,13 @@ package com.hazelcast.client.impl.protocol.task.map;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.MapRemovePartitionLostListenerCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractRemoveListenerMessageTask;
-import com.hazelcast.instance.Node;
+import com.hazelcast.instance.impl.Node;
+import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.map.impl.MapService;
-import com.hazelcast.nio.Connection;
 
 import java.security.Permission;
+import java.util.UUID;
+import java.util.concurrent.Future;
 
 public class MapRemovePartitionLostListenerMessageTask
         extends AbstractRemoveListenerMessageTask<MapRemovePartitionLostListenerCodec.RequestParameters> {
@@ -34,13 +36,13 @@ public class MapRemovePartitionLostListenerMessageTask
     }
 
     @Override
-    protected boolean deRegisterListener() {
+    protected Future<Boolean> deRegisterListener() {
         MapService mapService = getService(MapService.SERVICE_NAME);
-        return mapService.getMapServiceContext().removePartitionLostListener(parameters.name, parameters.registrationId);
+        return mapService.getMapServiceContext().removePartitionLostListenerAsync(parameters.name, parameters.registrationId);
     }
 
     @Override
-    protected String getRegistrationId() {
+    protected UUID getRegistrationId() {
         return parameters.registrationId;
     }
 

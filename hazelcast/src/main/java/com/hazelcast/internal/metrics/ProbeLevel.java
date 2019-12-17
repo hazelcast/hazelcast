@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,12 +17,14 @@
 package com.hazelcast.internal.metrics;
 
 /**
- * With the probe level one can control which probes are being tracked by the MetricsRegistry and which ones are not.
+ * With the probe level one can control which probes are being tracked by the
+ * MetricsRegistry and which ones are not.
  */
 public enum ProbeLevel {
 
     /**
-     * Indicates that a probe is mandatory. E.g. memory usage, since other parts of the system rely on it (e.g the health monitor)
+     * Indicates that a probe is mandatory. E.g. memory usage, since other parts
+     * of the system rely on it (e.g the health monitor)
      */
     MANDATORY(2),
 
@@ -43,7 +45,8 @@ public enum ProbeLevel {
     }
 
     /**
-     * Checks if the this ProbeLevel has a precedence equal or higher than the minimumLevel.
+     * Checks if the this ProbeLevel has a precedence equal or higher than the
+     * minimumLevel.
      *
      * @param minimumLevel the minimum ProbeLevel
      * @return true if it is trackable, false otherwise.

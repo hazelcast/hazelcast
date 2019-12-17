@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,17 +16,19 @@
 
 package com.hazelcast.replicatedmap.impl.operation;
 
-import com.hazelcast.core.Member;
-import com.hazelcast.nio.Address;
+import com.hazelcast.cluster.Address;
+import com.hazelcast.cluster.Member;
+import com.hazelcast.internal.partition.IPartitionService;
+import com.hazelcast.map.impl.MapEntries;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapEventPublishingService;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
-import com.hazelcast.replicatedmap.impl.client.ReplicatedMapEntries;
 import com.hazelcast.replicatedmap.impl.record.ReplicatedRecordStore;
-import com.hazelcast.spi.OperationService;
-import com.hazelcast.spi.partition.IPartitionService;
+import com.hazelcast.spi.impl.operationservice.MutatingOperation;
+import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.spi.impl.operationservice.OperationService;
 
 import java.io.IOException;
 import java.util.Collection;
@@ -36,16 +38,15 @@ import static com.hazelcast.cluster.memberselector.MemberSelectors.DATA_MEMBER_S
 /**
  * Puts a set of records to the replicated map.
  */
-public class PutAllOperation extends AbstractSerializableOperation {
+public class PutAllOperation extends AbstractNamedSerializableOperation implements MutatingOperation {
 
     private String name;
-    private ReplicatedMapEntries entries;
+    private MapEntries entries;
 
-    @SuppressWarnings("unused")
     public PutAllOperation() {
     }
 
-    public PutAllOperation(String name, ReplicatedMapEntries entries) {
+    public PutAllOperation(String name, MapEntries entries) {
         this.name = name;
         this.entries = entries;
     }
@@ -79,11 +80,10 @@ public class PutAllOperation extends AbstractSerializableOperation {
             if (address.equals(getNodeEngine().getThisAddress())) {
                 continue;
             }
-            ReplicateUpdateOperation updateOperation = new ReplicateUpdateOperation(name, key, value, 0, response, false,
-                    getCallerAddress());
-            updateOperation.setPartitionId(getPartitionId());
-            updateOperation.setValidateTarget(false);
-            operationService.invokeOnTarget(getServiceName(), updateOperation, address);
+            Operation op = new ReplicateUpdateOperation(name, key, value, 0, response, false, getCallerAddress())
+                    .setPartitionId(getPartitionId())
+                    .setValidateTarget(false);
+            operationService.invokeOnTarget(getServiceName(), op, address);
         }
     }
 
@@ -100,7 +100,12 @@ public class PutAllOperation extends AbstractSerializableOperation {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ReplicatedMapDataSerializerHook.PUT_ALL;
+    }
+
+    @Override
+    public String getName() {
+        return name;
     }
 }

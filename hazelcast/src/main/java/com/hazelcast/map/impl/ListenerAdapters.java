@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,16 +16,13 @@
 
 package com.hazelcast.map.impl;
 
-import com.hazelcast.core.EntryListener;
 import com.hazelcast.map.listener.MapListener;
 
-import static com.hazelcast.map.impl.EntryListenerAdaptors.createEntryListenerAdaptor;
 import static com.hazelcast.map.impl.MapListenerAdaptors.createMapListenerAdaptor;
 
 /**
  * Contains support methods for creating various {@link com.hazelcast.map.impl.ListenerAdapter ListenerAdapter}
  *
- * @see com.hazelcast.map.impl.EntryListenerAdaptors
  * @see com.hazelcast.map.impl.MapListenerAdaptors
  */
 public final class ListenerAdapters {
@@ -40,11 +37,6 @@ public final class ListenerAdapters {
 
         if (listener instanceof MapListener) {
             return createMapListenerAdaptor((MapListener) listener);
-        }
-
-        // this if only works when we need binary compatibility
-        if (listener instanceof EntryListener) {
-            return createEntryListenerAdaptor((EntryListener) listener);
         }
 
         throw new IllegalArgumentException("Not a valid type to create a listener: " + listener.getClass().getSimpleName());

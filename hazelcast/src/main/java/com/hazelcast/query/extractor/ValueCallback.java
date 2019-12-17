@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,17 +17,18 @@
 package com.hazelcast.query.extractor;
 
 /**
- * Enables notifying about values extracted in a {@see com.hazelcast.query.extractor.ValueExtractor}
+ * Enables notifying about values extracted in a {@link com.hazelcast.query.extractor.ValueExtractor}
  *
  * @param <T> type of the extracted value
  */
-public abstract class ValueCallback<T> {
+@FunctionalInterface
+public interface ValueCallback<T> {
 
     /**
      * Notifies about a value passed as an argument
      *
      * @param value value to be notified about
      */
-    public abstract void onResult(T value);
+    void onResult(T value);
 
 }

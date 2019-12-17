@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,10 @@
 
 package com.hazelcast.internal.networking.nio;
 
+import com.hazelcast.core.HazelcastException;
 import com.hazelcast.logging.ILogger;
 
+import java.io.IOException;
 import java.lang.reflect.Field;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
@@ -25,14 +27,15 @@ import java.util.AbstractSet;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 
-import static com.hazelcast.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static java.lang.Class.forName;
 import static java.lang.System.arraycopy;
 
 /**
- * The SelectorOptimizer optimizes the Selector so less litter is being created. The Selector uses a HashSet, but this creates
- * an object for every add of a selection key. With this SelectorOptimizer a SelectionKeysSet, which contains an  an array,
- * is being used since every key is going to be inserted only once.
+ * The SelectorOptimizer optimizes the Selector so less litter is being created.
+ * The Selector uses a HashSet, but this creates an object for every add of a
+ * selection key. With this SelectorOptimizer a SelectionKeysSet, which contains
+ * an array, is being used since every key is going to be inserted only once.
  *
  * This trick comes from Netty.
  */
@@ -43,13 +46,37 @@ public final class SelectorOptimizer {
     }
 
     /**
+     * Creates a new Selector and will optimize it if possible.
+     *
+     * @param logger the logger used for the optimization process.
+     * @return the created Selector.
+     * @throws NullPointerException if logger is null.
+     */
+    static Selector newSelector(ILogger logger) {
+        checkNotNull(logger, "logger");
+
+        Selector selector;
+        try {
+            selector = Selector.open();
+        } catch (IOException e) {
+            throw new HazelcastException("Failed to open a Selector", e);
+        }
+
+        boolean optimize = Boolean.parseBoolean(System.getProperty("hazelcast.io.optimizeselector", "true"));
+        if (optimize) {
+            optimize(selector, logger);
+        }
+        return selector;
+    }
+
+    /**
      * Tries to optimize the provided Selector.
      *
      * @param selector the selector to optimize
      * @return an FastSelectionKeySet if the optimization was a success, null otherwise.
      * @throws NullPointerException if selector or logger is null.
      */
-    public static SelectionKeysSet optimize(Selector selector, ILogger logger) {
+    static SelectionKeysSet optimize(Selector selector, ILogger logger) {
         checkNotNull(selector, "selector");
         checkNotNull(logger, "logger");
 

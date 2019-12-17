@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,25 +16,30 @@
 
 package com.hazelcast.executor.impl.operations;
 
+import com.hazelcast.internal.util.UUIDSerializationUtil;
 import com.hazelcast.executor.impl.DistributedExecutorService;
 import com.hazelcast.executor.impl.ExecutorDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.impl.operationservice.NamedOperation;
+import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.spi.impl.operationservice.MutatingOperation;
 
 import java.io.IOException;
+import java.util.UUID;
 
-public final class CancellationOperation extends Operation implements IdentifiedDataSerializable {
+public final class CancellationOperation extends Operation implements NamedOperation, MutatingOperation,
+        IdentifiedDataSerializable {
 
-    private String uuid;
+    private UUID uuid;
     private boolean interrupt;
     private boolean response;
 
     public CancellationOperation() {
     }
 
-    public CancellationOperation(String uuid, boolean interrupt) {
+    public CancellationOperation(UUID uuid, boolean interrupt) {
         this.uuid = uuid;
         this.interrupt = interrupt;
     }
@@ -56,14 +61,20 @@ public final class CancellationOperation extends Operation implements Identified
     }
 
     @Override
+    public String getName() {
+        DistributedExecutorService service = getService();
+        return service.getName(uuid);
+    }
+
+    @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
-        out.writeUTF(uuid);
+        UUIDSerializationUtil.writeUUID(out, uuid);
         out.writeBoolean(interrupt);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
-        uuid = in.readUTF();
+        uuid = UUIDSerializationUtil.readUUID(in);
         interrupt = in.readBoolean();
     }
 
@@ -73,7 +84,8 @@ public final class CancellationOperation extends Operation implements Identified
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ExecutorDataSerializerHook.CANCELLATION;
     }
+
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 
 package com.hazelcast.internal.networking.nio;
 
-import com.hazelcast.nio.tcp.TcpIpConnection_AbstractTransferStressTest;
+import com.hazelcast.internal.nio.tcp.TcpIpConnection_AbstractTransferStressTest;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.NightlyTest;
 import org.junit.Before;
@@ -29,7 +29,7 @@ public class SelectWithSelectorFix_TcpIpConnection_TransferStressTest extends Tc
 
     @Before
     public void setup() throws Exception {
-        eventLoopGroupFactory = new SelectWithSelectorFix_NioEventLoopGroupFactory();
+        networkingFactory = new SelectWithSelectorFix_NioNetworkingFactory();
         super.setup();
     }
 }

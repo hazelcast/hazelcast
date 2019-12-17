@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,7 @@
 package com.hazelcast.query.impl.getters;
 
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
 import org.junit.Test;
@@ -35,7 +35,7 @@ import static org.junit.Assert.assertSame;
 import static org.junit.Assert.fail;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class MethodGetterTest {
 
     private Method limbArrayMethod;
@@ -182,7 +182,8 @@ public class MethodGetterTest {
     }
 
     @Test
-    public void getValue_whenModifierOnCollectionIsPositionAndElementAtGivenPositionDoesNotExist_thenReturnNull() throws Exception {
+    public void getValue_whenModifierOnCollectionIsPositionAndElementAtGivenPositionDoesNotExist_thenReturnNull()
+            throws Exception {
         MethodGetter getter = new MethodGetter(null, limbCollectionMethod, "[3]", Limb.class);
         Limb result = (Limb) getter.getValue(body);
 
@@ -319,7 +320,7 @@ public class MethodGetterTest {
         }
     }
 
-    static class Nail {
+    static final class Nail {
         String colour;
 
         private Nail(String colour) {

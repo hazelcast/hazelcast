@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 
 package com.hazelcast.spi.impl.operationexecutor.impl;
 
-import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
@@ -28,11 +28,11 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.TimeUnit;
 
-import static com.hazelcast.spi.Operation.GENERIC_PARTITION_ID;
-import static com.hazelcast.spi.properties.GroupProperty.GENERIC_OPERATION_THREAD_COUNT;
-import static com.hazelcast.spi.properties.GroupProperty.PARTITION_COUNT;
-import static com.hazelcast.spi.properties.GroupProperty.PARTITION_OPERATION_THREAD_COUNT;
-import static com.hazelcast.spi.properties.GroupProperty.PRIORITY_GENERIC_OPERATION_THREAD_COUNT;
+import static com.hazelcast.spi.impl.operationservice.Operation.GENERIC_PARTITION_ID;
+import static com.hazelcast.spi.properties.ClusterProperty.GENERIC_OPERATION_THREAD_COUNT;
+import static com.hazelcast.spi.properties.ClusterProperty.PARTITION_COUNT;
+import static com.hazelcast.spi.properties.ClusterProperty.PARTITION_OPERATION_THREAD_COUNT;
+import static com.hazelcast.spi.properties.ClusterProperty.PRIORITY_GENERIC_OPERATION_THREAD_COUNT;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastSerialClassRunner.class)
@@ -78,7 +78,7 @@ public class OperationExecutorImpl_BasicTest extends OperationExecutorImpl_Abstr
     class LongRunningOperation extends Operation {
         private CountDownLatch completionLatch;
 
-        public LongRunningOperation(int partitionId, CountDownLatch completionLatch) {
+        LongRunningOperation(int partitionId, CountDownLatch completionLatch) {
             this.completionLatch = completionLatch;
             setPartitionId(partitionId);
         }
@@ -153,36 +153,6 @@ public class OperationExecutorImpl_BasicTest extends OperationExecutorImpl_Abstr
             }
         });
 
-        awaitBarrier(barrier);
-    }
-
-    @Test
-    public void test_interruptAllPartitionThreads() throws Exception {
-        initExecutor();
-
-        int threadCount = executor.getPartitionThreadCount();
-        final CyclicBarrier barrier = new CyclicBarrier(threadCount + 1);
-
-        executor.executeOnPartitionThreads(new Runnable() {
-            @Override
-            public void run() {
-                // current thread must be a PartitionOperationThread
-                if (Thread.currentThread() instanceof PartitionOperationThread) {
-                    try {
-                        Thread.sleep(Long.MAX_VALUE);
-                    } catch (InterruptedException ignored) {
-                    } finally {
-                        try {
-                            awaitBarrier(barrier);
-                        } catch (Exception ex) {
-                            ex.printStackTrace();
-                        }
-                    }
-                }
-            }
-        });
-
-        executor.interruptPartitionThreads();
         awaitBarrier(barrier);
     }
 

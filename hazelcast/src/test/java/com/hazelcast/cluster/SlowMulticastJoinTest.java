@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,12 +20,9 @@ import com.hazelcast.cluster.SplitBrainHandlerTest.MergedEventLifeCycleListener;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.MemberAttributeEvent;
-import com.hazelcast.core.MembershipEvent;
-import com.hazelcast.core.MembershipListener;
-import com.hazelcast.instance.HazelcastInstanceFactory;
+import com.hazelcast.instance.impl.HazelcastInstanceFactory;
 import com.hazelcast.internal.cluster.impl.MulticastJoiner;
-import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.NightlyTest;
@@ -72,9 +69,9 @@ public class SlowMulticastJoinTest extends AbstractJoinTest {
     public void testSplitBrainMessagesNotAccumulated_whenClusterIsStableOrNodeIsNotMaster() throws Exception {
         final int clusterSize = 3;
         Config config = new Config();
-        config.setProperty(GroupProperty.WAIT_SECONDS_BEFORE_JOIN.getName(), "0");
-        config.setProperty(GroupProperty.MERGE_FIRST_RUN_DELAY_SECONDS.getName(), "10");
-        config.setProperty(GroupProperty.MERGE_NEXT_RUN_DELAY_SECONDS.getName(), "15");
+        config.setProperty(ClusterProperty.WAIT_SECONDS_BEFORE_JOIN.getName(), "0");
+        config.setProperty(ClusterProperty.MERGE_FIRST_RUN_DELAY_SECONDS.getName(), "10");
+        config.setProperty(ClusterProperty.MERGE_NEXT_RUN_DELAY_SECONDS.getName(), "15");
 
         final HazelcastInstance[] instances = new HazelcastInstance[clusterSize];
         final MulticastJoiner[] joiners = new MulticastJoiner[clusterSize];
@@ -98,9 +95,6 @@ public class SlowMulticastJoinTest extends AbstractJoinTest {
                 splitLatch.countDown();
             }
 
-            @Override
-            public void memberAttributeChanged(MemberAttributeEvent memberAttributeEvent) {
-            }
         });
 
         final CountDownLatch mergeLatch = new CountDownLatch(1);
@@ -118,8 +112,8 @@ public class SlowMulticastJoinTest extends AbstractJoinTest {
         assertTrue(splitLatch.await(10, TimeUnit.SECONDS));
 
         // while cluster is split, no split brain join messages should be accumulated in the non-master member 1
-        assertSplitBrainMessagesCount(clusterSize, new HazelcastInstance[] {instances[1]},
-                new MulticastJoiner[] {joiners[1]});
+        assertSplitBrainMessagesCount(clusterSize, new HazelcastInstance[]{instances[1]},
+                new MulticastJoiner[]{joiners[1]});
 
         assertTrue(mergeLatch.await(30, TimeUnit.SECONDS));
         assertClusterSize(clusterSize, instances[0]);
@@ -149,8 +143,8 @@ public class SlowMulticastJoinTest extends AbstractJoinTest {
 
     private Config newConfig(String trustedInterface) {
         Config config = new Config();
-        config.setProperty(GroupProperty.MERGE_FIRST_RUN_DELAY_SECONDS.getName(), "5");
-        config.setProperty(GroupProperty.MERGE_NEXT_RUN_DELAY_SECONDS.getName(), "3");
+        config.setProperty(ClusterProperty.MERGE_FIRST_RUN_DELAY_SECONDS.getName(), "5");
+        config.setProperty(ClusterProperty.MERGE_NEXT_RUN_DELAY_SECONDS.getName(), "3");
         config.getNetworkConfig().getJoin().getMulticastConfig().addTrustedInterface(trustedInterface);
         return config;
     }

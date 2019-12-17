@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,23 +18,22 @@ package com.hazelcast.client.impl.protocol.task.cache;
 
 import com.hazelcast.cache.impl.CacheService;
 import com.hazelcast.cache.impl.journal.CacheEventJournalReadOperation;
-import com.hazelcast.cache.journal.EventJournalCacheEvent;
+import com.hazelcast.cache.EventJournalCacheEvent;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.CacheEventJournalReadCodec;
-import com.hazelcast.instance.Node;
-import com.hazelcast.internal.cluster.Versions;
-import com.hazelcast.nio.Connection;
-import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.projection.Projection;
+import com.hazelcast.instance.impl.Node;
+import com.hazelcast.internal.nio.Connection;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.ringbuffer.impl.ReadResultSetImpl;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.CachePermission;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.util.function.Predicate;
+import com.hazelcast.spi.impl.operationservice.Operation;
 
 import java.security.Permission;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Function;
+import java.util.function.Predicate;
 
 /**
  * Reads from the cache event journal in batches. You may specify the start sequence,
@@ -62,11 +61,7 @@ public class CacheEventJournalReadTask<K, V, T>
 
     @Override
     protected Operation prepareOperation() {
-        if (nodeEngine.getClusterService().getClusterVersion().isLessThan(Versions.V3_9)) {
-            throw new UnsupportedOperationException(
-                    "Event journal actions are available when cluster version is 3.9 or higher");
-        }
-        final Projection<? super EventJournalCacheEvent<K, V>, T> projection
+        final Function<? super EventJournalCacheEvent<K, V>, T> projection
                 = serializationService.toObject(parameters.projection);
         final Predicate<? super EventJournalCacheEvent<K, V>> predicate = serializationService.toObject(parameters.predicate);
         return new CacheEventJournalReadOperation<K, V, T>(parameters.name,
@@ -91,7 +86,8 @@ public class CacheEventJournalReadTask<K, V, T>
             seqs[k] = resultSet.getSequence(k);
         }
 
-        return CacheEventJournalReadCodec.encodeResponse(resultSet.readCount(), items, seqs);
+        return CacheEventJournalReadCodec.encodeResponse(
+                resultSet.readCount(), items, seqs, resultSet.getNextSequenceToReadFrom());
     }
 
     @Override

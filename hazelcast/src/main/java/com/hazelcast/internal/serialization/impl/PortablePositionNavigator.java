@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,8 @@
 
 package com.hazelcast.internal.serialization.impl;
 
-import com.hazelcast.nio.Bits;
-import com.hazelcast.nio.BufferObjectDataInput;
+import com.hazelcast.internal.nio.Bits;
+import com.hazelcast.internal.nio.BufferObjectDataInput;
 import com.hazelcast.nio.serialization.FieldType;
 
 import java.io.IOException;
@@ -55,7 +55,7 @@ final class PortablePositionNavigator {
      * Main method that enables navigating in the Portable byte stream to find the element specified in the path.
      * The path may be:
      * - simple -> which means that it includes a single attribute only, like "name"
-     * - nested -> which means that it includes more then a single attribute separated with a dot (.). like person.name
+     * - nested -> which means that it includes more than a single attribute separated with a dot (.). like person.name
      * <p>
      * The path may also includes array cells:
      * - specific quantifier, like person.leg[1] -> returns the leg with index 0

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,7 @@
 package com.hazelcast.logging;
 
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
 import org.junit.Test;
@@ -30,7 +30,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class NoLoggerTest extends AbstractLoggerTest {
 
     private ILogger logger;
@@ -81,8 +81,18 @@ public class NoLoggerTest extends AbstractLoggerTest {
     }
 
     @Test
+    public void info() {
+        logger.info(MESSAGE, THROWABLE);
+    }
+
+    @Test
     public void info_withMessage() {
         logger.info(MESSAGE);
+    }
+
+    @Test
+    public void info_withThrowable() {
+        logger.info(THROWABLE);
     }
 
     @Test
@@ -123,6 +133,11 @@ public class NoLoggerTest extends AbstractLoggerTest {
     @Test
     public void severe() {
         logger.severe(MESSAGE, THROWABLE);
+    }
+
+    @Test
+    public void isSevereEnabled() {
+        assertFalse(logger.isSevereEnabled());
     }
 
     @Test

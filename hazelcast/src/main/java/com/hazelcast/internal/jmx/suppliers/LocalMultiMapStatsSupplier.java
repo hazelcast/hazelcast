@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +16,9 @@
 
 package com.hazelcast.internal.jmx.suppliers;
 
-import com.hazelcast.core.MultiMap;
-import com.hazelcast.monitor.LocalMultiMapStats;
-import com.hazelcast.monitor.impl.LocalMultiMapStatsImpl;
+import com.hazelcast.multimap.MultiMap;
+import com.hazelcast.multimap.LocalMultiMapStats;
+import com.hazelcast.internal.monitor.impl.LocalMultiMapStatsImpl;
 
 /**
  * Implementation of {@link StatsSupplier} for {@link LocalMultiMapStats}

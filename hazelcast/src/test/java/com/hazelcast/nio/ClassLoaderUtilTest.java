@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,19 +16,25 @@
 
 package com.hazelcast.nio;
 
+import com.hazelcast.internal.nio.ClassLoaderUtil;
+import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.io.IOException;
+
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class ClassLoaderUtilTest extends HazelcastTestSupport {
 
     @Test
@@ -37,7 +43,7 @@ public class ClassLoaderUtilTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testImplementsIntefaceWithSameName_whenInterfaceIsDirectlyImplemented() {
+    public void testImplementsInterfaceWithSameName_whenInterfaceIsDirectlyImplemented() {
         assertTrue(ClassLoaderUtil.implementsInterfaceWithSameName(DirectlyImplementingInterface.class, MyInterface.class));
     }
 
@@ -47,20 +53,54 @@ public class ClassLoaderUtilTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testImplementsIntefaceWithSameName_whenInterfaceIsImplementedBySuperClass() {
+    public void testImplementsInterfaceWithSameName_whenInterfaceIsImplementedBySuperClass() {
         assertTrue(ClassLoaderUtil.implementsInterfaceWithSameName(ExtendingClassImplementingInterface.class, MyInterface.class));
     }
 
     @Test
-    public void testImplementsIntefaceWithSameName_whenDirectlyImplementingSubInterface() {
+    public void testImplementsInterfaceWithSameName_whenDirectlyImplementingSubInterface() {
         assertTrue(ClassLoaderUtil.implementsInterfaceWithSameName(DirectlyImplementingSubInterfaceInterface.class, MyInterface.class));
     }
 
     @Test
-    public void testImplementsIntefaceWithSameName_whenExtendingClassImplementingSubinterface() {
+    public void testImplementsInterfaceWithSameName_whenExtendingClassImplementingSubinterface() {
         assertTrue(ClassLoaderUtil.implementsInterfaceWithSameName(ExtendingClassImplementingSubInterface.class, MyInterface.class));
     }
 
+    @Test
+    public void testIssue13509() throws Exception {
+        // see https://github.com/hazelcast/hazelcast/issues/13509
+        ClassLoader testCL = new ClassLoader() {
+            @Override
+            protected Class<?> findClass(String name) throws ClassNotFoundException {
+                if (name.equals("mock.Class")) {
+                    try {
+                        byte[] classData = IOUtil.toByteArray(getClass().getResourceAsStream("mock-class-data.dat"));
+                        return defineClass(name, classData, 0, classData.length);
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
+                }
+                throw new ClassNotFoundException(name);
+            }
+        };
+
+        ClassLoader previousCL = Thread.currentThread().getContextClassLoader();
+        Thread.currentThread().setContextClassLoader(testCL);
+        try {
+            Thread.currentThread().setContextClassLoader(testCL);
+            Object o = ClassLoaderUtil.newInstance(null, "mock.Class");
+            assertNotNull("no object created", o);
+        } finally {
+            Thread.currentThread().setContextClassLoader(previousCL);
+        }
+
+        // now the context class loader is reset back, new instance should fail
+        try {
+            ClassLoaderUtil.newInstance(null, "mock.Class");
+            fail("call did not fail, class probably incorrectly returned from CONSTRUCTOR_CACHE");
+        } catch (ClassNotFoundException expected) { }
+    }
 
     private static class ExtendingClassImplementingSubInterface extends DirectlyImplementingSubInterfaceInterface {
 
@@ -85,5 +125,4 @@ public class ClassLoaderUtilTest extends HazelcastTestSupport {
     private interface MyInterface {
 
     }
-
 }

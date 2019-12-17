@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,25 +19,26 @@ package com.hazelcast.cardinality;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.SerializerConfig;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.nio.Bits;
+import com.hazelcast.internal.nio.Bits;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.StreamSerializer;
 import com.hazelcast.test.HazelcastTestSupport;
 import org.junit.Before;
 import org.junit.Test;
-import org.junit.runners.Parameterized;
+import org.junit.runners.Parameterized.Parameter;
+import org.junit.runners.Parameterized.Parameters;
 
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.Collection;
 
+import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assume.assumeTrue;
 
 public abstract class CardinalityEstimatorAbstractTest extends HazelcastTestSupport {
 
-    @Parameterized.Parameters(name = "config:{0}")
+    @Parameters(name = "config:{0}")
     public static Collection<Object[]> params() {
         final Config config = new Config();
         final SerializerConfig serializerConfig = new SerializerConfig();
@@ -45,8 +46,9 @@ public abstract class CardinalityEstimatorAbstractTest extends HazelcastTestSupp
         serializerConfig.setTypeClass(CustomObject.class);
         config.getSerializationConfig().addSerializerConfig(serializerConfig);
 
-        return Arrays.asList(new Object[][]{
-                {null}, {config}
+        return asList(new Object[][]{
+                {null},
+                {config},
         });
     }
 
@@ -54,7 +56,7 @@ public abstract class CardinalityEstimatorAbstractTest extends HazelcastTestSupp
 
     private CardinalityEstimator estimator;
 
-    @Parameterized.Parameter(0)
+    @Parameter(0)
     public Config config;
 
     @Before
@@ -66,7 +68,7 @@ public abstract class CardinalityEstimatorAbstractTest extends HazelcastTestSupp
         estimator = local.getCardinalityEstimator(name);
     }
 
-    protected abstract HazelcastInstance[] newInstances(final Config config);
+    protected abstract HazelcastInstance[] newInstances(Config config);
 
     @Test
     public void estimate() {
@@ -75,7 +77,7 @@ public abstract class CardinalityEstimatorAbstractTest extends HazelcastTestSupp
 
     @Test
     public void estimateAsync() throws Exception {
-        assertEquals(0, estimator.estimateAsync().get().longValue());
+        assertEquals(0, estimator.estimateAsync().toCompletableFuture().get().longValue());
     }
 
     @Test
@@ -94,16 +96,16 @@ public abstract class CardinalityEstimatorAbstractTest extends HazelcastTestSupp
 
     @Test
     public void addAsync() throws Exception {
-        estimator.addAsync(1L).get();
-        assertEquals(1L, estimator.estimateAsync().get().longValue());
-        estimator.addAsync(1L).get();
-        estimator.addAsync(1L).get();
-        assertEquals(1L, estimator.estimateAsync().get().longValue());
-        estimator.addAsync(2L).get();
+        estimator.addAsync(1L).toCompletableFuture().get();
+        assertEquals(1L, estimator.estimateAsync().toCompletableFuture().get().longValue());
+        estimator.addAsync(1L).toCompletableFuture().get();
+        estimator.addAsync(1L).toCompletableFuture().get();
+        assertEquals(1L, estimator.estimateAsync().toCompletableFuture().get().longValue());
+        estimator.addAsync(2L).toCompletableFuture().get();
         estimator.addAsync(3L);
-        assertEquals(3L, estimator.estimateAsync().get().longValue());
-        estimator.addAsync("Test").get();
-        assertEquals(4L, estimator.estimateAsync().get().longValue());
+        assertEquals(3L, estimator.estimateAsync().toCompletableFuture().get().longValue());
+        estimator.addAsync("Test").toCompletableFuture().get();
+        assertEquals(4L, estimator.estimateAsync().toCompletableFuture().get().longValue());
     }
 
     @Test(expected = com.hazelcast.nio.serialization.HazelcastSerializationException.class)

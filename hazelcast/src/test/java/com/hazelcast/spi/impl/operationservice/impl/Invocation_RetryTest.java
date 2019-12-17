@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,21 +20,20 @@ import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.internal.partition.InternalPartitionService;
-import com.hazelcast.nio.Address;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.OperationService;
-import com.hazelcast.spi.PartitionAwareOperation;
+import com.hazelcast.cluster.Address;
+import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.spi.impl.operationservice.OperationService;
+import com.hazelcast.spi.impl.operationservice.PartitionAwareOperation;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
 import com.hazelcast.spi.impl.AllowedDuringPassiveState;
 import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.spi.impl.operationservice.InternalOperationService;
-import com.hazelcast.spi.partition.IPartition;
-import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.internal.partition.IPartition;
+import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -53,7 +52,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.fail;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class Invocation_RetryTest extends HazelcastTestSupport {
 
     private static final int NUMBER_OF_INVOCATIONS = 100;
@@ -100,7 +99,7 @@ public class Invocation_RetryTest extends HazelcastTestSupport {
     @Test
     public void testNoStuckInvocationsWhenRetriedMultipleTimes() throws Exception {
         Config config = new Config();
-        config.setProperty(GroupProperty.OPERATION_CALL_TIMEOUT_MILLIS.getName(), "3000");
+        config.setProperty(ClusterProperty.OPERATION_CALL_TIMEOUT_MILLIS.getName(), "3000");
 
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
         HazelcastInstance local = factory.newHazelcastInstance(config);
@@ -142,7 +141,7 @@ public class Invocation_RetryTest extends HazelcastTestSupport {
         HazelcastInstance hz3 = factory.newHazelcastInstance();
         waitAllForSafeState(hz1, hz2, hz3);
 
-        InternalOperationService operationService = getNodeEngineImpl(hz1).getOperationService();
+        OperationServiceImpl operationService = getNodeEngineImpl(hz1).getOperationService();
 
         Future[] futures = new Future[NUMBER_OF_INVOCATIONS];
         for (int i = 0; i < NUMBER_OF_INVOCATIONS; i++) {
@@ -173,7 +172,7 @@ public class Invocation_RetryTest extends HazelcastTestSupport {
         HazelcastInstance hz = factory.newHazelcastInstance();
 
         NodeEngineImpl nodeEngine = getNodeEngineImpl(hz);
-        InternalOperationService operationService = nodeEngine.getOperationService();
+        OperationServiceImpl operationService = nodeEngine.getOperationService();
 
         operationService.invokeOnPartition(new SleepingOperation(Long.MAX_VALUE).setPartitionId(0));
         sleepSeconds(1);
@@ -262,7 +261,7 @@ public class Invocation_RetryTest extends HazelcastTestSupport {
 
         private long sleepMillis;
 
-        public SleepingOperation() {
+        SleepingOperation() {
         }
 
         SleepingOperation(long sleepMillis) {

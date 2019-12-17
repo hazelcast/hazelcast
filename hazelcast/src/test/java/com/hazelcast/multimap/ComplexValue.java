@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,11 +18,14 @@ package com.hazelcast.multimap;
 
 import java.io.Serializable;
 
-public class ComplexValue implements Serializable {
-    String name;
-    int time;
+class ComplexValue implements Serializable {
 
-    public ComplexValue(String name, int time) {
+    private static final long serialVersionUID = -6926569333412274188L;
+
+    private String name;
+    private int time;
+
+    ComplexValue(String name, int time) {
         this.name = name;
         this.time = time;
     }
@@ -35,8 +38,9 @@ public class ComplexValue implements Serializable {
         if (o == null || getClass() != o.getClass()) {
             return false;
         }
-        ComplexValue value = (ComplexValue) o;
-        if (name != null ? !name.equals(value.name) : value.name != null) {
+
+        ComplexValue that = (ComplexValue) o;
+        if (name != null ? !name.equals(that.name) : that.name != null) {
             return false;
         }
         return true;
@@ -49,9 +53,9 @@ public class ComplexValue implements Serializable {
 
     @Override
     public String toString() {
-        return "ComplexValue{" +
-                "name='" + name + '\'' +
-                ", time=" + time +
-                '}';
+        return "ComplexValue{"
+                + "name='" + name + '\''
+                + ", time=" + time
+                + '}';
     }
 }

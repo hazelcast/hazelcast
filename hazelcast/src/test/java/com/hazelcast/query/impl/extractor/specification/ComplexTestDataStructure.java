@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,6 +36,9 @@ import static com.hazelcast.query.impl.extractor.AbstractExtractionSpecification
  * limbs_list & limbs_array, so that both extraction in arrays and in collections may be tested.
  */
 public class ComplexTestDataStructure {
+
+    private ComplexTestDataStructure() {
+    }
 
     public static class Person implements Serializable, PortableAware {
         String name;
@@ -340,7 +343,7 @@ public class ComplexTestDataStructure {
         if (limb.fingers_array != null) {
             portable.fingers_portable = new Portable[limb.fingers_array.length];
             for (int i = 0; i < limb.fingers_array.length; i++) {
-                if(limb.fingers_array[i] != null) {
+                if (limb.fingers_array[i] != null) {
                     portable.fingers_portable[i] = limb.fingers_array[i].getPortable();
                 }
             }
@@ -377,7 +380,7 @@ public class ComplexTestDataStructure {
         if (person.limbs_array != null) {
             portable.limbs_portable = new Portable[person.limbs_array.length];
             for (int i = 0; i < person.limbs_array.length; i++) {
-                if(person.limbs_array[i] != null) {
+                if (person.limbs_array[i] != null) {
                     portable.limbs_portable[i] = person.limbs_array[i].getPortable();
                 }
             }

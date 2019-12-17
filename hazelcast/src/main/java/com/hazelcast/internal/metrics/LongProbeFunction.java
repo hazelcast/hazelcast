@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,8 +17,8 @@
 package com.hazelcast.internal.metrics;
 
 /**
- * A {@link ProbeFunction} that provides a long value and can be used to create a probe using
- * {@link MetricsRegistry#register(Object, String, LongProbeFunction)}
+ * A {@link ProbeFunction} that provides a long value and can be used to create
+ * a probe using {@link MetricsRegistry#registerStaticProbe(Object, String, ProbeLevel, LongProbeFunction)}
  *
  * @param <S> the type of the source object.
  * @see DoubleProbeFunction

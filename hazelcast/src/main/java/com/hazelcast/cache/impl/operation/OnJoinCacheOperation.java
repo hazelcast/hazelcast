@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,12 +19,11 @@ package com.hazelcast.cache.impl.operation;
 import com.hazelcast.cache.impl.CacheDataSerializerHook;
 import com.hazelcast.cache.impl.ICacheService;
 import com.hazelcast.config.CacheConfig;
-import com.hazelcast.cache.impl.PreJoinCacheConfig;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.exception.ServiceNotFoundException;
 
 import javax.cache.configuration.Configuration;
@@ -38,7 +37,7 @@ import static com.hazelcast.cache.impl.JCacheDetector.isJCacheAvailable;
 /**
  * Operation executed on joining members so they become aware of {@link CacheConfig}s dynamically created via
  * {@link javax.cache.CacheManager#createCache(String, Configuration)}. Depending on the cluster version, this operation
- * is executed either as a post-join operation (when cluster version is < 3.9) or as a pre-join operation (since 3.9), to
+ * is executed either as a post-join operation (when cluster version is &lt; 3.9) or as a pre-join operation (since 3.9), to
  * resolve a race between the {@link CacheConfig} becoming available in the joining member and creation of a
  * {@link com.hazelcast.cache.ICache} proxy.
  */
@@ -60,14 +59,7 @@ public class OnJoinCacheOperation extends Operation implements IdentifiedDataSer
         if (isJCacheAvailable(getNodeEngine().getConfigClassLoader())) {
             ICacheService cacheService = getService();
             for (CacheConfig cacheConfig : configs) {
-                // RU_COMPAT_38 since 3.9, configs are instances of PreJoinCacheConfig
-                CacheConfig cacheConfigToAdd;
-                if (cacheConfig instanceof PreJoinCacheConfig) {
-                    cacheConfigToAdd = ((PreJoinCacheConfig) cacheConfig).asCacheConfig();
-                } else {
-                    cacheConfigToAdd = cacheConfig;
-                }
-                cacheService.putCacheConfigIfAbsent(cacheConfigToAdd);
+                cacheService.putCacheConfigIfAbsent(cacheConfig);
             }
         } else {
             // if JCache is not in classpath and no Cache configurations need to be processed, do not fail the operation
@@ -112,7 +104,7 @@ public class OnJoinCacheOperation extends Operation implements IdentifiedDataSer
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return CacheDataSerializerHook.CACHE_POST_JOIN;
     }
 }

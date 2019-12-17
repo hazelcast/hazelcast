@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,13 +17,12 @@
 package com.hazelcast.replicatedmap;
 
 import com.hazelcast.core.HazelcastException;
-import com.hazelcast.nio.Address;
+import com.hazelcast.cluster.Address;
 
 /**
  * Thrown when {@link com.hazelcast.core.HazelcastInstance#getReplicatedMap(String)} is invoked on a lite member.
  */
-public class ReplicatedMapCantBeCreatedOnLiteMemberException
-        extends HazelcastException {
+public class ReplicatedMapCantBeCreatedOnLiteMemberException extends HazelcastException {
 
     public ReplicatedMapCantBeCreatedOnLiteMemberException(Address address) {
         this("Can't create replicated map instance on " + address);

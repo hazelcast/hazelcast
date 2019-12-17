@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,8 @@
 package com.hazelcast.map.impl.query;
 
 import com.hazelcast.query.impl.QueryableEntry;
-import com.hazelcast.spi.serialization.SerializationService;
+import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.util.collection.PartitionIdSet;
 
 import java.util.Collection;
 
@@ -34,10 +35,11 @@ public class QueryResultProcessor implements ResultProcessor<QueryResult> {
 
     @Override
     public QueryResult populateResult(Query query, long resultLimit, Collection<QueryableEntry> entries,
-                                      Collection<Integer> partitionIds) {
-        QueryResult result = new QueryResult(query.getIterationType(), resultLimit);
+                                      PartitionIdSet partitionIds) {
+        QueryResult result = new QueryResult(query.getIterationType(), query.getProjection(), serializationService, resultLimit,
+                false);
         for (QueryableEntry entry : entries) {
-            result.add(entry, query.getProjection(), serializationService);
+            result.add(entry);
         }
         result.setPartitionIds(partitionIds);
         return result;
@@ -45,6 +47,6 @@ public class QueryResultProcessor implements ResultProcessor<QueryResult> {
 
     @Override
     public QueryResult populateResult(Query query, long resultLimit) {
-        return new QueryResult(query.getIterationType(), resultLimit);
+        return new QueryResult(query.getIterationType(), query.getProjection(), serializationService, resultLimit, false);
     }
 }

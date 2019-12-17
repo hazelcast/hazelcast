@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,8 +17,9 @@
 package com.hazelcast.core;
 
 /**
- * Lifecycle event fired when HazelcastInstance's state changes.
- * Events are fired when instance:
+ * Lifecycle events are fired when the HazelcastInstance state changes.
+ * <p>
+ * Events are fired when the instance is:
  * <ul>
  * <li>Starting</li>
  * <li>Started</li>
@@ -32,34 +33,63 @@ package com.hazelcast.core;
  * @see HazelcastInstance#getLifecycleService()
  */
 public final class LifecycleEvent {
+
     /**
-     * lifecycle states
+     * Lifecycle states
      */
     public enum LifecycleState {
-        STARTING,
-        STARTED,
-        SHUTTING_DOWN,
-        SHUTDOWN,
         /**
-         * Fired on each cluster members just before starting a merge process into another cluster.
-         * This is typically used when a split-brain situation is healed.
-         *
+         * Fired when the member is starting.
+         */
+        STARTING,
+
+        /**
+         * Fired when the member start is completed.
+         */
+        STARTED,
+
+        /**
+         * Fired when the member is shutting down.
+         */
+        SHUTTING_DOWN,
+
+        /**
+         * Fired when the member shut down is completed.
+         */
+        SHUTDOWN,
+
+        /**
+         * Fired on each cluster member just before the start of a merge
+         * process into another cluster. This is typically used when a
+         * split-brain situation is healed.
          */
         MERGING,
 
         /**
-         * Indicates merge process was successful and data have been merged.
-         *
+         * Fired when the merge process was successful and all data has been
+         * merged.
          */
         MERGED,
 
         /**
-         * Indicates merge process failed for some reason.
-         *
+         * Fired when the merge process failed for some reason.
          */
         MERGE_FAILED,
+
+        /**
+         * Fired when a client is connected to the member.
+         */
         CLIENT_CONNECTED,
-        CLIENT_DISCONNECTED
+
+        /**
+         * Fired when a client is disconnected from the member.
+         */
+        CLIENT_DISCONNECTED,
+
+        /**
+         * Fired when a client is connected to a new cluster.
+         */
+        CLIENT_CHANGED_CLUSTER
     }
 
     final LifecycleState state;

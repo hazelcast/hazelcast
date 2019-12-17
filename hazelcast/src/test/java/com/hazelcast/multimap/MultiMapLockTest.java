@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,20 +16,19 @@
 
 package com.hazelcast.multimap;
 
-import com.hazelcast.concurrent.lock.LockService;
-import com.hazelcast.concurrent.lock.LockServiceImpl;
-import com.hazelcast.concurrent.lock.LockStoreContainer;
-import com.hazelcast.concurrent.lock.LockStoreImpl;
+import com.hazelcast.internal.locksupport.LockSupportService;
+import com.hazelcast.internal.locksupport.LockSupportServiceImpl;
+import com.hazelcast.internal.locksupport.LockStoreContainer;
+import com.hazelcast.internal.locksupport.LockStoreImpl;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.MultiMapConfig;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.MultiMap;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Assert;
 import org.junit.Test;
@@ -45,24 +44,24 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class MultiMapLockTest extends HazelcastTestSupport {
 
     @Test(expected = NullPointerException.class)
     public void testLock_whenNullKey() {
-        MultiMap multiMap = getMultiMapForLock();
+        MultiMap<String, Integer> multiMap = getMultiMapForLock();
         multiMap.lock(null);
     }
 
     @Test(expected = NullPointerException.class)
     public void testUnlock_whenNullKey() {
-        MultiMap multiMap = getMultiMapForLock();
+        MultiMap<String, Integer> multiMap = getMultiMapForLock();
         multiMap.unlock(null);
     }
 
     @Test(timeout = 60000)
     public void testTryLockLeaseTime_whenLockFree() throws InterruptedException {
-        MultiMap multiMap = getMultiMapForLock();
+        MultiMap<String, Integer> multiMap = getMultiMapForLock();
         String key = randomString();
         boolean isLocked = multiMap.tryLock(key, 1000, TimeUnit.MILLISECONDS, 1000, TimeUnit.MILLISECONDS);
         assertTrue(isLocked);
@@ -70,7 +69,7 @@ public class MultiMapLockTest extends HazelcastTestSupport {
 
     @Test(timeout = 60000)
     public void testTryLockLeaseTime_whenLockAcquiredByOther() throws InterruptedException {
-        final MultiMap multiMap = getMultiMapForLock();
+        final MultiMap<String, Integer> multiMap = getMultiMapForLock();
         final String key = randomString();
         Thread thread = new Thread() {
             public void run() {
@@ -86,12 +85,12 @@ public class MultiMapLockTest extends HazelcastTestSupport {
 
     @Test
     public void testTryLockLeaseTime_lockIsReleasedEventually() throws InterruptedException {
-        final MultiMap multiMap = getMultiMapForLock();
+        final MultiMap<String, Integer> multiMap = getMultiMapForLock();
         final String key = randomString();
         multiMap.tryLock(key, 1000, TimeUnit.MILLISECONDS, 1000, TimeUnit.MILLISECONDS);
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 Assert.assertFalse(multiMap.isLocked(key));
             }
         }, 30);
@@ -99,12 +98,15 @@ public class MultiMapLockTest extends HazelcastTestSupport {
 
     @Test
     public void testLock() throws Exception {
-        Config config = new Config();
         final String name = "defMM";
-        config.getMultiMapConfig(name).setValueCollectionType(MultiMapConfig.ValueCollectionType.LIST);
-        final int insCount = 4;
-        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(insCount);
+
+        Config config = new Config();
+        config.getMultiMapConfig(name)
+                .setValueCollectionType(MultiMapConfig.ValueCollectionType.LIST);
+
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(4);
         final HazelcastInstance[] instances = factory.newInstances(config);
+
         final CountDownLatch latch = new CountDownLatch(1);
         final CountDownLatch latch2 = new CountDownLatch(1);
         new Thread() {
@@ -136,7 +138,6 @@ public class MultiMapLockTest extends HazelcastTestSupport {
         }.start();
 
         assertTrue(instances[1].getMultiMap(name).tryLock("alo", 20, TimeUnit.SECONDS));
-
     }
 
     /**
@@ -145,14 +146,14 @@ public class MultiMapLockTest extends HazelcastTestSupport {
     @Test
     public void lockStoreShouldBeRemoved_whenMultimapIsDestroyed() {
         HazelcastInstance hz = createHazelcastInstance();
-        MultiMap multiMap = hz.getMultiMap(randomName());
+        MultiMap<String, Integer> multiMap = hz.getMultiMap(randomName());
         for (int i = 0; i < 1000; i++) {
-            multiMap.lock(i);
+            multiMap.lock("" + i);
         }
         multiMap.destroy();
 
         NodeEngineImpl nodeEngine = getNodeEngineImpl(hz);
-        LockServiceImpl lockService = nodeEngine.getService(LockService.SERVICE_NAME);
+        LockSupportServiceImpl lockService = nodeEngine.getService(LockSupportService.SERVICE_NAME);
         int partitionCount = nodeEngine.getPartitionService().getPartitionCount();
         for (int i = 0; i < partitionCount; i++) {
             LockStoreContainer lockContainer = lockService.getLockContainer(i);
@@ -161,8 +162,7 @@ public class MultiMapLockTest extends HazelcastTestSupport {
         }
     }
 
-    private MultiMap getMultiMapForLock() {
+    private MultiMap<String, Integer> getMultiMapForLock() {
         return createHazelcastInstance().getMultiMap(randomString());
     }
-
 }

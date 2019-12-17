@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,8 @@
 
 package com.hazelcast.nio.serialization;
 
+import com.hazelcast.internal.nio.IOUtil;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 
@@ -35,12 +37,12 @@ class DataDataSerializable implements DataSerializable {
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeData(data);
+        IOUtil.writeData(out, data);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        data = in.readData();
+        data = IOUtil.readData(in);
     }
 
     @Override
@@ -53,11 +55,9 @@ class DataDataSerializable implements DataSerializable {
         }
 
         DataDataSerializable that = (DataDataSerializable) o;
-
         if (data != null ? !data.equals(that.data) : that.data != null) {
             return false;
         }
-
         return true;
     }
 

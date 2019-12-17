@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,11 +17,14 @@
 package com.hazelcast.spring.security;
 
 import com.hazelcast.config.Config;
+import com.hazelcast.config.CredentialsFactoryConfig;
 import com.hazelcast.config.LoginModuleConfig;
 import com.hazelcast.config.LoginModuleConfig.LoginModuleUsage;
 import com.hazelcast.config.PermissionConfig;
 import com.hazelcast.config.SecurityConfig;
 import com.hazelcast.config.SecurityInterceptorConfig;
+import com.hazelcast.config.security.JaasAuthenticationConfig;
+import com.hazelcast.config.security.RealmConfig;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.security.ICredentialsFactory;
 import com.hazelcast.security.IPermissionPolicy;
@@ -77,31 +80,40 @@ public class SecureApplicationContextTest {
     public void testBasics() {
         assertNotNull(securityConfig);
         assertTrue(securityConfig.isEnabled());
-        assertNotNull(securityConfig.getClientLoginModuleConfigs());
-        assertFalse(securityConfig.getClientLoginModuleConfigs().isEmpty());
+        assertTrue(securityConfig.getClientBlockUnmappedActions());
+        assertEquals(2, securityConfig.getRealmConfigs().size());
+        assertNotNull(securityConfig.getClientRealm());
         assertNotNull(securityConfig.getClientPermissionConfigs());
         assertFalse(securityConfig.getClientPermissionConfigs().isEmpty());
-        assertNotNull(securityConfig.getMemberLoginModuleConfigs());
-        assertFalse(securityConfig.getMemberLoginModuleConfigs().isEmpty());
+        assertNotNull(securityConfig.getMemberRealm());
         assertNotNull(securityConfig.getClientPolicyConfig());
-        assertNotNull(securityConfig.getMemberCredentialsConfig());
         assertEquals(1, securityConfig.getSecurityInterceptorConfigs().size());
     }
 
     @Test
-    public void testMemberLoginConfigs() {
-        List<LoginModuleConfig> list = securityConfig.getMemberLoginModuleConfigs();
-        assertTrue(list.size() == 1);
+    public void testMemberRealm() {
+        RealmConfig realmConfig = securityConfig.getRealmConfig(securityConfig.getMemberRealm());
+        JaasAuthenticationConfig jaasAuthenticationConfig = realmConfig.getJaasAuthenticationConfig();
+        assertNotNull(jaasAuthenticationConfig);
+        List<LoginModuleConfig> list = jaasAuthenticationConfig.getLoginModuleConfigs();
+        assertEquals(1, list.size());
         LoginModuleConfig lm = list.get(0);
         assertEquals("com.hazelcast.examples.MyRequiredLoginModule", lm.getClassName());
         assertFalse(lm.getProperties().isEmpty());
         assertEquals(LoginModuleUsage.REQUIRED, lm.getUsage());
+
+        CredentialsFactoryConfig credentialsFactoryConfig = realmConfig.getCredentialsFactoryConfig();
+        assertNotNull(credentialsFactoryConfig);
+        assertEquals(dummyCredentialsFactory, credentialsFactoryConfig.getImplementation());
     }
 
     @Test
     public void testClientLoginConfigs() {
-        List<LoginModuleConfig> list = securityConfig.getClientLoginModuleConfigs();
-        assertTrue(list.size() == 2);
+        RealmConfig realmConfig = securityConfig.getRealmConfig(securityConfig.getClientRealm());
+        JaasAuthenticationConfig jaasAuthenticationConfig = realmConfig.getJaasAuthenticationConfig();
+        assertNotNull(jaasAuthenticationConfig);
+        List<LoginModuleConfig> list = jaasAuthenticationConfig.getLoginModuleConfigs();
+        assertEquals(2, list.size());
         LoginModuleConfig lm1 = list.get(0);
         assertEquals("com.hazelcast.examples.MyOptionalLoginModule", lm1.getClassName());
         assertFalse(lm1.getProperties().isEmpty());
@@ -110,14 +122,6 @@ public class SecureApplicationContextTest {
         assertEquals("com.hazelcast.examples.MyRequiredLoginModule", lm2.getClassName());
         assertFalse(lm2.getProperties().isEmpty());
         assertEquals(LoginModuleUsage.REQUIRED, lm2.getUsage());
-    }
-
-    @Test
-    public void testCredentialsFactory() {
-        assertEquals("com.hazelcast.examples.MyCredentialsFactory", securityConfig.getMemberCredentialsConfig()
-                .getClassName());
-        assertFalse(securityConfig.getMemberCredentialsConfig().getProperties().isEmpty());
-        assertEquals(dummyCredentialsFactory, securityConfig.getMemberCredentialsConfig().getImplementation());
     }
 
     @Test
@@ -156,7 +160,7 @@ public class SecureApplicationContextTest {
                     assertEquals(1, permConfig.getEndpoints().size());
                     assertEquals("127.0.0.1", permConfig.getEndpoints().iterator().next());
                     assertEquals(4, permConfig.getActions().size());
-                    String[] expectedActions = new String[] {"create", "add", "read", "destroy"};
+                    String[] expectedActions = new String[]{"create", "add", "read", "destroy"};
                     String[] actualActions = permConfig.getActions().toArray(new String[0]);
                     assertArrayEquals(expectedActions, actualActions);
                     break;

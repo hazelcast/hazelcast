@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,11 +16,12 @@
 
 package com.hazelcast.multimap.impl.operations;
 
+import com.hazelcast.multimap.impl.MultiMapContainer;
 import com.hazelcast.multimap.impl.MultiMapDataSerializerHook;
-import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.BackupOperation;
+import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.spi.impl.operationservice.BackupOperation;
 
-public class RemoveAllBackupOperation extends MultiMapKeyBasedOperation implements BackupOperation {
+public class RemoveAllBackupOperation extends AbstractKeyBasedMultiMapOperation implements BackupOperation {
 
     public RemoveAllBackupOperation() {
     }
@@ -31,12 +32,13 @@ public class RemoveAllBackupOperation extends MultiMapKeyBasedOperation implemen
 
     @Override
     public void run() throws Exception {
-        delete();
+        MultiMapContainer container = getOrCreateContainerWithoutAccess();
+        container.delete(dataKey);
         response = true;
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MultiMapDataSerializerHook.REMOVE_ALL_BACKUP;
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -42,15 +42,17 @@ public class SecurityInterceptorConfig {
         return className;
     }
 
-    public void setClassName(final String className) {
+    public SecurityInterceptorConfig setClassName(final String className) {
         this.className = className;
+        return this;
     }
 
     public SecurityInterceptor getImplementation() {
         return implementation;
     }
 
-    public void setImplementation(final SecurityInterceptor implementation) {
+    public SecurityInterceptorConfig setImplementation(final SecurityInterceptor implementation) {
         this.implementation = implementation;
+        return this;
     }
 }

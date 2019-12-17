@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,12 +19,14 @@ package com.hazelcast.scheduledexecutor.impl.operations;
 import com.hazelcast.scheduledexecutor.ScheduledTaskHandler;
 import com.hazelcast.scheduledexecutor.impl.DistributedScheduledExecutorService;
 import com.hazelcast.scheduledexecutor.impl.ScheduledExecutorDataSerializerHook;
+import com.hazelcast.spi.impl.operationservice.ReadonlyOperation;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public class GetAllScheduledOnMemberOperation
-        extends AbstractGetAllScheduledOperation {
+        extends AbstractGetAllScheduledOperation
+        implements ReadonlyOperation {
 
     private static final int MEMBER_BIN = -1;
 
@@ -53,7 +55,7 @@ public class GetAllScheduledOnMemberOperation
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ScheduledExecutorDataSerializerHook.GET_ALL_SCHEDULED_ON_MEMBER;
     }
 

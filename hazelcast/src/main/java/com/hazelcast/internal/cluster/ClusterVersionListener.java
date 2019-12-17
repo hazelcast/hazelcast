@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,9 @@
 
 package com.hazelcast.internal.cluster;
 
-import com.hazelcast.core.Cluster;
+import com.hazelcast.cluster.Cluster;
+import com.hazelcast.instance.impl.NodeExtension;
+import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.version.Version;
 
 /**
@@ -25,7 +27,7 @@ import com.hazelcast.version.Version;
  * interface do not have have to register themselves, as their {@link #onClusterVersionChange(Version)} method will be
  * invoked automatically.
  *
- * Other listeners have to register themselves with {@link com.hazelcast.instance.NodeExtension#registerListener(Object)}.
+ * Other listeners have to register themselves with {@link NodeExtension#registerListener(Object)}.
  * Upon registration, the listener's {@link #onClusterVersionChange(Version)} method will be invoked once with the current
  * value of the cluster version.
  *
@@ -42,7 +44,7 @@ public interface ClusterVersionListener {
      * the cluster version. Unhandled exceptions from listeners implementation will break the new version commit and a slow
      * implementation will stall the system and may cause a transaction timeout.
      * If new cluster version is {@code null} and property
-     * {@link com.hazelcast.spi.properties.GroupProperty#INIT_CLUSTER_VERSION} is set, the version set by this property
+     * {@link ClusterProperty#INIT_CLUSTER_VERSION} is set, the version set by this property
      * will be provided as argument to the listener. If neither are set, running node's codebase version will be used.
      *
      * @param newVersion the new version

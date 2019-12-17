@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,11 +17,15 @@
 package com.hazelcast.spi.discovery.integration;
 
 import com.hazelcast.config.DiscoveryConfig;
+import com.hazelcast.config.DiscoveryStrategyConfig;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.discovery.DiscoveryNode;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
- * The <tt>DiscoveryServiceSettings</tt> class is used to pass the necessary
+ * The <code>DiscoveryServiceSettings</code> class is used to pass the necessary
  * configuration to create a {@link DiscoveryService} to the
  * {@link DiscoveryServiceProvider}. This approach is chosen to have an easily
  * extensible way to provide new configuration properties over time.
@@ -31,6 +35,7 @@ public final class DiscoveryServiceSettings {
     private ILogger logger;
     private ClassLoader configClassLoader;
     private DiscoveryConfig discoveryConfig;
+    private List<DiscoveryStrategyConfig> aliasedDiscoveryConfigs = new ArrayList<DiscoveryStrategyConfig>();
     private DiscoveryMode discoveryMode;
 
     public DiscoveryNode getDiscoveryNode() {
@@ -75,6 +80,18 @@ public final class DiscoveryServiceSettings {
 
     public DiscoveryServiceSettings setDiscoveryMode(DiscoveryMode discoveryMode) {
         this.discoveryMode = discoveryMode;
+        return this;
+    }
+
+    public List<DiscoveryStrategyConfig> getAllDiscoveryConfigs() {
+        List<DiscoveryStrategyConfig> result = new ArrayList<DiscoveryStrategyConfig>();
+        result.addAll(discoveryConfig.getDiscoveryStrategyConfigs());
+        result.addAll(aliasedDiscoveryConfigs);
+        return result;
+    }
+
+    public DiscoveryServiceSettings setAliasedDiscoveryConfigs(List<DiscoveryStrategyConfig> aliasedDiscoveryConfigs) {
+        this.aliasedDiscoveryConfigs = aliasedDiscoveryConfigs;
         return this;
     }
 }

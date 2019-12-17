@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,17 +16,17 @@
 
 package com.hazelcast.internal.management.dto;
 
-import com.eclipsesource.json.JsonArray;
-import com.eclipsesource.json.JsonObject;
-import com.hazelcast.config.WanPublisherConfig;
+import com.hazelcast.config.WanBatchPublisherConfig;
+import com.hazelcast.config.WanCustomPublisherConfig;
+import com.hazelcast.config.WanConsumerConfig;
 import com.hazelcast.config.WanReplicationConfig;
-import com.hazelcast.internal.management.JsonSerializable;
-
-import java.util.List;
+import com.hazelcast.internal.json.JsonArray;
+import com.hazelcast.internal.json.JsonObject;
+import com.hazelcast.internal.json.JsonValue;
+import com.hazelcast.json.internal.JsonSerializable;
 
 /**
- * A {@link JsonSerializable} DTO to add new {@link com.hazelcast.config.WanReplicationConfig} objects from
- * management center
+ * A JSON representation of {@link WanReplicationConfig}.
  */
 public class WanReplicationConfigDTO implements JsonSerializable {
 
@@ -39,27 +39,61 @@ public class WanReplicationConfigDTO implements JsonSerializable {
     @Override
     public JsonObject toJson() {
         JsonObject root = new JsonObject();
-        root.add("name", config.getName());
-        JsonArray publisherList = new JsonArray();
-        for (WanPublisherConfig publisherConfig : config.getWanPublisherConfigs()) {
-            WanPublisherConfigDTO dto = new WanPublisherConfigDTO(publisherConfig);
-            publisherList.add(dto.toJson());
+        if (config.getName() != null) {
+            root.add("name", config.getName());
         }
-        root.add("publishers", publisherList);
+
+        JsonArray batchPublishers = new JsonArray();
+        JsonArray customPublishers = new JsonArray();
+
+        for (WanBatchPublisherConfig publisherConfig : config.getBatchPublisherConfigs()) {
+            batchPublishers.add(new WanBatchPublisherConfigDTO(publisherConfig).toJson());
+        }
+        for (WanCustomPublisherConfig publisherConfig : config.getCustomPublisherConfigs()) {
+            customPublishers.add(new CustomWanPublisherConfigDTO(publisherConfig).toJson());
+        }
+        root.add("batchPublishers", batchPublishers);
+        root.add("customPublishers", customPublishers);
+
+        WanConsumerConfig consumerConfig = config.getConsumerConfig();
+        if (consumerConfig != null) {
+            root.add("consumer", new WanConsumerConfigDTO(consumerConfig).toJson());
+        }
         return root;
     }
 
     @Override
     public void fromJson(JsonObject json) {
         config = new WanReplicationConfig();
-        config.setName(json.get("name").asString());
-        List<WanPublisherConfig> publisherConfigs = config.getWanPublisherConfigs();
-        JsonArray publishers = json.get("publishers").asArray();
-        int size = publishers.size();
-        for (int i = 0; i < size; i++) {
-            WanPublisherConfigDTO dto = new WanPublisherConfigDTO(new WanPublisherConfig());
-            dto.fromJson(publishers.get(0).asObject());
-            publisherConfigs.add(dto.getConfig());
+
+        JsonValue name = json.get("name");
+        if (name != null) {
+            config.setName(name.asString());
+        }
+
+        JsonValue batchPublishers = json.get("batchPublishers");
+        if (batchPublishers != null && !batchPublishers.isNull()) {
+            for (JsonValue jsonValue : batchPublishers.asArray()) {
+                WanBatchPublisherConfigDTO dto = new WanBatchPublisherConfigDTO();
+                dto.fromJson(jsonValue.asObject());
+                config.addBatchReplicationPublisherConfig(dto.getConfig());
+            }
+        }
+
+        JsonValue customPublishers = json.get("customPublishers");
+        if (customPublishers != null && !customPublishers.isNull()) {
+            for (JsonValue jsonValue : customPublishers.asArray()) {
+                CustomWanPublisherConfigDTO dto = new CustomWanPublisherConfigDTO();
+                dto.fromJson(jsonValue.asObject());
+                config.addCustomPublisherConfig(dto.getConfig());
+            }
+        }
+
+        JsonValue consumer = json.get("consumer");
+        if (consumer != null && !consumer.isNull()) {
+            WanConsumerConfigDTO consumerDTO = new WanConsumerConfigDTO();
+            consumerDTO.fromJson(consumer.asObject());
+            config.setConsumerConfig(consumerDTO.getConfig());
         }
     }
 

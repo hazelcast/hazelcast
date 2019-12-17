@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,19 +16,22 @@
 
 package com.hazelcast.map.impl.querycache.subscriber;
 
+import com.hazelcast.config.IndexConfig;
 import com.hazelcast.core.EntryEventType;
-import com.hazelcast.core.IMap;
+import com.hazelcast.map.IMap;
 import com.hazelcast.map.listener.MapListener;
 import com.hazelcast.query.Predicate;
-import com.hazelcast.query.impl.Indexes;
+import com.hazelcast.query.impl.getters.Extractors;
 
 import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 
 /**
  * Object for neutral {@code InternalQueryCache} implementation.
  */
+@SuppressWarnings("checkstyle:methodcount")
 public final class NullQueryCache implements InternalQueryCache {
 
     /**
@@ -40,15 +43,21 @@ public final class NullQueryCache implements InternalQueryCache {
     }
 
     @Override
-    public void setInternal(Object key, Object value, boolean callDelegate, EntryEventType eventType) {
+    public void set(Object key, Object value, EntryEventType eventType) {
     }
 
     @Override
-    public void deleteInternal(Object key, boolean callDelegate, EntryEventType eventType) {
+    public void prepopulate(Object key, Object value) {
+
     }
 
     @Override
-    public void clearInternal(EntryEventType eventType) {
+    public void delete(Object key, EntryEventType eventType) {
+    }
+
+    @Override
+    public int removeEntriesOf(int partitionId) {
+        return 0;
     }
 
     @Override
@@ -57,22 +66,37 @@ public final class NullQueryCache implements InternalQueryCache {
     }
 
     @Override
-    public Indexes getIndexes() {
-        return null;
-    }
-
-    @Override
     public void clear() {
     }
 
     @Override
-    public void setPublisherListenerId(String publisherListenerId) {
+    public void setPublisherListenerId(UUID publisherListenerId) {
 
+    }
+
+    @Override
+    public UUID getPublisherListenerId() {
+        return null;
     }
 
     @Override
     public String getCacheId() {
         return null;
+    }
+
+    @Override
+    public boolean reachedMaxCapacity() {
+        return false;
+    }
+
+    @Override
+    public Extractors getExtractors() {
+        return null;
+    }
+
+    @Override
+    public void recreate() {
+
     }
 
     @Override
@@ -101,7 +125,8 @@ public final class NullQueryCache implements InternalQueryCache {
     }
 
     @Override
-    public void addIndex(String attribute, boolean ordered) {
+    public void addIndex(IndexConfig config) {
+        // No-op.
     }
 
     @Override
@@ -140,27 +165,27 @@ public final class NullQueryCache implements InternalQueryCache {
     }
 
     @Override
-    public String addEntryListener(MapListener listener, boolean includeValue) {
+    public UUID addEntryListener(MapListener listener, boolean includeValue) {
         return null;
     }
 
     @Override
-    public String addEntryListener(MapListener listener, Object key, boolean includeValue) {
+    public UUID addEntryListener(MapListener listener, Object key, boolean includeValue) {
         return null;
     }
 
     @Override
-    public String addEntryListener(MapListener listener, Predicate predicate, boolean includeValue) {
+    public UUID addEntryListener(MapListener listener, Predicate predicate, boolean includeValue) {
         return null;
     }
 
     @Override
-    public String addEntryListener(MapListener listener, Predicate predicate, Object key, boolean includeValue) {
+    public UUID addEntryListener(MapListener listener, Predicate predicate, Object key, boolean includeValue) {
         return null;
     }
 
     @Override
-    public boolean removeEntryListener(String id) {
+    public boolean removeEntryListener(UUID id) {
         return false;
     }
 

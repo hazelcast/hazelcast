@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,18 +19,16 @@ package com.hazelcast.client.impl.protocol.task.replicatedmap;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ReplicatedMapValuesCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractPartitionMessageTask;
-import com.hazelcast.instance.Node;
-import com.hazelcast.nio.Connection;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.instance.impl.Node;
+import com.hazelcast.internal.nio.Connection;
+import com.hazelcast.map.impl.DataCollection;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
-import com.hazelcast.replicatedmap.impl.client.ReplicatedMapValueCollection;
 import com.hazelcast.replicatedmap.impl.operation.ValuesOperation;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.ReplicatedMapPermission;
-import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.impl.operationservice.Operation;
 
 import java.security.Permission;
-import java.util.List;
 
 public class ReplicatedMapValuesMessageTask
         extends AbstractPartitionMessageTask<ReplicatedMapValuesCodec.RequestParameters> {
@@ -51,8 +49,8 @@ public class ReplicatedMapValuesMessageTask
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        ReplicatedMapValueCollection values = (ReplicatedMapValueCollection) response;
-        return ReplicatedMapValuesCodec.encodeResponse((List<Data>) values.getValues());
+        DataCollection values = (DataCollection) response;
+        return ReplicatedMapValuesCodec.encodeResponse(values.getCollection());
     }
 
     @Override

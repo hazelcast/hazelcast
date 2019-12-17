@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +16,9 @@
 
 package com.hazelcast.spi.impl.eventservice.impl;
 
-import com.hazelcast.spi.EventPublishingService;
-import com.hazelcast.util.executor.StripedRunnable;
-import com.hazelcast.util.executor.TimeoutRunnable;
+import com.hazelcast.spi.impl.eventservice.EventPublishingService;
+import com.hazelcast.internal.util.executor.StripedRunnable;
+import com.hazelcast.internal.util.executor.TimeoutRunnable;
 
 import java.util.concurrent.TimeUnit;
 

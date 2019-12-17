@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,31 +19,28 @@ package com.hazelcast.map;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IMap;
-import com.hazelcast.map.listener.EntryEvictedListener;
 import com.hazelcast.map.listener.EntryExpiredListener;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.internal.util.RandomPicker;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.util.Random;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class ExpirationListenerTest extends HazelcastTestSupport {
 
     private static final int instanceCount = 3;
-    private static final Random rand = new Random();
 
-    private static HazelcastInstance[] instances;
+    private HazelcastInstance[] instances;
     private IMap<Integer, Integer> map;
 
     @Before
@@ -51,12 +48,8 @@ public class ExpirationListenerTest extends HazelcastTestSupport {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(instanceCount);
         Config config = new Config();
         instances = factory.newInstances(config);
-        HazelcastInstance node = getInstance();
-        map = node.getMap(randomMapName());
-    }
-
-    private HazelcastInstance getInstance() {
-        return instances[rand.nextInt(instanceCount)];
+        HazelcastInstance randomNode = instances[RandomPicker.getInt(instanceCount)];
+        map = randomNode.getMap(randomMapName());
     }
 
     @Test
@@ -81,6 +74,32 @@ public class ExpirationListenerTest extends HazelcastTestSupport {
         assertOpenEventually(expirationEventArrivalCount);
     }
 
+    @Test
+    public void test_whenTTLisModified_ExpirationListenernotified_afterExpirationOfEntries() throws Exception {
+        int numberOfPutOperations = 1000;
+        CountDownLatch expirationEventArrivalCount = new CountDownLatch(numberOfPutOperations);
+
+        map.addEntryListener(new ExpirationListener(expirationEventArrivalCount), true);
+
+        for (int i = 0; i < numberOfPutOperations; i++) {
+            map.put(i, i);
+        }
+
+        for (int i = 0; i < numberOfPutOperations; i++) {
+            map.setTtl(i, 100, TimeUnit.MILLISECONDS);
+        }
+
+        // wait expiration of entries
+        sleepAtLeastMillis(200);
+
+        // trigger immediate fire of expiration events by touching them
+        for (int i = 0; i < numberOfPutOperations; i++) {
+            map.get(i);
+        }
+
+        assertOpenEventually(expirationEventArrivalCount);
+    }
+
     private static class ExpirationListener implements EntryExpiredListener {
 
         private final CountDownLatch expirationEventCount;
@@ -92,51 +111,6 @@ public class ExpirationListenerTest extends HazelcastTestSupport {
         @Override
         public void entryExpired(EntryEvent event) {
             expirationEventCount.countDown();
-        }
-    }
-
-    @Test
-    public void testExpirationAndEvictionListener_bothNotified_afterExpirationOfEntries() throws Exception {
-        int numberOfPutOperations = 1000;
-        CountDownLatch expirationEventCount = new CountDownLatch(numberOfPutOperations);
-        CountDownLatch evictionEventCount = new CountDownLatch(numberOfPutOperations);
-
-        map.addEntryListener(new ExpirationAndEvictionListener(expirationEventCount, evictionEventCount), true);
-
-        for (int i = 0; i < numberOfPutOperations; i++) {
-            map.put(i, i, 100, TimeUnit.MILLISECONDS);
-        }
-
-        // wait expiration of entries
-        sleepAtLeastMillis(200);
-
-        // trigger immediate fire of expiration events by touching them
-        for (int i = 0; i < numberOfPutOperations; i++) {
-            map.get(i);
-        }
-
-        assertOpenEventually(expirationEventCount);
-        assertOpenEventually(evictionEventCount);
-    }
-
-    private static class ExpirationAndEvictionListener implements EntryExpiredListener, EntryEvictedListener {
-
-        private final CountDownLatch expirationEventArrivalCount;
-        private final CountDownLatch evictionEventArrivalCount;
-
-        ExpirationAndEvictionListener(CountDownLatch expirationEventArrivalCount, CountDownLatch evictionEventArrivalCount) {
-            this.expirationEventArrivalCount = expirationEventArrivalCount;
-            this.evictionEventArrivalCount = evictionEventArrivalCount;
-        }
-
-        @Override
-        public void entryExpired(EntryEvent event) {
-            expirationEventArrivalCount.countDown();
-        }
-
-        @Override
-        public void entryEvicted(EntryEvent event) {
-            evictionEventArrivalCount.countDown();
         }
     }
 }

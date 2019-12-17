@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,8 +18,8 @@ package com.hazelcast.spi.impl.operationexecutor.slowoperationdetector;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IMap;
-import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.map.IMap;
+import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.SlowTest;
 import org.junit.After;
@@ -40,10 +40,10 @@ public class SlowOperationDetector_purgeTest extends SlowOperationDetectorAbstra
 
     private void setup(String logRetentionSeconds) {
         Config config = new Config();
-        config.setProperty(GroupProperty.SLOW_OPERATION_DETECTOR_THRESHOLD_MILLIS.getName(), "1000");
-        config.setProperty(GroupProperty.SLOW_OPERATION_DETECTOR_LOG_RETENTION_SECONDS.getName(), logRetentionSeconds);
-        config.setProperty(GroupProperty.SLOW_OPERATION_DETECTOR_LOG_PURGE_INTERVAL_SECONDS.getName(), "1");
-        config.setProperty(GroupProperty.SLOW_OPERATION_DETECTOR_STACK_TRACE_LOGGING_ENABLED.getName(), "true");
+        config.setProperty(ClusterProperty.SLOW_OPERATION_DETECTOR_THRESHOLD_MILLIS.getName(), "800");
+        config.setProperty(ClusterProperty.SLOW_OPERATION_DETECTOR_LOG_RETENTION_SECONDS.getName(), logRetentionSeconds);
+        config.setProperty(ClusterProperty.SLOW_OPERATION_DETECTOR_LOG_PURGE_INTERVAL_SECONDS.getName(), "1");
+        config.setProperty(ClusterProperty.SLOW_OPERATION_DETECTOR_STACK_TRACE_LOGGING_ENABLED.getName(), "true");
 
         instance = createHazelcastInstance(config);
         map = getMapWithSingleElement(instance);
@@ -60,28 +60,28 @@ public class SlowOperationDetector_purgeTest extends SlowOperationDetectorAbstra
         setup("3");
 
         // all of these entry processors are executed after each other, not in parallel
-        for (int i = 0; i < 2; i++) {
+        for (int i = 0; i < 3; i++) {
             map.executeOnEntries(getSlowEntryProcessor(3));
         }
-        map.executeOnEntries(getSlowEntryProcessor(4));
-        map.executeOnEntries(getSlowEntryProcessor(3));
+        map.executeOnEntries(getSlowEntryProcessor(5));
         awaitSlowEntryProcessors();
 
         // shutdown to stop purging, so the last one or two entry processor invocations will survive
         shutdownOperationService(instance);
 
         Collection<SlowOperationLog> logs = getSlowOperationLogsAndAssertNumberOfSlowOperationLogs(instance, 1);
-
         SlowOperationLog firstLog = logs.iterator().next();
-        assertTotalInvocations(firstLog, 4);
+
         assertEntryProcessorOperation(firstLog);
         assertStackTraceContainsClassName(firstLog, "SlowEntryProcessor");
 
         Collection<SlowOperationLog.Invocation> invocations = getInvocations(firstLog);
         int invocationCount = invocations.size();
-        assertTrue("Expected 1 or 2 invocations, but was " + invocationCount, invocationCount >= 1 && invocationCount <= 2);
+        int totalInvocations = firstLog.totalInvocations.get();
+        assertTrue(String.format("Expected invocations must be less than total invocations, but was %s, total invocations: %s",
+                invocationCount, totalInvocations), invocationCount < totalInvocations);
         for (SlowOperationLog.Invocation invocation : invocations) {
-            assertInvocationDurationBetween(invocation, 1000, 3500);
+            assertInvocationDurationBetween(invocation, 1000, 4500);
         }
     }
 

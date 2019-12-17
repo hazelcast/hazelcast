@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,11 +19,11 @@ package com.hazelcast.scheduledexecutor;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.ScheduledExecutorConfig;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IAtomicLong;
-import com.hazelcast.core.ICountDownLatch;
-import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.cp.IAtomicLong;
+import com.hazelcast.cp.ICountDownLatch;
+import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.SlowTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -40,8 +40,8 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
-@RunWith(HazelcastParallelClassRunner.class)
-@Category({SlowTest.class, ParallelTest.class})
+@RunWith(HazelcastSerialClassRunner.class)
+@Category({SlowTest.class, ParallelJVMTest.class})
 public class ScheduledExecutorServiceSlowTest extends ScheduledExecutorServiceTestSupport {
 
     @Test
@@ -50,7 +50,7 @@ public class ScheduledExecutorServiceSlowTest extends ScheduledExecutorServiceTe
         double expectedResult = 169.4;
 
         HazelcastInstance[] instances = createClusterWithCount(2);
-        ICountDownLatch runsCountLatch = instances[0].getCountDownLatch("runsCountLatchName");
+        ICountDownLatch runsCountLatch = instances[0].getCPSubsystem().getCountDownLatch("runsCountLatchName");
         runsCountLatch.trySetCount(1);
 
         IScheduledExecutorService executorService = getScheduledExecutor(instances, "s");
@@ -71,9 +71,9 @@ public class ScheduledExecutorServiceSlowTest extends ScheduledExecutorServiceTe
         int waitStateSyncPeriodToAvoidPassiveState = 2000;
 
         String key = generateKeyOwnedBy(instances[1]);
-        ICountDownLatch latch = instances[0].getCountDownLatch("latch");
-        IAtomicLong runC = instances[0].getAtomicLong("runC");
-        IAtomicLong loadC = instances[0].getAtomicLong("loadC");
+        ICountDownLatch latch = instances[0].getCPSubsystem().getCountDownLatch("latch");
+        IAtomicLong runC = instances[0].getCPSubsystem().getAtomicLong("runC");
+        IAtomicLong loadC = instances[0].getCPSubsystem().getAtomicLong("loadC");
 
         latch.trySetCount(1);
 
@@ -104,10 +104,10 @@ public class ScheduledExecutorServiceSlowTest extends ScheduledExecutorServiceTe
 
         String key = generateKeyOwnedBy(instances[1]);
 
-        ICountDownLatch firstLatch = instances[0].getCountDownLatch("firstLatch");
+        ICountDownLatch firstLatch = instances[0].getCPSubsystem().getCountDownLatch("firstLatch");
         firstLatch.trySetCount(2);
 
-        ICountDownLatch lastLatch = instances[0].getCountDownLatch("lastLatch");
+        ICountDownLatch lastLatch = instances[0].getCPSubsystem().getCountDownLatch("lastLatch");
         lastLatch.trySetCount(6);
 
         IScheduledExecutorService executorService = getScheduledExecutor(instances, "s");
@@ -131,7 +131,7 @@ public class ScheduledExecutorServiceSlowTest extends ScheduledExecutorServiceTe
     public void stats_manyRepetitionsTask() throws Exception {
         HazelcastInstance[] instances = createClusterWithCount(4);
 
-        ICountDownLatch latch = instances[0].getCountDownLatch("latch");
+        ICountDownLatch latch = instances[0].getCPSubsystem().getCountDownLatch("latch");
         latch.trySetCount(6);
 
         IScheduledExecutorService executorService = getScheduledExecutor(instances, "s");
@@ -139,12 +139,10 @@ public class ScheduledExecutorServiceSlowTest extends ScheduledExecutorServiceTe
                 new ICountdownLatchRunnableTask("latch"), 0, 10, SECONDS);
 
         latch.await(120, SECONDS);
-        // wait for run-cycle to finish before cancelling, in order for stats to get updated
-        sleepSeconds(4);
         future.cancel(false);
 
         ScheduledTaskStatistics stats = future.getStats();
-        assertEquals(6, stats.getTotalRuns());
+        assertEquals(6, stats.getTotalRuns(), 1);
     }
 
     @Test
@@ -184,7 +182,7 @@ public class ScheduledExecutorServiceSlowTest extends ScheduledExecutorServiceTe
         String key = generateKeyOwnedBy(instances[1]);
         String runsCounterName = "runs";
 
-        ICountDownLatch runsLatch = instances[0].getCountDownLatch(runsCounterName);
+        ICountDownLatch runsLatch = instances[0].getCPSubsystem().getCountDownLatch(runsCounterName);
         runsLatch.trySetCount(2);
 
         int expectedTotal = 11;
@@ -202,7 +200,7 @@ public class ScheduledExecutorServiceSlowTest extends ScheduledExecutorServiceTe
     public void schedulePeriodicTask_withMultipleSchedulers_atRandomPartitions_thenGetAllScheduled() throws Exception {
         String runsCounterName = "runs";
         HazelcastInstance[] instances = createClusterWithCount(3);
-        ICountDownLatch runsLatch = instances[0].getCountDownLatch(runsCounterName);
+        ICountDownLatch runsLatch = instances[0].getCPSubsystem().getCountDownLatch(runsCounterName);
 
         int numOfSchedulers = 10;
         int numOfTasks = 10;
@@ -234,7 +232,7 @@ public class ScheduledExecutorServiceSlowTest extends ScheduledExecutorServiceTe
             throws Exception {
         String runsCounterName = "runs";
         HazelcastInstance[] instances = createClusterWithCount(3);
-        ICountDownLatch runsLatch = instances[0].getCountDownLatch(runsCounterName);
+        ICountDownLatch runsLatch = instances[0].getCPSubsystem().getCountDownLatch(runsCounterName);
 
         int numOfSchedulers = 10;
         int numOfTasks = 10;
@@ -269,7 +267,7 @@ public class ScheduledExecutorServiceSlowTest extends ScheduledExecutorServiceTe
     public void schedulePeriodicTask_withMultipleSchedulers_atRandomPartitions_killMember_thenGetAllScheduled() throws Exception {
         String runsCounterName = "runs";
         HazelcastInstance[] instances = createClusterWithCount(10);
-        ICountDownLatch runsLatch = instances[0].getCountDownLatch(runsCounterName);
+        ICountDownLatch runsLatch = instances[0].getCPSubsystem().getCountDownLatch(runsCounterName);
 
         int numOfSchedulers = 20;
         int numOfTasks = 10;
@@ -303,7 +301,7 @@ public class ScheduledExecutorServiceSlowTest extends ScheduledExecutorServiceTe
         HazelcastInstance[] instances = createClusterWithCount(1);
 
         String runFinishedLatchName = "runFinishedLatch";
-        ICountDownLatch latch = instances[0].getCountDownLatch(runFinishedLatchName);
+        ICountDownLatch latch = instances[0].getCPSubsystem().getCountDownLatch(runFinishedLatchName);
         latch.trySetCount(1);
 
         IScheduledExecutorService executorService = getScheduledExecutor(instances, "s");
@@ -335,7 +333,7 @@ public class ScheduledExecutorServiceSlowTest extends ScheduledExecutorServiceTe
         String key = generateKeyOwnedBy(instances[1]);
 
         String runFinishedLatchName = "runFinishedLatch";
-        ICountDownLatch latch = instances[0].getCountDownLatch(runFinishedLatchName);
+        ICountDownLatch latch = instances[0].getCPSubsystem().getCountDownLatch(runFinishedLatchName);
         latch.trySetCount(1);
 
         IScheduledExecutorService executorService = getScheduledExecutor(instances, "s");
@@ -389,7 +387,7 @@ public class ScheduledExecutorServiceSlowTest extends ScheduledExecutorServiceTe
         assertTrueEventually(new AllTasksRunningWithinNumOfNodes(scheduler, 1));
     }
 
-    @Test(timeout = 600000)
+    @Test(timeout = 1800000)
     public void schedule_thenDisposeLeakTest() {
         Config config = new Config()
                 .addScheduledExecutorConfig(new ScheduledExecutorConfig()

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,16 +17,15 @@
 package com.hazelcast.cache;
 
 import com.hazelcast.cache.impl.CacheProxy;
-import com.hazelcast.cache.impl.HazelcastServerCachingProvider;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.config.Config;
-import com.hazelcast.config.EvictionConfig;
+import com.hazelcast.config.MaxSizePolicy;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.spi.properties.GroupProperty;
-import com.hazelcast.test.HazelcastParametersRunnerFactory;
+import com.hazelcast.spi.properties.ClusterProperty;
+import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Assert;
 import org.junit.Ignore;
@@ -42,10 +41,12 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Iterator;
 
+import static com.hazelcast.cache.CacheTestSupport.createServerCachingProvider;
+
 @Ignore
 @RunWith(Parameterized.class)
-@Parameterized.UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Parameterized.UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class CachePartitionIteratorMigrationTest extends HazelcastTestSupport {
 
     @Parameterized.Parameter
@@ -57,14 +58,14 @@ public class CachePartitionIteratorMigrationTest extends HazelcastTestSupport {
     }
 
     protected CachingProvider createCachingProvider(HazelcastInstance server) {
-        return HazelcastServerCachingProvider.createCachingProvider(server);
+        return createServerCachingProvider(server);
     }
 
     private <K, V> CacheProxy<K, V> getCacheProxy(CachingProvider cachingProvider) {
         String cacheName = randomString();
         CacheManager cacheManager = cachingProvider.getCacheManager();
         CacheConfig<K, V> config = new CacheConfig<K, V>();
-        config.getEvictionConfig().setMaximumSizePolicy(EvictionConfig.MaxSizePolicy.ENTRY_COUNT).setSize(10000000);
+        config.getEvictionConfig().setMaxSizePolicy(MaxSizePolicy.ENTRY_COUNT).setSize(10000000);
         return (CacheProxy<K, V>) cacheManager.createCache(cacheName, config);
 
     }
@@ -88,7 +89,7 @@ public class CachePartitionIteratorMigrationTest extends HazelcastTestSupport {
     @Test
     public void test_DoesNotReturn_DuplicateEntry_When_Migration_Happens() throws Exception {
         Config config = getConfig();
-        config.setProperty(GroupProperty.PARTITION_COUNT.getName(), "2");
+        config.setProperty(ClusterProperty.PARTITION_COUNT.getName(), "2");
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
         HazelcastInstance instance = factory.newHazelcastInstance(config);
         CacheProxy<String, String> proxy = getCacheProxy(createCachingProvider(instance));

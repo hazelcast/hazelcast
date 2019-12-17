@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,12 +20,11 @@ import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.map.impl.EntryEventFilter;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.query.QueryEventFilter;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.query.impl.CachedQueryEntry;
 import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.query.impl.getters.Extractors;
-import com.hazelcast.spi.EventFilter;
-import com.hazelcast.spi.serialization.SerializationService;
+import com.hazelcast.spi.impl.eventservice.EventFilter;
 
 /**
  * A common abstract class to support implementations of filtering strategies.
@@ -35,10 +34,11 @@ import com.hazelcast.spi.serialization.SerializationService;
  */
 public abstract class AbstractFilteringStrategy implements FilteringStrategy {
 
-    protected final SerializationService serializationService;
+    protected final InternalSerializationService serializationService;
     protected final MapServiceContext mapServiceContext;
 
-    public AbstractFilteringStrategy(SerializationService serializationService, MapServiceContext mapServiceContext) {
+    public AbstractFilteringStrategy(InternalSerializationService serializationService,
+                                     MapServiceContext mapServiceContext) {
         this.serializationService = serializationService;
         this.mapServiceContext = mapServiceContext;
     }
@@ -72,7 +72,7 @@ public abstract class AbstractFilteringStrategy implements FilteringStrategy {
     protected boolean evaluateQueryEventFilter(EventFilter filter, Data dataKey, Object testValue, String mapNameOrNull) {
         Extractors extractors = getExtractorsForMapName(mapNameOrNull);
         QueryEventFilter queryEventFilter = (QueryEventFilter) filter;
-        QueryableEntry entry = new CachedQueryEntry((InternalSerializationService) serializationService,
+        QueryableEntry entry = new CachedQueryEntry(serializationService,
                 dataKey, testValue, extractors);
         return queryEventFilter.eval(entry);
     }
@@ -83,7 +83,8 @@ public abstract class AbstractFilteringStrategy implements FilteringStrategy {
      */
     private Extractors getExtractorsForMapName(String mapNameOrNull) {
         if (mapNameOrNull == null) {
-            return Extractors.empty();
+            return Extractors.newBuilder(serializationService)
+                    .build();
         }
         return mapServiceContext.getExtractors(mapNameOrNull);
     }

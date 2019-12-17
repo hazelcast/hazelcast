@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +16,9 @@
 
 package com.hazelcast.internal.cluster.impl;
 
-import com.hazelcast.instance.MemberImpl;
+import com.hazelcast.cluster.impl.MemberImpl;
 import com.hazelcast.internal.cluster.MemberInfo;
-import com.hazelcast.nio.Address;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
@@ -29,7 +29,10 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.UUID;
 
+import static com.hazelcast.internal.serialization.impl.SerializationUtil.readList;
+import static com.hazelcast.internal.serialization.impl.SerializationUtil.writeList;
 import static java.lang.Math.max;
 import static java.util.Collections.unmodifiableList;
 
@@ -57,12 +60,12 @@ public final class MembersView implements IdentifiedDataSerializable {
      * @return clone map
      */
     static MembersView cloneAdding(MembersView source, Collection<MemberInfo> newMembers) {
-        List<MemberInfo> list = new ArrayList<MemberInfo>(source.size() + newMembers.size());
+        List<MemberInfo> list = new ArrayList<>(source.size() + newMembers.size());
         list.addAll(source.getMembers());
         int newVersion = max(source.version, source.size());
         for (MemberInfo newMember : newMembers) {
             MemberInfo m = new MemberInfo(newMember.getAddress(), newMember.getUuid(), newMember.getAttributes(),
-                    newMember.isLiteMember(), newMember.getVersion(), ++newVersion);
+                    newMember.isLiteMember(), newMember.getVersion(), ++newVersion, newMember.getAddressMap());
             list.add(m);
         }
 
@@ -77,7 +80,7 @@ public final class MembersView implements IdentifiedDataSerializable {
      * @return a new {@code MemberMap}
      */
     public static MembersView createNew(int version, Collection<MemberImpl> members) {
-        List<MemberInfo> list = new ArrayList<MemberInfo>(members.size());
+        List<MemberInfo> list = new ArrayList<>(members.size());
 
         for (MemberImpl member : members) {
             list.add(new MemberInfo(member));
@@ -117,7 +120,7 @@ public final class MembersView implements IdentifiedDataSerializable {
         return false;
     }
 
-    public boolean containsMember(Address address, String uuid) {
+    public boolean containsMember(Address address, UUID uuid) {
         for (MemberInfo member : members) {
             if (member.getAddress().equals(address)) {
                 return member.getUuid().equals(uuid);
@@ -128,7 +131,7 @@ public final class MembersView implements IdentifiedDataSerializable {
     }
 
     public Set<Address> getAddresses() {
-        Set<Address> addresses = new HashSet<Address>(members.size());
+        Set<Address> addresses = new HashSet<>(members.size());
         for (MemberInfo member : members) {
             addresses.add(member.getAddress());
         }
@@ -155,33 +158,20 @@ public final class MembersView implements IdentifiedDataSerializable {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ClusterDataSerializerHook.MEMBERS_VIEW;
     }
 
     @Override
-    public void writeData(ObjectDataOutput out)
-            throws IOException {
+    public void writeData(ObjectDataOutput out) throws IOException {
         out.writeInt(version);
-        out.writeInt(members.size());
-        for (MemberInfo member : members) {
-            member.writeData(out);
-        }
+        writeList(members, out);
     }
 
     @Override
-    public void readData(ObjectDataInput in)
-            throws IOException {
+    public void readData(ObjectDataInput in) throws IOException {
         version = in.readInt();
-        int size = in.readInt();
-        List<MemberInfo> members = new ArrayList<MemberInfo>(size);
-        for (int i = 0; i < size; i++) {
-            MemberInfo member = new MemberInfo();
-            member.readData(in);
-            members.add(member);
-        }
-
-        this.members = unmodifiableList(members);
+        this.members = unmodifiableList(readList(in));
     }
 
     @Override

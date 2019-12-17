@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,8 @@ import com.hazelcast.cardinality.impl.hyperloglog.impl.SparseHyperLogLogEncoder;
 import com.hazelcast.cardinality.impl.operations.AggregateBackupOperation;
 import com.hazelcast.cardinality.impl.operations.AggregateOperation;
 import com.hazelcast.cardinality.impl.operations.EstimateOperation;
+import com.hazelcast.cardinality.impl.operations.MergeBackupOperation;
+import com.hazelcast.cardinality.impl.operations.MergeOperation;
 import com.hazelcast.cardinality.impl.operations.ReplicationOperation;
 import com.hazelcast.internal.serialization.DataSerializerHook;
 import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
@@ -45,6 +47,8 @@ public final class CardinalityEstimatorDataSerializerHook
     public static final int HLL = 5;
     public static final int HLL_DENSE_ENC = 6;
     public static final int HLL_SPARSE_ENC = 7;
+    public static final int MERGE = 8;
+    public static final int MERGE_BACKUP = 9;
 
     @Override
     public int getFactoryId() {
@@ -73,6 +77,10 @@ public final class CardinalityEstimatorDataSerializerHook
                         return new DenseHyperLogLogEncoder();
                     case HLL_SPARSE_ENC:
                         return new SparseHyperLogLogEncoder();
+                    case MERGE:
+                        return new MergeOperation();
+                    case MERGE_BACKUP:
+                        return new MergeBackupOperation();
                     default:
                         return null;
                 }

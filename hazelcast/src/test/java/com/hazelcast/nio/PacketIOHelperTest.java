@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,13 +16,15 @@
 
 package com.hazelcast.nio;
 
+import com.hazelcast.internal.nio.Packet;
+import com.hazelcast.internal.nio.PacketIOHelper;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.SerializationServiceBuilder;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableFactory;
 import com.hazelcast.nio.serialization.SerializationConcurrencyTest;
-import com.hazelcast.spi.serialization.SerializationService;
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
@@ -57,7 +59,8 @@ public class PacketIOHelperTest extends HazelcastTestSupport {
     private PacketIOHelper packetWriter;
     private PacketIOHelper packetReader;
 
-    private final Person person = new Person(111, 123L, 89.56d, "test-person", new SerializationConcurrencyTest.Address("street", 987));
+    private final Person person
+            = new Person(111, 123L, 89.56d, "test-person", new SerializationConcurrencyTest.Address("street", 987));
 
     private final PortablePerson portablePerson = new PortablePerson(222, 456L, "portable-person",
             new PortableAddress("street", 567));
@@ -77,8 +80,9 @@ public class PacketIOHelperTest extends HazelcastTestSupport {
                         return new PortablePerson();
                     case 2:
                         return new PortableAddress();
+                    default:
+                        throw new IllegalArgumentException();
                 }
-                throw new IllegalArgumentException();
             }
         };
         return new DefaultSerializationServiceBuilder().addPortableFactory(FACTORY_ID, portableFactory);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,48 +16,50 @@
 
 package com.hazelcast.client.impl.protocol.task.list;
 
-import com.hazelcast.client.ClientEndpoint;
+import com.hazelcast.client.impl.ClientEndpoint;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ListAddListenerCodec;
-import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
+import com.hazelcast.client.impl.protocol.task.AbstractAddListenerMessageTask;
+import com.hazelcast.collection.ItemEvent;
+import com.hazelcast.collection.ItemListener;
 import com.hazelcast.collection.impl.collection.CollectionEventFilter;
 import com.hazelcast.collection.impl.common.DataAwareItemEvent;
 import com.hazelcast.collection.impl.list.ListService;
-import com.hazelcast.core.ItemEvent;
-import com.hazelcast.core.ItemListener;
-import com.hazelcast.instance.Node;
-import com.hazelcast.nio.Connection;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.instance.impl.Node;
+import com.hazelcast.internal.nio.Connection;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.ListPermission;
-import com.hazelcast.spi.EventRegistration;
-import com.hazelcast.spi.EventService;
+import com.hazelcast.spi.impl.eventservice.EventRegistration;
+import com.hazelcast.spi.impl.eventservice.EventService;
 
 import java.security.Permission;
+import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
+
+import static com.hazelcast.internal.util.ConcurrencyUtil.CALLER_RUNS;
+import static com.hazelcast.spi.impl.InternalCompletableFuture.newCompletedFuture;
 
 public class ListAddListenerMessageTask
-        extends AbstractCallableMessageTask<ListAddListenerCodec.RequestParameters> {
+        extends AbstractAddListenerMessageTask<ListAddListenerCodec.RequestParameters> {
 
     public ListAddListenerMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
     @Override
-    protected Object call() {
-        ClientEndpoint endpoint = getEndpoint();
+    protected CompletableFuture<UUID> processInternal() {
         Data partitionKey = serializationService.toData(parameters.name);
         ItemListener listener = createItemListener(endpoint, partitionKey);
         EventService eventService = clientEngine.getEventService();
         CollectionEventFilter filter = new CollectionEventFilter(parameters.includeValue);
-        EventRegistration registration;
         if (parameters.localOnly) {
-            registration = eventService.registerLocalListener(getServiceName(), parameters.name, filter, listener);
-        } else {
-            registration = eventService.registerListener(getServiceName(), parameters.name, filter, listener);
+            return newCompletedFuture(
+                    eventService.registerLocalListener(getServiceName(), parameters.name, filter, listener).getId());
         }
-        String registrationId = registration.getId();
-        endpoint.addListenerDestroyAction(getServiceName(), parameters.name, registrationId);
-        return registrationId;
+
+        return eventService.registerListenerAsync(getServiceName(), parameters.name, filter, listener)
+                           .thenApplyAsync(EventRegistration::getId, CALLER_RUNS);
     }
 
     private ItemListener createItemListener(final ClientEndpoint endpoint, final Data partitionKey) {
@@ -97,7 +99,7 @@ public class ListAddListenerMessageTask
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return ListAddListenerCodec.encodeResponse((String) response);
+        return ListAddListenerCodec.encodeResponse((UUID) response);
     }
 
     @Override

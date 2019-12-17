@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,24 +16,26 @@
 
 package com.hazelcast.internal.management.operation;
 
-import com.hazelcast.spi.AbstractLocalOperation;
-import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.wan.WanReplicationService;
+import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.spi.impl.operationservice.AbstractLocalOperation;
+import com.hazelcast.wan.WanPublisherState;
+import com.hazelcast.wan.impl.WanReplicationService;
 
 /**
- * Enables/Disable publishing events to target cluster in WAN Replication {@link com.hazelcast.wan.WanReplicationService}
- * on a node. This operation does not block adding new events to event queue.
+ * Stop, pause or resume WAN replication for the given {@code wanReplicationName} and {@code wanPublisherId}.
  */
 public class ChangeWanStateOperation extends AbstractLocalOperation {
 
-    private String schemeName;
-    private String publisherName;
-    private boolean start;
+    private String wanReplicationName;
+    private String wanPublisherId;
+    private WanPublisherState state;
 
-    public ChangeWanStateOperation(String schemeName, String publisherName, boolean start) {
-        this.schemeName = schemeName;
-        this.publisherName = publisherName;
-        this.start = start;
+    public ChangeWanStateOperation(String wanReplicationName,
+                                   String wanPublisherId,
+                                   WanPublisherState state) {
+        this.wanReplicationName = wanReplicationName;
+        this.wanPublisherId = wanPublisherId;
+        this.state = state;
     }
 
     @Override
@@ -41,10 +43,18 @@ public class ChangeWanStateOperation extends AbstractLocalOperation {
         NodeEngine nodeEngine = getNodeEngine();
         WanReplicationService wanReplicationService = nodeEngine.getWanReplicationService();
 
-        if (start) {
-            wanReplicationService.resume(schemeName, publisherName);
-        } else {
-            wanReplicationService.pause(schemeName, publisherName);
+        switch (state) {
+            case REPLICATING:
+                wanReplicationService.resume(wanReplicationName, wanPublisherId);
+                break;
+            case PAUSED:
+                wanReplicationService.pause(wanReplicationName, wanPublisherId);
+                break;
+            case STOPPED:
+                wanReplicationService.stop(wanReplicationName, wanPublisherId);
+                break;
+            default:
+                break;
         }
     }
 }

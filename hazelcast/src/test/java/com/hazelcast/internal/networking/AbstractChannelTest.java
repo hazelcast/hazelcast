@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,7 @@
 package com.hazelcast.internal.networking;
 
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Before;
@@ -28,11 +28,12 @@ import org.junit.runner.RunWith;
 import java.io.IOException;
 import java.nio.channels.SocketChannel;
 
-import static com.hazelcast.nio.IOUtil.closeResource;
+import static com.hazelcast.internal.nio.IOUtil.closeResource;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.mock;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class AbstractChannelTest {
 
     private SocketChannel socketChannel;
@@ -59,15 +60,6 @@ public class AbstractChannelTest {
     }
 
     @Test
-    public void testClose_whenExceptionIsThrownOnClose_thenCloseIsSuccessful() throws Exception {
-        channel.throwExceptionOnClose = true;
-
-        channel.close();
-
-        assertTrue(channel.isClosed());
-    }
-
-    @Test
     public void testClose_whenExceptionIsThrownOnListener_thenCloseIsSuccessful() throws Exception {
         channel.addCloseListener(new TestChannelCloseListener());
 
@@ -79,17 +71,37 @@ public class AbstractChannelTest {
     private static class TestChannel extends AbstractChannel {
 
         private boolean throwExceptionOnClose;
+        private final ChannelOptions config = mock(ChannelOptions.class);
 
         TestChannel(SocketChannel socketChannel, boolean clientMode) {
             super(socketChannel, clientMode);
         }
 
         @Override
-        protected void onClose() throws IOException {
-            super.onClose();
+        public ChannelOptions options() {
+            return config;
+        }
+
+        @Override
+        protected void close0() throws IOException {
+            super.close0();
             if (throwExceptionOnClose) {
                 throw new IOException("Expected exception");
             }
+        }
+
+        @Override
+        public void start() {
+        }
+
+        @Override
+        public InboundPipeline inboundPipeline() {
+            return mock(InboundPipeline.class);
+        }
+
+        @Override
+        public OutboundPipeline outboundPipeline() {
+            return mock(OutboundPipeline.class);
         }
 
         @Override
@@ -108,7 +120,13 @@ public class AbstractChannelTest {
         }
 
         @Override
-        public void flush() {
+        public long bytesRead() {
+            return 0;
+        }
+
+        @Override
+        public long bytesWritten() {
+            return 0;
         }
     }
 

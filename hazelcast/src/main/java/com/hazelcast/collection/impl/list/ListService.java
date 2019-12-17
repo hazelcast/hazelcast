@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,18 +22,18 @@ import com.hazelcast.collection.impl.list.operations.ListReplicationOperation;
 import com.hazelcast.collection.impl.txnlist.TransactionalListProxy;
 import com.hazelcast.config.ListConfig;
 import com.hazelcast.core.DistributedObject;
-import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.PartitionReplicationEvent;
+import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.internal.partition.PartitionReplicationEvent;
+import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.transaction.impl.Transaction;
-import com.hazelcast.util.ConstructorFunction;
-import com.hazelcast.util.ContextMutexFactory;
+import com.hazelcast.internal.util.ConstructorFunction;
+import com.hazelcast.internal.util.ContextMutexFactory;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
-import static com.hazelcast.util.ConcurrencyUtil.getOrPutSynchronized;
+import static com.hazelcast.internal.util.ConcurrencyUtil.getOrPutSynchronized;
 
 public class ListService extends CollectionService {
 
@@ -42,16 +42,15 @@ public class ListService extends CollectionService {
     private static final Object NULL_OBJECT = new Object();
 
     private final ConcurrentMap<String, ListContainer> containerMap = new ConcurrentHashMap<String, ListContainer>();
-    private final ConcurrentMap<String, Object> quorumConfigCache = new ConcurrentHashMap<String, Object>();
-    private final ContextMutexFactory quorumConfigCacheMutexFactory = new ContextMutexFactory();
-    private final ConstructorFunction<String, Object> quorumConfigConstructor = new ConstructorFunction<String, Object>() {
+    private final ConcurrentMap<String, Object> splitBrainProtectionConfigCache = new ConcurrentHashMap<String, Object>();
+    private final ContextMutexFactory splitBrainProtectionConfigCacheMutexFactory = new ContextMutexFactory();
+    private final ConstructorFunction<String, Object> splitBrainProtectionConfigConstructor =
+            new ConstructorFunction<String, Object>() {
         @Override
         public Object createNew(String name) {
             ListConfig lockConfig = nodeEngine.getConfig().findListConfig(name);
-            String quorumName = lockConfig.getQuorumName();
-            // The quorumName will be null if there is no quorum defined for this data structure,
-            // but the QuorumService is active, due to another data structure with a quorum configuration
-            return quorumName == null ? NULL_OBJECT : quorumName;
+            String splitBrainProtectionName = lockConfig.getSplitBrainProtectionName();
+            return splitBrainProtectionName == null ? NULL_OBJECT : splitBrainProtectionName;
         }
     };
 
@@ -74,7 +73,7 @@ public class ListService extends CollectionService {
     }
 
     @Override
-    public Map<String, ? extends CollectionContainer> getContainerMap() {
+    public ConcurrentMap<String, ? extends CollectionContainer> getContainerMap() {
         return containerMap;
     }
 
@@ -84,8 +83,14 @@ public class ListService extends CollectionService {
     }
 
     @Override
-    public DistributedObject createDistributedObject(String objectId) {
+    public DistributedObject createDistributedObject(String objectId, boolean local) {
         return new ListProxyImpl(objectId, nodeEngine, this);
+    }
+
+    @Override
+    public void destroyDistributedObject(String name) {
+        super.destroyDistributedObject(name);
+        splitBrainProtectionConfigCache.remove(name);
     }
 
     @Override
@@ -102,10 +107,9 @@ public class ListService extends CollectionService {
     }
 
     @Override
-    public String getQuorumName(String name) {
-        // we use caching here because lock operations are often and we should avoid lock config lookup
-        Object quorumName = getOrPutSynchronized(quorumConfigCache, name, quorumConfigCacheMutexFactory,
-                quorumConfigConstructor);
-        return quorumName == NULL_OBJECT ? null : (String) quorumName;
+    public String getSplitBrainProtectionName(String name) {
+        Object splitBrainProtectionName = getOrPutSynchronized(splitBrainProtectionConfigCache, name,
+                splitBrainProtectionConfigCacheMutexFactory, splitBrainProtectionConfigConstructor);
+        return splitBrainProtectionName == NULL_OBJECT ? null : (String) splitBrainProtectionName;
     }
 }

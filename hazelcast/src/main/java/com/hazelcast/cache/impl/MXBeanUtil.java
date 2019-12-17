@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,7 @@ import javax.management.ObjectName;
 import java.lang.management.ManagementFactory;
 import java.util.Set;
 
-import static com.hazelcast.util.EmptyStatement.ignore;
+import static com.hazelcast.internal.util.EmptyStatement.ignore;
 
 /**
  * MXBean utility methods related to registration of the beans.
@@ -90,9 +90,8 @@ public final class MXBeanUtil {
                         // https://github.com/hazelcast/hazelcast/issues/11055
                         ignore(e);
                     } catch (Exception e) {
-                        throw new CacheException(
-                                "Error unregistering object instance " + registeredObjectName
-                                        + ". Error was " + e.getMessage(), e);
+                        throw new CacheException("Error unregistering object instance " + registeredObjectName
+                                + ". Error was " + e.getMessage(), e);
                     }
                 }
             }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,16 +18,17 @@ package com.hazelcast.query.impl.predicates;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.BinaryInterface;
+import com.hazelcast.internal.serialization.BinaryInterface;
+import com.hazelcast.query.impl.Comparables;
 import com.hazelcast.query.impl.Index;
 import com.hazelcast.query.impl.QueryContext;
 import com.hazelcast.query.impl.QueryableEntry;
 
 import java.io.IOException;
-import java.util.Map;
+import java.util.Arrays;
 import java.util.Set;
 
-import static com.hazelcast.util.SetUtil.createHashSet;
+import static com.hazelcast.internal.util.SetUtil.createHashSet;
 
 /**
  * In Predicate
@@ -35,8 +36,10 @@ import static com.hazelcast.util.SetUtil.createHashSet;
 @BinaryInterface
 public class InPredicate extends AbstractIndexAwarePredicate {
 
+    private static final long serialVersionUID = 1L;
+
     Comparable[] values;
-    private volatile Set<Comparable> convertedInValues;
+    private transient volatile Set<Comparable> convertedInValues;
 
     public InPredicate() {
     }
@@ -51,24 +54,26 @@ public class InPredicate extends AbstractIndexAwarePredicate {
     }
 
     @Override
-    protected boolean applyForSingleAttributeValue(Map.Entry entry, Comparable attributeValue) {
+    protected boolean applyForSingleAttributeValue(Comparable attributeValue) {
         if (attributeValue == null) {
             return false;
         }
+        attributeValue = (Comparable) convertEnumValue(attributeValue);
         Set<Comparable> set = convertedInValues;
         if (set == null) {
             set = createHashSet(values.length);
             for (Comparable value : values) {
-                set.add(convert(entry, attributeValue, value));
+                Comparable converted = convert(attributeValue, value);
+                set.add(Comparables.canonicalizeForHashLookup(converted));
             }
             convertedInValues = set;
         }
-        return set.contains(attributeValue);
+        return set.contains(Comparables.canonicalizeForHashLookup(attributeValue));
     }
 
     @Override
     public Set<QueryableEntry> filter(QueryContext queryContext) {
-        Index index = getIndex(queryContext);
+        Index index = matchIndex(queryContext, QueryContext.IndexMatchHint.PREFER_UNORDERED);
         if (index != null) {
             return index.getRecords(values);
         } else {
@@ -111,7 +116,40 @@ public class InPredicate extends AbstractIndexAwarePredicate {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return PredicateDataSerializerHook.IN_PREDICATE;
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (!super.equals(o)) {
+            return false;
+        }
+        if (!(o instanceof InPredicate)) {
+            return false;
+        }
+
+        InPredicate that = (InPredicate) o;
+        if (!that.canEqual(this)) {
+            return false;
+        }
+
+        return Arrays.equals(values, that.values);
+    }
+
+    @Override
+    public boolean canEqual(Object other) {
+        return (other instanceof InPredicate);
+    }
+
+    @Override
+    public int hashCode() {
+        int result = super.hashCode();
+        result = 31 * result + (Arrays.hashCode(values));
+        return result;
+    }
+
 }

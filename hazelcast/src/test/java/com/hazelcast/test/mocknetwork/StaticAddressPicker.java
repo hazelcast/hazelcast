@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,9 +17,13 @@
 package com.hazelcast.test.mocknetwork;
 
 import com.hazelcast.instance.AddressPicker;
-import com.hazelcast.nio.Address;
+import com.hazelcast.instance.EndpointQualifier;
+import com.hazelcast.cluster.Address;
 
 import java.nio.channels.ServerSocketChannel;
+import java.util.Map;
+
+import static java.util.Collections.singletonMap;
 
 class StaticAddressPicker implements AddressPicker {
 
@@ -29,18 +33,32 @@ class StaticAddressPicker implements AddressPicker {
         this.thisAddress = thisAddress;
     }
 
-    public void pickAddress() throws Exception {
+    public void pickAddress() {
     }
 
-    public Address getBindAddress() {
+    @Override
+    public Address getBindAddress(EndpointQualifier qualifier) {
         return thisAddress;
     }
 
-    public Address getPublicAddress() {
+    @Override
+    public Address getPublicAddress(EndpointQualifier qualifier) {
         return thisAddress;
     }
 
-    public ServerSocketChannel getServerSocketChannel() {
+    @Override
+    public Map<EndpointQualifier, Address> getPublicAddressMap() {
+        return singletonMap(EndpointQualifier.MEMBER, thisAddress);
+    }
+
+    @Override
+    public ServerSocketChannel getServerSocketChannel(EndpointQualifier qualifier) {
         return null;
     }
+
+    @Override
+    public Map<EndpointQualifier, ServerSocketChannel> getServerSocketChannels() {
+        return null;
+    }
+
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,27 +20,36 @@ import com.hazelcast.aggregation.Aggregator;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.query.PagingPredicate;
+import com.hazelcast.query.impl.QueryableEntry;
+import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.util.collection.PartitionIdSet;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collection;
+import java.util.Map;
+
+import static com.hazelcast.internal.serialization.impl.SerializationUtil.readNullablePartitionIdSet;
+import static com.hazelcast.internal.serialization.impl.SerializationUtil.writeNullablePartitionIdSet;
 
 /**
  * Contains the result of the evaluation of an aggregation on a specific Partition or Node.
- *
+ * <p>
  * At the end of the aggregation execution path all AggregationResults are merged into one AggregationResult.
  */
-public class AggregationResult implements Result<AggregationResult>, IdentifiedDataSerializable {
+public class AggregationResult implements Result<AggregationResult> {
 
     private Aggregator aggregator;
-    private Collection<Integer> partitionIds;
+    private PartitionIdSet partitionIds;
+
+    private final transient SerializationService serializationService;
 
     public AggregationResult() {
+        this.serializationService = null;
     }
 
-    public AggregationResult(Aggregator aggregator) {
+    public AggregationResult(Aggregator aggregator, SerializationService serializationService) {
         this.aggregator = aggregator;
+        this.serializationService = serializationService;
     }
 
     @SuppressWarnings("unchecked")
@@ -49,21 +58,22 @@ public class AggregationResult implements Result<AggregationResult>, IdentifiedD
     }
 
     @Override
-    public Collection<Integer> getPartitionIds() {
+    public PartitionIdSet getPartitionIds() {
         return partitionIds;
     }
 
     @Override
     public void combine(AggregationResult result) {
-        Collection<Integer> otherPartitionIds = result.getPartitionIds();
+        PartitionIdSet otherPartitionIds = result.getPartitionIds();
         if (otherPartitionIds == null) {
             return;
         }
         if (partitionIds == null) {
-            partitionIds = new ArrayList<Integer>(otherPartitionIds.size());
+            partitionIds = new PartitionIdSet(otherPartitionIds);
+        } else {
+            partitionIds.addAll(otherPartitionIds);
         }
-        partitionIds.addAll(otherPartitionIds);
-        aggregator.combine((result.aggregator));
+        aggregator.combine(result.aggregator);
     }
 
     @Override
@@ -74,8 +84,30 @@ public class AggregationResult implements Result<AggregationResult>, IdentifiedD
     }
 
     @Override
-    public void setPartitionIds(Collection<Integer> partitionIds) {
-        this.partitionIds = new ArrayList<Integer>(partitionIds);
+    public void add(QueryableEntry entry) {
+        aggregator.accumulate(entry);
+    }
+
+    @Override
+    public AggregationResult createSubResult() {
+        Aggregator aggregatorClone = serializationService.toObject(serializationService.toData(aggregator));
+        return new AggregationResult(aggregatorClone, serializationService);
+    }
+
+    @Override
+    public void orderAndLimit(PagingPredicate pagingPredicate, Map.Entry<Integer, Map.Entry> nearestAnchorEntry) {
+        // Do nothing, since there is no support of paging predicates for
+        // aggregations.
+    }
+
+    @Override
+    public void completeConstruction(PartitionIdSet partitionIds) {
+        setPartitionIds(partitionIds);
+    }
+
+    @Override
+    public void setPartitionIds(PartitionIdSet partitionIds) {
+        this.partitionIds = new PartitionIdSet(partitionIds);
     }
 
     @Override
@@ -84,31 +116,19 @@ public class AggregationResult implements Result<AggregationResult>, IdentifiedD
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MapDataSerializerHook.AGGREGATION_RESULT;
     }
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        int partitionSize = (partitionIds == null) ? 0 : partitionIds.size();
-        out.writeInt(partitionSize);
-        if (partitionSize > 0) {
-            for (Integer partitionId : partitionIds) {
-                out.writeInt(partitionId);
-            }
-        }
+        writeNullablePartitionIdSet(partitionIds, out);
         out.writeObject(aggregator);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        int partitionSize = in.readInt();
-        if (partitionSize > 0) {
-            this.partitionIds = new ArrayList<Integer>(partitionSize);
-            for (int i = 0; i < partitionSize; i++) {
-                this.partitionIds.add(in.readInt());
-            }
-        }
+        this.partitionIds = readNullablePartitionIdSet(in);
         this.aggregator = in.readObject();
     }
 }

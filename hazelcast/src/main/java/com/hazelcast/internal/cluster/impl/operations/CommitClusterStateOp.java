@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,35 +17,39 @@
 package com.hazelcast.internal.cluster.impl.operations;
 
 import com.hazelcast.core.MemberLeftException;
+import com.hazelcast.internal.util.UUIDSerializationUtil;
 import com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.internal.cluster.impl.ClusterStateChange;
 import com.hazelcast.internal.cluster.impl.ClusterStateManager;
-import com.hazelcast.nio.Address;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.spi.ExceptionAction;
-import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.impl.operationservice.ExceptionAction;
+import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.spi.impl.operationservice.UrgentSystemOperation;
 import com.hazelcast.spi.exception.TargetNotMemberException;
 import com.hazelcast.spi.impl.AllowedDuringPassiveState;
 import com.hazelcast.transaction.TransactionException;
 
 import java.io.IOException;
+import java.util.UUID;
 
 import static java.lang.String.format;
 
-public class CommitClusterStateOp extends Operation implements AllowedDuringPassiveState, IdentifiedDataSerializable {
+public class CommitClusterStateOp extends Operation implements AllowedDuringPassiveState, UrgentSystemOperation,
+        IdentifiedDataSerializable {
 
     private ClusterStateChange stateChange;
     private Address initiator;
-    private String txnId;
+    private UUID txnId;
     private boolean isTransient;
 
     public CommitClusterStateOp() {
     }
 
-    public CommitClusterStateOp(ClusterStateChange stateChange, Address initiator, String txnId, boolean isTransient) {
+    public CommitClusterStateOp(ClusterStateChange stateChange, Address initiator, UUID txnId, boolean isTransient) {
         this.stateChange = stateChange;
         this.initiator = initiator;
         this.txnId = txnId;
@@ -71,7 +75,7 @@ public class CommitClusterStateOp extends Operation implements AllowedDuringPass
 
     @Override
     public void logError(Throwable e) {
-        if (e instanceof TransactionException) {
+        if (e instanceof TransactionException || e instanceof IllegalStateException) {
             getLogger().severe(e.getMessage());
         } else {
             super.logError(e);
@@ -100,8 +104,8 @@ public class CommitClusterStateOp extends Operation implements AllowedDuringPass
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeObject(stateChange);
-        initiator.writeData(out);
-        out.writeUTF(txnId);
+        out.writeObject(initiator);
+        UUIDSerializationUtil.writeUUID(out, txnId);
         out.writeBoolean(isTransient);
     }
 
@@ -109,9 +113,8 @@ public class CommitClusterStateOp extends Operation implements AllowedDuringPass
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         stateChange = in.readObject();
-        initiator = new Address();
-        initiator.readData(in);
-        txnId = in.readUTF();
+        initiator = in.readObject();
+        txnId = UUIDSerializationUtil.readUUID(in);
         isTransient = in.readBoolean();
     }
 
@@ -121,7 +124,7 @@ public class CommitClusterStateOp extends Operation implements AllowedDuringPass
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ClusterDataSerializerHook.CHANGE_CLUSTER_STATE;
     }
 }

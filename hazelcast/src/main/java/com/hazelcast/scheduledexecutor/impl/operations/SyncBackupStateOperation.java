@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,8 +28,8 @@ public class SyncBackupStateOperation
     public SyncBackupStateOperation() {
     }
 
-    public SyncBackupStateOperation(String schedulerName, String taskName, Map state,
-                                    ScheduledTaskStatisticsImpl stats, ScheduledTaskResult result) {
+    public SyncBackupStateOperation(String schedulerName, String taskName, Map state, ScheduledTaskStatisticsImpl stats,
+                                    ScheduledTaskResult result) {
         super(schedulerName, taskName, state, stats, result);
     }
 
@@ -40,7 +40,7 @@ public class SyncBackupStateOperation
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ScheduledExecutorDataSerializerHook.SYNC_BACKUP_STATE_OP;
     }
 

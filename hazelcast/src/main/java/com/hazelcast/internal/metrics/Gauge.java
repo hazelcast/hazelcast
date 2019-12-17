@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,11 +17,11 @@
 package com.hazelcast.internal.metrics;
 
 /**
- * A Gauge is {@link Metric} where a particular value is read instantaneous. E.g. the current size of the
- * pending operations queue.
+ * A Gauge is a {@link Metric} where a particular value is read instantaneously.
+ * E.g. the current size of the pending operations queue.
  *
- * The Gauge interface has not methods for retrieving the actual value, because it depends on the type of
- * value to read.
+ * The Gauge interface has no methods for retrieving the actual value,
+ * because it depends on the type of value to read.
  *
  * @see LongGauge
  * @see DoubleGauge

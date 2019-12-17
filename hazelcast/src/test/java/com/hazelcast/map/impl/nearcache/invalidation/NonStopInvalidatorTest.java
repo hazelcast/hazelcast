@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,49 +16,24 @@
 
 package com.hazelcast.map.impl.nearcache.invalidation;
 
-import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.internal.nearcache.impl.invalidation.Invalidator;
 import com.hazelcast.internal.nearcache.impl.invalidation.NonStopInvalidator;
 import com.hazelcast.map.impl.MapService;
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.RequireAssertEnabled;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.Before;
-import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import static com.hazelcast.internal.nearcache.impl.invalidation.InvalidationUtils.TRUE_FILTER;
-import static org.mockito.Mockito.mock;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
-public class NonStopInvalidatorTest extends HazelcastTestSupport {
+@Category({QuickTest.class, ParallelJVMTest.class})
+public class NonStopInvalidatorTest extends AbstractInvalidatorTest {
 
-    private Data key;
-    private NonStopInvalidator invalidator;
-
-    @Before
-    public void setUp() {
-        key = mock(Data.class);
-
-        HazelcastInstance hz = createHazelcastInstance();
-        NodeEngineImpl nodeEngineImpl = getNodeEngineImpl(hz);
-        invalidator = new NonStopInvalidator(MapService.SERVICE_NAME, TRUE_FILTER, nodeEngineImpl);
-    }
-
-    @RequireAssertEnabled
-    @Test(expected = AssertionError.class)
-    public void testInvalidate_withInvalidMapName() {
-        invalidator.invalidateKey(key, null, null);
-    }
-
-    @RequireAssertEnabled
-    @Test(expected = AssertionError.class)
-    public void testClear_withInvalidMapName() {
-        invalidator.invalidateAllKeys(null, null);
+    @Override
+    public Invalidator createInvalidator(NodeEngineImpl nodeEngine) {
+        return new NonStopInvalidator(MapService.SERVICE_NAME, TRUE_FILTER, nodeEngine);
     }
 }

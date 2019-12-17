@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,10 +16,9 @@
 
 package com.hazelcast.map.impl.query;
 
-import com.hazelcast.core.IMap;
+import com.hazelcast.map.IMap;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.impl.QueryableEntriesSegment;
-import com.hazelcast.query.impl.QueryableEntry;
 
 import java.util.Collection;
 
@@ -29,7 +28,7 @@ import java.util.Collection;
  */
 public interface PartitionScanExecutor {
 
-    Collection<QueryableEntry> execute(String mapName, Predicate predicate, Collection<Integer> partitions);
+    void execute(String mapName, Predicate predicate, Collection<Integer> partitions, Result result);
 
     /**
      * Executes the predicate on a partition chunk. The offset in the partition is defined by the {@code tableIndex}

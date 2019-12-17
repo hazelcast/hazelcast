@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,22 +16,22 @@
 
 package com.hazelcast.scheduledexecutor.impl;
 
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.scheduledexecutor.DuplicateTaskException;
 import com.hazelcast.scheduledexecutor.ScheduledTaskHandler;
 import com.hazelcast.scheduledexecutor.ScheduledTaskStatistics;
 import com.hazelcast.scheduledexecutor.StaleTaskException;
-import com.hazelcast.scheduledexecutor.StatefulTask;
-import com.hazelcast.scheduledexecutor.impl.operations.ResultReadyNotifyOperation;
 import com.hazelcast.scheduledexecutor.impl.operations.SyncStateOperation;
-import com.hazelcast.spi.InvocationBuilder;
-import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.OperationService;
-import com.hazelcast.spi.impl.executionservice.InternalExecutionService;
+import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.spi.impl.executionservice.ExecutionService;
+import com.hazelcast.spi.impl.operationservice.InvocationBuilder;
+import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.spi.impl.operationservice.OperationService;
+import com.hazelcast.spi.merge.SplitBrainMergePolicy;
+import com.hazelcast.spi.merge.SplitBrainMergeTypes.ScheduledExecutorMergeTypes;
 
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
@@ -40,13 +40,19 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.logging.Level;
 
+import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
+import static com.hazelcast.internal.util.ExceptionUtil.sneakyThrow;
+import static com.hazelcast.internal.util.MapUtil.createHashMap;
 import static com.hazelcast.scheduledexecutor.impl.DistributedScheduledExecutorService.SERVICE_NAME;
-import static com.hazelcast.scheduledexecutor.impl.TaskDefinition.Type.SINGLE_RUN;
-import static com.hazelcast.util.ExceptionUtil.rethrow;
-import static com.hazelcast.util.ExceptionUtil.sneakyThrow;
-import static com.hazelcast.util.MapUtil.createHashMap;
+import static com.hazelcast.spi.impl.merge.MergingValueFactory.createMergingEntry;
+import static java.lang.String.format;
+import static java.util.logging.Level.FINE;
+import static java.util.logging.Level.FINEST;
+import static java.util.logging.Level.WARNING;
 
+@SuppressWarnings("checkstyle:methodcount")
 public class ScheduledExecutorContainer {
 
     protected final ConcurrentMap<String, ScheduledTaskDescriptor> tasks;
@@ -57,7 +63,7 @@ public class ScheduledExecutorContainer {
 
     private final NodeEngine nodeEngine;
 
-    private final InternalExecutionService executionService;
+    private final ExecutionService executionService;
 
     private final int partitionId;
 
@@ -65,17 +71,16 @@ public class ScheduledExecutorContainer {
 
     private final int capacity;
 
-    ScheduledExecutorContainer(String name, int partitionId, NodeEngine nodeEngine,
-                                      int durability, int capacity) {
-        this(name, partitionId, nodeEngine, durability, capacity, new ConcurrentHashMap<String, ScheduledTaskDescriptor>());
+    ScheduledExecutorContainer(String name, int partitionId, NodeEngine nodeEngine, int durability, int capacity) {
+        this(name, partitionId, nodeEngine, durability, capacity, new ConcurrentHashMap<>());
     }
 
-    ScheduledExecutorContainer(String name, int partitionId, NodeEngine nodeEngine,
-                                      int durability, int capacity, ConcurrentMap<String, ScheduledTaskDescriptor> tasks) {
+    ScheduledExecutorContainer(String name, int partitionId, NodeEngine nodeEngine, int durability, int capacity,
+                               ConcurrentMap<String, ScheduledTaskDescriptor> tasks) {
         this.logger = nodeEngine.getLogger(getClass());
         this.name = name;
         this.nodeEngine = nodeEngine;
-        this.executionService = (InternalExecutionService) nodeEngine.getExecutionService();
+        this.executionService = nodeEngine.getExecutionService();
         this.partitionId = partitionId;
         this.durability = durability;
         this.capacity = capacity;
@@ -88,14 +93,9 @@ public class ScheduledExecutorContainer {
         return createContextAndSchedule(definition);
     }
 
-    public boolean cancel(String taskName)
-            throws ExecutionException, InterruptedException {
+    public boolean cancel(String taskName) {
         checkNotStaleTask(taskName);
-
-        if (logger.isFinestEnabled()) {
-            logger.finest("[Scheduler: " + name + "][Partition: " + partitionId + "] Cancelling " + taskName);
-        }
-
+        log(FINEST, taskName, "Canceling");
         return tasks.get(taskName).cancel(true);
     }
 
@@ -120,40 +120,31 @@ public class ScheduledExecutorContainer {
         return descriptor.getStatsSnapshot();
     }
 
-    public boolean isCancelled(String taskName)
-            throws ExecutionException, InterruptedException {
+    public boolean isCancelled(String taskName) {
         checkNotStaleTask(taskName);
         return tasks.get(taskName).isCancelled();
     }
 
-    public boolean isDone(String taskName)
-            throws ExecutionException, InterruptedException {
+    public boolean isDone(String taskName) {
         checkNotStaleTask(taskName);
         return tasks.get(taskName).isDone();
     }
 
     public void destroy() {
-        if (logger.isFinestEnabled()) {
-            logger.finest("[Scheduler: " + name + "][Partition: " + partitionId + "] Destroying container...");
-        }
+        log(FINEST, "Destroying container...");
 
         for (ScheduledTaskDescriptor descriptor : tasks.values()) {
             try {
                 descriptor.cancel(true);
             } catch (Exception ex) {
-                logger.warning("[Scheduler: " + name + "][Partition: " + partitionId + "] "
-                        + "Destroying " + descriptor.getDefinition().getName() + " error: ", ex);
+                log(WARNING, descriptor.getDefinition().getName(), "Error while destroying", ex);
             }
         }
     }
 
-    public void dispose(String taskName)
-            throws ExecutionException, InterruptedException {
+    public void dispose(String taskName) {
         checkNotStaleTask(taskName);
-
-        if (logger.isFinestEnabled()) {
-            logger.finest("[Scheduler: " + name + "][Partition: " + partitionId + "] Disposing " + taskName);
-        }
+        log(FINEST, taskName, "Disposing");
 
         ScheduledTaskDescriptor descriptor = tasks.get(taskName);
         descriptor.cancel(true);
@@ -161,22 +152,17 @@ public class ScheduledExecutorContainer {
         tasks.remove(taskName);
     }
 
-    public void stash(TaskDefinition definition) {
-        stash(new ScheduledTaskDescriptor(definition));
+    public void enqueueSuspended(TaskDefinition definition) {
+        enqueueSuspended(new ScheduledTaskDescriptor(definition), false);
     }
 
-    public void stash(ScheduledTaskDescriptor descriptor) {
+    public void enqueueSuspended(ScheduledTaskDescriptor descriptor, boolean force) {
         if (logger.isFinestEnabled()) {
-            logger.finest("[Backup Scheduler: " + name + "][Partition: " + partitionId + "] Stashing "
-                    + descriptor.getDefinition());
+            log(FINEST, "Enqueuing suspended, i.e., backup: " + descriptor.getDefinition());
         }
 
-        if (!tasks.containsKey(descriptor.getDefinition().getName())) {
+        if (force || !tasks.containsKey(descriptor.getDefinition().getName())) {
             tasks.put(descriptor.getDefinition().getName(), descriptor);
-        }
-
-        if (logger.isFinestEnabled()) {
-            logger.finest("[Backup Scheduler: " + name + "][Partition: " + partitionId + "] Stash size: " + tasks.size());
         }
     }
 
@@ -187,17 +173,12 @@ public class ScheduledExecutorContainer {
     public void syncState(String taskName, Map newState, ScheduledTaskStatisticsImpl stats, ScheduledTaskResult resolution) {
         ScheduledTaskDescriptor descriptor = tasks.get(taskName);
         if (descriptor == null) {
-            // Task previously disposed
-            if (logger.isFinestEnabled()) {
-                logger.finest("[Scheduler: " + name + "][Partition: " + partitionId + "] syncState attempt "
-                        + "but no descriptor found for task: " + taskName);
-            }
+            log(FINEST, taskName, "Sync state attempt on a defunct descriptor");
             return;
         }
 
         if (logger.isFinestEnabled()) {
-            logger.finest("[Scheduler: " + name + "][Partition: " + partitionId + "] syncState for task: " + taskName + ", "
-                        + "state: " + newState);
+            log(FINEST, taskName, "New state received " + newState);
         }
 
         descriptor.setState(newState);
@@ -207,18 +188,15 @@ public class ScheduledExecutorContainer {
             // Task result previously populated - ie. through cancel
             // Ignore all subsequent results
             if (logger.isFineEnabled()) {
-                logger.fine(String.format("[Scheduler: " + name + "][Partition: " + partitionId + "] syncState result skipped. "
-                                        + "Current: %s New: %s", descriptor.getTaskResult(), resolution));
+                log(FINE, taskName, format("New state ignored! Current: %s New: %s ", descriptor.getTaskResult(), resolution));
             }
         } else {
             descriptor.setTaskResult(resolution);
         }
     }
 
-    public boolean shouldParkGetResult(String taskName)
-            throws ExecutionException, InterruptedException {
-        return tasks.containsKey(taskName)
-                && (tasks.get(taskName).getTaskResult() == null || !isDone(taskName));
+    public boolean shouldParkGetResult(String taskName) {
+        return tasks.containsKey(taskName) && (tasks.get(taskName).getTaskResult() == null || !isDone(taskName));
     }
 
     public int getDurability() {
@@ -229,6 +207,10 @@ public class ScheduledExecutorContainer {
         return name;
     }
 
+    public int getPartitionId() {
+        return partitionId;
+    }
+
     public NodeEngine getNodeEngine() {
         return nodeEngine;
     }
@@ -237,9 +219,73 @@ public class ScheduledExecutorContainer {
         return ScheduledTaskHandlerImpl.of(partitionId, getName(), taskName);
     }
 
+    /**
+     * Attempts to promote and schedule all suspended tasks on this partition.
+     * Exceptions throw during rescheduling will be rethrown and will prevent
+     * further suspended tasks from being scheduled.
+     */
+    public void promoteSuspended() {
+        for (ScheduledTaskDescriptor descriptor : tasks.values()) {
+            try {
+                log(FINEST, descriptor.getDefinition().getName(), "Attempting promotion");
+                if (descriptor.shouldSchedule()) {
+                    doSchedule(descriptor);
+                }
+            } catch (Exception e) {
+                throw rethrow(e);
+            }
+        }
+    }
+
+    /**
+     * Merges the given {@link ScheduledExecutorMergeTypes} via the given {@link SplitBrainMergePolicy}.
+     *
+     * @param mergingEntry the {@link ScheduledExecutorMergeTypes} instance to merge
+     * @param mergePolicy  the {@link SplitBrainMergePolicy} instance to apply
+     * @return the used {@link ScheduledTaskDescriptor} if merge is applied, otherwise {@code null}
+     */
+    public ScheduledTaskDescriptor merge(
+            ScheduledExecutorMergeTypes mergingEntry,
+            SplitBrainMergePolicy<ScheduledTaskDescriptor, ScheduledExecutorMergeTypes> mergePolicy) {
+        SerializationService serializationService = nodeEngine.getSerializationService();
+        serializationService.getManagedContext().initialize(mergingEntry);
+        serializationService.getManagedContext().initialize(mergePolicy);
+
+        // try to find an existing task with the same definition
+        ScheduledTaskDescriptor mergingTask = mergingEntry.getValue();
+        ScheduledTaskDescriptor existingTask = null;
+        for (ScheduledTaskDescriptor task : tasks.values()) {
+            if (mergingTask.equals(task)) {
+                existingTask = task;
+                break;
+            }
+        }
+        if (existingTask == null) {
+            ScheduledTaskDescriptor newTask = mergePolicy.merge(mergingEntry, null);
+            if (newTask != null) {
+                enqueueSuspended(newTask, false);
+                return newTask;
+            }
+        } else {
+            ScheduledExecutorMergeTypes existingEntry = createMergingEntry(serializationService, existingTask);
+            ScheduledTaskDescriptor newTask = mergePolicy.merge(mergingEntry, existingEntry);
+            // we are using == instead of equals() for the task comparison,
+            // since the descriptor may have the same fields for merging and existing entry,
+            // but we still want to be able to choose which one is merged (e.g. PassThroughMergePolicy)
+            if (newTask != null && newTask != existingTask) {
+                // cancel the existing task, before replacing it
+                existingTask.cancel(true);
+                enqueueSuspended(newTask, true);
+                return newTask;
+            }
+        }
+        // the merging task was already suspended on the original node, so we don't have to cancel it here
+        return null;
+    }
+
     ScheduledFuture createContextAndSchedule(TaskDefinition definition) {
         if (logger.isFinestEnabled()) {
-            logger.finest("[Scheduler: " + name + "][Partition: " + partitionId + "] Scheduling " + definition);
+            log(FINEST, "Creating new task context for " + definition);
         }
 
         ScheduledTaskDescriptor descriptor = new ScheduledTaskDescriptor(definition);
@@ -248,95 +294,109 @@ public class ScheduledExecutorContainer {
         }
 
         if (logger.isFinestEnabled()) {
-            logger.finest("[Scheduler: " + name + "][Partition: " + partitionId + "] Queue size: " + tasks.size());
+            log(FINEST, "Queue size: " + tasks.size());
         }
 
         return descriptor.getScheduledFuture();
     }
 
-    void promoteStash() {
-        for (ScheduledTaskDescriptor descriptor : tasks.values()) {
-            try {
-                if (logger.isFinestEnabled()) {
-                    logger.finest("[Partition: " + partitionId + "] " + "Attempt to promote stashed " + descriptor);
-                }
-
-                if (descriptor.shouldSchedule()) {
-                    doSchedule(descriptor);
-                }
-
-                descriptor.setTaskOwner(true);
-            } catch (Exception e) {
-                throw rethrow(e);
-            }
-        }
-    }
-
-    Map<String, ScheduledTaskDescriptor> prepareForReplication(boolean migrationMode) {
+    /**
+     * Returns all task descriptors on this container, mapped by task name.
+     *
+     * @return a map of all tasks on this container
+     */
+    Map<String, ScheduledTaskDescriptor> prepareForReplication() {
         Map<String, ScheduledTaskDescriptor> replicas = createHashMap(tasks.size());
-
         for (ScheduledTaskDescriptor descriptor : tasks.values()) {
             try {
-                ScheduledTaskDescriptor replica = new ScheduledTaskDescriptor(
-                        descriptor.getDefinition(),
+                ScheduledTaskDescriptor replica = new ScheduledTaskDescriptor(descriptor.getDefinition(),
                         descriptor.getState(),
                         descriptor.getStatsSnapshot(),
                         descriptor.getTaskResult());
                 replicas.put(descriptor.getDefinition().getName(), replica);
             } catch (Exception ex) {
                 sneakyThrow(ex);
-            } finally {
-                if (migrationMode) {
-                    // Best effort to cancel & interrupt the task.
-                    // In the case of Runnable the DelegateAndSkipOnConcurrentExecutionDecorator is not exposing access
-                    // to the Executor's Future, hence, we have no access on the runner thread to interrupt. In this case
-                    // the line below is only cancelling future runs.
-                    try {
-                        descriptor.stopForMigration();
-                    } catch (Exception ex) {
-                        throw rethrow(ex);
-                    }
-                }
             }
         }
-
         return replicas;
+    }
+
+    /**
+     * Attempts to cancel and interrupt all tasks on this container. Exceptions
+     * thrown during task cancellation will be rethrown and prevent further
+     * tasks from being cancelled.
+     */
+    void suspendTasks() {
+        for (ScheduledTaskDescriptor descriptor : tasks.values()) {
+            // Best effort to cancel & interrupt the task.
+            // In the case of Runnable the DelegateAndSkipOnConcurrentExecutionDecorator is not exposing access
+            // to the Executor's Future, hence, we have no access on the runner thread to interrupt. In this case
+            // the line below is only cancelling future runs.
+            try {
+                descriptor.suspend();
+                if (logger.isFinestEnabled()) {
+                    log(FINEST, descriptor.getDefinition().getName(), "Cancelled");
+                }
+            } catch (Exception ex) {
+                throw rethrow(ex);
+            }
+        }
     }
 
     void checkNotDuplicateTask(String taskName) {
         if (tasks.containsKey(taskName)) {
-            throw new DuplicateTaskException("There is already a task "
-                    + "with the same name '" + taskName + "' in '" + getName() + "'");
+            throw new DuplicateTaskException(
+                    "There is already a task " + "with the same name '" + taskName + "' in '" + getName() + "'");
         }
     }
 
     void checkNotAtCapacity() {
         if (capacity != 0 && tasks.size() >= capacity) {
-            throw new RejectedExecutionException("Maximum capacity (" + capacity + ") of tasks reached, "
-                    + "for scheduled executor (" + name + ")");
+            throw new RejectedExecutionException(
+                    "Maximum capacity (" + capacity + ") of tasks reached, " + "for scheduled executor (" + name + "). "
+                            + "Reminder that tasks must be disposed if not needed.");
         }
     }
 
     /**
      * State is published after every run.
-     * When replicas get promoted, they start of, with the latest state see {@link TaskRunner#initOnce()}
+     * When replicas get promoted, they start with the latest state.
      */
-    protected void publishTaskState(String taskName, Map stateSnapshot, ScheduledTaskStatisticsImpl statsSnapshot,
-                                    ScheduledTaskResult result) {
+    void publishTaskState(String taskName, Map stateSnapshot, ScheduledTaskStatisticsImpl statsSnapshot,
+                          ScheduledTaskResult result) {
         if (logger.isFinestEnabled()) {
-            logger.finest("[Scheduler: " + name + "][Partition: " + partitionId + "][Task: " + taskName + "] "
-                    + "Publishing state, to replicas. State: " + stateSnapshot);
+            log(FINEST, "Publishing state, to replicas. State: " + stateSnapshot);
         }
 
         Operation op = new SyncStateOperation(getName(), taskName, stateSnapshot, statsSnapshot, result);
         createInvocationBuilder(op)
                 .invoke()
-                .join();
+                .joinInternal();
     }
 
     protected InvocationBuilder createInvocationBuilder(Operation op) {
         OperationService operationService = nodeEngine.getOperationService();
         return operationService.createInvocationBuilder(SERVICE_NAME, op, partitionId);
+    }
+
+    protected void log(Level level, String msg) {
+        log(level, null, msg);
+    }
+
+    protected void log(Level level, String taskName, String msg) {
+        log(level, taskName, msg, null);
+    }
+
+    protected void log(Level level, String taskName, String msg, Throwable t) {
+        if (logger.isLoggable(level)) {
+            StringBuilder log = new StringBuilder();
+            log.append("[Scheduler: " + name + "][Partition: " + partitionId + "]");
+            if (taskName != null) {
+                log.append("[Task: " + taskName + "] ");
+            }
+            log.append(msg);
+            logger.log(level, log.toString(), t);
+        }
     }
 
     private <V> void doSchedule(ScheduledTaskDescriptor descriptor) {
@@ -347,23 +407,25 @@ public class ScheduledExecutorContainer {
         TaskRunner<V> runner;
         switch (definition.getType()) {
             case SINGLE_RUN:
-                runner = new TaskRunner<V>(descriptor);
-                future = new DelegatingScheduledFutureStripper<V>(
-                            executionService.scheduleDurable(name, (Callable) runner,
-                                definition.getInitialDelay(), definition.getUnit()));
+                runner = new TaskRunner<>(this, descriptor);
+                future = new DelegatingScheduledFutureStripper<V>(executionService
+                        .scheduleDurable(name, (Callable) runner, definition.getInitialDelay(), definition.getUnit()));
                 break;
             case AT_FIXED_RATE:
-                runner = new TaskRunner<V>(descriptor);
-                future = executionService.scheduleDurableWithRepetition(name,
-                        runner, definition.getInitialDelay(), definition.getPeriod(),
-                        definition.getUnit());
+                runner = new TaskRunner<>(this, descriptor);
+                future = executionService
+                        .scheduleDurableWithRepetition(name, runner, definition.getInitialDelay(), definition.getPeriod(),
+                                definition.getUnit());
                 break;
             default:
                 throw new IllegalArgumentException();
         }
 
-        descriptor.setTaskOwner(true);
         descriptor.setScheduledFuture(future);
+
+        if (logger.isFinestEnabled()) {
+            log(FINEST, definition.getName(), "Scheduled");
+        }
     }
 
     private void checkNotStaleTask(String taskName) {
@@ -371,116 +433,4 @@ public class ScheduledExecutorContainer {
             throw new StaleTaskException("Task with name " + taskName + " not found. ");
         }
     }
-
-    private class TaskRunner<V> implements Callable<V>, Runnable {
-
-        private final String taskName;
-
-        private final Callable<V> original;
-
-        private final ScheduledTaskDescriptor descriptor;
-
-        private final ScheduledTaskStatisticsImpl statistics;
-
-        private boolean initted;
-
-        private ScheduledTaskResult resolution;
-
-        TaskRunner(ScheduledTaskDescriptor descriptor) {
-            this.descriptor = descriptor;
-            this.original = descriptor.getDefinition().getCommand();
-            this.taskName = descriptor.getDefinition().getName();
-            this.statistics = descriptor.getStatsSnapshot();
-            statistics.onInit();
-        }
-
-        @Override
-        public V call()
-                throws Exception {
-            beforeRun();
-            try {
-                V result = original.call();
-                if (SINGLE_RUN.equals(descriptor.getDefinition().getType())) {
-                    resolution = new ScheduledTaskResult(result);
-                }
-                return result;
-            } catch (Throwable t) {
-                logger.warning("Exception occurred during scheduled task run phase", t);
-                resolution = new ScheduledTaskResult(t);
-                throw rethrow(t);
-            } finally {
-                afterRun();
-            }
-        }
-
-        @Override
-        public void run() {
-            try {
-                call();
-            } catch (Exception e) {
-                throw rethrow(e);
-            }
-        }
-
-        private void initOnce() {
-            if (initted) {
-                return;
-            }
-
-            Map snapshot = descriptor.getState();
-            if (original instanceof StatefulTask && !snapshot.isEmpty()) {
-                ((StatefulTask) original).load(snapshot);
-            }
-
-            initted = true;
-        }
-
-        private void beforeRun() {
-            if (logger.isFinestEnabled()) {
-                logger.finest("[Scheduler: " + name + "][Partition: " + partitionId + "][Task: " + taskName + "] "
-                        + "Entering running mode.");
-            }
-
-            try {
-                initOnce();
-                statistics.onBeforeRun();
-            } catch (Exception ex) {
-                logger.warning("[Scheduler: " + name + "][Partition: " + partitionId + "][Task: " + taskName + "] "
-                        + "Unexpected exception during beforeRun occurred: ", ex);
-            }
-        }
-
-        private void afterRun() {
-            try {
-                statistics.onAfterRun();
-
-                Map state = new HashMap();
-                if (original instanceof StatefulTask) {
-                    ((StatefulTask) original).save(state);
-                }
-
-                publishTaskState(taskName, state, statistics, resolution);
-            } catch (Exception ex) {
-                logger.warning("[Scheduler: " + name + "][Partition: " + partitionId + "][Task: " + taskName + "] "
-                        + "Unexpected exception during afterRun occurred: ", ex);
-            } finally {
-                notifyResultReady();
-            }
-
-            if (logger.isFinestEnabled()) {
-                logger.finest("[Scheduler: " + name + "][Partition: " + partitionId + "][Task: " + taskName + "] "
-                        + "Exiting running mode.");
-            }
-        }
-
-        private void notifyResultReady() {
-            Operation op = new ResultReadyNotifyOperation(offprintHandler(taskName));
-            createInvocationBuilder(op)
-                    .setCallTimeout(Long.MAX_VALUE)
-                    .invoke();
-        }
-
-    }
-
-
 }

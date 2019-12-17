@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,110 +19,131 @@ package com.hazelcast.logging;
 import java.util.logging.Level;
 
 /**
- * The Hazelcast logging interface. The reason if its existence is that Hazelcast doesn't want any dependencies
- * on concrete logging frameworks so it creates it own meta logging framework where existing logging frameworks can
- * be placed behind.
+ * The Hazelcast logging interface. It exists because Hazelcast doesn't want any dependencies
+ * on concrete logging frameworks, so it creates its own meta logging framework behind which
+ * existing frameworks can be placed.
+ *
+ * @see AbstractLogger
  */
 public interface ILogger {
 
     /**
-     * Logs a message at {@link Level#FINEST}.
+     * Logs a message at the {@link Level#FINEST} level.
      *
-     * @param message the message to log.
+     * @param message the message to log
      */
     void finest(String message);
 
     /**
-     * Logs a throwable at {@link Level#FINEST}. The message of the Throwable will be the message.
+     * Logs a throwable at the {@link Level#FINEST} level. The message of the
+     * Throwable will be the logged message.
      *
-     * @param thrown the Throwable to log.
+     * @param thrown the Throwable to log
      */
     void finest(Throwable thrown);
 
     /**
-     * Logs message with associated throwable information at {@link Level#FINEST}.
+     * Logs a message with an associated throwable at the {@link Level#FINEST} level.
      *
      * @param message the message to log
-     * @param thrown  the Throwable associated to the message.
+     * @param thrown  the Throwable associated to the message
      */
     void finest(String message, Throwable thrown);
 
     /**
-     * Checks if the {@link Level#FINEST} is enabled.
+     * Checks if the {@link Level#FINEST} level is enabled.
      *
-     * @return true if enabled, false otherwise.
+     * @return true if enabled, false otherwise
      */
     boolean isFinestEnabled();
 
     /**
-     * Logs a message at {@link Level#FINE}.
+     * Logs a message at the {@link Level#FINE} level.
      *
-     * @param message the message to log.
+     * @param message the message to log
      */
     void fine(String message);
 
     /**
-     * Logs a throwable at {@link Level#FINE}. The message of the Throwable will be the message.
+     * Logs a throwable at the {@link Level#FINE} level. The message of the
+     * Throwable will be the logged message.
      *
-     * @param thrown the Throwable to log.
+     * @param thrown the Throwable to log
      */
     void fine(Throwable thrown);
 
     /**
-     * Logs message with associated throwable information at {@link Level#FINE}.
+     * Logs a message with an associated throwable at the {@link Level#FINE} level.
      *
      * @param message the message to log
-     * @param thrown  the Throwable associated to the message.
+     * @param thrown  the Throwable associated to the message
      */
     void fine(String message, Throwable thrown);
 
     /**
-     * Checks if the {@link Level#FINE} is enabled.
+     * Checks if the {@link Level#FINE} level is enabled.
      *
-     * @return true if enabled, false otherwise.
+     * @return true if enabled, false otherwise
      */
     boolean isFineEnabled();
 
     /**
-     * Logs a message at {@link Level#INFO}.
+     * Logs a message at the {@link Level#INFO} level.
      *
-     * @param message the message to log.
+     * @param message the message to log
      */
     void info(String message);
 
     /**
-     * Checks if the {@link Level#INFO} is enabled.
+     * Logs a throwable at the {@link Level#INFO} level. The message of the
+     * Throwable will be the logged message.
      *
-     * @return true if enabled, false otherwise.
+     * @param thrown the Throwable to log
+     */
+    void info(Throwable thrown);
+
+    /**
+     * Logs a message with an associated throwable at the {@link Level#INFO} level.
+     *
+     * @param message the message to log
+     * @param thrown  the Throwable associated to the message
+     */
+    void info(String message, Throwable thrown);
+
+    /**
+     * Checks if the {@link Level#INFO} level is enabled.
+     *
+     * @return true if enabled, false otherwise
      */
     boolean isInfoEnabled();
 
     /**
-     * Logs a message at {@link Level#WARNING}.
+     * Logs a message at the {@link Level#WARNING} level.
      *
-     * @param message the message to log.
+     * @param message the message to log
      */
     void warning(String message);
 
     /**
-     * Logs a throwable at {@link Level#WARNING}. The message of the Throwable will be the message.
+     * Logs a throwable at the {@link Level#WARNING} level. The message of the
+     * Throwable will be the logged message.
      *
-     * @param thrown the Throwable to log.
+     * @param thrown the Throwable to log
      */
     void warning(Throwable thrown);
 
     /**
-     * Logs message with associated throwable information at {@link Level#WARNING}.
+     * Logs a message with an associated throwable at the {@link Level#WARNING} level.
      *
      * @param message the message to log
-     * @param thrown  the Throwable associated to the message.
+     * @param thrown  the Throwable associated to the message
      */
     void warning(String message, Throwable thrown);
 
     /**
      * Checks if the {@link Level#WARNING} is enabled.
      *
-     * @return true if enabled, false otherwise.
+     * @return true if enabled, false otherwise
      */
     boolean isWarningEnabled();
 
@@ -134,55 +155,63 @@ public interface ILogger {
     void severe(String message);
 
     /**
-     * Logs a throwable at {@link Level#SEVERE}. The message of the Throwable will be the message.
+     * Logs a throwable at the {@link Level#SEVERE} level. The message of the
+     * Throwable will be the logged message.
      *
-     * @param thrown the Throwable to log.
+     * @param thrown the Throwable to log
      */
     void severe(Throwable thrown);
 
     /**
-     * Logs message with associated throwable information at {@link Level#SEVERE}.
+     * Logs a message with an associated throwable at the {@link Level#SEVERE} level.
      *
      * @param message the message to log
-     * @param thrown  the Throwable associated to the message.
+     * @param thrown  the Throwable associated to the message
      */
     void severe(String message, Throwable thrown);
 
     /**
-     * Logs a message at the provided Level.
+     * Checks if the {@link Level#SEVERE} is enabled.
      *
-     * @param level   the Level of logging.
-     * @param message the message to log.
+     * @return true if enabled, false otherwise
+     */
+    boolean isSevereEnabled();
+
+    /**
+     * Logs a message at the given level.
+     *
+     * @param level   the log level
+     * @param message the message to log
      */
     void log(Level level, String message);
 
     /**
-     * Logs message with associated throwable information at the provided level.
+     * Logs a message with an associated throwable at the given level.
      *
      * @param message the message to log
-     * @param thrown  the Throwable associated to the message.
+     * @param thrown  the Throwable associated to the message
      */
     void log(Level level, String message, Throwable thrown);
 
     /**
-     * Logs a LogEvent
+     * Logs a LogEvent.
      *
-     * @param logEvent the logEvent to log.
+     * @param logEvent the logEvent to log
      */
     void log(LogEvent logEvent);
 
     /**
-     * Gets the logging Level.
+     * Gets the logging level.
      *
-     * @return the logging Level.
+     * @return the logging level
      */
     Level getLevel();
 
     /**
-     * Checks if a message at the provided level is going to be logged by this logger.
+     * Checks if a message at the given level is going to be logged by this logger.
      *
-     * @param level the log level.
-     * @return true if this Logger will log messages for the provided level, false otherwise.
+     * @param level the log level
+     * @return true if this logger will log messages for the given level, false otherwise
      */
     boolean isLoggable(Level level);
 }

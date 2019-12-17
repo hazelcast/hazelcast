@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,7 +29,7 @@ import java.io.IOException;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static com.hazelcast.util.SetUtil.createHashSet;
+import static com.hazelcast.internal.util.SetUtil.createHashSet;
 
 /**
  * Carries set of replicated map records for a partition from one node to another
@@ -50,16 +50,18 @@ public class SyncReplicatedMapDataOperation<K, V> extends AbstractSerializableOp
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public void run() throws Exception {
         ILogger logger = getLogger();
         if (logger.isFineEnabled()) {
-            logger.fine("Syncing " + recordSet.size() + " records and version: " + version + " for map: " + name + " partitionId="
-                    + getPartitionId() + " from: " + getCallerAddress() + " to: " + getNodeEngine().getThisAddress());
+            logger.fine("Syncing " + recordSet.size() + " records (version " + version
+                    + ") for replicated map '" + name + "' (partitionId " + getPartitionId()
+                    + ") from " + getCallerAddress() + " to " + getNodeEngine().getThisAddress());
         }
         ReplicatedMapService service = getService();
-        AbstractReplicatedRecordStore store = (AbstractReplicatedRecordStore) service
-                .getReplicatedRecordStore(name, true, getPartitionId());
-        InternalReplicatedMapStorage<K, V> newStorage = new InternalReplicatedMapStorage<K, V>();
+        AbstractReplicatedRecordStore store
+                = (AbstractReplicatedRecordStore) service.getReplicatedRecordStore(name, true, getPartitionId());
+        InternalReplicatedMapStorage<K, V> newStorage = new InternalReplicatedMapStorage<>();
         for (RecordMigrationInfo record : recordSet) {
             K key = (K) store.marshall(record.getKey());
             V value = (V) store.marshall(record.getValue());
@@ -81,7 +83,7 @@ public class SyncReplicatedMapDataOperation<K, V> extends AbstractSerializableOp
     }
 
     private ReplicatedRecord<K, V> buildReplicatedRecord(K key, V value, long ttlMillis) {
-        return new ReplicatedRecord<K, V>(key, value, ttlMillis);
+        return new ReplicatedRecord<>(key, value, ttlMillis);
     }
 
     @Override
@@ -108,7 +110,7 @@ public class SyncReplicatedMapDataOperation<K, V> extends AbstractSerializableOp
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ReplicatedMapDataSerializerHook.SYNC_REPLICATED_DATA;
     }
 }

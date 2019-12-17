@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,14 +28,12 @@ import org.junit.runners.model.Statement;
 import static java.lang.String.format;
 
 /**
- * Ignore tests annotated with {@code @TestForCompatibilitySince("X.Y")} as long as current codebase version
- * is less than {@code X.Y}
+ * Ignores tests annotated with {@code @TestForCompatibilitySince("X.Y")}
+ * as long as the current codebase version is less than {@code X.Y}.
  */
 public class IgnoreCompatibilityTestsWithSinceRule implements TestRule {
 
-    private static final ILogger LOGGER = Logger
-            .getLogger(IgnoreCompatibilityTestsWithSinceRule.class);
-
+    private static final ILogger LOGGER = Logger.getLogger(IgnoreCompatibilityTestsWithSinceRule.class);
 
     @Override
     public Statement apply(Statement base, final Description description) {
@@ -49,10 +47,10 @@ public class IgnoreCompatibilityTestsWithSinceRule implements TestRule {
             if (currentCodebaseVersion.isLessThan(testSinceVersion)) {
                 return new Statement() {
                     @Override
-                    public void evaluate() throws Throwable {
-                        LOGGER.finest(format("Ignoring `%s` because it is meant for execution since %s while "
-                                        + "current version is %s"
-                                , description.getClassName(), testSinceVersion, currentCodebaseVersion));
+                    public void evaluate() {
+                        LOGGER.finest(format(
+                                "Ignoring `%s` because it is meant for execution since %s while current version is %s",
+                                description.getClassName(), testSinceVersion, currentCodebaseVersion));
                     }
                 };
             }

@@ -1,24 +1,40 @@
+/*
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.hazelcast.partition;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IMap;
+import com.hazelcast.map.IMap;
 import com.hazelcast.core.IndeterminateOperationStateException;
 import com.hazelcast.core.MemberLeftException;
-import com.hazelcast.core.TransactionalMap;
+import com.hazelcast.transaction.TransactionalMap;
 import com.hazelcast.internal.partition.InternalPartitionService;
-import com.hazelcast.nio.Address;
-import com.hazelcast.spi.BackupAwareOperation;
-import com.hazelcast.spi.InternalCompletableFuture;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.ReadonlyOperation;
+import com.hazelcast.cluster.Address;
+import com.hazelcast.spi.impl.operationservice.BackupAwareOperation;
+import com.hazelcast.spi.impl.InternalCompletableFuture;
+import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.spi.impl.operationservice.ReadonlyOperation;
 import com.hazelcast.spi.impl.SpiDataSerializerHook;
-import com.hazelcast.spi.impl.operationservice.InternalOperationService;
+import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.transaction.TransactionContext;
 import org.junit.Test;
@@ -29,8 +45,9 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-import static com.hazelcast.spi.properties.GroupProperty.FAIL_ON_INDETERMINATE_OPERATION_STATE;
-import static com.hazelcast.spi.properties.GroupProperty.OPERATION_BACKUP_TIMEOUT_MILLIS;
+import static com.hazelcast.spi.impl.SpiDataSerializerHook.F_ID;
+import static com.hazelcast.spi.properties.ClusterProperty.FAIL_ON_INDETERMINATE_OPERATION_STATE;
+import static com.hazelcast.spi.properties.ClusterProperty.OPERATION_BACKUP_TIMEOUT_MILLIS;
 import static com.hazelcast.test.PacketFiltersUtil.dropOperationsBetween;
 import static java.util.Collections.singletonList;
 import static org.junit.Assert.assertEquals;
@@ -39,7 +56,7 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class IndeterminateOperationStateExceptionTest extends HazelcastTestSupport {
 
     private HazelcastInstance instance1;
@@ -63,10 +80,10 @@ public class IndeterminateOperationStateExceptionTest extends HazelcastTestSuppo
     public void partitionInvocation_shouldFailOnBackupTimeout_whenConfigurationEnabledGlobally() throws InterruptedException, TimeoutException {
         setup(true);
 
-        dropOperationsBetween(instance1, instance2, SpiDataSerializerHook.F_ID, singletonList(SpiDataSerializerHook.BACKUP));
+        dropOperationsBetween(instance1, instance2, F_ID, singletonList(SpiDataSerializerHook.BACKUP));
         int partitionId = getPartitionId(instance1);
 
-        InternalOperationService operationService = getNodeEngineImpl(instance1).getOperationService();
+        OperationServiceImpl operationService = getNodeEngineImpl(instance1).getOperationService();
         InternalCompletableFuture<Object> future = operationService
                 .createInvocationBuilder(InternalPartitionService.SERVICE_NAME, new PrimaryOperation(), partitionId).invoke();
         try {
@@ -81,10 +98,10 @@ public class IndeterminateOperationStateExceptionTest extends HazelcastTestSuppo
     public void partitionInvocation_shouldFailOnBackupTimeout_whenConfigurationEnabledForInvocation() throws InterruptedException, TimeoutException {
         setup(false);
 
-        dropOperationsBetween(instance1, instance2, SpiDataSerializerHook.F_ID, singletonList(SpiDataSerializerHook.BACKUP));
+        dropOperationsBetween(instance1, instance2, F_ID, singletonList(SpiDataSerializerHook.BACKUP));
         int partitionId = getPartitionId(instance1);
 
-        InternalOperationService operationService = getNodeEngineImpl(instance1).getOperationService();
+        OperationServiceImpl operationService = getNodeEngineImpl(instance1).getOperationService();
         InternalCompletableFuture<Object> future = operationService
                 .createInvocationBuilder(InternalPartitionService.SERVICE_NAME, new PrimaryOperation(), partitionId)
                 .setFailOnIndeterminateOperationState(true)
@@ -102,7 +119,7 @@ public class IndeterminateOperationStateExceptionTest extends HazelcastTestSuppo
         setup(true);
 
         int partitionId = getPartitionId(instance2);
-        InternalOperationService operationService = getNodeEngineImpl(instance1).getOperationService();
+        OperationServiceImpl operationService = getNodeEngineImpl(instance1).getOperationService();
         InternalCompletableFuture<Object> future = operationService
                 .createInvocationBuilder(InternalPartitionService.SERVICE_NAME, new SilentOperation(), partitionId).invoke();
 
@@ -135,7 +152,7 @@ public class IndeterminateOperationStateExceptionTest extends HazelcastTestSuppo
         dropOperationsBetween(instance2, instance1, SpiDataSerializerHook.F_ID, singletonList(SpiDataSerializerHook.NORMAL_RESPONSE));
 
         int partitionId = getPartitionId(instance2);
-        InternalOperationService operationService = getNodeEngineImpl(instance1).getOperationService();
+        OperationServiceImpl operationService = getNodeEngineImpl(instance1).getOperationService();
         InternalCompletableFuture<Boolean> future = operationService
                 .createInvocationBuilder(InternalPartitionService.SERVICE_NAME, new DummyReadOperation(), partitionId).invoke();
         spawn(new Runnable() {
@@ -153,8 +170,8 @@ public class IndeterminateOperationStateExceptionTest extends HazelcastTestSuppo
     public void transaction_shouldFail_whenBackupTimeoutOccurs() {
         setup(true);
 
-        dropOperationsBetween(instance1, instance2, SpiDataSerializerHook.F_ID, singletonList(SpiDataSerializerHook.BACKUP));
-        dropOperationsBetween(instance2, instance1, SpiDataSerializerHook.F_ID, singletonList(SpiDataSerializerHook.BACKUP));
+        dropOperationsBetween(instance1, instance2, F_ID, singletonList(SpiDataSerializerHook.BACKUP));
+        dropOperationsBetween(instance2, instance1, F_ID, singletonList(SpiDataSerializerHook.BACKUP));
 
         String name = randomMapName();
         String key1 = generateKeyOwnedBy(instance1);
@@ -183,7 +200,7 @@ public class IndeterminateOperationStateExceptionTest extends HazelcastTestSuppo
     public void targetInvocation_shouldFailWithMemberLeftException_onTargetMemberLeave() throws Exception {
         setup(true);
 
-        InternalOperationService operationService = getNodeEngineImpl(instance1).getOperationService();
+        OperationServiceImpl operationService = getNodeEngineImpl(instance1).getOperationService();
         Address target = getAddress(instance2);
         InternalCompletableFuture<Object> future = operationService
                 .createInvocationBuilder(InternalPartitionService.SERVICE_NAME, new SilentOperation(), target).invoke();

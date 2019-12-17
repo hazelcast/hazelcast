@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +16,13 @@
 
 package com.hazelcast.topic.impl;
 
-import com.hazelcast.spi.InternalCompletableFuture;
-import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.impl.InternalCompletableFuture;
+import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.spi.impl.operationservice.Operation;
+
+import javax.annotation.Nonnull;
+
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 /**
  * Topic proxy used when global ordering is enabled (all nodes listening to
@@ -36,10 +40,11 @@ public class TotalOrderedTopicProxy<E> extends TopicProxy<E> {
     }
 
     @Override
-    public void publish(E message) {
+    public void publish(@Nonnull  E message) {
+        checkNotNull(message, NULL_MESSAGE_IS_NOT_ALLOWED);
         Operation operation = new PublishOperation(getName(), toData(message))
                 .setPartitionId(partitionId);
         InternalCompletableFuture f = invokeOnPartition(operation);
-        f.join();
+        f.joinInternal();
     }
 }

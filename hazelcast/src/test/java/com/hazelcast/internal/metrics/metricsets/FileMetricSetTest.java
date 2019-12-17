@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -52,7 +52,8 @@ public class FileMetricSetTest extends HazelcastTestSupport {
     public void freeSpace() {
         File file = new File(System.getProperty("user.home"));
 
-        LongGauge freeSpaceGauge = metricsRegistry.newLongGauge("file.partition[user.home].freeSpace");
+        LongGauge freeSpaceGauge =
+                metricsRegistry.newLongGauge("file.partition[user.home].freeSpace");
 
         assertAlmostEquals(file.getFreeSpace(), freeSpaceGauge.read());
     }
@@ -61,7 +62,8 @@ public class FileMetricSetTest extends HazelcastTestSupport {
     public void totalSpace() {
         File file = new File(System.getProperty("user.home"));
 
-        LongGauge totalSpaceGauge = metricsRegistry.newLongGauge("file.partition[user.home].totalSpace");
+        LongGauge totalSpaceGauge =
+                metricsRegistry.newLongGauge("file.partition[user.home].totalSpace");
 
         assertAlmostEquals(file.getTotalSpace(), totalSpaceGauge.read());
     }
@@ -70,7 +72,8 @@ public class FileMetricSetTest extends HazelcastTestSupport {
     public void usableSpace() {
         File file = new File(System.getProperty("user.home"));
 
-        LongGauge usableSpaceGauge = metricsRegistry.newLongGauge("file.partition[user.home].usableSpace");
+        LongGauge usableSpaceGauge =
+                metricsRegistry.newLongGauge("file.partition[user.home].usableSpace");
 
         assertAlmostEquals(file.getUsableSpace(), usableSpaceGauge.read());
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,7 @@
 package com.hazelcast.query.impl;
 
 import com.hazelcast.internal.serialization.InternalSerializationService;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.query.impl.getters.Extractors;
 
 /**
@@ -41,7 +41,7 @@ public class QueryEntry extends QueryableEntry {
      * <pre>
      * <code>Predicate predicate = ...
      * QueryEntry entry = new QueryEntry()
-     * for (i == 0; i < HUGE_NUMBER; i++) {
+     * for (i == 0; i &lt; HUGE_NUMBER; i++) {
      *       entry.init(...)
      *       boolean valid = predicate.apply(queryEntry);
      *

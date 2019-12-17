@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,9 +30,9 @@ public abstract class PermissionTestSupport {
         private static final String DEFAULT_ALLOWED_NAME = "someMapsPermission";
         private static final String DEFAULT_REQUESTED_NAME = "someMapsPermission";
 
-        private String requested = null;
-        private String[] allowed = null;
-        private Boolean expectedResult = null;
+        private String requested;
+        private String[] allowed;
+        private Boolean expectedResult;
         private String allowedName = DEFAULT_ALLOWED_NAME;
         private String requestedName = DEFAULT_REQUESTED_NAME;
 

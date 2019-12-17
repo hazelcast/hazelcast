@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,7 +31,7 @@ class ValuesIteratorFactory<K, V> implements IteratorFactory<K, V, V> {
     }
 
     @Override
-    public Iterator<V> create(final Iterator<Map.Entry<K, ReplicatedRecord<K, V>>> iterator) {
+    public Iterator<V> create(Iterator<Map.Entry<K, ReplicatedRecord<K, V>>> iterator) {
         return new ValuesIterator(iterator);
     }
 

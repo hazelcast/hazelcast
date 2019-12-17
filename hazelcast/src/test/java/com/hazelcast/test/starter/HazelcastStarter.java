@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,30 +20,46 @@ import com.google.common.io.Files;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.HazelcastInstanceNotActiveException;
+import com.hazelcast.instance.impl.HazelcastInstanceImpl;
+import com.hazelcast.instance.impl.Node;
+import com.hazelcast.instance.impl.TestUtil;
+import com.hazelcast.test.starter.answer.HazelcastInstanceImplAnswer;
+import com.hazelcast.test.starter.answer.NodeAnswer;
 
 import java.io.File;
+import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.lang.reflect.Proxy;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 import static com.hazelcast.test.starter.HazelcastProxyFactory.proxyObjectForStarter;
-import static com.hazelcast.test.starter.Utils.rethrow;
-import static com.hazelcast.util.ExceptionUtil.rethrow;
+import static com.hazelcast.test.starter.HazelcastStarterUtils.debug;
+import static com.hazelcast.test.starter.HazelcastStarterUtils.rethrowGuardianException;
+import static com.hazelcast.test.starter.ReflectionUtils.getFieldValueReflectively;
+import static com.hazelcast.test.starter.ReflectionUtils.setFieldValueReflectively;
+import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
+import static com.hazelcast.internal.util.UuidUtil.newUnsecureUuidString;
 import static java.lang.Thread.currentThread;
+import static java.lang.reflect.Proxy.isProxyClass;
+import static org.mockito.Mockito.mock;
 
 public class HazelcastStarter {
 
-    public static final File WORKING_DIRECTORY = Files.createTempDir();
-
-    // Cache downloaded files & classloader used to load their classes per version string
-    private static final ConcurrentMap<String, HazelcastVersionClassloaderFuture> loadedVersions =
+    /**
+     * Caches downloaded files and classloader used to load their classes per version string.
+     */
+    private static final ConcurrentMap<String, HazelcastVersionClassloaderFuture> LOADED_VERSIONS =
             new ConcurrentHashMap<String, HazelcastVersionClassloaderFuture>();
 
+    private static final File WORKING_DIRECTORY = Files.createTempDir();
+
     /**
-     * Start a new open source {@link HazelcastInstance} of given version.
+     * Starts a new open source {@link HazelcastInstance} of the given version.
      *
      * @param version the version string e.g. "3.8". Must correspond to a released version available either in the
      *                local maven repository or maven central.
@@ -54,9 +70,9 @@ public class HazelcastStarter {
     }
 
     /**
-     * Start a new open source or enterprise edition {@link HazelcastInstance} of given version. Since no explicit
-     * configuration is provided, in order to start enterprise edition a license key must be previously set as a
-     * system property.
+     * Starts a new open source or enterprise edition {@link HazelcastInstance} of the given version. Since no
+     * explicit configuration is provided, a license key must be previously set as a system property to start
+     * Hazelcast enterprise edition.
      *
      * @param version    the version string e.g. "3.8". Must correspond to a released version available either in
      *                   local maven repository or maven central or Hazelcast enterprise repository, in case
@@ -69,35 +85,28 @@ public class HazelcastStarter {
     }
 
     /**
-     * Start a new {@link HazelcastInstance} of the given {@code version} configured with the given {@code Config},
+     * Starts a new {@link HazelcastInstance} of the given {@code version} configured with the given {@code Config},
      * open source or enterprise edition.
      *
      * @param version        the version string e.g. "3.8". Must correspond to a released version available either in
      *                       local maven repository or maven central or Hazelcast enterprise repository, in case
-     *                       {@code enterprise} is true.
+     *                       {@code enterprise} is {@code true}
      * @param configTemplate configuration object to clone on the target HazelcastInstance. If {@code null}, default
-     *                       configuration is assumed.
+     *                       configuration is assumed
      * @param enterprise     when {@code true}, start Hazelcast enterprise edition, otherwise open source
      * @return a {@link HazelcastInstance} proxying the started Hazelcast instance.
      */
     public static HazelcastInstance newHazelcastInstance(String version, Config configTemplate, boolean enterprise) {
-        HazelcastAPIDelegatingClassloader versionClassLoader = getTargetVersionClassloader(version, enterprise,
-                configTemplate == null ? null : configTemplate.getClassLoader());
+        ClassLoader cfgClassLoader = configTemplate == null ? null : configTemplate.getClassLoader();
+        HazelcastAPIDelegatingClassloader versionClassLoader = getTargetVersionClassloader(version, enterprise, cfgClassLoader);
+        if (configTemplate != null) {
+            configTemplate.getUserContext().put("versionClassLoader", versionClassLoader);
+        }
 
         ClassLoader contextClassLoader = currentThread().getContextClassLoader();
         currentThread().setContextClassLoader(null);
         try {
-            return newHazelcastMemberWithNetwork(configTemplate, versionClassLoader);
-        } catch (ClassNotFoundException e) {
-            throw rethrow(e);
-        } catch (NoSuchMethodException e) {
-            throw rethrow(e);
-        } catch (IllegalAccessException e) {
-            throw rethrow(e);
-        } catch (InvocationTargetException e) {
-            throw rethrow(e);
-        } catch (InstantiationException e) {
-            throw rethrow(e);
+            return newHazelcastInstanceWithNetwork(versionClassLoader, configTemplate);
         } finally {
             if (contextClassLoader != null) {
                 currentThread().setContextClassLoader(contextClassLoader);
@@ -105,62 +114,177 @@ public class HazelcastStarter {
         }
     }
 
+    public static Node getNode(HazelcastInstance hz) {
+        try {
+            HazelcastAPIDelegatingClassloader classloader = getHazelcastAPIDelegatingClassloader(hz);
+            Object instance = getHazelcastInstanceImpl(hz, classloader);
+            Object node = getFieldValueReflectively(instance, "node");
+            return mock(Node.class, new NodeAnswer(node));
+        } catch (HazelcastInstanceNotActiveException e) {
+            throw new IllegalArgumentException("The given HazelcastInstance is not an active HazelcastInstanceImpl: "
+                    + hz.getClass());
+        } catch (Exception e) {
+            throw rethrowGuardianException(e);
+        }
+    }
+
+    public static HazelcastInstanceImpl getHazelcastInstanceImpl(HazelcastInstance hz) {
+        try {
+            HazelcastAPIDelegatingClassloader classloader = getHazelcastAPIDelegatingClassloader(hz);
+            Object instance = getHazelcastInstanceImpl(hz, classloader);
+            Object node = getFieldValueReflectively(instance, "node");
+            HazelcastInstanceImpl proxy = mock(HazelcastInstanceImpl.class, new HazelcastInstanceImplAnswer(instance));
+            setFieldValueReflectively(proxy, "node", mock(Node.class, new NodeAnswer(node)));
+            return proxy;
+        } catch (HazelcastInstanceNotActiveException e) {
+            throw new IllegalArgumentException("The given HazelcastInstance is not an active HazelcastInstanceImpl: "
+                    + hz.getClass());
+        } catch (Exception e) {
+            throw rethrowGuardianException(e);
+        }
+    }
+
+    private static HazelcastAPIDelegatingClassloader getHazelcastAPIDelegatingClassloader(HazelcastInstance hz) {
+        ConcurrentMap<String, Object> userContext = hz.getConfig().getUserContext();
+        HazelcastAPIDelegatingClassloader classloader
+                = (HazelcastAPIDelegatingClassloader) userContext.get("versionClassLoader");
+        if (classloader == null) {
+            throw new GuardianException("HazelcastInstance was not started via HazelcastStarter or without config template!");
+        }
+        return classloader;
+    }
+
+    private static Object getHazelcastInstanceImpl(HazelcastInstance hazelcastInstance, ClassLoader classloader)
+            throws Exception {
+        if (isProxyClass(hazelcastInstance.getClass())) {
+            InvocationHandler invocationHandler = Proxy.getInvocationHandler(hazelcastInstance);
+            Object delegate = getFieldValueReflectively(invocationHandler, "delegate");
+            Class<?> instanceProxyClass = classloader.loadClass("com.hazelcast.instance.impl.HazelcastInstanceProxy");
+            Class<?> instanceImplClass = classloader.loadClass("com.hazelcast.instance.impl.HazelcastInstanceImpl");
+            if (instanceProxyClass.isAssignableFrom(delegate.getClass())) {
+                Object instanceProxy = instanceProxyClass.cast(delegate);
+                return instanceImplClass.cast(getFieldValueReflectively(instanceProxy, "original"));
+            } else if (instanceImplClass.isAssignableFrom(delegate.getClass())) {
+                return instanceImplClass.cast(delegate);
+            }
+            return delegate;
+        }
+        return TestUtil.getHazelcastInstanceImpl(hazelcastInstance);
+    }
+
     /**
-     * Obtain a {@link HazelcastAPIDelegatingClassloader} with the given version's binaries in its classpath.
+     * Obtains a {@link HazelcastAPIDelegatingClassloader} with the given version's binaries in its classpath.
      * Classloaders are cached, so requesting the classloader for a given version multiple times will return the
      * same instance.
      *
-     * @param version           the target Hazelcast version e.g. "3.8.1", must be a published release version.
+     * @param version           the target Hazelcast version e.g. "3.8.1", must be a published release version
      * @param configClassLoader class loader given via config
      * @return a classloader with given version's artifacts in its classpath
      */
-    public static HazelcastAPIDelegatingClassloader getTargetVersionClassloader(String version, boolean enterprise, ClassLoader configClassLoader) {
+    public static HazelcastAPIDelegatingClassloader getTargetVersionClassloader(String version, boolean enterprise,
+                                                                                ClassLoader configClassLoader) {
+        HazelcastVersionClassloaderFuture future;
+        if (configClassLoader != null) {
+            // when a custom ClassLoader should be the parent of the target version ClassLoader,
+            // do not use the ClassLoader cache
+            future = new HazelcastVersionClassloaderFuture(version, enterprise, configClassLoader);
+            return future.get();
+        }
+
         String versionSpec = versionSpec(version, enterprise);
-        HazelcastAPIDelegatingClassloader versionClassLoader = null;
-        HazelcastVersionClassloaderFuture future = loadedVersions.get(versionSpec);
-
+        future = LOADED_VERSIONS.get(versionSpec);
         if (future != null) {
-            versionClassLoader = future.get();
-            return versionClassLoader;
+            return future.get();
         }
 
-        future = new HazelcastVersionClassloaderFuture(version, enterprise, configClassLoader);
-        HazelcastVersionClassloaderFuture found = loadedVersions.putIfAbsent(versionSpec, future);
-
+        future = new HazelcastVersionClassloaderFuture(version, enterprise, null);
+        HazelcastVersionClassloaderFuture found = LOADED_VERSIONS.putIfAbsent(versionSpec, future);
         if (found != null) {
-            versionClassLoader = found.get();
-        }
-
-        if (versionClassLoader == null) {
-            try {
-                versionClassLoader = future.get();
-            } catch (Throwable t) {
-                loadedVersions.remove(versionSpec, future);
-                throw rethrow(t);
+            HazelcastAPIDelegatingClassloader versionClassLoader = found.get();
+            if (versionClassLoader != null) {
+                return versionClassLoader;
             }
         }
-        return versionClassLoader;
+
+        try {
+            return future.get();
+        } catch (Throwable t) {
+            LOADED_VERSIONS.remove(versionSpec, future);
+            throw rethrow(t);
+        }
     }
 
-    private static HazelcastInstance newHazelcastMemberWithNetwork(Config configTemplate,
-                                                                   HazelcastAPIDelegatingClassloader classloader)
-            throws ClassNotFoundException, InstantiationException, IllegalAccessException,
-            NoSuchMethodException, InvocationTargetException {
-        Class<Hazelcast> hazelcastClass = (Class<Hazelcast>) classloader.loadClass("com.hazelcast.core.Hazelcast");
-        System.out.println(hazelcastClass + " loaded by " + hazelcastClass.getClassLoader());
-        Class<?> configClass = classloader.loadClass("com.hazelcast.config.Config");
-        Object config = getConfig(configTemplate, classloader, configClass);
-
-        Method newHazelcastInstanceMethod = hazelcastClass.getMethod("newHazelcastInstance", configClass);
-        Object delegate = newHazelcastInstanceMethod.invoke(null, config);
-
-        return (HazelcastInstance) proxyObjectForStarter(HazelcastStarter.class.getClassLoader(), delegate);
+    private static HazelcastInstance newHazelcastInstanceWithNetwork(HazelcastAPIDelegatingClassloader classloader,
+                                                                     Config configTemplate) {
+        try {
+            Object delegate = createInstanceViaInstanceFactory(classloader, configTemplate);
+            if (delegate == null) {
+                delegate = createInstanceViaHazelcast(classloader, configTemplate);
+            }
+            return (HazelcastInstance) proxyObjectForStarter(HazelcastStarter.class.getClassLoader(), delegate);
+        } catch (ClassNotFoundException e) {
+            throw rethrowGuardianException(e);
+        }
     }
 
-    public static Object getConfig(Object configTemplate, HazelcastAPIDelegatingClassloader classloader,
-                                   Class<?> configClass)
-            throws InstantiationException, IllegalAccessException, NoSuchMethodException,
-            InvocationTargetException, ClassNotFoundException {
+    @SuppressWarnings("unchecked")
+    private static Object createInstanceViaInstanceFactory(HazelcastAPIDelegatingClassloader classloader, Config configTemplate) {
+        try {
+            Class<?> configClass = classloader.loadClass("com.hazelcast.config.Config");
+            Object config = getConfig(classloader, configClass, configTemplate);
+            String instanceName = configTemplate == null ? newUnsecureUuidString() : configTemplate.getInstanceName();
+
+            Class<?> nodeContextClass = classloader.loadClass("com.hazelcast.instance.impl.NodeContext");
+            Class<?> firewallingNodeContextClass = classloader.loadClass("com.hazelcast.instance.FirewallingNodeContext");
+            Object nodeContext = proxyObjectForStarter(classloader, firewallingNodeContextClass.newInstance());
+
+            Class<?> hazelcastInstanceFactoryClass = classloader.loadClass("com.hazelcast.instance.impl.HazelcastInstanceFactory");
+            System.out.println(hazelcastInstanceFactoryClass + " loaded by " + hazelcastInstanceFactoryClass.getClassLoader());
+
+            Method newHazelcastInstanceMethod = hazelcastInstanceFactoryClass.getMethod("newHazelcastInstance", configClass,
+                    String.class, nodeContextClass);
+            return newHazelcastInstanceMethod.invoke(null, config, instanceName, nodeContext);
+        } catch (ClassNotFoundException e) {
+            debug("Could not create HazelcastInstance via HazelcastInstanceFactory: " + e.getMessage());
+        } catch (IllegalAccessException e) {
+            debug("Could not create HazelcastInstance via HazelcastInstanceFactory: " + e.getMessage());
+        } catch (NoSuchMethodException e) {
+            debug("Could not create HazelcastInstance via HazelcastInstanceFactory: " + e.getMessage());
+        } catch (InvocationTargetException e) {
+            debug("Could not create HazelcastInstance via HazelcastInstanceFactory: " + e.getMessage());
+        } catch (InstantiationException e) {
+            debug("Could not create HazelcastInstance via HazelcastInstanceFactory: " + e.getMessage());
+        }
+        return null;
+    }
+
+    @SuppressWarnings("unchecked")
+    private static Object createInstanceViaHazelcast(HazelcastAPIDelegatingClassloader classloader, Config configTemplate) {
+        try {
+            Class<?> configClass = classloader.loadClass("com.hazelcast.config.Config");
+            Object config = getConfig(classloader, configClass, configTemplate);
+
+            Class<Hazelcast> hazelcastClass = (Class<Hazelcast>) classloader.loadClass("com.hazelcast.core.Hazelcast");
+            System.out.println(hazelcastClass + " loaded by " + hazelcastClass.getClassLoader());
+
+            Method newHazelcastInstanceMethod = hazelcastClass.getMethod("newHazelcastInstance", configClass);
+            return newHazelcastInstanceMethod.invoke(null, config);
+        } catch (ClassNotFoundException e) {
+            throw rethrowGuardianException(e);
+        } catch (NoSuchMethodException e) {
+            throw rethrowGuardianException(e);
+        } catch (IllegalAccessException e) {
+            throw rethrowGuardianException(e);
+        } catch (InvocationTargetException e) {
+            throw rethrowGuardianException(e);
+        } catch (InstantiationException e) {
+            throw rethrowGuardianException(e);
+        }
+    }
+
+    public static Object getConfig(HazelcastAPIDelegatingClassloader classloader, Class<?> configClass, Object configTemplate)
+            throws InstantiationException, IllegalAccessException, NoSuchMethodException, InvocationTargetException,
+            ClassNotFoundException {
         Object config;
         if (configTemplate == null) {
             config = configClass.newInstance();
@@ -172,35 +296,36 @@ public class HazelcastStarter {
         return config;
     }
 
-    private static URL[] fileIntoUrls(File[] files) {
-        URL[] urls = new URL[files.length];
-        for (int i = 0; i < files.length; i++) {
-            try {
-                urls[i] = files[i].toURL();
-            } catch (MalformedURLException e) {
-                throw rethrow(e);
-            }
-        }
-        return urls;
-    }
-
-    // Create temporary directory for downloaded artifacts. {@code versionSpec} should include both version
-    // and enterprise edition indication. Example values "3.8-EE", "3.8.1".
-    private static File getOrCreateVersionVersionDirectory(String versionSpec) {
+    /**
+     * Creates a temporary directory for downloaded artifacts.
+     *
+     * @param versionSpec the version specification, which should include both version and enterprise edition indication,
+     *                    e.g. "3.8-EE", "3.8.1"
+     */
+    public static File getOrCreateVersionDirectory(String versionSpec) {
         File workingDir = WORKING_DIRECTORY;
         if (!workingDir.isDirectory() || !workingDir.exists()) {
-            throw new GuardianException("Working directory " + workingDir + " does not exist.");
+            throw new GuardianException("Working directory " + workingDir.getAbsolutePath() + " does not exist.");
         }
 
         File versionDir = new File(WORKING_DIRECTORY, versionSpec);
-        versionDir.mkdir();
+        // the versionDir may already exist when the same Hazelcast version artifacts were previously downloaded
+        if (!versionDir.exists() && !versionDir.mkdir()) {
+            throw new GuardianException("Version directory " + versionDir.getAbsolutePath() + " could not be created.");
+        }
         return versionDir;
     }
 
+    private static String versionSpec(String version, boolean enterprise) {
+        return enterprise ? version + "-EE" : version;
+    }
+
     private static class HazelcastVersionClassloaderFuture {
+
         private final String version;
         private final boolean enterprise;
         private final ClassLoader configClassLoader;
+
         private HazelcastAPIDelegatingClassloader classLoader;
 
         HazelcastVersionClassloaderFuture(String version, boolean enterprise, ClassLoader configClassLoader) {
@@ -213,9 +338,8 @@ public class HazelcastStarter {
             if (classLoader != null) {
                 return classLoader;
             }
-
             synchronized (this) {
-                File versionDir = getOrCreateVersionVersionDirectory(versionSpec(version, enterprise));
+                File versionDir = getOrCreateVersionDirectory(versionSpec(version, enterprise));
                 File[] files = HazelcastVersionLocator.locateVersion(version, versionDir, enterprise);
                 URL[] urls = fileIntoUrls(files);
                 ClassLoader parentClassloader = HazelcastStarter.class.getClassLoader();
@@ -226,9 +350,17 @@ public class HazelcastStarter {
                 return classLoader;
             }
         }
-    }
 
-    private static final String versionSpec(String version, boolean enterprise) {
-        return enterprise ? version + "-EE" : version;
+        private static URL[] fileIntoUrls(File[] files) {
+            URL[] urls = new URL[files.length];
+            for (int i = 0; i < files.length; i++) {
+                try {
+                    urls[i] = files[i].toURI().toURL();
+                } catch (MalformedURLException e) {
+                    throw rethrowGuardianException(e);
+                }
+            }
+            return urls;
+        }
     }
 }

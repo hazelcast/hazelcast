@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ package com.hazelcast.internal.util.hashslot.impl;
 import com.hazelcast.internal.memory.MemoryAccessor;
 import com.hazelcast.internal.memory.impl.HeapMemoryManager;
 import com.hazelcast.internal.util.hashslot.HashSlotCursor16byteKey;
+import com.hazelcast.internal.util.hashslot.SlotAssignmentResult;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.RequireAssertEnabled;
 import com.hazelcast.test.annotation.QuickTest;
@@ -68,19 +69,23 @@ public class HashSlotArray16byteKeyImplTest {
     public void testPut() throws Exception {
         final long key1 = randomKey();
         final long key2 = randomKey();
-        final long valueAddress = insert(key1, key2);
+        SlotAssignmentResult slot = insert(key1, key2);
+        assertTrue(slot.isNew());
+        final long valueAddress = slot.address();
 
-        assertEquals(-valueAddress, hsa.ensure(key1, key2));
+        slot = hsa.ensure(key1, key2);
+        assertFalse(slot.isNew());
+        assertEquals(valueAddress, slot.address());
     }
 
     @Test
     public void testGet() throws Exception {
         final long key1 = randomKey();
         final long key2 = randomKey();
-        final long valueAddress = insert(key1, key2);
+        final SlotAssignmentResult slot = insert(key1, key2);
 
         final long valueAddress2 = hsa.get(key1, key2);
-        assertEquals(valueAddress, valueAddress2);
+        assertEquals(slot.address(), valueAddress2);
     }
 
     @Test
@@ -211,8 +216,8 @@ public class HashSlotArray16byteKeyImplTest {
 
     @Test
     public void testMigrateTo() {
-        final long valueAddr = insert(1, 2);
-        mem.putLong(valueAddr, 3);
+        final SlotAssignmentResult slot = insert(1, 2);
+        mem.putLong(slot.address(), 3);
         final HeapMemoryManager mgr2 = new HeapMemoryManager(memMgr);
         hsa.migrateTo(mgr2.getAllocator());
         assertEquals(0, memMgr.getUsedMemory());
@@ -241,19 +246,19 @@ public class HashSlotArray16byteKeyImplTest {
     public void testGotoNew() {
         hsa.dispose();
         hsa.gotoNew();
-        final long valueAddr = insert(1, 2);
+        final SlotAssignmentResult slot = insert(1, 2);
         final long gotValueAddr = hsa.get(1, 2);
-        assertEquals(valueAddr, gotValueAddr);
+        assertEquals(slot.address(), gotValueAddr);
     }
 
     @Test
     public void testGotoAddress() {
         final long addr1 = hsa.address();
-        final long valueAddr1 = insert(1, 2);
+        final SlotAssignmentResult slot = insert(1, 2);
         hsa.gotoNew();
         assertEquals(NULL_ADDRESS, hsa.get(1, 2));
         hsa.gotoAddress(addr1);
-        assertEquals(valueAddr1, hsa.get(1, 2));
+        assertEquals(slot.address(), hsa.get(1, 2));
     }
 
     // Cursor tests
@@ -334,11 +339,11 @@ public class HashSlotArray16byteKeyImplTest {
 
     @Test
     public void testCursor_valueAddress() {
-        final long valueAddress = insert(randomKey(), randomKey());
+        final SlotAssignmentResult slot = insert(randomKey(), randomKey());
 
         HashSlotCursor16byteKey cursor = hsa.cursor();
         cursor.advance();
-        assertEquals(valueAddress, cursor.valueAddress());
+        assertEquals(slot.address(), cursor.valueAddress());
     }
 
     @Test(expected = AssertionError.class)
@@ -398,13 +403,14 @@ public class HashSlotArray16byteKeyImplTest {
         return random.nextInt(Integer.MAX_VALUE) + 1;
     }
 
-    private long insert(long key1, long key2) {
-        final long valueAddress = hsa.ensure(key1, key2);
-        assertTrue(valueAddress > 0);
+    private SlotAssignmentResult insert(long key1, long key2) {
+        final SlotAssignmentResult slot = hsa.ensure(key1, key2);
+        final long valueAddress = slot.address();
+        assertNotEquals(NULL_ADDRESS, valueAddress);
         // Value length must be at least 16 bytes
         mem.putLong(valueAddress, key1);
         mem.putLong(valueAddress + 8L, key2);
-        return valueAddress;
+        return slot;
     }
 
     private void verifyValue(long key1, long key2, long valueAddress) {

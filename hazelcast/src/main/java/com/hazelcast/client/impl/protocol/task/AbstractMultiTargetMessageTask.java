@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,51 +17,56 @@
 package com.hazelcast.client.impl.protocol.task;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.core.Member;
-import com.hazelcast.instance.Node;
-import com.hazelcast.nio.Connection;
-import com.hazelcast.spi.InvocationBuilder;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.impl.SimpleExecutionCallback;
-import com.hazelcast.spi.impl.operationservice.InternalOperationService;
-import com.hazelcast.util.function.Supplier;
+import com.hazelcast.cluster.Member;
+import com.hazelcast.instance.impl.Node;
+import com.hazelcast.internal.nio.Connection;
+import com.hazelcast.spi.impl.operationservice.InvocationBuilder;
+import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.spi.impl.operationservice.impl.InvocationFuture;
+import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+import java.util.function.BiConsumer;
+import java.util.function.Supplier;
 
-import static com.hazelcast.util.MapUtil.createHashMap;
+import static com.hazelcast.internal.util.ConcurrencyUtil.CALLER_RUNS;
+import static com.hazelcast.internal.util.MapUtil.createHashMap;
 import static java.util.Collections.EMPTY_MAP;
 
-public abstract class AbstractMultiTargetMessageTask<P> extends AbstractMessageTask<P> {
+public abstract class AbstractMultiTargetMessageTask<P> extends AbstractAsyncMessageTask<P, Object> {
 
     protected AbstractMultiTargetMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
     @Override
-    protected void processMessage() throws Throwable {
+    protected CompletableFuture<Object> processInternal() {
         Supplier<Operation> operationSupplier = createOperationSupplier();
         Collection<Member> targets = getTargets();
 
-        returnResponseIfNoTargetLeft(targets, EMPTY_MAP);
+        CompletableFuture<Object> finalResult = new CompletableFuture<>();
 
-        final InternalOperationService operationService = nodeEngine.getOperationService();
+        if (targets.isEmpty()) {
+            finalResult.complete(EMPTY_MAP);
+            return finalResult;
+        }
 
-        MultiTargetCallback callback = new MultiTargetCallback(targets);
+        final OperationServiceImpl operationService = nodeEngine.getOperationService();
+
+        MultiTargetCallback callback = new MultiTargetCallback(targets, finalResult);
         for (Member target : targets) {
             Operation op = operationSupplier.get();
             InvocationBuilder builder = operationService.createInvocationBuilder(getServiceName(), op, target.getAddress())
-                    .setResultDeserialized(false)
-                    .setExecutionCallback(new SingleTargetCallback(target, callback));
-            builder.invoke();
-        }
-    }
+                                                        .setResultDeserialized(false);
 
-    private void returnResponseIfNoTargetLeft(Collection<Member> targets, Map<Member, Object> results) throws Throwable {
-        if (targets.isEmpty()) {
-            sendResponse(reduce(results));
+            InvocationFuture<Object> invocationFuture = builder.invoke();
+            invocationFuture.whenCompleteAsync(new SingleTargetCallback(target, callback), CALLER_RUNS);
         }
+
+        return finalResult;
     }
 
     protected abstract Supplier<Operation> createOperationSupplier();
@@ -74,10 +79,12 @@ public abstract class AbstractMultiTargetMessageTask<P> extends AbstractMessageT
 
         final Collection<Member> targets;
         final Map<Member, Object> results;
+        final CompletableFuture<Object> finalResult;
 
-        private MultiTargetCallback(Collection<Member> targets) {
-            this.targets = new HashSet<Member>(targets);
+        private MultiTargetCallback(Collection<Member> targets, CompletableFuture<Object> finalResult) {
+            this.targets = new HashSet<>(targets);
             this.results = createHashMap(targets.size());
+            this.finalResult = finalResult;
         }
 
         public synchronized void notify(Member target, Object result) {
@@ -85,19 +92,22 @@ public abstract class AbstractMultiTargetMessageTask<P> extends AbstractMessageT
                 results.put(target, result);
             } else {
                 if (results.containsKey(target)) {
-                    throw new IllegalArgumentException("Duplicate response from -> " + target);
+                    finalResult.completeExceptionally(new IllegalArgumentException("Duplicate response from -> " + target));
                 }
-                throw new IllegalArgumentException("Unknown target! -> " + target);
+                finalResult.completeExceptionally(new IllegalArgumentException("Unknown target! -> " + target));
             }
-            try {
-                returnResponseIfNoTargetLeft(targets, results);
-            } catch (Throwable throwable) {
-                handleProcessingFailure(throwable);
+
+            if (targets.isEmpty()) {
+                try {
+                    finalResult.complete(reduce(results));
+                } catch (Throwable throwable) {
+                    finalResult.completeExceptionally(throwable);
+                }
             }
         }
     }
 
-    private final class SingleTargetCallback extends SimpleExecutionCallback<Object> {
+    private final class SingleTargetCallback implements BiConsumer<Object, Throwable> {
 
         final Member target;
         final MultiTargetCallback parent;
@@ -108,8 +118,8 @@ public abstract class AbstractMultiTargetMessageTask<P> extends AbstractMessageT
         }
 
         @Override
-        public void notify(Object object) {
-            parent.notify(target, object);
+        public void accept(Object object, Throwable throwable) {
+            parent.notify(target, throwable == null ? object : throwable);
         }
     }
 }

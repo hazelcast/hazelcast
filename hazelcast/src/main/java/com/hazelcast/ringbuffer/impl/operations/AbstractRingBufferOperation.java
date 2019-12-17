@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,10 +24,11 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.ringbuffer.StaleSequenceException;
 import com.hazelcast.ringbuffer.impl.RingbufferContainer;
 import com.hazelcast.ringbuffer.impl.RingbufferService;
-import com.hazelcast.spi.ObjectNamespace;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.PartitionAwareOperation;
-import com.hazelcast.spi.ServiceNamespaceAware;
+import com.hazelcast.spi.impl.operationservice.NamedOperation;
+import com.hazelcast.internal.services.ObjectNamespace;
+import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.spi.impl.operationservice.PartitionAwareOperation;
+import com.hazelcast.internal.services.ServiceNamespaceAware;
 
 import java.io.IOException;
 
@@ -42,11 +43,10 @@ import static com.hazelcast.ringbuffer.impl.RingbufferService.SERVICE_NAME;
  * <li>defines the factory ID for the {@link IdentifiedDataSerializable}</li>
  * </ul>
  */
-public abstract class AbstractRingBufferOperation extends Operation
-        implements IdentifiedDataSerializable, PartitionAwareOperation, ServiceNamespaceAware {
+public abstract class AbstractRingBufferOperation extends Operation implements NamedOperation, IdentifiedDataSerializable,
+        PartitionAwareOperation, ServiceNamespaceAware {
 
     protected String name;
-    private RingbufferContainer ringbuffer;
 
     public AbstractRingBufferOperation() {
     }
@@ -60,6 +60,11 @@ public abstract class AbstractRingBufferOperation extends Operation
         return SERVICE_NAME;
     }
 
+    @Override
+    public String getName() {
+        return name;
+    }
+
     /**
      * Returns an {@link RingbufferContainer} or creates a new one if necessary by calling
      * {@link RingbufferService#getOrCreateContainer(int, ObjectNamespace, RingbufferConfig)}.
@@ -69,9 +74,6 @@ public abstract class AbstractRingBufferOperation extends Operation
      * @return the ringbuffer container
      */
     RingbufferContainer getRingBufferContainer() {
-        if (ringbuffer != null) {
-            return ringbuffer;
-        }
         final RingbufferService service = getService();
         final ObjectNamespace ns = RingbufferService.getRingbufferNamespace(name);
 
@@ -81,7 +83,6 @@ public abstract class AbstractRingBufferOperation extends Operation
         }
 
         ringbuffer.cleanup();
-        this.ringbuffer = ringbuffer;
         return ringbuffer;
     }
 

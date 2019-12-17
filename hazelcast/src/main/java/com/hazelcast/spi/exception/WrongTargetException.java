@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,23 +16,26 @@
 
 package com.hazelcast.spi.exception;
 
-import com.hazelcast.nio.Address;
+import com.hazelcast.cluster.Member;
 
 /**
  * A {@link com.hazelcast.spi.exception.RetryableHazelcastException} indicating that an operation is executed on
- * the wrong machine.
+ * a wrong member.
  */
 public class WrongTargetException extends RetryableHazelcastException {
 
-    private transient Address target;
+    // RU_COMPAT
+    private static final long serialVersionUID = -84600702836709317L;
 
-    public WrongTargetException(Address thisAddress, Address target, int partitionId, int replicaIndex, String operationName) {
-        this(thisAddress, target, partitionId, replicaIndex, operationName, null);
+    private transient Member target;
+
+    public WrongTargetException(Member localMember, Member target, int partitionId, int replicaIndex, String operationName) {
+        this(localMember, target, partitionId, replicaIndex, operationName, null);
     }
 
-    public WrongTargetException(Address thisAddress, Address target, int partitionId, int replicaIndex,
+    public WrongTargetException(Member localMember, Member target, int partitionId, int replicaIndex,
                                 String operationName, String serviceName) {
-        super("WrongTarget! this: " + thisAddress + ", target: " + target
+        super("WrongTarget! local: " + localMember + ", expected-target: " + target
                 + ", partitionId: " + partitionId + ", replicaIndex: " + replicaIndex
                 + ", operation: " + operationName + ", service: " + serviceName);
 
@@ -43,7 +46,7 @@ public class WrongTargetException extends RetryableHazelcastException {
         super(message);
     }
 
-    public Address getTarget() {
+    public Member getTarget() {
         return target;
     }
 }

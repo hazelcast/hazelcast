@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,12 +16,12 @@
 
 package com.hazelcast.internal.cluster.impl;
 
-import com.hazelcast.cluster.Joiner;
-import com.hazelcast.instance.MemberImpl;
-import com.hazelcast.instance.Node;
+import com.hazelcast.internal.cluster.Joiner;
+import com.hazelcast.cluster.impl.MemberImpl;
+import com.hazelcast.instance.impl.Node;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.nio.Address;
-import com.hazelcast.nio.Packet;
+import com.hazelcast.cluster.Address;
+import com.hazelcast.internal.nio.Packet;
 
 public class NodeMulticastListener implements MulticastListener {
 
@@ -109,7 +109,7 @@ public class NodeMulticastListener implements MulticastListener {
     }
 
     private boolean isJoinMessage(Object msg) {
-        return msg != null && msg instanceof JoinMessage && !(msg instanceof SplitBrainJoinMessage);
+        return msg instanceof JoinMessage && !(msg instanceof SplitBrainJoinMessage);
     }
 
     private boolean isValidJoinMessage(Object msg) {
@@ -124,10 +124,7 @@ public class NodeMulticastListener implements MulticastListener {
         }
 
         ConfigCheck theirConfig = joinMessage.getConfigCheck();
-        if (!ourConfig.isSameGroup(theirConfig)) {
-            return false;
-        }
-        return true;
+        return ourConfig.isSameGroup(theirConfig);
     }
 
     private boolean isMessageToSelf(JoinMessage joinMessage) {

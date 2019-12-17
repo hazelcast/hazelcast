@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,15 +16,16 @@
 
 package com.hazelcast.replicatedmap.impl.operation;
 
+import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.nio.Address;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapEventPublishingService;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
 import com.hazelcast.replicatedmap.impl.record.ReplicatedRecordStore;
-import com.hazelcast.spi.PartitionAwareOperation;
+import com.hazelcast.spi.impl.operationservice.PartitionAwareOperation;
 
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
@@ -32,26 +33,21 @@ import java.util.concurrent.TimeUnit;
 /**
  * Replicates the update happened on the partition owner to the other nodes.
  */
-public class ReplicateUpdateOperation extends AbstractSerializableOperation implements PartitionAwareOperation {
+public class ReplicateUpdateOperation extends AbstractNamedSerializableOperation implements PartitionAwareOperation {
 
-    VersionResponsePair response;
-    boolean isRemove;
-    String name;
-    Data dataKey;
-    Data dataValue;
-    long ttl;
-    Address origin;
+    private VersionResponsePair response;
+    private boolean isRemove;
+    private String name;
+    private Data dataKey;
+    private Data dataValue;
+    private long ttl;
+    private Address origin;
 
     public ReplicateUpdateOperation() {
     }
 
-    public ReplicateUpdateOperation(String name,
-                                    Data dataKey,
-                                    Data dataValue,
-                                    long ttl,
-                                    VersionResponsePair response,
-                                    boolean isRemove,
-                                    Address origin) {
+    public ReplicateUpdateOperation(String name, Data dataKey, Data dataValue, long ttl, VersionResponsePair response,
+                                    boolean isRemove, Address origin) {
         this.name = name;
         this.dataKey = dataKey;
         this.dataValue = dataValue;
@@ -70,8 +66,8 @@ public class ReplicateUpdateOperation extends AbstractSerializableOperation impl
         if (currentVersion >= updateVersion) {
             ILogger logger = getLogger();
             if (logger.isFineEnabled()) {
-                logger.fine("Rejecting stale update received for replicated map: " + name + "  partitionId="
-                        + getPartitionId() + " current version: " + currentVersion + " update version: " + updateVersion);
+                logger.fine("Rejecting stale update received for replicated map '" + name + "' (partitionId " + getPartitionId()
+                        + ") (current version " + currentVersion + ") (update version " + updateVersion + ")");
             }
             return;
         }
@@ -100,8 +96,8 @@ public class ReplicateUpdateOperation extends AbstractSerializableOperation impl
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         response.writeData(out);
         out.writeUTF(name);
-        out.writeData(dataKey);
-        out.writeData(dataValue);
+        IOUtil.writeData(out, dataKey);
+        IOUtil.writeData(out, dataValue);
         out.writeLong(ttl);
         out.writeBoolean(isRemove);
         out.writeObject(origin);
@@ -112,15 +108,20 @@ public class ReplicateUpdateOperation extends AbstractSerializableOperation impl
         response = new VersionResponsePair();
         response.readData(in);
         name = in.readUTF();
-        dataKey = in.readData();
-        dataValue = in.readData();
+        dataKey = IOUtil.readData(in);
+        dataValue = IOUtil.readData(in);
         ttl = in.readLong();
         isRemove = in.readBoolean();
         origin = in.readObject();
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ReplicatedMapDataSerializerHook.REPLICATE_UPDATE;
+    }
+
+    @Override
+    public String getName() {
+        return name;
     }
 }

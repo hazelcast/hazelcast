@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +16,11 @@
 
 package com.hazelcast.cache.impl;
 
-import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.OperationFactory;
+import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.spi.impl.operationservice.OperationFactory;
+import com.hazelcast.spi.merge.SplitBrainMergePolicy;
+import com.hazelcast.spi.merge.SplitBrainMergeTypes.CacheMergeTypes;
 
 import javax.cache.expiry.ExpiryPolicy;
 import javax.cache.processor.EntryProcessor;
@@ -55,6 +57,15 @@ public interface CacheOperationProvider {
 
     Operation createEntryIteratorOperation(int lastTableIndex, int fetchSize);
 
+    Operation createMergeOperation(String name, List<CacheMergeTypes> mergingEntries,
+                                   SplitBrainMergePolicy<Data, CacheMergeTypes> policy);
+
+    OperationFactory createMergeOperationFactory(String name, int[] partitions,
+                                                 List<CacheMergeTypes>[] mergingEntries,
+                                                 SplitBrainMergePolicy<Data, CacheMergeTypes> policy);
+
+    Operation createSetExpiryPolicyOperation(List<Data> keys, Data expiryPolicy);
+
     OperationFactory createGetAllOperationFactory(Set<Data> keySet, ExpiryPolicy policy);
 
     OperationFactory createLoadAllOperationFactory(Set<Data> keySet, boolean replaceExistingValues);
@@ -64,4 +75,5 @@ public interface CacheOperationProvider {
     OperationFactory createRemoveAllOperationFactory(Set<Data> keySet, Integer completionId);
 
     OperationFactory createSizeOperationFactory();
+
 }

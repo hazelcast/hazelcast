@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,8 +19,8 @@ package com.hazelcast.collection.impl;
 import com.hazelcast.collection.impl.txncollection.CollectionTxnOperation;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.spi.BackupAwareOperation;
-import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.impl.operationservice.BackupAwareOperation;
+import com.hazelcast.spi.impl.operationservice.Operation;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -33,7 +33,7 @@ public final class CollectionTxnUtil {
     }
 
     /**
-     * @param operation
+     * @param operation the operation.
      * @return negative itemId if the operation is a remove operation
      */
     public static long getItemId(CollectionTxnOperation operation) {
@@ -42,7 +42,7 @@ public final class CollectionTxnUtil {
     }
 
     /**
-     * @param itemId
+     * @param itemId the item ID
      * @return true if itemId is greater than 0
      */
     public static boolean isRemove(long itemId) {

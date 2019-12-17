@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,11 +16,12 @@
 
 package com.hazelcast.config;
 
-import com.hazelcast.internal.cluster.Versions;
+import com.hazelcast.internal.config.ConfigDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.nio.serialization.impl.Versioned;
+import com.hazelcast.spi.merge.SplitBrainMergeTypeProvider;
+import com.hazelcast.spi.merge.SplitBrainMergeTypes;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -28,8 +29,9 @@ import java.util.List;
 
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.readNullableList;
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.writeNullableList;
-import static com.hazelcast.util.Preconditions.checkAsyncBackupCount;
-import static com.hazelcast.util.Preconditions.checkBackupCount;
+import static com.hazelcast.internal.util.Preconditions.checkAsyncBackupCount;
+import static com.hazelcast.internal.util.Preconditions.checkBackupCount;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 /**
  * Provides configuration service for Collection.
@@ -37,7 +39,7 @@ import static com.hazelcast.util.Preconditions.checkBackupCount;
  * @param <T> Type of Collection such as List, Set
  */
 public abstract class CollectionConfig<T extends CollectionConfig>
-        implements IdentifiedDataSerializable, Versioned {
+        implements SplitBrainMergeTypeProvider, IdentifiedDataSerializable, NamedConfig {
 
     /**
      * Default maximum size for the Configuration.
@@ -58,8 +60,8 @@ public abstract class CollectionConfig<T extends CollectionConfig>
     private int asyncBackupCount = DEFAULT_ASYNC_BACKUP_COUNT;
     private int maxSize = DEFAULT_MAX_SIZE;
     private boolean statisticsEnabled = true;
-
-    private String quorumName;
+    private String splitBrainProtectionName;
+    private MergePolicyConfig mergePolicyConfig = new MergePolicyConfig();
 
     protected CollectionConfig() {
     }
@@ -71,11 +73,9 @@ public abstract class CollectionConfig<T extends CollectionConfig>
         this.asyncBackupCount = config.asyncBackupCount;
         this.maxSize = config.maxSize;
         this.statisticsEnabled = config.statisticsEnabled;
-        this.quorumName = config.quorumName;
+        this.splitBrainProtectionName = config.splitBrainProtectionName;
+        this.mergePolicyConfig = config.mergePolicyConfig;
     }
-
-
-    public abstract T getAsReadOnly();
 
     /**
      * Gets the name of this collection.
@@ -221,29 +221,55 @@ public abstract class CollectionConfig<T extends CollectionConfig>
      * Adds an item listener to this collection (listens for when items are added or removed).
      *
      * @param itemListenerConfig the item listener to add to this collection
+     * @return this configuration
      */
-    public void addItemListenerConfig(ItemListenerConfig itemListenerConfig) {
+    public T addItemListenerConfig(ItemListenerConfig itemListenerConfig) {
         getItemListenerConfigs().add(itemListenerConfig);
+        return (T) this;
     }
 
     /**
-     * Returns the quorum name for operations.
+     * Returns the split brain protection name for operations.
      *
-     * @return the quorum name
+     * @return the split brain protection name
      */
-    public String getQuorumName() {
-        return quorumName;
+    public String getSplitBrainProtectionName() {
+        return splitBrainProtectionName;
     }
 
     /**
-     * Sets the quorum name for operations.
+     * Sets the split brain protection name for operations.
      *
-     * @param quorumName the quorum name
+     * @param splitBrainProtectionName the split brain protection name
      * @return the updated configuration
      */
-    public T setQuorumName(String quorumName) {
-        this.quorumName = quorumName;
+    public T setSplitBrainProtectionName(String splitBrainProtectionName) {
+        this.splitBrainProtectionName = splitBrainProtectionName;
         return (T) this;
+    }
+
+    /**
+     * Gets the {@link MergePolicyConfig} for the collection.
+     *
+     * @return the {@link MergePolicyConfig} for the collection
+     */
+    public MergePolicyConfig getMergePolicyConfig() {
+        return mergePolicyConfig;
+    }
+
+    /**
+     * Sets the {@link MergePolicyConfig} for the collection.
+     *
+     * @return the current CollectionConfig
+     */
+    public T setMergePolicyConfig(MergePolicyConfig mergePolicyConfig) {
+        this.mergePolicyConfig = checkNotNull(mergePolicyConfig, "mergePolicyConfig cannot be null");
+        return (T) this;
+    }
+
+    @Override
+    public Class getProvidedMergeTypes() {
+        return SplitBrainMergeTypes.CollectionMergeTypes.class;
     }
 
     @Override
@@ -259,9 +285,8 @@ public abstract class CollectionConfig<T extends CollectionConfig>
         out.writeInt(asyncBackupCount);
         out.writeInt(maxSize);
         out.writeBoolean(statisticsEnabled);
-        if (out.getVersion().isGreaterOrEqual(Versions.V3_10)) {
-            out.writeUTF(quorumName);
-        }
+        out.writeUTF(splitBrainProtectionName);
+        out.writeObject(mergePolicyConfig);
     }
 
     @Override
@@ -272,9 +297,8 @@ public abstract class CollectionConfig<T extends CollectionConfig>
         asyncBackupCount = in.readInt();
         maxSize = in.readInt();
         statisticsEnabled = in.readBoolean();
-        if (in.getVersion().isGreaterOrEqual(Versions.V3_10)) {
-            quorumName = in.readUTF();
-        }
+        splitBrainProtectionName = in.readUTF();
+        mergePolicyConfig = in.readObject();
     }
 
     @Override
@@ -303,7 +327,11 @@ public abstract class CollectionConfig<T extends CollectionConfig>
         if (name != null ? !name.equals(that.name) : that.name != null) {
             return false;
         }
-        if (quorumName != null ? !quorumName.equals(that.quorumName) : that.quorumName != null) {
+        if (splitBrainProtectionName != null ? !splitBrainProtectionName.equals(that.splitBrainProtectionName)
+                : that.splitBrainProtectionName != null) {
+            return false;
+        }
+        if (mergePolicyConfig != null ? !mergePolicyConfig.equals(that.mergePolicyConfig) : that.mergePolicyConfig != null) {
             return false;
         }
         return getItemListenerConfigs().equals(that.getItemListenerConfigs());
@@ -317,7 +345,8 @@ public abstract class CollectionConfig<T extends CollectionConfig>
         result = 31 * result + asyncBackupCount;
         result = 31 * result + getMaxSize();
         result = 31 * result + (statisticsEnabled ? 1 : 0);
-        result = 31 * result + (quorumName != null ? quorumName.hashCode() : 0);
+        result = 31 * result + (splitBrainProtectionName != null ? splitBrainProtectionName.hashCode() : 0);
+        result = 31 * result + (mergePolicyConfig != null ? mergePolicyConfig.hashCode() : 0);
         return result;
     }
 
@@ -325,8 +354,13 @@ public abstract class CollectionConfig<T extends CollectionConfig>
      * Returns field names with values as concatenated String so it can be used in child classes' toString() methods.
      */
     protected String fieldsToString() {
-        return "name='" + name + "', listenerConfigs=" + listenerConfigs + ", backupCount=" + backupCount
-                + ", asyncBackupCount=" + asyncBackupCount + ", maxSize=" + maxSize + ", statisticsEnabled=" + statisticsEnabled
-                + ", quorumName=" + quorumName;
+        return "name='" + name
+                + "', listenerConfigs=" + listenerConfigs
+                + ", backupCount=" + backupCount
+                + ", asyncBackupCount=" + asyncBackupCount
+                + ", maxSize=" + maxSize
+                + ", statisticsEnabled=" + statisticsEnabled
+                + ", splitBrainProtectionName='" + splitBrainProtectionName + "'"
+                + ", mergePolicyConfig='" + mergePolicyConfig + "'";
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,12 +22,14 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.projection.Projection;
+import com.hazelcast.query.PagingPredicate;
 import com.hazelcast.query.Predicate;
-import com.hazelcast.util.IterationType;
+import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.util.IterationType;
 
 import java.io.IOException;
 
-import static com.hazelcast.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 /**
  * Object representing a Query together with all possible co-variants: like a predicate, iterationType, etc.
@@ -43,8 +45,7 @@ public class Query implements IdentifiedDataSerializable {
     public Query() {
     }
 
-    public Query(String mapName, Predicate predicate, IterationType iterationType, Aggregator aggregator,
-                 Projection projection) {
+    public Query(String mapName, Predicate predicate, IterationType iterationType, Aggregator aggregator, Projection projection) {
         this.mapName = checkNotNull(mapName);
         this.predicate = checkNotNull(predicate);
         this.iterationType = checkNotNull(iterationType);
@@ -93,6 +94,15 @@ public class Query implements IdentifiedDataSerializable {
         return projection != null;
     }
 
+    public Result createResult(SerializationService serializationService, long limit) {
+        if (isAggregationQuery()) {
+            Aggregator aggregatorClone = serializationService.toObject(serializationService.toData(aggregator));
+            return new AggregationResult(aggregatorClone, serializationService);
+        } else {
+            return new QueryResult(iterationType, projection, serializationService, limit, predicate instanceof PagingPredicate);
+        }
+    }
+
     public static QueryBuilder of() {
         return new QueryBuilder();
     }
@@ -107,7 +117,7 @@ public class Query implements IdentifiedDataSerializable {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MapDataSerializerHook.QUERY;
     }
 

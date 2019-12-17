@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,15 +16,13 @@
 
 package com.hazelcast.cache.impl.operation;
 
-import com.hazelcast.cache.CacheEntryView;
 import com.hazelcast.cache.impl.CacheDataSerializerHook;
-import com.hazelcast.cache.impl.CacheEntryViews;
 import com.hazelcast.cache.impl.record.CacheRecord;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.spi.BackupOperation;
+import com.hazelcast.spi.impl.operationservice.BackupOperation;
 
 import javax.cache.processor.EntryProcessor;
 import java.io.IOException;
@@ -39,7 +37,7 @@ import static com.hazelcast.cache.impl.operation.MutableOperation.IGNORE_COMPLET
  * functionality to apply the backup using the given {@link javax.cache.processor.EntryProcessor}.</p>
  */
 public class CacheBackupEntryProcessorOperation
-        extends AbstractBackupCacheOperation
+        extends KeyBasedCacheOperation
         implements BackupOperation, IdentifiedDataSerializable {
 
     private EntryProcessor entryProcessor;
@@ -56,28 +54,33 @@ public class CacheBackupEntryProcessorOperation
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return CacheDataSerializerHook.BACKUP_ENTRY_PROCESSOR;
     }
 
     @Override
-    public void runInternal()
-            throws Exception {
-        cache.invoke(key, entryProcessor, arguments, IGNORE_COMPLETION);
+    public void run() throws Exception {
+        if (recordStore != null) {
+            recordStore.invoke(key, entryProcessor, arguments, IGNORE_COMPLETION);
+        }
     }
 
     @Override
-    public void afterRunInternal() throws Exception {
-        if (cache.isWanReplicationEnabled()) {
-            CacheRecord record = cache.getRecord(key);
+    public void afterRun() throws Exception {
+        if (recordStore == null) {
+            return;
+        }
+
+        if (recordStore.isWanReplicationEnabled()) {
+            CacheRecord record = recordStore.getRecord(key);
             if (record != null) {
-                CacheEntryView<Data, Data> entryView = CacheEntryViews.createDefaultEntryView(key,
-                        getNodeEngine().getSerializationService().toData(record.getValue()), record);
-                wanEventPublisher.publishWanReplicationUpdate(name, entryView);
+                publishWanUpdate(key, record);
             } else {
-                wanEventPublisher.publishWanReplicationRemove(name, key);
+                publishWanRemove(key);
             }
         }
+
+        super.afterRun();
     }
 
     @Override

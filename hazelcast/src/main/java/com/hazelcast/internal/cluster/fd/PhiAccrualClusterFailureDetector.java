@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,15 +16,15 @@
 
 package com.hazelcast.internal.cluster.fd;
 
-import com.hazelcast.core.Member;
+import com.hazelcast.cluster.Member;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.spi.properties.HazelcastProperty;
-import com.hazelcast.util.ConstructorFunction;
+import com.hazelcast.internal.util.ConstructorFunction;
 
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
-import static com.hazelcast.util.ConcurrencyUtil.getOrPutIfAbsent;
+import static com.hazelcast.internal.util.ConcurrencyUtil.getOrPutIfAbsent;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 /**
@@ -46,48 +46,38 @@ public class PhiAccrualClusterFailureDetector implements ClusterFailureDetector 
      * </li>
      * </ul>
      */
-    static final HazelcastProperty HEARTBEAT_PHI_FAILURE_DETECTOR_THRESHOLD
+    public static final HazelcastProperty HEARTBEAT_PHI_FAILURE_DETECTOR_THRESHOLD
             = new HazelcastProperty("hazelcast.heartbeat.phiaccrual.failuredetector.threshold", 10);
 
     /**
      * Number of samples to use for calculations.
      */
-    private static final HazelcastProperty HEARTBEAT_PHI_FAILURE_DETECTOR_SAMPLE_SIZE
+    public static final HazelcastProperty HEARTBEAT_PHI_FAILURE_DETECTOR_SAMPLE_SIZE
             = new HazelcastProperty("hazelcast.heartbeat.phiaccrual.failuredetector.sample.size", 200);
 
     /**
      * Minimum standard deviation to use for the normal distribution used when calculating phi.
      * Too low standard deviation might result in too much sensitivity.
      */
-    private static final HazelcastProperty HEARTBEAT_PHI_FAILURE_DETECTOR_MIN_STD_DEV_MILLIS
+    public static final HazelcastProperty HEARTBEAT_PHI_FAILURE_DETECTOR_MIN_STD_DEV_MILLIS
             = new HazelcastProperty("hazelcast.heartbeat.phiaccrual.failuredetector.min.std.dev.millis", 100, MILLISECONDS);
 
 
-    private final int phiThreshold;
-    private final int maxSampleSize;
-    private final long minStdDeviationMillis;
-    private final long acceptableHeartbeatPauseMillis;
-    private final long firstHeartbeatEstimateMillis;
-
-    private final ConcurrentMap<Member, FailureDetector> failureDetectors
-            = new ConcurrentHashMap<Member, FailureDetector>();
-
-    private final ConstructorFunction<Member, FailureDetector> failureDetectorConstructor
-            = new ConstructorFunction<Member, FailureDetector>() {
-
-        @Override
-        public FailureDetector createNew(Member arg) {
-            return new PhiAccrualFailureDetector(phiThreshold, maxSampleSize, minStdDeviationMillis,
-                    acceptableHeartbeatPauseMillis, firstHeartbeatEstimateMillis);
-        }
-    };
+    private final double phiThreshold;
+    private final ConcurrentMap<Member, FailureDetector> failureDetectors = new ConcurrentHashMap<>();
+    private final ConstructorFunction<Member, FailureDetector> failureDetectorConstructor;
 
     public PhiAccrualClusterFailureDetector(long maxNoHeartbeatMillis, long heartbeatIntervalMillis, HazelcastProperties props) {
-        acceptableHeartbeatPauseMillis = maxNoHeartbeatMillis;
-        firstHeartbeatEstimateMillis = heartbeatIntervalMillis;
-        phiThreshold = props.getInteger(HEARTBEAT_PHI_FAILURE_DETECTOR_THRESHOLD);
-        maxSampleSize = props.getInteger(HEARTBEAT_PHI_FAILURE_DETECTOR_SAMPLE_SIZE);
-        minStdDeviationMillis = props.getMillis(HEARTBEAT_PHI_FAILURE_DETECTOR_MIN_STD_DEV_MILLIS);
+        this(maxNoHeartbeatMillis, heartbeatIntervalMillis, props.getDouble(HEARTBEAT_PHI_FAILURE_DETECTOR_THRESHOLD),
+                props.getInteger(HEARTBEAT_PHI_FAILURE_DETECTOR_SAMPLE_SIZE),
+                props.getMillis(HEARTBEAT_PHI_FAILURE_DETECTOR_MIN_STD_DEV_MILLIS));
+    }
+
+    public PhiAccrualClusterFailureDetector(long maxNoHeartbeatMillis, long heartbeatIntervalMillis, double phiThreshold,
+                                            int maxSampleSize, long minStdDeviationMillis) {
+        this.phiThreshold = phiThreshold;
+        this.failureDetectorConstructor = arg -> new PhiAccrualFailureDetector(phiThreshold, maxSampleSize, minStdDeviationMillis,
+                maxNoHeartbeatMillis, heartbeatIntervalMillis);
     }
 
     @Override

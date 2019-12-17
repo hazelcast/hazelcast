@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,9 +26,9 @@ import org.junit.runner.RunWith;
 import java.util.concurrent.Callable;
 import java.util.concurrent.FutureTask;
 
-import static com.hazelcast.spi.Operation.GENERIC_PARTITION_ID;
-import static com.hazelcast.spi.properties.GroupProperty.GENERIC_OPERATION_THREAD_COUNT;
-import static com.hazelcast.spi.properties.GroupProperty.PRIORITY_GENERIC_OPERATION_THREAD_COUNT;
+import static com.hazelcast.spi.impl.operationservice.Operation.GENERIC_PARTITION_ID;
+import static com.hazelcast.spi.properties.ClusterProperty.GENERIC_OPERATION_THREAD_COUNT;
+import static com.hazelcast.spi.properties.ClusterProperty.PRIORITY_GENERIC_OPERATION_THREAD_COUNT;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastSerialClassRunner.class)
@@ -60,7 +60,8 @@ public class OperationExecutorImpl_RunTest extends OperationExecutorImpl_Abstrac
         config.setProperty(PRIORITY_GENERIC_OPERATION_THREAD_COUNT.getName(), "0");
         initExecutor();
 
-        final DummyOperationRunner genericOperationHandler = ((DummyOperationRunnerFactory) handlerFactory).genericOperationHandlers.get(0);
+        final DummyOperationRunner genericOperationHandler
+                = ((DummyOperationRunnerFactory) handlerFactory).genericOperationHandlers.get(0);
         final DummyGenericOperation genericOperation = new DummyGenericOperation();
 
         PartitionSpecificCallable task = new PartitionSpecificCallable(GENERIC_PARTITION_ID) {

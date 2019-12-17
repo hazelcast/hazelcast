@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,18 +17,19 @@
 package com.hazelcast.hotrestart;
 
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import static com.hazelcast.test.HazelcastTestSupport.assumeDifferentHashCodes;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class BackupTaskStatusTest {
 
     private BackupTaskStatus backupTaskStatus;
@@ -73,6 +74,7 @@ public class BackupTaskStatusTest {
         assertEquals(backupTaskStatus.hashCode(), backupTaskStatus.hashCode());
         assertEquals(backupTaskStatus.hashCode(), backupTaskStatusWithSameAttributes.hashCode());
 
+        assumeDifferentHashCodes();
         assertNotEquals(backupTaskStatus.hashCode(), backupTaskStatusOtherState.hashCode());
         assertNotEquals(backupTaskStatus.hashCode(), backupTaskStatusOtherCompleted.hashCode());
         assertNotEquals(backupTaskStatus.hashCode(), backupTaskStatusOtherTotal.hashCode());

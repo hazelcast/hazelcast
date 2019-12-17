@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,26 +17,29 @@
 package com.hazelcast.multimap.impl.txn;
 
 import com.hazelcast.core.EntryEventType;
+import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.multimap.impl.MultiMapContainer;
 import com.hazelcast.multimap.impl.MultiMapDataSerializerHook;
 import com.hazelcast.multimap.impl.MultiMapRecord;
 import com.hazelcast.multimap.impl.MultiMapService;
 import com.hazelcast.multimap.impl.MultiMapValue;
-import com.hazelcast.multimap.impl.operations.MultiMapKeyBasedOperation;
+import com.hazelcast.multimap.impl.operations.AbstractKeyBasedMultiMapOperation;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.BackupAwareOperation;
-import com.hazelcast.spi.Operation;
+import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.spi.impl.operationservice.BackupAwareOperation;
+import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.spi.impl.operationservice.MutatingOperation;
 
 import java.io.IOException;
 import java.util.Collection;
 
-public class TxnPutOperation extends MultiMapKeyBasedOperation implements BackupAwareOperation {
+public class TxnPutOperation extends AbstractKeyBasedMultiMapOperation implements BackupAwareOperation, MutatingOperation {
 
-    long recordId;
-    Data value;
-    long startTimeNanos = -1;
+    private long recordId;
+    private Data value;
+
+    private transient long startTimeNanos;
 
     public TxnPutOperation() {
     }
@@ -52,11 +55,12 @@ public class TxnPutOperation extends MultiMapKeyBasedOperation implements Backup
         startTimeNanos = System.nanoTime();
         MultiMapContainer container = getOrCreateContainer();
         MultiMapValue multiMapValue = container.getOrCreateMultiMapValue(dataKey);
-        response = true;
         if (multiMapValue.containsRecordId(recordId)) {
             response = false;
             return;
         }
+        response = true;
+        container.update();
         Collection<MultiMapRecord> coll = multiMapValue.getCollection(false);
         MultiMapRecord record = new MultiMapRecord(recordId, isBinary() ? value : toObject(value));
         coll.add(record);
@@ -65,7 +69,7 @@ public class TxnPutOperation extends MultiMapKeyBasedOperation implements Backup
     @Override
     public void afterRun() throws Exception {
         long elapsed = Math.max(0, System.nanoTime() - startTimeNanos);
-        final MultiMapService service = getService();
+        MultiMapService service = getService();
         service.getLocalMultiMapStatsImpl(name).incrementPutLatencyNanos(elapsed);
         if (Boolean.TRUE.equals(response)) {
             publishEvent(EntryEventType.ADDED, dataKey, value, null);
@@ -90,19 +94,18 @@ public class TxnPutOperation extends MultiMapKeyBasedOperation implements Backup
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeLong(recordId);
-        out.writeData(value);
+        IOUtil.writeData(out, value);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         recordId = in.readLong();
-        value = in.readData();
+        value = IOUtil.readData(in);
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MultiMapDataSerializerHook.TXN_PUT;
     }
-
 }

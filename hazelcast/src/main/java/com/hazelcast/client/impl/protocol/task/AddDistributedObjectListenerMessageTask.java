@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,13 +20,14 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ClientAddDistributedObjectListenerCodec;
 import com.hazelcast.core.DistributedObjectEvent;
 import com.hazelcast.core.DistributedObjectListener;
-import com.hazelcast.instance.Node;
+import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.cluster.ClusterService;
-import com.hazelcast.nio.Connection;
-import com.hazelcast.spi.ProxyService;
+import com.hazelcast.internal.nio.Connection;
+import com.hazelcast.spi.impl.proxyservice.ProxyService;
 import com.hazelcast.spi.impl.proxyservice.impl.ProxyServiceImpl;
 
 import java.security.Permission;
+import java.util.UUID;
 import java.util.concurrent.Callable;
 
 public class AddDistributedObjectListenerMessageTask
@@ -40,13 +41,8 @@ public class AddDistributedObjectListenerMessageTask
     @Override
     protected Object call() throws Exception {
         final ProxyService proxyService = clientEngine.getProxyService();
-        final String registrationId = proxyService.addProxyListener(this);
-        endpoint.addDestroyAction(registrationId, new Callable() {
-            @Override
-            public Boolean call() {
-                return proxyService.removeProxyListener(registrationId);
-            }
-        });
+        final UUID registrationId = proxyService.addProxyListener(this);
+        endpoint.addDestroyAction(registrationId, (Callable) () -> proxyService.removeProxyListener(registrationId));
 
         return registrationId;
     }
@@ -58,7 +54,7 @@ public class AddDistributedObjectListenerMessageTask
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return ClientAddDistributedObjectListenerCodec.encodeResponse((String) response);
+        return ClientAddDistributedObjectListenerCodec.encodeResponse((UUID) response);
     }
 
     @Override
@@ -115,7 +111,7 @@ public class AddDistributedObjectListenerMessageTask
         }
 
         ClusterService clusterService = clientEngine.getClusterService();
-        boolean currentMemberIsMaster = clusterService.getMasterAddress().equals(clientEngine.getThisAddress());
+        boolean currentMemberIsMaster = clusterService.isMaster();
         if (parameters.localOnly && !currentMemberIsMaster) {
             //if client registered localOnly, only master is allowed to send request
             return false;

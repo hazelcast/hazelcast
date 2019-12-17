@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,7 @@
 package com.hazelcast.spring;
 
 import com.hazelcast.client.HazelcastClient;
-import com.hazelcast.client.impl.HazelcastClientProxy;
+import com.hazelcast.client.impl.clientside.HazelcastClientProxy;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
@@ -81,7 +81,7 @@ public class TestBeansApplicationContext extends HazelcastTestSupport {
         HazelcastInstance instance = (HazelcastInstance) context.getBean("instance");
         waitInstanceForSafeState(instance);
         Config config = instance.getConfig();
-        assertEquals("spring-group", config.getGroupConfig().getName());
+        assertEquals("spring-cluster", config.getClusterName());
         assertTrue(config.getNetworkConfig().getJoin().getTcpIpConfig().isEnabled());
         assertEquals(6, config.getMapConfig("map1").getBackupCount());
         assertFalse(config.getMapConfig("map1").isStatisticsEnabled());

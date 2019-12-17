@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,9 @@
 
 package com.hazelcast.map.impl.record;
 
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.internal.serialization.Data;
 
+import java.util.Objects;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 
 /**
@@ -26,7 +27,6 @@ import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 class CachedDataRecord extends DataRecord {
     private static final AtomicReferenceFieldUpdater<CachedDataRecord, Object> CACHED_VALUE =
             AtomicReferenceFieldUpdater.newUpdater(CachedDataRecord.class, Object.class, "cachedValue");
-
 
     private transient volatile Object cachedValue;
 
@@ -68,8 +68,7 @@ class CachedDataRecord extends DataRecord {
         }
 
         CachedDataRecord that = (CachedDataRecord) o;
-
-        return cachedValue != null ? cachedValue.equals(that.cachedValue) : that.cachedValue == null;
+        return Objects.equals(cachedValue, that.cachedValue);
 
     }
 
@@ -78,5 +77,13 @@ class CachedDataRecord extends DataRecord {
         int result = super.hashCode();
         result = 31 * result + (cachedValue != null ? cachedValue.hashCode() : 0);
         return result;
+    }
+
+    @Override
+    public String toString() {
+        return "CachedDataRecord{"
+                + "cachedValue=" + cachedValue
+                + ", " + super.toString()
+                + "} ";
     }
 }

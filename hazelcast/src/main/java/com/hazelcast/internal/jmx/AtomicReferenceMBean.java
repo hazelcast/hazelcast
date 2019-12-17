@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,10 +16,10 @@
 
 package com.hazelcast.internal.jmx;
 
-import com.hazelcast.core.IAtomicReference;
+import com.hazelcast.cp.IAtomicReference;
 
 /**
- * Management bean for {@link com.hazelcast.core.IAtomicReference}
+ * Management bean for {@link IAtomicReference}
  */
 @ManagedDescription("IAtomicReference")
 public class AtomicReferenceMBean extends HazelcastMBean<IAtomicReference> {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,8 @@ import com.hazelcast.nio.serialization.ByteArraySerializer;
 import com.hazelcast.nio.serialization.StreamSerializer;
 
 import java.io.IOException;
+import java.util.AbstractMap;
+import java.util.UUID;
 
 import static com.hazelcast.internal.serialization.impl.SerializationConstants.CONSTANT_TYPE_BOOLEAN;
 import static com.hazelcast.internal.serialization.impl.SerializationConstants.CONSTANT_TYPE_BOOLEAN_ARRAY;
@@ -31,6 +33,7 @@ import static com.hazelcast.internal.serialization.impl.SerializationConstants.C
 import static com.hazelcast.internal.serialization.impl.SerializationConstants.CONSTANT_TYPE_CHAR_ARRAY;
 import static com.hazelcast.internal.serialization.impl.SerializationConstants.CONSTANT_TYPE_DOUBLE;
 import static com.hazelcast.internal.serialization.impl.SerializationConstants.CONSTANT_TYPE_DOUBLE_ARRAY;
+import static com.hazelcast.internal.serialization.impl.SerializationConstants.CONSTANT_TYPE_SIMPLE_ENTRY;
 import static com.hazelcast.internal.serialization.impl.SerializationConstants.CONSTANT_TYPE_FLOAT;
 import static com.hazelcast.internal.serialization.impl.SerializationConstants.CONSTANT_TYPE_FLOAT_ARRAY;
 import static com.hazelcast.internal.serialization.impl.SerializationConstants.CONSTANT_TYPE_INTEGER;
@@ -40,9 +43,10 @@ import static com.hazelcast.internal.serialization.impl.SerializationConstants.C
 import static com.hazelcast.internal.serialization.impl.SerializationConstants.CONSTANT_TYPE_NULL;
 import static com.hazelcast.internal.serialization.impl.SerializationConstants.CONSTANT_TYPE_SHORT;
 import static com.hazelcast.internal.serialization.impl.SerializationConstants.CONSTANT_TYPE_SHORT_ARRAY;
+import static com.hazelcast.internal.serialization.impl.SerializationConstants.CONSTANT_TYPE_SIMPLE_IMMUTABLE_ENTRY;
 import static com.hazelcast.internal.serialization.impl.SerializationConstants.CONSTANT_TYPE_STRING;
 import static com.hazelcast.internal.serialization.impl.SerializationConstants.CONSTANT_TYPE_STRING_ARRAY;
-
+import static com.hazelcast.internal.serialization.impl.SerializationConstants.CONSTANT_TYPE_UUID;
 
 public final class ConstantSerializers {
 
@@ -388,6 +392,63 @@ public final class ConstantSerializers {
         @Override
         public void write(final ObjectDataOutput out, final String[] obj) throws IOException {
             out.writeUTFArray(obj);
+        }
+    }
+
+    public static final class UuidSerializer extends SingletonSerializer<UUID> {
+
+        @Override
+        public int getTypeId() {
+            return CONSTANT_TYPE_UUID;
+        }
+
+        @Override
+        public UUID read(final ObjectDataInput in) throws IOException {
+            return new UUID(in.readLong(), in.readLong());
+        }
+
+        @Override
+        public void write(final ObjectDataOutput out, final UUID uuid) throws IOException {
+            out.writeLong(uuid.getMostSignificantBits());
+            out.writeLong(uuid.getLeastSignificantBits());
+        }
+    }
+
+    public static final class SimpleEntrySerializer extends SingletonSerializer<AbstractMap.SimpleEntry> {
+
+        @Override
+        public int getTypeId() {
+            return CONSTANT_TYPE_SIMPLE_ENTRY;
+        }
+
+        @Override
+        public AbstractMap.SimpleEntry read(final ObjectDataInput in) throws IOException {
+            return new AbstractMap.SimpleEntry(in.readObject(), in.readObject());
+        }
+
+        @Override
+        public void write(final ObjectDataOutput out, final AbstractMap.SimpleEntry entry) throws IOException {
+            out.writeObject(entry.getKey());
+            out.writeObject(entry.getValue());
+        }
+    }
+
+    public static final class SimpleImmutableEntrySerializer extends SingletonSerializer<AbstractMap.SimpleImmutableEntry> {
+
+        @Override
+        public int getTypeId() {
+            return CONSTANT_TYPE_SIMPLE_IMMUTABLE_ENTRY;
+        }
+
+        @Override
+        public AbstractMap.SimpleImmutableEntry read(final ObjectDataInput in) throws IOException {
+            return new AbstractMap.SimpleImmutableEntry(in.readObject(), in.readObject());
+        }
+
+        @Override
+        public void write(final ObjectDataOutput out, final AbstractMap.SimpleImmutableEntry entry) throws IOException {
+            out.writeObject(entry.getKey());
+            out.writeObject(entry.getValue());
         }
     }
 

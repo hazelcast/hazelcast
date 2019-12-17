@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,10 @@ package com.hazelcast.internal.util;
  */
 public final class RuntimeAvailableProcessors {
 
-    private static volatile int availableProcessors = Runtime.getRuntime().availableProcessors();
+    // number of available processors currently configured
+    private static volatile int currentAvailableProcessors = Runtime.getRuntime().availableProcessors();
+    // number of processors to be used when reset
+    private static volatile int defaultAvailableProcessors = Runtime.getRuntime().availableProcessors();
 
     private RuntimeAvailableProcessors() {
     }
@@ -38,7 +41,7 @@ public final class RuntimeAvailableProcessors {
      * @return number of available processors
      */
     public static int get() {
-        return availableProcessors;
+        return currentAvailableProcessors;
     }
 
     /**
@@ -49,7 +52,18 @@ public final class RuntimeAvailableProcessors {
      * @param availableProcessors number of available processors
      */
     public static void override(int availableProcessors) {
-        RuntimeAvailableProcessors.availableProcessors = availableProcessors;
+        RuntimeAvailableProcessors.currentAvailableProcessors = availableProcessors;
+    }
+
+    /**
+     * Overrides the number of available processors that are set by the method {@link #override(int)}
+     * <p>
+     * This is to be used only for testing.
+     *
+     * @param availableProcessors
+     */
+    public static void overrideDefault(int availableProcessors) {
+        defaultAvailableProcessors = availableProcessors;
     }
 
     /**
@@ -58,6 +72,6 @@ public final class RuntimeAvailableProcessors {
      * This is to be used only for testing.
      */
     public static void resetOverride() {
-        RuntimeAvailableProcessors.availableProcessors = Runtime.getRuntime().availableProcessors();
+        RuntimeAvailableProcessors.currentAvailableProcessors = defaultAvailableProcessors;
     }
 }

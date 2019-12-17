@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,13 +18,14 @@ package com.hazelcast.nio.serialization.compatibility;
 
 import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.config.SerializerConfig;
+import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.internal.serialization.impl.HeapData;
 import com.hazelcast.nio.serialization.ClassDefinition;
 import com.hazelcast.nio.serialization.ClassDefinitionBuilder;
-import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.serialization.SerializationService;
-import com.hazelcast.test.HazelcastParametersRunnerFactory;
+import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -40,19 +41,21 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Array;
 import java.nio.ByteOrder;
+import java.util.Collection;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.LinkedList;
-import java.util.List;
-import java.util.ListIterator;
 import java.util.Map;
 
 import static com.hazelcast.nio.serialization.compatibility.ReferenceObjects.IDENTIFIED_DATA_SERIALIZABLE_FACTORY_ID;
 import static com.hazelcast.nio.serialization.compatibility.ReferenceObjects.INNER_PORTABLE_CLASS_ID;
 import static com.hazelcast.nio.serialization.compatibility.ReferenceObjects.PORTABLE_FACTORY_ID;
-import static junit.framework.TestCase.assertTrue;
+import static com.hazelcast.test.HazelcastTestSupport.assumeConfiguredByteOrder;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 @RunWith(Parameterized.class)
-@UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
+@UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
 @Category(QuickTest.class)
 public class BinaryCompatibilityTest {
 
@@ -93,6 +96,10 @@ public class BinaryCompatibilityTest {
     public static void init() throws IOException {
         for (byte version : versions) {
             InputStream input = BinaryCompatibilityTest.class.getResourceAsStream("/" + createFileName(version));
+            if (input == null) {
+                fail("Could not locate file " + createFileName(version) + ". Follow the instructions in "
+                        + "BinaryCompatibilityFileGenerator to generate the file.");
+            }
             DataInputStream inputStream = new DataInputStream(input);
             while (input.available() != 0) {
                 String objectKey = inputStream.readUTF();
@@ -152,13 +159,17 @@ public class BinaryCompatibilityTest {
                 .addFloatField("f")
                 .build();
 
-        return new DefaultSerializationServiceBuilder()
+        InternalSerializationService serializationService = new DefaultSerializationServiceBuilder()
                 .setVersion(version)
                 .addPortableFactory(PORTABLE_FACTORY_ID, new APortableFactory())
                 .addDataSerializableFactory(IDENTIFIED_DATA_SERIALIZABLE_FACTORY_ID, new ADataSerializableFactory())
                 .setConfig(config)
                 .addClassDefinition(classDefinition)
                 .build();
+
+        assumeConfiguredByteOrder(serializationService, byteOrder);
+
+        return serializationService;
     }
 
     private static boolean equals(Object a, Object b) {
@@ -184,9 +195,9 @@ public class BinaryCompatibilityTest {
             }
             return true;
         }
-        if (a instanceof List && b instanceof List) {
-            ListIterator e1 = ((List) a).listIterator();
-            ListIterator e2 = ((List) b).listIterator();
+        if (a instanceof Collection && b instanceof Collection) {
+            Iterator e1 = ((Collection) a).iterator();
+            Iterator e2 = ((Collection) b).iterator();
             while (e1.hasNext() && e2.hasNext()) {
                 Object o1 = e1.next();
                 Object o2 = e2.next();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,8 @@
 
 package com.hazelcast.internal.cluster.impl;
 
-import com.hazelcast.core.Member;
-import com.hazelcast.core.MemberSelector;
+import com.hazelcast.cluster.Member;
+import com.hazelcast.cluster.MemberSelector;
 
 import java.lang.reflect.Array;
 import java.util.ArrayList;
@@ -27,14 +27,14 @@ import java.util.List;
 import java.util.NoSuchElementException;
 
 /**
- * An immutable collection that applies all the {@link com.hazelcast.core.MemberSelector} instances to
- * its internal {@link com.hazelcast.core.Member} collection. It reflects changes in the internal collection.
+ * An immutable collection that applies all the {@link MemberSelector} instances to
+ * its internal {@link Member} collection. It reflects changes in the internal collection.
  * Mutating methods throw {@link java.lang.UnsupportedOperationException}
  * It is mainly used for querying a member list.
- * @param <M> A subclass of {@link com.hazelcast.core.Member} interface
+ *
+ * @param <M> A subclass of {@link Member} interface
  */
 public final class MemberSelectingCollection<M extends Member> implements Collection<M> {
-
 
     private final Collection<M> members;
 
@@ -47,13 +47,16 @@ public final class MemberSelectingCollection<M extends Member> implements Collec
 
     @Override
     public int size() {
+        return count(members, selector);
+    }
+
+    public static <M extends Member> int count(Collection<M> members, MemberSelector memberSelector) {
         int size = 0;
         for (M member : members) {
-            if (selector.select(member)) {
+            if (memberSelector.select(member)) {
                 size++;
             }
         }
-
         return size;
     }
 
@@ -80,19 +83,18 @@ public final class MemberSelectingCollection<M extends Member> implements Collec
 
     @Override
     public Object[] toArray() {
-        List<Object> result = new ArrayList<Object>();
+        List<Object> result = new ArrayList<>();
         for (M member : members) {
             if (selector.select(member)) {
                 result.add(member);
             }
         }
-
-        return result.toArray(new Object[result.size()]);
+        return result.toArray(new Object[0]);
     }
 
     @Override
     public <T> T[] toArray(T[] a) {
-        List<Object> result = new ArrayList<Object>();
+        List<Object> result = new ArrayList<>();
         for (M member : members) {
             if (selector.select(member)) {
                 result.add(member);
@@ -176,7 +178,7 @@ public final class MemberSelectingCollection<M extends Member> implements Collec
             if (member != null || hasNext()) {
                 nextMember = member;
                 member = null;
-            } else  {
+            } else {
                 throw new NoSuchElementException();
             }
 

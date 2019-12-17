@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,11 +17,11 @@
 package com.hazelcast.internal.partition.service;
 
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.spi.ManagedService;
-import com.hazelcast.spi.MigrationAwareService;
-import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.PartitionMigrationEvent;
-import com.hazelcast.spi.ServiceNamespace;
+import com.hazelcast.internal.services.ManagedService;
+import com.hazelcast.internal.partition.MigrationAwareService;
+import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.internal.partition.PartitionMigrationEvent;
+import com.hazelcast.internal.services.ServiceNamespace;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -66,7 +66,8 @@ public abstract class TestAbstractMigrationAwareService<N> implements ManagedSer
         onBeforeMigration(event);
     }
 
-    protected void onBeforeMigration(PartitionMigrationEvent event) {}
+    protected void onBeforeMigration(PartitionMigrationEvent event) {
+    }
 
     @Override
     public final void commitMigration(PartitionMigrationEvent event) {
@@ -76,7 +77,8 @@ public abstract class TestAbstractMigrationAwareService<N> implements ManagedSer
         onCommitMigration(event);
     }
 
-    protected void onCommitMigration(PartitionMigrationEvent event) {}
+    protected void onCommitMigration(PartitionMigrationEvent event) {
+    }
 
     @Override
     public void rollbackMigration(PartitionMigrationEvent event) {
@@ -86,7 +88,8 @@ public abstract class TestAbstractMigrationAwareService<N> implements ManagedSer
         onRollbackMigration(event);
     }
 
-    protected void onRollbackMigration(PartitionMigrationEvent event) {}
+    protected void onRollbackMigration(PartitionMigrationEvent event) {
+    }
 
     public List<PartitionMigrationEvent> getBeforeEvents() {
         synchronized (beforeEvents) {

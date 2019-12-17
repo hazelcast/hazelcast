@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,20 +19,23 @@ package com.hazelcast.map.impl.operation;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.spi.Notifier;
-import com.hazelcast.spi.PartitionAwareOperation;
-import com.hazelcast.spi.ReadonlyOperation;
-import com.hazelcast.spi.WaitNotifyKey;
+import com.hazelcast.spi.impl.operationservice.Notifier;
+import com.hazelcast.spi.impl.operationservice.PartitionAwareOperation;
+import com.hazelcast.spi.impl.operationservice.ReadonlyOperation;
+import com.hazelcast.spi.impl.operationservice.WaitNotifyKey;
 
 import java.io.IOException;
 
 /**
- * Used to notify {@link AwaitMapFlushOperation} when {@link com.hazelcast.map.impl.mapstore.writebehind.StoreWorker StoreWorker}
- * managed to flush this {@link AwaitMapFlushOperation#flushSequence flushSequence}.
+ * Used to notify {@link AwaitMapFlushOperation} when {@link
+ * com.hazelcast.map.impl.mapstore.writebehind.StoreWorker
+ * StoreWorker} managed to flush this {@link
+ * AwaitMapFlushOperation#sequence flushSequence}.
  *
  * @see AwaitMapFlushOperation
  */
-public class NotifyMapFlushOperation extends MapOperation implements PartitionAwareOperation, ReadonlyOperation, Notifier {
+public class NotifyMapFlushOperation extends MapOperation
+        implements PartitionAwareOperation, ReadonlyOperation, Notifier {
 
     private long sequence;
 
@@ -45,7 +48,7 @@ public class NotifyMapFlushOperation extends MapOperation implements PartitionAw
     }
 
     @Override
-    public void run() throws Exception {
+    protected void runInternal() {
         // NOP.
     }
 
@@ -72,7 +75,7 @@ public class NotifyMapFlushOperation extends MapOperation implements PartitionAw
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MapDataSerializerHook.NOTIFY_MAP_FLUSH;
     }
 }

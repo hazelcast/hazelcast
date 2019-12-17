@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,19 +17,21 @@
 package com.hazelcast.internal.serialization.impl;
 
 import com.hazelcast.internal.serialization.InternalSerializationService;
-import com.hazelcast.nio.Bits;
-import com.hazelcast.nio.BufferObjectDataInput;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.internal.nio.Bits;
+import com.hazelcast.internal.nio.BufferObjectDataInput;
+import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.internal.util.collection.ArrayUtils;
 
 import java.io.EOFException;
 import java.io.IOException;
 import java.nio.ByteOrder;
 
-import static com.hazelcast.nio.Bits.CHAR_SIZE_IN_BYTES;
-import static com.hazelcast.nio.Bits.INT_SIZE_IN_BYTES;
-import static com.hazelcast.nio.Bits.LONG_SIZE_IN_BYTES;
-import static com.hazelcast.nio.Bits.NULL_ARRAY_LENGTH;
-import static com.hazelcast.nio.Bits.SHORT_SIZE_IN_BYTES;
+import static com.hazelcast.internal.nio.Bits.CHAR_SIZE_IN_BYTES;
+import static com.hazelcast.internal.nio.Bits.INT_SIZE_IN_BYTES;
+import static com.hazelcast.internal.nio.Bits.LONG_SIZE_IN_BYTES;
+import static com.hazelcast.internal.nio.Bits.NULL_ARRAY_LENGTH;
+import static com.hazelcast.internal.nio.Bits.SHORT_SIZE_IN_BYTES;
+import static com.hazelcast.internal.nio.Bits.UTF_8;
 import static com.hazelcast.version.Version.UNKNOWN;
 
 class ByteArrayObjectDataInput extends VersionedObjectDataInput implements BufferObjectDataInput {
@@ -74,6 +76,7 @@ class ByteArrayObjectDataInput extends VersionedObjectDataInput implements Buffe
             charBuffer = new char[UTF_BUFFER_SIZE * 8];
         }
         version = UNKNOWN;
+        wanProtocolVersion = UNKNOWN;
     }
 
     @Override
@@ -90,9 +93,10 @@ class ByteArrayObjectDataInput extends VersionedObjectDataInput implements Buffe
     public final int read(byte[] b, int off, int len) throws EOFException {
         if (b == null) {
             throw new NullPointerException();
-        } else if (off < 0 || len < 0 || len > b.length - off) {
-            throw new IndexOutOfBoundsException();
-        } else if (len == 0) {
+        } else {
+            ArrayUtils.boundsCheck(b.length, off, len);
+        }
+        if (len == 0) {
             return 0;
         }
         if (pos >= size) {
@@ -287,8 +291,8 @@ class ByteArrayObjectDataInput extends VersionedObjectDataInput implements Buffe
         return Bits.readInt(data, position, byteOrder == ByteOrder.BIG_ENDIAN);
     }
 
-    @Deprecated
-    public final String readLine() throws EOFException {
+    @Override
+    public final String readLine() {
         throw new UnsupportedOperationException();
     }
 
@@ -548,23 +552,14 @@ class ByteArrayObjectDataInput extends VersionedObjectDataInput implements Buffe
      */
     @Override
     public final String readUTF() throws IOException {
-        int charCount = readInt();
-        if (charCount == NULL_ARRAY_LENGTH) {
+        int numberOfBytes = readInt();
+        if (numberOfBytes == NULL_ARRAY_LENGTH) {
             return null;
         }
-        if (charBuffer == null || charCount > charBuffer.length) {
-            charBuffer = new char[charCount];
-        }
-        byte b;
-        for (int i = 0; i < charCount; i++) {
-            b = readByte();
-            if (b < 0) {
-                charBuffer[i] = Bits.readUtf8Char(this, b);
-            } else {
-                charBuffer[i] = (char) b;
-            }
-        }
-        return new String(charBuffer, 0, charCount);
+
+        String result = new String(data, pos, numberOfBytes, UTF_8);
+        pos += numberOfBytes;
+        return result;
     }
 
     @Override
@@ -670,6 +665,11 @@ class ByteArrayObjectDataInput extends VersionedObjectDataInput implements Buffe
     @Override
     public final ClassLoader getClassLoader() {
         return service.getClassLoader();
+    }
+
+    @Override
+    public InternalSerializationService getSerializationService() {
+        return service;
     }
 
     public ByteOrder getByteOrder() {

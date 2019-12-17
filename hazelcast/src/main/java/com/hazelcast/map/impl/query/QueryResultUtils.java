@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,14 +17,15 @@
 package com.hazelcast.map.impl.query;
 
 import com.hazelcast.query.PagingPredicate;
+import com.hazelcast.query.PartitionPredicate;
 import com.hazelcast.query.Predicate;
-import com.hazelcast.spi.serialization.SerializationService;
-import com.hazelcast.util.IterationType;
+import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.util.IterationType;
 
 import java.util.ArrayList;
 import java.util.Set;
 
-import static com.hazelcast.util.SortingUtil.getSortedQueryResultSet;
+import static com.hazelcast.internal.util.SortingUtil.getSortedQueryResultSet;
 
 public final class QueryResultUtils {
 
@@ -34,11 +35,17 @@ public final class QueryResultUtils {
     public static Set transformToSet(
             SerializationService ss, QueryResult queryResult, Predicate predicate,
             IterationType iterationType, boolean unique, boolean binary) {
-        if (predicate instanceof PagingPredicate) {
+        Predicate unwrappedPredicate = unwrapPartitionPredicate(predicate);
+
+        if (unwrappedPredicate instanceof PagingPredicate) {
             Set result = new QueryResultCollection(ss, IterationType.ENTRY, binary, unique, queryResult);
-            return getSortedQueryResultSet(new ArrayList(result), (PagingPredicate) predicate, iterationType);
+            return getSortedQueryResultSet(new ArrayList(result), (PagingPredicate) unwrappedPredicate, iterationType);
         } else {
             return new QueryResultCollection(ss, iterationType, binary, unique, queryResult);
         }
+    }
+
+    private static Predicate unwrapPartitionPredicate(Predicate predicate) {
+        return predicate instanceof PartitionPredicate ? ((PartitionPredicate) predicate).getTarget() : predicate;
     }
 }

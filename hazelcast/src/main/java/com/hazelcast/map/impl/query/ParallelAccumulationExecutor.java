@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,16 +18,18 @@ package com.hazelcast.map.impl.query;
 
 import com.hazelcast.aggregation.Aggregator;
 import com.hazelcast.query.impl.QueryableEntry;
-import com.hazelcast.spi.serialization.SerializationService;
-import com.hazelcast.util.executor.ManagedExecutorService;
+import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.util.collection.PartitionIdSet;
+import com.hazelcast.internal.util.executor.ManagedExecutorService;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Future;
 
-import static com.hazelcast.util.FutureUtil.RETHROW_EVERYTHING;
-import static com.hazelcast.util.FutureUtil.returnWithDeadline;
+import static com.hazelcast.query.impl.predicates.PredicateUtils.estimatedSizeOf;
+import static com.hazelcast.internal.util.FutureUtil.RETHROW_EVERYTHING;
+import static com.hazelcast.internal.util.FutureUtil.returnWithDeadline;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 /**
@@ -53,7 +55,7 @@ public class ParallelAccumulationExecutor implements AccumulationExecutor {
     @Override
     @SuppressWarnings("unchecked")
     public AggregationResult execute(
-            Aggregator aggregator, Collection<QueryableEntry> entries, Collection<Integer> partitionIds) {
+            Aggregator aggregator, Collection<QueryableEntry> entries, PartitionIdSet partitionIds) {
         Collection<Aggregator> chunkAggregators = accumulateParallel(aggregator, entries);
 
         Aggregator resultAggregator = clone(aggregator);
@@ -65,13 +67,13 @@ public class ParallelAccumulationExecutor implements AccumulationExecutor {
             resultAggregator.onCombinationFinished();
         }
 
-        AggregationResult result = new AggregationResult(resultAggregator);
+        AggregationResult result = new AggregationResult(resultAggregator, serializationService);
         result.setPartitionIds(partitionIds);
         return result;
     }
 
     protected Collection<Aggregator> accumulateParallel(Aggregator aggregator, Collection<QueryableEntry> entries) {
-        Collection<Future<Aggregator>> futures = new ArrayList<Future<Aggregator>>();
+        Collection<Future<Aggregator>> futures = new ArrayList<>();
         Collection<QueryableEntry>[] chunks = split(entries, THREAD_SPLIT_COUNT);
         if (chunks == null) {
             // not enough elements for split
@@ -88,14 +90,15 @@ public class ParallelAccumulationExecutor implements AccumulationExecutor {
     }
 
     private Collection<QueryableEntry>[] split(Collection<QueryableEntry> entries, int chunkCount) {
-        if (entries.size() < chunkCount * 2) {
+        int estimatedSize = estimatedSizeOf(entries);
+        if (estimatedSize < chunkCount * 2) {
             return null;
         }
         int counter = 0;
         Collection<QueryableEntry>[] entriesSplit = new Collection[chunkCount];
-        int entriesPerChunk = entries.size() / chunkCount;
+        int entriesPerChunk = estimatedSize / chunkCount;
         for (int i = 0; i < chunkCount; i++) {
-            entriesSplit[i] = new ArrayList<QueryableEntry>(entriesPerChunk);
+            entriesSplit[i] = new ArrayList<>(entriesPerChunk);
         }
         for (QueryableEntry entry : entries) {
             entriesSplit[counter++ % THREAD_SPLIT_COUNT].add(entry);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,27 +16,20 @@
 
 package com.hazelcast.cache.impl;
 
-import com.hazelcast.cache.CacheEntryView;
-import com.hazelcast.cache.CacheMergePolicy;
-import com.hazelcast.cache.StorageTypeAwareCacheMergePolicy;
-import com.hazelcast.cache.impl.merge.entry.LazyCacheEntryView;
+import com.hazelcast.cache.impl.operation.KeyBasedCacheOperation;
 import com.hazelcast.cache.impl.record.CacheRecord;
-import com.hazelcast.cache.impl.record.CacheRecordFactory;
 import com.hazelcast.cache.impl.record.CacheRecordHashMap;
-import com.hazelcast.config.EvictionConfig.MaxSizePolicy;
+import com.hazelcast.config.MaxSizePolicy;
 import com.hazelcast.internal.eviction.EvictionChecker;
-import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.serialization.SerializationService;
-import com.hazelcast.util.Clock;
-
-import static com.hazelcast.cache.impl.operation.MutableOperation.IGNORE_COMPLETION;
+import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.internal.serialization.SerializationService;
 
 /**
  * <h1>On-Heap implementation of the {@link ICacheRecordStore} </h1>
  * <p>
  * Hazelcast splits data homogeneously to partitions using keys. CacheRecordStore represents a named ICache on-heap
- * data store for a single partition.<br/>
+ * data store for a single partition.<br>
  * This data structure is responsible for CRUD operations, entry processing, statistics, publishing events, cache
  * loader and writer and internal data operations like backup.
  * </p>
@@ -50,25 +43,21 @@ import static com.hazelcast.cache.impl.operation.MutableOperation.IGNORE_COMPLET
  *         cache.get(key, expiryPolicy);
  *         </code>
  *     </pre>
- * See {@link com.hazelcast.cache.impl.operation.AbstractCacheOperation} subclasses for actual examples.
- * </p>
+ * See {@link KeyBasedCacheOperation} subclasses for actual examples.
  *
  * @see com.hazelcast.cache.impl.CachePartitionSegment
  * @see com.hazelcast.cache.impl.CacheService
- * @see com.hazelcast.cache.impl.operation.AbstractCacheOperation
+ * @see KeyBasedCacheOperation
  */
 public class CacheRecordStore
-        extends AbstractCacheRecordStore<CacheRecord, CacheRecordHashMap>
-        implements SplitBrainAwareCacheRecordStore {
+        extends AbstractCacheRecordStore<CacheRecord, CacheRecordHashMap> {
 
     protected SerializationService serializationService;
-    protected CacheRecordFactory cacheRecordFactory;
 
     public CacheRecordStore(String cacheNameWithPrefix, int partitionId, NodeEngine nodeEngine,
                             AbstractCacheService cacheService) {
         super(cacheNameWithPrefix, partitionId, nodeEngine, cacheService);
         this.serializationService = nodeEngine.getSerializationService();
-        this.cacheRecordFactory = createCacheRecordFactory();
     }
 
     /**
@@ -109,15 +98,11 @@ public class CacheRecordStore
         return new CacheEntryProcessorEntry(key, record, this, now, completionId);
     }
 
-    protected CacheRecordFactory createCacheRecordFactory() {
-        return new CacheRecordFactory(cacheConfig.getInMemoryFormat(),
-                nodeEngine.getSerializationService());
-    }
-
     @Override
     protected CacheRecord createRecord(Object value, long creationTime, long expiryTime) {
         evictIfRequired();
 
+        markExpirable(expiryTime);
         return cacheRecordFactory.newRecordWithExpiry(value, creationTime, expiryTime);
     }
 
@@ -178,68 +163,7 @@ public class CacheRecordStore
     }
 
     @Override
-    public CacheRecord merge(CacheEntryView<Data, Data> cacheEntryView, CacheMergePolicy mergePolicy) {
-        final long now = Clock.currentTimeMillis();
-        final long start = isStatisticsEnabled() ? System.nanoTime() : 0;
-
-        boolean merged = false;
-        Data key = cacheEntryView.getKey();
-        Data value = cacheEntryView.getValue();
-        long expiryTime = cacheEntryView.getExpirationTime();
-        CacheRecord record = records.get(key);
-        boolean isExpired = processExpiredEntry(key, record, now);
-
-        if (record == null || isExpired) {
-            Object newValue = mergePolicy.merge(name, createCacheEntryView(
-                    key,
-                    value,
-                    cacheEntryView.getCreationTime(),
-                    cacheEntryView.getExpirationTime(),
-                    cacheEntryView.getLastAccessTime(),
-                    cacheEntryView.getAccessHit(),
-                    mergePolicy),
-                    null);
-            if (newValue != null) {
-                record = createRecordWithExpiry(key, newValue, expiryTime, now, true, IGNORE_COMPLETION);
-                merged = record != null;
-            }
-        } else {
-            Object existingValue = record.getValue();
-            Object newValue = mergePolicy.merge(name,
-                    createCacheEntryView(
-                            key,
-                            value,
-                            cacheEntryView.getCreationTime(),
-                            cacheEntryView.getExpirationTime(),
-                            cacheEntryView.getLastAccessTime(),
-                            cacheEntryView.getAccessHit(),
-                            mergePolicy),
-                    createCacheEntryView(
-                            key,
-                            existingValue,
-                            cacheEntryView.getCreationTime(),
-                            record.getExpirationTime(),
-                            record.getLastAccessTime(),
-                            record.getAccessHit(),
-                            mergePolicy));
-            if (existingValue != newValue) {
-                merged = updateRecordWithExpiry(key, newValue, record, expiryTime, now, true, IGNORE_COMPLETION);
-            }
-        }
-
-        if (merged && isStatisticsEnabled()) {
-            statistics.increaseCachePuts(1);
-            statistics.addPutTimeNanos(System.nanoTime() - start);
-        }
-
-        return merged ? record : null;
-    }
-
-    private CacheEntryView createCacheEntryView(Object key, Object value, long creationTime, long expirationTime,
-                                                long lastAccessTime, long accessHit, CacheMergePolicy mergePolicy) {
-        // null serialization service means that use as storage type without conversion,
-        // non-null serialization service means that conversion is required
-        SerializationService ss = mergePolicy instanceof StorageTypeAwareCacheMergePolicy ? null : serializationService;
-        return new LazyCacheEntryView(key, value, creationTime, expirationTime, lastAccessTime, accessHit, ss);
+    public void disposeDeferredBlocks() {
+        // NOP
     }
 }

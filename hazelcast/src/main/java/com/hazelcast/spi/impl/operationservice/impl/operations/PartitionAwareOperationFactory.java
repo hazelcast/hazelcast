@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,10 +16,9 @@
 
 package com.hazelcast.spi.impl.operationservice.impl.operations;
 
-import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.OperationFactory;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.spi.impl.operationservice.OperationFactory;
 
 /**
  * Creates partition specific operations.
@@ -40,8 +39,12 @@ public abstract class PartitionAwareOperationFactory implements OperationFactory
      * this method can be used to create it. Otherwise, stateful factories may cause JMM problems.
      *
      * @param nodeEngine nodeEngine
+     * @param partitions the partitions provided to an operation which use this
+     *                   factory. The operation factory may decide to use this
+     *                   externally provided partition set if it doesn't manage
+     *                   one internally on its own.
      */
-    public PartitionAwareOperationFactory createFactoryOnRunner(NodeEngine nodeEngine) {
+    public PartitionAwareOperationFactory createFactoryOnRunner(NodeEngine nodeEngine, int[] partitions) {
         return this;
     }
 
@@ -54,19 +57,6 @@ public abstract class PartitionAwareOperationFactory implements OperationFactory
      * @return created partition-operation
      */
     public abstract Operation createPartitionOperation(int partition);
-
-    /**
-     * This method will be called on operation runner node.
-     * <p>
-     * Created operations by this factory will be run on the partitions returned by this method.
-     * Returning {@code null} means operations will be run provided partitions by default.
-     *
-     * @return {@code null} to preserve default behaviour or return relevant partition IDs for the operations of this factory
-     */
-    @SuppressFBWarnings("EI_EXPOSE_REP")
-    public int[] getPartitions() {
-        return partitions;
-    }
 
     @Override
     public Operation createOperation() {

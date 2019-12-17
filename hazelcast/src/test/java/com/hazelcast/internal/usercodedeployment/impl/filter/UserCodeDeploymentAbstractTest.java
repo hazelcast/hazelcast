@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,28 +19,37 @@ package com.hazelcast.internal.usercodedeployment.impl.filter;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.UserCodeDeploymentConfig;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IMap;
+import com.hazelcast.map.IMap;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
+import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
-import com.hazelcast.util.FilteringClassLoader;
+import com.hazelcast.internal.util.FilteringClassLoader;
+import org.junit.After;
 import org.junit.Test;
 import usercodedeployment.EntryProcessorWithAnonymousAndInner;
 import usercodedeployment.IncrementingEntryProcessor;
 import usercodedeployment.blacklisted.BlacklistedEP;
 import usercodedeployment.whitelisted.WhitelistedEP;
 
-import static com.hazelcast.test.starter.Utils.assertInstanceOfByClassName;
+import static com.hazelcast.test.starter.HazelcastStarterUtils.assertInstanceOfByClassName;
 import static java.util.Collections.singletonList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
 public abstract class UserCodeDeploymentAbstractTest extends HazelcastTestSupport {
 
+    protected TestHazelcastInstanceFactory factory;
+
     protected abstract TestHazelcastInstanceFactory newFactory();
 
     protected abstract UserCodeDeploymentConfig.ClassCacheMode getClassCacheMode();
+
+    @After
+    public void tearDown() {
+        factory.terminateAll();
+    }
 
     @Test
     public void testUserCodeDeploymentIsDisabledByDefault() {
@@ -112,7 +121,7 @@ public abstract class UserCodeDeploymentAbstractTest extends HazelcastTestSuppor
                 .setBlacklistedPrefixes("usercodedeployment.blacklisted")
                 .setClassCacheMode(getClassCacheMode());
 
-        EntryProcessor<Integer, Integer> myEP = new BlacklistedEP();
+        EntryProcessor<Integer, Integer, Integer> myEP = new BlacklistedEP();
         try {
             executeSimpleTestScenario(i1Config, i2Config, myEP);
             fail();
@@ -136,7 +145,7 @@ public abstract class UserCodeDeploymentAbstractTest extends HazelcastTestSuppor
                 .setWhitelistedPrefixes("usercodedeployment.whitelisted")
                 .setClassCacheMode(getClassCacheMode());
 
-        EntryProcessor<Integer, Integer> myEP = new IncrementingEntryProcessor();
+        EntryProcessor<Integer, Integer, Integer> myEP = new IncrementingEntryProcessor();
         try {
             executeSimpleTestScenario(i1Config, i2Config, myEP);
             fail();
@@ -160,7 +169,7 @@ public abstract class UserCodeDeploymentAbstractTest extends HazelcastTestSuppor
                 .setWhitelistedPrefixes("usercodedeployment.whitelisted, usercodedeployment")
                 .setClassCacheMode(getClassCacheMode());
 
-        EntryProcessor<Integer, Integer> myEP = new WhitelistedEP();
+        EntryProcessor<Integer, Integer, Integer> myEP = new WhitelistedEP();
         executeSimpleTestScenario(i1Config, i2Config, myEP);
     }
 
@@ -179,7 +188,7 @@ public abstract class UserCodeDeploymentAbstractTest extends HazelcastTestSuppor
                 .setProviderFilter("HAS_ATTRIBUTE:foo")
                 .setClassCacheMode(getClassCacheMode());
 
-        EntryProcessor<Integer, Integer> myEP = new IncrementingEntryProcessor();
+        EntryProcessor<Integer, Integer, Integer> myEP = new IncrementingEntryProcessor();
         try {
             executeSimpleTestScenario(i1Config, i2Config, myEP);
             fail();
@@ -191,7 +200,7 @@ public abstract class UserCodeDeploymentAbstractTest extends HazelcastTestSuppor
     @Test
     public void givenProviderFilterUsesMemberAttribute_whenSomeMemberHasMatchingAttribute_thenClassLoadingRequestSucceed() {
         Config i1Config = new Config();
-        i1Config.getMemberAttributeConfig().setStringAttribute("foo", "bar");
+        i1Config.getMemberAttributeConfig().setAttribute("foo", "bar");
         i1Config.getUserCodeDeploymentConfig()
                 .setEnabled(true)
                 .setClassCacheMode(getClassCacheMode());
@@ -204,29 +213,34 @@ public abstract class UserCodeDeploymentAbstractTest extends HazelcastTestSuppor
                 .setProviderFilter("HAS_ATTRIBUTE:foo")
                 .setClassCacheMode(getClassCacheMode());
 
-        EntryProcessor<Integer, Integer> myEP = new IncrementingEntryProcessor();
+        EntryProcessor<Integer, Integer, Integer> myEP = new IncrementingEntryProcessor();
         executeSimpleTestScenario(i1Config, i2Config, myEP);
     }
 
-    protected void executeSimpleTestScenario(Config config, Config epFilteredConfig, EntryProcessor<Integer, Integer> ep) {
+    protected void executeSimpleTestScenario(Config config,
+                                             Config epFilteredConfig,
+                                             EntryProcessor<Integer, Integer, Integer> ep) {
         int keyCount = 100;
 
-        TestHazelcastInstanceFactory factory = newFactory();
-        try {
-            HazelcastInstance instanceWithNewEp = factory.newHazelcastInstance(config);
-            factory.newHazelcastInstance(epFilteredConfig);
+        factory = newFactory();
+        HazelcastInstance instanceWithNewEp = factory.newHazelcastInstance(config);
+        factory.newHazelcastInstance(epFilteredConfig);
 
-            IMap<Integer, Integer> map = instanceWithNewEp.getMap(randomName());
+        IMap<Integer, Integer> map = instanceWithNewEp.getMap(randomName());
 
-            for (int i = 0; i < keyCount; i++) {
-                map.put(i, 0);
-            }
-            map.executeOnEntries(ep);
-            for (int i = 0; i < keyCount; i++) {
-                assertEquals(1, (int) map.get(i));
-            }
-        } finally {
-            factory.shutdownAll();
+        for (int i = 0; i < keyCount; i++) {
+            map.put(i, 0);
         }
+        map.executeOnEntries(ep);
+        for (int i = 0; i < keyCount; i++) {
+            assertEquals(1, (int) map.get(i));
+        }
+    }
+
+    protected void lowerOperationTimeouts(Config config) {
+        // lower operation call timeout 60s -> 20s
+        config.setProperty(ClusterProperty.OPERATION_CALL_TIMEOUT_MILLIS.getName(), "20000");
+        // max retry count 250 -> 20
+        config.setProperty(ClusterProperty.INVOCATION_MAX_RETRY_COUNT.getName(), "20");
     }
 }

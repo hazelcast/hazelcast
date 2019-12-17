@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,31 +20,30 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IMap;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import static com.hazelcast.util.JVMUtil.REFERENCE_COST_IN_BYTES;
+import static com.hazelcast.internal.util.JVMUtil.REFERENCE_COST_IN_BYTES;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class EntryCostEstimatorTest
         extends HazelcastTestSupport {
 
     protected TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
-    // the JVM-independent portion of the cost of Integer key + Long value record is 124 bytes
+    // the JVM-independent portion of the cost of Integer key + Long value record is 104 bytes
     // (without taking into account 8 references to key, record and value objects)
-    private static final int JVM_INDEPENDENT_ENTRY_COST_IN_BYTES = 124;
+    private static final int JVM_INDEPENDENT_ENTRY_COST_IN_BYTES = 100;
     // JVM-dependent total cost of entry
-    private static final int ENTRY_COST_IN_BYTES = JVM_INDEPENDENT_ENTRY_COST_IN_BYTES + 9 * REFERENCE_COST_IN_BYTES;
+    private static final int ENTRY_COST_IN_BYTES = JVM_INDEPENDENT_ENTRY_COST_IN_BYTES + 8 * REFERENCE_COST_IN_BYTES;
 
     @Test
     public void smoke() {
@@ -79,7 +78,7 @@ public class EntryCostEstimatorTest
         String name = randomString();
         Config config = getConfig();
         config.getMapConfig(name).setBackupCount(1);
-        HazelcastInstance h[] = factory.newInstances(config);
+        HazelcastInstance[] h = factory.newInstances(config);
         warmUpPartitions(h);
 
         // create map
@@ -145,7 +144,7 @@ public class EntryCostEstimatorTest
         config.getMapConfig(nearCachedMapName).setBackupCount(0).setNearCacheConfig(nearCacheConfig);
         config.getMapConfig(noNearCacheMapName).setBackupCount(0);
 
-        HazelcastInstance h[] = factory.newInstances(config);
+        HazelcastInstance[] h = factory.newInstances(config);
         warmUpPartitions(h);
 
         IMap<String, String> noNearCached = h[0].getMap(noNearCacheMapName);

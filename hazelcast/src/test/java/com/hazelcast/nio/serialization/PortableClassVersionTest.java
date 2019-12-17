@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,17 +16,20 @@
 
 package com.hazelcast.nio.serialization;
 
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
-import com.hazelcast.nio.BufferObjectDataInput;
-import com.hazelcast.nio.BufferObjectDataOutput;
-import com.hazelcast.spi.serialization.SerializationService;
+import com.hazelcast.internal.nio.BufferObjectDataInput;
+import com.hazelcast.internal.nio.BufferObjectDataOutput;
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import static com.hazelcast.internal.nio.IOUtil.readData;
+import static com.hazelcast.internal.nio.IOUtil.writeData;
 import static com.hazelcast.nio.serialization.PortableTest.createNamedPortableClassDefinition;
 import static com.hazelcast.nio.serialization.PortableTest.createSerializationService;
 import static org.junit.Assert.assertEquals;
@@ -142,11 +145,11 @@ public class PortableClassVersionTest {
 
         // emulate socket write by writing data to stream
         BufferObjectDataOutput out = serializationService.createObjectDataOutput(1024);
-        out.writeData(dataV1);
+        writeData(out, dataV1);
         byte[] bytes = out.toByteArray();
         // emulate socket read by reading data from stream
         BufferObjectDataInput in = serializationService2.createObjectDataInput(bytes);
-        dataV1 = in.readData();
+        dataV1 = readData(in);
 
         // serialize new portable version
         NamedPortableV2 portableV2 = new NamedPortableV2("portable-v2", 123, 500);

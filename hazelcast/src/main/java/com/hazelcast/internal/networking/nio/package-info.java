@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,7 +15,7 @@
  */
 
 /**
- * Contains the non blocking {@link com.hazelcast.internal.networking.EventLoopGroup} functionality. It relies
+ * Contains the non blocking {@link com.hazelcast.internal.networking.Networking} functionality. It relies
  * on {@link java.nio.channels.Selector} to be notified if there is something to read/write.
  */
 package com.hazelcast.internal.networking.nio;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,46 +17,54 @@
 package com.hazelcast.internal.serialization.impl;
 
 import com.hazelcast.config.GlobalSerializerConfig;
+import com.hazelcast.config.JavaSerializationFilterConfig;
 import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.core.ManagedContext;
-import com.hazelcast.core.PartitioningStrategy;
 import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.internal.memory.GlobalMemoryAccessorRegistry;
+import com.hazelcast.internal.nio.ClassLoaderUtil;
 import com.hazelcast.internal.serialization.InputOutputFactory;
 import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.internal.serialization.SerializationClassNameFilter;
 import com.hazelcast.internal.serialization.SerializationServiceBuilder;
 import com.hazelcast.internal.serialization.impl.bufferpool.BufferPoolFactoryImpl;
-import com.hazelcast.nio.ClassLoaderUtil;
+import com.hazelcast.internal.util.StringUtil;
 import com.hazelcast.nio.serialization.ClassDefinition;
+import com.hazelcast.nio.serialization.ClassNameFilter;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.nio.serialization.PortableFactory;
 import com.hazelcast.nio.serialization.Serializer;
 import com.hazelcast.nio.serialization.SerializerHook;
-import com.hazelcast.spi.properties.GroupProperty;
-import com.hazelcast.util.function.Supplier;
+import com.hazelcast.partition.PartitioningStrategy;
+import com.hazelcast.spi.properties.ClusterProperty;
 
 import java.nio.ByteOrder;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Supplier;
 
 import static java.nio.ByteOrder.BIG_ENDIAN;
+import static java.nio.ByteOrder.LITTLE_ENDIAN;
 import static java.nio.ByteOrder.nativeOrder;
 
 public class DefaultSerializationServiceBuilder implements SerializationServiceBuilder {
 
+    static final ByteOrder DEFAULT_BYTE_ORDER = BIG_ENDIAN;
+
+    // System property to override configured byte order for tests
+    private static final String BYTE_ORDER_OVERRIDE_PROPERTY = "hazelcast.serialization.byteOrder";
     private static final int DEFAULT_OUT_BUFFER_SIZE = 4 * 1024;
 
-    protected final Map<Integer, DataSerializableFactory> dataSerializableFactories =
-            new HashMap<Integer, DataSerializableFactory>();
+    protected final Map<Integer, DataSerializableFactory> dataSerializableFactories = new HashMap<>();
 
-    protected final Map<Integer, PortableFactory> portableFactories = new HashMap<Integer, PortableFactory>();
+    protected final Map<Integer, PortableFactory> portableFactories = new HashMap<>();
 
-    protected final Set<ClassDefinition> classDefinitions = new HashSet<ClassDefinition>();
+    protected final Set<ClassDefinition> classDefinitions = new HashSet<>();
 
     protected ClassLoader classLoader;
     protected SerializationConfig config;
@@ -69,7 +77,7 @@ public class DefaultSerializationServiceBuilder implements SerializationServiceB
     protected ManagedContext managedContext;
 
     protected boolean useNativeByteOrder;
-    protected ByteOrder byteOrder = BIG_ENDIAN;
+    protected ByteOrder byteOrder = DEFAULT_BYTE_ORDER;
 
     protected boolean enableCompression;
     protected boolean enableSharedObject;
@@ -82,6 +90,8 @@ public class DefaultSerializationServiceBuilder implements SerializationServiceB
     protected HazelcastInstance hazelcastInstance;
 
     protected Supplier<RuntimeException> notActiveExceptionSupplier;
+
+    protected ClassNameFilter classNameFilter;
 
     @Override
     public SerializationServiceBuilder setVersion(byte version) {
@@ -121,6 +131,8 @@ public class DefaultSerializationServiceBuilder implements SerializationServiceB
         enableCompression = config.isEnableCompression();
         enableSharedObject = config.isEnableSharedObject();
         allowUnsafe = config.isAllowUnsafe();
+        JavaSerializationFilterConfig filterConfig = config.getJavaSerializationFilterConfig();
+        classNameFilter = filterConfig == null ? null : new SerializationClassNameFilter(filterConfig);
         return this;
     }
 
@@ -250,8 +262,9 @@ public class DefaultSerializationServiceBuilder implements SerializationServiceB
 
     private void initVersions() {
         if (version < 0) {
-            String defaultVal = GroupProperty.SERIALIZATION_VERSION.getDefaultValue();
-            byte versionCandidate = Byte.parseByte(System.getProperty(GroupProperty.SERIALIZATION_VERSION.getName(), defaultVal));
+            String defaultVal = ClusterProperty.SERIALIZATION_VERSION.getDefaultValue();
+            byte versionCandidate = Byte.parseByte(
+                    System.getProperty(ClusterProperty.SERIALIZATION_VERSION.getName(), defaultVal));
             byte maxVersion = Byte.parseByte(defaultVal);
             if (versionCandidate > maxVersion) {
                 throw new IllegalArgumentException(
@@ -268,10 +281,22 @@ public class DefaultSerializationServiceBuilder implements SerializationServiceB
                                                                       Supplier<RuntimeException> notActiveExceptionSupplier) {
         switch (version) {
             case 1:
-                SerializationServiceV1 serializationServiceV1 = new SerializationServiceV1(inputOutputFactory, version,
-                        portableVersion, classLoader, dataSerializableFactories, portableFactories, managedContext,
-                        partitioningStrategy, initialOutputBufferSize, new BufferPoolFactoryImpl(), enableCompression,
-                        enableSharedObject, notActiveExceptionSupplier);
+                SerializationServiceV1 serializationServiceV1 = SerializationServiceV1.builder()
+                    .withInputOutputFactory(inputOutputFactory)
+                    .withVersion(version)
+                    .withPortableVersion(portableVersion)
+                    .withClassLoader(classLoader)
+                    .withDataSerializableFactories(dataSerializableFactories)
+                    .withPortableFactories(portableFactories)
+                    .withManagedContext(managedContext)
+                    .withGlobalPartitionStrategy(partitioningStrategy)
+                    .withInitialOutputBufferSize(initialOutputBufferSize)
+                    .withBufferPoolFactory(new BufferPoolFactoryImpl())
+                    .withEnableCompression(enableCompression)
+                    .withEnableSharedObject(enableSharedObject)
+                    .withNotActiveExceptionSupplier(notActiveExceptionSupplier)
+                    .withClassNameFilter(classNameFilter)
+                    .build();
                 serializationServiceV1.registerClassDefinitions(classDefinitions, checkClassDefErrors);
                 return serializationServiceV1;
 
@@ -305,12 +330,29 @@ public class DefaultSerializationServiceBuilder implements SerializationServiceB
     }
 
     protected InputOutputFactory createInputOutputFactory() {
+        overrideByteOrder();
+
         if (byteOrder == null) {
-            byteOrder = useNativeByteOrder ? nativeOrder() : BIG_ENDIAN;
+            byteOrder = DEFAULT_BYTE_ORDER;
+        }
+        if (useNativeByteOrder) {
+            byteOrder = nativeOrder();
         }
         return byteOrder == nativeOrder() && allowUnsafe && GlobalMemoryAccessorRegistry.MEM_AVAILABLE
                 ? new UnsafeInputOutputFactory()
                 : new ByteArrayInputOutputFactory(byteOrder);
+    }
+
+    protected void overrideByteOrder() {
+        String byteOrderOverride = System.getProperty(BYTE_ORDER_OVERRIDE_PROPERTY);
+        if (StringUtil.isNullOrEmpty(byteOrderOverride)) {
+            return;
+        }
+        if (BIG_ENDIAN.toString().equals(byteOrderOverride)) {
+            byteOrder = BIG_ENDIAN;
+        } else if (LITTLE_ENDIAN.toString().equals(byteOrderOverride)) {
+            byteOrder = LITTLE_ENDIAN;
+        }
     }
 
     private void addConfigDataSerializableFactories(Map<Integer, DataSerializableFactory> dataSerializableFactories,

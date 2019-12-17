@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,8 +17,9 @@
 package com.hazelcast.spi.properties;
 
 import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
 
-import static com.hazelcast.util.Preconditions.checkHasText;
+import static com.hazelcast.internal.util.Preconditions.checkHasText;
 import static java.lang.String.format;
 
 /**
@@ -30,10 +31,21 @@ public final class HazelcastProperty {
     private final String defaultValue;
     private final TimeUnit timeUnit;
     private final HazelcastProperty parent;
+    private final Function<HazelcastProperties, ?> function;
     private volatile String deprecatedName;
 
     public HazelcastProperty(String name) {
         this(name, (String) null);
+    }
+
+    public HazelcastProperty(String name, Function<HazelcastProperties, ?> function) {
+        checkHasText(name, "The property name cannot be null or empty!");
+        this.name = name;
+        this.function = function;
+        this.defaultValue = null;
+        this.deprecatedName = null;
+        this.parent = null;
+        this.timeUnit = null;
     }
 
     public HazelcastProperty(String name, boolean defaultValue) {
@@ -56,8 +68,8 @@ public final class HazelcastProperty {
         this(name, Long.toString(defaultValue), timeUnit);
     }
 
-    public HazelcastProperty(String name, HazelcastProperty groupProperty) {
-        this(name, groupProperty.getDefaultValue(), groupProperty.timeUnit, groupProperty);
+    public HazelcastProperty(String name, HazelcastProperty property) {
+        this(name, property.getDefaultValue(), property.timeUnit, property);
     }
 
     public HazelcastProperty(String name, String defaultValue) {
@@ -72,6 +84,7 @@ public final class HazelcastProperty {
         checkHasText(name, "The property name cannot be null or empty!");
         this.name = name;
         this.defaultValue = defaultValue;
+        this.function = null;
         this.timeUnit = timeUnit;
         this.parent = parent;
     }
@@ -82,7 +95,7 @@ public final class HazelcastProperty {
      * This method is thread-safe, but is expected to be called immediately after the HazelcastProperty is constructed.
      *
      * <code>
-     *     HazelcastProperty property = new HazelcastProperty("newname").setDeprecatedName("oldname");
+     * HazelcastProperty property = new HazelcastProperty("newname").setDeprecatedName("oldname");
      * </code>
      *
      * @param deprecatedName the deprecated name of the property
@@ -92,6 +105,10 @@ public final class HazelcastProperty {
     public HazelcastProperty setDeprecatedName(String deprecatedName) {
         this.deprecatedName = checkHasText(deprecatedName, "a valid string should be provided");
         return this;
+    }
+
+    public Function<HazelcastProperties, ?> getFunction() {
+        return function;
     }
 
     public String getDeprecatedName() {
@@ -110,7 +127,7 @@ public final class HazelcastProperty {
     /**
      * Returns the default value of the property.
      *
-     * @return the default value or <tt>null</tt> if none is defined
+     * @return the default value or <code>null</code> if none is defined
      */
     public String getDefaultValue() {
         return defaultValue;
@@ -124,23 +141,23 @@ public final class HazelcastProperty {
      */
     public TimeUnit getTimeUnit() {
         if (timeUnit == null) {
-            throw new IllegalArgumentException(format("groupProperty %s has no TimeUnit defined!", this));
+            throw new IllegalArgumentException(format("Cluster property %s has no TimeUnit defined!", this));
         }
 
         return timeUnit;
     }
 
     /**
-     * Returns the parent {@link GroupProperty} of the property.
+     * Returns the parent {@link ClusterProperty} of the property.
      *
-     * @return the parent {@link GroupProperty} or <tt>null</tt> if none is defined
+     * @return the parent {@link ClusterProperty} or <code>null</code> if none is defined
      */
     public HazelcastProperty getParent() {
         return parent;
     }
 
     /**
-     * Sets the environmental value of the property.
+     * Sets the system property value of the property.
      *
      * @param value the value to set
      */
@@ -149,7 +166,7 @@ public final class HazelcastProperty {
     }
 
     /**
-     * Gets the environmental value of the property.
+     * Gets the system property value of the property.
      *
      * @return the value of the property
      */

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,13 +19,16 @@ package com.hazelcast.multimap.impl.operations;
 import com.hazelcast.multimap.impl.MultiMapContainer;
 import com.hazelcast.multimap.impl.MultiMapDataSerializerHook;
 import com.hazelcast.multimap.impl.MultiMapService;
-import com.hazelcast.spi.BackupAwareOperation;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.PartitionAwareOperation;
+import com.hazelcast.spi.impl.operationservice.BackupAwareOperation;
+import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.spi.impl.operationservice.PartitionAwareOperation;
+import com.hazelcast.spi.impl.operationservice.MutatingOperation;
 
-public class ClearOperation extends MultiMapOperation implements BackupAwareOperation, PartitionAwareOperation {
+public class ClearOperation extends AbstractMultiMapOperation implements BackupAwareOperation, PartitionAwareOperation,
+        MutatingOperation {
 
-    boolean shouldBackup;
+    private transient MultiMapContainer container;
+    private transient boolean shouldBackup;
 
     public ClearOperation() {
     }
@@ -36,19 +39,22 @@ public class ClearOperation extends MultiMapOperation implements BackupAwareOper
 
     @Override
     public void beforeRun() throws Exception {
-        MultiMapContainer container = getOrCreateContainer();
+        container = getOrCreateContainer();
         shouldBackup = container.size() > 0;
     }
 
     @Override
     public void run() throws Exception {
-        MultiMapContainer container = getOrCreateContainer();
+        container = getOrCreateContainer();
         response = container.clear();
     }
 
     @Override
     public void afterRun() throws Exception {
         ((MultiMapService) getService()).getLocalMultiMapStatsImpl(name).incrementOtherOperations();
+        if (shouldBackup) {
+            container.update();
+        }
     }
 
     @Override
@@ -62,8 +68,7 @@ public class ClearOperation extends MultiMapOperation implements BackupAwareOper
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MultiMapDataSerializerHook.CLEAR;
     }
-
 }

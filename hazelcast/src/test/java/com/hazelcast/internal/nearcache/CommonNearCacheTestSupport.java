@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,9 +22,9 @@ import com.hazelcast.internal.nearcache.impl.store.NearCacheDataRecordStore;
 import com.hazelcast.internal.nearcache.impl.store.NearCacheObjectRecordStore;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
-import com.hazelcast.spi.TaskScheduler;
+import com.hazelcast.spi.impl.executionservice.TaskScheduler;
 import com.hazelcast.spi.impl.executionservice.impl.DelegatingTaskScheduler;
-import com.hazelcast.spi.serialization.SerializationService;
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.test.HazelcastTestSupport;
 import org.junit.After;
 
@@ -35,11 +35,11 @@ import java.util.concurrent.ScheduledExecutorService;
 
 public abstract class CommonNearCacheTestSupport extends HazelcastTestSupport {
 
-    protected static final int DEFAULT_RECORD_COUNT = 100;
-    protected static final String DEFAULT_NEAR_CACHE_NAME = "TestNearCache";
+    static final int DEFAULT_RECORD_COUNT = 100;
+    static final String DEFAULT_NEAR_CACHE_NAME = "TestNearCache";
 
-    protected List<ScheduledExecutorService> scheduledExecutorServices = new ArrayList<ScheduledExecutorService>();
-    protected SerializationService ss = new DefaultSerializationServiceBuilder()
+    private List<ScheduledExecutorService> scheduledExecutorServices = new ArrayList<ScheduledExecutorService>();
+    private SerializationService ss = new DefaultSerializationServiceBuilder()
             .setVersion(InternalSerializationService.VERSION_1).build();
 
     @After
@@ -50,15 +50,14 @@ public abstract class CommonNearCacheTestSupport extends HazelcastTestSupport {
         scheduledExecutorServices.clear();
     }
 
-    protected NearCacheConfig createNearCacheConfig(String name, InMemoryFormat inMemoryFormat) {
+    NearCacheConfig createNearCacheConfig(String name, InMemoryFormat inMemoryFormat) {
         return new NearCacheConfig()
                 .setName(name)
                 .setInMemoryFormat(inMemoryFormat);
     }
 
-    protected <K, V> NearCacheRecordStore<K, V> createNearCacheRecordStore(NearCacheConfig nearCacheConfig,
-                                                                           InMemoryFormat inMemoryFormat) {
-        NearCacheRecordStore<K, V> recordStore = null;
+    <K, V> NearCacheRecordStore<K, V> createNearCacheRecordStore(NearCacheConfig nearCacheConfig, InMemoryFormat inMemoryFormat) {
+        NearCacheRecordStore<K, V> recordStore;
         switch (inMemoryFormat) {
             case BINARY:
                 recordStore = new NearCacheDataRecordStore<K, V>(DEFAULT_NEAR_CACHE_NAME, nearCacheConfig, ss, null);
@@ -70,11 +69,11 @@ public abstract class CommonNearCacheTestSupport extends HazelcastTestSupport {
                 throw new IllegalArgumentException("Unsupported in-memory format: " + inMemoryFormat);
         }
         recordStore.initialize();
-
         return recordStore;
     }
 
-    protected TaskScheduler createTaskScheduler() {
+    @SuppressWarnings("unused")
+    TaskScheduler createTaskScheduler() {
         ScheduledExecutorService scheduledExecutorService = Executors.newScheduledThreadPool(1);
         scheduledExecutorServices.add(scheduledExecutorService);
         return new DelegatingTaskScheduler(scheduledExecutorService, scheduledExecutorService);

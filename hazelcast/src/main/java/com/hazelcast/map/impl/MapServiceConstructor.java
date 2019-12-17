@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,8 @@
 
 package com.hazelcast.map.impl;
 
-import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.util.ConstructorFunction;
+import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.internal.util.ConstructorFunction;
 
 /**
  * Helper which is used to create a {@link MapService} object.
@@ -25,15 +25,12 @@ import com.hazelcast.util.ConstructorFunction;
 public final class MapServiceConstructor {
 
     private static final ConstructorFunction<NodeEngine, MapService> DEFAULT_MAP_SERVICE_CONSTRUCTOR
-            = new ConstructorFunction<NodeEngine, MapService>() {
-        @Override
-        public MapService createNew(NodeEngine nodeEngine) {
-            MapServiceContext defaultMapServiceContext = new MapServiceContextImpl(nodeEngine);
-            MapServiceFactory factory
-                    = new DefaultMapServiceFactory(nodeEngine, defaultMapServiceContext);
-            return factory.createMapService();
-        }
-    };
+            = nodeEngine -> {
+                MapServiceContext defaultMapServiceContext = new MapServiceContextImpl(nodeEngine);
+                MapServiceFactory factory
+                        = new DefaultMapServiceFactory(nodeEngine, defaultMapServiceContext);
+                return factory.createMapService();
+            };
 
     private MapServiceConstructor() {
     }

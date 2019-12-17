@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 
 package usercodedeployment;
 
-import com.hazelcast.map.AbstractEntryProcessor;
+import com.hazelcast.map.EntryProcessor;
 
 import java.util.Map;
 
@@ -25,10 +25,10 @@ import java.util.Map;
  * as Hazelcast has special rules for loading classes
  * from the {@code com.hazelcast.*} package.
  */
-public class IncrementingEntryProcessor extends AbstractEntryProcessor<Integer, Integer> {
+public class IncrementingEntryProcessor implements EntryProcessor<Integer, Integer, Integer> {
 
     @Override
-    public Object process(Map.Entry<Integer, Integer> entry) {
+    public Integer process(Map.Entry<Integer, Integer> entry) {
         Integer origValue = entry.getValue();
         Integer newValue = origValue + 1;
         entry.setValue(newValue);

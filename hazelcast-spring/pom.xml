@@ -1,5 +1,5 @@
 <!--
-  ~ Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+  ~ Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
   ~ you may not use this file except in compliance with the License.
@@ -25,17 +25,18 @@
     <parent>
         <groupId>com.hazelcast</groupId>
         <artifactId>hazelcast-root</artifactId>
-        <version>3.10-SNAPSHOT</version>
+        <version>4.0-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
     <properties>
-        <!-- needed for checkstyle/findbugs -->
+        <!-- needed for CheckStyle -->
         <main.basedir>${project.parent.basedir}</main.basedir>
 
-        <org.springframework.version>4.3.0.RELEASE</org.springframework.version>
+        <org.springframework.version>4.3.23.RELEASE</org.springframework.version>
         <jsr250.api.version>1.0</jsr250.api.version>
         <hazelcast.latest.version>3.8</hazelcast.latest.version>
+        <hazelcast-hibernate5.version>1.4.0-SNAPSHOT</hazelcast-hibernate5.version>
     </properties>
 
     <build>
@@ -47,13 +48,13 @@
                 <configuration>
                     <signature>
                         <groupId>org.codehaus.mojo.signature</groupId>
-                        <artifactId>java16</artifactId>
+                        <artifactId>java18</artifactId>
                         <version>1.0</version>
                     </signature>
                 </configuration>
                 <executions>
                     <execution>
-                        <id>source-java6-check</id>
+                        <id>source-java8-check</id>
                         <phase>compile</phase>
                         <goals>
                             <goal>check</goal>
@@ -126,13 +127,20 @@
                         <manifestFile>${project.build.outputDirectory}/META-INF/MANIFEST.MF</manifestFile>
                     </archive>
                 </configuration>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>test-jar</goal>
+                        </goals>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>
 
     <profiles>
         <profile>
-            <id>hibernate-4</id>
+            <id>hibernate-5</id>
             <activation>
                 <activeByDefault>true</activeByDefault>
             </activation>
@@ -140,33 +148,14 @@
                 <!--TEST DEPENDENCIES-->
                 <dependency>
                     <groupId>com.hazelcast</groupId>
-                    <artifactId>hazelcast-hibernate4</artifactId>
-                    <version>${hazelcast.latest.version}</version>
+                    <artifactId>hazelcast-hibernate5</artifactId>
+                    <version>${hazelcast-hibernate5.version}</version>
                     <scope>test</scope>
                 </dependency>
                 <dependency>
                     <groupId>org.hibernate</groupId>
                     <artifactId>hibernate-core</artifactId>
-                    <version>4.3.8.Final</version>
-                    <scope>test</scope>
-                </dependency>
-            </dependencies>
-        </profile>
-
-        <profile>
-            <id>hibernate-3</id>
-            <dependencies>
-                <!--TEST DEPENDENCIES-->
-                <dependency>
-                    <groupId>com.hazelcast</groupId>
-                    <artifactId>hazelcast-hibernate3</artifactId>
-                    <version>${hazelcast.latest.version}</version>
-                    <scope>test</scope>
-                </dependency>
-                <dependency>
-                    <groupId>org.hibernate</groupId>
-                    <artifactId>hibernate-core</artifactId>
-                    <version>3.6.10.Final</version>
+                    <version>5.0.9.Final</version>
                     <scope>test</scope>
                 </dependency>
             </dependencies>
@@ -178,12 +167,6 @@
             <groupId>com.hazelcast</groupId>
             <artifactId>hazelcast</artifactId>
             <version>${project.parent.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>com.hazelcast</groupId>
-            <artifactId>hazelcast-client</artifactId>
-            <version>${project.parent.version}</version>
-            <optional>true</optional>
         </dependency>
         <dependency>
             <groupId>javax.annotation</groupId>
@@ -222,6 +205,18 @@
             <groupId>org.springframework</groupId>
             <artifactId>spring-context-support</artifactId>
             <version>${org.springframework.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.httpcomponents</groupId>
+            <artifactId>httpclient</artifactId>
+            <version>${http.components.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.hazelcast</groupId>
+            <artifactId>hazelcast-hibernate5</artifactId>
+            <version>${hazelcast-hibernate5.version}</version>
             <scope>test</scope>
         </dependency>
     </dependencies>

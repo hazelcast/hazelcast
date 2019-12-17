@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,11 +17,10 @@
 package com.hazelcast.cache.impl.operation;
 
 import com.hazelcast.cache.impl.CacheDataSerializerHook;
-import com.hazelcast.cache.impl.CacheKeyIterationResult;
 import com.hazelcast.internal.serialization.impl.HeapData;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.spi.ReadonlyOperation;
+import com.hazelcast.spi.impl.operationservice.ReadonlyOperation;
 
 import java.io.IOException;
 
@@ -31,10 +30,11 @@ import java.io.IOException;
  * Initializes and grabs a number of keys defined by <code>size</code> parameter from the
  * {@link com.hazelcast.cache.impl.ICacheRecordStore} with the last table index.
  * </p>
+ *
  * @see com.hazelcast.cache.impl.ICacheRecordStore#fetchKeys(int, int)
  */
 public class CacheKeyIteratorOperation
-        extends AbstractCacheOperation
+        extends KeyBasedCacheOperation
         implements ReadonlyOperation {
 
     private int tableIndex;
@@ -50,28 +50,24 @@ public class CacheKeyIteratorOperation
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return CacheDataSerializerHook.KEY_ITERATOR;
     }
 
     @Override
-    public void run()
-            throws Exception {
-        final CacheKeyIterationResult iterator = this.cache.fetchKeys(tableIndex, size);
-        response = iterator;
+    public void run() throws Exception {
+        response = recordStore.fetchKeys(tableIndex, size);
     }
 
     @Override
-    protected void writeInternal(ObjectDataOutput out)
-            throws IOException {
+    protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeInt(tableIndex);
         out.writeInt(size);
     }
 
     @Override
-    protected void readInternal(ObjectDataInput in)
-            throws IOException {
+    protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         tableIndex = in.readInt();
         size = in.readInt();

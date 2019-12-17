@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -63,28 +63,18 @@ public class ProbeLevelTest extends HazelcastTestSupport {
     public void assertProbeExist(ProbeLevel probeLevel, ProbeLevel minimumLevel) {
         MetricsRegistryImpl metricsRegistry = new MetricsRegistryImpl(logger, minimumLevel);
 
-        metricsRegistry.register(this, "foo", probeLevel, new LongProbeFunction<ProbeLevelTest>() {
-            @Override
-            public long get(ProbeLevelTest source) throws Exception {
-                return 10;
-            }
-        });
+        metricsRegistry.registerStaticProbe(this, "foo", probeLevel, (LongProbeFunction<ProbeLevelTest>) source -> 10);
 
-        assertContains(metricsRegistry.getNames(), "foo");
+        assertContains(metricsRegistry.getNames(), "[metric=foo]");
         assertEquals(10, metricsRegistry.newLongGauge("foo").read());
     }
 
     public void assertNotProbeExist(ProbeLevel probeLevel, ProbeLevel minimumLevel) {
         MetricsRegistryImpl metricsRegistry = new MetricsRegistryImpl(logger, minimumLevel);
 
-        metricsRegistry.register(this, "foo", probeLevel, new LongProbeFunction<ProbeLevelTest>() {
-            @Override
-            public long get(ProbeLevelTest source) throws Exception {
-                return 10;
-            }
-        });
+        metricsRegistry.registerStaticProbe(this, "foo", probeLevel, (LongProbeFunction<ProbeLevelTest>) source -> 10);
 
-        assertFalse(metricsRegistry.getNames().contains("foo"));
+        assertFalse(metricsRegistry.getNames().contains("[metric=foo]"));
         assertEquals(0, metricsRegistry.newLongGauge("foo").read());
     }
 }

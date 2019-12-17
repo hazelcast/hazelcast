@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,19 +16,24 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.internal.config.ConfigDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.spi.merge.SplitBrainMergeTypeProvider;
+import com.hazelcast.spi.merge.SplitBrainMergeTypes;
 
 import java.io.IOException;
 
-import static com.hazelcast.util.Preconditions.checkNotNegative;
-import static com.hazelcast.util.Preconditions.checkPositive;
+import static com.hazelcast.internal.util.Preconditions.checkNotNegative;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.Preconditions.checkPositive;
 
 /**
  * Configuration options for the {@link com.hazelcast.scheduledexecutor.IScheduledExecutorService}.
  */
-public class ScheduledExecutorConfig implements IdentifiedDataSerializable {
+public class ScheduledExecutorConfig implements SplitBrainMergeTypeProvider, IdentifiedDataSerializable,
+        NamedConfig {
 
     /**
      * The number of executor threads per Member for the Executor based on this configuration.
@@ -53,7 +58,9 @@ public class ScheduledExecutorConfig implements IdentifiedDataSerializable {
 
     private int poolSize = DEFAULT_POOL_SIZE;
 
-    private transient ScheduledExecutorConfig.ScheduledExecutorConfigReadOnly readOnly;
+    private String splitBrainProtectionName;
+
+    private MergePolicyConfig mergePolicyConfig = new MergePolicyConfig();
 
     public ScheduledExecutorConfig() {
     }
@@ -63,14 +70,22 @@ public class ScheduledExecutorConfig implements IdentifiedDataSerializable {
     }
 
     public ScheduledExecutorConfig(String name, int durability, int capacity, int poolSize) {
+        this(name, durability, capacity, poolSize, null, new MergePolicyConfig());
+    }
+
+    public ScheduledExecutorConfig(String name, int durability, int capacity, int poolSize, String splitBrainProtectionName,
+                                   MergePolicyConfig mergePolicyConfig) {
         this.name = name;
         this.durability = durability;
         this.poolSize = poolSize;
         this.capacity = capacity;
+        this.splitBrainProtectionName = splitBrainProtectionName;
+        this.mergePolicyConfig = mergePolicyConfig;
     }
 
     public ScheduledExecutorConfig(ScheduledExecutorConfig config) {
-        this(config.getName(), config.getDurability(), config.getCapacity(), config.getPoolSize());
+        this(config.getName(), config.getDurability(), config.getCapacity(), config.getPoolSize(),
+                config.getSplitBrainProtectionName(), config.getMergePolicyConfig());
     }
 
     /**
@@ -158,21 +173,61 @@ public class ScheduledExecutorConfig implements IdentifiedDataSerializable {
         return this;
     }
 
+    /**
+     * Returns the split brain protection name for operations.
+     *
+     * @return the split brain protection name
+     */
+    public String getSplitBrainProtectionName() {
+        return splitBrainProtectionName;
+    }
+
+    /**
+     * Sets the split brain protection name for operations.
+     *
+     * @param splitBrainProtectionName the split brain protection name
+     * @return the updated configuration
+     */
+    public ScheduledExecutorConfig setSplitBrainProtectionName(String splitBrainProtectionName) {
+        this.splitBrainProtectionName = splitBrainProtectionName;
+        return this;
+    }
+
+
+    /**
+     * Gets the {@link MergePolicyConfig} for the scheduler.
+     *
+     * @return the {@link MergePolicyConfig} for the scheduler
+     */
+    public MergePolicyConfig getMergePolicyConfig() {
+        return mergePolicyConfig;
+    }
+
+    /**
+     * Sets the {@link MergePolicyConfig} for the scheduler.
+     *
+     * @return this executor config instance
+     */
+    public ScheduledExecutorConfig setMergePolicyConfig(MergePolicyConfig mergePolicyConfig) {
+        this.mergePolicyConfig = checkNotNull(mergePolicyConfig, "mergePolicyConfig cannot be null");
+        return this;
+    }
+
+    @Override
+    public Class getProvidedMergeTypes() {
+        return SplitBrainMergeTypes.ScheduledExecutorMergeTypes.class;
+    }
+
     @Override
     public String toString() {
         return "ScheduledExecutorConfig{"
                 + "name='" + name + '\''
                 + ", durability=" + durability
-                + ", poolSize-" + poolSize
-                + ", capacity-" + capacity
+                + ", poolSize=" + poolSize
+                + ", capacity=" + capacity
+                + ", splitBrainProtectionName=" + splitBrainProtectionName
+                + ", mergePolicyConfig=" + mergePolicyConfig
                 + '}';
-    }
-
-    ScheduledExecutorConfig getAsReadOnly() {
-        if (readOnly == null) {
-            readOnly = new ScheduledExecutorConfig.ScheduledExecutorConfigReadOnly(this);
-        }
-        return readOnly;
     }
 
     @Override
@@ -181,7 +236,7 @@ public class ScheduledExecutorConfig implements IdentifiedDataSerializable {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ConfigDataSerializerHook.SCHEDULED_EXECUTOR_CONFIG;
     }
 
@@ -191,6 +246,8 @@ public class ScheduledExecutorConfig implements IdentifiedDataSerializable {
         out.writeInt(durability);
         out.writeInt(capacity);
         out.writeInt(poolSize);
+        out.writeUTF(splitBrainProtectionName);
+        out.writeObject(mergePolicyConfig);
     }
 
     @Override
@@ -199,18 +256,22 @@ public class ScheduledExecutorConfig implements IdentifiedDataSerializable {
         durability = in.readInt();
         capacity = in.readInt();
         poolSize = in.readInt();
+        splitBrainProtectionName = in.readUTF();
+        mergePolicyConfig = in.readObject();
     }
 
+    @SuppressWarnings({"checkstyle:npathcomplexity"})
     @Override
     public final boolean equals(Object o) {
         if (this == o) {
             return true;
         }
+
         if (!(o instanceof ScheduledExecutorConfig)) {
             return false;
         }
-
         ScheduledExecutorConfig that = (ScheduledExecutorConfig) o;
+
         if (durability != that.durability) {
             return false;
         }
@@ -218,6 +279,13 @@ public class ScheduledExecutorConfig implements IdentifiedDataSerializable {
             return false;
         }
         if (poolSize != that.poolSize) {
+            return false;
+        }
+        if (splitBrainProtectionName != null ? !splitBrainProtectionName.equals(that.splitBrainProtectionName)
+                : that.splitBrainProtectionName != null) {
+            return false;
+        }
+        if (mergePolicyConfig != null ? !mergePolicyConfig.equals(that.mergePolicyConfig) : that.mergePolicyConfig != null) {
             return false;
         }
         return name.equals(that.name);
@@ -229,34 +297,8 @@ public class ScheduledExecutorConfig implements IdentifiedDataSerializable {
         result = 31 * result + durability;
         result = 31 * result + capacity;
         result = 31 * result + poolSize;
+        result = 31 * result + (splitBrainProtectionName != null ? splitBrainProtectionName.hashCode() : 0);
+        result = 31 * result + (mergePolicyConfig != null ? mergePolicyConfig.hashCode() : 0);
         return result;
-    }
-
-    // non-private for testing
-    static class ScheduledExecutorConfigReadOnly extends ScheduledExecutorConfig {
-
-        ScheduledExecutorConfigReadOnly(ScheduledExecutorConfig config) {
-            super(config);
-        }
-
-        @Override
-        public ScheduledExecutorConfig setName(String name) {
-            throw new UnsupportedOperationException("This config is read-only scheduled executor: " + getName());
-        }
-
-        @Override
-        public ScheduledExecutorConfig setDurability(int durability) {
-            throw new UnsupportedOperationException("This config is read-only scheduled executor: " + getName());
-        }
-
-        @Override
-        public ScheduledExecutorConfig setPoolSize(int poolSize) {
-            throw new UnsupportedOperationException("This config is read-only scheduled executor: " + getName());
-        }
-
-        @Override
-        public ScheduledExecutorConfig setCapacity(int capacity) {
-            throw new UnsupportedOperationException("This config is read-only scheduled executor: " + getName());
-        }
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,7 +29,7 @@ public class MultiMapValue {
 
     private final Collection<MultiMapRecord> collection;
 
-    private int hits;
+    private long hits;
 
     public MultiMapValue(Collection<MultiMapRecord> collection) {
         this.collection = collection;
@@ -44,9 +44,9 @@ public class MultiMapValue {
 
     private Collection<MultiMapRecord> getCopyOfCollection() {
         if (collection instanceof Set) {
-            return new HashSet<MultiMapRecord>(collection);
+            return new HashSet<>(collection);
         } else if (collection instanceof List) {
-            return new LinkedList<MultiMapRecord>(collection);
+            return new LinkedList<>(collection);
         }
         throw new IllegalArgumentException("No Matching CollectionProxyType!");
     }
@@ -55,8 +55,12 @@ public class MultiMapValue {
         hits++;
     }
 
-    public int getHits() {
+    public long getHits() {
         return hits;
+    }
+
+    public void setHits(long hits) {
+        this.hits = hits;
     }
 
     public boolean containsRecordId(long recordId) {
@@ -67,5 +71,4 @@ public class MultiMapValue {
         }
         return false;
     }
-
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,22 +16,22 @@
 
 package com.hazelcast.map.impl;
 
-import com.hazelcast.spi.ClientAwareService;
-import com.hazelcast.spi.EventPublishingService;
-import com.hazelcast.spi.ManagedService;
-import com.hazelcast.spi.MigrationAwareService;
-import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.PartitionAwareService;
-import com.hazelcast.spi.PostJoinAwareService;
-import com.hazelcast.spi.QuorumAwareService;
-import com.hazelcast.spi.RemoteService;
-import com.hazelcast.spi.ReplicationSupportingService;
-import com.hazelcast.spi.SplitBrainHandlerService;
-import com.hazelcast.spi.StatisticsAwareService;
-import com.hazelcast.spi.TransactionalService;
+import com.hazelcast.internal.services.ClientAwareService;
+import com.hazelcast.internal.services.ManagedService;
+import com.hazelcast.internal.services.PostJoinAwareService;
+import com.hazelcast.internal.services.RemoteService;
+import com.hazelcast.internal.services.WanSupportingService;
+import com.hazelcast.internal.services.SplitBrainHandlerService;
+import com.hazelcast.internal.services.StatisticsAwareService;
+import com.hazelcast.internal.services.TransactionalService;
+import com.hazelcast.internal.services.SplitBrainProtectionAwareService;
 import com.hazelcast.spi.impl.CountingMigrationAwareService;
+import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.spi.impl.eventservice.EventPublishingService;
+import com.hazelcast.internal.partition.MigrationAwareService;
+import com.hazelcast.internal.partition.PartitionAwareService;
 
-import static com.hazelcast.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 /**
  * An abstract implementation of {@link MapServiceFactory} interface; this abstract class knows
@@ -45,7 +45,7 @@ abstract class AbstractMapServiceFactory implements MapServiceFactory {
      * Creates a new {@link ManagedService} for {@link MapService}.
      *
      * @return Creates a new {@link ManagedService} implementation.
-     * @see com.hazelcast.spi.ManagedService
+     * @see ManagedService
      */
     abstract ManagedService createManagedService();
 
@@ -53,7 +53,7 @@ abstract class AbstractMapServiceFactory implements MapServiceFactory {
      * Creates a new {@link MigrationAwareService} for {@link MapService}.
      *
      * @return Creates a new {@link MigrationAwareService} implementation.
-     * @see com.hazelcast.spi.MigrationAwareService
+     * @see MigrationAwareService
      */
     abstract CountingMigrationAwareService createMigrationAwareService();
 
@@ -61,7 +61,7 @@ abstract class AbstractMapServiceFactory implements MapServiceFactory {
      * Creates a new {@link TransactionalService} for {@link MapService}.
      *
      * @return Creates a new {@link TransactionalService} implementation.
-     * @see com.hazelcast.spi.TransactionalService
+     * @see TransactionalService
      */
     abstract TransactionalService createTransactionalService();
 
@@ -69,7 +69,7 @@ abstract class AbstractMapServiceFactory implements MapServiceFactory {
      * Creates a new {@link RemoteService} for {@link MapService}.
      *
      * @return Creates a new {@link RemoteService} implementation.
-     * @see com.hazelcast.spi.RemoteService
+     * @see RemoteService
      */
     abstract RemoteService createRemoteService();
 
@@ -77,7 +77,7 @@ abstract class AbstractMapServiceFactory implements MapServiceFactory {
      * Creates a new {@link EventPublishingService} for {@link MapService}.
      *
      * @return Creates a new {@link EventPublishingService} implementation.
-     * @see com.hazelcast.spi.EventPublishingService
+     * @see EventPublishingService
      */
     abstract EventPublishingService createEventPublishingService();
 
@@ -85,7 +85,7 @@ abstract class AbstractMapServiceFactory implements MapServiceFactory {
      * Creates a new {@link PostJoinAwareService} for {@link MapService}.
      *
      * @return Creates a new {@link PostJoinAwareService} implementation.
-     * @see com.hazelcast.spi.PostJoinAwareService
+     * @see PostJoinAwareService
      */
     abstract PostJoinAwareService createPostJoinAwareService();
 
@@ -93,23 +93,23 @@ abstract class AbstractMapServiceFactory implements MapServiceFactory {
      * Creates a new {@link SplitBrainHandlerService} for {@link MapService}.
      *
      * @return Creates a new {@link SplitBrainHandlerService} implementation.
-     * @see com.hazelcast.spi.SplitBrainHandlerService
+     * @see SplitBrainHandlerService
      */
     abstract SplitBrainHandlerService createSplitBrainHandlerService();
 
     /**
-     * Creates a new {@link ReplicationSupportingService} for {@link MapService}.
+     * Creates a new {@link WanSupportingService} for {@link MapService}.
      *
-     * @return Creates a new {@link ReplicationSupportingService} implementation.
-     * @see com.hazelcast.spi.ReplicationSupportingService
+     * @return Creates a new {@link WanSupportingService} implementation.
+     * @see WanSupportingService
      */
-    abstract ReplicationSupportingService createReplicationSupportingService();
+    abstract WanSupportingService createReplicationSupportingService();
 
     /**
      * Creates a new {@link StatisticsAwareService} for {@link MapService}.
      *
      * @return Creates a new {@link StatisticsAwareService} implementation.
-     * @see com.hazelcast.spi.StatisticsAwareService
+     * @see StatisticsAwareService
      */
     abstract StatisticsAwareService createStatisticsAwareService();
 
@@ -117,7 +117,7 @@ abstract class AbstractMapServiceFactory implements MapServiceFactory {
      * Creates a new {@link PartitionAwareService} for {@link MapService}.
      *
      * @return Creates a new {@link PartitionAwareService} implementation.
-     * @see com.hazelcast.spi.PartitionAwareService
+     * @see PartitionAwareService
      */
     abstract PartitionAwareService createPartitionAwareService();
 
@@ -126,17 +126,17 @@ abstract class AbstractMapServiceFactory implements MapServiceFactory {
      * Creates a new {@link ClientAwareService} for {@link MapService}.
      *
      * @return Creates a new {@link ClientAwareService} implementation.
-     * @see com.hazelcast.spi.ClientAwareService
+     * @see ClientAwareService
      */
     abstract ClientAwareService createClientAwareService();
 
     /**
-     * Creates a new {@link QuorumAwareService} for {@link MapService}.
+     * Creates a new {@link SplitBrainProtectionAwareService} for {@link MapService}.
      *
      * @return Creates a new {@link PartitionAwareService} implementation.
-     * @see com.hazelcast.spi.PartitionAwareService
+     * @see PartitionAwareService
      */
-    abstract QuorumAwareService createQuorumAwareService();
+    abstract MapSplitBrainProtectionAwareService createSplitBrainProtectionAwareService();
 
 
     /**
@@ -156,10 +156,11 @@ abstract class AbstractMapServiceFactory implements MapServiceFactory {
         EventPublishingService eventPublishingService = createEventPublishingService();
         PostJoinAwareService postJoinAwareService = createPostJoinAwareService();
         SplitBrainHandlerService splitBrainHandlerService = createSplitBrainHandlerService();
-        ReplicationSupportingService replicationSupportingService = createReplicationSupportingService();
+        WanSupportingService wanSupportingService = createReplicationSupportingService();
         StatisticsAwareService statisticsAwareService = createStatisticsAwareService();
         PartitionAwareService partitionAwareService = createPartitionAwareService();
-        QuorumAwareService quorumAwareService = createQuorumAwareService();
+        MapSplitBrainProtectionAwareService splitBrainProtectionAwareService =
+                createSplitBrainProtectionAwareService();
         ClientAwareService clientAwareService = createClientAwareService();
 
         checkNotNull(nodeEngine, "nodeEngine should not be null");
@@ -171,10 +172,10 @@ abstract class AbstractMapServiceFactory implements MapServiceFactory {
         checkNotNull(eventPublishingService, "eventPublishingService should not be null");
         checkNotNull(postJoinAwareService, "postJoinAwareService should not be null");
         checkNotNull(splitBrainHandlerService, "splitBrainHandlerService should not be null");
-        checkNotNull(replicationSupportingService, "replicationSupportingService should not be null");
+        checkNotNull(wanSupportingService, "replicationSupportingService should not be null");
         checkNotNull(statisticsAwareService, "statisticsAwareService should not be null");
         checkNotNull(partitionAwareService, "partitionAwareService should not be null");
-        checkNotNull(quorumAwareService, "quorumAwareService should not be null");
+        checkNotNull(splitBrainProtectionAwareService, "splitBrainProtectionAwareService should not be null");
         checkNotNull(clientAwareService, "clientAwareService should not be null");
 
         MapService mapService = new MapService();
@@ -185,13 +186,12 @@ abstract class AbstractMapServiceFactory implements MapServiceFactory {
         mapService.eventPublishingService = eventPublishingService;
         mapService.postJoinAwareService = postJoinAwareService;
         mapService.splitBrainHandlerService = splitBrainHandlerService;
-        mapService.replicationSupportingService = replicationSupportingService;
+        mapService.wanSupportingService = wanSupportingService;
         mapService.statisticsAwareService = statisticsAwareService;
         mapService.mapServiceContext = mapServiceContext;
         mapService.partitionAwareService = partitionAwareService;
-        mapService.quorumAwareService = quorumAwareService;
+        mapService.splitBrainProtectionAwareService = splitBrainProtectionAwareService;
         mapService.clientAwareService = clientAwareService;
-        mapService.mapIndexSynchronizer = new MapIndexSynchronizer(mapServiceContext, nodeEngine);
         mapServiceContext.setService(mapService);
         return mapService;
     }

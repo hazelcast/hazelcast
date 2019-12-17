@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,7 +31,7 @@ public interface QueryCacheConfigurator {
      * @param cacheName query cache name.
      * @return {@link QueryCacheConfig} for the requested {@code cacheName}.
      */
-    QueryCacheConfig getOrCreateConfiguration(String mapName, String cacheName);
+    QueryCacheConfig getOrCreateConfiguration(String mapName, String cacheName, String cacheId);
 
     /**
      * Returns {@link QueryCacheConfig} for the requested {@code cacheName} or null
@@ -40,7 +40,7 @@ public interface QueryCacheConfigurator {
      * @param cacheName query cache name.
      * @return {@link QueryCacheConfig} for the requested {@code cacheName}.
      */
-    QueryCacheConfig getOrNull(String mapName, String cacheName);
+    QueryCacheConfig getOrNull(String mapName, String cacheName, String cacheId);
 
     /**
      * Removes corresponding configuration for the supplied {@code cacheName}

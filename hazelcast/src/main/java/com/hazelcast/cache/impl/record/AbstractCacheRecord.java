@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,12 +31,13 @@ import java.io.IOException;
  *
  * @param <V> the type of the value stored by this {@link AbstractCacheRecord}
  */
-public abstract class AbstractCacheRecord<V> implements CacheRecord<V>, IdentifiedDataSerializable {
+public abstract class AbstractCacheRecord<V, E> implements CacheRecord<V, E>, IdentifiedDataSerializable {
 
     protected long creationTime = TIME_NOT_AVAILABLE;
+
+    protected volatile int hits;
     protected volatile long expirationTime = TIME_NOT_AVAILABLE;
-    protected volatile long accessTime = TIME_NOT_AVAILABLE;
-    protected volatile int accessHit;
+    protected volatile long lastAccessTime = TIME_NOT_AVAILABLE;
 
     protected AbstractCacheRecord() {
     }
@@ -67,34 +68,30 @@ public abstract class AbstractCacheRecord<V> implements CacheRecord<V>, Identifi
 
     @Override
     public long getLastAccessTime() {
-        return accessTime;
+        return lastAccessTime;
     }
 
     @Override
-    public void setAccessTime(long accessTime) {
-        this.accessTime = accessTime;
+    public void setLastAccessTime(long lastAccessTime) {
+        this.lastAccessTime = lastAccessTime;
     }
 
     @Override
-    public int getAccessHit() {
-        return accessHit;
+    public long getHits() {
+        return hits;
     }
 
     @Override
-    public void setAccessHit(int accessHit) {
-        this.accessHit = accessHit;
+    public void setHits(long accessHit) {
+        this.hits = accessHit > Integer.MAX_VALUE
+                ? Integer.MAX_VALUE : (int) accessHit;
     }
 
     @Override
     @SuppressFBWarnings(value = "VO_VOLATILE_INCREMENT",
             justification = "CacheRecord can be accessed by only its own partition thread.")
-    public void incrementAccessHit() {
-        accessHit++;
-    }
-
-    @Override
-    public void resetAccessHit() {
-        accessHit = 0;
+    public void incrementHits() {
+        hits++;
     }
 
     @Override
@@ -106,16 +103,16 @@ public abstract class AbstractCacheRecord<V> implements CacheRecord<V>, Identifi
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeLong(creationTime);
         out.writeLong(expirationTime);
-        out.writeLong(accessTime);
-        out.writeInt(accessHit);
+        out.writeLong(lastAccessTime);
+        out.writeInt(hits);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         creationTime = in.readLong();
         expirationTime = in.readLong();
-        accessTime = in.readLong();
-        accessHit = in.readInt();
+        lastAccessTime = in.readLong();
+        hits = in.readInt();
     }
 
     @Override

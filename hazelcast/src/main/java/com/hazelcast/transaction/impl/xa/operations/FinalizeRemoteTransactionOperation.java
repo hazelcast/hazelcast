@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,12 +16,12 @@
 
 package com.hazelcast.transaction.impl.xa.operations;
 
-import com.hazelcast.core.ExecutionCallback;
+import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.BackupAwareOperation;
-import com.hazelcast.spi.Operation;
+import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.spi.impl.operationservice.BackupAwareOperation;
+import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.transaction.impl.TransactionDataSerializerHook;
 import com.hazelcast.transaction.impl.xa.SerializableXID;
 import com.hazelcast.transaction.impl.xa.XAService;
@@ -30,7 +30,7 @@ import com.hazelcast.transaction.impl.xa.XATransaction;
 import javax.transaction.xa.XAException;
 import java.io.IOException;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.BiConsumer;
 
 public class FinalizeRemoteTransactionOperation extends AbstractXAOperation implements BackupAwareOperation {
 
@@ -64,33 +64,14 @@ public class FinalizeRemoteTransactionOperation extends AbstractXAOperation impl
         }
         final int size = list.size();
 
-        final ExecutionCallback callback = new ExecutionCallback() {
-            AtomicInteger counter = new AtomicInteger();
-
-            @Override
-            public void onResponse(Object response) {
-                sendResponseIfComplete();
-            }
-
-            @Override
-            public void onFailure(Throwable t) {
-                // TODO log the error
-                sendResponseIfComplete();
-            }
-
-            void sendResponseIfComplete() {
-                if (size == counter.incrementAndGet()) {
-                    sendResponse(null);
-                }
-            }
-        };
+        final TransactionFinalizationCallback callback = new TransactionFinalizationCallback(this, size);
 
         for (XATransaction xaTransaction : list) {
             finalizeTransaction(xaTransaction, callback);
         }
     }
 
-    private void finalizeTransaction(XATransaction xaTransaction, ExecutionCallback callback) {
+    private void finalizeTransaction(XATransaction xaTransaction, BiConsumer callback) {
         if (isCommit) {
             xaTransaction.commitAsync(callback);
         } else {
@@ -125,18 +106,18 @@ public class FinalizeRemoteTransactionOperation extends AbstractXAOperation impl
 
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
-        out.writeData(xidData);
+        IOUtil.writeData(out, xidData);
         out.writeBoolean(isCommit);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
-        xidData = in.readData();
+        xidData = IOUtil.readData(in);
         isCommit = in.readBoolean();
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return TransactionDataSerializerHook.FINALIZE_REMOTE_TX;
     }
 }

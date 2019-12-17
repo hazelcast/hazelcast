@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,35 +16,38 @@
 
 package com.hazelcast.map.impl.operation;
 
-import com.hazelcast.core.EntryView;
 import com.hazelcast.map.EntryProcessor;
+import com.hazelcast.map.IMap;
 import com.hazelcast.map.impl.MapEntries;
 import com.hazelcast.map.impl.query.Query;
-import com.hazelcast.map.merge.MapMergePolicy;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.query.Predicate;
-import com.hazelcast.spi.OperationFactory;
+import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.spi.impl.operationservice.OperationFactory;
+import com.hazelcast.spi.merge.SplitBrainMergePolicy;
+import com.hazelcast.spi.merge.SplitBrainMergeTypes.MapMergeTypes;
 
 import java.util.List;
 import java.util.Set;
+import java.util.UUID;
 
 /**
  * Provides {@link com.hazelcast.config.InMemoryFormat InMemoryFormat} specific
- * operations for {@link com.hazelcast.core.IMap IMap}.
+ * operations for {@link IMap IMap}.
  */
 public interface MapOperationProvider {
 
-    MapOperation createPutOperation(String name, Data key, Data value, long ttl);
+    MapOperation createPutOperation(String name, Data key, Data value, long ttl, long maxIdle);
 
     MapOperation createTryPutOperation(String name, Data dataKey, Data value, long timeout);
 
-    MapOperation createSetOperation(String name, Data dataKey, Data value, long ttl);
+    MapOperation createSetOperation(String name, Data dataKey, Data value, long ttl, long maxIdle);
 
-    MapOperation createPutIfAbsentOperation(String name, Data key, Data value, long ttl);
+    MapOperation createPutIfAbsentOperation(String name, Data key, Data value, long ttl, long maxIdle);
 
-    MapOperation createPutTransientOperation(String name, Data key, Data value, long ttl);
+    MapOperation createPutTransientOperation(String name, Data key, Data value, long ttl, long maxIdle);
 
-    MapOperation createRemoveOperation(String name, Data key, boolean disableWanReplicationEvent);
+    MapOperation createSetTtlOperation(String name, Data key, long ttl);
 
     MapOperation createTryRemoveOperation(String name, Data dataKey, long timeout);
 
@@ -53,6 +56,8 @@ public interface MapOperationProvider {
     MapOperation createRemoveIfSameOperation(String name, Data dataKey, Data value);
 
     MapOperation createReplaceIfSameOperation(String name, Data dataKey, Data expect, Data update);
+
+    MapOperation createRemoveOperation(String name, Data key);
 
     /**
      * Creates a delete operation for an entry with key equal to {@code key} from the map named {@code name}.
@@ -79,7 +84,7 @@ public interface MapOperationProvider {
 
     MapOperation createGetOperation(String name, Data dataKey);
 
-    MapOperation createQueryOperation(Query query);
+    Operation createQueryOperation(Query query);
 
     MapOperation createQueryPartitionOperation(Query query);
 
@@ -96,17 +101,18 @@ public interface MapOperationProvider {
 
     MapOperation createPutAllOperation(String name, MapEntries mapEntries);
 
-    MapOperation createPutFromLoadAllOperation(String name, List<Data> keyValueSequence);
+    MapOperation createPutFromLoadAllOperation(String name, List<Data> keyValueSequence, boolean expirationTime);
 
     MapOperation createTxnDeleteOperation(String name, Data dataKey, long version);
 
-    MapOperation createTxnLockAndGetOperation(String name, Data dataKey, long timeout, long ttl, String ownerUuid,
+    MapOperation createTxnLockAndGetOperation(String name, Data dataKey, long timeout, long ttl, UUID ownerUuid,
                                               boolean shouldLoad, boolean blockReads);
 
     MapOperation createTxnSetOperation(String name, Data dataKey, Data value, long version, long ttl);
 
-    MapOperation createMergeOperation(String name, Data dataKey, EntryView<Data, Data> entryView,
-                                      MapMergePolicy policy, boolean disableWanReplicationEvent);
+    MapOperation createMergeOperation(String name, MapMergeTypes mergingValue,
+                                      SplitBrainMergePolicy<Data, MapMergeTypes> mergePolicy,
+                                      boolean disableWanReplicationEvent);
 
     MapOperation createMapFlushOperation(String name);
 
@@ -147,5 +153,7 @@ public interface MapOperationProvider {
     OperationFactory createMapSizeOperationFactory(String name);
 
     OperationFactory createPutAllOperationFactory(String name, int[] partitions, MapEntries[] mapEntries);
-}
 
+    OperationFactory createMergeOperationFactory(String name, int[] partitions, List<MapMergeTypes>[] mergingEntries,
+                                                 SplitBrainMergePolicy<Data, MapMergeTypes> mergePolicy);
+}

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,7 @@ package com.hazelcast.internal.serialization.impl;
 import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.internal.serialization.DataSerializerHook;
 import com.hazelcast.logging.Logger;
-import com.hazelcast.nio.ClassLoaderUtil;
+import com.hazelcast.internal.nio.ClassLoaderUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
@@ -29,12 +29,13 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.nio.serialization.StreamSerializer;
 import com.hazelcast.nio.serialization.TypedDataSerializable;
 import com.hazelcast.nio.serialization.TypedStreamDeserializer;
-import com.hazelcast.util.ExceptionUtil;
-import com.hazelcast.util.ServiceLoader;
-import com.hazelcast.util.collection.Int2ObjectHashMap;
+import com.hazelcast.internal.util.ExceptionUtil;
+import com.hazelcast.internal.util.ServiceLoader;
+import com.hazelcast.internal.util.collection.Int2ObjectHashMap;
 import com.hazelcast.version.Version;
 
 import java.io.IOException;
+import java.lang.reflect.Modifier;
 import java.util.Iterator;
 import java.util.Map;
 
@@ -56,7 +57,7 @@ final class DataSerializableSerializer implements StreamSerializer<DataSerializa
     private static final String FACTORY_ID = "com.hazelcast.DataSerializerHook";
 
     private final Version version = Version.of(BuildInfoProvider.getBuildInfo().getVersion());
-    private final Int2ObjectHashMap<DataSerializableFactory> factories = new Int2ObjectHashMap<DataSerializableFactory>();
+    private final Int2ObjectHashMap<DataSerializableFactory> factories = new Int2ObjectHashMap<>();
 
     DataSerializableSerializer(Map<Integer, ? extends DataSerializableFactory> dataSerializableFactories,
                                ClassLoader classLoader) {
@@ -119,6 +120,7 @@ final class DataSerializableSerializer implements StreamSerializer<DataSerializa
             try {
                 ds = (DataSerializable) aClass.newInstance();
             } catch (Exception e) {
+                e = tryClarifyInstantiationException(aClass, e);
                 throw new HazelcastSerializationException("Requested class " + aClass + " could not be instantiated.", e);
             }
         }
@@ -158,6 +160,7 @@ final class DataSerializableSerializer implements StreamSerializer<DataSerializa
             ds.readData(in);
             return ds;
         } catch (Exception e) {
+            e = tryClarifyNoSuchMethodException(in.getClassLoader(), className, e);
             throw rethrowReadException(id, factoryId, className, e);
         }
     }
@@ -180,6 +183,46 @@ final class DataSerializableSerializer implements StreamSerializer<DataSerializa
                 + ", exception: " + e.getMessage(), e);
     }
 
+    private Exception tryClarifyInstantiationException(Class aClass, Exception exception) {
+        if (!(exception instanceof InstantiationException)) {
+            return exception;
+        }
+        InstantiationException instantiationException = (InstantiationException) exception;
+
+        String message = tryGenerateClarifiedExceptionMessage(aClass);
+        if (message == null) {
+            return instantiationException;
+        }
+
+        InstantiationException clarifiedException = new InstantiationException(message);
+        clarifiedException.initCause(instantiationException);
+        return clarifiedException;
+    }
+
+    private Exception tryClarifyNoSuchMethodException(ClassLoader classLoader, String className, Exception exception) {
+        if (!(exception instanceof NoSuchMethodException)) {
+            return exception;
+        }
+        NoSuchMethodException noSuchMethodException = (NoSuchMethodException) exception;
+
+        Class aClass;
+        try {
+            ClassLoader effectiveClassLoader = classLoader == null ? ClassLoaderUtil.class.getClassLoader() : classLoader;
+            aClass = ClassLoaderUtil.loadClass(effectiveClassLoader, className);
+        } catch (Exception e) {
+            return noSuchMethodException;
+        }
+
+        String message = tryGenerateClarifiedExceptionMessage(aClass);
+        if (message == null) {
+            message = "Classes conforming to DataSerializable should provide a no-arguments constructor.";
+        }
+
+        NoSuchMethodException clarifiedException = new NoSuchMethodException(message);
+        clarifiedException.initCause(noSuchMethodException);
+        return clarifiedException;
+    }
+
     @Override
     public void write(ObjectDataOutput out, DataSerializable obj) throws IOException {
         // If you ever change the way this is serialized think about to change
@@ -190,7 +233,7 @@ final class DataSerializableSerializer implements StreamSerializer<DataSerializa
         if (identified) {
             final IdentifiedDataSerializable ds = (IdentifiedDataSerializable) obj;
             out.writeInt(ds.getFactoryId());
-            out.writeInt(ds.getId());
+            out.writeInt(ds.getClassId());
         } else {
             if (obj instanceof TypedDataSerializable) {
                 out.writeUTF(((TypedDataSerializable) obj).getClassType().getName());
@@ -213,4 +256,21 @@ final class DataSerializableSerializer implements StreamSerializer<DataSerializa
     private static void setInputVersion(ObjectDataInput in, Version version) {
         ((VersionedObjectDataInput) in).setVersion(version);
     }
+
+    private static String tryGenerateClarifiedExceptionMessage(Class aClass) {
+        String classType;
+        if (aClass.isAnonymousClass()) {
+            classType = "Anonymous";
+        } else if (aClass.isLocalClass()) {
+            classType = "Local";
+        } else if (aClass.isMemberClass() && !Modifier.isStatic(aClass.getModifiers())) {
+            classType = "Non-static member";
+        } else {
+            return null;
+        }
+
+        return String.format("%s classes can't conform to DataSerializable since they can't "
+                + "provide an explicit no-arguments constructor.", classType);
+    }
+
 }

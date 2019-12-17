@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,70 +16,79 @@
 
 package com.hazelcast.test.mocknetwork;
 
-import com.hazelcast.cluster.Joiner;
+import com.hazelcast.internal.cluster.Joiner;
 import com.hazelcast.instance.AddressPicker;
 import com.hazelcast.instance.BuildInfoProvider;
-import com.hazelcast.instance.Node;
-import com.hazelcast.instance.NodeContext;
-import com.hazelcast.instance.NodeExtension;
-import com.hazelcast.instance.NodeExtensionFactory;
-import com.hazelcast.nio.Address;
-import com.hazelcast.nio.ConnectionManager;
-import com.hazelcast.nio.NodeIOService;
-import com.hazelcast.nio.tcp.FirewallingConnectionManager;
+import com.hazelcast.instance.impl.DefaultNodeContext;
+import com.hazelcast.instance.impl.Node;
+import com.hazelcast.instance.impl.NodeContext;
+import com.hazelcast.instance.impl.NodeExtension;
+import com.hazelcast.instance.impl.NodeExtensionFactory;
+import com.hazelcast.internal.networking.ServerSocketRegistry;
+import com.hazelcast.cluster.Address;
+import com.hazelcast.internal.nio.NetworkingService;
+import com.hazelcast.internal.nio.NodeIOService;
+import com.hazelcast.internal.nio.tcp.FirewallingNetworkingService;
 import com.hazelcast.test.TestEnvironment;
 import com.hazelcast.test.compatibility.SamplingNodeExtension;
 
 import java.lang.reflect.Constructor;
-import java.nio.channels.ServerSocketChannel;
 import java.util.Collections;
+import java.util.List;
 import java.util.Set;
 
-import static com.hazelcast.util.ExceptionUtil.rethrow;
+import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 
 public class MockNodeContext implements NodeContext {
 
     private final TestNodeRegistry registry;
     private final Address thisAddress;
     private final Set<Address> initiallyBlockedAddresses;
+    private final List<String> nodeExtensionPriorityList;
 
-    protected MockNodeContext(TestNodeRegistry registry, Address thisAddress) {
-        this(registry, thisAddress, Collections.<Address>emptySet());
+    public MockNodeContext(TestNodeRegistry registry, Address thisAddress) {
+        this(registry, thisAddress, Collections.<Address>emptySet(), DefaultNodeContext.EXTENSION_PRIORITY_LIST);
     }
 
-    protected MockNodeContext(TestNodeRegistry registry, Address thisAddress, Set<Address> initiallyBlockedAddresses) {
+    protected MockNodeContext(
+            TestNodeRegistry registry, Address thisAddress, Set<Address> initiallyBlockedAddresses,
+            List<String> nodeExtensionPriorityList
+    ) {
         this.registry = registry;
         this.thisAddress = thisAddress;
         this.initiallyBlockedAddresses = initiallyBlockedAddresses;
+        this.nodeExtensionPriorityList = nodeExtensionPriorityList;
     }
 
     @Override
     public NodeExtension createNodeExtension(Node node) {
-        if (TestEnvironment.isRecordingSerializedClassNames()) {
-            return constructSamplingNodeExtension(node);
-        } else {
-            return NodeExtensionFactory.create(node);
-        }
+        return TestEnvironment.isRecordingSerializedClassNames()
+                ? constructSamplingNodeExtension(node)
+                : NodeExtensionFactory.create(node, nodeExtensionPriorityList);
     }
 
+    @Override
     public AddressPicker createAddressPicker(Node node) {
         return new StaticAddressPicker(thisAddress);
     }
 
+    @Override
     public Joiner createJoiner(Node node) {
         return new MockJoiner(node, registry, initiallyBlockedAddresses);
     }
 
-    public ConnectionManager createConnectionManager(Node node, ServerSocketChannel serverSocketChannel) {
+    @Override
+    public NetworkingService createNetworkingService(Node node, ServerSocketRegistry serverSocketRegistry) {
         NodeIOService ioService = new NodeIOService(node, node.nodeEngine);
-        ConnectionManager delegate = new MockConnectionManager(ioService, node, registry);
-        return new FirewallingConnectionManager(delegate, initiallyBlockedAddresses);
+        MockNetworkingService mockNetworkingService = new MockNetworkingService(ioService, node, registry);
+        return new FirewallingNetworkingService(mockNetworkingService, initiallyBlockedAddresses);
     }
 
     /**
      * @return {@code NodeExtension} suitable for sampling serialized objects in OSS or EE environment
      */
-    private NodeExtension constructSamplingNodeExtension(Node node) {
+    @SuppressWarnings("unchecked")
+    private static NodeExtension constructSamplingNodeExtension(Node node) {
         if (BuildInfoProvider.getBuildInfo().isEnterprise()) {
             try {
                 Class<? extends NodeExtension> klass = (Class<? extends NodeExtension>)
@@ -90,7 +99,7 @@ public class MockNodeContext implements NodeContext {
                 throw rethrow(e);
             }
         } else {
-            NodeExtension wrapped = NodeExtensionFactory.create(node);
+            NodeExtension wrapped = NodeExtensionFactory.create(node, DefaultNodeContext.EXTENSION_PRIORITY_LIST);
             return new SamplingNodeExtension(wrapped);
         }
     }

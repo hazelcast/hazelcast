@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,15 +16,14 @@
 
 package com.hazelcast.cluster;
 
-import com.hazelcast.core.Cluster;
-import com.hazelcast.instance.NodeState;
+import com.hazelcast.instance.impl.NodeState;
 import com.hazelcast.spi.impl.AllowedDuringPassiveState;
 
 /**
- * {@code ClusterState} consists several states of the cluster
- * which each state can allow and/or deny specific actions
- * and/or change behaviours of specific actions.
- * <p/>
+ * {@code ClusterState} are several possible states of the cluster
+ * where each state can allow and/or deny specific actions
+ * and/or change behavior of specific actions.
+ * <p>
  * There are 5 states:
  * <ol>
  * <li>
@@ -40,7 +39,7 @@ import com.hazelcast.spi.impl.AllowedDuringPassiveState;
  * {@link #FROZEN}:
  * New members are not allowed to join, partition table/assignments will be frozen.
  * All other operations are allowed and will operate without any restriction.
- * If some members leave the cluster during it is in {@code FROZEN} state, they can join back.
+ * If some members leave the cluster while it is in {@code FROZEN} state, they can join back.
  * </li>
  * <li>
  * {@link #PASSIVE}:
@@ -51,10 +50,10 @@ import com.hazelcast.spi.impl.AllowedDuringPassiveState;
  * <li>
  * {@link #IN_TRANSITION}:
  * Shows that {@code ClusterState} is in transition.
- * This is a temporary & intermediate state, not allowed to set explicitly.
+ * This is a temporary &amp; intermediate state, not allowed to be set explicitly.
  * </li>
  * </ol>
- * <p/>
+ * <p>
  * By default, cluster will be in {@code ACTIVE} state. During split-brain merge process,
  * state of the cluster, that is going to join to the major side,
  * will be changed to {@code FROZEN} automatically before merge
@@ -69,9 +68,9 @@ public enum ClusterState {
 
     /**
      * In {@code ACTIVE} state, cluster will continue to operate without any restriction.
-     * All operations are allowed. This is default state of a cluster.
+     * All operations are allowed. This is the default state of a cluster.
      */
-    ACTIVE(true, true),
+    ACTIVE(true, true, true, 0),
 
     /**
      * In {@code NO_MIGRATION} state of the cluster, migrations (partition rebalancing) and backup replications
@@ -90,7 +89,7 @@ public enum ClusterState {
      *
      * @since 3.9
      */
-    NO_MIGRATION(true, false),
+    NO_MIGRATION(true, false, true, 1),
 
     /**
      * In {@code FROZEN} state of the cluster:
@@ -105,9 +104,9 @@ public enum ClusterState {
      * Partition table/assignments will be frozen. When a member leaves the cluster, its partition
      * assignments (as primary and backup) will remain the same, until either that member re-joins
      * to the cluster or {@code ClusterState} changes back to {@code ACTIVE}.
-     * If that member re-joins in {@code FROZEN}, it will own all previous partition assignments as it is.
+     * If that member re-joins while still in {@code FROZEN}, it will own all previously assigned partitions.
      * If {@code ClusterState} changes to {@code ACTIVE} then partition re-balancing process will
-     * kick-in and all unassigned partitions will be assigned to active members.
+     * kick in and all unassigned partitions will be assigned to active members.
      * It's not allowed to change {@code ClusterState} to {@code FROZEN}
      * when there are pending migration/replication tasks in the system.
      * </li>
@@ -119,7 +118,7 @@ public enum ClusterState {
      * </li>
      * </ul>
      */
-    FROZEN(false, false),
+    FROZEN(false, false, false, 2),
 
     /**
      * In {@code PASSIVE} state of the cluster:
@@ -127,15 +126,15 @@ public enum ClusterState {
      * <li>
      * New members are not allowed to join, except the members left during {@link ClusterState#FROZEN} or {@code PASSIVE} state.
      * </li>
-     * * <li>
+     * <li>
      * Partition table/assignments will be frozen. It's not allowed to change {@code ClusterState}
      * to {@code PASSIVE} when there are pending migration/replication tasks in the system. If some
      * nodes leave the cluster while cluster is in {@code PASSIVE} state, they will be removed from the
-     * partition table if cluster state moves back to {@link #ACTIVE}.
+     * partition table when cluster state moves back to {@link #ACTIVE}.
      * </li>
      * <li>
-     * When cluster state is moved to {@code PASSIVE}, node are moved to {@link NodeState#PASSIVE}.
-     * In this regard, when cluster state moves to another state from {@code PASSIVE}, nodes become
+     * When cluster state is moved to {@code PASSIVE}, nodes are moved to {@link NodeState#PASSIVE} too.
+     * Similarly when cluster state moves to another state from {@code PASSIVE}, nodes become
      * {@link NodeState#ACTIVE}.
      * </li>
      * <li>
@@ -144,19 +143,18 @@ public enum ClusterState {
      * </li>
      * </ul>
      */
-    PASSIVE(false, false),
+    PASSIVE(false, false, false, 3),
 
     /**
      * Shows that ClusterState is in transition. When a state change transaction is started,
-     * ClusterState will be shown as {@code IN_TRANSITION} during the transaction lifecycle.
-     * After transaction completes, it will be in either new state or its previous state
-     * depending on transaction's result.
-     * <p/>
-     * This is a temporary & intermediate state, not allowed to set explicitly.
-     * <p/>
+     * ClusterState will be shown as {@code IN_TRANSITION} while the transaction is in progress.
+     * After the transaction completes, cluster will be either in the new state or in the previous state,
+     * depending on transaction result.
+     * <p>
+     * This is a temporary &amp; intermediate state, not allowed to be set explicitly.
      * <ul>
      * <li>
-     * Similar to the {@code FROZEN} state, new members are not allowed
+     * Similarly to the {@code FROZEN} state, new members are not allowed
      * and migration/replication process will be paused.
      * </li>
      * <li>
@@ -165,29 +163,58 @@ public enum ClusterState {
      * </li>
      * </ul>
      */
-    IN_TRANSITION(false, false);
+    IN_TRANSITION(false, false, false, 4);
 
     private final boolean joinAllowed;
     private final boolean migrationAllowed;
+    private final boolean partitionPromotionAllowed;
+    private final byte id;
 
-    ClusterState(boolean joinAllowed, boolean migrationAllowed) {
+    ClusterState(boolean joinAllowed,
+                 boolean migrationAllowed,
+                 boolean partitionPromotionAllowed,
+                 int id) {
+
         this.joinAllowed = joinAllowed;
         this.migrationAllowed = migrationAllowed;
+        this.partitionPromotionAllowed = partitionPromotionAllowed;
+        this.id = (byte) id;
     }
 
     /**
-     * Shows whether new member join is allowed.
-     * @return true when join is allowed, false otherwise
+     * Returns {@code true}, if joining of a new member is allowed in this state.
+     * @return {@code true} if joining of a new member is allowed in this state.
      */
     public boolean isJoinAllowed() {
         return joinAllowed;
     }
 
     /**
-     * Shows whether migrations and replications are allowed.
-     * @return true when migrations and replications are allowed, false otherwise
+     * Returns {@code true}, if migrations and replications are allowed in this state.
+     * @return {@code true} if migrations and replications are allowed in this state.
      */
     public boolean isMigrationAllowed() {
         return migrationAllowed;
+    }
+
+    /**
+     * Returns {@code true}, if partition promotions are allowed in this state.
+     * @return {@code true} if partition promotions are allowed in this state.
+     */
+    public boolean isPartitionPromotionAllowed() {
+        return partitionPromotionAllowed;
+    }
+
+    public byte getId() {
+        return id;
+    }
+
+    public static ClusterState getById(int id) {
+        for (ClusterState cs : values()) {
+            if (cs.getId() == id) {
+                return cs;
+            }
+        }
+        throw new IllegalArgumentException("Unsupported ID value");
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,24 +16,25 @@
 
 package com.hazelcast.internal.diagnostics;
 
-import com.hazelcast.internal.networking.EventLoopGroup;
-import com.hazelcast.internal.networking.nio.NioEventLoopGroup;
+import com.hazelcast.internal.networking.Networking;
+import com.hazelcast.internal.networking.nio.NioNetworking;
 import com.hazelcast.internal.networking.nio.NioThread;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.nio.ConnectionManager;
-import com.hazelcast.nio.tcp.TcpIpConnectionManager;
+import com.hazelcast.internal.nio.NetworkingService;
+import com.hazelcast.internal.nio.tcp.TcpIpNetworkingService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.spi.properties.HazelcastProperty;
 
-import static com.hazelcast.internal.diagnostics.Diagnostics.PREFIX;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
- * The {@link NetworkingImbalancePlugin} is an experimental plugin meant for detecting imbalance in the IO system.
+ * The {@link NetworkingImbalancePlugin} is an experimental plugin meant for
+ * detecting imbalance in the IO system.
  * <p>
- * This  plugin will probably mostly be used for internal purposes to get a better understanding of imbalances.
- * Normally imbalances are taken care of by the IOBalancer; but we need to make sure it makes the right choice.
+ * This  plugin will probably mostly be used for internal purposes to get a
+ * better understanding of imbalances. Normally imbalances are taken care of
+ * by the IOBalancer; but we need to make sure it makes the right choice.
  * <p>
  * This plugin can be used on server and client side.
  */
@@ -45,34 +46,34 @@ public class NetworkingImbalancePlugin extends DiagnosticsPlugin {
      * If set to 0, the plugin is disabled.
      */
     public static final HazelcastProperty PERIOD_SECONDS
-            = new HazelcastProperty(PREFIX + ".networking-imbalance.seconds", 0, SECONDS);
+            = new HazelcastProperty("hazelcast.diagnostics.networking-imbalance.seconds", 0, SECONDS);
 
     private static final double HUNDRED = 100d;
 
-    private final NioEventLoopGroup eventLoopGroup;
+    private final NioNetworking networking;
     private final long periodMillis;
 
     public NetworkingImbalancePlugin(NodeEngineImpl nodeEngine) {
         this(nodeEngine.getProperties(), getThreadingModel(nodeEngine), nodeEngine.getLogger(NetworkingImbalancePlugin.class));
     }
 
-    public NetworkingImbalancePlugin(HazelcastProperties properties, EventLoopGroup eventLoopGroup, ILogger logger) {
+    public NetworkingImbalancePlugin(HazelcastProperties properties, Networking networking, ILogger logger) {
         super(logger);
 
-        if (eventLoopGroup instanceof NioEventLoopGroup) {
-            this.eventLoopGroup = (NioEventLoopGroup) eventLoopGroup;
+        if (networking instanceof NioNetworking) {
+            this.networking = (NioNetworking) networking;
         } else {
-            this.eventLoopGroup = null;
+            this.networking = null;
         }
-        this.periodMillis = this.eventLoopGroup == null ? 0 : properties.getMillis(PERIOD_SECONDS);
+        this.periodMillis = this.networking == null ? 0 : properties.getMillis(PERIOD_SECONDS);
     }
 
-    private static EventLoopGroup getThreadingModel(NodeEngineImpl nodeEngine) {
-        ConnectionManager connectionManager = nodeEngine.getNode().getConnectionManager();
-        if (!(connectionManager instanceof TcpIpConnectionManager)) {
+    private static Networking getThreadingModel(NodeEngineImpl nodeEngine) {
+        NetworkingService networkingService = nodeEngine.getNode().getNetworkingService();
+        if (!(networkingService instanceof TcpIpNetworkingService)) {
             return null;
         }
-        return ((TcpIpConnectionManager) connectionManager).getEventLoopGroup();
+        return ((TcpIpNetworkingService) networkingService).getNetworking();
     }
 
     @Override
@@ -90,11 +91,11 @@ public class NetworkingImbalancePlugin extends DiagnosticsPlugin {
         writer.startSection("NetworkingImbalance");
 
         writer.startSection("InputThreads");
-        render(writer, eventLoopGroup.getInputThreads());
+        render(writer, networking.getInputThreads());
         writer.endSection();
 
         writer.startSection("OutputThreads");
-        render(writer, eventLoopGroup.getOutputThreads());
+        render(writer, networking.getOutputThreads());
         writer.endSection();
 
         writer.endSection();
@@ -142,7 +143,14 @@ public class NetworkingImbalancePlugin extends DiagnosticsPlugin {
     }
 
     private String toPercentage(long amount, long total) {
-        double percentage = (HUNDRED * amount) / total;
+        final double percentage;
+        if (amount == 0L) {
+            percentage = 0D;
+        } else if (total == 0L) {
+            percentage = Double.NaN;
+        } else {
+            percentage = (HUNDRED * amount) / total;
+        }
         return String.format("%1$,.2f", percentage) + " %";
     }
 }

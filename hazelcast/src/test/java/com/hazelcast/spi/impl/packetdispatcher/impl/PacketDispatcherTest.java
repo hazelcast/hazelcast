@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,9 +18,8 @@ package com.hazelcast.spi.impl.packetdispatcher.impl;
 
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
-import com.hazelcast.nio.Packet;
+import com.hazelcast.internal.nio.Packet;
 import com.hazelcast.spi.impl.PacketDispatcher;
-import com.hazelcast.spi.impl.PacketHandler;
 import com.hazelcast.test.ExpectedRuntimeException;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -31,9 +30,11 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.mockito.Mockito;
 
-import static com.hazelcast.nio.Packet.FLAG_OP_CONTROL;
-import static com.hazelcast.nio.Packet.FLAG_OP_RESPONSE;
-import static com.hazelcast.nio.Packet.FLAG_URGENT;
+import java.util.function.Consumer;
+
+import static com.hazelcast.internal.nio.Packet.FLAG_OP_CONTROL;
+import static com.hazelcast.internal.nio.Packet.FLAG_OP_RESPONSE;
+import static com.hazelcast.internal.nio.Packet.FLAG_URGENT;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyZeroInteractions;
@@ -42,23 +43,22 @@ import static org.mockito.Mockito.verifyZeroInteractions;
 @Category(QuickTest.class)
 public class PacketDispatcherTest extends HazelcastTestSupport {
 
-    private PacketHandler operationExecutor;
-    private PacketHandler eventService;
-    private PacketHandler connectionManager;
-    private PacketHandler responseHandler;
-    private PacketHandler invocationMonitor;
+    private Consumer<Packet> operationExecutor;
+    private Consumer<Packet> eventService;
+//    private Consumer<Packet> connectionManager;
+    private Consumer<Packet> responseHandler;
+    private Consumer<Packet> invocationMonitor;
     private PacketDispatcher dispatcher;
-    private PacketHandler jetService;
+    private Consumer<Packet> jetService;
 
     @Before
     public void setup() {
         ILogger logger = Logger.getLogger(getClass());
-        operationExecutor = mock(PacketHandler.class);
-        responseHandler = mock(PacketHandler.class);
-        eventService = mock(PacketHandler.class);
-        connectionManager = mock(PacketHandler.class);
-        invocationMonitor = mock(PacketHandler.class);
-        jetService = mock(PacketHandler.class);
+        operationExecutor = mock(Consumer.class);
+        responseHandler = mock(Consumer.class);
+        eventService = mock(Consumer.class);
+        invocationMonitor = mock(Consumer.class);
+        jetService = mock(Consumer.class);
 
         dispatcher = new PacketDispatcher(
                 logger,
@@ -66,113 +66,102 @@ public class PacketDispatcherTest extends HazelcastTestSupport {
                 responseHandler,
                 invocationMonitor,
                 eventService,
-                connectionManager,
                 jetService);
     }
 
     @Test
-    public void whenOperationPacket() throws Exception {
+    public void whenOperationPacket() {
         Packet packet = new Packet().setPacketType(Packet.Type.OPERATION);
 
-        dispatcher.handle(packet);
+        dispatcher.accept(packet);
 
-        verify(operationExecutor).handle(packet);
+        verify(operationExecutor).accept(packet);
 
-        verifyZeroInteractions(responseHandler, eventService, connectionManager, invocationMonitor, jetService);
+        verifyZeroInteractions(responseHandler, eventService, invocationMonitor, jetService);
     }
 
     @Test
-    public void whenUrgentOperationPacket() throws Exception {
+    public void whenUrgentOperationPacket() {
         Packet packet = new Packet().setPacketType(Packet.Type.OPERATION).raiseFlags(FLAG_URGENT);
 
-        dispatcher.handle(packet);
+        dispatcher.accept(packet);
 
-        verify(operationExecutor).handle(packet);
+        verify(operationExecutor).accept(packet);
 
-        verifyZeroInteractions(responseHandler, eventService, connectionManager, invocationMonitor, jetService);
+        verifyZeroInteractions(responseHandler, eventService, invocationMonitor, jetService);
     }
 
 
     @Test
-    public void whenOperationResponsePacket() throws Exception {
+    public void whenOperationResponsePacket() {
         Packet packet = new Packet().setPacketType(Packet.Type.OPERATION).raiseFlags(FLAG_OP_RESPONSE);
 
-        dispatcher.handle(packet);
+        dispatcher.accept(packet);
 
-        verify(responseHandler).handle(packet);
-        verifyZeroInteractions(operationExecutor, eventService, connectionManager, invocationMonitor, jetService);
+        verify(responseHandler).accept(packet);
+        verifyZeroInteractions(operationExecutor, eventService, invocationMonitor, jetService);
     }
 
     @Test
-    public void whenUrgentOperationResponsePacket() throws Exception {
+    public void whenUrgentOperationResponsePacket() {
         Packet packet = new Packet().setPacketType(Packet.Type.OPERATION).raiseFlags(FLAG_OP_RESPONSE | FLAG_URGENT);
 
-        dispatcher.handle(packet);
+        dispatcher.accept(packet);
 
-        verify(responseHandler).handle(packet);
-        verifyZeroInteractions(operationExecutor, eventService, connectionManager, invocationMonitor, jetService);
+        verify(responseHandler).accept(packet);
+        verifyZeroInteractions(operationExecutor, eventService, invocationMonitor, jetService);
     }
 
 
     @Test
-    public void whenOperationControlPacket() throws Exception {
+    public void whenOperationControlPacket() {
         Packet packet = new Packet().setPacketType(Packet.Type.OPERATION).raiseFlags(FLAG_OP_CONTROL);
 
-        dispatcher.handle(packet);
+        dispatcher.accept(packet);
 
-        verify(invocationMonitor).handle(packet);
+        verify(invocationMonitor).accept(packet);
 
-        verifyZeroInteractions(responseHandler, operationExecutor, eventService, connectionManager, jetService);
+        verifyZeroInteractions(responseHandler, operationExecutor, eventService, jetService);
     }
 
 
     @Test
-    public void whenEventPacket() throws Exception {
+    public void whenEventPacket() {
         Packet packet = new Packet().setPacketType(Packet.Type.EVENT);
 
-        dispatcher.handle(packet);
+        dispatcher.accept(packet);
 
-        verify(eventService).handle(packet);
-        verifyZeroInteractions(responseHandler, operationExecutor, connectionManager, invocationMonitor, jetService);
+        verify(eventService).accept(packet);
+        verifyZeroInteractions(responseHandler, operationExecutor, invocationMonitor, jetService);
     }
 
     @Test
-    public void whenBindPacket() throws Exception {
-        Packet packet = new Packet().setPacketType(Packet.Type.BIND);
-
-        dispatcher.handle(packet);
-
-        verify(connectionManager).handle(packet);
-        verifyZeroInteractions(responseHandler, operationExecutor, eventService, invocationMonitor, jetService);
-    }
-
-    @Test
-    public void whenJetPacket() throws Exception {
+    public void whenJetPacket() {
         Packet packet = new Packet().setPacketType(Packet.Type.JET);
-        dispatcher.handle(packet);
+        dispatcher.accept(packet);
 
-        verify(jetService).handle(packet);
-        verifyZeroInteractions(responseHandler, operationExecutor, connectionManager, eventService, invocationMonitor);
+        verify(jetService).accept(packet);
+        verifyZeroInteractions(responseHandler, operationExecutor, eventService, invocationMonitor);
     }
 
     // unrecognized packets are logged. No handlers is contacted.
     @Test
-    public void whenUnrecognizedPacket_thenSwallowed() throws Exception {
+    public void whenUnrecognizedPacket_thenSwallowed() {
         Packet packet = new Packet().setPacketType(Packet.Type.NULL);
 
-        dispatcher.handle(packet);
+        dispatcher.accept(packet);
 
-        verifyZeroInteractions(responseHandler, operationExecutor, eventService, connectionManager, invocationMonitor,
+        verifyZeroInteractions(responseHandler, operationExecutor, eventService, invocationMonitor,
                 jetService);
     }
 
     // when one of the handlers throws an exception, the exception is logged but not rethrown
     @Test
-    public void whenProblemHandlingPacket_thenSwallowed() throws Exception {
+    public void whenProblemHandlingPacket_thenSwallowed() {
         Packet packet = new Packet().setPacketType(Packet.Type.OPERATION);
 
-        Mockito.doThrow(new ExpectedRuntimeException()).when(operationExecutor).handle(packet);
+        Mockito.doThrow(new ExpectedRuntimeException()).when(operationExecutor).accept(packet);
 
-        dispatcher.handle(packet);
+        dispatcher.accept(packet);
     }
 }

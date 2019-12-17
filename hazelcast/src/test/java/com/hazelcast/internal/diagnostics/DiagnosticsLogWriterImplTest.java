@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,7 +28,7 @@ import java.io.CharArrayWriter;
 import java.io.PrintWriter;
 import java.util.Locale;
 
-import static com.hazelcast.util.StringUtil.LINE_SEPARATOR;
+import static com.hazelcast.internal.util.StringUtil.LINE_SEPARATOR;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastSerialClassRunner.class)
@@ -56,9 +56,10 @@ public class DiagnosticsLogWriterImplTest extends HazelcastTestSupport {
         // we need to get rid of the time/date prefix
         actual = actual.substring(actual.indexOf("SomeSection"));
 
-        assertEquals("" +
-                "SomeSection[" + LINE_SEPARATOR +
-                "                          s=null]" + LINE_SEPARATOR, actual);
+        assertEquals(""
+                + "SomeSection[" + LINE_SEPARATOR
+                + "                          s=null]" + LINE_SEPARATOR,
+                actual);
     }
 
     @Test
@@ -79,15 +80,16 @@ public class DiagnosticsLogWriterImplTest extends HazelcastTestSupport {
         // we need to get rid of the time/date prefix
         actual = actual.substring(actual.indexOf("SomeSection"));
 
-        assertEquals("" +
-                "SomeSection[" + LINE_SEPARATOR +
-                "                          boolean=true" + LINE_SEPARATOR +
-                "                          long=10" + LINE_SEPARATOR +
-                "                          SubSection[" + LINE_SEPARATOR +
-                "                                  integer=10]" + LINE_SEPARATOR +
-                "                          string=foo" + LINE_SEPARATOR +
-                "                          double=11.0" + LINE_SEPARATOR +
-                "                          foobar]" + LINE_SEPARATOR, actual);
+        assertEquals(""
+                + "SomeSection[" + LINE_SEPARATOR
+                + "                          boolean=true" + LINE_SEPARATOR
+                + "                          long=10" + LINE_SEPARATOR
+                + "                          SubSection[" + LINE_SEPARATOR
+                + "                                  integer=10]" + LINE_SEPARATOR
+                + "                          string=foo" + LINE_SEPARATOR
+                + "                          double=11.0" + LINE_SEPARATOR
+                + "                          foobar]" + LINE_SEPARATOR,
+                actual);
     }
 
     @Test

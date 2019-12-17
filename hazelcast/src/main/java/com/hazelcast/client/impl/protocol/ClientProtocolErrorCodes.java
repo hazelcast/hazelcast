@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -66,7 +66,7 @@ public final class ClientProtocolErrorCodes {
     public static final int PARTITION_MIGRATING = 41;
     public static final int QUERY = 42;
     public static final int QUERY_RESULT_SIZE_EXCEEDED = 43;
-    public static final int QUORUM = 44;
+    public static final int SPLIT_BRAIN_PROTECTION = 44;
     public static final int REACHED_MAX_SIZE = 45;
     public static final int REJECTED_EXECUTION = 46;
     public static final int REMOTE_MAP_REDUCE = 47;
@@ -107,7 +107,20 @@ public final class ClientProtocolErrorCodes {
     public static final int STALE_TASK = 82;
     public static final int LOCAL_MEMBER_RESET = 83;
     public static final int INDETERMINATE_OPERATION_STATE = 84;
-    public static final int RELIABLE_ID_NODE_ID_OUT_OF_RANGE_EXCEPTION = 85;
+    public static final int FLAKE_ID_NODE_ID_OUT_OF_RANGE_EXCEPTION = 85;
+    public static final int TARGET_NOT_REPLICA_EXCEPTION = 86;
+    public static final int MUTATION_DISALLOWED_EXCEPTION = 87;
+    public static final int CONSISTENCY_LOST_EXCEPTION = 88;
+    public static final int SESSION_EXPIRED_EXCEPTION = 89;
+    public static final int WAIT_KEY_CANCELLED_EXCEPTION = 90;
+    public static final int LOCK_ACQUIRE_LIMIT_REACHED_EXCEPTION = 91;
+    public static final int LOCK_OWNERSHIP_LOST_EXCEPTION = 92;
+    public static final int CP_GROUP_DESTROYED_EXCEPTION = 93;
+    public static final int CANNOT_REPLICATE_EXCEPTION = 94;
+    public static final int LEADER_DEMOTED_EXCEPTION = 95;
+    public static final int STALE_APPEND_REQUEST_EXCEPTION = 96;
+    public static final int NOT_LEADER_EXCEPTION = 97;
+    public static final int VERSION_MISMATCH_EXCEPTION = 98;
 
     // These exception codes are reserved to by used by hazelcast-jet project
     public static final int JET_EXCEPTIONS_RANGE_START = 500;

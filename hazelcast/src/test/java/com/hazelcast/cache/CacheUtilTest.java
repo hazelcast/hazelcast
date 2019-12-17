@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +16,9 @@
 
 package com.hazelcast.cache;
 
-import com.hazelcast.test.HazelcastParametersRunnerFactory;
+import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -29,19 +29,19 @@ import org.junit.runners.Parameterized.Parameters;
 
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.Arrays;
 import java.util.Collection;
 
 import static com.hazelcast.cache.CacheUtil.getPrefix;
 import static com.hazelcast.cache.CacheUtil.getPrefixedCacheName;
 import static com.hazelcast.cache.HazelcastCacheManager.CACHE_MANAGER_PREFIX;
+import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 @RunWith(Parameterized.class)
-@Parameterized.UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Parameterized.UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class CacheUtilTest extends HazelcastTestSupport {
 
     private static final String CACHE_NAME = "MY-CACHE";
@@ -70,15 +70,23 @@ public class CacheUtilTest extends HazelcastTestSupport {
         final URI uri = new URI(URI_SCOPE);
         final ClassLoader classLoader = mock(ClassLoader.class);
         when(classLoader.toString()).thenReturn(CLASSLOADER_SCOPE);
-        return Arrays.asList(
-                new Object[]{null, null, null, CACHE_NAME, CACHE_MANAGER_PREFIX + CACHE_NAME},
-                new Object[]{uri, null, URI_SCOPE + "/", URI_SCOPE + "/" + CACHE_NAME,
-                        CACHE_MANAGER_PREFIX + URI_SCOPE + "/" + CACHE_NAME},
-                new Object[]{null, classLoader, CLASSLOADER_SCOPE + "/", CLASSLOADER_SCOPE + "/" + CACHE_NAME,
-                        CACHE_MANAGER_PREFIX + CLASSLOADER_SCOPE + "/" + CACHE_NAME},
-                new Object[]{uri, classLoader, URI_SCOPE + "/" + CLASSLOADER_SCOPE + "/",
+        return asList(
+                new Object[]{
+                        null, null, null, CACHE_NAME, CACHE_MANAGER_PREFIX + CACHE_NAME,
+                },
+                new Object[]{
+                        uri, null, URI_SCOPE + "/", URI_SCOPE + "/" + CACHE_NAME,
+                        CACHE_MANAGER_PREFIX + URI_SCOPE + "/" + CACHE_NAME,
+                },
+                new Object[]{
+                        null, classLoader, CLASSLOADER_SCOPE + "/", CLASSLOADER_SCOPE + "/" + CACHE_NAME,
+                        CACHE_MANAGER_PREFIX + CLASSLOADER_SCOPE + "/" + CACHE_NAME,
+                },
+                new Object[]{
+                        uri, classLoader, URI_SCOPE + "/" + CLASSLOADER_SCOPE + "/",
                         URI_SCOPE + "/" + CLASSLOADER_SCOPE + "/" + CACHE_NAME,
-                        CACHE_MANAGER_PREFIX + URI_SCOPE + "/" + CLASSLOADER_SCOPE + "/" + CACHE_NAME}
+                        CACHE_MANAGER_PREFIX + URI_SCOPE + "/" + CLASSLOADER_SCOPE + "/" + CACHE_NAME,
+                }
         );
     }
 

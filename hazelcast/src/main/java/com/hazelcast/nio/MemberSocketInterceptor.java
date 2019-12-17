@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,15 +22,19 @@ import java.net.Socket;
 /**
  * Member Socket Interceptor can be registered via
  * see {@link com.hazelcast.config.SocketInterceptorConfig}
+ *
+ * Warning: a MemberSocketInterceptor provides access to the socket and will bypass
+ * any TLS encryption. So be warned that any data send using the SocketInterceptor
+ * could be visible as plain text and could therefor be a security risk.
  */
 public interface MemberSocketInterceptor extends SocketInterceptor {
 
     /**
-     * This method will be called when a connection to a member node is accepted meaning security requirements and
-     * clusters are matching.
+     * This method will be called when a connection to a member node is accepted
+     * meaning security requirements and clusters are matching.
      *
      * @param acceptedSocket accepted socket
-     * @throws IOException
+     * @throws IOException in case of any exceptional case
      */
     void onAccept(Socket acceptedSocket) throws IOException;
 }

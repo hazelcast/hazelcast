@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,21 +16,25 @@
 
 package com.hazelcast.client.impl.protocol.task.map;
 
-import com.hazelcast.client.ClientEndpoint;
+import com.hazelcast.client.impl.ClientEndpoint;
 import com.hazelcast.internal.nearcache.impl.invalidation.AbstractBaseNearCacheInvalidationListener;
 import com.hazelcast.internal.nearcache.impl.invalidation.Invalidation;
 import com.hazelcast.map.impl.nearcache.invalidation.InvalidationListener;
+
+import java.util.UUID;
 
 /**
  * Invalidation listener abstraction helps to handle some different behaviour between clients in a backward compatible way.
  */
 abstract class AbstractMapClientNearCacheInvalidationListener
-        extends AbstractBaseNearCacheInvalidationListener implements InvalidationListener {
+        extends AbstractBaseNearCacheInvalidationListener
+        implements InvalidationListener {
 
     private final ClientEndpoint endpoint;
 
-    AbstractMapClientNearCacheInvalidationListener(ClientEndpoint endpoint, String localMemberUuid) {
-        super(localMemberUuid);
+    AbstractMapClientNearCacheInvalidationListener(ClientEndpoint endpoint,
+                                                   UUID localMemberUuid, long correlationId) {
+        super(localMemberUuid, correlationId);
         this.endpoint = endpoint;
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,13 +16,13 @@
 
 package com.hazelcast.map.impl.querycache.event;
 
+import com.hazelcast.cluster.Address;
+import com.hazelcast.internal.serialization.BinaryInterface;
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.map.impl.event.EventData;
-import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.BinaryInterface;
-import com.hazelcast.spi.serialization.SerializationService;
+import com.hazelcast.internal.serialization.Data;
 
 import java.io.IOException;
 
@@ -30,7 +30,7 @@ import java.io.IOException;
  * {@link EventData} which is used only for the subscriber end of a query cache
  * and only for entry based events.
  * For this reason, it is not sent over the wire and is used locally to query cache.
- * <p/>
+ * <p>
  * Throws {@link UnsupportedOperationException} if one tries to serialize an instance of this class.
  *
  * @param <K> the key type.
@@ -144,7 +144,9 @@ public class LocalEntryEventData<K, V> implements EventData {
     }
 
     public LocalEntryEventData<K, V> cloneWithoutValue() {
-        return new LocalEntryEventData<K, V>(serializationService, source, eventType, key, null, null, partitionId);
+        Object key = this.key != null ? this.key : this.keyData;
+        return new LocalEntryEventData<>(serializationService, source,
+                eventType, key, null, null, partitionId);
     }
 
     @Override

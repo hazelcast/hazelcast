@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,17 +26,22 @@ import com.hazelcast.cache.impl.operation.CacheGetAndReplaceOperation;
 import com.hazelcast.cache.impl.operation.CacheGetOperation;
 import com.hazelcast.cache.impl.operation.CacheKeyIteratorOperation;
 import com.hazelcast.cache.impl.operation.CacheLoadAllOperationFactory;
+import com.hazelcast.cache.impl.operation.CacheMergeOperation;
+import com.hazelcast.cache.impl.operation.CacheMergeOperationFactory;
 import com.hazelcast.cache.impl.operation.CachePutAllOperation;
 import com.hazelcast.cache.impl.operation.CachePutIfAbsentOperation;
 import com.hazelcast.cache.impl.operation.CachePutOperation;
 import com.hazelcast.cache.impl.operation.CacheRemoveAllOperationFactory;
 import com.hazelcast.cache.impl.operation.CacheRemoveOperation;
 import com.hazelcast.cache.impl.operation.CacheReplaceOperation;
+import com.hazelcast.cache.impl.operation.CacheSetExpiryPolicyOperation;
 import com.hazelcast.cache.impl.operation.CacheSizeOperationFactory;
 import com.hazelcast.config.InMemoryFormat;
-import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.OperationFactory;
+import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.spi.impl.operationservice.OperationFactory;
+import com.hazelcast.spi.merge.SplitBrainMergePolicy;
+import com.hazelcast.spi.merge.SplitBrainMergeTypes.CacheMergeTypes;
 
 import javax.cache.expiry.ExpiryPolicy;
 import javax.cache.processor.EntryProcessor;
@@ -114,6 +119,24 @@ public class DefaultOperationProvider implements CacheOperationProvider {
     @Override
     public Operation createEntryIteratorOperation(int lastTableIndex, int fetchSize) {
         return new CacheEntryIteratorOperation(nameWithPrefix, lastTableIndex, fetchSize);
+    }
+
+    @Override
+    public Operation createMergeOperation(String name, List<CacheMergeTypes> mergingEntries,
+                                          SplitBrainMergePolicy<Data, CacheMergeTypes> policy) {
+        return new CacheMergeOperation(name, mergingEntries, policy);
+    }
+
+    @Override
+    public OperationFactory createMergeOperationFactory(String name, int[] partitions,
+                                                        List<CacheMergeTypes>[] mergingEntries,
+                                                        SplitBrainMergePolicy<Data, CacheMergeTypes> policy) {
+        return new CacheMergeOperationFactory(name, partitions, mergingEntries, policy);
+    }
+
+    @Override
+    public Operation createSetExpiryPolicyOperation(List<Data> keys, Data expiryPolicy) {
+        return new CacheSetExpiryPolicyOperation(nameWithPrefix, keys, expiryPolicy);
     }
 
     @Override

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,72 +16,129 @@
 
 package com.hazelcast.map.impl.recordstore;
 
-import com.hazelcast.concurrent.lock.LockService;
-import com.hazelcast.concurrent.lock.LockStore;
+import com.hazelcast.config.EventJournalConfig;
+import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.InMemoryFormat;
-import com.hazelcast.config.MapConfig;
+import com.hazelcast.config.MetadataPolicy;
+import com.hazelcast.internal.locksupport.LockStore;
+import com.hazelcast.internal.locksupport.LockSupportService;
+import com.hazelcast.internal.monitor.LocalRecordStoreStats;
+import com.hazelcast.internal.monitor.impl.LocalRecordStoreStatsImpl;
+import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.util.Clock;
+import com.hazelcast.internal.util.comparators.ValueComparator;
 import com.hazelcast.map.impl.EntryCostEstimator;
+import com.hazelcast.map.impl.JsonMetadataInitializer;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
-import com.hazelcast.map.impl.journal.MapEventJournal;
+import com.hazelcast.map.impl.MapStoreWrapper;
 import com.hazelcast.map.impl.mapstore.MapDataStore;
 import com.hazelcast.map.impl.mapstore.MapStoreContext;
 import com.hazelcast.map.impl.record.Record;
-import com.hazelcast.map.impl.record.RecordComparator;
 import com.hazelcast.map.impl.record.RecordFactory;
 import com.hazelcast.map.impl.record.Records;
-import com.hazelcast.monitor.LocalRecordStoreStats;
-import com.hazelcast.monitor.impl.LocalRecordStoreStatsImpl;
-import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.query.impl.Indexes;
-import com.hazelcast.query.impl.QueryableEntry;
-import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.serialization.SerializationService;
-import com.hazelcast.util.Clock;
+import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.wan.impl.CallerProvenance;
 
-import java.util.Collection;
+import javax.annotation.Nonnull;
+import java.util.UUID;
 
-import static com.hazelcast.map.impl.ExpirationTimeSetter.calculateMaxIdleMillis;
-import static com.hazelcast.map.impl.ExpirationTimeSetter.calculateTTLMillis;
-import static com.hazelcast.map.impl.ExpirationTimeSetter.pickTTL;
-import static com.hazelcast.map.impl.ExpirationTimeSetter.setExpirationTime;
-
+import static com.hazelcast.map.impl.ExpirationTimeSetter.setExpirationTimes;
 
 /**
  * Contains record store common parts.
  */
 abstract class AbstractRecordStore implements RecordStore<Record> {
 
-    protected final String name;
-    protected final MapContainer mapContainer;
     protected final int partitionId;
-    protected final MapServiceContext mapServiceContext;
-    protected final SerializationService serializationService;
-    protected final InMemoryFormat inMemoryFormat;
-    protected final RecordFactory recordFactory;
-    protected final RecordComparator recordComparator;
-    protected final MapStoreContext mapStoreContext;
-    protected final MapDataStore<Data, Object> mapDataStore;
+    protected final String name;
     protected final LockStore lockStore;
-    protected final MapEventJournal eventJournal;
+    protected final MapContainer mapContainer;
+    protected final RecordFactory recordFactory;
+    protected final InMemoryFormat inMemoryFormat;
+    protected final MapStoreContext mapStoreContext;
+    protected final ValueComparator valueComparator;
+    protected final MapServiceContext mapServiceContext;
+    protected final MapDataStore<Data, Object> mapDataStore;
+    protected final SerializationService serializationService;
+    protected final CompositeMutationObserver<Record> mutationObserver;
+    protected final LocalRecordStoreStatsImpl stats = new LocalRecordStoreStatsImpl();
 
     protected Storage<Data, Record> storage;
-    protected final LocalRecordStoreStatsImpl stats = new LocalRecordStoreStatsImpl();
+    protected IndexingMutationObserver<Record> indexingObserver;
 
     protected AbstractRecordStore(MapContainer mapContainer, int partitionId) {
         this.name = mapContainer.getName();
         this.mapContainer = mapContainer;
         this.partitionId = partitionId;
         this.mapServiceContext = mapContainer.getMapServiceContext();
-        this.serializationService = mapServiceContext.getNodeEngine().getSerializationService();
+        NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
+        this.serializationService = nodeEngine.getSerializationService();
         this.inMemoryFormat = mapContainer.getMapConfig().getInMemoryFormat();
         this.recordFactory = mapContainer.getRecordFactoryConstructor().createNew(null);
-        this.recordComparator = mapServiceContext.getRecordComparator(inMemoryFormat);
+        this.valueComparator = mapServiceContext.getValueComparatorOf(inMemoryFormat);
         this.mapStoreContext = mapContainer.getMapStoreContext();
         this.mapDataStore = mapStoreContext.getMapStoreManager().getMapDataStore(name, partitionId);
         this.lockStore = createLockStore();
-        this.eventJournal = mapServiceContext.getEventJournal();
+        this.mutationObserver = new CompositeMutationObserver<>();
+    }
+
+    @Override
+    public void init() {
+        this.storage = createStorage(recordFactory, inMemoryFormat);
+        addMutationObservers();
+    }
+
+    // Overridden in EE.
+    protected void addMutationObservers() {
+        // Add observer for event journal
+        EventJournalConfig eventJournalConfig = mapContainer.getEventJournalConfig();
+        if (eventJournalConfig != null && eventJournalConfig.isEnabled()) {
+            mutationObserver.add(new EventJournalWriterMutationObserver(mapServiceContext.getEventJournal(),
+                    mapContainer, partitionId));
+        }
+
+        // Add observer for json metadata
+        if (mapContainer.getMapConfig().getMetadataPolicy() == MetadataPolicy.CREATE_ON_UPDATE) {
+            addJsonMetadataMutationObserver();
+        }
+
+        // Add observer for indexing
+        indexingObserver = new IndexingMutationObserver<>(this, serializationService);
+        mutationObserver.add(indexingObserver);
+    }
+
+    // Overridden in EE.
+    protected void addJsonMetadataMutationObserver() {
+        mutationObserver.add(new JsonMetadataMutationObserver(serializationService,
+                JsonMetadataInitializer.INSTANCE));
+    }
+
+    public IndexingMutationObserver<Record> getIndexingObserver() {
+        return indexingObserver;
+    }
+
+    @Override
+    public InMemoryFormat getInMemoryFormat() {
+        return inMemoryFormat;
+    }
+
+    @Override
+    public EvictionPolicy getEvictionPolicy() {
+        return getMapContainer().getMapConfig().getEvictionConfig().getEvictionPolicy();
+    }
+
+    protected boolean persistenceEnabledFor(@Nonnull CallerProvenance provenance) {
+        switch (provenance) {
+            case WAN:
+                return mapContainer.isPersistWanReplicatedData();
+            case NOT_WAN:
+                return true;
+            default:
+                throw new IllegalArgumentException("Unexpected provenance: `" + provenance + "`");
+        }
     }
 
     @Override
@@ -90,29 +147,28 @@ abstract class AbstractRecordStore implements RecordStore<Record> {
     }
 
     @Override
-    public void init() {
-        this.storage = createStorage(recordFactory, inMemoryFormat);
-    }
-
-    @Override
-    public Record createRecord(Object value, long ttlMillis, long now) {
-        MapConfig mapConfig = mapContainer.getMapConfig();
+    public Record createRecord(Data key, Object value, long ttlMillis, long maxIdle, long now) {
         Record record = recordFactory.newRecord(value);
         record.setCreationTime(now);
         record.setLastUpdateTime(now);
-        long ttlMillisFromConfig = calculateTTLMillis(mapConfig);
-        long ttl = pickTTL(ttlMillis, ttlMillisFromConfig);
-        record.setTtl(ttl);
 
-        long maxIdleMillis = calculateMaxIdleMillis(mapConfig);
-        setExpirationTime(record, maxIdleMillis);
-        updateStatsOnPut(true, now);
+        setExpirationTimes(ttlMillis, maxIdle, record, mapContainer.getMapConfig(), true);
+        updateStatsOnPut(false, now);
         return record;
     }
 
     @Override
+    public Record createRecord(Data key, Record fromRecord, long nowInMillis) {
+        Record newRecord = recordFactory.newRecord(fromRecord == null ? null : fromRecord.getValue());
+        if (fromRecord != null) {
+            Records.copyMetadataFrom(fromRecord, newRecord);
+        }
+        updateStatsOnPut(false, nowInMillis);
+        return newRecord;
+    }
+
     public Storage createStorage(RecordFactory recordFactory, InMemoryFormat memoryFormat) {
-        return new StorageImpl(recordFactory, memoryFormat, serializationService);
+        return new StorageImpl(memoryFormat, serializationService);
     }
 
     @Override
@@ -130,16 +186,43 @@ abstract class AbstractRecordStore implements RecordStore<Record> {
         return storage.getEntryCostEstimator().getEstimate();
     }
 
-    protected long getNow() {
+    protected static long getNow() {
         return Clock.currentTimeMillis();
     }
 
-    protected void updateRecord(Data key, Record record, Object value, long now) {
-        updateStatsOnPut(false, now);
+    @SuppressWarnings("checkstyle:parameternumber")
+    protected void updateRecord(Data key, Record record, Object oldValue, Object newValue,
+                                long now, boolean countAsAccess,
+                                long ttl, long maxIdle, boolean mapStoreOperation,
+                                UUID transactionId, boolean backup) {
+        updateStatsOnPut(countAsAccess, now);
         record.onUpdate(now);
-        eventJournal.writeUpdateEvent(mapContainer.getEventJournalConfig(), mapContainer.getObjectNamespace(), partitionId,
-                record.getKey(), record.getValue(), value);
-        storage.updateRecordValue(key, record, value);
+        if (countAsAccess) {
+            record.onAccess(now);
+        }
+        setExpirationTimes(ttl, maxIdle, record, mapContainer.getMapConfig(), true);
+        if (mapStoreOperation) {
+            newValue = putIntoMapStore(record, key, newValue, now, transactionId);
+        }
+        storage.updateRecordValue(key, record, newValue);
+        mutationObserver.onUpdateRecord(key, record, oldValue, newValue, backup);
+    }
+
+    protected Record putNewRecord(Data key, Object oldValue, Object newValue, long ttlMillis,
+                                  long maxIdleMillis, long now, UUID transactionId) {
+        Record record = createRecord(key, newValue, ttlMillis, maxIdleMillis, now);
+        putIntoMapStore(record, key, newValue, now, transactionId);
+        storage.put(key, record);
+        mutationObserver.onPutRecord(key, record, oldValue, false);
+        return record;
+    }
+
+    protected Object putIntoMapStore(Record record, Data key, Object newValue, long now, UUID transactionId) {
+        newValue = mapDataStore.add(key, newValue, record.getExpirationTime(), now, transactionId);
+        if (mapDataStore.isPostProcessingMapStore()) {
+            storage.updateRecordValue(key, record, newValue);
+        }
+        return newValue;
     }
 
     @Override
@@ -147,40 +230,9 @@ abstract class AbstractRecordStore implements RecordStore<Record> {
         return partitionId;
     }
 
-    protected void saveIndex(Record record, Object oldValue) {
-        Data dataKey = record.getKey();
-        Indexes indexes = mapContainer.getIndexes(partitionId);
-        if (indexes.hasIndex()) {
-            Object value = Records.getValueOrCachedValue(record, serializationService);
-            QueryableEntry queryableEntry = mapContainer.newQueryEntry(dataKey, value);
-            indexes.saveEntryIndex(queryableEntry, oldValue);
-        }
-    }
-
-
-    protected void removeIndex(Record record) {
-        Indexes indexes = mapContainer.getIndexes(partitionId);
-        if (indexes.hasIndex()) {
-            Data key = record.getKey();
-            Object value = Records.getValueOrCachedValue(record, serializationService);
-            indexes.removeEntryIndex(key, value);
-        }
-    }
-
-    protected void removeIndex(Collection<Record> records) {
-        Indexes indexes = mapContainer.getIndexes(partitionId);
-        if (!indexes.hasIndex()) {
-            return;
-        }
-
-        for (Record record : records) {
-            removeIndex(record);
-        }
-    }
-
     protected LockStore createLockStore() {
         NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
-        LockService lockService = nodeEngine.getSharedService(LockService.SERVICE_NAME);
+        LockSupportService lockService = nodeEngine.getServiceOrNull(LockSupportService.SERVICE_NAME);
         if (lockService == null) {
             return null;
         }
@@ -192,8 +244,14 @@ abstract class AbstractRecordStore implements RecordStore<Record> {
     }
 
     protected RecordStoreLoader createRecordStoreLoader(MapStoreContext mapStoreContext) {
-        return mapStoreContext.getMapStoreWrapper() == null
-                ? RecordStoreLoader.EMPTY_LOADER : new BasicRecordStoreLoader(this);
+        MapStoreWrapper wrapper = mapStoreContext.getMapStoreWrapper();
+        if (wrapper == null) {
+            return RecordStoreLoader.EMPTY_LOADER;
+        } else if (wrapper.isWithExpirationTime()) {
+            return new EntryRecordStoreLoader(this);
+        } else {
+            return new BasicRecordStoreLoader(this);
+        }
     }
 
     protected Data toData(Object value) {
@@ -213,15 +271,16 @@ abstract class AbstractRecordStore implements RecordStore<Record> {
         return storage;
     }
 
-    protected void updateStatsOnPut(boolean newRecord, long now) {
+    protected void updateStatsOnPut(boolean countAsAccess, long now) {
         stats.setLastUpdateTime(now);
 
-        if (!newRecord) {
+        if (countAsAccess) {
             updateStatsOnGet(now);
         }
     }
 
-    protected void updateStatsOnPut(long hits) {
+    protected void updateStatsOnPut(long hits, long now) {
+        stats.setLastUpdateTime(now);
         stats.increaseHits(hits);
     }
 

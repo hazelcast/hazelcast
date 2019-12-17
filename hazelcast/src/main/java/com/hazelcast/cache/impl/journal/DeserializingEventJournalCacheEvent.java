@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,18 +16,22 @@
 
 package com.hazelcast.cache.impl.journal;
 
-import com.hazelcast.cache.impl.CacheDataSerializerHook;
 import com.hazelcast.cache.CacheEventType;
-import com.hazelcast.cache.journal.EventJournalCacheEvent;
+import com.hazelcast.cache.impl.CacheDataSerializerHook;
+import com.hazelcast.cache.EventJournalCacheEvent;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceAware;
+import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.spi.impl.SerializationServiceSupport;
-import com.hazelcast.spi.serialization.SerializationService;
+import com.hazelcast.internal.serialization.SerializationService;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
 
+@SuppressFBWarnings(value = "EQ_DOESNT_OVERRIDE_EQUALS",
+        justification = "equality is checked by serialised data in superclass, not deserialised instances in this class")
 public class DeserializingEventJournalCacheEvent<K, V>
         extends InternalEventJournalCacheEvent
         implements EventJournalCacheEvent<K, V>, HazelcastInstanceAware {
@@ -46,7 +50,7 @@ public class DeserializingEventJournalCacheEvent<K, V>
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return CacheDataSerializerHook.EVENT_JOURNAL_DESERIALIZING_CACHE_EVENT;
     }
 
@@ -82,9 +86,9 @@ public class DeserializingEventJournalCacheEvent<K, V>
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeInt(eventType);
-        out.writeData(toData(dataKey, objectKey));
-        out.writeData(toData(dataNewValue, objectNewValue));
-        out.writeData(toData(dataOldValue, objectOldValue));
+        IOUtil.writeData(out, toData(dataKey, objectKey));
+        IOUtil.writeData(out, toData(dataNewValue, objectNewValue));
+        IOUtil.writeData(out, toData(dataOldValue, objectOldValue));
     }
 
     private Data toData(Data data, Object o) {

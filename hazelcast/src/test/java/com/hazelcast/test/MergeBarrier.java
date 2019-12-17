@@ -1,3 +1,19 @@
+/*
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.hazelcast.test;
 
 import com.hazelcast.core.HazelcastInstance;
@@ -7,6 +23,7 @@ import com.hazelcast.core.LifecycleService;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.core.LifecycleEvent.LifecycleState.MERGED;
@@ -19,7 +36,7 @@ import static com.hazelcast.core.LifecycleEvent.LifecycleState.MERGING;
 class MergeBarrier {
 
     private final AtomicInteger mergedInProgress = new AtomicInteger();
-    private final Map<HazelcastInstance, String> registrations = new HashMap<HazelcastInstance, String>();
+    private final Map<HazelcastInstance, UUID> registrations = new HashMap<HazelcastInstance, UUID>();
 
     MergeBarrier(HazelcastInstance[] instances) {
         MergeCountingListener mergeCountingListener = new MergeCountingListener();
@@ -27,7 +44,7 @@ class MergeBarrier {
         for (HazelcastInstance instance : instances) {
             LifecycleService lifecycleService = instance.getLifecycleService();
             if (lifecycleService.isRunning()) {
-                String registration = lifecycleService.addLifecycleListener(mergeCountingListener);
+                UUID registration = lifecycleService.addLifecycleListener(mergeCountingListener);
                 registrations.put(instance, registration);
             }
         }
@@ -44,9 +61,9 @@ class MergeBarrier {
     }
 
     private void close() {
-        for (Map.Entry<HazelcastInstance, String> entry : registrations.entrySet()) {
+        for (Map.Entry<HazelcastInstance, UUID> entry : registrations.entrySet()) {
             HazelcastInstance instance = entry.getKey();
-            String registration = entry.getValue();
+            UUID registration = entry.getValue();
 
             instance.getLifecycleService().removeLifecycleListener(registration);
         }

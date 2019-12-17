@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,32 +17,36 @@
 package com.hazelcast.internal.partition.impl;
 
 import com.hazelcast.cluster.ClusterState;
-import com.hazelcast.core.ExecutionCallback;
-import com.hazelcast.instance.Node;
+import com.hazelcast.cluster.impl.MemberImpl;
+import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.internal.partition.InternalPartition;
+import com.hazelcast.internal.partition.PartitionReplica;
 import com.hazelcast.internal.partition.operation.HasOngoingMigration;
+import com.hazelcast.internal.util.Clock;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.nio.Address;
-import com.hazelcast.spi.InternalCompletableFuture;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.OperationService;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.PartitionSpecificRunnable;
-import com.hazelcast.util.Clock;
+import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.spi.impl.operationservice.OperationService;
+import com.hazelcast.spi.impl.operationservice.impl.InvocationFuture;
 
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.BiConsumer;
 import java.util.logging.Level;
 
+import static com.hazelcast.internal.partition.impl.PartitionServiceState.FETCHING_PARTITION_TABLE;
 import static com.hazelcast.internal.partition.impl.PartitionServiceState.MIGRATION_LOCAL;
 import static com.hazelcast.internal.partition.impl.PartitionServiceState.MIGRATION_ON_MASTER;
 import static com.hazelcast.internal.partition.impl.PartitionServiceState.REPLICA_NOT_OWNED;
 import static com.hazelcast.internal.partition.impl.PartitionServiceState.REPLICA_NOT_SYNC;
 import static com.hazelcast.internal.partition.impl.PartitionServiceState.SAFE;
-import static com.hazelcast.spi.partition.IPartitionService.SERVICE_NAME;
+import static com.hazelcast.internal.partition.IPartitionService.SERVICE_NAME;
+import static java.lang.Thread.currentThread;
 
 /**
  * Verifies up-to-dateness of each of partition replicas owned by this member.
@@ -74,6 +78,10 @@ public class PartitionReplicaStateChecker {
     }
 
     public PartitionServiceState getPartitionServiceState() {
+        if (partitionService.isFetchMostRecentPartitionTableTaskRequired()) {
+            return FETCHING_PARTITION_TABLE;
+        }
+
         if (hasMissingReplicaOwners()) {
             return REPLICA_NOT_OWNED;
         }
@@ -82,7 +90,7 @@ public class PartitionReplicaStateChecker {
             return MIGRATION_LOCAL;
         }
 
-        if (!node.isMaster() && hasOnGoingMigrationMaster(Level.OFF)) {
+        if (!partitionService.isLocalMemberMaster() && hasOnGoingMigrationMaster(Level.OFF)) {
             return MIGRATION_ON_MASTER;
         }
 
@@ -153,8 +161,8 @@ public class PartitionReplicaStateChecker {
 
         for (InternalPartition partition : partitionStateManager.getPartitions()) {
             for (int index = 0; index < replicaCount; index++) {
-                Address address = partition.getReplicaAddress(index);
-                if (address == null) {
+                PartitionReplica replica = partition.getReplica(index);
+                if (replica == null) {
                     if (logger.isFinestEnabled()) {
                         logger.finest("Missing replica=" + index + " for partitionId=" + partition.getPartitionId());
                     }
@@ -163,11 +171,11 @@ public class PartitionReplicaStateChecker {
 
                 // Checking IN_TRANSITION state is not needed,
                 // because to be able to change cluster state, we ensure that there are no ongoing/pending migrations
-                if (clusterService.getMember(address) == null
-                        && (clusterState.isJoinAllowed() || !clusterService.isMemberRemovedInNotJoinableState(address))) {
-
+                if (clusterService.getMember(replica.address(), replica.uuid()) == null
+                        && (clusterState.isJoinAllowed()
+                        || !clusterService.isMissingMember(replica.address(), replica.uuid()))) {
                     if (logger.isFinestEnabled()) {
-                        logger.finest("Unknown replica owner= " + address + ", partitionId="
+                        logger.finest("Unknown replica owner= " + replica + ", partitionId="
                                 + partition.getPartitionId() + ", replica=" + index);
                     }
                     return true;
@@ -194,6 +202,7 @@ public class PartitionReplicaStateChecker {
             //noinspection BusyWait
             Thread.sleep(sleep);
         } catch (InterruptedException ie) {
+            currentThread().interrupt();
             logger.finest("Busy wait interrupted", ie);
         }
         return timeoutInMillis - sleep;
@@ -219,27 +228,28 @@ public class PartitionReplicaStateChecker {
             boolean receivedAllResponses = semaphore.tryAcquire(permits, REPLICA_SYNC_CHECK_TIMEOUT_SECONDS, TimeUnit.SECONDS);
             return receivedAllResponses && ok.get();
         } catch (InterruptedException ignored) {
+            currentThread().interrupt();
             return false;
         }
     }
 
     @SuppressWarnings("checkstyle:npathcomplexity")
     private int invokeReplicaSyncOperations(int maxBackupCount, Semaphore semaphore, AtomicBoolean result) {
-        Address thisAddress = node.getThisAddress();
-        ExecutionCallback<Object> callback = new ReplicaSyncResponseCallback(result, semaphore);
+        MemberImpl localMember = node.getLocalMember();
+        BiConsumer<Object, Throwable> callback = new ReplicaSyncResponseCallback(result, semaphore);
 
         ClusterServiceImpl clusterService = node.getClusterService();
         ClusterState clusterState = clusterService.getClusterState();
 
         int ownedCount = 0;
         for (InternalPartition partition : partitionStateManager.getPartitions()) {
-            Address owner = partition.getOwnerOrNull();
+            PartitionReplica owner = partition.getOwnerReplicaOrNull();
             if (owner == null) {
                 result.set(false);
                 continue;
             }
 
-            if (!thisAddress.equals(owner)) {
+            if (!owner.isIdentical(localMember)) {
                 continue;
             }
             ownedCount++;
@@ -252,9 +262,9 @@ public class PartitionReplicaStateChecker {
             }
 
             for (int index = 1; index <= maxBackupCount; index++) {
-                Address replicaAddress = partition.getReplicaAddress(index);
+                PartitionReplica replicaOwner = partition.getReplica(index);
 
-                if (replicaAddress == null) {
+                if (replicaOwner == null) {
                     result.set(false);
                     semaphore.release();
                     continue;
@@ -262,7 +272,8 @@ public class PartitionReplicaStateChecker {
 
                 // Checking IN_TRANSITION state is not needed,
                 // because to be able to change cluster state, we ensure that there are no ongoing/pending migrations
-                if (!clusterState.isJoinAllowed() && clusterService.isMemberRemovedInNotJoinableState(replicaAddress)) {
+                if (!clusterState.isJoinAllowed()
+                        && clusterService.isMissingMember(replicaOwner.address(), replicaOwner.uuid())) {
                     semaphore.release();
                     continue;
                 }
@@ -288,21 +299,21 @@ public class PartitionReplicaStateChecker {
 
         Operation operation = new HasOngoingMigration();
         OperationService operationService = nodeEngine.getOperationService();
-        InternalCompletableFuture<Boolean> future = operationService
+        InvocationFuture<Boolean> future = operationService
                 .createInvocationBuilder(SERVICE_NAME, operation, masterAddress)
                 .setTryCount(INVOCATION_TRY_COUNT)
                 .setTryPauseMillis(INVOCATION_TRY_PAUSE_MILLIS)
                 .invoke();
 
         try {
-            return future.join();
+            return future.joinInternal();
         } catch (Exception e) {
             logger.log(level, "Could not get a response from master about migrations! -> " + e.toString());
         }
         return false;
     }
 
-    private static class ReplicaSyncResponseCallback implements ExecutionCallback<Object> {
+    private static class ReplicaSyncResponseCallback implements BiConsumer<Object, Throwable> {
 
         private final AtomicBoolean result;
         private final Semaphore semaphore;
@@ -313,16 +324,15 @@ public class PartitionReplicaStateChecker {
         }
 
         @Override
-        public void onResponse(Object response) {
-            if (Boolean.FALSE.equals(response)) {
+        public void accept(Object response, Throwable throwable) {
+            if (throwable == null) {
+                if (Boolean.FALSE.equals(response)) {
+                    result.set(false);
+                }
+                semaphore.release();
+            } else {
                 result.set(false);
             }
-            semaphore.release();
-        }
-
-        @Override
-        public void onFailure(Throwable t) {
-            result.set(false);
         }
     }
 }

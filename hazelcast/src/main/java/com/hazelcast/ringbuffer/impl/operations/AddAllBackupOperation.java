@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,11 +16,12 @@
 
 package com.hazelcast.ringbuffer.impl.operations;
 
+import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.ringbuffer.impl.RingbufferContainer;
-import com.hazelcast.spi.BackupOperation;
+import com.hazelcast.spi.impl.operationservice.BackupOperation;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
@@ -55,7 +56,7 @@ public class AddAllBackupOperation extends AbstractRingBufferOperation implement
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ADD_ALL_BACKUP_OPERATION;
     }
 
@@ -65,7 +66,7 @@ public class AddAllBackupOperation extends AbstractRingBufferOperation implement
         out.writeLong(lastSequenceId);
         out.writeInt(items.length);
         for (Data item : items) {
-            out.writeData(item);
+            IOUtil.writeData(out, item);
         }
     }
 
@@ -76,7 +77,7 @@ public class AddAllBackupOperation extends AbstractRingBufferOperation implement
         int length = in.readInt();
         items = new Data[length];
         for (int k = 0; k < items.length; k++) {
-            items[k] = in.readData();
+            items[k] = IOUtil.readData(in);
         }
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,16 +16,17 @@
 
 package com.hazelcast.map.impl.querycache.event;
 
-import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.serialization.SerializationService;
+import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import static com.hazelcast.test.HazelcastTestSupport.assumeDifferentHashCodes;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
@@ -36,7 +37,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class DefaultQueryCacheEventDataTest {
 
     private static final Object KEY = new Object();
@@ -216,6 +217,7 @@ public class DefaultQueryCacheEventDataTest {
         assertEquals(queryCacheEventData.hashCode(), queryCacheEventData.hashCode());
         assertEquals(queryCacheEventData.hashCode(), queryCacheEventDataSameAttributes.hashCode());
 
+        assumeDifferentHashCodes();
         assertNotEquals(queryCacheEventData.hashCode(), queryCacheEventDataOtherSequence.hashCode());
         assertNotEquals(queryCacheEventData.hashCode(), queryCacheEventDataOtherEventType.hashCode());
         assertNotEquals(queryCacheEventData.hashCode(), queryCacheEventDataOtherPartitionId.hashCode());

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,34 +18,32 @@ package com.hazelcast.map.impl.query;
 
 import com.hazelcast.config.CacheDeserializedValues;
 import com.hazelcast.config.Config;
+import com.hazelcast.config.IndexConfig;
+import com.hazelcast.config.IndexType;
 import com.hazelcast.config.MapConfig;
-import com.hazelcast.config.MapIndexConfig;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IMap;
-import com.hazelcast.nio.serialization.Portable;
-import com.hazelcast.nio.serialization.PortableFactory;
+import com.hazelcast.map.IMap;
 import com.hazelcast.nio.serialization.PortableTest.ChildPortableObject;
 import com.hazelcast.nio.serialization.PortableTest.GrandParentPortableObject;
 import com.hazelcast.nio.serialization.PortableTest.ParentPortableObject;
-import com.hazelcast.query.EntryObject;
 import com.hazelcast.query.Predicate;
-import com.hazelcast.query.PredicateBuilder;
+import com.hazelcast.query.PredicateBuilder.EntryObject;
 import com.hazelcast.query.Predicates;
 import com.hazelcast.query.QueryException;
 import com.hazelcast.query.SampleTestObjects;
 import com.hazelcast.query.SampleTestObjects.Employee;
+import com.hazelcast.query.SampleTestObjects.ObjectWithOptional;
 import com.hazelcast.query.SampleTestObjects.State;
 import com.hazelcast.query.SampleTestObjects.Value;
 import com.hazelcast.query.SampleTestObjects.ValueType;
-import com.hazelcast.query.SqlPredicate;
-import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.util.UuidUtil;
+import com.hazelcast.internal.util.UuidUtil;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -55,6 +53,7 @@ import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collection;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -69,14 +68,14 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class QueryBasicTest extends HazelcastTestSupport {
 
     @Test
     public void testPredicatedEvaluatedSingleThreadedByDefault() {
         Config config = getConfig();
         HazelcastProperties properties = new HazelcastProperties(config);
-        boolean parallelEvaluation = properties.getBoolean(GroupProperty.QUERY_PREDICATE_PARALLEL_EVALUATION);
+        boolean parallelEvaluation = properties.getBoolean(ClusterProperty.QUERY_PREDICATE_PARALLEL_EVALUATION);
         assertFalse(parallelEvaluation);
     }
 
@@ -91,7 +90,7 @@ public class QueryBasicTest extends HazelcastTestSupport {
             map.put("" + i, v);
         }
         String[] emptyArray = new String[2];
-        final Predicate predicate = new PredicateBuilder().getEntryObject().get("name").in(emptyArray);
+        final Predicate predicate = Predicates.newPredicateBuilder().getEntryObject().get("name").in(emptyArray);
         final Collection<Value> values = map.values(predicate);
         assertEquals(values.size(), 0);
     }
@@ -100,11 +99,11 @@ public class QueryBasicTest extends HazelcastTestSupport {
     public void testQueryIndexNullValues() {
         final HazelcastInstance instance = createHazelcastInstance(getConfig());
         final IMap<String, Value> map = instance.getMap("default");
-        map.addIndex("name", true);
+        map.addIndex(IndexType.SORTED, "name");
         map.put("first", new Value("first", 1));
         map.put("second", new Value(null, 2));
         map.put("third", new Value(null, 3));
-        final Predicate predicate = new SqlPredicate("name=null");
+        final Predicate predicate = Predicates.sql("name=null");
         final Collection<Value> values = map.values(predicate);
 
         final int[] expectedIndexValues = {2, 3};
@@ -123,11 +122,11 @@ public class QueryBasicTest extends HazelcastTestSupport {
     public void testLesserEqual() {
         final HazelcastInstance instance = createHazelcastInstance(getConfig());
         final IMap<String, Value> map = instance.getMap("default");
-        map.addIndex("index", true);
+        map.addIndex(IndexType.SORTED, "index");
         for (int i = 0; i < 10; i++) {
             map.put("" + i, new Value("" + i, i));
         }
-        final Predicate predicate = new SqlPredicate("index<=5");
+        final Predicate predicate = Predicates.sql("index<=5");
         final Collection<Value> values = map.values(predicate);
 
 
@@ -150,11 +149,11 @@ public class QueryBasicTest extends HazelcastTestSupport {
     public void testNotEqual() {
         final HazelcastInstance instance = createHazelcastInstance(getConfig());
         final IMap<String, Value> map = instance.getMap("default");
-        map.addIndex("name", true);
+        map.addIndex(IndexType.SORTED, "name");
         map.put("first", new Value("first", 1));
         map.put("second", new Value(null, 2));
         map.put("third", new Value(null, 3));
-        final Predicate predicate = new SqlPredicate("name != null");
+        final Predicate predicate = Predicates.sql("name != null");
 
 
         final Collection<Value> values = map.values(predicate);
@@ -174,20 +173,20 @@ public class QueryBasicTest extends HazelcastTestSupport {
     public void issue393SqlIn() {
         HazelcastInstance instance = createHazelcastInstance(getConfig());
         IMap<String, Value> map = instance.getMap("default");
-        map.addIndex("name", true);
+        map.addIndex(IndexType.SORTED, "name");
         for (int i = 0; i < 4; i++) {
             Value v = new Value("name" + i);
             map.put("" + i, v);
         }
-        Predicate predicate = new SqlPredicate("name IN ('name0', 'name2')");
+        Predicate predicate = Predicates.sql("name IN ('name0', 'name2')");
         Collection<Value> values = map.values(predicate);
         String[] expectedValues = new String[]{"name0", "name2"};
         assertEquals(expectedValues.length, values.size());
-        List<String> names = new ArrayList<String>();
+        List<String> names = new ArrayList<>();
         for (Value configObject : values) {
             names.add(configObject.getName());
         }
-        String[] array = names.toArray(new String[names.size()]);
+        String[] array = names.toArray(new String[0]);
         Arrays.sort(array);
         assertArrayEquals(names.toString(), expectedValues, array);
     }
@@ -196,20 +195,20 @@ public class QueryBasicTest extends HazelcastTestSupport {
     public void issue393SqlInInteger() {
         HazelcastInstance instance = createHazelcastInstance(getConfig());
         IMap<String, Value> map = instance.getMap("default");
-        map.addIndex("index", false);
+        map.addIndex(IndexType.HASH, "index");
         for (int i = 0; i < 4; i++) {
             Value v = new Value("name" + i, new ValueType("type" + i), i);
             map.put("" + i, v);
         }
-        Predicate predicate = new SqlPredicate("index IN (0, 2)");
+        Predicate predicate = Predicates.sql("index IN (0, 2)");
         Collection<Value> values = map.values(predicate);
         String[] expectedValues = new String[]{"name0", "name2"};
         assertEquals(expectedValues.length, values.size());
-        List<String> names = new ArrayList<String>();
+        List<String> names = new ArrayList<>();
         for (Value configObject : values) {
             names.add(configObject.getName());
         }
-        String[] array = names.toArray(new String[names.size()]);
+        String[] array = names.toArray(new String[0]);
         Arrays.sort(array);
         assertArrayEquals(names.toString(), expectedValues, array);
     }
@@ -225,7 +224,7 @@ public class QueryBasicTest extends HazelcastTestSupport {
         map.put("5", new ValueType("five"));
         map.put("6", new ValueType("six"));
         map.put("7", new ValueType("seven"));
-        Predicate predicate = new SqlPredicate("typeName in ('one','two')");
+        Predicate predicate = Predicates.sql("typeName in ('one','two')");
         for (int i = 0; i < 10; i++) {
             Collection<SampleTestObjects.ValueType> values = map.values(predicate);
             assertEquals(2, values.size());
@@ -256,7 +255,7 @@ public class QueryBasicTest extends HazelcastTestSupport {
         map.put("1", new ValueType("one"));
         map.put("2", new ValueType("two"));
         map.put("3", new ValueType("three"));
-        Predicate predicate = new SqlPredicate("typeName in ('one','two')");
+        Predicate predicate = Predicates.sql("typeName in ('one','two')");
         assertEquals(2, map.values(predicate).size());
         assertEquals(2, map.keySet(predicate).size());
         testIterator(map.keySet().iterator(), 3);
@@ -267,6 +266,7 @@ public class QueryBasicTest extends HazelcastTestSupport {
         testIterator(map.values(predicate).iterator(), 2);
     }
 
+    @SuppressWarnings("ConstantConditions")
     private void testIterator(Iterator it, int size) {
         for (int i = 0; i < size * 2; i++) {
             assertTrue("i is " + i, it.hasNext());
@@ -284,7 +284,7 @@ public class QueryBasicTest extends HazelcastTestSupport {
     public void issue393Fail() {
         HazelcastInstance instance = createHazelcastInstance(getConfig());
         IMap<String, Value> map = instance.getMap("default");
-        map.addIndex("qwe", true);
+        map.addIndex(IndexType.SORTED, "qwe");
         Value v = new Value("name");
         try {
             map.put("0", v);
@@ -298,15 +298,15 @@ public class QueryBasicTest extends HazelcastTestSupport {
     public void negativeDouble() {
         HazelcastInstance instance = createHazelcastInstance(getConfig());
         IMap<String, Employee> map = instance.getMap("default");
-        map.addIndex("salary", false);
+        map.addIndex(IndexType.HASH, "salary");
         map.put("" + 4, new Employee(1, "default", 1, true, -70D));
         map.put("" + 3, new Employee(1, "default", 1, true, -60D));
         map.put("" + 1, new Employee(1, "default", 1, true, -10D));
         map.put("" + 2, new Employee(2, "default", 2, true, 10D));
-        Predicate predicate = new SqlPredicate("salary >= -60");
+        Predicate predicate = Predicates.sql("salary >= -60");
         Collection<Employee> values = map.values(predicate);
         assertEquals(3, values.size());
-        predicate = new SqlPredicate("salary between -20 and 20");
+        predicate = Predicates.sql("salary between -20 and 20");
         values = map.values(predicate);
         assertEquals(2, values.size());
     }
@@ -315,20 +315,20 @@ public class QueryBasicTest extends HazelcastTestSupport {
     public void issue393SqlEq() {
         HazelcastInstance instance = createHazelcastInstance(getConfig());
         IMap<String, Value> map = instance.getMap("default");
-        map.addIndex("name", true);
+        map.addIndex(IndexType.SORTED, "name");
         for (int i = 0; i < 4; i++) {
             Value v = new Value("name" + i);
             map.put("" + i, v);
         }
-        Predicate predicate = new SqlPredicate("name='name0'");
+        Predicate predicate = Predicates.sql("name='name0'");
         Collection<Value> values = map.values(predicate);
         String[] expectedValues = new String[]{"name0"};
         assertEquals(expectedValues.length, values.size());
-        List<String> names = new ArrayList<String>();
+        List<String> names = new ArrayList<>();
         for (Value configObject : values) {
             names.add(configObject.getName());
         }
-        String[] array = names.toArray(new String[names.size()]);
+        String[] array = names.toArray(new String[0]);
         Arrays.sort(array);
         assertArrayEquals(names.toString(), expectedValues, array);
     }
@@ -337,20 +337,20 @@ public class QueryBasicTest extends HazelcastTestSupport {
     public void issue393() {
         HazelcastInstance instance = createHazelcastInstance(getConfig());
         IMap<String, Value> map = instance.getMap("default");
-        map.addIndex("name", true);
+        map.addIndex(IndexType.SORTED, "name");
         for (int i = 0; i < 4; i++) {
             Value v = new Value("name" + i);
             map.put("" + i, v);
         }
-        Predicate predicate = new PredicateBuilder().getEntryObject().get("name").in("name0", "name2");
+        Predicate predicate = Predicates.newPredicateBuilder().getEntryObject().get("name").in("name0", "name2");
         Collection<Value> values = map.values(predicate);
         String[] expectedValues = new String[]{"name0", "name2"};
         assertEquals(expectedValues.length, values.size());
-        List<String> names = new ArrayList<String>();
+        List<String> names = new ArrayList<>();
         for (Value configObject : values) {
             names.add(configObject.getName());
         }
-        String[] array = names.toArray(new String[names.size()]);
+        String[] array = names.toArray(new String[0]);
         Arrays.sort(array);
         assertArrayEquals(names.toString(), expectedValues, array);
     }
@@ -364,7 +364,7 @@ public class QueryBasicTest extends HazelcastTestSupport {
         Employee toto2 = new Employee("toto-super+hero", 23, true, 165765.0);
         map.put("2", toto2);
         // works well
-        Set<Map.Entry<String, Employee>> entries = map.entrySet(new SqlPredicate("name='toto-super+hero'"));
+        Set<Map.Entry<String, Employee>> entries = map.entrySet(Predicates.sql("name='toto-super+hero'"));
         assertTrue(entries.size() > 0);
         for (Map.Entry<String, Employee> entry : entries) {
             Employee e = entry.getValue();
@@ -376,14 +376,14 @@ public class QueryBasicTest extends HazelcastTestSupport {
     public void queryWithThis() {
         HazelcastInstance instance = createHazelcastInstance(getConfig());
         IMap<String, String> map = instance.getMap("queryWithThis");
-        map.addIndex("this", false);
+        map.addIndex(IndexType.HASH, "this");
         for (int i = 0; i < 1000; i++) {
             map.put("" + i, "" + i);
         }
-        Predicate predicate = new PredicateBuilder().getEntryObject().get("this").equal("10");
+        Predicate predicate = Predicates.newPredicateBuilder().getEntryObject().get("this").equal("10");
         Collection<String> set = map.values(predicate);
         assertEquals(1, set.size());
-        assertEquals(1, map.values(new SqlPredicate("this=15")).size());
+        assertEquals(1, map.values(Predicates.sql("this=15")).size());
     }
 
     /**
@@ -399,11 +399,11 @@ public class QueryBasicTest extends HazelcastTestSupport {
         map.put("4", 44);
         map.put("5", 55);
         map.put("6", 66);
-        Predicate predicate = new PredicateBuilder().getEntryObject().key().equal("1");
+        Predicate predicate = Predicates.newPredicateBuilder().getEntryObject().key().equal("1");
         assertEquals(1, map.values(predicate).size());
-        predicate = new PredicateBuilder().getEntryObject().key().in("2", "3");
+        predicate = Predicates.newPredicateBuilder().getEntryObject().key().in("2", "3");
         assertEquals(2, map.keySet(predicate).size());
-        predicate = new PredicateBuilder().getEntryObject().key().in("2", "3", "5", "6", "7");
+        predicate = Predicates.newPredicateBuilder().getEntryObject().key().in("2", "3", "5", "6", "7");
         assertEquals(4, map.keySet(predicate).size());
     }
 
@@ -424,7 +424,7 @@ public class QueryBasicTest extends HazelcastTestSupport {
     public void testPredicateStringAttributesWithIndex() {
         HazelcastInstance instance = createHazelcastInstance(getConfig());
         IMap<Integer, Value> map = instance.getMap("testPredicateStringWithStringIndex");
-        map.addIndex("name", false);
+        map.addIndex(IndexType.HASH, "name");
         testPredicateStringAttribute(map);
     }
 
@@ -438,14 +438,14 @@ public class QueryBasicTest extends HazelcastTestSupport {
         map.put(7, new Value("prs"));
         map.put(8, new Value("def"));
         map.put(9, new Value("qwx"));
-        assertEquals(8, map.values(new SqlPredicate("name > 'aac'")).size());
-        assertEquals(9, map.values(new SqlPredicate("name between 'aaa' and 'zzz'")).size());
-        assertEquals(7, map.values(new SqlPredicate("name < 't'")).size());
-        assertEquals(6, map.values(new SqlPredicate("name >= 'gh'")).size());
-        assertEquals(8, map.values(new PredicateBuilder().getEntryObject().get("name").greaterThan("aac")).size());
-        assertEquals(9, map.values(new PredicateBuilder().getEntryObject().get("name").between("aaa", "zzz")).size());
-        assertEquals(7, map.values(new PredicateBuilder().getEntryObject().get("name").lessThan("t")).size());
-        assertEquals(6, map.values(new PredicateBuilder().getEntryObject().get("name").greaterEqual("gh")).size());
+        assertEquals(8, map.values(Predicates.sql("name > 'aac'")).size());
+        assertEquals(9, map.values(Predicates.sql("name between 'aaa' and 'zzz'")).size());
+        assertEquals(7, map.values(Predicates.sql("name < 't'")).size());
+        assertEquals(6, map.values(Predicates.sql("name >= 'gh'")).size());
+        assertEquals(8, map.values(Predicates.newPredicateBuilder().getEntryObject().get("name").greaterThan("aac")).size());
+        assertEquals(9, map.values(Predicates.newPredicateBuilder().getEntryObject().get("name").between("aaa", "zzz")).size());
+        assertEquals(7, map.values(Predicates.newPredicateBuilder().getEntryObject().get("name").lessThan("t")).size());
+        assertEquals(6, map.values(Predicates.newPredicateBuilder().getEntryObject().get("name").greaterEqual("gh")).size());
     }
 
     @Test(timeout = 1000 * 90)
@@ -459,7 +459,7 @@ public class QueryBasicTest extends HazelcastTestSupport {
     public void testPredicateDateAttributeWithIndex() {
         HazelcastInstance instance = createHazelcastInstance(getConfig());
         IMap<Integer, Date> map = instance.getMap("testPredicateDateAttribute");
-        map.addIndex("this", true);
+        map.addIndex(IndexType.SORTED, "this");
         testPredicateDateAttribute(map);
     }
 
@@ -476,17 +476,17 @@ public class QueryBasicTest extends HazelcastTestSupport {
         cal.set(2000, Calendar.JUNE, 5);
         map.put(5, cal.getTime());
         cal.set(2011, Calendar.JANUARY, 1);
-        assertEquals(3, map.values(new PredicateBuilder().getEntryObject().get("this").greaterThan(cal.getTime())).size());
-        assertEquals(3, map.values(new SqlPredicate("this > 'Sat Jan 01 11:43:05 EET 2011'")).size());
-        assertEquals(2, map.values(new PredicateBuilder().getEntryObject().get("this").lessThan(cal.getTime())).size());
-        assertEquals(2, map.values(new SqlPredicate("this < 'Sat Jan 01 11:43:05 EET 2011'")).size());
+        assertEquals(3, map.values(Predicates.newPredicateBuilder().getEntryObject().get("this").greaterThan(cal.getTime())).size());
+        assertEquals(3, map.values(Predicates.sql("this > 'Sat Jan 01 11:43:05 EET 2011'")).size());
+        assertEquals(2, map.values(Predicates.newPredicateBuilder().getEntryObject().get("this").lessThan(cal.getTime())).size());
+        assertEquals(2, map.values(Predicates.sql("this < 'Sat Jan 01 11:43:05 EET 2011'")).size());
         cal.set(2003, Calendar.NOVEMBER, 10);
         Date d1 = cal.getTime();
         cal.set(2012, Calendar.FEBRUARY, 10);
         Date d2 = cal.getTime();
-        assertEquals(3, map.values(new PredicateBuilder().getEntryObject().get("this").between(d1, d2)).size());
-        assertEquals(3, map.values(new SqlPredicate("this between 'Mon Nov 10 11:43:05 EET 2003'" +
-                " and 'Fri Feb 10 11:43:05 EET 2012'")).size());
+        assertEquals(3, map.values(Predicates.newPredicateBuilder().getEntryObject().get("this").between(d1, d2)).size());
+        assertEquals(3, map.values(Predicates.sql("this between 'Mon Nov 10 11:43:05 EET 2003'"
+                + " and 'Fri Feb 10 11:43:05 EET 2012'")).size());
     }
 
     @Test(timeout = 1000 * 90)
@@ -500,7 +500,7 @@ public class QueryBasicTest extends HazelcastTestSupport {
     public void testPredicateEnumAttributeWithIndex() {
         HazelcastInstance instance = createHazelcastInstance(getConfig());
         IMap<Integer, NodeType> map = instance.getMap("testPredicateEnumAttribute");
-        map.addIndex("this", true);
+        map.addIndex(IndexType.SORTED, "this");
         testPredicateEnumAttribute(map);
     }
 
@@ -508,15 +508,15 @@ public class QueryBasicTest extends HazelcastTestSupport {
         map.put(1, NodeType.MEMBER);
         map.put(2, NodeType.LITE_MEMBER);
         map.put(3, NodeType.JAVA_CLIENT);
-        assertEquals(NodeType.MEMBER, map.values(new SqlPredicate("this=MEMBER")).iterator().next());
-        assertEquals(2, map.values(new SqlPredicate("this in (MEMBER, LITE_MEMBER)")).size());
+        assertEquals(NodeType.MEMBER, map.values(Predicates.sql("this=MEMBER")).iterator().next());
+        assertEquals(2, map.values(Predicates.sql("this in (MEMBER, LITE_MEMBER)")).size());
         assertEquals(NodeType.JAVA_CLIENT,
-                map.values(new PredicateBuilder().getEntryObject()
-                                                 .get("this").equal(NodeType.JAVA_CLIENT)).iterator().next());
-        assertEquals(0, map.values(new PredicateBuilder().getEntryObject()
-                                                         .get("this").equal(NodeType.CSHARP_CLIENT)).size());
-        assertEquals(2, map.values(new PredicateBuilder().getEntryObject()
-                                                         .get("this").in(NodeType.LITE_MEMBER, NodeType.MEMBER)).size());
+                map.values(Predicates.newPredicateBuilder().getEntryObject()
+                        .get("this").equal(NodeType.JAVA_CLIENT)).iterator().next());
+        assertEquals(0, map.values(Predicates.newPredicateBuilder().getEntryObject()
+                .get("this").equal(NodeType.CSHARP_CLIENT)).size());
+        assertEquals(2, map.values(Predicates.newPredicateBuilder().getEntryObject()
+                .get("this").in(NodeType.LITE_MEMBER, NodeType.MEMBER)).size());
     }
 
     private enum NodeType {
@@ -538,13 +538,13 @@ public class QueryBasicTest extends HazelcastTestSupport {
         CustomObject object2 = new CustomObject("name2", UuidUtil.newUnsecureUUID(), attribute);
         map.put(2, object2);
 
-        assertEquals(customObject, map.values(new PredicateBuilder().getEntryObject().get("uuid").equal(customObject.getUuid()))
-                                      .iterator().next());
-        assertEquals(2, map.values(new PredicateBuilder().getEntryObject().get("attribute").equal(attribute)).size());
+        assertEquals(customObject, map.values(Predicates.newPredicateBuilder().getEntryObject().get("uuid").equal(customObject.getUuid()))
+                .iterator().next());
+        assertEquals(2, map.values(Predicates.newPredicateBuilder().getEntryObject().get("attribute").equal(attribute)).size());
 
-        assertEquals(object2, map.values(new PredicateBuilder().getEntryObject().get("uuid").in(object2.getUuid()))
-                                 .iterator().next());
-        assertEquals(2, map.values(new PredicateBuilder().getEntryObject().get("attribute").in(attribute)).size());
+        assertEquals(object2, map.values(Predicates.newPredicateBuilder().getEntryObject().get("uuid").in(object2.getUuid()))
+                .iterator().next());
+        assertEquals(2, map.values(Predicates.newPredicateBuilder().getEntryObject().get("attribute").in(attribute)).size());
     }
 
     public static void doFunctionalSQLQueryTest(IMap<String, Employee> map) {
@@ -564,7 +564,7 @@ public class QueryBasicTest extends HazelcastTestSupport {
         }
         assertEquals(102, entryCount);
 
-        entries = map.entrySet(new SqlPredicate("active=true and age=23"));
+        entries = map.entrySet(Predicates.sql("active=true and age=23"));
         assertEquals(3, entries.size());
         for (Map.Entry entry : entries) {
             Employee employee = (Employee) entry.getValue();
@@ -572,19 +572,19 @@ public class QueryBasicTest extends HazelcastTestSupport {
             assertTrue(employee.isActive());
         }
         map.remove("2");
-        entries = map.entrySet(new SqlPredicate("active=true and age=23"));
+        entries = map.entrySet(Predicates.sql("active=true and age=23"));
         assertEquals(2, entries.size());
         for (Map.Entry entry : entries) {
             Employee employee = (Employee) entry.getValue();
             assertEquals(employee.getAge(), 23);
             assertTrue(employee.isActive());
         }
-        entries = map.entrySet(new SqlPredicate("age!=33"));
+        entries = map.entrySet(Predicates.sql("age!=33"));
         for (Map.Entry entry : entries) {
             Employee employee = (Employee) entry.getValue();
             assertTrue(employee.getAge() != 33);
         }
-        entries = map.entrySet(new SqlPredicate("active!=false"));
+        entries = map.entrySet(Predicates.sql("active!=false"));
         for (Map.Entry entry : entries) {
             Employee employee = (Employee) entry.getValue();
             assertTrue(employee.isActive());
@@ -608,7 +608,7 @@ public class QueryBasicTest extends HazelcastTestSupport {
         }
         assertEquals(102, entryCount);
 
-        EntryObject entryObject = new PredicateBuilder().getEntryObject();
+        EntryObject entryObject = Predicates.newPredicateBuilder().getEntryObject();
         Predicate predicate = entryObject.is("active").and(entryObject.get("age").equal(23));
         entries = map.entrySet(predicate);
         for (Map.Entry entry : entries) {
@@ -624,7 +624,7 @@ public class QueryBasicTest extends HazelcastTestSupport {
             assertEquals(employee.getAge(), 23);
             assertTrue(employee.isActive());
         }
-        entries = map.entrySet(new SqlPredicate(" (age >= " + 30 + ") AND (age <= " + 40 + ")"));
+        entries = map.entrySet(Predicates.sql(" (age >= " + 30 + ") AND (age <= " + 40 + ")"));
         assertEquals(23, entries.size());
         for (Map.Entry entry : entries) {
             Employee employee = (Employee) entry.getValue();
@@ -643,48 +643,48 @@ public class QueryBasicTest extends HazelcastTestSupport {
         map.put(1, new Employee("e", 1, false, 0));
         map.put(2, new Employee("e2", 1, false, 0));
         try {
-            map.values(new SqlPredicate("invalid_sql"));
+            map.values(Predicates.sql("invalid_sql"));
             fail("Should fail because of invalid SQL!");
         } catch (RuntimeException e) {
             assertContains(e.getMessage(), "There is no suitable accessor for 'invalid_sql'");
         }
         try {
-            map.values(new SqlPredicate("invalid sql"));
+            map.values(Predicates.sql("invalid sql"));
             fail("Should fail because of invalid SQL!");
         } catch (RuntimeException e) {
             assertContains(e.getMessage(), "Invalid SQL: [invalid sql]");
         }
         try {
-            map.values(new SqlPredicate("invalid and sql"));
+            map.values(Predicates.sql("invalid and sql"));
             fail("Should fail because of invalid SQL!");
         } catch (RuntimeException e) {
             assertContains(e.getMessage(), "There is no suitable accessor for 'invalid'");
         }
         try {
-            map.values(new SqlPredicate("invalid sql and"));
+            map.values(Predicates.sql("invalid sql and"));
             fail("Should fail because of invalid SQL!");
         } catch (RuntimeException e) {
             assertContains(e.getMessage(), "There is no suitable accessor for 'invalid'");
         }
         try {
-            map.values(new SqlPredicate(""));
+            map.values(Predicates.sql(""));
             fail("Should fail because of invalid SQL!");
         } catch (RuntimeException e) {
             assertContains(e.getMessage(), "Invalid SQL: []");
         }
-        assertEquals(2, map.values(new SqlPredicate("age=1 and name like 'e%'")).size());
+        assertEquals(2, map.values(Predicates.sql("age=1 and name like 'e%'")).size());
     }
 
     @Test(timeout = 1000 * 90)
     public void testIndexingEnumAttributeIssue597() {
         HazelcastInstance instance = createHazelcastInstance(getConfig());
         IMap<Integer, Value> map = instance.getMap("default");
-        map.addIndex("state", true);
+        map.addIndex(IndexType.SORTED, "state");
         for (int i = 0; i < 4; i++) {
             Value v = new Value(i % 2 == 0 ? State.STATE1 : State.STATE2, new ValueType(), i);
             map.put(i, v);
         }
-        Predicate predicate = new PredicateBuilder().getEntryObject().get("state").equal(State.STATE1);
+        Predicate predicate = Predicates.newPredicateBuilder().getEntryObject().get("state").equal(State.STATE1);
         Collection<Value> values = map.values(predicate);
         int[] expectedValues = new int[]{0, 2};
         assertEquals(expectedValues.length, values.size());
@@ -704,13 +704,13 @@ public class QueryBasicTest extends HazelcastTestSupport {
     public void testIndexingEnumAttributeWithSqlIssue597() {
         HazelcastInstance instance = createHazelcastInstance(getConfig());
         IMap<Integer, Value> map = instance.getMap("default");
-        map.addIndex("state", true);
+        map.addIndex(IndexType.SORTED, "state");
         for (int i = 0; i < 4; i++) {
             Value v = new Value(i % 2 == 0 ? State.STATE1 : State.STATE2, new ValueType(), i);
             map.put(i, v);
         }
 
-        Collection<Value> values = map.values(new SqlPredicate("state = 'STATE1'"));
+        Collection<Value> values = map.values(Predicates.sql("state = 'STATE1'"));
         int[] expectedValues = new int[]{0, 2};
         assertEquals(expectedValues.length, values.size());
         int[] indexes = new int[2];
@@ -726,7 +726,7 @@ public class QueryBasicTest extends HazelcastTestSupport {
     public void testMultipleOrPredicatesIssue885WithoutIndex() {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
         HazelcastInstance instance = factory.newHazelcastInstance(getConfig());
-        factory.newHazelcastInstance(new Config());
+        factory.newHazelcastInstance(getConfig());
         IMap<Integer, Employee> map = instance.getMap("default");
         testMultipleOrPredicates(map);
     }
@@ -735,9 +735,9 @@ public class QueryBasicTest extends HazelcastTestSupport {
     public void testMultipleOrPredicatesIssue885WithIndex() {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
         HazelcastInstance instance = factory.newHazelcastInstance(getConfig());
-        factory.newHazelcastInstance(new Config());
+        factory.newHazelcastInstance(getConfig());
         IMap<Integer, Employee> map = instance.getMap("default");
-        map.addIndex("name", true);
+        map.addIndex(IndexType.SORTED, "name");
         testMultipleOrPredicates(map);
     }
 
@@ -745,10 +745,10 @@ public class QueryBasicTest extends HazelcastTestSupport {
     public void testMultipleOrPredicatesIssue885WithDoubleIndex() {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
         HazelcastInstance instance = factory.newHazelcastInstance(getConfig());
-        factory.newHazelcastInstance(new Config());
+        factory.newHazelcastInstance(getConfig());
         IMap<Integer, Employee> map = instance.getMap("default");
-        map.addIndex("name", true);
-        map.addIndex("city", true);
+        map.addIndex(IndexType.SORTED, "name");
+        map.addIndex(IndexType.SORTED, "city");
         testMultipleOrPredicates(map);
     }
 
@@ -759,34 +759,34 @@ public class QueryBasicTest extends HazelcastTestSupport {
 
         Collection<Employee> values;
 
-        values = map.values(new SqlPredicate("name = 'name1' OR name = 'name2' OR name LIKE 'name3'"));
+        values = map.values(Predicates.sql("name = 'name1' OR name = 'name2' OR name LIKE 'name3'"));
         assertEquals(3, values.size());
 
-        values = map.values(new SqlPredicate("name = 'name1' OR name LIKE 'name2%' OR name LIKE 'name3'"));
+        values = map.values(Predicates.sql("name = 'name1' OR name LIKE 'name2%' OR name LIKE 'name3'"));
         assertEquals(3, values.size());
 
-        values = map.values(new SqlPredicate("name = 'name1' OR name LIKE 'name2%' OR name == 'name3'"));
+        values = map.values(Predicates.sql("name = 'name1' OR name LIKE 'name2%' OR name == 'name3'"));
         assertEquals(3, values.size());
 
-        values = map.values(new SqlPredicate("name LIKE '%name1' OR name LIKE 'name2%' OR name LIKE '%name3%'"));
+        values = map.values(Predicates.sql("name LIKE '%name1' OR name LIKE 'name2%' OR name LIKE '%name3%'"));
         assertEquals(3, values.size());
 
-        values = map.values(new SqlPredicate("name == 'name1' OR name == 'name2' OR name = 'name3'"));
+        values = map.values(Predicates.sql("name == 'name1' OR name == 'name2' OR name = 'name3'"));
         assertEquals(3, values.size());
 
-        values = map.values(new SqlPredicate("name = 'name1' OR name = 'name2' OR city LIKE 'city3'"));
+        values = map.values(Predicates.sql("name = 'name1' OR name = 'name2' OR city LIKE 'city3'"));
         assertEquals(3, values.size());
 
-        values = map.values(new SqlPredicate("name = 'name1' OR name LIKE 'name2%' OR city LIKE 'city3'"));
+        values = map.values(Predicates.sql("name = 'name1' OR name LIKE 'name2%' OR city LIKE 'city3'"));
         assertEquals(3, values.size());
 
-        values = map.values(new SqlPredicate("name = 'name1' OR name LIKE 'name2%' OR city == 'city3'"));
+        values = map.values(Predicates.sql("name = 'name1' OR name LIKE 'name2%' OR city == 'city3'"));
         assertEquals(3, values.size());
 
-        values = map.values(new SqlPredicate("name LIKE '%name1' OR name LIKE 'name2%' OR city LIKE '%city3%'"));
+        values = map.values(Predicates.sql("name LIKE '%name1' OR name LIKE 'name2%' OR city LIKE '%city3%'"));
         assertEquals(3, values.size());
 
-        values = map.values(new SqlPredicate("name == 'name1' OR name == 'name2' OR city = 'city3'"));
+        values = map.values(Predicates.sql("name == 'name1' OR name == 'name2' OR city = 'city3'"));
         assertEquals(3, values.size());
     }
 
@@ -803,7 +803,7 @@ public class QueryBasicTest extends HazelcastTestSupport {
         Object value = "value";
         map.put(key, value);
 
-        Collection<Object> values = map.values(new SqlPredicate("__key = '" + key + "'"));
+        Collection<Object> values = map.values(Predicates.sql("__key = '" + key + "'"));
         assertEquals(1, values.size());
         assertEquals(value, values.iterator().next());
     }
@@ -821,7 +821,7 @@ public class QueryBasicTest extends HazelcastTestSupport {
         Object value = "value";
         map.put(key, value);
 
-        Collection<Object> values = map.values(new SqlPredicate("__key.age = 12 and __key.height = 123"));
+        Collection<Object> values = map.values(Predicates.sql("__key.age = 12 and __key.height = 123"));
         assertEquals(1, values.size());
         assertEquals(value, values.iterator().next());
     }
@@ -839,7 +839,7 @@ public class QueryBasicTest extends HazelcastTestSupport {
         Object value = "value";
         map.put(key, value);
 
-        Collection<Object> values = map.values(new SqlPredicate("__key.timestamp = 123"));
+        Collection<Object> values = map.values(Predicates.sql("__key.timestamp = 123"));
         assertEquals(1, values.size());
         assertEquals(value, values.iterator().next());
     }
@@ -853,7 +853,7 @@ public class QueryBasicTest extends HazelcastTestSupport {
     @Test
     public void testQueryPortableObject_parallel() {
         Config config = getConfig();
-        config.setProperty(GroupProperty.QUERY_PREDICATE_PARALLEL_EVALUATION.getName(), "true");
+        config.setProperty(ClusterProperty.QUERY_PREDICATE_PARALLEL_EVALUATION.getName(), "true");
         testQueryUsingPortableObject(config, randomMapName());
     }
 
@@ -879,28 +879,15 @@ public class QueryBasicTest extends HazelcastTestSupport {
         map.put(key, new ParentPortableObject(1L));
         waitAllForSafeState(instance1, instance2);
 
-        Collection<Object> values = map.values(new SqlPredicate("timestamp > 0"));
+        Collection<Object> values = map.values(Predicates.sql("timestamp > 0"));
         assertEquals(1, values.size());
     }
 
     private void addPortableFactories(Config config) {
         config.getSerializationConfig()
-              .addPortableFactory(1, new PortableFactory() {
-                  @Override
-                  public Portable create(int classId) {
-                      return new GrandParentPortableObject(1L);
-                  }
-              }).addPortableFactory(2, new PortableFactory() {
-            @Override
-            public Portable create(int classId) {
-                return new ParentPortableObject(1L);
-            }
-        }).addPortableFactory(3, new PortableFactory() {
-            @Override
-            public Portable create(int classId) {
-                return new ChildPortableObject(1L);
-            }
-        });
+                .addPortableFactory(1, classId -> new GrandParentPortableObject(1L))
+                .addPortableFactory(2, classId -> new ParentPortableObject(1L))
+                .addPortableFactory(3, classId -> new ChildPortableObject(1L));
     }
 
     @Test(expected = QueryException.class)
@@ -910,7 +897,7 @@ public class QueryBasicTest extends HazelcastTestSupport {
         IMap<Object, Object> map = instance.getMap(randomMapName());
 
         map.put(1, new GrandParentPortableObject(1, new ParentPortableObject(1L, new ChildPortableObject(1L))));
-        Collection<Object> values = map.values(new SqlPredicate("child > 0"));
+        Collection<Object> values = map.values(Predicates.sql("child > 0"));
         values.size();
     }
 
@@ -925,8 +912,8 @@ public class QueryBasicTest extends HazelcastTestSupport {
         String name = randomMapName();
         Config config = getConfig();
         config.addMapConfig(new MapConfig(name)
-                .addMapIndexConfig(new MapIndexConfig("child.timestamp", false))
-                .addMapIndexConfig(new MapIndexConfig("child.child.timestamp", true)));
+                .addIndexConfig(new IndexConfig(IndexType.HASH, "child.timestamp"))
+                .addIndexConfig(new IndexConfig(IndexType.SORTED, "child.child.timestamp")));
 
         testQueryUsingNestedPortableObject(config, name);
     }
@@ -936,7 +923,7 @@ public class QueryBasicTest extends HazelcastTestSupport {
         String name = randomMapName();
         Config config = getConfig();
         config.addMapConfig(new MapConfig(name)
-                .addMapIndexConfig(new MapIndexConfig("timestamp", true)));
+                .addIndexConfig(new IndexConfig(IndexType.SORTED, "timestamp")));
 
         testQueryUsingPortableObject(config, name);
     }
@@ -947,7 +934,7 @@ public class QueryBasicTest extends HazelcastTestSupport {
         Config config = getConfig();
         config.addMapConfig(new MapConfig(name)
                 .setCacheDeserializedValues(CacheDeserializedValues.ALWAYS)
-                .addMapIndexConfig(new MapIndexConfig("timestamp", true)));
+                .addIndexConfig(new IndexConfig(IndexType.SORTED, "timestamp")));
 
         testQueryUsingPortableObject(config, name);
     }
@@ -965,10 +952,88 @@ public class QueryBasicTest extends HazelcastTestSupport {
         map.put(key, new GrandParentPortableObject(1, new ParentPortableObject(1L, new ChildPortableObject(1L))));
         waitAllForSafeState(instance1, instance2);
 
-        Collection<GrandParentPortableObject> values = map.values(new SqlPredicate("child.timestamp > 0"));
+        Collection<GrandParentPortableObject> values = map.values(Predicates.sql("child.timestamp > 0"));
         assertEquals(1, values.size());
 
-        values = map.values(new SqlPredicate("child.child.timestamp > 0"));
+        values = map.values(Predicates.sql("child.child.timestamp > 0"));
         assertEquals(1, values.size());
     }
+
+    @Test
+    public void testOptionalFullScanQuerying() {
+        String name = randomMapName();
+        Config config = smallInstanceConfig();
+        HazelcastInstance instance = createHazelcastInstance(config);
+        IMap<Integer, ObjectWithOptional<Integer>> map = instance.getMap(name);
+
+        for (int i = 0; i < 10; ++i) {
+            map.put(i, new ObjectWithOptional<>(i % 2 == 0 ? i : null));
+        }
+
+        Set<Integer> result = map.keySet(Predicates.equal("attribute", null));
+        assertEqualSets(result, 1, 3, 5, 7, 9);
+
+        result = map.keySet(Predicates.notEqual("attribute", null));
+        assertEqualSets(result, 0, 2, 4, 6, 8);
+
+        result = map.keySet(Predicates.greaterThan("attribute", 4));
+        assertEqualSets(result, 6, 8);
+    }
+
+    @Test
+    public void testOptionalUnorderedIndexQuerying() {
+        String name = randomMapName();
+        Config config = smallInstanceConfig();
+        config.getMapConfig(name).addIndexConfig(new IndexConfig(IndexType.HASH, "attribute"));
+        HazelcastInstance instance = createHazelcastInstance(config);
+        IMap<Integer, ObjectWithOptional<Integer>> map = instance.getMap(name);
+
+        for (int i = 0; i < 10; ++i) {
+            map.put(i, new ObjectWithOptional<>(i % 2 == 0 ? i : null));
+        }
+
+        Set<Integer> result = map.keySet(Predicates.equal("attribute", null));
+        assertEqualSets(result, 1, 3, 5, 7, 9);
+        assertEquals(1, map.getLocalMapStats().getIndexedQueryCount());
+
+        result = map.keySet(Predicates.notEqual("attribute", null));
+        assertEqualSets(result, 0, 2, 4, 6, 8);
+        assertEquals(1, map.getLocalMapStats().getIndexedQueryCount());
+
+        result = map.keySet(Predicates.greaterThan("attribute", 4));
+        assertEqualSets(result, 6, 8);
+        assertEquals(2, map.getLocalMapStats().getIndexedQueryCount());
+    }
+
+    @Test
+    public void testOptionalOrderedIndexQuerying() {
+        String name = randomMapName();
+        Config config = smallInstanceConfig();
+        config.getMapConfig(name).addIndexConfig(new IndexConfig(IndexType.SORTED, "attribute"));
+        HazelcastInstance instance = createHazelcastInstance(config);
+        IMap<Integer, ObjectWithOptional<Integer>> map = instance.getMap(name);
+
+        for (int i = 0; i < 10; ++i) {
+            map.put(i, new ObjectWithOptional<>(i % 2 == 0 ? i : null));
+        }
+
+        Set<Integer> result = map.keySet(Predicates.equal("attribute", null));
+        assertEqualSets(result, 1, 3, 5, 7, 9);
+        assertEquals(1, map.getLocalMapStats().getIndexedQueryCount());
+
+        result = map.keySet(Predicates.notEqual("attribute", null));
+        assertEqualSets(result, 0, 2, 4, 6, 8);
+        assertEquals(1, map.getLocalMapStats().getIndexedQueryCount());
+
+        result = map.keySet(Predicates.greaterThan("attribute", 4));
+        assertEqualSets(result, 6, 8);
+        assertEquals(2, map.getLocalMapStats().getIndexedQueryCount());
+    }
+
+
+    @SafeVarargs
+    private static <E> void assertEqualSets(Set<E> actual, E... expected) {
+        assertEquals(new HashSet<>(Arrays.asList(expected)), actual);
+    }
+
 }

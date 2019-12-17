@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,25 +21,20 @@ import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.version.MemberVersion;
 import com.hazelcast.version.Version;
 import org.junit.After;
-import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
 import java.util.concurrent.Callable;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class ClusterVersionInitTest extends HazelcastTestSupport {
-
-    @Rule
-    public ExpectedException expectedException = ExpectedException.none();
 
     private HazelcastInstance instance;
     private ClusterServiceImpl cluster;
@@ -48,7 +43,7 @@ public class ClusterVersionInitTest extends HazelcastTestSupport {
     @Test
     public void test_clusterVersion_isEventuallySet_whenSingleNodeMulticastJoinerCluster() {
         Config config = new Config();
-        config.getGroupConfig().setName(randomName());
+        config.setClusterName(randomName());
         config.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(true);
         setupInstance(config);
         assertEqualsEventually(new Callable<Version>() {
@@ -63,7 +58,7 @@ public class ClusterVersionInitTest extends HazelcastTestSupport {
     @Test
     public void test_clusterVersion_isEventuallySet_whenNoJoinerConfiguredSingleNode() {
         Config config = new Config();
-        config.getGroupConfig().setName(randomName());
+        config.setClusterName(randomName());
         config.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(false);
         config.getNetworkConfig().getJoin().getTcpIpConfig().setEnabled(false);
         setupInstance(config);
@@ -79,7 +74,7 @@ public class ClusterVersionInitTest extends HazelcastTestSupport {
     @Test
     public void test_clusterVersion_isEventuallySet_whenTcpJoinerConfiguredSingleNode() {
         Config config = new Config();
-        config.getGroupConfig().setName(randomName());
+        config.setClusterName(randomName());
         config.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(false);
         config.getNetworkConfig().getJoin().getTcpIpConfig().setEnabled(true);
         setupInstance(config);
@@ -95,7 +90,7 @@ public class ClusterVersionInitTest extends HazelcastTestSupport {
     @Test
     public void test_clusterVersion_isEventuallySetOnJoiningMember_whenMulticastJoinerConfigured() {
         Config config = new Config();
-        config.getGroupConfig().setName(randomName());
+        config.setClusterName(randomName());
         config.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(true);
         setupInstance(config);
         HazelcastInstance joiner = Hazelcast.newHazelcastInstance(config);
@@ -115,7 +110,7 @@ public class ClusterVersionInitTest extends HazelcastTestSupport {
     @Test
     public void test_clusterVersion_isEventuallySetOnJoiningMember_whenTcpJoinerConfigured() {
         Config config = new Config();
-        config.getGroupConfig().setName(randomName());
+        config.setClusterName(randomName());
         config.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(false);
         config.getNetworkConfig().getJoin().getTcpIpConfig().setEnabled(true);
         setupInstance(config);

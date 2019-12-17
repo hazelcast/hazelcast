@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -59,13 +59,13 @@ public class JCacheCacheManagerDITest {
         assertTrue("Node not injected to NodeAware object",
                 JCacheCacheLoaderFactory.NODE_INJECTED.get());
         assertNotNull("Spring bean not injected to @SpringAware object",
-                JCacheCacheLoaderFactory.INSTANCE.getDummyBean());
+                JCacheCacheLoaderFactory.instance.getDummyBean());
         assertTrue("HazelcastInstance not injected to HazelcastInstanceAware object",
                 JCacheCacheLoader.HAZELCAST_INSTANCE_INJECTED.get());
         assertTrue("Node not injected to NodeAware object",
                 JCacheCacheLoader.NODE_INJECTED.get());
         assertNotNull("Spring bean not injected to @SpringAware object",
-                JCacheCacheLoader.INSTANCE.getDummyBean());
+                JCacheCacheLoader.instance.getDummyBean());
     }
 
     @Test
@@ -80,13 +80,13 @@ public class JCacheCacheManagerDITest {
         assertTrue("Node not injected to NodeAware object",
                 JCacheCacheWriterFactory.NODE_INJECTED.get());
         assertNotNull("Spring bean not injected to @SpringAware object",
-                JCacheCacheWriterFactory.INSTANCE.getDummyBean());
+                JCacheCacheWriterFactory.instance.getDummyBean());
         assertTrue("HazelcastInstance not injected to HazelcastInstanceAware object",
                 JCacheCacheWriter.HAZELCAST_INSTANCE_INJECTED.get());
         assertTrue("Node not injected to NodeAware object",
                 JCacheCacheWriter.NODE_INJECTED.get());
         assertNotNull("Spring bean not injected to @SpringAware object",
-                JCacheCacheWriter.INSTANCE.getDummyBean());
+                JCacheCacheWriter.instance.getDummyBean());
     }
 
     @Test
@@ -101,19 +101,19 @@ public class JCacheCacheManagerDITest {
         assertTrue("Node not injected to NodeAware object",
                 JCacheExpiryPolicyFactory.NODE_INJECTED.get());
         assertNotNull("Spring bean not injected to @SpringAware object",
-                JCacheExpiryPolicyFactory.INSTANCE.getDummyBean());
+                JCacheExpiryPolicyFactory.instance.getDummyBean());
         assertTrue("HazelcastInstance not injected to HazelcastInstanceAware object",
                 JCacheExpiryPolicy.HAZELCAST_INSTANCE_INJECTED.get());
         assertTrue("Node not injected to NodeAware object",
                 JCacheExpiryPolicy.NODE_INJECTED.get());
         assertNotNull("Spring bean not injected to @SpringAware object",
-                JCacheExpiryPolicy.INSTANCE.getDummyBean());
+                JCacheExpiryPolicy.instance.getDummyBean());
     }
 
     @Test
     public void testCacheWithListeners_dependenciesInjected() {
         Cache cacheWithPartitionLostListener = springCacheManager.getCacheManager()
-                                                                 .getCache("cacheWithListeners");
+                .getCache("cacheWithListeners");
 
         cacheWithPartitionLostListener.get(1);
 
@@ -123,20 +123,20 @@ public class JCacheCacheManagerDITest {
         assertTrue("Node not injected to NodeAware object",
                 JCachePartitionLostListener.NODE_INJECTED.get());
         assertNotNull("Spring bean not injected to @SpringAware object",
-                JCachePartitionLostListener.INSTANCE.getDummyBean());
+                JCachePartitionLostListener.instance.getDummyBean());
         // ensure CacheEntryListenerFactory & CacheEntryListener dependencies have been injected
         assertTrue("HazelcastInstance not injected to HazelcastInstanceAware object",
                 JCacheCacheEntryListenerFactory.HAZELCAST_INSTANCE_INJECTED.get());
         assertTrue("Node not injected to NodeAware object",
                 JCacheCacheEntryListenerFactory.NODE_INJECTED.get());
         assertNotNull("Spring bean not injected to @SpringAware object",
-                JCacheCacheEntryListenerFactory.INSTANCE.getDummyBean());
+                JCacheCacheEntryListenerFactory.instance.getDummyBean());
         assertTrue("HazelcastInstance not injected to HazelcastInstanceAware object",
                 JCacheCacheEntryListener.HAZELCAST_INSTANCE_INJECTED.get());
         assertTrue("Node not injected to NodeAware object",
                 JCacheCacheEntryListener.NODE_INJECTED.get());
         assertNotNull("Spring bean not injected to @SpringAware object",
-                JCacheCacheEntryListener.INSTANCE.getDummyBean());
+                JCacheCacheEntryListener.instance.getDummyBean());
     }
 
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,8 @@ package com.hazelcast.core;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.ExecutorConfig;
 import com.hazelcast.map.EntryProcessor;
-import com.hazelcast.spi.ExecutionService;
+import com.hazelcast.map.IMap;
+import com.hazelcast.spi.impl.executionservice.ExecutionService;
 
 /**
  * Allows off-loading the processing unit implementing this interface to the specified or default Executor.
@@ -31,6 +32,7 @@ import com.hazelcast.spi.ExecutionService;
  *     <li>{@link IMap#submitToKey(Object, EntryProcessor, ExecutionCallback)} </li>
  * </ul>
  */
+@FunctionalInterface
 public interface Offloadable {
 
     /**

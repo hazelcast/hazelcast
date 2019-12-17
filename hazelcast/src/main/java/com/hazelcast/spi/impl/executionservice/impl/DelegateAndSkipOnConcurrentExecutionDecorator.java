@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,8 @@ package com.hazelcast.spi.impl.executionservice.impl;
 import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
+
 /**
  * Decorator to delegate task to an executor and prevent concurrent task execution.
  *
@@ -30,6 +32,7 @@ public class DelegateAndSkipOnConcurrentExecutionDecorator implements Runnable {
     private final AtomicBoolean isAlreadyRunning = new AtomicBoolean();
     private final Runnable runnable;
     private final Executor executor;
+    private volatile Throwable throwable;
 
     public DelegateAndSkipOnConcurrentExecutionDecorator(Runnable runnable, Executor executor) {
         this.runnable = new DelegateDecorator(runnable);
@@ -39,6 +42,13 @@ public class DelegateAndSkipOnConcurrentExecutionDecorator implements Runnable {
     @Override
     public void run() {
         if (isAlreadyRunning.compareAndSet(false, true)) {
+            if (throwable != null) {
+                // Capturing & throwing the exception to propagate the failure to the scheduler (suppress future executions)
+                // instead of hiding in the delegated executor.
+                rethrow(throwable);
+                return;
+            }
+
             executor.execute(runnable);
         }
     }
@@ -49,6 +59,7 @@ public class DelegateAndSkipOnConcurrentExecutionDecorator implements Runnable {
                 + "isAlreadyRunning=" + isAlreadyRunning
                 + ", runnable=" + runnable
                 + ", executor=" + executor
+                + ", throwable=" + throwable
                 + '}';
     }
 
@@ -64,6 +75,8 @@ public class DelegateAndSkipOnConcurrentExecutionDecorator implements Runnable {
         public void run() {
             try {
                 runnable.run();
+            } catch (Throwable t) {
+                throwable = t;
             } finally {
                 isAlreadyRunning.set(false);
             }

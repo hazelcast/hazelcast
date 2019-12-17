@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,8 +19,8 @@ package com.hazelcast.cache.impl.operation;
 import com.hazelcast.cache.impl.CacheDataSerializerHook;
 import com.hazelcast.cache.impl.ICacheService;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.spi.PartitionAwareOperation;
-import com.hazelcast.spi.impl.AbstractNamedOperation;
+import com.hazelcast.spi.impl.operationservice.PartitionAwareOperation;
+import com.hazelcast.spi.impl.operationservice.AbstractNamedOperation;
 
 /**
  * Abstract cache operation that implements {@link PartitionAwareOperation} serving a base class to provide
@@ -28,7 +28,6 @@ import com.hazelcast.spi.impl.AbstractNamedOperation;
  * @see com.hazelcast.cache.impl.operation.CacheSizeOperation
  * @see com.hazelcast.cache.impl.operation.CacheGetAllOperation
  * @see com.hazelcast.cache.impl.operation.CacheClearOperation
- * @see com.hazelcast.cache.impl.operation.CacheGetConfigOperation
  */
 abstract class PartitionWideCacheOperation
         extends AbstractNamedOperation

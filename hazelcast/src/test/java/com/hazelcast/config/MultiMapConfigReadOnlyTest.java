@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,9 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.internal.config.MultiMapConfigReadOnly;
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -27,11 +28,11 @@ import java.util.Collections;
 import java.util.List;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class MultiMapConfigReadOnlyTest {
 
     private MultiMapConfig getReadOnlyConfig() {
-        return new MultiMapConfig().getAsReadOnly();
+        return new MultiMapConfigReadOnly(new MultiMapConfig());
     }
 
     @Test(expected = UnsupportedOperationException.class)
@@ -40,7 +41,8 @@ public class MultiMapConfigReadOnlyTest {
                 .addEntryListenerConfig(new EntryListenerConfig())
                 .addEntryListenerConfig(new EntryListenerConfig());
 
-        List<EntryListenerConfig> entryListenerConfigs = config.getAsReadOnly().getEntryListenerConfigs();
+        List<EntryListenerConfig> entryListenerConfigs = new MultiMapConfigReadOnly(config)
+                .getEntryListenerConfigs();
         entryListenerConfigs.add(new EntryListenerConfig());
     }
 
@@ -75,11 +77,6 @@ public class MultiMapConfigReadOnlyTest {
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void setSyncBackupCountOfReadOnlyMultiMapConfigShouldFail() {
-        getReadOnlyConfig().setSyncBackupCount(1);
-    }
-
-    @Test(expected = UnsupportedOperationException.class)
     public void setBackupCountOfReadOnlyMultiMapConfigShouldFail() {
         getReadOnlyConfig().setBackupCount(1);
     }
@@ -92,5 +89,10 @@ public class MultiMapConfigReadOnlyTest {
     @Test(expected = UnsupportedOperationException.class)
     public void setStatisticsEnabledOfReadOnlyMultiMapConfigShouldFail() {
         getReadOnlyConfig().setStatisticsEnabled(true);
+    }
+
+    @Test(expected = UnsupportedOperationException.class)
+    public void setMergePolicy() {
+        getReadOnlyConfig().setMergePolicyConfig(new MergePolicyConfig());
     }
 }

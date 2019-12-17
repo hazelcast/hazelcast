@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,37 +16,36 @@
 
 package com.hazelcast.map.impl.nearcache;
 
-import com.hazelcast.config.NearCacheConfig;
-import com.hazelcast.core.IFunction;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.nearcache.NearCache;
 import com.hazelcast.internal.nearcache.impl.DefaultNearCacheManager;
 import com.hazelcast.internal.nearcache.impl.invalidation.BatchInvalidator;
+import com.hazelcast.internal.nearcache.impl.invalidation.InvalidationMetaDataFetcher;
 import com.hazelcast.internal.nearcache.impl.invalidation.Invalidator;
-import com.hazelcast.internal.nearcache.impl.invalidation.MetaDataFetcher;
 import com.hazelcast.internal.nearcache.impl.invalidation.MinimalPartitionService;
 import com.hazelcast.internal.nearcache.impl.invalidation.NonStopInvalidator;
 import com.hazelcast.internal.nearcache.impl.invalidation.RepairingHandler;
 import com.hazelcast.internal.nearcache.impl.invalidation.RepairingTask;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.impl.EventListenerFilter;
-import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapManagedService;
 import com.hazelcast.map.impl.MapServiceContext;
-import com.hazelcast.map.impl.nearcache.invalidation.MemberMapMetaDataFetcher;
-import com.hazelcast.nio.serialization.SerializableByConvention;
-import com.hazelcast.spi.EventFilter;
-import com.hazelcast.spi.EventRegistration;
-import com.hazelcast.spi.ExecutionService;
-import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.OperationService;
+import com.hazelcast.map.impl.nearcache.invalidation.MemberMapInvalidationMetaDataFetcher;
+import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.spi.impl.eventservice.EventFilter;
+import com.hazelcast.spi.impl.eventservice.EventRegistration;
+import com.hazelcast.spi.impl.executionservice.ExecutionService;
+import com.hazelcast.spi.impl.operationservice.OperationService;
 import com.hazelcast.spi.properties.HazelcastProperties;
+
+import java.util.UUID;
+import java.util.function.Function;
 
 import static com.hazelcast.core.EntryEventType.INVALIDATION;
 import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
-import static com.hazelcast.spi.properties.GroupProperty.MAP_INVALIDATION_MESSAGE_BATCH_ENABLED;
-import static com.hazelcast.spi.properties.GroupProperty.MAP_INVALIDATION_MESSAGE_BATCH_FREQUENCY_SECONDS;
-import static com.hazelcast.spi.properties.GroupProperty.MAP_INVALIDATION_MESSAGE_BATCH_SIZE;
+import static com.hazelcast.spi.properties.ClusterProperty.MAP_INVALIDATION_MESSAGE_BATCH_ENABLED;
+import static com.hazelcast.spi.properties.ClusterProperty.MAP_INVALIDATION_MESSAGE_BATCH_FREQUENCY_SECONDS;
+import static com.hazelcast.spi.properties.ClusterProperty.MAP_INVALIDATION_MESSAGE_BATCH_SIZE;
 
 public class MapNearCacheManager extends DefaultNearCacheManager {
 
@@ -64,7 +63,8 @@ public class MapNearCacheManager extends DefaultNearCacheManager {
 
     public MapNearCacheManager(MapServiceContext mapServiceContext) {
         super(mapServiceContext.getNodeEngine().getSerializationService(),
-                mapServiceContext.getNodeEngine().getExecutionService().getGlobalTaskScheduler(), null);
+                mapServiceContext.getNodeEngine().getExecutionService().getGlobalTaskScheduler(),
+                null, mapServiceContext.getNodeEngine().getProperties());
         this.nodeEngine = mapServiceContext.getNodeEngine();
         this.mapServiceContext = mapServiceContext;
         this.partitionService = new MemberMinimalPartitionService(nodeEngine.getPartitionService());
@@ -89,8 +89,7 @@ public class MapNearCacheManager extends DefaultNearCacheManager {
     /**
      * Filters out listeners other than invalidation related ones.
      */
-    @SerializableByConvention
-    private static class InvalidationAcceptorFilter implements IFunction<EventRegistration, Boolean> {
+    private static class InvalidationAcceptorFilter implements Function<EventRegistration, Boolean> {
 
         @Override
         public Boolean apply(EventRegistration eventRegistration) {
@@ -104,12 +103,15 @@ public class MapNearCacheManager extends DefaultNearCacheManager {
         ClusterService clusterService = nodeEngine.getClusterService();
         OperationService operationService = nodeEngine.getOperationService();
         HazelcastProperties properties = nodeEngine.getProperties();
-        ILogger logger = nodeEngine.getLogger(RepairingTask.class);
 
-        MetaDataFetcher metaDataFetcher = new MemberMapMetaDataFetcher(clusterService, operationService, logger);
-        String localUuid = nodeEngine.getLocalMember().getUuid();
-        return new RepairingTask(properties, metaDataFetcher, executionService.getGlobalTaskScheduler(),
-                serializationService, partitionService, localUuid, logger);
+        ILogger metadataFetcherLogger = nodeEngine.getLogger(MemberMapInvalidationMetaDataFetcher.class);
+        InvalidationMetaDataFetcher invalidationMetaDataFetcher
+                = new MemberMapInvalidationMetaDataFetcher(clusterService, operationService, metadataFetcherLogger);
+
+        ILogger repairingTaskLogger = nodeEngine.getLogger(RepairingTask.class);
+        UUID localUuid = nodeEngine.getLocalMember().getUuid();
+        return new RepairingTask(properties, invalidationMetaDataFetcher, executionService.getGlobalTaskScheduler(),
+                serializationService, partitionService, localUuid, repairingTaskLogger);
     }
 
     /**
@@ -135,17 +137,6 @@ public class MapNearCacheManager extends DefaultNearCacheManager {
     public boolean destroyNearCache(String mapName) {
         invalidator.destroy(mapName, nodeEngine.getLocalMember().getUuid());
         return super.destroyNearCache(mapName);
-    }
-
-    public Object getFromNearCache(String mapName, Object key) {
-        MapContainer mapContainer = mapServiceContext.getMapContainer(mapName);
-        if (!mapContainer.hasInvalidationListener()) {
-            return null;
-        }
-
-        NearCacheConfig nearCacheConfig = mapContainer.getMapConfig().getNearCacheConfig();
-        NearCache<Object, Object> nearCache = getOrCreateNearCache(mapName, nearCacheConfig);
-        return nearCache.get(key);
     }
 
     public Invalidator getInvalidator() {

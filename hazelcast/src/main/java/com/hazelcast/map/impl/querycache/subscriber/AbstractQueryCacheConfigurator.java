@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,15 +24,15 @@ import com.hazelcast.map.impl.EntryEventFilter;
 import com.hazelcast.map.impl.querycache.QueryCacheConfigurator;
 import com.hazelcast.map.impl.querycache.QueryCacheEventService;
 import com.hazelcast.map.listener.MapListener;
-import com.hazelcast.nio.ClassLoaderUtil;
+import com.hazelcast.internal.nio.ClassLoaderUtil;
 import com.hazelcast.query.Predicate;
-import com.hazelcast.query.SqlPredicate;
-import com.hazelcast.spi.EventFilter;
-import com.hazelcast.util.ExceptionUtil;
+import com.hazelcast.query.Predicates;
+import com.hazelcast.spi.impl.eventservice.EventFilter;
+import com.hazelcast.internal.util.ExceptionUtil;
 
 import java.util.EventListener;
 
-import static com.hazelcast.util.StringUtil.isNullOrEmpty;
+import static com.hazelcast.internal.util.StringUtil.isNullOrEmpty;
 
 /**
  * Abstract {@link QueryCacheConfigurator} includes common functionality.
@@ -84,7 +84,7 @@ public abstract class AbstractQueryCacheConfigurator implements QueryCacheConfig
 
         if (!isNullOrEmpty(predicateConfig.getSql())) {
             String sql = predicateConfig.getSql();
-            return new SqlPredicate(sql);
+            return Predicates.sql(sql);
         }
 
         return null;

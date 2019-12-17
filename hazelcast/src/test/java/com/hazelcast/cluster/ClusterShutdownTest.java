@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,25 +16,38 @@
 
 package com.hazelcast.cluster;
 
+import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.instance.Node;
-import com.hazelcast.instance.NodeState;
+import com.hazelcast.core.HazelcastOverloadException;
+import com.hazelcast.instance.impl.Node;
+import com.hazelcast.instance.impl.NodeState;
+import com.hazelcast.spi.impl.operationservice.AbstractWaitNotifyKey;
+import com.hazelcast.spi.impl.operationservice.BlockingOperation;
+import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.spi.impl.operationservice.WaitNotifyKey;
+import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
+import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeoutException;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class ClusterShutdownTest extends HazelcastTestSupport {
 
     @Test
@@ -69,9 +82,44 @@ public class ClusterShutdownTest extends HazelcastTestSupport {
         instance.getLifecycleService().shutdown();
     }
 
+    @Test
+    public void clusterShutdown_shouldNotBeRejected_byBackpressure() throws Exception {
+        Config config = new Config();
+        config.setProperty(ClusterProperty.PARTITION_COUNT.toString(), "1");
+        config.setProperty(ClusterProperty.BACKPRESSURE_ENABLED.toString(), "true");
+        config.setProperty(ClusterProperty.BACKPRESSURE_BACKOFF_TIMEOUT_MILLIS.toString(), "100");
+        config.setProperty(ClusterProperty.BACKPRESSURE_MAX_CONCURRENT_INVOCATIONS_PER_PARTITION.toString(), "3");
+
+        HazelcastInstance hz = createHazelcastInstance(config);
+        final OperationServiceImpl operationService = getOperationService(hz);
+        final Address address = getAddress(hz);
+
+        for (int i = 0; i < 10; i++) {
+            Future<Object> future = spawn(new Callable<Object>() {
+                @Override
+                public Object call() {
+                    operationService.invokeOnTarget(null, new AlwaysBlockingOperation(), address);
+                    return null;
+                }
+            });
+            try {
+                future.get();
+            } catch (ExecutionException e) {
+                assertInstanceOf(HazelcastOverloadException.class, e.getCause());
+            }
+        }
+
+        Node node = getNode(hz);
+        hz.getCluster().shutdown();
+
+        assertFalse(hz.getLifecycleService().isRunning());
+        assertEquals(NodeState.SHUT_DOWN, node.getState());
+    }
+
     private HazelcastInstance testClusterShutdownWithSingleMember(ClusterState clusterState) {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(4);
         HazelcastInstance[] instances = factory.newInstances();
+        assertClusterSizeEventually(4, instances);
 
         HazelcastInstance hz1 = instances[0];
         Node[] nodes = getNodes(instances);
@@ -87,6 +135,7 @@ public class ClusterShutdownTest extends HazelcastTestSupport {
     private void testClusterShutdownWithMultipleMembers(int clusterSize, int nodeCountToTriggerShutdown) {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(clusterSize);
         HazelcastInstance[] instances = factory.newInstances();
+        assertClusterSizeEventually(clusterSize, instances);
 
         instances[0].getCluster().changeClusterState(ClusterState.PASSIVE);
         Node[] nodes = getNodes(instances);
@@ -122,11 +171,38 @@ public class ClusterShutdownTest extends HazelcastTestSupport {
         for (final Node node : nodes) {
             assertTrueEventually(new AssertTask() {
                 @Override
-                public void run()
-                        throws Exception {
+                public void run() {
                     assertEquals(NodeState.SHUT_DOWN, node.getState());
                 }
             });
+        }
+    }
+
+    private static class AlwaysBlockingOperation extends Operation implements BlockingOperation {
+
+        @Override
+        public void run() throws Exception {
+        }
+
+        @Override
+        public WaitNotifyKey getWaitKey() {
+            return new AbstractWaitNotifyKey(getServiceName(), "test") {
+            };
+        }
+
+        @Override
+        public boolean shouldWait() {
+            return true;
+        }
+
+        @Override
+        public void onWaitExpire() {
+            sendResponse(new TimeoutException());
+        }
+
+        @Override
+        public String getServiceName() {
+            return "AlwaysBlockingOperationService";
         }
     }
 }

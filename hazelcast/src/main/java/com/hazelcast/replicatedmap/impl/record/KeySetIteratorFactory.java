@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,16 +31,15 @@ class KeySetIteratorFactory<K, V> implements IteratorFactory<K, V, K> {
     }
 
     @Override
-    public Iterator<K> create(final Iterator<Map.Entry<K, ReplicatedRecord<K, V>>> iterator) {
+    public Iterator<K> create(Iterator<Map.Entry<K, ReplicatedRecord<K, V>>> iterator) {
         return new KeySetIterator(iterator);
     }
 
-    private final class KeySetIterator
-            implements Iterator<K> {
+    private final class KeySetIterator implements Iterator<K> {
 
         private final Iterator<Map.Entry<K, ReplicatedRecord<K, V>>> iterator;
 
-        private Map.Entry<K, ReplicatedRecord<K, V>> entry;
+        private Map.Entry<K, ReplicatedRecord<K, V>> nextEntry;
 
         private KeySetIterator(Iterator<Map.Entry<K, ReplicatedRecord<K, V>>> iterator) {
             this.iterator = iterator;
@@ -49,8 +48,9 @@ class KeySetIteratorFactory<K, V> implements IteratorFactory<K, V, K> {
         @Override
         public boolean hasNext() {
             while (iterator.hasNext()) {
-                entry = iterator.next();
+                Map.Entry<K, ReplicatedRecord<K, V>> entry = iterator.next();
                 if (testEntry(entry)) {
+                    nextEntry = entry;
                     return true;
                 }
             }
@@ -59,26 +59,25 @@ class KeySetIteratorFactory<K, V> implements IteratorFactory<K, V, K> {
 
         @Override
         public K next() {
-            Map.Entry<K, ReplicatedRecord<K, V>> entry = this.entry;
+            Map.Entry<K, ReplicatedRecord<K, V>> entry = nextEntry;
             Object key = entry != null ? entry.getKey() : null;
 
             while (entry == null) {
                 entry = findNextEntry();
 
                 key = entry.getKey();
-
                 if (key != null) {
                     break;
                 }
             }
 
-            this.entry = null;
+            nextEntry = null;
             if (key == null) {
                 throw new NoSuchElementException();
             }
 
-            key = recordStore.unmarshall(key);
-            return (K) key;
+            //noinspection unchecked
+            return (K) recordStore.unmarshall(key);
         }
 
         @Override

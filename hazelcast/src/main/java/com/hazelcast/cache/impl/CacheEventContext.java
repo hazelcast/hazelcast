@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,9 @@
 package com.hazelcast.cache.impl;
 
 import com.hazelcast.cache.CacheEventType;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.internal.serialization.Data;
+
+import java.util.UUID;
 
 /**
  * Wrapper class for parameters of {@link ICacheService#publishEvent(CacheEventContext)}
@@ -34,9 +36,10 @@ public class CacheEventContext {
     private long expirationTime;
     private long lastAccessTime;
     private long accessHit;
-    private String origin;
+    private UUID origin;
     private int orderKey;
     private int completionId;
+    private Data expiryPolicy;
 
     public CacheEventContext() { }
 
@@ -129,11 +132,20 @@ public class CacheEventContext {
         return this;
     }
 
-    public String getOrigin() {
+    public Data getExpiryPolicy() {
+        return expiryPolicy;
+    }
+
+    public CacheEventContext setExpiryPolicy(Data expiryPolicy) {
+        this.expiryPolicy = expiryPolicy;
+        return this;
+    }
+
+    public UUID getOrigin() {
         return origin;
     }
 
-    public CacheEventContext setOrigin(String origin) {
+    public CacheEventContext setOrigin(UUID origin) {
         this.origin = origin;
         return this;
     }

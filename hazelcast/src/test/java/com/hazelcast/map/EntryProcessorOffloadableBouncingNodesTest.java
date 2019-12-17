@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,9 +20,9 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IMap;
 import com.hazelcast.core.Offloadable;
 import com.hazelcast.core.ReadOnly;
+import com.hazelcast.internal.util.RuntimeAvailableProcessors;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.SlowTest;
@@ -43,7 +43,7 @@ public class EntryProcessorOffloadableBouncingNodesTest extends HazelcastTestSup
 
     public static final String MAP_NAME = "EntryProcessorOffloadableTest";
     public static final int COUNT_ENTRIES = 1000;
-    private static final int CONCURRENCY = Runtime.getRuntime().availableProcessors();
+    private static final int CONCURRENCY = RuntimeAvailableProcessors.get();
 
     @Rule
     public BounceMemberRule bounceMemberRule = BounceMemberRule.with(getBouncingTestConfig()).build();
@@ -103,11 +103,10 @@ public class EntryProcessorOffloadableBouncingNodesTest extends HazelcastTestSup
         }
     }
 
-    private static class EntryIncOffloadable implements EntryProcessor<Integer, SimpleValue>, Offloadable,
-            EntryBackupProcessor<Integer, SimpleValue> {
+    private static class EntryIncOffloadable implements EntryProcessor<Integer, SimpleValue, Integer>, Offloadable {
 
         @Override
-        public Object process(final Map.Entry<Integer, SimpleValue> entry) {
+        public Integer process(final Map.Entry<Integer, SimpleValue> entry) {
             final SimpleValue value = entry.getValue();
             int result = value.i;
             value.i++;
@@ -117,23 +116,13 @@ public class EntryProcessorOffloadableBouncingNodesTest extends HazelcastTestSup
         }
 
         @Override
-        public EntryBackupProcessor<Integer, SimpleValue> getBackupProcessor() {
-            return this;
-        }
-
-        @Override
         public String getExecutorName() {
             return Offloadable.OFFLOADABLE_EXECUTOR;
         }
-
-        @Override
-        public void processBackup(Map.Entry<Integer, SimpleValue> entry) {
-            process(entry);
-        }
     }
 
-    private static class EntryReadOnlyOffloadable implements EntryProcessor<Integer, SimpleValue>,
-            Offloadable, ReadOnly {
+    private static class EntryReadOnlyOffloadable
+            implements EntryProcessor<Integer, SimpleValue, Object>, Offloadable, ReadOnly {
 
         @Override
         public Object process(final Map.Entry<Integer, SimpleValue> entry) {
@@ -141,7 +130,7 @@ public class EntryProcessorOffloadableBouncingNodesTest extends HazelcastTestSup
         }
 
         @Override
-        public EntryBackupProcessor<Integer, SimpleValue> getBackupProcessor() {
+        public EntryProcessor<Integer, SimpleValue, Object> getBackupProcessor() {
             return null;
         }
 

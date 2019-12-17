@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,16 +18,17 @@ package com.hazelcast.ringbuffer.impl.operations;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.ringbuffer.impl.RingbufferContainer;
-import com.hazelcast.spi.BlockingOperation;
-import com.hazelcast.spi.WaitNotifyKey;
+import com.hazelcast.spi.impl.operationservice.BlockingOperation;
+import com.hazelcast.spi.impl.operationservice.ReadonlyOperation;
+import com.hazelcast.spi.impl.operationservice.WaitNotifyKey;
 
 import java.io.IOException;
 
 import static com.hazelcast.ringbuffer.impl.RingbufferDataSerializerHook.READ_ONE_OPERATION;
 
-public class ReadOneOperation extends AbstractRingBufferOperation implements BlockingOperation {
+public class ReadOneOperation extends AbstractRingBufferOperation implements BlockingOperation, ReadonlyOperation {
 
     private long sequence;
     private Data result;
@@ -49,7 +50,12 @@ public class ReadOneOperation extends AbstractRingBufferOperation implements Blo
     @Override
     public boolean shouldWait() {
         RingbufferContainer ringbuffer = getRingBufferContainer();
-        return ringbuffer.shouldWait(sequence);
+        if (ringbuffer.isTooLargeSequence(sequence) || ringbuffer.isStaleSequence(sequence)) {
+            //no need to wait, let the operation continue and fail in beforeRun
+            return false;
+        }
+        // the sequence is not readable
+        return sequence == ringbuffer.tailSequence() + 1;
     }
 
     @Override
@@ -75,7 +81,7 @@ public class ReadOneOperation extends AbstractRingBufferOperation implements Blo
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return READ_ONE_OPERATION;
     }
 

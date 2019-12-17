@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,22 +17,22 @@
 package com.hazelcast.map.impl.eviction;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.config.MaxSizeConfig;
+import com.hazelcast.config.EvictionConfig;
+import com.hazelcast.config.MapConfig;
+import com.hazelcast.config.MaxSizePolicy;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IMap;
+import com.hazelcast.map.IMap;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
+import com.hazelcast.test.OverridePropertyRule;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.After;
-import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import static com.hazelcast.config.EvictionPolicy.LFU;
-import static com.hazelcast.config.MaxSizeConfig.MaxSizePolicy.FREE_HEAP_PERCENTAGE;
-import static java.lang.System.clearProperty;
-import static java.lang.System.setProperty;
+import static com.hazelcast.test.OverridePropertyRule.set;
 import static org.junit.Assert.assertEquals;
 
 
@@ -42,35 +42,23 @@ public class PluggableMemoryInfoAccessorTest extends HazelcastTestSupport {
 
     private static final String HAZELCAST_MEMORY_INFO_ACCESSOR_IMPL = "hazelcast.memory.info.accessor.impl";
 
-    private String previousValue;
+    @Rule
+    public final OverridePropertyRule overridePropertyRule = set(HAZELCAST_MEMORY_INFO_ACCESSOR_IMPL,
+            ZeroMemoryInfoAccessor.class.getCanonicalName());
 
-    @Before
-    public void setUp() throws Exception {
-        previousValue = System.getProperty(HAZELCAST_MEMORY_INFO_ACCESSOR_IMPL);
-
-        setProperty(HAZELCAST_MEMORY_INFO_ACCESSOR_IMPL, ZeroMemoryInfoAccessor.class.getCanonicalName());
-    }
-
-    @After
-    public void tearDown() throws Exception {
-        if (previousValue != null) {
-            setProperty(HAZELCAST_MEMORY_INFO_ACCESSOR_IMPL, previousValue);
-        } else {
-            clearProperty(HAZELCAST_MEMORY_INFO_ACCESSOR_IMPL);
-        }
-    }
 
     /**
      * Used {@link ZeroMemoryInfoAccessor} to evict every put, map should not contain any entry after this test run.
      */
     @Test
     public void testPluggedMemoryInfoAccessorUsed() throws Exception {
-        MaxSizeConfig maxSizeConfig = new MaxSizeConfig();
-        maxSizeConfig.setMaxSizePolicy(FREE_HEAP_PERCENTAGE);
-        maxSizeConfig.setSize(50);
-
         Config config = getConfig();
-        config.getMapConfig("test").setEvictionPolicy(LFU).setMaxSizeConfig(maxSizeConfig);
+        MapConfig mapConfig = config.getMapConfig("test");
+        EvictionConfig evictionConfig = mapConfig.getEvictionConfig();
+        evictionConfig
+                .setEvictionPolicy(LFU)
+                .setMaxSizePolicy(MaxSizePolicy.FREE_HEAP_PERCENTAGE)
+                .setSize(50);
 
         HazelcastInstance node = createHazelcastInstance(config);
         IMap map = node.getMap("test");

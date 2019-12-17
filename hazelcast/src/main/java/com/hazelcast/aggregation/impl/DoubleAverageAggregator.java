@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,10 +20,12 @@ import com.hazelcast.aggregation.Aggregator;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.query.impl.Numbers;
 
 import java.io.IOException;
+import java.util.Objects;
 
-public final class DoubleAverageAggregator<I> extends AbstractAggregator<I, Double, Double>
+public final class DoubleAverageAggregator<I> extends AbstractAggregator<I, Number, Double>
         implements IdentifiedDataSerializable {
 
     private double sum;
@@ -39,9 +41,9 @@ public final class DoubleAverageAggregator<I> extends AbstractAggregator<I, Doub
     }
 
     @Override
-    public void accumulateExtracted(I entry, Double value) {
+    public void accumulateExtracted(I entry, Number value) {
         count++;
-        sum += value;
+        sum += Numbers.asDoubleExactly(value);
     }
 
     @Override
@@ -65,7 +67,7 @@ public final class DoubleAverageAggregator<I> extends AbstractAggregator<I, Doub
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return AggregatorDataSerializerHook.DOUBLE_AVG;
     }
 
@@ -83,4 +85,23 @@ public final class DoubleAverageAggregator<I> extends AbstractAggregator<I, Doub
         this.count = in.readLong();
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        if (!super.equals(o)) {
+            return false;
+        }
+        DoubleAverageAggregator<?> that = (DoubleAverageAggregator<?>) o;
+        return Double.compare(that.sum, sum) == 0 && count == that.count;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), sum, count);
+    }
 }

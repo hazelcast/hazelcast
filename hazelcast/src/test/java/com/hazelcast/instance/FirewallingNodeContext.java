@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008 - 2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,11 +16,13 @@
 
 package com.hazelcast.instance;
 
-import com.hazelcast.nio.Address;
-import com.hazelcast.nio.ConnectionManager;
-import com.hazelcast.nio.tcp.FirewallingConnectionManager;
+import com.hazelcast.instance.impl.DefaultNodeContext;
+import com.hazelcast.instance.impl.Node;
+import com.hazelcast.internal.networking.ServerSocketRegistry;
+import com.hazelcast.cluster.Address;
+import com.hazelcast.internal.nio.NetworkingService;
+import com.hazelcast.internal.nio.tcp.FirewallingNetworkingService;
 
-import java.nio.channels.ServerSocketChannel;
 import java.util.Collections;
 
 /**
@@ -28,10 +30,11 @@ import java.util.Collections;
  * with a {@link FirewallingConnectionManager}.
  */
 public class FirewallingNodeContext extends DefaultNodeContext {
-    
+
     @Override
-    public ConnectionManager createConnectionManager(Node node, ServerSocketChannel serverSocketChannel) {
-        ConnectionManager connectionManager = super.createConnectionManager(node, serverSocketChannel);
-        return new FirewallingConnectionManager(connectionManager, Collections.<Address>emptySet());
+    public NetworkingService createNetworkingService(Node node, ServerSocketRegistry registry) {
+        NetworkingService networkingService = super.createNetworkingService(node, registry);
+        return new FirewallingNetworkingService(networkingService, Collections.<Address>emptySet());
     }
+
 }

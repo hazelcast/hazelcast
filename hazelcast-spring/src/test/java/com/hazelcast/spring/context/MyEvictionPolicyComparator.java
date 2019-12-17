@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,13 +16,15 @@
 
 package com.hazelcast.spring.context;
 
-import com.hazelcast.internal.eviction.EvictableEntryView;
-import com.hazelcast.internal.eviction.EvictionPolicyComparator;
+import com.hazelcast.cache.CacheEntryView;
+import com.hazelcast.cache.CacheEvictionPolicyComparator;
 
-public class MyEvictionPolicyComparator extends EvictionPolicyComparator {
+public class MyEvictionPolicyComparator
+        implements CacheEvictionPolicyComparator<Object, Object> {
 
     @Override
-    public int compare(EvictableEntryView e1, EvictableEntryView e2) {
-        return BOTH_OF_ENTRIES_HAVE_SAME_PRIORITY_TO_BE_EVICTED;
+    public int compare(CacheEntryView e1, CacheEntryView e2) {
+        return 0;
     }
+
 }

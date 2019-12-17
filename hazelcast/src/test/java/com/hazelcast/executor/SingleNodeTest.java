@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,16 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.hazelcast.executor;
 
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.IExecutorService;
-import com.hazelcast.core.Member;
-import com.hazelcast.core.MemberSelector;
-import com.hazelcast.monitor.LocalExecutorStats;
+import com.hazelcast.cluster.Member;
+import com.hazelcast.cluster.MemberSelector;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
 import org.junit.Test;
@@ -51,7 +51,7 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class SingleNodeTest extends ExecutorServiceTestSupport {
 
     private IExecutorService executor;
@@ -73,7 +73,7 @@ public class SingleNodeTest extends ExecutorServiceTestSupport {
 
     @Test(expected = NullPointerException.class)
     @SuppressWarnings("ConstantConditions")
-    public void submitNullTask_expectFailure() throws Exception {
+    public void submitNullTask_expectFailure() {
         executor.submit((Callable<?>) null);
     }
 
@@ -96,7 +96,7 @@ public class SingleNodeTest extends ExecutorServiceTestSupport {
     }
 
     @Test
-    public void executionCallback_notifiedOnSuccess() throws Exception {
+    public void executionCallback_notifiedOnSuccess() {
         final CountDownLatch latch = new CountDownLatch(1);
         Callable<String> task = new BasicTestCallable();
         ExecutionCallback<String> executionCallback = new ExecutionCallback<String>() {
@@ -112,7 +112,7 @@ public class SingleNodeTest extends ExecutorServiceTestSupport {
     }
 
     @Test
-    public void executionCallback_notifiedOnFailure() throws Exception {
+    public void executionCallback_notifiedOnFailure() {
         final CountDownLatch latch = new CountDownLatch(1);
         FailingTestTask task = new FailingTestTask();
         ExecutionCallback<String> executionCallback = new ExecutionCallback<String>() {
@@ -177,12 +177,10 @@ public class SingleNodeTest extends ExecutorServiceTestSupport {
     @Test
     public void issue129() throws Exception {
         for (int i = 0; i < 1000; i++) {
-            Callable<String>
-                    task1 = new BasicTestCallable(),
-                    task2 = new BasicTestCallable();
-            Future<String>
-                    future1 = executor.submit(task1),
-                    future2 = executor.submit(task2);
+            Callable<String> task1 = new BasicTestCallable();
+            Callable<String> task2 = new BasicTestCallable();
+            Future<String> future1 = executor.submit(task1);
+            Future<String> future2 = executor.submit(task2);
             assertEquals(future2.get(), BasicTestCallable.RESULT);
             assertTrue(future2.isDone());
             assertEquals(future1.get(), BasicTestCallable.RESULT);
@@ -291,7 +289,7 @@ public class SingleNodeTest extends ExecutorServiceTestSupport {
      * Shutdown-related method behaviour when the cluster is running
      */
     @Test
-    public void shutdownBehaviour() throws Exception {
+    public void shutdownBehaviour() {
         // fresh instance, is not shutting down
         assertFalse(executor.isShutdown());
         assertFalse(executor.isTerminated());
@@ -349,8 +347,7 @@ public class SingleNodeTest extends ExecutorServiceTestSupport {
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run()
-                    throws Exception {
+            public void run() {
                 LocalExecutorStats stats = executor.getLocalExecutorStats();
                 assertEquals(iterations + 1, stats.getStartedTaskCount());
                 assertEquals(iterations, stats.getCompletedTaskCount());

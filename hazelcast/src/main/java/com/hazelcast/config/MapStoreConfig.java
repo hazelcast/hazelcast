@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,15 +16,17 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.internal.config.ConfigDataSerializerHook;
+import com.hazelcast.map.MapStore;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.spi.properties.ClusterProperty;
 
 import java.io.IOException;
 import java.util.Properties;
 
-import static com.hazelcast.util.Preconditions.isNotNull;
+import static com.hazelcast.internal.util.Preconditions.isNotNull;
 
 /**
  * Contains the configuration for a Map Store.
@@ -45,14 +47,13 @@ public class MapStoreConfig implements IdentifiedDataSerializable {
 
     private boolean enabled = true;
     private boolean writeCoalescing = DEFAULT_WRITE_COALESCING;
-    private String className;
-    private String factoryClassName;
     private int writeDelaySeconds = DEFAULT_WRITE_DELAY_SECONDS;
     private int writeBatchSize = DEFAULT_WRITE_BATCH_SIZE;
+    private String className;
+    private String factoryClassName;
     private Object implementation;
     private Object factoryImplementation;
     private Properties properties = new Properties();
-    private transient MapStoreConfigReadOnly readOnly;
     private InitialLoadMode initialLoadMode = InitialLoadMode.LAZY;
 
     /**
@@ -83,19 +84,6 @@ public class MapStoreConfig implements IdentifiedDataSerializable {
         initialLoadMode = config.getInitialLoadMode();
         writeCoalescing = config.isWriteCoalescing();
         properties.putAll(config.getProperties());
-    }
-
-    /**
-     * Gets immutable version of this configuration.
-     *
-     * @return immutable version of this configuration
-     * @deprecated this method will be removed in 4.0; it is meant for internal usage only
-     */
-    public MapStoreConfigReadOnly getAsReadOnly() {
-        if (readOnly == null) {
-            readOnly = new MapStoreConfigReadOnly(this);
-        }
-        return readOnly;
     }
 
     /**
@@ -308,15 +296,18 @@ public class MapStoreConfig implements IdentifiedDataSerializable {
     }
 
     /**
-     * Setting {@link #writeCoalescing} is meaningful if you are using write-behind {@link com.hazelcast.core.MapStore}.
+     * Setting {@link #writeCoalescing} is meaningful
+     * if you are using write-behind {@link MapStore}.
      * <p>
-     * When {@link #writeCoalescing} is {@code true}, only the latest store operation on a key in the {@link #writeDelaySeconds}
-     * time-window will be reflected to {@link com.hazelcast.core.MapStore}.
+     * When {@link #writeCoalescing} is {@code true}, only the latest
+     * store operation on a key in the {@link #writeDelaySeconds}
+     * time-window will be reflected to {@link MapStore}.
      * <p>
      * Default value is {@value #DEFAULT_WRITE_COALESCING}.
      *
-     * @param writeCoalescing {@code true} to enable write-coalescing, {@code false} otherwise
-     * @see GroupProperty#MAP_WRITE_BEHIND_QUEUE_CAPACITY
+     * @param writeCoalescing {@code true} to enable
+     *                        write-coalescing, otherwise {@code false}.
+     * @see ClusterProperty#MAP_WRITE_BEHIND_QUEUE_CAPACITY
      */
     public MapStoreConfig setWriteCoalescing(boolean writeCoalescing) {
         this.writeCoalescing = writeCoalescing;
@@ -406,7 +397,7 @@ public class MapStoreConfig implements IdentifiedDataSerializable {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ConfigDataSerializerHook.MAP_STORE_CONFIG;
     }
 

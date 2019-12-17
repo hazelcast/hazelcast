@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +16,10 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.internal.config.QueryCacheConfigReadOnly;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import nl.jqno.equalsverifier.EqualsVerifier;
 import nl.jqno.equalsverifier.Warning;
@@ -26,13 +27,11 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import static com.hazelcast.config.EvictionConfig.MaxSizePolicy.ENTRY_COUNT;
-import static com.hazelcast.config.EvictionConfig.MaxSizePolicy.USED_NATIVE_MEMORY_PERCENTAGE;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class QueryCacheConfigTest extends HazelcastTestSupport {
 
     @Test(expected = IllegalArgumentException.class)
@@ -115,17 +114,21 @@ public class QueryCacheConfigTest extends HazelcastTestSupport {
 
     @Test
     public void testEqualsAndHashCode() {
+        assumeDifferentHashCodes();
         EqualsVerifier.forClass(QueryCacheConfig.class)
-                      .allFieldsShouldBeUsedExcept("readOnly")
-                      .suppress(Warning.NONFINAL_FIELDS)
-                      .withPrefabValues(PredicateConfig.class,
-                              new PredicateConfig("red"), new PredicateConfig("black"))
-                      .withPrefabValues(EvictionConfig.class,
-                              new EvictionConfig(1000, ENTRY_COUNT, EvictionPolicy.LFU),
-                              new EvictionConfig(300, USED_NATIVE_MEMORY_PERCENTAGE, EvictionPolicy.LRU))
-                      .withPrefabValues(QueryCacheConfigReadOnly.class,
-                              new QueryCacheConfigReadOnly(new QueryCacheConfig("red")),
-                              new QueryCacheConfigReadOnly(new QueryCacheConfig("black")))
-                      .verify();
+                .suppress(Warning.NONFINAL_FIELDS)
+                .withPrefabValues(PredicateConfig.class,
+                        new PredicateConfig("red"), new PredicateConfig("black"))
+                .withPrefabValues(EvictionConfig.class,
+                        new EvictionConfig().setSize(1000)
+                                .setMaxSizePolicy(MaxSizePolicy.ENTRY_COUNT)
+                                .setEvictionPolicy(EvictionPolicy.LFU),
+                        new EvictionConfig().setSize(300)
+                                .setMaxSizePolicy(MaxSizePolicy.USED_NATIVE_MEMORY_PERCENTAGE)
+                                .setEvictionPolicy(EvictionPolicy.LRU))
+                .withPrefabValues(QueryCacheConfigReadOnly.class,
+                        new QueryCacheConfigReadOnly(new QueryCacheConfig("red")),
+                        new QueryCacheConfigReadOnly(new QueryCacheConfig("black")))
+                .verify();
     }
 }

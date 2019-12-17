@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,21 +17,38 @@
 package com.hazelcast.map.impl.operation;
 
 import com.hazelcast.map.impl.MapDataSerializerHook;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.map.impl.record.Record;
+import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.spi.impl.operationservice.MutatingOperation;
 
-public class PutTransientOperation extends BasePutOperation {
+import static com.hazelcast.map.impl.record.Record.UNSET;
+
+public class PutTransientOperation extends BasePutOperation implements MutatingOperation {
 
     public PutTransientOperation() {
     }
 
-    public PutTransientOperation(String name, Data dataKey, Data value, long ttl) {
-        super(name, dataKey, value, ttl);
+    public PutTransientOperation(String name, Data dataKey, Data value) {
+        super(name, dataKey, value);
     }
 
     @Override
-    public void run() {
-        dataOldValue = mapServiceContext.toData(recordStore.putTransient(dataKey, dataValue, ttl));
-        putTransient = true;
+    protected void runInternal() {
+        oldValue = mapServiceContext.toData(recordStore.putTransient(dataKey,
+                dataValue, getTtl(), getMaxIdle()));
+    }
+
+    @Override
+    protected PutBackupOperation newBackupOperation(Data dataKey, Record record, Data dataValue) {
+        return new PutTransientBackupOperation(name, dataKey, record, dataValue);
+    }
+
+    protected long getTtl() {
+        return UNSET;
+    }
+
+    protected long getMaxIdle() {
+        return UNSET;
     }
 
     @Override
@@ -40,7 +57,7 @@ public class PutTransientOperation extends BasePutOperation {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MapDataSerializerHook.PUT_TRANSIENT;
     }
 }

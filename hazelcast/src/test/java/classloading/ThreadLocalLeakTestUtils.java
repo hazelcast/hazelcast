@@ -1,6 +1,6 @@
 /*
  * Original work Copyright 1999-2017 The Apache Software Foundation
- * Modified work Copyright (c) 2017, Hazelcast, Inc. All Rights Reserved.
+ * Modified work Copyright (c) 2017-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,6 +44,9 @@ public final class ThreadLocalLeakTestUtils {
             "org.mockito.internal.progress.MockingProgressImpl",
     };
 
+    private ThreadLocalLeakTestUtils() {
+    }
+
     public static void checkThreadLocalsForLeaks(ClassLoader cl) throws Exception {
         Thread[] threads = getThreads();
         // make the fields in the Thread class that store ThreadLocals accessible
@@ -65,14 +68,14 @@ public final class ThreadLocalLeakTestUtils {
                 threadLocalMap = threadLocalsField.get(thread);
                 if (threadLocalMap != null) {
                     expungeStaleEntriesMethod.invoke(threadLocalMap);
-                    checkThreadLocalMapForLeaks(cl, threadLocalMap, tableField);
+                    checkThreadLocalMapForLeaks(cl, thread, threadLocalMap, tableField);
                 }
 
                 // clear the second map
                 threadLocalMap = inheritableThreadLocalsField.get(thread);
                 if (threadLocalMap != null) {
                     expungeStaleEntriesMethod.invoke(threadLocalMap);
-                    checkThreadLocalMapForLeaks(cl, threadLocalMap, tableField);
+                    checkThreadLocalMapForLeaks(cl, thread, threadLocalMap, tableField);
                 }
             }
         }
@@ -111,7 +114,8 @@ public final class ThreadLocalLeakTestUtils {
      * Analyzes the given thread local map object. Also pass in the field that points
      * to the internal table to save re-calculating it on every call to this method.
      */
-    private static void checkThreadLocalMapForLeaks(ClassLoader cl, Object map, Field internalTableField) throws Exception {
+    private static void checkThreadLocalMapForLeaks(ClassLoader cl, Thread thread,
+                                                    Object map, Field internalTableField) throws Exception {
         if (map == null) {
             return;
         }
@@ -158,23 +162,27 @@ public final class ThreadLocalLeakTestUtils {
                     }
                 }
                 if (valueLoadedByApplication) {
-                    String message = format("Application created a ThreadLocal with key of type [%s] (value [%s]) and a value of"
-                                    + " type [%s] (value [%s) but failed to remove it when the application was stopped.",
-                            args[0], args[1], args[2], args[3]);
+                    String message = format("Application created a ThreadLocal on thread %s with key of"
+                                    + " type [%s] (value [%s]) and a value of type [%s] (value [%s) but failed"
+                                    + " to remove it when the application was stopped.",
+                            describeThread(thread), args[0], args[1], args[2], args[3]);
                     for (String acceptedThreadLocal : ACCEPTED_THREAD_LOCAL_VALUE_TYPES) {
                         if (acceptedThreadLocal.equals(args[2])) {
                             System.out.println(message + " But the value type is explicitly allowed, so this is no failure.");
                             return;
                         }
                     }
+                    message = checkKnownIssues(message, thread, key);
                     fail(message);
                 } else if (value == null) {
-                    System.out.printf("Application created a ThreadLocal with key of type [%s] (value [%s]). The ThreadLocal"
-                            + " has been correctly set to null and the key will be removed by GC.", args[0], args[1]);
+                    System.out.printf("Application created a ThreadLocal on thread %s with key of type [%s]"
+                            + " (value [%s]). The ThreadLocal has been correctly set to null and the key will be removed by GC.",
+                            describeThread(thread), args[0], args[1]);
                 } else {
-                    System.out.printf("Application created a ThreadLocal with key of type [%s] (value [%s]) and a value of type "
-                            + " [%s] (value [%s]). Since keys are only weakly held by the ThreadLocalMap this is not a memory"
-                            + " leak.", args[0], args[1], args[2], args[3]);
+                    System.out.printf("Application created a ThreadLocal on thread %s with key of type [%s] (value [%s])"
+                            + " and a value of type [%s] (value [%s]). Since keys are only weakly held by the"
+                            + " ThreadLocalMap this is not a memory leak.",
+                            describeThread(thread), args[0], args[1], args[2], args[3]);
                 }
             }
         }
@@ -227,5 +235,28 @@ public final class ThreadLocalLeakTestUtils {
             }
         }
         return false;
+    }
+
+    private static String describeThread(Thread thread) {
+        return format("[%s] of type [%s]", thread.getName(), getPrettyClassName(thread.getClass()));
+    }
+
+    // enhance message with information about known thread locals issues
+    private static String checkKnownIssues(String message, Thread thread, Object key) {
+        if (thread != null && key != null) {
+            String threadClassName = getPrettyClassName(thread.getClass());
+            String keyClassName = getPrettyClassName(key.getClass());
+            if (threadClassName.equals("com.hazelcast.internal.networking.nio.NioThread")
+                    && keyClassName.contains("ClientResponseHandlerSupplier$1")) {
+                // ClientResponseHandlerSupplier$AsyncMultiThreadedResponseHandler creates thread local MutableIntegers
+                // on NioThreads. During shutdown, NioThreads are interrupted but not joined in NioNetworking#shutdown
+                // to avoid delay -> rarely the thread local leak detection may execute before a NioThread was joined
+                // and fail the test.
+                return format("%s - consider that this failure may be due to NioNetworking#shutdown not waiting for"
+                        + " NioThread instances to join.", message);
+            }
+        }
+
+        return message;
     }
 }

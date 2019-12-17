@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,11 +20,17 @@ import com.hazelcast.cache.CacheStatistics;
 import com.hazelcast.cache.CacheTestSupport;
 import com.hazelcast.cache.ICache;
 import com.hazelcast.config.CacheConfig;
+import com.hazelcast.config.CacheSimpleConfig;
+import com.hazelcast.config.Config;
+import com.hazelcast.config.EvictionConfig;
+import com.hazelcast.config.EvictionPolicy;
+import com.hazelcast.config.MaxSizePolicy;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -40,7 +46,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class CacheStatsTest extends CacheTestSupport {
 
     protected TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
@@ -59,6 +65,10 @@ public class CacheStatsTest extends CacheTestSupport {
         return factory.newHazelcastInstance(createConfig());
     }
 
+    protected HazelcastInstance getHazelcastInstance(Config config) {
+        return factory.newHazelcastInstance(config);
+    }
+
     @Test
     public void testGettingStatistics() {
         ICache<Integer, String> cache = createCache();
@@ -69,14 +79,10 @@ public class CacheStatsTest extends CacheTestSupport {
 
     @Test
     public void testStatisticsDisabled() {
-        long now = System.currentTimeMillis();
-
         CacheConfig cacheConfig = createCacheConfig();
         cacheConfig.setStatisticsEnabled(false);
         ICache<Integer, String> cache = createCache(cacheConfig);
         CacheStatistics stats = cache.getLocalCacheStatistics();
-
-        assertTrue(stats.getCreationTime() >= now);
 
         final int ENTRY_COUNT = 100;
 
@@ -143,7 +149,7 @@ public class CacheStatsTest extends CacheTestSupport {
         final long ENTRY_COUNT = 100;
 
         for (int i = 0; i < ENTRY_COUNT; i++) {
-            cache.putAsync(i, "Value-" + i).get();
+            cache.putAsync(i, "Value-" + i).toCompletableFuture().get();
         }
 
         assertEqualsEventually(new Callable<Long>() {
@@ -153,6 +159,38 @@ public class CacheStatsTest extends CacheTestSupport {
                 return stats.getCachePuts();
             }
         }, ENTRY_COUNT);
+    }
+
+    @Test
+    public void testPutStat_whenPutIfAbsent_andKeysDoNotExist() {
+        ICache<Integer, String> cache = createCache();
+        CacheStatistics stats = cache.getLocalCacheStatistics();
+
+        final int ENTRY_COUNT = 100;
+
+        for (int i = 0; i < ENTRY_COUNT; i++) {
+            cache.putIfAbsent(i, "Value-" + i);
+        }
+
+        assertEquals(ENTRY_COUNT, stats.getCachePuts());
+    }
+
+    @Test
+    public void testPutStat_whenPutIfAbsent_andKeysExist() {
+        ICache<Integer, String> cache = createCache();
+        CacheStatistics stats = cache.getLocalCacheStatistics();
+
+        final int ENTRY_COUNT = 100;
+
+        for (int i = 0; i < ENTRY_COUNT; i++) {
+            cache.put(i, "Value-" + i);
+        }
+
+        for (int i = 0; i < ENTRY_COUNT; i++) {
+            cache.putIfAbsent(i, "NewValue-" + i);
+        }
+
+        assertEquals(ENTRY_COUNT, stats.getCachePuts());
     }
 
     @Test
@@ -204,7 +242,7 @@ public class CacheStatsTest extends CacheTestSupport {
         }
 
         for (int i = 0; i < 2 * ENTRY_COUNT; i++) {
-            cache.getAsync(i).get();
+            cache.getAsync(i).toCompletableFuture().get();
         }
         assertEqualsEventually(new Callable<Long>() {
             @Override
@@ -268,7 +306,7 @@ public class CacheStatsTest extends CacheTestSupport {
         }
 
         for (int i = 0; i < 2 * ENTRY_COUNT; i++) {
-            cache.removeAsync(i).get();
+            cache.removeAsync(i).toCompletableFuture().get();
         }
 
         assertEqualsEventually(new Callable<Long>() {
@@ -344,7 +382,7 @@ public class CacheStatsTest extends CacheTestSupport {
         }
 
         for (int i = 0; i < GET_COUNT; i++) {
-            cache.getAsync(i).get();
+            cache.getAsync(i).toCompletableFuture().get();
         }
 
         assertEqualsEventually(new Callable<Long>() {
@@ -408,7 +446,7 @@ public class CacheStatsTest extends CacheTestSupport {
         }
 
         for (int i = 0; i < GET_COUNT; i++) {
-            cache.getAsync(i).get();
+            cache.getAsync(i).toCompletableFuture().get();
         }
 
         assertEqualsEventually(new Callable<Long>() {
@@ -420,6 +458,39 @@ public class CacheStatsTest extends CacheTestSupport {
         }, GET_COUNT - ENTRY_COUNT);
     }
 
+    @Test
+    public void testMissStat_whenPutIfAbsent_andKeysDoNotExist() {
+        ICache<Integer, String> cache = createCache();
+        CacheStatistics stats = cache.getLocalCacheStatistics();
+
+        final int ENTRY_COUNT = 100;
+
+        for (int i = 0; i < ENTRY_COUNT; i++) {
+            cache.putIfAbsent(i, "Value-" + i);
+        }
+
+        assertEquals(ENTRY_COUNT, stats.getCacheMisses());
+    }
+
+    @Test
+    public void testMissStat_whenPutIfAbsent_andKeysAlreadyExist() {
+        ICache<Integer, String> cache = createCache();
+        CacheStatistics stats = cache.getLocalCacheStatistics();
+
+        final int ENTRY_COUNT = 100;
+
+        for (int i = 0; i < ENTRY_COUNT; i++) {
+            cache.put(i, "Value-" + i);
+        }
+
+        for (int i = 0; i < ENTRY_COUNT; i++) {
+            cache.putIfAbsent(i, "NewValue-" + i);
+        }
+
+        assertEquals(0, stats.getCacheMisses());
+    }
+
+    @Test
     public void testMissPercentageStat() {
         ICache<Integer, String> cache = createCache();
         CacheStatistics stats = cache.getLocalCacheStatistics();
@@ -445,7 +516,8 @@ public class CacheStatsTest extends CacheTestSupport {
         CacheStatistics stats = cache.getLocalCacheStatistics();
 
         final int ENTRY_COUNT = 100;
-        long start, end;
+        long start;
+        long end;
 
         for (int i = 0; i < ENTRY_COUNT; i++) {
             cache.put(i, "Value-" + i);
@@ -490,7 +562,8 @@ public class CacheStatsTest extends CacheTestSupport {
         CacheStatistics stats = cache.getLocalCacheStatistics();
 
         final int ENTRY_COUNT = 100;
-        long start, end;
+        long start;
+        long end;
 
         start = System.currentTimeMillis();
         for (int i = 0; i < ENTRY_COUNT; i++) {
@@ -545,6 +618,7 @@ public class CacheStatsTest extends CacheTestSupport {
         if (useBackups) {
             // Create the second instance to store data as backup.
             instance2 = getHazelcastInstance();
+            waitAllForSafeState(factory.getAllHazelcastInstances());
             CachingProvider cp = getCachingProvider(instance2);
             CacheManager cm = cp.getCacheManager();
             cache = createCache(cacheName);
@@ -594,6 +668,7 @@ public class CacheStatsTest extends CacheTestSupport {
             // so the second instance will be owner of some partitions
             // and the first instance will lose ownership of some instances.
             instance2 = getHazelcastInstance();
+            waitAllForSafeState(factory.getAllHazelcastInstances());
             CachingProvider cp = getCachingProvider(instance2);
             CacheManager cm = cp.getCacheManager();
             ICache<Integer, String> c = cm.getCache(cacheName).unwrap(ICache.class);
@@ -646,12 +721,45 @@ public class CacheStatsTest extends CacheTestSupport {
 
     @Test
     public void testEvictions() {
-        ICache<Integer, String> cache = createCache();
-        CacheStatistics stats = cache.getLocalCacheStatistics();
+        int partitionCount = 2;
+        int maxEntryCount = 2;
+        // with given parameters, the eviction checker expects 6 entries per partition to kick-in
+        // see EntryCountCacheEvictionChecker#calculateMaxPartitionSize for actual calculation
+        int calculatedMaxEntriesPerPartition = 6;
+        factory.terminateAll();
+        // configure members with 2 partitions, cache with eviction on max size 2
+        CacheSimpleConfig cacheConfig = new CacheSimpleConfig();
+        cacheConfig.setName("*")
+                .setBackupCount(1)
+                .setStatisticsEnabled(true)
+                .setEvictionConfig(
+                        new EvictionConfig().setSize(maxEntryCount)
+                                .setMaxSizePolicy(MaxSizePolicy.ENTRY_COUNT)
+                                .setEvictionPolicy(EvictionPolicy.LFU)
+                );
 
-        // TODO Produce a case that triggers evictions and verify the eviction count
-        // At the moment, we are just verifying that this stats is supported
-        stats.getCacheEvictions();
+        Config config = new Config();
+        config.setProperty(ClusterProperty.PARTITION_COUNT.getName(), Integer.toString(partitionCount));
+        config.addCacheConfig(cacheConfig);
+
+        HazelcastInstance hz1 = getHazelcastInstance(config);
+        HazelcastInstance hz2 = getHazelcastInstance(config);
+
+        ICache<String, String> cache1 = hz1.getCacheManager().getCache("cache1");
+        ICache<String, String> cache2 = hz2.getCacheManager().getCache("cache1");
+
+        // put 5 entries in a single partition
+        while (cache1.size() < calculatedMaxEntriesPerPartition) {
+            String key = generateKeyForPartition(hz1, 0);
+            cache1.put(key, randomString());
+        }
+        String key = generateKeyForPartition(hz1, 0);
+        // this put must trigger eviction
+        cache1.put(key, "foo");
+
+        // number of evictions on primary and backup must be 1
+        assertEquals(1, cache1.getLocalCacheStatistics().getCacheEvictions()
+                + cache2.getLocalCacheStatistics().getCacheEvictions());
     }
 
     @Test(expected = UnsupportedOperationException.class)

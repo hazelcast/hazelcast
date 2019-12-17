@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,9 +19,13 @@ package com.hazelcast.test;
 /**
  * Constants in milliseconds for use in test annotations such as {@code @Test(timeout = 5 * SECOND)}.
  */
-public interface TimeConstants {
+@SuppressWarnings("WeakerAccess")
+public final class TimeConstants {
 
-    long SECOND = 1000;
+    private TimeConstants() {
+    }
 
-    long MINUTE = 60 * SECOND;
+    public static final long SECOND = 1000;
+
+    public static final long MINUTE = 60 * SECOND;
 }

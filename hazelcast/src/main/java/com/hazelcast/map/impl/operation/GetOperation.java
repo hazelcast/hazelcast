@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,12 +16,12 @@
 
 package com.hazelcast.map.impl.operation;
 
-import com.hazelcast.concurrent.lock.LockWaitNotifyKey;
 import com.hazelcast.core.OperationTimeoutException;
+import com.hazelcast.internal.locksupport.LockWaitNotifyKey;
 import com.hazelcast.map.impl.MapDataSerializerHook;
-import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.BlockingOperation;
-import com.hazelcast.spi.WaitNotifyKey;
+import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.spi.impl.operationservice.BlockingOperation;
+import com.hazelcast.spi.impl.operationservice.WaitNotifyKey;
 
 public final class GetOperation extends ReadonlyKeyBasedMapOperation implements BlockingOperation {
 
@@ -37,13 +37,20 @@ public final class GetOperation extends ReadonlyKeyBasedMapOperation implements 
     }
 
     @Override
-    public void run() {
-        result = mapServiceContext.toData(recordStore.get(dataKey, false));
+    protected void runInternal() {
+        Object currentValue = recordStore.get(dataKey, false, getCallerAddress());
+        if (!executedLocally() && currentValue instanceof Data) {
+            // in case of a 'remote' call (e..g a client call) we prevent making an onheap copy of the offheap data
+            result = (Data) currentValue;
+        } else {
+            // in case of a local call, we do make a copy so we can safely share it with e.g. near cache invalidation
+            result = mapService.getMapServiceContext().toData(currentValue);
+        }
     }
 
     @Override
-    public void afterRun() {
-        mapServiceContext.interceptAfterGet(name, result);
+    protected void afterRunInternal() {
+        mapServiceContext.interceptAfterGet(mapContainer.getInterceptorRegistry(), result);
     }
 
     @Override
@@ -70,7 +77,7 @@ public final class GetOperation extends ReadonlyKeyBasedMapOperation implements 
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MapDataSerializerHook.GET;
     }
 }

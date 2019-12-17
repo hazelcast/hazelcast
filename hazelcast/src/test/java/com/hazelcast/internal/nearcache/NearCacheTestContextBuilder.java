@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,12 +22,12 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.adapter.DataStructureAdapter;
 import com.hazelcast.internal.adapter.DataStructureLoader;
 import com.hazelcast.internal.nearcache.impl.invalidation.RepairingTask;
-import com.hazelcast.spi.serialization.SerializationService;
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.test.HazelcastTestSupport;
 
 import javax.cache.CacheManager;
 
-import static com.hazelcast.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static org.junit.Assert.assertNotEquals;
 
 /**
@@ -50,7 +50,6 @@ public class NearCacheTestContextBuilder<K, V, NK, NV> extends HazelcastTestSupp
 
     private boolean hasLocalData;
     private DataStructureLoader loader;
-    private NearCacheInvalidationListener invalidationListener;
 
     private RepairingTask repairingTask;
 
@@ -109,11 +108,6 @@ public class NearCacheTestContextBuilder<K, V, NK, NV> extends HazelcastTestSupp
         return this;
     }
 
-    public NearCacheTestContextBuilder<K, V, NK, NV> setInvalidationListener(NearCacheInvalidationListener invalidationListener) {
-        this.invalidationListener = invalidationListener;
-        return this;
-    }
-
     public NearCacheTestContextBuilder<K, V, NK, NV> setRepairingTask(RepairingTask repairingTask) {
         this.repairingTask = repairingTask;
         return this;
@@ -138,7 +132,6 @@ public class NearCacheTestContextBuilder<K, V, NK, NV> extends HazelcastTestSupp
                 memberCacheManager,
                 hasLocalData,
                 loader,
-                invalidationListener,
                 repairingTask);
 
         warmUpPartitions(context.dataInstance, context.nearCacheInstance);

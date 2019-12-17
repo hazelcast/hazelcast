@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +16,9 @@
 
 package com.hazelcast.config;
 
-import com.hazelcast.config.EventJournalConfig.EventJournalConfigReadOnly;
+import com.hazelcast.internal.config.EventJournalConfigReadOnly;
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import nl.jqno.equalsverifier.EqualsVerifier;
 import nl.jqno.equalsverifier.Warning;
@@ -26,14 +26,11 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-@RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
-public class EventJournalConfigTest {
+import static com.hazelcast.test.HazelcastTestSupport.assumeDifferentHashCodes;
 
-    @Test(expected = UnsupportedOperationException.class)
-    public void testReadOnlyClass_setCacheName_throwsException() {
-        getReadOnlyConfig().setCacheName("cache-other");
-    }
+@RunWith(HazelcastParallelClassRunner.class)
+@Category({QuickTest.class, ParallelJVMTest.class})
+public class EventJournalConfigTest {
 
     @Test(expected = UnsupportedOperationException.class)
     public void testReadOnlyClass_setCapacity_throwsException() {
@@ -46,17 +43,13 @@ public class EventJournalConfigTest {
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void testReadOnlyClass_setMapName_throwsException() {
-        getReadOnlyConfig().setMapName("map-other");
-    }
-
-    @Test(expected = UnsupportedOperationException.class)
     public void testReadOnlyClass_setTTL_throwsException() {
         getReadOnlyConfig().setTimeToLiveSeconds(20);
     }
 
     @Test
     public void testEqualsAndHashCode() {
+        assumeDifferentHashCodes();
         EqualsVerifier.forClass(EventJournalConfig.class)
                       .suppress(Warning.NONFINAL_FIELDS)
                       .verify();
@@ -64,7 +57,7 @@ public class EventJournalConfigTest {
 
     private EventJournalConfigReadOnly getReadOnlyConfig() {
         EventJournalConfig config = new EventJournalConfig();
-        config.setEnabled(true).setCacheName("cache").setMapName("map").setCapacity(33).setTimeToLiveSeconds(15);
+        config.setEnabled(true).setCapacity(33).setTimeToLiveSeconds(15);
         return new EventJournalConfigReadOnly(config);
     }
 }

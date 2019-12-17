@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,11 +19,12 @@ package com.hazelcast.collection.impl.collection.operations;
 import com.hazelcast.collection.impl.collection.CollectionContainer;
 import com.hazelcast.collection.impl.collection.CollectionDataSerializerHook;
 import com.hazelcast.core.ItemEventType;
+import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.impl.MutatingOperation;
+import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.spi.impl.operationservice.MutatingOperation;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -77,7 +78,7 @@ public class CollectionAddAllOperation extends CollectionBackupAwareOperation im
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return CollectionDataSerializerHook.COLLECTION_ADD_ALL;
     }
 
@@ -86,7 +87,7 @@ public class CollectionAddAllOperation extends CollectionBackupAwareOperation im
         super.writeInternal(out);
         out.writeInt(valueList.size());
         for (Data value : valueList) {
-            out.writeData(value);
+            IOUtil.writeData(out, value);
         }
     }
 
@@ -96,7 +97,7 @@ public class CollectionAddAllOperation extends CollectionBackupAwareOperation im
         final int size = in.readInt();
         valueList = new ArrayList<Data>(size);
         for (int i = 0; i < size; i++) {
-            Data value = in.readData();
+            Data value = IOUtil.readData(in);
             valueList.add(value);
         }
     }

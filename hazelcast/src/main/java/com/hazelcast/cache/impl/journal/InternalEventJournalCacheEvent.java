@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,9 +18,10 @@ package com.hazelcast.cache.impl.journal;
 
 import com.hazelcast.cache.CacheEventType;
 import com.hazelcast.cache.impl.CacheDataSerializerHook;
+import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import java.io.IOException;
@@ -31,6 +32,7 @@ import java.io.IOException;
  * the event type.
  */
 public class InternalEventJournalCacheEvent implements IdentifiedDataSerializable {
+
     protected Data dataKey;
     protected Data dataNewValue;
     protected Data dataOldValue;
@@ -74,23 +76,62 @@ public class InternalEventJournalCacheEvent implements IdentifiedDataSerializabl
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return CacheDataSerializerHook.EVENT_JOURNAL_INTERNAL_CACHE_EVENT;
     }
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeInt(eventType);
-        out.writeData(dataKey);
-        out.writeData(dataNewValue);
-        out.writeData(dataOldValue);
+        IOUtil.writeData(out, dataKey);
+        IOUtil.writeData(out, dataNewValue);
+        IOUtil.writeData(out, dataOldValue);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         eventType = in.readInt();
-        dataKey = in.readData();
-        dataNewValue = in.readData();
-        dataOldValue = in.readData();
+        dataKey = IOUtil.readData(in);
+        dataNewValue = IOUtil.readData(in);
+        dataOldValue = IOUtil.readData(in);
     }
+
+    @Override
+    @SuppressWarnings("checkstyle:npathcomplexity")
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        InternalEventJournalCacheEvent that = (InternalEventJournalCacheEvent) o;
+
+        if (eventType != that.eventType) {
+            return false;
+        }
+        if (dataKey != null ? !dataKey.equals(that.dataKey) : that.dataKey != null) {
+            return false;
+        }
+        if (dataNewValue != null ? !dataNewValue.equals(that.dataNewValue) : that.dataNewValue != null) {
+            return false;
+        }
+        return dataOldValue != null ? dataOldValue.equals(that.dataOldValue) : that.dataOldValue == null;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = dataKey != null ? dataKey.hashCode() : 0;
+        result = 31 * result + (dataNewValue != null ? dataNewValue.hashCode() : 0);
+        result = 31 * result + (dataOldValue != null ? dataOldValue.hashCode() : 0);
+        result = 31 * result + eventType;
+        return result;
+    }
+
+    @Override
+    public String toString() {
+        return "InternalEventJournalCacheEvent{eventType=" + eventType + '}';
+    }
+
 }

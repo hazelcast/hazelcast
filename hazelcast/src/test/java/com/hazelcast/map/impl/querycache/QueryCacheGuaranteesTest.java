@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,15 +20,15 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.QueryCacheConfig;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IMap;
+import com.hazelcast.map.IMap;
 import com.hazelcast.map.QueryCache;
-import com.hazelcast.query.SqlPredicate;
-import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.query.Predicates;
+import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -44,7 +44,7 @@ import static org.junit.Assert.assertEquals;
  * So this test should be thought under query-cache-context-guarantees and it is fragile.
  */
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class QueryCacheGuaranteesTest extends HazelcastTestSupport {
 
     @Test
@@ -53,7 +53,7 @@ public class QueryCacheGuaranteesTest extends HazelcastTestSupport {
         String queryCacheName = randomString();
         TestHazelcastInstanceFactory instanceFactory = createHazelcastInstanceFactory(3);
         Config config = new Config();
-        config.setProperty(GroupProperty.PARTITION_COUNT.getName(), "271");
+        config.setProperty(ClusterProperty.PARTITION_COUNT.getName(), "271");
 
         QueryCacheConfig queryCacheConfig = new QueryCacheConfig(queryCacheName);
         queryCacheConfig.setBatchSize(100);
@@ -65,7 +65,7 @@ public class QueryCacheGuaranteesTest extends HazelcastTestSupport {
         HazelcastInstance node = instanceFactory.newHazelcastInstance(config);
         IMap<Integer, Integer> map = getMap(node, mapName);
 
-        final QueryCache<Integer, Integer> queryCache = map.getQueryCache(queryCacheName, new SqlPredicate("this > 20"), true);
+        final QueryCache<Integer, Integer> queryCache = map.getQueryCache(queryCacheName, Predicates.sql("this > 20"), true);
 
         for (int i = 0; i < 30; i++) {
             map.put(i, i);
@@ -110,7 +110,7 @@ public class QueryCacheGuaranteesTest extends HazelcastTestSupport {
         HazelcastInstance node = instanceFactory.newHazelcastInstance(config);
         IMap<Integer, Integer> map = (IMap<Integer, Integer>) node.<Integer, Integer>getMap(mapName);
 
-        final QueryCache<Integer, Integer> queryCache = map.getQueryCache(queryCacheName, new SqlPredicate("this > 20"), true);
+        final QueryCache<Integer, Integer> queryCache = map.getQueryCache(queryCacheName, Predicates.sql("this > 20"), true);
 
         for (int i = 0; i < 30; i++) {
             map.put(i, i);

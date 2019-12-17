@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -87,13 +87,9 @@ public class DelegateAndSkipOnConcurrentExecutionDecoratorTest
     }
 
     @Test
-    public void toString_contains_runnables_info() throws Exception {
+    public void toString_contains_runnables_info() {
         ResumableCountingRunnable runnable = new ResumableCountingRunnable();
-        Executor executor = new Executor() {
-            @Override
-            public void execute(Runnable command) {
-
-            }
+        Executor executor = command -> {
         };
 
         String stringified = new DelegateAndSkipOnConcurrentExecutionDecorator(runnable, executor).toString();

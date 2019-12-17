@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -63,25 +63,74 @@ public final class SerializationConstants {
 
     public static final int CONSTANT_TYPE_STRING_ARRAY = -20;
 
+    public static final int CONSTANT_TYPE_UUID = -21;
+
+    public static final int CONSTANT_TYPE_SIMPLE_ENTRY = -22;
+
+    public static final int CONSTANT_TYPE_SIMPLE_IMMUTABLE_ENTRY = -23;
+
     // ------------------------------------------------------------
     // DEFAULT SERIALIZERS
 
-    public static final int JAVA_DEFAULT_TYPE_CLASS = -21;
+    public static final int JAVA_DEFAULT_TYPE_CLASS = -24;
 
-    public static final int JAVA_DEFAULT_TYPE_DATE = -22;
+    public static final int JAVA_DEFAULT_TYPE_DATE = -25;
 
-    public static final int JAVA_DEFAULT_TYPE_BIG_INTEGER = -23;
+    public static final int JAVA_DEFAULT_TYPE_BIG_INTEGER = -26;
 
-    public static final int JAVA_DEFAULT_TYPE_BIG_DECIMAL = -24;
+    public static final int JAVA_DEFAULT_TYPE_BIG_DECIMAL = -27;
 
-    public static final int JAVA_DEFAULT_TYPE_ENUM = -25;
+    public static final int JAVA_DEFAULT_TYPE_ARRAY = -28;
 
-    public static final int JAVA_DEFAULT_TYPE_ARRAY_LIST = -26;
+    public static final int JAVA_DEFAULT_TYPE_ARRAY_LIST = -29;
 
-    public static final int JAVA_DEFAULT_TYPE_LINKED_LIST = -27;
+    public static final int JAVA_DEFAULT_TYPE_LINKED_LIST = -30;
+
+    public static final int JAVA_DEFAULT_TYPE_COPY_ON_WRITE_ARRAY_LIST = -31;
+
+
+    public static final int JAVA_DEFAULT_TYPE_HASH_MAP = -32;
+
+    public static final int JAVA_DEFAULT_TYPE_CONCURRENT_SKIP_LIST_MAP = -33;
+
+    public static final int JAVA_DEFAULT_TYPE_CONCURRENT_HASH_MAP = -34;
+
+    public static final int JAVA_DEFAULT_TYPE_LINKED_HASH_MAP = -35;
+
+    public static final int JAVA_DEFAULT_TYPE_TREE_MAP = -36;
+
+
+    public static final int JAVA_DEFAULT_TYPE_HASH_SET = -37;
+
+    public static final int JAVA_DEFAULT_TYPE_TREE_SET = -38;
+
+    public static final int JAVA_DEFAULT_TYPE_LINKED_HASH_SET = -39;
+
+    public static final int JAVA_DEFAULT_TYPE_COPY_ON_WRITE_ARRAY_SET = -40;
+
+    public static final int JAVA_DEFAULT_TYPE_CONCURRENT_SKIP_LIST_SET = -41;
+
+
+    public static final int JAVA_DEFAULT_TYPE_ARRAY_DEQUE = -42;
+
+    public static final int JAVA_DEFAULT_TYPE_LINKED_BLOCKING_QUEUE = -43;
+
+    public static final int JAVA_DEFAULT_TYPE_ARRAY_BLOCKING_QUEUE = -44;
+
+    public static final int JAVA_DEFAULT_TYPE_PRIORITY_BLOCKING_QUEUE = -45;
+
+    public static final int JAVA_DEFAULT_TYPE_DELAY_QUEUE = -46;
+
+    public static final int JAVA_DEFAULT_TYPE_SYNCHRONOUS_QUEUE = -47;
+
+    public static final int JAVA_DEFAULT_TYPE_LINKED_TRANSFER_QUEUE = -48;
+
+    public static final int JAVA_DEFAULT_TYPE_PRIORITY_QUEUE = -49;
 
     // NUMBER OF CONSTANT SERIALIZERS...
-    public static final int CONSTANT_SERIALIZERS_LENGTH = 28;
+    public static final int CONSTANT_SERIALIZERS_LENGTH = 50;
+
+    public static final int JAVA_DEFAULT_TYPE_ENUM = -50;
 
     // ------------------------------------------------------------
     // JAVA SERIALIZATION
@@ -96,6 +145,7 @@ public final class SerializationConstants {
     public static final int CSHARP_CLR_SERIALIZATION_TYPE = -110;
     public static final int PYTHON_PICKLE_SERIALIZATION_TYPE = -120;
     public static final int JAVASCRIPT_JSON_SERIALIZATION_TYPE = -130;
+    public static final int GO_GOB_SERIALIZATION_TYPE = -140;
 
     // ------------------------------------------------------------
     // HIBERNATE SERIALIZERS

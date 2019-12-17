@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 package com.hazelcast.internal.util.hashslot.impl;
 
 import com.hazelcast.internal.memory.MemoryManager;
+import com.hazelcast.internal.util.hashslot.SlotAssignmentResult;
 
 import static com.hazelcast.internal.util.hashslot.impl.CapacityUtil.DEFAULT_CAPACITY;
 import static com.hazelcast.internal.util.hashslot.impl.CapacityUtil.DEFAULT_LOAD_FACTOR;
@@ -47,7 +48,7 @@ public class HashSlotArray16byteKeyNoValue extends HashSlotArray16byteKeyImpl {
         return true;
     }
 
-    @Override public long ensure(long key1, long key2) {
+    @Override public SlotAssignmentResult ensure(long key1, long key2) {
         assert key1 != unassignedSentinel : "ensure() called with key1 == nullKey1 (" + unassignedSentinel + ')';
         return super.ensure0(key1, key2);
     }

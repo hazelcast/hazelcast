@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,32 +16,37 @@
 
 package com.hazelcast.client.impl.protocol.task;
 
-import com.hazelcast.client.ClientEndpoint;
 import com.hazelcast.client.impl.operations.OperationFactoryWrapper;
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.instance.Node;
-import com.hazelcast.nio.Connection;
-import com.hazelcast.spi.OperationFactory;
-import com.hazelcast.spi.impl.operationservice.InternalOperationService;
+import com.hazelcast.instance.impl.Node;
+import com.hazelcast.internal.nio.Connection;
+import com.hazelcast.spi.impl.operationservice.OperationFactory;
+import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 
-public abstract class AbstractAllPartitionsMessageTask<P> extends AbstractMessageTask<P> {
+public abstract class AbstractAllPartitionsMessageTask<P>
+        extends AbstractAsyncMessageTask<P, Map<Integer, Object>> {
 
     public AbstractAllPartitionsMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
     @Override
-    protected void processMessage() throws Exception {
-        ClientEndpoint endpoint = getEndpoint();
+    protected CompletableFuture<Map<Integer, Object>> processInternal() {
         OperationFactory operationFactory = new OperationFactoryWrapper(createOperationFactory(), endpoint.getUuid());
-        final InternalOperationService operationService = nodeEngine.getOperationService();
-        Map<Integer, Object> map = operationService.invokeOnAllPartitions(getServiceName(), operationFactory);
-        sendResponse(reduce(map));
+        OperationServiceImpl operationService = nodeEngine.getOperationService();
+        return operationService.invokeOnAllPartitionsAsync(getServiceName(), operationFactory);
+    }
+
+    @Override
+    protected Object processResponseBeforeSending(Map<Integer, Object> response) {
+        return reduce(response);
     }
 
     protected abstract OperationFactory createOperationFactory();
 
     protected abstract Object reduce(Map<Integer, Object> map);
+
 }

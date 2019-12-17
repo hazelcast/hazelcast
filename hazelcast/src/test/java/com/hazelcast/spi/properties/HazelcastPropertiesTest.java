@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,8 +17,7 @@
 package com.hazelcast.spi.properties;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.internal.diagnostics.Diagnostics;
-import com.hazelcast.internal.metrics.ProbeLevel;
+import com.hazelcast.internal.diagnostics.HealthMonitorLevel;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
@@ -27,8 +26,9 @@ import org.junit.runner.RunWith;
 
 import java.util.Properties;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
 
-import static com.hazelcast.spi.properties.GroupProperty.ENTERPRISE_LICENSE_KEY;
+import static com.hazelcast.spi.properties.ClusterProperty.ENTERPRISE_LICENSE_KEY;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNull;
@@ -93,6 +93,34 @@ public class HazelcastPropertiesTest {
     }
 
     @Test
+    public void testGet_whenFunctionAvailable_andNoOtherSettings() {
+        Properties props = new Properties();
+        HazelcastProperty p = new HazelcastProperty("key", new Function<HazelcastProperties, Integer>() {
+            @Override
+            public Integer apply(HazelcastProperties properties) {
+                return 23;
+            }
+        });
+        HazelcastProperties properties = new HazelcastProperties(props);
+
+        assertEquals(23, properties.getInteger(p));
+    }
+
+    @Test
+    public void testGet_whenFunctionAvailable_andPropertySet() {
+        Properties props = new Properties();
+        props.setProperty("key", "1");
+        HazelcastProperty p = new HazelcastProperty("key", new Function<HazelcastProperties, Integer>() {
+            @Override
+            public Integer apply(HazelcastProperties properties) {
+                return 23;
+            }
+        });
+        HazelcastProperties properties = new HazelcastProperties(props);
+        assertEquals(1, properties.getInteger(p));
+    }
+
+    @Test
     public void setProperty_ensureHighestPriorityOfConfig() {
         config.setProperty(ENTERPRISE_LICENSE_KEY.getName(), "configValue");
         ENTERPRISE_LICENSE_KEY.setSystemProperty("systemValue");
@@ -126,29 +154,30 @@ public class HazelcastPropertiesTest {
 
     @Test
     public void setProperty_inheritDefaultValueOfParentProperty() {
-        String inputIOThreadCount = defaultProperties.getString(GroupProperty.IO_INPUT_THREAD_COUNT);
+        HazelcastProperty parent = new HazelcastProperty("parent", 1);
+        HazelcastProperty child = new HazelcastProperty("child", parent);
 
-        assertEquals(GroupProperty.IO_THREAD_COUNT.getDefaultValue(), inputIOThreadCount);
+        assertEquals(1, defaultProperties.getInteger(child));
     }
 
     @Test
     public void setProperty_inheritActualValueOfParentProperty() {
-        config.setProperty(GroupProperty.IO_THREAD_COUNT.getName(), "1");
+        config.setProperty(ClusterProperty.IO_THREAD_COUNT.getName(), "1");
         HazelcastProperties properties = new HazelcastProperties(config);
 
-        String inputIOThreadCount = properties.getString(GroupProperty.IO_INPUT_THREAD_COUNT);
+        String inputIOThreadCount = properties.getString(ClusterProperty.IO_INPUT_THREAD_COUNT);
 
         assertEquals("1", inputIOThreadCount);
-        assertNotEquals(GroupProperty.IO_THREAD_COUNT.getDefaultValue(), inputIOThreadCount);
+        assertNotEquals(ClusterProperty.IO_THREAD_COUNT.getDefaultValue(), inputIOThreadCount);
     }
 
     @Test
     public void getSystemProperty() {
-        GroupProperty.APPLICATION_VALIDATION_TOKEN.setSystemProperty("token");
+        ClusterProperty.WAIT_SECONDS_BEFORE_JOIN.setSystemProperty("12");
 
-        assertEquals("token", GroupProperty.APPLICATION_VALIDATION_TOKEN.getSystemProperty());
+        assertEquals("12", ClusterProperty.WAIT_SECONDS_BEFORE_JOIN.getSystemProperty());
 
-        System.clearProperty(GroupProperty.APPLICATION_VALIDATION_TOKEN.getName());
+        System.clearProperty(ClusterProperty.WAIT_SECONDS_BEFORE_JOIN.getName());
     }
 
     @Test
@@ -162,14 +191,15 @@ public class HazelcastPropertiesTest {
 
     @Test
     public void getInteger() {
-        int ioThreadCount = defaultProperties.getInteger(GroupProperty.IO_THREAD_COUNT);
+        HazelcastProperty property = new HazelcastProperty("key", 3);
+        int ioThreadCount = defaultProperties.getInteger(property);
 
         assertEquals(3, ioThreadCount);
     }
 
     @Test
     public void getLong() {
-        long lockMaxLeaseTimeSeconds = defaultProperties.getLong(GroupProperty.LOCK_MAX_LEASE_TIME_SECONDS);
+        long lockMaxLeaseTimeSeconds = defaultProperties.getLong(ClusterProperty.LOCK_MAX_LEASE_TIME_SECONDS);
 
         assertEquals(Long.MAX_VALUE, lockMaxLeaseTimeSeconds);
     }
@@ -184,20 +214,43 @@ public class HazelcastPropertiesTest {
     }
 
     @Test
+    public void getPositiveMillisOrDefault() {
+        String name = ClusterProperty.PARTITION_TABLE_SEND_INTERVAL.getName();
+        config.setProperty(name, "-300");
+        HazelcastProperty property = new HazelcastProperty(name, "20", TimeUnit.MILLISECONDS);
+
+        long millis = defaultProperties.getPositiveMillisOrDefault(property);
+
+        assertEquals(20, millis);
+    }
+
+    @Test
+    public void getPositiveMillisOrDefaultWithManualDefault() {
+        String name = ClusterProperty.PARTITION_TABLE_SEND_INTERVAL.getName();
+        config.setProperty(name, "-300");
+        HazelcastProperties properties = new HazelcastProperties(config);
+        HazelcastProperty property = new HazelcastProperty(name, "20", TimeUnit.MILLISECONDS);
+
+        long millis = properties.getPositiveMillisOrDefault(property, 50);
+
+        assertEquals(50, millis);
+    }
+
+    @Test
     public void getTimeUnit() {
-        config.setProperty(GroupProperty.PARTITION_TABLE_SEND_INTERVAL.getName(), "300");
+        config.setProperty(ClusterProperty.PARTITION_TABLE_SEND_INTERVAL.getName(), "300");
         HazelcastProperties properties = new HazelcastProperties(config);
 
-        assertEquals(300, properties.getSeconds(GroupProperty.PARTITION_TABLE_SEND_INTERVAL));
+        assertEquals(300, properties.getSeconds(ClusterProperty.PARTITION_TABLE_SEND_INTERVAL));
     }
 
     @Test
     public void getTimeUnit_default() {
         long expectedSeconds = 15;
 
-        long intervalNanos = defaultProperties.getNanos(GroupProperty.PARTITION_TABLE_SEND_INTERVAL);
-        long intervalMillis = defaultProperties.getMillis(GroupProperty.PARTITION_TABLE_SEND_INTERVAL);
-        long intervalSeconds = defaultProperties.getSeconds(GroupProperty.PARTITION_TABLE_SEND_INTERVAL);
+        long intervalNanos = defaultProperties.getNanos(ClusterProperty.PARTITION_TABLE_SEND_INTERVAL);
+        long intervalMillis = defaultProperties.getMillis(ClusterProperty.PARTITION_TABLE_SEND_INTERVAL);
+        long intervalSeconds = defaultProperties.getSeconds(ClusterProperty.PARTITION_TABLE_SEND_INTERVAL);
 
         assertEquals(TimeUnit.SECONDS.toNanos(expectedSeconds), intervalNanos);
         assertEquals(TimeUnit.SECONDS.toMillis(expectedSeconds), intervalMillis);
@@ -206,41 +259,26 @@ public class HazelcastPropertiesTest {
 
     @Test(expected = IllegalArgumentException.class)
     public void getTimeUnit_noTimeUnitProperty() {
-        defaultProperties.getMillis(GroupProperty.APPLICATION_VALIDATION_TOKEN);
+        defaultProperties.getMillis(ClusterProperty.AUDIT_LOG_ENABLED);
     }
 
     @Test
     public void getEnum() {
-        config.setProperty(Diagnostics.METRICS_LEVEL.getName(), ProbeLevel.DEBUG.toString());
-        HazelcastProperties properties = new HazelcastProperties(config);
+        config.setProperty(ClusterProperty.HEALTH_MONITORING_LEVEL.getName(), "NOISY");
+        HazelcastProperties properties = new HazelcastProperties(config.getProperties());
+        HealthMonitorLevel healthMonitorLevel = properties
+                .getEnum(ClusterProperty.HEALTH_MONITORING_LEVEL, HealthMonitorLevel.class);
 
-        ProbeLevel level = properties.getEnum(Diagnostics.METRICS_LEVEL, ProbeLevel.class);
-
-        assertEquals(ProbeLevel.DEBUG, level);
+        assertEquals(HealthMonitorLevel.NOISY, healthMonitorLevel);
     }
 
     @Test
     public void getEnum_default() {
-        ProbeLevel level = defaultProperties.getEnum(Diagnostics.METRICS_LEVEL, ProbeLevel.class);
+        HazelcastProperties properties = new HazelcastProperties(config.getProperties());
+        HealthMonitorLevel healthMonitorLevel = properties
+                .getEnum(ClusterProperty.HEALTH_MONITORING_LEVEL, HealthMonitorLevel.class);
 
-        assertEquals(ProbeLevel.MANDATORY, level);
-    }
-
-    @Test(expected = IllegalArgumentException.class)
-    public void getEnum_nonExistingEnum() {
-        config.setProperty(Diagnostics.METRICS_LEVEL.getName(), "notExist");
-        HazelcastProperties properties = new HazelcastProperties(config);
-        properties.getEnum(Diagnostics.METRICS_LEVEL, ProbeLevel.class);
-    }
-
-    @Test
-    public void getEnum_ignoredName() {
-        config.setProperty(Diagnostics.METRICS_LEVEL.getName(), "dEbUg");
-        HazelcastProperties properties = new HazelcastProperties(config);
-
-        ProbeLevel level = properties.getEnum(Diagnostics.METRICS_LEVEL, ProbeLevel.class);
-
-        assertEquals(ProbeLevel.DEBUG, level);
+        assertEquals(HealthMonitorLevel.SILENT, healthMonitorLevel);
     }
 
     @Test

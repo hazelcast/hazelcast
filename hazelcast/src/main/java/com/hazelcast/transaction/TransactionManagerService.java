@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,11 +16,17 @@
 
 package com.hazelcast.transaction;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+import java.util.UUID;
+
 public interface TransactionManagerService {
 
-    <T> T executeTransaction(TransactionOptions options, TransactionalTask<T> task) throws TransactionException;
+    <T> T executeTransaction(@Nonnull TransactionOptions options,
+                             @Nonnull TransactionalTask<T> task) throws TransactionException;
 
-    TransactionContext newTransactionContext(TransactionOptions options);
+    TransactionContext newTransactionContext(@Nonnull TransactionOptions options);
 
-    TransactionContext newClientTransactionContext(TransactionOptions options, String clientUuid);
+    TransactionContext newClientTransactionContext(@Nonnull TransactionOptions options,
+                                                   @Nullable UUID clientUuid);
 }

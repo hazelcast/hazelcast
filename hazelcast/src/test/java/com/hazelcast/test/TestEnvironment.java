@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,10 @@
 
 package com.hazelcast.test;
 
+import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.test.compatibility.SamplingSerializationService;
 
+@SuppressWarnings("WeakerAccess")
 public final class TestEnvironment {
 
     public static final String HAZELCAST_TEST_USE_NETWORK = "hazelcast.test.use.network";
@@ -29,6 +31,7 @@ public final class TestEnvironment {
      * followed by a random UUID to avoid clashes.
      * For example {@code -Dhazelcast.test.sample.serialized.objects=/home/hz/tmp/objects-} will create files
      * {@code /home/hz/tmp/objects-UUID.index} and {@code /home/hz/tmp/objects-UUID.samples}.
+     *
      * @see SamplingSerializationService
      */
     public static final String SAMPLE_SERIALIZED_OBJECTS = "hazelcast.test.sample.serialized.objects";
@@ -44,7 +47,7 @@ public final class TestEnvironment {
      * @return {@code true} when compatibility tests are to be executed on a mixed version cluster
      */
     public static boolean isRunningCompatibilityTest() {
-        return Boolean.getBoolean(EXECUTE_COMPATIBILITY_TESTS);
+        return Boolean.getBoolean(EXECUTE_COMPATIBILITY_TESTS) && Versions.CURRENT_CLUSTER_VERSION.getMinor() > 0;
     }
 
     public static boolean isRecordingSerializedClassNames() {

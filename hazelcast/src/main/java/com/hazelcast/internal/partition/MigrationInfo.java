@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,16 +16,18 @@
 
 package com.hazelcast.internal.partition;
 
+import com.hazelcast.internal.util.UUIDSerializationUtil;
 import com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook;
-import com.hazelcast.nio.Address;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.util.UuidUtil;
+import com.hazelcast.internal.util.UuidUtil;
 
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
+import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class MigrationInfo implements IdentifiedDataSerializable {
@@ -65,19 +67,19 @@ public class MigrationInfo implements IdentifiedDataSerializable {
 
     }
 
-    private String uuid;
+    private UUID uuid;
     private int partitionId;
 
-    private Address source;
-    private String sourceUuid;
-    private Address destination;
-    private String destinationUuid;
+    private PartitionReplica source;
+    private PartitionReplica destination;
     private Address master;
 
     private int sourceCurrentReplicaIndex;
     private int sourceNewReplicaIndex;
     private int destinationCurrentReplicaIndex;
     private int destinationNewReplicaIndex;
+    private int initialPartitionVersion = -1;
+    private int partitionVersionIncrement;
 
     private final AtomicBoolean processing = new AtomicBoolean(false);
     private volatile MigrationStatus status;
@@ -85,15 +87,13 @@ public class MigrationInfo implements IdentifiedDataSerializable {
     public MigrationInfo() {
     }
 
-    public MigrationInfo(int partitionId, Address source, String sourceUuid, Address destination, String destinationUuid,
-                         int sourceCurrentReplicaIndex, int sourceNewReplicaIndex,
-                         int destinationCurrentReplicaIndex, int destinationNewReplicaIndex) {
-        this.uuid = UuidUtil.newUnsecureUuidString();
+    public MigrationInfo(int partitionId, PartitionReplica source, PartitionReplica destination,
+            int sourceCurrentReplicaIndex, int sourceNewReplicaIndex,
+            int destinationCurrentReplicaIndex, int destinationNewReplicaIndex) {
+        this.uuid = UuidUtil.newUnsecureUUID();
         this.partitionId = partitionId;
         this.source = source;
-        this.sourceUuid = sourceUuid;
         this.destination = destination;
-        this.destinationUuid = destinationUuid;
         this.sourceCurrentReplicaIndex = sourceCurrentReplicaIndex;
         this.sourceNewReplicaIndex = sourceNewReplicaIndex;
         this.destinationCurrentReplicaIndex = destinationCurrentReplicaIndex;
@@ -101,20 +101,20 @@ public class MigrationInfo implements IdentifiedDataSerializable {
         this.status = MigrationStatus.ACTIVE;
     }
 
-    public Address getSource() {
+    public PartitionReplica getSource() {
         return source;
     }
 
-    public String getSourceUuid() {
-        return sourceUuid;
+    public Address getSourceAddress() {
+        return source != null ? source.address() : null;
     }
 
-    public Address getDestination() {
+    public PartitionReplica getDestination() {
         return destination;
     }
 
-    public String getDestinationUuid() {
-        return destinationUuid;
+    public Address getDestinationAddress() {
+        return destination != null ? destination.address() : null;
     }
 
     public int getPartitionId() {
@@ -150,10 +150,6 @@ public class MigrationInfo implements IdentifiedDataSerializable {
         return processing.compareAndSet(false, true);
     }
 
-    public boolean isProcessing() {
-        return processing.get();
-    }
-
     public void doneProcessing() {
         processing.set(false);
     }
@@ -171,59 +167,73 @@ public class MigrationInfo implements IdentifiedDataSerializable {
         return status != MigrationStatus.INVALID;
     }
 
+    public int getInitialPartitionVersion() {
+        return initialPartitionVersion;
+    }
+
+    public MigrationInfo setInitialPartitionVersion(int initialPartitionVersion) {
+        assert initialPartitionVersion > 0;
+        this.initialPartitionVersion = initialPartitionVersion;
+        return this;
+    }
+
+    public int getPartitionVersionIncrement() {
+        if (partitionVersionIncrement > 0) {
+            return partitionVersionIncrement;
+        }
+        int inc = 1;
+        if (sourceNewReplicaIndex > -1) {
+            inc++;
+        }
+        if (destinationCurrentReplicaIndex > -1) {
+            inc++;
+        }
+        return inc;
+    }
+
+    public MigrationInfo setPartitionVersionIncrement(int partitionVersionIncrement) {
+        assert partitionVersionIncrement > 0;
+        this.partitionVersionIncrement = partitionVersionIncrement;
+        return this;
+    }
+
+    public int getFinalPartitionVersion() {
+        if (initialPartitionVersion > 0) {
+            return initialPartitionVersion + getPartitionVersionIncrement();
+        }
+        throw new IllegalStateException("Initial partition version is not set!");
+    }
+
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeUTF(uuid);
+        UUIDSerializationUtil.writeUUID(out, uuid);
         out.writeInt(partitionId);
         out.writeByte(sourceCurrentReplicaIndex);
         out.writeByte(sourceNewReplicaIndex);
         out.writeByte(destinationCurrentReplicaIndex);
         out.writeByte(destinationNewReplicaIndex);
         MigrationStatus.writeTo(status, out);
-
-        boolean hasSource = source != null;
-        out.writeBoolean(hasSource);
-        if (hasSource) {
-            source.writeData(out);
-            out.writeUTF(sourceUuid);
-        }
-
-        boolean hasDestination = destination != null;
-        out.writeBoolean(hasDestination);
-        if (hasDestination) {
-            destination.writeData(out);
-            out.writeUTF(destinationUuid);
-        }
-
-        master.writeData(out);
+        out.writeObject(source);
+        out.writeObject(destination);
+        out.writeObject(master);
+        out.writeInt(initialPartitionVersion);
+        out.writeInt(partitionVersionIncrement);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        uuid = in.readUTF();
+        uuid = UUIDSerializationUtil.readUUID(in);
         partitionId = in.readInt();
         sourceCurrentReplicaIndex = in.readByte();
         sourceNewReplicaIndex = in.readByte();
         destinationCurrentReplicaIndex = in.readByte();
         destinationNewReplicaIndex = in.readByte();
         status = MigrationStatus.readFrom(in);
-
-        boolean hasSource = in.readBoolean();
-        if (hasSource) {
-            source = new Address();
-            source.readData(in);
-            sourceUuid = in.readUTF();
-        }
-
-        boolean hasDestination = in.readBoolean();
-        if (hasDestination) {
-            destination = new Address();
-            destination.readData(in);
-            destinationUuid = in.readUTF();
-        }
-
-        master = new Address();
-        master.readData(in);
+        source = in.readObject();
+        destination = in.readObject();
+        master = in.readObject();
+        initialPartitionVersion = in.readInt();
+        partitionVersionIncrement = in.readInt();
     }
 
     @Override
@@ -252,14 +262,14 @@ public class MigrationInfo implements IdentifiedDataSerializable {
         sb.append("uuid=").append(uuid);
         sb.append(", partitionId=").append(partitionId);
         sb.append(", source=").append(source);
-        sb.append(", sourceUuid=").append(sourceUuid);
         sb.append(", sourceCurrentReplicaIndex=").append(sourceCurrentReplicaIndex);
         sb.append(", sourceNewReplicaIndex=").append(sourceNewReplicaIndex);
         sb.append(", destination=").append(destination);
-        sb.append(", destinationUuid=").append(destinationUuid);
         sb.append(", destinationCurrentReplicaIndex=").append(destinationCurrentReplicaIndex);
         sb.append(", destinationNewReplicaIndex=").append(destinationNewReplicaIndex);
         sb.append(", master=").append(master);
+        sb.append(", initialPartitionVersion=").append(initialPartitionVersion);
+        sb.append(", partitionVersionIncrement=").append(getPartitionVersionIncrement());
         sb.append(", processing=").append(processing);
         sb.append(", status=").append(status);
         sb.append('}');
@@ -272,7 +282,7 @@ public class MigrationInfo implements IdentifiedDataSerializable {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ClusterDataSerializerHook.MIGRATION_INFO;
     }
 }

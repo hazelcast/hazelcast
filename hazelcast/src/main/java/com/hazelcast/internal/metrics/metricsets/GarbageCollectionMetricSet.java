@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,9 +26,10 @@ import java.lang.management.ManagementFactory;
 import java.util.Collections;
 import java.util.Set;
 
+import static com.hazelcast.internal.metrics.ProbeLevel.INFO;
 import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
-import static com.hazelcast.util.Preconditions.checkNotNull;
-import static com.hazelcast.util.SetUtil.createHashSet;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.SetUtil.createHashSet;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
@@ -41,16 +42,19 @@ public final class GarbageCollectionMetricSet {
     private static final int PUBLISH_FREQUENCY_SECONDS = 1;
 
     static {
-        final Set<String> youngGC = createHashSet(3);
+        final Set<String> youngGC = createHashSet(4);
         youngGC.add("PS Scavenge");
         youngGC.add("ParNew");
         youngGC.add("G1 Young Generation");
+        youngGC.add("Copy");
         YOUNG_GC = Collections.unmodifiableSet(youngGC);
 
-        final Set<String> oldGC = createHashSet(3);
+        final Set<String> oldGC = createHashSet(5);
         oldGC.add("PS MarkSweep");
         oldGC.add("ConcurrentMarkSweep");
         oldGC.add("G1 Old Generation");
+        oldGC.add("G1 Mixed Generation");
+        oldGC.add("MarkSweepCompact");
         OLD_GC = Collections.unmodifiableSet(oldGC);
     }
 
@@ -66,8 +70,8 @@ public final class GarbageCollectionMetricSet {
         checkNotNull(metricsRegistry, "metricsRegistry");
 
         GcStats stats = new GcStats();
-        metricsRegistry.scheduleAtFixedRate(stats, PUBLISH_FREQUENCY_SECONDS, SECONDS);
-        metricsRegistry.scanAndRegister(stats, "gc");
+        metricsRegistry.scheduleAtFixedRate(stats, PUBLISH_FREQUENCY_SECONDS, SECONDS, INFO);
+        metricsRegistry.registerStaticMetrics(stats, "gc");
     }
 
 

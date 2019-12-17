@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,12 +18,11 @@ package com.hazelcast.cache;
 
 import com.hazelcast.cache.impl.CacheProxy;
 import com.hazelcast.cache.impl.ClusterWideIterator;
-import com.hazelcast.cache.impl.HazelcastServerCachingProvider;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.test.HazelcastParametersRunnerFactory;
+import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Before;
@@ -31,6 +30,9 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
+import org.junit.runners.Parameterized.Parameter;
+import org.junit.runners.Parameterized.Parameters;
+import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
 import javax.cache.Cache;
 import javax.cache.CacheManager;
@@ -39,24 +41,26 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Iterator;
 
+import static com.hazelcast.cache.CacheTestSupport.createServerCachingProvider;
+import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(Parameterized.class)
-@Parameterized.UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
-@Category({QuickTest.class, ParallelTest.class})
+@UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class CacheClusterWideIteratorTest extends HazelcastTestSupport {
 
     private CachingProvider cachingProvider;
 
-    @Parameterized.Parameters(name = "prefetchValues:{0}")
+    @Parameters(name = "prefetchValues:{0}")
     public static Collection<Object[]> parameters() {
-        return Arrays.asList(new Object[][]{
+        return asList(new Object[][]{
                 {false},
-                {true}
+                {true},
         });
     }
 
-    @Parameterized.Parameter(0)
+    @Parameter(0)
     public boolean prefetchValues;
 
     protected Iterator getIterator(Cache cache) {
@@ -70,7 +74,7 @@ public class CacheClusterWideIteratorTest extends HazelcastTestSupport {
 
     protected CachingProvider createCachingProvider() {
         HazelcastInstance hazelcastInstance = createHazelcastInstance();
-        return HazelcastServerCachingProvider.createCachingProvider(hazelcastInstance);
+        return createServerCachingProvider(hazelcastInstance);
     }
 
     @After

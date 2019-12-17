@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,19 +17,21 @@
 package com.hazelcast.internal.networking;
 
 /**
- * A strategy for controlling what needs to be done in case of an Exception being thrown when the {@link EventLoopGroup} processes
- * events.
+ * A strategy for controlling what needs to be done in case of an Exception
+ * being thrown when the {@link Networking} processes events.
  *
- * For example if a connection is making use of the Channel, the Connection could close itself when an error was encountered.
+ * For example if a connection is making use of the Channel, the Connection
+ * could close itself when an error was encountered.
  */
 public interface ChannelErrorHandler {
 
     /**
-     * Called when an error happened.
+     * Called when an error was detected.
      *
-     * @param channel the Channel that ran into an error. It could be that the Channel is null if error
+     * @param channel the Channel that ran into an error. It could be that
+     *                the Channel is null if error
      *                was thrown not related to a particular Channel.
-     * @param cause the Throwable causing problems
+     * @param error   the Throwable causing problems
      */
-    void onError(Channel channel, Throwable cause);
+    void onError(Channel channel, Throwable error);
 }

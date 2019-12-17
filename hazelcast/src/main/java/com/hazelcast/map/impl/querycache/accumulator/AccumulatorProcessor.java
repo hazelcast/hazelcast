@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,7 @@ package com.hazelcast.map.impl.querycache.accumulator;
 
 /**
  * Responsible for processing of an event of an {@link Accumulator}.
- * <p/>
+ *
  * Processing can vary according to the implementation.
  *
  * @param <T> type of element to process.

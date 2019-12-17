@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,7 @@
 
 package com.hazelcast.map;
 
-import com.hazelcast.core.AbstractIMapEvent;
-import com.hazelcast.core.Member;
+import com.hazelcast.cluster.Member;
 
 /**
  * Used for providing information about the lost partition for a map

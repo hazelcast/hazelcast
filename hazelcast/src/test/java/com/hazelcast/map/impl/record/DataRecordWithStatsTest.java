@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,22 +16,23 @@
 
 package com.hazelcast.map.impl.record;
 
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import static com.hazelcast.test.HazelcastTestSupport.assumeDifferentHashCodes;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class DataRecordWithStatsTest {
 
     private static final Data VALUE = mock(Data.class);
@@ -47,18 +48,14 @@ public class DataRecordWithStatsTest {
         Data otherKey = mock(Data.class);
 
         record = new DataRecordWithStats(VALUE);
-        record.setKey(key);
 
         recordSameAttributes = new DataRecordWithStats();
-        recordSameAttributes.setKey(key);
         recordSameAttributes.setValue(VALUE);
 
         recordOtherKeyAndValue = new DataRecordWithStats();
-        recordOtherKeyAndValue.setKey(otherKey);
         recordOtherKeyAndValue.setValue(otherKey);
 
         objectRecord = new ObjectRecordWithStats();
-        objectRecord.setKey(key);
         objectRecord.setValue(new Object());
     }
 
@@ -93,6 +90,7 @@ public class DataRecordWithStatsTest {
         assertEquals(record.hashCode(), record.hashCode());
         assertEquals(record.hashCode(), recordSameAttributes.hashCode());
 
+        assumeDifferentHashCodes();
         assertNotEquals(record.hashCode(), objectRecord.hashCode());
         assertNotEquals(record.hashCode(), recordOtherKeyAndValue.hashCode());
     }

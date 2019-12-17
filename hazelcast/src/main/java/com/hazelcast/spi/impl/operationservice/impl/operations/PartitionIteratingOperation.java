@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,20 +20,24 @@ import com.hazelcast.client.impl.operations.OperationFactoryWrapper;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.OperationAccessor;
-import com.hazelcast.spi.OperationFactory;
-import com.hazelcast.spi.OperationResponseHandler;
-import com.hazelcast.spi.OperationService;
+import com.hazelcast.spi.impl.operationservice.CallStatus;
+import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.spi.impl.operationservice.Offload;
+import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.spi.impl.operationservice.OperationAccessor;
+import com.hazelcast.spi.impl.operationservice.OperationFactory;
+import com.hazelcast.spi.impl.operationservice.OperationResponseHandler;
 import com.hazelcast.spi.impl.SpiDataSerializerHook;
+import com.hazelcast.spi.impl.operationservice.PartitionTaskFactory;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 import com.hazelcast.spi.impl.operationservice.impl.responses.ErrorResponse;
 import com.hazelcast.spi.impl.operationservice.impl.responses.NormalResponse;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
+import java.util.BitSet;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReferenceArray;
 
@@ -79,100 +83,19 @@ public final class PartitionIteratingOperation extends Operation implements Iden
     }
 
     @Override
-    public boolean returnsResponse() {
-        // since this call is non blocking, we don't have a response. The response is send when the actual operations complete.
-        return false;
-    }
-
-    @Override
-    public void run() throws Exception {
-        // partitions may be empty if the node has joined and didn't get any partitions yet
-        // a generic operation may already execute on it.
-        if (partitions.length == 0) {
-            this.sendResponse(EMPTY_RESPONSE);
-            return;
-        }
-
-        getOperationServiceImpl().onStartAsyncOperation(this);
-        PartitionAwareOperationFactory partitionAwareFactory = extractPartitionAware(operationFactory);
-        if (partitionAwareFactory != null) {
-            executePartitionAwareOperations(partitionAwareFactory);
-        } else {
-            executeOperations();
-        }
+    public CallStatus call() {
+        return new OffloadImpl();
     }
 
     @Override
     public void onExecutionFailure(Throwable cause) {
-        try {
-            // we also send a response so that the caller doesn't wait indefinitely.
-            sendResponse(new ErrorResponse(cause, getCallId(), isUrgent()));
-        } finally {
-            // in case of an error, we need to de-register to prevent leaks.
-            getOperationServiceImpl().onCompletionAsyncOperation(this);
-        }
+        // we also send a response so that the caller doesn't wait indefinitely.
+        sendResponse(new ErrorResponse(cause, getCallId(), isUrgent()));
         getLogger().severe(cause);
     }
 
-    private void executeOperations() {
-        NodeEngine nodeEngine = getNodeEngine();
-        OperationResponseHandler responseHandler = new OperationResponseHandlerImpl(partitions);
-        OperationService operationService = nodeEngine.getOperationService();
-        Object service = getServiceName() == null ? null : getService();
-
-        for (int partitionId : partitions) {
-            Operation operation = operationFactory.createOperation()
-                    .setNodeEngine(nodeEngine)
-                    .setPartitionId(partitionId)
-                    .setReplicaIndex(getReplicaIndex())
-                    .setOperationResponseHandler(responseHandler)
-                    .setServiceName(getServiceName())
-                    .setService(service)
-                    .setCallerUuid(extractCallerUuid());
-
-            OperationAccessor.setCallerAddress(operation, getCallerAddress());
-            operationService.execute(operation);
-        }
-    }
-
-    private void executePartitionAwareOperations(PartitionAwareOperationFactory givenFactory) {
-        PartitionAwareOperationFactory factory = givenFactory.createFactoryOnRunner(getNodeEngine());
-
-        NodeEngine nodeEngine = getNodeEngine();
-        int[] operationFactoryPartitions = factory.getPartitions();
-        partitions = operationFactoryPartitions == null ? partitions : operationFactoryPartitions;
-
-        OperationResponseHandler responseHandler = new OperationResponseHandlerImpl(partitions);
-        OperationService operationService = nodeEngine.getOperationService();
-        Object service = getServiceName() == null ? null : getService();
-
-        for (int partitionId : partitions) {
-            Operation op = factory.createPartitionOperation(partitionId)
-                    .setNodeEngine(nodeEngine)
-                    .setPartitionId(partitionId)
-                    .setReplicaIndex(getReplicaIndex())
-                    .setOperationResponseHandler(responseHandler)
-                    .setServiceName(getServiceName())
-                    .setService(service)
-                    .setCallerUuid(extractCallerUuid());
-
-            OperationAccessor.setCallerAddress(op, getCallerAddress());
-            operationService.execute(op);
-        }
-    }
-
-    private OperationServiceImpl getOperationServiceImpl() {
+    private OperationServiceImpl getOperationService() {
         return (OperationServiceImpl) getNodeEngine().getOperationService();
-    }
-
-    private String extractCallerUuid() {
-        // Clients callerUUID can be set already. See OperationFactoryWrapper usage.
-        if (operationFactory instanceof OperationFactoryWrapper) {
-            return ((OperationFactoryWrapper) operationFactory).getUuid();
-        }
-
-        // Members UUID
-        return getCallerUuid();
     }
 
     @Override
@@ -181,7 +104,7 @@ public final class PartitionIteratingOperation extends Operation implements Iden
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return SpiDataSerializerHook.PARTITION_ITERATOR;
     }
 
@@ -206,6 +129,95 @@ public final class PartitionIteratingOperation extends Operation implements Iden
         super.toString(sb);
 
         sb.append(", operationFactory=").append(operationFactory);
+    }
+
+    private final class OffloadImpl extends Offload {
+        private OffloadImpl() {
+            super(PartitionIteratingOperation.this);
+        }
+
+        @Override
+        public void start() {
+            if (partitions.length == 0) {
+                // partitions may be empty if the node has joined and didn't get any partitions yet
+                // a generic operation may already execute on it.
+                sendResponse(EMPTY_RESPONSE);
+                return;
+            }
+
+            PartitionAwareOperationFactory partitionAwareFactory = extractPartitionAware(operationFactory);
+            if (partitionAwareFactory == null) {
+                executeOperations();
+            } else {
+                executeOperations(partitionAwareFactory);
+            }
+        }
+
+        private void executeOperations() {
+            PartitionTaskFactory f = new PartitionTaskFactory() {
+                private final NodeEngine nodeEngine = getNodeEngine();
+                private final OperationResponseHandler responseHandler = new OperationResponseHandlerImpl(partitions);
+                private final Object service = getServiceName() == null ? null : getService();
+
+                @Override
+                public Operation create(int partitionId) {
+                    Operation op = operationFactory.createOperation()
+                            .setNodeEngine(nodeEngine)
+                            .setPartitionId(partitionId)
+                            .setReplicaIndex(getReplicaIndex())
+                            .setOperationResponseHandler(responseHandler)
+                            .setServiceName(getServiceName())
+                            .setService(service)
+                            .setCallerUuid(extractCallerUuid());
+
+                    OperationAccessor.setCallerAddress(op, getCallerAddress());
+                    return op;
+                }
+            };
+
+            getOperationService().executeOnPartitions(f, toPartitionBitSet());
+        }
+
+        private void executeOperations(PartitionAwareOperationFactory givenFactory) {
+            final NodeEngine nodeEngine = getNodeEngine();
+            final PartitionAwareOperationFactory factory = givenFactory.createFactoryOnRunner(nodeEngine, partitions);
+            final OperationResponseHandler responseHandler = new OperationResponseHandlerImpl(partitions);
+            final Object service = getServiceName() == null ? null : getService();
+
+            PartitionTaskFactory f = partitionId -> {
+                Operation op = factory.createPartitionOperation(partitionId)
+                        .setNodeEngine(nodeEngine)
+                        .setPartitionId(partitionId)
+                        .setReplicaIndex(getReplicaIndex())
+                        .setOperationResponseHandler(responseHandler)
+                        .setServiceName(getServiceName())
+                        .setService(service)
+                        .setCallerUuid(extractCallerUuid());
+
+                OperationAccessor.setCallerAddress(op, getCallerAddress());
+                return op;
+            };
+
+            getOperationService().executeOnPartitions(f, toPartitionBitSet());
+        }
+
+        private BitSet toPartitionBitSet() {
+            BitSet bitSet = new BitSet(getNodeEngine().getPartitionService().getPartitionCount());
+            for (int partition : partitions) {
+                bitSet.set(partition);
+            }
+            return bitSet;
+        }
+
+        private UUID extractCallerUuid() {
+            // Clients callerUUID can be set already. See OperationFactoryWrapper usage.
+            if (operationFactory instanceof OperationFactoryWrapper) {
+                return ((OperationFactoryWrapper) operationFactory).getUuid();
+            }
+
+            // Members UUID
+            return getCallerUuid();
+        }
     }
 
     private class OperationResponseHandlerImpl implements OperationResponseHandler {
@@ -243,11 +255,7 @@ public final class PartitionIteratingOperation extends Operation implements Iden
 
             // if it is the last response we are waiting for, we can send the final response to the caller.
             if (pendingOperations.decrementAndGet() == 0) {
-                try {
-                    sendResponse();
-                } finally {
-                    getOperationServiceImpl().onCompletionAsyncOperation(PartitionIteratingOperation.this);
-                }
+                sendResponse();
             }
         }
 
@@ -290,13 +298,18 @@ public final class PartitionIteratingOperation extends Operation implements Iden
             return results;
         }
 
+        @SuppressFBWarnings("EI_EXPOSE_REP")
+        public int[] getPartitions() {
+            return partitions;
+        }
+
         @Override
         public int getFactoryId() {
             return SpiDataSerializerHook.F_ID;
         }
 
         @Override
-        public int getId() {
+        public int getClassId() {
             return SpiDataSerializerHook.PARTITION_RESPONSE;
         }
 

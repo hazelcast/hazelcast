@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,10 +17,10 @@
 package com.hazelcast.internal.usercodedeployment.impl.filter;
 
 import com.hazelcast.internal.util.filter.Filter;
-import com.hazelcast.util.collection.ArrayUtils;
+import com.hazelcast.internal.util.collection.ArrayUtils;
 
 /**
- * Match only classes in the whitelist. No other classes matches
+ * Only classes in the whitelist match. No other classes match.
  */
 public class ClassWhitelistFilter implements Filter<String> {
 

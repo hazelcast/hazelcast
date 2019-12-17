@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -45,7 +45,8 @@ public class LiteMemberTest {
     private HazelcastInstance instance;
 
     @Test
-    public void shouldBeLiteMember() throws InterruptedException {
-        assertTrue(instance.getConfig().isLiteMember());
+    public void shouldBeLiteMember() {
+        assertTrue("Expected Config.isLiteMember() to be true", instance.getConfig().isLiteMember());
+        assertTrue("Expected Member.isLiteMember() to be true", instance.getCluster().getLocalMember().isLiteMember());
     }
 }

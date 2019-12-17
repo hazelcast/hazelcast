@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,23 +20,25 @@ import com.hazelcast.config.EventJournalConfig;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.RingbufferConfig;
 import com.hazelcast.core.EntryEventType;
-import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.DataType;
+import com.hazelcast.map.impl.MapContainer;
+import com.hazelcast.map.impl.MapServiceContext;
+import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.internal.serialization.DataType;
 import com.hazelcast.ringbuffer.impl.ReadResultSetImpl;
 import com.hazelcast.ringbuffer.impl.RingbufferContainer;
 import com.hazelcast.ringbuffer.impl.RingbufferService;
 import com.hazelcast.ringbuffer.impl.RingbufferWaitNotifyKey;
-import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.ObjectNamespace;
-import com.hazelcast.spi.WaitNotifyKey;
+import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.internal.services.ObjectNamespace;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationparker.OperationParker;
+import com.hazelcast.spi.impl.operationservice.WaitNotifyKey;
 
 import static com.hazelcast.core.EntryEventType.ADDED;
 import static com.hazelcast.core.EntryEventType.EVICTED;
+import static com.hazelcast.core.EntryEventType.LOADED;
 import static com.hazelcast.core.EntryEventType.REMOVED;
 import static com.hazelcast.core.EntryEventType.UPDATED;
 
@@ -47,11 +49,14 @@ import static com.hazelcast.core.EntryEventType.UPDATED;
  * Adapts the {@link EventJournalConfig} to the {@link RingbufferConfig} when creating the ringbuffer.
  */
 public class RingbufferMapEventJournalImpl implements MapEventJournal {
+
     private final NodeEngineImpl nodeEngine;
+    private final MapServiceContext mapServiceContext;
     private final ILogger logger;
 
-    public RingbufferMapEventJournalImpl(NodeEngine engine) {
+    public RingbufferMapEventJournalImpl(NodeEngine engine, MapServiceContext mapServiceContext) {
         this.nodeEngine = (NodeEngineImpl) engine;
+        this.mapServiceContext = mapServiceContext;
         this.logger = this.nodeEngine.getLogger(RingbufferMapEventJournalImpl.class);
     }
 
@@ -80,6 +85,12 @@ public class RingbufferMapEventJournalImpl implements MapEventJournal {
     }
 
     @Override
+    public void writeLoadEvent(EventJournalConfig journalConfig, ObjectNamespace namespace, int partitionId, Data key,
+                               Object value) {
+        addToEventRingbuffer(journalConfig, namespace, partitionId, LOADED, key, null, value);
+    }
+
+    @Override
     public long newestSequence(ObjectNamespace namespace, int partitionId) {
         return getRingbufferOrFail(namespace, partitionId).tailSequence();
     }
@@ -90,8 +101,13 @@ public class RingbufferMapEventJournalImpl implements MapEventJournal {
     }
 
     @Override
+    public boolean isPersistenceEnabled(ObjectNamespace namespace, int partitionId) {
+        return getRingbufferOrFail(namespace, partitionId).getStore().isEnabled();
+    }
+
+    @Override
     public void destroy(ObjectNamespace namespace, int partitionId) {
-        final RingbufferService service;
+        RingbufferService service;
         try {
             service = getRingbufferService();
         } catch (Exception e) {
@@ -131,25 +147,24 @@ public class RingbufferMapEventJournalImpl implements MapEventJournal {
 
     @Override
     public boolean hasEventJournal(ObjectNamespace namespace) {
-        final EventJournalConfig config = getEventJournalConfig(namespace);
+        EventJournalConfig config = getEventJournalConfig(namespace);
         return config != null && config.isEnabled();
     }
 
     @Override
     public EventJournalConfig getEventJournalConfig(ObjectNamespace namespace) {
-        // when the cluster version is less than 3.9 we act as if the journal is disabled
-        // this is because some members might not know how to save journal events
-        return nodeEngine.getClusterService().getClusterVersion().isLessThan(Versions.V3_9)
-                ? null
-                : nodeEngine.getConfig().findMapEventJournalConfig(namespace.getObjectName());
+        return nodeEngine.getConfig()
+                         .findMapConfig(namespace.getObjectName())
+                         .getEventJournalConfig();
     }
 
     @Override
-    public RingbufferConfig toRingbufferConfig(EventJournalConfig config) {
-        final int partitionCount = nodeEngine.getPartitionService().getPartitionCount();
+    public RingbufferConfig toRingbufferConfig(EventJournalConfig config, ObjectNamespace namespace) {
+        MapContainer mapContainer = mapServiceContext.getMapContainer(namespace.getObjectName());
+        int partitionCount = nodeEngine.getPartitionService().getPartitionCount();
         return new RingbufferConfig()
-                .setAsyncBackupCount(0)
-                .setBackupCount(0)
+                .setAsyncBackupCount(mapContainer.getAsyncBackupCount())
+                .setBackupCount(mapContainer.getBackupCount())
                 .setInMemoryFormat(InMemoryFormat.OBJECT)
                 .setCapacity(config.getCapacity() / partitionCount)
                 .setTimeToLiveSeconds(config.getTimeToLiveSeconds());
@@ -160,11 +175,11 @@ public class RingbufferMapEventJournalImpl implements MapEventJournal {
         if (journalConfig == null || !journalConfig.isEnabled()) {
             return;
         }
-        final RingbufferContainer<InternalEventJournalMapEvent> eventContainer = getRingbufferOrNull(namespace, partitionId);
+        RingbufferContainer<InternalEventJournalMapEvent, Object> eventContainer = getRingbufferOrNull(namespace, partitionId);
         if (eventContainer == null) {
             return;
         }
-        final InternalEventJournalMapEvent event
+        InternalEventJournalMapEvent event
                 = new InternalEventJournalMapEvent(toData(key), toData(newValue), toData(oldValue), eventType.getType());
         eventContainer.add(event);
         getOperationParker().unpark(eventContainer);
@@ -174,8 +189,9 @@ public class RingbufferMapEventJournalImpl implements MapEventJournal {
         return getSerializationService().toData(val, DataType.HEAP);
     }
 
-    private RingbufferContainer<InternalEventJournalMapEvent> getRingbufferOrFail(ObjectNamespace namespace, int partitionId) {
-        final RingbufferContainer<InternalEventJournalMapEvent> ringbuffer = getRingbufferOrNull(namespace, partitionId);
+    private RingbufferContainer<InternalEventJournalMapEvent, Object> getRingbufferOrFail(ObjectNamespace namespace,
+                                                                                          int partitionId) {
+        RingbufferContainer<InternalEventJournalMapEvent, Object> ringbuffer = getRingbufferOrNull(namespace, partitionId);
         if (ringbuffer == null) {
             throw new IllegalStateException("There is no event journal configured for map with name: "
                     + namespace.getObjectName());
@@ -183,19 +199,21 @@ public class RingbufferMapEventJournalImpl implements MapEventJournal {
         return ringbuffer;
     }
 
-    private RingbufferContainer<InternalEventJournalMapEvent> getRingbufferOrNull(ObjectNamespace namespace, int partitionId) {
-        final RingbufferService service = getRingbufferService();
-        final RingbufferConfig ringbufferConfig;
-        final RingbufferContainer<InternalEventJournalMapEvent> container = service.getContainerOrNull(partitionId, namespace);
+    private RingbufferContainer<InternalEventJournalMapEvent, Object> getRingbufferOrNull(ObjectNamespace namespace,
+                                                                                          int partitionId) {
+        RingbufferService service = getRingbufferService();
+        RingbufferConfig ringbufferConfig;
+        RingbufferContainer<InternalEventJournalMapEvent, Object> container
+                = service.getContainerOrNull(partitionId, namespace);
         if (container != null) {
             return container;
         }
 
-        final EventJournalConfig config = getEventJournalConfig(namespace);
+        EventJournalConfig config = getEventJournalConfig(namespace);
         if (config == null || !config.isEnabled()) {
             return null;
         }
-        ringbufferConfig = toRingbufferConfig(config);
+        ringbufferConfig = toRingbufferConfig(config, namespace);
         return service.getOrCreateContainer(partitionId, namespace, ringbufferConfig);
     }
 

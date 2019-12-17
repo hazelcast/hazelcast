@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,14 +16,14 @@
 
 package com.hazelcast.internal.partition.impl;
 
-import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
+import com.hazelcast.instance.impl.OutOfMemoryErrorDispatcher;
 import com.hazelcast.internal.partition.impl.MigrationManager.MigrateTask;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.spi.properties.ClusterProperty;
 
 import java.util.concurrent.TimeUnit;
 
-import static com.hazelcast.util.ThreadUtil.createThreadName;
+import static com.hazelcast.internal.util.ThreadUtil.createThreadName;
 import static java.lang.Math.max;
 
 /**
@@ -79,14 +79,14 @@ class MigrationThread extends Thread implements Runnable {
 
     /**
      * Polls the migration queue and processes the tasks, sleeping if there are no tasks, if migration is not allowed or
-     * if configured to do so (see {@link GroupProperty#PARTITION_MIGRATION_INTERVAL}).
+     * if configured to do so (see {@link ClusterProperty#PARTITION_MIGRATION_INTERVAL}).
      *
      * @throws InterruptedException if the sleep was interrupted
      */
     private void doRun() throws InterruptedException {
         boolean migrating = false;
         for (; ; ) {
-            if (!migrationManager.isMigrationAllowed()) {
+            if (!migrationManager.areMigrationTasksAllowed()) {
                 break;
             }
             MigrationRunnable runnable = queue.poll(1, TimeUnit.SECONDS);
@@ -103,10 +103,11 @@ class MigrationThread extends Thread implements Runnable {
         boolean hasNoTasks = !queue.hasMigrationTasks();
         if (hasNoTasks) {
             if (migrating) {
-                logger.info("All migration tasks have been completed, queues are empty.");
+                logger.info("All migration tasks have been completed. ("
+                        + migrationManager.getStats().formatToString(logger.isFineEnabled()) + ")");
             }
             Thread.sleep(sleepTime);
-        } else if (!migrationManager.isMigrationAllowed()) {
+        } else if (!migrationManager.areMigrationTasksAllowed()) {
             Thread.sleep(sleepTime);
         }
     }

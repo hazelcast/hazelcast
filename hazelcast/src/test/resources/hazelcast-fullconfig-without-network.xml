@@ -1,0 +1,823 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ~ Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+  ~
+  ~ Licensed under the Apache License, Version 2.0 (the "License");
+  ~ you may not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~
+  ~ http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  -->
+
+<!--
+    A comprehensive example of Hazelcast configuration without network configuration.
+    This file is complete if included into either of the following:
+      - hazelcast-fullconfig.xml
+      - hazelcast-fullconfig-advanced-network-config.xml
+
+    Hazelcast resolves configuration using the following approach:
+
+    1. First is checks to see if the ’hazelcast.config’ system property is set. If it is, then the value is used as the path.
+
+       The config option can be set by adding the following to the java command: -Dhazelcast.config=path_to_the_hazelcast.xml.
+
+       The value can be a normal file path, but can also be a classpath reference if it is prefixed with ’classpath:’.
+
+    2. Otherwise it checks if there is a ’hazelcast.xml’ in the working directory.
+
+    3. After that it checks if there is a ’hazelcast.xml’ in the root of the classpath.
+
+    4. If a configuration cannot be found, Hazelcast will use the default hazelcast configuration
+       ’hazelcast-default.xml’, which is included in the the Hazelcast jar
+-->
+<hazelcast xmlns="http://www.hazelcast.com/schema/config"
+           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+           xsi:schemaLocation="http://www.hazelcast.com/schema/config
+           http://www.hazelcast.com/schema/config/hazelcast-config-4.0.xsd">
+
+    <cluster-name>my-cluster</cluster-name>
+    <license-key>HAZELCAST_ENTERPRISE_LICENSE_KEY</license-key>
+    <instance-name>dummy</instance-name>
+    <management-center scripting-enabled="false" />
+
+    <properties>
+        <property name="foo">bar</property>
+    </properties>
+    <wan-replication name="my-wan-cluster">
+        <batch-publisher>
+            <cluster-name>tokyo</cluster-name>
+            <publisher-id>tokyoPublisherId</publisher-id>
+            <queue-capacity>1000</queue-capacity>
+            <queue-full-behavior>THROW_EXCEPTION</queue-full-behavior>
+            <initial-publisher-state>STOPPED</initial-publisher-state>
+            <batch-size>50</batch-size>
+            <batch-max-delay-millis>3000</batch-max-delay-millis>
+            <snapshot-enabled>true</snapshot-enabled>
+            <response-timeout-millis>5000</response-timeout-millis>
+            <acknowledge-type>ACK_ON_RECEIPT</acknowledge-type>
+            <target-endpoints>10.3.5.1:5701, 10.3.5.2:5701</target-endpoints>
+            <sync>
+                <consistency-check-strategy>MERKLE_TREES</consistency-check-strategy>
+            </sync>
+        </batch-publisher>
+        <batch-publisher>
+            <cluster-name>istanbul</cluster-name>
+            <queue-full-behavior>THROW_EXCEPTION_ONLY_IF_REPLICATION_ACTIVE</queue-full-behavior>
+            <initial-publisher-state>STOPPED</initial-publisher-state>
+            <queue-capacity>12345</queue-capacity>
+            <discovery-period-seconds>5</discovery-period-seconds>
+            <max-target-endpoints>2</max-target-endpoints>
+            <aws enabled="false" connection-timeout-seconds="10">
+                <access-key>sample-access-key</access-key>
+                <secret-key>sample-secret-key</secret-key>
+                <iam-role>sample-role</iam-role>
+                <region>sample-region</region>
+                <host-header>sample-header</host-header>
+                <security-group-name>sample-group</security-group-name>
+                <tag-key>sample-tag-key</tag-key>
+                <tag-value>sample-tag-value</tag-value>
+            </aws>
+            <gcp enabled="false">
+                <zones>us-east1-b,us-east1-c</zones>
+            </gcp>
+            <azure enabled="false">
+                <client-id>CLIENT_ID</client-id>
+                <client-secret>CLIENT_SECRET</client-secret>
+                <tenant-id>TENANT_ID</tenant-id>
+                <subscription-id>SUB_ID</subscription-id>
+                <cluster-id>HZLCAST001</cluster-id>
+                <group-name>RESOURCE-GROUP-NAME</group-name>
+            </azure>
+            <kubernetes enabled="false">
+                <namespace>MY-KUBERNETES-NAMESPACE</namespace>
+                <service-name>MY-SERVICE-NAME</service-name>
+                <service-label-name>MY-SERVICE-LABEL-NAME</service-label-name>
+                <service-label-value>MY-SERVICE-LABEL-VALUE</service-label-value>
+            </kubernetes>
+            <eureka enabled="false">
+                <self-registration>true</self-registration>
+                <namespace>hazelcast</namespace>
+            </eureka>
+            <discovery-strategies>
+                <node-filter class="DummyFilterClass"/>
+                <discovery-strategy class="DummyDiscoveryStrategy1" enabled="true">
+                    <properties>
+                        <property name="key-string">foo</property>
+                        <property name="key-int">123</property>
+                        <property name="key-boolean">true</property>
+                    </properties>
+                </discovery-strategy>
+            </discovery-strategies>
+            <properties>
+                <property name="custom.prop.publisher">prop.publisher</property>
+            </properties>
+        </batch-publisher>
+        <consumer>
+            <class-name>com.hazelcast.wan.custom.WanConsumer</class-name>
+            <properties>
+                <property name="custom.prop.consumer">prop.consumer</property>
+            </properties>
+            <persist-wan-replicated-data>true</persist-wan-replicated-data>
+        </consumer>
+    </wan-replication>
+    <partition-group enabled="true" group-type="CUSTOM">
+        <member-group>
+            <interface>10.10.0.*</interface>
+            <interface>10.10.3.*</interface>
+            <interface>10.10.5.*</interface>
+        </member-group>
+        <member-group>
+            <interface>10.10.10.10-100</interface>
+            <interface>10.10.1.*</interface>
+            <interface>10.10.2.*</interface>
+        </member-group>
+    </partition-group>
+    <executor-service name="default">
+        <statistics-enabled>false</statistics-enabled>
+        <pool-size>16</pool-size>
+        <queue-capacity>1000</queue-capacity>
+        <split-brain-protection-ref>splitBrainProtectionRuleWithThreeMembers</split-brain-protection-ref>
+    </executor-service>
+    <durable-executor-service name="dummy">
+        <pool-size>10</pool-size>
+        <durability>2</durability>
+        <capacity>10</capacity>
+        <split-brain-protection-ref>splitBrainProtectionRuleWithThreeMembers</split-brain-protection-ref>
+    </durable-executor-service>
+    <scheduled-executor-service name="dummy">
+        <pool-size>10</pool-size>
+        <durability>2</durability>
+        <capacity>50</capacity>
+        <split-brain-protection-ref>splitBrainProtectionRuleWithThreeMembers</split-brain-protection-ref>
+        <merge-policy batch-size="10">PutIfAbsentMergePolicy</merge-policy>
+    </scheduled-executor-service>
+    <cardinality-estimator name="dummy">
+        <backup-count>1</backup-count>
+        <async-backup-count>0</async-backup-count>
+        <split-brain-protection-ref>splitBrainProtectionRuleWithThreeNodes</split-brain-protection-ref>
+        <merge-policy batch-size="50">HyperLogLogMergePolicy</merge-policy>
+    </cardinality-estimator>
+
+    <queue name="default">
+        <statistics-enabled>false</statistics-enabled>
+        <!--
+            Maximum size of the queue. When a JVM's local queue size reaches the maximum,
+            all put/offer operations will get blocked until the queue size
+            of the JVM goes down below the maximum.
+            Any integer between 0 and Integer.MAX_VALUE. 0 means
+            Integer.MAX_VALUE. Default is 0.
+        -->
+        <max-size>10</max-size>
+
+        <backup-count>2</backup-count>
+        <async-backup-count>2</async-backup-count>
+        <empty-queue-ttl>12</empty-queue-ttl>
+
+        <item-listeners>
+            <item-listener include-value="true">com.hazelcast.examples.ItemListener</item-listener>
+        </item-listeners>
+        <queue-store enabled="true">
+            <!--<class-name>DummyClass</class-name>-->
+            <factory-class-name>DummyFactoryClass</factory-class-name>
+            <properties>
+                <property name="foo">bar</property>
+            </properties>
+        </queue-store>
+
+        <split-brain-protection-ref>splitBrainProtectionRuleWithThreeMembers</split-brain-protection-ref>
+        <merge-policy batch-size="100">PutIfAbsentMergePolicy</merge-policy>
+    </queue>
+
+    <map name="default">
+        <!--
+           Data type that will be used for storing recordMap.
+           Possible values:
+           BINARY (default): keys and values will be stored as binary data
+           OBJECT : values will be stored in their object forms
+           NATIVE : values will be stored in non-heap region of JVM
+        -->
+        <in-memory-format>OBJECT</in-memory-format>
+
+        <!--
+            Metadata policy for this map. Hazelcast may process objects of supported types ahead of time to
+            create additional metadata about them. This metadata then is used to make querying and indexing faster.
+            Metadata creation may decrease put throughput.
+            Valid values are:
+            CREATE_ON_UPDATE (default): Objects of supported types are pre-processed when they are created and updated.
+            OFF: No metadata is created.
+        -->
+        <metadata-policy>CREATE_ON_UPDATE</metadata-policy>
+
+        <!--
+            Whether statistical information (hits, creation time, last access time etc.) should be gathered and stored.
+            You can disable if you do not plan to use eviction on your entries.
+        -->
+        <statistics-enabled>false</statistics-enabled>
+
+        <cache-deserialized-values>ALWAYS</cache-deserialized-values>
+        <!--
+            Number of backups. If 1 is set as the backup-count for example,
+            then all entries of the map will be copied to another JVM for
+            fail-safety. 0 means no backup.
+        -->
+        <backup-count>2</backup-count>
+
+        <!--
+            Number of async backups. 0 means no backup.
+        -->
+        <async-backup-count>2</async-backup-count>
+
+        <!--
+            Maximum number of seconds for each item to live.
+            Any integer between 0 and Integer.MAX_VALUE. 0 means infinite. Default is 0.
+        -->
+        <time-to-live-seconds>2</time-to-live-seconds>
+
+        <!--
+            Maximum number of seconds for each item to stay idle (untouched).
+            Any integer between 0 and Integer.MAX_VALUE. 0 means infinite. Default is 0.
+        -->
+        <max-idle-seconds>2</max-idle-seconds>
+
+        <!-- By default map's eviction mechanism is disabled. -->
+        <eviction max-size-policy="PER_NODE" eviction-policy="LRU" size="20"/>
+
+        <!--
+            While recovering from split-brain (network partitioning), data structure entries in the small cluster
+            merge into the bigger cluster based on the policy set here. When an entry merges into the cluster,
+            an entry with the same key (or value) might already exist in the cluster.
+            The merge policy resolves these conflicts with different out-of-the-box or custom strategies.
+            The out-of-the-box merge polices can be references by their simple class name.
+            For custom merge policies you have to provide a fully qualified class name.
+
+            The out-of-the-box policies are:
+             * DiscardMergePolicy: the entry from the smaller cluster will be discarded.
+             * HigherHitsMergePolicy: the entry with the higher number of hits wins.
+             * LatestAccessMergePolicy: the entry with the latest access wins.
+             * LatestUpdateMergePolicy: the entry with the latest update wins.
+             * PassThroughMergePolicy: the entry from the smaller cluster wins.
+             * PutIfAbsentMergePolicy: the entry from the smaller cluster wins if it doesn't exist in the cluster.
+             * The default policy is: PutIfAbsentMergePolicy
+            Beware that `merge-policy` is not supported for NATIVE in-memory format.
+        -->
+        <merge-policy batch-size="100">PutIfAbsentMergePolicy</merge-policy>
+
+        <read-backup-data>true</read-backup-data>
+
+        <merkle-tree enabled="true">
+            <depth>5</depth>
+        </merkle-tree>
+
+        <hot-restart>
+            <fsync>true</fsync>
+        </hot-restart>
+
+        <event-journal enabled="true">
+            <capacity>10</capacity>
+            <time-to-live-seconds>10</time-to-live-seconds>
+        </event-journal>
+
+        <!--
+            Used to store Map entries in a backing store. If configured entries will be loaded from this store on startup.
+
+            On startup, may be loaded in two ways, controlled by the initial-mode attribute:
+                - LAZY. Asynchronously loads the entries. This is the default.
+                - EAGER. Synchronously loads the entries. Calls to getMap() are blocked while this happens.
+        -->
+        <map-store enabled="true" initial-mode="LAZY">
+            <class-name>com.hazelcast.examples.DummyStore</class-name>
+            <!--         	<factory-class-name>com.hazelcast.examples.DummyStoreFactory</factory-class-name> -->
+            <write-delay-seconds>0</write-delay-seconds>
+            <write-batch-size>1</write-batch-size>
+            <write-coalescing>true</write-coalescing>
+            <properties>
+                <property name="dummy.property">value</property>
+            </properties>
+        </map-store>
+
+        <!--
+            Note that the Near Cache eviction configuration is different for NATIVE in-memory format.
+            Proper eviction configuration example for NATIVE in-memory format :
+               `<eviction max-size-policy="USED_NATIVE_MEMORY_SIZE" eviction-policy="LFU" size="60"/>`
+        -->
+        <near-cache>
+            <time-to-live-seconds>0</time-to-live-seconds>
+            <max-idle-seconds>0</max-idle-seconds>
+            <invalidate-on-change>true</invalidate-on-change>
+            <cache-local-entries>false</cache-local-entries>
+            <eviction eviction-policy="LRU" size="10000"/>
+        </near-cache>
+
+        <wan-replication-ref name="my-wan-cluster">
+            <merge-policy>hz.PASS_THROUGH</merge-policy>
+            <filters>
+                <filter-impl>com.example.WanTestFilter1</filter-impl>
+                <filter-impl>com.example.WanTestFilter2</filter-impl>
+            </filters>
+            <republishing-enabled>false</republishing-enabled>
+        </wan-replication-ref>
+
+        <indexes>
+            <index type="HASH">
+                <attributes>
+                    <attribute>name</attribute>
+                </attributes>
+            </index>
+            <index>
+                <attributes>
+                    <attribute>age</attribute>
+                </attributes>
+            </index>
+        </indexes>
+
+        <attributes>
+            <attribute extractor-class-name="com.example.CurrencyExtractor">currency</attribute>
+            <attribute extractor-class-name="com.example.AgeExtractor">age</attribute>
+        </attributes>
+
+        <entry-listeners>
+            <entry-listener include-value="true" local="false">com.hazelcast.examples.EntryListener</entry-listener>
+        </entry-listeners>
+
+        <partition-lost-listeners>
+            <partition-lost-listener>com.hazelcast.examples.MapPartitionLostListener</partition-lost-listener>
+        </partition-lost-listeners>
+
+        <query-caches>
+            <query-cache name="query-cache-name">
+                <predicate type="class-name">com.hazelcast.examples.ExamplePredicate</predicate>
+                <entry-listeners>
+                    <entry-listener include-value="true" local="false">com.hazelcast.examples.EntryListener</entry-listener>
+                </entry-listeners>
+                <include-value>true</include-value>
+                <batch-size>1</batch-size>
+                <buffer-size>16</buffer-size>
+                <delay-seconds>0</delay-seconds>
+                <in-memory-format>BINARY</in-memory-format>
+                <coalesce>false</coalesce>
+                <populate>true</populate>
+                <eviction eviction-policy="LRU" max-size-policy="ENTRY_COUNT" size="10000"/>
+                <indexes>
+                    <index type="HASH">
+                        <attributes>
+                            <attribute>name</attribute>
+                        </attributes>
+                    </index>
+                    <index>
+                        <attributes>
+                            <attribute>age</attribute>
+                        </attributes>
+                    </index>
+                </indexes>
+            </query-cache>
+        </query-caches>
+    </map>
+
+    <multimap name="default">
+        <backup-count>1</backup-count>
+        <async-backup-count>0</async-backup-count>
+        <statistics-enabled>false</statistics-enabled>
+        <binary>false</binary>
+        <value-collection-type>SET</value-collection-type>
+        <entry-listeners>
+            <entry-listener include-value="true" local="true">com.hazelcast.examples.EntryListener</entry-listener>
+        </entry-listeners>
+        <split-brain-protection-ref>splitBrainProtectionRuleWithThreeMembers</split-brain-protection-ref>
+        <merge-policy batch-size="100">PutIfAbsentMergePolicy</merge-policy>
+    </multimap>
+
+    <replicatedmap name="dummy">
+        <in-memory-format>BINARY</in-memory-format>
+        <async-fillup>false</async-fillup>
+        <statistics-enabled>false</statistics-enabled>
+        <split-brain-protection-ref>splitBrainProtectionRuleWithThreeMembers</split-brain-protection-ref>
+        <merge-policy batch-size="100">PutIfAbsentMergePolicy</merge-policy>
+        <entry-listeners>
+            <entry-listener include-value="false" local="true">DummyListener</entry-listener>
+        </entry-listeners>
+    </replicatedmap>
+
+    <list name="default">
+        <statistics-enabled>false</statistics-enabled>
+        <max-size>5</max-size>
+        <backup-count>2</backup-count>
+        <async-backup-count>2</async-backup-count>
+        <item-listeners>
+            <item-listener include-value="true">com.hazelcast.examples.ItemListener</item-listener>
+        </item-listeners>
+        <split-brain-protection-ref>splitBrainProtectionRuleWithThreeMembers</split-brain-protection-ref>
+        <merge-policy batch-size="100">PutIfAbsentMergePolicy</merge-policy>
+    </list>
+
+    <set name="default">
+        <statistics-enabled>false</statistics-enabled>
+        <max-size>0</max-size>
+        <backup-count>1</backup-count>
+        <async-backup-count>0</async-backup-count>
+        <item-listeners>
+            <item-listener include-value="true">com.hazelcast.examples.ItemListener</item-listener>
+        </item-listeners>
+        <split-brain-protection-ref>splitBrainProtectionRuleWithThreeMembers</split-brain-protection-ref>
+        <merge-policy batch-size="100">PutIfAbsentMergePolicy</merge-policy>
+    </set>
+
+    <topic name="default">
+        <statistics-enabled>false</statistics-enabled>
+        <global-ordering-enabled>true</global-ordering-enabled>
+        <message-listeners>
+            <message-listener>com.hazelcast.examples.MessageListener</message-listener>
+        </message-listeners>
+        <multi-threading-enabled>false</multi-threading-enabled>
+    </topic>
+
+
+    <reliable-topic name="default">
+        <statistics-enabled>true</statistics-enabled>
+        <topic-overload-policy>ERROR</topic-overload-policy>
+        <read-batch-size>10</read-batch-size>
+        <message-listeners>
+            <message-listener>com.hazelcast.examples.MessageListener</message-listener>
+        </message-listeners>
+    </reliable-topic>
+
+    <ringbuffer name="default">
+        <capacity>25311</capacity>
+        <backup-count>2</backup-count>
+        <async-backup-count>1</async-backup-count>
+        <time-to-live-seconds>29</time-to-live-seconds>
+        <in-memory-format>OBJECT</in-memory-format>
+        <split-brain-protection-ref>splitBrainProtectionRuleWithThreeMembers</split-brain-protection-ref>
+        <merge-policy batch-size="100">PutIfAbsentMergePolicy</merge-policy>
+    </ringbuffer>
+
+    <cache name="default">
+        <key-type class-name="java.lang.Object"/>
+        <value-type class-name="java.lang.String"/>
+        <statistics-enabled>false</statistics-enabled>
+        <management-enabled>false</management-enabled>
+
+        <read-through>true</read-through>
+        <write-through>true</write-through>
+        <cache-loader-factory class-name="com.example.cache.MyCacheLoaderFactory"/>
+        <cache-writer-factory class-name="com.example.cache.MyCacheWriterFactory"/>
+        <expiry-policy-factory class-name="com.example.cache.MyExpirePolicyFactory">
+            <timed-expiry-policy-factory expiry-policy-type="ETERNAL" duration-amount="123" time-unit="MICROSECONDS"/>
+        </expiry-policy-factory>
+
+        <cache-entry-listeners>
+            <cache-entry-listener old-value-required="true" synchronous="true">
+                <cache-entry-listener-factory class-name="com.example.cache.MyEntryListenerFactory"/>
+                <cache-entry-event-filter-factory class-name="com.example.cache.MyEntryEventFilterFactory"/>
+            </cache-entry-listener>
+            <cache-entry-listener>
+                <cache-entry-listener-factory class-name="com.example.cache.MyEntryListenerFactory2"/>
+                <cache-entry-event-filter-factory class-name="com.example.cache.MyEntryEventFilterFactory2"/>
+            </cache-entry-listener>
+        </cache-entry-listeners>
+        <in-memory-format>OBJECT</in-memory-format>
+        <backup-count>2</backup-count>
+        <async-backup-count>2</async-backup-count>
+        <eviction comparator-class-name="DummyClass" eviction-policy="LRU"
+                  max-size-policy="ENTRY_COUNT" size="50"/>
+        <wan-replication-ref name="my-wan-cluster">
+            <merge-policy>hz.PASS_THROUGH</merge-policy>
+            <filters>
+                <filter-impl>com.example.WanTestFilter1</filter-impl>
+                <filter-impl>com.example.WanTestFilter2</filter-impl>
+            </filters>
+        </wan-replication-ref>
+        <split-brain-protection-ref>DummySplitBrainProtection</split-brain-protection-ref>
+        <merge-policy>DummyMergePolicy</merge-policy>
+        <partition-lost-listeners>
+            <partition-lost-listener>DummyListener</partition-lost-listener>
+        </partition-lost-listeners>
+        <hot-restart>
+            <fsync>true</fsync>
+        </hot-restart>
+        <event-journal enabled="true">
+            <capacity>100</capacity>
+            <time-to-live-seconds>100</time-to-live-seconds>
+        </event-journal>
+    </cache>
+
+    <flake-id-generator name="default">
+        <prefetch-count>100</prefetch-count>
+        <prefetch-validity-millis>600000</prefetch-validity-millis>
+        <id-offset>0</id-offset>
+        <node-id-offset>0</node-id-offset>
+        <statistics-enabled>false</statistics-enabled>
+    </flake-id-generator>
+
+    <listeners>
+        <listener>com.hazelcast.examples.MembershipListener</listener>
+        <listener>com.hazelcast.examples.InstanceListener</listener>
+        <listener>com.hazelcast.examples.MigrationListener</listener>
+        <listener>com.hazelcast.examples.PartitionLostListener</listener>
+    </listeners>
+
+    <serialization>
+        <portable-version>0</portable-version>
+        <use-native-byte-order>true</use-native-byte-order>
+        <byte-order>LITTLE_ENDIAN</byte-order>
+        <enable-compression>true</enable-compression>
+        <enable-shared-object>true</enable-shared-object>
+        <allow-unsafe>true</allow-unsafe>
+        <data-serializable-factories>
+            <data-serializable-factory factory-id="1">com.hazelcast.examples.DataSerializableFactory
+            </data-serializable-factory>
+        </data-serializable-factories>
+        <portable-factories>
+            <portable-factory factory-id="1">com.hazelcast.examples.PortableFactory</portable-factory>
+        </portable-factories>
+        <serializers>
+            <global-serializer override-java-serialization="true">com.hazelcast.examples.GlobalSerializerFactory
+            </global-serializer>
+            <serializer type-class="com.hazelcast.examples.DummyType"
+                        class-name="com.hazelcast.examples.SerializerFactory"/>
+        </serializers>
+        <check-class-def-errors>false</check-class-def-errors>
+        <java-serialization-filter defaults-disabled="true">
+            <blacklist>
+                <class>com.acme.app.BeanComparator</class>
+            </blacklist>
+            <whitelist>
+                <class>java.lang.String</class>
+                <class>example.Foo</class>
+                <package>com.acme.app</package>
+                <package>com.acme.app.subpkg</package>
+                <prefix>java</prefix>
+                <prefix>com.</prefix>
+                <prefix>[</prefix>
+            </whitelist>
+        </java-serialization-filter>
+    </serialization>
+
+    <native-memory allocator-type="STANDARD" enabled="true">
+        <size unit="MEGABYTES" value="256"/>
+        <min-block-size>123</min-block-size>
+        <page-size>123</page-size>
+        <metadata-space-percentage>12.5</metadata-space-percentage>
+    </native-memory>
+
+    <security enabled="false">
+        <realms>
+            <realm name="mr">
+                <authentication>
+                    <jaas>
+                        <login-module class-name="com.hazelcast.examples.MyRequiredLoginModule" usage="REQUIRED">
+                            <properties>
+                                <property name="property">value</property>
+                            </properties>
+                        </login-module>
+                    </jaas>
+                </authentication>
+                <identity>
+                    <credentials-factory class-name="com.hazelcast.examples.MyCredentialsFactory">
+                        <properties>
+                            <property name="property">value</property>
+                        </properties>
+                    </credentials-factory>
+                </identity>
+            </realm>
+            <realm name="cr">
+                <authentication>
+                    <jaas>
+                        <login-module class-name="com.hazelcast.examples.MyOptionalLoginModule" usage="OPTIONAL">
+                            <properties>
+                                <property name="property">value</property>
+                            </properties>
+                        </login-module>
+                        <login-module class-name="com.hazelcast.examples.MyRequiredLoginModule" usage="REQUIRED">
+                            <properties>
+                                <property name="property">value</property>
+                            </properties>
+                        </login-module>
+                    </jaas>
+                </authentication>
+            </realm>
+        </realms>
+        <member-authentication realm="mr"/>
+        <client-authentication realm="cr"/>
+        <client-permission-policy class-name="com.hazelcast.examples.MyPermissionPolicy">
+            <properties>
+                <property name="property">value</property>
+            </properties>
+        </client-permission-policy>
+        <client-permissions on-join-operation="SEND">
+            <all-permissions principal="admin">
+                <endpoints>
+                    <endpoint>127.0.0.1</endpoint>
+                </endpoints>
+            </all-permissions>
+            <config-permission principal="deployer"/>
+            <transaction-permission principal="deployer"/>
+            <map-permission name="custom" principal="dev">
+                <endpoints>
+                    <endpoint>127.0.0.1</endpoint>
+                </endpoints>
+                <actions>
+                    <action>create</action>
+                    <action>destroy</action>
+                    <action>put</action>
+                    <action>read</action>
+                </actions>
+            </map-permission>
+            <queue-permission name="*">
+                <actions>
+                    <action>all</action>
+                </actions>
+            </queue-permission>
+            <topic-permission name="*">
+                <actions>
+                    <action>all</action>
+                </actions>
+            </topic-permission>
+            <multimap-permission name="*">
+                <actions>
+                    <action>all</action>
+                </actions>
+            </multimap-permission>
+            <list-permission name="*">
+                <actions>
+                    <action>all</action>
+                </actions>
+            </list-permission>
+            <set-permission name="*">
+                <actions>
+                    <action>all</action>
+                </actions>
+            </set-permission>
+            <flake-id-generator-permission name="*">
+                <actions>
+                    <action>all</action>
+                </actions>
+            </flake-id-generator-permission>
+            <lock-permission name="*">
+                <actions>
+                    <action>all</action>
+                </actions>
+            </lock-permission>
+            <atomic-long-permission name="*">
+                <actions>
+                    <action>all</action>
+                </actions>
+            </atomic-long-permission>
+            <atomic-reference-permission name="*">
+                <actions>
+                    <action>all</action>
+                </actions>
+            </atomic-reference-permission>
+            <countdown-latch-permission name="*">
+                <actions>
+                    <action>all</action>
+                </actions>
+            </countdown-latch-permission>
+            <semaphore-permission name="*">
+                <actions>
+                    <action>all</action>
+                </actions>
+            </semaphore-permission>
+            <executor-service-permission name="*">
+                <actions>
+                    <action>all</action>
+                </actions>
+            </executor-service-permission>
+            <durable-executor-service-permission name="*">
+                <actions>
+                    <action>all</action>
+                </actions>
+            </durable-executor-service-permission>
+            <cardinality-estimator-permission name="*">
+                <actions>
+                    <action>all</action>
+                </actions>
+            </cardinality-estimator-permission>
+            <scheduled-executor-permission name="*">
+                <actions>
+                    <action>all</action>
+                </actions>
+            </scheduled-executor-permission>
+            <cache-permission name="*">
+                <actions>
+                    <action>all</action>
+                </actions>
+            </cache-permission>
+            <user-code-deployment-permission name="*">
+                <actions>
+                    <action>all</action>
+                </actions>
+            </user-code-deployment-permission>
+            <pn-counter-permission name="*">
+                <actions>
+                    <action>all</action>
+                </actions>
+            </pn-counter-permission>
+        </client-permissions>
+        <client-block-unmapped-actions>true</client-block-unmapped-actions>
+    </security>
+
+    <member-attributes>
+        <attribute name="attribute.string">hazelcast</attribute>
+    </member-attributes>
+
+
+    <split-brain-protection name="splitBrainProtectionRuleWithThreeMembers" enabled="true">
+        <minimum-cluster-size>3</minimum-cluster-size>
+        <protect-on>READ_WRITE</protect-on>
+    </split-brain-protection>
+
+    <crdt-replication>
+        <replication-period-millis>1000</replication-period-millis>
+        <max-concurrent-replication-targets>1</max-concurrent-replication-targets>
+    </crdt-replication>
+
+    <pn-counter name="pn-counter-1">
+        <replica-count>100</replica-count>
+        <split-brain-protection-ref>splitBrainProtectionRuleWithThreeMembers</split-brain-protection-ref>
+        <statistics-enabled>false</statistics-enabled>
+    </pn-counter>
+
+    <split-brain-protection enabled="true" name="member-count-split-brain-protection">
+        <protect-on>READ_WRITE</protect-on>
+        <minimum-cluster-size>3</minimum-cluster-size>
+        <member-count-split-brain-protection/>
+    </split-brain-protection>
+
+    <split-brain-protection enabled="true" name="probabilistic-split-brain-protection">
+        <minimum-cluster-size>3</minimum-cluster-size>
+        <protect-on>READ_WRITE</protect-on>
+        <probabilistic-split-brain-protection acceptable-heartbeat-pause-millis="100" max-sample-size="20" suspicion-threshold="10" />
+    </split-brain-protection>
+
+    <split-brain-protection enabled="true" name="recently-active-split-brain-protection">
+        <minimum-cluster-size>4</minimum-cluster-size>
+        <protect-on>READ_WRITE</protect-on>
+        <recently-active-split-brain-protection heartbeat-tolerance-millis="60000" />
+    </split-brain-protection>
+
+    <hot-restart-persistence enabled="false">
+        <backup-dir>backup-dir</backup-dir>
+        <base-dir>base-dir</base-dir>
+        <cluster-data-recovery-policy>FULL_RECOVERY_ONLY</cluster-data-recovery-policy>
+        <data-load-timeout-seconds>42</data-load-timeout-seconds>
+        <parallelism>3</parallelism>
+        <validation-timeout-seconds>10</validation-timeout-seconds>
+    </hot-restart-persistence>
+
+    <lite-member enabled="true"/>
+
+    <cp-subsystem>
+        <cp-member-count>10</cp-member-count>
+        <group-size>3</group-size>
+        <session-time-to-live-seconds>60</session-time-to-live-seconds>
+        <session-heartbeat-interval-seconds>5</session-heartbeat-interval-seconds>
+        <missing-cp-member-auto-removal-seconds>120</missing-cp-member-auto-removal-seconds>
+        <fail-on-indeterminate-operation-state>false</fail-on-indeterminate-operation-state>
+        <persistence-enabled>false</persistence-enabled>
+        <base-dir>data</base-dir>
+        <data-load-timeout-seconds>30</data-load-timeout-seconds>
+        <raft-algorithm>
+            <leader-election-timeout-in-millis>2000</leader-election-timeout-in-millis>
+            <leader-heartbeat-period-in-millis>5000</leader-heartbeat-period-in-millis>
+            <max-missed-leader-heartbeat-count>5</max-missed-leader-heartbeat-count>
+            <append-request-max-entry-count>50</append-request-max-entry-count>
+            <commit-index-advance-count-to-snapshot>1000</commit-index-advance-count-to-snapshot>
+            <uncommitted-entry-count-to-reject-new-appends>100</uncommitted-entry-count-to-reject-new-appends>
+            <append-request-backoff-timeout-in-millis>100</append-request-backoff-timeout-in-millis>
+        </raft-algorithm>
+        <semaphores>
+            <semaphore>
+                <name>sem1</name>
+                <jdk-compatible>true</jdk-compatible>
+            </semaphore>
+            <semaphore>
+                <name>sem2</name>
+                <jdk-compatible>false</jdk-compatible>
+            </semaphore>
+        </semaphores>
+        <locks>
+            <fenced-lock>
+                <name>lock1</name>
+                <lock-acquire-limit>1</lock-acquire-limit>
+            </fenced-lock>
+            <fenced-lock>
+                <name>lock2</name>
+                <lock-acquire-limit>2</lock-acquire-limit>
+            </fenced-lock>
+        </locks>
+    </cp-subsystem>
+
+    <metrics enabled="false">
+        <management-center enabled="false">
+            <retention-seconds>42</retention-seconds>
+        </management-center>
+        <jmx enabled="false"/>
+        <collection-frequency-seconds>24</collection-frequency-seconds>
+    </metrics>
+</hazelcast>

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,10 +18,11 @@ package com.hazelcast.scheduledexecutor.impl;
 
 import com.hazelcast.config.ScheduledExecutorConfig;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.util.ConstructorFunction;
+import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.internal.util.ConstructorFunction;
 
-public class ScheduledExecutorMemberBin extends AbstractScheduledExecutorContainerHolder {
+public class ScheduledExecutorMemberBin
+        extends AbstractScheduledExecutorContainerHolder {
 
     private final ILogger logger;
 
@@ -32,8 +33,7 @@ public class ScheduledExecutorMemberBin extends AbstractScheduledExecutorContain
                 @Override
                 public ScheduledExecutorContainer createNew(String name) {
                     if (logger.isFinestEnabled()) {
-                        logger.finest("[Partition: -1] "
-                                + "Create new scheduled executor container with name: " + name);
+                        logger.finest("[Partition: -1] Create new scheduled executor container with name: " + name);
                     }
 
                     ScheduledExecutorConfig config = nodeEngine.getConfig().findScheduledExecutorConfig(name);

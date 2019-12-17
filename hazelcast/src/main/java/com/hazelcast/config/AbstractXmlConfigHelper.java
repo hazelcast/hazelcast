@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,21 +16,14 @@
 
 package com.hazelcast.config;
 
-import com.hazelcast.config.AbstractConfigBuilder.ConfigType;
-import com.hazelcast.core.HazelcastException;
+import com.hazelcast.config.AbstractXmlConfigBuilder.ConfigType;
 import com.hazelcast.instance.BuildInfo;
 import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
-import com.hazelcast.memory.MemorySize;
-import com.hazelcast.memory.MemoryUnit;
-import com.hazelcast.util.StringUtil;
-
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import com.hazelcast.internal.util.StringUtil;
+import com.hazelcast.spi.annotation.PrivateApi;
 import org.w3c.dom.Document;
-import org.w3c.dom.NamedNodeMap;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
 
 import javax.xml.XMLConstants;
@@ -48,24 +41,15 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.net.URL;
-import java.nio.ByteOrder;
-import java.text.DecimalFormat;
-import java.text.ParseException;
 import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.NoSuchElementException;
-import java.util.Properties;
 
-import static com.hazelcast.nio.IOUtil.closeResource;
-import static com.hazelcast.util.StringUtil.LINE_SEPARATOR;
-import static com.hazelcast.util.StringUtil.upperCaseInternal;
-import static java.lang.Boolean.parseBoolean;
-import static java.lang.String.format;
+import static com.hazelcast.internal.nio.IOUtil.closeResource;
+import static com.hazelcast.internal.util.StringUtil.LINE_SEPARATOR;
 
 /**
  * Contains Hazelcast XML Configuration helper methods and variables.
  */
+@SuppressWarnings("checkstyle:methodcount")
 public abstract class AbstractXmlConfigHelper {
 
     private static final ILogger LOGGER = Logger.getLogger(AbstractXmlConfigHelper.class);
@@ -74,70 +58,13 @@ public abstract class AbstractXmlConfigHelper {
 
     final String xmlns = "http://www.hazelcast.com/schema/" + getNamespaceType();
 
-    private final String hazelcastSchemaLocation = getXmlType().name + "-config-" + getReleaseVersion() + ".xsd";
-
-    public static Iterable<Node> childElements(Node node) {
-        return new IterableNodeList(node, Node.ELEMENT_NODE);
-    }
-
-    public static Iterable<Node> asElementIterable(NodeList list) {
-        return new IterableNodeList(list, Node.ELEMENT_NODE);
-    }
-
-    private static class IterableNodeList implements Iterable<Node> {
-
-        private final NodeList wrapped;
-        private final int maximum;
-        private final short nodeType;
-
-        IterableNodeList(Node parent, short nodeType) {
-            this(parent.getChildNodes(), nodeType);
-        }
-
-        IterableNodeList(NodeList wrapped, short nodeType) {
-            this.wrapped = wrapped;
-            this.nodeType = nodeType;
-            this.maximum = wrapped.getLength();
-        }
-
-        @Override
-        public Iterator<Node> iterator() {
-            return new Iterator<Node>() {
-                private int index;
-                private Node next;
-
-                public boolean hasNext() {
-                    next = null;
-                    for (; index < maximum; index++) {
-                        final Node item = wrapped.item(index);
-                        if (nodeType == 0 || item.getNodeType() == nodeType) {
-                            next = item;
-                            return true;
-                        }
-                    }
-                    return false;
-                }
-
-                public Node next() {
-                    if (hasNext()) {
-                        index++;
-                        return next;
-                    }
-                    throw new NoSuchElementException();
-                }
-
-                public void remove() {
-                    throw new UnsupportedOperationException();
-                }
-            };
-        }
-    }
+    private final String hazelcastSchemaLocation = getConfigType().name + "-config-" + getReleaseVersion() + ".xsd";
 
     public String getNamespaceType() {
-        return getXmlType().name.equals("hazelcast") ? "config" : "client-config";
+        return getConfigType().name.equals("hazelcast") ? "config" : "client-config";
     }
 
-    protected ConfigType getXmlType() {
+    protected ConfigType getConfigType() {
         return ConfigType.SERVER;
     }
 
@@ -181,13 +108,13 @@ public abstract class AbstractXmlConfigHelper {
 
         // schema validation
         SchemaFactory schemaFactory = SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI);
-        Schema schema = schemaFactory.newSchema(schemas.toArray(new Source[schemas.size()]));
+        Schema schema = schemaFactory.newSchema(schemas.toArray(new Source[0]));
         Validator validator = schema.newValidator();
         try {
             SAXSource source = new SAXSource(new InputSource(is));
             validator.validate(source);
         } catch (Exception e) {
-            throw new InvalidConfigurationException(e.getMessage());
+            throw new InvalidConfigurationException(e.getMessage(), e);
         } finally {
             for (StreamSource source : schemas) {
                 closeResource(source.getInputStream());
@@ -210,13 +137,18 @@ public abstract class AbstractXmlConfigHelper {
         return inputStream;
     }
 
-    protected String getReleaseVersion() {
+    @PrivateApi
+    public String getReleaseVersion() {
         BuildInfo buildInfo = BuildInfoProvider.getBuildInfo();
         String[] versionTokens = StringUtil.tokenizeVersionString(buildInfo.getVersion());
         return versionTokens[0] + "." + versionTokens[1];
     }
 
     protected String xmlToJavaName(final String name) {
+        String javaRefName = xmlRefToJavaName(name);
+        if (javaRefName != null) {
+            return javaRefName;
+        }
         final StringBuilder builder = new StringBuilder();
         final char[] charArray = name.toCharArray();
         boolean dash = false;
@@ -234,6 +166,13 @@ public abstract class AbstractXmlConfigHelper {
         return builder.toString();
     }
 
+    private String xmlRefToJavaName(final String name) {
+        if (name.equals("split-brain-protection-ref")) {
+            return "splitBrainProtectionName";
+        }
+        return null;
+    }
+
     protected void appendToken(final StringBuilder builder, final StringBuilder token) {
         String string = token.toString();
         if ("Jvm".equals(string)) {
@@ -243,268 +182,4 @@ public abstract class AbstractXmlConfigHelper {
         token.setLength(0);
     }
 
-    protected String getTextContent(final Node node) {
-        if (node != null) {
-            final String text;
-            if (domLevel3) {
-                text = node.getTextContent();
-            } else {
-                text = getTextContentOld(node);
-            }
-            return text != null ? text.trim() : "";
-        }
-        return "";
-    }
-
-    private String getTextContentOld(final Node node) {
-        final Node child = node.getFirstChild();
-        if (child != null) {
-            final Node next = child.getNextSibling();
-            if (next == null) {
-                return hasTextContent(child) ? child.getNodeValue() : "";
-            }
-            final StringBuilder buf = new StringBuilder();
-            appendTextContents(node, buf);
-            return buf.toString();
-        }
-        return "";
-    }
-
-    private void appendTextContents(final Node node, final StringBuilder buf) {
-        Node child = node.getFirstChild();
-        while (child != null) {
-            if (hasTextContent(child)) {
-                buf.append(child.getNodeValue());
-            }
-            child = child.getNextSibling();
-        }
-    }
-
-    protected final boolean hasTextContent(final Node node) {
-        final short nodeType = node.getNodeType();
-        return nodeType != Node.COMMENT_NODE && nodeType != Node.PROCESSING_INSTRUCTION_NODE;
-    }
-
-    public static String cleanNodeName(final Node node) {
-        final String nodeName = node.getLocalName();
-        if (nodeName == null) {
-            throw new HazelcastException("Local node name is null for " + node);
-        }
-        return StringUtil.lowerCaseInternal(nodeName);
-    }
-
-    protected static boolean getBooleanValue(final String value) {
-        return parseBoolean(StringUtil.lowerCaseInternal(value));
-    }
-
-    protected static int getIntegerValue(final String parameterName, final String value) {
-        try {
-            return Integer.parseInt(value);
-        } catch (final NumberFormatException e) {
-            throw new InvalidConfigurationException(format("Invalid integer value for parameter %s: %s", parameterName, value));
-        }
-    }
-
-    protected static long getLongValue(final String parameterName, final String value) {
-        try {
-            return Long.parseLong(value);
-        } catch (final Exception e) {
-            throw new InvalidConfigurationException(
-                    format("Invalid long integer value for parameter %s: %s", parameterName, value));
-        }
-    }
-
-    protected String getAttribute(Node node, String attName) {
-        final Node attNode = node.getAttributes().getNamedItem(attName);
-        if (attNode == null) {
-            return null;
-        }
-        return getTextContent(attNode);
-    }
-
-    protected SocketInterceptorConfig parseSocketInterceptorConfig(final Node node) {
-        SocketInterceptorConfig socketInterceptorConfig = new SocketInterceptorConfig();
-        final NamedNodeMap atts = node.getAttributes();
-        final Node enabledNode = atts.getNamedItem("enabled");
-        final boolean enabled = enabledNode != null && getBooleanValue(getTextContent(enabledNode).trim());
-        socketInterceptorConfig.setEnabled(enabled);
-
-        for (Node n : childElements(node)) {
-            final String nodeName = cleanNodeName(n);
-            if ("class-name".equals(nodeName)) {
-                socketInterceptorConfig.setClassName(getTextContent(n).trim());
-            } else if ("properties".equals(nodeName)) {
-                fillProperties(n, socketInterceptorConfig.getProperties());
-            }
-        }
-        return socketInterceptorConfig;
-    }
-
-    protected void fillProperties(final Node node, Properties properties) {
-        if (properties == null) {
-            return;
-        }
-        for (Node n : childElements(node)) {
-            final String name = cleanNodeName(n);
-            final String propertyName = "property".equals(name)
-                    ? getTextContent(n.getAttributes().getNamedItem("name")).trim()
-                    // old way - probably should be deprecated
-                    : name;
-            final String value = getTextContent(n).trim();
-            properties.setProperty(propertyName, value);
-        }
-    }
-
-    protected void fillProperties(final Node node, Map<String, Comparable> properties) {
-        if (properties == null) {
-            return;
-        }
-        for (Node n : childElements(node)) {
-            if (n.getNodeType() == Node.TEXT_NODE || n.getNodeType() == Node.COMMENT_NODE) {
-                continue;
-            }
-            final String name = cleanNodeName(n);
-            final String propertyName;
-            if ("property".equals(name)) {
-                propertyName = getTextContent(n.getAttributes().getNamedItem("name")).trim();
-            } else {
-                // old way - probably should be deprecated
-                propertyName = name;
-            }
-            final String value = getTextContent(n).trim();
-            properties.put(propertyName, value);
-        }
-    }
-
-    protected SerializationConfig parseSerialization(final Node node) {
-        SerializationConfig serializationConfig = new SerializationConfig();
-        for (Node child : childElements(node)) {
-            final String name = cleanNodeName(child);
-            if ("portable-version".equals(name)) {
-                String value = getTextContent(child);
-                serializationConfig.setPortableVersion(getIntegerValue(name, value));
-            } else if ("check-class-def-errors".equals(name)) {
-                String value = getTextContent(child);
-                serializationConfig.setCheckClassDefErrors(getBooleanValue(value));
-            } else if ("use-native-byte-order".equals(name)) {
-                serializationConfig.setUseNativeByteOrder(getBooleanValue(getTextContent(child)));
-            } else if ("byte-order".equals(name)) {
-                String value = getTextContent(child);
-                ByteOrder byteOrder = null;
-                if (ByteOrder.BIG_ENDIAN.toString().equals(value)) {
-                    byteOrder = ByteOrder.BIG_ENDIAN;
-                } else if (ByteOrder.LITTLE_ENDIAN.toString().equals(value)) {
-                    byteOrder = ByteOrder.LITTLE_ENDIAN;
-                }
-                serializationConfig.setByteOrder(byteOrder != null ? byteOrder : ByteOrder.BIG_ENDIAN);
-            } else if ("enable-compression".equals(name)) {
-                serializationConfig.setEnableCompression(getBooleanValue(getTextContent(child)));
-            } else if ("enable-shared-object".equals(name)) {
-                serializationConfig.setEnableSharedObject(getBooleanValue(getTextContent(child)));
-            } else if ("allow-unsafe".equals(name)) {
-                serializationConfig.setAllowUnsafe(getBooleanValue(getTextContent(child)));
-            } else if ("data-serializable-factories".equals(name)) {
-                fillDataSerializableFactories(child, serializationConfig);
-            } else if ("portable-factories".equals(name)) {
-                fillPortableFactories(child, serializationConfig);
-            } else if ("serializers".equals(name)) {
-                fillSerializers(child, serializationConfig);
-            }
-        }
-        return serializationConfig;
-    }
-
-    protected void fillDataSerializableFactories(Node node, SerializationConfig serializationConfig) {
-        for (Node child : childElements(node)) {
-            final String name = cleanNodeName(child);
-            if ("data-serializable-factory".equals(name)) {
-                final String value = getTextContent(child);
-                final Node factoryIdNode = child.getAttributes().getNamedItem("factory-id");
-                if (factoryIdNode == null) {
-                    throw new IllegalArgumentException(
-                            "'factory-id' attribute of 'data-serializable-factory' is required!");
-                }
-                int factoryId = Integer.parseInt(getTextContent(factoryIdNode));
-                serializationConfig.addDataSerializableFactoryClass(factoryId, value);
-            }
-        }
-    }
-
-    protected void fillPortableFactories(Node node, SerializationConfig serializationConfig) {
-        for (Node child : childElements(node)) {
-            final String name = cleanNodeName(child);
-            if ("portable-factory".equals(name)) {
-                final String value = getTextContent(child);
-                final Node factoryIdNode = child.getAttributes().getNamedItem("factory-id");
-                if (factoryIdNode == null) {
-                    throw new IllegalArgumentException("'factory-id' attribute of 'portable-factory' is required!");
-                }
-                int factoryId = Integer.parseInt(getTextContent(factoryIdNode));
-                serializationConfig.addPortableFactoryClass(factoryId, value);
-            }
-        }
-    }
-
-    protected void fillSerializers(final Node node, SerializationConfig serializationConfig) {
-        for (Node child : childElements(node)) {
-            final String name = cleanNodeName(child);
-            final String value = getTextContent(child);
-            if ("serializer".equals(name)) {
-                SerializerConfig serializerConfig = new SerializerConfig();
-                final String typeClassName = getAttribute(child, "type-class");
-                final String className = getAttribute(child, "class-name");
-                serializerConfig.setTypeClassName(typeClassName);
-                serializerConfig.setClassName(className);
-                serializationConfig.addSerializerConfig(serializerConfig);
-            } else if ("global-serializer".equals(name)) {
-                GlobalSerializerConfig globalSerializerConfig = new GlobalSerializerConfig();
-                globalSerializerConfig.setClassName(value);
-                String attrValue = getAttribute(child, "override-java-serialization");
-                boolean overrideJavaSerialization = attrValue != null && getBooleanValue(attrValue.trim());
-                globalSerializerConfig.setOverrideJavaSerialization(overrideJavaSerialization);
-                serializationConfig.setGlobalSerializerConfig(globalSerializerConfig);
-            }
-        }
-    }
-
-    @SuppressFBWarnings("DM_BOXED_PRIMITIVE_FOR_PARSING")
-    protected void fillNativeMemoryConfig(Node node, NativeMemoryConfig nativeMemoryConfig) {
-        final NamedNodeMap atts = node.getAttributes();
-        final Node enabledNode = atts.getNamedItem("enabled");
-        final boolean enabled = enabledNode != null && getBooleanValue(getTextContent(enabledNode).trim());
-        nativeMemoryConfig.setEnabled(enabled);
-
-        final Node allocTypeNode = atts.getNamedItem("allocator-type");
-        final String allocType = getTextContent(allocTypeNode);
-        if (allocType != null && !"".equals(allocType)) {
-            nativeMemoryConfig.setAllocatorType(
-                    NativeMemoryConfig.MemoryAllocatorType.valueOf(upperCaseInternal(allocType)));
-        }
-
-        for (Node n : childElements(node)) {
-            final String nodeName = cleanNodeName(n);
-            if ("size".equals(nodeName)) {
-                final NamedNodeMap attrs = n.getAttributes();
-                final String value = getTextContent(attrs.getNamedItem("value"));
-                final MemoryUnit unit = MemoryUnit.valueOf(getTextContent(attrs.getNamedItem("unit")));
-                MemorySize memorySize = new MemorySize(Long.valueOf(value), unit);
-                nativeMemoryConfig.setSize(memorySize);
-            } else if ("min-block-size".equals(nodeName)) {
-                String value = getTextContent(n);
-                nativeMemoryConfig.setMinBlockSize(Integer.parseInt(value));
-            } else if ("page-size".equals(nodeName)) {
-                String value = getTextContent(n);
-                nativeMemoryConfig.setPageSize(Integer.parseInt(value));
-            } else if ("metadata-space-percentage".equals(nodeName)) {
-                String value = getTextContent(n);
-                try {
-                    Number percentage = new DecimalFormat("##.#").parse(value);
-                    nativeMemoryConfig.setMetadataSpacePercentage(percentage.floatValue());
-                } catch (ParseException e) {
-                    LOGGER.info("Metadata space percentage, [" + value
-                            + "], is not a proper value. Default value will be used!");
-                }
-            }
-        }
-    }
 }

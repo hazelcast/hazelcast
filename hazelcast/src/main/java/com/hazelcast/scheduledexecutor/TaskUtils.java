@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,14 +17,12 @@
 package com.hazelcast.scheduledexecutor;
 
 import com.hazelcast.scheduledexecutor.impl.NamedTaskDecorator;
-import com.hazelcast.spi.annotation.Beta;
 
 import java.util.concurrent.Callable;
 
 /**
  * A helper class with utilities to act upon {@link Runnable} and/or {@link Callable} tasks.
  */
-@Beta
 public final class TaskUtils {
 
     private TaskUtils() {
@@ -46,6 +44,7 @@ public final class TaskUtils {
      *
      * @param name     The name that the task will have
      * @param callable The callable task to be named
+     * @param <V>      The return type of callable task
      * @return A new Callable implementing the {@link NamedTask} interface
      */
     public static <V> Callable<V> named(final String name, final Callable<V> callable) {

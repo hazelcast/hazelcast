@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,7 +23,8 @@ public enum AuthenticationStatus {
 
     AUTHENTICATED(0),
     CREDENTIALS_FAILED(1),
-    SERIALIZATION_VERSION_MISMATCH(2);
+    SERIALIZATION_VERSION_MISMATCH(2),
+    NOT_ALLOWED_IN_CLUSTER(3);
 
     private final byte id;
 

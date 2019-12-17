@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -46,7 +46,7 @@ public class LongSetHsa implements LongSet {
     @Override
     public boolean add(long value) {
         assert value != nullValue : "add() called with null-sentinel value " + nullValue;
-        return hsa.ensure(value) > 0;
+        return hsa.ensure(value).isNew();
     }
 
     @Override

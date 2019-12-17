@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,25 +19,58 @@ package com.hazelcast.client.impl.protocol.task.cache;
 import com.hazelcast.cache.impl.operation.CacheGetConfigOperation;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.CacheGetConfigCodec;
-import com.hazelcast.instance.Node;
-import com.hazelcast.nio.Connection;
-import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.Operation;
+import com.hazelcast.client.impl.protocol.codec.holder.CacheConfigHolder;
+import com.hazelcast.client.impl.protocol.task.AbstractAddressMessageTask;
+import com.hazelcast.config.CacheConfig;
+import com.hazelcast.instance.impl.Node;
+import com.hazelcast.cluster.Address;
+import com.hazelcast.internal.nio.Connection;
+import com.hazelcast.spi.impl.operationservice.Operation;
+
+import java.security.Permission;
+
+import static com.hazelcast.cache.impl.ICacheService.SERVICE_NAME;
 
 /**
- * This client request  specifically calls {@link CacheGetConfigOperation} on the server side.
+ * This client request specifically calls {@link CacheGetConfigOperation} on the server side.
  *
  * @see CacheGetConfigOperation
  */
 public class CacheGetConfigMessageTask
-        extends AbstractCacheMessageTask<CacheGetConfigCodec.RequestParameters> {
+        extends AbstractAddressMessageTask<CacheGetConfigCodec.RequestParameters> {
+
     public CacheGetConfigMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
     @Override
+    protected Address getAddress() {
+        return nodeEngine.getThisAddress();
+    }
+
+    @Override
     protected Operation prepareOperation() {
         return new CacheGetConfigOperation(parameters.name, parameters.simpleName);
+    }
+
+    @Override
+    public String getServiceName() {
+        return SERVICE_NAME;
+    }
+
+    @Override
+    public String getMethodName() {
+        return null;
+    }
+
+    @Override
+    public Object[] getParameters() {
+        return null;
+    }
+
+    @Override
+    public Permission getRequiredPermission() {
+        return null;
     }
 
     @Override
@@ -47,9 +80,9 @@ public class CacheGetConfigMessageTask
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        Data responseData = serializeCacheConfig(response);
+        CacheConfig cacheConfig = (CacheConfig) response;
 
-        return CacheGetConfigCodec.encodeResponse(responseData);
+        return CacheGetConfigCodec.encodeResponse(CacheConfigHolder.of(cacheConfig, serializationService));
     }
 
     @Override

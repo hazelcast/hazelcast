@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,23 +34,31 @@ import org.junit.runner.RunWith;
 
 import java.io.InputStream;
 
+import static com.hazelcast.test.OverridePropertyRule.clear;
 import static com.hazelcast.test.OverridePropertyRule.set;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
 public class MemberToMemberDiscoveryTest extends HazelcastTestSupport {
 
-    private Config config;
-
     @Rule
-    public final OverridePropertyRule overridePropertyRule = set("hazelcast.wait.seconds.before.join", "10");
+    public final OverridePropertyRule overrideJoinWaitSecondsRule = set("hazelcast.wait.seconds.before.join", "10");
+    @Rule
+    public final OverridePropertyRule overrideMergeFirstRunDelayRule = set("hazelcast.merge.first.run.delay.seconds", "5");
+    @Rule
+    public final OverridePropertyRule overrideMergeNextRunDelayRule = set("hazelcast.merge.next.run.delay.seconds", "5");
+    @Rule
+    public final OverridePropertyRule overridePreferIpv4Rule = set("java.net.preferIPv4Stack", "true");
+    @Rule
+    public final OverridePropertyRule overrideHazelcastLocalAddressRule = clear("hazelcast.local.localAddress");
+
+    private Config config;
 
     @Before
     public void setUp() {
         String xmlFileName = "hazelcast-multicast-plugin.xml";
         InputStream xmlResource = MulticastDiscoveryStrategy.class.getClassLoader().getResourceAsStream(xmlFileName);
         config = new XmlConfigBuilder(xmlResource).build();
-        System.setProperty("java.net.preferIPv4Stack", "true");
     }
 
     @After
@@ -59,18 +67,18 @@ public class MemberToMemberDiscoveryTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void formClusterWithTwoMembersTest() throws InterruptedException {
+    public void formClusterWithTwoMembersTest() {
         HazelcastInstance instance = Hazelcast.newHazelcastInstance(config);
         Hazelcast.newHazelcastInstance(config);
         assertClusterSizeEventually(2, instance);
     }
 
     @Test(expected = ValidationException.class)
-    public void invalidPortPropertyTest() throws InterruptedException {
+    public void invalidPortPropertyTest() {
         String xmlFileName = "hazelcast-multicast-plugin-invalid-port.xml";
         InputStream xmlResource = MulticastDiscoveryStrategy.class.getClassLoader().getResourceAsStream(xmlFileName);
         config = new XmlConfigBuilder(xmlResource).build();
+
         Hazelcast.newHazelcastInstance(config);
     }
-
 }

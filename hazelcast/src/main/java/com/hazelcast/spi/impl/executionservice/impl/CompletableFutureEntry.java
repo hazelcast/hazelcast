@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,16 +16,16 @@
 
 package com.hazelcast.spi.impl.executionservice.impl;
 
-import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.impl.InternalCompletableFuture;
 
 import java.util.concurrent.Future;
 
 final class CompletableFutureEntry<V> {
 
-    final BasicCompletableFuture<V> completableFuture;
+    final InternalCompletableFuture<V> completableFuture;
 
-    CompletableFutureEntry(Future<V> future, NodeEngine nodeEngine) {
-        this.completableFuture = new BasicCompletableFuture<V>(future, nodeEngine);
+    CompletableFutureEntry(Future<V> future) {
+        this.completableFuture = new BasicCompletableFuture<V>(future);
     }
 
     boolean processState() {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,31 +17,43 @@
 package com.hazelcast.ringbuffer.impl;
 
 import com.hazelcast.ringbuffer.StaleSequenceException;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+
+import java.util.Arrays;
+import java.util.Iterator;
 
 /**
- * The ArrayRingbuffer is responsible for storing the actual content of a ringbuffer.
- * <p/>
- * Currently the Ringbuffer is not a partitioned data-structure. So all data of a ringbuffer is stored in a single partition
- * and replicated to the replica's. No thread-safety is needed since a partition can only be accessed by a single thread at
- * any given moment.
- * <p/>
- * The ringItems is the ring that contains the actual items.
+ * The ArrayRingbuffer is responsible for storing the actual contents of a
+ * ringbuffer.
+ * <p>
+ * Currently the Ringbuffer is not a partitioned data-structure. So all
+ * data of a ringbuffer is stored in a single partition and replicated to
+ * the replicas. No thread safety is needed since a partition can only be
+ * accessed by a single thread at any given moment.
+ *
+ * @param <E> the type of the data stored in the ringbuffer
  */
-public class ArrayRingbuffer<T> implements Ringbuffer<T> {
-    // contains the actual items
-    T[] ringItems;
+public class ArrayRingbuffer<E> implements Ringbuffer<E> {
+
+    private E[] ringItems;
     private long tailSequence = -1;
     private long headSequence = tailSequence + 1;
     private int capacity;
 
+    @SuppressWarnings("unchecked")
     public ArrayRingbuffer(int capacity) {
         this.capacity = capacity;
-        this.ringItems = (T[]) new Object[capacity];
+        this.ringItems = (E[]) new Object[capacity];
     }
 
     @Override
     public long tailSequence() {
         return tailSequence;
+    }
+
+    @Override
+    public long peekNextTailSequence() {
+        return tailSequence + 1;
     }
 
     @Override
@@ -76,7 +88,7 @@ public class ArrayRingbuffer<T> implements Ringbuffer<T> {
     }
 
     @Override
-    public long add(T item) {
+    public long add(E item) {
         tailSequence++;
 
         if (tailSequence - capacity == headSequence) {
@@ -91,7 +103,7 @@ public class ArrayRingbuffer<T> implements Ringbuffer<T> {
     }
 
     @Override
-    public T read(long sequence) {
+    public E read(long sequence) {
         checkReadSequence(sequence);
         return ringItems[toIndex(sequence)];
     }
@@ -132,7 +144,25 @@ public class ArrayRingbuffer<T> implements Ringbuffer<T> {
     }
 
     @Override
-    public void set(long seq, T data) {
+    public void set(long seq, E data) {
         ringItems[toIndex(seq)] = data;
+    }
+
+    @Override
+    public void clear() {
+        Arrays.fill(ringItems, null);
+        tailSequence = -1;
+        headSequence = tailSequence + 1;
+    }
+
+    @Override
+    public Iterator<E> iterator() {
+        return new ReadOnlyRingbufferIterator<E>(this);
+    }
+
+    @Override
+    @SuppressFBWarnings("EI_EXPOSE_REP")
+    public E[] getItems() {
+        return ringItems;
     }
 }

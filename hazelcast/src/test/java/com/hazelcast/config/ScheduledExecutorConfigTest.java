@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,10 +16,11 @@
 
 package com.hazelcast.config;
 
-import com.hazelcast.config.ScheduledExecutorConfig.ScheduledExecutorConfigReadOnly;
+import com.hazelcast.internal.config.ScheduledExecutorConfigReadOnly;
+import com.hazelcast.spi.merge.DiscardMergePolicy;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import nl.jqno.equalsverifier.EqualsVerifier;
 import nl.jqno.equalsverifier.Warning;
@@ -30,7 +31,7 @@ import org.junit.runner.RunWith;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class ScheduledExecutorConfigTest extends HazelcastTestSupport {
 
     private ScheduledExecutorConfig config = new ScheduledExecutorConfig();
@@ -70,12 +71,15 @@ public class ScheduledExecutorConfigTest extends HazelcastTestSupport {
 
     @Test
     public void testEqualsAndHashCode() {
+        assumeDifferentHashCodes();
         EqualsVerifier.forClass(ScheduledExecutorConfig.class)
-                      .allFieldsShouldBeUsedExcept("readOnly")
                       .suppress(Warning.NULL_FIELDS, Warning.NONFINAL_FIELDS)
                       .withPrefabValues(ScheduledExecutorConfigReadOnly.class,
                               new ScheduledExecutorConfigReadOnly(new ScheduledExecutorConfig("red")),
                               new ScheduledExecutorConfigReadOnly(new ScheduledExecutorConfig("black")))
+                      .withPrefabValues(MergePolicyConfig.class,
+                              new MergePolicyConfig(),
+                              new MergePolicyConfig(DiscardMergePolicy.class.getSimpleName(), 10))
                       .verify();
     }
 }

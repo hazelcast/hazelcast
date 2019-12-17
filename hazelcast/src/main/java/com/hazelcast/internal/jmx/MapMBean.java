@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,29 +16,25 @@
 
 package com.hazelcast.internal.jmx;
 
-import com.hazelcast.core.IMap;
 import com.hazelcast.internal.jmx.suppliers.LocalMapStatsSupplier;
 import com.hazelcast.internal.jmx.suppliers.StatsSupplier;
-import com.hazelcast.monitor.LocalMapStats;
-import com.hazelcast.query.Predicate;
-import com.hazelcast.query.SqlPredicate;
-
-import java.util.Collection;
-import java.util.Map;
-import java.util.Set;
+import com.hazelcast.map.IMap;
+import com.hazelcast.map.LocalMapStats;
 
 /**
- * Management bean for {@link com.hazelcast.core.IMap}
+ * Management bean for {@link IMap}
  */
+@SuppressWarnings({"checkstyle:methodcount"})
 @ManagedDescription("IMap")
 public class MapMBean extends HazelcastMBean<IMap> {
+
     private final LocalStatsDelegate<LocalMapStats> localMapStatsDelegate;
 
     protected MapMBean(IMap managedObject, ManagementService service) {
         super(managedObject, service);
         this.objectName = service.createObjectName("IMap", managedObject.getName());
         StatsSupplier<LocalMapStats> localMapStatsSupplier = new LocalMapStatsSupplier(managedObject);
-        this.localMapStatsDelegate = new LocalStatsDelegate<LocalMapStats>(localMapStatsSupplier, updateIntervalSec);
+        this.localMapStatsDelegate = new LocalStatsDelegate<>(localMapStatsSupplier, updateIntervalSec);
     }
 
     @ManagedAnnotation("localOwnedEntryCount")
@@ -113,6 +109,12 @@ public class MapMBean extends HazelcastMBean<IMap> {
         return localMapStatsDelegate.getLocalStats().getPutOperationCount();
     }
 
+    @ManagedAnnotation("localSetOperationCount")
+    @ManagedDescription("the number of set operations on this member")
+    public long getLocalSetOperationCount() {
+        return localMapStatsDelegate.getLocalStats().getSetOperationCount();
+    }
+
     @ManagedAnnotation("localGetOperationCount")
     @ManagedDescription("number of get operations on this member")
     public long getLocalGetOperationCount() {
@@ -131,6 +133,12 @@ public class MapMBean extends HazelcastMBean<IMap> {
         return localMapStatsDelegate.getLocalStats().getTotalPutLatency();
     }
 
+    @ManagedAnnotation("localTotalSetLatency")
+    @ManagedDescription("the total latency of set operations. To get the average latency, divide to number of sets")
+    public long getLocalTotalSetLatency() {
+        return localMapStatsDelegate.getLocalStats().getTotalSetLatency();
+    }
+
     @ManagedAnnotation("localTotalGetLatency")
     @ManagedDescription("the total latency of get operations. To get the average latency, divide to number of gets")
     public long getLocalTotalGetLatency() {
@@ -147,6 +155,12 @@ public class MapMBean extends HazelcastMBean<IMap> {
     @ManagedDescription("the maximum latency of put operations. To get the average latency, divide to number of puts")
     public long getLocalMaxPutLatency() {
         return localMapStatsDelegate.getLocalStats().getMaxPutLatency();
+    }
+
+    @ManagedAnnotation("localMaxSetLatency")
+    @ManagedDescription("the maximum latency of set operations. To get the average latency, divide to number of sets")
+    public long getLocalMaxSetLatency() {
+        return localMapStatsDelegate.getLocalStats().getMaxSetLatency();
     }
 
     @ManagedAnnotation("localMaxGetLatency")
@@ -207,55 +221,5 @@ public class MapMBean extends HazelcastMBean<IMap> {
     @ManagedDescription("Clear Map")
     public void clear() {
         managedObject.clear();
-    }
-
-    @ManagedAnnotation(value = "values", operation = true)
-    public String values(String query) {
-        Collection coll;
-        if (query != null && !query.isEmpty()) {
-            Predicate predicate = new SqlPredicate(query);
-            coll = managedObject.values(predicate);
-        } else {
-            coll = managedObject.values();
-        }
-        StringBuilder buf = new StringBuilder();
-        if (coll.size() == 0) {
-            buf.append("Empty");
-        } else {
-            buf.append("[");
-            for (Object obj : coll) {
-                buf.append(obj);
-                buf.append(", ");
-            }
-            buf.replace(buf.length() - 1, buf.length(), "]");
-        }
-        return buf.toString();
-    }
-
-    @ManagedAnnotation(value = "entrySet", operation = true)
-    public String entrySet(String query) {
-        Set<Map.Entry> entrySet;
-        if (query != null && !query.isEmpty()) {
-            Predicate predicate = new SqlPredicate(query);
-            entrySet = managedObject.entrySet(predicate);
-        } else {
-            entrySet = managedObject.entrySet();
-        }
-
-        StringBuilder buf = new StringBuilder();
-        if (entrySet.size() == 0) {
-            buf.append("Empty");
-        } else {
-            buf.append("[");
-            for (Map.Entry entry : entrySet) {
-                buf.append("{key:");
-                buf.append(entry.getKey());
-                buf.append(", value:");
-                buf.append(entry.getValue());
-                buf.append("}, ");
-            }
-            buf.replace(buf.length() - 1, buf.length(), "]");
-        }
-        return buf.toString();
     }
 }

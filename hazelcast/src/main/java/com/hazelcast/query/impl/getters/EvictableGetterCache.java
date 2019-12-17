@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,13 +16,14 @@
 
 package com.hazelcast.query.impl.getters;
 
-import com.hazelcast.util.ConstructorFunction;
-import com.hazelcast.util.SampleableConcurrentHashMap;
+import com.hazelcast.internal.util.ConcurrentReferenceHashMap.ReferenceType;
+import com.hazelcast.internal.util.ConstructorFunction;
+import com.hazelcast.internal.util.SampleableConcurrentHashMap;
 
 import javax.annotation.Nullable;
 import java.util.concurrent.ConcurrentMap;
 
-import static com.hazelcast.util.ConcurrencyUtil.getOrPutIfAbsent;
+import static com.hazelcast.internal.util.ConcurrencyUtil.getOrPutIfAbsent;
 
 class EvictableGetterCache {
 
@@ -34,8 +35,10 @@ class EvictableGetterCache {
     private final int maxGetterPerClassCount;
     private final int afterEvictionGetterPerClassCount;
 
-    EvictableGetterCache(int maxClassCount, final int maxGetterPerClassCount, float evictPercentage) {
-        getterCache = new SampleableConcurrentHashMap<Class, SampleableConcurrentHashMap<String, Getter>>(maxClassCount);
+    EvictableGetterCache(int maxClassCount, final int maxGetterPerClassCount, float evictPercentage, boolean strongReferences) {
+        ReferenceType referenceType = strongReferences ? ReferenceType.STRONG : ReferenceType.SOFT;
+        getterCache = new SampleableConcurrentHashMap<Class, SampleableConcurrentHashMap<String, Getter>>(maxClassCount,
+                referenceType, referenceType);
         getterCacheConstructor = new ConstructorFunction<Class, SampleableConcurrentHashMap<String, Getter>>() {
             @Override
             public SampleableConcurrentHashMap<String, Getter> createNew(Class arg) {
@@ -74,6 +77,7 @@ class EvictableGetterCache {
      * It works on best effort basis. If multi-threaded calls involved it may evict all elements, but it's unlikely.
      */
     private void evictMap(SampleableConcurrentHashMap<?, ?> map, int triggeringEvictionSize, int afterEvictionSize) {
+        map.purgeStaleEntries();
         int mapSize = map.size();
         if (mapSize - triggeringEvictionSize >= 0) {
             for (SampleableConcurrentHashMap.SamplingEntry entry : map.getRandomSamples(mapSize - afterEvictionSize)) {

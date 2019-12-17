@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,7 @@ import com.hazelcast.internal.nearcache.impl.invalidation.InvalidationQueue;
 import com.hazelcast.internal.nearcache.impl.invalidation.SingleNearCacheInvalidation;
 import com.hazelcast.internal.serialization.impl.HeapData;
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -38,7 +38,7 @@ import static com.hazelcast.test.HazelcastTestSupport.spawn;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class InvalidationEventQueueTest {
 
     private static final int WORKER_COUNT = 10;
@@ -113,7 +113,7 @@ public class InvalidationEventQueueTest {
 
     protected SingleNearCacheInvalidation newInvalidation() {
         return new SingleNearCacheInvalidation(new HeapData(), "name",
-                "source", new UUID(0, 0), 1);
+                UUID.randomUUID(), UUID.randomUUID(), 1);
     }
 
     @Test(expected = UnsupportedOperationException.class)
@@ -129,10 +129,5 @@ public class InvalidationEventQueueTest {
     @Test(expected = UnsupportedOperationException.class)
     public void retainAllOperationIsNotSupported() {
         new InvalidationQueue().retainAll(new ArrayList<SingleNearCacheInvalidation>());
-    }
-
-    @Test(expected = UnsupportedOperationException.class)
-    public void clearOperationIsNotSupported() {
-        new InvalidationQueue().clear();
     }
 }

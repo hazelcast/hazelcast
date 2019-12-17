@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,26 +36,37 @@ public final class ThreadLeakTestUtils {
 
     private static final int ASSERT_TIMEOUT_SECONDS = 300;
 
+    /**
+     * List of whitelisted classes of threads, which are allowed to be not joinable.
+     * We should not add classes of Hazelcast production code here, just test related classes.
+     */
+    private static final List<Class<?>> THREAD_CLASS_WHITELIST = asList(new Class<?>[]{
+            JitterThread.class,
+    });
+    private static final List<String> THREAD_NAME_WHITELIST = asList(
+            "process reaper",
+            "surefire-forkedjvm-ping-30s"
+    );
+
     private static final ILogger LOGGER = Logger.getLogger(ThreadLeakTestUtils.class);
 
     static {
         LOGGER.info("Initializing Logger (required for thread leak tests)");
     }
 
-    /**
-     * List of whitelisted classes of threads, which are allowed to be not joinable.
-     * We should not add classes of Hazelcast production code here, just test related classes.
-     */
-    private static final List<Class> THREAD_CLASS_WHITELIST = asList(new Class[]{
-            JitterThread.class
-    });
+    private ThreadLeakTestUtils() {
+    }
 
     public static Set<Thread> getThreads() {
         return Thread.getAllStackTraces().keySet();
     }
 
     public static void assertHazelcastThreadShutdown(Set<Thread> oldThreads) {
-        Thread[] joinableThreads = getAndLogThreads("There are still Hazelcast threads running after shutdown!", oldThreads);
+        assertHazelcastThreadShutdown("There are still Hazelcast threads running after shutdown!", oldThreads);
+    }
+
+    public static void assertHazelcastThreadShutdown(String message, Set<Thread> oldThreads) {
+        Thread[] joinableThreads = getAndLogThreads(message, oldThreads);
         if (joinableThreads == null) {
             return;
         }
@@ -70,12 +81,25 @@ public final class ThreadLeakTestUtils {
 
     public static Thread[] getAndLogThreads(String message, Set<Thread> oldThreads) {
         Map<Thread, StackTraceElement[]> stackTraces = Thread.getAllStackTraces();
-        Thread[] joinableThreads = getJoinableThreads(oldThreads, stackTraces.keySet());
+        Set<Thread> nonSystemNonCommonPoolThreads = getNonSystemAndNonCommonPoolThreads(stackTraces);
+        Thread[] joinableThreads = getJoinableThreads(oldThreads, nonSystemNonCommonPoolThreads);
         if (joinableThreads.length == 0) {
             return null;
         }
         logThreads(stackTraces, joinableThreads, message);
         return joinableThreads;
+    }
+
+    private static Set<Thread> getNonSystemAndNonCommonPoolThreads(Map<Thread, StackTraceElement[]> stackTraces) {
+        Set<Thread> nonSystemThreads = new HashSet<>();
+        for (Thread thread : stackTraces.keySet()) {
+            ThreadGroup threadGroup = thread.getThreadGroup();
+            if (threadGroup != null && threadGroup.getParent() != null && !thread.getName().contains("ForkJoinPool.commonPool")) {
+                // non-system alive thread
+                nonSystemThreads.add(thread);
+            }
+        }
+        return nonSystemThreads;
     }
 
     private static Thread[] getJoinableThreads(Set<Thread> oldThreads, Set<Thread> newThreads) {
@@ -93,7 +117,9 @@ public final class ThreadLeakTestUtils {
         Iterator<Thread> iterator = threads.iterator();
         while (iterator.hasNext()) {
             Thread thread = iterator.next();
-            if (THREAD_CLASS_WHITELIST.contains(thread.getClass())) {
+            Class<? extends Thread> threadClass = thread.getClass();
+            String threadName = thread.getName();
+            if (THREAD_CLASS_WHITELIST.contains(threadClass) || THREAD_NAME_WHITELIST.contains(threadName)) {
                 iterator.remove();
             }
         }

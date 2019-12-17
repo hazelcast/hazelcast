@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,20 @@ package com.hazelcast.internal.eviction;
 public interface Evictable<V> {
 
     /**
+     * Gets the value of this {@link Evictable}.
+     *
+     * @return the value of this {@link Evictable}
+     */
+    V getValue();
+
+    /**
+     * Gets the access hit count of this {@link Evictable}.
+     *
+     * @return the access hit count of this {@link Evictable}
+     */
+    long getHits();
+
+    /**
      * Gets the creation time of this {@link Evictable} in milliseconds.
      *
      * @return the creation time of this {@link Evictable} in milliseconds
@@ -34,19 +48,4 @@ public interface Evictable<V> {
      * @return the latest access time of this {@link Evictable} in milliseconds
      */
     long getLastAccessTime();
-
-    /**
-     * Gets the access hit count of this {@link Evictable}.
-     *
-     * @return the access hit count of this {@link Evictable}
-     */
-    int getAccessHit();
-
-    /**
-     * Gets the value of this {@link Evictable}.
-     *
-     * @return the value of this {@link Evictable}
-     */
-    V getValue();
-
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,28 +19,30 @@ package com.hazelcast.internal.nearcache.impl.invalidation;
 import com.hazelcast.config.Config;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
-import com.hazelcast.spi.ExecutionService;
+import com.hazelcast.spi.impl.executionservice.ExecutionService;
 import com.hazelcast.spi.properties.HazelcastProperties;
-import com.hazelcast.spi.serialization.SerializationService;
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.util.UuidUtil;
+import com.hazelcast.internal.util.UuidUtil;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.util.UUID;
+
 import static com.hazelcast.internal.nearcache.impl.invalidation.RepairingTask.MAX_TOLERATED_MISS_COUNT;
 import static com.hazelcast.internal.nearcache.impl.invalidation.RepairingTask.MIN_RECONCILIATION_INTERVAL_SECONDS;
 import static com.hazelcast.internal.nearcache.impl.invalidation.RepairingTask.RECONCILIATION_INTERVAL_SECONDS;
-import static com.hazelcast.util.RandomPicker.getInt;
+import static com.hazelcast.internal.util.RandomPicker.getInt;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.mock;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class RepairingTaskTest extends HazelcastTestSupport {
 
     @Test
@@ -92,14 +94,14 @@ public class RepairingTaskTest extends HazelcastTestSupport {
 
     private static RepairingTask newRepairingTask(Config config) {
         HazelcastProperties hazelcastProperties = new HazelcastProperties(config);
-        MetaDataFetcher metaDataFetcher = mock(MetaDataFetcher.class);
+        InvalidationMetaDataFetcher invalidationMetaDataFetcher = mock(InvalidationMetaDataFetcher.class);
         ExecutionService executionService = mock(ExecutionService.class);
         SerializationService serializationService = mock(SerializationService.class);
         MinimalPartitionService minimalPartitionService = mock(MinimalPartitionService.class);
-        String uuid = UuidUtil.newUnsecureUUID().toString();
+        UUID uuid = UuidUtil.newUnsecureUUID();
         ILogger logger = Logger.getLogger(RepairingTask.class);
 
-        return new RepairingTask(hazelcastProperties, metaDataFetcher, executionService.getGlobalTaskScheduler(),
+        return new RepairingTask(hazelcastProperties, invalidationMetaDataFetcher, executionService.getGlobalTaskScheduler(),
                 serializationService, minimalPartitionService, uuid, logger);
     }
 }

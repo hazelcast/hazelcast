@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,25 +17,26 @@
 package com.hazelcast.internal.diagnostics;
 
 import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.spi.impl.operationservice.InternalOperationService;
 import com.hazelcast.spi.impl.operationservice.impl.Invocation;
 import com.hazelcast.spi.impl.operationservice.impl.InvocationRegistry;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.spi.properties.HazelcastProperty;
-import com.hazelcast.util.Clock;
-import com.hazelcast.util.ItemCounter;
+import com.hazelcast.internal.util.Clock;
+import com.hazelcast.internal.util.ItemCounter;
 
-import static com.hazelcast.internal.diagnostics.Diagnostics.PREFIX;
 import static com.hazelcast.internal.diagnostics.OperationDescriptors.toOperationDesc;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
- * A {@link DiagnosticsPlugin} that displays all invocations that have been executing for some time.
+ * A {@link DiagnosticsPlugin} that displays all invocations that have been
+ * executing for some time.
  * <p>
- * It will display the current invocations and the invocation history. For example, if an entry processor has been
- * running for 5 minutes and the {@link #SAMPLE_PERIOD_SECONDS} is set to 1 minute, then there will be 5 samples
- * for that given invocation. This is useful to track which operations have been slow over a longer period of time.
+ * It will display the current invocations and the invocation history. For
+ * example, if an entry processor has been running for 5 minutes and the
+ * {@link #SAMPLE_PERIOD_SECONDS} is set to 1 minute, then there will be
+ * 5 samples for that given invocation. This is useful to track which
+ * operations have been slow over a longer period of time.
  */
 public class InvocationPlugin extends DiagnosticsPlugin {
 
@@ -45,19 +46,19 @@ public class InvocationPlugin extends DiagnosticsPlugin {
      * If set to 0, the plugin is disabled.
      */
     public static final HazelcastProperty SAMPLE_PERIOD_SECONDS
-            = new HazelcastProperty(PREFIX + ".invocation.sample.period.seconds", 0, SECONDS);
+            = new HazelcastProperty("hazelcast.diagnostics.invocation.sample.period.seconds", 0, SECONDS);
 
     /**
      * The threshold in seconds to consider an invocation to be slow.
      */
     public static final HazelcastProperty SLOW_THRESHOLD_SECONDS
-            = new HazelcastProperty(PREFIX + ".invocation.slow.threshold.seconds", 5, SECONDS);
+            = new HazelcastProperty("hazelcast.diagnostics.invocation.slow.threshold.seconds", 5, SECONDS);
 
     /**
      * The maximum number of slow invocations to print.
      */
     public static final HazelcastProperty SLOW_MAX_COUNT
-            = new HazelcastProperty(PREFIX + ".invocation.slow.max.count", 100);
+            = new HazelcastProperty("hazelcast.diagnostics.invocation.slow.max.count", 100);
 
     private final InvocationRegistry invocationRegistry;
     private final long samplePeriodMillis;
@@ -68,7 +69,7 @@ public class InvocationPlugin extends DiagnosticsPlugin {
 
     public InvocationPlugin(NodeEngineImpl nodeEngine) {
         super(nodeEngine.getLogger(PendingInvocationsPlugin.class));
-        InternalOperationService operationService = nodeEngine.getOperationService();
+        OperationServiceImpl operationService = nodeEngine.getOperationService();
         this.invocationRegistry = ((OperationServiceImpl) operationService).getInvocationRegistry();
         HazelcastProperties props = nodeEngine.getProperties();
         this.samplePeriodMillis = props.getMillis(SAMPLE_PERIOD_SECONDS);

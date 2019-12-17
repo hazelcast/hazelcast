@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -80,22 +80,6 @@ public class ServiceConfig {
         return this;
     }
 
-    /**
-     * @deprecated use {@link #getImplementation()} instead
-     */
-    @Deprecated
-    public Object getServiceImpl() {
-        return getImplementation();
-    }
-
-    /**
-     * @deprecated use {@link #setImplementation(Object)} instead
-     */
-    @Deprecated
-    public ServiceConfig setServiceImpl(final Object serviceImpl) {
-        return setImplementation(serviceImpl);
-    }
-
     public Properties getProperties() {
         return properties;
     }
@@ -117,6 +101,48 @@ public class ServiceConfig {
 
     public Object getConfigObject() {
         return configObject;
+    }
+
+    @Override
+    @SuppressWarnings({"checkstyle:cyclomaticcomplexity", "checkstyle:npathcomplexity"})
+    public final boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || !(o instanceof ServiceConfig)) {
+            return false;
+        }
+
+        ServiceConfig that = (ServiceConfig) o;
+
+        if (enabled != that.enabled) {
+            return false;
+        }
+        if (name != null ? !name.equals(that.name) : that.name != null) {
+            return false;
+        }
+        if (className != null ? !className.equals(that.className) : that.className != null) {
+            return false;
+        }
+        if (serviceImpl != null ? !serviceImpl.equals(that.serviceImpl) : that.serviceImpl != null) {
+            return false;
+        }
+        if (properties != null ? !properties.equals(that.properties) : that.properties != null) {
+            return false;
+        }
+        return configObject != null ? configObject.equals(that.configObject) : that.configObject == null;
+    }
+
+    @Override
+    @SuppressWarnings({"checkstyle:cyclomaticcomplexity", "checkstyle:npathcomplexity"})
+    public final int hashCode() {
+        int result = (enabled ? 1 : 0);
+        result = 31 * result + (name != null ? name.hashCode() : 0);
+        result = 31 * result + (className != null ? className.hashCode() : 0);
+        result = 31 * result + (serviceImpl != null ? serviceImpl.hashCode() : 0);
+        result = 31 * result + (properties != null ? properties.hashCode() : 0);
+        result = 31 * result + (configObject != null ? configObject.hashCode() : 0);
+        return result;
     }
 
     @Override

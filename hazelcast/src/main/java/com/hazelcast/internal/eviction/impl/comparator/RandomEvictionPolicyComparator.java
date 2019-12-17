@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,19 +16,42 @@
 
 package com.hazelcast.internal.eviction.impl.comparator;
 
-import com.hazelcast.internal.eviction.EvictableEntryView;
-import com.hazelcast.internal.eviction.EvictionPolicyComparator;
-import com.hazelcast.nio.serialization.SerializableByConvention;
+import com.hazelcast.spi.eviction.EvictableEntryView;
+import com.hazelcast.spi.eviction.EvictionPolicyComparator;
+import com.hazelcast.internal.serialization.SerializableByConvention;
 
 /**
- * {@link com.hazelcast.config.EvictionPolicy#RANDOM} policy based {@link EvictionPolicyComparator}.
+ * {@link com.hazelcast.config.EvictionPolicy#RANDOM}
+ * policy based {@link EvictionPolicyComparator}.
  */
 @SerializableByConvention
-public class RandomEvictionPolicyComparator extends EvictionPolicyComparator {
+public class RandomEvictionPolicyComparator
+        implements EvictionPolicyComparator<Object, Object, EvictableEntryView<Object, Object>> {
+
+    public static final RandomEvictionPolicyComparator INSTANCE
+            = new RandomEvictionPolicyComparator();
 
     @Override
     @SuppressWarnings("ComparatorMethodParameterNotUsed")
     public int compare(EvictableEntryView e1, EvictableEntryView e2) {
         return 0;
+    }
+
+    @Override
+    public String toString() {
+        return "RandomEvictionPolicyComparator{" + super.toString() + "} ";
+    }
+
+    @Override
+    public final boolean equals(Object o) {
+        if (o == null) {
+            return false;
+        }
+        return getClass().equals(o.getClass());
+    }
+
+    @Override
+    public final int hashCode() {
+        return getClass().hashCode();
     }
 }

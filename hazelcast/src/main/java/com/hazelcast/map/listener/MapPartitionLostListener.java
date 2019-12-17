@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,7 @@ import com.hazelcast.map.MapPartitionLostEvent;
  * @see MapPartitionLostEvent
  * @since 3.5
  */
+@FunctionalInterface
 public interface MapPartitionLostListener extends MapListener {
 
     /**

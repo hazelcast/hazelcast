@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,16 +21,18 @@ import com.hazelcast.collection.impl.set.SetService;
 import com.hazelcast.collection.impl.txncollection.AbstractTransactionalCollectionProxy;
 import com.hazelcast.collection.impl.txncollection.operations.CollectionReserveAddOperation;
 import com.hazelcast.collection.impl.txncollection.operations.CollectionTxnAddOperation;
-import com.hazelcast.core.TransactionalSet;
-import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.transaction.TransactionalSet;
+import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.impl.Transaction;
-import com.hazelcast.util.ExceptionUtil;
+import com.hazelcast.internal.util.ExceptionUtil;
 
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.concurrent.Future;
+
+import static com.hazelcast.collection.impl.collection.CollectionContainer.INVALID_ITEM_ID;
 
 public class TransactionalSetProxy<E>
         extends AbstractTransactionalCollectionProxy<SetService, E>
@@ -48,7 +50,7 @@ public class TransactionalSetProxy<E>
         checkObjectNotNull(e);
 
         Data value = getNodeEngine().toData(e);
-        if (!getCollection().add(new CollectionItem(-1, value))) {
+        if (!getCollection().add(new CollectionItem(INVALID_ITEM_ID, value))) {
             return false;
         }
 

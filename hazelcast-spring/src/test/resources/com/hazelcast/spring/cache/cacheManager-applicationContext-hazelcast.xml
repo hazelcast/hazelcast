@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+  ~ Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
   ~ you may not use this file except in compliance with the License.
@@ -24,23 +24,20 @@
         http://www.springframework.org/schema/cache
         http://www.springframework.org/schema/cache/spring-cache.xsd
         http://www.hazelcast.com/schema/spring
-        http://www.hazelcast.com/schema/spring/hazelcast-spring.xsd">
+        http://www.hazelcast.com/schema/spring/hazelcast-spring-4.0.xsd">
 
     <cache:annotation-driven cache-manager="cacheManager"/>
 
     <hz:hazelcast id="instance">
         <hz:config>
-            <hz:group name="dev" password="dev-pass"/>
-            <hz:network port="5701" port-auto-increment="false">
+            <hz:cluster-name>dev</hz:cluster-name>
+            <hz:network port="5101" port-auto-increment="true">
                 <hz:join>
-                    <hz:multicast enabled="true"/>
-                    <hz:tcp-ip enabled="false">
-                        <hz:interface>127.0.0.1:5701</hz:interface>
+                    <hz:multicast enabled="false"/>
+                    <hz:tcp-ip enabled="true">
+                        <hz:members>127.0.0.1</hz:members>
                     </hz:tcp-ip>
                 </hz:join>
-                <hz:interfaces enabled="true">
-                    <hz:interface>127.0.0.1</hz:interface>
-                </hz:interfaces>
             </hz:network>
             <hz:map name="default">
                 <hz:map-store enabled="true" write-delay-seconds="0"

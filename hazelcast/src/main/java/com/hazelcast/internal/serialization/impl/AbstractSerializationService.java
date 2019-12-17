@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,7 @@ package com.hazelcast.internal.serialization.impl;
 
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.ManagedContext;
-import com.hazelcast.core.PartitioningStrategy;
+import com.hazelcast.partition.PartitioningStrategy;
 import com.hazelcast.internal.serialization.InputOutputFactory;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.bufferpool.BufferPool;
@@ -27,16 +27,15 @@ import com.hazelcast.internal.serialization.impl.bufferpool.BufferPoolThreadLoca
 import com.hazelcast.internal.usercodedeployment.impl.ClassLocator;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
-import com.hazelcast.nio.BufferObjectDataInput;
-import com.hazelcast.nio.BufferObjectDataOutput;
+import com.hazelcast.internal.nio.BufferObjectDataInput;
+import com.hazelcast.internal.nio.BufferObjectDataOutput;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.Serializer;
-import com.hazelcast.util.function.Supplier;
 
 import java.io.Externalizable;
 import java.io.Serializable;
@@ -47,6 +46,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Supplier;
 
 import static com.hazelcast.internal.serialization.impl.SerializationConstants.CONSTANT_SERIALIZERS_LENGTH;
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.EMPTY_PARTITIONING_STRATEGY;
@@ -56,7 +56,7 @@ import static com.hazelcast.internal.serialization.impl.SerializationUtil.handle
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.handleSerializeException;
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.indexForDefaultType;
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.isNullData;
-import static com.hazelcast.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static java.nio.ByteOrder.BIG_ENDIAN;
 
 public abstract class AbstractSerializationService implements InternalSerializationService {
@@ -88,19 +88,15 @@ public abstract class AbstractSerializationService implements InternalSerializat
     private final byte version;
     private final ILogger logger = Logger.getLogger(InternalSerializationService.class);
 
-    AbstractSerializationService(InputOutputFactory inputOutputFactory, byte version, ClassLoader classLoader,
-                                 ManagedContext managedContext, PartitioningStrategy globalPartitionStrategy,
-                                 int initialOutputBufferSize,
-                                 BufferPoolFactory bufferPoolFactory,
-                                 Supplier<RuntimeException> notActiveExceptionSupplier) {
-        this.inputOutputFactory = inputOutputFactory;
-        this.version = version;
-        this.classLoader = classLoader;
-        this.managedContext = managedContext;
-        this.globalPartitioningStrategy = globalPartitionStrategy;
-        this.outputBufferSize = initialOutputBufferSize;
-        this.bufferPoolThreadLocal = new BufferPoolThreadLocal(this, bufferPoolFactory,
-                notActiveExceptionSupplier);
+    AbstractSerializationService(Builder<?> builder) {
+        this.inputOutputFactory = builder.inputOutputFactory;
+        this.version = builder.version;
+        this.classLoader = builder.classLoader;
+        this.managedContext = builder.managedContext;
+        this.globalPartitioningStrategy = builder.globalPartitionStrategy;
+        this.outputBufferSize = builder.initialOutputBufferSize;
+        this.bufferPoolThreadLocal = new BufferPoolThreadLocal(this, builder.bufferPoolFactory,
+                builder.notActiveExceptionSupplier);
         this.nullSerializerAdapter = createSerializerAdapter(new ConstantSerializers.NullSerializer(), this);
     }
 
@@ -130,11 +126,17 @@ public abstract class AbstractSerializationService implements InternalSerializat
 
     @Override
     public byte[] toBytes(Object obj, int leftPadding, boolean insertPartitionHash) {
-        return toBytes(obj, leftPadding, insertPartitionHash, globalPartitioningStrategy);
+        return toBytes(obj, leftPadding, insertPartitionHash, globalPartitioningStrategy, getByteOrder());
     }
 
     private byte[] toBytes(Object obj, int leftPadding, boolean writeHash, PartitioningStrategy strategy) {
+        return toBytes(obj, leftPadding, writeHash, strategy, BIG_ENDIAN);
+    }
+
+    private byte[] toBytes(Object obj, int leftPadding, boolean writeHash, PartitioningStrategy strategy,
+                           ByteOrder serializerTypeIdByteOrder) {
         checkNotNull(obj);
+        checkNotNull(serializerTypeIdByteOrder);
 
         BufferPool pool = bufferPoolThreadLocal.get();
         BufferObjectDataOutput out = pool.takeOutputBuffer();
@@ -147,7 +149,7 @@ public abstract class AbstractSerializationService implements InternalSerializat
                 out.writeInt(partitionHash, BIG_ENDIAN);
             }
 
-            out.writeInt(serializer.getTypeId(), BIG_ENDIAN);
+            out.writeInt(serializer.getTypeId(), serializerTypeIdByteOrder);
 
             serializer.write(out, obj);
             return out.toByteArray();
@@ -234,15 +236,14 @@ public abstract class AbstractSerializationService implements InternalSerializat
 
     private static HazelcastSerializationException newHazelcastSerializationException(int typeId) {
         return new HazelcastSerializationException("There is no suitable de-serializer for type " + typeId + ". "
-                + "This exception is likely to be caused by differences in the serialization configuration between members "
+                + "This exception is likely caused by differences in the serialization configuration between members "
                 + "or between clients and members.");
     }
 
     @Override
     public final void writeObject(final ObjectDataOutput out, final Object obj) {
         if (obj instanceof Data) {
-            throw new HazelcastSerializationException(
-                    "Cannot write a Data instance! " + "Use #writeData(ObjectDataOutput out, Data data) instead.");
+            throw new HazelcastSerializationException("Cannot write a Data instance, use writeData() instead");
         }
         try {
             SerializerAdapter serializer = serializerFor(obj);
@@ -355,11 +356,11 @@ public abstract class AbstractSerializationService implements InternalSerializat
 
     public final void register(Class type, Serializer serializer) {
         if (type == null) {
-            throw new IllegalArgumentException("Class type information is required!");
+            throw new IllegalArgumentException("type is required");
         }
         if (serializer.getTypeId() <= 0) {
             throw new IllegalArgumentException(
-                    "Type ID must be positive! Current: " + serializer.getTypeId() + ", Serializer: " + serializer);
+                    "Type ID must be positive. Current: " + serializer.getTypeId() + ", Serializer: " + serializer);
         }
         safeRegister(type, createSerializerAdapter(serializer, this));
     }
@@ -371,7 +372,7 @@ public abstract class AbstractSerializationService implements InternalSerializat
     public final void registerGlobal(final Serializer serializer, boolean overrideJavaSerialization) {
         SerializerAdapter adapter = createSerializerAdapter(serializer, this);
         if (!global.compareAndSet(null, adapter)) {
-            throw new IllegalStateException("Global serializer is already registered!");
+            throw new IllegalStateException("Global serializer is already registered");
         }
         this.overrideJavaSerialization = overrideJavaSerialization;
         SerializerAdapter current = idMap.putIfAbsent(serializer.getTypeId(), adapter);
@@ -379,7 +380,7 @@ public abstract class AbstractSerializationService implements InternalSerializat
             global.compareAndSet(adapter, null);
             this.overrideJavaSerialization = false;
             throw new IllegalStateException(
-                    "Serializer [" + current.getImpl() + "] has been already registered for type-id: " + serializer.getTypeId());
+                    "Serializer [" + current.getImpl() + "] has been already registered for type ID: " + serializer.getTypeId());
         }
     }
 
@@ -402,7 +403,7 @@ public abstract class AbstractSerializationService implements InternalSerializat
 
     protected final boolean safeRegister(final Class type, final SerializerAdapter serializer) {
         if (constantTypesMap.containsKey(type)) {
-            throw new IllegalArgumentException("[" + type + "] serializer cannot be overridden!");
+            throw new IllegalArgumentException("[" + type + "] serializer cannot be overridden");
         }
         SerializerAdapter current = typeMap.putIfAbsent(type, serializer);
         if (current != null && current.getImpl().getClass() != serializer.getImpl().getClass()) {
@@ -412,7 +413,7 @@ public abstract class AbstractSerializationService implements InternalSerializat
         current = idMap.putIfAbsent(serializer.getTypeId(), serializer);
         if (current != null && current.getImpl().getClass() != serializer.getImpl().getClass()) {
             throw new IllegalStateException(
-                    "Serializer [" + current.getImpl() + "] has been already registered for type-id: " + serializer.getTypeId());
+                    "Serializer [" + current.getImpl() + "] has been already registered for type ID: " + serializer.getTypeId());
         }
         return current == null;
     }
@@ -557,5 +558,65 @@ public abstract class AbstractSerializationService implements InternalSerializat
             return javaSerializerAdapter;
         }
         return null;
+    }
+
+    public abstract static class Builder<T extends Builder<T>> {
+        private InputOutputFactory inputOutputFactory;
+        private byte version;
+        private ClassLoader classLoader;
+        private ManagedContext managedContext;
+        private PartitioningStrategy globalPartitionStrategy;
+        private int initialOutputBufferSize;
+        private BufferPoolFactory bufferPoolFactory;
+        private Supplier<RuntimeException> notActiveExceptionSupplier;
+
+        protected Builder() {
+        }
+
+        protected abstract T self();
+
+        public final T withInputOutputFactory(InputOutputFactory inputOutputFactory) {
+            this.inputOutputFactory = inputOutputFactory;
+            return self();
+        }
+
+        public final T withVersion(byte version) {
+            this.version = version;
+            return self();
+        }
+
+        public final T withClassLoader(ClassLoader classLoader) {
+            this.classLoader = classLoader;
+            return self();
+        }
+
+        public ClassLoader getClassLoader() {
+            return classLoader;
+        }
+
+        public final T withManagedContext(ManagedContext managedContext) {
+            this.managedContext = managedContext;
+            return self();
+        }
+
+        public final T withGlobalPartitionStrategy(PartitioningStrategy globalPartitionStrategy) {
+            this.globalPartitionStrategy = globalPartitionStrategy;
+            return self();
+        }
+
+        public final T withInitialOutputBufferSize(int initialOutputBufferSize) {
+            this.initialOutputBufferSize = initialOutputBufferSize;
+            return self();
+        }
+
+        public final T withBufferPoolFactory(BufferPoolFactory bufferPoolFactory) {
+            this.bufferPoolFactory = bufferPoolFactory;
+            return self();
+        }
+
+        public final T withNotActiveExceptionSupplier(Supplier<RuntimeException> notActiveExceptionSupplier) {
+            this.notActiveExceptionSupplier = notActiveExceptionSupplier;
+            return self();
+        }
     }
 }

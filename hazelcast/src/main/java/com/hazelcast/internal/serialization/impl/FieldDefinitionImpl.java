@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,12 +21,12 @@ import com.hazelcast.nio.serialization.FieldType;
 
 public class FieldDefinitionImpl implements FieldDefinition {
 
-    int index;
-    String fieldName;
-    FieldType type;
-    int classId;
-    int factoryId;
-    int version;
+    private final int index;
+    private final String fieldName;
+    private final FieldType type;
+    private final int classId;
+    private final int factoryId;
+    private final int version;
 
     public FieldDefinitionImpl(int index, String fieldName, FieldType type, int version) {
         this(index, fieldName, type, 0, 0, version);
@@ -71,9 +71,8 @@ public class FieldDefinitionImpl implements FieldDefinition {
         return version;
     }
 
-    //CHECKSTYLE:OFF
-    //Generated equals method has too high NPath Complexity
     @Override
+    @SuppressWarnings("checkstyle:npathcomplexity")
     public boolean equals(Object o) {
         if (this == o) {
             return true;
@@ -83,7 +82,6 @@ public class FieldDefinitionImpl implements FieldDefinition {
         }
 
         FieldDefinitionImpl that = (FieldDefinitionImpl) o;
-
         if (index != that.index) {
             return false;
         }
@@ -101,7 +99,7 @@ public class FieldDefinitionImpl implements FieldDefinition {
         }
         return type == that.type;
     }
-    //CHECKSTYLE:ON
+
     @Override
     public int hashCode() {
         int result = index;

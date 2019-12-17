@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,19 +17,21 @@
 package com.hazelcast.cache;
 
 import com.hazelcast.cache.impl.CacheEventListener;
-import com.hazelcast.cache.impl.HazelcastServerCachingProvider;
 import com.hazelcast.cache.impl.ICacheService;
 import com.hazelcast.cache.impl.operation.CacheDestroyOperation;
 import com.hazelcast.config.CacheConfig;
+import com.hazelcast.core.DistributedObjectEvent;
+import com.hazelcast.core.DistributedObjectListener;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.instance.HazelcastInstanceProxy;
+import com.hazelcast.instance.impl.HazelcastInstanceProxy;
 import com.hazelcast.internal.nearcache.impl.invalidation.Invalidation;
+import com.hazelcast.internal.util.RuntimeAvailableProcessors;
 import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.spi.impl.operationservice.InternalOperationService;
+import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -47,13 +49,14 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static com.hazelcast.cache.CacheTestSupport.createServerCachingProvider;
 import static java.lang.String.format;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class CacheDestroyTest extends CacheTestSupport {
     private static final int INSTANCE_COUNT = 2;
 
@@ -97,23 +100,32 @@ public class CacheDestroyTest extends CacheTestSupport {
     }
 
     @Test
-    public void test_cacheDestroyOperation() throws ExecutionException, InterruptedException {
+    public void test_cacheDestroyOperation() {
         final String CACHE_NAME = "MyCache";
         final String FULL_CACHE_NAME = HazelcastCacheManager.CACHE_MANAGER_PREFIX + CACHE_NAME;
+        final CountDownLatch cacheProxyCreatedLatch = new CountDownLatch(INSTANCE_COUNT);
+        for (HazelcastInstance hz : hazelcastInstances) {
+            hz.addDistributedObjectListener(new CacheProxyListener(cacheProxyCreatedLatch));
+        }
 
-        CachingProvider cachingProvider = HazelcastServerCachingProvider.createCachingProvider(getHazelcastInstance());
+        CachingProvider cachingProvider = createServerCachingProvider(getHazelcastInstance());
         CacheManager cacheManager = cachingProvider.getCacheManager();
         cacheManager.createCache(CACHE_NAME, new CacheConfig());
 
         NodeEngineImpl nodeEngine1 = getNode(getHazelcastInstance()).getNodeEngine();
         final ICacheService cacheService1 = nodeEngine1.getService(ICacheService.SERVICE_NAME);
-        InternalOperationService operationService1 = nodeEngine1.getOperationService();
+        OperationServiceImpl operationService1 = nodeEngine1.getOperationService();
 
         NodeEngineImpl nodeEngine2 = getNode(hazelcastInstances[1]).getNodeEngine();
         final ICacheService cacheService2 = nodeEngine2.getService(ICacheService.SERVICE_NAME);
 
         assertNotNull(cacheService1.getCacheConfig(FULL_CACHE_NAME));
         assertNotNull(cacheService2.getCacheConfig(FULL_CACHE_NAME));
+
+        // wait for the latch to ensure proxy registration events have been processed (otherwise
+        // the cache config may be added on a member after having been removed by CacheDestroyOp)
+        assertOpenEventually("A cache proxy should have been created on each instance, latch count was "
+                                + cacheProxyCreatedLatch.getCount(), cacheProxyCreatedLatch);
 
         // Invoke on single node and the operation is also forward to others nodes by the operation itself
         operationService1.invokeOnTarget(ICacheService.SERVICE_NAME,
@@ -177,7 +189,7 @@ public class CacheDestroyTest extends CacheTestSupport {
         final Cache<Integer, Integer> cache = cacheManager.createCache(cacheName, cacheConfig);
 
         final CountDownLatch latch = new CountDownLatch(1);
-        int concurrency = Runtime.getRuntime().availableProcessors();
+        int concurrency = RuntimeAvailableProcessors.get();
         Future[] destroyFutures = new Future[concurrency];
 
         DestroyCacheTask destroyCacheTask = new DestroyCacheTask(cacheName, cacheManager, latch, cache);
@@ -201,14 +213,14 @@ public class CacheDestroyTest extends CacheTestSupport {
         final CacheConfig<Integer, Integer> cacheConfig = createCacheConfig();
 
         final CountDownLatch latch = new CountDownLatch(1);
-        int concurrency = Runtime.getRuntime().availableProcessors() * 4;
+        int concurrency = RuntimeAvailableProcessors.get() * 4;
         Future[] futures = new Future[concurrency];
 
         DestroyCacheTask destroyCacheTask = new DestroyCacheTask(cacheName, cacheManager, latch, null);
         CreateCacheTask createCacheTask = new CreateCacheTask(cacheName, cacheManager, latch, cacheConfig);
 
         for (int i = 0; i < concurrency; i++) {
-            futures[i] = spawn( i % 2 == 0 ? destroyCacheTask : createCacheTask);
+            futures[i] = spawn(i % 2 == 0 ? destroyCacheTask : createCacheTask);
         }
 
         latch.countDown();
@@ -226,7 +238,8 @@ public class CacheDestroyTest extends CacheTestSupport {
                 .registerListener(ICacheService.SERVICE_NAME, name, cacheEventListener);
     }
 
-    public static abstract class CacheTask implements Runnable {
+    public abstract static class CacheTask implements Runnable {
+
         protected final AtomicBoolean running = new AtomicBoolean(true);
         protected final String cacheName;
         protected final CacheManager cacheManager;
@@ -294,4 +307,22 @@ public class CacheDestroyTest extends CacheTestSupport {
         }
     }
 
+    public static class CacheProxyListener implements DistributedObjectListener {
+        private final CountDownLatch objectCreatedLatch;
+
+        public CacheProxyListener(CountDownLatch objectCreatedLatch) {
+            this.objectCreatedLatch = objectCreatedLatch;
+        }
+
+        @Override
+        public void distributedObjectCreated(DistributedObjectEvent event) {
+            if (event.getDistributedObject() instanceof Cache) {
+                objectCreatedLatch.countDown();
+            }
+        }
+
+        @Override
+        public void distributedObjectDestroyed(DistributedObjectEvent event) {
+        }
+    }
 }

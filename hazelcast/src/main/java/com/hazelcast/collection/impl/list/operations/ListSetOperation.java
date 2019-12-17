@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,20 +21,23 @@ import com.hazelcast.collection.impl.collection.CollectionItem;
 import com.hazelcast.collection.impl.collection.operations.CollectionBackupAwareOperation;
 import com.hazelcast.collection.impl.list.ListContainer;
 import com.hazelcast.core.ItemEventType;
+import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.impl.MutatingOperation;
+import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.spi.impl.operationservice.MutatingOperation;
 
 import java.io.IOException;
+
+import static com.hazelcast.collection.impl.collection.CollectionContainer.INVALID_ITEM_ID;
 
 public class ListSetOperation extends CollectionBackupAwareOperation implements MutatingOperation {
 
     private int index;
     private Data value;
-    private long itemId = -1;
-    private long oldItemId = -1;
+    private long itemId = INVALID_ITEM_ID;
+    private long oldItemId = INVALID_ITEM_ID;
 
     public ListSetOperation() {
     }
@@ -71,7 +74,7 @@ public class ListSetOperation extends CollectionBackupAwareOperation implements 
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return CollectionDataSerializerHook.LIST_SET;
     }
 
@@ -79,13 +82,13 @@ public class ListSetOperation extends CollectionBackupAwareOperation implements 
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeInt(index);
-        out.writeData(value);
+        IOUtil.writeData(out, value);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         index = in.readInt();
-        value = in.readData();
+        value = IOUtil.readData(in);
     }
 }

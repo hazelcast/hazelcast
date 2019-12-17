@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+  ~ Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
   ~ you may not use this file except in compliance with the License.
@@ -22,7 +22,7 @@
        xsi:schemaLocation="http://www.springframework.org/schema/beans
         http://www.springframework.org/schema/beans/spring-beans.xsd
         http://www.hazelcast.com/schema/spring
-        http://www.hazelcast.com/schema/spring/hazelcast-spring.xsd">
+        http://www.hazelcast.com/schema/spring/hazelcast-spring-4.0.xsd">
 
     <bean class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer"
           p:systemPropertiesModeName="SYSTEM_PROPERTIES_MODE_OVERRIDE">
@@ -35,9 +35,7 @@
 
     <hz:hazelcast id="instance">
         <hz:config>
-            <hz:group
-                    name="${cluster.group.name}"
-                    password="${cluster.group.password}"/>
+            <hz:cluster-name>${cluster.name}</hz:cluster-name>
             <hz:properties>
                 <hz:property name="hazelcast.merge.first.run.delay.seconds">5</hz:property>
                 <hz:property name="hazelcast.merge.next.run.delay.seconds">5</hz:property>
@@ -67,11 +65,9 @@
         </hz:config>
     </hz:hazelcast>
 
-    <hz:client id="client"
-               credentials-ref="credentials">
-        <hz:network connection-attempt-limit="3"
-                    connection-attempt-period="3000"
-                    connection-timeout="1000"
+    <hz:client id="client">
+        <hz:cluster-name>${cluster.name}</hz:cluster-name>
+        <hz:network connection-timeout="1000"
                     redo-operation="false"
                     smart-routing="false">
             <hz:member>127.0.0.1:5700</hz:member>
@@ -91,23 +87,33 @@
                     <hz:property name="javax.net.ssl.protocol">TLS</hz:property>
                 </hz:properties>
             </hz:ssl>
-            <hz:discovery-strategies>
-                <hz:node-filter implementation="dummyNodeFilter"/>
-                <hz:discovery-strategy discovery-strategy-factory="dummyDiscoveryStrategyFactory">
-                    <hz:properties>
-                        <hz:property name="key-string">foo</hz:property>
-                        <hz:property name="key-int">123</hz:property>
-                        <hz:property name="key-boolean">true</hz:property>
-                    </hz:properties>
-                </hz:discovery-strategy>
-                <hz:discovery-strategy class-name="com.hazelcast.spring.DummyDiscoveryStrategy">
-                    <hz:properties>
-                        <hz:property name="key-string">foo2</hz:property>
-                    </hz:properties>
-                </hz:discovery-strategy>
-                <hz:discovery-strategy class-name="com.hazelcast.spring.DummyDiscoveryStrategy"/>
-                <hz:discovery-strategy discovery-strategy-factory="dummyDiscoveryStrategyFactory"/>
-            </hz:discovery-strategies>
+            <hz:aws enabled="false"
+                    access-key="sample-access-key"
+                    secret-key="sample-secret-key"
+                    region="sample-region"
+                    host-header="sample-header"
+                    security-group-name="sample-group"
+                    tag-key="sample-tag-key"
+                    tag-value="sample-tag-value"
+                    iam-role="sample-role"/>
+            <hz:gcp enabled="false"
+                    zones="us-east1-b,us-east1-c"/>
+            <hz:azure enabled="false"
+                      client-id="CLIENT_ID"
+                      client-secret="CLIENT_SECRET"
+                      tenant-id="TENANT_ID"
+                      subscription-id="SUB_ID"
+                      cluster-id="HZLCAST001"
+                      group-name="RESOURCE-GROUP-NAME"/>
+            <hz:kubernetes enabled="false"
+                           namespace="MY-KUBERNETES-NAMESPACE"
+                           service-name="MY-SERVICE-NAME"
+                           service-label-name="MY-SERVICE-LABEL-NAME"
+                           service-label-value="MY-SERVICE-LABEL-VALUE"/>
+            <hz:eureka enabled="false"
+                       self-registration="true"
+                       namespace="hazelcast"/>
+            <hz:discovery-strategies/>
             <hz:outbound-ports>
                 <hz:ports>34600</hz:ports>
                 <hz:ports>34700-34710</hz:ports>
@@ -140,7 +146,6 @@
             </hz:serializers>
         </hz:serialization>
 
-
         <hz:proxy-factories>
             <hz:proxy-factory class-name="com.hazelcast.spring.DummyProxyFactory" service="MyService"/>
         </hz:proxy-factories>
@@ -150,16 +155,15 @@
         <hz:near-cache name="default"
                        time-to-live-seconds="1"
                        max-idle-seconds="70"
-                       eviction-policy="LRU"
-                       max-size="4000"
-                       invalidate-on-change="true"/>
-
+                       invalidate-on-change="true">
+            <hz:eviction eviction-policy="LRU" size="4000"/>
+        </hz:near-cache>
 
     </hz:client>
 
     <bean id="credentials" class="com.hazelcast.security.UsernamePasswordCredentials">
-        <property name="username" value="spring-group"/>
-        <property name="password" value="spring-group-pass"/>
+        <property name="name" value="spring-cluster"/>
+        <property name="password" value="spring-cluster-pass"/>
     </bean>
 
     <hz:map id="map" instance-ref="client" name="map"/>

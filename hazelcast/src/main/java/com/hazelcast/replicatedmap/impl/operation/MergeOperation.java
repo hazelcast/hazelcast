@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,61 +16,88 @@
 
 package com.hazelcast.replicatedmap.impl.operation;
 
-import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
-import com.hazelcast.replicatedmap.impl.record.ReplicatedMapEntryView;
 import com.hazelcast.replicatedmap.impl.record.ReplicatedRecordStore;
-import com.hazelcast.replicatedmap.merge.ReplicatedMapMergePolicy;
+import com.hazelcast.spi.merge.SplitBrainMergePolicy;
+import com.hazelcast.spi.merge.SplitBrainMergeTypes.ReplicatedMapMergeTypes;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
- * Merges two replicated map entries with the given merge policy after the split-brain syndrome is recovered.
+ * Contains multiple merging entries for split-brain healing with a {@link SplitBrainMergePolicy}.
+ *
+ * @since 3.10
  */
-public class MergeOperation extends AbstractReplicatedMapOperation {
+public class MergeOperation extends AbstractNamedSerializableOperation {
 
     private String name;
-    private Object key;
-    private ReplicatedMapEntryView entryView;
-    private ReplicatedMapMergePolicy policy;
+    private List<ReplicatedMapMergeTypes> mergingEntries;
+    private SplitBrainMergePolicy<Object, ReplicatedMapMergeTypes> mergePolicy;
+
+    private transient boolean hasMergedValues;
 
     public MergeOperation() {
     }
 
-    public MergeOperation(String name, Object key, ReplicatedMapEntryView entryView, ReplicatedMapMergePolicy policy) {
+    MergeOperation(String name, List<ReplicatedMapMergeTypes> mergingEntries,
+                   SplitBrainMergePolicy<Object, ReplicatedMapMergeTypes> mergePolicy) {
         this.name = name;
-        this.key = key;
-        this.entryView = entryView;
-        this.policy = policy;
+        this.mergingEntries = mergingEntries;
+        this.mergePolicy = mergePolicy;
     }
 
     @Override
-    public void run() throws Exception {
+    public String getName() {
+        return name;
+    }
+
+    @Override
+    public void run() {
         ReplicatedMapService service = getService();
-        ReplicatedRecordStore store = service.getReplicatedRecordStore(name, true, key);
-        store.merge(key, entryView, policy);
+        ReplicatedRecordStore recordStore = service.getReplicatedRecordStore(name, true, getPartitionId());
+
+        for (ReplicatedMapMergeTypes mergingEntry : mergingEntries) {
+            if (recordStore.merge(mergingEntry, mergePolicy)) {
+                hasMergedValues = true;
+            }
+        }
+    }
+
+    @Override
+    public Object getResponse() {
+        return hasMergedValues;
     }
 
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
+        super.writeInternal(out);
         out.writeUTF(name);
-        IOUtil.writeObject(out, key);
-        out.writeObject(entryView);
-        out.writeObject(policy);
+        out.writeInt(mergingEntries.size());
+        for (ReplicatedMapMergeTypes mergingEntry : mergingEntries) {
+            out.writeObject(mergingEntry);
+        }
+        out.writeObject(mergePolicy);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
+        super.readInternal(in);
         name = in.readUTF();
-        key = IOUtil.readObject(in);
-        entryView = in.readObject();
-        policy = in.readObject();
+        int size = in.readInt();
+        mergingEntries = new ArrayList<>(size);
+        for (int i = 0; i < size; i++) {
+            ReplicatedMapMergeTypes mergingEntry = in.readObject();
+            mergingEntries.add(mergingEntry);
+        }
+        mergePolicy = in.readObject();
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ReplicatedMapDataSerializerHook.MERGE;
     }
 }

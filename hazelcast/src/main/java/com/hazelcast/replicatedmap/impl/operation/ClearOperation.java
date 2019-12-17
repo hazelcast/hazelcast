@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,13 +16,16 @@
 
 package com.hazelcast.replicatedmap.impl.operation;
 
-import com.hazelcast.core.Member;
-import com.hazelcast.nio.Address;
+import com.hazelcast.cluster.Member;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.replicatedmap.ReplicatedMap;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
 import com.hazelcast.replicatedmap.impl.record.ReplicatedRecordStore;
-import com.hazelcast.spi.OperationService;
+import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.spi.impl.operationservice.OperationService;
+import com.hazelcast.spi.impl.operationservice.MutatingOperation;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -33,9 +36,9 @@ import static com.hazelcast.replicatedmap.impl.ReplicatedMapService.INVOCATION_T
 
 /**
  * This operation will execute the remote clear on replicated map if
- * {@link com.hazelcast.core.ReplicatedMap#clear()} is called.
+ * {@link ReplicatedMap#clear()} is called.
  */
-public class ClearOperation extends AbstractSerializableOperation {
+public class ClearOperation extends AbstractNamedSerializableOperation implements MutatingOperation {
 
     private String mapName;
     private boolean replicateClear;
@@ -57,7 +60,7 @@ public class ClearOperation extends AbstractSerializableOperation {
 
     @Override
     public void run() throws Exception {
-        if (getNodeEngine().getConfig().isLiteMember()) {
+        if (getNodeEngine().getLocalMember().isLiteMember()) {
             return;
         }
         ReplicatedMapService service = getService();
@@ -65,7 +68,7 @@ public class ClearOperation extends AbstractSerializableOperation {
         if (store == null) {
             return;
         }
-        response = store.size();
+        response = store.getStorage().size();
 
         if (replicateClear) {
             store.clear();
@@ -76,14 +79,14 @@ public class ClearOperation extends AbstractSerializableOperation {
     }
 
     private void replicateClearOperation(long version) {
-        final OperationService operationService = getNodeEngine().getOperationService();
+        OperationService operationService = getNodeEngine().getOperationService();
         Collection<Address> members = getMemberAddresses();
         for (Address address : members) {
-            ClearOperation clearOperation = new ClearOperation(mapName, false, version);
-            clearOperation.setPartitionId(getPartitionId());
-            clearOperation.setValidateTarget(false);
+            Operation op = new ClearOperation(mapName, false, version)
+                    .setPartitionId(getPartitionId())
+                    .setValidateTarget(false);
             operationService
-                    .createInvocationBuilder(getServiceName(), clearOperation, address)
+                    .createInvocationBuilder(getServiceName(), op, address)
                     .setTryCount(INVOCATION_TRY_COUNT)
                     .invoke();
         }
@@ -92,7 +95,7 @@ public class ClearOperation extends AbstractSerializableOperation {
     protected Collection<Address> getMemberAddresses() {
         Address thisAddress = getNodeEngine().getThisAddress();
         Collection<Member> members = getNodeEngine().getClusterService().getMembers(DATA_MEMBER_SELECTOR);
-        Collection<Address> addresses = new ArrayList<Address>();
+        Collection<Address> addresses = new ArrayList<>();
         for (Member member : members) {
             Address address = member.getAddress();
             if (address.equals(thisAddress)) {
@@ -119,7 +122,7 @@ public class ClearOperation extends AbstractSerializableOperation {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ReplicatedMapDataSerializerHook.CLEAR;
     }
 
@@ -137,5 +140,10 @@ public class ClearOperation extends AbstractSerializableOperation {
         mapName = in.readUTF();
         replicateClear = in.readBoolean();
         version = in.readLong();
+    }
+
+    @Override
+    public String getName() {
+        return mapName;
     }
 }

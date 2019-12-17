@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,67 +16,117 @@
 
 package com.hazelcast.cache.impl.operation;
 
-import com.hazelcast.cache.CacheEntryView;
-import com.hazelcast.cache.CacheMergePolicy;
 import com.hazelcast.cache.impl.CacheDataSerializerHook;
-import com.hazelcast.cache.impl.CacheRecordStore;
+import com.hazelcast.cache.impl.record.CacheRecord;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.BackupAwareOperation;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.impl.MutatingOperation;
+import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.spi.impl.operationservice.BackupAwareOperation;
+import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.spi.merge.SplitBrainMergePolicy;
+import com.hazelcast.spi.merge.SplitBrainMergeTypes.CacheMergeTypes;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 
-public class CacheMergeOperation
-        extends AbstractCacheOperation
-        implements BackupAwareOperation, MutatingOperation {
+import static com.hazelcast.internal.util.MapUtil.createHashMap;
+import static com.hazelcast.wan.impl.CallerProvenance.NOT_WAN;
 
-    private CacheMergePolicy mergePolicy;
-    private CacheEntryView<Data, Data> mergingEntry;
+/**
+ * Contains multiple merging entries for split-brain healing with a {@link SplitBrainMergePolicy}.
+ *
+ * @since 3.10
+ */
+public class CacheMergeOperation extends CacheOperation implements BackupAwareOperation {
+
+    private List<CacheMergeTypes> mergingEntries;
+    private SplitBrainMergePolicy<Data, CacheMergeTypes> mergePolicy;
+
+    private transient boolean hasBackups;
+    private transient Map<Data, CacheRecord> backupRecords;
 
     public CacheMergeOperation() {
     }
 
-    public CacheMergeOperation(String name, Data key, CacheEntryView<Data, Data> entryView, CacheMergePolicy policy) {
-        super(name, key);
-        mergingEntry = entryView;
-        mergePolicy = policy;
+    public CacheMergeOperation(String name, List<CacheMergeTypes> mergingEntries,
+                               SplitBrainMergePolicy<Data, CacheMergeTypes> mergePolicy) {
+        super(name);
+        this.mergingEntries = mergingEntries;
+        this.mergePolicy = mergePolicy;
     }
 
     @Override
-    public void run() throws Exception {
-        backupRecord = ((CacheRecordStore) cache).merge(mergingEntry, mergePolicy);
+    protected void beforeRunInternal() {
+        hasBackups = getSyncBackupCount() + getAsyncBackupCount() > 0;
+        if (hasBackups) {
+            backupRecords = createHashMap(mergingEntries.size());
+        }
+    }
+
+    @Override
+    public void run() {
+        for (CacheMergeTypes mergingEntry : mergingEntries) {
+            merge(mergingEntry);
+        }
+    }
+
+    private void merge(CacheMergeTypes mergingEntry) {
+        Data dataKey = mergingEntry.getKey();
+
+        CacheRecord backupRecord = recordStore.merge(mergingEntry, mergePolicy, NOT_WAN);
+        if (backupRecords != null && backupRecord != null) {
+            backupRecords.put(dataKey, backupRecord);
+        }
+        if (recordStore.isWanReplicationEnabled()) {
+            if (backupRecord != null) {
+                publishWanUpdate(dataKey, backupRecord);
+            } else {
+                publishWanRemove(dataKey);
+            }
+        }
+    }
+
+    @Override
+    public Object getResponse() {
+        return hasBackups && !backupRecords.isEmpty();
     }
 
     @Override
     public boolean shouldBackup() {
-        return backupRecord != null;
+        return hasBackups && !backupRecords.isEmpty();
     }
 
     @Override
     public Operation getBackupOperation() {
-        return new CachePutBackupOperation(name, key, backupRecord);
+        return new CachePutAllBackupOperation(name, backupRecords);
     }
 
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        out.writeObject(mergingEntry);
+        out.writeInt(mergingEntries.size());
+        for (CacheMergeTypes mergingEntry : mergingEntries) {
+            out.writeObject(mergingEntry);
+        }
         out.writeObject(mergePolicy);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        mergingEntry = in.readObject();
+        int size = in.readInt();
+        mergingEntries = new ArrayList<>(size);
+        for (int i = 0; i < size; i++) {
+            CacheMergeTypes mergingEntry = in.readObject();
+            mergingEntries.add(mergingEntry);
+        }
         mergePolicy = in.readObject();
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return CacheDataSerializerHook.MERGE;
     }
-
 }

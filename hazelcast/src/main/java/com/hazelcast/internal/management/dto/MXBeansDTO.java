@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,14 +16,14 @@
 
 package com.hazelcast.internal.management.dto;
 
-import com.eclipsesource.json.JsonObject;
-import com.hazelcast.internal.management.JsonSerializable;
+import com.hazelcast.internal.json.JsonObject;
+import com.hazelcast.json.internal.JsonSerializable;
 
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
-import static com.hazelcast.util.JsonUtil.getObject;
+import static com.hazelcast.internal.util.JsonUtil.getObject;
 
 /**
  * Holder class for serializable service beans.
@@ -35,9 +35,7 @@ public class MXBeansDTO implements JsonSerializable {
     private ConnectionManagerDTO connectionManagerBean;
     private PartitionServiceBeanDTO partitionServiceBean;
     private ProxyServiceDTO proxyServiceBean;
-    private Map<String, ManagedExecutorDTO> managedExecutorBeans =
-            new HashMap<String, ManagedExecutorDTO>();
-
+    private Map<String, ManagedExecutorDTO> managedExecutorBeans = new HashMap<>();
 
     public MXBeansDTO() {
     }

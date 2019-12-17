@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,24 +16,27 @@
 
 package com.hazelcast.scheduledexecutor.impl;
 
-import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.impl.executionservice.InternalExecutionService;
-import com.hazelcast.util.ConstructorFunction;
+import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.internal.util.ConstructorFunction;
 
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
-import static com.hazelcast.util.ConcurrencyUtil.getOrPutIfAbsent;
-import static com.hazelcast.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.ConcurrencyUtil.getOrPutIfAbsent;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
-public abstract class AbstractScheduledExecutorContainerHolder implements ScheduledExecutorContainerHolder {
+public abstract class AbstractScheduledExecutorContainerHolder
+        implements ScheduledExecutorContainerHolder {
 
     final NodeEngine nodeEngine;
 
-    final ConcurrentMap<String, ScheduledExecutorContainer> containers =
-            new ConcurrentHashMap<String, ScheduledExecutorContainer>();
+    /**
+     * Containers for scheduled tasks, grouped by scheduler name
+     */
+    final ConcurrentMap<String, ScheduledExecutorContainer> containers = new ConcurrentHashMap<>();
 
     public AbstractScheduledExecutorContainerHolder(NodeEngine nodeEngine) {
         this.nodeEngine = nodeEngine;
@@ -54,10 +57,13 @@ public abstract class AbstractScheduledExecutorContainerHolder implements Schedu
         return Collections.unmodifiableCollection(containers.values());
     }
 
+    public Iterator<ScheduledExecutorContainer> iterator() {
+        return containers.values().iterator();
+    }
+
     public void destroy() {
         for (ScheduledExecutorContainer container : containers.values()) {
-            ((InternalExecutionService) nodeEngine.getExecutionService())
-                    .shutdownScheduledDurableExecutor(container.getName());
+            nodeEngine.getExecutionService().shutdownScheduledDurableExecutor(container.getName());
         }
     }
 

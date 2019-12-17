@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,41 +16,47 @@
 
 package com.hazelcast.spi.impl.operationexecutor.impl;
 
-import com.hazelcast.instance.NodeExtension;
-import com.hazelcast.internal.metrics.MetricsProvider;
+import com.hazelcast.instance.impl.NodeExtension;
+import com.hazelcast.internal.metrics.ExcludedMetricTargets;
+import com.hazelcast.internal.metrics.MetricDescriptor;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
+import com.hazelcast.internal.metrics.StaticMetricsProvider;
+import com.hazelcast.internal.nio.Packet;
 import com.hazelcast.internal.util.counters.SwCounter;
+import com.hazelcast.internal.util.executor.HazelcastManagedThread;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.nio.Packet;
-import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.impl.PartitionSpecificRunnable;
 import com.hazelcast.spi.impl.operationexecutor.OperationRunner;
-import com.hazelcast.util.executor.HazelcastManagedThread;
+import com.hazelcast.spi.impl.operationservice.Operation;
 
 import java.util.concurrent.TimeUnit;
 
-import static com.hazelcast.instance.OutOfMemoryErrorDispatcher.inspectOutOfMemoryError;
+import static com.hazelcast.instance.impl.OutOfMemoryErrorDispatcher.inspectOutOfMemoryError;
+import static com.hazelcast.internal.metrics.MetricTarget.MANAGEMENT_CENTER;
 import static com.hazelcast.internal.util.counters.SwCounter.newSwCounter;
 
 /**
- * The OperationThread is responsible for processing operations, packets containing operations and runnable's.
- * <p/>
+ * The OperationThread is responsible for processing operations, packets
+ * containing operations and runnable's.
+ * <p>
  * There are 2 flavors of OperationThread:
  * - threads that deal with operations for a specific partition
  * - threads that deal with non partition specific tasks
- * <p/>
- * The actual processing of an operation is forwarded to the {@link com.hazelcast.spi.impl.operationexecutor.OperationRunner}.
+ * <p>
+ * The actual processing of an operation is forwarded to the {@link OperationRunner}.
  */
-public abstract class OperationThread extends HazelcastManagedThread implements MetricsProvider {
+@ExcludedMetricTargets(MANAGEMENT_CENTER)
+public abstract class OperationThread extends HazelcastManagedThread implements StaticMetricsProvider {
 
     final int threadId;
     final OperationQueue queue;
-    // This field wil only be accessed by the thread itself when doing 'self' calls. So no need
-    // for any form of synchronization.
+    // This field wil only be accessed by the thread itself when doing 'self'
+    // calls. So no need for any form of synchronization.
     OperationRunner currentRunner;
 
-    // All these counters are updated by this OperationThread (so a single writer) and are read by the MetricsRegistry.
+    // All these counters are updated by this OperationThread (so a single writer)
+    // and are read by the MetricsRegistry.
     @Probe
     private final SwCounter completedTotalCount = newSwCounter();
     @Probe
@@ -63,13 +69,21 @@ public abstract class OperationThread extends HazelcastManagedThread implements 
     private final SwCounter completedRunnableCount = newSwCounter();
     @Probe
     private final SwCounter errorCount = newSwCounter();
+    @Probe
+    private final SwCounter completedOperationBatchCount = newSwCounter();
 
     private final boolean priority;
     private final NodeExtension nodeExtension;
     private final ILogger logger;
     private volatile boolean shutdown;
-    public OperationThread(String name, int threadId, OperationQueue queue, ILogger logger,
-                           NodeExtension nodeExtension, boolean priority, ClassLoader configClassLoader) {
+
+    public OperationThread(String name,
+                           int threadId,
+                           OperationQueue queue,
+                           ILogger logger,
+                           NodeExtension nodeExtension,
+                           boolean priority,
+                           ClassLoader configClassLoader) {
         super(name);
         setContextClassLoader(configClassLoader);
         this.queue = queue;
@@ -83,7 +97,7 @@ public abstract class OperationThread extends HazelcastManagedThread implements 
         return threadId;
     }
 
-    public abstract OperationRunner getOperationRunner(int partitionId);
+    public abstract OperationRunner operationRunner(int partitionId);
 
     @Override
     public final void run() {
@@ -110,40 +124,78 @@ public abstract class OperationThread extends HazelcastManagedThread implements 
     private void process(Object task) {
         try {
             if (task.getClass() == Packet.class) {
-                Packet packet = (Packet) task;
-                currentRunner = getOperationRunner(packet.getPartitionId());
-                currentRunner.run(packet);
-                completedPacketCount.inc();
+                process((Packet) task);
             } else if (task instanceof Operation) {
-                Operation operation = (Operation) task;
-                currentRunner = getOperationRunner(operation.getPartitionId());
-                currentRunner.run(operation);
-                completedOperationCount.inc();
+                process((Operation) task);
             } else if (task instanceof PartitionSpecificRunnable) {
-                PartitionSpecificRunnable runnable = (PartitionSpecificRunnable) task;
-                currentRunner = getOperationRunner(runnable.getPartitionId());
-                currentRunner.run(runnable);
-                completedPartitionSpecificRunnableCount.inc();
+                process((PartitionSpecificRunnable) task);
             } else if (task instanceof Runnable) {
-                Runnable runnable = (Runnable) task;
-                runnable.run();
-                completedRunnableCount.inc();
+                process((Runnable) task);
+            } else if (task instanceof TaskBatch) {
+                process((TaskBatch) task);
             } else {
-                throw new IllegalStateException("Unhandled task type for task:" + task);
+                throw new IllegalStateException("Unhandled task:" + task);
             }
             completedTotalCount.inc();
         } catch (Throwable t) {
             errorCount.inc();
             inspectOutOfMemoryError(t);
-            logger.severe("Failed to process packet: " + task + " on " + getName(), t);
+            logger.severe("Failed to process: " + task + " on: " + getName(), t);
         } finally {
             currentRunner = null;
         }
     }
 
+    private void process(Operation operation) {
+        currentRunner = operationRunner(operation.getPartitionId());
+        currentRunner.run(operation);
+        completedOperationCount.inc();
+    }
+
+    private void process(Packet packet) throws Exception {
+        currentRunner = operationRunner(packet.getPartitionId());
+        currentRunner.run(packet);
+        completedPacketCount.inc();
+    }
+
+    private void process(PartitionSpecificRunnable runnable) {
+        currentRunner = operationRunner(runnable.getPartitionId());
+        currentRunner.run(runnable);
+        completedPartitionSpecificRunnableCount.inc();
+    }
+
+    private void process(Runnable runnable) {
+        runnable.run();
+        completedRunnableCount.inc();
+    }
+
+    private void process(TaskBatch batch) {
+        Object task = batch.next();
+        if (task == null) {
+            completedOperationBatchCount.inc();
+            return;
+        }
+
+        try {
+            if (task instanceof Operation) {
+                process((Operation) task);
+            } else if (task instanceof Runnable) {
+                process((Runnable) task);
+            } else {
+                throw new IllegalStateException("Unhandled task: " + task + " from " + batch.taskFactory());
+            }
+        } finally {
+            queue.add(batch, false);
+        }
+    }
+
     @Override
-    public void provideMetrics(MetricsRegistry registry) {
-        registry.scanAndRegister(this, "operation.thread[" + getName() + "]");
+    public void provideStaticMetrics(MetricsRegistry registry) {
+        MetricDescriptor descriptor = registry
+                .newMetricDescriptor()
+                .withPrefix("operation.thread")
+                .withDiscriminator("thread", getName());
+        registry.registerStaticMetrics(descriptor, this);
     }
 
     public final void shutdown() {
@@ -152,7 +204,6 @@ public abstract class OperationThread extends HazelcastManagedThread implements 
     }
 
     public final void awaitTermination(int timeout, TimeUnit unit) throws InterruptedException {
-        long timeoutMs = unit.toMillis(timeout);
-        join(timeoutMs);
+        join(unit.toMillis(timeout));
     }
 }

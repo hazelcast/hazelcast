@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,9 +15,10 @@
  */
 
 /**
- * <p>This package contains logging functionality for Hazelcast.<br/>
- * Since Hazelcast has a zero dependency policy, Hazelcast provides a logging abstraction like commongs logging,
- * so that different logging frameworks like log4j, can be hooked in.
+ * <p>This package contains logging functionality for Hazelcast.<br>
+ * Since Hazelcast has a zero dependency policy, Hazelcast provides a logging
+ * abstraction like commons logging, so that different logging frameworks like
+ * log4j, can be hooked in.
  *
  * @since 1
  */

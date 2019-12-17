@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,9 +17,12 @@
 package com.hazelcast.map.impl.operation;
 
 import com.hazelcast.map.impl.MapDataSerializerHook;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.spi.impl.operationservice.MutatingOperation;
 
-public class TryPutOperation extends BasePutOperation {
+import static com.hazelcast.map.impl.record.Record.UNSET;
+
+public class TryPutOperation extends BasePutOperation implements MutatingOperation {
 
     public TryPutOperation() {
     }
@@ -30,8 +33,8 @@ public class TryPutOperation extends BasePutOperation {
     }
 
     @Override
-    public void run() {
-        recordStore.put(dataKey, dataValue, ttl);
+    protected void runInternal() {
+        recordStore.put(dataKey, dataValue, UNSET, UNSET);
     }
 
     @Override
@@ -50,7 +53,7 @@ public class TryPutOperation extends BasePutOperation {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MapDataSerializerHook.TRY_PUT;
     }
 }

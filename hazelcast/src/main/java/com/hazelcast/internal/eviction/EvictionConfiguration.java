@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 package com.hazelcast.internal.eviction;
 
 import com.hazelcast.config.EvictionPolicy;
+import com.hazelcast.spi.eviction.EvictionPolicyComparator;
 
 /**
  * Interface for configuration information about eviction.
@@ -36,15 +37,6 @@ public interface EvictionConfiguration {
      * @return the eviction policy
      */
     EvictionPolicy getEvictionPolicy();
-
-    /**
-     * Gets the type of eviction policy.
-     *
-     * @return the type of eviction policy
-     * @deprecated since 3.9, use {@link #getEvictionPolicy()} instead
-     */
-    @Deprecated
-    EvictionPolicyType getEvictionPolicyType();
 
     /**
      * Gets the class name of the configured {@link EvictionPolicyComparator} implementation.
