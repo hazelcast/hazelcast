@@ -1227,7 +1227,7 @@ hazelcast:
            ordered: true
          # bitmap index on the age attribute
          BITMAP(age):
-           ordered: true
+           ordered: false
       attributes:
         currency:
           extractor: com.bank.CurrencyExtractor
