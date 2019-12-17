@@ -48,6 +48,7 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -195,6 +196,7 @@ public class MapLoaderTest extends HazelcastTestSupport {
         map.loadAll(keys, true);
     }
 
+    @Ignore("See https://github.com/hazelcast/hazelcast/issues/11931")
     @Test
     public void testNullKey_loadAll() {
         String name = "testNullIn_loadAll";
@@ -254,6 +256,7 @@ public class MapLoaderTest extends HazelcastTestSupport {
         map.size();
     }
 
+    @Ignore("See https://github.com/hazelcast/hazelcast/issues/11931")
     @Test
     public void testNullValue_loadAll() {
         String name = "testNullIn_loadAll";
@@ -318,6 +321,7 @@ public class MapLoaderTest extends HazelcastTestSupport {
         assertEquals("3", map.get("3"));
     }
 
+    @Ignore("See https://github.com/hazelcast/hazelcast/issues/11931")
     @Test
     public void testNullValue_loadAll_withInterceptor() {
         String name = "testNullIn_loadAll";
@@ -379,6 +383,7 @@ public class MapLoaderTest extends HazelcastTestSupport {
         map.size();
     }
 
+    @Ignore("See https://github.com/hazelcast/hazelcast/issues/11931")
     @Test
     public void testNullKey_loadAllKeys() {
         String name = "testNullIn_loadAllKeys";
