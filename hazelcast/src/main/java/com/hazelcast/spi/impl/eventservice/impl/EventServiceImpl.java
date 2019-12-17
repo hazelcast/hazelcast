@@ -378,8 +378,12 @@ public class EventServiceImpl implements EventService, StaticMetricsProvider {
             return newCompletedFuture(false);
         }
 
-        return invokeOnAllMembers(reg, new DeregistrationOperationSupplier(reg, nodeEngine.getClusterService()))
-                .thenApplyAsync(Objects::nonNull, CALLER_RUNS);
+        if (!reg.isLocalOnly()) {
+            return invokeOnAllMembers(reg, new DeregistrationOperationSupplier(reg, nodeEngine.getClusterService()))
+                    .thenApplyAsync(Objects::nonNull, CALLER_RUNS);
+        } else {
+            return newCompletedFuture(true);
+        }
     }
 
     @Override
