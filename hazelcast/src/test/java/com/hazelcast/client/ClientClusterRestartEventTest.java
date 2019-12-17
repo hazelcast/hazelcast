@@ -18,7 +18,7 @@ package com.hazelcast.client;
 
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.test.TestHazelcastFactory;
-import com.hazelcast.cluster.ClusterState;
+import com.hazelcast.cluster.Cluster;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.cluster.MembershipEvent;
 import com.hazelcast.cluster.MembershipListener;
@@ -41,9 +41,9 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static com.hazelcast.internal.cluster.impl.AdvancedClusterStateTest.changeClusterStateEventually;
 import static com.hazelcast.test.HazelcastTestSupport.assertContains;
 import static com.hazelcast.test.HazelcastTestSupport.assertOpenEventually;
+import static com.hazelcast.test.HazelcastTestSupport.assertTrueEventually;
 import static com.hazelcast.test.HazelcastTestSupport.spawn;
 import static org.junit.Assert.assertEquals;
 
@@ -139,8 +139,14 @@ public class ClientClusterRestartEventTest {
             }
         });
 
-        changeClusterStateEventually(instance1, ClusterState.PASSIVE);
-        instance1.getCluster().shutdown();
+        Cluster cluster = instance1.getCluster();
+        assertTrueEventually(() -> {
+            try {
+                cluster.shutdown();
+            } catch (Exception e) {
+                throw new AssertionError(e);
+            }
+        });
 
         Future<HazelcastInstance> f1 = spawn(() -> hazelcastFactory.newHazelcastInstance(newConfig()));
         Future<HazelcastInstance> f2 = spawn(() -> hazelcastFactory.newHazelcastInstance(newConfig()));
