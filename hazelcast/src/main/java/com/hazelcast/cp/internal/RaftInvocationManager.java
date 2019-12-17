@@ -33,7 +33,9 @@ import com.hazelcast.cp.internal.raft.impl.RaftEndpoint;
 import com.hazelcast.cp.internal.raftop.metadata.CreateRaftGroupOp;
 import com.hazelcast.cp.internal.raftop.metadata.CreateRaftNodeOp;
 import com.hazelcast.cp.internal.raftop.metadata.GetActiveCPMembersOp;
+import com.hazelcast.cp.internal.raftop.metadata.GetRaftGroupIdsOp;
 import com.hazelcast.internal.cluster.ClusterService;
+import com.hazelcast.internal.util.RandomPicker;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.NodeEngine;
@@ -48,8 +50,10 @@ import com.hazelcast.spi.impl.operationservice.impl.RaftInvocationContext;
 import com.hazelcast.spi.properties.ClusterProperty;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static com.hazelcast.cp.internal.RaftService.CP_SUBSYSTEM_EXECUTOR;
 import static com.hazelcast.cp.internal.raft.QueryPolicy.LINEARIZABLE;
@@ -61,6 +65,8 @@ import static java.util.Collections.shuffle;
  */
 @SuppressWarnings({"unchecked", "checkstyle:classdataabstractioncoupling"})
 public class RaftInvocationManager {
+
+    private static final int RANDOM_RAFT_GROUP_INDEX_RANGE = 10000;
 
     private final NodeEngineImpl nodeEngine;
     private final OperationServiceImpl operationService;
@@ -105,7 +111,7 @@ public class RaftInvocationManager {
 
     private <V> InternalCompletableFuture<V> completeExceptionallyIfCPSubsystemNotAvailable() {
         if (!cpSubsystemEnabled) {
-            InternalCompletableFuture future = new InternalCompletableFuture();
+            InternalCompletableFuture<V> future = new InternalCompletableFuture<>();
             future.completeExceptionally(new HazelcastException("CP Subsystem is not enabled!"));
             return future;
         }
@@ -114,40 +120,52 @@ public class RaftInvocationManager {
 
     private void invokeGetMembersToCreateRaftGroup(String groupName, int groupSize,
                                                    InternalCompletableFuture<RaftGroupId> resultFuture) {
-        RaftOp op = new GetActiveCPMembersOp();
-        InternalCompletableFuture<List<CPMemberInfo>> f = query(raftService.getMetadataGroupId(), op, LINEARIZABLE);
+        RaftGroupId metadataGroupId = raftService.getMetadataGroupId();
+        InternalCompletableFuture<List<CPMemberInfo>> f1 = query(metadataGroupId, new GetActiveCPMembersOp(), LINEARIZABLE);
+        InternalCompletableFuture<Collection<RaftGroupId>> f2 = query(metadataGroupId, new GetRaftGroupIdsOp(), LINEARIZABLE);
 
-        f.whenCompleteAsync((members, t) -> {
-            if (t == null) {
-                members = new ArrayList<>(members);
-
-                if (members.size() < groupSize) {
-                    Exception result = new IllegalArgumentException("There are not enough active members to create CP group "
-                            + groupName + ". Active members: " + members.size() + ", Requested count: " + groupSize);
-                    resultFuture.completeExceptionally(result);
-                    return;
-                }
-
-                shuffle(members);
-                members.sort(new CPMemberReachabilityComparator());
-                members = members.subList(0, groupSize);
-
-                List<RaftEndpoint> groupEndpoints = new ArrayList<>();
-                for (CPMemberInfo member : members) {
-                    groupEndpoints.add(member.toRaftEndpoint());
-
-                }
-                invokeCreateRaftGroup(groupName, groupSize, groupEndpoints, resultFuture);
-            } else {
-                resultFuture.completeExceptionally(t);
+        f1.thenCombineAsync(f2, (cpMembers, groupIds) -> {
+            if (cpMembers.size() < groupSize) {
+                Exception e = new IllegalArgumentException("There are not enough active CP members to create CP group "
+                        + groupName + ". Active CP members: " + cpMembers.size() + ", Requested CP group size: " + groupSize);
+                resultFuture.completeExceptionally(e);
+                return null;
             }
+
+            long groupIndex = generateRandomGroupIndex(groupIds);
+            List<RaftEndpoint> groupEndpoints = generateRandomGroupMembers(cpMembers, groupSize);
+            invokeCreateRaftGroup(groupName, groupSize, groupIndex, groupEndpoints, resultFuture);
+            return null;
+        }).exceptionally(t -> {
+            resultFuture.completeExceptionally(t);
+            return null;
         });
     }
 
-    private void invokeCreateRaftGroup(String groupName, int groupSize, List<RaftEndpoint> members,
+    private long generateRandomGroupIndex(Collection<RaftGroupId> groupIds) {
+        long groupIndex = RandomPicker.getInt(RANDOM_RAFT_GROUP_INDEX_RANGE);
+        if (groupIds.size() > 0) {
+            groupIndex += groupIds.stream().mapToLong(RaftGroupId::getId).max().getAsLong();
+        }
+
+        return groupIndex;
+    }
+
+    private List<RaftEndpoint> generateRandomGroupMembers(List<CPMemberInfo> cpMembers, int groupSize) {
+        cpMembers = new ArrayList<>(cpMembers);
+        shuffle(cpMembers);
+
+        return cpMembers.stream()
+                        .sorted(new CPMemberReachabilityComparator())
+                        .limit(groupSize)
+                        .map(CPMemberInfo::toRaftEndpoint)
+                        .collect(Collectors.toList());
+    }
+
+    private void invokeCreateRaftGroup(String groupName, int groupSize, long groupIndex, List<RaftEndpoint> members,
                                        InternalCompletableFuture<RaftGroupId> resultFuture) {
         InternalCompletableFuture<CPGroupSummary> f =
-                invoke(raftService.getMetadataGroupId(), new CreateRaftGroupOp(groupName, members));
+                invoke(raftService.getMetadataGroupId(), new CreateRaftGroupOp(groupName, members, groupIndex));
 
         f.whenCompleteAsync((group, t) -> {
             if (t == null) {
@@ -155,8 +173,8 @@ public class RaftInvocationManager {
                 triggerRaftNodeCreation(group);
             } else {
                 if (t instanceof CannotCreateRaftGroupException) {
-                    logger.fine("Could not create CP group: " + groupName + " with members: " + members,
-                            t.getCause());
+                    logger.fine("Could not create CP group: " + groupName + " with members: " + members
+                                    + " and group index: " + groupIndex, t.getCause());
                     invokeGetMembersToCreateRaftGroup(groupName, groupSize, resultFuture);
                     return;
                 }

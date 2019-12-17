@@ -65,6 +65,7 @@ import static com.hazelcast.cluster.memberselector.MemberSelectors.DATA_MEMBER_S
 import static com.hazelcast.cp.CPGroup.CPGroupStatus.ACTIVE;
 import static com.hazelcast.cp.CPGroup.CPGroupStatus.DESTROYED;
 import static com.hazelcast.cp.CPGroup.CPGroupStatus.DESTROYING;
+import static com.hazelcast.cp.CPGroup.DEFAULT_GROUP_NAME;
 import static com.hazelcast.cp.CPGroup.METADATA_CP_GROUP_NAME;
 import static com.hazelcast.cp.internal.MembershipChangeSchedule.CPGroupMembershipChange;
 import static com.hazelcast.cp.internal.RaftService.CP_SUBSYSTEM_EXECUTOR;
@@ -470,7 +471,7 @@ public class MetadataRaftGroupManager implements SnapshotAwareService<MetadataRa
         throw exception;
     }
 
-    public CPGroupSummary createRaftGroup(String groupName, Collection<RaftEndpoint> groupEndpoints, long commitIndex) {
+    public CPGroupSummary createRaftGroup(String groupName, Collection<RaftEndpoint> groupEndpoints, long groupId) {
         checkFalse(METADATA_CP_GROUP_NAME.equalsIgnoreCase(groupName), groupName + " is reserved for internal usage!");
         checkMetadataGroupInitSuccessful();
 
@@ -490,6 +491,12 @@ public class MetadataRaftGroupManager implements SnapshotAwareService<MetadataRa
             throw new IllegalStateException(msg);
         }
 
+        group = getRaftGroupById(groupId);
+        if (group != null) {
+            throw new CannotCreateRaftGroupException("Cannot create CP group: " + groupName + " with members: " + groupEndpoints
+                    + " because group index: " + groupId + " already belongs to " + group.name());
+        }
+
         Map<UUID, CPMemberInfo> activeMembersMap = getActiveMembersMap();
 
         CPMemberInfo leavingMember = membershipChangeSchedule != null ? membershipChangeSchedule.getLeavingMember() : null;
@@ -505,7 +512,7 @@ public class MetadataRaftGroupManager implements SnapshotAwareService<MetadataRa
             }
         }
 
-        return createRaftGroup(new CPGroupInfo(new RaftGroupId(groupName, getGroupIdSeed(), commitIndex), groupEndpoints));
+        return createRaftGroup(new CPGroupInfo(new RaftGroupId(groupName, getGroupIdSeed(), groupId), groupEndpoints));
     }
 
     private CPGroupSummary createRaftGroup(CPGroupInfo group) {
@@ -552,6 +559,15 @@ public class MetadataRaftGroupManager implements SnapshotAwareService<MetadataRa
     private CPGroupInfo getRaftGroupByName(String name) {
         for (CPGroupInfo group : groups.values()) {
             if (group.status() != DESTROYED && group.name().equals(name)) {
+                return group;
+            }
+        }
+        return null;
+    }
+
+    private CPGroupInfo getRaftGroupById(long groupId) {
+        for (CPGroupInfo group : groups.values()) {
+            if (group.id().getId() == groupId) {
                 return group;
             }
         }
@@ -882,10 +898,6 @@ public class MetadataRaftGroupManager implements SnapshotAwareService<MetadataRa
 
     public Collection<CPMemberInfo> getActiveMembers() {
         return activeMembers;
-    }
-
-    public long getActiveMembersCommitIndex() {
-        return activeMembersCommitIndex;
     }
 
     @SuppressFBWarnings("JLM_JSR166_UTILCONCURRENT_MONITORENTER")
@@ -1377,7 +1389,18 @@ public class MetadataRaftGroupManager implements SnapshotAwareService<MetadataRa
     private static class CPGroupIdComparator implements Comparator<CPGroupId> {
         @Override
         public int compare(CPGroupId o1, CPGroupId o2) {
-            return Long.compare(o1.getId(), o2.getId());
+            if (o1.getName().equals(METADATA_CP_GROUP_NAME)) {
+                return -1;
+            } else if (o2.getName().equals(METADATA_CP_GROUP_NAME)) {
+                return 1;
+            } else if (o1.getName().equals(DEFAULT_GROUP_NAME)) {
+                return -1;
+            } else if (o2.getName().equals(DEFAULT_GROUP_NAME)) {
+                return 1;
+            }
+
+            return o1.getName().compareTo(o2.getName());
         }
     }
+
 }
