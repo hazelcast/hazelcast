@@ -27,7 +27,6 @@
                 <xs:element ref="import" minOccurs="0" maxOccurs="unbounded"/>
                 <xs:element name="config-replacers" type="config-replacers" minOccurs="0" maxOccurs="1"/>
                 <xs:element name="cluster-name" type="xs:string" minOccurs="0" maxOccurs="1"/>
-                <xs:element name="license-key" type="xs:string" minOccurs="0" maxOccurs="1"/>
                 <xs:element name="backup-ack-to-client-enabled" type="xs:boolean" minOccurs="0" maxOccurs="1" default="true"/>
                 <xs:element name="properties" type="properties" minOccurs="0" maxOccurs="1"/>
                 <xs:element name="network" type="network" minOccurs="0" maxOccurs="1"/>

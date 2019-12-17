@@ -36,7 +36,6 @@ hazelcast-client:
 
   cluster-name: my-cluster
   instance-name: CLIENT_NAME
-  license-key: HAZELCAST_ENTERPRISE_LICENSE_KEY
   properties:
     hazelcast.client.shuffle.member.list: true
     hazelcast.client.heartbeat.timeout: 60000
