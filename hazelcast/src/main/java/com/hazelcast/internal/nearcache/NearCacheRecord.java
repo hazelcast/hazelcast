@@ -59,7 +59,7 @@ public interface NearCacheRecord<V> extends Expirable, Evictable<V> {
 
     long NOT_RESERVED = -1;
 
-    long READ_PERMITTED = -4;
+    long READ_PERMITTED = -2;
 
     /**
      * Sets the value of this {@link NearCacheRecord}.
@@ -95,10 +95,21 @@ public interface NearCacheRecord<V> extends Expirable, Evictable<V> {
     void incrementHits();
 
     /**
-     * @return current state of this record.
+     * It can have 2 different value:
+     *
+     *  1. {@link #READ_PERMITTED} if no
+     * update is happening on this record.
+     *
+     * 2. A `long` reservation id to indicate
+     * an update is happening on this record now.
+     *
+     * @return reservation that this record has.
      */
     long getReservationId();
 
+    /**
+     * @param reservationId net reservation id to set.
+     */
     void setReservationId(long reservationId);
 
     /**
