@@ -313,7 +313,6 @@ class TestClientRegistry {
                 }
             }));
             executor.shutdownIncoming();
-            System.out.println(">>>> >>>>>");
         }
 
         void onServerClose(final String reason) {
@@ -329,7 +328,6 @@ class TestClientRegistry {
                 }
             });
             executor.shutdownOutgoing();
-            System.out.println("<<<< <<<<");
         }
 
         @Override
