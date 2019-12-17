@@ -25,14 +25,15 @@ import com.hazelcast.client.impl.ClientEngine;
 import com.hazelcast.client.impl.client.SecureRequest;
 import com.hazelcast.client.impl.protocol.ClientExceptions;
 import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.instance.BuildInfo;
 import com.hazelcast.instance.impl.Node;
+import com.hazelcast.internal.nio.Connection;
+import com.hazelcast.internal.nio.ConnectionType;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.cluster.Address;
-import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.security.Credentials;
 import com.hazelcast.security.SecurityContext;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
@@ -114,9 +115,26 @@ public abstract class AbstractMessageTask<P> implements MessageTask, SecureReque
         return true;
     }
 
+    /**
+     * Used to accept hot restart messages (and some other messages required for
+     * client to connect) sent from MC client when node start is not complete yet.
+     */
+    protected boolean acceptOnIncompleteStart() {
+        return false;
+    }
+
+    /**
+     * Used as a workaround for calling {@link #validateNodeStart} after
+     * decoding auth messages, i.e. when connection type is unknown prior
+     * to decode is made.
+     */
+    protected boolean validateNodeStartBeforeDecode() {
+        return true;
+    }
+
     private void initializeAndProcessMessage() throws Throwable {
-        if (!node.getNodeExtension().isStartCompleted()) {
-            throw new HazelcastInstanceNotActiveException("Hazelcast instance is not ready yet!");
+        if (validateNodeStartBeforeDecode()) {
+            validateNodeStart();
         }
         parameters = decodeClientMessage(clientMessage);
         assert addressesDecodedWithTranslation() : formatWrongAddressInDecodedMessage();
@@ -125,6 +143,18 @@ public abstract class AbstractMessageTask<P> implements MessageTask, SecureReque
         checkPermissions(endpoint);
         processMessage();
         interceptAfter(credentials);
+    }
+
+    /**
+     * Throws if node start is incomplete or if the message is from a special
+     * subset of messages and it's sent from MC client.
+     */
+    protected final void validateNodeStart() {
+        boolean acceptOnIncompleteStart = acceptOnIncompleteStart()
+                && ConnectionType.MC_JAVA_CLIENT.equals(endpoint.getClientType());
+        if (!acceptOnIncompleteStart && !node.getNodeExtension().isStartCompleted()) {
+            throw new HazelcastInstanceNotActiveException("Hazelcast instance is not ready yet!");
+        }
     }
 
     private void handleAuthenticationFailure() {

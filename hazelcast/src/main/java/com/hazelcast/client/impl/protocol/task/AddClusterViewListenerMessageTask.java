@@ -35,6 +35,11 @@ public class AddClusterViewListenerMessageTask
     }
 
     @Override
+    protected boolean acceptOnIncompleteStart() {
+        return true;
+    }
+
+    @Override
     protected Object call() {
         ClusterViewListenerService service = clientEngine.getClusterListenerService();
         service.registerListener(endpoint, clientMessage.getCorrelationId());

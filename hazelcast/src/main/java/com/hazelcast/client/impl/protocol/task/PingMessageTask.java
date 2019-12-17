@@ -30,6 +30,11 @@ public class PingMessageTask extends AbstractCallableMessageTask<ClientPingCodec
     }
 
     @Override
+    protected boolean acceptOnIncompleteStart() {
+        return true;
+    }
+
+    @Override
     protected ClientPingCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
         return ClientPingCodec.decodeRequest(clientMessage);
     }

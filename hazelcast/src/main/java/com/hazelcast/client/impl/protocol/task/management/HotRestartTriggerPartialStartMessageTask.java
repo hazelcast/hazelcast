@@ -36,6 +36,11 @@ public class HotRestartTriggerPartialStartMessageTask
     }
 
     @Override
+    protected boolean acceptOnIncompleteStart() {
+        return true;
+    }
+
+    @Override
     protected Object call() throws Exception {
         return node.getNodeExtension().getInternalHotRestartService().triggerPartialStart();
     }

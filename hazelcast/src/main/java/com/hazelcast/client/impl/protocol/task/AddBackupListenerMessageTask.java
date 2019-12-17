@@ -38,6 +38,11 @@ public class AddBackupListenerMessageTask
     }
 
     @Override
+    protected boolean acceptOnIncompleteStart() {
+        return true;
+    }
+
+    @Override
     protected CompletableFuture<UUID> processInternal() {
         UUID uuid = endpoint.getUuid();
         if (logger.isFinestEnabled()) {
