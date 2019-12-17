@@ -23,11 +23,8 @@ import com.hazelcast.client.impl.protocol.codec.holder.PagingPredicateHolder;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.util.IterationType;
-import com.hazelcast.map.impl.query.QueryResultRow;
 import com.hazelcast.internal.serialization.Data;
 
-import java.util.AbstractMap;
-import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
@@ -36,12 +33,6 @@ public class MapEntriesWithPagingPredicateMessageTask
 
     public MapEntriesWithPagingPredicateMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
-    }
-
-    @Override
-    protected Object reduce(Collection<QueryResultRow> result) {
-        List<Map.Entry<Data, Data>> entriesData = getSortedPageEntries(result);
-        return new AbstractMap.SimpleImmutableEntry(getPagingPredicate().getAnchorList(), entriesData);
     }
 
     @Override

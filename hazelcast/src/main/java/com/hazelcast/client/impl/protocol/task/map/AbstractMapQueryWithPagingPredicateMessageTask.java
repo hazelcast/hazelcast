@@ -22,16 +22,15 @@ import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.util.SortingUtil;
 import com.hazelcast.map.impl.query.QueryResultRow;
-import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.impl.CachedQueryEntry;
 import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.query.impl.predicates.PagingPredicateImpl;
 
+import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.Map;
 
 import static com.hazelcast.query.impl.predicates.PredicateUtils.unwrapPagingPredicate;
 
@@ -42,7 +41,8 @@ public abstract class AbstractMapQueryWithPagingPredicateMessageTask<P> extends 
         super(clientMessage, node, connection);
     }
 
-    protected List<Map.Entry<Data, Data>> getSortedPageEntries(Collection<QueryResultRow> result) {
+    @Override
+    protected Object reduce(Collection<QueryResultRow> result) {
         ArrayList<QueryableEntry> accumulatedList = new ArrayList<>(result.size());
 
         // TODO: The following lines will be replaced by k-way merge sort algorithm as described at
@@ -52,7 +52,9 @@ public abstract class AbstractMapQueryWithPagingPredicateMessageTask<P> extends 
 
         PagingPredicateImpl pagingPredicateImpl = getPagingPredicate();
 
-        return SortingUtil.getSortedSubList(accumulatedList, pagingPredicateImpl);
+        List pageData = SortingUtil.getSortedSubListData(accumulatedList, pagingPredicateImpl);
+
+        return new AbstractMap.SimpleImmutableEntry(getPagingPredicate().getAnchorList(), pageData);
     }
 
     @Override

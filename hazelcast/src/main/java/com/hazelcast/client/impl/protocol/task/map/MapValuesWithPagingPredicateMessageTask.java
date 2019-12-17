@@ -17,19 +17,14 @@
 package com.hazelcast.client.impl.protocol.task.map;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.codec.MapKeySetWithPagingPredicateCodec;
 import com.hazelcast.client.impl.protocol.codec.MapValuesWithPagingPredicateCodec;
 import com.hazelcast.client.impl.protocol.codec.holder.AnchorDataListHolder;
 import com.hazelcast.client.impl.protocol.codec.holder.PagingPredicateHolder;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.util.IterationType;
-import com.hazelcast.map.impl.query.QueryResultRow;
 import com.hazelcast.internal.serialization.Data;
 
-import java.util.AbstractMap;
-import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
@@ -38,16 +33,6 @@ public class MapValuesWithPagingPredicateMessageTask
 
     public MapValuesWithPagingPredicateMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
-    }
-
-    @Override
-    protected Object reduce(Collection<QueryResultRow> result) {
-        List<Map.Entry<Data, Data>> entriesData = getSortedPageEntries(result);
-
-        List<Data> valueList = new ArrayList<>(entriesData.size());
-        entriesData.forEach(entry -> valueList.add(entry.getValue()));
-
-        return new AbstractMap.SimpleImmutableEntry(getPagingPredicate().getAnchorList(), valueList);
     }
 
     @Override
@@ -70,7 +55,7 @@ public class MapValuesWithPagingPredicateMessageTask
         Map.Entry<List<Map.Entry<Integer, Map.Entry>>, List<Data>> result =
                 (Map.Entry<List<Map.Entry<Integer, Map.Entry>>, List<Data>>) response;
         AnchorDataListHolder anchorDataListHolder = AnchorDataListHolder.of(result.getKey(), serializationService);
-        return MapKeySetWithPagingPredicateCodec.encodeResponse(result.getValue(), anchorDataListHolder);
+        return MapValuesWithPagingPredicateCodec.encodeResponse(result.getValue(), anchorDataListHolder);
     }
 
     @Override
