@@ -131,7 +131,7 @@ public class ConfigXmlGenerator {
                 .node("cluster-name", config.getClusterName())
                 ;
 
-        manCenterXmlGenerator(gen, config);
+        managementCenterXmlGenerator(gen, config);
         gen.appendProperties(config.getProperties());
         securityXmlGenerator(gen, config);
         wanReplicationXmlGenerator(gen, config);
@@ -174,7 +174,7 @@ public class ConfigXmlGenerator {
         return maskSensitiveFields ? MASK_FOR_SENSITIVE_DATA : value;
     }
 
-    private void manCenterXmlGenerator(XmlGenerator gen, Config config) {
+    private void managementCenterXmlGenerator(XmlGenerator gen, Config config) {
         if (config.getManagementCenterConfig() != null) {
             ManagementCenterConfig mcConfig = config.getManagementCenterConfig();
             gen.open("management-center",

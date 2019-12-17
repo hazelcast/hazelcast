@@ -36,7 +36,7 @@ public class LocalMapStatsProviderTest extends HazelcastTestSupport {
 
     //https://github.com/hazelcast/hazelcast/issues/11598
     @Test
-    public void testRedundantPartitionMigrationWhenManCenterConfigured() {
+    public void testRedundantPartitionMigrationWhenManagementCenterConfigured() {
         Config config = new Config();
 
         //don't need start management center, just configure it

@@ -662,8 +662,8 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
 
         Config xmlConfig = getNewConfigViaXMLGenerator(config);
 
-        ManagementCenterConfig xmlManCenterConfig = xmlConfig.getManagementCenterConfig();
-        assertEquals(managementCenterConfig.isScriptingEnabled(), xmlManCenterConfig.isScriptingEnabled());
+        ManagementCenterConfig xmlMCConfig = xmlConfig.getManagementCenterConfig();
+        assertEquals(managementCenterConfig.isScriptingEnabled(), xmlMCConfig.isScriptingEnabled());
     }
 
     @Test
