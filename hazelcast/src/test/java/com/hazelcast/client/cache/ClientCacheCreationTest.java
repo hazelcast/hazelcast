@@ -114,6 +114,8 @@ public class ClientCacheCreationTest extends CacheCreationTest {
         clientConfig.setProperty(ClientProperty.MAX_CONCURRENT_INVOCATIONS.getName(), "1");
         // disable metrics collection (the periodic send statistics task may interfere with the test)
         clientConfig.getMetricsConfig().setEnabled(false);
+        // disable backup acknowledgements (the backup listener registration may interfere with the test)
+        clientConfig.setBackupAckToClientEnabled(false);
         HazelcastInstance client = HazelcastClient.newHazelcastClient(clientConfig);
         HazelcastClientCachingProvider cachingProvider = createClientCachingProvider(client);
         final CacheManager cacheManager = cachingProvider.getCacheManager();
