@@ -14,19 +14,25 @@
  * limitations under the License.
  */
 
-package com.hazelcast.client.impl.protocol.task;
+package com.hazelcast.client.impl.protocol.task.management;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.codec.ClientPingCodec;
+import com.hazelcast.client.impl.protocol.codec.MCTriggerForceStartCodec;
+import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
 import com.hazelcast.instance.impl.Node;
+import com.hazelcast.internal.management.ManagementCenterService;
 import com.hazelcast.internal.nio.Connection;
 
 import java.security.Permission;
 
-public class PingMessageTask extends AbstractCallableMessageTask<ClientPingCodec.RequestParameters> implements UrgentMessageTask {
+public class HotRestartTriggerForceStartMessageTask
+        extends AbstractCallableMessageTask<MCTriggerForceStartCodec.RequestParameters> {
 
-    public PingMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
+    private Node node;
+
+    public HotRestartTriggerForceStartMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
+        this.node = node;
     }
 
     @Override
@@ -35,23 +41,23 @@ public class PingMessageTask extends AbstractCallableMessageTask<ClientPingCodec
     }
 
     @Override
-    protected ClientPingCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
-        return ClientPingCodec.decodeRequest(clientMessage);
+    protected Object call() throws Exception {
+        return node.getNodeExtension().getInternalHotRestartService().triggerForceStart();
+    }
+
+    @Override
+    protected MCTriggerForceStartCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return MCTriggerForceStartCodec.decodeRequest(clientMessage);
     }
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return ClientPingCodec.encodeResponse();
-    }
-
-    @Override
-    protected Object call() throws Exception {
-        return null;
+        return MCTriggerForceStartCodec.encodeResponse((Boolean) response);
     }
 
     @Override
     public String getServiceName() {
-        return null;
+        return ManagementCenterService.SERVICE_NAME;
     }
 
     @Override
@@ -66,16 +72,11 @@ public class PingMessageTask extends AbstractCallableMessageTask<ClientPingCodec
 
     @Override
     public String getMethodName() {
-        return null;
+        return "triggerForceStart";
     }
 
     @Override
     public Object[] getParameters() {
-        return null;
-    }
-
-    @Override
-    public int getPartitionId() {
-        return -1;
+        return new Object[0];
     }
 }

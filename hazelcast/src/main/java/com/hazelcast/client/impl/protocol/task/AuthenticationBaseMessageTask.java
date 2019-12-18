@@ -55,7 +55,6 @@ public abstract class AuthenticationBaseMessageTask<P> extends AbstractMessageTa
         super(clientMessage, node, connection);
     }
 
-
     @Override
     public int getPartitionId() {
         return -1;
@@ -63,6 +62,16 @@ public abstract class AuthenticationBaseMessageTask<P> extends AbstractMessageTa
 
     @Override
     protected boolean requiresAuthentication() {
+        return false;
+    }
+
+    @Override
+    protected boolean acceptOnIncompleteStart() {
+        return true;
+    }
+
+    @Override
+    protected boolean validateNodeStartBeforeDecode() {
         return false;
     }
 
@@ -164,6 +173,7 @@ public abstract class AuthenticationBaseMessageTask<P> extends AbstractMessageTa
         endpoint.authenticated(clientUuid, credentials, clientVersion, clientMessage.getCorrelationId(),
                 clientName, labels);
         setConnectionType();
+        validateNodeStart();
         if (!clientEngine.bind(endpoint)) {
             return prepareNotAllowedInCluster();
         }

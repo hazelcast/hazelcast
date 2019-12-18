@@ -14,44 +14,46 @@
  * limitations under the License.
  */
 
-package com.hazelcast.client.impl.protocol.task;
+package com.hazelcast.client.impl.protocol.task.management;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.codec.ClientPingCodec;
+import com.hazelcast.client.impl.protocol.codec.MCTriggerHotRestartBackupCodec;
+import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
 import com.hazelcast.instance.impl.Node;
+import com.hazelcast.internal.management.ManagementCenterService;
 import com.hazelcast.internal.nio.Connection;
 
 import java.security.Permission;
 
-public class PingMessageTask extends AbstractCallableMessageTask<ClientPingCodec.RequestParameters> implements UrgentMessageTask {
+public class HotRestartTriggerBackupMessageTask
+        extends AbstractCallableMessageTask<MCTriggerHotRestartBackupCodec.RequestParameters> {
 
-    public PingMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
+    private final Node node;
+
+    public HotRestartTriggerBackupMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
-    }
-
-    @Override
-    protected boolean acceptOnIncompleteStart() {
-        return true;
-    }
-
-    @Override
-    protected ClientPingCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
-        return ClientPingCodec.decodeRequest(clientMessage);
-    }
-
-    @Override
-    protected ClientMessage encodeResponse(Object response) {
-        return ClientPingCodec.encodeResponse();
+        this.node = node;
     }
 
     @Override
     protected Object call() throws Exception {
+        node.getNodeExtension().getHotRestartService().backup();
         return null;
     }
 
     @Override
+    protected MCTriggerHotRestartBackupCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return MCTriggerHotRestartBackupCodec.decodeRequest(clientMessage);
+    }
+
+    @Override
+    protected ClientMessage encodeResponse(Object response) {
+        return MCTriggerHotRestartBackupCodec.encodeResponse();
+    }
+
+    @Override
     public String getServiceName() {
-        return null;
+        return ManagementCenterService.SERVICE_NAME;
     }
 
     @Override
@@ -66,16 +68,11 @@ public class PingMessageTask extends AbstractCallableMessageTask<ClientPingCodec
 
     @Override
     public String getMethodName() {
-        return null;
+        return "triggerHotRestartBackup";
     }
 
     @Override
     public Object[] getParameters() {
-        return null;
-    }
-
-    @Override
-    public int getPartitionId() {
-        return -1;
+        return new Object[0];
     }
 }
