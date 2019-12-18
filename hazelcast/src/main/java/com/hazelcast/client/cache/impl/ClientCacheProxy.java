@@ -304,17 +304,26 @@ public class ClientCacheProxy<K, V> extends ClientCacheProxySupport<K, V>
     public void registerCacheEntryListener(CacheEntryListenerConfiguration<K, V> cacheEntryListenerConfiguration,
                                            boolean addToConfig) {
         ensureOpen();
+
         if (cacheEntryListenerConfiguration == null) {
             throw new NullPointerException("CacheEntryListenerConfiguration can't be null");
         }
+
         CacheEventListenerAdaptor<K, V> adaptor = new CacheEventListenerAdaptor<>(this, cacheEntryListenerConfiguration,
                 getSerializationService());
-        EventHandler handler = createHandler(adaptor);
-        UUID regId = getContext().getListenerService().registerListener(createCacheEntryListenerCodec(nameWithPrefix), handler);
+
+        UUID regId = getContext().getListenerService()
+                .registerListener(createCacheEntryListenerCodec(nameWithPrefix), createHandler(adaptor));
+        if (regId == null) {
+            return;
+        }
+
         if (addToConfig) {
             cacheConfig.addCacheEntryListenerConfiguration(cacheEntryListenerConfiguration);
         }
+
         addListenerLocally(regId, cacheEntryListenerConfiguration, adaptor);
+
         if (addToConfig) {
             updateCacheListenerConfigOnOtherNodes(cacheEntryListenerConfiguration, true);
         }

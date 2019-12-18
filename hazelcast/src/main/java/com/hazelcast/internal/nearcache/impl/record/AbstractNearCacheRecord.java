@@ -52,7 +52,7 @@ public abstract class AbstractNearCacheRecord<V> implements NearCacheRecord<V> {
     protected volatile int partitionId;
     protected volatile int lastAccessTime = TIME_NOT_SET;
     protected volatile int expirationTime;
-    protected volatile long sequence;
+    protected volatile long invalidationSequence;
     protected volatile long reservationId = READ_PERMITTED;
 
     public AbstractNearCacheRecord(V value, long creationTime, long expirationTime) {
@@ -148,12 +148,12 @@ public abstract class AbstractNearCacheRecord<V> implements NearCacheRecord<V> {
 
     @Override
     public long getInvalidationSequence() {
-        return sequence;
+        return invalidationSequence;
     }
 
     @Override
     public void setInvalidationSequence(long sequence) {
-        this.sequence = sequence;
+        this.invalidationSequence = sequence;
     }
 
     @Override
@@ -168,13 +168,17 @@ public abstract class AbstractNearCacheRecord<V> implements NearCacheRecord<V> {
 
     @Override
     public String toString() {
-        return "creationTime=" + creationTime
-                + ", sequence=" + sequence
+        return "AbstractNearCacheRecord{" +
+                "creationTime=" + creationTime
+                + ", value=" + value
                 + ", uuid=" + uuid
-                + ", expirationTime=" + expirationTime
-                + ", lastAccessTime=" + lastAccessTime
+                + ", cachedAsNull=" + cachedAsNull
                 + ", hits=" + hits
-                + ", recordState=" + reservationId
-                + ", value=" + value;
+                + ", partitionId=" + partitionId
+                + ", lastAccessTime=" + lastAccessTime
+                + ", expirationTime=" + expirationTime
+                + ", invalidationSequence=" + invalidationSequence
+                + ", reservationId=" + reservationId
+                + '}';
     }
 }

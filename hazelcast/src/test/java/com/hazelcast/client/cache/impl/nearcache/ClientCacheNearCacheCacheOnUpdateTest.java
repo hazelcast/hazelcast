@@ -82,7 +82,7 @@ public class ClientCacheNearCacheCacheOnUpdateTest extends ClientNearCacheTestSu
             }
         }
 
-        AtomicBoolean stop = new AtomicBoolean(false);
+        AtomicBoolean stop = new AtomicBoolean();
 
         Runnable getter = () -> {
             while (!stop.get()) {
@@ -109,11 +109,11 @@ public class ClientCacheNearCacheCacheOnUpdateTest extends ClientNearCacheTestSu
 
         executor.execute(putter);
 
-        sleepSeconds(20);
+        sleepSeconds(10);
         stop.set(true);
 
         executor.shutdown();
-        executor.awaitTermination(30, TimeUnit.SECONDS);
+        executor.awaitTermination(120, TimeUnit.SECONDS);
     }
 
     private ICache<Integer, Integer> newNearCachedCache(NearCacheConfig.LocalUpdatePolicy localUpdatePolicy) {
