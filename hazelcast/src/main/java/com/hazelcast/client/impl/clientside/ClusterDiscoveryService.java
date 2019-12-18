@@ -44,11 +44,8 @@ public class ClusterDiscoveryService {
     }
 
     public void tryNextCluster(BiFunction<CandidateClusterContext, CandidateClusterContext, Boolean> function) {
-        if (maxTryCount == 0) {
-            return;
-        }
-
         int tryCount = 0;
+
         do {
             for (int i = 0; i < candidateClusters.size(); i++) {
                 if (function.apply(current(), next())) {
@@ -56,6 +53,10 @@ public class ClusterDiscoveryService {
                 }
             }
         } while (lifecycleService.isRunning() && ++tryCount < maxTryCount);
+
+        String msg = lifecycleService.isRunning()
+                ? "Unable to connect to any cluster." : "Client is being shutdown.";
+        throw new IllegalStateException(msg);
     }
 
     public CandidateClusterContext current() {
