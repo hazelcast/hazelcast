@@ -53,8 +53,8 @@ import static com.hazelcast.map.impl.record.Record.UNSET;
 import static com.hazelcast.wan.impl.CallerProvenance.NOT_WAN;
 
 /**
- * Operator for single key processing logic of {@link EntryProcessor} and
- * backup entry processor related operations.
+ * Operator for single key processing logic of {@link
+ * EntryProcessor} and backup entry processor related operations.
  */
 public final class EntryOperator {
 
@@ -82,12 +82,12 @@ public final class EntryOperator {
     private EntryProcessor backupProcessor;
 
     // these fields can be used to reset this operator
+    private boolean didMatchPredicate;
     private Data dataKey;
     private Object oldValue;
-    private Object newValue;
     private EntryEventType eventType;
     private Data result;
-    private boolean didMatchPredicate;
+    private LockAwareLazyMapEntry entry;
 
     @SuppressWarnings("checkstyle:executablestatementcount")
     private EntryOperator(MapOperation mapOperation, Object processor, Predicate predicate, boolean collectWanEvents) {
@@ -113,6 +113,7 @@ public final class EntryOperator {
         this.mapEventPublisher = mapServiceContext.getMapEventPublisher();
         this.partitionId = recordStore.getPartitionId();
         this.callerAddress = mapOperation.getCallerAddress();
+        this.entry = new LockAwareLazyMapEntry();
     }
 
     private void setProcessor(Object processor) {
@@ -137,18 +138,20 @@ public final class EntryOperator {
         return new EntryOperator(mapOperation, processor, predicate, false);
     }
 
-    public EntryOperator init(Data dataKey, Object oldValue, Object newValue, Data result, EntryEventType eventType) {
+    public EntryOperator init(Data dataKey, Object oldValue, Object newValue, Data result,
+                              EntryEventType eventType, Boolean locked) {
         this.dataKey = dataKey;
         this.oldValue = oldValue;
-        this.newValue = newValue;
         this.eventType = eventType;
         this.result = result;
         this.didMatchPredicate = true;
+        this.entry.init(ss, dataKey, newValue != null ? newValue : oldValue,
+                mapContainer.getExtractors(), locked);
         return this;
     }
 
     public EntryOperator operateOnKey(Data dataKey) {
-        init(dataKey, null, null, null, null);
+        init(dataKey, null, null, null, null, null);
 
         if (belongsAnotherPartition(dataKey)) {
             return this;
@@ -172,9 +175,8 @@ public final class EntryOperator {
     }
 
     private EntryOperator operateOnKeyValueInternal(Data dataKey, Object oldValue, Boolean locked) {
-        init(dataKey, oldValue, null, null, null);
+        init(dataKey, oldValue, null, null, null, locked);
 
-        Entry entry = createMapEntry(dataKey, oldValue, locked);
         if (outOfPredicateScope(entry)) {
             this.didMatchPredicate = false;
             return this;
@@ -182,7 +184,6 @@ public final class EntryOperator {
 
         process(entry);
         findModificationType(entry);
-        newValue = entry.getValue();
 
         if (readOnly && entryWasModified()) {
             throwModificationInReadOnlyException();
@@ -198,8 +199,8 @@ public final class EntryOperator {
         return eventType;
     }
 
-    public Object getNewValue() {
-        return newValue;
+    public Object getByPreferringDataNewValue() {
+        return entry.getByPrioritizingDataValue();
     }
 
     public Object getOldValue() {
@@ -250,6 +251,33 @@ public final class EntryOperator {
         return this;
     }
 
+    private void onAddedOrUpdated() {
+        Object newValue = inMemoryFormat == OBJECT
+                ? entry.getValue() : entry.getByPrioritizingDataValue();
+        if (backup) {
+            recordStore.putBackup(dataKey, newValue, NOT_WAN);
+        } else {
+            recordStore.setWithUncountedAccess(dataKey, newValue, UNSET, UNSET);
+            if (mapOperation.isPostProcessing(recordStore)) {
+                Record record = recordStore.getRecord(dataKey);
+                newValue = record == null ? null : record.getValue();
+                entry.setValueByInMemoryFormat(inMemoryFormat, newValue);
+            }
+            mapServiceContext.interceptAfterPut(mapContainer.getInterceptorRegistry(), newValue);
+            stats.incrementPutLatencyNanos(getLatencyNanos(startTimeNanos));
+        }
+    }
+
+    private void onRemove() {
+        if (backup) {
+            recordStore.removeBackup(dataKey, NOT_WAN);
+        } else {
+            recordStore.delete(dataKey, NOT_WAN);
+            mapServiceContext.interceptAfterRemove(mapContainer.getInterceptorRegistry(), oldValue);
+            stats.incrementRemoveLatencyNanos(getLatencyNanos(startTimeNanos));
+        }
+    }
+
     private Object clonedOrRawOldValue() {
         return shouldClone ? ss.toObject(ss.toData(oldValue)) : oldValue;
     }
@@ -269,21 +297,15 @@ public final class EntryOperator {
         return predicate == Predicates.alwaysFalse() || !predicate.apply(entry);
     }
 
-    private Entry createMapEntry(Data key, Object value, Boolean locked) {
-        return new LockAwareLazyMapEntry(key, value, ss, mapContainer.getExtractors(), locked);
-    }
-
-    private void findModificationType(Entry entry) {
-        LazyMapEntry lazyMapEntry = (LazyMapEntry) entry;
-
-        if (!lazyMapEntry.isModified()
-                || (oldValue == null && lazyMapEntry.hasNullValue())) {
+    private void findModificationType(LazyMapEntry mapEntry) {
+        if (!mapEntry.isModified()
+                || (oldValue == null && mapEntry.hasNullValue())) {
             // read only
             eventType = null;
             return;
         }
 
-        if (lazyMapEntry.hasNullValue()) {
+        if (mapEntry.hasNullValue()) {
             eventType = REMOVED;
             return;
         }
@@ -296,30 +318,6 @@ public final class EntryOperator {
         Record record = recordStore.getRecord(dataKey);
         if (record != null) {
             recordStore.accessRecord(record, Clock.currentTimeMillis());
-        }
-    }
-
-    private void onAddedOrUpdated() {
-        if (backup) {
-            recordStore.putBackup(dataKey, newValue, NOT_WAN);
-        } else {
-            recordStore.setWithUncountedAccess(dataKey, newValue, UNSET, UNSET);
-            if (mapOperation.isPostProcessing(recordStore)) {
-                Record record = recordStore.getRecord(dataKey);
-                newValue = record == null ? null : record.getValue();
-            }
-            mapServiceContext.interceptAfterPut(mapContainer.getInterceptorRegistry(), newValue);
-            stats.incrementPutLatencyNanos(getLatencyNanos(startTimeNanos));
-        }
-    }
-
-    private void onRemove() {
-        if (backup) {
-            recordStore.removeBackup(dataKey, NOT_WAN);
-        } else {
-            recordStore.delete(dataKey, NOT_WAN);
-            mapServiceContext.interceptAfterRemove(mapContainer.getInterceptorRegistry(), oldValue);
-            stats.incrementRemoveLatencyNanos(getLatencyNanos(startTimeNanos));
         }
     }
 
@@ -349,13 +347,14 @@ public final class EntryOperator {
         if (eventType == REMOVED) {
             mapOperation.publishWanRemove(dataKey);
         } else {
-            mapOperation.publishWanUpdate(dataKey, newValue);
+            mapOperation.publishWanUpdate(dataKey, entry.getByPrioritizingDataValue());
         }
     }
 
     private void publishEntryEvent() {
         Object oldValue = getOrNullOldValue();
-        mapEventPublisher.publishEvent(callerAddress, mapName, eventType, toHeapData(dataKey), oldValue, newValue);
+        mapEventPublisher.publishEvent(callerAddress, mapName, eventType,
+                toHeapData(dataKey), oldValue, entry.getByPrioritizingDataValue());
     }
 
     /**

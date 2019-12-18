@@ -390,7 +390,7 @@ public class EntryOperation extends LockAwareOperation
                         Data result = entryOperator.getResult();
                         EntryEventType modificationType = entryOperator.getEventType();
                         if (modificationType != null) {
-                            Data newValue = serializationService.toData(entryOperator.getNewValue());
+                            Data newValue = serializationService.toData(entryOperator.getByPreferringDataNewValue());
                             updateAndUnlock(serializationService.toData(oldValue),
                                     newValue, modificationType, finalCaller, finalThreadId, result, finalBegin);
                         } else {
