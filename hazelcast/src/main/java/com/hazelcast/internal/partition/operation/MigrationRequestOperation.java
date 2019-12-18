@@ -92,7 +92,7 @@ public class MigrationRequestOperation extends BaseMigrationOperation {
         if (!migrationInfo.startProcessing()) {
             getLogger().warning("Migration is cancelled -> " + migrationInfo);
             completeMigration(false);
-            return CallStatus.DONE_VOID;
+            return CallStatus.VOID;
         }
 
         return new OffloadImpl();

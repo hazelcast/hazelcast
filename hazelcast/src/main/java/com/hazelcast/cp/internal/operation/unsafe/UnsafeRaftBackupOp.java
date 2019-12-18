@@ -37,7 +37,7 @@ public class UnsafeRaftBackupOp extends AbstractUnsafeRaftOp implements BackupOp
 
     @Override
     CallStatus handleResponse(long commitIndex, Object response) {
-        return CallStatus.DONE_VOID;
+        return CallStatus.VOID;
     }
 
     @Override

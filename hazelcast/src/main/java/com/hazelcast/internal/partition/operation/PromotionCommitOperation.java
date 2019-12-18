@@ -120,10 +120,10 @@ public class PromotionCommitOperation extends AbstractPartitionOperation impleme
                 return beforePromotion();
             case FINALIZE_PROMOTION:
                 finalizePromotion();
-                return CallStatus.DONE_VOID;
+                return CallStatus.VOID;
             case COMPLETE:
                 complete();
-                return CallStatus.DONE_RESPONSE;
+                return CallStatus.RESPONSE;
             default:
                 throw new IllegalStateException("Unknown state: " + runStage);
         }
@@ -150,7 +150,7 @@ public class PromotionCommitOperation extends AbstractPartitionOperation impleme
                     + partitionState.getVersion() + ", current version: " + partitionStateVersion);
             partitionService.getMigrationManager().releasePromotionPermit();
             success = true;
-            return CallStatus.DONE_RESPONSE;
+            return CallStatus.RESPONSE;
         }
 
         migrationState = new MigrationStateImpl(Clock.currentTimeMillis(), promotions.size(), 0, 0L);
@@ -173,7 +173,7 @@ public class PromotionCommitOperation extends AbstractPartitionOperation impleme
             op.setPartitionId(promotion.getPartitionId()).setNodeEngine(nodeEngine).setService(partitionService);
             operationService.execute(op);
         }
-        return CallStatus.DONE_VOID;
+        return CallStatus.VOID;
     }
 
     /** Processes the sent partition state and sends {@link FinalizePromotionOperation} for all promotions. */

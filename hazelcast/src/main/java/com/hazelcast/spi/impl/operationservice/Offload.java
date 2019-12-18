@@ -36,7 +36,7 @@ import java.util.Set;
  * more information see the {@link Operation#call()}.
  *
  * If the operation 'offloads' some work, but doesn't send a response ever,
- * {@link CallStatus#DONE_VOID} should be used instead.
+ * {@link CallStatus#VOID} should be used instead.
  *
  * <h1>Response handling</h1>
  * When the {@link Offload#init(NodeEngineImpl, Set)} is called, the original
