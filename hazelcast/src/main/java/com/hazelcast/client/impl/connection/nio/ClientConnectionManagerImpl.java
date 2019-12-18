@@ -329,13 +329,24 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
     }
 
     private void connectToClusterSync() {
-        CandidateClusterContext currentCluster = clusterDiscoveryService.current();
-        logger.info("Trying to connect to cluster with client name: " + currentCluster.getClusterName());
-        if (connectToCandidate(currentCluster)) {
+        CandidateClusterContext current = clusterDiscoveryService.current();
+
+        logger.info("Trying to connect to cluster with client name: " + current.getClusterName());
+
+        // try to connect to current cluster
+        if (connectToCandidate(current)) {
             return;
         }
 
-        clusterDiscoveryService.tryNextCluster(this::destroyCurrentAndTryNext);
+        // try to connect to next cluster
+        if (clusterDiscoveryService.tryNextCluster(this::destroyCurrentAndTryNext)) {
+            return;
+        }
+
+        // notify when no succeeded cluster connection is found
+        String msg = client.getLifecycleService().isRunning()
+                ? "Unable to connect to any cluster." : "Client is being shutdown.";
+        throw new IllegalStateException(msg);
     }
 
     private Boolean destroyCurrentAndTryNext(CandidateClusterContext current, CandidateClusterContext next) {
