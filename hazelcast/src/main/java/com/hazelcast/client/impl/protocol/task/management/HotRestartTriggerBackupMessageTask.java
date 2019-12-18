@@ -22,8 +22,15 @@ import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.management.ManagementCenterService;
 import com.hazelcast.internal.nio.Connection;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.spi.impl.executionservice.ExecutionService;
 
 import java.security.Permission;
+import java.util.concurrent.Future;
+
+import static com.hazelcast.internal.util.ConcurrencyUtil.CALLER_RUNS;
+import static com.hazelcast.internal.util.ExceptionUtil.peel;
+import static com.hazelcast.internal.util.ExceptionUtil.withTryCatch;
 
 public class HotRestartTriggerBackupMessageTask
         extends AbstractCallableMessageTask<MCTriggerHotRestartBackupCodec.RequestParameters> {
@@ -37,7 +44,20 @@ public class HotRestartTriggerBackupMessageTask
 
     @Override
     protected Object call() throws Exception {
-        node.getNodeExtension().getHotRestartService().backup();
+        ILogger logger = nodeEngine.getLogger(getClass());
+        ExecutionService executionService = nodeEngine.getExecutionService();
+        Future<Void> future = executionService.submit(
+                ExecutionService.ASYNC_EXECUTOR,
+                () -> {
+                    node.getNodeExtension().getHotRestartService().backup();
+                    return null;
+                });
+
+        executionService.asCompletableFuture(future).whenCompleteAsync(
+                withTryCatch(
+                        logger,
+                        (empty, error) -> sendResponse(error != null ? peel(error) : null)), CALLER_RUNS);
+
         return null;
     }
 
