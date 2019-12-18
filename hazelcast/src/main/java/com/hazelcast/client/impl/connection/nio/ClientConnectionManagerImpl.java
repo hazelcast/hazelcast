@@ -104,6 +104,7 @@ import static com.hazelcast.client.properties.ClientProperty.IO_INPUT_THREAD_COU
 import static com.hazelcast.client.properties.ClientProperty.IO_OUTPUT_THREAD_COUNT;
 import static com.hazelcast.client.properties.ClientProperty.IO_WRITE_THROUGH_ENABLED;
 import static com.hazelcast.client.properties.ClientProperty.SHUFFLE_MEMBER_LIST;
+import static com.hazelcast.core.LifecycleEvent.LifecycleState.CLIENT_CHANGED_CLUSTER;
 import static com.hazelcast.internal.nio.IOUtil.closeResource;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
@@ -306,8 +307,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
     }
 
     private void connectToCluster() {
-        CandidateClusterContext currentClusterContext = clusterDiscoveryService.current();
-        currentClusterContext.start();
+        clusterDiscoveryService.current().start();
 
         if (asyncStart) {
             connectToClusterAsync();
@@ -321,26 +321,32 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
             try {
                 connectToClusterSync();
             } catch (Throwable e) {
-                logger.warning("Could not connect to any cluster, shutting down the client: " + e.getMessage());
+                logger.warning("Could not connect to any cluster, "
+                        + "shutting down the client: " + e.getMessage());
                 shutdownWithExternalThread();
             }
         });
     }
 
     private void connectToClusterSync() {
-        CandidateClusterContext currentCluster = clusterDiscoveryService.current();
-        logger.info("Trying to connect to cluster with client name: " + currentCluster.getClusterName());
-        if (connectToCandidate(currentCluster)) {
+        CandidateClusterContext current = clusterDiscoveryService.current();
+
+        logger.info("Trying to connect to cluster with client name: " + current.getClusterName());
+
+        // try to connect to current cluster
+        if (connectToCandidate(current)) {
             return;
         }
 
-        clusterDiscoveryService.tryNextCluster(this::destroyCurrentAndTryNext);
-
-        if (!client.getLifecycleService().isRunning()) {
-            throw new IllegalStateException("Client is being shutdown.");
-        } else {
-            throw new IllegalStateException("Unable to connect to any cluster.");
+        // try to connect to next cluster
+        if (clusterDiscoveryService.tryNextCluster(this::destroyCurrentAndTryNext)) {
+            return;
         }
+
+        // notify when no succeeded cluster connection is found
+        String msg = client.getLifecycleService().isRunning()
+                ? "Unable to connect to any cluster." : "Client is being shutdown.";
+        throw new IllegalStateException(msg);
     }
 
     private Boolean destroyCurrentAndTryNext(CandidateClusterContext current, CandidateClusterContext next) {
@@ -354,9 +360,9 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
 
         logger.info("Trying to connect to next cluster with client name: " + next.getClusterName());
 
-        if (ClientConnectionManagerImpl.this.connectToCandidate(next)) {
+        if (connectToCandidate(next)) {
             client.waitForInitialMembershipEvents();
-            ClientConnectionManagerImpl.this.fireLifecycleEvent(LifecycleEvent.LifecycleState.CLIENT_CHANGED_CLUSTER);
+            fireLifecycleEvent(CLIENT_CHANGED_CLUSTER);
             return true;
         }
         return false;
