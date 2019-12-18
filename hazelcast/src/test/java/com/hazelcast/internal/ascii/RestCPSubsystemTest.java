@@ -74,7 +74,7 @@ public class RestCPSubsystemTest extends HazelcastTestSupport {
     public void setup() {
         RestApiConfig restApiConfig = new RestApiConfig()
                 .setEnabled(true)
-                .enableGroups(RestEndpointGroup.CLUSTER_WRITE);
+                .enableGroups(RestEndpointGroup.CP);
         config.getNetworkConfig().setRestApiConfig(restApiConfig);
 
         JoinConfig join = config.getNetworkConfig().getJoin();
