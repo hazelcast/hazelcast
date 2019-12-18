@@ -51,7 +51,7 @@ import static com.hazelcast.core.Offloadable.NO_OFFLOADING;
 import static com.hazelcast.internal.util.ToHeapDataConverter.toHeapData;
 import static com.hazelcast.map.impl.operation.EntryOperator.operator;
 import static com.hazelcast.spi.impl.executionservice.ExecutionService.OFFLOADABLE_EXECUTOR;
-import static com.hazelcast.spi.impl.operationservice.CallStatus.DONE_RESPONSE;
+import static com.hazelcast.spi.impl.operationservice.CallStatus.RESPONSE;
 import static com.hazelcast.spi.impl.operationservice.CallStatus.WAIT;
 import static com.hazelcast.spi.impl.operationservice.InvocationBuilder.DEFAULT_TRY_PAUSE_MILLIS;
 import static com.hazelcast.internal.util.ExceptionUtil.sneakyThrow;
@@ -188,7 +188,7 @@ public class EntryOperation extends LockAwareOperation
                     .operateOnKey(dataKey)
                     .doPostOperateOps()
                     .getResult();
-            return DONE_RESPONSE;
+            return RESPONSE;
         }
     }
 

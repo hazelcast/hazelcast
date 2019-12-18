@@ -58,7 +58,7 @@ public class TransferLeadershipOp extends Operation implements RaftSystemOperati
         RaftService service = getService();
         InternalCompletableFuture future = service.transferLeadership(groupId, (CPMemberInfo) destination);
         future.whenCompleteAsync(this);
-        return CallStatus.DONE_VOID;
+        return CallStatus.VOID;
     }
 
     @Override

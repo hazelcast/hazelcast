@@ -38,7 +38,7 @@ public class UnsafeRaftQueryOp extends AbstractUnsafeRaftOp implements ReadonlyO
 
     @Override
     CallStatus handleResponse(long commitIndex, Object response) {
-        return CallStatus.DONE_RESPONSE;
+        return CallStatus.RESPONSE;
     }
 
     @Override
