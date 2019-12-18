@@ -1,3 +1,4 @@
 http\://www.hazelcast.com/schema/spring/hazelcast-spring-4.0.xsd=hazelcast-spring-4.0.xsd
 https\://www.hazelcast.com/schema/spring/hazelcast-spring-4.0.xsd=hazelcast-spring-4.0.xsd
 http\://www.hazelcast.com/schema/spring/hazelcast-spring.xsd=hazelcast-spring-4.0.xsd
+https\://www.hazelcast.com/schema/spring/hazelcast-spring.xsd=hazelcast-spring-4.0.xsd
