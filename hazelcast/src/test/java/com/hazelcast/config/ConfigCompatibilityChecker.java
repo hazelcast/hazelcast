@@ -974,8 +974,9 @@ public class ConfigCompatibilityChecker {
         }
 
         private boolean discoveryStrategyClassNameEqual(DiscoveryStrategyConfig c1, DiscoveryStrategyConfig c2) {
-            return classNameOrImpl(c1.getClassName(), c1.getDiscoveryStrategyFactory())
-                .equals(classNameOrImpl(c2.getClassName(), c2.getDiscoveryStrategyFactory()));
+            return nullSafeEqual(
+                classNameOrImpl(c1.getClassName(), c1.getDiscoveryStrategyFactory()),
+                classNameOrImpl(c2.getClassName(), c2.getDiscoveryStrategyFactory()));
         }
     }
 

@@ -22,6 +22,7 @@ import com.hazelcast.collection.QueueStore;
 import com.hazelcast.collection.QueueStoreFactory;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.util.StringUtil;
 
 import java.util.Map;
 
@@ -74,14 +75,22 @@ public class QueueStoreConfigHolder {
 
     public QueueStoreConfig asQueueStoreConfig(SerializationService serializationService) {
         QueueStoreConfig config = new QueueStoreConfig();
-        config.setClassName(className);
+        if (!StringUtil.isNullOrEmptyAfterTrim(className)) {
+            config.setClassName(className);
+        }
         config.setEnabled(enabled);
-        config.setFactoryClassName(factoryClassName);
+        if (!StringUtil.isNullOrEmptyAfterTrim(factoryClassName)) {
+            config.setFactoryClassName(factoryClassName);
+        }
         config.setProperties(PropertiesUtil.fromMap(properties));
         QueueStore storeImplementation = serializationService.toObject(implementation);
+        if (storeImplementation != null) {
+            config.setStoreImplementation(storeImplementation);
+        }
         QueueStoreFactory storeFactoryImplementation = serializationService.toObject(factoryImplementation);
-        config.setStoreImplementation(storeImplementation);
-        config.setFactoryImplementation(storeFactoryImplementation);
+        if (storeFactoryImplementation != null) {
+            config.setFactoryImplementation(storeFactoryImplementation);
+        }
         return config;
     }
 

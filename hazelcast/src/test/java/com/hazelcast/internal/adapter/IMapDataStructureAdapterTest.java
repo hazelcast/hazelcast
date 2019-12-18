@@ -72,7 +72,6 @@ public class IMapDataStructureAdapterTest extends HazelcastTestSupport {
         MapStoreConfig mapStoreConfig = new MapStoreConfig()
                 .setEnabled(true)
                 .setInitialLoadMode(MapStoreConfig.InitialLoadMode.LAZY)
-                .setClassName(null)
                 .setImplementation(mapStore);
 
         Config config = new Config();

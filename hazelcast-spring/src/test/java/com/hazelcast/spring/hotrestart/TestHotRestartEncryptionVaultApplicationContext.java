@@ -86,7 +86,6 @@ public class TestHotRestartEncryptionVaultApplicationContext {
         SSLConfig sslConfig = vaultConfig.getSSLConfig();
         assertNotNull(sslConfig);
         assertTrue(sslConfig.isEnabled());
-        assertEquals(DummySSLContextFactory.class.getName(), sslConfig.getFactoryClassName());
         assertEquals(sslContextFactory, sslConfig.getFactoryImplementation());
         assertEquals(60, vaultConfig.getPollingInterval());
     }

@@ -28,7 +28,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 
-import static com.hazelcast.internal.util.Preconditions.checkHasText;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 /**
@@ -97,7 +96,7 @@ public class WanConsumerConfig implements IdentifiedDataSerializable {
      * @see #setImplementation(WanConsumer)
      */
     public WanConsumerConfig setClassName(@Nonnull String className) {
-        this.className = checkHasText(className, "Wan consumer class name must contain text");
+        this.className = checkNotNull(className, "Wan consumer class name must contain text");
         this.implementation = null;
         return this;
     }

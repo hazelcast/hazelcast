@@ -130,6 +130,7 @@ import com.hazelcast.config.security.TokenEncoding;
 import com.hazelcast.config.security.TokenIdentityConfig;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.instance.ProtocolType;
+import com.hazelcast.internal.util.StringUtil;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.query.impl.IndexUtils;
@@ -1984,7 +1985,10 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
             evictionConfig.setEvictionPolicy(EvictionPolicy.valueOf(upperCaseInternal(getTextContent(evictionPolicy))));
         }
         if (comparatorClassName != null) {
-            evictionConfig.setComparatorClassName(getTextContent(comparatorClassName));
+            String className = getTextContent(comparatorClassName);
+            if (!StringUtil.isNullOrEmptyAfterTrim(className)) {
+                evictionConfig.setComparatorClassName(className);
+            }
         }
 
         try {

@@ -142,7 +142,6 @@ public class MapNearCacheBasicTest extends AbstractNearCacheBasicTest<Data, Stri
         MapStoreConfig mapStoreConfig = new MapStoreConfig()
                 .setEnabled(true)
                 .setInitialLoadMode(MapStoreConfig.InitialLoadMode.EAGER)
-                .setClassName(null)
                 .setImplementation(mapStore);
 
         mapConfig.setMapStoreConfig(mapStoreConfig);

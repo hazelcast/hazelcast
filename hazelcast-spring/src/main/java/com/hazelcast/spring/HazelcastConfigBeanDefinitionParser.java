@@ -124,6 +124,7 @@ import com.hazelcast.config.security.UsernamePasswordIdentityConfig;
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.instance.ProtocolType;
 import com.hazelcast.internal.config.AliasedDiscoveryConfigUtils;
+import com.hazelcast.internal.util.StringUtil;
 import com.hazelcast.memory.MemorySize;
 import com.hazelcast.memory.MemoryUnit;
 import com.hazelcast.splitbrainprotection.SplitBrainProtectionOn;
@@ -1440,7 +1441,9 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
             String implementation = getAttribute(n, "implementation");
             boolean persistWanReplicatedData = getBooleanValue(getAttribute(n, "persist-wan-replicated-data"));
 
-            consumerConfigBuilder.addPropertyValue("className", className);
+            if (!StringUtil.isNullOrEmptyAfterTrim(className)) {
+                consumerConfigBuilder.addPropertyValue("className", className);
+            }
             if (implementation != null) {
                 consumerConfigBuilder.addPropertyReference("implementation", implementation);
             }

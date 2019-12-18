@@ -106,6 +106,7 @@ public class MapStoreConfig implements IdentifiedDataSerializable {
      */
     public MapStoreConfig setClassName(@Nonnull String className) {
         this.className = checkHasText(className, "Map store class name must contain text");
+        this.implementation = null;
         return this;
     }
 
@@ -124,7 +125,7 @@ public class MapStoreConfig implements IdentifiedDataSerializable {
      * @param factoryClassName the name to set for the MapStoreFactory implementation class
      */
     public MapStoreConfig setFactoryClassName(@Nonnull String factoryClassName) {
-        this.factoryClassName = checkNotNull(factoryClassName, "Map store factory class name cannot be null!");
+        this.factoryClassName = checkHasText(factoryClassName, "Map store factory class name must contain text");
         this.factoryImplementation = null;
         return this;
     }
