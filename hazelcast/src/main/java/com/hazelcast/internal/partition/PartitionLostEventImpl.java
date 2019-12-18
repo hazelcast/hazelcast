@@ -71,6 +71,14 @@ public class PartitionLostEventImpl implements PartitionLostEvent, IPartitionLos
         return lostBackupCount;
     }
 
+    /**
+     * Returns true if all replicas of a partition are lost
+     */
+    @Override
+    public boolean allReplicasInPartitionLost() {
+        return getLostBackupCount() == InternalPartition.MAX_BACKUP_COUNT;
+    }
+
     @Override
     public int getLostReplicaIndex() {
         return lostBackupCount;
