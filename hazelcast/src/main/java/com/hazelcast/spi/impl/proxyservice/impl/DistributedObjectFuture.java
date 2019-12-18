@@ -53,6 +53,14 @@ public class DistributedObjectFuture {
         throw ExceptionUtil.rethrow(error);
     }
 
+    public DistributedObject getNow() {
+        if (error != null) {
+            throw ExceptionUtil.rethrow(error);
+        }
+        // return completed proxy or null
+        return proxy;
+    }
+
     private boolean waitUntilSetAndInitialized() {
         boolean interrupted = false;
         synchronized (this) {
@@ -89,10 +97,12 @@ public class DistributedObjectFuture {
             throw new IllegalArgumentException("Proxy should not be null!");
         }
         synchronized (this) {
-            if (!initialized && o instanceof InitializingObject) {
-                rawProxy = o;
-            } else {
-                proxy = o;
+            if (error == null) {
+                if (!initialized && o instanceof InitializingObject) {
+                    rawProxy = o;
+                } else {
+                    proxy = o;
+                }
             }
             notifyAll();
         }
