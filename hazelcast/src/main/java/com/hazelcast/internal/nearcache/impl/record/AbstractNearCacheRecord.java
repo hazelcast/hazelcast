@@ -168,8 +168,8 @@ public abstract class AbstractNearCacheRecord<V> implements NearCacheRecord<V> {
 
     @Override
     public String toString() {
-        return "AbstractNearCacheRecord{" +
-                "creationTime=" + creationTime
+        return "AbstractNearCacheRecord{"
+                + "creationTime=" + creationTime
                 + ", value=" + value
                 + ", uuid=" + uuid
                 + ", cachedAsNull=" + cachedAsNull
