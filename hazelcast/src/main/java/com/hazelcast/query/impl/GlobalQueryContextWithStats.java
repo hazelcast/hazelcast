@@ -20,6 +20,7 @@ import com.hazelcast.config.IndexConfig;
 import com.hazelcast.core.TypeConverter;
 import com.hazelcast.internal.monitor.impl.PerIndexStats;
 import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.query.Predicate;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -31,9 +32,9 @@ import java.util.Set;
  */
 public class GlobalQueryContextWithStats extends QueryContext {
 
-    private final HashMap<String, QueryTrackingIndex> knownIndexes = new HashMap<String, QueryTrackingIndex>();
+    private final HashMap<String, QueryTrackingIndex> knownIndexes = new HashMap<>();
 
-    private final HashSet<QueryTrackingIndex> trackedIndexes = new HashSet<QueryTrackingIndex>(8);
+    private final HashSet<QueryTrackingIndex> trackedIndexes = new HashSet<>(8);
 
     @Override
     void attachTo(Indexes indexes) {
@@ -123,6 +124,18 @@ public class GlobalQueryContextWithStats extends QueryContext {
         @Override
         public void removeEntry(Data key, Object value, OperationSource operationSource) {
             delegate.removeEntry(key, value, operationSource);
+        }
+
+        @Override
+        public boolean canEvaluate(Class<? extends Predicate> predicateClass) {
+            return delegate.canEvaluate(predicateClass);
+        }
+
+        @Override
+        public Set<QueryableEntry> evaluate(Predicate predicate) {
+            Set<QueryableEntry> result = delegate.evaluate(predicate);
+            hasQueries = true;
+            return result;
         }
 
         @Override

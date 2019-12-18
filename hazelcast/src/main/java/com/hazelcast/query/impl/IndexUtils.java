@@ -17,9 +17,11 @@
 package com.hazelcast.query.impl;
 
 import com.hazelcast.config.ConfigXmlGenerator;
+import com.hazelcast.config.UniqueKeyTransform;
 import com.hazelcast.internal.config.DomConfigHelper;
 import com.hazelcast.config.IndexConfig;
 import com.hazelcast.config.IndexType;
+import com.hazelcast.internal.util.StringUtil;
 import com.hazelcast.internal.util.UuidUtil;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
@@ -31,6 +33,7 @@ import java.util.regex.Pattern;
 import static com.hazelcast.internal.config.DomConfigHelper.childElements;
 import static com.hazelcast.internal.config.DomConfigHelper.cleanNodeName;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.StringUtil.isNullOrEmpty;
 
 /**
  * Utility methods for indexes.
@@ -70,6 +73,10 @@ public final class IndexUtils {
                 + " attributes: " + config);
         }
 
+        if (config.getType() == IndexType.BITMAP && originalAttributeNames.size() > 1) {
+            throw new IllegalArgumentException("Composite bitmap indexes are not supported: " + config);
+        }
+
         List<String> normalizedAttributeNames = new ArrayList<>(originalAttributeNames.size());
 
         for (String originalAttributeName : originalAttributeNames) {
@@ -106,11 +113,15 @@ public final class IndexUtils {
             name = null;
         }
 
-        return buildNormalizedConfig(mapName, config.getType(), name, normalizedAttributeNames);
+        validateAttribute(config.getUniqueKey());
+        String uniqueKey = canonicalizeAttribute(config.getUniqueKey());
+
+        return buildNormalizedConfig(mapName, config.getType(), name, normalizedAttributeNames, uniqueKey,
+                config.getUniqueKeyTransform());
     }
 
     private static IndexConfig buildNormalizedConfig(String mapName, IndexType indexType, String indexName,
-        List<String> normalizedAttributeNames) {
+        List<String> normalizedAttributeNames, String uniqueKey, UniqueKeyTransform uniqueKeyTransform) {
         IndexConfig newConfig = new IndexConfig().setType(indexType);
 
         StringBuilder nameBuilder = indexName == null
@@ -129,6 +140,9 @@ public final class IndexUtils {
         }
 
         newConfig.setName(indexName);
+
+        newConfig.setUniqueKey(uniqueKey);
+        newConfig.setUniqueKeyTransform(uniqueKeyTransform);
 
         return newConfig;
     }
@@ -244,9 +258,11 @@ public final class IndexUtils {
         gen.open("indexes");
         for (IndexConfig indexCfg : indexConfigs) {
             if (indexCfg.getName() != null) {
-                gen.open("index", "name", indexCfg.getName(), "type", indexCfg.getType().name());
+                gen.open("index", "name", indexCfg.getName(), "type", indexCfg.getType().name(), "unique-key",
+                        indexCfg.getUniqueKey(), "unique-key-transform", indexCfg.getUniqueKeyTransform());
             } else {
-                gen.open("index", "type", indexCfg.getType().name());
+                gen.open("index", "type", indexCfg.getType().name(), "unique-key", indexCfg.getUniqueKey(),
+                        "unique-key-transform", indexCfg.getUniqueKeyTransform());
             }
 
             gen.open("attributes");
@@ -274,7 +290,16 @@ public final class IndexUtils {
 
         IndexType type = getIndexTypeFromXmlName(typeStr);
 
-        IndexConfig res = new IndexConfig().setName(name).setType(type);
+        String uniqueKeyText = DomConfigHelper.getTextContent(attrs.getNamedItem("unique-key"), domLevel3);
+        String uniqueKey = isNullOrEmpty(uniqueKeyText) ? IndexConfig.DEFAULT_UNIQUE_KEY : uniqueKeyText;
+
+        String uniqueKeyTransformText = DomConfigHelper.getTextContent(attrs.getNamedItem("unique-key-transform"), domLevel3);
+        UniqueKeyTransform uniqueKeyTransform =
+                isNullOrEmpty(uniqueKeyText) ? IndexConfig.DEFAULT_UNIQUE_KEY_TRANSFORM : UniqueKeyTransform.fromName(
+                        uniqueKeyTransformText);
+
+        IndexConfig res =
+                new IndexConfig().setName(name).setType(type).setUniqueKey(uniqueKey).setUniqueKeyTransform(uniqueKeyTransform);
 
         for (Node attributesNode : childElements(indexNode)) {
             if ("attributes".equals(cleanNodeName(attributesNode))) {
@@ -302,6 +327,8 @@ public final class IndexUtils {
             return IndexType.SORTED;
         } else if (typeStr.equals(IndexType.HASH.name().toLowerCase())) {
             return IndexType.HASH;
+        } else if (typeStr.equals(IndexType.BITMAP.name().toLowerCase())) {
+            return IndexType.BITMAP;
         } else {
             throw new IllegalArgumentException("Unsupported index type: " + typeStr);
         }
@@ -330,11 +357,22 @@ public final class IndexUtils {
             type = IndexType.SORTED;
         } else if (typeStr.equals(IndexType.HASH.name().toLowerCase())) {
             type = IndexType.HASH;
+        } else if (typeStr.equals(IndexType.BITMAP.name().toLowerCase())) {
+            type = IndexType.BITMAP;
         } else {
             throw new IllegalArgumentException("Unsupported index type: " + typeStr);
         }
 
-        IndexConfig res = new IndexConfig().setName(name).setType(type);
+        String uniqueKeyText = DomConfigHelper.getTextContent(attrs.getNamedItem("unique-key"), domLevel3);
+        String uniqueKey = isNullOrEmpty(uniqueKeyText) ? IndexConfig.DEFAULT_UNIQUE_KEY : uniqueKeyText;
+
+        String uniqueKeyTransformText = DomConfigHelper.getTextContent(attrs.getNamedItem("unique-key-transform"), domLevel3);
+        UniqueKeyTransform uniqueKeyTransform =
+                isNullOrEmpty(uniqueKeyText) ? IndexConfig.DEFAULT_UNIQUE_KEY_TRANSFORM : UniqueKeyTransform.fromName(
+                        uniqueKeyTransformText);
+
+        IndexConfig res =
+                new IndexConfig().setName(name).setType(type).setUniqueKey(uniqueKey).setUniqueKeyTransform(uniqueKeyTransform);
 
         Node attributesNode = attrs.getNamedItem("attributes");
 
@@ -354,6 +392,9 @@ public final class IndexUtils {
 
             case HASH:
                 return "hash";
+
+            case BITMAP:
+                return "bitmap";
 
             default:
                 throw new IllegalArgumentException("Unsupported index type: " + type);

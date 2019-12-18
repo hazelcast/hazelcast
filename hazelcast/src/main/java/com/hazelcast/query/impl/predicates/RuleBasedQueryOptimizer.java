@@ -28,6 +28,7 @@ public final class RuleBasedQueryOptimizer implements QueryOptimizer {
     private final Visitor rangeVisitor = new RangeVisitor();
     private final Visitor orToInVisitor = new OrToInVisitor();
     private final Visitor compositeIndexVisitor = new CompositeIndexVisitor();
+    private final Visitor evaluateVisitor = new EvaluateVisitor();
 
     @SuppressWarnings("unchecked")
     public <K, V> Predicate<K, V> optimize(Predicate<K, V> predicate, Indexes indexes) {
@@ -43,6 +44,9 @@ public final class RuleBasedQueryOptimizer implements QueryOptimizer {
         }
         if (optimized instanceof VisitablePredicate) {
             optimized = ((VisitablePredicate) optimized).accept(compositeIndexVisitor, indexes);
+        }
+        if (optimized instanceof VisitablePredicate) {
+            optimized = ((VisitablePredicate) optimized).accept(evaluateVisitor, indexes);
         }
         return optimized;
     }

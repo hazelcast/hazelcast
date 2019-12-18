@@ -16,11 +16,12 @@
 
 package com.hazelcast.query.impl.predicates;
 
+import com.hazelcast.internal.serialization.BinaryInterface;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.internal.serialization.BinaryInterface;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.impl.Comparables;
+import com.hazelcast.query.impl.Indexes;
 
 import java.io.IOException;
 import java.util.Map;
@@ -32,7 +33,7 @@ import static com.hazelcast.query.impl.predicates.PredicateUtils.isNull;
  * Not Equal Predicate
  */
 @BinaryInterface
-public class NotEqualPredicate extends AbstractPredicate implements NegatablePredicate {
+public class NotEqualPredicate extends AbstractPredicate implements NegatablePredicate, VisitablePredicate {
 
     private static final long serialVersionUID = 1L;
 
@@ -44,6 +45,15 @@ public class NotEqualPredicate extends AbstractPredicate implements NegatablePre
     public NotEqualPredicate(String attribute, Comparable value) {
         super(attribute);
         this.value = value;
+    }
+
+    public Comparable getValue() {
+        return value;
+    }
+
+    @Override
+    public Predicate accept(Visitor visitor, Indexes indexes) {
+        return visitor.visit(this, indexes);
     }
 
     @SuppressWarnings("unchecked")

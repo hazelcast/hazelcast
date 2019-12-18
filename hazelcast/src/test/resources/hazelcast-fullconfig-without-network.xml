@@ -324,12 +324,34 @@
         </wan-replication-ref>
 
         <indexes>
+            <!-- unordered/hash index on the name attribute -->
             <index type="HASH">
                 <attributes>
                     <attribute>name</attribute>
                 </attributes>
             </index>
+            <!-- ordered/tree index on the age attribute -->
             <index>
+                <attributes>
+                    <attribute>age</attribute>
+                </attributes>
+            </index>
+            <!-- composite unordered/hash index on the name and age attributes -->
+            <index type="HASH">
+                <attributes>
+                    <attribute>name</attribute>
+                    <attribute>age</attribute>
+                </attributes>
+            </index>
+            <!-- composite ordered/tree index on the age and name attributes -->
+            <index>
+                <attributes>
+                    <attribute>age</attribute>
+                    <attribute>name</attribute>
+                </attributes>
+            </index>
+            <!-- bitmap index on the age attribute -->
+            <index type="BITMAP">
                 <attributes>
                     <attribute>age</attribute>
                 </attributes>

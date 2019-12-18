@@ -2483,6 +2483,8 @@
         </xs:all>
         <xs:attribute name="name"/>
         <xs:attribute name="type" type="index-type" default="SORTED"/>
+        <xs:attribute name="unique-key" type="xs:string" default="__key"/>
+        <xs:attribute name="unique-key-transform" type="index-unique-key-transform" default="OBJECT"/>
     </xs:complexType>
     <xs:complexType name="index-attributes">
         <xs:sequence>
@@ -2493,6 +2495,14 @@
         <xs:restriction base="non-space-string">
             <xs:enumeration value="SORTED"/>
             <xs:enumeration value="HASH"/>
+            <xs:enumeration value="BITMAP"/>
+        </xs:restriction>
+    </xs:simpleType>
+    <xs:simpleType name="index-unique-key-transform">
+        <xs:restriction base="non-space-string">
+            <xs:enumeration value="OBJECT"/>
+            <xs:enumeration value="LONG"/>
+            <xs:enumeration value="RAW"/>
         </xs:restriction>
     </xs:simpleType>
     <xs:complexType name="map-attribute">

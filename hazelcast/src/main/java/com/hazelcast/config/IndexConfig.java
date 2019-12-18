@@ -20,8 +20,10 @@ import com.hazelcast.internal.config.ConfigDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.query.QueryConstants;
 import com.hazelcast.query.impl.IndexUtils;
 
+import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -46,11 +48,20 @@ public class IndexConfig implements IdentifiedDataSerializable {
     /** Default index type. */
     public static final IndexType DEFAULT_TYPE = IndexType.SORTED;
 
+    /** Default unique key. */
+    public static final String DEFAULT_UNIQUE_KEY = QueryConstants.KEY_ATTRIBUTE_NAME.value();
+    /** Default unique key transform. */
+    public static final UniqueKeyTransform DEFAULT_UNIQUE_KEY_TRANSFORM = UniqueKeyTransform.OBJECT;
+
     /** Name of the index. */
     private String name;
 
     /** Type of the index. */
     private IndexType type = DEFAULT_TYPE;
+
+    /** Bitmap index options: unique key attribute path and its transform. */
+    private String uniqueKey = DEFAULT_UNIQUE_KEY;
+    private UniqueKeyTransform uniqueKeyTransform = DEFAULT_UNIQUE_KEY_TRANSFORM;
 
     /** Indexed attributes. */
     private List<String> attributes;
@@ -87,6 +98,8 @@ public class IndexConfig implements IdentifiedDataSerializable {
     public IndexConfig(IndexConfig other) {
         this.name = other.name;
         this.type = other.type;
+        this.uniqueKey = other.uniqueKey;
+        this.uniqueKeyTransform = other.uniqueKeyTransform;
 
         for (String attribute : other.getAttributes()) {
             addAttributeInternal(attribute);
@@ -136,6 +149,44 @@ public class IndexConfig implements IdentifiedDataSerializable {
     public IndexConfig setType(IndexType type) {
         this.type = checkNotNull(type, "Index type cannot be null.");
 
+        return this;
+    }
+
+    /**
+     * @return the unique key attribute of this index. Used by bitmap indexes.
+     */
+    public String getUniqueKey() {
+        return uniqueKey;
+    }
+
+    /**
+     * Sets unique key attribute of this index to the given value. Used by
+     * bitmap indexes.
+     *
+     * @param uniqueKey the value to set.
+     */
+    public IndexConfig setUniqueKey(@Nonnull String uniqueKey) {
+        checkNotNull(uniqueKey, "unique key can't be null");
+        this.uniqueKey = uniqueKey;
+        return this;
+    }
+
+    /**
+     * @return unique key transform of this index. Used by bitmap indexes.
+     */
+    public UniqueKeyTransform getUniqueKeyTransform() {
+        return uniqueKeyTransform;
+    }
+
+    /**
+     * Sets unique key transform of this index to the given value. Used by
+     * bitmap indexes.
+     *
+     * @param uniqueKeyTransform the value to set.
+     */
+    public IndexConfig setUniqueKeyTransform(@Nonnull UniqueKeyTransform uniqueKeyTransform) {
+        checkNotNull(uniqueKeyTransform, "unique key transform can't be null");
+        this.uniqueKeyTransform = uniqueKeyTransform;
         return this;
     }
 
@@ -206,6 +257,8 @@ public class IndexConfig implements IdentifiedDataSerializable {
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeUTF(name);
         out.writeInt(type.getId());
+        out.writeUTF(uniqueKey);
+        out.writeInt(uniqueKeyTransform.getId());
         writeNullableList(attributes, out);
     }
 
@@ -213,6 +266,8 @@ public class IndexConfig implements IdentifiedDataSerializable {
     public void readData(ObjectDataInput in) throws IOException {
         name = in.readUTF();
         type = IndexType.getById(in.readInt());
+        uniqueKey = in.readUTF();
+        uniqueKeyTransform = UniqueKeyTransform.fromId(in.readInt());
         attributes = readNullableList(in);
     }
 
@@ -236,6 +291,14 @@ public class IndexConfig implements IdentifiedDataSerializable {
             return false;
         }
 
+        if (!Objects.equals(uniqueKey, that.uniqueKey)) {
+            return false;
+        }
+
+        if (uniqueKeyTransform != that.uniqueKeyTransform) {
+            return false;
+        }
+
         return getAttributes().equals(that.getAttributes());
     }
 
@@ -244,6 +307,8 @@ public class IndexConfig implements IdentifiedDataSerializable {
         int result = (name != null ? name.hashCode() : 0);
 
         result = 31 * result + (type != null ? type.hashCode() : 0);
+        result = 31 * result + uniqueKey.hashCode();
+        result = 31 * result + uniqueKeyTransform.hashCode();
         result = 31 * result + getAttributes().hashCode();
 
         return result;
@@ -251,6 +316,7 @@ public class IndexConfig implements IdentifiedDataSerializable {
 
     @Override
     public String toString() {
-        return "IndexConfig{name=" + name + ", type=" + type + ", attributes=" + getAttributes() + '}';
+        return "IndexConfig{name=" + name + ", type=" + type + ", uniqueKey=" + uniqueKey + ", uniqueKeyTransform="
+                + uniqueKeyTransform + ", attributes=" + getAttributes() + '}';
     }
 }

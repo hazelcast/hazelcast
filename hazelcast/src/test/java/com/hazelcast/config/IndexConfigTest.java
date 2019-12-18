@@ -16,6 +16,7 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.query.QueryConstants;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -41,6 +42,8 @@ public class IndexConfigTest {
 
         assertEquals(IndexType.SORTED, config.getType());
         assertNull(config.getName());
+        assertEquals(QueryConstants.KEY_ATTRIBUTE_NAME.value(), config.getUniqueKey());
+        assertEquals(UniqueKeyTransform.OBJECT, config.getUniqueKeyTransform());
     }
 
     @Test
@@ -50,6 +53,12 @@ public class IndexConfigTest {
         checkIndexQuality(new IndexConfig(IndexType.SORTED), new IndexConfig(IndexType.SORTED), true);
         checkIndexQuality(new IndexConfig(IndexType.HASH), new IndexConfig(IndexType.HASH), true);
         checkIndexQuality(new IndexConfig(IndexType.HASH), new IndexConfig(IndexType.SORTED), false);
+        checkIndexQuality(new IndexConfig(IndexType.BITMAP), new IndexConfig(IndexType.BITMAP), true);
+        checkIndexQuality(new IndexConfig(IndexType.BITMAP), new IndexConfig(IndexType.HASH), false);
+
+        checkIndexQuality(new IndexConfig(IndexType.BITMAP), new IndexConfig(IndexType.BITMAP).setUniqueKey("a"), false);
+        checkIndexQuality(new IndexConfig(IndexType.BITMAP),
+                new IndexConfig(IndexType.BITMAP).setUniqueKeyTransform(UniqueKeyTransform.RAW), false);
 
         checkIndexQuality(new IndexConfig().setName("name"), new IndexConfig().setName("name"), true);
         checkIndexQuality(new IndexConfig().setName("name"), new IndexConfig().setName("name2"), false);
