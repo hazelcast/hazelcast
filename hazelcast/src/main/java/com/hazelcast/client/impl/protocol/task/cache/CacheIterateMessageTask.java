@@ -28,6 +28,9 @@ import com.hazelcast.spi.impl.operationservice.Operation;
 
 import java.util.Collections;
 
+import static com.hazelcast.internal.iteration.IterationPointer.decodePointers;
+import static com.hazelcast.internal.iteration.IterationPointer.encodePointers;
+
 /**
  * This client request  specifically calls {@link CacheFetchKeysOperation} on the server side.
  *
@@ -42,9 +45,8 @@ public class CacheIterateMessageTask
 
     @Override
     protected Operation prepareOperation() {
-        // TODO add client support for IterationPointer
         CacheOperationProvider operationProvider = getOperationProvider(parameters.name);
-        IterationPointer[] pointers = {new IterationPointer(parameters.tableIndex, -1)};
+        IterationPointer[] pointers = decodePointers(parameters.iterationPointers);
         return operationProvider.createFetchKeysOperation(pointers, parameters.batch);
     }
 
@@ -56,11 +58,11 @@ public class CacheIterateMessageTask
     @Override
     protected ClientMessage encodeResponse(Object response) {
         if (response == null) {
-            return CacheIterateCodec.encodeResponse(0, Collections.emptyList());
+            return CacheIterateCodec.encodeResponse(Collections.emptyList(), Collections.emptyList());
         }
         CacheKeysWithCursor keyIteratorResult = (CacheKeysWithCursor) response;
         IterationPointer[] pointers = keyIteratorResult.getPointers();
-        return CacheIterateCodec.encodeResponse(pointers[pointers.length - 1].getIndex(), keyIteratorResult.getKeys());
+        return CacheIterateCodec.encodeResponse(encodePointers(pointers), keyIteratorResult.getKeys());
     }
 
     @Override

@@ -627,6 +627,8 @@ public class ReferenceObjects {
             = Collections.singletonList(new AbstractMap.SimpleEntry<>(anInt, aUUID));
     public static List<Map.Entry<Integer, Long>> aListOfIntegerToLong
             = Collections.singletonList(new AbstractMap.SimpleEntry<>(anInt, aLong));
+    public static List<Map.Entry<Integer, Integer>> aListOfIntegerToInteger
+            = Collections.singletonList(new AbstractMap.SimpleEntry<>(anInt, anInt));
     public static List<Map.Entry<UUID, Long>> aListOfUuidToLong
             = Collections.singletonList(new AbstractMap.SimpleEntry<>(aUUID, aLong));
     public static List<Integer> aListOfIntegers = Collections.singletonList(anInt);

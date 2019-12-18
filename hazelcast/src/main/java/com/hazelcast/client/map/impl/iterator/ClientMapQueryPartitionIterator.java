@@ -35,6 +35,9 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map.Entry;
 
+import static com.hazelcast.internal.iteration.IterationPointer.decodePointers;
+import static com.hazelcast.internal.iteration.IterationPointer.encodePointers;
+
 /**
  * Iterator for iterating map entries in the {@code partitionId}. The values
  * are not fetched one-by-one but rather in batches.
@@ -67,11 +70,10 @@ public class ClientMapQueryPartitionIterator<K, V, R> extends AbstractMapQueryPa
 
     @Override
     protected List<Data> fetch() {
-        // TODO add client support for IterationPointer
         HazelcastClientInstanceImpl client = (HazelcastClientInstanceImpl) context.getHazelcastInstance();
         ClientMessage request = MapFetchWithQueryCodec.encodeRequest(
                 mapProxy.getName(),
-                pointers[pointers.length - 1].getIndex(),
+                encodePointers(pointers),
                 fetchSize,
                 getSerializationService().toData(query.getProjection()),
                 getSerializationService().toData(query.getPredicate()));
@@ -80,7 +82,7 @@ public class ClientMapQueryPartitionIterator<K, V, R> extends AbstractMapQueryPa
             ClientInvocationFuture f = clientInvocation.invoke();
             MapFetchWithQueryCodec.ResponseParameters responseParameters = MapFetchWithQueryCodec.decodeResponse(f.get());
             List<Data> results = responseParameters.results;
-            IterationPointer[] pointers = {new IterationPointer(responseParameters.nextTableIndexToReadFrom, -1)};
+            IterationPointer[] pointers = decodePointers(responseParameters.iterationPointers);
             setLastTableIndex(results, pointers);
             return results;
         } catch (Exception e) {

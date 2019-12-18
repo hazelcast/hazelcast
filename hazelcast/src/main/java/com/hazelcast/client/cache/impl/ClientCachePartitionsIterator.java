@@ -32,6 +32,8 @@ import javax.cache.Cache;
 import java.util.Iterator;
 import java.util.List;
 
+import static com.hazelcast.internal.iteration.IterationPointer.decodePointers;
+import static com.hazelcast.internal.iteration.IterationPointer.encodePointers;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 
 /**
@@ -72,31 +74,29 @@ public class ClientCachePartitionsIterator<K, V> extends AbstractCachePartitions
     }
 
     protected List fetch() {
-        // TODO add client support for IterationPointer
         HazelcastClientInstanceImpl client = (HazelcastClientInstanceImpl) context.getHazelcastInstance();
         String name = cacheProxy.getPrefixedName();
         if (prefetchValues) {
             ClientMessage request = CacheIterateEntriesCodec.encodeRequest(
-                    name, pointers[pointers.length - 1].getIndex(), fetchSize);
+                    name, encodePointers(pointers), fetchSize);
             try {
                 ClientInvocation clientInvocation = new ClientInvocation(client, request, name, partitionIndex);
                 ClientInvocationFuture future = clientInvocation.invoke();
                 CacheIterateEntriesCodec.ResponseParameters responseParameters = CacheIterateEntriesCodec.decodeResponse(
                         future.get());
-                IterationPointer[] pointers = {new IterationPointer(responseParameters.tableIndex, -1)};
+                IterationPointer[] pointers = decodePointers(responseParameters.iterationPointers);
                 setLastTableIndex(responseParameters.entries, pointers);
                 return responseParameters.entries;
             } catch (Exception e) {
                 throw rethrow(e);
             }
         } else {
-            ClientMessage request = CacheIterateCodec.encodeRequest(
-                    name, pointers[pointers.length - 1].getIndex(), fetchSize);
+            ClientMessage request = CacheIterateCodec.encodeRequest(name, encodePointers(pointers), fetchSize);
             try {
                 ClientInvocation clientInvocation = new ClientInvocation(client, request, name, partitionIndex);
                 ClientInvocationFuture future = clientInvocation.invoke();
                 CacheIterateCodec.ResponseParameters responseParameters = CacheIterateCodec.decodeResponse(future.get());
-                IterationPointer[] pointers = {new IterationPointer(responseParameters.tableIndex, -1)};
+                IterationPointer[] pointers = decodePointers(responseParameters.iterationPointers);
                 setLastTableIndex(responseParameters.keys, pointers);
                 return responseParameters.keys;
             } catch (Exception e) {

@@ -29,6 +29,9 @@ import com.hazelcast.spi.impl.operationservice.Operation;
 import java.security.Permission;
 import java.util.Collections;
 
+import static com.hazelcast.internal.iteration.IterationPointer.decodePointers;
+import static com.hazelcast.internal.iteration.IterationPointer.encodePointers;
+
 public class MapFetchEntriesMessageTask extends AbstractMapPartitionMessageTask<MapFetchEntriesCodec.RequestParameters> {
     public MapFetchEntriesMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -36,9 +39,8 @@ public class MapFetchEntriesMessageTask extends AbstractMapPartitionMessageTask<
 
     @Override
     protected Operation prepareOperation() {
-        // TODO add client support for IterationPointer
         MapOperationProvider operationProvider = getMapOperationProvider(parameters.name);
-        IterationPointer[] pointers = {new IterationPointer(parameters.tableIndex, -1)};
+        IterationPointer[] pointers = decodePointers(parameters.iterationPointers);
         return operationProvider.createFetchEntriesOperation(parameters.name, pointers, parameters.batch);
     }
 
@@ -50,12 +52,12 @@ public class MapFetchEntriesMessageTask extends AbstractMapPartitionMessageTask<
     @Override
     protected ClientMessage encodeResponse(Object response) {
         if (response == null) {
-            return MapFetchEntriesCodec.encodeResponse(0, Collections.emptyList());
+            return MapFetchEntriesCodec.encodeResponse(Collections.emptyList(), Collections.emptyList());
         }
         MapEntriesWithCursor mapEntriesWithCursor = (MapEntriesWithCursor) response;
         IterationPointer[] pointers = mapEntriesWithCursor.getIterationPointers();
         return MapFetchEntriesCodec.encodeResponse(
-                pointers[pointers.length - 1].getIndex(), mapEntriesWithCursor.getBatch());
+                encodePointers(pointers), mapEntriesWithCursor.getBatch());
     }
 
     @Override

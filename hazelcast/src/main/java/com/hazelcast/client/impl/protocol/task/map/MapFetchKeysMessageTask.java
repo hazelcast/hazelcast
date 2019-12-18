@@ -19,16 +19,18 @@ package com.hazelcast.client.impl.protocol.task.map;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.MapFetchKeysCodec;
 import com.hazelcast.instance.impl.Node;
-import com.hazelcast.map.impl.MapService;
 import com.hazelcast.internal.iteration.IterationPointer;
+import com.hazelcast.internal.nio.Connection;
+import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.iterator.MapKeysWithCursor;
 import com.hazelcast.map.impl.operation.MapOperationProvider;
-import com.hazelcast.internal.nio.Connection;
-import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.spi.impl.operationservice.Operation;
 
 import java.security.Permission;
 import java.util.Collections;
+
+import static com.hazelcast.internal.iteration.IterationPointer.decodePointers;
+import static com.hazelcast.internal.iteration.IterationPointer.encodePointers;
 
 public class MapFetchKeysMessageTask extends AbstractMapPartitionMessageTask<MapFetchKeysCodec.RequestParameters> {
     public MapFetchKeysMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
@@ -37,9 +39,8 @@ public class MapFetchKeysMessageTask extends AbstractMapPartitionMessageTask<Map
 
     @Override
     protected Operation prepareOperation() {
-        // TODO add client support for IterationPointer
         MapOperationProvider operationProvider = getMapOperationProvider(parameters.name);
-        IterationPointer[] pointers = {new IterationPointer(parameters.tableIndex, -1)};
+        IterationPointer[] pointers = decodePointers(parameters.iterationPointers);
         return operationProvider.createFetchKeysOperation(parameters.name, pointers, parameters.batch);
     }
 
@@ -51,12 +52,12 @@ public class MapFetchKeysMessageTask extends AbstractMapPartitionMessageTask<Map
     @Override
     protected ClientMessage encodeResponse(Object response) {
         if (response == null) {
-            return MapFetchKeysCodec.encodeResponse(0, Collections.<Data>emptyList());
+            return MapFetchKeysCodec.encodeResponse(Collections.emptyList(), Collections.emptyList());
         }
         MapKeysWithCursor mapKeysWithCursor = (MapKeysWithCursor) response;
         IterationPointer[] pointers = mapKeysWithCursor.getIterationPointers();
         return MapFetchKeysCodec.encodeResponse(
-                pointers[pointers.length - 1].getIndex(), mapKeysWithCursor.getBatch());
+                encodePointers(pointers), mapKeysWithCursor.getBatch());
     }
 
     @Override

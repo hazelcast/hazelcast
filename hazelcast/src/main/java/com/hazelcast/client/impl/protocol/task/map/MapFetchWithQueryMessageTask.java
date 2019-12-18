@@ -20,24 +20,27 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.MapFetchWithQueryCodec;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.iteration.IterationPointer;
+import com.hazelcast.internal.nio.Connection;
+import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.internal.util.IterationType;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.operation.MapOperationProvider;
 import com.hazelcast.map.impl.query.Query;
 import com.hazelcast.map.impl.query.QueryResult;
 import com.hazelcast.map.impl.query.QueryResultRow;
 import com.hazelcast.map.impl.query.ResultSegment;
-import com.hazelcast.internal.nio.Connection;
-import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.projection.Projection;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MapPermission;
 import com.hazelcast.spi.impl.operationservice.Operation;
-import com.hazelcast.internal.util.IterationType;
 
 import java.security.Permission;
 import java.util.ArrayList;
 import java.util.List;
+
+import static com.hazelcast.internal.iteration.IterationPointer.decodePointers;
+import static com.hazelcast.internal.iteration.IterationPointer.encodePointers;
 
 /**
  * Fetches by query a batch of items from a single partition ID for a map.
@@ -54,7 +57,6 @@ public class MapFetchWithQueryMessageTask extends AbstractMapPartitionMessageTas
 
     @Override
     protected Operation prepareOperation() {
-        // TODO add client support for IterationPointer
         MapOperationProvider operationProvider = getMapOperationProvider(parameters.name);
         Projection<?, ?> projection = nodeEngine.getSerializationService().toObject(parameters.projection);
         Predicate predicate = nodeEngine.getSerializationService().toObject(parameters.predicate);
@@ -64,7 +66,7 @@ public class MapFetchWithQueryMessageTask extends AbstractMapPartitionMessageTas
                            .predicate(predicate)
                            .projection(projection)
                            .build();
-        IterationPointer[] pointers = {new IterationPointer(parameters.tableIndex, -1)};
+        IterationPointer[] pointers = decodePointers(parameters.iterationPointers);
         return operationProvider.createFetchWithQueryOperation(parameters.name, pointers, parameters.batch, query);
     }
 
@@ -78,12 +80,12 @@ public class MapFetchWithQueryMessageTask extends AbstractMapPartitionMessageTas
         ResultSegment resp = (ResultSegment) response;
         QueryResult queryResult = (QueryResult) resp.getResult();
 
-        List<Data> serialized = new ArrayList<Data>(queryResult.size());
+        List<Data> serialized = new ArrayList<>(queryResult.size());
         for (QueryResultRow row : queryResult) {
             serialized.add(row.getValue());
         }
         IterationPointer[] pointers = resp.getPointers();
-        return MapFetchWithQueryCodec.encodeResponse(serialized, pointers[pointers.length - 1].getIndex());
+        return MapFetchWithQueryCodec.encodeResponse(serialized, encodePointers(pointers));
     }
 
     @Override

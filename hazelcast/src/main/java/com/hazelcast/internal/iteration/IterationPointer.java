@@ -16,6 +16,12 @@
 
 package com.hazelcast.internal.iteration;
 
+import java.util.AbstractMap.SimpleEntry;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map.Entry;
+
 /**
  * Pointer structure representing the state of iteration in a structure.
  * The index defines the position in the structure while the size defines
@@ -70,6 +76,23 @@ public class IterationPointer {
      */
     public void setSize(int size) {
         this.size = size;
+    }
+
+    public static IterationPointer[] decodePointers(List<Entry<Integer, Integer>> pointers) {
+        IterationPointer[] decoded = new IterationPointer[pointers.size()];
+        int i = 0;
+        for (Entry<Integer, Integer> pointer : pointers) {
+            decoded[i++] = new IterationPointer(pointer.getKey(), pointer.getValue());
+        }
+        return decoded;
+    }
+
+    public static Collection<Entry<Integer, Integer>> encodePointers(IterationPointer[] pointers) {
+        ArrayList<Entry<Integer, Integer>> encoded = new ArrayList<>(pointers.length);
+        for (IterationPointer pointer : pointers) {
+            encoded.add(new SimpleEntry<>(pointer.getIndex(), pointer.getSize()));
+        }
+        return encoded;
     }
 
     @Override

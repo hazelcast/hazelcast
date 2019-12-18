@@ -16,6 +16,7 @@
 
 package com.hazelcast.map;
 
+import com.hazelcast.client.impl.proxy.ClientMapProxy;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.impl.proxy.MapProxyImpl;
@@ -55,7 +56,7 @@ public class MapPartitionIteratorBouncingTest extends HazelcastTestSupport {
             BounceMemberRule.with(getConfig())
                             .clusterSize(4)
                             .driverCount(4)
-                            .driverType(DriverType.MEMBER)
+                            .driverType(isClientDriver() ? DriverType.CLIENT : DriverType.MEMBER)
                             .build();
 
     protected Config getConfig() {
@@ -108,7 +109,7 @@ public class MapPartitionIteratorBouncingTest extends HazelcastTestSupport {
             HashSet<Integer> keys = new HashSet<>();
             int partitionCount = hazelcastInstance.getPartitionService().getPartitions().size();
             for (int partitionId = 0; partitionId < partitionCount; partitionId++) {
-                Iterator<Entry<Integer, Integer>> iterator = ((MapProxyImpl) map).iterator(FETCH_SIZE, partitionId, false);
+                Iterator<Entry<Integer, Integer>> iterator = createIterator(map, FETCH_SIZE, partitionId, false);
                 while (iterator.hasNext()) {
                     Entry<Integer, Integer> e = iterator.next();
                     assertTrue("Got the same key twice", keys.add(e.getKey()));
@@ -117,6 +118,17 @@ public class MapPartitionIteratorBouncingTest extends HazelcastTestSupport {
             return keys;
         }
 
+    }
+
+    private Iterator<Entry<Integer, Integer>> createIterator(
+            IMap<Integer, Integer> map, int fetchSize, int partitionId, boolean prefetchValues) {
+        return isClientDriver()
+                ? ((ClientMapProxy<Integer, Integer>) map).iterator(fetchSize, partitionId, prefetchValues)
+                : ((MapProxyImpl<Integer, Integer>) map).iterator(fetchSize, partitionId, prefetchValues);
+    }
+
+    protected boolean isClientDriver() {
+        return false;
     }
 
     public class MutationRunnable implements Runnable {
@@ -145,6 +157,5 @@ public class MapPartitionIteratorBouncingTest extends HazelcastTestSupport {
                 map.remove(i, i);
             }
         }
-
     }
 }
