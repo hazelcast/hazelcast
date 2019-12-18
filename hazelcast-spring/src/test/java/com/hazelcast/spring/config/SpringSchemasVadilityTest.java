@@ -55,7 +55,7 @@ public class SpringSchemasVadilityTest {
     @Test
     public void testAllXSDsAvailable() throws Exception {
         Collection<Object> values = prop.values();
-        Set<String> allXSDs = new HashSet<String>();
+        Set<String> allXSDs = new HashSet<>();
 
         for (Object o : values) {
             allXSDs.add(o.toString());
@@ -67,7 +67,7 @@ public class SpringSchemasVadilityTest {
     }
 
     @Test
-    public void testUrlMatchesXSD() throws Exception {
+    public void testUrlMatchesXSD() {
         Set<String> names = prop.stringPropertyNames();
 
         for (String name : names) {
@@ -80,7 +80,7 @@ public class SpringSchemasVadilityTest {
     }
 
     @Test
-    public void testPermaLinkIsLatestVersion() throws Exception {
+    public void testPermaLinkIsLatestVersion() {
         Pattern pattern = Pattern.compile("hazelcast-spring-([0-9\\.]+)\\.xsd");
         ComparableVersion latestVersion = null;
         String latestVersionXsdFile = null;
@@ -110,11 +110,11 @@ public class SpringSchemasVadilityTest {
     }
 
     @Test
-    public void testBothHttpAndHttpsAvailable() throws Exception {
+    public void testBothHttpAndHttpsAvailable() {
         Set<String> allURLs = prop.stringPropertyNames();
 
-        Set<String> http = new HashSet<String>();
-        Set<String> https = new HashSet<String>();
+        Set<String> http = new HashSet<>();
+        Set<String> https = new HashSet<>();
 
         for (String url : allURLs) {
             if (url.startsWith("https")) {
