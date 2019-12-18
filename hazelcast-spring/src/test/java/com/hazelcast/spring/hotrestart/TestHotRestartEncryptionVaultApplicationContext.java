@@ -24,7 +24,6 @@ import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.nio.ssl.SSLContextFactory;
 import com.hazelcast.spring.CustomSpringJUnit4ClassRunner;
-import com.hazelcast.spring.DummySSLContextFactory;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
