@@ -314,9 +314,6 @@ public class ClientCacheProxy<K, V> extends ClientCacheProxySupport<K, V>
 
         UUID regId = getContext().getListenerService()
                 .registerListener(createCacheEntryListenerCodec(nameWithPrefix), createHandler(adaptor));
-        if (regId == null) {
-            return;
-        }
 
         if (addToConfig) {
             cacheConfig.addCacheEntryListenerConfiguration(cacheEntryListenerConfiguration);
