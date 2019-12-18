@@ -39,14 +39,14 @@ public class SqlClientQueryRegistry {
     private final NodeEngine nodeEngine;
 
     /** Registered client cursors. */
-    private final ConcurrentHashMap<QueryId, SqlClientCursor> clientCursors = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<QueryId, SqlClientState> clientCursors = new ConcurrentHashMap<>();
 
     public SqlClientQueryRegistry(NodeEngine nodeEngine) {
         this.nodeEngine = nodeEngine;
     }
 
     public void execute(UUID clientId, QueryId queryId, SqlCursorImpl cursor) {
-        SqlClientCursor clientCursor = new SqlClientCursor(clientId, queryId, cursor);
+        SqlClientState clientCursor = new SqlClientState(clientId, queryId, cursor);
 
         clientCursors.put(queryId, clientCursor);
 
@@ -69,7 +69,7 @@ public class SqlClientQueryRegistry {
     }
 
     public SqlClientPage fetch(UUID clientId, QueryId queryId, int pageSize) {
-        SqlClientCursor clientCursor = getClientCursor(clientId, queryId);
+        SqlClientState clientCursor = getClientCursor(clientId, queryId);
 
         if (clientCursor == null) {
             throw new HazelcastSqlException(-1, "Cursor not found (closed?): " + queryId);
@@ -99,7 +99,7 @@ public class SqlClientQueryRegistry {
     }
 
     public void close(UUID clientId, QueryId queryId) {
-        SqlClientCursor clientCursor = getClientCursor(clientId, queryId);
+        SqlClientState clientCursor = getClientCursor(clientId, queryId);
 
         if (clientCursor == null) {
             return;
@@ -113,7 +113,7 @@ public class SqlClientQueryRegistry {
     public void onClientDisconnected(UUID clientId) {
         Set<QueryId> victims = new HashSet<>();
 
-        for (SqlClientCursor clientCursor : clientCursors.values()) {
+        for (SqlClientState clientCursor : clientCursors.values()) {
             if (clientCursor.getClientId().equals(clientId)) {
                 victims.add(clientCursor.getQueryId());
             }
@@ -124,8 +124,8 @@ public class SqlClientQueryRegistry {
         }
     }
 
-    private SqlClientCursor getClientCursor(UUID clientId, QueryId queryId) {
-        SqlClientCursor cursor = clientCursors.get(queryId);
+    private SqlClientState getClientCursor(UUID clientId, QueryId queryId) {
+        SqlClientState cursor = clientCursors.get(queryId);
 
         if (cursor == null || !cursor.getClientId().equals(clientId)) {
             return null;
@@ -134,7 +134,7 @@ public class SqlClientQueryRegistry {
         return cursor;
     }
 
-    private void deleteClientCursor(SqlClientCursor cursor) {
+    private void deleteClientCursor(SqlClientState cursor) {
         clientCursors.remove(cursor.getQueryId());
     }
 }

@@ -42,16 +42,34 @@ public class SqlClientCursorImpl implements SqlCursor {
     /** Client iterator. */
     private final ClientIterator iterator = new ClientIterator();
 
+    /** Page size. */
+    private int pageSize;
+
     /** Whether the cursor is closed. */
     private boolean closed;
 
     /** Whether iterator was accessed. */
     private boolean iteratorAccessed;
 
-    public SqlClientCursorImpl(SqlClientServiceImpl service, Connection connection, QueryId queryId) {
+    public SqlClientCursorImpl(SqlClientServiceImpl service, Connection connection, QueryId queryId, int pageSize) {
         this.service = service;
         this.connection = connection;
         this.queryId = queryId;
+        this.pageSize = pageSize;
+    }
+
+    @SuppressWarnings("NullableProblems")
+    @Override
+    public Iterator<SqlRow> iterator() {
+        if (!iteratorAccessed) {
+            iteratorAccessed = true;
+
+            fetchNextPage(iterator);
+
+            return iterator;
+        } else {
+            throw new IllegalStateException("Iterator could be requested only once");
+        }
     }
 
     @Override
@@ -70,22 +88,18 @@ public class SqlClientCursorImpl implements SqlCursor {
         }
     }
 
-    @SuppressWarnings("NullableProblems")
-    @Override
-    public Iterator<SqlRow> iterator() {
-        if (!iteratorAccessed) {
-            iteratorAccessed = true;
+    public int getPageSize() {
+        return pageSize;
+    }
 
-            fetchNextPage(iterator);
+    public void setPageSize(int pageSize) {
+        assert pageSize >= 0;
 
-            return iterator;
-        } else {
-            throw new IllegalStateException("Iterator could be requested only once");
-        }
+        this.pageSize = pageSize;
     }
 
     private void fetchNextPage(ClientIterator iterator) {
-        BiTuple<List<SqlRow>, Boolean> nextPage = service.fetch(connection, queryId);
+        BiTuple<List<SqlRow>, Boolean> nextPage = service.fetch(connection, queryId, pageSize);
 
         iterator.onNextPage(nextPage.element1, nextPage.element2);
     }

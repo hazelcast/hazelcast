@@ -931,14 +931,14 @@ public class TpcHTest extends SqlTestSupport {
         }
         System.out.println();
 
-        System.out.println(">>> Optimizer statistics (" + plan.getStatistics().getDuration() + " ms):");
+        System.out.println("\n>>> Optimizer statistics (" + plan.getStatistics().getDuration() + " ms):");
         for (Map.Entry<String, Integer> entry : plan.getStatistics().getPhysicalRuleCalls().getRuleCalls().entrySet()) {
             System.out.println("\t" + entry.getKey() + " -> " + entry.getValue());
         }
 
         List<SqlRow> rows = new ArrayList<>();
 
-        System.out.println(">>> Results: ");
+        System.out.println("\n>>> Results: ");
         int cnt = 0;
 
         for (SqlRow row : res) {
@@ -951,7 +951,7 @@ public class TpcHTest extends SqlTestSupport {
             }
         }
 
-        System.out.println(">>> Total rows: " + cnt);
+        System.out.println("\n>>> Total rows: " + cnt);
         System.out.println();
 
         assert cnt > 0;

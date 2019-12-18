@@ -26,7 +26,7 @@ import java.util.UUID;
 /**
  * Client cursor registered on the server.
  */
-public class SqlClientCursor {
+public class SqlClientState {
     /** Client ID. */
     private final UUID clientId;
 
@@ -39,7 +39,7 @@ public class SqlClientCursor {
     /** Iterator. */
     private Iterator<SqlRow> iterator;
 
-    public SqlClientCursor(UUID clientId, QueryId queryId, SqlCursorImpl cursor) {
+    public SqlClientState(UUID clientId, QueryId queryId, SqlCursorImpl cursor) {
         this.clientId = clientId;
         this.queryId = queryId;
         this.cursor = cursor;

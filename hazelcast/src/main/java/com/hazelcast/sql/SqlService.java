@@ -27,8 +27,26 @@ public interface SqlService {
      * Execute query.
      *
      * @param sql SQL.
-     * @param args Arguments.
+     * @param params Parameters.
      * @return Cursor.
      */
-    SqlCursor query(String sql, Object... args);
+    default SqlCursor query(String sql, Object... params) {
+        SqlQuery query = new SqlQuery(sql);
+
+        if (params != null) {
+            for (Object param : params) {
+                query.addParameter(param);
+            }
+        }
+
+        return query(query);
+    }
+
+    /**
+     * Execute query.
+     *
+     * @param query Query.
+     * @return Cursor.
+     */
+    SqlCursor query(SqlQuery query);
 }

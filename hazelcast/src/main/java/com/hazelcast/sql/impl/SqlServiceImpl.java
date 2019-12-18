@@ -30,6 +30,7 @@ import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.SqlCursor;
+import com.hazelcast.sql.SqlQuery;
 import com.hazelcast.sql.SqlService;
 import com.hazelcast.sql.impl.client.SqlClientPage;
 import com.hazelcast.sql.impl.client.SqlClientQueryRegistry;
@@ -92,7 +93,10 @@ public class SqlServiceImpl implements SqlService, ManagedService, ClientAwareSe
     }
 
     @Override
-    public SqlCursor query(String sql, Object... args) {
+    public SqlCursor query(SqlQuery query) {
+        String sql = query.getSql();
+        List<Object> params = query.getParameters();
+
         if (sql == null || sql.isEmpty()) {
             throw new HazelcastException("SQL cannot be null or empty.");
         }
@@ -113,12 +117,10 @@ public class SqlServiceImpl implements SqlService, ManagedService, ClientAwareSe
 
         List<Object> args0;
 
-        if (args == null || args.length == 0) {
+        if (params.isEmpty()) {
             args0 = Collections.emptyList();
         } else {
-            args0 = new ArrayList<>(args.length);
-
-            Collections.addAll(args0, args);
+            args0 = new ArrayList<>(params);
         }
 
         QueryHandle handle = execute0(plan, args0);

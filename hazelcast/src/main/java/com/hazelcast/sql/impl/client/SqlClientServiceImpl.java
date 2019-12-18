@@ -30,6 +30,7 @@ import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.util.BiTuple;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.sql.SqlCursor;
+import com.hazelcast.sql.SqlQuery;
 import com.hazelcast.sql.SqlRow;
 import com.hazelcast.sql.SqlService;
 import com.hazelcast.sql.impl.QueryId;
@@ -47,9 +48,6 @@ import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 //  to remap from QueryId to more light-weight UUID. The latter might be not good from the manageability standpoint, as user
 //  will have two IDs at hands.
 public class SqlClientServiceImpl implements SqlService {
-    /** Default page size. */
-    public static final int DEFAULT_PAGE_SIZE = 1000;
-
     /** Decoder for execute request. */
     private static final ClientMessageDecoder<Data> EXECUTE_DECODER =
         clientMessage -> SqlExecuteCodec.decodeResponse(clientMessage).queryId;
@@ -76,27 +74,28 @@ public class SqlClientServiceImpl implements SqlService {
     }
 
     @Override
-    public SqlCursor query(String sql, Object... args) {
-        List<Data> params;
+    public SqlCursor query(SqlQuery query) {
+        List<Object> params = query.getParameters();
+        List<Data> params0;
 
-        if (args != null && args.length > 0) {
-            params = new ArrayList<>(args.length);
+        if (!params.isEmpty()) {
+            params0 = new ArrayList<>(params.size());
 
-            for (Object arg : args) {
-                params.add(toData(arg));
+            for (Object param : params) {
+                params0.add(toData(param));
             }
         } else {
-            params = null;
+            params0 = null;
         }
 
-        ClientMessage message = SqlExecuteCodec.encodeRequest(sql, params);
+        ClientMessage message = SqlExecuteCodec.encodeRequest(query.getSql(), params0);
 
         Connection connection = client.getConnectionManager().getRandomConnection();
 
         Data queryIdData = invoke(message, connection, EXECUTE_DECODER);
         QueryId queryId = toObject(queryIdData);
 
-        return new SqlClientCursorImpl(this, connection, queryId);
+        return new SqlClientCursorImpl(this, connection, queryId, query.getPageSize());
     }
 
     /**
@@ -106,8 +105,8 @@ public class SqlClientServiceImpl implements SqlService {
      * @param queryId Query ID.
      * @return Pair: fetched rows + last page flag.
      */
-    BiTuple<List<SqlRow>, Boolean> fetch(Connection connection, QueryId queryId) {
-        ClientMessage message = SqlFetchCodec.encodeRequest(toData(queryId), DEFAULT_PAGE_SIZE);
+    public BiTuple<List<SqlRow>, Boolean> fetch(Connection connection, QueryId queryId, int pageSize) {
+        ClientMessage message = SqlFetchCodec.encodeRequest(toData(queryId), pageSize);
 
         BiTuple<List<Data>, Boolean> res = invoke(message, connection, FETCH_DECODER);
 
