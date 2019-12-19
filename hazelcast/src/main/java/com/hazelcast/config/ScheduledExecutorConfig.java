@@ -44,9 +44,14 @@ public class ScheduledExecutorConfig implements IdentifiedDataSerializable, Name
     private static final int DEFAULT_POOL_SIZE = 16;
 
     /**
-     * The number of tasks that can co-exist per scheduler per partition.
+     * The number of tasks that can co-exist per scheduler according to the capacity policy.
      */
     private static final int DEFAULT_CAPACITY = 100;
+
+    /**
+     * The number of tasks that can co-exist per scheduler per partition.
+     */
+    private static final CapacityPolicy DEFAULT_CAPACITY_POLICY = PER_NODE;
 
     /**
      * The number of replicas per task scheduled in each ScheduledExecutor.
@@ -59,7 +64,7 @@ public class ScheduledExecutorConfig implements IdentifiedDataSerializable, Name
 
     private int capacity = DEFAULT_CAPACITY;
 
-    private CapacityPolicy capacityPolicy = PER_NODE;
+    private CapacityPolicy capacityPolicy = DEFAULT_CAPACITY_POLICY;
 
     private int poolSize = DEFAULT_POOL_SIZE;
 
@@ -75,7 +80,7 @@ public class ScheduledExecutorConfig implements IdentifiedDataSerializable, Name
     }
 
     public ScheduledExecutorConfig(String name, int durability, int capacity, int poolSize) {
-        this(name, durability, capacity, poolSize, null, new MergePolicyConfig(), PER_NODE);
+        this(name, durability, capacity, poolSize, null, new MergePolicyConfig(), DEFAULT_CAPACITY_POLICY);
     }
 
     public ScheduledExecutorConfig(String name, int durability, int capacity, int poolSize, String splitBrainProtectionName,
@@ -84,6 +89,7 @@ public class ScheduledExecutorConfig implements IdentifiedDataSerializable, Name
         this.durability = durability;
         this.poolSize = poolSize;
         this.capacity = capacity;
+        this.capacityPolicy = capacityPolicy;
         this.splitBrainProtectionName = splitBrainProtectionName;
         this.mergePolicyConfig = mergePolicyConfig;
     }
