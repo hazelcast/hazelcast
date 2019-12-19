@@ -48,7 +48,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BiConsumer;
 
 import static com.hazelcast.client.cache.impl.ClientCacheProxySupportUtil.checkNearCacheConfig;
@@ -183,10 +182,9 @@ public class NearCachedClientCacheProxy<K, V> extends ClientCacheProxy<K, V> {
                                                            ClientInvocationFuture invocationFuture,
                                                            BiConsumer<V, Throwable> callback) {
         Object callbackKey = serializeKeys ? keyData : key;
-        PutAsyncOneShotCallback wrapped = new PutAsyncOneShotCallback(callbackKey, keyData, value, valueData, callback);
+        PutAsyncCallback wrapped = new PutAsyncCallback(callbackKey, keyData, value, valueData, callback);
         ClientDelegatingFuture<V> future = new ClientInterceptingDelegatingFuture<>(invocationFuture,
                 getSerializationService(), message -> CachePutCodec.decodeResponse(message).response, wrapped);
-        future.whenCompleteAsync(wrapped);
         return future;
     }
 
@@ -623,30 +621,25 @@ public class NearCachedClientCacheProxy<K, V> extends ClientCacheProxy<K, V> {
         }
     }
 
-    private final class PutAsyncOneShotCallback implements BiConsumer<V, Throwable> {
+    private final class PutAsyncCallback implements BiConsumer<V, Throwable> {
 
-        private final AtomicBoolean executed;
         private final Object key;
         private final Data keyData;
         private final V newValue;
         private final Data newValueData;
         private final BiConsumer<V, Throwable> statsCallback;
 
-        private PutAsyncOneShotCallback(Object key, Data keyData, V newValue, Data newValueData,
-                                        BiConsumer<V, Throwable> callback) {
+        private PutAsyncCallback(Object key, Data keyData, V newValue, Data newValueData,
+                                 BiConsumer<V, Throwable> callback) {
             this.key = key;
             this.keyData = keyData;
             this.newValue = newValue;
             this.newValueData = newValueData;
             this.statsCallback = callback;
-            this.executed = new AtomicBoolean();
         }
 
         @Override
         public void accept(V v, Throwable throwable) {
-            if (!executed.compareAndSet(false, true)) {
-                return;
-            }
             try {
                 if (statsCallback != null) {
                     statsCallback.accept(v, throwable);

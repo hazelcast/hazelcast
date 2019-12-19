@@ -42,11 +42,14 @@ import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import javax.cache.configuration.FactoryBuilder;
 import javax.cache.spi.CachingProvider;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 
 import static com.hazelcast.cache.CacheTestSupport.createClientCachingProvider;
 import static com.hazelcast.cache.CacheTestSupport.createServerCachingProvider;
@@ -58,6 +61,7 @@ import static com.hazelcast.config.NearCacheConfig.DEFAULT_MEMORY_FORMAT;
 import static com.hazelcast.config.NearCacheConfig.DEFAULT_SERIALIZE_KEYS;
 import static com.hazelcast.internal.nearcache.NearCacheTestUtils.createNearCacheConfig;
 import static com.hazelcast.internal.nearcache.NearCacheTestUtils.getBaseConfig;
+import static org.junit.Assert.assertEquals;
 
 /**
  * Basic Near Cache tests for {@link ICache} on Hazelcast clients.
@@ -77,6 +81,21 @@ public class ClientCacheNearCacheBasicTest extends AbstractNearCacheBasicTest<Da
     @After
     public void tearDown() {
         hazelcastFactory.terminateAll();
+    }
+
+    @Test
+    public void putAsyncToCacheAndThenGetFromClientNearCacheImmediately()
+            throws ExecutionException, InterruptedException {
+        // putAsync future is completed -> near cache contains the new value only with CACHE_ON_UPDATE policy
+        nearCacheConfig.setLocalUpdatePolicy(NearCacheConfig.LocalUpdatePolicy.CACHE_ON_UPDATE);
+        NearCacheTestContext context = createContext(false);
+
+        for (int i = 0; i < 10 * DEFAULT_RECORD_COUNT; i++) {
+            String expectedValue = "value-" + i;
+            Future f = context.nearCacheAdapter.putAsync(i, expectedValue).toCompletableFuture();
+            f.get();
+            assertEquals(expectedValue, context.nearCache.get(i));
+        }
     }
 
     @Override
