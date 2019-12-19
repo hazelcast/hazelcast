@@ -70,10 +70,12 @@ public interface DataStructureAdapter<K, V> {
 
     boolean replace(K key, V oldValue, V newValue);
 
+    @MethodNotAvailable
     default V getAndReplace(K key, V value) {
         throw new MethodNotAvailableException();
     }
 
+    @MethodNotAvailable
     default CompletionStage<V> getAndReplaceAsync(K key, V value) {
         throw new MethodNotAvailableException();
     }
@@ -84,10 +86,12 @@ public interface DataStructureAdapter<K, V> {
 
     CompletionStage<V> removeAsync(K key);
 
+    @MethodNotAvailable
     default V getAndRemove(K key) {
         throw new MethodNotAvailableException();
     }
 
+    @MethodNotAvailable
     default CompletionStage<V> getAndRemoveAsync(K key) {
         throw new MethodNotAvailableException();
     }

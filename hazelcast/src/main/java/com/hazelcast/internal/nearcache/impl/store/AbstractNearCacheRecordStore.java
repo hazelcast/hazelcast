@@ -442,6 +442,11 @@ public abstract class AbstractNearCacheRecordStore<K, V, KS, R extends NearCache
             return reservedRecord;
         }
 
+        boolean update = reservedRecord.getValue() != null || reservedRecord.isCachedAsNull();
+        if (update) {
+            nearCacheStats.incrementOwnedEntryMemoryCost(-getTotalStorageMemoryCost(key, reservedRecord));
+        }
+
         updateRecordValue(reservedRecord, value);
         if (value == null) {
             // TODO Add ICache/IMap config to allow cache as null
@@ -450,7 +455,9 @@ public abstract class AbstractNearCacheRecordStore<K, V, KS, R extends NearCache
         reservedRecord.setReservationId(READ_PERMITTED);
 
         nearCacheStats.incrementOwnedEntryMemoryCost(getTotalStorageMemoryCost(key, reservedRecord));
-        nearCacheStats.incrementOwnedEntryCount();
+        if (!update) {
+            nearCacheStats.incrementOwnedEntryCount();
+        }
 
         return reservedRecord;
     }

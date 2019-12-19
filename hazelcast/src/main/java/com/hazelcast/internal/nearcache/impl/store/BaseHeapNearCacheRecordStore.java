@@ -25,8 +25,8 @@ import com.hazelcast.internal.eviction.EvictionChecker;
 import com.hazelcast.internal.nearcache.NearCacheRecord;
 import com.hazelcast.internal.nearcache.impl.maxsize.EntryCountNearCacheEvictionChecker;
 import com.hazelcast.internal.nearcache.impl.preloader.NearCachePreloader;
-import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.internal.serialization.SerializationService;
 
 import java.util.Map;
 import java.util.function.BiFunction;
@@ -153,7 +153,6 @@ public abstract class BaseHeapNearCacheRecordStore<K, V, R extends NearCacheReco
         if (existingRecord == null || !deserialize) {
             return null;
         }
-
         Object cachedValue = existingRecord.getValue();
         return cachedValue instanceof Data ? toValue(cachedValue) : (V) cachedValue;
     }
