@@ -57,12 +57,11 @@ import com.hazelcast.multimap.LocalMultiMapStats;
 import com.hazelcast.multimap.MultiMap;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.spi.impl.UnmodifiableLazyList;
+import com.hazelcast.spi.impl.UnmodifiableLazySet;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.util.AbstractMap;
 import java.util.Collection;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -161,13 +160,8 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
         ClientMessage request = MultiMapKeySetCodec.encodeRequest(name);
         ClientMessage response = invoke(request);
         MultiMapKeySetCodec.ResponseParameters resultParameters = MultiMapKeySetCodec.decodeResponse(response);
-        Collection<Data> result = resultParameters.response;
-        Set<K> keySet = new HashSet<K>(result.size());
-        for (Data data : result) {
-            final K key = toObject(data);
-            keySet.add(key);
-        }
-        return keySet;
+
+        return (Set<K>) new UnmodifiableLazySet(resultParameters.response, getSerializationService());
     }
 
     @Nonnull
@@ -186,13 +180,7 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
         ClientMessage response = invoke(request);
         MultiMapEntrySetCodec.ResponseParameters resultParameters = MultiMapEntrySetCodec.decodeResponse(response);
 
-        Set<Map.Entry<K, V>> entrySet = new HashSet<>(resultParameters.response.size());
-        for (Map.Entry<Data, Data> entry : resultParameters.response) {
-            K key = toObject(entry.getKey());
-            V value = toObject(entry.getValue());
-            entrySet.add(new AbstractMap.SimpleEntry<>(key, value));
-        }
-        return entrySet;
+        return (Set) new UnmodifiableLazySet(resultParameters.response, getSerializationService());
     }
 
     @Override
