@@ -23,11 +23,15 @@ import com.hazelcast.client.impl.connection.nio.ClientConnection;
 import com.hazelcast.client.impl.spi.EventHandler;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.LifecycleEvent;
+import com.hazelcast.core.LifecycleListener;
 import com.hazelcast.test.HazelcastTestSupport;
 
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.junit.Assert.assertEquals;
 
@@ -93,5 +97,25 @@ public class ClientTestSupport extends HazelcastTestSupport {
             map.putAll(activeConnection.getEventHandlers());
         }
         return map;
+    }
+
+    public static class ReconnectListener implements LifecycleListener {
+
+        public final CountDownLatch disconnectedLatch = new CountDownLatch(1);
+        public final CountDownLatch reconnectedLatch = new CountDownLatch(1);
+        private final AtomicBoolean disconnected = new AtomicBoolean();
+
+        @Override
+        public void stateChanged(LifecycleEvent event) {
+            LifecycleEvent.LifecycleState state = event.getState();
+            if (state.equals(LifecycleEvent.LifecycleState.CLIENT_DISCONNECTED)) {
+                disconnected.set(true);
+                disconnectedLatch.countDown();
+            } else if (state.equals(LifecycleEvent.LifecycleState.CLIENT_CONNECTED)) {
+                if (disconnected.get()) {
+                    reconnectedLatch.countDown();
+                }
+            }
+        }
     }
 }

@@ -27,8 +27,6 @@ import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IExecutorService;
-import com.hazelcast.core.LifecycleEvent;
-import com.hazelcast.core.LifecycleListener;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.nio.ConnectionListener;
 import com.hazelcast.test.AssertTask;
@@ -41,16 +39,13 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.util.Collection;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -151,24 +146,11 @@ public class ClientConnectionTest extends ClientTestSupport {
         final Address serverAddress = server.getCluster().getLocalMember().getAddress();
         final Connection connectionToServer = connectionManager.getConnection(serverAddress);
 
-        final CountDownLatch isConnected = new CountDownLatch(1);
-        clientImpl.getLifecycleService().addLifecycleListener(new LifecycleListener() {
-            @Override
-            public void stateChanged(LifecycleEvent event) {
-                if (LifecycleEvent.LifecycleState.CLIENT_CONNECTED == event.getState()) {
-                    isConnected.countDown();
-                }
-            }
-        });
+        ReconnectListener reconnectListener = new ReconnectListener();
+        clientImpl.getLifecycleService().addLifecycleListener(reconnectListener);
 
         connectionToServer.close(null, null);
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run()
-                    throws Exception {
-                assertTrue(isConnected.await(5, TimeUnit.SECONDS));
-            }
-        });
+        assertOpenEventually(reconnectListener.reconnectedLatch);
 
         connectionToServer.close(null, null);
         assertEquals("connection removed should be called only once", 1, listener.connectionRemovedCount.get());
