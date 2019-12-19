@@ -1030,10 +1030,17 @@ public final class Sources {
     }
 
     /**
-     * Convenience for {@link #jmsQueueBuilder(SupplierEx)}. This
-     * version creates a connection without any authentication parameters and
-     * uses non-transacted sessions with {@code Session.AUTO_ACKNOWLEDGE} mode.
-     * JMS {@link Message} objects are emitted to downstream.
+     * Shortcut equivalent to:
+     * <pre>
+     *         return jmsQueueBuilder(factorySupplier)
+     *                 .destinationName(name)
+     *                 .build();
+     * </pre>
+     *
+     * This version creates a connection without any authentication parameters
+     * and uses transacted sessions if processing guarantee is enabled for the
+     * job, otherwise it uses {@code Session.AUTO_ACKNOWLEDGE} mode. JMS {@link
+     * Message} objects are emitted to downstream.
      * <p>
      * <b>Note:</b> {@link javax.jms.Message} might not be serializable. In
      * that case you can use {@linkplain #jmsQueueBuilder(SupplierEx)
@@ -1057,12 +1064,16 @@ public final class Sources {
      * a custom JMS {@link StreamSource} for the Pipeline API. See javadoc on
      * {@link JmsSourceBuilder} methods for more details.
      * <p>
-     * This source uses the {@link Message#getJMSTimestamp() JMS' message
+     * This source uses the {@linkplain Message#getJMSTimestamp() JMS' message
      * timestamp} as the native timestamp, if {@linkplain
      * StreamSourceStage#withNativeTimestamps(long) enabled}.
      * <p>
-     * The source does not save any state to snapshot. The source starts
-     * emitting items where it left from.
+     * If processing guarantee is enabled for the job, the source will
+     * acknowledge the consumption of messages using distributed transactions.
+     * To disable it, call {@link
+     * JmsSourceBuilder#forceAutoAcknowledge(boolean)} on the returned builder.
+     * You also need to disable it if your {@code ConnectionFactory} isn't a
+     * {@link javax.jms.XAConnectionFactory}.
      * <p>
      * IO failures should be handled by the JMS provider. If any JMS operation
      * throws an exception, the job will fail. Most of the providers offer a

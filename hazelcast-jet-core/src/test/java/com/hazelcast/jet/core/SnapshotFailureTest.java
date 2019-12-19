@@ -66,7 +66,6 @@ public class SnapshotFailureTest extends JetTestSupport {
         MapStoreConfig mapStoreConfig = mapConfig.getMapStoreConfig();
         mapStoreConfig.setEnabled(true);
         mapStoreConfig.setImplementation(new FailingMapStore());
-        mapConfig.getEventJournalConfig().setEnabled(true);
         config.getHazelcastConfig().addMapConfig(mapConfig);
 
         JetInstance[] instances = createJetMembers(config, 2);
@@ -75,6 +74,7 @@ public class SnapshotFailureTest extends JetTestSupport {
 
     @Test
     public void when_snapshotFails_then_jobShouldNotFail() {
+        storeFailed = false;
         int numPartitions = 2;
         int numElements = 10;
         IMap<Object, Object> results = instance1.getMap("results");
@@ -99,7 +99,7 @@ public class SnapshotFailureTest extends JetTestSupport {
         assertTrue("no failure occurred in store", storeFailed);
     }
 
-    public static class FailingMapStore extends AMapStore implements Serializable {
+    private static class FailingMapStore extends AMapStore implements Serializable {
         @Override
         public void store(Object o, Object o2) {
             storeFailed = true;

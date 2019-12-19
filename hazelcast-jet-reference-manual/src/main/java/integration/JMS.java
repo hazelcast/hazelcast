@@ -23,7 +23,7 @@ import org.apache.activemq.ActiveMQConnectionFactory;
 
 public class JMS {
 
-    static void s1 () {
+    static void s1() {
         //tag::s1[]
         Pipeline p = Pipeline.create();
         p.readFrom(Sources.jmsQueue(() -> new ActiveMQConnectionFactory(
@@ -33,7 +33,7 @@ public class JMS {
         //end::s1[]
     }
 
-    static void s2 () {
+    static void s2() {
         //tag::s2[]
         Pipeline p = Pipeline.create();
         p.readFrom(Sources.jmsTopic(() -> new ActiveMQConnectionFactory(
@@ -43,7 +43,7 @@ public class JMS {
         //end::s2[]
     }
 
-    static void s3 () {
+    static void s3() {
         //tag::s3[]
         Pipeline p = Pipeline.create();
         p.readFrom(Sources.list("inputList"))
@@ -52,7 +52,7 @@ public class JMS {
         //end::s3[]
     }
 
-    static void s4 () {
+    static void s4() {
         //tag::s4[]
         Pipeline p = Pipeline.create();
         p.readFrom(Sources.list("inputList"))
@@ -60,5 +60,4 @@ public class JMS {
                  "tcp://localhost:61616"), "topic"));
         //end::s4[]
     }
-
 }

@@ -20,7 +20,6 @@ import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.JetTestSupport;
 import com.hazelcast.jet.core.TestProcessors.ListSource;
-import com.hazelcast.jet.core.TestProcessors.MapWatermarksToString;
 import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.core.processor.Processors;
 import com.hazelcast.test.HazelcastSerialClassRunner;
@@ -32,6 +31,7 @@ import java.util.Arrays;
 
 import static com.hazelcast.jet.core.Edge.between;
 import static com.hazelcast.jet.core.EventTimePolicy.eventTimePolicy;
+import static com.hazelcast.jet.core.TestProcessors.MapWatermarksToString.mapWatermarksToString;
 import static com.hazelcast.jet.core.WatermarkPolicy.limitingLag;
 import static com.hazelcast.jet.core.processor.SinkProcessors.writeListP;
 import static java.util.Arrays.asList;
@@ -54,7 +54,7 @@ public class InsertWatermarksP_IntegrationTest extends JetTestSupport {
         Vertex iwm = dag.newVertex("iwm", Processors.insertWatermarksP(eventTimePolicy(
                 (Long x) -> x, limitingLag(100), 100, 0, 0)))
                 .localParallelism(1);
-        Vertex mapWmToStr = dag.newVertex("mapWmToStr", MapWatermarksToString::new)
+        Vertex mapWmToStr = dag.newVertex("mapWmToStr", mapWatermarksToString(false))
                 .localParallelism(1);
         Vertex sink = dag.newVertex("sink", writeListP("list"));
 

@@ -93,12 +93,6 @@
             <artifactId>kafka_${scala.version}</artifactId>
             <version>${kafka.version}</version>
             <scope>test</scope>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.slf4j</groupId>
-                    <artifactId>slf4j-log4j12</artifactId>
-                </exclusion>
-            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.apache.kafka</groupId>
@@ -106,12 +100,6 @@
             <version>${kafka.version}</version>
             <classifier>test</classifier>
             <scope>test</scope>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.slf4j</groupId>
-                    <artifactId>slf4j-log4j12</artifactId>
-                </exclusion>
-            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.apache.kafka</groupId>
@@ -123,11 +111,10 @@
 
         <dependency>
             <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-simple</artifactId>
-            <version>1.7.21</version>
+            <artifactId>slf4j-log4j12</artifactId>
+            <version>1.7.25</version>
             <scope>test</scope>
         </dependency>
-
 
     </dependencies>
 

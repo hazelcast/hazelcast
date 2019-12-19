@@ -20,6 +20,7 @@ import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.config.EdgeConfig;
 import com.hazelcast.jet.config.JobConfig;
+import com.hazelcast.jet.config.ProcessingGuarantee;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.core.Watermark;
@@ -72,7 +73,7 @@ import static java.util.stream.IntStream.range;
 
 public final class Util {
 
-    static final int BUFFER_SIZE = 1 << 15;
+    private static final int BUFFER_SIZE = 1 << 15;
 
     private static final DateTimeFormatter LOCAL_TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm:ss.SSS");
     private static final Pattern TRAILING_NUMBER_PATTERN = Pattern.compile("(.*)-([0-9]+)");
@@ -437,4 +438,10 @@ public final class Util {
         }
     }
 
+    /**
+     * Returns the lower of the given guarantees.
+     */
+    public static ProcessingGuarantee min(ProcessingGuarantee g1, ProcessingGuarantee g2) {
+        return g1.ordinal() < g2.ordinal() ? g1 : g2;
+    }
 }

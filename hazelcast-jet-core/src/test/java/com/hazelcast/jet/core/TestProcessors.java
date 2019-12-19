@@ -19,6 +19,7 @@ package com.hazelcast.jet.core;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.function.SupplierEx;
 import com.hazelcast.jet.Traverser;
+import com.hazelcast.jet.core.processor.Processors;
 
 import javax.annotation.Nonnull;
 import java.util.List;
@@ -40,6 +41,7 @@ import static com.hazelcast.jet.Traversers.traverseStream;
 import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.core.BroadcastKey.broadcastKey;
 import static com.hazelcast.jet.core.ProcessorMetaSupplier.preferLocalParallelismOne;
+import static com.hazelcast.jet.impl.JetEvent.jetEvent;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
 import static java.util.stream.Collectors.toList;
 import static org.junit.Assert.assertEquals;
@@ -411,13 +413,22 @@ public final class TestProcessors {
     /**
      * A processor that maps Watermarks to String (otherwise, they would not be
      * inserted to sink). It passes other items without change (from all input
-     * edges to all output edges. It can't be done using {@link
-     * com.hazelcast.jet.core.processor.Processors#mapP} because it doesn't
-     * handle watermarks.
+     * edges to all output edges, including the watermarks. It can't be done
+     * using {@link Processors#mapP} because it doesn't handle watermarks.
      */
-    public static class MapWatermarksToString extends AbstractProcessor {
+    public static final class MapWatermarksToString extends AbstractProcessor {
 
-        FlatMapper<Watermark, Object> flatMapper = flatMapper(wm -> traverseItems("wm(" + wm.timestamp() + ')', wm));
+        private final FlatMapper<Watermark, Object> flatMapper;
+
+        private MapWatermarksToString(boolean wrapToJetEvent) {
+            this.flatMapper = wrapToJetEvent
+                    ? flatMapper(wm -> traverseItems(jetEvent(wm.timestamp(), "wm(" + wm.timestamp() + ')'), wm))
+                    : flatMapper(wm -> traverseItems("wm(" + wm.timestamp() + ')', wm));
+        }
+
+        public static SupplierEx<Processor> mapWatermarksToString(boolean wrapToJetEvent) {
+            return () -> new MapWatermarksToString(wrapToJetEvent);
+        }
 
         @Override
         protected boolean tryProcess(int ordinal, @Nonnull Object item) {

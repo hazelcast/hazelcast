@@ -32,7 +32,7 @@ import java.util.List;
 import java.util.function.Function;
 
 import static com.hazelcast.internal.util.UuidUtil.newUnsecureUuidString;
-import static java.util.Collections.singletonList;
+import static java.util.Collections.nCopies;
 
 /**
  * Factory of {@link ProcessorSupplier} instances. The starting point of
@@ -287,7 +287,7 @@ public interface ProcessorMetaSupplier extends Serializable {
                 return addr -> addr.equals(ownerAddress) ?
                         supplier
                         :
-                        count -> singletonList(new AbstractProcessor() {
+                        count -> nCopies(count, new AbstractProcessor() {
                             @Override
                             protected boolean tryProcess(int ordinal, @Nonnull Object item) {
                                 throw new IllegalStateException(

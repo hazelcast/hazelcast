@@ -17,6 +17,7 @@
 package com.hazelcast.jet.impl.util;
 
 import com.hazelcast.jet.Traverser;
+import com.hazelcast.jet.Traversers;
 
 import java.util.function.Function;
 
@@ -37,8 +38,7 @@ public class FlatMappingTraverser<T, R> implements Traverser<R> {
 
     private final Traverser<T> wrapped;
     private final Function<? super T, ? extends Traverser<? extends R>> mapper;
-    @SuppressWarnings("unchecked")
-    private Traverser<? extends R> currentTraverser = NULL_TRAVERSER;
+    private Traverser<? extends R> currentTraverser = Traversers.empty();
 
     public FlatMappingTraverser(Traverser<T> wrapped, Function<? super T, ? extends Traverser<? extends R>> mapper) {
         this.wrapped = wrapped;

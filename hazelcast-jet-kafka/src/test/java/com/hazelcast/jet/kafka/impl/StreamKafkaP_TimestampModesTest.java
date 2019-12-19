@@ -29,6 +29,7 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import java.io.IOException;
 import java.util.Properties;
 
 import static java.util.Arrays.asList;
@@ -42,11 +43,11 @@ public class StreamKafkaP_TimestampModesTest extends StreamSourceStageTestBase {
     private String topicName;
 
     @BeforeClass
-    public static void beforeClass1() throws Exception {
-        String brokerConnectionString = kafkaTestSupport.createKafkaCluster();
+    public static void beforeClass1() throws IOException {
+        kafkaTestSupport.createKafkaCluster();
         properties = new Properties();
         properties.setProperty("group.id", randomString());
-        properties.setProperty("bootstrap.servers", brokerConnectionString);
+        properties.setProperty("bootstrap.servers", kafkaTestSupport.getBrokerConnectionString());
         properties.setProperty("key.deserializer", IntegerDeserializer.class.getCanonicalName());
         properties.setProperty("value.deserializer", StringDeserializer.class.getCanonicalName());
         properties.setProperty("auto.offset.reset", "earliest");

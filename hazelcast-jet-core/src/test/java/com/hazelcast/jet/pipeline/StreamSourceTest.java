@@ -21,7 +21,7 @@ import com.hazelcast.jet.core.Processor.Context;
 import org.junit.Test;
 
 import static com.hazelcast.jet.aggregate.AggregateOperations.counting;
-import static org.apache.activemq.transport.amqp.AmqpWireFormat.DEFAULT_IDLE_TIMEOUT;
+import static com.hazelcast.jet.core.EventTimePolicy.DEFAULT_IDLE_TIMEOUT;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -38,7 +38,7 @@ public class StreamSourceTest extends PipelineTestSupport {
         test(500);
     }
 
-    private void test(int idleTimeout) {
+    private void test(long idleTimeout) {
         StreamSource<Object> source = SourceBuilder
                 .stream("src", Context::globalProcessorIndex)
                 .distributed(1)

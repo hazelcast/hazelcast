@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet;
 
+import com.hazelcast.jet.core.AppendableTraverser;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -23,6 +24,8 @@ import java.util.List;
 
 import static com.hazelcast.jet.Traversers.traverseItems;
 import static java.util.Arrays.asList;
+import static java.util.Collections.emptyList;
+import static java.util.Collections.singletonList;
 import static java.util.function.Function.identity;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -30,100 +33,127 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
+@SuppressWarnings("ResultOfMethodCallIgnored")
 public class TraverserTest {
+
+    private AppendableTraverser<Integer> rootTraverser = new AppendableTraverser<>(3);
+
+    private AppendableTraverser<Integer> resetRootTraverser() {
+        while (rootTraverser.next() != null) {
+        }
+        rootTraverser.append(0);
+        rootTraverser.append(1);
+        rootTraverser.append(2);
+        return rootTraverser;
+    }
 
     @Test
     public void smokeTest_map() {
-        check(traverser().map(identity()),
-                0, 1, 2);
-        check(traverser().map(i -> i + 1),
-                1, 2, 3);
-        check(traverser().map(i -> i % 2 != 0 ? null : i),
-                0, 2);
-        check(traverser().map(i -> null)
-                );
-        check(traverser().map(i -> i == 0 ? null : i),
-                1, 2);
-        check(traverser().map(i -> i != 0 ? null : i),
-                0);
+        check(resetRootTraverser().map(identity()),
+                asList(0, 1, 2), singletonList(3));
+        check(resetRootTraverser().map(i -> i + 1),
+                asList(1, 2, 3), singletonList(4));
+        check(resetRootTraverser().map(i -> i % 2 != 0 ? null : i),
+                asList(0, 2), emptyList());
+        check(resetRootTraverser().map(i -> null),
+                emptyList(), emptyList());
+        check(resetRootTraverser().map(i -> i == 0 ? null : i),
+                asList(1, 2), singletonList(3));
+        check(resetRootTraverser().map(i -> i != 0 ? null : i),
+                singletonList(0), emptyList());
     }
 
     @Test
     public void smokeTest_filter() {
-        check(traverser().filter(i -> true),
-                0, 1, 2);
-        check(traverser().filter(i -> false)
-                );
-        check(traverser().filter(i -> i != 1),
-                0, 2);
-        check(traverser().filter(i -> i == 1),
-                1);
-        check(traverser().filter(i -> i != 0),
-                1, 2);
-        check(traverser().filter(i -> i != 2),
-                0, 1);
+        check(resetRootTraverser().filter(i -> true),
+                asList(0, 1, 2), singletonList(3));
+        check(resetRootTraverser().filter(i -> false),
+                emptyList(), emptyList());
+        check(resetRootTraverser().filter(i -> i != 1),
+                asList(0, 2), singletonList(3));
+        check(resetRootTraverser().filter(i -> i == 1),
+                singletonList(1), emptyList());
+        check(resetRootTraverser().filter(i -> i != 0),
+                asList(1, 2), singletonList(3));
+        check(resetRootTraverser().filter(i -> i != 2),
+                asList(0, 1), singletonList(3));
+        check(resetRootTraverser().filter(i -> i != 3),
+                asList(0, 1, 2), emptyList());
     }
 
     @Test
     public void smokeTest_takeWhile() {
-        check(traverser().takeWhile(i -> false)
-                );
-        check(traverser().takeWhile(i -> true),
-                0, 1, 2);
-        check(traverser().takeWhile(i -> i < 3),
-                0, 1, 2);
-        check(traverser().takeWhile(i -> i < 2),
-                0, 1);
-        check(traverser().takeWhile(i -> i < 1),
-                0);
-        check(traverser().takeWhile(i -> i < 0)
-                );
+        check(resetRootTraverser().takeWhile(i -> false),
+                emptyList(), emptyList());
+        check(resetRootTraverser().takeWhile(i -> true),
+                asList(0, 1, 2), singletonList(3));
+        check(resetRootTraverser().takeWhile(i -> i < 3),
+                asList(0, 1, 2), emptyList());
+        check(resetRootTraverser().takeWhile(i -> i < 2),
+                asList(0, 1), emptyList());
+        check(resetRootTraverser().takeWhile(i -> i < 1),
+                singletonList(0), emptyList());
+        check(resetRootTraverser().takeWhile(i -> i < 0),
+                emptyList(), emptyList());
     }
 
     @Test
     public void smokeTest_dropWhile() {
-        check(traverser().dropWhile(i -> true)
-                );
-        check(traverser().dropWhile(i -> false),
-                0, 1, 2);
-        check(traverser().dropWhile(i -> i < 3)
-                );
-        check(traverser().dropWhile(i -> i < 2),
-                2);
-        check(traverser().dropWhile(i -> i < 1),
-                1, 2);
-        check(traverser().dropWhile(i -> i < 0),
-                0, 1, 2);
+        check(resetRootTraverser().dropWhile(i -> true),
+                emptyList(), emptyList());
+        check(resetRootTraverser().dropWhile(i -> false),
+                asList(0, 1, 2), singletonList(3));
+        check(resetRootTraverser().dropWhile(i -> i < 3),
+                emptyList(), singletonList(3));
+        check(resetRootTraverser().dropWhile(i -> i < 2),
+                singletonList(2), singletonList(3));
+        check(resetRootTraverser().dropWhile(i -> i < 1),
+                asList(1, 2), singletonList(3));
+        check(resetRootTraverser().dropWhile(i -> i < 0),
+                asList(0, 1, 2), singletonList(3));
     }
 
     @Test
     public void smokeTest_append() {
-        check(traverser().append(5),
-                0, 1, 2, 5);
-        check(traverser().append(5).append(6),
-                0, 1, 2, 5, 6);
+        check(traverseItems(0, 1, 2).append(5),
+                asList(0, 1, 2, 5), emptyList());
+        check(traverseItems(0, 1, 2).append(5).append(6),
+                asList(0, 1, 2, 5, 6), emptyList());
         check(Traversers.empty().append(0),
-                0);
+                singletonList(0), emptyList());
     }
 
     @Test
     public void smokeTest_prepend() {
-        check(traverser().prepend(5),
-                5, 0, 1, 2);
-        check(traverser().prepend(5).prepend(6),
-                6, 5, 0, 1, 2);
+        check(resetRootTraverser().prepend(5),
+                asList(5, 0, 1, 2), singletonList(3));
+        check(resetRootTraverser().prepend(5).prepend(6),
+                asList(6, 5, 0, 1, 2), singletonList(3));
         check(Traversers.empty().prepend(0),
-                0);
+                singletonList(0), emptyList());
     }
 
     @Test
     public void smokeTest_flatMap() {
-        check(traverser().flatMap(i -> traverser()),
-                0, 1, 2, 0, 1, 2, 0, 1, 2);
-        check(traverser().flatMap(i -> Traversers.empty())
-                );
-        check(traverser().flatMap(i -> traverser().takeWhile(j -> j < i)),
-                0, 0, 1); // 0 -> {}, 1 -> {0}, 2 -> {0, 1} ==> {0, 0, 1}
+        check(resetRootTraverser().flatMap(i -> traverseItems(0, 1, 2)),
+                asList(0, 1, 2, 0, 1, 2, 0, 1, 2), asList(0, 1, 2));
+        check(resetRootTraverser().flatMap(i -> Traversers.empty()),
+                emptyList(), emptyList());
+        check(resetRootTraverser().flatMap(i -> traverseItems(0, 1, 2).takeWhile(j -> j < i)),
+                asList(0, 0, 1), asList(0, 1, 2)); // 0 -> {}, 1 -> {0}, 2 -> {0, 1} ==> {0, 0, 1}
+    }
+
+    @Test
+    public void flatMap_continueAfterNull() {
+        AppendableTraverser<Integer> rootTrav = new AppendableTraverser<>(1);
+        rootTrav.append(0);
+        Traverser<Integer> mappedTrav = rootTrav.flatMap(Traversers::traverseItems);
+        assertEquals(Integer.valueOf(0), mappedTrav.next());
+        assertNull(mappedTrav.next());
+        // the root traverser was already drained (returned null), now add more items to it and check that they
+        // are flat-mapped
+        rootTrav.append(1);
+        assertEquals(Integer.valueOf(1), mappedTrav.next());
     }
 
     @Test
@@ -151,34 +181,34 @@ public class TraverserTest {
     @Test
     public void smokeTest_peek() {
         List<Integer> peekList = new ArrayList<>();
-        check(traverser().peek(peekList::add),
-                0, 1, 2);
-        assertEquals(asList(0, 1, 2), peekList);
+        check(resetRootTraverser().peek(peekList::add),
+                asList(0, 1, 2), singletonList(3));
+        assertEquals(asList(0, 1, 2, 3), peekList);
         peekList.clear();
 
-        // check that it is not peeking the appended item
-        check(traverser().peek(peekList::add).append(4),
-                0, 1, 2, 4);
-        assertEquals(asList(0, 1, 2), peekList);
+        // check that it is not peeking item appended after the peek
+        check(resetRootTraverser().peek(peekList::add).append(4),
+                asList(0, 1, 2, 4), singletonList(3));
+        assertEquals(asList(0, 1, 2, 3), peekList);
         peekList.clear();
 
-        // check that it is not peeking the prepended item
-        check(traverser().peek(peekList::add).prepend(4),
-                4, 0, 1, 2);
-        assertEquals(asList(0, 1, 2), peekList);
+        // check that it is not peeking the item prepended after the peek
+        check(resetRootTraverser().peek(peekList::add).prepend(4),
+                asList(4, 0, 1, 2), singletonList(3));
+        assertEquals(asList(0, 1, 2, 3), peekList);
         peekList.clear();
 
         // check that it is peeking the items filtered-out after peek()
-        check(traverser().peek(peekList::add).filter(i -> i == 0),
-                0);
-        assertEquals(asList(0, 1, 2), peekList);
+        check(resetRootTraverser().peek(peekList::add).filter(i -> i == 0),
+                singletonList(0), emptyList());
+        assertEquals(asList(0, 1, 2, 3), peekList);
         peekList.clear();
     }
 
     @Test
     public void smokeTest_onFirstNull() {
         boolean[] actionCalled = {false};
-        Traverser<Integer> t = traverser()
+        Traverser<Integer> t = resetRootTraverser()
                 .onFirstNull(() -> {
                     assert !actionCalled[0] : "action already called";
                     actionCalled[0] = true;
@@ -192,13 +222,16 @@ public class TraverserTest {
         assertFalse(actionCalled[0]);
         assertNull(t.next());
         assertTrue(actionCalled[0]);
-        assertNull(t.next()); // this will file inside the action if called duplicately
+        assertNull(t.next()); // this will fail inside the action if called duplicately
+        rootTraverser.append(3);
+        assertEquals(3, (int) t.next());
+        assertNull(t.next());
     }
 
     @Test
     public void when_allFilteredOut_then_onFirstNullCalledImmediately() {
         boolean[] actionCalled = {false};
-        Traverser<Integer> t = traverser()
+        Traverser<Integer> t = resetRootTraverser()
                 .filter(i -> false)
                 .onFirstNull(() -> {
                     assert !actionCalled[0] : "action already called";
@@ -213,7 +246,7 @@ public class TraverserTest {
     @Test
     public void when_allFilteredOutUsingMap_then_onFirstNullCalledImmediately() {
         boolean[] actionCalled = {false};
-        Traverser<Integer> t = traverser()
+        Traverser<Integer> t = resetRootTraverser()
                 .map(i -> (Integer) null)
                 .onFirstNull(() -> {
                     assert !actionCalled[0] : "action already called";
@@ -225,19 +258,28 @@ public class TraverserTest {
         assertTrue(actionCalled[0]);
     }
 
-    private static Traverser<Integer> traverser() {
-        return traverseItems(0, 1, 2);
-    }
-
-    @SafeVarargs
-    private static <T> void check(Traverser<T> t, T... expected) {
+    private <T> void check(Traverser<T> t, List<T> expected, List<T> expectedAfterAdd) {
         List<T> list = new ArrayList<>();
         for (T item; (item = t.next()) != null; ) {
             list.add(item);
         }
-        assertEquals(asList(expected), list);
+        assertEquals(expected, list);
         // after first null there should be only nulls
         assertNull(t.next());
         assertNull(t.next());
+
+        // if `expectedAfterAdd` is not null, append one more item to rootTraverser and
+        // assert the traverser output again
+        if (expectedAfterAdd != null) {
+            // add one more item to the rootTraverser
+            rootTraverser.append(3);
+            list.clear();
+            for (T item; (item = t.next()) != null; ) {
+                list.add(item);
+            }
+            assertEquals(expectedAfterAdd, list);
+            assertNull(t.next());
+            assertNull(t.next());
+        }
     }
 }

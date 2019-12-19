@@ -27,6 +27,9 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static com.hazelcast.jet.config.ProcessingGuarantee.AT_LEAST_ONCE;
+import static com.hazelcast.jet.config.ProcessingGuarantee.EXACTLY_ONCE;
+import static com.hazelcast.jet.config.ProcessingGuarantee.NONE;
 import static com.hazelcast.jet.impl.util.Util.addClamped;
 import static com.hazelcast.jet.impl.util.Util.addOrIncrementIndexInName;
 import static com.hazelcast.jet.impl.util.Util.gcd;
@@ -156,5 +159,13 @@ public class UtilTest {
                 roundRobinPart(3, 2, 0));
         assertArrayEquals(new int[] {1},
                 roundRobinPart(3, 2, 1));
+    }
+
+    @Test
+    public void test_minGuarantee() {
+        assertEquals(NONE, Util.min(NONE, AT_LEAST_ONCE));
+        assertEquals(AT_LEAST_ONCE, Util.min(AT_LEAST_ONCE, EXACTLY_ONCE));
+        assertEquals(NONE, Util.min(NONE, EXACTLY_ONCE));
+        assertEquals(NONE, Util.min(NONE, NONE));
     }
 }

@@ -22,7 +22,6 @@ import com.hazelcast.jet.core.AbstractProcessor;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.JetTestSupport;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
-import com.hazelcast.jet.core.TestProcessors.MapWatermarksToString;
 import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.core.Watermark;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
@@ -43,6 +42,7 @@ import java.util.List;
 import static com.hazelcast.jet.core.Edge.between;
 import static com.hazelcast.jet.core.Edge.from;
 import static com.hazelcast.jet.core.ProcessorMetaSupplier.preferLocalParallelismOne;
+import static com.hazelcast.jet.core.TestProcessors.MapWatermarksToString.mapWatermarksToString;
 import static com.hazelcast.jet.core.processor.SinkProcessors.writeListP;
 import static com.hazelcast.jet.impl.execution.WatermarkCoalescer.IDLE_MESSAGE;
 import static java.util.Arrays.asList;
@@ -84,7 +84,7 @@ public class WatermarkCoalescer_IntegrationTest extends JetTestSupport {
     private static DAG createDag(Mode mode, List<Object> input1, List<Object> input2) {
         DAG dag = new DAG();
 
-        Vertex mapWmToString = dag.newVertex("mapWmToString", MapWatermarksToString::new).localParallelism(1);
+        Vertex mapWmToString = dag.newVertex("mapWmToString", mapWatermarksToString(false)).localParallelism(1);
         Vertex sink = dag.newVertex("sink", writeListP("sinkList")).localParallelism(1);
         dag.edge(between(mapWmToString, sink));
 

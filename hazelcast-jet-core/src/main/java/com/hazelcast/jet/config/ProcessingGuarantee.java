@@ -74,6 +74,5 @@ public enum ProcessingGuarantee {
      * correctness guarantee. However latency might increase due to the aligning of
      * barriers which are required in this processing mode.
      */
-    EXACTLY_ONCE,
-
+    EXACTLY_ONCE
 }

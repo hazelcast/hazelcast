@@ -84,8 +84,10 @@ public abstract class SimpleTestInClusterSupport extends JetTestSupport {
 
     @AfterClass
     public static void supportAfterClass() throws Exception {
-        spawn(() -> factory.terminateAll())
-                .get(1, TimeUnit.MINUTES);
+        if (factory != null) {
+            spawn(() -> factory.terminateAll())
+                    .get(1, TimeUnit.MINUTES);
+        }
 
         factory = null;
         instances = null;
