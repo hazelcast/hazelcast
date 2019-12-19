@@ -20,7 +20,7 @@ options.
 == Configuration
 
 The Hadoop source and sink require a configuration object of type
-https://hadoop.apache.org/docs/r2.8.3/api/org/apache/hadoop/conf/Configuration.html[Configuration]
+https://hadoop.apache.org/docs/r2.10.0/api/org/apache/hadoop/conf/Configuration.html[Configuration]
 which supplies the input and output paths and formats. They don't
 actually create a MapReduce job, this config is simply used to describe
 the required inputs and outputs. You can share the same `Configuration`
@@ -51,7 +51,7 @@ creation. Hazelcast Jet expects the objects to be immutable thus makes a
 copy of each object after the configured projection function applied to
 the record. The source copies the objects by serializing and
 de-serializing them. The objects should be either
-https://hadoop.apache.org/docs/r2.8.3/api/org/apache/hadoop/io/Writable.html[Writable]
+https://hadoop.apache.org/docs/r2.10.0/api/org/apache/hadoop/io/Writable.html[Writable]
 or serializable in a way which Hazelcast Jet can serialize/de-serialize.
 
 For readers which create a new instance for each record, the source can
