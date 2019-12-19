@@ -101,13 +101,15 @@ public class NearCachedClientCacheProxy<K, V> extends ClientCacheProxy<K, V> {
         useObjectKey = !nearCacheConfig.isSerializeKeys();
         useObjectValue = nearCacheConfig.getInMemoryFormat() == InMemoryFormat.OBJECT;
 
-        ICacheDataStructureAdapter<K, V> adapter = new ICacheDataStructureAdapter<>(this);
         nearCacheManager = getContext().getNearCacheManager(getServiceName());
-        nearCache = nearCacheManager.getOrCreateNearCache(nameWithPrefix, nearCacheConfig, adapter);
+        nearCache = nearCacheManager.getOrCreateNearCache(nameWithPrefix, nearCacheConfig);
         CacheStatistics localCacheStatistics = super.getLocalCacheStatistics();
         ((ClientCacheStatisticsImpl) localCacheStatistics).setNearCacheStats(nearCache.getNearCacheStats());
 
         registerInvalidationListener();
+        if (nearCacheConfig.getPreloaderConfig().isEnabled()) {
+            nearCacheManager.startPreloading(nearCache, new ICacheDataStructureAdapter<>(this));
+        }
     }
 
     @Override

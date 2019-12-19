@@ -23,6 +23,7 @@ import com.hazelcast.internal.nearcache.NearCache;
 import com.hazelcast.internal.nearcache.impl.invalidation.BatchNearCacheInvalidation;
 import com.hazelcast.internal.nearcache.impl.invalidation.Invalidation;
 import com.hazelcast.internal.nearcache.impl.invalidation.RepairingHandler;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.impl.InterceptorRegistry;
 import com.hazelcast.map.impl.MapEntries;
@@ -30,7 +31,6 @@ import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.nearcache.MapNearCacheManager;
 import com.hazelcast.map.impl.nearcache.invalidation.InvalidationListener;
 import com.hazelcast.map.impl.nearcache.invalidation.UuidFilter;
-import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.NodeEngine;
@@ -90,7 +90,8 @@ public class NearCachedMapProxyImpl<K, V> extends MapProxyImpl<K, V> {
         super.initialize();
 
         mapNearCacheManager = mapServiceContext.getMapNearCacheManager();
-        nearCache = mapNearCacheManager.getOrCreateNearCache(name, mapConfig.getNearCacheConfig());
+        NearCacheConfig nearCacheConfig = mapConfig.getNearCacheConfig();
+        nearCache = mapNearCacheManager.getOrCreateNearCache(name, nearCacheConfig);
         if (invalidateOnChange) {
             registerInvalidationListener();
         }
