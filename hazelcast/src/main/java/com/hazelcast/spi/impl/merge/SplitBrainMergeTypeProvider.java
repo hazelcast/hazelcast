@@ -37,15 +37,15 @@ public final class SplitBrainMergeTypeProvider {
     /**
      * Returns a class with the provided merge value types.
      * <p>
-     * Is implemented by config classes of split-brain capable data structures.
-     * <p>
      * Is used by the {@link com.hazelcast.internal.config.ConfigValidator} to
      * check if a data structure provides he required merge types of a
      * configured {@link SplitBrainMergePolicy}.
      *
-     * @param config the configuration object
+     * @param config the configuration object of the structure supporting split-brain merging
      * @return type of the provided merging values, e.g. a simple {@code MergingValue}
      * or a composition like {@code MergingEntry & MergingHits & MergingLastAccessTime}
+     * @throws IllegalArgumentException if the provided {@code config} object is for a data structure not
+     *                                  supporting split-brain merging
      * @since 3.10
      */
     @SuppressWarnings({"checkstyle:returncount", "checkstyle:npathcomplexity"})

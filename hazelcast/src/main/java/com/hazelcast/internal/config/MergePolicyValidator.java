@@ -78,7 +78,8 @@ public final class MergePolicyValidator {
     }
 
     /**
-     * Checks if a {@link SplitBrainMergeTypeProvider} provides all required types of a given merge policy.
+     * Checks if the provided {@code mergeTypes} satisfy the requirements of a
+     * given merge policy.
      *
      * @param mergeTypes           the provided merge types
      * @param mergePolicyProvider  the {@link SplitBrainMergePolicyProvider} to resolve merge policy classes
@@ -108,7 +109,8 @@ public final class MergePolicyValidator {
     }
 
     /**
-     * Checks if a {@link SplitBrainMergeTypeProvider} provides all required types of a given {@link SplitBrainMergePolicy}.
+     * Checks if the provided {@code mergeTypes} satisfy the requirements of a
+     * given merge policy.
      *
      * @param mergeTypes          the provided merge types
      * @param mergePolicyInstance the {@link SplitBrainMergePolicy} instance
