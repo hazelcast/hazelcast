@@ -26,11 +26,11 @@ import com.hazelcast.projection.Projections;
 import com.hazelcast.query.LocalIndexStats;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.Predicates;
-import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -42,6 +42,7 @@ import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
 import java.util.Collection;
 
+import static com.hazelcast.spi.properties.ClusterProperty.PARTITION_COUNT;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -53,6 +54,8 @@ import static org.junit.Assert.assertTrue;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class LocalIndexStatsTest extends HazelcastTestSupport {
 
+    public static final String HAZELCAST_PROXY_DESTROY_TIMEOUT_MILLIS = "hazelcast.proxy.destroy.timeout.millis";
+
     @Parameters(name = "format:{0}")
     public static Collection<Object[]> parameters() {
         return asList(new Object[][]{{InMemoryFormat.OBJECT}, {InMemoryFormat.BINARY}});
@@ -62,6 +65,8 @@ public class LocalIndexStatsTest extends HazelcastTestSupport {
     public InMemoryFormat inMemoryFormat;
 
     protected static final int PARTITIONS = 137;
+
+    protected static final int PROXY_DESTROY_TIMEOUT = 60;
 
     private static final int QUERIES = 10;
 
@@ -82,8 +87,10 @@ public class LocalIndexStatsTest extends HazelcastTestSupport {
         mapName = randomMapName();
         noStatsMapName = mapName + "_no_stats";
 
+        System.setProperty(HAZELCAST_PROXY_DESTROY_TIMEOUT_MILLIS, Integer.toString(PROXY_DESTROY_TIMEOUT));
+
         Config config = getConfig();
-        config.setProperty(ClusterProperty.PARTITION_COUNT.getName(), Integer.toString(PARTITIONS));
+        config.setProperty(PARTITION_COUNT.getName(), Integer.toString(PARTITIONS));
         config.getMapConfig(mapName).setInMemoryFormat(inMemoryFormat);
         config.getMapConfig(noStatsMapName).setStatisticsEnabled(false);
 
@@ -91,6 +98,11 @@ public class LocalIndexStatsTest extends HazelcastTestSupport {
         map = instance.getMap(mapName);
         noStatsMap = instance.getMap(noStatsMapName);
         queryTypes = initQueryTypes();
+    }
+
+    @After
+    public void tearDown() {
+        System.clearProperty(HAZELCAST_PROXY_DESTROY_TIMEOUT_MILLIS);
     }
 
     @Override

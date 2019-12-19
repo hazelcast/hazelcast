@@ -16,29 +16,29 @@
 
 package com.hazelcast.spi.impl.proxyservice.impl;
 
+import com.hazelcast.cluster.Member;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.DistributedObjectListener;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
-import com.hazelcast.cluster.Member;
-import com.hazelcast.internal.metrics.StaticMetricsProvider;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
-import com.hazelcast.internal.util.counters.MwCounter;
-import com.hazelcast.logging.ILogger;
-import com.hazelcast.spi.impl.eventservice.EventPublishingService;
-import com.hazelcast.spi.impl.operationservice.Operation;
-import com.hazelcast.spi.impl.operationservice.OperationService;
+import com.hazelcast.internal.metrics.StaticMetricsProvider;
 import com.hazelcast.internal.services.PostJoinAwareService;
-import com.hazelcast.spi.impl.proxyservice.ProxyService;
 import com.hazelcast.internal.services.RemoteService;
-import com.hazelcast.spi.exception.DistributedObjectDestroyedException;
-import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.spi.impl.proxyservice.InternalProxyService;
-import com.hazelcast.spi.impl.proxyservice.impl.operations.DistributedObjectDestroyOperation;
-import com.hazelcast.spi.impl.proxyservice.impl.operations.PostJoinProxyOperation;
 import com.hazelcast.internal.util.ConstructorFunction;
 import com.hazelcast.internal.util.FutureUtil.ExceptionHandler;
 import com.hazelcast.internal.util.UuidUtil;
+import com.hazelcast.internal.util.counters.MwCounter;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.spi.exception.DistributedObjectDestroyedException;
+import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.spi.impl.eventservice.EventPublishingService;
+import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.spi.impl.operationservice.OperationService;
+import com.hazelcast.spi.impl.proxyservice.InternalProxyService;
+import com.hazelcast.spi.impl.proxyservice.ProxyService;
+import com.hazelcast.spi.impl.proxyservice.impl.operations.DistributedObjectDestroyOperation;
+import com.hazelcast.spi.impl.proxyservice.impl.operations.PostJoinProxyOperation;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -53,12 +53,13 @@ import java.util.logging.Level;
 
 import static com.hazelcast.core.DistributedObjectEvent.EventType.CREATED;
 import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
-import static com.hazelcast.internal.util.counters.MwCounter.newMwCounter;
 import static com.hazelcast.internal.util.ConcurrencyUtil.getOrPutIfAbsent;
 import static com.hazelcast.internal.util.EmptyStatement.ignore;
 import static com.hazelcast.internal.util.ExceptionUtil.peel;
 import static com.hazelcast.internal.util.FutureUtil.waitWithDeadline;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.counters.MwCounter.newMwCounter;
+import static java.lang.Integer.parseInt;
 import static java.util.logging.Level.FINEST;
 import static java.util.logging.Level.WARNING;
 
@@ -69,19 +70,15 @@ public class ProxyServiceImpl
     public static final String SERVICE_NAME = "hz:core:proxyService";
 
     private static final int TRY_COUNT = 10;
-    private static final long DESTROY_TIMEOUT_SECONDS = 30;
 
     final NodeEngineImpl nodeEngine;
     final ILogger logger;
+    final long destroyTimeout;
     final ConcurrentMap<UUID, DistributedObjectListener> listeners =
             new ConcurrentHashMap<UUID, DistributedObjectListener>();
 
     private final ConstructorFunction<String, ProxyRegistry> registryConstructor =
-            new ConstructorFunction<String, ProxyRegistry>() {
-                public ProxyRegistry createNew(String serviceName) {
-                    return new ProxyRegistry(ProxyServiceImpl.this, serviceName);
-                }
-            };
+            serviceName -> new ProxyRegistry(ProxyServiceImpl.this, serviceName);
 
     private final ConcurrentMap<String, ProxyRegistry> registries =
             new ConcurrentHashMap<String, ProxyRegistry>();
@@ -102,6 +99,7 @@ public class ProxyServiceImpl
 
     public ProxyServiceImpl(NodeEngineImpl nodeEngine) {
         this.nodeEngine = nodeEngine;
+        this.destroyTimeout = parseInt(System.getProperty("hazelcast.proxy.destroy.timeout.millis", "30"));
         this.logger = nodeEngine.getLogger(ProxyService.class.getName());
     }
 
@@ -161,7 +159,7 @@ public class ProxyServiceImpl
 
         OperationService operationService = nodeEngine.getOperationService();
         Collection<Member> members = nodeEngine.getClusterService().getMembers();
-        Collection<Future> calls = new ArrayList<Future>(members.size());
+        Collection<Future> calls = new ArrayList<>(members.size());
         for (Member member : members) {
             if (member.localMember()) {
                 continue;
@@ -174,8 +172,7 @@ public class ProxyServiceImpl
         }
 
         destroyLocalDistributedObject(serviceName, name, true);
-
-        waitWithDeadline(calls, DESTROY_TIMEOUT_SECONDS, TimeUnit.SECONDS, destroyProxyExceptionHandler);
+        waitWithDeadline(calls, destroyTimeout, TimeUnit.SECONDS, destroyProxyExceptionHandler);
     }
 
     @Override
@@ -261,7 +258,7 @@ public class ProxyServiceImpl
 
     @Override
     public Operation getPostJoinOperation() {
-        Collection<ProxyInfo> proxies = new LinkedList<ProxyInfo>();
+        Collection<ProxyInfo> proxies = new LinkedList<>();
         for (ProxyRegistry registry : registries.values()) {
             registry.getProxyInfos(proxies);
         }
