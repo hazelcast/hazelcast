@@ -133,6 +133,7 @@ public class NearCachedClientCacheProxy<K, V> extends ClientCacheProxy<K, V> {
         }
     }
 
+    @Nonnull
     @Override
     @SuppressWarnings("unchecked")
     protected InternalCompletableFuture<V> callGetAsync(Object key, ExpiryPolicy expiryPolicy,

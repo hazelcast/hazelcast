@@ -400,7 +400,17 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
         whenEntryIsAddedWithCacheOnUpdate_thenNearCacheShouldBePopulated(DataStructureMethods.PUT_ALL);
     }
 
-    private void whenEntryIsAddedWithCacheOnUpdate_thenNearCacheShouldBePopulated(DataStructureMethods method) {
+    @Test
+    public void whenGetAndReplaceIsUsedWithCacheOnUpdate_thenNearCacheShouldBePopulated() {
+        whenEntryIsAddedWithCacheOnUpdate_thenNearCacheShouldBePopulated(DataStructureMethods.GET_AND_REPLACE);
+    }
+
+    @Test
+    public void whenGetAndReplaceAsyncIsUsedWithCacheOnUpdate_thenNearCacheShouldBePopulated() {
+        whenEntryIsAddedWithCacheOnUpdate_thenNearCacheShouldBePopulated(DataStructureMethods.GET_AND_REPLACE_ASYNC);
+    }
+
+    protected void whenEntryIsAddedWithCacheOnUpdate_thenNearCacheShouldBePopulated(DataStructureMethods method) {
         assumeThatMethodIsAvailable(method);
         assumeThatLocalUpdatePolicyIsCacheOnUpdate(nearCacheConfig);
         NearCacheTestContext<Integer, String, NK, NV> context = createContext();
@@ -453,6 +463,16 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
                     String oldValue = "oldValue-" + i;
                     context.dataAdapter.put(i, oldValue);
                     assertTrue(adapter.replace(i, oldValue, value));
+                    break;
+                case GET_AND_REPLACE:
+                    String replacedValue = "oldValue-" + i;
+                    context.dataAdapter.put(i, replacedValue);
+                    assertEquals(replacedValue, adapter.getAndReplace(i, value));
+                    break;
+                case GET_AND_REPLACE_ASYNC:
+                    replacedValue = "oldValue-" + i;
+                    context.dataAdapter.put(i, replacedValue);
+                    assertEquals(replacedValue, adapter.getAndReplaceAsync(i, value).toCompletableFuture().join());
                     break;
                 case PUT_ALL:
                     putAllMap.put(i, value);
@@ -1209,6 +1229,16 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
         whenEntryIsRemoved_thenNearCacheShouldBeInvalidated(true, DataStructureMethods.DESTROY);
     }
 
+    @Test
+    public void whenGetAndRemoveIsUsed_thenNearCacheShouldBeInvalidated_onNearCacheAdapter() {
+        whenEntryIsRemoved_thenNearCacheShouldBeInvalidated(false, DataStructureMethods.GET_AND_REMOVE);
+    }
+
+    @Test
+    public void whenGetAndRemoveAsyncIsUsed_thenNearCacheShouldBeInvalidated_onNearCacheAdapter() {
+        whenEntryIsRemoved_thenNearCacheShouldBeInvalidated(false, DataStructureMethods.GET_AND_REMOVE_ASYNC);
+    }
+
     /**
      * With the {@link NearCacheTestContext#dataAdapter} we have to set {@link NearCacheConfig#setInvalidateOnChange(boolean)}.
      * With the {@link NearCacheTestContext#nearCacheAdapter} Near Cache invalidations are not needed.
@@ -1238,6 +1268,12 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
                         break;
                     case REMOVE_ASYNC:
                         assertEquals(value, getFuture(adapter.removeAsync(i), "Could not remove entry via removeAsync()"));
+                        break;
+                    case GET_AND_REMOVE:
+                        assertEquals(value, adapter.getAndRemove(i));
+                        break;
+                    case GET_AND_REMOVE_ASYNC:
+                        assertEquals(value, getFuture(adapter.getAndRemoveAsync(i), "Could not remove entry via getAndRemoveAsync()"));
                         break;
                     case DELETE:
                         adapter.delete(i);

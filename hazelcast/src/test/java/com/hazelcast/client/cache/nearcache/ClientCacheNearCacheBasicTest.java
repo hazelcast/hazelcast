@@ -27,6 +27,7 @@ import com.hazelcast.config.CacheConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.internal.adapter.DataStructureAdapter;
 import com.hazelcast.internal.adapter.DataStructureAdapterMethod;
 import com.hazelcast.internal.adapter.ICacheCacheLoader;
 import com.hazelcast.internal.adapter.ICacheDataStructureAdapter;
@@ -42,6 +43,7 @@ import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
@@ -163,5 +165,10 @@ public class ClientCacheNearCacheBasicTest extends AbstractNearCacheBasicTest<Da
                 .setNearCache(nearCache)
                 .setNearCacheManager(nearCacheManager)
                 .setCacheManager(cacheManager);
+    }
+
+    @Test
+    public void whenGetAndReplaceIsUsedWithCacheOnUpdate_thenNearCacheShouldBePopulated() {
+        super.whenEntryIsAddedWithCacheOnUpdate_thenNearCacheShouldBePopulated(DataStructureAdapter.DataStructureMethods.GET_AND_REPLACE);
     }
 }
