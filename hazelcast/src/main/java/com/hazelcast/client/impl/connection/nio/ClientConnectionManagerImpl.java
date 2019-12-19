@@ -788,7 +788,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
         boolean changedCluster = false;
         // newClusterId may be null when member has not started yet;
         // see AbstractMessageTask#acceptOnIncompleteStart
-        if (isFirstConnectionAfterDisconnection & newClusterId != null) {
+        if (isFirstConnectionAfterDisconnection && newClusterId != null) {
             changedCluster = clusterId != null && !newClusterId.equals(clusterId);
             clusterId = newClusterId;
         }
