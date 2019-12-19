@@ -48,16 +48,6 @@ public interface TransactionContext extends TransactionalTaskContext {
     void rollbackTransaction();
 
     /**
-     * Suspend current transaction.
-     */
-    void suspendTransaction();
-
-    /**
-     * Resume suspended transaction.
-     */
-    void resumeTransaction();
-
-    /**
      * Gets the ID that uniquely identifies the transaction.
      *
      * @return the transaction ID

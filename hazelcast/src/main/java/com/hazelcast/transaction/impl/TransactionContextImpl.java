@@ -46,9 +46,9 @@ import static com.hazelcast.transaction.impl.Transaction.State.ACTIVE;
 final class TransactionContextImpl implements TransactionContext {
 
     private final NodeEngineImpl nodeEngine;
-    private final TransactionWrapper transaction;
+    private final TransactionImpl transaction;
     private final Map<TransactionalObjectKey, TransactionalObject> txnObjectMap
-            = new HashMap<>(2);
+            = new HashMap<TransactionalObjectKey, TransactionalObject>(2);
 
     TransactionContextImpl(@Nonnull TransactionManagerServiceImpl transactionManagerService,
                            @Nonnull NodeEngineImpl nodeEngine,
@@ -56,8 +56,7 @@ final class TransactionContextImpl implements TransactionContext {
                            @Nullable UUID ownerUuid,
                            boolean originatedFromClient) {
         this.nodeEngine = nodeEngine;
-        this.transaction = new TransactionWrapper(
-                new TransactionImpl(transactionManagerService, nodeEngine, options, ownerUuid, originatedFromClient));
+        this.transaction = new TransactionImpl(transactionManagerService, nodeEngine, options, ownerUuid, originatedFromClient);
     }
 
     @Override
@@ -72,7 +71,7 @@ final class TransactionContextImpl implements TransactionContext {
 
     @Override
     public void commitTransaction() throws TransactionException {
-        if (transaction.getTransactionOfRequiredType(TransactionImpl.class).requiresPrepare()) {
+        if (transaction.requiresPrepare()) {
             transaction.prepare();
         }
         transaction.commit();
@@ -81,18 +80,6 @@ final class TransactionContextImpl implements TransactionContext {
     @Override
     public void rollbackTransaction() {
         transaction.rollback();
-    }
-
-    @Override
-    public void suspendTransaction() {
-        transaction.set(transaction.getTransactionOfRequiredType(TransactionImpl.class).new SuspendedTransactionImpl());
-    }
-
-    @Override
-    public void resumeTransaction() {
-        SuspendedTransactionImpl suspendedTransaction = transaction.getTransactionOfRequiredType(SuspendedTransactionImpl.class);
-        suspendedTransaction.resume();
-        transaction.set(suspendedTransaction.getTransaction());
     }
 
     @SuppressWarnings("unchecked")
@@ -131,7 +118,7 @@ final class TransactionContextImpl implements TransactionContext {
         checkActive(serviceName, name);
 
         if (requiresBackupLogs(serviceName)) {
-            transaction.getTransactionOfRequiredType(TransactionImpl.class).ensureBackupLogsExist();
+            transaction.ensureBackupLogsExist();
         }
 
         TransactionalObjectKey key = new TransactionalObjectKey(serviceName, name);
