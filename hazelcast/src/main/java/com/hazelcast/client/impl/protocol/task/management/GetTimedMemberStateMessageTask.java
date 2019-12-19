@@ -33,6 +33,11 @@ public class GetTimedMemberStateMessageTask extends AbstractCallableMessageTask<
     }
 
     @Override
+    protected boolean acceptOnIncompleteStart() {
+        return true;
+    }
+
+    @Override
     protected Object call() throws Exception {
         ManagementCenterService mcs = nodeEngine.getManagementCenterService();
         return mcs != null ? mcs.getTimedMemberStateJson().orElse(null) : null;
