@@ -241,7 +241,7 @@ public class ManagementCenterServiceTest extends HazelcastTestSupport {
         assertNull(metadata.getJetVersion());
         assertTrue(metadata.getClusterTime() > 0);
 
-        hazelcastInstances[0].getCluster().changeClusterState(PASSIVE);
+        changeClusterStateEventually(hazelcastInstances[0], PASSIVE);
 
         assertTrueEventually(
                 () -> {
