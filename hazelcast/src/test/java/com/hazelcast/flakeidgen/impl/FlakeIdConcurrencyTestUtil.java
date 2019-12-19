@@ -27,8 +27,6 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Future;
 import java.util.function.Supplier;
 
-import static org.junit.Assert.assertEquals;
-
 public final class FlakeIdConcurrencyTestUtil {
 
     public static final int NUM_THREADS = 4;
@@ -59,9 +57,6 @@ public final class FlakeIdConcurrencyTestUtil {
         for (Future<Set<Long>> f : futures) {
             ids.addAll(f.get());
         }
-
-        // if there were duplicate IDs generated, there will be less items in the set than expected
-        assertEquals(NUM_THREADS * IDS_IN_THREAD, ids.size());
         return ids;
     }
 }

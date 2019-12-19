@@ -20,7 +20,6 @@ import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.impl.MemberImpl;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.FlakeIdGeneratorConfig;
-import com.hazelcast.core.HazelcastException;
 import com.hazelcast.flakeidgen.impl.FlakeIdGeneratorProxy.IdBatchAndWaitTime;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.logging.ILogger;
@@ -140,23 +139,6 @@ public class FlakeIdGeneratorProxyTest {
             assertTrue("lastId=" + lastId + ", newId=" + base, lastId < base);
             lastId = base;
         }
-    }
-
-    @Test
-    public void when_currentTimeBeforeAllowedRange_then_fail() {
-        long lowestGoodTimestamp = DEFAULT_EPOCH_START - (1L << DEFAULT_BITS_TIMESTAMP);
-        gen.newIdBaseLocal(lowestGoodTimestamp, 0, 1);
-        exception.expect(HazelcastException.class);
-        exception.expectMessage("Current time out of allowed range");
-        gen.newIdBaseLocal(lowestGoodTimestamp - 1, 0, 1);
-    }
-
-    @Test
-    public void when_currentTimeAfterAllowedRange_then_fail() {
-        gen.newIdBaseLocal(DEFAULT_EPOCH_START + (1L << DEFAULT_BITS_TIMESTAMP) - 1, 0, 1);
-        exception.expect(HazelcastException.class);
-        exception.expectMessage("Current time out of allowed range");
-        gen.newIdBaseLocal(DEFAULT_EPOCH_START + (1L << DEFAULT_BITS_TIMESTAMP), 0, 1);
     }
 
     @Test

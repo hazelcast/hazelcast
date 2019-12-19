@@ -191,9 +191,6 @@ public class FlakeIdGeneratorConfig implements IdentifiedDataSerializable, Named
     /**
      * Sets the offset of timestamp component in milliseconds.
      * <p>
-     * This setting pertains only to {@link FlakeIdGenerator#newId newId} calls made on the member
-     * that configured it.
-     *
      * @param epochStart the desired epoch start
      * @return this instance for fluent API
      */
@@ -270,7 +267,9 @@ public class FlakeIdGeneratorConfig implements IdentifiedDataSerializable, Named
 
     /**
      * Sets the bit length of timestamp component.
-     *
+     * <p>
+     * Sum of {@code bitsTimestamp + bitsSequence + bitsNodeId} should be 63 in total, 64 in case negative IDs
+     * are acceptable.
      * @param bitsTimestamp timestamp component bit length
      * @return this instance for fluent API
      */
@@ -289,7 +288,9 @@ public class FlakeIdGeneratorConfig implements IdentifiedDataSerializable, Named
 
     /**
      * Sets the bit length of sequence component.
-     *
+     * <p>
+     * Sum of {@code bitsTimestamp + bitsSequence + bitsNodeId} should be 63 in total, 64 in case negative IDs
+     * are acceptable.
      * @param bitsSequence sequence component bit length
      * @return this instance for fluent API
      */
@@ -308,7 +309,9 @@ public class FlakeIdGeneratorConfig implements IdentifiedDataSerializable, Named
 
     /**
      * Sets the bit length of node id component.
-     *
+     * <p>
+     * Sum of {@code bitsTimestamp + bitsSequence + bitsNodeId} should be 63 in total, 64 in case negative IDs
+     * are acceptable.
      * @param bitsNodeId node id component bit length
      * @return this instance for fluent API
      */
@@ -378,7 +381,7 @@ public class FlakeIdGeneratorConfig implements IdentifiedDataSerializable, Named
                 && bitsSequence == that.bitsSequence
                 && bitsNodeId == that.bitsNodeId
                 && allowedFutureMillis == that.allowedFutureMillis
-                && (Objects.equals(name, that.name))
+                && Objects.equals(name, that.name)
                 && statisticsEnabled == that.statisticsEnabled;
     }
 

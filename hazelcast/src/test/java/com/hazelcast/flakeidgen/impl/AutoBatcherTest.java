@@ -74,6 +74,8 @@ public class AutoBatcherTest {
                 return batcher.newId();
             }
         });
+        // if there were duplicate IDs generated, there will be less items in the set than expected
+        assertEquals(NUM_THREADS * IDS_IN_THREAD, ids.size());
         for (int i = 0; i < NUM_THREADS * IDS_IN_THREAD; i++) {
             assertTrue("Missing ID: " + i, ids.contains((long) i));
         }
