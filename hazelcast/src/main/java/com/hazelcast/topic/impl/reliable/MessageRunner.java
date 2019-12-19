@@ -23,7 +23,6 @@ import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.ringbuffer.ReadResultSet;
 import com.hazelcast.ringbuffer.Ringbuffer;
-import com.hazelcast.ringbuffer.StaleSequenceException;
 import com.hazelcast.spi.exception.DistributedObjectDestroyedException;
 import com.hazelcast.topic.Message;
 import com.hazelcast.topic.MessageListener;
@@ -167,8 +166,6 @@ public abstract class MessageRunner<E> implements BiConsumer<ReadResultSet<Relia
             return handleOperationTimeoutException();
         } else if (t instanceof IllegalArgumentException) {
             return handleIllegalArgumentException((IllegalArgumentException) t);
-        } else if (t instanceof StaleSequenceException) {
-            return handleStaleSequenceException((StaleSequenceException) t);
         } else if (t instanceof HazelcastInstanceNotActiveException) {
             if (logger.isFinestEnabled()) {
                 logger.finest("Terminating MessageListener " + listener + " on topic: " + topicName + ". "
@@ -224,35 +221,6 @@ public abstract class MessageRunner<E> implements BiConsumer<ReadResultSet<Relia
                 + "head: " + newSequence + " sequence:" + sequence);
         return false;
     }
-
-    /**
-     * Handles a {@link StaleSequenceException} associated with requesting
-     * a sequence older than the {@code headSequence}.
-     * This may indicate that the reader was too slow and items in the
-     * ringbuffer were already overwritten.
-     *
-     * @param staleSequenceException the exception
-     * @return if the exception was handled and the listener may continue reading
-     */
-    private boolean handleStaleSequenceException(StaleSequenceException staleSequenceException) { //todo: should not be needed
-        long headSeq = getHeadSequence(staleSequenceException);
-        if (listener.isLossTolerant()) {
-            if (logger.isFinestEnabled()) {
-                logger.finest("MessageListener " + listener + " on topic: " + topicName + " ran into a stale sequence. "
-                        + "Jumping from oldSequence: " + sequence
-                        + " to sequence: " + headSeq);
-            }
-            sequence = headSeq;
-            return true;
-        }
-
-        logger.warning("Terminating MessageListener:" + listener + " on topic: " + topicName + ". "
-                + "Reason: The listener was too slow or the retention period of the message has been violated. "
-                + "head: " + headSeq + " sequence:" + sequence);
-        return false;
-    }
-
-    protected abstract long getHeadSequence(StaleSequenceException staleSequenceException); //todo: should not be needed
 
     /**
      * Handles the {@link IllegalArgumentException} associated with requesting

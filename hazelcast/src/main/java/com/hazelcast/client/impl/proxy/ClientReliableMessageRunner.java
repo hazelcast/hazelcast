@@ -20,7 +20,6 @@ import com.hazelcast.client.HazelcastClientOfflineException;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.ringbuffer.Ringbuffer;
-import com.hazelcast.ringbuffer.StaleSequenceException;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.topic.ReliableMessageListener;
 import com.hazelcast.topic.impl.reliable.MessageRunner;
@@ -77,10 +76,5 @@ public class ClientReliableMessageRunner<E> extends MessageRunner<E> {
     @Override
     protected Throwable adjustThrowable(Throwable t) {
         return peel(t);
-    }
-
-    @Override
-    protected long getHeadSequence(StaleSequenceException staleSequenceException) {
-        return ringbuffer.headSequence();
     }
 }
