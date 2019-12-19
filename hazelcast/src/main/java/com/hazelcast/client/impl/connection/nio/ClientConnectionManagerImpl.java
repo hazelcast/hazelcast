@@ -786,9 +786,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
 
         boolean isFirstConnectionAfterDisconnection = connectionCount.incrementAndGet() == 1;
         boolean changedCluster = false;
-        // newClusterId may be null when member has not started yet;
-        // see AbstractMessageTask#acceptOnIncompleteStart
-        if (isFirstConnectionAfterDisconnection && newClusterId != null) {
+        if (isFirstConnectionAfterDisconnection) {
             changedCluster = clusterId != null && !newClusterId.equals(clusterId);
             clusterId = newClusterId;
         }
