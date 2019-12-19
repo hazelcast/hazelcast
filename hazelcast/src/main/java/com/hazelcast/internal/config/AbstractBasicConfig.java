@@ -19,7 +19,6 @@ package com.hazelcast.internal.config;
 import com.hazelcast.config.MergePolicyConfig;
 import com.hazelcast.config.NamedConfig;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.spi.impl.merge.SplitBrainMergeTypeProvider;
 
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
@@ -31,7 +30,7 @@ import static com.hazelcast.internal.util.Preconditions.checkNotNull;
  */
 @SuppressWarnings("WeakerAccess")
 public abstract class AbstractBasicConfig<T extends AbstractBasicConfig>
-        implements SplitBrainMergeTypeProvider, IdentifiedDataSerializable, NamedConfig {
+        implements IdentifiedDataSerializable, NamedConfig {
 
     protected String name;
     protected String splitBrainProtectionName;
@@ -114,7 +113,7 @@ public abstract class AbstractBasicConfig<T extends AbstractBasicConfig>
 
     @Override
     public String toString() {
-        return  getClass().getSimpleName() + "{"
+        return getClass().getSimpleName() + "{"
                 + "name='" + name + '\''
                 + ", splitBrainProtectionName=" + splitBrainProtectionName
                 + ", mergePolicyConfig=" + mergePolicyConfig

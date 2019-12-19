@@ -21,8 +21,6 @@ import com.hazelcast.internal.partition.IPartition;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.spi.impl.merge.SplitBrainMergeTypeProvider;
-import com.hazelcast.spi.merge.SplitBrainMergeTypes;
 
 import javax.annotation.Nonnull;
 import java.io.IOException;
@@ -43,7 +41,7 @@ import static com.hazelcast.internal.util.Preconditions.isNotNull;
  * CacheConfig depends on the JCache API. If the JCache API is not in the classpath,
  * you can use CacheSimpleConfig as a communicator between the code and CacheConfig.
  */
-public class CacheSimpleConfig implements SplitBrainMergeTypeProvider, IdentifiedDataSerializable, NamedConfig {
+public class CacheSimpleConfig implements IdentifiedDataSerializable, NamedConfig {
 
     /**
      * The minimum number of backups.
@@ -629,11 +627,6 @@ public class CacheSimpleConfig implements SplitBrainMergeTypeProvider, Identifie
     public CacheSimpleConfig setMergePolicyConfig(MergePolicyConfig mergePolicyConfig) {
         this.mergePolicyConfig = checkNotNull(mergePolicyConfig, "mergePolicyConfig cannot be null!");
         return this;
-    }
-
-    @Override
-    public Class getProvidedMergeTypes() {
-        return SplitBrainMergeTypes.CacheMergeTypes.class;
     }
 
     /**

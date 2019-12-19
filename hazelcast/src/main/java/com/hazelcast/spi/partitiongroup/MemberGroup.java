@@ -21,6 +21,9 @@ import com.hazelcast.cluster.Member;
 import java.util.Collection;
 import java.util.Iterator;
 
+/**
+ * A collection of members to which a single partition replica can be assigned.
+ */
 public interface MemberGroup {
 
     void addMember(Member member);

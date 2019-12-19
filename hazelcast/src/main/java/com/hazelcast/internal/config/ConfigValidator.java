@@ -45,11 +45,9 @@ import com.hazelcast.config.cp.CPSubsystemConfig;
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.instance.ProtocolType;
 import com.hazelcast.internal.util.MutableInteger;
-import com.hazelcast.logging.ILogger;
-import com.hazelcast.logging.Logger;
 import com.hazelcast.spi.eviction.EvictionPolicyComparator;
+import com.hazelcast.spi.merge.MergingValue;
 import com.hazelcast.spi.merge.SplitBrainMergePolicyProvider;
-import com.hazelcast.spi.impl.merge.SplitBrainMergeTypeProvider;
 import com.hazelcast.spi.properties.HazelcastProperties;
 
 import java.util.EnumMap;
@@ -80,6 +78,7 @@ import static com.hazelcast.internal.config.MergePolicyValidator.checkMapMergePo
 import static com.hazelcast.internal.config.MergePolicyValidator.checkMergeTypeProviderHasRequiredTypes;
 import static com.hazelcast.internal.util.Preconditions.checkTrue;
 import static com.hazelcast.internal.util.StringUtil.isNullOrEmpty;
+import static com.hazelcast.spi.impl.merge.SplitBrainMergeTypeProvider.getProvidedMergeTypes;
 import static com.hazelcast.spi.properties.ClusterProperty.HOT_RESTART_FREE_NATIVE_MEMORY_PERCENTAGE;
 import static java.lang.String.format;
 
@@ -112,8 +111,6 @@ public final class ConfigValidator {
     private static final EnumSet<MaxSizePolicy> CACHE_SUPPORTED_NATIVE_MAX_SIZE_POLICIES
             = EnumSet.of(USED_NATIVE_MEMORY_PERCENTAGE,
             FREE_NATIVE_MEMORY_PERCENTAGE, USED_NATIVE_MEMORY_SIZE, FREE_NATIVE_MEMORY_SIZE);
-
-    private static final ILogger LOGGER = Logger.getLogger(ConfigValidator.class);
 
     private ConfigValidator() {
     }
@@ -260,8 +257,7 @@ public final class ConfigValidator {
             return;
         }
 
-        EnumMap<ProtocolType, MutableInteger> serverSocketsPerProtocolType
-                = new EnumMap<ProtocolType, MutableInteger>(ProtocolType.class);
+        EnumMap<ProtocolType, MutableInteger> serverSocketsPerProtocolType = new EnumMap<>(ProtocolType.class);
         for (ProtocolType protocolType : ProtocolType.values()) {
             serverSocketsPerProtocolType.put(protocolType, new MutableInteger());
         }
@@ -350,7 +346,6 @@ public final class ConfigValidator {
      *
      * @param evictionConfig the {@link EvictionConfig}
      */
-    @SuppressWarnings("ConstantConditions")
     public static void checkCacheEvictionConfig(EvictionConfig evictionConfig) {
         checkEvictionConfig(evictionConfig, COMMONLY_SUPPORTED_EVICTION_POLICIES);
     }
@@ -360,7 +355,6 @@ public final class ConfigValidator {
      *
      * @param evictionConfig the {@link EvictionConfig}
      */
-    @SuppressWarnings("ConstantConditions")
     public static void checkEvictionConfig(EvictionConfig evictionConfig,
                                            EnumSet<EvictionPolicy> supportedEvictionPolicies) {
         if (evictionConfig == null) {
@@ -473,9 +467,10 @@ public final class ConfigValidator {
      */
     public static void checkCacheConfig(CacheSimpleConfig cacheSimpleConfig,
                                         SplitBrainMergePolicyProvider mergePolicyProvider) {
+        Class<? extends MergingValue> mergeTypes = getProvidedMergeTypes(cacheSimpleConfig);
         checkCacheConfig(cacheSimpleConfig.getInMemoryFormat(), cacheSimpleConfig.getEvictionConfig(),
                 cacheSimpleConfig.getMergePolicyConfig().getPolicy(),
-                cacheSimpleConfig, mergePolicyProvider, COMMONLY_SUPPORTED_EVICTION_POLICIES);
+                mergeTypes, mergePolicyProvider, COMMONLY_SUPPORTED_EVICTION_POLICIES);
     }
 
     /**
@@ -487,9 +482,9 @@ public final class ConfigValidator {
      */
     public static void checkCacheConfig(CacheConfig cacheConfig,
                                         SplitBrainMergePolicyProvider mergePolicyProvider) {
-
+        Class<? extends MergingValue> mergeTypes = getProvidedMergeTypes(cacheConfig);
         checkCacheConfig(cacheConfig.getInMemoryFormat(), cacheConfig.getEvictionConfig(),
-                cacheConfig.getMergePolicyConfig().getPolicy(), cacheConfig,
+                cacheConfig.getMergePolicyConfig().getPolicy(), mergeTypes,
                 mergePolicyProvider, COMMONLY_SUPPORTED_EVICTION_POLICIES);
 
     }
@@ -504,20 +499,20 @@ public final class ConfigValidator {
      * @param inMemoryFormat       the {@link InMemoryFormat} of the cache
      * @param evictionConfig       the {@link EvictionConfig} of the cache
      * @param mergePolicyClassname the configured merge policy of the cache
-     * @param mergeTypeProvider    the {@link SplitBrainMergeTypeProvider} of the cache
+     * @param mergeTypes           the cache merge types
      * @param mergePolicyProvider  the {@link SplitBrainMergePolicyProvider} to resolve merge policy classes
      */
     public static void checkCacheConfig(InMemoryFormat inMemoryFormat,
                                         EvictionConfig evictionConfig,
                                         String mergePolicyClassname,
-                                        SplitBrainMergeTypeProvider mergeTypeProvider,
+                                        Class<? extends MergingValue> mergeTypes,
                                         SplitBrainMergePolicyProvider mergePolicyProvider,
                                         EnumSet<EvictionPolicy> supportedEvictionPolicies) {
         try {
             checkNotNativeWhenOpenSource(inMemoryFormat);
             checkEvictionConfig(evictionConfig, supportedEvictionPolicies);
             checkCacheMaxSizePolicy(evictionConfig.getMaxSizePolicy(), inMemoryFormat);
-            checkMergeTypeProviderHasRequiredTypes(mergeTypeProvider, mergePolicyProvider, mergePolicyClassname);
+            checkMergeTypeProviderHasRequiredTypes(mergeTypes, mergePolicyProvider, mergePolicyClassname);
         } catch (InvalidConfigurationException e) {
             throw new IllegalArgumentException(e.getMessage());
         }
@@ -551,7 +546,8 @@ public final class ConfigValidator {
      */
     public static void checkReplicatedMapConfig(ReplicatedMapConfig replicatedMapConfig,
                                                 SplitBrainMergePolicyProvider mergePolicyProvider) {
-        checkMergeTypeProviderHasRequiredTypes(replicatedMapConfig, mergePolicyProvider,
+        Class<? extends MergingValue> mergeTypes = getProvidedMergeTypes(replicatedMapConfig);
+        checkMergeTypeProviderHasRequiredTypes(mergeTypes, mergePolicyProvider,
                 replicatedMapConfig.getMergePolicyConfig().getPolicy());
     }
 
@@ -563,7 +559,8 @@ public final class ConfigValidator {
      */
     public static void checkMultiMapConfig(MultiMapConfig multiMapConfig,
                                            SplitBrainMergePolicyProvider mergePolicyProvider) {
-        checkMergeTypeProviderHasRequiredTypes(multiMapConfig, mergePolicyProvider,
+        Class<? extends MergingValue> mergeTypes = getProvidedMergeTypes(multiMapConfig);
+        checkMergeTypeProviderHasRequiredTypes(mergeTypes, mergePolicyProvider,
                 multiMapConfig.getMergePolicyConfig().getPolicy());
     }
 
@@ -575,7 +572,8 @@ public final class ConfigValidator {
      */
     public static void checkQueueConfig(QueueConfig queueConfig,
                                         SplitBrainMergePolicyProvider mergePolicyProvider) {
-        checkMergeTypeProviderHasRequiredTypes(queueConfig, mergePolicyProvider,
+        Class<? extends MergingValue> mergeTypes = getProvidedMergeTypes(queueConfig);
+        checkMergeTypeProviderHasRequiredTypes(mergeTypes, mergePolicyProvider,
                 queueConfig.getMergePolicyConfig().getPolicy());
     }
 
@@ -587,7 +585,8 @@ public final class ConfigValidator {
      */
     public static void checkCollectionConfig(CollectionConfig collectionConfig,
                                              SplitBrainMergePolicyProvider mergePolicyProvider) {
-        checkMergeTypeProviderHasRequiredTypes(collectionConfig, mergePolicyProvider,
+        Class<? extends MergingValue> mergeTypes = getProvidedMergeTypes(collectionConfig);
+        checkMergeTypeProviderHasRequiredTypes(mergeTypes, mergePolicyProvider,
 
                 collectionConfig.getMergePolicyConfig().getPolicy());
     }
@@ -600,7 +599,8 @@ public final class ConfigValidator {
      */
     public static void checkRingbufferConfig(RingbufferConfig ringbufferConfig,
                                              SplitBrainMergePolicyProvider mergePolicyProvider) {
-        checkMergeTypeProviderHasRequiredTypes(ringbufferConfig, mergePolicyProvider,
+        Class<? extends MergingValue> mergeTypes = getProvidedMergeTypes(ringbufferConfig);
+        checkMergeTypeProviderHasRequiredTypes(mergeTypes, mergePolicyProvider,
                 ringbufferConfig.getMergePolicyConfig().getPolicy());
     }
 
@@ -613,7 +613,8 @@ public final class ConfigValidator {
     public static void checkScheduledExecutorConfig(ScheduledExecutorConfig scheduledExecutorConfig,
                                                     SplitBrainMergePolicyProvider mergePolicyProvider) {
         String mergePolicyClassName = scheduledExecutorConfig.getMergePolicyConfig().getPolicy();
-        checkMergeTypeProviderHasRequiredTypes(scheduledExecutorConfig, mergePolicyProvider, mergePolicyClassName);
+        Class<? extends MergingValue> mergeTypes = getProvidedMergeTypes(scheduledExecutorConfig);
+        checkMergeTypeProviderHasRequiredTypes(mergeTypes, mergePolicyProvider, mergePolicyClassName);
     }
 
     public static void checkCPSubsystemConfig(CPSubsystemConfig config) {
