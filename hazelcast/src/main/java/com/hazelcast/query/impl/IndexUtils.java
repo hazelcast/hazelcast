@@ -21,7 +21,6 @@ import com.hazelcast.config.UniqueKeyTransform;
 import com.hazelcast.internal.config.DomConfigHelper;
 import com.hazelcast.config.IndexConfig;
 import com.hazelcast.config.IndexType;
-import com.hazelcast.internal.util.StringUtil;
 import com.hazelcast.internal.util.UuidUtil;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;

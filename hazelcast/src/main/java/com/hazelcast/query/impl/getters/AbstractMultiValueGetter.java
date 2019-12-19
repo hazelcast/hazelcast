@@ -169,6 +169,7 @@ public abstract class AbstractMultiValueGetter extends Getter {
         }
     }
 
+    @SuppressWarnings({"checkstyle:cyclomaticcomplexity", "checkstyle:methodlength"})
     private void reducePrimitiveArrayInto(MultiResult<Object> collector, Object primitiveArray) {
         // XXX: Standard Array.get has really bad performance, see
         // https://bugs.openjdk.java.net/browse/JDK-8051447. For large arrays

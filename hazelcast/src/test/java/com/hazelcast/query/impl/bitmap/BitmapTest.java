@@ -209,7 +209,7 @@ public class BitmapTest {
         private final LongPredicate predicate;
         private final SortedSet<Long> result = new TreeSet<>();
 
-        public ExpectedQuery(LongPredicate predicate) {
+        ExpectedQuery(LongPredicate predicate) {
             this.predicate = predicate;
         }
 
