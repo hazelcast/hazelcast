@@ -65,21 +65,14 @@ import static com.hazelcast.transaction.impl.Transaction.State.PREPARING;
 import static com.hazelcast.transaction.impl.Transaction.State.ROLLED_BACK;
 import static com.hazelcast.transaction.impl.Transaction.State.ROLLING_BACK;
 import static com.hazelcast.transaction.impl.TransactionManagerServiceImpl.SERVICE_NAME;
-import static com.hazelcast.internal.util.Clock.currentTimeMillis;
-import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
-import static com.hazelcast.internal.util.FutureUtil.ExceptionHandler;
-import static com.hazelcast.internal.util.FutureUtil.RETHROW_TRANSACTION_EXCEPTION;
-import static com.hazelcast.internal.util.FutureUtil.logAllExceptions;
-import static com.hazelcast.internal.util.FutureUtil.waitUntilAllRespondedWithDeadline;
-import static com.hazelcast.internal.util.FutureUtil.waitWithDeadline;
-import static com.hazelcast.internal.util.UuidUtil.newUnsecureUUID;
+import static java.lang.Boolean.TRUE;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 @SuppressWarnings("checkstyle:methodcount")
 public class TransactionImpl implements Transaction {
 
     private static final Address[] EMPTY_ADDRESSES = new Address[0];
-    private static final ThreadLocal<TransactionImpl> ACTIVE_THREAD_TRANSACTION = new ThreadLocal<TransactionImpl>();
+    private static final ThreadLocal<Boolean> TRANSACTION_EXISTS = new ThreadLocal<Boolean>();
 
     private final ExceptionHandler rollbackExceptionHandler;
     private final ExceptionHandler rollbackTxExceptionHandler;
