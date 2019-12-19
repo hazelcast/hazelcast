@@ -31,8 +31,6 @@ import com.hazelcast.cluster.Address;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.LifecycleEvent;
-import com.hazelcast.core.LifecycleListener;
 import com.hazelcast.map.IMap;
 import com.hazelcast.map.listener.EntryAddedListener;
 import com.hazelcast.spi.properties.ClusterProperty;
@@ -142,25 +140,14 @@ public class ClientRegressionWithRealNetworkTest extends ClientTestSupport {
 
         assertTrueEventually(() -> assertEquals(1, connectionManager.getActiveConnections().size()));
 
-        final CountDownLatch disconnectedLatch = new CountDownLatch(1);
-        final CountDownLatch connectedLatch = new CountDownLatch(1);
-        client.getLifecycleService().addLifecycleListener(new LifecycleListener() {
-            @Override
-            public void stateChanged(LifecycleEvent event) {
-                LifecycleEvent.LifecycleState state = event.getState();
-                if (state.equals(LifecycleEvent.LifecycleState.CLIENT_DISCONNECTED)) {
-                    disconnectedLatch.countDown();
-                } else if (state.equals(LifecycleEvent.LifecycleState.CLIENT_CONNECTED)) {
-                    connectedLatch.countDown();
-                }
-            }
-        });
+        ReconnectListener reconnectListener = new ReconnectListener();
+        client.getLifecycleService().addLifecycleListener(reconnectListener);
 
         hazelcastInstance.shutdown();
-        assertOpenEventually(disconnectedLatch);
+        assertOpenEventually(reconnectListener.disconnectedLatch);
         Hazelcast.newHazelcastInstance(config);
 
-        assertOpenEventually(connectedLatch);
+        assertOpenEventually(reconnectListener.reconnectedLatch);
         assertEquals(1, connectionManager.getActiveConnections().size());
     }
 

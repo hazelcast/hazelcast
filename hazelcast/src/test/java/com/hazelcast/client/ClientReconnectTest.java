@@ -17,6 +17,7 @@
 package com.hazelcast.client;
 
 import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.client.test.ClientTestSupport;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.Member;
@@ -56,22 +57,17 @@ public class ClientReconnectTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testClientReconnectOnClusterDown() throws Exception {
+    public void testClientReconnectOnClusterDown() {
         final HazelcastInstance h1 = hazelcastFactory.newHazelcastInstance();
         ClientConfig clientConfig = new ClientConfig();
         clientConfig.getConnectionStrategyConfig().getConnectionRetryConfig().setClusterConnectTimeoutMillis(Long.MAX_VALUE);
         final HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig);
-        final CountDownLatch connectedLatch = new CountDownLatch(2);
-        client.getLifecycleService().addLifecycleListener(new LifecycleListener() {
-            @Override
-            public void stateChanged(LifecycleEvent event) {
-                connectedLatch.countDown();
-            }
-        });
+        ClientTestSupport.ReconnectListener reconnectListener = new ClientTestSupport.ReconnectListener();
+        client.getLifecycleService().addLifecycleListener(reconnectListener);
         IMap<String, String> m = client.getMap("default");
         h1.shutdown();
         hazelcastFactory.newHazelcastInstance();
-        assertOpenEventually(connectedLatch);
+        assertOpenEventually(reconnectListener.reconnectedLatch);
         assertNull(m.put("test", "test"));
         assertEquals("test", m.get("test"));
     }
