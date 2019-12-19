@@ -1035,7 +1035,6 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         SSLConfig sslConfig = config.getNetworkConfig().getSSLConfig();
         assertNotNull(sslConfig);
         assertFalse(sslConfig.isEnabled());
-        assertEquals(DummySSLContextFactory.class.getName(), sslConfig.getFactoryClassName());
         assertEquals(sslContextFactory, sslConfig.getFactoryImplementation());
     }
 
@@ -1044,7 +1043,6 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         SocketInterceptorConfig socketInterceptorConfig = config.getNetworkConfig().getSocketInterceptorConfig();
         assertNotNull(socketInterceptorConfig);
         assertFalse(socketInterceptorConfig.isEnabled());
-        assertEquals(DummySocketInterceptor.class.getName(), socketInterceptorConfig.getClassName());
         assertEquals(socketInterceptor, socketInterceptorConfig.getImplementation());
     }
 
@@ -1263,7 +1261,6 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         SSLConfig sslConfig = vaultConfig.getSSLConfig();
         assertNotNull(sslConfig);
         assertTrue(sslConfig.isEnabled());
-        assertEquals(DummySSLContextFactory.class.getName(), sslConfig.getFactoryClassName());
         assertEquals(sslContextFactory, sslConfig.getFactoryImplementation());
         assertEquals(60, vaultConfig.getPollingInterval());
     }

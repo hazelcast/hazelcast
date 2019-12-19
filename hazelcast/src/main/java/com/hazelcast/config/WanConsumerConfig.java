@@ -22,10 +22,13 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.wan.WanConsumer;
 
+import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
+
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 /**
  * Config for processing WAN events received from a target cluster.
@@ -92,8 +95,9 @@ public class WanConsumerConfig implements IdentifiedDataSerializable {
      * @return this config
      * @see #setImplementation(WanConsumer)
      */
-    public WanConsumerConfig setClassName(String className) {
-        this.className = className;
+    public WanConsumerConfig setClassName(@Nonnull String className) {
+        this.className = checkNotNull(className, "Wan consumer class name must contain text");
+        this.implementation = null;
         return this;
     }
 
@@ -117,8 +121,9 @@ public class WanConsumerConfig implements IdentifiedDataSerializable {
      * @return this config
      * @see #setClassName(String)
      */
-    public WanConsumerConfig setImplementation(WanConsumer implementation) {
-        this.implementation = implementation;
+    public WanConsumerConfig setImplementation(@Nonnull WanConsumer implementation) {
+        this.implementation = checkNotNull(implementation, "Wan consumer cannot be null!");
+        this.className = null;
         return this;
     }
 
@@ -199,24 +204,14 @@ public class WanConsumerConfig implements IdentifiedDataSerializable {
 
         WanConsumerConfig that = (WanConsumerConfig) o;
 
-        if (persistWanReplicatedData != that.persistWanReplicatedData) {
-            return false;
-        }
-        if (!Objects.equals(className, that.className)) {
-            return false;
-        }
-        if (!Objects.equals(implementation, that.implementation)) {
-            return false;
-        }
-        return Objects.equals(properties, that.properties);
+        return persistWanReplicatedData == that.persistWanReplicatedData
+            && Objects.equals(className, that.className)
+            && Objects.equals(implementation, that.implementation)
+            && Objects.equals(properties, that.properties);
     }
 
     @Override
     public int hashCode() {
-        int result = (persistWanReplicatedData ? 1 : 0);
-        result = 31 * result + (className != null ? className.hashCode() : 0);
-        result = 31 * result + (implementation != null ? implementation.hashCode() : 0);
-        result = 31 * result + (properties != null ? properties.hashCode() : 0);
-        return result;
+        return Objects.hash(persistWanReplicatedData, className, implementation, properties);
     }
 }

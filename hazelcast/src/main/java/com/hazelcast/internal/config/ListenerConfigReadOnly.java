@@ -18,6 +18,7 @@ package com.hazelcast.internal.config;
 
 import com.hazelcast.config.ListenerConfig;
 
+import javax.annotation.Nonnull;
 import java.util.EventListener;
 
 /**
@@ -30,7 +31,7 @@ public class ListenerConfigReadOnly extends ListenerConfig {
     }
 
     @Override
-    public ListenerConfig setClassName(String className) {
+    public ListenerConfig setClassName(@Nonnull String className) {
         throw new UnsupportedOperationException("This config is read-only");
     }
 

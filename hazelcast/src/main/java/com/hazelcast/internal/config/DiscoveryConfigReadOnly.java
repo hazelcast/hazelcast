@@ -21,6 +21,7 @@ import com.hazelcast.config.DiscoveryStrategyConfig;
 import com.hazelcast.spi.discovery.NodeFilter;
 import com.hazelcast.spi.discovery.integration.DiscoveryServiceProvider;
 
+import javax.annotation.Nonnull;
 import java.util.List;
 
 /**
@@ -39,12 +40,12 @@ public class DiscoveryConfigReadOnly extends DiscoveryConfig {
     }
 
     @Override
-    public DiscoveryConfig setNodeFilter(NodeFilter nodeFilter) {
+    public DiscoveryConfig setNodeFilter(@Nonnull NodeFilter nodeFilter) {
         throw new UnsupportedOperationException("Configuration is readonly");
     }
 
     @Override
-    public DiscoveryConfig setNodeFilterClass(String nodeFilterClass) {
+    public DiscoveryConfig setNodeFilterClass(@Nonnull String nodeFilterClass) {
         throw new UnsupportedOperationException("Configuration is readonly");
     }
 

@@ -176,6 +176,11 @@ public abstract class HazelcastTestSupport {
         return false;
     }
 
+    protected static <T> void assertCollection(Collection<T> expected, Collection<T> actual) {
+        assertEquals(expected.size(), actual.size());
+        assertContainsAll(expected, actual);
+    }
+
     protected static <T> void assertCollection(Collection<T> expected, Collection<T> actual, Comparator<T> comparator) {
         assertEquals(expected.size(), actual.size());
         for (T item : expected) {

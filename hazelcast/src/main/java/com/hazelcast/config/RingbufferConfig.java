@@ -24,6 +24,7 @@ import com.hazelcast.spi.merge.SplitBrainMergeTypeProvider;
 import com.hazelcast.spi.merge.SplitBrainMergeTypes;
 
 import java.io.IOException;
+import java.util.Objects;
 
 import static com.hazelcast.config.InMemoryFormat.NATIVE;
 import static com.hazelcast.internal.util.Preconditions.checkAsyncBackupCount;
@@ -437,7 +438,6 @@ public class RingbufferConfig implements SplitBrainMergeTypeProvider, Identified
     }
 
     @Override
-    @SuppressWarnings({"checkstyle:cyclomaticcomplexity", "checkstyle:npathcomplexity"})
     public final boolean equals(Object o) {
         if (this == o) {
             return true;
@@ -447,46 +447,20 @@ public class RingbufferConfig implements SplitBrainMergeTypeProvider, Identified
         }
 
         RingbufferConfig that = (RingbufferConfig) o;
-        if (capacity != that.capacity) {
-            return false;
-        }
-        if (backupCount != that.backupCount) {
-            return false;
-        }
-        if (asyncBackupCount != that.asyncBackupCount) {
-            return false;
-        }
-        if (timeToLiveSeconds != that.timeToLiveSeconds) {
-            return false;
-        }
-        if (!name.equals(that.name)) {
-            return false;
-        }
-        if (inMemoryFormat != that.inMemoryFormat) {
-            return false;
-        }
-        if (ringbufferStoreConfig != null ? !ringbufferStoreConfig.equals(that.ringbufferStoreConfig)
-                : that.ringbufferStoreConfig != null) {
-            return false;
-        }
-        if (splitBrainProtectionName != null ? !splitBrainProtectionName.equals(that.splitBrainProtectionName)
-                : that.splitBrainProtectionName != null) {
-            return false;
-        }
-        return mergePolicyConfig != null ? mergePolicyConfig.equals(that.mergePolicyConfig) : that.mergePolicyConfig == null;
+        return capacity == that.capacity
+            && backupCount == that.backupCount
+            && asyncBackupCount == that.asyncBackupCount
+            && timeToLiveSeconds == that.timeToLiveSeconds
+            && Objects.equals(name, that.name)
+            && inMemoryFormat == that.inMemoryFormat
+            && Objects.equals(ringbufferStoreConfig, that.ringbufferStoreConfig)
+            && Objects.equals(splitBrainProtectionName, that.splitBrainProtectionName)
+            && Objects.equals(mergePolicyConfig, that.mergePolicyConfig);
     }
 
     @Override
     public final int hashCode() {
-        int result = name.hashCode();
-        result = 31 * result + capacity;
-        result = 31 * result + backupCount;
-        result = 31 * result + asyncBackupCount;
-        result = 31 * result + timeToLiveSeconds;
-        result = 31 * result + (inMemoryFormat != null ? inMemoryFormat.hashCode() : 0);
-        result = 31 * result + (ringbufferStoreConfig != null ? ringbufferStoreConfig.hashCode() : 0);
-        result = 31 * result + (splitBrainProtectionName != null ? splitBrainProtectionName.hashCode() : 0);
-        result = 31 * result + (mergePolicyConfig != null ? mergePolicyConfig.hashCode() : 0);
-        return result;
+        return Objects.hash(name, capacity, backupCount, asyncBackupCount, timeToLiveSeconds, inMemoryFormat,
+            ringbufferStoreConfig, splitBrainProtectionName, mergePolicyConfig);
     }
 }

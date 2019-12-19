@@ -45,6 +45,8 @@ public class DiscoveryStrategyConfigDTO implements JsonSerializable {
 
         if (config.getClassName() != null) {
             root.add("className", config.getClassName());
+        } else if (config.getDiscoveryStrategyFactory() != null) {
+            root.add("className", config.getDiscoveryStrategyFactory().getClass().getName());
         }
         if (!isNullOrEmpty(config.getProperties())) {
             root.add("properties", toJsonObject(config.getProperties()));

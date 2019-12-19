@@ -27,6 +27,7 @@ import com.hazelcast.spi.merge.SplitBrainMergeTypes;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.readNullableList;
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.writeNullableList;
@@ -46,7 +47,7 @@ public class QueueConfig implements SplitBrainMergeTypeProvider, IdentifiedDataS
     public static final int DEFAULT_MAX_SIZE = 0;
 
     /**
-     * Default value for the sychronous backup count.
+     * Default value for the synchronous backup count.
      */
     public static final int DEFAULT_SYNC_BACKUP_COUNT = 1;
 
@@ -383,7 +384,6 @@ public class QueueConfig implements SplitBrainMergeTypeProvider, IdentifiedDataS
     }
 
     @Override
-    @SuppressWarnings({"checkstyle:cyclomaticcomplexity", "checkstyle:npathcomplexity"})
     public final boolean equals(Object o) {
         if (this == o) {
             return true;
@@ -393,49 +393,21 @@ public class QueueConfig implements SplitBrainMergeTypeProvider, IdentifiedDataS
         }
 
         QueueConfig that = (QueueConfig) o;
-        if (backupCount != that.backupCount) {
-            return false;
-        }
-        if (asyncBackupCount != that.asyncBackupCount) {
-            return false;
-        }
-        if (getMaxSize() != that.getMaxSize()) {
-            return false;
-        }
-        if (emptyQueueTtl != that.emptyQueueTtl) {
-            return false;
-        }
-        if (statisticsEnabled != that.statisticsEnabled) {
-            return false;
-        }
-        if (!name.equals(that.name)) {
-            return false;
-        }
-        if (!getItemListenerConfigs().equals(that.getItemListenerConfigs())) {
-            return false;
-        }
-        if (queueStoreConfig != null ? !queueStoreConfig.equals(that.queueStoreConfig) : that.queueStoreConfig != null) {
-            return false;
-        }
-        if (splitBrainProtectionName != null ? !splitBrainProtectionName.equals(that.splitBrainProtectionName)
-                : that.splitBrainProtectionName != null) {
-            return false;
-        }
-        return mergePolicyConfig != null ? mergePolicyConfig.equals(that.mergePolicyConfig) : that.mergePolicyConfig == null;
+        return backupCount == that.backupCount
+            && asyncBackupCount == that.asyncBackupCount
+            && getMaxSize() == that.getMaxSize()
+            && emptyQueueTtl == that.emptyQueueTtl
+            && statisticsEnabled == that.statisticsEnabled
+            && Objects.equals(name, that.name)
+            && getItemListenerConfigs().equals(that.getItemListenerConfigs())
+            && Objects.equals(queueStoreConfig, that.queueStoreConfig)
+            && Objects.equals(splitBrainProtectionName, that.splitBrainProtectionName)
+            && Objects.equals(mergePolicyConfig, that.mergePolicyConfig);
     }
 
     @Override
     public final int hashCode() {
-        int result = name.hashCode();
-        result = 31 * result + getItemListenerConfigs().hashCode();
-        result = 31 * result + backupCount;
-        result = 31 * result + asyncBackupCount;
-        result = 31 * result + getMaxSize();
-        result = 31 * result + emptyQueueTtl;
-        result = 31 * result + (queueStoreConfig != null ? queueStoreConfig.hashCode() : 0);
-        result = 31 * result + (statisticsEnabled ? 1 : 0);
-        result = 31 * result + (splitBrainProtectionName != null ? splitBrainProtectionName.hashCode() : 0);
-        result = 31 * result + (mergePolicyConfig != null ? mergePolicyConfig.hashCode() : 0);
-        return result;
+        return Objects.hash(name, getItemListenerConfigs(), backupCount, asyncBackupCount, getMaxSize(), emptyQueueTtl,
+            queueStoreConfig, statisticsEnabled, splitBrainProtectionName, mergePolicyConfig);
     }
 }
