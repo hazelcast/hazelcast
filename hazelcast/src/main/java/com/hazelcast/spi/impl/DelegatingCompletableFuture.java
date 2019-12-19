@@ -36,6 +36,7 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 
 import static com.hazelcast.internal.util.ExceptionUtil.sneakyThrow;
+import static java.util.Objects.requireNonNull;
 
 /**
  * A {@link InternalCompletableFuture} implementation that delegates the real logic to an underlying
@@ -436,6 +437,8 @@ public class DelegatingCompletableFuture<V> extends InternalCompletableFuture<V>
         private final Function<E, R> delegate;
 
         DeserializingFunction(SerializationService serializationService, Function<E, R> delegate) {
+            requireNonNull(delegate);
+
             this.serializationService = serializationService;
             this.delegate = delegate;
         }
@@ -451,6 +454,8 @@ public class DelegatingCompletableFuture<V> extends InternalCompletableFuture<V>
         private final Consumer<E> delegate;
 
         DeserializingConsumer(SerializationService serializationService, Consumer<E> delegate) {
+            requireNonNull(delegate);
+
             this.serializationService = serializationService;
             this.delegate = delegate;
         }
@@ -466,6 +471,8 @@ public class DelegatingCompletableFuture<V> extends InternalCompletableFuture<V>
         private final BiFunction<T, U, R> delegate;
 
         DeserializingBiFunction(SerializationService serializationService, BiFunction<T, U, R> delegate) {
+            requireNonNull(delegate);
+
             this.serializationService = serializationService;
             this.delegate = delegate;
         }
@@ -482,6 +489,8 @@ public class DelegatingCompletableFuture<V> extends InternalCompletableFuture<V>
         private final BiConsumer<T, U> delegate;
 
         DeserializingBiConsumer(SerializationService serializationService, BiConsumer<T, U> delegate) {
+            requireNonNull(delegate);
+
             this.serializationService = serializationService;
             this.delegate = delegate;
         }
