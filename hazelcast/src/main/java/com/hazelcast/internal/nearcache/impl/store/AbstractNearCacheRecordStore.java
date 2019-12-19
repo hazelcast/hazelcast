@@ -30,10 +30,10 @@ import com.hazelcast.internal.nearcache.NearCacheRecordStore;
 import com.hazelcast.internal.nearcache.impl.SampleableNearCacheRecordMap;
 import com.hazelcast.internal.nearcache.impl.invalidation.MetaDataContainer;
 import com.hazelcast.internal.nearcache.impl.invalidation.StaleReadDetector;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.util.Clock;
 import com.hazelcast.nearcache.NearCacheStats;
-import com.hazelcast.internal.serialization.Data;
 
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 import java.util.function.BiFunction;
@@ -397,6 +397,15 @@ public abstract class AbstractNearCacheRecordStore<K, V, KS, R extends NearCache
 
     @Override
     public long tryReserveForUpdate(K key, Data keyData) {
+        return tryReserve0(key, keyData, false);
+    }
+
+    @Override
+    public long tryReserveForCacheOnUpdate(K key, Data keyData) {
+        return tryReserve0(key, keyData, true);
+    }
+
+    private long tryReserve0(K key, Data keyData, boolean cacheOnUpdate) {
         checkAvailable();
         // if there is no eviction configured we return if the Near Cache is full and it's a new key
         // (we have to check the key, otherwise we might lose updates on existing keys)
@@ -405,24 +414,16 @@ public abstract class AbstractNearCacheRecordStore<K, V, KS, R extends NearCache
         }
 
         long reservationId = nextReservationId();
-        R reservedRecord = getOrCreateToReserve(key, keyData, reservationId);
-        return reservedRecord.getReservationId() == reservationId ? reservationId : NOT_RESERVED;
-    }
 
-    @Override
-    public long tryReserveForCacheOnUpdate(K key, Data keyData) {
-        checkAvailable();
-        // if there is no eviction configured we return if the Near
-        // Cache is full and it's a new key (we have to check the
-        // key, otherwise we might lose updates on existing keys)
-        if (evictionDisabled && evictionChecker.isEvictionRequired() && !containsRecordKey(key)) {
+        R reservedRecord = cacheOnUpdate
+                ? reserveForCacheOnUpdate(key, keyData, reservationId)
+                : getOrCreateToReserve(key, keyData, reservationId);
+
+        if (reservedRecord == null || reservedRecord.getReservationId() != reservationId) {
             return NOT_RESERVED;
         }
 
-        long reservationId = nextReservationId();
-        R reservedRecord = reserveForCacheOnUpdate(key, keyData, reservationId);
-        return reservedRecord == null ? NOT_RESERVED
-                : (reservedRecord.getReservationId() == reservationId ? reservationId : NOT_RESERVED);
+        return reservationId;
     }
 
     @Override

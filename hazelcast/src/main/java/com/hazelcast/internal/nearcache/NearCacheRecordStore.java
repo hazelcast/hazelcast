@@ -50,6 +50,10 @@ public interface NearCacheRecordStore<K, V> extends InitializingObject {
     void put(K key, Data keyData, V value, Data valueData);
 
     /**
+     * Reservations are done with this method
+     * if local update policy is {@link
+     * com.hazelcast.config.NearCacheConfig.LocalUpdatePolicy#INVALIDATE}
+     *
      * Tries to reserve supplied key for update. <p> If one thread takes
      * reservation, only that thread can update the key.
      *

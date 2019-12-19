@@ -17,8 +17,8 @@
 package com.hazelcast.internal.nearcache;
 
 import com.hazelcast.internal.adapter.DataStructureAdapter;
-import com.hazelcast.nearcache.NearCacheStats;
 import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.nearcache.NearCacheStats;
 import com.hazelcast.spi.impl.InitializingObject;
 import com.hazelcast.spi.properties.HazelcastProperty;
 
@@ -166,6 +166,10 @@ public interface NearCache<K, V> extends InitializingObject {
     <T> T unwrap(Class<T> clazz);
 
     /**
+     * Reservations are done with this method
+     * if local update policy is {@link
+     * com.hazelcast.config.NearCacheConfig.LocalUpdatePolicy#INVALIDATE}
+     *
      * Tries to reserve supplied key for update. <p> If one thread takes
      * reservation, only that thread can update the key.
      *
@@ -176,6 +180,13 @@ public interface NearCache<K, V> extends InitializingObject {
      */
     long tryReserveForUpdate(K key, Data keyData);
 
+    /**
+     * Reservations are done with this method
+     * if local update policy is {@link
+     * com.hazelcast.config.NearCacheConfig.LocalUpdatePolicy#CACHE_ON_UPDATE}
+     *
+     * @see #tryReserveForUpdate
+     */
     long tryReserveForCacheOnUpdate(K key, Data keyData);
 
     /**
