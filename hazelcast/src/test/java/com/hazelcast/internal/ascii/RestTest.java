@@ -33,7 +33,6 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestAwareInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
-import org.apache.http.NoHttpResponseException;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -318,22 +317,22 @@ public class RestTest {
         assertEquals(HTTP_OK, response);
     }
 
-    @Test(expected = NoHttpResponseException.class)
+    @Test(expected = IOException.class)
     public void testUndefined_HeadRequest() throws IOException {
         communicator.headRequestToUndefinedURI();
     }
 
-    @Test(expected = NoHttpResponseException.class)
+    @Test(expected = IOException.class)
     public void testUndefined_GetRequest() throws IOException {
         communicator.getRequestToUndefinedURI();
     }
 
-    @Test(expected = NoHttpResponseException.class)
+    @Test(expected = IOException.class)
     public void testUndefined_PostRequest() throws IOException {
         communicator.postRequestToUndefinedURI();
     }
 
-    @Test(expected = NoHttpResponseException.class)
+    @Test(expected = IOException.class)
     public void testUndefined_DeleteRequest() throws IOException {
         communicator.deleteRequestToUndefinedURI();
     }
