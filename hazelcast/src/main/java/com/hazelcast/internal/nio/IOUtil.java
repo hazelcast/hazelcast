@@ -26,6 +26,7 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.ClassNameFilter;
 import com.hazelcast.internal.serialization.Data;
 
+import javax.annotation.Nonnull;
 import java.io.ByteArrayOutputStream;
 import java.io.Closeable;
 import java.io.EOFException;
@@ -44,6 +45,12 @@ import java.net.Socket;
 import java.net.URL;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
+import java.nio.file.FileVisitResult;
+import java.nio.file.Files;
+import java.nio.file.LinkOption;
+import java.nio.file.Path;
+import java.nio.file.SimpleFileVisitor;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.util.zip.DataFormatException;
 import java.util.zip.Deflater;
 import java.util.zip.Inflater;
@@ -58,6 +65,8 @@ import static com.hazelcast.internal.util.EmptyStatement.ignore;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 import static com.hazelcast.internal.nio.IOService.KILO_BYTE;
 import static java.lang.String.format;
+import static java.nio.file.FileVisitResult.CONTINUE;
+import static java.nio.file.LinkOption.NOFOLLOW_LINKS;
 
 @SuppressWarnings({"WeakerAccess", "checkstyle:methodcount", "checkstyle:magicnumber"})
 public final class IOUtil {
@@ -406,9 +415,9 @@ public final class IOUtil {
      * If the file could not be deleted, returns silently.
      * If the file is a directory, its children are recursively deleted.
      */
-    public static void deleteQuietly(File f) {
+    public static void deleteQuietly(@Nonnull File f) {
         try {
-            delete(f);
+            delete(f.toPath());
         } catch (Exception e) {
             ignore(e);
         }
@@ -420,18 +429,36 @@ public final class IOUtil {
      * If the file could not be deleted, fails with an exception.
      * If the file is a directory, its children are recursively deleted.
      */
-    public static void delete(File f) {
-        if (!f.exists()) {
+    public static void delete(@Nonnull File f) {
+        delete(f.toPath());
+    }
+
+    /**
+     * Ensures that the file described by the supplied parameter does not exist
+     * after the method returns. If the file didn't exist, returns silently.
+     * If the file could not be deleted, fails with an exception.
+     * If the file is a directory, its children are recursively deleted.
+     */
+    public static void delete(@Nonnull Path path) {
+        if (!Files.exists(path, NOFOLLOW_LINKS)) {
             return;
         }
-        File[] subFiles = f.listFiles();
-        if (subFiles != null) {
-            for (File sf : subFiles) {
-                delete(sf);
-            }
-        }
-        if (!f.delete()) {
-            throw new HazelcastException("Failed to delete " + f);
+        try {
+            Files.walkFileTree(path, new SimpleFileVisitor<Path>() {
+                @Override
+                public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
+                    Files.delete(file);
+                    return CONTINUE;
+                }
+
+                @Override
+                public FileVisitResult postVisitDirectory(Path dir, IOException exc) throws IOException {
+                    Files.delete(dir);
+                    return CONTINUE;
+                }
+            });
+        } catch (IOException e) {
+            throw new HazelcastException("Failed to delete " + path, e);
         }
     }
 
