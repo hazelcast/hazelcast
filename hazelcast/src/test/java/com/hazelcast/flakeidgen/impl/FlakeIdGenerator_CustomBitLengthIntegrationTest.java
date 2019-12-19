@@ -16,9 +16,9 @@
 
 package com.hazelcast.flakeidgen.impl;
 
+import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.flakeidgen.FlakeIdGenerator;
-import com.hazelcast.internal.monitor.LocalFlakeIdGeneratorStats;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -33,18 +33,19 @@ import org.junit.experimental.categories.Category;
 import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
-import java.util.Map;
 import java.util.Set;
 import java.util.function.Supplier;
 
-import static com.hazelcast.flakeidgen.impl.FlakeIdConcurrencyTestUtil.IDS_IN_THREAD;
-import static com.hazelcast.flakeidgen.impl.FlakeIdConcurrencyTestUtil.NUM_THREADS;
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class, SerializationSamplesExcluded.class})
-public class FlakeIdGenerator_MemberIntegrationTest extends HazelcastTestSupport {
+public class FlakeIdGenerator_CustomBitLengthIntegrationTest extends HazelcastTestSupport {
+    private static final int BITS_TIMESTAMP = 5;
+    private static final int MAX_BITS_TIMESTAMP = 63;
+    private static final int BITS_NODE_ID = 4;
+    private static final int BITS_SEQUENCE = 4;
+    private static final long PREFETCH_VALIDITY_MS = 10;
 
     @Rule
     public ExpectedException exception = ExpectedException.none();
@@ -62,8 +63,15 @@ public class FlakeIdGenerator_MemberIntegrationTest extends HazelcastTestSupport
     }
 
     @Test
-    public void smokeTest() throws Exception {
-        HazelcastInstance instance = factory.newHazelcastInstance();
+    public void customBitLengthTest() throws Exception {
+        Config cfg = new Config();
+        cfg.getFlakeIdGeneratorConfig("gen")
+                .setBitsTimestamp(BITS_TIMESTAMP)
+                .setBitsNodeId(BITS_NODE_ID)
+                .setBitsSequence(BITS_SEQUENCE)
+                .setPrefetchValidityMillis(PREFETCH_VALIDITY_MS);
+        long maxId = (1L << (BITS_TIMESTAMP + BITS_NODE_ID + BITS_SEQUENCE)) - 1;
+        HazelcastInstance instance = factory.newHazelcastInstance(cfg);
         final FlakeIdGenerator generator = instance.getFlakeIdGenerator("gen");
         Set<Long> ids = FlakeIdConcurrencyTestUtil.concurrentlyGenerateIds(new Supplier<Long>() {
             @Override
@@ -71,24 +79,9 @@ public class FlakeIdGenerator_MemberIntegrationTest extends HazelcastTestSupport
                 return generator.newId();
             }
         });
-        // if there were duplicate IDs generated, there will be less items in the set than expected
-        assertEquals(NUM_THREADS * IDS_IN_THREAD, ids.size());
-    }
-
-    @Test
-
-    public void statistics() {
-        HazelcastInstance instance = factory.newHazelcastInstance();
-
-        FlakeIdGenerator gen = instance.getFlakeIdGenerator("gen");
-        gen.newId();
-
-        FlakeIdGeneratorService service = getNodeEngineImpl(instance).getService(FlakeIdGeneratorService.SERVICE_NAME);
-        Map<String, LocalFlakeIdGeneratorStats> stats = service.getStats();
-        assertTrue(!stats.isEmpty());
-        assertTrue(stats.containsKey("gen"));
-        LocalFlakeIdGeneratorStats genStats = stats.get("gen");
-        assertEquals(1L, genStats.getBatchCount());
-        assertTrue(genStats.getIdCount() > 0);
+        for (Long id : ids) {
+            assertTrue(id + " >= 0", id >= 0);
+            assertTrue(id + " <= " + maxId, id <= maxId);
+        }
     }
 }

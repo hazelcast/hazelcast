@@ -36,6 +36,7 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 import static com.hazelcast.internal.util.Preconditions.checkPositive;
+import static com.hazelcast.internal.util.Preconditions.checkTrue;
 import static java.lang.Thread.currentThread;
 import static java.util.Collections.newSetFromMap;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -49,14 +50,15 @@ public class FlakeIdGeneratorProxy
 
     private static final int NODE_ID_NOT_YET_SET = -1;
     private static final int NODE_ID_OUT_OF_RANGE = -2;
+    private static final int MAX_BIT_LENGTH = 64;
 
     private final String name;
     private final UUID source;
     private final long epochStart;
     private final long nodeIdOffset;
-    private final int bitsTimestamp;
     private final int bitsSequence;
     private final int bitsNodeId;
+    private final long maxId;
     private final long allowedFutureMillis;
     private volatile int nodeId = NODE_ID_NOT_YET_SET;
     private volatile long nextNodeIdUpdate = Long.MIN_VALUE;
@@ -84,10 +86,13 @@ public class FlakeIdGeneratorProxy
         this.source = source;
 
         FlakeIdGeneratorConfig config = nodeEngine.getConfig().findFlakeIdGeneratorConfig(getName());
-        bitsTimestamp = config.getBitsTimestamp();
+        int bitsTimestamp = config.getBitsTimestamp();
         bitsSequence = config.getBitsSequence();
         bitsNodeId = config.getBitsNodeId();
         allowedFutureMillis = config.getAllowedFutureMillis();
+        int bitLength = bitsTimestamp + bitsSequence + bitsNodeId;
+        checkTrue(bitLength <= MAX_BIT_LENGTH, "Configuration error, maximum ID bit length exceeded: " + bitLength +", max " + MAX_BIT_LENGTH);
+        maxId = bitLength == 64 ? Long.MAX_VALUE : (1L << bitLength) - 1L;
         increment = 1 << bitsNodeId;
         epochStart = config.getEpochStart() - (config.getIdOffset() >> (bitsSequence + bitsNodeId));
         nodeIdOffset = config.getNodeIdOffset();
@@ -117,7 +122,7 @@ public class FlakeIdGeneratorProxy
     public long newId() {
         // The cluster version is checked when ClusterService.getMemberListJoinVersion() is called. This always happens
         // before first ID is generated.
-        return batcher.newId();
+        return batcher.newId() & maxId;
     }
 
     public IdBatchAndWaitTime newIdBatch(int batchSize) {
@@ -170,9 +175,6 @@ public class FlakeIdGeneratorProxy
         }
         assert (nodeId & -1 << bitsNodeId) == 0  : "nodeId out of range: " + nodeId;
         now -= epochStart;
-        if (now < -(1L << bitsTimestamp) || now >= (1L << bitsTimestamp)) {
-            throw new HazelcastException("Current time out of allowed range");
-        }
         now <<= bitsSequence;
         long oldGeneratedValue;
         long base;

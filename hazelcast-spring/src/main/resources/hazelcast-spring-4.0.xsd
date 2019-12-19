@@ -3278,8 +3278,6 @@
                 <xs:documentation>
                     Sets the offset of timestamp component. Time unit is milliseconds, default is 1514764800000 
                     (1.1.2018 0:00 UTC).
-
-                    This setting pertains only to newId() calls made on the member that configured it.
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
@@ -3315,10 +3313,14 @@
             <xs:annotation>
                 <xs:documentation>
                     Sets the timestamp component bit length, default 41 bits.
+
+                    Sum of bitsTimestamp + bitsSequence + bitsNodeId should be 63 in total, 64 in case negative IDs 
+                    are acceptable.
                 </xs:documentation>
             </xs:annotation>
             <xs:simpleType>
                 <xs:restriction base="xs:int">
+                    <xs:maxInclusive value="63" />
                     <xs:minInclusive value="1" />
                 </xs:restriction>
             </xs:simpleType>
@@ -3327,11 +3329,14 @@
             <xs:annotation>
                 <xs:documentation>
                     Sets the sequence component bit length, default 6 bits.
+
+                    Sum of bitsTimestamp + bitsSequence + bitsNodeId should be 63 in total, 64 in case negative IDs
+                    are acceptable.
                 </xs:documentation>
             </xs:annotation>
             <xs:simpleType>
                 <xs:restriction base="xs:int">
-                    <xs:minInclusive value="1" />
+                    <xs:minInclusive value="0" />
                 </xs:restriction>
             </xs:simpleType>
         </xs:attribute>
@@ -3339,6 +3344,9 @@
             <xs:annotation>
                 <xs:documentation>
                     Sets the node id component bit length, default 16 bits.
+
+                    Sum of bitsTimestamp + bitsSequence + bitsNodeId should be 63 in total, 64 in case negative IDs
+                    are acceptable.
                 </xs:documentation>
             </xs:annotation>
             <xs:simpleType>
