@@ -17,4 +17,4 @@
 /**
  * todo
  */
-package com.hazelcast.partition.membergroup;
+package com.hazelcast.internal.partition.membergroup;

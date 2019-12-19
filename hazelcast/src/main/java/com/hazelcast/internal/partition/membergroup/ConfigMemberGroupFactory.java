@@ -14,12 +14,13 @@
  * limitations under the License.
  */
 
-package com.hazelcast.partition.membergroup;
+package com.hazelcast.internal.partition.membergroup;
 
 import com.hazelcast.config.MemberGroupConfig;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.cluster.impl.MemberImpl;
 import com.hazelcast.internal.util.AddressUtil;
+import com.hazelcast.spi.partitiongroup.MemberGroup;
 
 import java.util.Collection;
 import java.util.HashMap;

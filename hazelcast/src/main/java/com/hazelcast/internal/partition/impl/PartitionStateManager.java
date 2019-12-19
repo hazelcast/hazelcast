@@ -33,9 +33,9 @@ import com.hazelcast.internal.partition.PartitionReplicaInterceptor;
 import com.hazelcast.internal.partition.PartitionStateGenerator;
 import com.hazelcast.internal.partition.PartitionTableView;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.partition.membergroup.MemberGroup;
-import com.hazelcast.partition.membergroup.MemberGroupFactory;
-import com.hazelcast.partition.membergroup.MemberGroupFactoryFactory;
+import com.hazelcast.spi.partitiongroup.MemberGroup;
+import com.hazelcast.internal.partition.membergroup.MemberGroupFactory;
+import com.hazelcast.internal.partition.membergroup.MemberGroupFactoryFactory;
 
 import java.util.Collection;
 import java.util.Set;

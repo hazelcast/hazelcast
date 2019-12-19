@@ -20,8 +20,6 @@ import com.hazelcast.internal.config.ConfigDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.spi.merge.SplitBrainMergeTypeProvider;
-import com.hazelcast.spi.merge.SplitBrainMergeTypes;
 
 import java.io.IOException;
 
@@ -32,8 +30,7 @@ import static com.hazelcast.internal.util.Preconditions.checkPositive;
 /**
  * Configuration options for the {@link com.hazelcast.scheduledexecutor.IScheduledExecutorService}.
  */
-public class ScheduledExecutorConfig implements SplitBrainMergeTypeProvider, IdentifiedDataSerializable,
-        NamedConfig {
+public class ScheduledExecutorConfig implements IdentifiedDataSerializable, NamedConfig {
 
     /**
      * The number of executor threads per Member for the Executor based on this configuration.
@@ -211,11 +208,6 @@ public class ScheduledExecutorConfig implements SplitBrainMergeTypeProvider, Ide
     public ScheduledExecutorConfig setMergePolicyConfig(MergePolicyConfig mergePolicyConfig) {
         this.mergePolicyConfig = checkNotNull(mergePolicyConfig, "mergePolicyConfig cannot be null");
         return this;
-    }
-
-    @Override
-    public Class getProvidedMergeTypes() {
-        return SplitBrainMergeTypes.ScheduledExecutorMergeTypes.class;
     }
 
     @Override

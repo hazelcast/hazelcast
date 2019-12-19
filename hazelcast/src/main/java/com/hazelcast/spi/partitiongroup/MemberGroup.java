@@ -14,26 +14,27 @@
  * limitations under the License.
  */
 
-package com.hazelcast.partition.membergroup;
+package com.hazelcast.spi.partitiongroup;
 
 import com.hazelcast.cluster.Member;
 
 import java.util.Collection;
-import java.util.Set;
-
-import static com.hazelcast.internal.util.SetUtil.createHashSet;
+import java.util.Iterator;
 
 /**
- * Arranges members in single-member groups (every member is its own group).
+ * A collection of members to which a single partition replica can be assigned.
  */
-public class SingleMemberGroupFactory implements MemberGroupFactory {
+public interface MemberGroup {
 
-    @Override
-    public Set<MemberGroup> createMemberGroups(Collection<? extends Member> members) {
-        Set<MemberGroup> groups = createHashSet(members.size());
-        for (Member member : members) {
-            groups.add(new SingleMemberGroup(member));
-        }
-        return groups;
-    }
+    void addMember(Member member);
+
+    void addMembers(Collection<Member> members);
+
+    void removeMember(Member member);
+
+    boolean hasMember(Member member);
+
+    Iterator<Member> iterator();
+
+    int size();
 }
