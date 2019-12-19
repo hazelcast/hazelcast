@@ -19,6 +19,7 @@ package com.hazelcast.client.impl.protocol.task;
 import com.hazelcast.client.impl.protocol.AuthenticationStatus;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.cluster.Address;
+import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.security.Credentials;
@@ -174,6 +175,12 @@ public abstract class AuthenticationBaseMessageTask<P> extends AbstractMessageTa
                 clientName, labels);
         setConnectionType();
         validateNodeStart();
+        final UUID clusterId = clientEngine.getClusterService().getClusterId();
+        // additional check: cluster id may be null when member has not started yet;
+        // see AbstractMessageTask#acceptOnIncompleteStart
+        if (clusterId == null) {
+            throw new HazelcastInstanceNotActiveException("Hazelcast instance is not ready yet!");
+        }
         if (!clientEngine.bind(endpoint)) {
             return prepareNotAllowedInCluster();
         }
@@ -182,9 +189,8 @@ public abstract class AuthenticationBaseMessageTask<P> extends AbstractMessageTa
                 + ", client version: " + clientVersion);
         final Address thisAddress = clientEngine.getThisAddress();
         byte status = AUTHENTICATED.getId();
-        return encodeAuth(status, thisAddress, clientUuid,
-                serializationService.getVersion(),
-                clientEngine.getPartitionService().getPartitionCount(), clientEngine.getClusterService().getClusterId());
+        return encodeAuth(status, thisAddress, clientUuid, serializationService.getVersion(),
+                clientEngine.getPartitionService().getPartitionCount(), clusterId);
     }
 
     private void setConnectionType() {
