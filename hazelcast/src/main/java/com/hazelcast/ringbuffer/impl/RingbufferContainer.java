@@ -435,6 +435,31 @@ public class RingbufferContainer<T, E> implements IdentifiedDataSerializable, No
     }
 
     /**
+     * Checks if the provided {@code sequence} can be read immediately. If
+     * not, it will return the current oldest or newest immediately readable
+     * sequence. This method can be used for a loss-tolerant reader when
+     * trying to avoid a {@link com.hazelcast.ringbuffer.StaleSequenceException}.
+     *
+     * @param readSequence the sequence wanting to be read
+     * @return the bounded sequence
+     */
+    public long clampReadSequenceToBounds(long readSequence) {
+        // fast forward if late and no store is configured
+        final long headSequence = headSequence();
+        if (readSequence < headSequence && !store.isEnabled()) {
+            return headSequence;
+        }
+
+        // jump back if too far in future
+        final long tailSequence = tailSequence();
+        if (readSequence > tailSequence + 1) {
+            return tailSequence + 1;
+        }
+
+        return readSequence;
+    }
+
+    /**
      * Check if the sequence is of an item that can be read immediately
      * or is the sequence of the next item to be added into the ringbuffer.
      * Since this method allows the sequence to be one larger than
