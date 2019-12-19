@@ -96,8 +96,8 @@ public abstract class MessageRunner<E> implements BiConsumer<ReadResultSet<Relia
         if (throwable == null) {
             // we process all messages in batch. So we don't release the thread and reschedule ourselves;
             // but we'll process whatever was received in 1 go.
-            for (Object item : result) {
-                ReliableTopicMessage message = (ReliableTopicMessage) item;
+            for (int i = 0; i < result.size(); i++) {
+                ReliableTopicMessage message = result.get(i);
 
                 if (cancelled) {
                     return;
@@ -113,6 +113,13 @@ public abstract class MessageRunner<E> implements BiConsumer<ReadResultSet<Relia
                     }
                 }
 
+                long actualSequence = result.getSequence(i);
+                if (actualSequence != sequence) {
+                    if (!handleSilentSequenceJump(actualSequence)) {
+                        cancel();
+                        return;
+                    }
+                }
                 sequence++;
             }
             next();
@@ -196,6 +203,29 @@ public abstract class MessageRunner<E> implements BiConsumer<ReadResultSet<Relia
     protected abstract Throwable adjustThrowable(Throwable t);
 
     /**
+     * Handles a sudden jump in received sequence numbers. This may indicate
+     * that the reader was too slow and items in the ringbuffer were already overwritten.
+     *
+     * @param newSequence the new, unexpected sequence number encountered
+     * @return if the listener may continue reading
+     */
+    private boolean handleSilentSequenceJump(long newSequence) {
+        if (listener.isLossTolerant()) {
+            if (logger.isFinestEnabled()) {
+                logger.finest("MessageListener " + listener + " on topic: " + topicName + " ran into a silent sequence " +
+                        "jump from oldSequence: " + sequence + " to sequence: " + newSequence);
+            }
+            sequence = newSequence;
+            return true;
+        }
+
+        logger.warning("Terminating MessageListener:" + listener + " on topic: " + topicName + ". "
+                + "Reason: The listener was too slow or the retention period of the message has been violated. "
+                + "head: " + newSequence + " sequence:" + sequence);
+        return false;
+    }
+
+    /**
      * Handles a {@link StaleSequenceException} associated with requesting
      * a sequence older than the {@code headSequence}.
      * This may indicate that the reader was too slow and items in the
@@ -204,7 +234,7 @@ public abstract class MessageRunner<E> implements BiConsumer<ReadResultSet<Relia
      * @param staleSequenceException the exception
      * @return if the exception was handled and the listener may continue reading
      */
-    private boolean handleStaleSequenceException(StaleSequenceException staleSequenceException) {
+    private boolean handleStaleSequenceException(StaleSequenceException staleSequenceException) { //todo: should not be needed
         long headSeq = getHeadSequence(staleSequenceException);
         if (listener.isLossTolerant()) {
             if (logger.isFinestEnabled()) {
@@ -222,7 +252,7 @@ public abstract class MessageRunner<E> implements BiConsumer<ReadResultSet<Relia
         return false;
     }
 
-    protected abstract long getHeadSequence(StaleSequenceException staleSequenceException);
+    protected abstract long getHeadSequence(StaleSequenceException staleSequenceException); //todo: should not be needed
 
     /**
      * Handles the {@link IllegalArgumentException} associated with requesting
