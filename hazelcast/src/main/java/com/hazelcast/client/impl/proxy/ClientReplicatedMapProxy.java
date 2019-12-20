@@ -46,8 +46,6 @@ import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.internal.nearcache.NearCache;
 import com.hazelcast.internal.nio.Connection;
-import com.hazelcast.internal.util.IterationType;
-import com.hazelcast.internal.util.ResultSet;
 import com.hazelcast.internal.util.ThreadLocalRandomProvider;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.MapEvent;
@@ -57,6 +55,7 @@ import com.hazelcast.query.Predicate;
 import com.hazelcast.replicatedmap.LocalReplicatedMapStats;
 import com.hazelcast.replicatedmap.ReplicatedMap;
 import com.hazelcast.spi.impl.UnmodifiableLazyList;
+import com.hazelcast.spi.impl.UnmodifiableLazySet;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -435,11 +434,8 @@ public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements Repli
         ClientMessage request = ReplicatedMapKeySetCodec.encodeRequest(name);
         ClientMessage response = invokeOnPartition(request, targetPartitionId);
         ReplicatedMapKeySetCodec.ResponseParameters result = ReplicatedMapKeySetCodec.decodeResponse(response);
-        List<Entry> keys = new ArrayList<>(result.response.size());
-        for (Data dataKey : result.response) {
-            keys.add(new AbstractMap.SimpleImmutableEntry<K, V>(toObject(dataKey), null));
-        }
-        return (Set) new ResultSet(keys, IterationType.KEY);
+
+        return (Set<K>) new UnmodifiableLazySet(result.response, getSerializationService());
     }
 
     @Nonnull
@@ -472,13 +468,7 @@ public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements Repli
         ClientMessage request = ReplicatedMapEntrySetCodec.encodeRequest(name);
         ClientMessage response = invokeOnPartition(request, targetPartitionId);
         ReplicatedMapEntrySetCodec.ResponseParameters result = ReplicatedMapEntrySetCodec.decodeResponse(response);
-        List<Entry> entries = new ArrayList<>(result.response.size());
-        for (Entry<Data, Data> dataEntry : result.response) {
-            K key = toObject(dataEntry.getKey());
-            V value = toObject(dataEntry.getValue());
-            entries.add(new AbstractMap.SimpleImmutableEntry<>(key, value));
-        }
-        return (Set) new ResultSet(entries, IterationType.ENTRY);
+        return (Set) new UnmodifiableLazySet(result.response, getSerializationService());
     }
 
     public UUID addNearCacheInvalidationListener(EventHandler handler) {
