@@ -21,7 +21,6 @@ import com.hazelcast.config.RingbufferConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IFunction;
 import com.hazelcast.cp.IAtomicLong;
-import com.hazelcast.internal.util.RootCauseMatcher;
 import com.hazelcast.ringbuffer.ReadResultSet;
 import com.hazelcast.ringbuffer.Ringbuffer;
 import com.hazelcast.ringbuffer.StaleSequenceException;
