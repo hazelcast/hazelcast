@@ -17,8 +17,11 @@
 package com.hazelcast.jet.pipeline;
 
 import com.hazelcast.function.FunctionEx;
+import com.hazelcast.jet.config.JobConfig;
+import com.hazelcast.jet.config.ProcessingGuarantee;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 
@@ -33,11 +36,20 @@ import static com.hazelcast.jet.core.processor.SinkProcessors.writeFileP;
  */
 public final class FileSinkBuilder<T> {
 
+    /**
+     * A suffix added to file names until they are committed. Files ending with
+     * this suffix should be ignored when processing. See {@link
+     * Sinks#filesBuilder} for more information.
+     */
+    public static final String TEMP_FILE_SUFFIX = ".tmp";
+
     private final String directoryName;
 
     private FunctionEx<? super T, String> toStringFn = Object::toString;
     private Charset charset = StandardCharsets.UTF_8;
-    private boolean append;
+    private String datePattern;
+    private Long maxFileSize;
+    private boolean exactlyOnce = true;
 
     /**
      * Use {@link Sinks#filesBuilder}.
@@ -66,11 +78,51 @@ public final class FileSinkBuilder<T> {
     }
 
     /**
-     * Sets whether to append ({@code true}) or overwrite ({@code false})
-     * an existing file. Default value is {@code false}.
+     * Sets a date pattern that will be included in the file name. Each time
+     * the formatted current time changes a new file will be started. For
+     * example, if the {@code datePattern} is {@code yyyy-MM-dd}, a new file
+     * will be started every day.
+     * <p>
+     * The rolling is based on system time, not on event time. By default no
+     * rolling by date is done. If the system clock goes back, the outcome is
+     * unspecified and possibly corrupt.
      */
-    public FileSinkBuilder<T> append(boolean append) {
-        this.append = append;
+    public FileSinkBuilder<T> rollByDate(@Nullable String datePattern) {
+        this.datePattern = datePattern;
+        return this;
+    }
+
+    /**
+     * Enables rolling by file size. If the size after writing a batch of items
+     * exceeds the limit, a new file will be started. From this follows that
+     * the file will typically be larger than the given maximum.
+     */
+    public FileSinkBuilder<T> rollByFileSize(@Nullable Long maxFileSize) {
+        this.maxFileSize = maxFileSize;
+        return this;
+    }
+
+    /**
+     * Enables or disables the exactly-once behavior of the sink using
+     * two-phase commit of state snapshots. If enabled, the {@linkplain
+     * JobConfig#setProcessingGuarantee(ProcessingGuarantee) processing
+     * guarantee} of the job must be set to {@linkplain
+     * ProcessingGuarantee#EXACTLY_ONCE exactly-once}, otherwise the sink's
+     * guarantee will match that of the job. In other words, sink's
+     * guarantee cannot be higher than job's, but can be lower to avoid the
+     * additional overhead.
+     * <p>
+     * See {@link Sinks#filesBuilder(String)} for more information.
+     * <p>
+     * The default value is true.
+     *
+     * @param enable If true, sink's guarantee will match the job
+     *      guarantee. If false, sink's guarantee will be at-least-once
+     *      even if job's is exactly-once
+     * @return this instance for fluent API
+     */
+    public FileSinkBuilder<T> exactlyOnce(boolean enable) {
+        exactlyOnce = enable;
         return this;
     }
 
@@ -79,6 +131,6 @@ public final class FileSinkBuilder<T> {
      */
     public Sink<T> build() {
         return Sinks.fromProcessor("filesSink(" + directoryName + ')',
-                writeFileP(directoryName, toStringFn, charset, append));
+                writeFileP(directoryName, charset, datePattern, maxFileSize, exactlyOnce, toStringFn));
     }
 }

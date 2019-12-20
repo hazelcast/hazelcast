@@ -17,68 +17,430 @@
 package com.hazelcast.jet.impl.connector;
 
 import com.hazelcast.function.FunctionEx;
+import com.hazelcast.jet.RestartableException;
+import com.hazelcast.jet.config.ProcessingGuarantee;
+import com.hazelcast.jet.core.Inbox;
+import com.hazelcast.jet.core.Outbox;
+import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
-import com.hazelcast.jet.core.processor.SinkProcessors;
+import com.hazelcast.jet.impl.execution.init.JetInitDataSerializerHook;
+import com.hazelcast.jet.impl.processor.TwoPhaseSnapshotCommitUtility.TransactionId;
+import com.hazelcast.jet.impl.processor.TwoPhaseSnapshotCommitUtility.TransactionalResource;
+import com.hazelcast.jet.impl.processor.UnboundedTransactionsProcessorUtility;
+import com.hazelcast.jet.impl.util.LoggingUtil;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import javax.annotation.Nonnull;
-import java.io.BufferedWriter;
+import javax.annotation.Nullable;
+import java.io.BufferedOutputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
+import java.io.Serializable;
+import java.io.Writer;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.nio.file.StandardOpenOption;
+import java.nio.file.StandardCopyOption;
+import java.time.Instant;
+import java.time.format.DateTimeFormatter;
+import java.util.function.LongSupplier;
+import java.util.stream.Stream;
 
-import static com.hazelcast.jet.core.processor.SinkProcessors.writeBufferedP;
+import static com.hazelcast.jet.config.ProcessingGuarantee.AT_LEAST_ONCE;
+import static com.hazelcast.jet.config.ProcessingGuarantee.EXACTLY_ONCE;
+import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
+import static com.hazelcast.jet.impl.util.Util.uncheckRun;
+import static com.hazelcast.jet.pipeline.FileSinkBuilder.TEMP_FILE_SUFFIX;
 
 /**
- * See {@link SinkProcessors#writeFileP(String, FunctionEx, Charset, boolean)}.
- * <p>
- * Since the work of this sink is file IO-intensive, {@link
- * com.hazelcast.jet.core.Vertex#localParallelism(int) local parallelism} of
- * the vertex should be set according to the performance characteristics of
- * the underlying storage system. Most typically, local parallelism of 1 will
- * already reach the maximum available performance.
+ * A file-writing sink supporting rolling files. Rolling can occur:
+ * <ul>
+ *      <li>at a snapshot boundary
+ *      <li>when a file size is reached
+ *      <li>when a date changes
+ * </ul>
  */
-public final class WriteFileP {
+public final class WriteFileP<T> implements Processor {
 
-    private WriteFileP() { }
+    private static final LongSupplier SYSTEM_CLOCK = (LongSupplier & Serializable) System::currentTimeMillis;
+
+    private final Path directory;
+    private final FunctionEx<? super T, ? extends String> toStringFn;
+    private final Charset charset;
+    private final DateTimeFormatter dateFormatter;
+    private final Long maxFileSize;
+    private final boolean exactlyOnce;
+    private final LongSupplier clock;
+
+    private UnboundedTransactionsProcessorUtility<FileId, FileResource> utility;
+    private Context context;
+    private int fileSequence;
+    private SizeTrackingStream sizeTrackingStream;
+    private String lastFileDate;
 
     /**
-     * Use {@link SinkProcessors#writeFileP(String, FunctionEx, Charset, boolean)}
+     * Rolling by date is based on system clock, not on event time.
      */
+    private WriteFileP(
+            @Nonnull String directoryName,
+            @Nonnull FunctionEx<? super T, ? extends String> toStringFn,
+            @Nonnull String charset,
+            @Nullable String dateFormatter,
+            @Nullable Long maxFileSize,
+            boolean exactlyOnce,
+            @Nonnull LongSupplier clock
+    ) {
+        this.directory = Paths.get(directoryName);
+        this.toStringFn = toStringFn;
+        this.charset = Charset.forName(charset);
+        this.dateFormatter = dateFormatter != null ? DateTimeFormatter.ofPattern(dateFormatter) : null;
+        this.maxFileSize = maxFileSize;
+        this.exactlyOnce = exactlyOnce;
+        this.clock = clock;
+    }
+
+    @Override
+    public void init(@Nonnull Outbox outbox, @Nonnull Context context) throws IOException {
+        this.context = context;
+        Files.createDirectories(directory);
+
+        ProcessingGuarantee guarantee = context.processingGuarantee() == EXACTLY_ONCE && !exactlyOnce
+                ? AT_LEAST_ONCE
+                : context.processingGuarantee();
+        utility = new UnboundedTransactionsProcessorUtility<>(
+                outbox,
+                context,
+                guarantee,
+                this::newFileName,
+                this::newFileResource,
+                this::recoverAndCommit,
+                this::abortUnfinishedTransactions
+        );
+    }
+
+    @Override
+    public void process(int ordinal, @Nonnull Inbox inbox) {
+        // roll file on date change
+        if (dateFormatter != null && !currentTimeFormatted().equals(lastFileDate)) {
+            fileSequence = 0;
+            utility.finishActiveTransaction();
+        }
+        FileResource transaction = utility.activeTransaction();
+        Writer writer = transaction.writer();
+        try {
+            for (Object item; (item = inbox.poll()) != null; ) {
+                @SuppressWarnings("unchecked")
+                T castedItem = (T) item;
+                writer.write(toStringFn.apply(castedItem));
+                writer.write(System.lineSeparator());
+                if (maxFileSize != null && sizeTrackingStream.size >= maxFileSize) {
+                    utility.finishActiveTransaction();
+                    writer = utility.activeTransaction().writer();
+                }
+            }
+            writer.flush();
+            if (maxFileSize != null && sizeTrackingStream.size >= maxFileSize) {
+                utility.finishActiveTransaction();
+            }
+        } catch (IOException e) {
+            throw new RestartableException(e);
+        }
+    }
+
+    @Override
+    public boolean complete() {
+        utility.afterCompleted();
+        return true;
+    }
+
+    @Override
+    public void close() {
+        if (utility != null) {
+            utility.close();
+        }
+    }
+
+    @Override
+    public boolean snapshotCommitPrepare() {
+        return utility.snapshotCommitPrepare();
+    }
+
+    @Override
+    public boolean snapshotCommitFinish(boolean success) {
+        return utility.snapshotCommitFinish(success);
+    }
+
+    @Override
+    public void restoreFromSnapshot(@Nonnull Inbox inbox) {
+        utility.restoreFromSnapshot(inbox);
+    }
+
+    private FileId newFileName() {
+        StringBuilder sb = new StringBuilder();
+        if (dateFormatter != null) {
+            lastFileDate = currentTimeFormatted();
+            sb.append(lastFileDate);
+            sb.append('-');
+        }
+        sb.append(context.globalProcessorIndex());
+        String file = sb.toString();
+        boolean usesSequence = utility.externalGuarantee() == EXACTLY_ONCE || maxFileSize != null;
+        if (usesSequence) {
+            // check existing files if the sequence number is used
+            int prefixLength = sb.length();
+            do {
+                sb.append('-').append(fileSequence++);
+                file = sb.toString();
+                sb.setLength(prefixLength);
+            } while (Files.exists(directory.resolve(file))
+                    || Files.exists(directory.resolve(file + TEMP_FILE_SUFFIX)));
+        }
+        return new FileId(file, context.globalProcessorIndex());
+    }
+
+    /**
+     * Returns a FileResource for a fileId.
+     */
+    private FileResource newFileResource(FileId fileId) {
+        return utility.externalGuarantee() == EXACTLY_ONCE
+                ? new FileWithTransaction(fileId)
+                : new FileWithoutTransaction(fileId);
+    }
+
+    private void recoverAndCommit(FileId fileId) throws IOException {
+        Path tempFile = directory.resolve(fileId.fileName + TEMP_FILE_SUFFIX);
+        Path finalFile = directory.resolve(fileId.fileName);
+        if (Files.exists(tempFile)) {
+            Files.move(tempFile, finalFile, StandardCopyOption.ATOMIC_MOVE);
+        } else if (!Files.exists(finalFile)) {
+            context.logger().warning("Neither temporary nor final file from the previous execution exists, data loss " +
+                    "might occur: " + tempFile);
+        }
+    }
+
+    private void abortUnfinishedTransactions() {
+        try (Stream<Path> fileStream = Files.list(directory)) {
+            fileStream
+                    .filter(file -> file.getFileName().toString().endsWith(TEMP_FILE_SUFFIX))
+                    .forEach(file -> uncheckRun(() -> {
+                        LoggingUtil.logFine(context.logger(), "deleting %s",  file);
+                        Files.delete(file);
+                    }));
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private Writer createWriter(Path file) {
+        try {
+            LoggingUtil.logFine(context.logger(), "creating %s", file);
+            FileOutputStream fos = new FileOutputStream(file.toFile(), true);
+            BufferedOutputStream bos = new BufferedOutputStream(fos);
+            sizeTrackingStream = new SizeTrackingStream(bos);
+            return new OutputStreamWriter(sizeTrackingStream, charset);
+        } catch (IOException e) {
+            throw sneakyThrow(e);
+        }
+    }
+
+    private String currentTimeFormatted() {
+        return dateFormatter.format(Instant.ofEpochMilli(clock.getAsLong()));
+    }
+
     public static <T> ProcessorMetaSupplier metaSupplier(
             @Nonnull String directoryName,
             @Nonnull FunctionEx<? super T, ? extends String> toStringFn,
             @Nonnull String charset,
-            boolean append) {
-
-        return ProcessorMetaSupplier.preferLocalParallelismOne(writeBufferedP(
-                ctx -> createBufferedWriter(Paths.get(directoryName), ctx.globalProcessorIndex(),
-                        charset, append),
-                (fileWriter, item) -> {
-                    fileWriter.write(toStringFn.apply((T) item));
-                    fileWriter.newLine();
-                },
-                BufferedWriter::flush,
-                BufferedWriter::close
-        ));
+            @Nullable String datePattern,
+            @Nullable Long maxFileSize,
+            boolean exactlyOnce
+    ) {
+        return metaSupplier(directoryName, toStringFn, charset, datePattern, maxFileSize, exactlyOnce, SYSTEM_CLOCK);
     }
 
-    @SuppressFBWarnings(value = "RV_RETURN_VALUE_IGNORED_BAD_PRACTICE",
-            justification = "mkdirs() returns false if the directory already existed, which is good. "
-                    + "We don't care even if it didn't exist and we failed to create it, "
-                    + "because we'll fail later when trying to create the file.")
-    private static BufferedWriter createBufferedWriter(
-            Path directory, int globalIndex, String charset, boolean append) throws IOException {
-        directory.toFile().mkdirs();
-
-        Path file = directory.resolve(String.valueOf(globalIndex));
-
-        return Files.newBufferedWriter(file,
-                Charset.forName(charset), StandardOpenOption.CREATE,
-                append ? StandardOpenOption.APPEND : StandardOpenOption.TRUNCATE_EXISTING);
+    // for tests
+    static <T> ProcessorMetaSupplier metaSupplier(
+            @Nonnull String directoryName,
+            @Nonnull FunctionEx<? super T, ? extends String> toStringFn,
+            @Nonnull String charset,
+            @Nullable String datePattern,
+            @Nullable Long maxFileSize,
+            boolean exactlyOnce,
+            @Nonnull LongSupplier clock
+    ) {
+        return ProcessorMetaSupplier.preferLocalParallelismOne(() -> new WriteFileP<>(directoryName, toStringFn,
+                charset, datePattern, maxFileSize, exactlyOnce, clock));
     }
 
+    private abstract class FileResource implements TransactionalResource<FileId> {
+
+        final FileId fileId;
+        final Path targetFile;
+        Writer writer;
+
+        @SuppressFBWarnings(value = "NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE",
+                justification = "targetFile always has fileName")
+        FileResource(FileId fileId) {
+            this.fileId = fileId;
+            this.targetFile = directory.resolve(fileId.fileName);
+        }
+
+        @Override
+        public FileId id() {
+            return fileId;
+        }
+
+        @Override
+        public void endAndPrepare() throws IOException {
+            closeFile();
+        }
+
+        @Override
+        public void release() throws IOException {
+            closeFile();
+        }
+
+        private void closeFile() throws IOException {
+            if (writer != null) {
+                LoggingUtil.logFine(context.logger(), "closing %s", id().fileName);
+                writer.close();
+                writer = null;
+            }
+        }
+
+        public Writer writer() {
+            return writer;
+        }
+    }
+
+    private final class FileWithoutTransaction extends FileResource {
+
+        FileWithoutTransaction(@Nonnull FileId fileId) {
+            super(fileId);
+        }
+
+        @Override
+        public Writer writer() {
+            if (writer == null) {
+                writer = createWriter(targetFile);
+            }
+            return super.writer();
+        }
+    }
+
+    private final class FileWithTransaction extends FileResource {
+
+        private final Path tempFile;
+
+        FileWithTransaction(@Nonnull FileId fileId) {
+            super(fileId);
+            tempFile = directory.resolve(fileId.fileName + TEMP_FILE_SUFFIX);
+        }
+
+        @Override
+        public void begin() {
+            writer = createWriter(tempFile);
+        }
+
+        @Override
+        public void commit() throws IOException {
+            if (writer != null) {
+                writer.close();
+                writer = null;
+            }
+            Files.move(tempFile, targetFile, StandardCopyOption.ATOMIC_MOVE);
+        }
+
+        @Override
+        public void rollback() throws Exception {
+            if (writer != null) {
+                writer.close();
+                writer = null;
+            }
+            Files.delete(tempFile);
+        }
+    }
+
+    private static final class SizeTrackingStream extends OutputStream {
+        private final OutputStream target;
+        private long size;
+
+        private SizeTrackingStream(OutputStream target) {
+            this.target = target;
+        }
+
+        @Override
+        public void write(int b) throws IOException {
+            size++;
+            target.write(b);
+        }
+
+        @Override
+        public void write(@Nonnull byte[] b, int off, int len) throws IOException {
+            size += len;
+            target.write(b, off, len);
+        }
+
+        @Override
+        public void close() throws IOException {
+            target.close();
+        }
+
+        @Override
+        public void flush() throws IOException {
+            target.flush();
+        }
+    }
+
+    public static final class FileId implements TransactionId, IdentifiedDataSerializable {
+        private String fileName;
+        private int index;
+
+        // for deserialization
+        public FileId() {
+        }
+
+        private FileId(String fileName, int index) {
+            this.fileName = fileName;
+            this.index = index;
+        }
+
+        @Override
+        public int index() {
+            return index;
+        }
+
+        @Override
+        public String toString() {
+            return "File{" + fileName + '}';
+        }
+
+        @Override
+        public int getFactoryId() {
+            return JetInitDataSerializerHook.FACTORY_ID;
+        }
+
+        @Override
+        public int getClassId() {
+            return JetInitDataSerializerHook.WRITE_FILE_P_FILE_ID;
+        }
+
+        @Override
+        public void readData(ObjectDataInput in) throws IOException {
+            fileName = in.readUTF();
+            index = in.readInt();
+        }
+
+        @Override
+        public void writeData(ObjectDataOutput out) throws IOException {
+            out.writeUTF(fileName);
+            out.writeInt(index);
+        }
+    }
 }

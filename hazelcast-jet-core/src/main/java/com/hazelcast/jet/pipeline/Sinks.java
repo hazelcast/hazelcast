@@ -716,19 +716,71 @@ public final class Sinks {
 
     /**
      * Returns a builder object that offers a step-by-step fluent API to build
-     * a custom file sink for the Pipeline API. See javadoc of methods in {@link
-     * FileSinkBuilder} for more details.
+     * a custom file sink for the Pipeline API. See javadoc of methods in
+     * {@link FileSinkBuilder} for more details.
      * <p>
-     * The sink writes the items it receives to files. Each
-     * processor will write to its own file whose name is equal to the
-     * processor's global index (an integer unique to each processor of the
-     * vertex), but a single pathname is used to resolve the containing
-     * directory of all files, on all cluster members.
+     * The sink writes the items it receives to files. Each processor will
+     * write to its own files whose names contain the processor's global index
+     * (an integer unique to each processor of the vertex), but a single
+     * directory is used for all files, on all cluster members. That directory
+     * can be a shared in a network - the global processor index is different
+     * on each member and the members won't overwrite each other's files.
+     *
+     * <h3>Fault tolerance</h3>
+     * If the job is running in <i>exactly-once</i> mode, items will be written
+     * to temporary files (ending with a {@value
+     * FileSinkBuilder#TEMP_FILE_SUFFIX} suffix). When the snapshot is
+     * committed, the file will be atomically renamed to remove this suffix.
+     * Thanks to the two-phase commit of the snapshot, exactly-once guarantee
+     * is provided for the sink. Because of this a new file will be started
+     * each time a state snapshotted, the sink will likely produce many more
+     * small files, depending on the snapshot interval.
      * <p>
-     * No state is saved to snapshot for this sink. If the job is restarted and
-     * {@linkplain FileSinkBuilder#append(boolean) appending} is enabled, the
-     * items will likely be duplicated, providing an <i>at-least-once</i>
-     * guarantee.
+     * If you want to avoid the temporary files or the high number of files but
+     * need to have exactly-once for other processors in the job, call {@link
+     * FileSinkBuilder#exactlyOnce(boolean) exactlyOnce(false)} on the returned
+     * builder. This will give you <i>at-least-once</i> guarantee for the
+     * source and unchanged guarantee for other processors.
+     *
+     * <h3>File name structure</h3>
+     * <pre>{@code
+     * [<date>-]<global processor index>[-<sequence>][".tmp"]
+     * }</pre>
+     *
+     * Description (parts in {@code []} are optional):
+     * <ul>
+     *     <li>{@code <date>}: the current date and time, see {@link
+     *          FileSinkBuilder#rollByDate(String)}. Not present if rolling by
+     *          date is not used
+     *
+     *     <li>{@code <global processor index>}: a processor index ensuring
+     *          that each parallel processor writes to its own file
+     *
+     *     <li>{@code <sequence>}: a sequence number starting from 0. Used if
+     *          either:<ul>
+     *              <li>running in <i>exactly-once</i> mode
+     *              <li>{@linkplain FileSinkBuilder#rollByFileSize(Long)
+     *                    maximum file size} is set
+     *          </ul>
+     *          The sequence is reset to 0 when the {@code <date>} changes.
+     *
+     *     <li>{@code ".tmp"}: the {@link FileSinkBuilder#TEMP_FILE_SUFFIX},
+     *          used if the file is not yet committed
+     * </ul>
+     *
+     * <h3>Notes</h3>
+     *
+     * The target directory is not deleted before the job start. If file names
+     * clash, they are appended to. This is needed to ensure at-least-once
+     * behavior. In exactly-once mode the file names never clash thanks to the
+     * sequence number in file name: a number higher than the highest sequence
+     * number found in the directory is always chosen.
+     * <p>
+     * For performance, the processor doesn't delete old files from the
+     * directory. If you have frequent snapshots, you should delete the old
+     * files from time to time to avoid having huge number of files in the
+     * directory. Jet lists the files in the directory after a restart to find
+     * out the sequence number to use.
      * <p>
      * The default local parallelism for this sink is 1.
      *

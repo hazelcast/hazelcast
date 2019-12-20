@@ -27,6 +27,7 @@ import com.hazelcast.jet.impl.JobResult;
 import com.hazelcast.jet.impl.JobSummary;
 import com.hazelcast.jet.impl.SnapshotValidationRecord;
 import com.hazelcast.jet.impl.aggregate.AggregateOpAggregator;
+import com.hazelcast.jet.impl.connector.WriteFileP;
 import com.hazelcast.jet.impl.operation.CompleteExecutionOperation;
 import com.hazelcast.jet.impl.operation.GetJobConfigOperation;
 import com.hazelcast.jet.impl.operation.GetJobIdsByNameOperation;
@@ -96,6 +97,7 @@ public final class JetInitDataSerializerHook implements DataSerializerHook {
     public static final int GET_JOB_METRICS_OP = 34;
     public static final int GET_LOCAL_JOB_METRICS_OP = 35;
     public static final int SNAPSHOT_PHASE2_OPERATION = 36;
+    public static final int WRITE_FILE_P_FILE_ID = 42;
 
     public static final int FACTORY_ID = FactoryIdHelper.getFactoryId(JET_IMPL_DS_FACTORY, JET_IMPL_DS_FACTORY_ID);
 
@@ -188,6 +190,8 @@ public final class JetInitDataSerializerHook implements DataSerializerHook {
                     return new GetLocalJobMetricsOperation();
                 case SNAPSHOT_PHASE2_OPERATION:
                     return new SnapshotPhase2Operation();
+                case WRITE_FILE_P_FILE_ID:
+                    return new WriteFileP.FileId();
                 default:
                     throw new IllegalArgumentException("Unknown type id " + typeId);
             }
