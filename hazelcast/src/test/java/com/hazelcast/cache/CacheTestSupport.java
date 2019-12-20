@@ -49,7 +49,7 @@ public abstract class CacheTestSupport extends HazelcastTestSupport {
     protected abstract HazelcastInstance getHazelcastInstance();
 
     @Before
-    public final void setup() {
+    public void setup() {
         onSetup();
         cachingProvider = getCachingProvider();
         cacheManager = cachingProvider.getCacheManager();
