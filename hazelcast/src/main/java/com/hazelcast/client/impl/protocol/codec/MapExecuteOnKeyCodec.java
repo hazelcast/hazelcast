@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Applies the user defined EntryProcessor to the entry mapped by the key. Returns the the object which is result of
  * the process() method of EntryProcessor.
  */
-@Generated("f52985df27650b8c8c2748d8ac73d8cf")
+@Generated("fa5a0d7c57810e446b09cf656a9d2947")
 public final class MapExecuteOnKeyCodec {
     //hex: 0x012E00
     public static final int REQUEST_MESSAGE_TYPE = 77312;
@@ -69,7 +69,7 @@ public final class MapExecuteOnKeyCodec {
         public com.hazelcast.internal.serialization.Data key;
 
         /**
-         * TODO DOC
+         * Id of the thread that the task is submitted from.
          */
         public long threadId;
     }

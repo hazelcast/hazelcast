@@ -37,19 +37,19 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Adds listener for backup acks
  */
-@Generated("dc4541817dcaa4e2ad244944d576a8d0")
+@Generated("ac3ba261715a6a9d80c3ad1ad1466380")
 public final class ClientLocalBackupListenerCodec {
-    //hex: 0x001000
-    public static final int REQUEST_MESSAGE_TYPE = 4096;
-    //hex: 0x001001
-    public static final int RESPONSE_MESSAGE_TYPE = 4097;
+    //hex: 0x000F00
+    public static final int REQUEST_MESSAGE_TYPE = 3840;
+    //hex: 0x000F01
+    public static final int RESPONSE_MESSAGE_TYPE = 3841;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_RESPONSE_FIELD_OFFSET = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_RESPONSE_FIELD_OFFSET + UUID_SIZE_IN_BYTES;
     private static final int EVENT_BACKUP_SOURCE_INVOCATION_CORRELATION_ID_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int EVENT_BACKUP_INITIAL_FRAME_SIZE = EVENT_BACKUP_SOURCE_INVOCATION_CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
-    //hex: 0x001002
-    private static final int EVENT_BACKUP_MESSAGE_TYPE = 4098;
+    //hex: 0x000F02
+    private static final int EVENT_BACKUP_MESSAGE_TYPE = 3842;
 
     private ClientLocalBackupListenerCodec() {
     }

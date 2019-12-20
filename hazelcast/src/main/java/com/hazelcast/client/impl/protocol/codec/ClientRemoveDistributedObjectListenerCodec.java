@@ -34,14 +34,14 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  */
 
 /**
- * TODO DOC
+ * Removes the specified distributed object listener. Returns silently if there is no such listener added before.
  */
-@Generated("8c51ad9e8db302160085f1756a23aae1")
+@Generated("29b502d7e50d8e840d9a8663beb7249b")
 public final class ClientRemoveDistributedObjectListenerCodec {
-    //hex: 0x000B00
-    public static final int REQUEST_MESSAGE_TYPE = 2816;
-    //hex: 0x000B01
-    public static final int RESPONSE_MESSAGE_TYPE = 2817;
+    //hex: 0x000A00
+    public static final int REQUEST_MESSAGE_TYPE = 2560;
+    //hex: 0x000A01
+    public static final int RESPONSE_MESSAGE_TYPE = 2561;
     private static final int REQUEST_REGISTRATION_ID_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_REGISTRATION_ID_FIELD_OFFSET + UUID_SIZE_IN_BYTES;
     private static final int RESPONSE_RESPONSE_FIELD_OFFSET = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;

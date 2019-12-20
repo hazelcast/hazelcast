@@ -34,14 +34,14 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  */
 
 /**
- * TODO DOC
+ * Removes the specified partition lost listener. Returns silently if there is no such listener added before.
  */
-@Generated("4e1b4e08c304a36c9445349eadd31649")
+@Generated("517fd2b16e057bf445239e790af207e2")
 public final class ClientRemovePartitionLostListenerCodec {
-    //hex: 0x000800
-    public static final int REQUEST_MESSAGE_TYPE = 2048;
-    //hex: 0x000801
-    public static final int RESPONSE_MESSAGE_TYPE = 2049;
+    //hex: 0x000700
+    public static final int REQUEST_MESSAGE_TYPE = 1792;
+    //hex: 0x000701
+    public static final int RESPONSE_MESSAGE_TYPE = 1793;
     private static final int REQUEST_REGISTRATION_ID_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_REGISTRATION_ID_FIELD_OFFSET + UUID_SIZE_IN_BYTES;
     private static final int RESPONSE_RESPONSE_FIELD_OFFSET = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;

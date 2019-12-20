@@ -35,9 +35,10 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  */
 
 /**
- * TODO DOC
+ * Adds an entry listener for this cache. The listener will be notified
+ * for all cache created/removed/updated/expired events.
  */
-@Generated("62de91f5fca2f53f7da9ae9280c348b8")
+@Generated("5bfff5784cb99e0171eb5f05b036cfb7")
 public final class CacheAddEntryListenerCodec {
     //hex: 0x130100
     public static final int REQUEST_MESSAGE_TYPE = 1245440;
@@ -65,7 +66,7 @@ public final class CacheAddEntryListenerCodec {
         public java.lang.String name;
 
         /**
-         * if true fires events that originated from this node only, otherwise fires all events
+         * If true fires events that originated from this node only, otherwise fires all events
          */
         public boolean localOnly;
     }

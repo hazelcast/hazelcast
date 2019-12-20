@@ -34,14 +34,14 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  */
 
 /**
- * TODO DOC
+ * Sends a ping to the given connection.
  */
-@Generated("919d1e45f3f26808af4c5a5455c8a8df")
+@Generated("f6130af5298864eee5a02290eef5732c")
 public final class ClientPingCodec {
-    //hex: 0x000C00
-    public static final int REQUEST_MESSAGE_TYPE = 3072;
-    //hex: 0x000C01
-    public static final int RESPONSE_MESSAGE_TYPE = 3073;
+    //hex: 0x000B00
+    public static final int REQUEST_MESSAGE_TYPE = 2816;
+    //hex: 0x000B01
+    public static final int RESPONSE_MESSAGE_TYPE = 2817;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
 

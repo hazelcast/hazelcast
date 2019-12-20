@@ -34,9 +34,9 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  */
 
 /**
- * TODO DOC
+ * Creates a transaction with the given parameters.
  */
-@Generated("d1924db66b1df99e9a975683a900601d")
+@Generated("6c2edb8c6781cdcae39ee5f66f36d317")
 public final class TransactionCreateCodec {
     //hex: 0x150200
     public static final int REQUEST_MESSAGE_TYPE = 1376768;

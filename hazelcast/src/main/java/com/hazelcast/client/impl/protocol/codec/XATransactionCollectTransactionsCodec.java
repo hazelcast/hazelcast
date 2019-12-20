@@ -34,9 +34,9 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  */
 
 /**
- * TODO DOC
+ * Obtains a list of prepared transaction from the cluster.
  */
-@Generated("081094d55e468d3c433dde066e4c83b2")
+@Generated("3396e28d75898a66add3ac7df2595965")
 public final class XATransactionCollectTransactionsCodec {
     //hex: 0x140200
     public static final int REQUEST_MESSAGE_TYPE = 1311232;

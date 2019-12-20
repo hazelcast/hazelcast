@@ -35,9 +35,9 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  */
 
 /**
- * TODO DOC
+ * Adds a listener to be notified for the events fired on the underlying map on all nodes.
  */
-@Generated("c0b5d89b50ad152942e61ece3ed5b25c")
+@Generated("2bed87609dcb328870dbd3e7949aee23")
 public final class ContinuousQueryAddListenerCodec {
     //hex: 0x160400
     public static final int REQUEST_MESSAGE_TYPE = 1442816;

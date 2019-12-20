@@ -37,7 +37,6 @@ import com.hazelcast.client.impl.protocol.codec.CPSessionHeartbeatSessionCodec;
 import com.hazelcast.client.impl.protocol.codec.CacheAddEntryListenerCodec;
 import com.hazelcast.client.impl.protocol.codec.CacheAddNearCacheInvalidationListenerCodec;
 import com.hazelcast.client.impl.protocol.codec.CacheAddPartitionLostListenerCodec;
-import com.hazelcast.client.impl.protocol.codec.CacheAssignAndGetUuidsCodec;
 import com.hazelcast.client.impl.protocol.codec.CacheClearCodec;
 import com.hazelcast.client.impl.protocol.codec.CacheContainsKeyCodec;
 import com.hazelcast.client.impl.protocol.codec.CacheCreateConfigCodec;
@@ -82,7 +81,6 @@ import com.hazelcast.client.impl.protocol.codec.ClientDestroyProxyCodec;
 import com.hazelcast.client.impl.protocol.codec.ClientGetDistributedObjectsCodec;
 import com.hazelcast.client.impl.protocol.codec.ClientLocalBackupListenerCodec;
 import com.hazelcast.client.impl.protocol.codec.ClientPingCodec;
-import com.hazelcast.client.impl.protocol.codec.ClientRemoveAllListenersCodec;
 import com.hazelcast.client.impl.protocol.codec.ClientRemoveDistributedObjectListenerCodec;
 import com.hazelcast.client.impl.protocol.codec.ClientRemovePartitionLostListenerCodec;
 import com.hazelcast.client.impl.protocol.codec.ClientStatisticsCodec;
@@ -191,7 +189,6 @@ import com.hazelcast.client.impl.protocol.codec.MapAddNearCacheInvalidationListe
 import com.hazelcast.client.impl.protocol.codec.MapAddPartitionLostListenerCodec;
 import com.hazelcast.client.impl.protocol.codec.MapAggregateCodec;
 import com.hazelcast.client.impl.protocol.codec.MapAggregateWithPredicateCodec;
-import com.hazelcast.client.impl.protocol.codec.MapAssignAndGetUuidsCodec;
 import com.hazelcast.client.impl.protocol.codec.MapClearCodec;
 import com.hazelcast.client.impl.protocol.codec.MapContainsKeyCodec;
 import com.hazelcast.client.impl.protocol.codec.MapContainsValueCodec;
@@ -423,14 +420,12 @@ import com.hazelcast.client.impl.protocol.task.DeployClassesMessageTask;
 import com.hazelcast.client.impl.protocol.task.DestroyProxyMessageTask;
 import com.hazelcast.client.impl.protocol.task.GetDistributedObjectsMessageTask;
 import com.hazelcast.client.impl.protocol.task.PingMessageTask;
-import com.hazelcast.client.impl.protocol.task.RemoveAllListenersMessageTask;
 import com.hazelcast.client.impl.protocol.task.RemoveDistributedObjectListenerMessageTask;
 import com.hazelcast.client.impl.protocol.task.RemovePartitionLostListenerMessageTask;
 import com.hazelcast.client.impl.protocol.task.TriggerPartitionAssignmentMessageTask;
 import com.hazelcast.client.impl.protocol.task.cache.CacheAddEntryListenerMessageTask;
 import com.hazelcast.client.impl.protocol.task.cache.CacheAddNearCacheInvalidationListenerTask;
 import com.hazelcast.client.impl.protocol.task.cache.CacheAddPartitionLostListenerMessageTask;
-import com.hazelcast.client.impl.protocol.task.cache.CacheAssignAndGetUuidsMessageTask;
 import com.hazelcast.client.impl.protocol.task.cache.CacheClearMessageTask;
 import com.hazelcast.client.impl.protocol.task.cache.CacheContainsKeyMessageTask;
 import com.hazelcast.client.impl.protocol.task.cache.CacheCreateConfigMessageTask;
@@ -559,7 +554,6 @@ import com.hazelcast.client.impl.protocol.task.map.MapAddNearCacheInvalidationLi
 import com.hazelcast.client.impl.protocol.task.map.MapAddPartitionLostListenerMessageTask;
 import com.hazelcast.client.impl.protocol.task.map.MapAggregateMessageTask;
 import com.hazelcast.client.impl.protocol.task.map.MapAggregateWithPredicateMessageTask;
-import com.hazelcast.client.impl.protocol.task.map.MapAssignAndGetUuidsMessageTask;
 import com.hazelcast.client.impl.protocol.task.map.MapClearMessageTask;
 import com.hazelcast.client.impl.protocol.task.map.MapContainsKeyMessageTask;
 import com.hazelcast.client.impl.protocol.task.map.MapContainsValueMessageTask;
@@ -899,8 +893,6 @@ public class DefaultMessageTaskFactoryProvider implements MessageTaskFactoryProv
 //region ----------  REGISTRATION FOR com.hazelcast.client.impl.protocol.task.cache
         factories.put(CacheClearCodec.REQUEST_MESSAGE_TYPE,
                 (cm, con) -> new CacheClearMessageTask(cm, node, con));
-        factories.put(CacheAssignAndGetUuidsCodec.REQUEST_MESSAGE_TYPE,
-                (cm, con) -> new CacheAssignAndGetUuidsMessageTask(cm, node, con));
         factories.put(CacheFetchNearCacheInvalidationMetadataCodec.REQUEST_MESSAGE_TYPE,
                 (cm, con) -> new CacheFetchNearCacheInvalidationMetadataTask(cm, node, con));
         factories.put(CacheReplaceCodec.REQUEST_MESSAGE_TYPE,
@@ -1258,8 +1250,6 @@ public class DefaultMessageTaskFactoryProvider implements MessageTaskFactoryProv
                 (cm, con) -> new MapEntriesWithPagingPredicateMessageTask(cm, node, con));
         factories.put(MapAddEntryListenerCodec.REQUEST_MESSAGE_TYPE,
                 (cm, con) -> new MapAddEntryListenerMessageTask(cm, node, con));
-        factories.put(MapAssignAndGetUuidsCodec.REQUEST_MESSAGE_TYPE,
-                (cm, con) -> new MapAssignAndGetUuidsMessageTask(cm, node, con));
         factories.put(MapFetchNearCacheInvalidationMetadataCodec.REQUEST_MESSAGE_TYPE,
                 (cm, con) -> new MapFetchNearCacheInvalidationMetadataTask(cm, node, con));
         factories.put(MapRemoveIfSameCodec.REQUEST_MESSAGE_TYPE,
@@ -1418,8 +1408,6 @@ public class DefaultMessageTaskFactoryProvider implements MessageTaskFactoryProv
                 (cm, con) -> new AddClusterViewListenerMessageTask(cm, node, con));
         factories.put(ClientAuthenticationCustomCodec.REQUEST_MESSAGE_TYPE,
                 (cm, con) -> new AuthenticationCustomCredentialsMessageTask(cm, node, con));
-        factories.put(ClientRemoveAllListenersCodec.REQUEST_MESSAGE_TYPE,
-                (cm, con) -> new RemoveAllListenersMessageTask(cm, node, con));
         factories.put(ClientRemoveDistributedObjectListenerCodec.REQUEST_MESSAGE_TYPE,
                 (cm, con) -> new RemoveDistributedObjectListenerMessageTask(cm, node, con));
         factories.put(ClientAuthenticationCodec.REQUEST_MESSAGE_TYPE,

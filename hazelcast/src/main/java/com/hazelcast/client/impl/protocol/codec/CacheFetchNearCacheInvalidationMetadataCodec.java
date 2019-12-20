@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Fetches invalidation metadata from partitions of map.
  */
-@Generated("c7082e223a8e02ecfeb46c80e7dba03b")
+@Generated("69d9ab8a0a3eb993cfb9bbceaaa90311")
 public final class CacheFetchNearCacheInvalidationMetadataCodec {
     //hex: 0x131E00
     public static final int REQUEST_MESSAGE_TYPE = 1252864;
@@ -57,7 +57,7 @@ public final class CacheFetchNearCacheInvalidationMetadataCodec {
         public java.util.List<java.lang.String> names;
 
         /**
-         * TODO DOC
+         * Address of the member.
          */
         public com.hazelcast.cluster.Address address;
     }
@@ -88,12 +88,12 @@ public final class CacheFetchNearCacheInvalidationMetadataCodec {
     public static class ResponseParameters {
 
         /**
-         * TODO DOC
+         * Map of partition ids and sequence number of invalidations mapped by the cache name.
          */
         public java.util.List<java.util.Map.Entry<java.lang.String, java.util.List<java.util.Map.Entry<java.lang.Integer, java.lang.Long>>>> namePartitionSequenceList;
 
         /**
-         * TODO DOC
+         * Map of member UUIDs mapped by the partition ids of invalidations.
          */
         public java.util.List<java.util.Map.Entry<java.lang.Integer, java.util.UUID>> partitionUuidList;
     }

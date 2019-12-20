@@ -34,9 +34,9 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  */
 
 /**
- * TODO DOC
+ * Commits the transaction with the given id.
  */
-@Generated("9f2ff533eb59b1dcc28c6a38f7cc92a3")
+@Generated("8823b8fe278ba430fd0730a21d6c947e")
 public final class TransactionCommitCodec {
     //hex: 0x150100
     public static final int REQUEST_MESSAGE_TYPE = 1376512;

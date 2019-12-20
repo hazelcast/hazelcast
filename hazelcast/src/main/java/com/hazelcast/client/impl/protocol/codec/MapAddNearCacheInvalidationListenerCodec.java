@@ -37,12 +37,12 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Adds listener to map. This listener will be used to listen near cache invalidation events.
  */
-@Generated("95f3e746a3a9cc8c9dbd613e2d588c04")
+@Generated("d519fd210a036a8fd8260a1994843cfd")
 public final class MapAddNearCacheInvalidationListenerCodec {
-    //hex: 0x014100
-    public static final int REQUEST_MESSAGE_TYPE = 82176;
-    //hex: 0x014101
-    public static final int RESPONSE_MESSAGE_TYPE = 82177;
+    //hex: 0x013F00
+    public static final int REQUEST_MESSAGE_TYPE = 81664;
+    //hex: 0x013F01
+    public static final int RESPONSE_MESSAGE_TYPE = 81665;
     private static final int REQUEST_LISTENER_FLAGS_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_LOCAL_ONLY_FIELD_OFFSET = REQUEST_LISTENER_FLAGS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_LOCAL_ONLY_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
@@ -52,11 +52,11 @@ public final class MapAddNearCacheInvalidationListenerCodec {
     private static final int EVENT_I_MAP_INVALIDATION_PARTITION_UUID_FIELD_OFFSET = EVENT_I_MAP_INVALIDATION_SOURCE_UUID_FIELD_OFFSET + UUID_SIZE_IN_BYTES;
     private static final int EVENT_I_MAP_INVALIDATION_SEQUENCE_FIELD_OFFSET = EVENT_I_MAP_INVALIDATION_PARTITION_UUID_FIELD_OFFSET + UUID_SIZE_IN_BYTES;
     private static final int EVENT_I_MAP_INVALIDATION_INITIAL_FRAME_SIZE = EVENT_I_MAP_INVALIDATION_SEQUENCE_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
-    //hex: 0x014102
-    private static final int EVENT_I_MAP_INVALIDATION_MESSAGE_TYPE = 82178;
+    //hex: 0x013F02
+    private static final int EVENT_I_MAP_INVALIDATION_MESSAGE_TYPE = 81666;
     private static final int EVENT_I_MAP_BATCH_INVALIDATION_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    //hex: 0x014103
-    private static final int EVENT_I_MAP_BATCH_INVALIDATION_MESSAGE_TYPE = 82179;
+    //hex: 0x013F03
+    private static final int EVENT_I_MAP_BATCH_INVALIDATION_MESSAGE_TYPE = 81667;
 
     private MapAddNearCacheInvalidationListenerCodec() {
     }

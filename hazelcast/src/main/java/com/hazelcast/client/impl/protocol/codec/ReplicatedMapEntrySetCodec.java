@@ -34,9 +34,9 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  */
 
 /**
- * TODO DOC
+ * Gets a lazy set view of the mappings contained in this map.
  */
-@Generated("e8b92a196203e364fe0ddd89ba70f21a")
+@Generated("190c0aabe596235af3c8a1605fdb371a")
 public final class ReplicatedMapEntrySetCodec {
     //hex: 0x0D1100
     public static final int REQUEST_MESSAGE_TYPE = 856320;

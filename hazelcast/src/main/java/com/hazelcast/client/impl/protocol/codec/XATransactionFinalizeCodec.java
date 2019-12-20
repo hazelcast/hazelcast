@@ -34,9 +34,9 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  */
 
 /**
- * TODO DOC
+ * Finalizes the commit of XA transaction with the given xid.
  */
-@Generated("ce97d45f4b5174da5c7872def1662000")
+@Generated("b6d71db6e5e88263b64c97f830db7e19")
 public final class XATransactionFinalizeCodec {
     //hex: 0x140300
     public static final int REQUEST_MESSAGE_TYPE = 1311488;
