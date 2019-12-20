@@ -1299,11 +1299,26 @@ hazelcast:
             - com.example.SampleFilter2
           republishing-enabled: false
       indexes:
+        # unordered/hash index on the name attribute
         - type: HASH
           attributes:
             - "name"
+        # ordered/tree index on the age attribute
         - attributes:
           - "age"
+        # composite unordered/hash index on the name and age attributes
+        - type: HASH
+          attributes:
+            - "name"
+            - "age"
+        # composite ordered/tree index on the age and name attributes
+        - attributes:
+          - "age"
+          - "name"
+        # bitmap index on the age attribute
+        - type: BITMAP
+          attributes:
+            - "age"
       attributes:
         currency:
           extractor-class-name: com.bank.CurrencyExtractor
@@ -2100,7 +2115,7 @@ hazelcast:
   #
   #  HAZELCAST SECURITY REALMS
   #  Security realms are named security configurations which can be referenced from Hazelcast security configuration.
-  #  Currently, the realms support configuring <authentication> and/or <identity>. Only one type of authentication 
+  #  Currently, the realms support configuring <authentication> and/or <identity>. Only one type of authentication
   #  configuration and one type of identity configuration is allowed per the realm.
   #  Authentication types:
   #  * jaas
