@@ -20,6 +20,10 @@ import com.hazelcast.config.MergePolicyConfig;
 import com.hazelcast.config.ScheduledExecutorConfig;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
+import com.hazelcast.monitor.LocalExecutorStats;
+import com.hazelcast.monitor.LocalScheduledExecutorStats;
+import com.hazelcast.monitor.impl.LocalExecutorStatsImpl;
+import com.hazelcast.monitor.impl.LocalScheduledExecutorStatsImpl;
 import com.hazelcast.partition.PartitionLostEvent;
 import com.hazelcast.partition.PartitionLostListener;
 import com.hazelcast.scheduledexecutor.impl.operations.MergeOperation;
@@ -35,14 +39,17 @@ import com.hazelcast.spi.PartitionReplicationEvent;
 import com.hazelcast.spi.QuorumAwareService;
 import com.hazelcast.spi.RemoteService;
 import com.hazelcast.spi.SplitBrainHandlerService;
+import com.hazelcast.spi.StatisticsAwareService;
 import com.hazelcast.spi.impl.executionservice.InternalExecutionService;
 import com.hazelcast.spi.impl.merge.AbstractContainerMerger;
 import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 import com.hazelcast.spi.merge.SplitBrainMergeTypes.ScheduledExecutorMergeTypes;
 import com.hazelcast.spi.partition.MigrationEndpoint;
 import com.hazelcast.spi.serialization.SerializationService;
+import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.util.ContextMutexFactory;
+import com.hazelcast.util.MapUtil;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -68,7 +75,7 @@ import static java.util.Collections.synchronizedSet;
  */
 public class DistributedScheduledExecutorService
         implements ManagedService, RemoteService, MigrationAwareService, QuorumAwareService, SplitBrainHandlerService,
-        MembershipAwareService {
+        MembershipAwareService, StatisticsAwareService {
 
     public static final String SERVICE_NAME = "hz:impl:scheduledExecutorService";
     public static final int MEMBER_BIN = -1;
@@ -90,6 +97,10 @@ public class DistributedScheduledExecutorService
             return quorumName == null ? NULL_OBJECT : quorumName;
         }
     };
+
+
+    private final ConcurrentHashMap<String, LocalScheduledExecutorStatsImpl> statsMap
+            = new ConcurrentHashMap<String, LocalScheduledExecutorStatsImpl>();
 
     private NodeEngine nodeEngine;
     private ScheduledExecutorPartition[] partitions;
@@ -126,8 +137,8 @@ public class DistributedScheduledExecutorService
     @Override
     public void reset() {
         shutdown(true);
-
-        memberBin = new ScheduledExecutorMemberBin(nodeEngine);
+        statsMap.clear();
+        memberBin = new ScheduledExecutorMemberBin(nodeEngine, statsMap);
 
         // Keep using the public API due to the benefit of getting events on all partitions and not just local
         if (partitionLostRegistration == null) {
@@ -138,7 +149,7 @@ public class DistributedScheduledExecutorService
             if (partitions[partitionId] != null) {
                 partitions[partitionId].destroy();
             }
-            partitions[partitionId] = new ScheduledExecutorPartition(nodeEngine, partitionId);
+            partitions[partitionId] = new ScheduledExecutorPartition(nodeEngine, partitionId, statsMap);
         }
     }
 
@@ -169,7 +180,6 @@ public class DistributedScheduledExecutorService
     public DistributedObject createDistributedObject(String name) {
         ScheduledExecutorConfig executorConfig = nodeEngine.getConfig().findScheduledExecutorConfig(name);
         checkScheduledExecutorConfig(executorConfig, nodeEngine.getSplitBrainMergePolicyProvider());
-
         return new ScheduledExecutorServiceProxy(name, nodeEngine, this);
     }
 
@@ -178,7 +188,7 @@ public class DistributedScheduledExecutorService
         if (shutdownExecutors.remove(name) == null) {
             ((InternalExecutionService) nodeEngine.getExecutionService()).shutdownScheduledDurableExecutor(name);
         }
-
+        statsMap.remove(name);
         resetPartitionOrMemberBinContainer(name);
         quorumConfigCache.remove(name);
     }
@@ -358,5 +368,14 @@ public class DistributedScheduledExecutorService
             MergeOperation operation = new MergeOperation(name, mergingEntries, mergePolicy);
             invoke(SERVICE_NAME, operation, partitionId);
         }
+    }
+
+    @Override
+    public Map getStats() {
+        Map<String, LocalScheduledExecutorStats> executorStats = MapUtil.createHashMap(statsMap.size());
+        for (Map.Entry<String, LocalScheduledExecutorStatsImpl> queueStat : statsMap.entrySet()) {
+            executorStats.put(queueStat.getKey(), queueStat.getValue());
+        }
+        return executorStats;
     }
 }

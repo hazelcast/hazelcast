@@ -17,6 +17,7 @@
 package com.hazelcast.scheduledexecutor.impl;
 
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.monitor.impl.LocalScheduledExecutorStatsImpl;
 import com.hazelcast.scheduledexecutor.DuplicateTaskException;
 import com.hazelcast.scheduledexecutor.ScheduledTaskHandler;
 import com.hazelcast.scheduledexecutor.ScheduledTaskStatistics;
@@ -70,15 +71,18 @@ public class ScheduledExecutorContainer {
     private final int durability;
 
     private final int capacity;
+    private final LocalScheduledExecutorStatsImpl stats;
 
-    ScheduledExecutorContainer(String name, int partitionId, NodeEngine nodeEngine, int durability, int capacity) {
-        this(name, partitionId, nodeEngine, durability, capacity, new ConcurrentHashMap<String, ScheduledTaskDescriptor>());
+    ScheduledExecutorContainer(String name, int partitionId, NodeEngine nodeEngine, int durability, int capacity,
+                               LocalScheduledExecutorStatsImpl stats) {
+        this(name, partitionId, nodeEngine, durability, capacity, new ConcurrentHashMap<String, ScheduledTaskDescriptor>(), stats);
     }
 
     ScheduledExecutorContainer(String name, int partitionId, NodeEngine nodeEngine, int durability, int capacity,
-                               ConcurrentMap<String, ScheduledTaskDescriptor> tasks) {
+                               ConcurrentMap<String, ScheduledTaskDescriptor> tasks, LocalScheduledExecutorStatsImpl stats) {
         this.logger = nodeEngine.getLogger(getClass());
         this.name = name;
+        this.stats = stats;
         this.nodeEngine = nodeEngine;
         this.executionService = (InternalExecutionService) nodeEngine.getExecutionService();
         this.partitionId = partitionId;
@@ -383,6 +387,8 @@ public class ScheduledExecutorContainer {
 
     private <V> void doSchedule(ScheduledTaskDescriptor descriptor) {
         assert descriptor.getScheduledFuture() == null;
+
+
         TaskDefinition definition = descriptor.getDefinition();
 
         if (logger.isFinestEnabled()) {
@@ -393,11 +399,14 @@ public class ScheduledExecutorContainer {
         TaskRunner<V> runner;
         switch (definition.getType()) {
             case SINGLE_RUN:
+                stats.incScheduledSingleRun();
+
                 runner = new TaskRunner<V>(this, descriptor);
                 future = new DelegatingScheduledFutureStripper<V>(executionService
                         .scheduleDurable(name, (Callable) runner, definition.getInitialDelay(), definition.getUnit()));
                 break;
             case AT_FIXED_RATE:
+                stats.incScheduledFixedRate();
                 runner = new TaskRunner<V>(this, descriptor);
                 future = executionService
                         .scheduleDurableWithRepetition(name, runner, definition.getInitialDelay(), definition.getPeriod(),

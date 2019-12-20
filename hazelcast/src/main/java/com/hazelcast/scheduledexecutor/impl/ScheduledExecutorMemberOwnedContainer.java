@@ -16,6 +16,7 @@
 
 package com.hazelcast.scheduledexecutor.impl;
 
+import com.hazelcast.monitor.impl.LocalScheduledExecutorStatsImpl;
 import com.hazelcast.scheduledexecutor.ScheduledTaskHandler;
 import com.hazelcast.spi.InvocationBuilder;
 import com.hazelcast.spi.NodeEngine;
@@ -39,8 +40,8 @@ public class ScheduledExecutorMemberOwnedContainer
 
     private final AtomicBoolean memberPartitionLock = new AtomicBoolean();
 
-    ScheduledExecutorMemberOwnedContainer(String name, int capacity, NodeEngine nodeEngine) {
-        super(name, -1, nodeEngine, MEMBER_DURABILITY, capacity, new ConcurrentHashMap<String, ScheduledTaskDescriptor>());
+    ScheduledExecutorMemberOwnedContainer(String name, int capacity, NodeEngine nodeEngine, LocalScheduledExecutorStatsImpl stats) {
+        super(name, -1, nodeEngine, MEMBER_DURABILITY, capacity, new ConcurrentHashMap<String, ScheduledTaskDescriptor>(), stats);
     }
 
     @Override

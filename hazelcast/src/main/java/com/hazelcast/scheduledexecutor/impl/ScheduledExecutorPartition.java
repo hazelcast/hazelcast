@@ -18,13 +18,16 @@ package com.hazelcast.scheduledexecutor.impl;
 
 import com.hazelcast.config.ScheduledExecutorConfig;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.monitor.impl.LocalScheduledExecutorStatsImpl;
 import com.hazelcast.scheduledexecutor.impl.operations.ReplicationOperation;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConstructorFunction;
 
 import java.util.Iterator;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import static com.hazelcast.util.MapUtil.createHashMap;
 
@@ -33,7 +36,12 @@ public class ScheduledExecutorPartition
 
     private final ILogger logger;
     private final int partitionId;
-
+    private final ConstructorFunction<String, LocalScheduledExecutorStatsImpl> statsConstructorFunction
+            = new ConstructorFunction<String, LocalScheduledExecutorStatsImpl>() {
+        public LocalScheduledExecutorStatsImpl createNew(String key) {
+            return new LocalScheduledExecutorStatsImpl();
+        }
+    };
     private final ConstructorFunction<String, ScheduledExecutorContainer> containerConstructorFunction =
             new ConstructorFunction<String, ScheduledExecutorContainer>() {
                 @Override
@@ -44,14 +52,20 @@ public class ScheduledExecutorPartition
 
                     ScheduledExecutorConfig config = nodeEngine.getConfig().findScheduledExecutorConfig(name);
                     return new ScheduledExecutorContainer(name, partitionId, nodeEngine, config.getDurability(),
-                            config.getCapacity());
+                            config.getCapacity(), getLocalExecutorStats(name));
+                }
+
+                LocalScheduledExecutorStatsImpl getLocalExecutorStats(String name) {
+                    return ConcurrencyUtil.getOrPutIfAbsent(statsMap, name, statsConstructorFunction);
                 }
             };
+    private final ConcurrentHashMap<String, LocalScheduledExecutorStatsImpl> statsMap;
 
-    ScheduledExecutorPartition(NodeEngine nodeEngine, int partitionId) {
+    ScheduledExecutorPartition(NodeEngine nodeEngine, int partitionId, ConcurrentHashMap<String, LocalScheduledExecutorStatsImpl> statsMap) {
         super(nodeEngine);
         this.logger = nodeEngine.getLogger(getClass());
         this.partitionId = partitionId;
+        this.statsMap = statsMap;
     }
 
     public Operation prepareReplicationOperation(int replicaIndex, boolean migrationMode) {

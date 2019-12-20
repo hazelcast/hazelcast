@@ -18,8 +18,13 @@ package com.hazelcast.scheduledexecutor.impl;
 
 import com.hazelcast.config.ScheduledExecutorConfig;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.monitor.LocalScheduledExecutorStats;
+import com.hazelcast.monitor.impl.LocalScheduledExecutorStatsImpl;
 import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConstructorFunction;
+
+import java.util.concurrent.ConcurrentHashMap;
 
 public class ScheduledExecutorMemberBin
         extends AbstractScheduledExecutorContainerHolder {
@@ -27,6 +32,13 @@ public class ScheduledExecutorMemberBin
     private final ILogger logger;
 
     private final NodeEngine nodeEngine;
+
+    private final ConstructorFunction<String, LocalScheduledExecutorStatsImpl> statsConstructorFunction
+            = new ConstructorFunction<String, LocalScheduledExecutorStatsImpl>() {
+        public LocalScheduledExecutorStatsImpl createNew(String key) {
+            return new LocalScheduledExecutorStatsImpl();
+        }
+    };
 
     private final ConstructorFunction<String, ScheduledExecutorContainer> containerConstructorFunction =
             new ConstructorFunction<String, ScheduledExecutorContainer>() {
@@ -36,15 +48,19 @@ public class ScheduledExecutorMemberBin
                         logger.finest("[Partition: -1] Create new scheduled executor container with name: " + name);
                     }
 
+                    LocalScheduledExecutorStatsImpl stats = ConcurrencyUtil.getOrPutIfAbsent(statsMap, name, statsConstructorFunction);
                     ScheduledExecutorConfig config = nodeEngine.getConfig().findScheduledExecutorConfig(name);
-                    return new ScheduledExecutorMemberOwnedContainer(name, config.getCapacity(), nodeEngine);
+                    return new ScheduledExecutorMemberOwnedContainer(name, config.getCapacity(), nodeEngine, stats);
                 }
             };
 
-    public ScheduledExecutorMemberBin(NodeEngine nodeEngine) {
+    private final ConcurrentHashMap<String, LocalScheduledExecutorStatsImpl> statsMap;
+
+    public ScheduledExecutorMemberBin(NodeEngine nodeEngine, ConcurrentHashMap<String, LocalScheduledExecutorStatsImpl> statsMap) {
         super(nodeEngine);
         this.logger = nodeEngine.getLogger(getClass());
         this.nodeEngine = nodeEngine;
+        this.statsMap =statsMap;
     }
 
     @Override
