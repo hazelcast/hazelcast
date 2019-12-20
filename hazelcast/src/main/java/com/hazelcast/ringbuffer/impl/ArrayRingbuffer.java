@@ -111,7 +111,7 @@ public class ArrayRingbuffer<E> implements Ringbuffer<E> {
     @Override
     // This method is not used since the RingbufferContainer also checks if the ring buffer store is enabled before
     // throwing a StaleSequenceException
-    public void checkBlockableReadSequence(long readSequence) {
+    public void checkBlockableReadSequence(long readSequence) { //todo (xxx): check
         if (readSequence > tailSequence + 1) {
             throw new IllegalArgumentException("sequence:" + readSequence
                     + " is too large. The current tailSequence is:" + tailSequence);

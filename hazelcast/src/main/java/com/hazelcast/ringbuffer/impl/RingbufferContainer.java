@@ -473,7 +473,7 @@ public class RingbufferContainer<T, E> implements IdentifiedDataSerializable, No
      *                                  not enabled
      * @throws IllegalArgumentException if the requested sequence is greater than the tail sequence + 1 or
      */
-    public void checkBlockableReadSequence(long readSequence) {
+    public void checkBlockableReadSequence(long readSequence) { //todo (xxx): check
         if (isTooLargeSequence(readSequence)) {
             throw new IllegalArgumentException("sequence:" + readSequence
                     + " is too large. The current tailSequence is:" + tailSequence());

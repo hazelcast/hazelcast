@@ -42,6 +42,7 @@ import java.util.Random;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.config.InMemoryFormat.OBJECT;
 import static com.hazelcast.ringbuffer.OverflowPolicy.FAIL;
@@ -567,12 +568,10 @@ public abstract class RingbufferAbstractTest extends HazelcastTestSupport {
 
         long seq = ringbuffer.tailSequence() + 2;
         Future<ReadResultSet<String>> f = ringbuffer.readManyAsync(seq, 1, 1, null).toCompletableFuture();
-        try {
-            f.get();
-            fail();
-        } catch (ExecutionException e) {
-            assertInstanceOf(IllegalArgumentException.class, e.getCause());
-        }
+
+        //test that the read blocks (should at least fail some of the time, if not the case)
+        TimeUnit.MILLISECONDS.sleep(250);
+        assertFalse(f.isDone());
     }
 
     @Test
@@ -689,11 +688,14 @@ public abstract class RingbufferAbstractTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void readManyAsync_whenHitsStale_shouldNotBeBlocked() throws Exception {
-        Future<ReadResultSet<String>> f = ringbuffer.readManyAsync(0, 1, 10, null).toCompletableFuture();
+    public void readManyAsync_whenHitsStale_useHeadAsStartSequence() throws Exception {
         ringbuffer.addAllAsync(asList("0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10"), OVERWRITE);
-        expectedException.expect(new RootCauseMatcher(StaleSequenceException.class));
-        f.get();
+        Future<ReadResultSet<String>> f = ringbuffer.readManyAsync(1, 1, 10, null).toCompletableFuture();
+
+        ReadResultSet rs = f.get();
+        assertEquals(10, rs.readCount());
+        assertEquals("1", rs.get(0));
+        assertEquals("10", rs.get(9));
     }
 
     @Test
