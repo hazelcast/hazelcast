@@ -871,7 +871,7 @@ public final class Sinks {
      * configuration parameter to enable auto-reconnection, refer to provider
      * documentation for details.
      * <p>
-     * Default local parallelism for this processor is 4 (or less if less CPUs
+     * The default local parallelism for this processor is 4 (or less if less CPUs
      * are available).
      *
      * @param <T> type of the items the sink accepts
@@ -916,7 +916,7 @@ public final class Sinks {
      * configuration parameter to enable auto-reconnection, refer to provider
      * documentation for details.
      * <p>
-     * Default local parallelism for this processor is 4 (or less if less CPUs
+     * The default local parallelism for this processor is 4 (or less if less CPUs
      * are available).
      *
      * @param <T> type of the items the sink accepts

@@ -115,7 +115,7 @@
         <kafka.version>2.2.0</kafka.version>
 
         <!-- test dependencies -->
-        <activemq.version>5.15.3</activemq.version>
+        <activemq.version>5.15.11</activemq.version>
         <junit.version>4.12</junit.version>
         <hamcrest.version>1.3</hamcrest.version>
         <mockito.version>2.22.0</mockito.version>

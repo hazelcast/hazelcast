@@ -65,14 +65,14 @@ import javax.annotation.Nonnull;
  * created. It should only rollback transactions created by this vertex and
  * this job; it can use the vertex name and job ID passed to the {@link #init}
  * method in the context to filter.
- *
- * <p><b>Determining the list of transactions to rollback</b><br/>
+ * <p>
+ * <b>Determining the list of transactions to rollback</b><br/>
  * You can't store the IDs of the created transactions to the snapshot, as one
  * might intuitively think. The job might run for a while after creating a
  * snapshot and start a new transaction and we need to roll that one too. The
  * job might even fail before it creates the first snapshot.
- *
- * <p>There are multiple ways to tackle this:
+ * <p>
+ * There are multiple ways to tackle this:
  * <ul>
  *     <li>enumerate all pending transactions in the external system and
  *     rollback those that were created by this processor. For example, a file
@@ -276,13 +276,13 @@ public interface Processor {
      * the processor doesn't use transactions, it can just return {@code true}
      * or rely on the no-op default implementation. This is the first phase of
      * a two-phase commit.
-     *
-     * <p>This method is called right after {@link #saveToSnapshot()}. After
+     * <p>
+     * This method is called right after {@link #saveToSnapshot()}. After
      * this method returns {@code true}, Jet will return to call the processing
      * methods again. Some time later, {@link #snapshotCommitFinish} will be
      * called.
-     *
-     * <p>When this processor communicates with an external transactional
+     * <p>
+     * When this processor communicates with an external transactional
      * store, it should do the following:
      *
      * <ul>
@@ -317,15 +317,15 @@ public interface Processor {
      * This is the second phase of a two-phase commit. Jet calls it after the
      * snapshot was successfully saved on all other processors in the job on
      * all cluster members.
-     *
-     * <p>This method can be called even when the {@link #process(int, Inbox)
+     * <p>
+     * This method can be called even when the {@link #process(int, Inbox)
      * process()} method didn't process the items in the inbox. For this reason
      * this method should not add any items to the outbox. After all the input
      * is exhausted, it is also called between {@link #complete()} calls. Once
      * {@code complete()} returns {@code true}, this method can still be called
      * to finish the snapshot that was started before this processor completed.
-     *
-     * <p>The processor should do the following:
+     * <p>
+     * The processor should do the following:
      *
      * <ul>
      *     <li>if {@code success == true}, it should commit the prepared
@@ -339,8 +339,8 @@ public interface Processor {
      *     in {@link #saveToSnapshot}, it can continue to use the last active
      *     transaction as active.
      * </ul>
-     *
-     * <p>The method is called repeatedly until it eventually returns {@code
+     * <p>
+     * The method is called repeatedly until it eventually returns {@code
      * true}. No other method on this processor will be called before it
      * returns {@code true}.
      *
@@ -354,8 +354,8 @@ public interface Processor {
      * state snapshot after the restart in {@link #restoreFromSnapshot}. This
      * is necessary to ensure exactly-once processing of transactional
      * processors.
-     *
-     * <p>The default implementation takes no action and returns {@code true}.
+     * <p>
+     * The default implementation takes no action and returns {@code true}.
      *
      * @param success true, if all members were successful in {@link
      *      #saveToSnapshot()} and we're not doing {@link Job#exportSnapshot}
@@ -372,13 +372,13 @@ public interface Processor {
      * snapshot" operation. The type of items in the inbox is {@code
      * Map.Entry}, key and value types are exactly as they were saved in {@link
      * #saveToSnapshot()}. This method may emit items to the outbox.
-     *
-     * <p>If this method returns with items still present in the inbox, it will
+     * <p>
+     * If this method returns with items still present in the inbox, it will
      * be called again before proceeding to call any other methods. It is never
      * called with an empty inbox. After all items are processed, {@link
      * #finishSnapshotRestore()} is called.
-     *
-     * <p>If a transaction ID saved in {@link #snapshotCommitPrepare()} is
+     * <p>
+     * If a transaction ID saved in {@link #snapshotCommitPrepare()} is
      * restored, this method should commit that transaction. If the processor
      * is unable to commit those transactions, data loss or duplication might
      * occur. The processor must be ready to restore a transaction ID that no
@@ -388,8 +388,8 @@ public interface Processor {
      * part of the transaction ID, can be different from the current job ID, if
      * the job was {@linkplain JobConfig#setInitialSnapshotName started from an
      * exported state}. These cases should be handled gracefully.
-     *
-     * <p>The default implementation throws an exception - if you emit
+     * <p>
+     * The default implementation throws an exception - if you emit
      * something in {@link #saveToSnapshot()}, you must be able to handle it
      * here. If you don't override {@link #saveToSnapshot()}, throwing an
      * exception here will never happen.

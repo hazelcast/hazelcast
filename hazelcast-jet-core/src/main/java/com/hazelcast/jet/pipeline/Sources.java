@@ -27,6 +27,7 @@ import com.hazelcast.function.PredicateEx;
 import com.hazelcast.function.SupplierEx;
 import com.hazelcast.jet.Util;
 import com.hazelcast.jet.config.JobConfig;
+import com.hazelcast.jet.config.ProcessingGuarantee;
 import com.hazelcast.jet.core.EventTimeMapper;
 import com.hazelcast.jet.core.EventTimePolicy;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
@@ -1020,7 +1021,7 @@ public final class Sources {
      * append the lines. However, it might not work as expected because some
      * editors write to a temp file and then rename it or append extra newline
      * character at the end which gets overwritten if more text is added in the
-     * editor. Best way to append is to use {@code echo text >> yourfile}.
+     * editor. The best way to append is to use {@code echo text >> yourFile}.
      *
      * See {@link #filesBuilder(String)}.
      */
@@ -1037,14 +1038,12 @@ public final class Sources {
      *                 .build();
      * </pre>
      *
-     * This version creates a connection without any authentication parameters
-     * and uses transacted sessions if processing guarantee is enabled for the
-     * job, otherwise it uses {@code Session.AUTO_ACKNOWLEDGE} mode. JMS {@link
-     * Message} objects are emitted to downstream.
+     * This version creates a connection without any authentication parameters.
+     * JMS {@link javax.jms.Message} objects are emitted to downstream.
      * <p>
      * <b>Note:</b> {@link javax.jms.Message} might not be serializable. In
-     * that case you can use {@linkplain #jmsQueueBuilder(SupplierEx)
-     * the builder} and add a projection.
+     * that case you can use {@linkplain #jmsQueueBuilder(SupplierEx) the
+     * builder} and add a projection.
      *
      * @param factorySupplier supplier to obtain JMS connection factory
      * @param name            the name of the queue
@@ -1064,24 +1063,20 @@ public final class Sources {
      * a custom JMS {@link StreamSource} for the Pipeline API. See javadoc on
      * {@link JmsSourceBuilder} methods for more details.
      * <p>
-     * This source uses the {@linkplain Message#getJMSTimestamp() JMS' message
-     * timestamp} as the native timestamp, if {@linkplain
+     * This source uses the {@linkplain Message#getJMSTimestamp() JMS'
+     * message timestamp} as the native timestamp, if {@linkplain
      * StreamSourceStage#withNativeTimestamps(long) enabled}.
      * <p>
-     * If processing guarantee is enabled for the job, the source will
-     * acknowledge the consumption of messages using distributed transactions.
-     * To disable it, call {@link
-     * JmsSourceBuilder#forceAutoAcknowledge(boolean)} on the returned builder.
-     * You also need to disable it if your {@code ConnectionFactory} isn't a
-     * {@link javax.jms.XAConnectionFactory}.
+     * This source supports exactly-once and at-least-once mode, see {@link
+     * JmsSourceBuilder#maxGuarantee(ProcessingGuarantee)} for more
+     * information.
      * <p>
-     * IO failures should be handled by the JMS provider. If any JMS operation
-     * throws an exception, the job will fail. Most of the providers offer a
-     * configuration parameter to enable auto-reconnection, refer to provider
-     * documentation for details.
+     * IO failures should be handled by the JMS provider. If any JMS
+     * operation throws an exception, the job will fail. Most of the providers
+     * offer a configuration parameter to enable auto-reconnection, refer to
+     * provider documentation for details.
      * <p>
-     * Default local parallelism for this processor is 4 (or less if less CPUs
-     * are available).
+     * The default local parallelism for this processor is 1.
      */
     @Nonnull
     public static JmsSourceBuilder jmsQueueBuilder(SupplierEx<? extends ConnectionFactory> factorySupplier) {
@@ -1089,17 +1084,24 @@ public final class Sources {
     }
 
     /**
-     * Convenience for {@link #jmsTopicBuilder(SupplierEx)}. This
-     * version creates a connection without any authentication parameters and
-     * uses non-transacted sessions with {@code Session.AUTO_ACKNOWLEDGE} mode.
-     * JMS {@link Message} objects are emitted to downstream.
+     * Shortcut equivalent to:
+     * <pre>
+     *         return jmsTopicBuilder(factorySupplier)
+     *                 .destinationName(name)
+     *                 .build();
+     * </pre>
+     *
+     * This version creates a connection without any authentication parameters.
+     * A non-durable, non-shared consumer is used, only one member will connect
+     * to the broker. JMS {@link javax.jms.Message} objects are emitted to
+     * downstream.
      * <p>
      * <b>Note:</b> {@link javax.jms.Message} might not be serializable. In
-     * that case you can use {@linkplain #jmsTopicBuilder(SupplierEx)
-     * the builder} and add a projection.
+     * that case you can use {@linkplain #jmsQueueBuilder(SupplierEx) the
+     * builder} and add a projection.
      *
      * @param factorySupplier supplier to obtain JMS connection factory
-     * @param name            the name of the topic
+     * @param name            the name of the queue
      */
     @Nonnull
     public static StreamSource<Message> jmsTopic(
@@ -1116,27 +1118,24 @@ public final class Sources {
      * a custom JMS {@link StreamSource} for the Pipeline API. See javadoc on
      * {@link JmsSourceBuilder} methods for more details.
      * <p>
-     * Topic is a non-distributed source: if messages are consumed by multiple
-     * consumers, all of them will get the same messages. Therefore the source
-     * operates on a single member and with local parallelism of 1. Setting
-     * local parallelism to a value other than 1 causes an {@code
-     * IllegalArgumentException}.
+     * By default, a non-shared consumer is used. This forces the source to
+     * run on only one member of the cluster. You can use {@link
+     * JmsSourceBuilder#consumerFn(FunctionEx)} to create a shared consumer.
      * <p>
-     * This source uses the {@link Message#getJMSTimestamp() JMS' message
-     * timestamp} as the native timestamp, if {@linkplain
+     * This source uses the {@linkplain Message#getJMSTimestamp() JMS'
+     * message timestamp} as the native timestamp, if {@linkplain
      * StreamSourceStage#withNativeTimestamps(long) enabled}.
      * <p>
-     * The source does not save any state to snapshot. Behavior of job restart
-     * changes according to the consumer. If it is a durable consumer and a
-     * unique client identifier is set for the connection then JMS provider
-     * persists items during restart and the source starts where it left from.
-     * If the consumer is non-durable then source emits the items published
-     * after the restart.
+     * This source supports exactly-once and at-least-once mode, see {@link
+     * JmsSourceBuilder#maxGuarantee(ProcessingGuarantee)} for more
+     * information.
      * <p>
-     * IO failures should be handled by the JMS provider. If any JMS operation
-     * throws an exception, the job will fail. Most of the providers offer a
-     * configuration parameter to enable auto-reconnection, refer to provider
-     * documentation for details.
+     * IO failures should be handled by the JMS provider. If any JMS
+     * operation throws an exception, the job will fail. Most of the providers
+     * offer a configuration parameter to enable auto-reconnection, refer to
+     * provider documentation for details.
+     * <p>
+     * The default local parallelism for this processor is 1.
      */
     @Nonnull
     public static JmsSourceBuilder jmsTopicBuilder(SupplierEx<? extends ConnectionFactory> factorySupplier) {

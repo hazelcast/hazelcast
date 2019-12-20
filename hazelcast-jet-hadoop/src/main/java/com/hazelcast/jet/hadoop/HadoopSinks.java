@@ -63,7 +63,7 @@ public final class HadoopSinks {
      * will be overwritten and some not - we don't clean the directory before
      * the execution starts.
      * <p>
-     * Default local parallelism for this processor is 2 (or less if less CPUs
+     * The default local parallelism for this processor is 2 (or less if less CPUs
      * are available).
      *
      * @param configuration {@code Configuration} used for output format configuration

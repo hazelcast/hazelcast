@@ -88,7 +88,7 @@ public final class HadoopSources {
      * configuration from {@link Job#getConfiguration()}, the new API will be
      * used. Please see {@link #COPY_ON_READ} if you are using the new API.
      * <p>
-     * Default local parallelism for this processor is 2 (or less if less CPUs
+     * The default local parallelism for this processor is 2 (or less if less CPUs
      * are available).
      * <p>
      * This source does not save any state to snapshot. If the job is restarted,

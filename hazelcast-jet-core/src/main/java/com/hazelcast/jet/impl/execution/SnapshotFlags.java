@@ -46,8 +46,8 @@ public final class SnapshotFlags {
      * If set, the {@link Processor#snapshotCommitPrepare()} and {@link
      * Processor#snapshotCommitFinish(boolean)} methods won't be called, only
      * {@link Processor#saveToSnapshot()}.
-     *
-     * <p>It's initiated with {@link Job#exportSnapshot}, but not with {@link
+     * <p>
+     * It's initiated with {@link Job#exportSnapshot}, but not with {@link
      * Job#cancelAndExportSnapshot}.
      */
     public static boolean isExportOnly(int flags) {

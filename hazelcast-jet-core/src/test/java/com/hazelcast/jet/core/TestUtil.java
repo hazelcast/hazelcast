@@ -48,7 +48,7 @@ public final class TestUtil {
     /**
      * Asserts that {@code caught} exception is equal to {@code expected} or one of its causes.
      * <p>
-     * <p>Exceptions are considered equal, if their {@code message}s and classes are equal.
+     * Exceptions are considered equal, if their {@code message}s and classes are equal.
      *
      * @param expected Expected exception
      * @param caught   Caught exception

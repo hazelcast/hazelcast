@@ -138,8 +138,8 @@ public final class Util {
     /**
      * Parses the jobId formatted with {@link
      * Util#idToString(long)}.
-     *
-     * <p>The method is lenient: if the string doesn't match the structure
+     * <p>
+     * The method is lenient: if the string doesn't match the structure
      * output by {@code idToString} or if the string is null, it will return
      * -1.
      *

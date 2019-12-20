@@ -21,12 +21,9 @@ import org.apache.activemq.ActiveMQConnectionFactory;
 
 import javax.jms.Connection;
 import javax.jms.ConnectionFactory;
-import javax.jms.Destination;
-import javax.jms.JMSException;
+import javax.jms.MessageProducer;
 import javax.jms.Session;
-import javax.jms.TextMessage;
 
-import static com.hazelcast.jet.impl.util.Util.uncheckRun;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
@@ -36,41 +33,25 @@ public final class JmsMessageProducer {
 
     private final Thread producerThread;
 
-    JmsMessageProducer(String destinationName, DestinationType destinationType) {
+    JmsMessageProducer(String destinationName, boolean isQueue) {
         producerThread = new Thread(() -> {
             ConnectionFactory connectionFactory = new ActiveMQConnectionFactory(ActiveMQBroker.BROKER_URL);
-            Connection connection = null;
-            try {
-                connection = connectionFactory.createConnection();
-                connection.start();
-
-                Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
-                Destination destination;
-                if (destinationType == DestinationType.QUEUE) {
-                    destination = session.createQueue(destinationName);
-                } else {
-                    destination = session.createTopic(destinationName);
-                }
-
-                javax.jms.MessageProducer producer = session.createProducer(destination);
-                int count = 0;
-                while (true) {
-                    TextMessage textMessage = session.createTextMessage("Message-" + count++);
-                    producer.send(textMessage);
+            try (
+                    Connection connection = connectionFactory.createConnection();
+                    Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+                    MessageProducer producer = session.createProducer(
+                            isQueue ? session.createQueue(destinationName)
+                                    : session.createTopic(destinationName))
+            ) {
+                for (int count = 0; ; count++) {
+                    producer.send(session.createTextMessage("Message-" + count));
                     SECONDS.sleep(1);
                 }
-            } catch (JMSException e) {
-                throw ExceptionUtil.rethrow(e);
             } catch (InterruptedException ignored) {
-            } finally {
-                if (connection != null) {
-                    uncheckRun(connection::close);
-                }
+            } catch (Exception e) {
+                e.printStackTrace();
             }
         });
-    }
-
-    public void start() {
         producerThread.start();
     }
 
@@ -81,9 +62,5 @@ public final class JmsMessageProducer {
         } catch (Exception e) {
             throw ExceptionUtil.rethrow(e);
         }
-    }
-
-    enum DestinationType {
-        QUEUE, TOPIC
     }
 }

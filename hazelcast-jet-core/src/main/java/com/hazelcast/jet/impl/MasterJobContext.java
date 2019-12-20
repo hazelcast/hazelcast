@@ -129,8 +129,8 @@ public class MasterJobContext {
      * A future (re)created when the job is started and completed when its
      * execution ends. Execution ending doesn't mean the job is done, it may
      * be just temporarily stopping due to suspension, job restarting, etc.
-     *
-     * <p>It's always completed normally, even if the execution fails.
+     * <p>
+     * It's always completed normally, even if the execution fails.
      */
     @Nonnull
     private volatile CompletableFuture<Void> executionCompletionFuture = completedFuture(null);
@@ -760,12 +760,12 @@ public class MasterJobContext {
 
     /**
      * Checks if the job is running on all members and maybe restart it.
-     *
-     * <p>Returns {@code false}, if this method should be scheduled to
+     * <p>
+     * Returns {@code false}, if this method should be scheduled to
      * be called later. That is, when the job is running, but we've
      * failed to request the restart.
-     *
-     * <p>Returns {@code true}, if the job is not running, has
+     * <p>
+     * Returns {@code true}, if the job is not running, has
      * auto-scaling disabled, is already running on all members or if
      * we've managed to request a restart.
      */

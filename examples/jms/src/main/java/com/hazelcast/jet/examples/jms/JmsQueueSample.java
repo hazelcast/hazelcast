@@ -19,7 +19,6 @@ package com.hazelcast.jet.examples.jms;
 import com.hazelcast.jet.Jet;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Job;
-import com.hazelcast.jet.core.JobStatus;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.jet.pipeline.Sources;
@@ -27,10 +26,7 @@ import org.apache.activemq.ActiveMQConnectionFactory;
 
 import javax.jms.TextMessage;
 import java.util.concurrent.CancellationException;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
 
-import static com.hazelcast.jet.impl.util.Util.uncheckRun;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
@@ -43,12 +39,11 @@ public class JmsQueueSample {
     private static final String INPUT_QUEUE = "inputQueue";
     private static final String OUTPUT_QUEUE = "outputQueue";
 
-    private ScheduledExecutorService scheduledExecutorService;
-    private ActiveMQBroker activeMQBroker;
+    private ActiveMQBroker broker;
     private JmsMessageProducer producer;
     private JetInstance jet;
 
-    private static Pipeline buildPipeline() {
+    private Pipeline buildPipeline() {
         Pipeline p = Pipeline.create();
         p.readFrom(Sources.jmsQueue(() -> new ActiveMQConnectionFactory(ActiveMQBroker.BROKER_URL), INPUT_QUEUE))
          .withoutTimestamps()
@@ -59,13 +54,12 @@ public class JmsQueueSample {
          .writeTo(Sinks.<TextMessage>jmsQueueBuilder(() -> new ActiveMQConnectionFactory(ActiveMQBroker.BROKER_URL))
                  .destinationName(OUTPUT_QUEUE)
                  .messageFn((session, message) -> {
-                         // create new text message with the same text and few additional properties
-                         TextMessage textMessage = session.createTextMessage(message.getText());
-                         textMessage.setBooleanProperty("isActive", true);
-                         textMessage.setJMSPriority(8);
-                         return textMessage;
-                     }
-                 )
+                     // create new text message with the same text and few additional properties
+                     TextMessage textMessage = session.createTextMessage(message.getText());
+                     textMessage.setBooleanProperty("isActive", true);
+                     textMessage.setJMSPriority(8);
+                     return textMessage;
+                 })
                  .build());
         return p;
     }
@@ -75,41 +69,29 @@ public class JmsQueueSample {
     }
 
     private void go() throws Exception {
-        Job job = null;
         try {
             setup();
-            job = jet.newJob(buildPipeline());
-            scheduledExecutorService.schedule(job::cancel, 10, SECONDS);
-            job.join();
-        } catch (CancellationException e) {
-            waitForComplete(job);
+            Job job = jet.newJob(buildPipeline());
+            SECONDS.sleep(10);
+            job.cancel();
+            try {
+                job.join();
+            } catch (CancellationException ignored) {
+            }
         } finally {
             cleanup();
         }
     }
 
     private void setup() throws Exception {
-        scheduledExecutorService = Executors.newSingleThreadScheduledExecutor();
-
-        activeMQBroker = new ActiveMQBroker();
-        activeMQBroker.start();
-
-        producer = new JmsMessageProducer(INPUT_QUEUE, JmsMessageProducer.DestinationType.QUEUE);
-        producer.start();
-
+        broker = new ActiveMQBroker();
+        producer = new JmsMessageProducer(INPUT_QUEUE, true);
         jet = Jet.newJetInstance();
     }
 
-    private void cleanup() {
-        scheduledExecutorService.shutdown();
+    private void cleanup() throws Exception {
         producer.stop();
-        activeMQBroker.stop();
         Jet.shutdownAll();
-    }
-
-    private static void waitForComplete(Job job) {
-        while (job.getStatus() != JobStatus.COMPLETED) {
-            uncheckRun(() -> SECONDS.sleep(1));
-        }
+        broker.stop();
     }
 }
