@@ -14,43 +14,23 @@
  * limitations under the License.
  */
 
-package com.hazelcast.client.scheduledexecutor;
+package com.hazelcast.scheduledexecutor.impl;
 
-import com.hazelcast.client.test.TestHazelcastFactory;
-import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.scheduledexecutor.impl.AbstractScheduledExecutorNullTest;
+import com.hazelcast.scheduledexecutor.TaskUtils;
 import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.After;
-import org.junit.Before;
+import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-/**
- * Member implementation for basic scheduled executor methods nullability tests
- */
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class ClientScheduledExecutorNullTest extends AbstractScheduledExecutorNullTest {
+public class TaskUtilsTest extends HazelcastTestSupport {
 
-    private final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
-    private HazelcastInstance member;
-    private HazelcastInstance client;
-
-    @Before
-    public void setup() {
-        member = hazelcastFactory.newHazelcastInstance();
-        client = hazelcastFactory.newHazelcastClient();
-    }
-
-    @After
-    public void tearDown() {
-        hazelcastFactory.terminateAll();
-    }
-
-    @Override
-    protected HazelcastInstance getDriver() {
-        return client;
+    @Test
+    public void testConstructor() {
+        assertUtilityConstructor(TaskUtils.class);
     }
 }

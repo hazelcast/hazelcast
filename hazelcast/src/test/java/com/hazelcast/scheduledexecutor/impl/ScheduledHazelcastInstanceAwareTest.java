@@ -14,9 +14,11 @@
  * limitations under the License.
  */
 
-package com.hazelcast.scheduledexecutor;
+package com.hazelcast.scheduledexecutor.impl;
 
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.scheduledexecutor.IScheduledExecutorService;
+import com.hazelcast.scheduledexecutor.IScheduledFuture;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;

@@ -14,11 +14,12 @@
  * limitations under the License.
  */
 
-package com.hazelcast.scheduledexecutor;
+package com.hazelcast.scheduledexecutor.impl;
 
 import com.hazelcast.cluster.Member;
 import com.hazelcast.cluster.impl.MemberImpl;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.scheduledexecutor.IScheduledExecutorService;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.internal.util.ExceptionUtil;
 import org.junit.Test;

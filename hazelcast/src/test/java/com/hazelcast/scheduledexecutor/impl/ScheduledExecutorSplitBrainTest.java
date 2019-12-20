@@ -14,13 +14,17 @@
  * limitations under the License.
  */
 
-package com.hazelcast.scheduledexecutor;
+package com.hazelcast.scheduledexecutor.impl;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.MergePolicyConfig;
+import com.hazelcast.config.ScheduledExecutorConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.cluster.Member;
-import com.hazelcast.scheduledexecutor.ScheduledExecutorServiceTestSupport.PlainCallableTask;
+import com.hazelcast.scheduledexecutor.IScheduledExecutorService;
+import com.hazelcast.scheduledexecutor.IScheduledFuture;
+import com.hazelcast.scheduledexecutor.StaleTaskException;
+import com.hazelcast.scheduledexecutor.impl.ScheduledExecutorServiceTestSupport.PlainCallableTask;
 import com.hazelcast.spi.merge.DiscardMergePolicy;
 import com.hazelcast.spi.merge.PassThroughMergePolicy;
 import com.hazelcast.spi.merge.PutIfAbsentMergePolicy;
@@ -109,6 +113,7 @@ public class ScheduledExecutorSplitBrainTest extends SplitBrainTestSupport {
         Config config = super.config();
         config.getScheduledExecutorConfig(scheduledExecutorName)
                 .setDurability(1)
+                .setCapacityPolicy(ScheduledExecutorConfig.CapacityPolicy.PER_PARTITION)
                 .setMergePolicyConfig(mergePolicyConfig);
         return config;
     }

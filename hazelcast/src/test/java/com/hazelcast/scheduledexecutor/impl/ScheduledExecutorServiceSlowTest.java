@@ -14,13 +14,16 @@
  * limitations under the License.
  */
 
-package com.hazelcast.scheduledexecutor;
+package com.hazelcast.scheduledexecutor.impl;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.ScheduledExecutorConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.cp.IAtomicLong;
 import com.hazelcast.cp.ICountDownLatch;
+import com.hazelcast.scheduledexecutor.IScheduledExecutorService;
+import com.hazelcast.scheduledexecutor.IScheduledFuture;
+import com.hazelcast.scheduledexecutor.ScheduledTaskStatistics;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -364,7 +367,10 @@ public class ScheduledExecutorServiceSlowTest extends ScheduledExecutorServiceTe
     @Test
     public void reschedulingAfterMigration_whenCurrentNodePreviouslyOwnedTask() {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
-        HazelcastInstance first = factory.newHazelcastInstance();
+        Config config = new Config();
+        config.addScheduledExecutorConfig(new ScheduledExecutorConfig("scheduler").setCapacity(1000));
+
+        HazelcastInstance first = factory.newHazelcastInstance(config);
 
         int tasksCount = 1000;
         final IScheduledExecutorService scheduler = first.getScheduledExecutorService("scheduler");

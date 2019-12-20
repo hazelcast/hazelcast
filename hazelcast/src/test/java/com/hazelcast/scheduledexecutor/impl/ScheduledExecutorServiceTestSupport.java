@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.scheduledexecutor;
+package com.hazelcast.scheduledexecutor.impl;
 
 import com.hazelcast.cluster.Member;
 import com.hazelcast.config.Config;
@@ -22,6 +22,10 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.map.IMap;
 import com.hazelcast.partition.PartitionAware;
+import com.hazelcast.scheduledexecutor.IScheduledExecutorService;
+import com.hazelcast.scheduledexecutor.IScheduledFuture;
+import com.hazelcast.scheduledexecutor.NamedTask;
+import com.hazelcast.scheduledexecutor.StatefulTask;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;

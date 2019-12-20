@@ -26,7 +26,9 @@ import com.hazelcast.spi.impl.operationservice.Operation;
 import java.util.Iterator;
 import java.util.Map;
 
+import static com.hazelcast.config.ScheduledExecutorConfig.CapacityPolicy.PER_PARTITION;
 import static com.hazelcast.internal.util.MapUtil.createHashMap;
+import static com.hazelcast.scheduledexecutor.impl.DistributedScheduledExecutorService.NOOP_PERMIT;
 
 public class ScheduledExecutorPartition extends AbstractScheduledExecutorContainerHolder {
 
@@ -34,8 +36,7 @@ public class ScheduledExecutorPartition extends AbstractScheduledExecutorContain
     private final int partitionId;
     private final ConstructorFunction<String, ScheduledExecutorContainer> containerConstructorFunction;
 
-
-    ScheduledExecutorPartition(NodeEngine nodeEngine, int partitionId) {
+    ScheduledExecutorPartition(NodeEngine nodeEngine, DistributedScheduledExecutorService service, int partitionId) {
         super(nodeEngine);
         this.logger = nodeEngine.getLogger(getClass());
         this.partitionId = partitionId;
@@ -44,8 +45,8 @@ public class ScheduledExecutorPartition extends AbstractScheduledExecutorContain
                 logger.finest("[Partition:" + partitionId + "]Create new scheduled executor container with name:" + name);
             }
             ScheduledExecutorConfig config = nodeEngine.getConfig().findScheduledExecutorConfig(name);
-            return new ScheduledExecutorContainer(name, partitionId, nodeEngine, config.getDurability(),
-                    config.getCapacity());
+            return new ScheduledExecutorContainer(name, partitionId, nodeEngine,
+                    newPermitFor(name, service, config), config.getDurability());
         };
     }
 
@@ -75,6 +76,17 @@ public class ScheduledExecutorPartition extends AbstractScheduledExecutorContain
     @Override
     public ConstructorFunction<String, ScheduledExecutorContainer> getContainerConstructorFunction() {
         return containerConstructorFunction;
+    }
+
+    CapacityPermit newPermitFor(String name, DistributedScheduledExecutorService service,
+                                ScheduledExecutorConfig config) {
+        if (config.getCapacity() == 0) {
+            return NOOP_PERMIT;
+        }
+
+        return config.getCapacityPolicy() == PER_PARTITION
+                ? new PartitionCapacityPermit(name, config.getCapacity(), partitionId)
+                : service.permitFor(name, config);
     }
 
     void disposeObsoleteReplicas(int thresholdReplicaIndex) {

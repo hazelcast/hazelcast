@@ -24,7 +24,7 @@ import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 
 public class ScheduledTaskStatisticsImpl
-        implements ScheduledTaskStatistics, TaskLifecycleListener {
+        implements ScheduledTaskStatistics, TaskRuncycleHook {
 
     private static final TimeUnit MEASUREMENT_UNIT = TimeUnit.NANOSECONDS;
 

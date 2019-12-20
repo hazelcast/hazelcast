@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.scheduledexecutor;
+package com.hazelcast.scheduledexecutor.impl;
 
 import com.hazelcast.cluster.Member;
 import com.hazelcast.cluster.impl.MemberImpl;
@@ -23,24 +23,32 @@ import com.hazelcast.config.ScheduledExecutorConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.cp.IAtomicLong;
 import com.hazelcast.cp.ICountDownLatch;
+import com.hazelcast.internal.partition.IPartitionLostEvent;
 import com.hazelcast.internal.partition.PartitionLostEventImpl;
 import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
-import com.hazelcast.map.IMap;
-import com.hazelcast.partition.PartitionAware;
-import com.hazelcast.scheduledexecutor.impl.DistributedScheduledExecutorService;
-import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.internal.partition.IPartitionLostEvent;
-import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.annotation.ParallelJVMTest;
-import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.internal.util.RootCauseMatcher;
 import com.hazelcast.internal.util.executor.ManagedExecutorService;
+import com.hazelcast.map.IMap;
+import com.hazelcast.partition.PartitionAware;
+import com.hazelcast.scheduledexecutor.DuplicateTaskException;
+import com.hazelcast.scheduledexecutor.IScheduledExecutorService;
+import com.hazelcast.scheduledexecutor.IScheduledFuture;
+import com.hazelcast.scheduledexecutor.ScheduledTaskHandler;
+import com.hazelcast.scheduledexecutor.ScheduledTaskStatistics;
+import com.hazelcast.scheduledexecutor.StaleTaskException;
+import com.hazelcast.scheduledexecutor.TaskUtils;
+import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.TestHazelcastInstanceFactory;
+import com.hazelcast.test.annotation.ParallelJVMTest;
+import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -51,8 +59,9 @@ import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-import static com.hazelcast.scheduledexecutor.TaskUtils.named;
 import static com.hazelcast.internal.partition.IPartition.MAX_BACKUP_COUNT;
+import static com.hazelcast.scheduledexecutor.TaskUtils.named;
+import static com.hazelcast.spi.properties.ClusterProperty.PARTITION_COUNT;
 import static java.lang.String.format;
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -66,7 +75,6 @@ import static org.junit.Assert.fail;
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceTestSupport {
-
 
     @Rule
     public ExpectedException expected = ExpectedException.none();
@@ -84,7 +92,7 @@ public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceT
 
         HazelcastInstance[] instances = createClusterWithCount(1, config);
         IScheduledFuture future = instances[0].getScheduledExecutorService(schedulerName)
-                .schedule(new PlainCallableTask(), 0, SECONDS);
+                                              .schedule(new PlainCallableTask(), 0, SECONDS);
 
         NodeEngineImpl nodeEngine = getNodeEngineImpl(instances[0]);
         ManagedExecutorService mes = (ManagedExecutorService) nodeEngine.getExecutionService()
@@ -118,7 +126,7 @@ public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceT
     }
 
     @Test
-    public void capacity_whenNoLimit() {
+    public void capacity_whenNoLimit_perNode() {
         String schedulerName = "foobar";
 
         ScheduledExecutorConfig sec = new ScheduledExecutorConfig()
@@ -139,25 +147,89 @@ public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceT
     }
 
     @Test
+    public void capacity_whenNoLimit_perPartition() {
+        String schedulerName = "foobar";
+
+        ScheduledExecutorConfig sec = new ScheduledExecutorConfig()
+                .setName(schedulerName)
+                .setDurability(1)
+                .setPoolSize(1)
+                .setCapacity(0)
+                .setCapacityPolicy(ScheduledExecutorConfig.CapacityPolicy.PER_PARTITION);
+
+        Config config = new Config().addScheduledExecutorConfig(sec);
+
+        HazelcastInstance[] instances = createClusterWithCount(1, config);
+        IScheduledExecutorService service = instances[0].getScheduledExecutorService(schedulerName);
+        String keyOwner = "hitSamePartitionToCheckCapacity";
+
+        for (int i = 0; i < 101; i++) {
+            service.scheduleOnKeyOwner(new PlainCallableTask(), keyOwner, 0, TimeUnit.SECONDS);
+        }
+    }
+
+    @Test
     public void capacity_whenDefault() {
         String schedulerName = "foobar";
 
         HazelcastInstance[] instances = createClusterWithCount(1, null);
         IScheduledExecutorService service = instances[0].getScheduledExecutorService(schedulerName);
-        String keyOwner = "hitSamePartitionToCheckCapacity";
-
+        List<IScheduledFuture> futures = new ArrayList<>();
         for (int i = 0; i < 100; i++) {
-            service.scheduleOnKeyOwner(new PlainCallableTask(), keyOwner, 0, TimeUnit.SECONDS);
+            futures.add(service.schedule(new PlainCallableTask(), 0, TimeUnit.SECONDS));
         }
 
-        try {
-            service.scheduleOnKeyOwner(new PlainCallableTask(), keyOwner, 0, TimeUnit.SECONDS);
-            fail("Should have been rejected.");
-        } catch (RejectedExecutionException ex) {
-            assertEquals("Got wrong RejectedExecutionException",
-                    "Maximum capacity (100) of tasks reached, for scheduled executor (foobar). "
-                            + "Reminder that tasks must be disposed if not needed.", ex.getMessage());
+        assertCapacityReached(service, null, "Maximum capacity (100) of tasks reached "
+                + "for this member and scheduled executor (foobar).");
+
+        // Dispose all
+        for (IScheduledFuture future : futures) {
+            future.dispose();
         }
+
+        // Re-schedule to verify capacity
+        for (int i = 0; i < 100; i++) {
+            service.schedule(new PlainCallableTask(), 0, TimeUnit.SECONDS);
+        }
+
+        assertCapacityReached(service, null, "Maximum capacity (100) of tasks reached "
+                + "for this member and scheduled executor (foobar).");
+    }
+
+    @Test
+    public void capacity_whenDefault_perPartition() {
+        String schedulerName = "foobar";
+        ScheduledExecutorConfig sec = new ScheduledExecutorConfig()
+                .setName(schedulerName)
+                .setCapacityPolicy(ScheduledExecutorConfig.CapacityPolicy.PER_PARTITION);
+
+        Config config = new Config().addScheduledExecutorConfig(sec);
+
+        HazelcastInstance[] instances = createClusterWithCount(1, config);
+        IScheduledExecutorService service = instances[0].getScheduledExecutorService(schedulerName);
+        String key = "hitSamePartitionToCheckCapacity";
+        int keyOwner = getNodeEngineImpl(instances[0]).getPartitionService().getPartitionId(key);
+
+        List<IScheduledFuture> futures = new ArrayList<>();
+        for (int i = 0; i < 100; i++) {
+            futures.add(service.scheduleOnKeyOwner(new PlainCallableTask(), key, 0, TimeUnit.SECONDS));
+        }
+
+        assertCapacityReached(service, key, "Maximum capacity (100) of tasks reached "
+                + "for partition (" + keyOwner + ") and scheduled executor (foobar).");
+
+        // Dispose all
+        for (IScheduledFuture future : futures) {
+            future.dispose();
+        }
+
+        // Re-schedule to verify capacity
+        for (int i = 0; i < 100; i++) {
+            service.scheduleOnKeyOwner(new PlainCallableTask(), key, 0, TimeUnit.SECONDS);
+        }
+
+        assertCapacityReached(service, key, "Maximum capacity (100) of tasks reached "
+                + "for partition (" + keyOwner + ") and scheduled executor (foobar).");
     }
 
     @Test
@@ -168,25 +240,332 @@ public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceT
                 .setName(schedulerName)
                 .setDurability(1)
                 .setPoolSize(1)
-                .setCapacity(10);
+                .setCapacity(10)
+                .setCapacityPolicy(ScheduledExecutorConfig.CapacityPolicy.PER_PARTITION);
 
         Config config = new Config().addScheduledExecutorConfig(sec);
 
         HazelcastInstance[] instances = createClusterWithCount(1, config);
         IScheduledExecutorService service = instances[0].getScheduledExecutorService(schedulerName);
-        String keyOwner = "hitSamePartitionToCheckCapacity";
+        String key = "hitSamePartitionToCheckCapacity";
+        int keyOwner = getNodeEngineImpl(instances[0]).getPartitionService().getPartitionId(key);
 
+        List<IScheduledFuture> futures = new ArrayList<>();
         for (int i = 0; i < 10; i++) {
-            service.scheduleOnKeyOwner(new PlainCallableTask(), keyOwner, 0, TimeUnit.SECONDS);
+            futures.add(service.scheduleOnKeyOwner(new PlainCallableTask(), key, 0, TimeUnit.SECONDS));
         }
 
+        assertCapacityReached(service, key, "Maximum capacity (10) of tasks reached "
+                + "for partition (" + keyOwner + ") and scheduled executor (foobar).");
+
+        // Dispose all
+        for (IScheduledFuture future : futures) {
+            future.dispose();
+        }
+
+        // Re-schedule to verify capacity
+        for (int i = 0; i < 10; i++) {
+            service.scheduleOnKeyOwner(new PlainCallableTask(), key, 0, TimeUnit.SECONDS);
+        }
+
+        assertCapacityReached(service, key, "Maximum capacity (10) of tasks reached "
+                + "for partition (" + keyOwner + ") and scheduled executor (foobar).");
+
+    }
+
+    @Test
+    public void capacity_whenPositiveLimit_andMigration()
+            throws ExecutionException, InterruptedException {
+        String schedulerName = "foobar";
+
+        ScheduledExecutorConfig sec = new ScheduledExecutorConfig()
+                .setName(schedulerName)
+                .setDurability(1)
+                .setPoolSize(1)
+                .setCapacity(1)
+                .setCapacityPolicy(ScheduledExecutorConfig.CapacityPolicy.PER_PARTITION);
+
+        Config config = new Config().addScheduledExecutorConfig(sec);
+
+        HazelcastInstance[] instances = createClusterWithCount(2, config);
+        IScheduledExecutorService service = instances[0].getScheduledExecutorService(schedulerName);
+        String key = generateKeyOwnedBy(instances[0]);
+        int keyOwner = getNodeEngineImpl(instances[0]).getPartitionService().getPartitionId(key);
+
+        IScheduledFuture future = service.scheduleOnKeyOwner(new PlainCallableTask(), key, 0, TimeUnit.SECONDS);
+        future.get();
+
+        assertCapacityReached(service, key, "Maximum capacity (1) of tasks reached "
+                + "for partition (" + keyOwner + ") and scheduled executor (foobar).");
+
+        instances[0].getLifecycleService().shutdown();
+        waitAllForSafeState(instances[1]);
+        // Re-assign service & future
+        service = instances[1].getScheduledExecutorService(schedulerName);
+        future = service.getScheduledFuture(future.getHandler());
+
+        assertCapacityReached(service, key, "Maximum capacity (1) of tasks reached "
+                + "for partition (" + keyOwner + ") and scheduled executor (foobar).");
+
+        future.dispose();
+        service.scheduleOnKeyOwner(new PlainCallableTask(), key, 0, TimeUnit.SECONDS);
+
+        assertCapacityReached(service, key, "Maximum capacity (1) of tasks reached "
+                + "for partition (" + keyOwner + ") and scheduled executor (foobar).");
+    }
+
+    /**
+     * Make sure disposal of SUSPENDED tasks doesn't release permits
+     */
+    @Test
+    public void capacity_whenPositiveLimit_afterDisposing_andReplicaPartitionPromotion()
+            throws ExecutionException, InterruptedException {
+        String schedulerName = "foobar";
+
+        ScheduledExecutorConfig sec = new ScheduledExecutorConfig()
+                .setName(schedulerName)
+                .setDurability(1)
+                .setPoolSize(1)
+                .setCapacity(1)
+                .setCapacityPolicy(ScheduledExecutorConfig.CapacityPolicy.PER_PARTITION);
+
+        Config config = new Config().addScheduledExecutorConfig(sec);
+
+        HazelcastInstance[] instances = createClusterWithCount(2, config);
+        IScheduledExecutorService service = instances[0].getScheduledExecutorService(schedulerName);
+        String key = generateKeyOwnedBy(instances[0]);
+        int keyOwner = getNodeEngineImpl(instances[0]).getPartitionService().getPartitionId(key);
+
+        IScheduledFuture future = service.scheduleOnKeyOwner(new PlainCallableTask(), key, 0, TimeUnit.SECONDS);
+        future.get();
+
+        assertCapacityReached(service, key, "Maximum capacity (1) of tasks reached "
+                + "for partition (" + keyOwner + ") and scheduled executor (foobar).");
+
+        instances[0].getLifecycleService().shutdown();
+        waitAllForSafeState(instances[1]);
+        // Re-assign service & future
+        service = instances[1].getScheduledExecutorService(schedulerName);
+        future = service.getScheduledFuture(future.getHandler());
+
+        assertCapacityReached(service, key, "Maximum capacity (1) of tasks reached "
+                + "for partition (" + keyOwner + ") and scheduled executor (foobar).");
+
+        future.dispose();
+        service.scheduleOnKeyOwner(new PlainCallableTask(), key, 0, TimeUnit.SECONDS);
+
+        assertCapacityReached(service, key, "Maximum capacity (1) of tasks reached "
+                + "for partition (" + keyOwner + ") and scheduled executor (foobar).");
+    }
+
+    @Test
+    public void capacity_whenPositiveLimit_perNode_afterDisposing_andReplicaPartitionPromotion()
+            throws ExecutionException, InterruptedException {
+        String schedulerName = "foobar";
+
+        ScheduledExecutorConfig sec = new ScheduledExecutorConfig()
+                .setName(schedulerName)
+                .setDurability(1)
+                .setPoolSize(1)
+                .setCapacity(1)
+                .setCapacityPolicy(ScheduledExecutorConfig.CapacityPolicy.PER_NODE);
+
+        Config config = new Config().addScheduledExecutorConfig(sec);
+
+        HazelcastInstance[] instances = createClusterWithCount(2, config);
+        IScheduledExecutorService service = instances[0].getScheduledExecutorService(schedulerName);
+        String key = generateKeyOwnedBy(instances[0]);
+
+        IScheduledFuture future = service.scheduleOnKeyOwner(new PlainCallableTask(), key, 0, TimeUnit.SECONDS);
+        future.get();
+
+        assertCapacityReached(service, key, "Maximum capacity (1) of tasks reached for this "
+                + "member and scheduled executor (foobar).");
+
+        instances[0].getLifecycleService().shutdown();
+        waitAllForSafeState(instances[1]);
+        // Re-assign service & future
+        service = instances[1].getScheduledExecutorService(schedulerName);
+        future = service.getScheduledFuture(future.getHandler());
+
+        assertCapacityReached(service, key, "Maximum capacity (1) of tasks reached for this "
+                + "member and scheduled executor (foobar).");
+
+        future.dispose();
+        service.scheduleOnKeyOwner(new PlainCallableTask(), key, 0, TimeUnit.SECONDS);
+
+        assertCapacityReached(service, key, "Maximum capacity (1) of tasks reached for this "
+                + "member and scheduled executor (foobar).");
+    }
+
+    @Test
+    public void capacity_whenPositiveLimit_completedTask_andFirstPromotionFails()
+            throws ExecutionException, InterruptedException {
+        String schedulerName = "foobar";
+
+        ScheduledExecutorConfig sec = new ScheduledExecutorConfig()
+                .setName(schedulerName)
+                .setDurability(1)
+                .setPoolSize(1)
+                .setCapacity(1)
+                .setCapacityPolicy(ScheduledExecutorConfig.CapacityPolicy.PER_PARTITION);
+
+        Config config = new Config().addScheduledExecutorConfig(sec);
+        config.setProperty(PARTITION_COUNT.getName(), "3");
+
+        TestHazelcastInstanceFactory hazelcastInstanceFactory = createHazelcastInstanceFactory();
+        HazelcastInstance[] instances = hazelcastInstanceFactory.newInstances(config, 3);
+        IScheduledExecutorService service = instances[0].getScheduledExecutorService(schedulerName);
+        String key = generateKeyOwnedBy(instances[0]);
+        int keyOwner = getNodeEngineImpl(instances[0]).getPartitionService().getPartitionId(key);
+
+        IScheduledFuture future = service.scheduleOnKeyOwner(new PlainCallableTask(), key, 0, TimeUnit.SECONDS);
+        future.get();
+
+        assertCapacityReached(service, key, "Maximum capacity (1) of tasks reached "
+                + "for partition (" + keyOwner + ") and scheduled executor (foobar).");
+
+        // Fail promotion
+        DistributedScheduledExecutorService.FAIL_MIGRATIONS.set(true);
+        instances[0].getLifecycleService().terminate();
+
+        waitAllForSafeState(instances);
+
+        service = instances[1].getScheduledExecutorService(schedulerName);
+        assertCapacityReached(service, key, "Maximum capacity (1) of tasks reached "
+                + "for partition (" + keyOwner + ") and scheduled executor (foobar).");
+    }
+
+    @Test
+    public void capacity_whenPositiveLimit_pendingTask_andFirstPromotionFails() {
+        String schedulerName = "foobar";
+
+        ScheduledExecutorConfig sec = new ScheduledExecutorConfig()
+                .setName(schedulerName)
+                .setDurability(1)
+                .setPoolSize(1)
+                .setCapacity(1)
+                .setCapacityPolicy(ScheduledExecutorConfig.CapacityPolicy.PER_PARTITION);
+
+        Config config = new Config().addScheduledExecutorConfig(sec);
+        config.setProperty(PARTITION_COUNT.getName(), "3");
+
+        TestHazelcastInstanceFactory hazelcastInstanceFactory = createHazelcastInstanceFactory();
+        HazelcastInstance[] instances = hazelcastInstanceFactory.newInstances(config, 3);
+        IScheduledExecutorService service = instances[0].getScheduledExecutorService(schedulerName);
+        String key = generateKeyOwnedBy(instances[0]);
+        int keyOwner = getNodeEngineImpl(instances[0]).getPartitionService().getPartitionId(key);
+
+        IScheduledFuture future = service.scheduleOnKeyOwner(new PlainCallableTask(), key, 1, TimeUnit.HOURS);
+        future.getStats();
+
+        assertCapacityReached(service, key, "Maximum capacity (1) of tasks reached "
+                + "for partition (" + keyOwner + ") and scheduled executor (foobar).");
+
+        // Fail promotion
+        DistributedScheduledExecutorService.FAIL_MIGRATIONS.set(true);
+        instances[0].getLifecycleService().terminate();
+
+        waitAllForSafeState(instances);
+
+        service = instances[1].getScheduledExecutorService(schedulerName);
+        assertCapacityReached(service, key, "Maximum capacity (1) of tasks reached "
+                + "for partition (" + keyOwner + ") and scheduled executor (foobar).");
+    }
+
+    @Test
+    public void capacity_whenPositiveLimit_onMember_andMigration()
+            throws ExecutionException, InterruptedException {
+        String schedulerName = "foobar";
+
+        ScheduledExecutorConfig sec = new ScheduledExecutorConfig()
+                .setName(schedulerName)
+                .setDurability(1)
+                .setPoolSize(1)
+                .setCapacity(3)
+                .setCapacityPolicy(ScheduledExecutorConfig.CapacityPolicy.PER_NODE);
+
+        Config config = new Config().addScheduledExecutorConfig(sec);
+
+        HazelcastInstance[] instances = createClusterWithCount(2, config);
+        IScheduledExecutorService serviceA = instances[0].getScheduledExecutorService(schedulerName);
+        IScheduledExecutorService serviceB = instances[1].getScheduledExecutorService(schedulerName);
+
+        // Fill-up both nodes
+        String key = generateKeyOwnedBy(instances[0]);
+        IScheduledFuture futureAA = serviceA.scheduleOnKeyOwner(new PlainCallableTask(), key, 0, TimeUnit.SECONDS);
+        IScheduledFuture futureAB = serviceA.scheduleOnKeyOwner(new PlainCallableTask(), key, 0, TimeUnit.SECONDS);
+        IScheduledFuture futureAC = serviceA.scheduleOnKeyOwner(new PlainCallableTask(), key, 0, TimeUnit.SECONDS);
+        futureAA.get();
+        futureAB.get();
+        futureAC.get();
+
+        key = generateKeyOwnedBy(instances[1]);
+        IScheduledFuture futureBA = serviceB.scheduleOnKeyOwner(new PlainCallableTask(), key, 0, TimeUnit.SECONDS);
+        IScheduledFuture futureBB = serviceB.scheduleOnKeyOwner(new PlainCallableTask(), key, 0, TimeUnit.SECONDS);
+        futureBA.get();
+        futureBB.get();
+
+        // At this point both Node A has 5 tasks each.
+        // Accounting for both primary copies & replicas
+        // Node B has still availability for 1 more primary task
+
+        // Scheduling on different partition on Node A should be rejected
+        key = generateKeyOwnedBy(instances[0]);
+        assertCapacityReached(serviceA, key, "Maximum capacity (3) of tasks reached "
+                        + "for this member and scheduled executor (foobar).");
+
+        instances[0].getLifecycleService().shutdown();
+        waitAllForSafeState(instances[1]);
+
+        // At this point Node B has 5 primary tasks.
+        // No new tasks should be allowed
+        // Re-fetch future from Node B
+        futureAA = serviceB.getScheduledFuture(futureAA.getHandler());
+        futureAB = serviceB.getScheduledFuture(futureAB.getHandler());
+        futureAC = serviceB.getScheduledFuture(futureAC.getHandler());
+
+        assertCapacityReached(serviceB, null, "Maximum capacity (3) of tasks reached "
+                + "for this member and scheduled executor (foobar).");
+
+        // Disposing node's A tasks will be enough to schedule ONE more,
+        // since Node B was already holding 2 tasks before the migration
+        futureAA.dispose();
+        assertCapacityReached(serviceB, null, "Maximum capacity (3) of tasks reached "
+                + "for this member and scheduled executor (foobar).");
+        futureAB.dispose();
+        assertCapacityReached(serviceB, null, "Maximum capacity (3) of tasks reached "
+                + "for this member and scheduled executor (foobar).");
+        futureAC.dispose();
+
+        // Now we should be able to schedule again ONE more
+        IScheduledFuture futureBC = serviceB.scheduleOnKeyOwner(new PlainCallableTask(), key, 0, TimeUnit.SECONDS);
+        assertCapacityReached(serviceB, null, "Maximum capacity (3) of tasks reached "
+                + "for this member and scheduled executor (foobar).");
+        futureBA.dispose();
+        futureBB.dispose();
+        futureBC.dispose();
+
+        // Clean slate - can schedule 3 more
+        serviceB.scheduleOnKeyOwner(new PlainCallableTask(), key, 0, TimeUnit.SECONDS);
+        serviceB.scheduleOnKeyOwner(new PlainCallableTask(), key, 0, TimeUnit.SECONDS);
+        serviceB.scheduleOnKeyOwner(new PlainCallableTask(), key, 0, TimeUnit.SECONDS);
+        assertCapacityReached(serviceB, null, "Maximum capacity (3) of tasks reached "
+                + "for this member and scheduled executor (foobar).");
+    }
+
+    protected void assertCapacityReached(IScheduledExecutorService service, String key, String expectedError) {
         try {
-            service.scheduleOnKeyOwner(new PlainCallableTask(), keyOwner, 0, TimeUnit.SECONDS);
+            if (key == null) {
+                service.schedule(new PlainCallableTask(), 0, TimeUnit.SECONDS);
+            } else {
+                service.scheduleOnKeyOwner(new PlainCallableTask(), key, 0, TimeUnit.SECONDS);
+            }
             fail("Should have been rejected.");
         } catch (RejectedExecutionException ex) {
-            assertEquals("Got wrong RejectedExecutionException",
-                    "Maximum capacity (10) of tasks reached, for scheduled executor (foobar). "
-                            + "Reminder that tasks must be disposed if not needed.", ex.getMessage());
+            assertEquals("Got wrong RejectedExecutionException", expectedError
+                            + " Reminder, that tasks must be disposed if not needed.",
+                    ex.getMessage());
         }
     }
 
@@ -206,6 +585,26 @@ public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceT
         IScheduledExecutorService service = instances[0].getScheduledExecutorService(schedulerName);
         Member member = instances[0].getCluster().getLocalMember();
 
+        List<IScheduledFuture> futures = new ArrayList<>();
+        for (int i = 0; i < 10; i++) {
+            futures.add(service.scheduleOnMember(new PlainCallableTask(), member, 0, TimeUnit.SECONDS));
+        }
+
+        try {
+            service.scheduleOnMember(new PlainCallableTask(), member, 0, TimeUnit.SECONDS);
+            fail("Should have been rejected.");
+        } catch (RejectedExecutionException ex) {
+            assertEquals("Got wrong RejectedExecutionException",
+                    "Maximum capacity (10) of tasks reached for this member and scheduled executor (foobar). "
+                            + "Reminder, that tasks must be disposed if not needed.", ex.getMessage());
+        }
+
+        // Dispose all
+        for (IScheduledFuture future : futures) {
+            future.dispose();
+        }
+
+        // Re-schedule to verify capacity
         for (int i = 0; i < 10; i++) {
             service.scheduleOnMember(new PlainCallableTask(), member, 0, TimeUnit.SECONDS);
         }
@@ -215,9 +614,34 @@ public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceT
             fail("Should have been rejected.");
         } catch (RejectedExecutionException ex) {
             assertEquals("Got wrong RejectedExecutionException",
-                    "Maximum capacity (10) of tasks reached, for scheduled executor (foobar). "
-                            + "Reminder that tasks must be disposed if not needed.", ex.getMessage());
+                    "Maximum capacity (10) of tasks reached for this member and scheduled executor (foobar). "
+                            + "Reminder, that tasks must be disposed if not needed.", ex.getMessage());
         }
+    }
+
+    @Test
+    public void capacity_onMember_whenPositiveLimit_perPartition_shouldNotReject() {
+        String schedulerName = "foobar";
+
+        ScheduledExecutorConfig sec = new ScheduledExecutorConfig()
+                .setName(schedulerName)
+                .setDurability(1)
+                .setPoolSize(1)
+                .setCapacity(10)
+                .setCapacityPolicy(ScheduledExecutorConfig.CapacityPolicy.PER_PARTITION);
+
+        Config config = new Config().addScheduledExecutorConfig(sec);
+
+        HazelcastInstance[] instances = createClusterWithCount(1, config);
+        IScheduledExecutorService service = instances[0].getScheduledExecutorService(schedulerName);
+        Member member = instances[0].getCluster().getLocalMember();
+
+        for (int i = 0; i < 10; i++) {
+            service.scheduleOnMember(new PlainCallableTask(), member, 0, TimeUnit.SECONDS);
+        }
+
+        // Should pass - PER_PARTITION policy disables MEMBER OWNED capacity checking
+        service.scheduleOnMember(new PlainCallableTask(), member, 0, TimeUnit.SECONDS);
     }
 
     @Test

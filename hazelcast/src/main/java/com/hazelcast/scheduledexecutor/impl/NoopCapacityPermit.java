@@ -14,22 +14,25 @@
  * limitations under the License.
  */
 
-package com.hazelcast.scheduledexecutor;
+package com.hazelcast.scheduledexecutor.impl;
 
-import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.annotation.ParallelJVMTest;
-import com.hazelcast.test.annotation.QuickTest;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
+public class NoopCapacityPermit
+    implements CapacityPermit {
 
-@RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelJVMTest.class})
-public class TaskUtilsTest extends HazelcastTestSupport {
+    @Override
+    public void acquire() {
+    }
 
-    @Test
-    public void testConstructor() {
-        assertUtilityConstructor(TaskUtils.class);
+    @Override
+    public void acquireQuietly() {
+    }
+
+    @Override
+    public void release() {
+    }
+
+    @Override
+    public int totalAcquired() {
+        return Integer.MIN_VALUE;
     }
 }

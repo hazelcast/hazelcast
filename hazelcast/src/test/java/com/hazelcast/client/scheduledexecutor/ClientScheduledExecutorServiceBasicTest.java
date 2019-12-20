@@ -21,7 +21,7 @@ import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.scheduledexecutor.IScheduledExecutorService;
-import com.hazelcast.scheduledexecutor.ScheduledExecutorServiceBasicTest;
+import com.hazelcast.scheduledexecutor.impl.ScheduledExecutorServiceBasicTest;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;

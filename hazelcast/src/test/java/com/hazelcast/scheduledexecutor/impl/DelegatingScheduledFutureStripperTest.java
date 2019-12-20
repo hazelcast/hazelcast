@@ -14,9 +14,8 @@
  * limitations under the License.
  */
 
-package com.hazelcast.scheduledexecutor;
+package com.hazelcast.scheduledexecutor.impl;
 
-import com.hazelcast.scheduledexecutor.impl.DelegatingScheduledFutureStripper;
 import com.hazelcast.spi.impl.executionservice.impl.DelegatingTaskScheduler;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
