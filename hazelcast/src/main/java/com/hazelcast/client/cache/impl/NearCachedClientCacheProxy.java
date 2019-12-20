@@ -809,7 +809,7 @@ public class NearCachedClientCacheProxy<K, V> extends ClientCacheProxy<K, V> {
                     ? nearCache.tryReserveForCacheOnUpdate(nearCacheKey, keyData) : NOT_RESERVED;
             T response = remoteCallSupplier.get();
             if (reservationId != NOT_RESERVED
-                    && calledByBooleanMethod && (Boolean) response) {
+                    && calledByBooleanMethod ? (Boolean) response : true) {
                 Object nearCacheValue = toNearCacheValue(value, valueData);
                 tryPublishReserved(nearCacheKey, nearCacheValue, reservationId, false);
             } else {
@@ -865,7 +865,7 @@ public class NearCachedClientCacheProxy<K, V> extends ClientCacheProxy<K, V> {
 
                     if (throwable != null) {
                         invalidateNearCache(nearCacheKey);
-                    } else if (calledByBooleanMethod && (Boolean) response) {
+                    } else if (calledByBooleanMethod ? (Boolean) response : true) {
                         Object nearCacheValue = toNearCacheValue(value, valueData);
                         tryPublishReserved(nearCacheKey, nearCacheValue, reservationId, false);
                     } else {
