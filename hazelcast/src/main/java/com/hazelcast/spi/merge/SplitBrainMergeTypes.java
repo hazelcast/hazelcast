@@ -20,14 +20,13 @@ import com.hazelcast.cardinality.impl.hyperloglog.HyperLogLog;
 import com.hazelcast.collection.IList;
 import com.hazelcast.collection.IQueue;
 import com.hazelcast.collection.ISet;
-import com.hazelcast.map.IMap;
-import com.hazelcast.multimap.MultiMap;
 import com.hazelcast.cp.IAtomicLong;
 import com.hazelcast.cp.IAtomicReference;
 import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.map.IMap;
+import com.hazelcast.multimap.MultiMap;
 import com.hazelcast.replicatedmap.ReplicatedMap;
 import com.hazelcast.scheduledexecutor.impl.ScheduledTaskDescriptor;
-import com.hazelcast.spi.impl.merge.SplitBrainMergeTypeProvider;
 
 import java.util.Collection;
 
@@ -37,9 +36,7 @@ import java.util.Collection;
  * Useful for implementors of {@link SplitBrainMergePolicy} to check on which data structures
  * their custom merge policy can be configured.
  * <p>
- * Will be returned by the method {@link SplitBrainMergeTypeProvider#getProvidedMergeTypes(Object)}
- * method for config classes which support split-brain merging
- * and used by the {@link com.hazelcast.internal.config.ConfigValidator} to check if a
+ * Used by the {@link com.hazelcast.internal.config.ConfigValidator} to check if a
  * configured {@link SplitBrainMergePolicy} is usable on its data structure.
  *
  * @since 3.10
