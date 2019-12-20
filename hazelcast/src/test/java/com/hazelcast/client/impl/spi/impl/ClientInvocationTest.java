@@ -18,8 +18,12 @@ package com.hazelcast.client.impl.spi.impl;
 
 import com.hazelcast.client.HazelcastClientNotActiveException;
 import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
+import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.codec.MapSizeCodec;
 import com.hazelcast.client.test.ClientTestSupport;
 import com.hazelcast.client.test.TestHazelcastFactory;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.LifecycleEvent;
@@ -44,6 +48,7 @@ import java.util.concurrent.locks.LockSupport;
 import java.util.function.BiConsumer;
 
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -186,5 +191,28 @@ public class ClientInvocationTest extends ClientTestSupport {
             }
             latch.countDown();
         }
+    }
+
+    @Test
+    public void invokeOnPartitionOwnerRedirectsToRandom_WhenPartitionOwnerIsnull() throws Exception {
+        hazelcastFactory.newHazelcastInstance();
+        HazelcastClientInstanceImpl client = getHazelcastClientInstanceImpl(hazelcastFactory.newHazelcastClient());
+
+        ClientMessage request = MapSizeCodec.encodeRequest("test");
+        int ownerlessPartition = 4000;
+        ClientInvocation invocation = new ClientInvocation(client, request, "map", ownerlessPartition);
+        invocation.invoke().get();
+        assertEquals(0, MapSizeCodec.decodeResponse(invocation.invoke().get()).response);
+    }
+
+    @Test
+    public void invokeOnMemberRedirectsToRandom_whenMemberIsNotInMemberList() throws Exception {
+        hazelcastFactory.newHazelcastInstance();
+        Address unavailableAddress = new Address("100.100.100.100", 1);
+        HazelcastClientInstanceImpl client = getHazelcastClientInstanceImpl(hazelcastFactory.newHazelcastClient());
+
+        ClientMessage request = MapSizeCodec.encodeRequest("test");
+        ClientInvocation invocation = new ClientInvocation(client, request, "map", unavailableAddress);
+        assertEquals(0, MapSizeCodec.decodeResponse(invocation.invoke().get()).response);
     }
 }
