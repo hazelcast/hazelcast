@@ -18,8 +18,8 @@ package com.hazelcast.wan.impl;
 
 import com.hazelcast.config.AbstractWanPublisherConfig;
 import com.hazelcast.config.Config;
-import com.hazelcast.config.WanCustomPublisherConfig;
 import com.hazelcast.config.MapConfig;
+import com.hazelcast.config.WanCustomPublisherConfig;
 import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.config.WanReplicationRef;
 import com.hazelcast.core.HazelcastInstance;
@@ -36,8 +36,8 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.wan.WanMigrationAwarePublisher;
 import com.hazelcast.wan.WanEvent;
+import com.hazelcast.wan.WanMigrationAwarePublisher;
 import com.hazelcast.wan.WanPublisher;
 import org.junit.After;
 import org.junit.Before;
@@ -49,6 +49,7 @@ import org.junit.runners.Parameterized.Parameter;
 import org.junit.runners.Parameterized.Parameters;
 import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
+import javax.annotation.Nonnull;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
@@ -114,15 +115,27 @@ public class WanPublisherMigrationTest extends HazelcastTestSupport {
         MigrationCountingWanPublisher publisher = getPublisher(member2);
 
         if (!failMigrations) {
-            assertEquals(partitionsToMigrate, publisher.migrationStart.intValue());
-            assertEquals(partitionsToMigrate, publisher.migrationProcess.intValue());
-            assertEquals(partitionsToMigrate, publisher.migrationCommit.intValue());
+            assertEquals(exceptionMsg("migrationStart", publisher),
+                    partitionsToMigrate, publisher.migrationStart.intValue());
+            assertEquals(exceptionMsg("migrationProcess", publisher),
+                    partitionsToMigrate, publisher.migrationProcess.intValue());
+            assertEquals(exceptionMsg("migrationCommit", publisher),
+                    partitionsToMigrate, publisher.migrationCommit.intValue());
         } else {
-            assertEquals(partitionsToMigrate + 1, publisher.migrationStart.intValue());
-            assertEquals(partitionsToMigrate, publisher.migrationProcess.intValue());
-            assertEquals(partitionsToMigrate, publisher.migrationCommit.intValue());
-            assertEquals(1, publisher.migrationRollback.intValue());
+            assertEquals(exceptionMsg("migrationStart", publisher),
+                    partitionsToMigrate + 1, publisher.migrationStart.intValue());
+            assertEquals(exceptionMsg("migrationProcess", publisher),
+                    partitionsToMigrate, publisher.migrationProcess.intValue());
+            assertEquals(exceptionMsg("migrationCommit", publisher),
+                    partitionsToMigrate, publisher.migrationCommit.intValue());
+            assertEquals(exceptionMsg("migrationRollback", publisher),
+                    1, publisher.migrationRollback.intValue());
         }
+    }
+
+    @Nonnull
+    private static String exceptionMsg(String counterName, MigrationCountingWanPublisher publisher) {
+        return "not expected " + counterName + " count (" + publisher.toString() + ")";
     }
 
     @Override
@@ -227,6 +240,17 @@ public class WanPublisherMigrationTest extends HazelcastTestSupport {
         public void collectAllServiceNamespaces(PartitionReplicationEvent event,
                                                 Set<ServiceNamespace> set) {
             set.add(new DistributedObjectNamespace(MapService.SERVICE_NAME, "testMap"));
+        }
+
+        @Override
+        public String toString() {
+            return "MigrationCountingWanPublisher{"
+                    + "failMigration=" + failMigration
+                    + ", migrationStart=" + migrationStart
+                    + ", migrationCommit=" + migrationCommit
+                    + ", migrationRollback=" + migrationRollback
+                    + ", migrationProcess=" + migrationProcess
+                    + '}';
         }
     }
 }
