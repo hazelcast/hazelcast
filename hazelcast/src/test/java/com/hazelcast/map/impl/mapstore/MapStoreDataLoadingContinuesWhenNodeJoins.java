@@ -397,7 +397,6 @@ public class MapStoreDataLoadingContinuesWhenNodeJoins extends HazelcastTestSupp
         mapStoreConfig.setEnabled(true);
         mapStoreConfig.setInitialLoadMode(initialLoadMode);
         mapStoreConfig.setWriteDelaySeconds(WRITE_DELAY_SECONDS);
-        mapStoreConfig.setClassName(null);
         mapStoreConfig.setImplementation(store);
         mapConfig.setMapStoreConfig(mapStoreConfig);
         return config;
