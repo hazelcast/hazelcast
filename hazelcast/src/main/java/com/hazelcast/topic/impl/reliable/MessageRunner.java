@@ -92,14 +92,24 @@ public abstract class MessageRunner<E> implements BiConsumer<ReadResultSet<Relia
 
     @Override
     public void accept(ReadResultSet<ReliableTopicMessage> result, Throwable throwable) {
+        if (cancelled) {
+            return;
+        }
+
         if (throwable == null) {
             // we process all messages in batch. So we don't release the thread and reschedule ourselves;
             // but we'll process whatever was received in 1 go.
             for (int i = 0; i < result.size(); i++) {
                 ReliableTopicMessage message = result.get(i);
 
-                if (cancelled) {
-                    return;
+                long actualSequence = result.getSequence(i);
+                if (actualSequence != sequence) {
+                    if (handleSilentSequenceJump(actualSequence)) {
+                        sequence = actualSequence;
+                    } else {
+                        cancel();
+                        return;
+                    }
                 }
 
                 try {
@@ -112,21 +122,10 @@ public abstract class MessageRunner<E> implements BiConsumer<ReadResultSet<Relia
                     }
                 }
 
-                long actualSequence = result.getSequence(i);
-                if (actualSequence != sequence) {
-                    if (!handleSilentSequenceJump(actualSequence)) {
-                        cancel();
-                        return;
-                    }
-                }
                 sequence++;
             }
             next();
         } else {
-            if (cancelled) {
-                return;
-            }
-
             throwable = adjustThrowable(throwable);
             if (handleInternalException(throwable)) {
                 next();
@@ -209,8 +208,8 @@ public abstract class MessageRunner<E> implements BiConsumer<ReadResultSet<Relia
     private boolean handleSilentSequenceJump(long newSequence) {
         if (listener.isLossTolerant()) {
             if (logger.isFinestEnabled()) {
-                logger.finest("MessageListener " + listener + " on topic: " + topicName + " ran into a silent sequence " +
-                        "jump from oldSequence: " + sequence + " to sequence: " + newSequence);
+                logger.finest("MessageListener " + listener + " on topic: " + topicName + " ran into a silent sequence"
+                        + " jump from oldSequence: " + sequence + " to sequence: " + newSequence);
             }
             sequence = newSequence;
             return true;

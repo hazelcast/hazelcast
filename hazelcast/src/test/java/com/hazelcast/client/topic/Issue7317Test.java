@@ -111,9 +111,7 @@ public class Issue7317Test extends HazelcastTestSupport {
     }
 
     @Test
-    public void registerListenerOnStaleSequenceClientServer()
-            throws InterruptedException {
-
+    public void registerListenerOnStaleSequenceClientServer() {
         final List<String> messages = Arrays.asList("a", "b", "c", "d", "e");
         final CountDownLatch cdl = new CountDownLatch(smallRBCapacity);
         ITopic<String> rTopic = client.getReliableTopic(smallRB);
