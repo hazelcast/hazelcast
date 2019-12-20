@@ -1042,12 +1042,12 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
 
     @Override
     @Test
-    public void testNearCacheInMemoryFormatNative_withKeysByReference() {
+    public void testNearCacheInMemoryFormatObject_withKeysByReference() {
         String mapName = "testMapNearCacheInMemoryFormatNative";
         String xml = HAZELCAST_START_TAG
                 + "  <map name=\"" + mapName + "\">\n"
                 + "    <near-cache>\n"
-                + "      <in-memory-format>NATIVE</in-memory-format>\n"
+                + "      <in-memory-format>OBJECT</in-memory-format>\n"
                 + "      <serialize-keys>false</serialize-keys>\n"
                 + "    </near-cache>\n"
                 + "  </map>\n"
@@ -1057,8 +1057,8 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         MapConfig mapConfig = config.getMapConfig(mapName);
         NearCacheConfig ncConfig = mapConfig.getNearCacheConfig();
 
-        assertEquals(InMemoryFormat.NATIVE, ncConfig.getInMemoryFormat());
-        assertTrue(ncConfig.isSerializeKeys());
+        assertEquals(InMemoryFormat.OBJECT, ncConfig.getInMemoryFormat());
+        assertFalse(ncConfig.isSerializeKeys());
     }
 
     @Override

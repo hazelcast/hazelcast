@@ -1050,22 +1050,22 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
 
     @Override
     @Test
-    public void testNearCacheInMemoryFormatNative_withKeysByReference() {
+    public void testNearCacheInMemoryFormatObject_withKeysByReference() {
         String mapName = "testMapNearCacheInMemoryFormatNative";
         String yaml = ""
                 + "hazelcast:\n"
                 + "  map:\n"
                 + "    " + mapName + ":\n"
                 + "      near-cache:\n"
-                + "        in-memory-format: NATIVE\n"
+                + "        in-memory-format: OBJECT\n"
                 + "        serialize-keys: false\n";
 
         Config config = buildConfig(yaml);
         MapConfig mapConfig = config.getMapConfig(mapName);
         NearCacheConfig ncConfig = mapConfig.getNearCacheConfig();
 
-        assertEquals(InMemoryFormat.NATIVE, ncConfig.getInMemoryFormat());
-        assertTrue(ncConfig.isSerializeKeys());
+        assertEquals(InMemoryFormat.OBJECT, ncConfig.getInMemoryFormat());
+        assertFalse(ncConfig.isSerializeKeys());
     }
 
     @Override

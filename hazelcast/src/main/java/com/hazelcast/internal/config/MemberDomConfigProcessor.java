@@ -151,6 +151,7 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 
+import static com.hazelcast.config.NearCacheConfigAccessor.initDefaultMaxSizeForOnHeapMaps;
 import static com.hazelcast.config.ServerSocketEndpointConfig.DEFAULT_SOCKET_CONNECT_TIMEOUT_SECONDS;
 import static com.hazelcast.config.ServerSocketEndpointConfig.DEFAULT_SOCKET_LINGER_SECONDS;
 import static com.hazelcast.config.ServerSocketEndpointConfig.DEFAULT_SOCKET_RECEIVE_BUFFER_SIZE_KB;
@@ -197,8 +198,7 @@ import static com.hazelcast.internal.config.ConfigSections.TOPIC;
 import static com.hazelcast.internal.config.ConfigSections.USER_CODE_DEPLOYMENT;
 import static com.hazelcast.internal.config.ConfigSections.WAN_REPLICATION;
 import static com.hazelcast.internal.config.ConfigSections.canOccurMultipleTimes;
-import static com.hazelcast.internal.config.ConfigValidator.checkCacheConfig;
-import static com.hazelcast.internal.config.ConfigValidator.checkMapConfig;
+import static com.hazelcast.internal.config.ConfigValidator.*;
 import static com.hazelcast.internal.config.DomConfigHelper.childElements;
 import static com.hazelcast.internal.config.DomConfigHelper.childElementsWithName;
 import static com.hazelcast.internal.config.DomConfigHelper.cleanNodeName;
@@ -1726,7 +1726,7 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
             } else if ("async-backup-count".equals(nodeName)) {
                 mapConfig.setAsyncBackupCount(getIntegerValue("async-backup-count", value));
             } else if ("eviction".equals(nodeName)) {
-                mapConfig.setEvictionConfig(getEvictionConfig(node, false, true));
+                mapConfig.setEvictionConfig(getEvictionConfig(node, true));
             } else if ("time-to-live-seconds".equals(nodeName)) {
                 mapConfig.setTimeToLiveSeconds(getIntegerValue("time-to-live-seconds", value));
             } else if ("max-idle-seconds".equals(nodeName)) {
@@ -1777,6 +1777,10 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         }
         try {
             checkMapConfig(mapConfig, config.getNativeMemoryConfig(), null, new HazelcastProperties(config));
+            if (mapConfig.isNearCacheEnabled()) {
+                String name = mapConfig.getName();
+                checkNearCacheConfig(name, mapConfig.getNearCacheConfig(), config.getNativeMemoryConfig(), false);
+            }
         } catch (IllegalArgumentException e) {
             throw new InvalidConfigurationException(e.getMessage());
         }
@@ -1807,7 +1811,7 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
                 NearCacheConfig.LocalUpdatePolicy policy = NearCacheConfig.LocalUpdatePolicy.valueOf(value);
                 nearCacheConfig.setLocalUpdatePolicy(policy);
             } else if ("eviction".equals(nodeName)) {
-                nearCacheConfig.setEvictionConfig(getEvictionConfig(child, true, false));
+                nearCacheConfig.setEvictionConfig(getEvictionConfig(child, false));
             }
         }
         if (serializeKeys != null && !serializeKeys && nearCacheConfig.getInMemoryFormat() == InMemoryFormat.NATIVE) {
@@ -1877,7 +1881,7 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
             } else if ("wan-replication-ref".equals(nodeName)) {
                 cacheWanReplicationRefHandle(n, cacheConfig);
             } else if ("eviction".equals(nodeName)) {
-                cacheConfig.setEvictionConfig(getEvictionConfig(n, false, false));
+                cacheConfig.setEvictionConfig(getEvictionConfig(n, false));
             } else if ("split-brain-protection-ref".equals(nodeName)) {
                 cacheConfig.setSplitBrainProtectionName(value);
             } else if ("partition-lost-listeners".equals(nodeName)) {
@@ -1895,6 +1899,7 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         }
         try {
             checkCacheConfig(cacheConfig, null);
+            checkCacheEvictionConfig(cacheConfig.getEvictionConfig());
         } catch (IllegalArgumentException e) {
             throw new InvalidConfigurationException(e.getMessage());
         }
@@ -1961,7 +1966,7 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         return new CacheSimpleConfig.ExpiryPolicyFactoryConfig.TimedExpiryPolicyFactoryConfig(expiryPolicyType, durationConfig);
     }
 
-    private EvictionConfig getEvictionConfig(Node node, boolean isNearCache, boolean isIMap) {
+    private EvictionConfig getEvictionConfig(Node node, boolean isIMap) {
         EvictionConfig evictionConfig = new EvictionConfig();
         if (isIMap) {
             // Set IMap defaults
@@ -2134,12 +2139,9 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         for (Node childNode : childElements(queryCacheNode)) {
             String nodeName = cleanNodeName(childNode);
             if ("entry-listeners".equals(nodeName)) {
-                handleEntryListeners(childNode, new Function<EntryListenerConfig, Void>() {
-                    @Override
-                    public Void apply(EntryListenerConfig entryListenerConfig) {
-                        queryCacheConfig.addEntryListenerConfig(entryListenerConfig);
-                        return null;
-                    }
+                handleEntryListeners(childNode, entryListenerConfig -> {
+                    queryCacheConfig.addEntryListenerConfig(entryListenerConfig);
+                    return null;
                 });
             } else {
                 String textContent = getTextContent(childNode);
@@ -2169,7 +2171,7 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
                 } else if ("predicate".equals(nodeName)) {
                     queryCachePredicateHandler(childNode, queryCacheConfig);
                 } else if ("eviction".equals(nodeName)) {
-                    queryCacheConfig.setEvictionConfig(getEvictionConfig(childNode, false, false));
+                    queryCacheConfig.setEvictionConfig(getEvictionConfig(childNode, false));
                 }
             }
         }

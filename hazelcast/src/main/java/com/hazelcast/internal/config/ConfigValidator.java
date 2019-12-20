@@ -34,6 +34,7 @@ import com.hazelcast.config.NativeMemoryConfig;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.config.NearCacheConfig.LocalUpdatePolicy;
 import com.hazelcast.config.NearCachePreloaderConfig;
+import com.hazelcast.config.QueryCacheConfig;
 import com.hazelcast.config.QueueConfig;
 import com.hazelcast.config.ReplicatedMapConfig;
 import com.hazelcast.config.RingbufferConfig;
@@ -135,6 +136,10 @@ public final class ConfigValidator {
         checkMapMaxSizePolicyPerInMemoryFormat(mapConfig);
         if (mergePolicyProvider != null) {
             checkMapMergePolicy(mapConfig, mergePolicyProvider);
+        }
+
+        for (QueryCacheConfig queryCacheConfig : mapConfig.getQueryCacheConfigs()) {
+            checkCacheEvictionConfig(queryCacheConfig.getEvictionConfig());
         }
     }
 

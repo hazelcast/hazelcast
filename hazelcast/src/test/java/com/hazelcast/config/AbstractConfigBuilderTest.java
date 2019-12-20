@@ -182,7 +182,7 @@ public abstract class AbstractConfigBuilderTest extends HazelcastTestSupport {
     public abstract void testNearCacheInMemoryFormat();
 
     @Test
-    public abstract void testNearCacheInMemoryFormatNative_withKeysByReference();
+    public abstract void testNearCacheInMemoryFormatObject_withKeysByReference();
 
     @Test
     public abstract void testNearCacheEvictionPolicy();
