@@ -82,13 +82,14 @@ public class ScheduledExecutorContainer {
                                ConcurrentMap<String, ScheduledTaskDescriptor> tasks, LocalScheduledExecutorStatsImpl stats) {
         this.logger = nodeEngine.getLogger(getClass());
         this.name = name;
-        this.stats = stats;
         this.nodeEngine = nodeEngine;
         this.executionService = (InternalExecutionService) nodeEngine.getExecutionService();
         this.partitionId = partitionId;
         this.durability = durability;
         this.capacity = capacity;
         this.tasks = tasks;
+        this.stats = stats;
+        this.stats.tasks = tasks;
     }
 
     public ScheduledFuture schedule(TaskDefinition definition) {
