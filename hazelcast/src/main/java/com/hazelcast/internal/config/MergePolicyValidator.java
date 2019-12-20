@@ -18,12 +18,12 @@ package com.hazelcast.internal.config;
 
 import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.config.MapConfig;
-import com.hazelcast.spi.impl.merge.SplitBrainMergeTypeProvider;
 import com.hazelcast.spi.merge.MergingExpirationTime;
 import com.hazelcast.spi.merge.MergingLastStoredTime;
 import com.hazelcast.spi.merge.MergingValue;
 import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 import com.hazelcast.spi.merge.SplitBrainMergePolicyProvider;
+import com.hazelcast.spi.merge.SplitBrainMergeTypes;
 
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
@@ -51,8 +51,8 @@ public final class MergePolicyValidator {
                                     SplitBrainMergePolicyProvider mergePolicyProvider) {
         String mergePolicyClassName = mapConfig.getMergePolicyConfig().getPolicy();
         SplitBrainMergePolicy mergePolicyInstance = mergePolicyProvider.getMergePolicy(mergePolicyClassName);
-        Class<? extends MergingValue> mergeTypes = SplitBrainMergeTypeProvider.getProvidedMergeTypes(mapConfig);
-        List<Class> requiredMergeTypes = checkSplitBrainMergePolicy(mergeTypes, mergePolicyInstance);
+        List<Class> requiredMergeTypes =
+                checkSplitBrainMergePolicy(SplitBrainMergeTypes.MapMergeTypes.class, mergePolicyInstance);
         if (!mapConfig.isStatisticsEnabled() && requiredMergeTypes != null) {
             checkMapMergePolicyWhenStatisticsAreDisabled(mergePolicyClassName, requiredMergeTypes);
         }
