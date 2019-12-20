@@ -20,13 +20,17 @@ import com.hazelcast.core.EntryView;
 import com.hazelcast.internal.serialization.SerializationService;
 
 /**
- * LazyEntryView is an implementation of {@link
- * EntryView} and also it is writable.
+ * LazyEntryView is an implementation of {@link EntryView} and also it is
+ * writable. It is lazy because you may intialise it with serialized formats
+ * of key and value and it will deserialise only if {@link #getKey()} or
+ * {@link #getValue()} are invoked.
+ * If the provided key and/or value are in deserialised format, the methods
+ * do not do any additional deserialisation and only return the provided
+ * instances.
  *
  * @param <K> the type of key.
  * @param <V> the type of value.
  */
-
 class LazyEntryView<K, V> implements EntryView<K, V> {
     private K key;
     private V value;

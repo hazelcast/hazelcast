@@ -85,7 +85,7 @@ public final class CacheEntryViews {
      *                  expiration time and access hit
      * @return the {@link LazyCacheEntryView} instance
      */
-    public static CacheEntryView<Data, Data> createLazyEntryView(Data key, Data value, Data expiryPolicy, CacheRecord record) {
+    public static CacheEntryView<Data, Data> toLazyCacheEntryView(Data key, Data value, Data expiryPolicy, CacheRecord record) {
         return new LazyCacheEntryView<>(key, value,
                 record.getCreationTime(),
                 record.getExpirationTime(),
@@ -94,8 +94,8 @@ public final class CacheEntryViews {
                 expiryPolicy);
     }
 
-    public static <K, V> CacheEntryView<K, V> createLazyEntryView(CacheEntryView<K, V> entryView,
-                                                                  SerializationService serializationService) {
+    public static <K, V> CacheEntryView<K, V> toLazyCacheEntryView(CacheEntryView<K, V> entryView,
+                                                                   SerializationService serializationService) {
         return new LazyCacheEntryView<>(entryView.getKey(), entryView.getValue(),
                 entryView.getCreationTime(),
                 entryView.getExpirationTime(),
@@ -124,7 +124,7 @@ public final class CacheEntryViews {
             case DEFAULT:
                 return createDefaultEntryView(key, value, expiryPolicy, record);
             case LAZY:
-                return createLazyEntryView(key, value, expiryPolicy, record);
+                return toLazyCacheEntryView(key, value, expiryPolicy, record);
             default:
                 throw new IllegalArgumentException("Invalid cache entry view type: " + cacheEntryViewType);
         }

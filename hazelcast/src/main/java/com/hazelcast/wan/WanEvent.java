@@ -26,18 +26,12 @@ import javax.annotation.Nullable;
  */
 public interface WanEvent<T> {
     /**
-     * Increments the count for the related event in the {@code counters}
-     *
-     * @param counters the WAN event counter
-     */
-    void incrementEventCount(@Nonnull WanEventCounters counters);
-
-    /**
      * Returns the service name on which this event occurred.
      *
      * @return the service on which this event occurred.
      */
-    @Nonnull WanEventService getService();
+    @Nonnull
+    WanEventService getService();
 
     /**
      * Returns the name of the distributed object (map or cache) on which this
@@ -45,19 +39,22 @@ public interface WanEvent<T> {
      *
      * @return the distributed object name
      */
-    @Nonnull String getObjectName();
+    @Nonnull
+    String getObjectName();
 
     /**
      * Returns the type of this event.
      *
      * @return the WAN event type
      */
-    @Nonnull WanEventType getEventType();
+    @Nonnull
+    WanEventType getEventType();
 
     /**
      * Returns the event object/data.
      *
      * @return the WAN event object
      */
-    @Nullable T getEventObject();
+    @Nullable
+    T getEventObject();
 }

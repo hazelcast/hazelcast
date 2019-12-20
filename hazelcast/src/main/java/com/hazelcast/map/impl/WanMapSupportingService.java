@@ -22,8 +22,8 @@ import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.services.WanSupportingService;
 import com.hazelcast.map.impl.operation.MapOperation;
 import com.hazelcast.map.impl.operation.MapOperationProvider;
+import com.hazelcast.map.impl.wan.WanMapAddOrUpdateEvent;
 import com.hazelcast.map.impl.wan.WanMapRemoveEvent;
-import com.hazelcast.map.impl.wan.WanMapUpdateEvent;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 import com.hazelcast.spi.merge.SplitBrainMergeTypes.MapMergeTypes;
@@ -50,8 +50,8 @@ class WanMapSupportingService implements WanSupportingService {
 
     @Override
     public void onReplicationEvent(InternalWanEvent event, WanAcknowledgeType acknowledgeType) {
-        if (event instanceof WanMapUpdateEvent) {
-            handleUpdate((WanMapUpdateEvent) event);
+        if (event instanceof WanMapAddOrUpdateEvent) {
+            handleUpdate((WanMapAddOrUpdateEvent) event);
         } else if (event instanceof WanMapRemoveEvent) {
             handleRemove((WanMapRemoveEvent) event);
         }
@@ -74,7 +74,7 @@ class WanMapSupportingService implements WanSupportingService {
         }
     }
 
-    private void handleUpdate(WanMapUpdateEvent replicationUpdate) {
+    private void handleUpdate(WanMapAddOrUpdateEvent replicationUpdate) {
         SplitBrainMergePolicy mergePolicy = replicationUpdate.getMergePolicy();
         String mapName = replicationUpdate.getObjectName();
         MapOperationProvider operationProvider = mapServiceContext.getMapOperationProvider(mapName);

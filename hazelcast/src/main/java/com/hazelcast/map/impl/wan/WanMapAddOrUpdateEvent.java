@@ -17,13 +17,12 @@
 package com.hazelcast.map.impl.wan;
 
 import com.hazelcast.core.EntryView;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.serialization.SerializationServiceAware;
 import com.hazelcast.map.impl.EntryViews;
-import com.hazelcast.map.impl.MapService;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 import com.hazelcast.wan.WanEventCounters;
@@ -41,7 +40,7 @@ import java.util.Set;
 /**
  * WAN replication object for map update operations.
  */
-public class WanMapUpdateEvent implements InternalWanEvent<EntryView<Object, Object>>,
+public class WanMapAddOrUpdateEvent implements InternalWanEvent<EntryView<Object, Object>>,
         IdentifiedDataSerializable, SerializationServiceAware {
     private String mapName;
     /**
@@ -54,13 +53,13 @@ public class WanMapUpdateEvent implements InternalWanEvent<EntryView<Object, Obj
     private WanMapEntryView<Data, Data> entryView;
     private SerializationService serializationService;
 
-    public WanMapUpdateEvent() {
+    public WanMapAddOrUpdateEvent() {
     }
 
-    public WanMapUpdateEvent(String mapName,
-                             SplitBrainMergePolicy mergePolicy,
-                             EntryView<Data, Data> entryView,
-                             SerializationService serializationService) {
+    public WanMapAddOrUpdateEvent(String mapName,
+                                  SplitBrainMergePolicy mergePolicy,
+                                  EntryView<Data, Data> entryView,
+                                  SerializationService serializationService) {
         this.mergePolicy = mergePolicy;
         this.mapName = mapName;
         this.serializationService = serializationService;
@@ -145,12 +144,6 @@ public class WanMapUpdateEvent implements InternalWanEvent<EntryView<Object, Obj
     public long getCreationTime() {
         // called only in EE
         return 0;
-    }
-
-    @Nonnull
-    @Override
-    public String getServiceName() {
-        return MapService.SERVICE_NAME;
     }
 
     @Nonnull

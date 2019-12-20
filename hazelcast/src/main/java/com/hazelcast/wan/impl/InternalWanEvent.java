@@ -16,15 +16,20 @@
 
 package com.hazelcast.wan.impl;
 
+import com.hazelcast.cache.impl.CacheService;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.util.Clock;
+import com.hazelcast.map.impl.MapService;
 import com.hazelcast.wan.WanEvent;
+import com.hazelcast.wan.WanEventCounters;
+import com.hazelcast.wan.WanEventService;
 
 import javax.annotation.Nonnull;
 import java.util.Set;
 
 /**
- * Private API for WAN replication events
+ * Private API for WAN replication events. Adds methods for internal use by
+ * our built-in WAN replication implementation.
  *
  * @param <T> type of event data
  */
@@ -55,9 +60,23 @@ public interface InternalWanEvent<T> extends WanEvent<T> {
     long getCreationTime();
 
     /**
-     * Returns the service name on which this event occurred.
+     * Increments the count for the related event in the {@code counters}
      *
-     * @return the service name
+     * @param counters the WAN event counter
      */
-    @Nonnull String getServiceName();
+    void incrementEventCount(@Nonnull WanEventCounters counters);
+
+    /**
+     * Returns the name of the service on which this event happened.
+     */
+    default String getServiceName() {
+        WanEventService service = getService();
+        switch (service) {
+            case MAP:
+                return MapService.SERVICE_NAME;
+            case CACHE:
+                return CacheService.SERVICE_NAME;
+        }
+        throw new IllegalStateException("Unknown service name for service " + service);
+    }
 }

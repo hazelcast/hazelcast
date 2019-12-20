@@ -17,12 +17,11 @@
 package com.hazelcast.map.impl.wan;
 
 import com.hazelcast.internal.nio.IOUtil;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.serialization.SerializationServiceAware;
-import com.hazelcast.map.impl.MapService;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.wan.WanEventCounters;
 import com.hazelcast.wan.WanEventService;
@@ -79,12 +78,6 @@ public class WanMapRemoveEvent implements InternalWanEvent<Object>, IdentifiedDa
     public long getCreationTime() {
         // called only in EE
         return 0;
-    }
-
-    @Nonnull
-    @Override
-    public String getServiceName() {
-        return MapService.SERVICE_NAME;
     }
 
     @Nonnull

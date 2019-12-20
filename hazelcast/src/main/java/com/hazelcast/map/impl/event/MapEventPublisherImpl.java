@@ -26,8 +26,8 @@ import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapPartitionLostEventFilter;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.query.QueryEventFilter;
+import com.hazelcast.map.impl.wan.WanMapAddOrUpdateEvent;
 import com.hazelcast.map.impl.wan.WanMapRemoveEvent;
-import com.hazelcast.map.impl.wan.WanMapUpdateEvent;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.spi.impl.eventservice.EventFilter;
@@ -104,7 +104,7 @@ public class MapEventPublisherImpl implements MapEventPublisher {
 
         MapContainer mapContainer = mapServiceContext.getMapContainer(mapName);
         SplitBrainMergePolicy wanMergePolicy = mapContainer.getWanMergePolicy();
-        WanMapUpdateEvent event = new WanMapUpdateEvent(mapName, wanMergePolicy, entryView, serializationService);
+        WanMapAddOrUpdateEvent event = new WanMapAddOrUpdateEvent(mapName, wanMergePolicy, entryView, serializationService);
         publishWanEvent(mapName, event);
     }
 
