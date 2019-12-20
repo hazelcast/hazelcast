@@ -17,15 +17,16 @@
 package com.hazelcast.cache;
 
 import com.hazelcast.cache.impl.CacheDataSerializerHook;
+import com.hazelcast.internal.serialization.BinaryInterface;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.internal.serialization.BinaryInterface;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import javax.cache.expiry.Duration;
 import javax.cache.expiry.ExpiryPolicy;
 import java.io.IOException;
 import java.io.Serializable;
+import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -187,13 +188,13 @@ public class HazelcastExpiryPolicy implements ExpiryPolicy, IdentifiedDataSerial
 
         HazelcastExpiryPolicy that = (HazelcastExpiryPolicy) o;
 
-        if (create != null ? !create.equals(that.create) : that.create != null) {
+        if (!Objects.equals(create, that.create)) {
             return false;
         }
-        if (access != null ? !access.equals(that.access) : that.access != null) {
+        if (!Objects.equals(access, that.access)) {
             return false;
         }
-        if (update != null ? !update.equals(that.update) : that.update != null) {
+        if (!Objects.equals(update, that.update)) {
             return false;
         }
         return true;
@@ -208,4 +209,12 @@ public class HazelcastExpiryPolicy implements ExpiryPolicy, IdentifiedDataSerial
         return result;
     }
 
+    @Override
+    public String toString() {
+        return "HazelcastExpiryPolicy{"
+                + "createMillis=" + create.getTimeUnit().toMillis(create.getDurationAmount())
+                + ", accessMillis=" + access.getTimeUnit().toMillis(access.getDurationAmount())
+                + ", updateMillis=" + update.getTimeUnit().toMillis(update.getDurationAmount())
+                + '}';
+    }
 }

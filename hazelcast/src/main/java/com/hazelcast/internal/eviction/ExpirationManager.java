@@ -84,7 +84,7 @@ public final class ExpirationManager implements LifecycleListener, PartitionLost
      * Calling this method multiple times has same effect.
      */
     public void scheduleExpirationTask() {
-        if (nodeEngine.getLocalMember().isLiteMember() || scheduled.get()
+        if (!task.isCleanupEnabled() || nodeEngine.getLocalMember().isLiteMember() || scheduled.get()
                 || !scheduled.compareAndSet(false, true)) {
             return;
         }

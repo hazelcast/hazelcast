@@ -19,9 +19,9 @@ package com.hazelcast.internal.eviction;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.map.IMap;
 import com.hazelcast.core.LifecycleEvent;
 import com.hazelcast.instance.impl.LifecycleServiceImpl;
+import com.hazelcast.map.IMap;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.PartitionContainer;
 import com.hazelcast.map.impl.eviction.MapClearExpiredRecordsTask;
@@ -69,12 +69,7 @@ public class MapExpirationManagerTest extends AbstractExpirationManagerTest {
         final AtomicInteger expirationCounter = new AtomicInteger();
 
         IMap<Integer, Integer> map = node.getMap("test");
-        map.addEntryListener(new EntryExpiredListener() {
-            @Override
-            public void entryExpired(EntryEvent event) {
-                expirationCounter.incrementAndGet();
-            }
-        }, true);
+        map.addEntryListener((EntryExpiredListener) event -> expirationCounter.incrementAndGet(), true);
 
         map.put(1, 1, 3, TimeUnit.SECONDS);
 
@@ -99,13 +94,21 @@ public class MapExpirationManagerTest extends AbstractExpirationManagerTest {
         IMap<Integer, Integer> map = node.getMap("test");
         map.put(1, 1);
 
-        assertTrueAllTheTime(new AssertTask() {
-            @Override
-            public void run() {
-                assertFalse("There should be zero ClearExpiredRecordsTask",
-                        hasClearExpiredRecordsTaskStarted(node));
-            }
-        }, 3);
+        assertTrueAllTheTime(() -> assertFalse("There should be zero ClearExpiredRecordsTask",
+                hasClearExpiredRecordsTaskStarted(node)), 3);
+    }
+
+    @Test
+    public void clearExpiredRecordsTask_should_not_be_started_when_disabled() {
+        Config config = getConfig();
+        config.setProperty(cleanupTaskEnabledPropName(), "false");
+        final HazelcastInstance node = createHazelcastInstance(config);
+
+        IMap<Integer, Integer> map = node.getMap("test");
+        map.put(1, 1, 1, SECONDS);
+
+        assertTrueAllTheTime(() -> assertFalse("There should be zero ClearExpiredRecordsTask",
+                hasClearExpiredRecordsTaskStarted(node)), 3);
     }
 
     @Test
@@ -213,6 +216,11 @@ public class MapExpirationManagerTest extends AbstractExpirationManagerTest {
     @Override
     protected String cleanupPercentagePropName() {
         return MapClearExpiredRecordsTask.PROP_CLEANUP_PERCENTAGE;
+    }
+
+    @Override
+    protected String cleanupTaskEnabledPropName() {
+        return MapClearExpiredRecordsTask.PROP_CLEANUP_ENABLED;
     }
 
     @Override

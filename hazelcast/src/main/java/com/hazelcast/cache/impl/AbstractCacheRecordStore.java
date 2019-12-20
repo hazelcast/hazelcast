@@ -29,8 +29,8 @@ import com.hazelcast.config.EventJournalConfig;
 import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.MaxSizePolicy;
-import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.config.WanConsumerConfig;
+import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.config.WanReplicationRef;
 import com.hazelcast.core.ManagedContext;
 import com.hazelcast.internal.diagnostics.StoreLatencyPlugin;
@@ -43,6 +43,7 @@ import com.hazelcast.internal.eviction.ExpiredKey;
 import com.hazelcast.internal.eviction.impl.evaluator.EvictionPolicyEvaluator;
 import com.hazelcast.internal.eviction.impl.strategy.sampling.SamplingEvictionStrategy;
 import com.hazelcast.internal.nearcache.impl.invalidation.InvalidationQueue;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.services.ObjectNamespace;
 import com.hazelcast.internal.util.Clock;
@@ -51,7 +52,6 @@ import com.hazelcast.internal.util.UuidUtil;
 import com.hazelcast.internal.util.comparators.ValueComparator;
 import com.hazelcast.internal.util.comparators.ValueComparatorUtil;
 import com.hazelcast.map.impl.MapEntries;
-import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.eventservice.EventRegistration;
@@ -436,11 +436,13 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
     protected ExpiryPolicy getExpiryPolicy(CacheRecord record, ExpiryPolicy expiryPolicy) {
         if (expiryPolicy != null) {
             return expiryPolicy;
-        } else if (record != null && record.getExpiryPolicy() != null) {
-            return (ExpiryPolicy) toValue(record.getExpiryPolicy());
-        } else {
-            return defaultExpiryPolicy;
         }
+
+        if (record != null && record.getExpiryPolicy() != null) {
+            return (ExpiryPolicy) toValue(record.getExpiryPolicy());
+        }
+
+        return defaultExpiryPolicy;
     }
 
     protected boolean evictIfExpired(Data key, R record, long now) {

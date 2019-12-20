@@ -240,5 +240,7 @@ public abstract class AbstractExpirationManagerTest extends HazelcastTestSupport
 
     protected abstract String cleanupPercentagePropName();
 
+    protected abstract String cleanupTaskEnabledPropName();
+
     protected abstract AtomicInteger configureForTurnsActivePassiveTest(HazelcastInstance node);
 }
