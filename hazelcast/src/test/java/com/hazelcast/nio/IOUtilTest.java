@@ -109,7 +109,7 @@ public class IOUtilTest extends HazelcastTestSupport {
     public TestName testName = new TestName();
 
     private final InternalSerializationService serializationService = new DefaultSerializationServiceBuilder().build();
-    private final List<File> files = new ArrayList<File>();
+    private final List<File> files = new ArrayList<>();
 
     @After
     public void tearDown() {
@@ -631,15 +631,6 @@ public class IOUtilTest extends HazelcastTestSupport {
         assertFalse("childDir should be deleted", childDir.exists());
         assertFalse("childFile1 should be deleted", childFile1.exists());
         assertFalse("childFile2 should be deleted", childFile2.exists());
-    }
-
-    @Test(expected = HazelcastException.class)
-    public void testDelete_shouldThrowIfFileCouldNotBeDeleted() {
-        File file = mock(File.class);
-        when(file.exists()).thenReturn(true);
-        when(file.delete()).thenReturn(false);
-
-        delete(file);
     }
 
     @Test
