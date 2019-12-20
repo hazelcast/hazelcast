@@ -124,7 +124,7 @@ There are several properties to configure the plugin, all of them are optional.
  * `service-name`: service name used to scan only PODs connected to the given service; if not specified, then all PODs in the namespace are checked
  * `service-label-name`, `service-label-value`: service label and value used to tag services that should form the Hazelcast cluster together
  * `pod-label-name`, `pod-label-value`: pod label and value used to tag pods that should form the Hazelcast cluster together.
- * `resolve-not-ready-addresses`: if set to `true`, it checks also the addresses of PODs which are not ready; `false` by default
+ * `resolve-not-ready-addresses`: if set to `true`, it checks also the addresses of PODs which are not ready; `true` by default
  * `use-node-name-as-external-address`: if set to `true`, uses the node name to connect to a `NodePort` service instead of looking up the external IP using the API; `false` by default
  * `kubernetes-api-retries`: number of retries in case of issues while connecting to Kubernetes API; defaults to `3` 
  * `kubernetes-master`: URL of Kubernetes Master; `https://kubernetes.default.svc` by default
