@@ -122,7 +122,6 @@ public final class BitmapIndexStore extends BaseIndexStore {
         if (value == NonTerminalJsonValue.INSTANCE) {
             return;
         }
-        markIndexStoreExpirableIfNecessary(entry);
 
         if (internalObjectKeys == null) {
             // no remapping or long-to-long remapping
@@ -132,6 +131,8 @@ public final class BitmapIndexStore extends BaseIndexStore {
 
             takeWriteLock();
             try {
+                markIndexStoreExpirableIfNecessary(entry);
+
                 if (internalKeys != null) {
                     // long-to-long remapping
 
@@ -155,6 +156,8 @@ public final class BitmapIndexStore extends BaseIndexStore {
 
             takeWriteLock();
             try {
+                markIndexStoreExpirableIfNecessary(entry);
+
                 long internalKey = internalKeyCounter++;
                 long replaced = internalObjectKeys.put(key, internalKey);
                 assert replaced == NO_KEY;
@@ -172,7 +175,6 @@ public final class BitmapIndexStore extends BaseIndexStore {
             insert(newValue, entry, operationStats);
             return;
         }
-        markIndexStoreExpirableIfNecessary(entry);
 
         if (internalObjectKeys == null) {
             // no remapping or long-to-long remapping
@@ -183,6 +185,8 @@ public final class BitmapIndexStore extends BaseIndexStore {
 
             takeWriteLock();
             try {
+                markIndexStoreExpirableIfNecessary(entry);
+
                 if (internalKeys != null) {
                     // long-to-long remapping
 
@@ -204,6 +208,8 @@ public final class BitmapIndexStore extends BaseIndexStore {
 
             takeWriteLock();
             try {
+                markIndexStoreExpirableIfNecessary(entry);
+
                 long internalKey = internalObjectKeys.getValue(key);
                 assert internalKey != NO_KEY;
                 bitmap.update(oldValues, newValues, internalKey, entry);
