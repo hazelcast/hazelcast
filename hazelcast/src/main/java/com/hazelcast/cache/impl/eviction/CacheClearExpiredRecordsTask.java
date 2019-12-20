@@ -101,7 +101,8 @@ public class CacheClearExpiredRecordsTask
     };
 
     public CacheClearExpiredRecordsTask(CachePartitionSegment[] containers, NodeEngine nodeEngine) {
-        super(SERVICE_NAME, containers, CLEANUP_ENABLED, CLEANUP_OPERATION_COUNT, CLEANUP_PERCENTAGE, TASK_PERIOD_SECONDS, nodeEngine);
+        super(SERVICE_NAME, containers, CLEANUP_ENABLED, CLEANUP_OPERATION_COUNT,
+                CLEANUP_PERCENTAGE, TASK_PERIOD_SECONDS, nodeEngine);
     }
 
     @Override
