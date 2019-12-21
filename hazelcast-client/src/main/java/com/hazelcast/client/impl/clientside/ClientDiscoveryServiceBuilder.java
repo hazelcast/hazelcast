@@ -33,6 +33,7 @@ import com.hazelcast.client.spi.impl.discovery.DiscoveryAddressTranslator;
 import com.hazelcast.client.spi.impl.discovery.HazelcastCloudAddressProvider;
 import com.hazelcast.client.spi.impl.discovery.HazelcastCloudAddressTranslator;
 import com.hazelcast.client.spi.impl.discovery.HazelcastCloudDiscovery;
+import com.hazelcast.client.spi.impl.discovery.PrivateLinkAddressTranslator;
 import com.hazelcast.client.spi.properties.ClientProperty;
 import com.hazelcast.config.CredentialsFactoryConfig;
 import com.hazelcast.config.DiscoveryConfig;
@@ -181,6 +182,14 @@ class ClientDiscoveryServiceBuilder {
             String cloudUrlBase = properties.getString(HazelcastCloudDiscovery.CLOUD_URL_BASE_PROPERTY);
             String urlEndpoint = HazelcastCloudDiscovery.createUrlEndpoint(cloudUrlBase, discoveryToken);
             return new HazelcastCloudAddressTranslator(urlEndpoint, getConnectionTimeoutMillis(networkConfig), loggingService);
+        }
+
+        if(networkConfig.isPrivateLink()){
+            List<String> zonalNames = networkConfig.getPrivateLinkOrderedZonalNames();
+            if (zonalNames.size() < 1){throw new IllegalStateException(
+                "Invalid ClientConfig.NetworkConfig: privateLink is enabled without privateLinkOrderedZonalNames."
+                + "please re-configure as per instructions shown on the Hazelcast Cloud Dedicated console");}            
+            return new PrivateLinkAddressTranslator(zonalNames);
         }
 
         return new DefaultAddressTranslator();

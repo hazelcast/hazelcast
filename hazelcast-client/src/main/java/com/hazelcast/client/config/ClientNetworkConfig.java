@@ -59,9 +59,12 @@ public class ClientNetworkConfig {
     private Collection<String> outboundPortDefinitions;
     private Collection<Integer> outboundPorts;
     private ClientIcmpPingConfig clientIcmpPingConfig = new ClientIcmpPingConfig();
+    private boolean privateLink = false;
+    private final List<String> privateLinkOrderedZonalNames;
 
     public ClientNetworkConfig() {
         addressList = new ArrayList<String>();
+        privateLinkOrderedZonalNames = new ArrayList<String>(); 
     }
 
     public ClientNetworkConfig(ClientNetworkConfig networkConfig) {
@@ -85,6 +88,9 @@ public class ClientNetworkConfig {
                 ? null : new HashSet<String>(networkConfig.outboundPortDefinitions);
         outboundPorts = networkConfig.outboundPorts == null ? null : new HashSet<Integer>(networkConfig.outboundPorts);
         clientIcmpPingConfig = new ClientIcmpPingConfig(networkConfig.clientIcmpPingConfig);
+        privateLink=networkConfig.privateLink;
+        privateLinkOrderedZonalNames = new ArrayList<String>(networkConfig.privateLinkOrderedZonalNames);
+
     }
 
     /**
@@ -115,6 +121,10 @@ public class ClientNetworkConfig {
         return smartRouting;
     }
 
+    public boolean isPrivateLink() {
+        return privateLink;
+    }
+
     /**
      * If {@code true}, client will route the key based operations to owner of the key on best-effort basis.
      * Note that it uses a cached version of {@link com.hazelcast.core.PartitionService#getPartitions()} and doesn't
@@ -131,6 +141,21 @@ public class ClientNetworkConfig {
      */
     public ClientNetworkConfig setSmartRouting(boolean smartRouting) {
         this.smartRouting = smartRouting;
+        return this;
+    }
+    /**
+     * If {@code true}, client will convert member's private IP to {@code [private-link-URL]:private-link-port} using the 
+     * {@link com.hazelcast.client.spi.impl.discovery.PrivateLinkAddressTranslator PrivateLinkAddressTranslator}.
+     * <p>Requires:
+     * <ol>
+     * <li> Hazelcast Cloud Dedicated cluster in private link configuration.
+     * <li> correctly configured {@link #privateLinkOrderedZonalNames}
+     * </ol><br>
+     * @param privateLink true if private link should be enabled. default = false
+     * @return configured {@link com.hazelcast.client.config.ClientNetworkConfig} for chaining
+     */
+    public ClientNetworkConfig setPrivateLink(boolean privateLink) {
+        this.privateLink = privateLink;
         return this;
     }
 
@@ -264,6 +289,35 @@ public class ClientNetworkConfig {
     public List<String> getAddresses() {
         return addressList;
     }
+
+
+/**
+ * Required for {@link #isPrivateLink()}{@code = true}
+ * <p> contains ordered zonal private DNS hostnames provided by the private link connector
+ * 
+ * @see <a href="https://docs.aws.amazon.com/vpc/latest/userguide/vpce-interface.html#access-service-though-endpoint">AWS VPC Interface Endpoints</a> 
+ * 
+ * @param privateLinkOrderedZonalNames
+ * @return configured {@link com.hazelcast.client.config.ClientNetworkConfig} for chaining
+ */
+    public ClientNetworkConfig setPrivateLinkOrderedZonalNames(String... privateLinkOrderedZonalNames) {
+        isNotNull(privateLinkOrderedZonalNames, "privateLinkOrderedZonalNames");
+        for (String privateLinkOrderedZonalName : privateLinkOrderedZonalNames) {
+            isNotNull(privateLinkOrderedZonalName, "privateLinkOrderedZonalName");
+            checkHasText(privateLinkOrderedZonalName.trim(), "zonalName must contain text");
+        }
+        this.privateLinkOrderedZonalNames.clear();
+        Collections.addAll(this.privateLinkOrderedZonalNames, privateLinkOrderedZonalNames);
+        
+        return this;
+    }
+
+/**
+ * @return privateLinkOrderedZonalNames
+ */
+    public List<String> getPrivateLinkOrderedZonalNames() {
+        return privateLinkOrderedZonalNames;
+    }    
 
     /**
      * See {@link com.hazelcast.client.config.ClientNetworkConfig#setRedoOperation(boolean)} for details
@@ -552,6 +606,9 @@ public class ClientNetworkConfig {
         if (smartRouting != that.smartRouting) {
             return false;
         }
+        if (privateLink != that.privateLink) {
+            return false;
+        }        
         if (redoOperation != that.redoOperation) {
             return false;
         }
@@ -565,6 +622,9 @@ public class ClientNetworkConfig {
             return false;
         }
         if (!addressList.equals(that.addressList)) {
+            return false;
+        }
+        if (!privateLinkOrderedZonalNames.equals(that.privateLinkOrderedZonalNames)) {
             return false;
         }
         if (!socketInterceptorConfig.equals(that.socketInterceptorConfig)) {
@@ -610,7 +670,7 @@ public class ClientNetworkConfig {
     @Override
     public int hashCode() {
         int result = addressList.hashCode();
-        result = 31 * result + (smartRouting ? 1 : 0);
+        result = 31 * result + (smartRouting ? 1 : 0);        
         result = 31 * result + (redoOperation ? 1 : 0);
         result = 31 * result + connectionTimeout;
         result = 31 * result + connectionAttemptLimit;
@@ -628,6 +688,9 @@ public class ClientNetworkConfig {
         result = 31 * result + (outboundPortDefinitions != null ? outboundPortDefinitions.hashCode() : 0);
         result = 31 * result + (outboundPorts != null ? outboundPorts.hashCode() : 0);
         result = 31 * result + clientIcmpPingConfig.hashCode();
+        result = 31 * result + (privateLink ? 1 : 0);
+        result = 31 * result + privateLinkOrderedZonalNames.hashCode();
+
         return result;
     }
 }
