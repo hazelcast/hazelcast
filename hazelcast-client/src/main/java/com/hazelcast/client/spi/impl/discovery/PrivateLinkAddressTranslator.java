@@ -38,13 +38,12 @@ public class PrivateLinkAddressTranslator implements AddressTranslator {
         this.privateLinkOrderedZonalNames = privateLinkOrderedZonalNames.toArray(new String[privateLinkOrderedZonalNames.size()]);
     }
 
-
     @Override
     public Address translate(Address address) {
 
-        String[] ip = address.getHost().split(".");
-
-        String zonalName = privateLinkOrderedZonalNames[Integer.parseInt(ip[1])];
+        String[] ip = address.getHost().split("\\.");
+           
+        String zonalName = privateLinkOrderedZonalNames[Integer.parseInt(ip[2])];
         int port = Integer.parseInt(ip[2]) * 256 + Integer.parseInt(ip[3]);
         
         Address pvtlnAddr;
@@ -56,6 +55,8 @@ public class PrivateLinkAddressTranslator implements AddressTranslator {
             return null;
         }        
 
+        Logger.getLogger(PrivateLinkAddressTranslator.class).info(
+            " \n ====== pvtln-addr-translate====== address: "+ address + " >>> pvtlnAddr: "+pvtlnAddr + "\n");
         return pvtlnAddr;
     }
 
