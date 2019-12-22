@@ -48,7 +48,21 @@ class NearCachePreloaderLock {
     }
 
     void release() {
-        releaseInternal(lock, channel);
+        try {
+            lock.release();
+        } catch (ClosedChannelException e) {
+            EmptyStatement.ignore(e);
+        } catch (IOException e) {
+            logger.severe("Problem while releasing the lock on " + lockFile, e);
+        }
+
+        try {
+            channel.close();
+        } catch (IOException e) {
+            logger.severe("Problem while closing the channel " + lockFile, e);
+        } finally {
+            IOUtil.delete(lockFile);
+        }
     }
 
     // package private for testing
@@ -70,25 +84,6 @@ class NearCachePreloaderLock {
             if (fileLock == null) {
                 closeResource(channel);
             }
-        }
-    }
-
-    // package private for testing
-    void releaseInternal(FileLock lock, FileChannel channel) {
-        try {
-            lock.release();
-        } catch (ClosedChannelException e) {
-            EmptyStatement.ignore(e);
-        } catch (IOException e) {
-            logger.severe("Problem while releasing the lock on " + lockFile, e);
-        }
-
-        try {
-            channel.close();
-        } catch (IOException e) {
-            logger.severe("Problem while closing the channel " + lockFile, e);
-        } finally {
-            IOUtil.delete(lockFile);
         }
     }
 
