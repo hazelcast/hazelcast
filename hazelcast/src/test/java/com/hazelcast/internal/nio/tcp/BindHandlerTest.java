@@ -49,6 +49,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -121,6 +122,7 @@ public class BindHandlerTest {
 
     private InternalSerializationService serializationService;
     private BindHandler bindHandler;
+    private UUID uuid = UUID.randomUUID();
 
     // mocks
     private Channel channel;
@@ -200,7 +202,7 @@ public class BindHandlerTest {
 
     private Packet bindMessage() {
         BindMessage bindMessage =
-                new BindMessage((byte) 1, localAddresses, new Address(CLIENT_SOCKET_ADDRESS), reply);
+                new BindMessage((byte) 1, localAddresses, new Address(CLIENT_SOCKET_ADDRESS), reply, uuid);
 
         Packet packet = new Packet(serializationService.toBytes(bindMessage));
         TcpIpConnection connection = new TcpIpConnection(endpointManager, null, 1, channel);

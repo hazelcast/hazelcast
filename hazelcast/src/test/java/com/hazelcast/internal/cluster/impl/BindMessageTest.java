@@ -34,6 +34,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.EnumMap;
 import java.util.Map;
+import java.util.UUID;
 
 import static java.util.Collections.singletonList;
 import static org.junit.Assert.assertEquals;
@@ -48,22 +49,25 @@ public class BindMessageTest {
     private BindMessage bindMessage;
     private SerializationService serializationService;
     private Address targetAddress;
+    private UUID uuid;
 
     @Before
     public void setup() throws UnknownHostException {
         targetAddress = new Address("127.0.0.1", 9999);
         serializationService = new DefaultSerializationServiceBuilder().build();
+        uuid = UUID.randomUUID();
     }
 
     @Test
     public void testSerialization_withMultipleLocalAddresses() throws Exception {
-        bindMessage = new BindMessage((byte) 1, localAddresses(), targetAddress, true);
+        bindMessage = new BindMessage((byte) 1, localAddresses(), targetAddress, true, uuid);
         Data serialized = serializationService.toData(bindMessage);
         BindMessage deserialized = serializationService.toObject(serialized);
         assertEquals(1, deserialized.getSchemaVersion());
         assertEquals(localAddresses(), deserialized.getLocalAddresses());
         assertEquals(targetAddress, deserialized.getTargetAddress());
         assertTrue(deserialized.isReply());
+        assertEquals(uuid, deserialized.getUuid());
     }
 
     @Test
@@ -75,6 +79,7 @@ public class BindMessageTest {
         assertTrue(deserialized.getLocalAddresses().isEmpty());
         assertNull(null, deserialized.getTargetAddress());
         assertFalse(deserialized.isReply());
+        assertNull(deserialized.getUuid());
     }
 
     Map<ProtocolType, Collection<Address>> localAddresses() throws Exception {

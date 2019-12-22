@@ -38,6 +38,7 @@ import java.io.IOException;
 import java.net.Socket;
 import java.util.Collection;
 import java.util.Map;
+import java.util.UUID;
 
 @SuppressWarnings({"checkstyle:methodcount"})
 public interface IOService {
@@ -120,4 +121,11 @@ public interface IOService {
     OutboundHandler[] createOutboundHandlers(EndpointQualifier qualifier, TcpIpConnection connection);
 
     AuditlogService getAuditLogService();
+
+    /**
+     * Returns UUID of the local member.
+     *
+     * @return member UUID
+     */
+    UUID getUuid();
 }

@@ -54,7 +54,7 @@ public class BindRequest {
         if (logger.isFinestEnabled()) {
             logger.finest("Sending bind packet to " + remoteEndPoint);
         }
-        BindMessage bind = new BindMessage((byte) 1, getConfiguredLocalAddresses(), remoteEndPoint, reply);
+        BindMessage bind = new BindMessage((byte) 1, getConfiguredLocalAddresses(), remoteEndPoint, reply, ioService.getUuid());
         byte[] bytes = ioService.getSerializationService().toBytes(bind);
         Packet packet = new Packet(bytes).setPacketType(Packet.Type.BIND);
         connection.write(packet);
