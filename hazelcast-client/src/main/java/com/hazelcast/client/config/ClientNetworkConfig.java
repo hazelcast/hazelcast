@@ -308,6 +308,9 @@ public class ClientNetworkConfig {
         }
         this.privateLinkOrderedZonalNames.clear();
         Collections.addAll(this.privateLinkOrderedZonalNames, privateLinkOrderedZonalNames);
+        
+        this.addAddress(this.privateLinkOrderedZonalNames.get(0)+ ":1"); //for initial discovery
+
         return this;
     }
 

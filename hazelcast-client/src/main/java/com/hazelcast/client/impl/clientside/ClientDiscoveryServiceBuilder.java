@@ -185,11 +185,10 @@ class ClientDiscoveryServiceBuilder {
         }
 
         if(networkConfig.isPrivateLink()){
-            //<check zonalnames?>
             List<String> zonalNames = networkConfig.getPrivateLinkOrderedZonalNames();
             if (zonalNames.size() < 1){throw new IllegalStateException(
                 "Invalid ClientConfig.NetworkConfig: privateLink is enabled without privateLinkOrderedZonalNames."
-                + "please re-configure as per instructions shown on the Hazelcast Cloud Dedicated console");}
+                + "please re-configure as per instructions shown on the Hazelcast Cloud Dedicated console");}            
             return new PrivateLinkAddressTranslator(zonalNames);
         }
 
