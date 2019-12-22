@@ -18,19 +18,13 @@ package com.hazelcast.client.spi.impl.discovery;
 
 import com.hazelcast.client.connection.AddressTranslator;
 import com.hazelcast.nio.Address;
-
+import com.hazelcast.logging.Logger;
 import java.util.List;
-
-
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-import com.hazelcast.logging.Logger;
 
-/**
- * Default Address Translator is a no-op. It always returns the given address.
- */
+
 public class PrivateLinkAddressTranslator implements AddressTranslator {
-
 
     private final String[] privateLinkOrderedZonalNames;
 
@@ -47,16 +41,13 @@ public class PrivateLinkAddressTranslator implements AddressTranslator {
         int port = Integer.parseInt(ip[2]) * 256 + Integer.parseInt(ip[3]);
         
         Address pvtlnAddr;
-
         try {
             pvtlnAddr = new Address(InetAddress.getByName(zonalName), port);
         } catch (UnknownHostException ignored) {
-            Logger.getLogger(PrivateLinkAddressTranslator.class).finest("Address not available", ignored);
+            Logger.getLogger(PrivateLinkAddressTranslator.class).severe("Address not available", ignored);
             return null;
         }        
 
-        Logger.getLogger(PrivateLinkAddressTranslator.class).info(
-            " \n ====== pvtln-addr-translate====== address: "+ address + " >>> pvtlnAddr: "+pvtlnAddr + "\n");
         return pvtlnAddr;
     }
 

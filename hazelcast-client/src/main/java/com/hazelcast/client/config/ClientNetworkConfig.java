@@ -144,9 +144,15 @@ public class ClientNetworkConfig {
         return this;
     }
     /**
-     * < @@@todo@@@ add privateLink description>
-     * @param privateLink
-     * @return
+     * If {@code true}, client will convert member's private IP to {@code [private-link-URL]:private-link-port} using the 
+     * {@link com.hazelcast.client.spi.impl.discovery.PrivateLinkAddressTranslator PrivateLinkAddressTranslator}.
+     * <p>Requires:
+     * <ol>
+     * <li> Hazelcast Cloud Dedicated cluster in private link configuration.
+     * <li> correctly configured {@link #privateLinkOrderedZonalNames}
+     * </ol><br>
+     * @param privateLink true if private link should be enabled. default = false
+     * @return configured {@link com.hazelcast.client.config.ClientNetworkConfig} for chaining
      */
     public ClientNetworkConfig setPrivateLink(boolean privateLink) {
         this.privateLink = privateLink;
@@ -286,9 +292,13 @@ public class ClientNetworkConfig {
 
 
 /**
- * <@@@todo@@@ add set:privateLinkOrderedZonalNames description>
+ * Required for {@link #isPrivateLink()}{@code = true}
+ * <p> contains ordered zonal private DNS hostnames provided by the private link connector
+ * 
+ * @see <a href="https://docs.aws.amazon.com/vpc/latest/userguide/vpce-interface.html#access-service-though-endpoint">AWS VPC Interface Endpoints</a> 
+ * 
  * @param privateLinkOrderedZonalNames
- * @return
+ * @return configured {@link com.hazelcast.client.config.ClientNetworkConfig} for chaining
  */
     public ClientNetworkConfig setPrivateLinkOrderedZonalNames(String... privateLinkOrderedZonalNames) {
         isNotNull(privateLinkOrderedZonalNames, "privateLinkOrderedZonalNames");
@@ -302,8 +312,7 @@ public class ClientNetworkConfig {
     }
 
 /**
- * <@@@todo@@@ add get:privateLinkOrderedZonalNames description>
- * @return
+ * @return privateLinkOrderedZonalNames
  */
     public List<String> getPrivateLinkOrderedZonalNames() {
         return privateLinkOrderedZonalNames;
