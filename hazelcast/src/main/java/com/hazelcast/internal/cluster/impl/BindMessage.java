@@ -27,9 +27,12 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.EnumMap;
 import java.util.Map;
+import java.util.UUID;
 
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.readCollection;
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.writeCollection;
+import static com.hazelcast.internal.util.UUIDSerializationUtil.readUUID;
+import static com.hazelcast.internal.util.UUIDSerializationUtil.writeUUID;
 
 /**
  * Bind message, conveying information about all kinds of public
@@ -50,16 +53,18 @@ public class BindMessage
     private Map<ProtocolType, Collection<Address>> localAddresses;
     private Address targetAddress;
     private boolean reply;
+    private UUID uuid;
 
     public BindMessage() {
     }
 
     public BindMessage(byte schemaVersion, Map<ProtocolType, Collection<Address>> localAddresses,
-                       Address targetAddress, boolean reply) {
+                       Address targetAddress, boolean reply, UUID uuid) {
         this.schemaVersion = schemaVersion;
         this.localAddresses = new EnumMap<>(localAddresses);
         this.targetAddress = targetAddress;
         this.reply = reply;
+        this.uuid = uuid;
     }
 
     byte getSchemaVersion() {
@@ -78,6 +83,10 @@ public class BindMessage
         return reply;
     }
 
+    public UUID getUuid() {
+        return uuid;
+    }
+
     @Override
     public int getFactoryId() {
         return ClusterDataSerializerHook.F_ID;
@@ -93,6 +102,7 @@ public class BindMessage
         out.writeByte(schemaVersion);
         out.writeObject(targetAddress);
         out.writeBoolean(reply);
+        writeUUID(out, uuid);
         int size = (localAddresses == null) ? 0 : localAddresses.size();
         out.writeInt(size);
         if (size == 0) {
@@ -109,6 +119,7 @@ public class BindMessage
         schemaVersion = in.readByte();
         targetAddress = in.readObject();
         reply = in.readBoolean();
+        uuid = readUUID(in);
         int size = in.readInt();
         if (size == 0) {
             localAddresses = Collections.emptyMap();
@@ -126,6 +137,6 @@ public class BindMessage
     @Override
     public String toString() {
         return "BindMessage{" + "schemaVersion=" + schemaVersion + ", localAddresses=" + localAddresses
-                + ", targetAddress=" + targetAddress + ", reply=" + reply + '}';
+                + ", targetAddress=" + targetAddress + ", reply=" + reply + ", uuid=" + uuid + '}';
     }
 }
