@@ -24,7 +24,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.core.Offloadable;
 import com.hazelcast.core.ReadOnly;
-import com.hazelcast.cp.IAtomicReference;
+import com.hazelcast.cp.IAtomicLong;
 import com.hazelcast.cp.ICountDownLatch;
 import com.hazelcast.internal.util.FutureUtil;
 import com.hazelcast.spi.impl.NodeEngine;
@@ -854,8 +854,8 @@ public class EntryProcessorOffloadableTest extends HazelcastTestSupport {
         final String key = generateKeyOwnedBy(instances[1]);
         String offloadableStartTimeRefName = "offloadableStartTimeRefName";
         String exitLatchName = "exitLatchName";
-        IAtomicReference offloadableStartedTimeRef
-                = instances[0].getCPSubsystem().getAtomicReference(offloadableStartTimeRefName);
+        IAtomicLong offloadableStartedTimeRef
+                = instances[0].getCPSubsystem().getAtomicLong(offloadableStartTimeRefName);
         ICountDownLatch exitLatch = instances[0].getCPSubsystem().getCountDownLatch(exitLatchName);
         exitLatch.trySetCount(1);
 
@@ -866,29 +866,27 @@ public class EntryProcessorOffloadableTest extends HazelcastTestSupport {
 
         final Address instance1Address = instances[1].getCluster().getLocalMember().getAddress();
         final List<Long> heartBeatTimestamps = new LinkedList<>();
-        Thread hbMonitorThread = new Thread() {
-            public void run() {
-                NodeEngine nodeEngine = HazelcastTestSupport.getNodeEngineImpl(instances[0]);
-                OperationServiceImpl osImpl = (OperationServiceImpl) nodeEngine.getOperationService();
-                Map<Address, AtomicLong> heartBeats = osImpl.getInvocationMonitor().getHeartbeatPerMember();
-                long lastbeat = Long.MIN_VALUE;
-                while (!isInterrupted()) {
-                    AtomicLong timestamp = heartBeats.get(instance1Address);
-                    if (timestamp != null) {
-                        long newlastbeat = timestamp.get();
-                        if (lastbeat != newlastbeat) {
-                            lastbeat = newlastbeat;
-                            long offloadableStartTime = (long) offloadableStartedTimeRef.get();
-                            if (offloadableStartTime != 0 && offloadableStartTime < newlastbeat) {
-                                heartBeatTimestamps.add(newlastbeat);
-                                exitLatch.countDown();
-                            }
+        Thread hbMonitorThread = new Thread(() -> {
+            NodeEngine nodeEngine = HazelcastTestSupport.getNodeEngineImpl(instances[0]);
+            OperationServiceImpl osImpl = (OperationServiceImpl) nodeEngine.getOperationService();
+            Map<Address, AtomicLong> heartBeats = osImpl.getInvocationMonitor().getHeartbeatPerMember();
+            long lastbeat = Long.MIN_VALUE;
+            while (!Thread.currentThread().isInterrupted()) {
+                AtomicLong timestamp = heartBeats.get(instance1Address);
+                if (timestamp != null) {
+                    long newlastbeat = timestamp.get();
+                    if (lastbeat != newlastbeat) {
+                        lastbeat = newlastbeat;
+                        long offloadableStartTime = offloadableStartedTimeRef.get();
+                        if (offloadableStartTime != 0 && offloadableStartTime < newlastbeat) {
+                            heartBeatTimestamps.add(newlastbeat);
+                            exitLatch.countDown();
                         }
                     }
-                    HazelcastTestSupport.sleepMillis(100);
                 }
+                HazelcastTestSupport.sleepMillis(100);
             }
-        };
+        });
 
         final int secondsToRun = 55;
         try {
@@ -907,7 +905,9 @@ public class EntryProcessorOffloadableTest extends HazelcastTestSupport {
             }
         }
 
-        assertTrue("Heartbeats should be received while offloadable entry processor is running", heartBeatCount > 0);
+        assertTrue("Heartbeats should be received while offloadable entry processor is running. "
+                + "Observed: " + heartBeatTimestamps + " EP start: " + updatedValue.processStart
+                + " end: " + updatedValue.processEnd, heartBeatCount > 0);
     }
 
     private static class TimeConsumingOffloadableTask
@@ -920,7 +920,7 @@ public class EntryProcessorOffloadableTest extends HazelcastTestSupport {
         private final String startTimeRefName;
         private final String exitLatchName;
         private transient ICountDownLatch exitLatch;
-        private transient IAtomicReference startedTime;
+        private transient IAtomicLong startedTime;
 
         private TimeConsumingOffloadableTask(int secondsToWork, String startTimeRefName, String exitLatchName) {
             this.secondsToWork = secondsToWork;
@@ -931,7 +931,7 @@ public class EntryProcessorOffloadableTest extends HazelcastTestSupport {
         @Override
         public void setHazelcastInstance(HazelcastInstance hazelcastInstance) {
             this.exitLatch = hazelcastInstance.getCPSubsystem().getCountDownLatch(exitLatchName);
-            this.startedTime = hazelcastInstance.getCPSubsystem().getAtomicReference(startTimeRefName);
+            this.startedTime = hazelcastInstance.getCPSubsystem().getAtomicLong(startTimeRefName);
         }
 
         @Override
