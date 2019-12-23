@@ -10,7 +10,6 @@ set JAVA_OPTS=%JAVA_OPTS%^
  "-Dhazelcast.logging.type=log4j"^
  "-Dlog4j.configuration=file:%JET_HOME%\config\log4j.properties"^
  "-Dhazelcast.config=%JET_HOME%\config\hazelcast.yaml"^
- "-Dhazelcast.client.config=%JET_HOME%\config\hazelcast-client.yaml"^
  "-Dhazelcast.jet.config=%JET_HOME%\config\hazelcast-jet.yaml"^
  "-Djet.home=%JET_HOME%"
 

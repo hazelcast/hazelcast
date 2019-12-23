@@ -27,18 +27,6 @@ if [ "$JAVA_VERSION" -ge "9" ]; then
     "
 fi
 
-JAVA_OPTS_ARRAY=(\
-$JDK_OPTS \
-"-Dhazelcast.logging.type=log4j" \
-"-Dlog4j.configuration=file:$JET_HOME/config/log4j.properties" \
-"-Djet.home=$JET_HOME" \
-"-Dhazelcast.config=$JET_HOME/config/hazelcast.yaml" \
-"-Dhazelcast.client.config=$JET_HOME/config/hazelcast-client.yaml" \
-"-Dhazelcast.jet.config=$JET_HOME/config/hazelcast-jet.yaml" \
-$JAVA_OPTS \
-)
-
-
 if [ "$JET_LICENSE_KEY" ]; then
   JAVA_OPTS_ARRAY+=("-Dhazelcast.enterprise.license.key=${JET_LICENSE_KEY}")
 fi
