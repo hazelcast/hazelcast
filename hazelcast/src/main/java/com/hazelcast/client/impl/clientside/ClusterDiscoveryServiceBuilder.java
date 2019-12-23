@@ -27,6 +27,7 @@ import com.hazelcast.client.impl.connection.AddressProvider;
 import com.hazelcast.client.impl.spi.impl.DefaultAddressProvider;
 import com.hazelcast.client.impl.spi.impl.discovery.HazelcastCloudDiscovery;
 import com.hazelcast.client.impl.spi.impl.discovery.RemoteAddressProvider;
+import com.hazelcast.client.impl.spi.impl.discovery.PrivateLinkAddressTranslator;
 import com.hazelcast.client.properties.ClientProperty;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.config.DiscoveryConfig;
@@ -149,6 +150,14 @@ class ClusterDiscoveryServiceBuilder {
             int connectionTimeoutMillis = getConnectionTimeoutMillis(networkConfig);
             HazelcastCloudDiscovery cloudDiscovery = new HazelcastCloudDiscovery(urlEndpoint, connectionTimeoutMillis);
             return new RemoteAddressProvider(cloudDiscovery::discoverNodes, true);
+        }
+
+        if(networkConfig.isPrivateLink()){
+            List<String> zonalNames = networkConfig.getPrivateLinkOrderedZonalNames();
+            if (zonalNames.size() < 1){throw new IllegalStateException(
+                "Invalid ClientConfig.NetworkConfig: privateLink is enabled without privateLinkOrderedZonalNames."
+                + "please re-configure as per instructions shown on the Hazelcast Cloud Dedicated console");}            
+            return new PrivateLinkAddressTranslator(networkConfig);
         }
 
         return new DefaultAddressProvider(networkConfig);

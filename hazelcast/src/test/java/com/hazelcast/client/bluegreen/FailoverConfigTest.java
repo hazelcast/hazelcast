@@ -77,6 +77,7 @@ public class FailoverConfigTest {
     public void testAllClientNetworkConfigsAreHandledInMultipleClientConfigSupport() {
         Set<String> allClientNetworkConfigMethods = new HashSet<>();
         Collections.addAll(allClientNetworkConfigMethods, "isSmartRouting", "setSmartRouting", "getSocketInterceptorConfig",
+                "isPrivateLink", "setPrivateLink", "setPrivateLinkOrderedZonalNames", "getPrivateLinkOrderedZonalNames",
                 "setSocketInterceptorConfig", "getConnectionTimeout", "setConnectionTimeout",
                 "addAddress", "setAddresses", "getAddresses", "isRedoOperation", "setRedoOperation", "getSocketOptions",
                 "setSocketOptions", "getDiscoveryConfig", "setDiscoveryConfig", "getSSLConfig", "setSSLConfig", "setAwsConfig",
