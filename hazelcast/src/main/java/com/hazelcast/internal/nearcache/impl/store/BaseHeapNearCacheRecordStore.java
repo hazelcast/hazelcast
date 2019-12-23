@@ -25,8 +25,8 @@ import com.hazelcast.internal.eviction.EvictionChecker;
 import com.hazelcast.internal.nearcache.NearCacheRecord;
 import com.hazelcast.internal.nearcache.impl.maxsize.EntryCountNearCacheEvictionChecker;
 import com.hazelcast.internal.nearcache.impl.preloader.NearCachePreloader;
-import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.internal.serialization.SerializationService;
 
 import java.util.Map;
 import java.util.function.BiFunction;
@@ -71,7 +71,7 @@ public abstract class BaseHeapNearCacheRecordStore<K, V, R extends NearCacheReco
 
     @Override
     protected HeapNearCacheRecordMap<K, R> createNearCacheRecordMap(NearCacheConfig nearCacheConfig) {
-        return new HeapNearCacheRecordMap<K, R>(serializationService, DEFAULT_INITIAL_CAPACITY);
+        return new HeapNearCacheRecordMap<>(serializationService, DEFAULT_INITIAL_CAPACITY);
     }
 
     @Override
@@ -135,24 +135,24 @@ public abstract class BaseHeapNearCacheRecordStore<K, V, R extends NearCacheReco
     }
 
     @Override
-    protected R getOrCreateToReserve(K key, Data keyData) {
-        return records.applyIfAbsent(key, new ReserveForUpdateFunction(keyData));
+    protected R getOrCreateToReserve(K key, Data keyData, long reservationId) {
+        return records.applyIfAbsent(key, new ReserveForUpdateFunction(keyData, reservationId));
+    }
+
+    @Override
+    protected R reserveForCacheOnUpdate(K key, Data keyData, long reservationId) {
+        return records.apply(key, new ReserveForCacheOnUpdateFunction(keyData, reservationId));
     }
 
     @Override
     @SuppressWarnings("unchecked")
     protected V updateAndGetReserved(K key, final V value, final long reservationId, boolean deserialize) {
-        R existingRecord = records.applyIfPresent(key, new BiFunction<K, R, R>() {
-            @Override
-            public R apply(K key, R reservedRecord) {
-                return updateReservedRecordInternal(key, value, reservedRecord, reservationId);
-            }
-        });
+        R existingRecord = records.applyIfPresent(key,
+                (key1, reservedRecord) -> updateReservedRecordInternal(key1, value, reservedRecord, reservationId));
 
         if (existingRecord == null || !deserialize) {
             return null;
         }
-
         Object cachedValue = existingRecord.getValue();
         return cachedValue instanceof Data ? toValue(cachedValue) : (V) cachedValue;
     }

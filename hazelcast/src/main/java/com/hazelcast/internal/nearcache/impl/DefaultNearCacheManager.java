@@ -99,7 +99,7 @@ public class DefaultNearCacheManager implements NearCacheManager {
     }
 
     protected <K, V> NearCache<K, V> createNearCache(String name, NearCacheConfig nearCacheConfig) {
-        return new DefaultNearCache<K, V>(name, nearCacheConfig, serializationService,
+        return new DefaultNearCache<>(name, nearCacheConfig, serializationService,
                 scheduler, classLoader, properties);
     }
 

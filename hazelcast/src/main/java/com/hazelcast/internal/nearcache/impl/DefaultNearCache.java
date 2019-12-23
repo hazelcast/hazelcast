@@ -23,11 +23,11 @@ import com.hazelcast.internal.nearcache.NearCache;
 import com.hazelcast.internal.nearcache.NearCacheRecordStore;
 import com.hazelcast.internal.nearcache.impl.store.NearCacheDataRecordStore;
 import com.hazelcast.internal.nearcache.impl.store.NearCacheObjectRecordStore;
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.nearcache.NearCacheStats;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.spi.impl.executionservice.TaskScheduler;
 import com.hazelcast.spi.properties.HazelcastProperties;
-import com.hazelcast.internal.serialization.SerializationService;
 
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
@@ -195,6 +195,13 @@ public class DefaultNearCache<K, V> implements NearCache<K, V> {
         nearCacheRecordStore.doEviction(false);
 
         return nearCacheRecordStore.tryReserveForUpdate(key, keyData);
+    }
+
+    @Override
+    public long tryReserveForCacheOnUpdate(K key, Data keyData) {
+        nearCacheRecordStore.doEviction(false);
+
+        return nearCacheRecordStore.tryReserveForCacheOnUpdate(key, keyData);
     }
 
     @Override

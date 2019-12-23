@@ -20,14 +20,14 @@ import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.adapter.DataStructureAdapter;
-import com.hazelcast.internal.nearcache.impl.invalidation.StaleReadDetector;
-import com.hazelcast.nearcache.NearCacheStats;
 import com.hazelcast.internal.monitor.impl.NearCacheStatsImpl;
+import com.hazelcast.internal.nearcache.impl.invalidation.StaleReadDetector;
 import com.hazelcast.internal.serialization.Data;
-import com.hazelcast.spi.impl.executionservice.ExecutionService;
-import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.nearcache.NearCacheStats;
+import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.spi.impl.executionservice.ExecutionService;
+import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.test.AssertTask;
 import org.junit.Before;
 
@@ -65,7 +65,7 @@ public abstract class NearCacheTestSupport extends CommonNearCacheTestSupport {
     }
 
     protected Map<Integer, String> generateRandomKeyValueMappings() {
-        Map<Integer, String> expectedKeyValueMappings = new HashMap<Integer, String>();
+        Map<Integer, String> expectedKeyValueMappings = new HashMap<>();
         for (int i = 0; i < DEFAULT_RECORD_COUNT; i++) {
             expectedKeyValueMappings.put(i, "Record-" + i);
         }
@@ -103,7 +103,7 @@ public abstract class NearCacheTestSupport extends CommonNearCacheTestSupport {
     }
 
     protected void doPutToNearCache() {
-        Map<Integer, String> expectedKeyValueMappings = new HashMap<Integer, String>();
+        Map<Integer, String> expectedKeyValueMappings = new HashMap<>();
         ManagedNearCacheRecordStore managedNearCacheRecordStore = createManagedNearCacheRecordStore(expectedKeyValueMappings);
         NearCache<Integer, String> nearCache = createNearCache(DEFAULT_NEAR_CACHE_NAME, managedNearCacheRecordStore);
 
@@ -185,9 +185,6 @@ public abstract class NearCacheTestSupport extends CommonNearCacheTestSupport {
         config1.setInMemoryFormat(InMemoryFormat.OBJECT);
         config2.setInMemoryFormat(InMemoryFormat.BINARY);
 
-        NearCache nearCache1 = createNearCache(config1.getName(), config1, createManagedNearCacheRecordStore());
-        NearCache nearCache2 = createNearCache(config2.getName(), config2, createManagedNearCacheRecordStore());
-
         // show that NearCache gets "inMemoryFormat" configuration from specified NearCacheConfig
         assertEquals(InMemoryFormat.OBJECT, config1.getInMemoryFormat());
         assertEquals(InMemoryFormat.BINARY, config2.getInMemoryFormat());
@@ -234,10 +231,9 @@ public abstract class NearCacheTestSupport extends CommonNearCacheTestSupport {
         assertTrue(managedNearCacheRecordStore.doEvictionIfRequiredCalled);
     }
 
-    protected class ManagedNearCacheRecordStore implements NearCacheRecordStore<Integer, String> {
+    protected static class ManagedNearCacheRecordStore implements NearCacheRecordStore<Integer, String> {
 
         protected final NearCacheStats nearCacheStats = new NearCacheStatsImpl();
-        protected final Object selectedCandidateToSave = new Object();
 
         protected Map<Integer, String> expectedKeyValueMappings;
         protected Integer latestKeyOnGet;
@@ -250,7 +246,6 @@ public abstract class NearCacheTestSupport extends CommonNearCacheTestSupport {
 
         protected volatile boolean clearCalled;
         protected volatile boolean destroyCalled;
-        protected volatile boolean selectToSaveCalled;
         protected volatile boolean doEvictionIfRequiredCalled;
         protected volatile boolean doExpirationCalled;
 
@@ -364,6 +359,11 @@ public abstract class NearCacheTestSupport extends CommonNearCacheTestSupport {
 
         @Override
         public long tryReserveForUpdate(Integer key, Data keyData) {
+            return NOT_RESERVED;
+        }
+
+        @Override
+        public long tryReserveForCacheOnUpdate(Integer key, Data keyData) {
             return NOT_RESERVED;
         }
 

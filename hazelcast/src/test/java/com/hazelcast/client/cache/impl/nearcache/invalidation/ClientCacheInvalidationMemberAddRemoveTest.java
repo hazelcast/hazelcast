@@ -60,6 +60,7 @@ import static com.hazelcast.cache.CacheTestSupport.createClientCachingProvider;
 import static com.hazelcast.cache.CacheTestSupport.createServerCachingProvider;
 import static com.hazelcast.config.MaxSizePolicy.ENTRY_COUNT;
 import static com.hazelcast.config.InMemoryFormat.BINARY;
+import static com.hazelcast.config.NearCacheConfig.LocalUpdatePolicy.CACHE_ON_UPDATE;
 import static com.hazelcast.config.NearCacheConfig.LocalUpdatePolicy.INVALIDATE;
 import static com.hazelcast.internal.nearcache.impl.invalidation.InvalidationUtils.NO_SEQUENCE;
 import static com.hazelcast.internal.nearcache.impl.invalidation.RepairingTask.MAX_TOLERATED_MISS_COUNT;
@@ -89,8 +90,7 @@ public class ClientCacheInvalidationMemberAddRemoveTest extends ClientNearCacheT
     public static Collection<Object[]> parameters() {
         return asList(new Object[][]{
                 {INVALIDATE},
-                // TODO: "https://github.com/hazelcast/hazelcast/issues/12548"
-                // {CACHE_ON_UPDATE}
+                {CACHE_ON_UPDATE}
         });
     }
 
@@ -221,7 +221,7 @@ public class ClientCacheInvalidationMemberAddRemoveTest extends ClientNearCacheT
                 long memberSequence2 = metaDataGenerator2.currentSequence("/hz/" + DEFAULT_CACHE_NAME, partitionId);
                 UUID memberUuid2 = metaDataGenerator2.getUuidOrNull(partitionId);
 
-                StaleReadDetector staleReadDetector = getStaleReadDetector((AbstractNearCacheRecordStore) nearCacheRecordStore);
+                StaleReadDetector staleReadDetector = getStaleReadDetector(nearCacheRecordStore);
                 MetaDataContainer metaDataContainer = staleReadDetector.getMetaDataContainer(partitionId);
                 return format("On client: [uuid=%s, partition=%d, onRecordSequence=%d, latestSequence=%d, staleSequence=%d],"
                                 + "%nOn members: [memberUuid1=%s, memberSequence1=%d, memberUuid2=%s, memberSequence2=%d]",

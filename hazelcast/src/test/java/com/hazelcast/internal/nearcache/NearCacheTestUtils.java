@@ -298,7 +298,7 @@ public final class NearCacheTestUtils extends HazelcastTestSupport {
     public static void assertNearCacheRecord(NearCacheRecord record, int key, InMemoryFormat inMemoryFormat) {
         assertNotNull(format("NearCacheRecord for key %d could not be found", key), record);
         assertEquals(format("RecordState of NearCacheRecord for key %d should be READ_PERMITTED (%s)", key, record),
-                READ_PERMITTED, record.getRecordState());
+                READ_PERMITTED, record.getReservationId());
 
         Class<? extends NearCacheRecord> recordClass = record.getClass();
         Class<?> recordValueClass = record.getValue().getClass();
@@ -471,12 +471,7 @@ public final class NearCacheTestUtils extends HazelcastTestSupport {
      */
     public static void assertNearCacheSizeEventually(final NearCacheTestContext<?, ?, ?, ?> context, final int expectedSize,
                                                      final String... messages) {
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertNearCacheSize(context, expectedSize, messages);
-            }
-        });
+        assertTrueEventually(() -> assertNearCacheSize(context, expectedSize, messages));
     }
 
     /**

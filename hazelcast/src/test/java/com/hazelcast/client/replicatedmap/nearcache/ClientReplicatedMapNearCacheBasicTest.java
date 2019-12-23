@@ -38,6 +38,7 @@ import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -137,5 +138,11 @@ public class ClientReplicatedMapNearCacheBasicTest extends AbstractNearCacheBasi
                 .setNearCacheAdapter(new ReplicatedMapDataStructureAdapter<>(clientMap))
                 .setNearCache(nearCache)
                 .setNearCacheManager(nearCacheManager);
+    }
+
+
+    @Override
+    @Ignore
+    public void testNearCacheMemoryCostCalculation_withConcurrentCacheMisses() {
     }
 }

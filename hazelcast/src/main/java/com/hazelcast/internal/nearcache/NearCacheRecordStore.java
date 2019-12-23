@@ -18,8 +18,8 @@ package com.hazelcast.internal.nearcache;
 
 import com.hazelcast.internal.adapter.DataStructureAdapter;
 import com.hazelcast.internal.nearcache.impl.invalidation.StaleReadDetector;
-import com.hazelcast.nearcache.NearCacheStats;
 import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.nearcache.NearCacheStats;
 import com.hazelcast.spi.impl.InitializingObject;
 
 /**
@@ -50,6 +50,10 @@ public interface NearCacheRecordStore<K, V> extends InitializingObject {
     void put(K key, Data keyData, V value, Data valueData);
 
     /**
+     * Reservations are done with this method
+     * if local update policy is {@link
+     * com.hazelcast.config.NearCacheConfig.LocalUpdatePolicy#INVALIDATE}
+     *
      * Tries to reserve supplied key for update. <p> If one thread takes
      * reservation, only that thread can update the key.
      *
@@ -59,6 +63,15 @@ public interface NearCacheRecordStore<K, V> extends InitializingObject {
      * NearCacheRecord#NOT_RESERVED}
      */
     long tryReserveForUpdate(K key, Data keyData);
+
+    /**
+     * Reservations are done with this method
+     * if local update policy is {@link
+     * com.hazelcast.config.NearCacheConfig.LocalUpdatePolicy#CACHE_ON_UPDATE}
+     *
+     * @see #tryReserveForUpdate
+     */
+    long tryReserveForCacheOnUpdate(K key, Data keyData);
 
     /**
      * Tries to update reserved key with supplied value. If update

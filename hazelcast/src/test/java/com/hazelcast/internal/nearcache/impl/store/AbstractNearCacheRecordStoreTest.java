@@ -101,6 +101,6 @@ public class AbstractNearCacheRecordStoreTest {
 
     @SuppressWarnings("unchecked")
     private void assertRecordState(long recordState) {
-        assertEquals(recordState, store.getRecord(KEY).getRecordState());
+        assertEquals(recordState, store.getRecord(KEY).getReservationId());
     }
 }
