@@ -153,17 +153,24 @@ public class IndexConfig implements IdentifiedDataSerializable {
     }
 
     /**
-     * @return the unique key attribute of this index. Used by bitmap indexes.
+     * Returns the unique key attribute configured in this index config.
+     * Defaults to {@code __key}. The unique key attribute is used as a source
+     * of values which uniquely identify each entry being inserted into an index.
+     * <p>
+     * Currently, applicable only to bitmap indexes.
+     *
+     * @return the configured unique key attribute.
      */
     public String getUniqueKey() {
         return uniqueKey;
     }
 
     /**
-     * Sets unique key attribute of this index to the given value. Used by
-     * bitmap indexes.
+     * Sets unique key attribute in this index config.
+     * <p>
+     * Currently, applicable only to bitmap indexes.
      *
-     * @param uniqueKey the value to set.
+     * @param uniqueKey a unique key attribute to configure.
      */
     public IndexConfig setUniqueKey(@Nonnull String uniqueKey) {
         checkNotNull(uniqueKey, "unique key can't be null");
@@ -172,17 +179,24 @@ public class IndexConfig implements IdentifiedDataSerializable {
     }
 
     /**
-     * @return unique key transform of this index. Used by bitmap indexes.
+     * Returns the unique key transform configured in this index. Defaults to
+     * {@link UniqueKeyTransform#OBJECT OBJECT}. The transform is applied to
+     * every value extracted from {@link #getUniqueKey() unique key attribue}.
+     * <p>
+     * Currently, applicable only to bitmap indexes.
+     *
+     * @return the configured unique key transform.
      */
     public UniqueKeyTransform getUniqueKeyTransform() {
         return uniqueKeyTransform;
     }
 
     /**
-     * Sets unique key transform of this index to the given value. Used by
-     * bitmap indexes.
+     * Sets unique key transform in this index config.
+     * <p>
+     * Currently, applicable only to bitmap indexes.
      *
-     * @param uniqueKeyTransform the value to set.
+     * @param uniqueKeyTransform a unique key transform to configure.
      */
     public IndexConfig setUniqueKeyTransform(@Nonnull UniqueKeyTransform uniqueKeyTransform) {
         checkNotNull(uniqueKeyTransform, "unique key transform can't be null");

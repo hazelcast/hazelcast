@@ -19,8 +19,10 @@ package com.hazelcast.config;
 import com.hazelcast.internal.util.StringUtil;
 
 /**
- * Defines an assortment of transforms applied to unique key values for
- * bitmap indexes.
+ * Defines an assortment of transforms which can be applied to {@link
+ * IndexConfig#getUniqueKey() unique key} values.
+ * <p>
+ * Currently, applicable only to bitmap indexes.
  */
 public enum UniqueKeyTransform {
 
@@ -33,14 +35,15 @@ public enum UniqueKeyTransform {
     /**
      * Extracted unique key value is interpreted as a whole integer value of
      * byte, short, int or long type. The extracted value is upcasted to
-     * long and unique non-negative ID is assigned to every distinct value.
+     * long (if necessary) and unique non-negative ID is assigned to every
+     * distinct value.
      */
     LONG("LONG", 1),
 
     /**
      * Extracted unique key value is interpreted as a whole integer value of
      * byte, short, int or long type. The extracted value is upcasted to
-     * long and the resulting value is used directly as an ID.
+     * long (if necessary) and the resulting value is used directly as an ID.
      */
     RAW("RAW", 2);
 
