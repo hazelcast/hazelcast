@@ -35,8 +35,6 @@ public class PrivateLinkAddressTranslator implements AddressTranslator {
     @Override
     public Address translate(Address address) {
     
-        if (address.getPort()==1) {return address;} //for initial discovery
-
         String[] ip = address.getHost().split("\\.");           
         String zonalName = privateLinkOrderedZonalNames[Integer.parseInt(ip[2])];
         int port = Integer.parseInt(ip[2]) * 256 + Integer.parseInt(ip[3]);
