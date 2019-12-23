@@ -76,7 +76,8 @@ public interface InternalWanEvent<T> extends WanEvent<T> {
                 return MapService.SERVICE_NAME;
             case CACHE:
                 return CacheService.SERVICE_NAME;
+            default:
+                throw new IllegalStateException("Unknown service name for service " + service);
         }
-        throw new IllegalStateException("Unknown service name for service " + service);
     }
 }

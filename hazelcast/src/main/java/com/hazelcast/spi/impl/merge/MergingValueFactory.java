@@ -16,18 +16,19 @@
 
 package com.hazelcast.spi.impl.merge;
 
-import com.hazelcast.cache.CacheEntryView;
 import com.hazelcast.cache.impl.record.CacheRecord;
+import com.hazelcast.cache.impl.wan.WanCacheEntryView;
 import com.hazelcast.cardinality.impl.hyperloglog.HyperLogLog;
 import com.hazelcast.collection.impl.collection.CollectionItem;
 import com.hazelcast.collection.impl.queue.QueueItem;
 import com.hazelcast.core.EntryView;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.map.impl.record.Record;
+import com.hazelcast.map.impl.wan.WanMapEntryView;
 import com.hazelcast.multimap.impl.MultiMapContainer;
 import com.hazelcast.multimap.impl.MultiMapMergeContainer;
 import com.hazelcast.multimap.impl.MultiMapRecord;
-import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.replicatedmap.impl.record.ReplicatedRecord;
 import com.hazelcast.ringbuffer.impl.Ringbuffer;
 import com.hazelcast.scheduledexecutor.impl.ScheduledTaskDescriptor;
@@ -106,6 +107,23 @@ public final class MergingValueFactory {
     }
 
     public static MapMergeTypes createMergingEntry(SerializationService serializationService,
+                                                   WanMapEntryView<Object, Object> entryView) {
+        return new MapMergingEntryImpl(serializationService)
+                .setKey(entryView.getDataKey())
+                .setValue(entryView.getDataValue())
+                .setCreationTime(entryView.getCreationTime())
+                .setExpirationTime(entryView.getExpirationTime())
+                .setLastStoredTime(entryView.getLastStoredTime())
+                .setLastUpdateTime(entryView.getLastUpdateTime())
+                .setLastAccessTime(entryView.getLastAccessTime())
+                .setHits(entryView.getHits())
+                .setTtl(entryView.getTtl())
+                .setMaxIdle(entryView.getMaxIdle())
+                .setVersion(entryView.getVersion())
+                .setCost(entryView.getCost());
+    }
+
+    public static MapMergeTypes createMergingEntry(SerializationService serializationService,
                                                    Data dataKey, Record record) {
         return new MapMergingEntryImpl(serializationService)
                 .setKey(dataKey)
@@ -141,10 +159,10 @@ public final class MergingValueFactory {
     }
 
     public static CacheMergeTypes createMergingEntry(SerializationService serializationService,
-                                                     CacheEntryView<Data, Data> entryView) {
+                                                     WanCacheEntryView<Object, Object> entryView) {
         return new CacheMergingEntryImpl(serializationService)
-                .setKey(entryView.getKey())
-                .setValue(entryView.getValue())
+                .setKey(entryView.getDataKey())
+                .setValue(entryView.getDataValue())
                 .setCreationTime(entryView.getCreationTime())
                 .setExpirationTime(entryView.getExpirationTime())
                 .setLastAccessTime(entryView.getLastAccessTime())

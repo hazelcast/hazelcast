@@ -47,9 +47,6 @@ class LazyEntryView<K, V> implements EntryView<K, V> {
 
     private SerializationService serializationService;
 
-    LazyEntryView() {
-    }
-
     LazyEntryView(K key, V value, SerializationService serializationService) {
         this.value = value;
         this.key = key;

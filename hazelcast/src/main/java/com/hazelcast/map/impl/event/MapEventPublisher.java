@@ -16,10 +16,10 @@
 
 package com.hazelcast.map.impl.event;
 
-import com.hazelcast.core.EntryEventType;
-import com.hazelcast.core.EntryView;
 import com.hazelcast.cluster.Address;
+import com.hazelcast.core.EntryEventType;
 import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.map.impl.wan.WanMapEntryView;
 
 /**
  * Helper methods for publishing events related to map
@@ -39,7 +39,7 @@ public interface MapEventPublisher {
      *                          update is a load from map-loader, otherwise
      *                          set {@code false}
      */
-    void publishWanUpdate(String mapName, EntryView<Data, Data> entryView, boolean hasLoadProvenance);
+    void publishWanUpdate(String mapName, WanMapEntryView<Object, Object> entryView, boolean hasLoadProvenance);
 
     /**
      * Notifies the WAN subsystem of a map entry removal on a replica owner.
