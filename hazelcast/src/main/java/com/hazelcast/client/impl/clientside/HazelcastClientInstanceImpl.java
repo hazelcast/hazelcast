@@ -840,9 +840,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         ILogger logger = loggingService.getLogger(HazelcastInstance.class);
         logger.info("Clearing local state of the client, because of a cluster restart ");
 
-        for (Disposable disposable : onClusterChangeDisposables) {
-            disposable.dispose();
-        }
+        dispose(onClusterChangeDisposables);
         //clear the member list version
         clusterService.clearMemberListVersion();
     }
