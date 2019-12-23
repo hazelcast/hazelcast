@@ -54,7 +54,7 @@ import static org.junit.Assert.assertTrue;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class LocalIndexStatsTest extends HazelcastTestSupport {
 
-    public static final String HAZELCAST_PROXY_DESTROY_TIMEOUT_MILLIS = "hazelcast.proxy.destroy.timeout.millis";
+    public static final String HAZELCAST_PROXY_DESTROY_TIMEOUT_SECONDS = "hazelcast.proxy.destroy.timeout.seconds";
 
     @Parameters(name = "format:{0}")
     public static Collection<Object[]> parameters() {
@@ -87,7 +87,7 @@ public class LocalIndexStatsTest extends HazelcastTestSupport {
         mapName = randomMapName();
         noStatsMapName = mapName + "_no_stats";
 
-        System.setProperty(HAZELCAST_PROXY_DESTROY_TIMEOUT_MILLIS, Integer.toString(PROXY_DESTROY_TIMEOUT));
+        System.setProperty(HAZELCAST_PROXY_DESTROY_TIMEOUT_SECONDS, Integer.toString(PROXY_DESTROY_TIMEOUT));
 
         Config config = getConfig();
         config.setProperty(PARTITION_COUNT.getName(), Integer.toString(PARTITIONS));
@@ -102,7 +102,7 @@ public class LocalIndexStatsTest extends HazelcastTestSupport {
 
     @After
     public void tearDown() {
-        System.clearProperty(HAZELCAST_PROXY_DESTROY_TIMEOUT_MILLIS);
+        System.clearProperty(HAZELCAST_PROXY_DESTROY_TIMEOUT_SECONDS);
     }
 
     @Override

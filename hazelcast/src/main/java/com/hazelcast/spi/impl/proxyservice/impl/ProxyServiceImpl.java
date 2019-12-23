@@ -68,6 +68,7 @@ public class ProxyServiceImpl
         EventPublishingService<DistributedObjectEventPacket, Object>, StaticMetricsProvider {
 
     public static final String SERVICE_NAME = "hz:core:proxyService";
+    private static final String HAZELCAST_PROXY_DESTROY_TIMEOUT_SECONDS = "hazelcast.proxy.destroy.timeout.seconds";
 
     private static final int TRY_COUNT = 10;
 
@@ -99,7 +100,7 @@ public class ProxyServiceImpl
 
     public ProxyServiceImpl(NodeEngineImpl nodeEngine) {
         this.nodeEngine = nodeEngine;
-        this.destroyTimeout = parseInt(System.getProperty("hazelcast.proxy.destroy.timeout.millis", "30"));
+        this.destroyTimeout = parseInt(System.getProperty(HAZELCAST_PROXY_DESTROY_TIMEOUT_SECONDS, "30"));
         this.logger = nodeEngine.getLogger(ProxyService.class.getName());
     }
 
