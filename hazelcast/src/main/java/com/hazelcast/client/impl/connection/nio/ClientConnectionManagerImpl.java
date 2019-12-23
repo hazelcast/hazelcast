@@ -41,6 +41,7 @@ import com.hazelcast.client.impl.protocol.codec.ClientIsFailoverSupportedCodec;
 import com.hazelcast.client.impl.spi.impl.ClientExecutionServiceImpl;
 import com.hazelcast.client.impl.spi.impl.ClientInvocation;
 import com.hazelcast.client.impl.spi.impl.ClientInvocationFuture;
+import com.hazelcast.client.impl.spi.impl.ClientPartitionServiceImpl;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.config.InvalidConfigurationException;
@@ -145,7 +146,6 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
     private final LoadBalancer loadBalancer;
     private final boolean isSmartRoutingEnabled;
     private volatile Credentials currentCredentials;
-    private volatile int partitionCount = -1;
     private volatile UUID clusterId;
     private volatile AtomicReference<ClusterState> state = new AtomicReference<>(ClusterState.STARTING);
 
@@ -855,12 +855,11 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
     }
 
     private void checkPartitionCount(int newPartitionCount) {
-        if (partitionCount == -1) {
-            partitionCount = newPartitionCount;
-        } else if (partitionCount != newPartitionCount) {
+        ClientPartitionServiceImpl partitionService = (ClientPartitionServiceImpl) client.getClientPartitionService();
+        if (!partitionService.checkAndSetPartitionCount(newPartitionCount)) {
             throw new ClientNotAllowedInClusterException("Client can not work with this cluster "
                     + " because it has a different partition count. "
-                    + "Partition count client expects :" + partitionCount
+                    + "Partition count client expects :" + partitionService.getPartitionCount()
                     + ", Member partition count:" + newPartitionCount);
         }
     }
@@ -869,8 +868,8 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
         if (!failoverConfigProvided) {
             return true;
         }
-        ClientMessage isFailoverSupportedMessage = ClientIsFailoverSupportedCodec.encodeRequest();
-        ClientInvocationFuture future = new ClientInvocation(client, isFailoverSupportedMessage, null, connection).invoke();
+        ClientMessage request = ClientIsFailoverSupportedCodec.encodeRequest();
+        ClientInvocationFuture future = new ClientInvocation(client, request, null, connection).invokeUrgent();
         try {
             boolean isAllowed = ClientIsFailoverSupportedCodec.decodeResponse(future.get()).response;
             if (!isAllowed) {

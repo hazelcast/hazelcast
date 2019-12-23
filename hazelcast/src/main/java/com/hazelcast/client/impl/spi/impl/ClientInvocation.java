@@ -111,6 +111,7 @@ public class ClientInvocation extends BaseInvocation implements Runnable {
     public ClientInvocation(HazelcastClientInstanceImpl client, ClientMessage clientMessage, Object objectName,
                             int partitionId) {
         this(client, clientMessage, objectName, partitionId, null, null);
+        clientMessage.setPartitionId(partitionId);
     }
 
     /**
@@ -127,10 +128,6 @@ public class ClientInvocation extends BaseInvocation implements Runnable {
     public ClientInvocation(HazelcastClientInstanceImpl client, ClientMessage clientMessage, Object objectName,
                             Connection connection) {
         this(client, clientMessage, objectName, UNASSIGNED_PARTITION, null, connection);
-    }
-
-    public int getPartitionId() {
-        return partitionId;
     }
 
     public ClientMessage getClientMessage() {
