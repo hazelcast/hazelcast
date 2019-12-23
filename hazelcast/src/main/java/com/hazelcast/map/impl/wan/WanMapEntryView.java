@@ -237,6 +237,7 @@ public class WanMapEntryView<K, V> implements EntryView<K, V>, IdentifiedDataSer
     }
 
     @Override
+    @SuppressWarnings("checkstyle:cyclomaticcomplexity")
     public boolean equals(Object o) {
         if (this == o) {
             return true;
@@ -245,20 +246,20 @@ public class WanMapEntryView<K, V> implements EntryView<K, V>, IdentifiedDataSer
             return false;
         }
         WanMapEntryView<?, ?> that = (WanMapEntryView<?, ?>) o;
-        return cost == that.cost &&
-                creationTime == that.creationTime &&
-                expirationTime == that.expirationTime &&
-                hits == that.hits &&
-                lastAccessTime == that.lastAccessTime &&
-                lastStoredTime == that.lastStoredTime &&
-                lastUpdateTime == that.lastUpdateTime &&
-                version == that.version &&
-                ttl == that.ttl &&
-                maxIdle == that.maxIdle &&
-                Objects.equals(key, that.key) &&
-                Objects.equals(value, that.value) &&
-                dataKey.equals(that.dataKey) &&
-                dataValue.equals(that.dataValue);
+        return cost == that.cost
+                && creationTime == that.creationTime
+                && expirationTime == that.expirationTime
+                && hits == that.hits
+                && lastAccessTime == that.lastAccessTime
+                && lastStoredTime == that.lastStoredTime
+                && lastUpdateTime == that.lastUpdateTime
+                && version == that.version
+                && ttl == that.ttl
+                && maxIdle == that.maxIdle
+                && Objects.equals(key, that.key)
+                && Objects.equals(value, that.value)
+                && dataKey.equals(that.dataKey)
+                && dataValue.equals(that.dataValue);
     }
 
     @Override
