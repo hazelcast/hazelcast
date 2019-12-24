@@ -88,11 +88,14 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
         serializeKeys = nearCacheConfig.isSerializeKeys();
 
         NearCacheManager nearCacheManager = getContext().getNearCacheManager(getServiceName());
-        IMapDataStructureAdapter<K, V> adapter = new IMapDataStructureAdapter<>(this);
-        nearCache = nearCacheManager.getOrCreateNearCache(name, nearCacheConfig, adapter);
+        nearCache = nearCacheManager.getOrCreateNearCache(name, nearCacheConfig);
 
         if (nearCacheConfig.isInvalidateOnChange()) {
             registerInvalidationListener();
+        }
+
+        if (nearCacheConfig.getPreloaderConfig().isEnabled()) {
+            nearCacheManager.startPreloading(nearCache, new IMapDataStructureAdapter<>(this));
         }
     }
 

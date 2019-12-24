@@ -16,6 +16,7 @@
 
 package com.hazelcast.internal.nearcache;
 
+import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.internal.adapter.DataStructureAdapter;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.nearcache.NearCacheStats;
@@ -71,6 +72,11 @@ public interface NearCache<K, V> extends InitializingObject {
      * @return the name of this {@link NearCache} instance
      */
     String getName();
+
+    /**
+     * @return config object used by {@link NearCache} instance.
+     */
+    NearCacheConfig getNearCacheConfig();
 
     /**
      * Gets the value associated with the given {@code key}.

@@ -26,6 +26,7 @@ import com.hazelcast.internal.nearcache.impl.invalidation.MinimalPartitionServic
 import com.hazelcast.internal.nearcache.impl.invalidation.NonStopInvalidator;
 import com.hazelcast.internal.nearcache.impl.invalidation.RepairingHandler;
 import com.hazelcast.internal.nearcache.impl.invalidation.RepairingTask;
+import com.hazelcast.internal.services.RemoteService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.impl.EventListenerFilter;
 import com.hazelcast.map.impl.MapManagedService;
@@ -131,7 +132,7 @@ public class MapNearCacheManager extends DefaultNearCacheManager {
     }
 
     /**
-     * @see com.hazelcast.map.impl.MapRemoteService#destroyDistributedObject(String)
+     * @see RemoteService#destroyDistributedObject(String) for IMap
      */
     @Override
     public boolean destroyNearCache(String mapName) {
