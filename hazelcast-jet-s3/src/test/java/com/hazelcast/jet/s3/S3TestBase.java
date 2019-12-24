@@ -82,15 +82,17 @@ abstract class S3TestBase extends JetTestSupport {
         jet.newJob(p).join();
 
         try (S3Client client = clientSupplier().get()) {
-            long lineCount = client
-                    .listObjects(req -> req.bucket(bucketName).prefix(prefix))
-                    .contents()
-                    .stream()
-                    .map(o -> client.getObject(req -> req.bucket(bucketName).key(o.key()), toInputStream()))
-                    .flatMap(this::inputStreamToLines)
-                    .peek(line -> assertEquals(payload, line))
-                    .count();
-            assertEquals(itemCount, lineCount);
+            assertTrueEventually(() -> {
+                long lineCount = client
+                        .listObjects(req -> req.bucket(bucketName).prefix(prefix))
+                        .contents()
+                        .stream()
+                        .map(o -> client.getObject(req -> req.bucket(bucketName).key(o.key()), toInputStream()))
+                        .flatMap(this::inputStreamToLines)
+                        .peek(line -> assertEquals(payload, line))
+                        .count();
+                assertEquals(itemCount, lineCount);
+            });
         }
     }
 
