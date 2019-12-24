@@ -148,6 +148,7 @@ public class MembershipChangeSchedule implements IdentifiedDataSerializable {
 
         @Override
         public void writeData(ObjectDataOutput out) throws IOException {
+            out.writeObject(groupId);
             out.writeLong(membersCommitIndex);
             out.writeInt(members.size());
             for (RaftEndpoint member : members) {
@@ -159,6 +160,7 @@ public class MembershipChangeSchedule implements IdentifiedDataSerializable {
 
         @Override
         public void readData(ObjectDataInput in) throws IOException {
+            groupId = in.readObject();
             membersCommitIndex = in.readLong();
             int len = in.readInt();
             members = new HashSet<>(len);

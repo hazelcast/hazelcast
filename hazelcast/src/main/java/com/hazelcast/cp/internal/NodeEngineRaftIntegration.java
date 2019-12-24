@@ -218,6 +218,7 @@ final class NodeEngineRaftIntegration implements RaftIntegration {
         try {
             return operation.run(groupId, commitIndex);
         } catch (Throwable t) {
+            operation.logFailure(t);
             return t;
         }
     }

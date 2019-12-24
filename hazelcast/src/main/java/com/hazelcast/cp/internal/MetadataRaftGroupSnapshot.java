@@ -43,7 +43,10 @@ public final class MetadataRaftGroupSnapshot implements IdentifiedDataSerializab
     private Set<Long> initializationCommitIndices = new HashSet<>();
 
     public void setGroups(Collection<CPGroupInfo> groups) {
-        this.groups.addAll(groups);
+        for (CPGroupInfo group : groups) {
+            // Deep copy CPGroupInfo, because it's a mutable object.
+            this.groups.add(new CPGroupInfo(group));
+        }
     }
 
     public void setMembers(Collection<CPMemberInfo> members) {
