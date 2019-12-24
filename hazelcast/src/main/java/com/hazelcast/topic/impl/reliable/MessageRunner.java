@@ -99,21 +99,17 @@ public abstract class MessageRunner<E> implements BiConsumer<ReadResultSet<Relia
         if (throwable == null) {
             // we process all messages in batch. So we don't release the thread and reschedule ourselves;
             // but we'll process whatever was received in 1 go.
+
+            long lostCount = result.getNextSequenceToReadFrom() - result.readCount() - sequence;
+            if (lostCount > 0 && !isLossTolerable(lostCount)) {
+                cancel();
+                return;
+            }
+
             for (int i = 0; i < result.size(); i++) {
                 ReliableTopicMessage message = result.get(i);
-
-                long actualSequence = result.getSequence(i);
-                if (actualSequence != sequence) {
-                    if (isLossTolerable(actualSequence)) {
-                        sequence = actualSequence;
-                    } else {
-                        cancel();
-                        return;
-                    }
-                }
-
                 try {
-                    listener.storeSequence(sequence);
+                    listener.storeSequence(result.getSequence(i));
                     process(message);
                 } catch (Throwable t) {
                     if (terminate(t)) {
@@ -122,8 +118,9 @@ public abstract class MessageRunner<E> implements BiConsumer<ReadResultSet<Relia
                     }
                 }
 
-                sequence++;
             }
+
+            sequence = result.getNextSequenceToReadFrom();
             next();
         } else {
             throwable = adjustThrowable(throwable);
@@ -199,25 +196,24 @@ public abstract class MessageRunner<E> implements BiConsumer<ReadResultSet<Relia
     protected abstract Throwable adjustThrowable(Throwable t);
 
     /**
-     * Called when jumps in message sequence numbers are detected. Checks
-     * if the listener is able to tolerate the data loss implied by such
-     * sequence number jumps.
+     * Called when message loss is detected. Checks if the listener is able
+     * to tolerate the loss.
      *
-     * @param newSequence the new, unexpected sequence number encountered
+     * @param lossCount number of lost messages
      * @return if the listener may continue reading
      */
-    private boolean isLossTolerable(long newSequence) {
+    private boolean isLossTolerable(long lossCount) {
         if (listener.isLossTolerant()) {
             if (logger.isFinestEnabled()) {
-                logger.finest("MessageListener " + listener + " on topic: " + topicName + " ran into a silent sequence"
-                        + " jump from oldSequence: " + sequence + " to sequence: " + newSequence);
+                logger.finest("MessageListener " + listener + " on topic: " + topicName + " lost " + lossCount + " " +
+                        "messages");
             }
             return true;
         }
 
         logger.warning("Terminating MessageListener:" + listener + " on topic: " + topicName + ". "
                 + "Reason: The listener was too slow or the retention period of the message has been violated. "
-                + "head: " + newSequence + " sequence:" + sequence);
+                + lossCount + " messages lost.");
         return false;
     }
 
