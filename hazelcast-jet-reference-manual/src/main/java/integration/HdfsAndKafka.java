@@ -63,11 +63,11 @@ public class HdfsAndKafka {
     }
 
     static void s3() throws IOException {
-        //tag::s2[]
+        //tag::s3[]
         Job job = Job.getInstance();
         Configuration configuration = job.getConfiguration();
         configuration.set(HadoopSources.COPY_ON_READ, "false");
-        //end::s2[]
+        //end::s3[]
     }
 
     static void s4() {
