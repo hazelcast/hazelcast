@@ -101,7 +101,7 @@ public abstract class MessageRunner<E> implements BiConsumer<ReadResultSet<Relia
             // but we'll process whatever was received in 1 go.
 
             long lostCount = result.getNextSequenceToReadFrom() - result.readCount() - sequence;
-            if (lostCount > 0 && !isLossTolerable(lostCount)) {
+            if (lostCount != 0 && !isLossTolerable(lostCount)) {
                 cancel();
                 return;
             }
