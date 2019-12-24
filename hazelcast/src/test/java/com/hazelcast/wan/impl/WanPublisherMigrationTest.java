@@ -60,6 +60,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Tests for custom WAN publisher implementation migration support.
@@ -117,15 +118,21 @@ public class WanPublisherMigrationTest extends HazelcastTestSupport {
         if (!failMigrations) {
             assertEquals(exceptionMsg("migrationStart", publisher),
                     partitionsToMigrate, publisher.migrationStart.intValue());
-            assertEquals(exceptionMsg("migrationProcess", publisher),
-                    partitionsToMigrate, publisher.migrationProcess.intValue());
+            // it may happen that we have additional partition anti-entropy operations
+            // that call process but don't show up as migration operations
+            assertTrue("Expected at least " + partitionsToMigrate
+                            + " migration operations to be processed but was " + publisher,
+                    publisher.migrationProcess.intValue() >= partitionsToMigrate);
             assertEquals(exceptionMsg("migrationCommit", publisher),
                     partitionsToMigrate, publisher.migrationCommit.intValue());
         } else {
             assertEquals(exceptionMsg("migrationStart", publisher),
                     partitionsToMigrate + 1, publisher.migrationStart.intValue());
-            assertEquals(exceptionMsg("migrationProcess", publisher),
-                    partitionsToMigrate, publisher.migrationProcess.intValue());
+            // it may happen that we have additional partition anti-entropy operations
+            // that call process but don't show up as migration operations
+            assertTrue("Expected at least " + partitionsToMigrate
+                            + " migration operations to be processed but was " + publisher,
+                    publisher.migrationProcess.intValue() >= partitionsToMigrate);
             assertEquals(exceptionMsg("migrationCommit", publisher),
                     partitionsToMigrate, publisher.migrationCommit.intValue());
             assertEquals(exceptionMsg("migrationRollback", publisher),
