@@ -104,7 +104,7 @@ public abstract class MessageRunner<E> implements BiConsumer<ReadResultSet<Relia
 
                 long actualSequence = result.getSequence(i);
                 if (actualSequence != sequence) {
-                    if (handleSilentSequenceJump(actualSequence)) {
+                    if (isLossTolerable(actualSequence)) {
                         sequence = actualSequence;
                     } else {
                         cancel();
@@ -199,19 +199,19 @@ public abstract class MessageRunner<E> implements BiConsumer<ReadResultSet<Relia
     protected abstract Throwable adjustThrowable(Throwable t);
 
     /**
-     * Handles a sudden jump in received sequence numbers. This may indicate
-     * that the reader was too slow and items in the ringbuffer were already overwritten.
+     * Called when jumps in message sequence numbers are detected. Checks
+     * if the listener is able to tolerate the data loss implied by such
+     * sequence number jumps.
      *
      * @param newSequence the new, unexpected sequence number encountered
      * @return if the listener may continue reading
      */
-    private boolean handleSilentSequenceJump(long newSequence) {
+    private boolean isLossTolerable(long newSequence) {
         if (listener.isLossTolerant()) {
             if (logger.isFinestEnabled()) {
                 logger.finest("MessageListener " + listener + " on topic: " + topicName + " ran into a silent sequence"
                         + " jump from oldSequence: " + sequence + " to sequence: " + newSequence);
             }
-            sequence = newSequence;
             return true;
         }
 
