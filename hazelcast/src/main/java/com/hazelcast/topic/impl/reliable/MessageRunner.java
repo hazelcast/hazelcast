@@ -205,8 +205,8 @@ public abstract class MessageRunner<E> implements BiConsumer<ReadResultSet<Relia
     private boolean isLossTolerable(long lossCount) {
         if (listener.isLossTolerant()) {
             if (logger.isFinestEnabled()) {
-                logger.finest("MessageListener " + listener + " on topic: " + topicName + " lost " + lossCount + " " +
-                        "messages");
+                logger.finest("MessageListener " + listener + " on topic: " + topicName + " lost " + lossCount
+                        + "messages");
             }
             return true;
         }
