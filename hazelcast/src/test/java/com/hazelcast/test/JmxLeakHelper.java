@@ -19,7 +19,9 @@ package com.hazelcast.test;
 import javax.management.ObjectInstance;
 import javax.management.ObjectName;
 import java.lang.management.ManagementFactory;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
 
@@ -34,6 +36,20 @@ public final class JmxLeakHelper {
         // No-op.
     }
 
+    public static Collection<ObjectInstance> getBeansByClass(Class clazz) {
+        String className = clazz.getName();
+
+        List<ObjectInstance> res = new ArrayList<>();
+
+        for (ObjectInstance activeJmxBean : getActiveJmxBeans()) {
+            if (className.equals(activeJmxBean.getClassName())) {
+                res.add(activeJmxBean);
+            }
+        }
+
+        return res;
+    }
+
     public static void checkJmxBeans() {
         if (ignoreOnce) {
             ignoreOnce = false;
@@ -41,22 +57,34 @@ public final class JmxLeakHelper {
             return;
         }
 
-        Collection<String> activeJmxBeans = getActiveJmxBeans();
+        Collection<String> activeJmxBeanNames = getActiveJmxBeanNames();
 
-        if (!activeJmxBeans.isEmpty()) {
+        if (!activeJmxBeanNames.isEmpty()) {
             StringBuilder errorMessage = new StringBuilder("JMX beans are still registered:\n");
 
-            for (String activeJmxBean : activeJmxBeans) {
-                errorMessage.append("\t").append(activeJmxBean).append("\n");
+            for (String activeJmxBeanName : activeJmxBeanNames) {
+                errorMessage.append("\t").append(activeJmxBeanName).append("\n");
             }
 
             throw new IllegalStateException(errorMessage.toString());
         }
     }
 
-    private static Collection<String> getActiveJmxBeans() {
+    private static Collection<String> getActiveJmxBeanNames() {
+        Collection<ObjectInstance> activeJmxBeans = getActiveJmxBeans();
+
+        Set<String> res = new TreeSet<>();
+
+        for (ObjectInstance activeJmxBean : activeJmxBeans) {
+            res.add(activeJmxBean.getObjectName().getCanonicalName());
+        }
+
+        return res;
+    }
+
+    private static Collection<ObjectInstance> getActiveJmxBeans() {
         try {
-            TreeSet<String> res = new TreeSet<>();
+            List<ObjectInstance> res = new ArrayList<>();
 
             ObjectName objectName = new ObjectName("com.hazelcast*:*");
 
@@ -66,7 +94,7 @@ public final class JmxLeakHelper {
                 String name = instance.getObjectName().getCanonicalName();
 
                 if (name != null && name.startsWith("com.hazelcast")) {
-                    res.add(name);
+                    res.add(instance);
                 }
             }
 
