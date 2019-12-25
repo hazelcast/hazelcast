@@ -30,7 +30,6 @@ import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -54,8 +53,6 @@ import static org.junit.Assert.assertTrue;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class LocalIndexStatsTest extends HazelcastTestSupport {
 
-    public static final String HAZELCAST_PROXY_DESTROY_TIMEOUT_SECONDS = "hazelcast.proxy.destroy.timeout.seconds";
-
     @Parameters(name = "format:{0}")
     public static Collection<Object[]> parameters() {
         return asList(new Object[][]{{InMemoryFormat.OBJECT}, {InMemoryFormat.BINARY}});
@@ -65,8 +62,6 @@ public class LocalIndexStatsTest extends HazelcastTestSupport {
     public InMemoryFormat inMemoryFormat;
 
     protected static final int PARTITIONS = 137;
-
-    protected static final int PROXY_DESTROY_TIMEOUT = 60;
 
     private static final int QUERIES = 10;
 
@@ -87,8 +82,6 @@ public class LocalIndexStatsTest extends HazelcastTestSupport {
         mapName = randomMapName();
         noStatsMapName = mapName + "_no_stats";
 
-        System.setProperty(HAZELCAST_PROXY_DESTROY_TIMEOUT_SECONDS, Integer.toString(PROXY_DESTROY_TIMEOUT));
-
         Config config = getConfig();
         config.setProperty(PARTITION_COUNT.getName(), Integer.toString(PARTITIONS));
         config.getMapConfig(mapName).setInMemoryFormat(inMemoryFormat);
@@ -98,11 +91,6 @@ public class LocalIndexStatsTest extends HazelcastTestSupport {
         map = instance.getMap(mapName);
         noStatsMap = instance.getMap(noStatsMapName);
         queryTypes = initQueryTypes();
-    }
-
-    @After
-    public void tearDown() {
-        System.clearProperty(HAZELCAST_PROXY_DESTROY_TIMEOUT_SECONDS);
     }
 
     @Override
