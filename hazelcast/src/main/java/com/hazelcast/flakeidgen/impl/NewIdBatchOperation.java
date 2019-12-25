@@ -17,36 +17,32 @@
 package com.hazelcast.flakeidgen.impl;
 
 import com.hazelcast.flakeidgen.impl.FlakeIdGeneratorProxy.IdBatchAndWaitTime;
-import com.hazelcast.internal.util.UUIDSerializationUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.impl.operationservice.Operation;
 
 import java.io.IOException;
-import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 class NewIdBatchOperation extends Operation implements IdentifiedDataSerializable {
 
     private String flakeIdGenName;
     private int batchSize;
-    private UUID source;
 
     // for deserialization
     NewIdBatchOperation() {
     }
 
-    NewIdBatchOperation(String genName, int batchSize, UUID source) {
+    NewIdBatchOperation(String genName, int batchSize) {
         this.flakeIdGenName = genName;
         this.batchSize = batchSize;
-        this.source = source;
     }
 
     @Override
     public void run() throws Exception {
         FlakeIdGeneratorProxy proxy = (FlakeIdGeneratorProxy) getNodeEngine().getProxyService()
-                .getDistributedObject(getServiceName(), flakeIdGenName, source);
+                .getDistributedObject(getServiceName(), flakeIdGenName, getCallerUuid());
         final IdBatchAndWaitTime result = proxy.newIdBaseLocal(batchSize);
         if (result.waitTimeMillis == 0) {
             sendResponse(result.idBatch.base());
@@ -84,14 +80,12 @@ class NewIdBatchOperation extends Operation implements IdentifiedDataSerializabl
     protected void readInternal(ObjectDataInput in) throws IOException {
         flakeIdGenName = in.readUTF();
         batchSize = in.readInt();
-        source = UUIDSerializationUtil.readUUID(in);
     }
 
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         out.writeUTF(flakeIdGenName);
         out.writeInt(batchSize);
-        UUIDSerializationUtil.writeUUID(out, source);
     }
 
     @Override

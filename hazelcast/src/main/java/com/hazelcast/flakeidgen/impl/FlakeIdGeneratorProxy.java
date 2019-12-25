@@ -134,7 +134,8 @@ public class FlakeIdGeneratorProxy
 
         // Remote call otherwise. Loop will end when getRandomMember() throws that all members overflowed.
         while (true) {
-            NewIdBatchOperation op = new NewIdBatchOperation(name, batchSize, source);
+            NewIdBatchOperation op = new NewIdBatchOperation(name, batchSize);
+            op.setCallerUuid(source);
             Member target = getRandomMember();
             InvocationFuture<Long> future = getNodeEngine().getOperationService()
                                                            .invokeOnTarget(getServiceName(), op, target.getAddress());

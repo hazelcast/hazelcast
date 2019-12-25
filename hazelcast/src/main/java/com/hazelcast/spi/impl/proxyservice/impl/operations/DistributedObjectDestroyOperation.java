@@ -16,7 +16,6 @@
 
 package com.hazelcast.spi.impl.proxyservice.impl.operations;
 
-import com.hazelcast.internal.util.UUIDSerializationUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
@@ -25,28 +24,25 @@ import com.hazelcast.spi.impl.SpiDataSerializerHook;
 import com.hazelcast.spi.impl.proxyservice.impl.ProxyServiceImpl;
 
 import java.io.IOException;
-import java.util.UUID;
 
 public class DistributedObjectDestroyOperation
         extends Operation implements IdentifiedDataSerializable {
 
     private String serviceName;
     private String name;
-    private UUID source;
 
     public DistributedObjectDestroyOperation() {
     }
 
-    public DistributedObjectDestroyOperation(String serviceName, String name, UUID source) {
+    public DistributedObjectDestroyOperation(String serviceName, String name) {
         this.serviceName = serviceName;
         this.name = name;
-        this.source = source;
     }
 
     @Override
     public void run() throws Exception {
         ProxyServiceImpl proxyService = getNodeEngine().getService(ProxyServiceImpl.SERVICE_NAME);
-        proxyService.destroyLocalDistributedObject(serviceName, name, source, false);
+        proxyService.destroyLocalDistributedObject(serviceName, name, getCallerUuid(), false);
     }
 
     @Override
@@ -59,7 +55,6 @@ public class DistributedObjectDestroyOperation
         super.writeInternal(out);
         out.writeUTF(serviceName);
         out.writeUTF(name);
-        UUIDSerializationUtil.writeUUID(out, source);
     }
 
     @Override
@@ -67,7 +62,6 @@ public class DistributedObjectDestroyOperation
         super.readInternal(in);
         serviceName = in.readUTF();
         name = in.readUTF();
-        source = UUIDSerializationUtil.readUUID(in);
     }
 
     @Override

@@ -163,7 +163,8 @@ public class ProxyServiceImpl
                 continue;
             }
 
-            DistributedObjectDestroyOperation operation = new DistributedObjectDestroyOperation(serviceName, name, source);
+            DistributedObjectDestroyOperation operation = new DistributedObjectDestroyOperation(serviceName, name);
+            operation.setCallerUuid(source);
             Future f = operationService.createInvocationBuilder(SERVICE_NAME, operation, member.getAddress())
                     .setTryCount(TRY_COUNT).invoke();
             calls.add(f);
