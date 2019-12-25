@@ -58,9 +58,19 @@ public class PrivateLinkAddressTranslator implements AddressProvider {
     @Override
     public Address translate(Address address) {
 
-        String[] ip = address.getHost().split("\\.");           
-        String zonalName = privateLinkOrderedZonalNames[Integer.parseInt(ip[2])];
-        int port = Integer.parseInt(ip[2]) * 256 + Integer.parseInt(ip[3]);
+        String IP = address.getHost();
+        int len = IP.length(), idx=len, cnt=0; 
+        char[] c = IP.toCharArray();
+        String[] buffer = new String[2];
+        for (int j=len-2;j>=0; j--){
+            if (c[j]=='.'){
+                buffer[cnt]=IP.substring(j+1, idx);
+                idx = j; cnt++; j--;
+            }
+            if (cnt >1){break;}
+        }
+        String zonalName = privateLinkOrderedZonalNames[Integer.parseInt(buffer[1])];
+        int port = Integer.parseInt(buffer[1]) * 256 + Integer.parseInt(buffer[0]);
 
         Address pvtlnAddr;
         try {

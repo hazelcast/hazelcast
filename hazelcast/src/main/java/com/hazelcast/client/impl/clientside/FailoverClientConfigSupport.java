@@ -280,6 +280,9 @@ public final class FailoverClientConfigSupport {
         if (mainNetworkConfig.isSmartRouting() != alternativeNetworkConfig.isSmartRouting()) {
             throwInvalidConfigurationException(mainClusterName, alterNativeClusterName, "network:smartRouting");
         }
+        if (mainNetworkConfig.isPrivateLink() != alternativeNetworkConfig.isPrivateLink()) {
+            throwInvalidConfigurationException(mainClusterName, alterNativeClusterName, "network:privateLink");
+        }
         if (mainNetworkConfig.isRedoOperation() != alternativeNetworkConfig.isRedoOperation()) {
             throwInvalidConfigurationException(mainClusterName, alterNativeClusterName, "network:redoOperation");
         }
