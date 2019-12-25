@@ -19,6 +19,7 @@ package com.hazelcast.jet.server;
 import com.hazelcast.cluster.Cluster;
 import com.hazelcast.collection.IList;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.internal.util.StringUtil;
 import com.hazelcast.jet.Jet;
 import com.hazelcast.jet.JetCacheManager;
 import com.hazelcast.jet.JetException;
@@ -108,7 +109,7 @@ public final class JetBootstrap {
 
     static synchronized void executeJar(@Nonnull Supplier<JetInstance> supplier,
                            @Nonnull String jar, @Nullable String snapshotName,
-                           @Nullable String jobName, @Nonnull List<String> args
+                           @Nullable String jobName, @Nullable String mainClass, @Nonnull List<String> args
     ) throws Exception {
         JetBootstrap.jarName = jar;
         JetBootstrap.snapshotName = snapshotName;
@@ -116,12 +117,14 @@ public final class JetBootstrap {
         JetBootstrap.supplier = new ConcurrentMemoizingSupplier<>(() -> new InstanceProxy(supplier.get()));
 
         try (JarFile jarFile = new JarFile(jar)) {
-            if (jarFile.getManifest() == null) {
-                error("No manifest file in " + jar);
-            }
-            String mainClass = jarFile.getManifest().getMainAttributes().getValue("Main-Class");
-            if (mainClass == null) {
-                error("No Main-Class found in manifest");
+            if (StringUtil.isNullOrEmpty(mainClass)) {
+                if (jarFile.getManifest() == null) {
+                    error("No manifest file in " + jar + ". The -c option can be used to provide a main class.");
+                }
+                mainClass = jarFile.getManifest().getMainAttributes().getValue("Main-Class");
+                if (mainClass == null) {
+                    error("No Main-Class found in manifest. The -c option can be used to provide a main class.");
+                }
             }
 
             URL jarUrl = new URL("file:///" + jar);

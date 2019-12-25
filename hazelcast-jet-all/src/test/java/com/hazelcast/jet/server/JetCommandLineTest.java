@@ -447,6 +447,21 @@ public class JetCommandLineTest extends JetTestSupport {
     }
 
     @Test
+    public void test_submit_withClassname() {
+        run("submit", "--class", "com.hazelcast.jet.testjob.TestJob", testJobJarFile.toString());
+        assertTrueEventually(() -> assertEquals(1, jet.getJobs().size()), 5);
+        Job job = jet.getJobs().get(0);
+        assertJobStatusEventually(job, JobStatus.RUNNING);
+        assertNull(job.getName());
+    }
+
+    @Test
+    public void test_submit_withWrongClassname() {
+        exception.expectMessage("ClassNotFoundException");
+        run("submit", "--class", "com.hazelcast.jet.testjob.NonExisting", testJobJarFile.toString());
+    }
+
+    @Test
     public void test_submit_argsPassing() {
         run("submit", testJobJarFile.toString(), "--jobOption", "fooValue");
         // this list is created by the job in testjob.jar
