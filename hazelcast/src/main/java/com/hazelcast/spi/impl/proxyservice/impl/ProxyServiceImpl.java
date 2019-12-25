@@ -59,7 +59,6 @@ import static com.hazelcast.internal.util.ExceptionUtil.peel;
 import static com.hazelcast.internal.util.FutureUtil.waitWithDeadline;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.internal.util.counters.MwCounter.newMwCounter;
-import static java.lang.Integer.parseInt;
 import static java.util.logging.Level.FINEST;
 import static java.util.logging.Level.WARNING;
 
@@ -68,13 +67,12 @@ public class ProxyServiceImpl
         EventPublishingService<DistributedObjectEventPacket, Object>, StaticMetricsProvider {
 
     public static final String SERVICE_NAME = "hz:core:proxyService";
-    private static final String HAZELCAST_PROXY_DESTROY_TIMEOUT_SECONDS = "hazelcast.proxy.destroy.timeout.seconds";
 
     private static final int TRY_COUNT = 10;
+    private static final long DESTROY_TIMEOUT_SECONDS = 30;
 
     final NodeEngineImpl nodeEngine;
     final ILogger logger;
-    final long destroyTimeout;
     final ConcurrentMap<UUID, DistributedObjectListener> listeners =
             new ConcurrentHashMap<UUID, DistributedObjectListener>();
 
@@ -100,7 +98,6 @@ public class ProxyServiceImpl
 
     public ProxyServiceImpl(NodeEngineImpl nodeEngine) {
         this.nodeEngine = nodeEngine;
-        this.destroyTimeout = parseInt(System.getProperty(HAZELCAST_PROXY_DESTROY_TIMEOUT_SECONDS, "30"));
         this.logger = nodeEngine.getLogger(ProxyService.class.getName());
     }
 
@@ -173,7 +170,7 @@ public class ProxyServiceImpl
         }
 
         destroyLocalDistributedObject(serviceName, name, true);
-        waitWithDeadline(calls, destroyTimeout, TimeUnit.SECONDS, destroyProxyExceptionHandler);
+        waitWithDeadline(calls, DESTROY_TIMEOUT_SECONDS, TimeUnit.SECONDS, destroyProxyExceptionHandler);
     }
 
     @Override
