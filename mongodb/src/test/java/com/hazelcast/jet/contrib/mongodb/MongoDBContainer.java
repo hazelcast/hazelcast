@@ -35,11 +35,11 @@ public class MongoDBContainer extends GenericContainer<MongoDBContainer> {
     private String replicaSetName;
 
     public MongoDBContainer() {
-        this(VERSION);
+        this(IMAGE_NAME + ":" + VERSION);
     }
 
-    public MongoDBContainer(String version) {
-        super(IMAGE_NAME + ":" + version);
+    public MongoDBContainer(String imageName) {
+        super(imageName);
     }
 
     @Override

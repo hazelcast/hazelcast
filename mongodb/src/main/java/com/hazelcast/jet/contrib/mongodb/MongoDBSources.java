@@ -31,7 +31,7 @@ import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.List;
 
-import static com.hazelcast.jet.function.FunctionEx.identity;
+import static com.hazelcast.function.FunctionEx.identity;
 
 /**
  * Contains factory methods for MongoDB sources.
@@ -65,7 +65,7 @@ public final class MongoDBSources {
      *                 new Document("age", 1)
      *         );
      * Pipeline p = Pipeline.create();
-     * BatchStage<Document> srcStage = p.drawFrom(batchSource);
+     * BatchStage<Document> srcStage = p.readFrom(batchSource);
      * }</pre>
      *
      * @param name             a descriptive name for the source (diagnostic purposes)
@@ -126,7 +126,7 @@ public final class MongoDBSources {
      *         );
      *
      * Pipeline p = Pipeline.create();
-     * StreamSourceStage<? extends Document> srcStage = p.drawFrom(streamSource);
+     * StreamSourceStage<? extends Document> srcStage = p.readFrom(streamSource);
      * }</pre>
      *
      * @param name             a descriptive name for the source (diagnostic purposes)

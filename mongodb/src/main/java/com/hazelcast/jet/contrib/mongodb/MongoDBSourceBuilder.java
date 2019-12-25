@@ -16,9 +16,9 @@
 
 package com.hazelcast.jet.contrib.mongodb;
 
-import com.hazelcast.jet.function.ConsumerEx;
-import com.hazelcast.jet.function.FunctionEx;
-import com.hazelcast.jet.function.SupplierEx;
+import com.hazelcast.function.ConsumerEx;
+import com.hazelcast.function.FunctionEx;
+import com.hazelcast.function.SupplierEx;
 import com.hazelcast.jet.pipeline.BatchSource;
 import com.hazelcast.jet.pipeline.SourceBuilder;
 import com.hazelcast.jet.pipeline.StreamSource;
@@ -36,8 +36,8 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.List;
 
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.jet.impl.util.Util.checkSerializable;
-import static com.hazelcast.util.Preconditions.checkNotNull;
 
 /**
  * Top-level class for MongoDB custom source builders.
@@ -111,7 +111,7 @@ public final class MongoDBSourceBuilder<T> {
      *         .mapFn(Document::toJson)
      *         .build();
      * Pipeline p = Pipeline.create();
-     * BatchStage<String> srcStage = p.drawFrom(source);
+     * BatchStage<String> srcStage = p.readFrom(source);
      * }</pre>
      *
      * @param name               a descriptive name for the source (diagnostic purposes)
@@ -150,7 +150,7 @@ public final class MongoDBSourceBuilder<T> {
      *         .mapFn(ChangeStreamDocument::getFullDocument)
      *         .build();
      * Pipeline p = Pipeline.create();
-     * StreamSourceStage<? extends Document> srcStage = p.drawFrom(streamAll);
+     * StreamSourceStage<? extends Document> srcStage = p.readFrom(streamAll);
      * }</pre>
      * <p>
      * See {@link #stream(String, SupplierEx)}
@@ -192,7 +192,7 @@ public final class MongoDBSourceBuilder<T> {
      *         .mapFn(ChangeStreamDocument::getFullDocument)
      *         .build();
      * Pipeline p = Pipeline.create();
-     * StreamSourceStage<? extends Document> srcStage = p.drawFrom(streamDatabase);
+     * StreamSourceStage<? extends Document> srcStage = p.readFrom(streamDatabase);
      * }</pre>
      * <p>
      * See {@link #stream(String, SupplierEx)}
@@ -255,7 +255,7 @@ public final class MongoDBSourceBuilder<T> {
      *         .mapFn(ChangeStreamDocument::getFullDocument)
      *         .build();
      * Pipeline p = Pipeline.create();
-     * StreamSourceStage<? extends Document> srcStage = p.drawFrom(streamCollection);
+     * StreamSourceStage<? extends Document> srcStage = p.readFrom(streamCollection);
      * }</pre>
      *
      * @param name               a descriptive name for the source (diagnostic purposes)

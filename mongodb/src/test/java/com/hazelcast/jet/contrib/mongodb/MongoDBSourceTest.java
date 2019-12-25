@@ -16,8 +16,8 @@
 
 package com.hazelcast.jet.contrib.mongodb;
 
-import com.hazelcast.core.ISet;
-import com.hazelcast.jet.IListJet;
+import com.hazelcast.collection.IList;
+import com.hazelcast.collection.ISet;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.config.JobConfig;
@@ -64,10 +64,10 @@ public class MongoDBSourceTest extends AbstractMongoDBTest {
 
 
         Pipeline p = Pipeline.create();
-        p.drawFrom(streamSource(30))
+        p.readFrom(streamSource(30))
          .withNativeTimestamps(0)
          .map(doc -> doc.getInteger("key"))
-         .drainTo(setSink);
+         .writeTo(setSink);
 
         JobConfig jobConfig = new JobConfig();
         jobConfig.setProcessingGuarantee(ProcessingGuarantee.EXACTLY_ONCE)
@@ -96,7 +96,7 @@ public class MongoDBSourceTest extends AbstractMongoDBTest {
     @Test
     public void testBatch() {
 
-        IListJet<Document> list = jet.getList("list");
+        IList<Document> list = jet.getList("list");
 
         List<Document> documents = new ArrayList<>();
         for (int i = 0; i < 100; i++) {
@@ -108,10 +108,10 @@ public class MongoDBSourceTest extends AbstractMongoDBTest {
         String connectionString = mongoContainer.connectionString();
 
         Pipeline p = Pipeline.create();
-        p.drawFrom(MongoDBSources.batch(SOURCE_NAME, connectionString, DB_NAME, COL_NAME,
+        p.readFrom(MongoDBSources.batch(SOURCE_NAME, connectionString, DB_NAME, COL_NAME,
                 new Document("val", new Document("$gte", 10)),
                 new Document("val", 1).append("_id", 0)))
-         .drainTo(Sinks.list(list));
+         .writeTo(Sinks.list(list));
 
         jet.newJob(p).join();
 
@@ -124,7 +124,7 @@ public class MongoDBSourceTest extends AbstractMongoDBTest {
 
     @Test
     public void testStream() {
-        IListJet<Document> list = jet.getList("list");
+        IList<Document> list = jet.getList("list");
 
         StreamSource<? extends Document> streamSource =
                 streamSource(
@@ -134,9 +134,9 @@ public class MongoDBSourceTest extends AbstractMongoDBTest {
                 );
 
         Pipeline p = Pipeline.create();
-        p.drawFrom(streamSource)
+        p.readFrom(streamSource)
          .withNativeTimestamps(0)
-         .drainTo(Sinks.list(list));
+         .writeTo(Sinks.list(list));
 
         Job job = jet.newJob(p);
 
@@ -167,7 +167,7 @@ public class MongoDBSourceTest extends AbstractMongoDBTest {
 
     @Test
     public void testStream_whenWatchDatabase() {
-        IListJet<Document> list = jet.getList("list");
+        IList<Document> list = jet.getList("list");
 
         String connectionString = mongoContainer.connectionString();
         long value = startAtOperationTime.getValue();
@@ -190,9 +190,9 @@ public class MongoDBSourceTest extends AbstractMongoDBTest {
 
 
         Pipeline p = Pipeline.create();
-        p.drawFrom(source)
+        p.readFrom(source)
          .withNativeTimestamps(0)
-         .drainTo(Sinks.list(list));
+         .writeTo(Sinks.list(list));
 
         Job job = jet.newJob(p);
 
@@ -234,7 +234,7 @@ public class MongoDBSourceTest extends AbstractMongoDBTest {
 
     @Test
     public void testStream_whenWatchAll() {
-        IListJet<Document> list = jet.getList("list");
+        IList<Document> list = jet.getList("list");
 
         String connectionString = mongoContainer.connectionString();
         long value = startAtOperationTime.getValue();
@@ -255,9 +255,9 @@ public class MongoDBSourceTest extends AbstractMongoDBTest {
                 .build();
 
         Pipeline p = Pipeline.create();
-        p.drawFrom(source)
+        p.readFrom(source)
          .withNativeTimestamps(0)
-         .drainTo(Sinks.list(list));
+         .writeTo(Sinks.list(list));
 
         Job job = jet.newJob(p);
 

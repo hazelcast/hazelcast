@@ -63,7 +63,7 @@ BatchSource<Document> batchSource =
                 new Document("age", 1)
         );
 Pipeline p = Pipeline.create();
-BatchStage<Document> srcStage = p.drawFrom(batchSource);
+BatchStage<Document> srcStage = p.readFrom(batchSource);
 ```
 
 For more detail check out 
@@ -111,7 +111,7 @@ StreamSource<? extends Document> streamSource =
                 new Document("fullDocument.age", 1)
         );
 Pipeline p = Pipeline.create();
-StreamSourceStage<? extends Document> srcStage = p.drawFrom(streamSource);
+StreamSourceStage<? extends Document> srcStage = p.readFrom(streamSource);
 ```
 
 For more detail check out 
@@ -131,9 +131,9 @@ List, maps them to `Document` instances and writes them to MongoDB.
 
 ```java
 Pipeline p = Pipeline.create();
-p.drawFrom(Sources.list(list))
+p.readFrom(Sources.list(list))
  .map(i -> new Document("key", i))
- .drainTo(
+ .writeTo(
      MongoDBSinks.mongodb(
         "sink", 
         "mongodb://localhost:27017",

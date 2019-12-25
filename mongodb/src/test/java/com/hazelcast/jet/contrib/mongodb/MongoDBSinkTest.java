@@ -16,7 +16,7 @@
 
 package com.hazelcast.jet.contrib.mongodb;
 
-import com.hazelcast.jet.IListJet;
+import com.hazelcast.collection.IList;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sink;
@@ -37,7 +37,7 @@ public class MongoDBSinkTest extends AbstractMongoDBTest {
 
     @Test
     public void test() {
-        IListJet<Integer> list = jet.getList("list");
+        IList<Integer> list = jet.getList("list");
         for (int i = 0; i < 100; i++) {
             list.add(i);
         }
@@ -45,9 +45,9 @@ public class MongoDBSinkTest extends AbstractMongoDBTest {
         String connectionString = mongoContainer.connectionString();
 
         Pipeline p = Pipeline.create();
-        p.drawFrom(Sources.list(list))
+        p.readFrom(Sources.list(list))
          .map(i -> new Document("key", i))
-         .drainTo(MongoDBSinks.mongodb(SINK_NAME, connectionString, DB_NAME, COL_NAME));
+         .writeTo(MongoDBSinks.mongodb(SINK_NAME, connectionString, DB_NAME, COL_NAME));
 
         jet.newJob(p).join();
 
@@ -60,7 +60,7 @@ public class MongoDBSinkTest extends AbstractMongoDBTest {
         String connectionString = mongoContainer.connectionString();
         mongoContainer.close();
 
-        IListJet<Integer> list = jet.getList("list");
+        IList<Integer> list = jet.getList("list");
         for (int i = 0; i < 100; i++) {
             list.add(i);
         }
@@ -74,9 +74,9 @@ public class MongoDBSinkTest extends AbstractMongoDBTest {
 
 
         Pipeline p = Pipeline.create();
-        p.drawFrom(Sources.list(list))
+        p.readFrom(Sources.list(list))
          .map(i -> new Document("key", i))
-         .drainTo(sink);
+         .writeTo(sink);
 
         try {
             jet.newJob(p).join();

@@ -16,7 +16,7 @@
 
 package com.hazelcast.jet.contrib.mongodb;
 
-import com.hazelcast.jet.function.SupplierEx;
+import com.hazelcast.function.SupplierEx;
 import com.hazelcast.jet.pipeline.Sink;
 import com.hazelcast.jet.pipeline.SinkBuilder;
 import com.mongodb.client.MongoClient;
