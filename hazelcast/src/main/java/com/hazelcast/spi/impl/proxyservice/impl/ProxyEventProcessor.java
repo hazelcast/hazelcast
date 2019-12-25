@@ -23,6 +23,7 @@ import com.hazelcast.core.DistributedObjectUtil;
 import com.hazelcast.internal.util.executor.StripedRunnable;
 
 import java.util.Collection;
+import java.util.UUID;
 
 final class ProxyEventProcessor implements StripedRunnable {
 
@@ -31,19 +32,21 @@ final class ProxyEventProcessor implements StripedRunnable {
     private final String serviceName;
     private final String objectName;
     private final DistributedObject object;
+    private final UUID source;
 
     ProxyEventProcessor(Collection<DistributedObjectListener> listeners, DistributedObjectEvent.EventType eventType,
-                        String serviceName, String objectName, DistributedObject object) {
+                        String serviceName, String objectName, DistributedObject object, UUID source) {
         this.listeners = listeners;
         this.type = eventType;
         this.serviceName = serviceName;
         this.objectName = objectName;
         this.object = object;
+        this.source = source;
     }
 
     @Override
     public void run() {
-        DistributedObjectEvent event = new DistributedObjectEvent(type, serviceName, objectName, object);
+        DistributedObjectEvent event = new DistributedObjectEvent(type, serviceName, objectName, object, source);
         for (DistributedObjectListener listener : listeners) {
             switch (type) {
                 case CREATED:

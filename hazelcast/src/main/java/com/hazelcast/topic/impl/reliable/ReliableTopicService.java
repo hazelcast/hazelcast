@@ -35,6 +35,7 @@ import com.hazelcast.topic.LocalTopicStats;
 
 import java.util.Map;
 import java.util.Properties;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -55,7 +56,7 @@ public class ReliableTopicService implements ManagedService, RemoteService, Stat
     }
 
     @Override
-    public DistributedObject createDistributedObject(String objectName, boolean local) {
+    public DistributedObject createDistributedObject(String objectName, UUID source, boolean local) {
         ReliableTopicConfig topicConfig = nodeEngine.getConfig().findReliableTopicConfig(objectName);
         return new ReliableTopicProxy(objectName, nodeEngine, this, topicConfig);
     }

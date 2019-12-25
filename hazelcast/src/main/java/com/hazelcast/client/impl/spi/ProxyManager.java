@@ -97,7 +97,7 @@ import static com.hazelcast.internal.util.ServiceLoader.classIterator;
  */
 @SuppressWarnings({"checkstyle:classfanoutcomplexity",
         "checkstyle:classdataabstractioncoupling", "checkstyle:methodcount"})
-public final class ProxyManager {
+public final class ProxyManager implements DistributedObjectListener {
 
     private static final String PROVIDER_ID = ClientProxyDescriptorProvider.class.getCanonicalName();
     private static final Class[] LEGACY_CONSTRUCTOR_ARGUMENT_TYPES = new Class[]{String.class, String.class};
@@ -138,6 +138,8 @@ public final class ProxyManager {
 
     @SuppressWarnings("checkstyle:methodlength")
     public void init(ClientConfig config, ClientContext clientContext) {
+        addDistributedObjectListener(this);
+
         List<ListenerConfig> listenerConfigs = client.getClientConfig().getListenerConfigs();
         if (listenerConfigs != null && !listenerConfigs.isEmpty()) {
             for (ListenerConfig listenerConfig : listenerConfigs) {
@@ -407,6 +409,22 @@ public final class ProxyManager {
         }
     }
 
+    @Override
+    public void distributedObjectCreated(DistributedObjectEvent event) {
+        // no-op
+    }
+
+    @Override
+    public void distributedObjectDestroyed(DistributedObjectEvent event) {
+        if (event.getSource().equals(client.getConnectionManager().getClientUuid())) {
+            // ignore destroy events which were originally initiated from this client
+            return;
+        }
+
+        // destroy local proxy
+        destroyProxyLocally(event.getServiceName(), (String) event.getObjectName());
+    }
+
     private final class DistributedObjectEventHandler extends ClientAddDistributedObjectListenerCodec.AbstractEventHandler
             implements EventHandler<ClientMessage> {
 
@@ -420,12 +438,12 @@ public final class ProxyManager {
         }
 
         @Override
-        public void handleDistributedObjectEvent(String name, String serviceName, String eventTypeName) {
+        public void handleDistributedObjectEvent(String name, String serviceName, String eventTypeName, UUID source) {
             final ObjectNamespace ns = new DistributedObjectNamespace(serviceName, name);
             ClientProxyFuture future = proxies.get(ns);
             ClientProxy proxy = future == null ? null : future.get();
             DistributedObjectEvent.EventType eventType = DistributedObjectEvent.EventType.valueOf(eventTypeName);
-            LazyDistributedObjectEvent event = new LazyDistributedObjectEvent(eventType, serviceName, name, proxy,
+            LazyDistributedObjectEvent event = new LazyDistributedObjectEvent(eventType, serviceName, name, proxy, source,
                     proxyManager);
             if (DistributedObjectEvent.EventType.CREATED.equals(eventType)) {
                 listener.distributedObjectCreated(event);

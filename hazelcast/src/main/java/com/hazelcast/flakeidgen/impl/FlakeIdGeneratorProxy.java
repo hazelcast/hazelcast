@@ -65,6 +65,7 @@ public class FlakeIdGeneratorProxy
     private static final int NODE_ID_OUT_OF_RANGE = -2;
 
     private final String name;
+    private final UUID source;
     private final long epochStart;
     private final long nodeIdOffset;
     private volatile int nodeId = NODE_ID_NOT_YET_SET;
@@ -85,10 +86,11 @@ public class FlakeIdGeneratorProxy
      */
     private final Set<UUID> outOfRangeMembers = newSetFromMap(new ConcurrentHashMap<>());
 
-    FlakeIdGeneratorProxy(String name, NodeEngine nodeEngine, FlakeIdGeneratorService service) {
+    FlakeIdGeneratorProxy(String name, NodeEngine nodeEngine, FlakeIdGeneratorService service, UUID source) {
         super(nodeEngine, service);
         this.name = name;
         this.logger = nodeEngine.getLogger(getClass());
+        this.source = source;
 
         FlakeIdGeneratorConfig config = nodeEngine.getConfig().findFlakeIdGeneratorConfig(getName());
         epochStart = EPOCH_START - (config.getIdOffset() >> (BITS_SEQUENCE + BITS_NODE_ID));
@@ -132,7 +134,7 @@ public class FlakeIdGeneratorProxy
 
         // Remote call otherwise. Loop will end when getRandomMember() throws that all members overflowed.
         while (true) {
-            NewIdBatchOperation op = new NewIdBatchOperation(name, batchSize);
+            NewIdBatchOperation op = new NewIdBatchOperation(name, batchSize, source);
             Member target = getRandomMember();
             InvocationFuture<Long> future = getNodeEngine().getOperationService()
                                                            .invokeOnTarget(getServiceName(), op, target.getAddress());

@@ -48,6 +48,7 @@ final class TransactionContextImpl implements TransactionContext {
     private final TransactionImpl transaction;
     private final Map<TransactionalObjectKey, TransactionalObject> txnObjectMap
             = new HashMap<TransactionalObjectKey, TransactionalObject>(2);
+    private final UUID source;
 
     TransactionContextImpl(@Nonnull TransactionManagerServiceImpl transactionManagerService,
                            @Nonnull NodeEngineImpl nodeEngine,
@@ -55,6 +56,11 @@ final class TransactionContextImpl implements TransactionContext {
                            @Nullable UUID ownerUuid,
                            boolean originatedFromClient) {
         this.nodeEngine = nodeEngine;
+        if (originatedFromClient) {
+            this.source = ownerUuid;
+        } else {
+            this.source = nodeEngine.getLocalMember().getUuid();
+        }
         this.transaction = new TransactionImpl(transactionManagerService, nodeEngine, options, ownerUuid, originatedFromClient);
     }
 
@@ -127,7 +133,7 @@ final class TransactionContextImpl implements TransactionContext {
         }
 
         TransactionalService transactionalService = getTransactionalService(serviceName);
-        nodeEngine.getProxyService().initializeDistributedObject(serviceName, name);
+        nodeEngine.getProxyService().initializeDistributedObject(serviceName, name, source);
         obj = transactionalService.createTransactionalObject(name, transaction);
         txnObjectMap.put(key, obj);
         return obj;

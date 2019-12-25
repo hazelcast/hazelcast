@@ -278,10 +278,11 @@ public class ClientCompatibilityNullTest_2_0 {
 
     private class ClientAddDistributedObjectListenerCodecHandler extends ClientAddDistributedObjectListenerCodec.AbstractEventHandler {
         @Override
-        public void handleDistributedObjectEvent(java.lang.String name, java.lang.String serviceName, java.lang.String eventType) {
+        public void handleDistributedObjectEvent(java.lang.String name, java.lang.String serviceName, java.lang.String eventType, java.util.UUID source) {
             assertTrue(isEqual(aString, name));
             assertTrue(isEqual(aString, serviceName));
             assertTrue(isEqual(aString, eventType));
+            assertTrue(isEqual(aUUID, source));
         }
     }
 

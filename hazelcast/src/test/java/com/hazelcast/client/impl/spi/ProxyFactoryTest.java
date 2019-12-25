@@ -35,6 +35,8 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.util.UUID;
+
 import static com.hazelcast.client.impl.clientside.ClientTestUtil.getHazelcastClientInstanceImpl;
 import static org.junit.Assert.assertEquals;
 
@@ -130,7 +132,7 @@ public class ProxyFactoryTest {
     private class CustomService implements RemoteService {
 
         @Override
-        public DistributedObject createDistributedObject(String objectName, boolean local) {
+        public DistributedObject createDistributedObject(String objectName, UUID source, boolean local) {
             return new CustomClientProxy(SERVICE_NAME, objectName, context);
         }
 

@@ -75,7 +75,7 @@ public class XAService implements ManagedService, RemoteService, MigrationAwareS
     }
 
     @Override
-    public DistributedObject createDistributedObject(String objectName, boolean local) {
+    public DistributedObject createDistributedObject(String objectName, UUID source, boolean local) {
         return xaResource;
     }
 

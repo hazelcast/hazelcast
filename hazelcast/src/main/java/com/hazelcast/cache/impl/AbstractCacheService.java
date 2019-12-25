@@ -242,7 +242,7 @@ public abstract class AbstractCacheService implements ICacheService, PreJoinAwar
     }
 
     @Override
-    public DistributedObject createDistributedObject(String cacheNameWithPrefix, boolean local) {
+    public DistributedObject createDistributedObject(String cacheNameWithPrefix, UUID source, boolean local) {
         try {
             /*
              * In here, cacheNameWithPrefix is the full cache name.

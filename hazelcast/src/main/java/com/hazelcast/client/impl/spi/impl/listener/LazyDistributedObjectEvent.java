@@ -20,23 +20,24 @@ import com.hazelcast.client.impl.spi.ProxyManager;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.DistributedObjectEvent;
 
+import java.util.UUID;
+
 public final class LazyDistributedObjectEvent extends DistributedObjectEvent {
 
     private ProxyManager proxyManager;
 
     /**
      * Constructs a DistributedObject Event.
-     *
-     * @param eventType         The event type as an enum {@link EventType} integer.
+     *  @param eventType         The event type as an enum {@link EventType} integer.
      * @param serviceName       The service name of the DistributedObject.
      * @param objectName        The name of the DistributedObject.
      * @param distributedObject The DistributedObject for the event.
+     * @param source            The UUID of the client/member which caused the create/destroy of the proxy.
      * @param proxyManager      The ProxyManager for lazily creating the proxy if not available on the client.
      */
     public LazyDistributedObjectEvent(EventType eventType, String serviceName, String objectName,
-                                      DistributedObject distributedObject,
-                                      ProxyManager proxyManager) {
-        super(eventType, serviceName, objectName, distributedObject);
+                                      DistributedObject distributedObject, UUID source, ProxyManager proxyManager) {
+        super(eventType, serviceName, objectName, distributedObject, source);
         this.proxyManager = proxyManager;
     }
 

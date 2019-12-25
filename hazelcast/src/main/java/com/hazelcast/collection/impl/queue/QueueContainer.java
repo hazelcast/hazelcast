@@ -1007,7 +1007,8 @@ public class QueueContainer implements IdentifiedDataSerializable {
         }
         if (getItemQueue().isEmpty() && txMap.isEmpty() && !isEvictionScheduled) {
             if (emptyQueueTtl == 0) {
-                nodeEngine.getProxyService().destroyDistributedObject(QueueService.SERVICE_NAME, name);
+                UUID source = nodeEngine.getLocalMember().getUuid();
+                nodeEngine.getProxyService().destroyDistributedObject(QueueService.SERVICE_NAME, name, source);
             } else {
                 service.scheduleEviction(name, TimeUnit.SECONDS.toMillis(emptyQueueTtl));
                 isEvictionScheduled = true;

@@ -349,7 +349,8 @@ public class HazelcastInstanceImpl implements HazelcastInstance, SerializationSe
     @SuppressWarnings("unchecked")
     public <T extends DistributedObject> T getDistributedObject(@Nonnull String serviceName, @Nonnull String name) {
         ProxyService proxyService = node.getNodeEngine().getProxyService();
-        return (T) proxyService.getDistributedObject(serviceName, name);
+        UUID source = node.nodeEngine.getLocalMember().getUuid();
+        return (T) proxyService.getDistributedObject(serviceName, name, source);
     }
 
     @Override

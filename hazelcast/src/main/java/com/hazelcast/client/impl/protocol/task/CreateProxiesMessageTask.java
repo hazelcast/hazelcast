@@ -49,7 +49,7 @@ public class CreateProxiesMessageTask extends AbstractMultiTargetMessageTask<Cli
     public Operation get() {
         List<ProxyInfo> proxyInfos = new ArrayList<ProxyInfo>(parameters.proxies.size());
         for (Map.Entry<String, String> proxy : parameters.proxies) {
-            proxyInfos.add(new ProxyInfo(proxy.getValue(), proxy.getKey()));
+            proxyInfos.add(new ProxyInfo(proxy.getValue(), proxy.getKey(), endpoint.getUuid()));
         }
         return new PostJoinProxyOperation(proxyInfos);
     }

@@ -33,6 +33,7 @@ import com.hazelcast.spi.impl.proxyservice.impl.operations.InitializeDistributed
 import java.security.Permission;
 import java.util.Collection;
 import java.util.Iterator;
+import java.util.UUID;
 
 public class CreateProxyMessageTask extends AbstractInvocationMessageTask<ClientCreateProxyCodec.RequestParameters>
         implements BlockingMessageTask {
@@ -62,7 +63,8 @@ public class CreateProxyMessageTask extends AbstractInvocationMessageTask<Client
 
     @Override
     protected Operation prepareOperation() {
-        return new InitializeDistributedObjectOperation(parameters.serviceName, parameters.name);
+        UUID source = endpoint.getUuid();
+        return new InitializeDistributedObjectOperation(parameters.serviceName, parameters.name, source);
     }
 
     @Override

@@ -29,6 +29,7 @@ import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MapPermission;
 
 import java.security.Permission;
+import java.util.UUID;
 
 public class MapLoadAllMessageTask
         extends AbstractCallableMessageTask<MapLoadAllCodec.RequestParameters> implements BlockingMessageTask {
@@ -40,9 +41,10 @@ public class MapLoadAllMessageTask
     @Override
     protected Object call() {
         final MapService mapService = getService(MapService.SERVICE_NAME);
+        UUID source = endpoint.getUuid();
         final DistributedObject distributedObject
                 = mapService.getMapServiceContext().getNodeEngine().getProxyService()
-                .getDistributedObject(MapService.SERVICE_NAME, parameters.name);
+                .getDistributedObject(MapService.SERVICE_NAME, parameters.name, source);
         final MapProxyImpl mapProxy = (MapProxyImpl) distributedObject;
         mapProxy.loadAll(parameters.replaceExistingValues);
         return null;

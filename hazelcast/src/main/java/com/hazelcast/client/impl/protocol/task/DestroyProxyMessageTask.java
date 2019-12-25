@@ -46,7 +46,7 @@ public class DestroyProxyMessageTask extends AbstractMultiTargetMessageTask<Clie
 
     @Override
     public Operation get() {
-        return new DistributedObjectDestroyOperation(parameters.serviceName, parameters.name);
+        return new DistributedObjectDestroyOperation(parameters.serviceName, parameters.name, endpoint.getUuid());
     }
 
     @Override

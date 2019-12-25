@@ -35,6 +35,7 @@ import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
 import java.util.Date;
+import java.util.UUID;
 
 import static com.hazelcast.flakeidgen.impl.FlakeIdGeneratorProxy.ALLOWED_FUTURE_MILLIS;
 import static com.hazelcast.flakeidgen.impl.FlakeIdGeneratorProxy.BITS_NODE_ID;
@@ -80,7 +81,8 @@ public class FlakeIdGeneratorProxyTest {
                 new FlakeIdGeneratorConfig("foo").setIdOffset(idOffset).setNodeIdOffset(nodeIdOffset)
         ));
         when(nodeEngine.getClusterService()).thenReturn(clusterService);
-        gen = new FlakeIdGeneratorProxy("foo", nodeEngine, service);
+        UUID source = nodeEngine.getLocalMember().getUuid();
+        gen = new FlakeIdGeneratorProxy("foo", nodeEngine, service, source);
     }
 
     @Test

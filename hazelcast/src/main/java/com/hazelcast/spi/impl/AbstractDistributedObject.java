@@ -28,6 +28,8 @@ import com.hazelcast.spi.impl.operationservice.impl.InvocationFuture;
 import com.hazelcast.spi.impl.proxyservice.ProxyService;
 import com.hazelcast.version.Version;
 
+import java.util.UUID;
+
 /**
  * Abstract DistributedObject implementation. Useful to provide basic functionality.
  *
@@ -64,7 +66,8 @@ public abstract class AbstractDistributedObject<S extends RemoteService> impleme
         if (preDestroy()) {
             NodeEngine engine = getNodeEngine();
             ProxyService proxyService = engine.getProxyService();
-            proxyService.destroyDistributedObject(getServiceName(), getDistributedObjectName());
+            UUID source = engine.getLocalMember().getUuid();
+            proxyService.destroyDistributedObject(getServiceName(), getDistributedObjectName(), source);
             postDestroy();
         }
     }

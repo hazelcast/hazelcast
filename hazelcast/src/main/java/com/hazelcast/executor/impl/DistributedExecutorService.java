@@ -179,7 +179,7 @@ public class DistributedExecutorService implements ManagedService, RemoteService
     }
 
     @Override
-    public ExecutorServiceProxy createDistributedObject(String name, boolean local) {
+    public ExecutorServiceProxy createDistributedObject(String name, UUID source, boolean local) {
         return new ExecutorServiceProxy(name, nodeEngine, this);
     }
 

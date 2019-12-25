@@ -101,7 +101,7 @@ public class AddDistributedObjectListenerMessageTask
         String serviceName = event.getServiceName();
         ClientMessage eventMessage =
                 ClientAddDistributedObjectListenerCodec.encodeDistributedObjectEvent(name,
-                        serviceName, event.getEventType().name());
+                        serviceName, event.getEventType().name(), event.getSource());
         sendClientMessage(null, eventMessage);
     }
 
