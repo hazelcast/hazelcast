@@ -96,15 +96,15 @@ public class ClusterViewListenerService {
         }
         clusterListeningEndpoints.put(clientEndpoint, correlationId);
 
+        ClientMessage memberListViewMessage = getMemberListViewMessage();
+        memberListViewMessage.setCorrelationId(correlationId);
+        clientEndpoint.getConnection().write(memberListViewMessage);
+
         ClientMessage partitionViewMessage = getPartitionViewMessageOrNull();
         if (partitionViewMessage != null) {
             partitionViewMessage.setCorrelationId(correlationId);
             clientEndpoint.getConnection().write(partitionViewMessage);
         }
-
-        ClientMessage memberListViewMessage = getMemberListViewMessage();
-        memberListViewMessage.setCorrelationId(correlationId);
-        clientEndpoint.getConnection().write(memberListViewMessage);
     }
 
     private ClientMessage getPartitionViewMessageOrNull() {
