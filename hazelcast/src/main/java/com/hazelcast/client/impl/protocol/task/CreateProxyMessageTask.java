@@ -62,10 +62,7 @@ public class CreateProxyMessageTask extends AbstractInvocationMessageTask<Client
 
     @Override
     protected Operation prepareOperation() {
-        InitializeDistributedObjectOperation operation = new InitializeDistributedObjectOperation(
-                parameters.serviceName, parameters.name);
-        operation.setCallerUuid(endpoint.getUuid());
-        return operation;
+        return new InitializeDistributedObjectOperation(parameters.serviceName, parameters.name);
     }
 
     @Override

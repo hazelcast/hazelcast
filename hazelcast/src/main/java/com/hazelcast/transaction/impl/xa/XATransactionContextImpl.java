@@ -46,16 +46,10 @@ public class XATransactionContextImpl implements TransactionContext {
     private final XATransaction transaction;
     private final Map<TransactionalObjectKey, TransactionalObject> txnObjectMap
             = new HashMap<TransactionalObjectKey, TransactionalObject>(2);
-    private final UUID source;
 
     public XATransactionContextImpl(NodeEngineImpl nodeEngine, Xid xid, UUID txOwnerUuid,
                                     int timeout, boolean originatedFromClient) {
         this.nodeEngine = nodeEngine;
-        if (originatedFromClient) {
-            this.source = txOwnerUuid;
-        } else {
-            this.source = nodeEngine.getLocalMember().getUuid();
-        }
         this.transaction = new XATransaction(nodeEngine, xid, txOwnerUuid, timeout, originatedFromClient);
     }
 
@@ -124,7 +118,7 @@ public class XATransactionContextImpl implements TransactionContext {
 
         final Object service = nodeEngine.getService(serviceName);
         if (service instanceof TransactionalService) {
-            nodeEngine.getProxyService().initializeDistributedObject(serviceName, name, source);
+            nodeEngine.getProxyService().initializeDistributedObject(serviceName, name, transaction.getOwnerUuid());
             obj = ((TransactionalService) service).createTransactionalObject(name, transaction);
             txnObjectMap.put(key, obj);
         } else {

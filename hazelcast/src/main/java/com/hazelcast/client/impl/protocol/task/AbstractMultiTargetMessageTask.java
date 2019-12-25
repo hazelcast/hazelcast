@@ -59,6 +59,7 @@ public abstract class AbstractMultiTargetMessageTask<P> extends AbstractAsyncMes
         MultiTargetCallback callback = new MultiTargetCallback(targets, finalResult);
         for (Member target : targets) {
             Operation op = operationSupplier.get();
+            op.setCallerUuid(endpoint.getUuid());
             InvocationBuilder builder = operationService.createInvocationBuilder(getServiceName(), op, target.getAddress())
                                                         .setResultDeserialized(false);
 
