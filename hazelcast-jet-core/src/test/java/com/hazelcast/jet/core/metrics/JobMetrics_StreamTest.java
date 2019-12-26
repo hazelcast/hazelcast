@@ -62,9 +62,8 @@ public class JobMetrics_StreamTest extends TestInClusterSupport {
         putIntoMap(map, 2, 1);
         List<String> sink = jet().getList(sinkListName);
 
-        Pipeline p = createPipeline();
         // When
-        Job job = jet().newJob(p);
+        Job job = jet().newJob(createPipeline());
 
         assertTrueEventually(() -> assertEquals(2, sink.size()));
         // Then
@@ -82,8 +81,7 @@ public class JobMetrics_StreamTest extends TestInClusterSupport {
         putIntoMap(map, 2, 1);
         List<String> sink = jet().getList(sinkListName);
 
-        Pipeline p = createPipeline();
-        Job job = jet().newJob(p, JOB_CONFIG_WITH_METRICS);
+        Job job = jet().newJob(createPipeline(), JOB_CONFIG_WITH_METRICS);
 
         putIntoMap(map, 1, 1);
 
@@ -102,13 +100,11 @@ public class JobMetrics_StreamTest extends TestInClusterSupport {
         putIntoMap(map, 2, 1);
         List<String> sink = jet().getList(sinkListName);
 
-        Pipeline p = createPipeline();
-
         JobConfig jobConfig = new JobConfig()
             .setStoreMetricsAfterJobCompletion(true)
             .setProcessingGuarantee(ProcessingGuarantee.EXACTLY_ONCE);
         // When
-        Job job = jet().newJob(p, jobConfig);
+        Job job = jet().newJob(createPipeline(), jobConfig);
 
         putIntoMap(map, 1, 1);
 
@@ -146,8 +142,7 @@ public class JobMetrics_StreamTest extends TestInClusterSupport {
         putIntoMap(map, 2, 1);
         List<String> sink = jet().getList(sinkListName);
 
-        Pipeline p = createPipeline();
-        Job job = jet().newJob(p, JOB_CONFIG_WITH_METRICS);
+        Job job = jet().newJob(createPipeline(), JOB_CONFIG_WITH_METRICS);
 
         assertTrueEventually(() -> assertEquals(2, sink.size()));
         assertTrueEventually(() -> assertMetrics(job.getMetrics(), 3, 1));
@@ -177,11 +172,9 @@ public class JobMetrics_StreamTest extends TestInClusterSupport {
     @Test
     public void when_jobRestarted_then_metricsReset_withJournal() {
         Map<String, String> map = jet().getMap(journalMapName);
-        putIntoMap(map, 2, 1);
         List<String> sink = jet().getList(sinkListName);
 
-        Pipeline p = createPipeline(JournalInitialPosition.START_FROM_CURRENT);
-        Job job = jet().newJob(p, JOB_CONFIG_WITH_METRICS);
+        Job job = jet().newJob(createPipeline(), JOB_CONFIG_WITH_METRICS);
 
         assertJobStatusEventually(job, RUNNING);
         assertTrueEventually(() -> assertMetrics(job.getMetrics(), 0, 0));
@@ -195,28 +188,24 @@ public class JobMetrics_StreamTest extends TestInClusterSupport {
         job.restart();
 
         assertJobStatusEventually(job, RUNNING);
-        assertTrueEventually(() -> assertEquals(2, sink.size()));
+        assertTrueEventually(() -> assertEquals(4, sink.size()));
         // Then
-        assertTrueEventually(() -> assertMetrics(job.getMetrics(), 0, 0));
+        assertTrueEventually(() -> assertMetrics(job.getMetrics(), 3, 1));
 
         putIntoMap(map, 1, 1);
-        assertTrueEventually(() -> assertEquals(3, sink.size()));
-        assertTrueEventually(() -> assertMetrics(job.getMetrics(), 2, 1));
+        assertTrueEventually(() -> assertEquals(5, sink.size()));
+        assertTrueEventually(() -> assertMetrics(job.getMetrics(), 5, 2));
 
         job.cancel();
         assertJobStatusEventually(job, FAILED);
-        assertMetrics(job.getMetrics(), 2, 1);
+        assertMetrics(job.getMetrics(), 5, 2);
     }
 
     private Pipeline createPipeline() {
-        return createPipeline(JournalInitialPosition.START_FROM_OLDEST);
-    }
-
-    private Pipeline createPipeline(JournalInitialPosition position) {
         Pipeline p = Pipeline.create();
-        p.<Map.Entry<String, String>>readFrom(Sources.mapJournal(journalMapName, position))
+        p.<Map.Entry<String, String>>readFrom(Sources.mapJournal(journalMapName, JournalInitialPosition.START_FROM_OLDEST))
                 .withIngestionTimestamps()
-                .map(map -> map.getKey())
+                .map(Map.Entry::getKey)
                 .filter(word -> !word.startsWith(FILTER_OUT_PREFIX))
                 .writeTo(Sinks.list(sinkListName));
         return p;
