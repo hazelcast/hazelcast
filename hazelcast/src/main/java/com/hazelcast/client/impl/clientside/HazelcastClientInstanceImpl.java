@@ -394,7 +394,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
             }
             ClientConnectionStrategyConfig connectionStrategyConfig = config.getConnectionStrategyConfig();
             if (!connectionStrategyConfig.isAsyncStart()) {
-                connectionManager.tryOpenConnectionToAllMembers();
+                connectionManager.connectToAllClusterMembers();
                 waitForInitialMembershipEvents();
             }
             loadBalancer.init(getCluster(), config);
@@ -838,7 +838,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
 
     public void onClusterRestart() {
         ILogger logger = loggingService.getLogger(HazelcastInstance.class);
-        logger.info("Clearing local state of the client, because of a cluster restart ");
+        logger.info("Clearing local state of the client, because of a cluster restart");
 
         dispose(onClusterChangeDisposables);
         //clear the member list version
