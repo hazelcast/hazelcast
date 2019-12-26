@@ -390,7 +390,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
     }
 
     private boolean connectToCandidate(CandidateClusterContext context) {
-        Set<Address> triedAddresses = new HashSet<Address>();
+        Set<Address> triedAddresses = new HashSet<>();
         try {
             waitStrategy.reset();
             do {
@@ -801,7 +801,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
                 .getConnectedServerVersion() + " Local address: " + connection.getLocalSocketAddress());
 
         if (changedCluster) {
-            clusterConnectionExecutor.execute(() -> sendStatesToCluster(newClusterId));
+            sendStatesToCluster(newClusterId);
         } else if (isFirstConnectionAfterDisconnection) {
             state.set(ClusterState.CONNECTED);
             fireLifecycleEvent(LifecycleEvent.LifecycleState.CLIENT_CONNECTED);

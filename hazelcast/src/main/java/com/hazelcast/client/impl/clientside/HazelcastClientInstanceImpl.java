@@ -849,6 +849,11 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         clusterService.waitInitialMemberListFetched();
     }
 
+    /**
+     * Synchronously called in 2 cases:
+     * 1. On client start
+     * 2. On client changed cluster
+     */
     public void sendStateToCluster() throws ExecutionException, InterruptedException {
         userCodeDeploymentService.deploy(this);
         proxyManager.createDistributedObjectsOnCluster();
