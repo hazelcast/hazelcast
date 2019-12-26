@@ -94,6 +94,10 @@ public class DistributedObjectEvent {
         return distributedObject;
     }
 
+    /**
+     *
+     * @return The UUID of the member/client which initially caused this event.
+     */
     public UUID getSource() {
         return source;
     }
