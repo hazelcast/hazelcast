@@ -12,6 +12,6 @@ Links to issues fixed (if any):
 
 Fixes #NNNN
 
-List of Breaking Changes:
+List of breaking changes:
 
 * ..
