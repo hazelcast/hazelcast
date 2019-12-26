@@ -17,31 +17,32 @@
 package com.hazelcast.client.test;
 
 import com.hazelcast.client.HazelcastClient;
-import com.hazelcast.client.config.impl.ClientAliasedDiscoveryConfigUtils;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.XmlClientConfigBuilder;
-import com.hazelcast.client.impl.connection.AddressProvider;
-import com.hazelcast.client.impl.connection.Addresses;
+import com.hazelcast.client.config.impl.ClientAliasedDiscoveryConfigUtils;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.clientside.HazelcastClientProxy;
+import com.hazelcast.client.impl.connection.AddressProvider;
+import com.hazelcast.client.impl.connection.Addresses;
 import com.hazelcast.client.properties.ClientProperty;
 import com.hazelcast.client.util.AddressHelper;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.config.DiscoveryStrategyConfig;
+import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.impl.OutOfMemoryErrorDispatcher;
-import com.hazelcast.cluster.Address;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.test.TestEnvironment;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 public class TestHazelcastFactory extends TestHazelcastInstanceFactory {
 
     private final boolean mockNetwork = TestEnvironment.isMockNetwork();
-    private final List<HazelcastClientInstanceImpl> clients = Collections.synchronizedList(new ArrayList<>(10));
+    private final ConcurrentMap<String, HazelcastClientInstanceImpl> clients = new ConcurrentHashMap<>(10);
     private final TestClientRegistry clientRegistry = new TestClientRegistry(getRegistry());
 
     public TestHazelcastFactory(int initialPort, String... addresses) {
@@ -78,7 +79,11 @@ public class TestHazelcastFactory extends TestHazelcastInstanceFactory {
             HazelcastClientInstanceImpl client = new HazelcastClientInstanceImpl(config, null,
                     clientRegistry.createClientServiceFactory(), createAddressProvider(config));
             client.start();
-            clients.add(client);
+            if (clients.putIfAbsent(client.getName(), client) != null) {
+                throw new InvalidConfigurationException("HazelcastClientInstance with name '" + client.getName()
+                        + "' already exists!");
+            }
+
             OutOfMemoryErrorDispatcher.registerClient(client);
             return new HazelcastClientProxy(client);
         } finally {
@@ -88,7 +93,7 @@ public class TestHazelcastFactory extends TestHazelcastInstanceFactory {
 
     // used by MC tests
     public HazelcastInstance getHazelcastClientByName(String clientName) {
-        return clients.stream()
+        return clients.values().stream()
                 .filter(client -> client.getName().equals(clientName)).findFirst().orElse(null);
     }
 
@@ -135,7 +140,7 @@ public class TestHazelcastFactory extends TestHazelcastInstanceFactory {
     @Override
     public void shutdownAll() {
         if (mockNetwork) {
-            for (HazelcastClientInstanceImpl client : clients) {
+            for (HazelcastClientInstanceImpl client : clients.values()) {
                 client.shutdown();
             }
         } else {
@@ -148,7 +153,7 @@ public class TestHazelcastFactory extends TestHazelcastInstanceFactory {
     @Override
     public void terminateAll() {
         if (mockNetwork) {
-            for (HazelcastClientInstanceImpl client : clients) {
+            for (HazelcastClientInstanceImpl client : clients.values()) {
                 client.getLifecycleService().terminate();
             }
         } else {
