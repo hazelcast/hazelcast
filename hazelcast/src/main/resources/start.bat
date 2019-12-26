@@ -25,7 +25,7 @@ if NOT "%MAX_HEAP_SIZE%" == "" (
 
 set "CLASSPATH=%~dp0..\lib\hazelcast-all-${project.version}.jar;%~dp0..\user-lib;%~dp0..\user-lib\*"
 
-FOR /F "tokens=2 delims=," %%F in ('tasklist /NH /FI "WINDOWTITLE eq hazelcast %CLASSPATH%" /fo csv') DO (
+FOR /F "tokens=2 delims=," %%F in ('tasklist /NH /FI "WINDOWTITLE eq hazelcast-imdg" /fo csv') DO (
 SET PID=%%F
 )
 IF NOT "%PID%"=="" (
@@ -38,7 +38,7 @@ ECHO # JAVA_OPTS=%JAVA_OPTS%
 ECHO # starting now...."
 ECHO ########################################
 
-start "hazelcast %CLASSPATH%" "%RUN_JAVA%" %JAVA_OPTS% -cp "%CLASSPATH%" "com.hazelcast.core.server.StartServer"
+start "hazelcast-imdg" "%RUN_JAVA%" %JAVA_OPTS% -cp "%CLASSPATH%" "com.hazelcast.core.server.StartServer"
 goto endofscript
 
 :error
