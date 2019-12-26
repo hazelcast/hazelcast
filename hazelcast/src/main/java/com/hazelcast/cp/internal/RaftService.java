@@ -72,6 +72,7 @@ import com.hazelcast.internal.partition.MigrationAwareService;
 import com.hazelcast.internal.partition.MigrationEndpoint;
 import com.hazelcast.internal.partition.PartitionMigrationEvent;
 import com.hazelcast.internal.partition.PartitionReplicationEvent;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.services.GracefulShutdownAwareService;
 import com.hazelcast.internal.services.ManagedService;
 import com.hazelcast.internal.services.MembershipAwareService;
@@ -81,8 +82,8 @@ import com.hazelcast.internal.util.Clock;
 import com.hazelcast.internal.util.ExceptionUtil;
 import com.hazelcast.internal.util.executor.ManagedExecutorService;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.spi.exception.PartitionMigratingException;
+import com.hazelcast.spi.exception.ResponseAlreadySentException;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.NodeEngineImpl;
@@ -1225,9 +1226,7 @@ public class RaftService implements ManagedService, SnapshotAwareService<Metadat
             UnsafeModePartitionState unsafeModeState = unsafeModeStates[partitionId];
             for (Long index : indices) {
                 Operation op = unsafeModeState.removeWaitingOp(index);
-                if (op != null) {
-                    op.sendResponse(result);
-                }
+                sendOperationResponse(op, result);
             }
         }
         return true;
@@ -1255,12 +1254,20 @@ public class RaftService implements ManagedService, SnapshotAwareService<Metadat
             UnsafeModePartitionState unsafeModeState = unsafeModeStates[partitionId];
             for (Entry<Long, Object> result : results) {
                 Operation op = unsafeModeState.removeWaitingOp(result.getKey());
-                if (op != null) {
-                    op.sendResponse(result.getValue());
-                }
+                sendOperationResponse(op, result.getValue());
             }
         }
         return true;
+    }
+
+    private void sendOperationResponse(Operation op, Object result) {
+        if (op != null) {
+            try {
+                op.sendResponse(result);
+            } catch (ResponseAlreadySentException e) {
+                op.logError(e);
+            }
+        }
     }
 
     @Override
