@@ -205,23 +205,17 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
     private final ClientProxySessionManager proxySessionManager;
     private final CPSubsystemImpl cpSubsystem;
 
-    public HazelcastClientInstanceImpl(ClientConfig clientConfig,
+    public HazelcastClientInstanceImpl(String instanceName, ClientConfig clientConfig,
                                        ClientFailoverConfig clientFailoverConfig,
                                        ClientConnectionManagerFactory clientConnectionManagerFactory,
                                        AddressProvider externalAddressProvider) {
-        assert clientConfig != null || clientFailoverConfig != null : "At most one type of config can be provided";
-        assert clientConfig == null || clientFailoverConfig == null : "At least one config should be provided ";
         if (clientConfig != null) {
             this.config = clientConfig;
         } else {
             this.config = clientFailoverConfig.getClientConfigs().get(0);
         }
         this.clientFailoverConfig = clientFailoverConfig;
-        if (config.getInstanceName() != null) {
-            instanceName = config.getInstanceName();
-        } else {
-            instanceName = "hz.client_" + id;
-        }
+        this.instanceName = instanceName;
 
         GroupConfig groupConfig = config.getGroupConfig();
         String loggingType = config.getProperty(GroupProperty.LOGGING_TYPE.getName());
