@@ -95,7 +95,8 @@ public final class KafkaSources {
      *     offsets to Kafka using {@link KafkaConsumer#commitSync()}. But the
      *     offsets are committed before or after the event is fully processed.
      *     Therefore some events can be processed twice or not at all. You can
-     *     configure {@code group.id} in this case.
+     *     configure {@code group.id} in this case. If not configured a random
+     *     UUID will be set.
      * </ol>
      *
      * If you add Kafka partitions at run-time, consumption from them will

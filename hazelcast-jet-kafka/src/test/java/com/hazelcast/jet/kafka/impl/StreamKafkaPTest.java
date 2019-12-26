@@ -117,7 +117,7 @@ public class StreamKafkaPTest extends SimpleTestInClusterSupport {
     public void when_projectionFunctionProvided_thenAppliedToReadRecords() {
         int messageCount = 20;
         Pipeline p = Pipeline.create();
-        p.readFrom(KafkaSources.<Integer, String, String>kafka(getProperties(), rec -> rec.value() + "-x", topic1Name))
+        p.readFrom(KafkaSources.<Integer, String, String>kafka(properties(), rec -> rec.value() + "-x", topic1Name))
          .withoutTimestamps()
          .writeTo(Sinks.list("sink"));
 
@@ -152,7 +152,7 @@ public class StreamKafkaPTest extends SimpleTestInClusterSupport {
         Arrays.setAll(instances, i -> createJetMember());
 
         Pipeline p = Pipeline.create();
-        p.readFrom(KafkaSources.kafka(getProperties(), topic1Name, topic2Name))
+        p.readFrom(KafkaSources.kafka(properties(null), topic1Name, topic2Name))
          .withoutTimestamps()
          .writeTo(Sinks.list("sink"));
 
@@ -219,7 +219,7 @@ public class StreamKafkaPTest extends SimpleTestInClusterSupport {
 
     @Test
     public void when_eventsInAllPartitions_then_watermarkOutputImmediately() throws Exception {
-        StreamKafkaP processor = createProcessor(getProperties(), 1, r -> entry(r.key(), r.value()), 10_000);
+        StreamKafkaP processor = createProcessor(properties(), 1, r -> entry(r.key(), r.value()), 10_000);
         TestOutbox outbox = new TestOutbox(new int[]{10}, 10);
         processor.init(outbox, new TestProcessorContext());
 
@@ -238,7 +238,7 @@ public class StreamKafkaPTest extends SimpleTestInClusterSupport {
     public void when_noAssignedPartitionAndAddedLater_then_resumesFromIdle() throws Exception {
         // we ask to create 5th out of 5 processors, but we have only 4 partitions and 1 topic
         // --> our processor will have nothing assigned
-        StreamKafkaP processor = createProcessor(getProperties(), 1, r -> entry(r.key(), r.value()), 10_000);
+        StreamKafkaP processor = createProcessor(properties(), 1, r -> entry(r.key(), r.value()), 10_000);
         TestOutbox outbox = new TestOutbox(new int[]{10}, 10);
         processor.init(outbox, new TestProcessorContext()
                 .setTotalParallelism(INITIAL_PARTITION_COUNT + 1)
@@ -269,7 +269,7 @@ public class StreamKafkaPTest extends SimpleTestInClusterSupport {
     @Test
     public void when_eventsInSinglePartition_then_watermarkAfterIdleTime() throws Exception {
         // When
-        StreamKafkaP processor = createProcessor(getProperties(), 2, r -> entry(r.key(), r.value()), 10_000);
+        StreamKafkaP processor = createProcessor(properties(), 2, r -> entry(r.key(), r.value()), 10_000);
         TestOutbox outbox = new TestOutbox(new int[]{10}, 10);
         processor.init(outbox, new TestProcessorContext());
         kafkaTestSupport.produce(topic1Name, 10, "foo");
@@ -285,7 +285,7 @@ public class StreamKafkaPTest extends SimpleTestInClusterSupport {
 
     @Test
     public void when_snapshotSaved_then_offsetsRestored() throws Exception {
-        StreamKafkaP processor = createProcessor(getProperties(), 2, r -> entry(r.key(), r.value()), 10_000);
+        StreamKafkaP processor = createProcessor(properties(), 2, r -> entry(r.key(), r.value()), 10_000);
         TestOutbox outbox = new TestOutbox(new int[]{10}, 10);
         processor.init(outbox, new TestProcessorContext().setProcessingGuarantee(ProcessingGuarantee.EXACTLY_ONCE));
 
@@ -301,7 +301,7 @@ public class StreamKafkaPTest extends SimpleTestInClusterSupport {
         assertEquals(entry(1, "1"), consumeEventually(processor, outbox));
 
         // create new processor and restore snapshot
-        processor = createProcessor(getProperties(), 2, r -> entry(r.key(), r.value()), 10_000);
+        processor = createProcessor(properties(), 2, r -> entry(r.key(), r.value()), 10_000);
         outbox = new TestOutbox(new int[]{10}, 10);
         processor.init(outbox, new TestProcessorContext().setProcessingGuarantee(ProcessingGuarantee.EXACTLY_ONCE));
 
@@ -341,7 +341,7 @@ public class StreamKafkaPTest extends SimpleTestInClusterSupport {
 
     @Test
     public void when_partitionAdded_then_consumedFromBeginning() throws Exception {
-        Properties properties = getProperties();
+        Properties properties = properties();
         properties.setProperty("metadata.max.age.ms", "100");
         StreamKafkaP processor = createProcessor(properties, 2, r -> entry(r.key(), r.value()), 10_000);
         TestOutbox outbox = new TestOutbox(new int[]{10}, 10);
@@ -375,7 +375,7 @@ public class StreamKafkaPTest extends SimpleTestInClusterSupport {
 
     @Test
     public void when_noAssignedPartitions_thenEmitIdleMsgImmediately() throws Exception {
-        StreamKafkaP processor = createProcessor(getProperties(), 2, r -> entry(r.key(), r.value()), 100_000);
+        StreamKafkaP processor = createProcessor(properties(), 2, r -> entry(r.key(), r.value()), 100_000);
         TestOutbox outbox = new TestOutbox(new int[]{10}, 10);
         TestProcessorContext context = new TestProcessorContext()
                 // Set global parallelism to higher number than number of partitions
@@ -391,7 +391,7 @@ public class StreamKafkaPTest extends SimpleTestInClusterSupport {
     @Test
     public void when_customProjection_then_used() throws Exception {
         // When
-        StreamKafkaP processor = createProcessor(getProperties(), 2, r -> r.key() + "=" + r.value(), 10_000);
+        StreamKafkaP processor = createProcessor(properties(), 2, r -> r.key() + "=" + r.value(), 10_000);
         TestOutbox outbox = new TestOutbox(new int[]{10}, 10);
         processor.init(outbox, new TestProcessorContext());
         kafkaTestSupport.produce(topic1Name, 0, "0");
@@ -410,7 +410,7 @@ public class StreamKafkaPTest extends SimpleTestInClusterSupport {
                 0
         );
         StreamKafkaP processor = new StreamKafkaP<Integer, String, String>(
-                getProperties(), singletonList(topic1Name), r -> "0".equals(r.value()) ? null : r.value(), eventTimePolicy
+                properties(), singletonList(topic1Name), r -> "0".equals(r.value()) ? null : r.value(), eventTimePolicy
         );
         TestOutbox outbox = new TestOutbox(new int[]{10}, 10);
         processor.init(outbox, new TestProcessorContext());
@@ -459,9 +459,15 @@ public class StreamKafkaPTest extends SimpleTestInClusterSupport {
         return snapshot;
     }
 
-    public static Properties getProperties() {
+    public static Properties properties() {
+        return properties(randomString());
+    }
+
+    public static Properties properties(String groupId) {
         Properties properties = new Properties();
-        properties.setProperty("group.id", randomString());
+        if (groupId != null) {
+            properties.setProperty("group.id", groupId);
+        }
         properties.setProperty("bootstrap.servers", kafkaTestSupport.getBrokerConnectionString());
         properties.setProperty("key.deserializer", IntegerDeserializer.class.getCanonicalName());
         properties.setProperty("value.deserializer", StringDeserializer.class.getCanonicalName());
