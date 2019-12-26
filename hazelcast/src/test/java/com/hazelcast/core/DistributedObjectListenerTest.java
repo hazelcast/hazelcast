@@ -34,8 +34,10 @@ import java.util.Collection;
 import java.util.Random;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
@@ -75,7 +77,6 @@ public class DistributedObjectListenerTest extends HazelcastTestSupport {
         firstMap.destroy();
 
         assertEquals(1, instance.getDistributedObjects().size());
-
     }
 
     @Test
@@ -117,16 +118,14 @@ public class DistributedObjectListenerTest extends HazelcastTestSupport {
         instance.addDistributedObjectListener(listener);
         IMap<Object, Object> map = instance.getMap(randomString());
         map.destroy();
-        AssertTask task = new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                Assert.assertEquals(1, listener.createdCount.get());
-                Assert.assertEquals(1, listener.destroyedCount.get());
-                Collection<DistributedObject> distributedObjects = instance.getDistributedObjects();
-                Assert.assertTrue(distributedObjects.isEmpty());
-            }
+        AssertTask task = () -> {
+            Assert.assertEquals(1, listener.createdCount.get());
+            Assert.assertEquals(1, listener.destroyedCount.get());
+            Collection<DistributedObject> distributedObjects = instance.getDistributedObjects();
+            Assert.assertTrue(distributedObjects.isEmpty());
+            Assert.assertEquals(instance.getLocalEndpoint().getUuid(), listener.lastProxyDestroyedEvent.get().getSource());
         };
-        assertTrueEventually(task, 5);
+        assertTrueEventually(task);
         assertTrueAllTheTime(task, 3);
     }
 
@@ -140,16 +139,16 @@ public class DistributedObjectListenerTest extends HazelcastTestSupport {
         IMap<Object, Object> map1 = instance1.getMap(randomMapName);
         IMap<Object, Object> map2 = instance2.getMap(randomMapName);
         map2.destroy();
-        AssertTask task = new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                Assert.assertEquals(1, listener.createdCount.get());
-                Assert.assertEquals(1, listener.destroyedCount.get());
-                Collection<DistributedObject> distributedObjects = instance1.getDistributedObjects();
-                Assert.assertTrue(distributedObjects.isEmpty());
-            }
+        AssertTask task = () -> {
+            Assert.assertEquals(1, listener.createdCount.get());
+            Assert.assertEquals(1, listener.destroyedCount.get());
+            Collection<DistributedObject> distributedObjects = instance1.getDistributedObjects();
+            Assert.assertTrue(distributedObjects.isEmpty());
+            DistributedObjectEvent lastDestroyedEvent = listener.lastProxyDestroyedEvent.get();
+            assertNotNull(lastDestroyedEvent);
+            Assert.assertEquals(instance2.getLocalEndpoint().getUuid(), lastDestroyedEvent.getSource());
         };
-        assertTrueEventually(task, 5);
+        assertTrueEventually(task);
         assertTrueAllTheTime(task, 3);
     }
 
@@ -163,16 +162,13 @@ public class DistributedObjectListenerTest extends HazelcastTestSupport {
         IMap<Object, Object> map1 = instance.getMap(mapName);
         IMap<Object, Object> map2 = server.getMap(mapName);
         map2.destroy();
-        AssertTask task = new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                Assert.assertEquals(1, listener.createdCount.get());
-                Assert.assertEquals(1, listener.destroyedCount.get());
-                Collection<DistributedObject> distributedObjects = instance.getDistributedObjects();
-                Assert.assertTrue(distributedObjects.isEmpty());
-            }
+        AssertTask task = () -> {
+            Assert.assertEquals(1, listener.createdCount.get());
+            Assert.assertEquals(1, listener.destroyedCount.get());
+            Collection<DistributedObject> distributedObjects = instance.getDistributedObjects();
+            Assert.assertTrue(distributedObjects.isEmpty());
         };
-        assertTrueEventually(task, 5);
+        assertTrueEventually(task);
         assertTrueAllTheTime(task, 3);
     }
 
@@ -180,12 +176,14 @@ public class DistributedObjectListenerTest extends HazelcastTestSupport {
 
         public AtomicInteger createdCount = new AtomicInteger();
         public AtomicInteger destroyedCount = new AtomicInteger();
+        public AtomicReference<DistributedObjectEvent> lastProxyDestroyedEvent = new AtomicReference<>();
 
         public void distributedObjectCreated(DistributedObjectEvent event) {
             createdCount.incrementAndGet();
         }
 
         public void distributedObjectDestroyed(DistributedObjectEvent event) {
+            lastProxyDestroyedEvent.set(event);
             destroyedCount.incrementAndGet();
         }
     }

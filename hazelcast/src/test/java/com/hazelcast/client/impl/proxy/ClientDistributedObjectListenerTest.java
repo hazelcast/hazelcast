@@ -33,9 +33,9 @@ import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class DistributedObjectListenerTest extends com.hazelcast.core.DistributedObjectListenerTest {
+public class ClientDistributedObjectListenerTest
+        extends com.hazelcast.core.DistributedObjectListenerTest {
 
-    // TODO: Put this test to base class when the server side failure is fixed
     @Test
     public void distributedObjectsCreatedBack_whenClusterRestart_withSingleNode() {
         final HazelcastInstance server = getRandomServer();
@@ -64,7 +64,6 @@ public class DistributedObjectListenerTest extends com.hazelcast.core.Distribute
         });
     }
 
-    // TODO: Put this test to base class when the server side failure is fixed
     @Test
     public void distributedObjectsCreatedBack_whenClusterRestart_withMultipleNode() {
         ClientConfig clientConfig = new ClientConfig();
