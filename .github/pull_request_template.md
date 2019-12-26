@@ -8,6 +8,10 @@ Checklist
 - [ ] New public APIs have `@since` tags in Javadoc
 - [ ] For code samples, code sample main readme is updated
 
-Links to issues fixed (if any)
+Links to issues fixed (if any):
 
 Fixes #NNNN
+
+List of Breaking Changes:
+
+* ..
