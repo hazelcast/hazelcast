@@ -21,6 +21,7 @@ import com.hazelcast.config.IndexType;
 import com.hazelcast.core.TypeConverter;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.util.collection.PartitionIdSet;
 import com.hazelcast.map.impl.StoreAdapter;
 import com.hazelcast.internal.monitor.impl.GlobalIndexesStats;
 import com.hazelcast.internal.monitor.impl.IndexesStats;
@@ -307,7 +308,7 @@ public class Indexes {
      * performed using the indexes known to this indexes instance.
      */
     @SuppressWarnings("unchecked")
-    public Set<QueryableEntry> query(Predicate predicate) {
+    public Set<QueryableEntry> query(Predicate predicate, PartitionIdSet queryPartitions) {
         stats.incrementQueryCount();
 
         if (!haveAtLeastOneIndex() || !(predicate instanceof IndexAwarePredicate)) {
@@ -316,11 +317,11 @@ public class Indexes {
 
         IndexAwarePredicate indexAwarePredicate = (IndexAwarePredicate) predicate;
         QueryContext queryContext = queryContextProvider.obtainContextFor(this);
-        if (!indexAwarePredicate.isIndexed(queryContext)) {
+        if (!indexAwarePredicate.isIndexed(queryContext, queryPartitions)) {
             return null;
         }
 
-        Set<QueryableEntry> result = indexAwarePredicate.filter(queryContext);
+        Set<QueryableEntry> result = indexAwarePredicate.filter(queryContext, queryPartitions);
         if (result != null) {
             stats.incrementIndexedQueryCount();
             queryContext.applyPerQueryStats();
@@ -339,12 +340,19 @@ public class Indexes {
      * @see QueryContext.IndexMatchHint
      * @see Indexes#matchIndex
      */
-    public InternalIndex matchIndex(String pattern, QueryContext.IndexMatchHint matchHint) {
+    public InternalIndex matchIndex(String pattern, QueryContext.IndexMatchHint matchHint, PartitionIdSet queryPartitions) {
+        InternalIndex index;
         if (matchHint == QueryContext.IndexMatchHint.EXACT_NAME) {
-            return indexesByName.get(pattern);
+            index =  indexesByName.get(pattern);
         } else {
-            return attributeIndexRegistry.match(pattern, matchHint);
+            index = attributeIndexRegistry.match(pattern, matchHint);
         }
+
+        if (index == null || queryPartitions != null && !index.allPartitionsIndexed(queryPartitions)) {
+            return null;
+        }
+
+        return index;
     }
 
     /**

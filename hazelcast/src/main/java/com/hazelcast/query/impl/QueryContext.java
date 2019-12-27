@@ -16,6 +16,8 @@
 
 package com.hazelcast.query.impl;
 
+import com.hazelcast.internal.util.collection.PartitionIdSet;
+
 /**
  * Provides the context for queries execution.
  */
@@ -62,8 +64,8 @@ public class QueryContext {
      * @return the obtained index or {@code null} if there is no index available
      * for the given attribute.
      */
-    public Index getIndex(String attribute) {
-        return matchIndex(attribute, IndexMatchHint.NONE);
+    public Index getIndex(String attribute, PartitionIdSet queryPartitions) {
+        return matchIndex(attribute, IndexMatchHint.NONE, queryPartitions);
     }
 
     /**
@@ -75,8 +77,8 @@ public class QueryContext {
      * @return the matched index or {@code null} if nothing matched.
      * @see QueryContext.IndexMatchHint
      */
-    public Index matchIndex(String pattern, IndexMatchHint matchHint) {
-        return indexes.matchIndex(pattern, matchHint);
+    public Index matchIndex(String pattern, IndexMatchHint matchHint, PartitionIdSet queryPartitions) {
+        return indexes.matchIndex(pattern, matchHint, queryPartitions);
     }
 
     /**

@@ -16,6 +16,7 @@
 
 package com.hazelcast.query.impl.predicates;
 
+import com.hazelcast.internal.util.collection.PartitionIdSet;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.internal.serialization.BinaryInterface;
@@ -68,8 +69,8 @@ public final class GreaterLessPredicate extends AbstractIndexAwarePredicate impl
     }
 
     @Override
-    public Set<QueryableEntry> filter(QueryContext queryContext) {
-        Index index = matchIndex(queryContext, QueryContext.IndexMatchHint.PREFER_ORDERED);
+    public Set<QueryableEntry> filter(QueryContext queryContext, PartitionIdSet queryPartitions) {
+        Index index = matchIndex(queryContext, QueryContext.IndexMatchHint.PREFER_ORDERED, queryPartitions);
         final Comparison comparison;
         if (less) {
             comparison = equal ? Comparison.LESS_OR_EQUAL : Comparison.LESS;

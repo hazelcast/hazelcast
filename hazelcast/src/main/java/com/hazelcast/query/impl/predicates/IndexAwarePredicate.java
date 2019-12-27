@@ -17,6 +17,7 @@
 package com.hazelcast.query.impl.predicates;
 
 import com.hazelcast.internal.serialization.BinaryInterface;
+import com.hazelcast.internal.util.collection.PartitionIdSet;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.impl.QueryContext;
 import com.hazelcast.query.impl.QueryableEntry;
@@ -64,7 +65,7 @@ public interface IndexAwarePredicate<K, V> extends Predicate<K, V> {
      *                     call to the method.
      * @return the produced filtered entry set.
      */
-    Set<QueryableEntry<K, V>> filter(QueryContext queryContext);
+    Set<QueryableEntry<K, V>> filter(QueryContext queryContext, PartitionIdSet queryPartitions);
 
     /**
      * Signals to the query engine that this predicate is able to utilize the
@@ -75,5 +76,5 @@ public interface IndexAwarePredicate<K, V> extends Predicate<K, V> {
      * @return {@code true} if this predicate is able to use the indexes to
      * speed up the processing, {@code false} otherwise.
      */
-    boolean isIndexed(QueryContext queryContext);
+    boolean isIndexed(QueryContext queryContext, PartitionIdSet queryPartitions);
 }

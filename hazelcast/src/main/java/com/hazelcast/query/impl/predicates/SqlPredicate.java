@@ -16,6 +16,7 @@
 
 package com.hazelcast.query.impl.predicates;
 
+import com.hazelcast.internal.util.collection.PartitionIdSet;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.internal.serialization.BinaryInterface;
@@ -91,16 +92,16 @@ public class SqlPredicate
     }
 
     @Override
-    public boolean isIndexed(QueryContext queryContext) {
+    public boolean isIndexed(QueryContext queryContext, PartitionIdSet queryPartitions) {
         if (predicate instanceof IndexAwarePredicate) {
-            return ((IndexAwarePredicate) predicate).isIndexed(queryContext);
+            return ((IndexAwarePredicate) predicate).isIndexed(queryContext, queryPartitions);
         }
         return false;
     }
 
     @Override
-    public Set<QueryableEntry> filter(QueryContext queryContext) {
-        return ((IndexAwarePredicate) predicate).filter(queryContext);
+    public Set<QueryableEntry> filter(QueryContext queryContext, PartitionIdSet queryPartitions) {
+        return ((IndexAwarePredicate) predicate).filter(queryContext, queryPartitions);
     }
 
     @Override

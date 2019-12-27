@@ -19,6 +19,7 @@ package com.hazelcast.query.impl;
 import com.hazelcast.config.IndexConfig;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.monitor.impl.PerIndexStats;
+import com.hazelcast.internal.util.collection.PartitionIdSet;
 import com.hazelcast.query.impl.getters.Extractors;
 
 import java.util.Set;
@@ -57,6 +58,14 @@ public class IndexImpl extends AbstractIndex {
     @Override
     public boolean hasPartitionIndexed(int partitionId) {
         return indexedPartitions.contains(partitionId);
+    }
+
+    @Override
+    public boolean allPartitionsIndexed(PartitionIdSet queryPartitions) {
+        // This check guarantees that all partitions are indexed
+        // only if there is no concurrent migrations. Check migration stamp
+        // to detect concurrent migrations if needed.
+        return indexedPartitions.size() == queryPartitions.size();
     }
 
     @Override

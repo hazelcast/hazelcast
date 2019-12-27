@@ -16,6 +16,7 @@
 
 package com.hazelcast.query.impl.predicates;
 
+import com.hazelcast.internal.util.collection.PartitionIdSet;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.internal.serialization.BinaryInterface;
@@ -183,12 +184,12 @@ public class PagingPredicateImpl<K, V>
      * @return
      */
     @Override
-    public Set<QueryableEntry<K, V>> filter(QueryContext queryContext) {
+    public Set<QueryableEntry<K, V>> filter(QueryContext queryContext, PartitionIdSet queryPartitions) {
         if (!(predicate instanceof IndexAwarePredicate)) {
             return null;
         }
 
-        Set<QueryableEntry<K, V>> set = ((IndexAwarePredicate<K, V>) predicate).filter(queryContext);
+        Set<QueryableEntry<K, V>> set = ((IndexAwarePredicate<K, V>) predicate).filter(queryContext, queryPartitions);
         if (set == null || set.isEmpty()) {
             return set;
         }
@@ -212,9 +213,9 @@ public class PagingPredicateImpl<K, V>
      * @param queryContext
      * @return
      */
-    public boolean isIndexed(QueryContext queryContext) {
+    public boolean isIndexed(QueryContext queryContext, PartitionIdSet queryPartitions) {
         if (predicate instanceof IndexAwarePredicate) {
-            return ((IndexAwarePredicate) predicate).isIndexed(queryContext);
+            return ((IndexAwarePredicate) predicate).isIndexed(queryContext, queryPartitions);
         }
         return false;
     }

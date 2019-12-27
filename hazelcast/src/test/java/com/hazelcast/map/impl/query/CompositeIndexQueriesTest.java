@@ -20,6 +20,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.IndexConfig;
 import com.hazelcast.config.IndexType;
+import com.hazelcast.internal.util.collection.PartitionIdSet;
 import com.hazelcast.map.IMap;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.Predicates;
@@ -348,12 +349,12 @@ public class CompositeIndexQueriesTest extends HazelcastTestSupport {
         }
 
         @Override
-        public Set<QueryableEntry> filter(QueryContext queryContext) {
+        public Set<QueryableEntry> filter(QueryContext queryContext, PartitionIdSet queryPartitions) {
             throw new UnsupportedOperationException();
         }
 
         @Override
-        public boolean isIndexed(QueryContext queryContext) {
+        public boolean isIndexed(QueryContext queryContext, PartitionIdSet queryPartitions) {
             return false;
         }
 

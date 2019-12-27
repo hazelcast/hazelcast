@@ -78,9 +78,9 @@ public class IndexJsonTest {
         assertEquals(0, numberIndex.getRecords(-1).size());
         assertEquals(1001, stringIndex.getRecords("sancar").size());
         assertEquals(501, boolIndex.getRecords(true).size());
-        assertEquals(501, is.query(new AndPredicate(new EqualPredicate("name", "sancar"), new EqualPredicate("active", "true"))).size());
-        assertEquals(300, is.query(Predicates.and(Predicates.greaterThan("age", 400), Predicates.equal("active", true))).size());
-        assertEquals(1001, is.query(Predicates.sql("name == sancar")).size());
+        assertEquals(501, is.query(new AndPredicate(new EqualPredicate("name", "sancar"), new EqualPredicate("active", "true")), null).size());
+        assertEquals(300, is.query(Predicates.and(Predicates.greaterThan("age", 400), Predicates.equal("active", true)), null).size());
+        assertEquals(1001, is.query(Predicates.sql("name == sancar"), null).size());
     }
 
 }

@@ -16,6 +16,7 @@
 
 package com.hazelcast.query.impl.predicates;
 
+import com.hazelcast.internal.util.collection.PartitionIdSet;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.impl.CompositeValue;
 import com.hazelcast.query.impl.Index;
@@ -80,8 +81,8 @@ public class CompositeEqualPredicate implements IndexAwarePredicate {
     }
 
     @Override
-    public Set<QueryableEntry> filter(QueryContext queryContext) {
-        Index index = queryContext.matchIndex(indexName, QueryContext.IndexMatchHint.EXACT_NAME);
+    public Set<QueryableEntry> filter(QueryContext queryContext, PartitionIdSet queryPartitions) {
+        Index index = queryContext.matchIndex(indexName, QueryContext.IndexMatchHint.EXACT_NAME, queryPartitions);
         return index.getRecords(value);
     }
 
@@ -91,7 +92,7 @@ public class CompositeEqualPredicate implements IndexAwarePredicate {
     }
 
     @Override
-    public boolean isIndexed(QueryContext queryContext) {
+    public boolean isIndexed(QueryContext queryContext, PartitionIdSet queryPartitions) {
         return true;
     }
 

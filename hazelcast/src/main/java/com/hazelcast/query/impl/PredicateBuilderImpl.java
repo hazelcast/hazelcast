@@ -16,6 +16,7 @@
 
 package com.hazelcast.query.impl;
 
+import com.hazelcast.internal.util.collection.PartitionIdSet;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.internal.serialization.BinaryInterface;
@@ -89,19 +90,19 @@ public class PredicateBuilderImpl implements PredicateBuilder, EntryObject, Inde
     }
 
     @Override
-    public Set<QueryableEntry> filter(QueryContext queryContext) {
+    public Set<QueryableEntry> filter(QueryContext queryContext, PartitionIdSet queryPartitions) {
         Predicate p = lsPredicates.get(0);
         if (p instanceof IndexAwarePredicate) {
-            return ((IndexAwarePredicate) p).filter(queryContext);
+            return ((IndexAwarePredicate) p).filter(queryContext, queryPartitions);
         }
         return null;
     }
 
     @Override
-    public boolean isIndexed(QueryContext queryContext) {
+    public boolean isIndexed(QueryContext queryContext, PartitionIdSet queryPartitions) {
         Predicate p = lsPredicates.get(0);
         if (p instanceof IndexAwarePredicate) {
-            return ((IndexAwarePredicate) p).isIndexed(queryContext);
+            return ((IndexAwarePredicate) p).isIndexed(queryContext, queryPartitions);
         }
         return false;
     }

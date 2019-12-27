@@ -17,6 +17,7 @@
 package com.hazelcast.query.impl;
 
 import com.hazelcast.internal.monitor.impl.PerIndexStats;
+import com.hazelcast.internal.util.collection.PartitionIdSet;
 
 /**
  * Provides the private index API.
@@ -40,6 +41,13 @@ public interface InternalIndex extends Index {
      * {@code false} otherwise.
      */
     boolean hasPartitionIndexed(int partitionId);
+
+    /**
+     * Returns {@code true} if all {@code queryPartitions} are indexed,
+     * {@code false} otherwise.
+     * @param queryPartitions a set of partitions a query runs on.
+     */
+    boolean allPartitionsIndexed(PartitionIdSet queryPartitions);
 
     /**
      * Marks the given partition as indexed by this index.

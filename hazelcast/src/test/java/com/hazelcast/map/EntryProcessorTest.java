@@ -28,6 +28,7 @@ import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.core.HazelcastJsonValue;
 import com.hazelcast.internal.json.Json;
 import com.hazelcast.internal.json.JsonValue;
+import com.hazelcast.internal.util.collection.PartitionIdSet;
 import com.hazelcast.map.impl.MapEntries;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.operation.MultipleEntryWithPredicateOperation;
@@ -1291,13 +1292,13 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         }
 
         @Override
-        public Set<QueryableEntry> filter(QueryContext queryContext) {
-            Index index = queryContext.getIndex(attributeName);
+        public Set<QueryableEntry> filter(QueryContext queryContext, PartitionIdSet queryPartitions) {
+            Index index = queryContext.getIndex(attributeName, queryPartitions);
             return index.getRecords(key);
         }
 
         @Override
-        public boolean isIndexed(QueryContext queryContext) {
+        public boolean isIndexed(QueryContext queryContext, PartitionIdSet queryPartitions) {
             return true;
         }
 
@@ -1426,12 +1427,12 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         }
 
         @Override
-        public Set<QueryableEntry<K, V>> filter(QueryContext queryContext) {
+        public Set<QueryableEntry<K, V>> filter(QueryContext queryContext, PartitionIdSet queryPartitions) {
             return null;
         }
 
         @Override
-        public boolean isIndexed(QueryContext queryContext) {
+        public boolean isIndexed(QueryContext queryContext, PartitionIdSet queryPartitions) {
             indexCalled.set(true);
             return true;
         }

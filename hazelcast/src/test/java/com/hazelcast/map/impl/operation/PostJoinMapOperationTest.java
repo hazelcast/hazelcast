@@ -18,6 +18,7 @@ package com.hazelcast.map.impl.operation;
 
 import com.hazelcast.config.IndexType;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.internal.util.collection.PartitionIdSet;
 import com.hazelcast.map.IMap;
 import com.hazelcast.map.MapInterceptor;
 import com.hazelcast.map.impl.MapContainer;
@@ -141,8 +142,8 @@ public class PostJoinMapOperationTest extends HazelcastTestSupport {
         }
 
         @Override
-        public Set<QueryableEntry> filter(QueryContext queryContext) {
-            Index ix = queryContext.getIndex("age");
+        public Set<QueryableEntry> filter(QueryContext queryContext, PartitionIdSet queryPartitions) {
+            Index ix = queryContext.getIndex("age", queryPartitions);
             if (ix != null) {
                 return ix.getRecords(Comparison.GREATER, 50);
             } else {
@@ -151,8 +152,8 @@ public class PostJoinMapOperationTest extends HazelcastTestSupport {
         }
 
         @Override
-        public boolean isIndexed(QueryContext queryContext) {
-            Index ix = queryContext.getIndex("age");
+        public boolean isIndexed(QueryContext queryContext, PartitionIdSet queryPartitions) {
+            Index ix = queryContext.getIndex("age", queryPartitions);
             if (ix != null) {
                 isIndexedInvocationCounter.incrementAndGet();
                 return true;

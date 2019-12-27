@@ -16,6 +16,7 @@
 
 package com.hazelcast.query.impl.predicates;
 
+import com.hazelcast.internal.util.collection.PartitionIdSet;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.internal.serialization.BinaryInterface;
@@ -67,14 +68,14 @@ public final class AndPredicate
     }
 
     @Override
-    public Set<QueryableEntry> filter(QueryContext queryContext) {
+    public Set<QueryableEntry> filter(QueryContext queryContext, PartitionIdSet queryPartitions) {
         Set<QueryableEntry> smallestResultSet = null;
         List<Set<QueryableEntry>> otherResultSets = null;
         List<Predicate> unindexedPredicates = null;
 
         for (Predicate predicate : predicates) {
-            if (isIndexedPredicate(predicate, queryContext)) {
-                Set<QueryableEntry> currentResultSet = ((IndexAwarePredicate) predicate).filter(queryContext);
+            if (isIndexedPredicate(predicate, queryContext, queryPartitions)) {
+                Set<QueryableEntry> currentResultSet = ((IndexAwarePredicate) predicate).filter(queryContext, queryPartitions);
                 if (smallestResultSet == null) {
                     smallestResultSet = currentResultSet;
                 } else if (estimatedSizeOf(currentResultSet) < estimatedSizeOf(smallestResultSet)) {
@@ -97,8 +98,9 @@ public final class AndPredicate
         return new AndResultSet(smallestResultSet, otherResultSets, unindexedPredicates);
     }
 
-    private static boolean isIndexedPredicate(Predicate predicate, QueryContext queryContext) {
-        return predicate instanceof IndexAwarePredicate && ((IndexAwarePredicate) predicate).isIndexed(queryContext);
+    private static boolean isIndexedPredicate(Predicate predicate, QueryContext queryContext, PartitionIdSet queryPartitions) {
+        return predicate instanceof IndexAwarePredicate
+                && ((IndexAwarePredicate) predicate).isIndexed(queryContext, queryPartitions);
     }
 
     private static <T> List<T> initOrGetListOf(List<T> list) {
@@ -109,11 +111,11 @@ public final class AndPredicate
     }
 
     @Override
-    public boolean isIndexed(QueryContext queryContext) {
+    public boolean isIndexed(QueryContext queryContext, PartitionIdSet queryPartitions) {
         for (Predicate predicate : predicates) {
             if (predicate instanceof IndexAwarePredicate) {
                 IndexAwarePredicate iap = (IndexAwarePredicate) predicate;
-                if (iap.isIndexed(queryContext)) {
+                if (iap.isIndexed(queryContext, queryPartitions)) {
                     return true;
                 }
             }

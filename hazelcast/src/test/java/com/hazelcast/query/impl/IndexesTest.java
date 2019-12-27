@@ -87,7 +87,7 @@ public class IndexesTest {
         EntryObject entryObject = Predicates.newPredicateBuilder().getEntryObject();
         PredicateBuilder predicate =
                 entryObject.get("name").equal("0Name").and(entryObject.get("age").in(ages.toArray(new String[0])));
-        Set<QueryableEntry> results = indexes.query(predicate);
+        Set<QueryableEntry> results = indexes.query(predicate, null);
         assertEquals(1, results.size());
     }
 
@@ -105,7 +105,7 @@ public class IndexesTest {
 
         for (int i = 0; i < 10; i++) {
             Predicate predicate = Predicates.sql("salary=161 and age >20 and age <23");
-            Set<QueryableEntry> results = new HashSet<>(indexes.query(predicate));
+            Set<QueryableEntry> results = new HashSet<>(indexes.query(predicate, null));
             assertEquals(5, results.size());
         }
     }
@@ -132,7 +132,7 @@ public class IndexesTest {
                 Index.OperationSource.USER);
         indexes.putEntry(new QueryEntry(serializationService, toData(9), new Value("qwx"), newExtractor()), null,
                 Index.OperationSource.USER);
-        assertEquals(8, new HashSet<>(indexes.query(Predicates.sql("name > 'aac'"))).size());
+        assertEquals(8, new HashSet<>(indexes.query(Predicates.sql("name > 'aac'"), null)).size());
     }
 
     protected Extractors newExtractor() {
@@ -166,7 +166,7 @@ public class IndexesTest {
                     Index.OperationSource.USER);
         }
 
-        Set<QueryableEntry> query = indexes.query(Predicates.sql("__key > 10 "));
+        Set<QueryableEntry> query = indexes.query(Predicates.sql("__key > 10 "), null);
 
         assertNull("There should be no result", query);
     }
@@ -182,7 +182,7 @@ public class IndexesTest {
                     Index.OperationSource.USER);
         }
 
-        Set<QueryableEntry> query = indexes.query(Predicates.sql("__key > 10 "));
+        Set<QueryableEntry> query = indexes.query(Predicates.sql("__key > 10 "), null);
 
         assertEquals(89, query.size());
     }

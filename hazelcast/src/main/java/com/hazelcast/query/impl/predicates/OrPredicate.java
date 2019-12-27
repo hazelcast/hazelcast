@@ -16,6 +16,7 @@
 
 package com.hazelcast.query.impl.predicates;
 
+import com.hazelcast.internal.util.collection.PartitionIdSet;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.internal.serialization.BinaryInterface;
@@ -55,13 +56,13 @@ public final class OrPredicate
     }
 
     @Override
-    public Set<QueryableEntry> filter(QueryContext queryContext) {
+    public Set<QueryableEntry> filter(QueryContext queryContext, PartitionIdSet queryPartitions) {
         List<Set<QueryableEntry>> indexedResults = new LinkedList<Set<QueryableEntry>>();
         for (Predicate predicate : predicates) {
             if (predicate instanceof IndexAwarePredicate) {
                 IndexAwarePredicate iap = (IndexAwarePredicate) predicate;
-                if (iap.isIndexed(queryContext)) {
-                    Set<QueryableEntry> s = iap.filter(queryContext);
+                if (iap.isIndexed(queryContext, queryPartitions)) {
+                    Set<QueryableEntry> s = iap.filter(queryContext, queryPartitions);
                     if (s != null) {
                         indexedResults.add(s);
                     }
@@ -74,11 +75,11 @@ public final class OrPredicate
     }
 
     @Override
-    public boolean isIndexed(QueryContext queryContext) {
+    public boolean isIndexed(QueryContext queryContext, PartitionIdSet queryPartitions) {
         for (Predicate predicate : predicates) {
             if (predicate instanceof IndexAwarePredicate) {
                 IndexAwarePredicate iap = (IndexAwarePredicate) predicate;
-                if (!iap.isIndexed(queryContext)) {
+                if (!iap.isIndexed(queryContext, queryPartitions)) {
                     return false;
                 }
             } else {

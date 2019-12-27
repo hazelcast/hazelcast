@@ -18,6 +18,7 @@ package com.hazelcast.query.impl.predicates;
 
 import com.hazelcast.config.IndexType;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.internal.util.collection.PartitionIdSet;
 import com.hazelcast.map.IMap;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
@@ -105,12 +106,12 @@ public class PredicatesTest extends HazelcastTestSupport {
         }
 
         @Override
-        public Set<QueryableEntry<K, V>> filter(final QueryContext queryContext) {
+        public Set<QueryableEntry<K, V>> filter(final QueryContext queryContext, PartitionIdSet queryPartitions) {
             return null;
         }
 
         @Override
-        public boolean isIndexed(final QueryContext queryContext) {
+        public boolean isIndexed(final QueryContext queryContext, PartitionIdSet queryPartitions) {
             return false;
         }
     }

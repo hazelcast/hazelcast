@@ -17,6 +17,7 @@
 package com.hazelcast.query.impl.predicates;
 
 import com.hazelcast.internal.serialization.BinaryInterface;
+import com.hazelcast.internal.util.collection.PartitionIdSet;
 import com.hazelcast.query.impl.Index;
 import com.hazelcast.query.impl.QueryContext;
 
@@ -30,17 +31,17 @@ public abstract class AbstractIndexAwarePredicate<K, V> extends AbstractPredicat
         super(attributeName);
     }
 
-    protected Index getIndex(QueryContext queryContext) {
-        return matchIndex(queryContext, QueryContext.IndexMatchHint.NONE);
+    protected Index getIndex(QueryContext queryContext, PartitionIdSet queryPartitions) {
+        return matchIndex(queryContext, QueryContext.IndexMatchHint.NONE, queryPartitions);
     }
 
-    protected Index matchIndex(QueryContext queryContext, QueryContext.IndexMatchHint matchHint) {
-        return queryContext.matchIndex(attributeName, matchHint);
+    protected Index matchIndex(QueryContext queryContext, QueryContext.IndexMatchHint matchHint, PartitionIdSet queryPartitions) {
+        return queryContext.matchIndex(attributeName, matchHint, queryPartitions);
     }
 
     @Override
-    public boolean isIndexed(QueryContext queryContext) {
-        return getIndex(queryContext) != null;
+    public boolean isIndexed(QueryContext queryContext, PartitionIdSet queryPartitions) {
+        return getIndex(queryContext, queryPartitions) != null;
     }
 
 }
