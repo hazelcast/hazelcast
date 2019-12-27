@@ -82,7 +82,8 @@ public class HazelcastCloudDiscovery {
         httpsConnection.connect();
         checkCertificate(httpsConnection);
         checkError(httpsConnection);
-        return parseResponse(httpsConnection.getInputStream());
+        InputStream inputStream = httpsConnection.getInputStream();
+        return parseJsonResponse(Json.parse(readInputStream(inputStream)));
     }
 
     private void checkCertificate(HttpURLConnection connection) throws IOException, CertificateException {
@@ -99,9 +100,7 @@ public class HazelcastCloudDiscovery {
         }
     }
 
-    private Map<Address, Address> parseResponse(InputStream is) throws IOException {
-
-        JsonValue jsonValue = Json.parse(readInputStream(is));
+    static Map<Address, Address> parseJsonResponse(JsonValue jsonValue) throws IOException {
         List<JsonValue> response = jsonValue.asArray().values();
 
         Map<Address, Address> privateToPublicAddresses = new HashMap<Address, Address>();
@@ -109,15 +108,16 @@ public class HazelcastCloudDiscovery {
             String privateAddress = value.asObject().get(PRIVATE_ADDRESS_PROPERTY).asString();
             String publicAddress = value.asObject().get(PUBLIC_ADDRESS_PROPERTY).asString();
 
-            Address publicAddr = createAddress(publicAddress);
-            privateToPublicAddresses.put(new Address(privateAddress, publicAddr.getPort()), publicAddr);
+            Address publicAddr = createAddress(publicAddress, -1);
+            //if it is not explicitly given, create the private address with public addresses port
+            Address privateAddr = createAddress(privateAddress, publicAddr.getPort());
+            privateToPublicAddresses.put(privateAddr, publicAddr);
         }
-
         return privateToPublicAddresses;
     }
 
-    private Address createAddress(String hostname) throws IOException {
-        AddressUtil.AddressHolder addressHolder = AddressUtil.getAddressHolder(hostname);
+    private static Address createAddress(String hostname, int defaultPort) throws IOException {
+        AddressUtil.AddressHolder addressHolder = AddressUtil.getAddressHolder(hostname, defaultPort);
         String scopedHostName = AddressHelper.getScopedHostName(addressHolder);
         return new Address(scopedHostName, addressHolder.getPort());
     }
