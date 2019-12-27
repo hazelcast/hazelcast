@@ -189,7 +189,7 @@ public class YamlConfigBuilderConfigResolutionTest {
     }
 
     @Test
-    public void testResolveFromWorkDir() throws Exception {
+    public void testResolveFromWorkDirYamlButNotYml() throws Exception {
         helper.givenYamlConfigFileInWorkDir("cluster-yaml-workdir");
 
         Config config = new YamlConfigBuilder().build();
@@ -198,8 +198,46 @@ public class YamlConfigBuilderConfigResolutionTest {
     }
 
     @Test
-    public void testResolveFromClasspath() throws Exception {
+    public void testResolveFromWorkDirYmlButNotYaml() throws Exception {
+        helper.givenYmlConfigFileInWorkDir("cluster-yml-workdir");
+
+        Config config = new YamlConfigBuilder().build();
+
+        assertEquals("cluster-yml-workdir", config.getInstanceName());
+    }
+
+    @Test
+    public void testResolveFromWorkDirYamlAndYml() throws Exception {
+        helper.givenYamlConfigFileInWorkDir("cluster-yaml-workdir");
+        helper.givenYmlConfigFileInWorkDir("cluster-yml-workdir");
+
+        Config config = new YamlConfigBuilder().build();
+
+        assertEquals("cluster-yaml-workdir", config.getInstanceName());
+    }
+
+    @Test
+    public void testResolveFromClasspathYamlButNotYml() throws Exception {
         helper.givenYamlConfigFileOnClasspath("cluster-yaml-classpath");
+
+        Config config = new YamlConfigBuilder().build();
+
+        assertEquals("cluster-yaml-classpath", config.getInstanceName());
+    }
+
+    @Test
+    public void testResolveFromClasspathYmlButNotYaml() throws Exception {
+        helper.givenYmlConfigFileOnClasspath("cluster-yml-classpath");
+
+        Config config = new YamlConfigBuilder().build();
+
+        assertEquals("cluster-yml-classpath", config.getInstanceName());
+    }
+
+    @Test
+    public void testResolveFromClasspathYamlAndYml() throws Exception {
+        helper.givenYamlConfigFileOnClasspath("cluster-yaml-classpath");
+        helper.givenYmlConfigFileOnClasspath("cluster-yml-classpath");
 
         Config config = new YamlConfigBuilder().build();
 

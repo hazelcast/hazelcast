@@ -189,7 +189,7 @@ public class YamlClientFailoverConfigBuilderConfigResolutionTest {
     }
 
     @Test
-    public void testResolveFromWorkDir() throws Exception {
+    public void testResolveFromWorkDirYamlButNotYml() throws Exception {
         helper.givenYamlClientFailoverConfigFileInWorkDir(42);
 
         ClientFailoverConfig config = new YamlClientFailoverConfigBuilder().build();
@@ -198,8 +198,46 @@ public class YamlClientFailoverConfigBuilderConfigResolutionTest {
     }
 
     @Test
-    public void testResolveFromClasspath() throws Exception {
+    public void testResolveFromWorkDirYmlButNotYaml() throws Exception {
+        helper.givenYmlClientFailoverConfigFileInWorkDir(42);
+
+        ClientFailoverConfig config = new YamlClientFailoverConfigBuilder().build();
+
+        assertEquals(42, config.getTryCount());
+    }
+
+    @Test
+    public void testResolveFromWorkDirYamlAndYaml() throws Exception {
+        helper.givenYamlClientFailoverConfigFileInWorkDir(42);
+        helper.givenYmlClientFailoverConfigFileInWorkDir(42);
+
+        ClientFailoverConfig config = new YamlClientFailoverConfigBuilder().build();
+
+        assertEquals(42, config.getTryCount());
+    }
+
+    @Test
+    public void testResolveFromClasspathYamlButNotYml() throws Exception {
         helper.givenYamlClientFailoverConfigFileOnClasspath(42);
+
+        ClientFailoverConfig config = new YamlClientFailoverConfigBuilder().build();
+
+        assertEquals(42, config.getTryCount());
+    }
+
+    @Test
+    public void testResolveFromClasspathYmlButNotYaml() throws Exception {
+        helper.givenYmlClientFailoverConfigFileOnClasspath(42);
+
+        ClientFailoverConfig config = new YamlClientFailoverConfigBuilder().build();
+
+        assertEquals(42, config.getTryCount());
+    }
+
+    @Test
+    public void testResolveFromClasspathYamlAndYml() throws Exception {
+        helper.givenYamlClientFailoverConfigFileOnClasspath(42);
+        helper.givenYmlClientFailoverConfigFileOnClasspath(42);
 
         ClientFailoverConfig config = new YamlClientFailoverConfigBuilder().build();
 

@@ -53,6 +53,10 @@ public class DeclarativeConfigFileHelper {
         return givenYamlConfigFileInWorkDir("hazelcast.yaml", instanceName);
     }
 
+    public File givenYmlConfigFileInWorkDir(String instanceName) throws Exception {
+        return givenYamlConfigFileInWorkDir("hazelcast.yml", instanceName);
+    }
+
     public File givenYamlConfigFileInWorkDir(String filename, String instanceName) throws Exception {
         String xml = yamlConfig(instanceName);
         return givenConfigFileInWorkDir(filename, xml);
@@ -69,6 +73,10 @@ public class DeclarativeConfigFileHelper {
 
     public URL givenYamlConfigFileOnClasspath(String instanceName) throws Exception {
         return givenYamlConfigFileOnClasspath("hazelcast.yaml", instanceName);
+    }
+
+    public URL givenYmlConfigFileOnClasspath(String instanceName) throws Exception {
+        return givenYamlConfigFileOnClasspath("hazelcast.yml", instanceName);
     }
 
     public URL givenYamlConfigFileOnClasspath(String filename, String instanceName) throws Exception {
@@ -100,6 +108,10 @@ public class DeclarativeConfigFileHelper {
         return givenYamlClientConfigFileInWorkDir("hazelcast-client.yaml", instanceName);
     }
 
+    public File givenYmlClientConfigFileInWorkDir(String instanceName) throws Exception {
+        return givenYamlClientConfigFileInWorkDir("hazelcast-client.yml", instanceName);
+    }
+
     public File givenYamlClientConfigFileInWorkDir(String filename, String instanceName) throws Exception {
         String xml = yamlClientConfig(instanceName);
         return givenConfigFileInWorkDir(filename, xml);
@@ -107,6 +119,10 @@ public class DeclarativeConfigFileHelper {
 
     public URL givenYamlClientConfigFileOnClasspath(String instanceName) throws Exception {
         return givenYamlClientConfigFileOnClasspath("hazelcast-client.yaml", instanceName);
+    }
+
+    public URL givenYmlClientConfigFileOnClasspath(String instanceName) throws Exception {
+        return givenYamlClientConfigFileOnClasspath("hazelcast-client.yml", instanceName);
     }
 
     public URL givenYamlClientConfigFileOnClasspath(String filename, String instanceName) throws Exception {
@@ -138,6 +154,10 @@ public class DeclarativeConfigFileHelper {
         return givenYamlClientFailoverConfigFileInWorkDir("hazelcast-client-failover.yaml", tryCount);
     }
 
+    public File givenYmlClientFailoverConfigFileInWorkDir(int tryCount) throws Exception {
+        return givenYamlClientFailoverConfigFileInWorkDir("hazelcast-client-failover.yml", tryCount);
+    }
+
     public File givenYamlClientFailoverConfigFileInWorkDir(String filename, int tryCount) throws Exception {
         String xml = yamlFailoverClientConfig(tryCount);
         return givenConfigFileInWorkDir(filename, xml);
@@ -145,6 +165,10 @@ public class DeclarativeConfigFileHelper {
 
     public URL givenYamlClientFailoverConfigFileOnClasspath(int tryCount) throws Exception {
         return givenYamlClientFailoverConfigFileOnClasspath("hazelcast-client-failover.yaml", tryCount);
+    }
+
+    public URL givenYmlClientFailoverConfigFileOnClasspath(int tryCount) throws Exception {
+        return givenYamlClientFailoverConfigFileOnClasspath("hazelcast-client-failover.yml", tryCount);
     }
 
     public URL givenYamlClientFailoverConfigFileOnClasspath(String filename, int tryCount) throws Exception {
