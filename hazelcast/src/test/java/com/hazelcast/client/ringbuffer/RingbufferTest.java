@@ -47,7 +47,6 @@ import java.util.concurrent.TimeoutException;
 import static com.hazelcast.ringbuffer.OverflowPolicy.OVERWRITE;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
