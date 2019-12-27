@@ -95,6 +95,8 @@ import com.hazelcast.spi.impl.proxyservice.impl.ProxyServiceImpl;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.version.MemberVersion;
 import com.hazelcast.version.Version;
+import sun.misc.Signal;
+import sun.misc.SignalHandler;
 
 import java.lang.reflect.Constructor;
 import java.security.PrivilegedAction;
@@ -122,6 +124,7 @@ import static com.hazelcast.internal.config.ConfigValidator.checkAdvancedNetwork
 import static com.hazelcast.internal.util.EmptyStatement.ignore;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 import static com.hazelcast.internal.util.FutureUtil.waitWithDeadline;
+import static com.hazelcast.internal.util.OsHelper.isUnixFamily;
 import static com.hazelcast.internal.util.StringUtil.LINE_SEPARATOR;
 import static com.hazelcast.internal.util.ThreadUtil.createThreadName;
 import static com.hazelcast.spi.properties.ClusterProperty.DISCOVERY_SPI_ENABLED;
@@ -167,6 +170,8 @@ public class Node {
 
     private final ILogger logger;
 
+    private final AtomicBoolean interruptGracefulShutdownRequestFlag = new AtomicBoolean(false);
+
     private final AtomicBoolean shuttingDown = new AtomicBoolean(false);
 
     private final NodeShutdownHookThread shutdownHookThread;
@@ -204,6 +209,7 @@ public class Node {
 
         String policy = properties.getString(SHUTDOWNHOOK_POLICY);
         this.shutdownHookThread = new NodeShutdownHookThread("hz.ShutdownThread", policy);
+
         // Calling getBuildInfo() instead of directly using BuildInfoProvider.BUILD_INFO.
         // Version can be overridden via system property. That's why BuildInfo should be parsed for each Node.
         this.buildInfo = BuildInfoProvider.getBuildInfo();
@@ -477,7 +483,7 @@ public class Node {
             return;
         }
 
-        if (!terminate) {
+        if (!terminate && !interruptGracefulShutdownRequestFlag.get()) {
             int maxWaitSeconds = properties.getSeconds(GRACEFUL_SHUTDOWN_MAX_WAIT);
             callGracefulShutdownAwareServices(maxWaitSeconds);
         } else {
@@ -519,6 +525,10 @@ public class Node {
         Collection<Future> futures = new ArrayList<Future>(services.size());
 
         for (final GracefulShutdownAwareService service : services) {
+            if (interruptGracefulShutdownRequestFlag.get()) {
+                break;
+            }
+
             Future future = executor.submit(new Runnable() {
                 @Override
                 public void run() {
@@ -541,8 +551,11 @@ public class Node {
             });
             futures.add(future);
         }
+
         try {
-            waitWithDeadline(futures, maxWaitSeconds, TimeUnit.SECONDS, FutureUtil.RETHROW_EVERYTHING);
+            if (!interruptGracefulShutdownRequestFlag.get()) {
+                waitWithDeadline(futures, maxWaitSeconds, TimeUnit.SECONDS, FutureUtil.RETHROW_EVERYTHING);
+            }
         } catch (Exception e) {
             logger.warning(e);
         }
@@ -728,6 +741,14 @@ public class Node {
 
         @Override
         public void run() {
+            if (isUnixFamily() && this.policy.equals(ShutdownHookPolicy.GRACEFUL)) {
+                // Guarded for UnixFamily since it was not tested under process (and/or UI wrapper) lifecycle on Windows OS
+                // Register handlers for TERM and INT kill signals, to interrupt the graceful shutdown process if requested.
+                NodeKillShutdownHandler killShutdownHandler = new NodeKillShutdownHandler();
+                Signal.handle(new Signal("INT"), killShutdownHandler);
+                Signal.handle(new Signal("TERM"), killShutdownHandler);
+            }
+
             try {
                 if (isRunning()) {
                     logger.info("Running shutdown hook... Current state: " + state);
@@ -742,6 +763,22 @@ public class Node {
                             throw new IllegalArgumentException("Unimplemented shutdown hook policy: " + policy);
                     }
                 }
+            } catch (Exception e) {
+                logger.warning(e);
+            }
+        }
+    }
+
+    private class NodeKillShutdownHandler
+            implements SignalHandler {
+
+        @Override
+        public void handle(Signal sig) {
+            try {
+                if (interruptGracefulShutdownRequestFlag.compareAndSet(false, true)) {
+                    logger.info("Interrupting graceful shutdown and exiting immediately");
+                }
+                shutdownHookThread.interrupt();
             } catch (Exception e) {
                 logger.warning(e);
             }

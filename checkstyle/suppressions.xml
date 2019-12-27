@@ -127,6 +127,9 @@
     <!-- Memory -->
     <suppress checks="IllegalImport" files="com[\\/]hazelcast[\\/]internal[\\/]memory[\\/]impl[\\/]UnsafeUtil"/>
 
+    <!-- Signals Node -->
+    <suppress checks="IllegalImport" files="com.hazelcast.instance.impl.Node"/>
+
     <!-- OSGI -->
     <suppress checks="MethodCount" files="com[\\/]hazelcast[\\/]osgi[\\/]impl[\\/]HazelcastOSGiInstanceImpl"/>
 

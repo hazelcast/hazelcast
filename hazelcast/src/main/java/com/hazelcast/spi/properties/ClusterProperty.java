@@ -451,10 +451,19 @@ public final class ClusterProperty {
      * GRACEFUL:  Initiate graceful shutdown. This can significantly slow-down JVM exit process, but it's tries to
      * retain data safety.
      *
+     * On Unix based systems, there is additional logic to interrupt a GRACEFUL shutdown upon a subsequent
+     * SIGTERM or SIGINT signal.
+     *
      * Default: TERMINATE
      *
-     * You should always shutdown Hazelcast explicitly via {@link HazelcastInstance#shutdown()}
      * It's not recommended to rely on shutdown hook, this is a last-effort measure.
+     * Relying on OS signals to handle a shutdown request gracefully, is generally a bad practice. Signals
+     * can be raised by numerous flows (IDE running process stop, System shutdown, Window exit button, CTRL-C on running
+     * terminal, kill signal on PID) most of which, are requests for immediate termination. Some, may even display
+     * 'unresponsive process' for processes, that don't respond to SIGTERM under a certain time-frame, and suggest a force KILL.
+     *
+     * You should always shutdown Hazelcast explicitly via {@link HazelcastInstance#shutdown()} through your application logic,
+     * management-center, JMX, etc.
      */
     public static final HazelcastProperty SHUTDOWNHOOK_POLICY
             = new HazelcastProperty("hazelcast.shutdownhook.policy", "TERMINATE");
