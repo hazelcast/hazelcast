@@ -51,7 +51,6 @@ public class DistributedObjectEvent extends EventObject {
         this.serviceName = serviceName;
         this.objectName = objectName;
         this.distributedObject = distributedObject;
-        this.source = source;
     }
 
     /**
