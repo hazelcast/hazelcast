@@ -17,6 +17,7 @@
 package com.hazelcast.client;
 
 import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.client.test.ClientTestSupport;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.Member;
@@ -24,9 +25,7 @@ import com.hazelcast.cluster.MembershipAdapter;
 import com.hazelcast.cluster.MembershipEvent;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.LifecycleEvent;
-import com.hazelcast.core.LifecycleListener;
 import com.hazelcast.map.IMap;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -56,28 +55,23 @@ public class ClientReconnectTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testClientReconnectOnClusterDown() throws Exception {
+    public void testClientReconnectOnClusterDown() {
         final HazelcastInstance h1 = hazelcastFactory.newHazelcastInstance();
         ClientConfig clientConfig = new ClientConfig();
         clientConfig.getConnectionStrategyConfig().getConnectionRetryConfig().setClusterConnectTimeoutMillis(Long.MAX_VALUE);
         final HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig);
-        final CountDownLatch connectedLatch = new CountDownLatch(2);
-        client.getLifecycleService().addLifecycleListener(new LifecycleListener() {
-            @Override
-            public void stateChanged(LifecycleEvent event) {
-                connectedLatch.countDown();
-            }
-        });
+        ClientTestSupport.ReconnectListener reconnectListener = new ClientTestSupport.ReconnectListener();
+        client.getLifecycleService().addLifecycleListener(reconnectListener);
         IMap<String, String> m = client.getMap("default");
         h1.shutdown();
         hazelcastFactory.newHazelcastInstance();
-        assertOpenEventually(connectedLatch);
+        assertOpenEventually(reconnectListener.reconnectedLatch);
         assertNull(m.put("test", "test"));
         assertEquals("test", m.get("test"));
     }
 
     @Test
-    public void testReconnectToNewInstanceAtSameAddress() throws InterruptedException {
+    public void testReconnectToNewInstanceAtSameAddress() {
         HazelcastInstance instance = hazelcastFactory.newHazelcastInstance();
         Address localAddress = instance.getCluster().getLocalMember().getAddress();
         ClientConfig clientConfig = new ClientConfig();
@@ -97,14 +91,11 @@ public class ClientReconnectTest extends HazelcastTestSupport {
 
         assertOpenEventually(memberRemovedLatch);
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertClusterSize(1, client);
-                Iterator<Member> iterator = client.getCluster().getMembers().iterator();
-                Member member = iterator.next();
-                assertEquals(instance2.getCluster().getLocalMember(), member);
-            }
+        assertTrueEventually(() -> {
+            assertClusterSize(1, client);
+            Iterator<Member> iterator = client.getCluster().getMembers().iterator();
+            Member member = iterator.next();
+            assertEquals(instance2.getCluster().getLocalMember(), member);
         });
     }
 
@@ -116,12 +107,9 @@ public class ClientReconnectTest extends HazelcastTestSupport {
         HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig);
 
         final CountDownLatch shutdownLatch = new CountDownLatch(1);
-        client.getLifecycleService().addLifecycleListener(new LifecycleListener() {
-            @Override
-            public void stateChanged(LifecycleEvent event) {
-                if (event.getState() == LifecycleEvent.LifecycleState.SHUTDOWN) {
-                    shutdownLatch.countDown();
-                }
+        client.getLifecycleService().addLifecycleListener(event -> {
+            if (event.getState() == LifecycleEvent.LifecycleState.SHUTDOWN) {
+                shutdownLatch.countDown();
             }
         });
         server.shutdown();

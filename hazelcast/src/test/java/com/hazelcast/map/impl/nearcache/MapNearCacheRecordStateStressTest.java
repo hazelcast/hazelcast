@@ -166,7 +166,7 @@ public class MapNearCacheRecordStateStressTest extends HazelcastTestSupport {
         for (int i = 0; i < keySpace; i++) {
             NearCacheRecord record = nearCacheRecordStore.getRecord(i);
             if (record != null) {
-                assertEquals(record.toString(), READ_PERMITTED, record.getRecordState());
+                assertEquals(record.toString(), READ_PERMITTED, record.getReservationId());
                 recordFound = true;
             }
         }

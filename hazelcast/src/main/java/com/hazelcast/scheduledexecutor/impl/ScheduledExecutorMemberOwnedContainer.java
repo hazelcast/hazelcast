@@ -39,19 +39,16 @@ public class ScheduledExecutorMemberOwnedContainer
 
     private final AtomicBoolean memberPartitionLock = new AtomicBoolean();
 
-    ScheduledExecutorMemberOwnedContainer(String name, int capacity, NodeEngine nodeEngine) {
-        super(name, -1, nodeEngine, MEMBER_DURABILITY, capacity, new ConcurrentHashMap<String, ScheduledTaskDescriptor>());
+    ScheduledExecutorMemberOwnedContainer(String name, CapacityPermit permit,
+                                          NodeEngine nodeEngine) {
+        super(name, -1, nodeEngine, permit, MEMBER_DURABILITY, new ConcurrentHashMap<>());
     }
 
     @Override
     public ScheduledFuture schedule(TaskDefinition definition) {
         try {
             acquireMemberPartitionLockIfNeeded();
-
-            checkNotDuplicateTask(definition.getName());
-            checkNotAtCapacity();
-            return createContextAndSchedule(definition);
-
+            return super.schedule(definition);
         } finally {
             releaseMemberPartitionLockIfNeeded();
         }

@@ -20,7 +20,6 @@ import com.hazelcast.cache.impl.CacheEventData;
 import com.hazelcast.cache.impl.CacheEventListenerAdaptor;
 import com.hazelcast.cache.impl.event.CachePartitionLostEvent;
 import com.hazelcast.cache.impl.event.CachePartitionLostListener;
-import com.hazelcast.client.impl.ClientDelegatingFuture;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.CacheAddEntryListenerCodec;
 import com.hazelcast.client.impl.protocol.codec.CacheAddNearCacheInvalidationListenerCodec;
@@ -35,6 +34,7 @@ import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.NativeMemoryConfig;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.spi.impl.InternalCompletableFuture;
 
 import javax.cache.CacheException;
 import javax.cache.integration.CompletionListener;
@@ -77,7 +77,7 @@ final class ClientCacheProxySupportUtil {
         }
     }
 
-    static  <T> T getSafely(Future<T> future) {
+    static <T> T getSafely(Future<T> future) {
         try {
             return future.get();
         } catch (Throwable throwable) {
@@ -85,21 +85,21 @@ final class ClientCacheProxySupportUtil {
         }
     }
 
-    static <T> void addCallback(ClientDelegatingFuture<T> delegatingFuture, BiConsumer<T, Throwable> callback) {
-        if (callback == null) {
-            return;
-        }
-        delegatingFuture.whenCompleteAsync(callback, CALLER_RUNS);
+    static <T> InternalCompletableFuture<T> addCallback(InternalCompletableFuture<T> future,
+                                                        BiConsumer<T, Throwable> callback) {
+        return callback == null
+                ? future : (InternalCompletableFuture<T>) future.whenCompleteAsync(callback, CALLER_RUNS);
     }
 
-    static NearCacheConfig checkNearCacheConfig(NearCacheConfig nearCacheConfig, NativeMemoryConfig nativeMemoryConfig) {
+    static NearCacheConfig checkNearCacheConfig(NearCacheConfig nearCacheConfig,
+                                                NativeMemoryConfig nativeMemoryConfig) {
         InMemoryFormat inMemoryFormat = nearCacheConfig.getInMemoryFormat();
         if (inMemoryFormat != NATIVE) {
             return nearCacheConfig;
         }
 
-        checkTrue(nativeMemoryConfig.isEnabled(), "Enable native memory config to use NATIVE in-memory-format "
-                + "for Near Cache");
+        checkTrue(nativeMemoryConfig.isEnabled(),
+                "Enable native memory config to use NATIVE in-memory-format for Near Cache");
         return nearCacheConfig;
     }
 

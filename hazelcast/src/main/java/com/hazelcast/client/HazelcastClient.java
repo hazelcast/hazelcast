@@ -66,8 +66,7 @@ public final class HazelcastClient {
         OutOfMemoryErrorDispatcher.setClientHandler(new ClientOutOfMemoryHandler());
     }
 
-    static final ConcurrentMap<String, HazelcastClientProxy> CLIENTS
-            = new ConcurrentHashMap<String, HazelcastClientProxy>(5);
+    static final ConcurrentMap<String, HazelcastClientProxy> CLIENTS = new ConcurrentHashMap<>(5);
 
     private HazelcastClient() {
     }
@@ -173,7 +172,6 @@ public final class HazelcastClient {
      *      <li>it checks if a hazelcast-client-failover.yaml is available on the classpath</li>
      *      <li>if none available {@link HazelcastException} is thrown</li>
      * </ol>
-     *
      *
      * @param clientFailoverConfig config describing the failover configs and try count
      * @return the client instance

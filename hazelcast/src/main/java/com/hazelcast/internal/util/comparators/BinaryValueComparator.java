@@ -38,7 +38,9 @@ final class BinaryValueComparator implements ValueComparator {
         if (value1 == null || value2 == null) {
             return false;
         }
-        // the PartitioningStrategy is not needed here, since `Data.equals()` only checks the payload, not the partitionHash
+        // the PartitioningStrategy is not needed
+        // here, since `Data.equals()` only checks
+        // the payload, not the partitionHash
         Data data1 = ss.toData(value1);
         Data data2 = ss.toData(value2);
         return data1.equals(data2);

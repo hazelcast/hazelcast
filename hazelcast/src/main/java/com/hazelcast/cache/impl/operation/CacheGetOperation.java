@@ -45,8 +45,7 @@ public class CacheGetOperation
     }
 
     @Override
-    public void run()
-            throws Exception {
+    public void run() throws Exception {
         response = recordStore.get(key, expiryPolicy);
     }
 

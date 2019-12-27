@@ -103,7 +103,7 @@ public class WanBatchPublisherConfig extends AbstractWanPublisherConfig {
     }
 
     @Override
-    public WanBatchPublisherConfig setClassName(String className) {
+    public WanBatchPublisherConfig setClassName(@Nonnull String className) {
         super.setClassName(className);
         return this;
     }
@@ -131,7 +131,7 @@ public class WanBatchPublisherConfig extends AbstractWanPublisherConfig {
      * @return this config
      */
     @Override
-    public WanBatchPublisherConfig setImplementation(WanPublisher implementation) {
+    public WanBatchPublisherConfig setImplementation(@Nonnull WanPublisher implementation) {
         return this;
     }
 

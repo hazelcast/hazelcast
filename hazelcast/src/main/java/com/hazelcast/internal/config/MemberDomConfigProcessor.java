@@ -129,6 +129,7 @@ import com.hazelcast.config.security.TokenEncoding;
 import com.hazelcast.config.security.TokenIdentityConfig;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.instance.ProtocolType;
+import com.hazelcast.internal.util.StringUtil;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.query.impl.IndexUtils;
@@ -1013,6 +1014,8 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
                 scheduledExecutorConfig.setMergePolicyConfig(createMergePolicyConfig(child));
             } else if ("capacity".equals(nodeName)) {
                 scheduledExecutorConfig.setCapacity(parseInt(getTextContent(child)));
+            } else if ("capacity-policy".equals(nodeName)) {
+                scheduledExecutorConfig.setCapacityPolicy(ScheduledExecutorConfig.CapacityPolicy.valueOf(getTextContent(child)));
             } else if ("durability".equals(nodeName)) {
                 scheduledExecutorConfig.setDurability(parseInt(getTextContent(child)));
             } else if ("pool-size".equals(nodeName)) {
@@ -1982,7 +1985,10 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
             evictionConfig.setEvictionPolicy(EvictionPolicy.valueOf(upperCaseInternal(getTextContent(evictionPolicy))));
         }
         if (comparatorClassName != null) {
-            evictionConfig.setComparatorClassName(getTextContent(comparatorClassName));
+            String className = getTextContent(comparatorClassName);
+            if (!StringUtil.isNullOrEmptyAfterTrim(className)) {
+                evictionConfig.setComparatorClassName(className);
+            }
         }
 
         try {

@@ -109,10 +109,12 @@ public class ClientQueryCacheRecreationTest extends HazelcastTestSupport {
             map.put(i, i);
         }
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
+        assertTrueEventually(() -> {
+            try {
                 assertEquals(200, queryCache.size());
+            } catch (AssertionError e) {
+                queryCache.tryRecover();
+                throw e;
             }
         });
 
@@ -151,12 +153,7 @@ public class ClientQueryCacheRecreationTest extends HazelcastTestSupport {
             map.put(i, i);
         }
 
-        AssertTask assertTask = new AssertTask() {
-            @Override
-            public void run() {
-                assertEquals(90, entryAddedCounter.get());
-            }
-        };
+        AssertTask assertTask = () -> assertEquals(90, entryAddedCounter.get());
 
         assertTrueEventually(assertTask);
         assertTrueAllTheTime(assertTask, 3);

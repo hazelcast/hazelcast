@@ -196,7 +196,7 @@ public class ClientConnection implements Connection {
             logger.warning("Exception while closing connection" + e.getMessage());
         }
 
-        connectionManager.onClose(this);
+        connectionManager.onConnectionClose(this);
     }
 
     private void logClose() {

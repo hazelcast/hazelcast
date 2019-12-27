@@ -19,6 +19,8 @@ package com.hazelcast.scheduledexecutor.impl;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.scheduledexecutor.DuplicateTaskException;
+import com.hazelcast.scheduledexecutor.IScheduledExecutorService;
+import com.hazelcast.scheduledexecutor.IScheduledFuture;
 import com.hazelcast.scheduledexecutor.ScheduledTaskHandler;
 import com.hazelcast.scheduledexecutor.ScheduledTaskStatistics;
 import com.hazelcast.scheduledexecutor.StaleTaskException;
@@ -37,7 +39,6 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
@@ -69,27 +70,46 @@ public class ScheduledExecutorContainer {
 
     private final int durability;
 
-    private final int capacity;
+    /**
+     * Permits are acquired through two different places
+     * a. When a task is scheduled by the user-facing API
+     *      ie. {@link IScheduledExecutorService#schedule(Runnable, long, TimeUnit)}
+     *      whereas the permit policy is enforced, rejecting new tasks once the capacity is reached.
+     * b. When a task is promoted (ie. migration finished)
+     *      whereas the permit policy is not-enforced, meaning that actual task count might be more than the configured capacity,
+     *      but that is purposefully done to prevent any data-loss during node/cluster failures.
+     *
+     * Permits are released similarly through two different places
+     * a. When a task is disposed by user-facing API
+     *      ie. {@link IScheduledFuture#dispose()} or {@link IScheduledExecutorService#destroy()}
+     * b. When a task is suspended (ie. migration started / roll-backed)
+     * Note: Permit releases are done, only if the task was previously active
+     *  (ie. {@link ScheduledTaskDescriptor#status == {@link Status#ACTIVE}}
+     *
+     * As a result, {@link #tasks} size will be inconsistent with the number of acquired permits at times.
+     */
+    private final CapacityPermit permit;
 
-    ScheduledExecutorContainer(String name, int partitionId, NodeEngine nodeEngine, int durability, int capacity) {
-        this(name, partitionId, nodeEngine, durability, capacity, new ConcurrentHashMap<>());
+    ScheduledExecutorContainer(String name, int partitionId, NodeEngine nodeEngine, CapacityPermit permit,
+                               int durability) {
+        this(name, partitionId, nodeEngine, permit, durability, new ConcurrentHashMap<>());
     }
 
-    ScheduledExecutorContainer(String name, int partitionId, NodeEngine nodeEngine, int durability, int capacity,
-                               ConcurrentMap<String, ScheduledTaskDescriptor> tasks) {
+    ScheduledExecutorContainer(String name, int partitionId, NodeEngine nodeEngine, CapacityPermit permit,
+                               int durability, ConcurrentMap<String, ScheduledTaskDescriptor> tasks) {
         this.logger = nodeEngine.getLogger(getClass());
         this.name = name;
         this.nodeEngine = nodeEngine;
         this.executionService = nodeEngine.getExecutionService();
         this.partitionId = partitionId;
         this.durability = durability;
-        this.capacity = capacity;
+        this.permit = permit;
         this.tasks = tasks;
     }
 
     public ScheduledFuture schedule(TaskDefinition definition) {
         checkNotDuplicateTask(definition.getName());
-        checkNotAtCapacity();
+        acquirePermit(false);
         return createContextAndSchedule(definition);
     }
 
@@ -133,11 +153,11 @@ public class ScheduledExecutorContainer {
     public void destroy() {
         log(FINEST, "Destroying container...");
 
-        for (ScheduledTaskDescriptor descriptor : tasks.values()) {
+        for (String task : tasks.keySet()) {
             try {
-                descriptor.cancel(true);
+                dispose(task);
             } catch (Exception ex) {
-                log(WARNING, descriptor.getDefinition().getName(), "Error while destroying", ex);
+                log(WARNING, task, "Error while destroying", ex);
             }
         }
     }
@@ -146,10 +166,12 @@ public class ScheduledExecutorContainer {
         checkNotStaleTask(taskName);
         log(FINEST, taskName, "Disposing");
 
-        ScheduledTaskDescriptor descriptor = tasks.get(taskName);
-        descriptor.cancel(true);
+        ScheduledTaskDescriptor descriptor = tasks.remove(taskName);
+        if (descriptor.isActive()) {
+            releasePermit();
+        }
 
-        tasks.remove(taskName);
+        descriptor.cancel(true);
     }
 
     public void enqueueSuspended(TaskDefinition definition) {
@@ -161,7 +183,8 @@ public class ScheduledExecutorContainer {
             log(FINEST, "Enqueuing suspended, i.e., backup: " + descriptor.getDefinition());
         }
 
-        if (force || !tasks.containsKey(descriptor.getDefinition().getName())) {
+        boolean keyExists = tasks.containsKey(descriptor.getDefinition().getName());
+        if (force || !keyExists) {
             tasks.put(descriptor.getDefinition().getName(), descriptor);
         }
     }
@@ -228,9 +251,16 @@ public class ScheduledExecutorContainer {
         for (ScheduledTaskDescriptor descriptor : tasks.values()) {
             try {
                 log(FINEST, descriptor.getDefinition().getName(), "Attempting promotion");
-                if (descriptor.shouldSchedule()) {
+                boolean wasActive = descriptor.isActive();
+                if (descriptor.canBeScheduled()) {
                     doSchedule(descriptor);
                 }
+
+                if (!wasActive) {
+                    acquirePermit(true);
+                }
+
+                descriptor.setActive();
             } catch (Exception e) {
                 throw rethrow(e);
             }
@@ -283,6 +313,18 @@ public class ScheduledExecutorContainer {
         return null;
     }
 
+    private void releasePermit() {
+        permit.release();
+    }
+
+    private void acquirePermit(boolean quietly) {
+        if (quietly) {
+            permit.acquireQuietly();
+        } else {
+            permit.acquire();
+        }
+    }
+
     ScheduledFuture createContextAndSchedule(TaskDefinition definition) {
         if (logger.isFinestEnabled()) {
             log(FINEST, "Creating new task context for " + definition);
@@ -333,9 +375,11 @@ public class ScheduledExecutorContainer {
             // to the Executor's Future, hence, we have no access on the runner thread to interrupt. In this case
             // the line below is only cancelling future runs.
             try {
-                descriptor.suspend();
+                if (descriptor.suspend()) {
+                    releasePermit();
+                }
                 if (logger.isFinestEnabled()) {
-                    log(FINEST, descriptor.getDefinition().getName(), "Cancelled");
+                    log(FINEST, descriptor.getDefinition().getName(), "Suspended");
                 }
             } catch (Exception ex) {
                 throw rethrow(ex);
@@ -347,14 +391,6 @@ public class ScheduledExecutorContainer {
         if (tasks.containsKey(taskName)) {
             throw new DuplicateTaskException(
                     "There is already a task " + "with the same name '" + taskName + "' in '" + getName() + "'");
-        }
-    }
-
-    void checkNotAtCapacity() {
-        if (capacity != 0 && tasks.size() >= capacity) {
-            throw new RejectedExecutionException(
-                    "Maximum capacity (" + capacity + ") of tasks reached, " + "for scheduled executor (" + name + "). "
-                            + "Reminder that tasks must be disposed if not needed.");
         }
     }
 

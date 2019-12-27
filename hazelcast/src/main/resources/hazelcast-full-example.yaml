@@ -846,6 +846,9 @@ hazelcast:
   # * "capacity":
   #     Capacity of the scheduled executor. The default value is 100.
   #     This is the maximum number of tasks for a given scheduled executor on a particular partition.
+  # * "capacity-policy":
+  #     The active policy for the capacity setting. Default is PER_NODE
+  #     Available options (PER_PARTITION, PER_NODE)
   # * "split-brain-protection-ref":
   #     Adds the Split Brain Protection for this data-structure which you configure using the "split-brain-protection" element. You should set
   #     the "split-brain-protection-ref"'s value as the "split-brain-protection"'s name.
@@ -858,6 +861,7 @@ hazelcast:
       pool-size: 16
       durability: 1
       capacity: 100
+      capacity-policy: PER_NODE
       split-brain-protection-ref: splitBrainProtectionRuleWithThreeNodes
       merge-policy:
         batch-size: 100

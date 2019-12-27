@@ -16,9 +16,9 @@
 
 package com.hazelcast.client.impl.spi;
 
-import com.hazelcast.partition.Partition;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.partition.Partition;
 
 import javax.annotation.Nonnull;
 
@@ -29,13 +29,31 @@ import javax.annotation.Nonnull;
  */
 public interface ClientPartitionService {
 
+    /**
+     * @param partitionId
+     * @return the owner of the partition or null if a partition is not assigned yet
+     */
     Address getPartitionOwner(int partitionId);
 
+    /**
+     * @return the partition id associated with given data
+     * @throws com.hazelcast.spi.exception.RetryableHazelcastException if partition table is not arrived yet
+     */
     int getPartitionId(@Nonnull Data key);
 
+    /**
+     * @return the partition id associated with given Object
+     * @throws com.hazelcast.spi.exception.RetryableHazelcastException if partition table is not arrived yet
+     */
     int getPartitionId(@Nonnull Object key);
 
+    /**
+     * If partition table is not fetched yet, this method returns zero
+     *
+     * @return the partition count
+     */
     int getPartitionCount();
 
     Partition getPartition(int partitionId);
+
 }

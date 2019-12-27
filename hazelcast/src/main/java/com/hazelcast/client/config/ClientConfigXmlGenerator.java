@@ -368,6 +368,7 @@ public final class ClientConfigXmlGenerator {
             String mapName = entry.getKey();
             Map<String, QueryCacheConfig> queryCachesPerMap = entry.getValue();
             for (QueryCacheConfig queryCache : queryCachesPerMap.values()) {
+                EvictionConfig evictionConfig = queryCache.getEvictionConfig();
                 gen.open("query-cache", "mapName", mapName, "name", queryCache.getName())
                         .node("include-value", queryCache.isIncludeValue())
                         .node("in-memory-format", queryCache.getInMemoryFormat())
@@ -376,10 +377,11 @@ public final class ClientConfigXmlGenerator {
                         .node("delay-seconds", queryCache.getDelaySeconds())
                         .node("batch-size", queryCache.getBatchSize())
                         .node("buffer-size", queryCache.getBufferSize())
-                        .node("eviction", null, "size", queryCache.getEvictionConfig().getSize(),
-                                "max-size-policy", queryCache.getEvictionConfig().getMaxSizePolicy(),
-                                "eviction-policy", queryCache.getEvictionConfig().getEvictionPolicy(),
-                                "comparator-class-name", queryCache.getEvictionConfig().getComparatorClassName());
+                        .node("eviction", null, "size", evictionConfig.getSize(),
+                                "max-size-policy", evictionConfig.getMaxSizePolicy(),
+                                "eviction-policy", evictionConfig.getEvictionPolicy(),
+                                "comparator-class-name",
+                            classNameOrImplClass(evictionConfig.getComparatorClassName(), evictionConfig.getComparator()));
                 queryCachePredicate(gen, queryCache.getPredicateConfig());
                 entryListeners(gen, queryCache.getEntryListenerConfigs());
                 IndexUtils.generateXml(gen, queryCache.getIndexConfigs());
@@ -554,7 +556,8 @@ public final class ClientConfigXmlGenerator {
                 .node("eviction", null, "size", eviction.getSize(),
                         "max-size-policy", eviction.getMaxSizePolicy(),
                         "eviction-policy", eviction.getEvictionPolicy(),
-                        "comparator-class-name", eviction.getComparatorClassName())
+                        "comparator-class-name", classNameOrImplClass(
+                            eviction.getComparatorClassName(), eviction.getComparator()))
                 .node("preloader", null, "enabled", preloader.isEnabled(),
                         "directory", preloader.getDirectory(),
                         "store-initial-delay-seconds", preloader.getStoreInitialDelaySeconds(),

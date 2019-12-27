@@ -33,6 +33,11 @@ public interface PartitionLostEvent extends PartitionEvent {
     int getLostBackupCount();
 
     /**
+     * Returns true if all replicas of a partition are lost
+     */
+    boolean allReplicasInPartitionLost();
+
+    /**
      * Returns the address of the node that dispatches the event
      *
      * @return the address of the node that dispatches the event

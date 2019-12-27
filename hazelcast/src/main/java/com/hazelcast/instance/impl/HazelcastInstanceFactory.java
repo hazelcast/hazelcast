@@ -20,17 +20,16 @@ import com.hazelcast.cluster.Member;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.config.XmlConfigBuilder;
-import com.hazelcast.internal.config.XmlConfigLocator;
 import com.hazelcast.config.YamlConfigBuilder;
-import com.hazelcast.internal.config.YamlConfigLocator;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.internal.config.XmlConfigLocator;
+import com.hazelcast.internal.config.YamlConfigLocator;
 import com.hazelcast.internal.jmx.ManagementService;
+import com.hazelcast.internal.util.ExceptionUtil;
 import com.hazelcast.internal.util.ModularJavaUtils;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.spi.properties.ClusterProperty;
-import com.hazelcast.internal.util.ExceptionUtil;
 
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -40,9 +39,9 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static com.hazelcast.core.LifecycleEvent.LifecycleState.STARTED;
 import static com.hazelcast.internal.config.DeclarativeConfigUtil.SYSPROP_MEMBER_CONFIG;
 import static com.hazelcast.internal.config.DeclarativeConfigUtil.validateSuffixInSystemProperty;
-import static com.hazelcast.core.LifecycleEvent.LifecycleState.STARTED;
 import static com.hazelcast.internal.util.EmptyStatement.ignore;
 import static com.hazelcast.internal.util.Preconditions.checkHasText;
 import static com.hazelcast.internal.util.SetUtil.createHashSet;
@@ -61,7 +60,7 @@ public final class HazelcastInstanceFactory {
     private static final int ADDITIONAL_SLEEP_SECONDS_FOR_NON_FIRST_MEMBERS = 4;
 
     private static final AtomicInteger FACTORY_ID_GEN = new AtomicInteger();
-    private static final ConcurrentMap<String, InstanceFuture> INSTANCE_MAP = new ConcurrentHashMap<String, InstanceFuture>(5);
+    private static final ConcurrentMap<String, InstanceFuture> INSTANCE_MAP = new ConcurrentHashMap<>(5);
 
     static {
         ModularJavaUtils.checkJavaInternalAccess(Logger.getLogger(HazelcastInstanceFactory.class));
@@ -168,7 +167,7 @@ public final class HazelcastInstanceFactory {
         if (propertyValue == null) {
             propertyValue = ClusterProperty.MOBY_NAMING_ENABLED.getDefaultValue();
         }
-        Boolean useMobyNaming = Boolean.valueOf(propertyValue);
+        boolean useMobyNaming = Boolean.parseBoolean(propertyValue);
         int instanceNum = FACTORY_ID_GEN.incrementAndGet();
         String name;
         if (useMobyNaming) {
@@ -310,7 +309,7 @@ public final class HazelcastInstanceFactory {
     }
 
     private static void shutdownAll(boolean terminate) {
-        List<HazelcastInstanceProxy> instances = new LinkedList<HazelcastInstanceProxy>();
+        List<HazelcastInstanceProxy> instances = new LinkedList<>();
         for (InstanceFuture future : INSTANCE_MAP.values()) {
             try {
                 HazelcastInstanceProxy instanceProxy = future.get();
@@ -323,11 +322,7 @@ public final class HazelcastInstanceFactory {
         INSTANCE_MAP.clear();
         OutOfMemoryErrorDispatcher.clearServers();
         ManagementService.shutdownAll(instances);
-        Collections.sort(instances, new Comparator<HazelcastInstanceProxy>() {
-            public int compare(HazelcastInstanceProxy o1, HazelcastInstanceProxy o2) {
-                return o1.getName().compareTo(o2.getName());
-            }
-        });
+        instances.sort(Comparator.comparing(HazelcastInstanceProxy::getName));
         for (HazelcastInstanceProxy proxy : instances) {
             if (terminate) {
                 proxy.getLifecycleService().terminate();

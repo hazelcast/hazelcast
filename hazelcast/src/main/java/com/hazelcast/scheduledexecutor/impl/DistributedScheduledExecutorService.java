@@ -50,6 +50,7 @@ import java.util.UUID;
 import java.util.WeakHashMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.hazelcast.internal.config.ConfigValidator.checkScheduledExecutorConfig;
 import static com.hazelcast.internal.util.ConcurrencyUtil.getOrPutSynchronized;
@@ -68,10 +69,15 @@ public class DistributedScheduledExecutorService
 
     public static final String SERVICE_NAME = "hz:impl:scheduledExecutorService";
     public static final int MEMBER_BIN = -1;
+    public static final CapacityPermit NOOP_PERMIT = new NoopCapacityPermit();
+
+    //Testing only
+    static final AtomicBoolean FAIL_MIGRATIONS = new AtomicBoolean(false);
 
     private static final Object NULL_OBJECT = new Object();
 
     private final ConcurrentMap<String, Boolean> shutdownExecutors = new ConcurrentHashMap<>();
+    private final ConcurrentMap<String, CapacityPermit> permits = new ConcurrentHashMap<>();
     private final Set<ScheduledFutureProxy> lossListeners = synchronizedSet(newSetFromMap(new WeakHashMap<>()));
 
     private final ConcurrentMap<String, Object> splitBrainProtectionConfigCache = new ConcurrentHashMap<>();
@@ -122,7 +128,7 @@ public class DistributedScheduledExecutorService
     public void reset() {
         shutdown(true);
 
-        memberBin = new ScheduledExecutorMemberBin(nodeEngine);
+        memberBin = new ScheduledExecutorMemberBin(nodeEngine, this);
 
         // Keep using the public API due to the benefit of getting events on all partitions and not just local
         if (partitionLostRegistration == null) {
@@ -133,13 +139,14 @@ public class DistributedScheduledExecutorService
             if (partitions[partitionId] != null) {
                 partitions[partitionId].destroy();
             }
-            partitions[partitionId] = new ScheduledExecutorPartition(nodeEngine, partitionId);
+            partitions[partitionId] = new ScheduledExecutorPartition(nodeEngine, this, partitionId);
         }
     }
 
     @Override
     public void shutdown(boolean terminate) {
         shutdownExecutors.clear();
+        permits.clear();
 
         if (memberBin != null) {
             memberBin.destroy();
@@ -154,6 +161,10 @@ public class DistributedScheduledExecutorService
                 partition.destroy();
             }
         }
+    }
+
+    CapacityPermit permitFor(String name, ScheduledExecutorConfig config) {
+        return permits.computeIfAbsent(name, n -> new MemberCapacityPermit(n, config.getCapacity()));
     }
 
     void addLossListener(ScheduledFutureProxy future) {
@@ -204,6 +215,10 @@ public class DistributedScheduledExecutorService
 
     @Override
     public void beforeMigration(PartitionMigrationEvent event) {
+        if (FAIL_MIGRATIONS.getAndSet(false)) {
+            throw new RuntimeException();
+        }
+
         ScheduledExecutorPartition partition = partitions[event.getPartitionId()];
         if (event.getMigrationEndpoint() == MigrationEndpoint.SOURCE && event.getCurrentReplicaIndex() == 0) {
             // this is the partition owner at the beginning of the migration
@@ -241,6 +256,7 @@ public class DistributedScheduledExecutorService
     }
 
     private void resetPartitionOrMemberBinContainer(String name) {
+        permits.remove(name);
         if (memberBin != null) {
             memberBin.destroyContainer(name);
         }

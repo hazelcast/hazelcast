@@ -18,11 +18,13 @@ package com.hazelcast.internal.nearcache.impl.preloader;
 
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.internal.nio.IOUtil;
+import com.hazelcast.internal.util.EmptyStatement;
 import com.hazelcast.logging.ILogger;
 
 import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
+import java.nio.channels.ClosedChannelException;
 import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
 import java.nio.channels.OverlappingFileLockException;
@@ -46,7 +48,21 @@ class NearCachePreloaderLock {
     }
 
     void release() {
-        releaseInternal(lock, channel);
+        try {
+            lock.release();
+        } catch (ClosedChannelException e) {
+            EmptyStatement.ignore(e);
+        } catch (IOException e) {
+            logger.severe("Problem while releasing the lock on " + lockFile, e);
+        }
+
+        try {
+            channel.close();
+        } catch (IOException e) {
+            logger.severe("Problem while closing the channel " + lockFile, e);
+        } finally {
+            IOUtil.delete(lockFile);
+        }
     }
 
     // package private for testing
@@ -68,18 +84,6 @@ class NearCachePreloaderLock {
             if (fileLock == null) {
                 closeResource(channel);
             }
-        }
-    }
-
-    // package private for testing
-    void releaseInternal(FileLock lock, FileChannel channel) {
-        try {
-            lock.release();
-            channel.close();
-        } catch (IOException e) {
-            logger.severe("Problem while releasing the lock and closing channel on " + lockFile, e);
-        } finally {
-            IOUtil.delete(lockFile);
         }
     }
 

@@ -91,18 +91,6 @@ public class TransactionContextProxy implements ClientTransactionContext {
     }
 
     @Override
-    public void suspendTransaction() {
-        // TODO: implemet
-        throw new UnsupportedOperationException("Not implemented yet.");
-    }
-
-    @Override
-    public void resumeTransaction() {
-        // TODO: implemet
-        throw new UnsupportedOperationException("Not implemented yet.");
-    }
-
-    @Override
     public <K, V> TransactionalMap<K, V> getMap(String name) {
         return getTransactionalObject(MapService.SERVICE_NAME, name);
     }

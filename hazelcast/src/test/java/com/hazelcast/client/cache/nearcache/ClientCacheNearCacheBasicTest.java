@@ -27,6 +27,7 @@ import com.hazelcast.config.CacheConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.internal.adapter.DataStructureAdapter;
 import com.hazelcast.internal.adapter.DataStructureAdapterMethod;
 import com.hazelcast.internal.adapter.ICacheCacheLoader;
 import com.hazelcast.internal.adapter.ICacheDataStructureAdapter;
@@ -40,13 +41,17 @@ import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
+import org.hamcrest.Matchers;
 import org.junit.After;
+import org.junit.Assume;
 import org.junit.Before;
+import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import javax.cache.configuration.FactoryBuilder;
 import javax.cache.spi.CachingProvider;
+import java.util.concurrent.CompletableFuture;
 
 import static com.hazelcast.cache.CacheTestSupport.createClientCachingProvider;
 import static com.hazelcast.cache.CacheTestSupport.createServerCachingProvider;
@@ -58,6 +63,7 @@ import static com.hazelcast.config.NearCacheConfig.DEFAULT_MEMORY_FORMAT;
 import static com.hazelcast.config.NearCacheConfig.DEFAULT_SERIALIZE_KEYS;
 import static com.hazelcast.internal.nearcache.NearCacheTestUtils.createNearCacheConfig;
 import static com.hazelcast.internal.nearcache.NearCacheTestUtils.getBaseConfig;
+import static org.junit.Assert.assertEquals;
 
 /**
  * Basic Near Cache tests for {@link ICache} on Hazelcast clients.
@@ -77,6 +83,24 @@ public class ClientCacheNearCacheBasicTest extends AbstractNearCacheBasicTest<Da
     @After
     public void tearDown() {
         hazelcastFactory.terminateAll();
+    }
+
+    @Test
+    public void putAsyncToCacheAndThenGetFromClientNearCacheImmediately() {
+        Assume.assumeThat("Tests behaviour specific to CACHE_ON_UPDATE policy",
+                nearCacheConfig.getLocalUpdatePolicy(),
+                Matchers.equalTo(NearCacheConfig.LocalUpdatePolicy.CACHE_ON_UPDATE));
+        // putAsync future is completed -> near cache contains the new value only with CACHE_ON_UPDATE policy
+        NearCacheTestContext context = createContext(false);
+
+        for (int i = 0; i < 10 * DEFAULT_RECORD_COUNT; i++) {
+            Object key = context.nearCacheConfig.isSerializeKeys()
+                    ? context.serializationService.toData(i) : i;
+            String expectedValue = "value-" + i;
+            CompletableFuture f = context.nearCacheAdapter.putAsync(i, expectedValue).toCompletableFuture();
+            f.join();
+            assertEquals(expectedValue, context.nearCache.get(key));
+        }
     }
 
     @Override
@@ -163,5 +187,10 @@ public class ClientCacheNearCacheBasicTest extends AbstractNearCacheBasicTest<Da
                 .setNearCache(nearCache)
                 .setNearCacheManager(nearCacheManager)
                 .setCacheManager(cacheManager);
+    }
+
+    @Test
+    public void whenGetAndReplaceIsUsedWithCacheOnUpdate_thenNearCacheShouldBePopulated() {
+        super.whenEntryIsAddedWithCacheOnUpdate_thenNearCacheShouldBePopulated(DataStructureAdapter.DataStructureMethods.GET_AND_REPLACE);
     }
 }

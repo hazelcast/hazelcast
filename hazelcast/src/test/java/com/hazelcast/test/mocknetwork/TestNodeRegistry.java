@@ -42,7 +42,7 @@ import static org.junit.Assert.assertFalse;
 
 public final class TestNodeRegistry {
 
-    private final ConcurrentMap<Address, Node> nodes = new ConcurrentHashMap<Address, Node>(10);
+    private final ConcurrentMap<Address, Node> nodes = new ConcurrentHashMap<>(10);
     private final Collection<Address> joinAddresses;
     private final List<String> nodeExtensionPriorityList;
 

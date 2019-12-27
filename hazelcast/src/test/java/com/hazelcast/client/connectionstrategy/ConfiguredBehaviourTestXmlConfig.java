@@ -73,7 +73,6 @@ public class ConfiguredBehaviourTestXmlConfig extends ClientTestSupport {
 
     @Test
     public void testReconnectModeASYNCSingleMemberStartLateXmlConfig() {
-        final CountDownLatch reconnectedLatch = new CountDownLatch(1);
 
         HazelcastInstance hazelcastInstance = hazelcastFactory.newHazelcastInstance();
 
@@ -84,20 +83,13 @@ public class ConfiguredBehaviourTestXmlConfig extends ClientTestSupport {
 
         assertTrue(client.getLifecycleService().isRunning());
 
+        ReconnectListener reconnectListener = new ReconnectListener();
+        client.getLifecycleService().addLifecycleListener(reconnectListener);
+
         hazelcastInstance.shutdown();
-
-        client.getLifecycleService().addLifecycleListener(new LifecycleListener() {
-            @Override
-            public void stateChanged(LifecycleEvent event) {
-                if (event.getState().equals(CLIENT_CONNECTED)) {
-                    reconnectedLatch.countDown();
-                }
-            }
-        });
-
         hazelcastFactory.newHazelcastInstance();
 
-        assertOpenEventually(reconnectedLatch);
+        assertOpenEventually(reconnectListener.reconnectedLatch);
 
         client.getMap(randomMapName());
     }

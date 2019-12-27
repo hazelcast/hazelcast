@@ -34,6 +34,7 @@ import com.hazelcast.client.impl.protocol.codec.MCGetMemberConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.MCGetSystemPropertiesCodec;
 import com.hazelcast.client.impl.protocol.codec.MCGetThreadDumpCodec;
 import com.hazelcast.client.impl.protocol.codec.MCGetTimedMemberStateCodec;
+import com.hazelcast.client.impl.protocol.codec.MCInterruptHotRestartBackupCodec;
 import com.hazelcast.client.impl.protocol.codec.MCMatchMCConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.MCPollMCEventsCodec;
 import com.hazelcast.client.impl.protocol.codec.MCPromoteLiteMemberCodec;
@@ -46,6 +47,9 @@ import com.hazelcast.client.impl.protocol.codec.MCRunGcCodec;
 import com.hazelcast.client.impl.protocol.codec.MCRunScriptCodec;
 import com.hazelcast.client.impl.protocol.codec.MCShutdownClusterCodec;
 import com.hazelcast.client.impl.protocol.codec.MCShutdownMemberCodec;
+import com.hazelcast.client.impl.protocol.codec.MCTriggerForceStartCodec;
+import com.hazelcast.client.impl.protocol.codec.MCTriggerHotRestartBackupCodec;
+import com.hazelcast.client.impl.protocol.codec.MCTriggerPartialStartCodec;
 import com.hazelcast.client.impl.protocol.codec.MCUpdateMapConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.MCWanSyncMapCodec;
 import com.hazelcast.client.impl.spi.impl.ClientInvocation;
@@ -131,6 +135,7 @@ public class ManagementCenterService {
                 MCChangeClusterStateCodec.encodeRequest(newState.getId()),
                 null
         );
+
         return new ClientDelegatingFuture<>(
                 invocation.invoke(),
                 serializationService,
@@ -212,6 +217,7 @@ public class ManagementCenterService {
                 parameters.getMap(),
                 member.getAddress()
         );
+
         return new ClientDelegatingFuture<>(
                 invocation.invoke(),
                 serializationService,
@@ -232,6 +238,7 @@ public class ManagementCenterService {
                 null,
                 member.getAddress()
         );
+
         return new ClientDelegatingFuture<>(
                 invocation.invoke(),
                 serializationService,
@@ -252,6 +259,7 @@ public class ManagementCenterService {
                 null,
                 member.getAddress()
         );
+
         return new ClientDelegatingFuture<>(
                 invocation.invoke(),
                 serializationService,
@@ -275,6 +283,7 @@ public class ManagementCenterService {
                 null,
                 member.getAddress()
         );
+
         return new ClientDelegatingFuture<>(
                 invocation.invoke(),
                 serializationService,
@@ -367,7 +376,8 @@ public class ManagementCenterService {
                 client,
                 MCGetTimedMemberStateCodec.encodeRequest(),
                 null,
-                member.getAddress());
+                member.getAddress()
+        );
 
         return new ClientDelegatingFuture<>(
                 invocation.invoke(),
@@ -395,6 +405,7 @@ public class ManagementCenterService {
                 null,
                 member.getAddress()
         );
+
         return new ClientDelegatingFuture<>(
                 invocation.invoke(),
                 serializationService,
@@ -428,6 +439,7 @@ public class ManagementCenterService {
                 null,
                 member.getAddress()
         );
+
         return new ClientDelegatingFuture<>(
                 invocation.invoke(),
                 serializationService,
@@ -448,7 +460,8 @@ public class ManagementCenterService {
                 client,
                 MCGetClusterMetadataCodec.encodeRequest(),
                 null,
-                member.getAddress());
+                member.getAddress()
+        );
 
         return new ClientDelegatingFuture<>(
                 invocation.invoke(),
@@ -513,6 +526,7 @@ public class ManagementCenterService {
                 null,
                 member.getAddress()
         );
+
         return new ClientDelegatingFuture<>(
                 invocation.invoke(),
                 serializationService,
@@ -539,6 +553,7 @@ public class ManagementCenterService {
                 null,
                 member.getAddress()
         );
+
         return new ClientDelegatingFuture<>(
                 invocation.invoke(),
                 serializationService,
@@ -555,6 +570,7 @@ public class ManagementCenterService {
      * @param wanPublisherId     ID of the WAN publisher to change state of
      * @param newState           new state for the WAN publisher
      */
+    @SuppressWarnings("unused")
     @Nonnull
     public CompletableFuture<Void> changeWanReplicationState(Member member,
                                                              String wanReplicationName,
@@ -587,6 +603,7 @@ public class ManagementCenterService {
      * @param wanReplicationName name of the WAN replication to clear queues of
      * @param wanPublisherId     ID of the WAN publisher to clear queues of
      */
+    @SuppressWarnings("unused")
     @Nonnull
     public CompletableFuture<Void> clearWanQueues(Member member,
                                                   String wanReplicationName,
@@ -616,6 +633,7 @@ public class ManagementCenterService {
      * @return a {@link CompletableFuture} that holds the IDs for the WAN publishers which were
      * added to the configuration, and the ones that are ignored/not added to the configuration
      */
+    @SuppressWarnings("unused")
     @Nonnull
     public CompletableFuture<AddWanConfigResult> addWanReplicationConfig(MCWanBatchPublisherConfig config) {
         checkNotNull(config);
@@ -656,6 +674,7 @@ public class ManagementCenterService {
      * @param mapName            name of the map to trigger WAN sync on
      * @return a {@link CompletableFuture} that holds the UUID of the synchronization
      */
+    @SuppressWarnings("unused")
     @Nonnull
     public CompletableFuture<UUID> wanSyncMap(String wanReplicationName,
                                               String wanPublisherId,
@@ -674,6 +693,7 @@ public class ManagementCenterService {
      * @param wanPublisherId     ID of the WAN publisher to initiate WAN sync for
      * @return a {@link CompletableFuture} that holds the UUID of the synchronization
      */
+    @SuppressWarnings("unused")
     @Nonnull
     public CompletableFuture<UUID> wanSyncAllMaps(String wanReplicationName,
                                                   String wanPublisherId) {
@@ -711,6 +731,7 @@ public class ManagementCenterService {
      * @param mapName            name of the map to check WAN consistency for
      * @return a {@link CompletableFuture} that holds the UUID of the WAN consistency check
      */
+    @SuppressWarnings("unused")
     @Nonnull
     public CompletableFuture<UUID> checkWanConsistency(String wanReplicationName,
                                                        String wanPublisherId,
@@ -745,7 +766,8 @@ public class ManagementCenterService {
                 client,
                 MCPollMCEventsCodec.encodeRequest(),
                 null,
-                member.getAddress());
+                member.getAddress()
+        );
 
         return new ClientDelegatingFuture<>(
                 invocation.invoke(),
@@ -766,7 +788,8 @@ public class ManagementCenterService {
         ClientInvocation invocation = new ClientInvocation(
                 client,
                 MCGetCPMembersCodec.encodeRequest(),
-                null);
+                null
+        );
 
         return new ClientDelegatingFuture<>(
                 invocation.invoke(),
@@ -793,7 +816,8 @@ public class ManagementCenterService {
                 client,
                 MCPromoteToCPMemberCodec.encodeRequest(),
                 null,
-                member.getAddress());
+                member.getAddress()
+        );
 
         return new ClientDelegatingFuture<>(
                 invocation.invoke(),
@@ -817,7 +841,8 @@ public class ManagementCenterService {
         ClientInvocation invocation = new ClientInvocation(
                 client,
                 MCRemoveCPMemberCodec.encodeRequest(cpMemberUuid),
-                null);
+                null
+        );
 
         return new ClientDelegatingFuture<>(
                 invocation.invoke(),
@@ -843,10 +868,94 @@ public class ManagementCenterService {
                 client,
                 MCResetCPSubsystemCodec.encodeRequest(),
                 null,
-                masterAddress);
+                masterAddress
+        );
 
         return new ClientDelegatingFuture<>(
                 invocation.invoke(),
+                serializationService,
+                clientMessage -> null
+        );
+    }
+
+    /**
+     * Triggers a partial restart process
+     *
+     * @return  a {@link CompletableFuture} that returns true if the partial restart
+     *          was successfully initiated, false otherwise
+     */
+    @SuppressWarnings("unused")
+    @Nonnull
+    public CompletableFuture<Boolean> triggerPartialStart() {
+        ClientInvocation invocation = new ClientInvocation(
+                client,
+                MCTriggerPartialStartCodec.encodeRequest(),
+                null
+        );
+
+        return new ClientDelegatingFuture<>(
+                invocation.invoke(),
+                serializationService,
+                clientMessage -> MCTriggerPartialStartCodec.decodeResponse(clientMessage).result
+        );
+    }
+
+    /**
+     * Forces the cluster to start
+     *
+     * @return  a {@link CompletableFuture} that returns true if the forced start
+     *          was successfully initiated, false otherwise
+     */
+    @SuppressWarnings("unused")
+    @Nonnull
+    public CompletableFuture<Boolean> triggerForceStart() {
+        ClientInvocation invocation = new ClientInvocation(
+                client,
+                MCTriggerForceStartCodec.encodeRequest(),
+                null
+        );
+
+        return new ClientDelegatingFuture<>(invocation.invoke(),
+                serializationService,
+                clientMessage -> MCTriggerForceStartCodec.decodeResponse(clientMessage).result
+        );
+    }
+
+    /**
+     * Triggers the hot restart backup process
+     *
+     * @return an empty {@code CompletableFuture} after the hot restart process started
+     */
+    @SuppressWarnings("unused")
+    @Nonnull
+    public CompletableFuture<Void> triggerHotRestartBackup() {
+        ClientInvocation invocation = new ClientInvocation(
+                client,
+                MCTriggerHotRestartBackupCodec.encodeRequest(),
+                null
+        );
+
+        return new ClientDelegatingFuture<>(invocation.invoke(),
+                serializationService,
+                clientMessage -> null
+        );
+    }
+
+    /**
+     * Interrupts the hot restart backup process
+     *
+     * @return an empty {@code CompletableFuture} after the hot restart process got interrupted
+     */
+    @SuppressWarnings("unused")
+    @Nonnull
+    public CompletableFuture<Void> interruptHotRestartBackup() {
+        ClientInvocation invocation = new ClientInvocation(
+                client,
+                MCInterruptHotRestartBackupCodec.encodeRequest(),
+                null
+        );
+
+        return new ClientDelegatingFuture<>(invocation.invoke(),
                 serializationService,
                 clientMessage -> null
         );

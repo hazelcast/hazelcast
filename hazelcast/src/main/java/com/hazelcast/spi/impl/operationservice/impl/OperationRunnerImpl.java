@@ -72,9 +72,8 @@ import static com.hazelcast.internal.metrics.MetricTarget.MANAGEMENT_CENTER;
 import static com.hazelcast.internal.metrics.ProbeLevel.DEBUG;
 import static com.hazelcast.internal.util.counters.MwCounter.newMwCounter;
 import static com.hazelcast.internal.util.counters.SwCounter.newSwCounter;
-import static com.hazelcast.spi.impl.operationservice.CallStatus.DONE_RESPONSE_ORDINAL;
-import static com.hazelcast.spi.impl.operationservice.CallStatus.DONE_VOID_BACKUP_ORDINAL;
-import static com.hazelcast.spi.impl.operationservice.CallStatus.DONE_VOID_ORDINAL;
+import static com.hazelcast.spi.impl.operationservice.CallStatus.RESPONSE_ORDINAL;
+import static com.hazelcast.spi.impl.operationservice.CallStatus.VOID_ORDINAL;
 import static com.hazelcast.spi.impl.operationservice.CallStatus.OFFLOAD_ORDINAL;
 import static com.hazelcast.spi.impl.operationservice.CallStatus.WAIT_ORDINAL;
 import static com.hazelcast.spi.impl.operationservice.OperationAccessor.setCallerAddress;
@@ -221,12 +220,22 @@ class OperationRunnerImpl extends OperationRunner implements StaticMetricsProvid
         CallStatus callStatus = op.call();
 
         switch (callStatus.ordinal()) {
-            case DONE_RESPONSE_ORDINAL:
-                handleResponse(op);
+            case RESPONSE_ORDINAL:
+                int backupAcks = backupHandler.sendBackups(op);
+                Object response = op.getResponse();
+                if (backupAcks > 0) {
+                    response = new NormalResponse(response, op.getCallId(), backupAcks, op.isUrgent());
+                }
+                try {
+                    op.sendResponse(response);
+                } catch (ResponseAlreadySentException e) {
+                    logOperationError(op, e);
+                }
                 afterRun(op);
                 break;
-            case DONE_VOID_ORDINAL:
-                op.afterRun();
+            case VOID_ORDINAL:
+                backupHandler.sendBackups(op);
+                afterRun(op);
                 break;
             case OFFLOAD_ORDINAL:
                 op.afterRun();
@@ -237,26 +246,8 @@ class OperationRunnerImpl extends OperationRunner implements StaticMetricsProvid
             case WAIT_ORDINAL:
                 nodeEngine.getOperationParker().park((BlockingOperation) op);
                 break;
-            case DONE_VOID_BACKUP_ORDINAL:
-                backupHandler.sendBackups(op);
-                op.afterRun();
-                break;
             default:
                 throw new IllegalStateException();
-        }
-    }
-
-    private void handleResponse(Operation op) throws Exception {
-        int backupAcks = backupHandler.sendBackups(op);
-
-        try {
-            Object response = op.getResponse();
-            if (backupAcks > 0) {
-                response = new NormalResponse(response, op.getCallId(), backupAcks, op.isUrgent());
-            }
-            op.sendResponse(response);
-        } catch (ResponseAlreadySentException e) {
-            logOperationError(op, e);
         }
     }
 

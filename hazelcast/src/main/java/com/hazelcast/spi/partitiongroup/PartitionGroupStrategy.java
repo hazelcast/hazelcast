@@ -16,7 +16,6 @@
 
 package com.hazelcast.spi.partitiongroup;
 
-import com.hazelcast.partition.membergroup.MemberGroup;
 import com.hazelcast.spi.discovery.AbstractDiscoveryStrategy;
 
 /**

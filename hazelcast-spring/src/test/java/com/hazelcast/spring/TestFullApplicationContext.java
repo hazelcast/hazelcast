@@ -711,6 +711,8 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         assertEquals("scheduledExec", testExecConfig.getName());
         assertEquals(10, testExecConfig.getPoolSize());
         assertEquals(5, testExecConfig.getDurability());
+        assertEquals(100, testExecConfig.getCapacity());
+        assertEquals(ScheduledExecutorConfig.CapacityPolicy.PER_PARTITION, testExecConfig.getCapacityPolicy());
         MergePolicyConfig mergePolicyConfig = testExecConfig.getMergePolicyConfig();
         assertNotNull(mergePolicyConfig);
         assertEquals("PassThroughMergePolicy", mergePolicyConfig.getPolicy());
@@ -1035,7 +1037,6 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         SSLConfig sslConfig = config.getNetworkConfig().getSSLConfig();
         assertNotNull(sslConfig);
         assertFalse(sslConfig.isEnabled());
-        assertEquals(DummySSLContextFactory.class.getName(), sslConfig.getFactoryClassName());
         assertEquals(sslContextFactory, sslConfig.getFactoryImplementation());
     }
 
@@ -1044,7 +1045,6 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         SocketInterceptorConfig socketInterceptorConfig = config.getNetworkConfig().getSocketInterceptorConfig();
         assertNotNull(socketInterceptorConfig);
         assertFalse(socketInterceptorConfig.isEnabled());
-        assertEquals(DummySocketInterceptor.class.getName(), socketInterceptorConfig.getClassName());
         assertEquals(socketInterceptor, socketInterceptorConfig.getImplementation());
     }
 
@@ -1263,7 +1263,6 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         SSLConfig sslConfig = vaultConfig.getSSLConfig();
         assertNotNull(sslConfig);
         assertTrue(sslConfig.isEnabled());
-        assertEquals(DummySSLContextFactory.class.getName(), sslConfig.getFactoryClassName());
         assertEquals(sslContextFactory, sslConfig.getFactoryImplementation());
         assertEquals(60, vaultConfig.getPollingInterval());
     }

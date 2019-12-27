@@ -157,13 +157,14 @@ import com.hazelcast.client.impl.protocol.codec.ListSubCodec;
 import com.hazelcast.client.impl.protocol.codec.MCApplyMCConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.MCChangeClusterStateCodec;
 import com.hazelcast.client.impl.protocol.codec.MCChangeClusterVersionCodec;
-import com.hazelcast.client.impl.protocol.codec.MCGetClusterMetadataCodec;
 import com.hazelcast.client.impl.protocol.codec.MCGetCPMembersCodec;
+import com.hazelcast.client.impl.protocol.codec.MCGetClusterMetadataCodec;
 import com.hazelcast.client.impl.protocol.codec.MCGetMapConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.MCGetMemberConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.MCGetSystemPropertiesCodec;
 import com.hazelcast.client.impl.protocol.codec.MCGetThreadDumpCodec;
 import com.hazelcast.client.impl.protocol.codec.MCGetTimedMemberStateCodec;
+import com.hazelcast.client.impl.protocol.codec.MCInterruptHotRestartBackupCodec;
 import com.hazelcast.client.impl.protocol.codec.MCMatchMCConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.MCPollMCEventsCodec;
 import com.hazelcast.client.impl.protocol.codec.MCPromoteLiteMemberCodec;
@@ -176,6 +177,9 @@ import com.hazelcast.client.impl.protocol.codec.MCRunGcCodec;
 import com.hazelcast.client.impl.protocol.codec.MCRunScriptCodec;
 import com.hazelcast.client.impl.protocol.codec.MCShutdownClusterCodec;
 import com.hazelcast.client.impl.protocol.codec.MCShutdownMemberCodec;
+import com.hazelcast.client.impl.protocol.codec.MCTriggerPartialStartCodec;
+import com.hazelcast.client.impl.protocol.codec.MCTriggerForceStartCodec;
+import com.hazelcast.client.impl.protocol.codec.MCTriggerHotRestartBackupCodec;
 import com.hazelcast.client.impl.protocol.codec.MCUpdateMapConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.MapAddEntryListenerCodec;
 import com.hazelcast.client.impl.protocol.codec.MapAddEntryListenerToKeyCodec;
@@ -527,6 +531,10 @@ import com.hazelcast.client.impl.protocol.task.management.GetMemberConfigMessage
 import com.hazelcast.client.impl.protocol.task.management.GetSystemPropertiesMessageTask;
 import com.hazelcast.client.impl.protocol.task.management.GetThreadDumpMessageTask;
 import com.hazelcast.client.impl.protocol.task.management.GetTimedMemberStateMessageTask;
+import com.hazelcast.client.impl.protocol.task.management.HotRestartInterruptBackupMessageTask;
+import com.hazelcast.client.impl.protocol.task.management.HotRestartTriggerBackupMessageTask;
+import com.hazelcast.client.impl.protocol.task.management.HotRestartTriggerForceStartMessageTask;
+import com.hazelcast.client.impl.protocol.task.management.HotRestartTriggerPartialStartMessageTask;
 import com.hazelcast.client.impl.protocol.task.management.MatchMCConfigMessageTask;
 import com.hazelcast.client.impl.protocol.task.management.PollMCEventsMessageTask;
 import com.hazelcast.client.impl.protocol.task.management.PromoteLiteMemberMessageTask;
@@ -1705,6 +1713,14 @@ public class DefaultMessageTaskFactoryProvider implements MessageTaskFactoryProv
                 (cm, con) -> new RemoveCPMemberMessageTask(cm, node, con));
         factories.put(MCResetCPSubsystemCodec.REQUEST_MESSAGE_TYPE,
                 (cm, con) -> new ResetCPSubsystemMessageTask(cm, node, con));
+        factories.put(MCTriggerPartialStartCodec.REQUEST_MESSAGE_TYPE,
+                (cm, con) -> new HotRestartTriggerPartialStartMessageTask(cm, node, con));
+        factories.put(MCTriggerForceStartCodec.REQUEST_MESSAGE_TYPE,
+                (cm, con) -> new HotRestartTriggerForceStartMessageTask(cm, node, con));
+        factories.put(MCTriggerHotRestartBackupCodec.REQUEST_MESSAGE_TYPE,
+                (cm, con) -> new HotRestartTriggerBackupMessageTask(cm, node, con));
+        factories.put(MCInterruptHotRestartBackupCodec.REQUEST_MESSAGE_TYPE,
+                (cm, con) -> new HotRestartInterruptBackupMessageTask(cm, node, con));
     }
 
     @SuppressFBWarnings({"MS_EXPOSE_REP", "EI_EXPOSE_REP"})

@@ -20,6 +20,7 @@ import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.config.MapPartitionLostListenerConfig;
 import com.hazelcast.map.listener.MapPartitionLostListener;
 
+import javax.annotation.Nonnull;
 import java.util.EventListener;
 
 /**
@@ -39,7 +40,7 @@ public class MapPartitionLostListenerConfigReadOnly extends MapPartitionLostList
     }
 
     @Override
-    public ListenerConfig setClassName(String className) {
+    public ListenerConfig setClassName(@Nonnull String className) {
         throw new UnsupportedOperationException("this config is read-only");
     }
 

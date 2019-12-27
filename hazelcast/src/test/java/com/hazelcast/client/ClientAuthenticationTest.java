@@ -19,6 +19,10 @@ package com.hazelcast.client;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.Config;
+import com.hazelcast.instance.impl.DefaultNodeExtension;
+import com.hazelcast.instance.impl.HazelcastInstanceFactory;
+import com.hazelcast.instance.impl.Node;
+import com.hazelcast.instance.impl.NodeExtension;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.security.SimpleTokenCredentials;
@@ -26,6 +30,7 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.test.mocknetwork.MockNodeContext;
 import org.junit.After;
 import org.junit.Rule;
 import org.junit.Test;
@@ -78,6 +83,27 @@ public class ClientAuthenticationTest extends HazelcastTestSupport {
     @Test
     public void testAuthentication_with_mcModeEnabled() {
         hazelcastFactory.newHazelcastInstance();
+
+        ClientConfig clientConfig = new ClientConfig();
+        clientConfig.setProperty(MC_CLIENT_MODE_PROP.getName(), "true");
+        // if the client is able to connect, it's a pass
+        hazelcastFactory.newHazelcastClient(clientConfig);
+    }
+
+    @Test
+    public void testAuthentication_with_mcModeEnabled_when_clusterStart_isNotComplete() {
+        HazelcastInstanceFactory.newHazelcastInstance(new Config(), randomName(),
+                new MockNodeContext(hazelcastFactory.getRegistry(), hazelcastFactory.nextAddress()) {
+                    @Override
+                    public NodeExtension createNodeExtension(Node node) {
+                        return new DefaultNodeExtension(node) {
+                            @Override
+                            public boolean isStartCompleted() {
+                                return false;
+                            }
+                        };
+                    }
+                });
 
         ClientConfig clientConfig = new ClientConfig();
         clientConfig.setProperty(MC_CLIENT_MODE_PROP.getName(), "true");

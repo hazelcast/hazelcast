@@ -24,10 +24,15 @@ import com.hazelcast.spi.discovery.DiscoveryStrategy;
 import com.hazelcast.spi.discovery.NodeFilter;
 import com.hazelcast.spi.discovery.integration.DiscoveryServiceProvider;
 
+import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Objects;
+
+import static com.hazelcast.internal.util.Preconditions.checkHasText;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 /**
  * This configuration class describes the top-level config of the discovery
@@ -35,7 +40,7 @@ import java.util.List;
  */
 public class DiscoveryConfig implements IdentifiedDataSerializable {
 
-    private List<DiscoveryStrategyConfig> discoveryStrategyConfigs = new ArrayList<DiscoveryStrategyConfig>();
+    private List<DiscoveryStrategyConfig> discoveryStrategyConfigs = new ArrayList<>();
     private DiscoveryServiceProvider discoveryServiceProvider;
     private NodeFilter nodeFilter;
     private String nodeFilterClass;
@@ -52,7 +57,7 @@ public class DiscoveryConfig implements IdentifiedDataSerializable {
     }
 
     public DiscoveryConfig(DiscoveryConfig discoveryConfig) {
-        discoveryStrategyConfigs = new ArrayList<DiscoveryStrategyConfig>(discoveryConfig.discoveryStrategyConfigs);
+        discoveryStrategyConfigs = new ArrayList<>(discoveryConfig.discoveryStrategyConfigs);
         discoveryServiceProvider = discoveryConfig.discoveryServiceProvider;
         nodeFilter = discoveryConfig.nodeFilter;
         nodeFilterClass = discoveryConfig.nodeFilterClass;
@@ -71,8 +76,9 @@ public class DiscoveryConfig implements IdentifiedDataSerializable {
         return nodeFilter;
     }
 
-    public DiscoveryConfig setNodeFilter(NodeFilter nodeFilter) {
-        this.nodeFilter = nodeFilter;
+    public DiscoveryConfig setNodeFilter(@Nonnull NodeFilter nodeFilter) {
+        this.nodeFilter = checkNotNull(nodeFilter, "Node filter cannot be null!");
+        this.nodeFilterClass = null;
         return this;
     }
 
@@ -80,8 +86,9 @@ public class DiscoveryConfig implements IdentifiedDataSerializable {
         return nodeFilterClass;
     }
 
-    public DiscoveryConfig setNodeFilterClass(String nodeFilterClass) {
-        this.nodeFilterClass = nodeFilterClass;
+    public DiscoveryConfig setNodeFilterClass(@Nonnull String nodeFilterClass) {
+        this.nodeFilterClass = checkHasText(nodeFilterClass, "Node filter class name must contain text");
+        this.nodeFilter = null;
         return this;
     }
 
@@ -111,7 +118,7 @@ public class DiscoveryConfig implements IdentifiedDataSerializable {
      */
     public DiscoveryConfig setDiscoveryStrategyConfigs(List<DiscoveryStrategyConfig> discoveryStrategyConfigs) {
         this.discoveryStrategyConfigs = discoveryStrategyConfigs == null
-                ? new ArrayList<DiscoveryStrategyConfig>(1)
+                ? new ArrayList<>(1)
                 : discoveryStrategyConfigs;
         return this;
     }
@@ -167,7 +174,6 @@ public class DiscoveryConfig implements IdentifiedDataSerializable {
     }
 
     @Override
-    @SuppressWarnings("checkstyle:npathcomplexity")
     public boolean equals(Object o) {
         if (this == o) {
             return true;
@@ -178,27 +184,14 @@ public class DiscoveryConfig implements IdentifiedDataSerializable {
 
         DiscoveryConfig that = (DiscoveryConfig) o;
 
-        if (!discoveryStrategyConfigs.equals(that.discoveryStrategyConfigs)) {
-            return false;
-        }
-
-        if (discoveryServiceProvider != null
-                ? !discoveryServiceProvider.equals(that.discoveryServiceProvider)
-                : that.discoveryServiceProvider != null) {
-            return false;
-        }
-        if (nodeFilter != null ? !nodeFilter.equals(that.nodeFilter) : that.nodeFilter != null) {
-            return false;
-        }
-        return nodeFilterClass != null ? nodeFilterClass.equals(that.nodeFilterClass) : that.nodeFilterClass == null;
+        return discoveryStrategyConfigs.equals(that.discoveryStrategyConfigs)
+            && Objects.equals(discoveryServiceProvider, that.discoveryServiceProvider)
+            && Objects.equals(nodeFilterClass, that.nodeFilterClass)
+            && Objects.equals(nodeFilter, that.nodeFilter);
     }
 
     @Override
     public int hashCode() {
-        int result = discoveryStrategyConfigs.hashCode();
-        result = 31 * result + (discoveryServiceProvider != null ? discoveryServiceProvider.hashCode() : 0);
-        result = 31 * result + (nodeFilter != null ? nodeFilter.hashCode() : 0);
-        result = 31 * result + (nodeFilterClass != null ? nodeFilterClass.hashCode() : 0);
-        return result;
+        return Objects.hash(discoveryStrategyConfigs, discoveryServiceProvider, nodeFilterClass, nodeFilter);
     }
 }

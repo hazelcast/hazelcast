@@ -575,7 +575,9 @@ public abstract class AbstractHazelcastBeanDefinitionParser extends AbstractBean
             String implementation = getTextContent(implNode).trim();
             isTrue(!className.isEmpty() || !implementation.isEmpty(),
                     "One of 'class-name' or 'implementation' attributes is required to create NodeFilter!");
-            discoveryConfigBuilder.addPropertyValue("nodeFilterClass", className);
+            if (!className.isEmpty()) {
+                discoveryConfigBuilder.addPropertyValue("nodeFilterClass", className);
+            }
             if (!implementation.isEmpty()) {
                 discoveryConfigBuilder.addPropertyReference("nodeFilter", implementation);
             }

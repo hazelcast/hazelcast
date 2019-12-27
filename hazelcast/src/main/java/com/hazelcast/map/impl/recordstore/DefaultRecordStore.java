@@ -789,7 +789,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         Data key = mergingEntry.getKey();
         Record record = getRecordOrNull(key, now, false);
         Object newValue;
-        Object oldValue = null;
+        Object oldValue;
         if (record == null) {
             newValue = mergePolicy.merge(mergingEntry, null);
             if (newValue == null) {

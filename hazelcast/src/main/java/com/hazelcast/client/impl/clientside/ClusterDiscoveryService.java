@@ -43,19 +43,20 @@ public class ClusterDiscoveryService {
         this.lifecycleService = lifecycleService;
     }
 
-    public void tryNextCluster(BiFunction<CandidateClusterContext, CandidateClusterContext, Boolean> function) {
-        if (maxTryCount == 0) {
-            return;
-        }
-
+    public boolean tryNextCluster(BiFunction<CandidateClusterContext, CandidateClusterContext, Boolean> function) {
         int tryCount = 0;
-        do {
+
+        while (lifecycleService.isRunning() && tryCount++ < maxTryCount) {
+
             for (int i = 0; i < candidateClusters.size(); i++) {
                 if (function.apply(current(), next())) {
-                    return;
+                    return true;
                 }
             }
-        } while (lifecycleService.isRunning() && ++tryCount < maxTryCount);
+
+        }
+
+        return false;
     }
 
     public CandidateClusterContext current() {

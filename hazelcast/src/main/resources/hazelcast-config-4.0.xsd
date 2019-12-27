@@ -1655,7 +1655,25 @@
                 <xs:annotation>
                     <xs:documentation>
                         The maximum number of tasks that a scheduler can have at any given point
-                        in time per partition.
+                        in time as per capacity-policy.
+                        Once the capacity is reached, new tasks will be rejected.
+                        Capacity is ignored upon migrations to prevent any undesirable data-loss.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="capacity-policy" type="scheduled-executor-capacity-policy" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation>
+                        The active policy for the capacity setting
+                        capacity-policy has these valid values:
+                        PER_NODE: Maximum number of tasks in each Hazelcast instance.
+                        This is the default policy.
+                        PER_PARTITION: Maximum number of tasks within each partition. Storage size
+                        depends on the partition count in a Hazelcast instance.
+                        This attribute should not be used often.
+                        Avoid using this attribute with a small cluster: if the cluster is small it will
+                        be hosting more partitions, and therefore tasks, than that of a larger
+                        cluster.
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
@@ -3183,6 +3201,13 @@
             <xs:enumeration value="USED_NATIVE_MEMORY_PERCENTAGE"/>
             <xs:enumeration value="FREE_NATIVE_MEMORY_SIZE"/>
             <xs:enumeration value="FREE_NATIVE_MEMORY_PERCENTAGE"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:simpleType name="scheduled-executor-capacity-policy">
+        <xs:restriction base="non-space-string">
+            <xs:enumeration value="PER_NODE"/>
+            <xs:enumeration value="PER_PARTITION"/>
         </xs:restriction>
     </xs:simpleType>
 

@@ -110,7 +110,6 @@ import com.hazelcast.internal.monitor.impl.LocalMapStatsImpl;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.util.CollectionUtil;
 import com.hazelcast.internal.util.IterationType;
-import com.hazelcast.internal.util.collection.ImmutableInflatableSet;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.EventJournalMapEvent;
 import com.hazelcast.map.IMap;
@@ -1118,13 +1117,7 @@ public class ClientMapProxy<K, V> extends ClientProxy
         ClientMessage response = invoke(request);
         MapKeySetCodec.ResponseParameters resultParameters = MapKeySetCodec.decodeResponse(response);
 
-        ImmutableInflatableSet.ImmutableSetBuilder<K> setBuilder =
-                ImmutableInflatableSet.newImmutableSetBuilder(resultParameters.response.size());
-        for (Data data : resultParameters.response) {
-            K key = toObject(data);
-            setBuilder.add(key);
-        }
-        return setBuilder.build();
+        return (Set<K>) new UnmodifiableLazySet(resultParameters.response, getSerializationService());
     }
 
     @Override

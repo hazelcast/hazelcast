@@ -24,6 +24,7 @@ import com.hazelcast.internal.locksupport.LockStore;
 import com.hazelcast.internal.locksupport.LockSupportService;
 import com.hazelcast.internal.monitor.LocalRecordStoreStats;
 import com.hazelcast.internal.monitor.impl.LocalRecordStoreStatsImpl;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.util.Clock;
 import com.hazelcast.internal.util.comparators.ValueComparator;
@@ -38,7 +39,6 @@ import com.hazelcast.map.impl.mapstore.MapStoreContext;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.record.RecordFactory;
 import com.hazelcast.map.impl.record.Records;
-import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.wan.impl.CallerProvenance;
 

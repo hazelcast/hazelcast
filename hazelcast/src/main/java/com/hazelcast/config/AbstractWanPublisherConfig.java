@@ -27,6 +27,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 
+import static com.hazelcast.internal.util.Preconditions.checkHasText;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 /**
@@ -35,7 +36,7 @@ import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 public abstract class AbstractWanPublisherConfig implements IdentifiedDataSerializable {
 
     protected String publisherId = "";
-    protected String className = "";
+    protected String className;
     protected WanPublisher implementation;
     protected Map<String, Comparable> properties = new HashMap<>();
 
@@ -97,8 +98,9 @@ public abstract class AbstractWanPublisherConfig implements IdentifiedDataSerial
      * @param className the name of the class implementation for the WAN replication
      * @return this config
      */
-    public AbstractWanPublisherConfig setClassName(String className) {
-        this.className = className;
+    public AbstractWanPublisherConfig setClassName(@Nonnull String className) {
+        this.className = checkHasText(className, "Wan publisher class name must contain text!");
+        this.implementation = null;
         return this;
     }
 
@@ -115,8 +117,9 @@ public abstract class AbstractWanPublisherConfig implements IdentifiedDataSerial
      * @param implementation the implementation for the WAN replication
      * @return this config
      */
-    public AbstractWanPublisherConfig setImplementation(WanPublisher implementation) {
-        this.implementation = implementation;
+    public AbstractWanPublisherConfig setImplementation(@Nonnull WanPublisher implementation) {
+        this.implementation = checkNotNull(implementation, "Wan publisher cannot be null!");
+        this.className = null;
         return this;
     }
 
@@ -155,24 +158,14 @@ public abstract class AbstractWanPublisherConfig implements IdentifiedDataSerial
 
         AbstractWanPublisherConfig that = (AbstractWanPublisherConfig) o;
 
-        if (!publisherId.equals(that.publisherId)) {
-            return false;
-        }
-        if (!Objects.equals(className, that.className)) {
-            return false;
-        }
-        if (!Objects.equals(implementation, that.implementation)) {
-            return false;
-        }
-        return properties.equals(that.properties);
+        return publisherId.equals(that.publisherId)
+            && Objects.equals(implementation, that.implementation)
+            && Objects.equals(className, that.className)
+            && properties.equals(that.properties);
     }
 
     @Override
     public int hashCode() {
-        int result = publisherId.hashCode();
-        result = 31 * result + (className != null ? className.hashCode() : 0);
-        result = 31 * result + (implementation != null ? implementation.hashCode() : 0);
-        result = 31 * result + properties.hashCode();
-        return result;
+        return Objects.hash(publisherId, className, implementation, properties);
     }
 }

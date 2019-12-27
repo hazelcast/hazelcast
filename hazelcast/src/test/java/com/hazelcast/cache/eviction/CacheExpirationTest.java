@@ -86,13 +86,12 @@ public class CacheExpirationTest extends CacheTestSupport {
     @Parameterized.Parameter(0)
     public boolean useSyncBackups;
 
-    private final Duration THREE_SECONDS = new Duration(TimeUnit.SECONDS, 3);
+    protected static final int KEY_RANGE = 1000;
+    protected static final int CLUSTER_SIZE = 2;
+    protected final Duration THREE_SECONDS = new Duration(TimeUnit.SECONDS, 3);
 
-    private static final int CLUSTER_SIZE = 2;
-    private static final int KEY_RANGE = 1000;
-
-    private HazelcastInstance[] instances = new HazelcastInstance[3];
-    private TestHazelcastInstanceFactory factory;
+    protected TestHazelcastInstanceFactory factory;
+    protected HazelcastInstance[] instances = new HazelcastInstance[3];
 
     @Override
     protected HazelcastInstance getHazelcastInstance() {
@@ -127,9 +126,8 @@ public class CacheExpirationTest extends CacheTestSupport {
         return cacheConfig;
     }
 
-    protected <K, V, M extends Serializable & ExpiryPolicy>
-    CacheConfig<K, V> createCacheConfig(M expiryPolicy) {
-        CacheConfig<K, V> cacheConfig = new CacheConfig<K, V>();
+    protected <K, V, M extends Serializable & ExpiryPolicy> CacheConfig<K, V> createCacheConfig(M expiryPolicy) {
+        CacheConfig<K, V> cacheConfig = new CacheConfig<>();
         cacheConfig.setExpiryPolicyFactory(FactoryBuilder.factoryOf(expiryPolicy));
         cacheConfig.setName(randomName());
 
@@ -296,45 +294,6 @@ public class CacheExpirationTest extends CacheTestSupport {
                 assertEquals(i, backupAccessor.get(i));
             }
         }
-    }
-
-    @Test
-    public void test_backupOperationAppliesDefaultExpiryPolicy() {
-        HazelcastExpiryPolicy defaultExpiryPolicy = new HazelcastExpiryPolicy(THREE_SECONDS, THREE_SECONDS, THREE_SECONDS);
-
-        CacheConfig cacheConfig = createCacheConfig(defaultExpiryPolicy);
-        ICache cache = createCache(cacheConfig);
-
-        for (int i = 0; i < 100; i++) {
-            cache.put(i, i);
-        }
-
-        // Check if all backup entries have applied the default expiry policy
-        for (int i = 1; i < CLUSTER_SIZE; i++) {
-            BackupAccessor backupAccessor = TestBackupUtils.newCacheAccessor(instances, cache.getName(), i);
-            for (int j = 0; j < 100; j++) {
-                TestBackupUtils.assertExpirationTimeExistsEventually(j, backupAccessor);
-            }
-        }
-
-        // terminate other nodes than number zero to cause backup promotion at the 0th member
-        for (int i = 1; i < CLUSTER_SIZE; i++) {
-            getNode(instances[i]).shutdown(true);
-        }
-
-        // expiration time is over.
-        sleepAtLeastSeconds(3);
-
-        // Check if there are unexpired entries after backup promotion
-        int unExpiredCount = 0;
-        for (int i = 0; i < 100; i++) {
-            if (cache.get(i) != null) {
-                unExpiredCount++;
-                break;
-            }
-        }
-
-        assertEquals(0, unExpiredCount);
     }
 
     @Test

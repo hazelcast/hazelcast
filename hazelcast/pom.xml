@@ -209,6 +209,14 @@
                                       tofile="${basedir}/target/hazelcast-full-example.xml"/>
                                 <copy file="${basedir}/src/main/resources/hazelcast-full-example.yaml"
                                       tofile="${basedir}/target/hazelcast-full-example.yaml"/>
+                                <copy file="${basedir}/src/main/resources/hazelcast-client-full-example.xml"
+                                      tofile="${basedir}/target/hazelcast-client-full-example.xml"/>
+                                <copy file="${basedir}/src/main/resources/hazelcast-client-full-example.yaml"
+                                      tofile="${basedir}/target/hazelcast-client-full-example.yaml"/>
+                                <copy file="${basedir}/src/main/resources/hazelcast-client-failover-full-example.xml"
+                                      tofile="${basedir}/target/hazelcast-client-failover-full-example.xml"/>
+                                <copy file="${basedir}/src/main/resources/hazelcast-client-failover-full-example.yaml"
+                                      tofile="${basedir}/target/hazelcast-client-failover-full-example.yaml"/>
                             </target>
                         </configuration>
                     </execution>

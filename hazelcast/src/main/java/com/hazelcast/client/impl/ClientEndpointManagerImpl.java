@@ -114,6 +114,8 @@ public class ClientEndpointManagerImpl implements ClientEndpointManager, Dynamic
             endpoint.destroy();
         } catch (LoginException e) {
             logger.warning(e);
+        } catch (Exception e) {
+            logger.finest(e);
         }
 
         ClientEvent event = new ClientEvent(endpoint.getUuid(),

@@ -16,22 +16,18 @@
 
 package com.hazelcast.client.impl.spi.impl;
 
+import com.hazelcast.client.HazelcastClientOfflineException;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
-import com.hazelcast.client.impl.spi.ClientClusterService;
 import com.hazelcast.client.impl.spi.ClientPartitionService;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.Member;
-import com.hazelcast.cluster.memberselector.MemberSelectors;
 import com.hazelcast.config.ListenerConfig;
-import com.hazelcast.internal.cluster.impl.MemberSelectingCollection;
 import com.hazelcast.internal.nio.ClassLoaderUtil;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.serialization.Data;
-import com.hazelcast.internal.util.ExceptionUtil;
 import com.hazelcast.internal.util.HashUtil;
 import com.hazelcast.internal.util.collection.Int2ObjectHashMap;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.partition.NoDataMemberInClusterException;
 import com.hazelcast.partition.Partition;
 import com.hazelcast.partition.PartitionLostListener;
 
@@ -40,6 +36,8 @@ import java.util.Collection;
 import java.util.EventListener;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
@@ -47,12 +45,12 @@ import java.util.concurrent.atomic.AtomicReference;
  */
 public final class ClientPartitionServiceImpl implements ClientPartitionService {
 
-    private static final long BLOCKING_GET_ONCE_SLEEP_MILLIS = 100;
     private final HazelcastClientInstanceImpl client;
     private final ILogger logger;
     private final AtomicReference<PartitionTable> partitionTable =
             new AtomicReference<>(new PartitionTable(null, -1, new Int2ObjectHashMap<>()));
-    private volatile int partitionCount;
+    private volatile AtomicInteger partitionCount = new AtomicInteger(0);
+    private final AtomicBoolean triggeringPartitionAssingment = new AtomicBoolean();
 
     public ClientPartitionServiceImpl(HazelcastClientInstanceImpl client) {
         this.client = client;
@@ -92,7 +90,6 @@ public final class ClientPartitionServiceImpl implements ClientPartitionService 
         }
     }
 
-
     /**
      * The partitions can be empty on the response, client will not apply the empty partition table,
      */
@@ -109,24 +106,12 @@ public final class ClientPartitionServiceImpl implements ClientPartitionService 
             Int2ObjectHashMap<Address> newPartitions = convertToPartitionToAddressMap(partitions);
             PartitionTable newMetaData = new PartitionTable(connection, partitionStateVersion, newPartitions);
             if (this.partitionTable.compareAndSet(current, newMetaData)) {
-                onPartitionTableUpdate();
+                if (logger.isFineEnabled()) {
+                    logger.fine("Applied partition table with partitionStateVersion : " + partitionStateVersion);
+                }
                 return;
             }
 
-        }
-    }
-
-    private void onPartitionTableUpdate() {
-        //  partition count is set once at the start. Even if we reset the partition table when switching cluster
-        // we want to remember the partition count. That is why it is a different field.
-        PartitionTable partitionTable = this.partitionTable.get();
-        Int2ObjectHashMap<Address> newPartitions = partitionTable.partitions;
-        if (partitionCount == 0) {
-            partitionCount = newPartitions.size();
-        }
-        if (logger.isFineEnabled()) {
-            logger.fine("Processed partition response. partitionStateVersion : " + partitionTable.partitionSateVersion
-                    + ", partitionCount :" + newPartitions.size());
         }
     }
 
@@ -190,9 +175,13 @@ public final class ClientPartitionServiceImpl implements ClientPartitionService 
 
     @Override
     public int getPartitionId(@Nonnull Data key) {
-        final int pc = getPartitionCount();
-        if (pc <= 0) {
-            return 0;
+        int pc = getPartitionCount();
+        if (pc == 0) {
+            //Partition count can not be zero for the sync mode.
+            // On the sync mode, we are waiting for the first connection to be established.
+            // We are initializing the partition count with the value coming from the server with authentication.
+            // This exception is used only for async mode client.
+            throw new HazelcastClientOfflineException();
         }
         int hash = key.getPartitionHash();
         return HashUtil.hashToIndex(hash, pc);
@@ -206,26 +195,24 @@ public final class ClientPartitionServiceImpl implements ClientPartitionService 
 
     @Override
     public int getPartitionCount() {
-        while (partitionCount == 0 && client.getConnectionManager().isAlive()) {
-            ClientClusterService clusterService = client.getClientClusterService();
-            Collection<Member> memberList = clusterService.getMemberList();
-            if (MemberSelectingCollection.count(memberList, MemberSelectors.DATA_MEMBER_SELECTOR) == 0) {
-                throw new NoDataMemberInClusterException(
-                        "Partitions can't be assigned since all nodes in the cluster are lite members");
-            }
-            try {
-                Thread.sleep(BLOCKING_GET_ONCE_SLEEP_MILLIS);
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                throw ExceptionUtil.rethrow(e);
-            }
-        }
-        return partitionCount;
+        return partitionCount.get();
     }
 
     @Override
     public Partition getPartition(int partitionId) {
         return new PartitionImpl(partitionId);
+    }
+
+    /**
+     * @param newPartitionCount
+     * @return true if partition count can be set for the first time, or it is equal to one that is already available,
+     * returns false otherwise
+     */
+    public boolean checkAndSetPartitionCount(int newPartitionCount) {
+        if (partitionCount.compareAndSet(0, newPartitionCount)) {
+            return true;
+        }
+        return partitionCount.get() == newPartitionCount;
     }
 
     private final class PartitionImpl implements Partition {

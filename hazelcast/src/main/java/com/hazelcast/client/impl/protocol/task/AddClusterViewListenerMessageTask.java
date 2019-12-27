@@ -22,7 +22,6 @@ import com.hazelcast.client.impl.protocol.codec.ClientAddClusterViewListenerCode
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.internal.nio.Connection;
-import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.util.UuidUtil;
 
 import java.security.Permission;
@@ -35,6 +34,11 @@ public class AddClusterViewListenerMessageTask
     }
 
     @Override
+    protected boolean acceptOnIncompleteStart() {
+        return true;
+    }
+
+    @Override
     protected Object call() {
         ClusterViewListenerService service = clientEngine.getClusterListenerService();
         service.registerListener(endpoint, clientMessage.getCorrelationId());
@@ -43,8 +47,6 @@ public class AddClusterViewListenerMessageTask
             return Boolean.TRUE;
         });
 
-        InternalPartitionService internalPartitionService = getService(InternalPartitionService.SERVICE_NAME);
-        internalPartitionService.firstArrangement();
         return true;
     }
 

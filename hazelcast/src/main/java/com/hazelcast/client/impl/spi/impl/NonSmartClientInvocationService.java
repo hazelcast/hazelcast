@@ -41,7 +41,6 @@ public class NonSmartClientInvocationService extends AbstractClientInvocationSer
 
     @Override
     public void invokeOnPartitionOwner(ClientInvocation invocation, int partitionId) throws IOException {
-        invocation.getClientMessage().setPartitionId(partitionId);
         send(invocation, getConnection());
     }
 

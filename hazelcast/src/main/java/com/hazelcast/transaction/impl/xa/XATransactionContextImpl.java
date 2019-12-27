@@ -69,16 +69,6 @@ public class XATransactionContextImpl implements TransactionContext {
     }
 
     @Override
-    public void suspendTransaction() {
-        throw new UnsupportedOperationException("XA Transaction cannot be suspended manually!");
-    }
-
-    @Override
-    public void resumeTransaction() {
-        throw new UnsupportedOperationException("XA Transaction cannot be resumed manually!");
-    }
-
-    @Override
     public UUID getTxnId() {
         return transaction.getTxnId();
     }

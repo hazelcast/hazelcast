@@ -65,7 +65,6 @@ public class MapClassLoaderTest extends HazelcastTestSupport {
         mapStoreConfig.setEnabled(true);
         mapStoreConfig.setInitialLoadMode(MapStoreConfig.InitialLoadMode.EAGER);
         mapStoreConfig.setWriteDelaySeconds(WRITE_DELAY_SECONDS);
-        mapStoreConfig.setClassName(null);
         mapStoreConfig.setImplementation(store);
         mapConfig.setMapStoreConfig(mapStoreConfig);
 

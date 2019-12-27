@@ -24,7 +24,6 @@ import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.nio.ssl.SSLContextFactory;
 import com.hazelcast.spring.CustomSpringJUnit4ClassRunner;
-import com.hazelcast.spring.DummySSLContextFactory;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -86,7 +85,6 @@ public class TestHotRestartEncryptionVaultApplicationContext {
         SSLConfig sslConfig = vaultConfig.getSSLConfig();
         assertNotNull(sslConfig);
         assertTrue(sslConfig.isEnabled());
-        assertEquals(DummySSLContextFactory.class.getName(), sslConfig.getFactoryClassName());
         assertEquals(sslContextFactory, sslConfig.getFactoryImplementation());
         assertEquals(60, vaultConfig.getPollingInterval());
     }

@@ -21,6 +21,7 @@ import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.internal.services.RemoteService;
 import com.hazelcast.internal.util.EmptyStatement;
+import com.hazelcast.spi.exception.DistributedObjectDestroyedException;
 import com.hazelcast.spi.impl.AbstractDistributedObject;
 import com.hazelcast.spi.impl.InitializingObject;
 import com.hazelcast.spi.impl.NodeEngineImpl;
@@ -45,8 +46,7 @@ public final class ProxyRegistry {
     private final ProxyServiceImpl proxyService;
     private final String serviceName;
     private final RemoteService service;
-    private final ConcurrentMap<String, DistributedObjectFuture> proxies
-            = new ConcurrentHashMap<String, DistributedObjectFuture>();
+    private final ConcurrentMap<String, DistributedObjectFuture> proxies = new ConcurrentHashMap<>();
 
     ProxyRegistry(ProxyServiceImpl proxyService, String serviceName) {
         this.proxyService = proxyService;
@@ -259,17 +259,29 @@ public final class ProxyRegistry {
 
         DistributedObject proxy;
         try {
-            proxy = proxyFuture.get();
+            proxy = proxyFuture.getNow();
         } catch (Throwable t) {
             proxyService.logger.warning("Cannot destroy proxy [" + serviceName + ":" + name
                     + "], since its creation is failed with "
                     + t.getClass().getName() + ": " + t.getMessage());
             return;
         }
-        EventService eventService = proxyService.nodeEngine.getEventService();
-        ProxyEventProcessor callback = new ProxyEventProcessor(proxyService.listeners.values(), DESTROYED, serviceName,
-                name, proxy);
-        eventService.executeEventCallback(callback);
+        if (proxy == null) {
+            // complete exceptionally the proxy future
+            try {
+                proxyFuture.setError(new DistributedObjectDestroyedException("Proxy [" + serviceName + ":" + name + "] "
+                        + "was destroyed while being created. This may result in incomplete cleanup of resources."));
+            } catch (IllegalStateException e) {
+                // proxy was set and initialized in the meanwhile
+                proxy = proxyFuture.get();
+            }
+        }
+        if (proxy != null) {
+            EventService eventService = proxyService.nodeEngine.getEventService();
+            ProxyEventProcessor callback = new ProxyEventProcessor(proxyService.listeners.values(), DESTROYED, serviceName, name,
+                    proxy);
+            eventService.executeEventCallback(callback);
+        }
         if (publishEvent) {
             publish(new DistributedObjectEventPacket(DESTROYED, serviceName, name));
         }

@@ -18,6 +18,7 @@ package com.hazelcast.client.impl.protocol.task.dynamicconfig;
 
 import com.hazelcast.client.impl.protocol.util.PropertiesUtil;
 import com.hazelcast.config.RingbufferStoreConfig;
+import com.hazelcast.internal.util.StringUtil;
 import com.hazelcast.ringbuffer.RingbufferStore;
 import com.hazelcast.ringbuffer.RingbufferStoreFactory;
 import com.hazelcast.internal.serialization.Data;
@@ -74,14 +75,22 @@ public class RingbufferStoreConfigHolder {
 
     public RingbufferStoreConfig asRingbufferStoreConfig(SerializationService serializationService) {
         RingbufferStoreConfig config = new RingbufferStoreConfig();
-        config.setClassName(className);
+        if (!StringUtil.isNullOrEmptyAfterTrim(className)) {
+            config.setClassName(className);
+        }
         config.setEnabled(enabled);
-        config.setFactoryClassName(factoryClassName);
+        if (!StringUtil.isNullOrEmptyAfterTrim(factoryClassName)) {
+            config.setFactoryClassName(factoryClassName);
+        }
         config.setProperties(PropertiesUtil.fromMap(properties));
         RingbufferStore storeImplementation = serializationService.toObject(implementation);
+        if (storeImplementation != null) {
+            config.setStoreImplementation(storeImplementation);
+        }
         RingbufferStoreFactory storeFactoryImplementation = serializationService.toObject(factoryImplementation);
-        config.setStoreImplementation(storeImplementation);
-        config.setFactoryImplementation(storeFactoryImplementation);
+        if (storeFactoryImplementation != null) {
+            config.setFactoryImplementation(storeFactoryImplementation);
+        }
         return config;
     }
 
