@@ -18,6 +18,7 @@ package com.hazelcast.core;
 
 import com.hazelcast.spi.exception.DistributedObjectDestroyedException;
 
+import java.util.EventObject;
 import java.util.UUID;
 
 /**
@@ -27,14 +28,13 @@ import java.util.UUID;
  * @see DistributedObject
  * @see DistributedObjectListener
  */
-public class DistributedObjectEvent {
+public class DistributedObjectEvent extends EventObject {
 
     protected DistributedObject distributedObject;
 
     private EventType eventType;
     private String serviceName;
     private String objectName;
-    private UUID source;
 
     /**
      * Constructs a DistributedObject Event.
@@ -46,6 +46,7 @@ public class DistributedObjectEvent {
      */
     public DistributedObjectEvent(EventType eventType, String serviceName, String objectName, DistributedObject distributedObject,
                                   UUID source) {
+        super(source);
         this.eventType = eventType;
         this.serviceName = serviceName;
         this.objectName = objectName;
@@ -95,14 +96,6 @@ public class DistributedObjectEvent {
     }
 
     /**
-     *
-     * @return The UUID of the member/client which initially caused this event.
-     */
-    public UUID getSource() {
-        return source;
-    }
-
-    /**
      * Type of the DistributedObjectEvent.
      */
     public enum EventType {
@@ -118,11 +111,7 @@ public class DistributedObjectEvent {
 
     @Override
     public String toString() {
-        return "DistributedObjectEvent{"
-                + "eventType=" + eventType
-                + ", serviceName='" + serviceName + '\''
-                + ", objectName='" + objectName + '\''
-                + ", distributedObject=" + distributedObject
-                + '}';
+        return "DistributedObjectEvent{" + "distributedObject=" + distributedObject + ", eventType=" + eventType
+                + ", serviceName='" + serviceName + '\'' + ", objectName='" + objectName + '\'' + ", source=" + source + '}';
     }
 }

@@ -114,9 +114,10 @@ public class DistributedObjectListenerTest extends HazelcastTestSupport {
     @Test
     public void testDestroyEventReceived_WhenDestroyedFromTheSameInstance() {
         final HazelcastInstance instance = newInstance();
-        EventCountListener listener = new EventCountListener();
+        String mapName = randomMapName();
+        EventCountListener listener = new EventCountListener(mapName);
         instance.addDistributedObjectListener(listener);
-        IMap<Object, Object> map = instance.getMap(randomString());
+        IMap<Object, Object> map = instance.getMap(mapName);
         map.destroy();
         AssertTask task = () -> {
             Assert.assertEquals(1, listener.createdCount.get());
@@ -133,11 +134,11 @@ public class DistributedObjectListenerTest extends HazelcastTestSupport {
     public void testDestroyEventReceived_WhenDestroyedFromDifferentInstance() {
         final HazelcastInstance instance1 = newInstance();
         final HazelcastInstance instance2 = newInstance();
-        EventCountListener listener = new EventCountListener();
+        String mapName = randomMapName();
+        EventCountListener listener = new EventCountListener(mapName);
         instance1.addDistributedObjectListener(listener);
-        String randomMapName = randomMapName();
-        IMap<Object, Object> map1 = instance1.getMap(randomMapName);
-        IMap<Object, Object> map2 = instance2.getMap(randomMapName);
+        instance1.getMap(mapName);
+        IMap<Object, Object> map2 = instance2.getMap(mapName);
         map2.destroy();
         AssertTask task = () -> {
             Assert.assertEquals(1, listener.createdCount.get());
@@ -156,15 +157,17 @@ public class DistributedObjectListenerTest extends HazelcastTestSupport {
     public void testDestroyEventReceived_WhenDestroyedByServer() {
         final HazelcastInstance instance = newInstance();
         final HazelcastInstance server = getRandomServer();
-        EventCountListener listener = new EventCountListener();
-        instance.addDistributedObjectListener(listener);
         String mapName = randomMapName();
-        IMap<Object, Object> map1 = instance.getMap(mapName);
+        EventCountListener listener = new EventCountListener(mapName);
+        instance.addDistributedObjectListener(listener);
+        instance.getMap(mapName);
         IMap<Object, Object> map2 = server.getMap(mapName);
         map2.destroy();
         AssertTask task = () -> {
-            Assert.assertEquals(1, listener.createdCount.get());
-            Assert.assertEquals(1, listener.destroyedCount.get());
+            Assert.assertEquals("Create event failed. unexpectedObjectName:" + listener.unexpectedObjectName, 1,
+                    listener.createdCount.get());
+            Assert.assertEquals("Destroy event failed. unexpectedObjectName:" + listener.unexpectedObjectName, 1,
+                    listener.destroyedCount.get());
             Collection<DistributedObject> distributedObjects = instance.getDistributedObjects();
             Assert.assertTrue(distributedObjects.isEmpty());
         };
@@ -177,14 +180,31 @@ public class DistributedObjectListenerTest extends HazelcastTestSupport {
         public AtomicInteger createdCount = new AtomicInteger();
         public AtomicInteger destroyedCount = new AtomicInteger();
         public AtomicReference<DistributedObjectEvent> lastProxyDestroyedEvent = new AtomicReference<>();
+        public volatile String unexpectedObjectName;
+
+        private final String objectName;
+
+        public EventCountListener(String objectName) {
+            this.objectName = objectName;
+        }
 
         public void distributedObjectCreated(DistributedObjectEvent event) {
-            createdCount.incrementAndGet();
+            Object objectName = event.getObjectName();
+            if (objectName.equals(this.objectName)) {
+                createdCount.incrementAndGet();
+            } else {
+                unexpectedObjectName = (String) objectName;
+            }
         }
 
         public void distributedObjectDestroyed(DistributedObjectEvent event) {
-            lastProxyDestroyedEvent.set(event);
-            destroyedCount.incrementAndGet();
+            Object objectName = event.getObjectName();
+            if (objectName.equals(this.objectName)) {
+                lastProxyDestroyedEvent.set(event);
+                destroyedCount.incrementAndGet();
+            } else {
+                unexpectedObjectName = (String) objectName;
+            }
         }
     }
 }

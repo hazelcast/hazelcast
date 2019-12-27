@@ -63,6 +63,8 @@ public abstract class AbstractDistributedObject<S extends RemoteService> impleme
 
     @Override
     public final void destroy() {
+        // IMPORTANT NOTE: This method should NOT be called from client MessageTasks.
+
         if (preDestroy()) {
             NodeEngine engine = getNodeEngine();
             ProxyService proxyService = engine.getProxyService();

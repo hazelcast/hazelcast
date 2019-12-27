@@ -416,6 +416,12 @@ public final class ProxyManager implements DistributedObjectListener {
 
     @Override
     public void distributedObjectDestroyed(DistributedObjectEvent event) {
+        /**
+         * TODO: This is a best effort solution. There are cases where a newly created object may still be destroyed.
+         * e.g. client restarts with a new UUID and creates the object and event is delivered later on.
+         * Only aims to fix the issue https://github.com/hazelcast/hazelcast/issues/12470 partially.
+         */
+
         if (event.getSource().equals(client.getConnectionManager().getClientUuid())) {
             // ignore destroy events which were originally initiated from this client
             return;
