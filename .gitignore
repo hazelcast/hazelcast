@@ -5,6 +5,7 @@ target/
 .attach_pid*
 .classpath
 .directory
+.factorypath
 .patch
 .project
 .surefire-*
