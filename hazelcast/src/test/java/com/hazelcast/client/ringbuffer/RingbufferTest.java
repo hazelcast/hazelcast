@@ -42,6 +42,7 @@ import java.util.concurrent.CompletionStage;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import static com.hazelcast.ringbuffer.OverflowPolicy.OVERWRITE;
 import static java.util.Arrays.asList;
@@ -115,24 +116,22 @@ public class RingbufferTest extends HazelcastTestSupport {
         assertEquals("10", rs.get(0));
     }
 
-    @Test
+    @Test(expected = TimeoutException.class)
     public void readManyAsync_whenStartSequenceIsJustBeyondTailSequence() throws Exception {
         serverRingbuffer.addAllAsync(asList("0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10"), OVERWRITE);
         CompletionStage<ReadResultSet<String>> f = clientRingbuffer.readManyAsync(11, 1, 10, null);
 
         //test that the read blocks (should at least fail some of the time, if not the case)
-        TimeUnit.MILLISECONDS.sleep(250);
-        assertFalse(f.toCompletableFuture().isDone());
+        f.toCompletableFuture().get(250, TimeUnit.MILLISECONDS);
     }
 
-    @Test
+    @Test(expected = TimeoutException.class)
     public void readManyAsync_whenStartSequenceIsWellBeyondTailSequence() throws Exception {
         serverRingbuffer.addAllAsync(asList("0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10"), OVERWRITE);
         CompletionStage<ReadResultSet<String>> f = clientRingbuffer.readManyAsync(19, 1, 10, null);
 
         //test that the read blocks (should at least fail some of the time, if not the case)
-        TimeUnit.MILLISECONDS.sleep(250);
-        assertFalse(f.toCompletableFuture().isDone());
+        f.toCompletableFuture().get(250, TimeUnit.MILLISECONDS);
     }
 
     @Test

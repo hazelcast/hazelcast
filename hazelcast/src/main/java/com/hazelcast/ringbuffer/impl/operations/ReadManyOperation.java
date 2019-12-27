@@ -66,7 +66,7 @@ public class ReadManyOperation<O> extends AbstractRingBufferOperation
         sequence = ringbuffer.clampReadSequenceToBounds(sequence);
 
         if (minSize == 0) {
-            if (!ringbuffer.shouldWait(sequence)) {
+            if (sequence < ringbuffer.tailSequence() + 1) {
                 readMany(ringbuffer);
             }
 

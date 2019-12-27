@@ -42,6 +42,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import static com.hazelcast.config.InMemoryFormat.OBJECT;
 import static com.hazelcast.ringbuffer.OverflowPolicy.FAIL;
@@ -560,8 +561,8 @@ public abstract class RingbufferAbstractTest extends HazelcastTestSupport {
 
     // ==================== asyncReadOrWait ==============================
 
-    @Test
-    public void readManyAsync_whenReadingBeyondTail() throws InterruptedException {
+    @Test(expected = TimeoutException.class)
+    public void readManyAsync_whenReadingBeyondTail() throws Exception {
         ringbuffer.add("1");
         ringbuffer.add("2");
 
@@ -569,8 +570,7 @@ public abstract class RingbufferAbstractTest extends HazelcastTestSupport {
         Future<ReadResultSet<String>> f = ringbuffer.readManyAsync(seq, 1, 1, null).toCompletableFuture();
 
         //test that the read blocks (should at least fail some of the time, if not the case)
-        TimeUnit.MILLISECONDS.sleep(250);
-        assertFalse(f.isDone());
+        f.get(250, TimeUnit.MILLISECONDS);
     }
 
     @Test
