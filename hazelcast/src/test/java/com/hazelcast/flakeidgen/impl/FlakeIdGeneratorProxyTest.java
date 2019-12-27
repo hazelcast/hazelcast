@@ -16,6 +16,8 @@
 
 package com.hazelcast.flakeidgen.impl;
 
+import com.hazelcast.cluster.Address;
+import com.hazelcast.cluster.impl.MemberImpl;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.FlakeIdGeneratorConfig;
 import com.hazelcast.core.HazelcastException;
@@ -27,6 +29,7 @@ import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.version.MemberVersion;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -34,6 +37,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
+import java.net.UnknownHostException;
 import java.util.Date;
 import java.util.UUID;
 
@@ -81,6 +85,13 @@ public class FlakeIdGeneratorProxyTest {
                 new FlakeIdGeneratorConfig("foo").setIdOffset(idOffset).setNodeIdOffset(nodeIdOffset)
         ));
         when(nodeEngine.getClusterService()).thenReturn(clusterService);
+        Address address = null;
+        try {
+            address = new Address("127.0.0.1", 5701);
+        } catch (UnknownHostException e) {
+            // no-op
+        }
+        when(nodeEngine.getLocalMember()).thenReturn(new MemberImpl(address, MemberVersion.UNKNOWN, true, UUID.randomUUID()));
         UUID source = nodeEngine.getLocalMember().getUuid();
         gen = new FlakeIdGeneratorProxy("foo", nodeEngine, service, source);
     }

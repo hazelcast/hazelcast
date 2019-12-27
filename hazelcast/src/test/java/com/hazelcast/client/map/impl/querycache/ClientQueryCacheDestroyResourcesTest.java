@@ -95,15 +95,19 @@ public class ClientQueryCacheDestroyResourcesTest extends ClientTestSupport {
         QueryCache<String, String> queryCache2 = map2.getQueryCache(QUERY_CACHE_NAME_2);
         QueryCache<String, String> queryCache3 = map3.getQueryCache(QUERY_CACHE_NAME_3);
 
+        HazelcastClientInstanceImpl client = getHazelcastClientInstanceImpl(clientInstance);
+        ClientListenerServiceImpl listenerService = (ClientListenerServiceImpl) client.getListenerService();
+
+        int numberOfListenersBeforeDestroy = listenerService.getRegistrations().size();
+
         queryCache1.destroy();
         queryCache2.destroy();
         queryCache3.destroy();
 
-        HazelcastClientInstanceImpl client = getHazelcastClientInstanceImpl(clientInstance);
-        ClientListenerServiceImpl listenerService = (ClientListenerServiceImpl) client.getListenerService();
-        Map<UUID, ClientListenerRegistration> registrations = listenerService.getRegistrations();
+        final Map<UUID, ClientListenerRegistration> registrations = listenerService.getRegistrations();
 
-        //we expect at least 1 for backup listener
-        assertEquals(registrations.toString(), 1, registrations.size());
+        //we expect at least 1 for backup listener and 1 listener for ProxyManager and
+        // we expect 3 listeners to be deleted one for each queryCache.
+        assertEquals(registrations.toString(), 3, numberOfListenersBeforeDestroy - registrations.size());
     }
 }

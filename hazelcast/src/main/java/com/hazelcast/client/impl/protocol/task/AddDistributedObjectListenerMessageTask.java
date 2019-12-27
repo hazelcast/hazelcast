@@ -92,6 +92,11 @@ public class AddDistributedObjectListenerMessageTask
         send(event);
     }
 
+    @Override
+    protected boolean acceptOnIncompleteStart() {
+        return true;
+    }
+
     private void send(DistributedObjectEvent event) {
         if (!shouldSendEvent()) {
             return;
