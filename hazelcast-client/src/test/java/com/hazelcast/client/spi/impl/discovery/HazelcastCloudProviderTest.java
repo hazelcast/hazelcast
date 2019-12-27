@@ -16,6 +16,8 @@
 
 package com.hazelcast.client.spi.impl.discovery;
 
+import com.hazelcast.internal.json.Json;
+import com.hazelcast.internal.json.JsonValue;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.nio.Address;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -26,6 +28,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.io.IOException;
 import java.net.UnknownHostException;
 import java.util.Collection;
 import java.util.Map;
@@ -79,6 +82,28 @@ public class HazelcastCloudProviderTest {
         Collection<Address> addresses = provider.loadAddresses().primary();
 
         assertEquals("Expected that no addresses are loaded", 0, addresses.size());
+    }
+
+    @Test
+    public void testJsonResponseParse_withDifferentPortOnPrivateAddress() throws IOException {
+        JsonValue jsonResponse = Json.parse(
+                " [{\"private-address\":\"100.96.5.1:5701\",\"public-address\":\"10.113.44.139:31115\"},"
+                        + "{\"private-address\":\"100.96.4.2:5701\",\"public-address\":\"10.113.44.130:31115\"} ]");
+        Map<Address, Address> privatePublicMap = HazelcastCloudDiscovery.parseJsonResponse(jsonResponse);
+        assertEquals(2, privatePublicMap.size());
+        assertEquals(new Address("10.113.44.139", 31115), privatePublicMap.get(new Address("100.96.5.1", 5701)));
+        assertEquals(new Address("10.113.44.130", 31115), privatePublicMap.get(new Address("100.96.4.2", 5701)));
+    }
+
+    @Test
+    public void testJsonResponseParse() throws IOException {
+        JsonValue jsonResponse = Json.parse(
+                "[{\"private-address\":\"100.96.5.1\",\"public-address\":\"10.113.44.139:31115\"},"
+                        + "{\"private-address\":\"100.96.4.2\",\"public-address\":\"10.113.44.130:31115\"} ]");
+        Map<Address, Address> privatePublicMap = HazelcastCloudDiscovery.parseJsonResponse(jsonResponse);
+        assertEquals(2, privatePublicMap.size());
+        assertEquals(new Address("10.113.44.139", 31115), privatePublicMap.get(new Address("100.96.5.1", 31115)));
+        assertEquals(new Address("10.113.44.130", 31115), privatePublicMap.get(new Address("100.96.4.2", 31115)));
     }
 
 }
