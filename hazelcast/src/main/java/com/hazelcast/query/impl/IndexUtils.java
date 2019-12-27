@@ -17,6 +17,7 @@
 package com.hazelcast.query.impl;
 
 import com.hazelcast.config.BitmapIndexOptions;
+import com.hazelcast.config.BitmapIndexOptions.UniqueKeyTransformation;
 import com.hazelcast.config.ConfigXmlGenerator;
 import com.hazelcast.internal.config.DomConfigHelper;
 import com.hazelcast.config.IndexConfig;
@@ -116,7 +117,7 @@ public final class IndexUtils {
 
         if (config.getType() == IndexType.BITMAP) {
             String uniqueKey = config.getBitmapIndexOptions().getUniqueKey();
-            BitmapIndexOptions.UniqueKeyTransformation uniqueKeyTransformation = config.getBitmapIndexOptions().getUniqueKeyTransformation();
+            UniqueKeyTransformation uniqueKeyTransformation = config.getBitmapIndexOptions().getUniqueKeyTransformation();
 
             validateAttribute(uniqueKey);
             uniqueKey = canonicalizeAttribute(uniqueKey);
@@ -322,9 +323,9 @@ public final class IndexUtils {
 
                 Node uniqueKeyTransformationNode = DomConfigHelper.childElementWithName(optionsNode, "unique-key-transformation");
                 String uniqueKeyTransformationText = DomConfigHelper.getTextContent(uniqueKeyTransformationNode, domLevel3);
-                BitmapIndexOptions.UniqueKeyTransformation uniqueKeyTransformation = isNullOrEmpty(uniqueKeyTransformationText) ?
-                        BitmapIndexOptions.DEFAULT_UNIQUE_KEY_TRANSFORMATION :
-                        BitmapIndexOptions.UniqueKeyTransformation.fromName(uniqueKeyTransformationText);
+                UniqueKeyTransformation uniqueKeyTransformation = isNullOrEmpty(uniqueKeyTransformationText)
+                        ? BitmapIndexOptions.DEFAULT_UNIQUE_KEY_TRANSFORMATION
+                        : UniqueKeyTransformation.fromName(uniqueKeyTransformationText);
 
                 res.getBitmapIndexOptions().setUniqueKey(uniqueKey);
                 res.getBitmapIndexOptions().setUniqueKeyTransformation(uniqueKeyTransformation);
@@ -399,10 +400,9 @@ public final class IndexUtils {
 
                 Node uniqueKeyTransformationNode = DomConfigHelper.childElementWithName(optionsNode, "unique-key-transformation");
                 String uniqueKeyTransformationText = DomConfigHelper.getTextContent(uniqueKeyTransformationNode, domLevel3);
-                BitmapIndexOptions.UniqueKeyTransformation uniqueKeyTransformation = isNullOrEmpty(
-                        uniqueKeyTransformationText) ? BitmapIndexOptions.DEFAULT_UNIQUE_KEY_TRANSFORMATION :
-                        BitmapIndexOptions.UniqueKeyTransformation.fromName(
-                        uniqueKeyTransformationText);
+                UniqueKeyTransformation uniqueKeyTransformation = isNullOrEmpty(uniqueKeyTransformationText)
+                        ? BitmapIndexOptions.DEFAULT_UNIQUE_KEY_TRANSFORMATION
+                        : UniqueKeyTransformation.fromName(uniqueKeyTransformationText);
 
                 res.getBitmapIndexOptions().setUniqueKey(uniqueKey);
                 res.getBitmapIndexOptions().setUniqueKeyTransformation(uniqueKeyTransformation);
