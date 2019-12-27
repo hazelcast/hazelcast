@@ -851,7 +851,7 @@ public class NearCachedClientCacheProxy<K, V> extends ClientCacheProxy<K, V> {
                 ? nearCache.tryReserveForCacheOnUpdate(nearCacheKey, keyData) : NOT_RESERVED;
         CompletableFuture<T> future = remoteCallSupplier.get();
         if (reservationId != NOT_RESERVED) {
-            future.whenCompleteAsync(new BiConsumer<T, Throwable>() {
+            return future.whenCompleteAsync(new BiConsumer<T, Throwable>() {
                 private final AtomicBoolean executed = new AtomicBoolean();
 
                 @Override
@@ -877,7 +877,7 @@ public class NearCachedClientCacheProxy<K, V> extends ClientCacheProxy<K, V> {
                 }
             });
         } else {
-            future.whenCompleteAsync(new BiConsumer<T, Throwable>() {
+            return future.whenCompleteAsync(new BiConsumer<T, Throwable>() {
                 private final AtomicBoolean executed = new AtomicBoolean();
 
                 @Override
@@ -895,7 +895,6 @@ public class NearCachedClientCacheProxy<K, V> extends ClientCacheProxy<K, V> {
                 }
             });
         }
-        return future;
     }
 
     private Object toNearCacheKey(K key, Data keyData) {
