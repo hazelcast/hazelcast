@@ -19,6 +19,7 @@ package com.hazelcast.executor;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IExecutorService;
 import com.hazelcast.cluster.Member;
+import com.hazelcast.spi.exception.DistributedObjectDestroyedException;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -84,23 +85,28 @@ public class ExecutorServiceCreateDestroyTest extends HazelcastTestSupport {
         for (int i = 0; i < INSTANCE_COUNT; i++) {
             final HazelcastInstance instance = instances[i];
 
-            futures[i] = spawn(new Callable() {
-                @Override
-                public Object call() throws Exception {
-                    Random rand = new Random();
-                    for (int i = 0; i < 1000; i++) {
-                        LockSupport.parkNanos(1 + rand.nextInt(100));
-                        IExecutorService ex = instance.getExecutorService("executor");
-                        command.run(ex);
-                        ex.destroy();
-                    }
-                    return null;
+            futures[i] = spawn(() -> {
+                Random rand = new Random();
+                for (int i1 = 0; i1 < 1000; i1++) {
+                    LockSupport.parkNanos(1 + rand.nextInt(100));
+                    IExecutorService ex = instance.getExecutorService("executor");
+                    command.run(ex);
+                    ex.destroy();
                 }
+                return null;
             });
         }
 
         for (Future future : futures) {
-            future.get(ASSERT_TRUE_EVENTUALLY_TIMEOUT, TimeUnit.SECONDS);
+            try {
+                future.get(ASSERT_TRUE_EVENTUALLY_TIMEOUT, TimeUnit.SECONDS);
+            } catch (ExecutionException e) {
+                // DistributedObjectDestroyedException is ignored, it may be thrown
+                // when executor is destroyed as it is being created from another thread
+                if (!(e.getCause() instanceof DistributedObjectDestroyedException)) {
+                    throw e;
+                }
+            }
         }
     }
 
