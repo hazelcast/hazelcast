@@ -25,6 +25,7 @@ import com.hazelcast.internal.util.RootCauseMatcher;
 import com.hazelcast.spi.exception.DistributedObjectDestroyedException;
 import com.hazelcast.spi.impl.InitializingObject;
 import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationService;
 import com.hazelcast.spi.impl.proxyservice.impl.ProxyRegistry;
@@ -222,7 +223,9 @@ public class DistributedObjectTest extends HazelcastTestSupport {
             instance.getDistributedObject(serviceName, objectName);
         });
         initializationStarted.await();
-        getNodeEngineImpl(instance).getProxyService().destroyDistributedObject(serviceName, objectName);
+        NodeEngineImpl nodeEngine = getNodeEngineImpl(instance);
+        UUID source = nodeEngine.getLocalMember().getUuid();
+        nodeEngine.getProxyService().destroyDistributedObject(serviceName, objectName, source);
         objectDestroyed.countDown();
 
         expectedException.expect(ExecutionException.class);
