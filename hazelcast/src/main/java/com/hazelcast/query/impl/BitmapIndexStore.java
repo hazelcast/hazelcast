@@ -84,11 +84,11 @@ public final class BitmapIndexStore extends BaseIndexStore {
     public BitmapIndexStore(IndexConfig config, InternalSerializationService serializationService, Extractors extractors) {
         super(IndexCopyBehavior.NEVER);
 
-        this.keyAttribute = config.getUniqueKey();
+        this.keyAttribute = config.getBitmapIndexOptions().getUniqueKey();
         this.serializationService = serializationService;
         this.extractors = extractors;
 
-        switch (config.getUniqueKeyTransform()) {
+        switch (config.getBitmapIndexOptions().getUniqueKeyTransformation()) {
             case OBJECT:
                 // object-to-long remapping
                 this.internalObjectKeys = new Object2LongHashMap(INITIAL_CAPACITY, LOAD_FACTOR, NO_KEY);
@@ -105,7 +105,8 @@ public final class BitmapIndexStore extends BaseIndexStore {
                 this.internalObjectKeys = null;
                 break;
             default:
-                throw new IllegalArgumentException("unexpected unique key transform: " + config.getUniqueKeyTransform());
+                throw new IllegalArgumentException(
+                        "unexpected unique key transform: " + config.getBitmapIndexOptions().getUniqueKeyTransformation());
         }
     }
 

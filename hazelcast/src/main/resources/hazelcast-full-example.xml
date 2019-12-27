@@ -1342,6 +1342,16 @@
                     <attribute>age</attribute>
                 </attributes>
             </index>
+            <!-- bitmap index on the name attribute with options -->
+            <index type="BITMAP">
+                <attributes>
+                    <attribute>name</attribute>
+                </attributes>
+                <bitmap-index-options>
+                    <unique-key>id</unique-key>
+                    <unique-key-transformation>RAW</unique-key-transformation>
+                </bitmap-index-options>
+            </index>
         </indexes>
         <attributes>
             <attribute extractor-class-name="com.bank.CurrencyExtractor">currency</attribute>

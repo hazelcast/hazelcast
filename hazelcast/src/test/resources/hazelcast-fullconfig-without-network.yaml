@@ -328,6 +328,13 @@ hazelcast:
         - type: BITMAP
           attributes:
             - "age"
+        # bitmap index on the name attribute with options
+        - type: BITMAP
+          attributes:
+            - "name"
+          bitmap-index-options:
+            unique-key: id
+            unique-key-transformation: RAW
 
       attributes:
         currency:

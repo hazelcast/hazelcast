@@ -39,7 +39,7 @@ import org.openjdk.jmh.runner.options.TimeValue;
 import java.io.Serializable;
 import java.util.Random;
 
-import static com.hazelcast.config.UniqueKeyTransform.RAW;
+import static com.hazelcast.config.BitmapIndexOptions.UniqueKeyTransformation.RAW;
 
 @State(Scope.Benchmark)
 public class BitmapIndexInsertBenchmark {
@@ -61,7 +61,9 @@ public class BitmapIndexInsertBenchmark {
 
         MapConfig personsBitmapConfig = config.getMapConfig("personsBitmap");
         personsBitmapConfig.setInMemoryFormat(InMemoryFormat.OBJECT);
-        personsBitmapConfig.addIndexConfig(new IndexConfig(IndexType.BITMAP, "habits[any]").setUniqueKeyTransform(RAW));
+        IndexConfig indexConfig = new IndexConfig(IndexType.BITMAP, "habits[any]");
+        indexConfig.getBitmapIndexOptions().setUniqueKeyTransformation(RAW);
+        personsBitmapConfig.addIndexConfig(indexConfig);
 
         MapConfig personsHashConfig = config.getMapConfig("personsHash");
         personsHashConfig.setInMemoryFormat(InMemoryFormat.OBJECT);

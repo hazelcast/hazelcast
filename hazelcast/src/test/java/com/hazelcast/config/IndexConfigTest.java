@@ -16,6 +16,7 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.config.BitmapIndexOptions.UniqueKeyTransformation;
 import com.hazelcast.query.QueryConstants;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -42,8 +43,8 @@ public class IndexConfigTest {
 
         assertEquals(IndexType.SORTED, config.getType());
         assertNull(config.getName());
-        assertEquals(QueryConstants.KEY_ATTRIBUTE_NAME.value(), config.getUniqueKey());
-        assertEquals(UniqueKeyTransform.OBJECT, config.getUniqueKeyTransform());
+        assertEquals(QueryConstants.KEY_ATTRIBUTE_NAME.value(), config.getBitmapIndexOptions().getUniqueKey());
+        assertEquals(UniqueKeyTransformation.OBJECT, config.getBitmapIndexOptions().getUniqueKeyTransformation());
     }
 
     @Test
@@ -56,9 +57,13 @@ public class IndexConfigTest {
         checkIndexQuality(new IndexConfig(IndexType.BITMAP), new IndexConfig(IndexType.BITMAP), true);
         checkIndexQuality(new IndexConfig(IndexType.BITMAP), new IndexConfig(IndexType.HASH), false);
 
-        checkIndexQuality(new IndexConfig(IndexType.BITMAP), new IndexConfig(IndexType.BITMAP).setUniqueKey("a"), false);
-        checkIndexQuality(new IndexConfig(IndexType.BITMAP),
-                new IndexConfig(IndexType.BITMAP).setUniqueKeyTransform(UniqueKeyTransform.RAW), false);
+        IndexConfig actual = new IndexConfig(IndexType.BITMAP);
+        actual.getBitmapIndexOptions().setUniqueKey("a");
+        checkIndexQuality(new IndexConfig(IndexType.BITMAP), actual, false);
+
+        actual = new IndexConfig(IndexType.BITMAP);
+        actual.getBitmapIndexOptions().setUniqueKeyTransformation(UniqueKeyTransformation.RAW);
+        checkIndexQuality(new IndexConfig(IndexType.BITMAP), actual, false);
 
         checkIndexQuality(new IndexConfig().setName("name"), new IndexConfig().setName("name"), true);
         checkIndexQuality(new IndexConfig().setName("name"), new IndexConfig().setName("name2"), false);
@@ -119,4 +124,5 @@ public class IndexConfigTest {
     public void testAttributeEmptyAdd() {
         new IndexConfig().addAttribute("");
     }
+
 }

@@ -20,10 +20,8 @@ import com.hazelcast.internal.config.ConfigDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.query.QueryConstants;
 import com.hazelcast.query.impl.IndexUtils;
 
-import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -48,23 +46,16 @@ public class IndexConfig implements IdentifiedDataSerializable {
     /** Default index type. */
     public static final IndexType DEFAULT_TYPE = IndexType.SORTED;
 
-    /** Default unique key. */
-    public static final String DEFAULT_UNIQUE_KEY = QueryConstants.KEY_ATTRIBUTE_NAME.value();
-    /** Default unique key transform. */
-    public static final UniqueKeyTransform DEFAULT_UNIQUE_KEY_TRANSFORM = UniqueKeyTransform.OBJECT;
-
     /** Name of the index. */
     private String name;
 
     /** Type of the index. */
     private IndexType type = DEFAULT_TYPE;
 
-    /** Bitmap index options: unique key attribute path and its transform. */
-    private String uniqueKey = DEFAULT_UNIQUE_KEY;
-    private UniqueKeyTransform uniqueKeyTransform = DEFAULT_UNIQUE_KEY_TRANSFORM;
-
     /** Indexed attributes. */
     private List<String> attributes;
+
+    private BitmapIndexOptions bitmapIndexOptions = new BitmapIndexOptions();
 
     public IndexConfig() {
         // No-op.
@@ -98,8 +89,7 @@ public class IndexConfig implements IdentifiedDataSerializable {
     public IndexConfig(IndexConfig other) {
         this.name = other.name;
         this.type = other.type;
-        this.uniqueKey = other.uniqueKey;
-        this.uniqueKeyTransform = other.uniqueKeyTransform;
+        this.bitmapIndexOptions = new BitmapIndexOptions(other.bitmapIndexOptions);
 
         for (String attribute : other.getAttributes()) {
             addAttributeInternal(attribute);
@@ -149,58 +139,6 @@ public class IndexConfig implements IdentifiedDataSerializable {
     public IndexConfig setType(IndexType type) {
         this.type = checkNotNull(type, "Index type cannot be null.");
 
-        return this;
-    }
-
-    /**
-     * Returns the unique key attribute configured in this index config.
-     * Defaults to {@code __key}. The unique key attribute is used as a source
-     * of values which uniquely identify each entry being inserted into an index.
-     * <p>
-     * Currently, applicable only to bitmap indexes.
-     *
-     * @return the configured unique key attribute.
-     */
-    public String getUniqueKey() {
-        return uniqueKey;
-    }
-
-    /**
-     * Sets unique key attribute in this index config.
-     * <p>
-     * Currently, applicable only to bitmap indexes.
-     *
-     * @param uniqueKey a unique key attribute to configure.
-     */
-    public IndexConfig setUniqueKey(@Nonnull String uniqueKey) {
-        checkNotNull(uniqueKey, "unique key can't be null");
-        this.uniqueKey = uniqueKey;
-        return this;
-    }
-
-    /**
-     * Returns the unique key transform configured in this index. Defaults to
-     * {@link UniqueKeyTransform#OBJECT OBJECT}. The transform is applied to
-     * every value extracted from {@link #getUniqueKey() unique key attribue}.
-     * <p>
-     * Currently, applicable only to bitmap indexes.
-     *
-     * @return the configured unique key transform.
-     */
-    public UniqueKeyTransform getUniqueKeyTransform() {
-        return uniqueKeyTransform;
-    }
-
-    /**
-     * Sets unique key transform in this index config.
-     * <p>
-     * Currently, applicable only to bitmap indexes.
-     *
-     * @param uniqueKeyTransform a unique key transform to configure.
-     */
-    public IndexConfig setUniqueKeyTransform(@Nonnull UniqueKeyTransform uniqueKeyTransform) {
-        checkNotNull(uniqueKeyTransform, "unique key transform can't be null");
-        this.uniqueKeyTransform = uniqueKeyTransform;
         return this;
     }
 
@@ -257,6 +195,15 @@ public class IndexConfig implements IdentifiedDataSerializable {
         return this;
     }
 
+    /**
+     * Provides access to index options specific to bitmap indexes.
+     *
+     * @return the bitmap index options associated with this index config.
+     */
+    public BitmapIndexOptions getBitmapIndexOptions() {
+        return bitmapIndexOptions;
+    }
+
     @Override
     public int getFactoryId() {
         return ConfigDataSerializerHook.F_ID;
@@ -271,18 +218,22 @@ public class IndexConfig implements IdentifiedDataSerializable {
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeUTF(name);
         out.writeInt(type.getId());
-        out.writeUTF(uniqueKey);
-        out.writeInt(uniqueKeyTransform.getId());
         writeNullableList(attributes, out);
+
+        if (type == IndexType.BITMAP) {
+            out.writeObject(bitmapIndexOptions);
+        }
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         name = in.readUTF();
         type = IndexType.getById(in.readInt());
-        uniqueKey = in.readUTF();
-        uniqueKeyTransform = UniqueKeyTransform.fromId(in.readInt());
         attributes = readNullableList(in);
+
+        if (type == IndexType.BITMAP) {
+            bitmapIndexOptions = in.readObject();
+        }
     }
 
     @Override
@@ -305,11 +256,7 @@ public class IndexConfig implements IdentifiedDataSerializable {
             return false;
         }
 
-        if (!Objects.equals(uniqueKey, that.uniqueKey)) {
-            return false;
-        }
-
-        if (uniqueKeyTransform != that.uniqueKeyTransform) {
+        if (type == IndexType.BITMAP && !bitmapIndexOptions.equals(that.bitmapIndexOptions)) {
             return false;
         }
 
@@ -321,16 +268,21 @@ public class IndexConfig implements IdentifiedDataSerializable {
         int result = (name != null ? name.hashCode() : 0);
 
         result = 31 * result + (type != null ? type.hashCode() : 0);
-        result = 31 * result + uniqueKey.hashCode();
-        result = 31 * result + uniqueKeyTransform.hashCode();
         result = 31 * result + getAttributes().hashCode();
+
+        if (type == IndexType.BITMAP) {
+            result = 31 * result + bitmapIndexOptions.hashCode();
+        }
 
         return result;
     }
 
     @Override
     public String toString() {
-        return "IndexConfig{name=" + name + ", type=" + type + ", uniqueKey=" + uniqueKey + ", uniqueKeyTransform="
-                + uniqueKeyTransform + ", attributes=" + getAttributes() + '}';
+        String string = "IndexConfig{name=" + name + ", type=" + type + ", attributes=" + getAttributes();
+        if (type == IndexType.BITMAP) {
+            string += ", bitmapIndexOptions=" + bitmapIndexOptions;
+        }
+        return string + '}';
     }
 }

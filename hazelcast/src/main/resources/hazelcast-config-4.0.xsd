@@ -2480,11 +2480,10 @@
     <xs:complexType name="index">
         <xs:all>
             <xs:element name="attributes" type="index-attributes"/>
+            <xs:element name="bitmap-index-options" type="bitmap-index-options" minOccurs="0"/>
         </xs:all>
         <xs:attribute name="name"/>
         <xs:attribute name="type" type="index-type" default="SORTED"/>
-        <xs:attribute name="unique-key" type="xs:string" default="__key"/>
-        <xs:attribute name="unique-key-transform" type="index-unique-key-transform" default="OBJECT"/>
     </xs:complexType>
     <xs:complexType name="index-attributes">
         <xs:sequence>
@@ -2498,7 +2497,14 @@
             <xs:enumeration value="BITMAP"/>
         </xs:restriction>
     </xs:simpleType>
-    <xs:simpleType name="index-unique-key-transform">
+    <xs:complexType name="bitmap-index-options">
+        <xs:all>
+            <xs:element name="unique-key" type="xs:string" default="__key" minOccurs="0"/>
+            <xs:element name="unique-key-transformation" type="bitmap-index-unique-key-transformation"
+                        default="OBJECT" minOccurs="0"/>
+        </xs:all>
+    </xs:complexType>
+    <xs:simpleType name="bitmap-index-unique-key-transformation">
         <xs:restriction base="non-space-string">
             <xs:enumeration value="OBJECT"/>
             <xs:enumeration value="LONG"/>

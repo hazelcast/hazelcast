@@ -39,7 +39,7 @@ import org.openjdk.jmh.runner.options.TimeValue;
 import java.io.Serializable;
 import java.util.Random;
 
-import static com.hazelcast.config.UniqueKeyTransform.RAW;
+import static com.hazelcast.config.BitmapIndexOptions.UniqueKeyTransformation.RAW;
 import static com.hazelcast.query.Predicates.and;
 import static com.hazelcast.query.Predicates.equal;
 import static com.hazelcast.query.Predicates.not;
@@ -63,7 +63,9 @@ public class BitmapIndexQueriesBenchmark {
 
         MapConfig personsBitmapConfig = config.getMapConfig("personsBitmap");
         personsBitmapConfig.setInMemoryFormat(InMemoryFormat.OBJECT);
-        personsBitmapConfig.addIndexConfig(new IndexConfig(IndexType.BITMAP, "habits[any]").setUniqueKeyTransform(RAW));
+        IndexConfig indexConfig = new IndexConfig(IndexType.BITMAP, "habits[any]");
+        indexConfig.getBitmapIndexOptions().setUniqueKeyTransformation(RAW);
+        personsBitmapConfig.addIndexConfig(indexConfig);
 
         MapConfig personsHashConfig = config.getMapConfig("personsHash");
         personsHashConfig.setInMemoryFormat(InMemoryFormat.OBJECT);

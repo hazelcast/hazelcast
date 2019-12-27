@@ -16,6 +16,7 @@
 
 package com.hazelcast.map.impl.query;
 
+import com.hazelcast.config.BitmapIndexOptions.UniqueKeyTransformation;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.IndexConfig;
 import com.hazelcast.config.IndexType;
@@ -51,9 +52,9 @@ import java.util.Random;
 import java.util.Set;
 import java.util.function.LongPredicate;
 
-import static com.hazelcast.config.UniqueKeyTransform.LONG;
-import static com.hazelcast.config.UniqueKeyTransform.OBJECT;
-import static com.hazelcast.config.UniqueKeyTransform.RAW;
+import static com.hazelcast.config.BitmapIndexOptions.UniqueKeyTransformation.LONG;
+import static com.hazelcast.config.BitmapIndexOptions.UniqueKeyTransformation.OBJECT;
+import static com.hazelcast.config.BitmapIndexOptions.UniqueKeyTransformation.RAW;
 import static com.hazelcast.query.Predicates.and;
 import static com.hazelcast.query.Predicates.equal;
 import static com.hazelcast.query.Predicates.in;
@@ -75,11 +76,11 @@ public class MultiValueBitmapIndexTest extends HazelcastTestSupport {
     public static Collection<Object[]> parameters() {
         // @formatter:off
         return asList(new Object[][]{
-                {new IndexConfig(IndexType.BITMAP, "habits[any]")},
-                {new IndexConfig(IndexType.BITMAP, "habits[any]").setUniqueKey("stringId")},
-                {new IndexConfig(IndexType.BITMAP, "habits[any]").setUniqueKey("stringId").setUniqueKeyTransform(OBJECT)},
-                {new IndexConfig(IndexType.BITMAP, "habits[any]").setUniqueKeyTransform(RAW)},
-                {new IndexConfig(IndexType.BITMAP, "habits[any]").setUniqueKeyTransform(LONG)}
+                {makeConfig(null, null)},
+                {makeConfig("stringId", null)},
+                {makeConfig("stringId", OBJECT)},
+                {makeConfig(null, RAW)},
+                {makeConfig(null, LONG)}
         });
         // @formatter:on
     }
@@ -357,6 +358,17 @@ public class MultiValueBitmapIndexTest extends HazelcastTestSupport {
             result.clear();
         }
 
+    }
+
+    private static IndexConfig makeConfig(String uniqueKey, UniqueKeyTransformation uniqueKeyTransformation) {
+        IndexConfig config = new IndexConfig(IndexType.BITMAP, "habits[any]");
+        if (uniqueKey != null) {
+            config.getBitmapIndexOptions().setUniqueKey(uniqueKey);
+        }
+        if (uniqueKeyTransformation != null) {
+            config.getBitmapIndexOptions().setUniqueKeyTransformation(uniqueKeyTransformation);
+        }
+        return config;
     }
 
 }
