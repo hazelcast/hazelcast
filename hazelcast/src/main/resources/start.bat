@@ -2,8 +2,18 @@
 
 SETLOCAL
 
-if NOT DEFINED JAVA_HOME goto error
-set RUN_JAVA=%JAVA_HOME%\bin\java
+if "x%JAVA_HOME%" == "x" (
+    echo JAVA_HOME environment variable not available.
+    set RUN_JAVA=java
+) else (
+    set "RUN_JAVA=%JAVA_HOME%\bin\java"
+)
+
+"%RUN_JAVA%" -version 1>nul 2>nul || (
+    echo JAVA could not be found in your system.
+    echo Please install Java 1.8 or higher!!!
+    exit /b 2
+)
 
 
 REM ******* you can enable following variables by uncommenting them
@@ -25,7 +35,7 @@ if NOT "%MAX_HEAP_SIZE%" == "" (
 
 set "CLASSPATH=%~dp0..\lib\hazelcast-all-${project.version}.jar;%~dp0..\user-lib;%~dp0..\user-lib\*"
 
-FOR /F "tokens=2 delims=," %%F in ('tasklist /NH /FI "WINDOWTITLE eq hazelcast %CLASSPATH%" /fo csv') DO (
+FOR /F "tokens=2 delims=," %%F in ('tasklist /NH /FI "WINDOWTITLE eq hazelcast-imdg" /fo csv') DO (
 SET PID=%%F
 )
 IF NOT "%PID%"=="" (
@@ -38,7 +48,7 @@ ECHO # JAVA_OPTS=%JAVA_OPTS%
 ECHO # starting now...."
 ECHO ########################################
 
-start "hazelcast %CLASSPATH%" "%RUN_JAVA%" %JAVA_OPTS% -cp "%CLASSPATH%" "com.hazelcast.core.server.StartServer"
+start "hazelcast-imdg" "%RUN_JAVA%" %JAVA_OPTS% -cp "%CLASSPATH%" "com.hazelcast.core.server.StartServer"
 goto endofscript
 
 :error
