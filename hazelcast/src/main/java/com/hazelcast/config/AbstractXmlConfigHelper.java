@@ -86,7 +86,9 @@ public abstract class AbstractXmlConfigHelper {
 
             // if this is hazelcast namespace but location is different log only warning
             if (namespace.equals(xmlns) && !uri.endsWith(hazelcastSchemaLocation)) {
-                LOGGER.warning("Name of the hazelcast schema location is incorrect, using default");
+                if (LOGGER.isWarningEnabled()) {
+                    LOGGER.warning("Name of the hazelcast schema location[" + uri + "] is incorrect, using default");
+                }
             }
 
             // if this is not hazelcast namespace then try to load from uri
