@@ -250,6 +250,7 @@ public class MemberCompatibilityNullTest_2_0 {
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         ClientAddDistributedObjectListenerCodec.RequestParameters parameters = ClientAddDistributedObjectListenerCodec.decodeRequest(fromFile);
         assertTrue(isEqual(aBoolean, parameters.localOnly));
+        assertTrue(isEqual(aBoolean, parameters.internal));
     }
 
     @Test
