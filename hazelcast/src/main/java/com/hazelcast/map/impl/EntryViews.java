@@ -63,19 +63,4 @@ public final class EntryViews {
                 .withExpirationTime(record.getExpirationTime())
                 .withLastStoredTime(record.getLastStoredTime());
     }
-
-    public static <K, V> EntryView<K, V> toLazyEntryView(EntryView<K, V> entryView,
-                                                         SerializationService serializationService) {
-        return new LazyEntryView<>(entryView.getKey(), entryView.getValue(), serializationService)
-                .setCost(entryView.getCost())
-                .setVersion(entryView.getVersion())
-                .setLastAccessTime(entryView.getLastAccessTime())
-                .setLastUpdateTime(entryView.getLastUpdateTime())
-                .setTtl(entryView.getTtl())
-                .setMaxIdle(entryView.getMaxIdle())
-                .setCreationTime(entryView.getCreationTime())
-                .setHits(entryView.getHits())
-                .setExpirationTime(entryView.getExpirationTime())
-                .setLastStoredTime(entryView.getLastStoredTime());
-    }
 }

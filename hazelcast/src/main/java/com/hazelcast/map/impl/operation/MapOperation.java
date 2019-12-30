@@ -39,6 +39,7 @@ import com.hazelcast.spi.impl.operationservice.AbstractNamedOperation;
 import com.hazelcast.spi.impl.operationservice.BackupOperation;
 import com.hazelcast.wan.impl.CallerProvenance;
 
+import javax.annotation.Nonnull;
 import java.util.List;
 import java.util.logging.Level;
 
@@ -337,7 +338,7 @@ public abstract class MapOperation extends AbstractNamedOperation
         publishWanUpdateInternal(dataKey, value, true);
     }
 
-    protected final void publishWanRemove(Data dataKey) {
+    protected final void publishWanRemove(@Nonnull Data dataKey) {
         if (!canPublishWanEvent) {
             return;
         }

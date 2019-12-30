@@ -18,12 +18,12 @@ package com.hazelcast.map.impl.wan;
 
 import com.hazelcast.core.EntryView;
 import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.map.impl.MapService;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 import com.hazelcast.wan.WanEventCounters;
-import com.hazelcast.wan.WanEventService;
 import com.hazelcast.wan.WanEventType;
 import com.hazelcast.wan.impl.InternalWanEvent;
 import com.hazelcast.wan.impl.WanDataSerializerHook;
@@ -51,9 +51,9 @@ public class WanMapAddOrUpdateEvent implements InternalWanEvent<EntryView<Object
     public WanMapAddOrUpdateEvent() {
     }
 
-    public WanMapAddOrUpdateEvent(String mapName,
-                                  SplitBrainMergePolicy mergePolicy,
-                                  WanMapEntryView<Object, Object> entryView) {
+    public WanMapAddOrUpdateEvent(@Nonnull String mapName,
+                                  @Nonnull SplitBrainMergePolicy mergePolicy,
+                                  @Nonnull WanMapEntryView<Object, Object> entryView) {
         this.mergePolicy = mergePolicy;
         this.mapName = mapName;
         this.entryView = entryView;
@@ -102,8 +102,8 @@ public class WanMapAddOrUpdateEvent implements InternalWanEvent<EntryView<Object
 
     @Nonnull
     @Override
-    public WanEventService getService() {
-        return WanEventService.MAP;
+    public String getServiceName() {
+        return MapService.SERVICE_NAME;
     }
 
     @Nonnull

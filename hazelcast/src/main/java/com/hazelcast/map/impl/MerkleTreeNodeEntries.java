@@ -46,20 +46,8 @@ public class MerkleTreeNodeEntries implements IdentifiedDataSerializable {
         this.nodeEntries = nodeEntries;
     }
 
-    public int getNodeOrder() {
-        return nodeOrder;
-    }
-
-    public void setNodeOrder(int nodeOrder) {
-        this.nodeOrder = nodeOrder;
-    }
-
     public Set<WanMapEntryView<Object, Object>> getNodeEntries() {
         return nodeEntries;
-    }
-
-    public void setNodeEntries(Set<WanMapEntryView<Object, Object>> nodeEntries) {
-        this.nodeEntries = nodeEntries;
     }
 
     @Override

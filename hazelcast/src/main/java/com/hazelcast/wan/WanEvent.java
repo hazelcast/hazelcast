@@ -28,10 +28,12 @@ public interface WanEvent<T> {
     /**
      * Returns the service name on which this event occurred.
      *
-     * @return the service on which this event occurred.
+     * @return the service name on which this event occurred.
+     * @see com.hazelcast.map.impl.MapService#SERVICE_NAME
+     * @see com.hazelcast.cache.impl.CacheService#SERVICE_NAME
      */
     @Nonnull
-    WanEventService getService();
+    String getServiceName();
 
     /**
      * Returns the name of the distributed object (map or cache) on which this

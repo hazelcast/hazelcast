@@ -27,6 +27,7 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.wan.impl.WanDataSerializerHook;
 
 import java.io.IOException;
+import java.util.Objects;
 
 /**
  * WAN heap based implementation of {@link CacheEntryView}.
@@ -141,5 +142,27 @@ public class WanCacheEntryView<K, V> implements CacheEntryView<K, V>, Identified
     @Override
     public void setSerializationService(SerializationService serializationService) {
         this.serializationService = serializationService;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        WanCacheEntryView<?, ?> that = (WanCacheEntryView<?, ?>) o;
+        return creationTime == that.creationTime &&
+                expirationTime == that.expirationTime &&
+                lastAccessTime == that.lastAccessTime &&
+                hits == that.hits &&
+                dataKey.equals(that.dataKey) &&
+                dataValue.equals(that.dataValue);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(dataKey, dataValue, creationTime, expirationTime, lastAccessTime, hits);
     }
 }

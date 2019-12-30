@@ -36,6 +36,10 @@ import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 /**
  * WAN heap based implementation of {@link EntryView}.
  *
+ * It is lazy because you intialise it with serialized formats
+ * of key and value and it will deserialise only if {@link #getKey()} or
+ * {@link #getValue()} are invoked.
+ *
  * @param <K> the type of key.
  * @param <V> the type of value.
  */
@@ -78,6 +82,9 @@ public class WanMapEntryView<K, V> implements EntryView<K, V>, IdentifiedDataSer
         return key;
     }
 
+    /**
+     * Returns the serialised format of the entry key.
+     */
     public Data getDataKey() {
         return dataKey;
     }
@@ -90,6 +97,9 @@ public class WanMapEntryView<K, V> implements EntryView<K, V>, IdentifiedDataSer
         return value;
     }
 
+    /**
+     * Returns the serialised format of the entry value.
+     */
     public Data getDataValue() {
         return dataValue;
     }

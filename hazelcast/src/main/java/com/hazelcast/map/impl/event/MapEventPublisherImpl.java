@@ -42,6 +42,7 @@ import com.hazelcast.wan.WanPublisher;
 import com.hazelcast.wan.impl.DelegatingWanScheme;
 import com.hazelcast.wan.impl.InternalWanEvent;
 
+import javax.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedList;
@@ -96,8 +97,9 @@ public class MapEventPublisherImpl implements MapEventPublisher {
     }
 
     @Override
-    public void publishWanUpdate(String mapName,
-                                 WanMapEntryView<Object, Object> entryView, boolean hasLoadProvenance) {
+    public void publishWanUpdate(@Nonnull String mapName,
+                                 @Nonnull WanMapEntryView<Object, Object> entryView,
+                                 boolean hasLoadProvenance) {
         if (!isOwnedPartition(entryView.getDataKey())) {
             return;
         }
@@ -109,7 +111,7 @@ public class MapEventPublisherImpl implements MapEventPublisher {
     }
 
     @Override
-    public void publishWanRemove(String mapName, Data key) {
+    public void publishWanRemove(@Nonnull String mapName, @Nonnull Data key) {
         if (!isOwnedPartition(key)) {
             return;
         }

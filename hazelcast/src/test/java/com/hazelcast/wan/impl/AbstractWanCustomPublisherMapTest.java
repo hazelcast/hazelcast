@@ -37,7 +37,6 @@ import com.hazelcast.spi.merge.SplitBrainMergeTypes.MapMergeTypes;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.wan.WanEvent;
-import com.hazelcast.wan.WanEventService;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -280,7 +279,7 @@ public class AbstractWanCustomPublisherMapTest extends HazelcastTestSupport {
         Stream.of(instance1, instance2)
               .flatMap(i -> getWanReplicationImpl(i).getEventQueue().stream())
               .forEach(e -> {
-                  assertEquals(WanEventService.MAP, e.getService());
+                  assertEquals(MapService.SERVICE_NAME, e.getServiceName());
                   assertEquals(map.getName(), e.getObjectName());
                   Object eventObject = e.getEventObject();
                   assertNotNull(eventObject);

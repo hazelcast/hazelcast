@@ -20,7 +20,7 @@ import com.hazelcast.config.WanAcknowledgeType;
 import com.hazelcast.wan.impl.InternalWanEvent;
 
 /**
- * An interface that can be implemented by SPI services to give them the
+ * An interface that can be implemented by internal services to give them the
  * ability to listen to WAN replication events.
  */
 public interface WanSupportingService {

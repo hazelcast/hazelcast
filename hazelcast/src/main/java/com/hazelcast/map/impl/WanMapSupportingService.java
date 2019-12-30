@@ -51,7 +51,7 @@ class WanMapSupportingService implements WanSupportingService {
     @Override
     public void onReplicationEvent(InternalWanEvent event, WanAcknowledgeType acknowledgeType) {
         if (event instanceof WanMapAddOrUpdateEvent) {
-            handleUpdate((WanMapAddOrUpdateEvent) event);
+            handleAddOrUpdate((WanMapAddOrUpdateEvent) event);
         } else if (event instanceof WanMapRemoveEvent) {
             handleRemove((WanMapRemoveEvent) event);
         }
@@ -74,7 +74,7 @@ class WanMapSupportingService implements WanSupportingService {
         }
     }
 
-    private void handleUpdate(WanMapAddOrUpdateEvent replicationUpdate) {
+    private void handleAddOrUpdate(WanMapAddOrUpdateEvent replicationUpdate) {
         SplitBrainMergePolicy mergePolicy = replicationUpdate.getMergePolicy();
         String mapName = replicationUpdate.getObjectName();
         MapOperationProvider operationProvider = mapServiceContext.getMapOperationProvider(mapName);
