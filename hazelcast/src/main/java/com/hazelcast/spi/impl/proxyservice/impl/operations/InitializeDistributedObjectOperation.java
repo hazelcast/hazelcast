@@ -41,7 +41,7 @@ public class InitializeDistributedObjectOperation extends Operation implements I
     @Override
     public void run() throws Exception {
         ProxyService proxyService = getNodeEngine().getProxyService();
-        proxyService.initializeDistributedObject(serviceName, name);
+        proxyService.initializeDistributedObject(serviceName, name, getCallerUuid());
     }
 
     @Override

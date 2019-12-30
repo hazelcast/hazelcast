@@ -19,11 +19,13 @@ package com.hazelcast.serviceprovider;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.internal.services.RemoteService;
 
+import java.util.UUID;
+
 public class TestRemoteService implements RemoteService {
     public static final String SERVICE_NAME = "TestRemoteService";
 
     @Override
-    public DistributedObject createDistributedObject(String objectName, boolean local) {
+    public DistributedObject createDistributedObject(String objectName, UUID source, boolean local) {
         return new TestDistributedObject(objectName);
     }
 

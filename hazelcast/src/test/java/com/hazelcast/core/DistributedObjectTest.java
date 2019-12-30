@@ -25,6 +25,7 @@ import com.hazelcast.internal.util.RootCauseMatcher;
 import com.hazelcast.spi.exception.DistributedObjectDestroyedException;
 import com.hazelcast.spi.impl.InitializingObject;
 import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationService;
 import com.hazelcast.spi.impl.proxyservice.impl.ProxyRegistry;
@@ -42,6 +43,7 @@ import org.junit.runner.RunWith;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
@@ -221,7 +223,9 @@ public class DistributedObjectTest extends HazelcastTestSupport {
             instance.getDistributedObject(serviceName, objectName);
         });
         initializationStarted.await();
-        getNodeEngineImpl(instance).getProxyService().destroyDistributedObject(serviceName, objectName);
+        NodeEngineImpl nodeEngine = getNodeEngineImpl(instance);
+        UUID source = nodeEngine.getLocalMember().getUuid();
+        nodeEngine.getProxyService().destroyDistributedObject(serviceName, objectName, source);
         objectDestroyed.countDown();
 
         expectedException.expect(ExecutionException.class);
@@ -243,7 +247,7 @@ public class DistributedObjectTest extends HazelcastTestSupport {
         }
 
         @Override
-        public DistributedObject createDistributedObject(final String objectName, boolean local) {
+        public DistributedObject createDistributedObject(final String objectName, UUID source, boolean local) {
             if (initializer != null) {
                 return new TestInitializingObject(objectName, initializer);
             } else {
@@ -378,7 +382,9 @@ public class DistributedObjectTest extends HazelcastTestSupport {
         }
 
         for (int i = 0; i < instances.length; i++) {
-            registries[i].createProxy(objectName, true, true);
+            NodeEngine nodeEngine = getNodeEngineImpl(instances[i]);
+            UUID source = nodeEngine.getLocalMember().getUuid();
+            registries[i].createProxy(objectName, source, true, true);
             for (int j = i + 1; j < instances.length; j++) {
                 Collection<DistributedObject> objects = new ArrayList<>();
                 registries[j].getDistributedObjects(objects);
@@ -392,7 +398,7 @@ public class DistributedObjectTest extends HazelcastTestSupport {
         static final String NAME = "FailingInitializingObjectService";
 
         @Override
-        public DistributedObject createDistributedObject(String objectName, boolean local) {
+        public DistributedObject createDistributedObject(String objectName, UUID source, boolean local) {
             throw new HazelcastException("Object creation is not allowed!");
         }
 

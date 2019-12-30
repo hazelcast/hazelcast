@@ -117,7 +117,7 @@ public class TopicService implements ManagedService, RemoteService, EventPublish
     }
 
     @Override
-    public ITopic createDistributedObject(String name, boolean local) {
+    public ITopic createDistributedObject(String name, UUID source, boolean local) {
         TopicConfig topicConfig = nodeEngine.getConfig().findTopicConfig(name);
 
         if (topicConfig.isGlobalOrderingEnabled()) {

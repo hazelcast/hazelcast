@@ -128,12 +128,12 @@ public class ProxyServiceImpl
     }
 
     @Override
-    public void initializeDistributedObject(String serviceName, String name) {
+    public void initializeDistributedObject(String serviceName, String name, UUID source) {
         checkServiceNameNotNull(serviceName);
         checkObjectNameNotNull(name);
 
         ProxyRegistry registry = getOrCreateRegistry(serviceName);
-        registry.createProxy(name, true, false);
+        registry.createProxy(name, source, true, false);
         createdCounter.inc();
     }
 
@@ -142,16 +142,16 @@ public class ProxyServiceImpl
     }
 
     @Override
-    public DistributedObject getDistributedObject(String serviceName, String name) {
+    public DistributedObject getDistributedObject(String serviceName, String name, UUID source) {
         checkServiceNameNotNull(serviceName);
         checkObjectNameNotNull(name);
 
         ProxyRegistry registry = getOrCreateRegistry(serviceName);
-        return registry.getOrCreateProxy(name, true);
+        return registry.getOrCreateProxy(name, source, true);
     }
 
     @Override
-    public void destroyDistributedObject(String serviceName, String name) {
+    public void destroyDistributedObject(String serviceName, String name, UUID source) {
         checkServiceNameNotNull(serviceName);
         checkObjectNameNotNull(name);
 
@@ -164,20 +164,21 @@ public class ProxyServiceImpl
             }
 
             DistributedObjectDestroyOperation operation = new DistributedObjectDestroyOperation(serviceName, name);
+            operation.setCallerUuid(source);
             Future f = operationService.createInvocationBuilder(SERVICE_NAME, operation, member.getAddress())
                     .setTryCount(TRY_COUNT).invoke();
             calls.add(f);
         }
 
-        destroyLocalDistributedObject(serviceName, name, true);
+        destroyLocalDistributedObject(serviceName, name, source, true);
         waitWithDeadline(calls, DESTROY_TIMEOUT_SECONDS, TimeUnit.SECONDS, destroyProxyExceptionHandler);
     }
 
     @Override
-    public void destroyLocalDistributedObject(String serviceName, String name, boolean fireEvent) {
+    public void destroyLocalDistributedObject(String serviceName, String name, UUID source, boolean fireEvent) {
         ProxyRegistry registry = registries.get(serviceName);
         if (registry != null) {
-            registry.destroyProxy(name, fireEvent);
+            registry.destroyProxy(name, source, fireEvent);
             destroyedCounter.inc();
         }
         RemoteService service = nodeEngine.getService(serviceName);
@@ -240,7 +241,7 @@ public class ProxyServiceImpl
             try {
                 final ProxyRegistry registry = getOrCreateRegistry(serviceName);
                 if (!registry.contains(eventPacket.getName())) {
-                    registry.createProxy(eventPacket.getName(), true, true);
+                    registry.createProxy(eventPacket.getName(), eventPacket.getSource(), true, true);
                     // listeners will be called if proxy is created here.
                 }
             } catch (HazelcastInstanceNotActiveException ignored) {
@@ -249,7 +250,7 @@ public class ProxyServiceImpl
         } else {
             final ProxyRegistry registry = registries.get(serviceName);
             if (registry != null) {
-                registry.destroyProxy(eventPacket.getName(), false);
+                registry.destroyProxy(eventPacket.getName(), eventPacket.getSource(), false);
             }
         }
     }

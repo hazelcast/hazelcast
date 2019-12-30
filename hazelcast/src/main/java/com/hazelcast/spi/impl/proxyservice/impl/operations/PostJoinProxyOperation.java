@@ -17,6 +17,7 @@
 package com.hazelcast.spi.impl.proxyservice.impl.operations;
 
 import com.hazelcast.cache.CacheNotExistsException;
+import com.hazelcast.internal.util.UUIDSerializationUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
@@ -84,6 +85,7 @@ public class PostJoinProxyOperation extends Operation implements IdentifiedDataS
             for (ProxyInfo proxy : proxies) {
                 out.writeUTF(proxy.getServiceName());
                 out.writeUTF(proxy.getObjectName());
+                UUIDSerializationUtil.writeUUID(out, proxy.getSource());
             }
         }
     }
@@ -95,7 +97,7 @@ public class PostJoinProxyOperation extends Operation implements IdentifiedDataS
         if (len > 0) {
             proxies = new ArrayList<>(len);
             for (int i = 0; i < len; i++) {
-                ProxyInfo proxy = new ProxyInfo(in.readUTF(), in.readUTF());
+                ProxyInfo proxy = new ProxyInfo(in.readUTF(), in.readUTF(), UUIDSerializationUtil.readUUID(in));
                 proxies.add(proxy);
             }
         }
@@ -123,7 +125,7 @@ public class PostJoinProxyOperation extends Operation implements IdentifiedDataS
         @Override
         public void run() {
             try {
-                registry.createProxy(proxyInfo.getObjectName(), true, true);
+                registry.createProxy(proxyInfo.getObjectName(), proxyInfo.getSource(), true, true);
             } catch (CacheNotExistsException e) {
                 // this can happen when a cache destroy event is received
                 // after the cache config is replicated during join (pre-join)

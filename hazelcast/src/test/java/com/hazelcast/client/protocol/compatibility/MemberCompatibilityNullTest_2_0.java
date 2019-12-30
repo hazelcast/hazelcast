@@ -264,7 +264,7 @@ public class MemberCompatibilityNullTest_2_0 {
     public void test_ClientAddDistributedObjectListenerCodec_encodeDistributedObjectEvent() {
         int fileClientMessageIndex = 23;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
-        ClientMessage encoded = ClientAddDistributedObjectListenerCodec.encodeDistributedObjectEvent(aString, aString, aString);
+        ClientMessage encoded = ClientAddDistributedObjectListenerCodec.encodeDistributedObjectEvent(aString, aString, aString, aUUID);
         compareClientMessages(fromFile, encoded);
     }
 

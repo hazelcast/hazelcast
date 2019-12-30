@@ -56,6 +56,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Properties;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -131,7 +132,7 @@ public class RingbufferService implements ManagedService, RemoteService, Fragmen
     }
 
     @Override
-    public DistributedObject createDistributedObject(String objectName, boolean local) {
+    public DistributedObject createDistributedObject(String objectName, UUID source, boolean local) {
         RingbufferConfig ringbufferConfig = getRingbufferConfig(objectName);
         checkRingbufferConfig(ringbufferConfig, nodeEngine.getSplitBrainMergePolicyProvider());
 

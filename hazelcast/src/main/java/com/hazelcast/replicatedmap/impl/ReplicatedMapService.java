@@ -67,6 +67,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ScheduledFuture;
@@ -196,7 +197,7 @@ public class ReplicatedMapService implements ManagedService, RemoteService, Even
     }
 
     @Override
-    public DistributedObject createDistributedObject(String objectName, boolean local) {
+    public DistributedObject createDistributedObject(String objectName, UUID source, boolean local) {
         ReplicatedMapConfig replicatedMapConfig = getReplicatedMapConfig(objectName);
         checkReplicatedMapConfig(replicatedMapConfig, mergePolicyProvider);
         if (nodeEngine.getLocalMember().isLiteMember()) {

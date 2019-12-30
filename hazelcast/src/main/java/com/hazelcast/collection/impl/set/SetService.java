@@ -30,6 +30,7 @@ import com.hazelcast.internal.util.ConstructorFunction;
 import com.hazelcast.internal.util.ContextMutexFactory;
 
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -83,7 +84,7 @@ public class SetService extends CollectionService {
     }
 
     @Override
-    public DistributedObject createDistributedObject(String objectId, boolean local) {
+    public DistributedObject createDistributedObject(String objectId, UUID source, boolean local) {
         return new SetProxyImpl(objectId, nodeEngine, this);
     }
 

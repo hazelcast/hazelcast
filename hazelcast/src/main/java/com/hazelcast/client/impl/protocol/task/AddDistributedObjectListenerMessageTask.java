@@ -92,6 +92,11 @@ public class AddDistributedObjectListenerMessageTask
         send(event);
     }
 
+    @Override
+    protected boolean acceptOnIncompleteStart() {
+        return true;
+    }
+
     private void send(DistributedObjectEvent event) {
         if (!shouldSendEvent()) {
             return;
@@ -101,7 +106,7 @@ public class AddDistributedObjectListenerMessageTask
         String serviceName = event.getServiceName();
         ClientMessage eventMessage =
                 ClientAddDistributedObjectListenerCodec.encodeDistributedObjectEvent(name,
-                        serviceName, event.getEventType().name());
+                        serviceName, event.getEventType().name(), (UUID) event.getSource());
         sendClientMessage(null, eventMessage);
     }
 
