@@ -117,11 +117,8 @@ public class ClientCacheNearCacheCacheOnUpdateTest extends ClientNearCacheTestSu
     }
 
     private ICache<Integer, Integer> newNearCachedCache(NearCacheConfig.LocalUpdatePolicy localUpdatePolicy) {
-        NearCacheConfig nearCacheConfig = new NearCacheConfig()
-                .setName(DEFAULT_CACHE_NAME)
-                .setInMemoryFormat(InMemoryFormat.BINARY)
-                .setLocalUpdatePolicy(localUpdatePolicy);
-        ClientConfig clientConfig = new ClientConfig()
+        NearCacheConfig nearCacheConfig = getNearCacheConfig(localUpdatePolicy);
+        ClientConfig clientConfig = getClientConfig()
                 .addNearCacheConfig(nearCacheConfig);
 
         HazelcastClientProxy client = (HazelcastClientProxy) hazelcastFactory.newHazelcastClient(clientConfig);
@@ -132,10 +129,22 @@ public class ClientCacheNearCacheCacheOnUpdateTest extends ClientNearCacheTestSu
                 newCacheConfig(InMemoryFormat.BINARY));
     }
 
+    protected ClientConfig getClientConfig() {
+        return new ClientConfig();
+    }
+
+    protected NearCacheConfig getNearCacheConfig(NearCacheConfig.LocalUpdatePolicy localUpdatePolicy) {
+        return new NearCacheConfig()
+                .setName(DEFAULT_CACHE_NAME)
+                .setInMemoryFormat(InMemoryFormat.BINARY)
+                .setLocalUpdatePolicy(localUpdatePolicy);
+    }
+
     private static <K, V> CacheConfig<K, V> newCacheConfig(InMemoryFormat inMemoryFormat) {
         return new CacheConfig<K, V>()
                 .setName(DEFAULT_CACHE_NAME)
                 .setInMemoryFormat(inMemoryFormat)
                 .setBackupCount(1);
     }
+
 }
