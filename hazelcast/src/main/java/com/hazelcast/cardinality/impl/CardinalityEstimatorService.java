@@ -41,6 +41,7 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Properties;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -115,7 +116,7 @@ public class CardinalityEstimatorService
     }
 
     @Override
-    public CardinalityEstimatorProxy createDistributedObject(String objectName, boolean local) {
+    public CardinalityEstimatorProxy createDistributedObject(String objectName, UUID source, boolean local) {
         return new CardinalityEstimatorProxy(objectName, nodeEngine, this);
     }
 

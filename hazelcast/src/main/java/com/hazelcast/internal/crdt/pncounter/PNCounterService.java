@@ -44,6 +44,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Properties;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -154,7 +155,7 @@ public class PNCounterService implements ManagedService, RemoteService, CRDTRepl
     }
 
     @Override
-    public PNCounterProxy createDistributedObject(String objectName, boolean local) {
+    public PNCounterProxy createDistributedObject(String objectName, UUID source, boolean local) {
         return new PNCounterProxy(objectName, nodeEngine, this);
     }
 

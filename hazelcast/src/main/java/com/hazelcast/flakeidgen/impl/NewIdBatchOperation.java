@@ -42,7 +42,7 @@ class NewIdBatchOperation extends Operation implements IdentifiedDataSerializabl
     @Override
     public void run() throws Exception {
         FlakeIdGeneratorProxy proxy = (FlakeIdGeneratorProxy) getNodeEngine().getProxyService()
-                .getDistributedObject(getServiceName(), flakeIdGenName);
+                .getDistributedObject(getServiceName(), flakeIdGenName, getCallerUuid());
         final IdBatchAndWaitTime result = proxy.newIdBaseLocal(batchSize);
         if (result.waitTimeMillis == 0) {
             sendResponse(result.idBatch.base());

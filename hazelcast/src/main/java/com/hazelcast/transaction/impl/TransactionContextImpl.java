@@ -127,7 +127,7 @@ final class TransactionContextImpl implements TransactionContext {
         }
 
         TransactionalService transactionalService = getTransactionalService(serviceName);
-        nodeEngine.getProxyService().initializeDistributedObject(serviceName, name);
+        nodeEngine.getProxyService().initializeDistributedObject(serviceName, name, transaction.getOwnerUuid());
         obj = transactionalService.createTransactionalObject(name, transaction);
         txnObjectMap.put(key, obj);
         return obj;

@@ -31,6 +31,7 @@ import com.hazelcast.internal.partition.PartitionReplicationEvent;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -75,7 +76,7 @@ public class LongRegisterService implements ManagedService, RemoteService, Migra
     }
 
     @Override
-    public LongRegisterProxy createDistributedObject(String name, boolean local) {
+    public LongRegisterProxy createDistributedObject(String name, UUID source, boolean local) {
         return new LongRegisterProxy(name, nodeEngine, this);
     }
 

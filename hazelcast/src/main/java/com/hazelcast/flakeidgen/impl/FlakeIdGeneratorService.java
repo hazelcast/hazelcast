@@ -34,6 +34,7 @@ import com.hazelcast.spi.properties.ClusterProperty;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static com.hazelcast.internal.metrics.impl.ProviderHelper.provide;
@@ -74,8 +75,8 @@ public class FlakeIdGeneratorService implements ManagedService, RemoteService,
     }
 
     @Override
-    public DistributedObject createDistributedObject(String name, boolean local) {
-        return new FlakeIdGeneratorProxy(name, nodeEngine, this);
+    public DistributedObject createDistributedObject(String name, UUID source, boolean local) {
+        return new FlakeIdGeneratorProxy(name, nodeEngine, this, source);
     }
 
     @Override

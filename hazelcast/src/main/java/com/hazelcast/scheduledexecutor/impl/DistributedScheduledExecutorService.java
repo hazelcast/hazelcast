@@ -172,7 +172,7 @@ public class DistributedScheduledExecutorService
     }
 
     @Override
-    public DistributedObject createDistributedObject(String name, boolean local) {
+    public DistributedObject createDistributedObject(String name, UUID source, boolean local) {
         ScheduledExecutorConfig executorConfig = nodeEngine.getConfig().findScheduledExecutorConfig(name);
         checkScheduledExecutorConfig(executorConfig, nodeEngine.getSplitBrainMergePolicyProvider());
 

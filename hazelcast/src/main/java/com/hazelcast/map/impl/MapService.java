@@ -177,8 +177,8 @@ public class MapService implements ManagedService, FragmentedMigrationAwareServi
     }
 
     @Override
-    public DistributedObject createDistributedObject(String objectName, boolean local) {
-        return remoteService.createDistributedObject(objectName, local);
+    public DistributedObject createDistributedObject(String objectName, UUID source, boolean local) {
+        return remoteService.createDistributedObject(objectName, source, local);
     }
 
     @Override

@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * TODO DOC
  */
-@Generated("7501d07f7c9b9268bd8b5b45ed30f22b")
+@Generated("fb82ded6cdcbb9418985f1db252e4b49")
 public final class ClientAddDistributedObjectListenerCodec {
     //hex: 0x000A00
     public static final int REQUEST_MESSAGE_TYPE = 2560;
@@ -47,7 +47,8 @@ public final class ClientAddDistributedObjectListenerCodec {
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_LOCAL_ONLY_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
     private static final int RESPONSE_RESPONSE_FIELD_OFFSET = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_RESPONSE_FIELD_OFFSET + UUID_SIZE_IN_BYTES;
-    private static final int EVENT_DISTRIBUTED_OBJECT_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int EVENT_DISTRIBUTED_OBJECT_SOURCE_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int EVENT_DISTRIBUTED_OBJECT_INITIAL_FRAME_SIZE = EVENT_DISTRIBUTED_OBJECT_SOURCE_FIELD_OFFSET + UUID_SIZE_IN_BYTES;
     //hex: 0x000A02
     private static final int EVENT_DISTRIBUTED_OBJECT_MESSAGE_TYPE = 2562;
 
@@ -110,11 +111,12 @@ public final class ClientAddDistributedObjectListenerCodec {
         return response;
     }
 
-    public static ClientMessage encodeDistributedObjectEvent(java.lang.String name, java.lang.String serviceName, java.lang.String eventType) {
+    public static ClientMessage encodeDistributedObjectEvent(java.lang.String name, java.lang.String serviceName, java.lang.String eventType, java.util.UUID source) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[EVENT_DISTRIBUTED_OBJECT_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         initialFrame.flags |= ClientMessage.IS_EVENT_FLAG;
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, EVENT_DISTRIBUTED_OBJECT_MESSAGE_TYPE);
+        encodeUUID(initialFrame.content, EVENT_DISTRIBUTED_OBJECT_SOURCE_FIELD_OFFSET, source);
         clientMessage.add(initialFrame);
 
         StringCodec.encode(clientMessage, name);
@@ -129,16 +131,16 @@ public final class ClientAddDistributedObjectListenerCodec {
             int messageType = clientMessage.getMessageType();
             ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
             if (messageType == EVENT_DISTRIBUTED_OBJECT_MESSAGE_TYPE) {
-                //empty initial frame
-                iterator.next();
+                ClientMessage.Frame initialFrame = iterator.next();
+                java.util.UUID source = decodeUUID(initialFrame.content, EVENT_DISTRIBUTED_OBJECT_SOURCE_FIELD_OFFSET);
                 java.lang.String name = StringCodec.decode(iterator);
                 java.lang.String serviceName = StringCodec.decode(iterator);
                 java.lang.String eventType = StringCodec.decode(iterator);
-                handleDistributedObjectEvent(name, serviceName, eventType);
+                handleDistributedObjectEvent(name, serviceName, eventType, source);
                 return;
             }
             Logger.getLogger(super.getClass()).finest("Unknown message type received on event handler :" + messageType);
         }
-        public abstract void handleDistributedObjectEvent(java.lang.String name, java.lang.String serviceName, java.lang.String eventType);
+        public abstract void handleDistributedObjectEvent(java.lang.String name, java.lang.String serviceName, java.lang.String eventType, java.util.UUID source);
     }
 }
