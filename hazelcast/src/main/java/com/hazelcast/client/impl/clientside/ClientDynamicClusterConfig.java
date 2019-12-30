@@ -347,9 +347,12 @@ public class ClientDynamicClusterConfig extends Config {
                 flakeIdGeneratorConfig.getName(),
                 flakeIdGeneratorConfig.getPrefetchCount(),
                 flakeIdGeneratorConfig.getPrefetchValidityMillis(),
-                flakeIdGeneratorConfig.getIdOffset(),
                 flakeIdGeneratorConfig.isStatisticsEnabled(),
-                flakeIdGeneratorConfig.getNodeIdOffset());
+                flakeIdGeneratorConfig.getNodeIdOffset(),
+                flakeIdGeneratorConfig.getEpochStart(),
+                flakeIdGeneratorConfig.getBitsSequence(),
+                flakeIdGeneratorConfig.getBitsNodeId(),
+                flakeIdGeneratorConfig.getAllowedFutureMillis());
         invoke(request);
         return this;
     }

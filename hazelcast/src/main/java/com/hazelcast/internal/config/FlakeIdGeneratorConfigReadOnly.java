@@ -48,17 +48,7 @@ public class FlakeIdGeneratorConfigReadOnly extends FlakeIdGeneratorConfig {
     }
 
     @Override
-    public FlakeIdGeneratorConfig setIdOffset(long idOffset) {
-        throw throwReadOnly();
-    }
-
-    @Override
     public FlakeIdGeneratorConfig setNodeIdOffset(long nodeIdOffset) {
-        throw throwReadOnly();
-    }
-
-    @Override
-    public FlakeIdGeneratorConfig setBitsTimestamp(int bitsTimestamp) {
         throw throwReadOnly();
     }
 

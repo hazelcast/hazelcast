@@ -42,7 +42,6 @@ import static org.junit.Assert.assertTrue;
 @Category({QuickTest.class, ParallelJVMTest.class, SerializationSamplesExcluded.class})
 public class FlakeIdGenerator_CustomBitLengthIntegrationTest extends HazelcastTestSupport {
     private static final int BITS_TIMESTAMP = 5;
-    private static final int MAX_BITS_TIMESTAMP = 63;
     private static final int BITS_NODE_ID = 4;
     private static final int BITS_SEQUENCE = 4;
     private static final long PREFETCH_VALIDITY_MS = 10;
@@ -66,7 +65,6 @@ public class FlakeIdGenerator_CustomBitLengthIntegrationTest extends HazelcastTe
     public void customBitLengthTest() throws Exception {
         Config cfg = new Config();
         cfg.getFlakeIdGeneratorConfig("gen")
-                .setBitsTimestamp(BITS_TIMESTAMP)
                 .setBitsNodeId(BITS_NODE_ID)
                 .setBitsSequence(BITS_SEQUENCE)
                 .setPrefetchValidityMillis(PREFETCH_VALIDITY_MS);
@@ -76,7 +74,7 @@ public class FlakeIdGenerator_CustomBitLengthIntegrationTest extends HazelcastTe
         Set<Long> ids = FlakeIdConcurrencyTestUtil.concurrentlyGenerateIds(new Supplier<Long>() {
             @Override
             public Long get() {
-                return generator.newId();
+                return generator.newId() & maxId;
             }
         });
         for (Long id : ids) {

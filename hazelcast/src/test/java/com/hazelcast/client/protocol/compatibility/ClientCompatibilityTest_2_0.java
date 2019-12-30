@@ -6284,7 +6284,7 @@ public class ClientCompatibilityTest_2_0 {
     @Test
     public void test_DynamicConfigAddFlakeIdGeneratorConfigCodec_encodeRequest() {
         int fileClientMessageIndex = 745;
-        ClientMessage encoded = DynamicConfigAddFlakeIdGeneratorConfigCodec.encodeRequest(aString, anInt, aLong, aLong, aBoolean, aLong);
+        ClientMessage encoded = DynamicConfigAddFlakeIdGeneratorConfigCodec.encodeRequest(aString, anInt, aLong, aBoolean, aLong, aLong, anInt, anInt, aLong);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
     }
