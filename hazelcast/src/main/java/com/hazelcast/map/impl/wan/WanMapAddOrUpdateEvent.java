@@ -17,17 +17,19 @@
 package com.hazelcast.map.impl.wan;
 
 import com.hazelcast.core.EntryView;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 import com.hazelcast.wan.WanEventCounters;
+import com.hazelcast.wan.WanEventType;
 import com.hazelcast.wan.impl.InternalWanEvent;
 import com.hazelcast.wan.impl.WanDataSerializerHook;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.Set;
@@ -35,7 +37,7 @@ import java.util.Set;
 /**
  * WAN replication object for map update operations.
  */
-public class WanMapUpdateEvent implements InternalWanEvent, IdentifiedDataSerializable {
+public class WanMapAddOrUpdateEvent implements InternalWanEvent<EntryView<Object, Object>>, IdentifiedDataSerializable {
     private String mapName;
     /**
      * The policy how to merge the entry on the receiving cluster
@@ -44,21 +46,17 @@ public class WanMapUpdateEvent implements InternalWanEvent, IdentifiedDataSerial
     /**
      * The updated entry
      */
-    private WanMapEntryView<Data, Data> entryView;
+    private WanMapEntryView<Object, Object> entryView;
 
-    public WanMapUpdateEvent() {
+    public WanMapAddOrUpdateEvent() {
     }
 
-    public WanMapUpdateEvent(String mapName,
-                             SplitBrainMergePolicy mergePolicy,
-                             EntryView<Data, Data> entryView) {
+    public WanMapAddOrUpdateEvent(@Nonnull String mapName,
+                                  @Nonnull SplitBrainMergePolicy mergePolicy,
+                                  @Nonnull WanMapEntryView<Object, Object> entryView) {
         this.mergePolicy = mergePolicy;
         this.mapName = mapName;
-        if (entryView instanceof WanMapEntryView) {
-            this.entryView = (WanMapEntryView<Data, Data>) entryView;
-        } else {
-            this.entryView = new WanMapEntryView<>(entryView);
-        }
+        this.entryView = entryView;
     }
 
     public SplitBrainMergePolicy getMergePolicy() {
@@ -69,12 +67,8 @@ public class WanMapUpdateEvent implements InternalWanEvent, IdentifiedDataSerial
         this.mergePolicy = mergePolicy;
     }
 
-    public WanMapEntryView<Data, Data> getEntryView() {
+    public WanMapEntryView<Object, Object> getEntryView() {
         return entryView;
-    }
-
-    public void setEntryView(WanMapEntryView<Data, Data> entryView) {
-        this.entryView = entryView;
     }
 
     @Override
@@ -102,14 +96,20 @@ public class WanMapUpdateEvent implements InternalWanEvent, IdentifiedDataSerial
     }
 
     @Override
-    public void incrementEventCount(WanEventCounters counters) {
+    public void incrementEventCount(@Nonnull WanEventCounters counters) {
         counters.incrementUpdate(mapName);
     }
 
     @Nonnull
     @Override
+    public String getServiceName() {
+        return MapService.SERVICE_NAME;
+    }
+
+    @Nonnull
+    @Override
     public Data getKey() {
-        return entryView.getKey();
+        return entryView.getDataKey();
     }
 
     @Nonnull
@@ -131,13 +131,21 @@ public class WanMapUpdateEvent implements InternalWanEvent, IdentifiedDataSerial
         return 0;
     }
 
-    @Override
-    public String getServiceName() {
-        return MapService.SERVICE_NAME;
-    }
-
+    @Nonnull
     @Override
     public String getObjectName() {
         return mapName;
+    }
+
+    @Nonnull
+    @Override
+    public WanEventType getEventType() {
+        return WanEventType.ADD_OR_UPDATE;
+    }
+
+    @Nullable
+    @Override
+    public EntryView<Object, Object> getEventObject() {
+        return entryView;
     }
 }

@@ -28,6 +28,7 @@ import com.hazelcast.internal.partition.IPartitionLostEvent;
 import com.hazelcast.internal.partition.PartitionAwareService;
 import com.hazelcast.internal.partition.PartitionMigrationEvent;
 import com.hazelcast.internal.partition.PartitionReplicationEvent;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.services.ClientAwareService;
 import com.hazelcast.internal.services.DistributedObjectNamespace;
 import com.hazelcast.internal.services.LockInterceptorService;
@@ -36,17 +37,16 @@ import com.hazelcast.internal.services.NotifiableEventListener;
 import com.hazelcast.internal.services.ObjectNamespace;
 import com.hazelcast.internal.services.PostJoinAwareService;
 import com.hazelcast.internal.services.RemoteService;
-import com.hazelcast.internal.services.WanSupportingService;
 import com.hazelcast.internal.services.ServiceNamespace;
 import com.hazelcast.internal.services.SplitBrainHandlerService;
 import com.hazelcast.internal.services.SplitBrainProtectionAwareService;
 import com.hazelcast.internal.services.StatisticsAwareService;
 import com.hazelcast.internal.services.TransactionalService;
+import com.hazelcast.internal.services.WanSupportingService;
 import com.hazelcast.map.LocalMapStats;
 import com.hazelcast.map.impl.event.MapEventPublishingService;
 import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.nearcache.NearCacheStats;
-import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.query.LocalIndexStats;
 import com.hazelcast.spi.impl.CountingMigrationAwareService;
 import com.hazelcast.spi.impl.NodeEngine;
@@ -58,7 +58,7 @@ import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.transaction.TransactionalObject;
 import com.hazelcast.transaction.impl.Transaction;
-import com.hazelcast.wan.WanEvent;
+import com.hazelcast.wan.impl.InternalWanEvent;
 
 import java.util.Collection;
 import java.util.Map;
@@ -188,7 +188,7 @@ public class MapService implements ManagedService, FragmentedMigrationAwareServi
     }
 
     @Override
-    public void onReplicationEvent(WanEvent event, WanAcknowledgeType acknowledgeType) {
+    public void onReplicationEvent(InternalWanEvent event, WanAcknowledgeType acknowledgeType) {
         wanSupportingService.onReplicationEvent(event, acknowledgeType);
     }
 

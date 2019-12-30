@@ -116,7 +116,7 @@ public final class DelegatingWanScheme {
      * Silently skips publishers not supporting republication.
      * NOTE: used only in Hazelcast Enterprise
      */
-    public void republishReplicationEvent(WanEvent wanEvent) {
+    public void republishReplicationEvent(InternalWanEvent wanEvent) {
         for (WanPublisher publisher : publishers.values()) {
             if (publisher instanceof InternalWanPublisher) {
                 ((InternalWanPublisher) publisher).republishReplicationEvent(wanEvent);

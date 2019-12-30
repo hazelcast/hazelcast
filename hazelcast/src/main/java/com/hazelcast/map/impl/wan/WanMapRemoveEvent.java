@@ -17,27 +17,36 @@
 package com.hazelcast.map.impl.wan;
 
 import com.hazelcast.internal.nio.IOUtil;
+import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.serialization.SerializationServiceAware;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.wan.WanEventCounters;
+import com.hazelcast.wan.WanEventType;
 import com.hazelcast.wan.impl.InternalWanEvent;
 import com.hazelcast.wan.impl.WanDataSerializerHook;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.Set;
 
-public class WanMapRemoveEvent implements InternalWanEvent, IdentifiedDataSerializable {
+public class WanMapRemoveEvent implements InternalWanEvent<Object>, IdentifiedDataSerializable, SerializationServiceAware {
+    private SerializationService serializationService;
     private String mapName;
-    private Data key;
+    private Data dataKey;
+    private transient Object key;
 
-    public WanMapRemoveEvent(String mapName, Data key) {
+    public WanMapRemoveEvent(@Nonnull String mapName,
+                             @Nonnull Data dataKey,
+                             @Nonnull SerializationService serializationService) {
         this.mapName = mapName;
-        this.key = key;
+        this.dataKey = dataKey;
+        this.serializationService = serializationService;
     }
 
     public WanMapRemoveEvent() {
@@ -46,6 +55,15 @@ public class WanMapRemoveEvent implements InternalWanEvent, IdentifiedDataSerial
     @Nonnull
     @Override
     public Data getKey() {
+        return dataKey;
+    }
+
+    @Nullable
+    @Override
+    public Object getEventObject() {
+        if (key == null) {
+            key = serializationService.toObject(dataKey);
+        }
         return key;
     }
 
@@ -68,30 +86,28 @@ public class WanMapRemoveEvent implements InternalWanEvent, IdentifiedDataSerial
         return 0;
     }
 
-    @Override
-    public String getServiceName() {
-        return MapService.SERVICE_NAME;
-    }
-
+    @Nonnull
     @Override
     public String getObjectName() {
         return mapName;
     }
 
-    public void setKey(Data key) {
-        this.key = key;
+    @Nonnull
+    @Override
+    public WanEventType getEventType() {
+        return WanEventType.REMOVE;
     }
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeUTF(mapName);
-        IOUtil.writeData(out, key);
+        IOUtil.writeData(out, dataKey);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         mapName = in.readUTF();
-        key = IOUtil.readData(in);
+        dataKey = IOUtil.readData(in);
     }
 
     @Override
@@ -105,7 +121,18 @@ public class WanMapRemoveEvent implements InternalWanEvent, IdentifiedDataSerial
     }
 
     @Override
-    public void incrementEventCount(WanEventCounters counters) {
+    public void incrementEventCount(@Nonnull WanEventCounters counters) {
         counters.incrementRemove(mapName);
+    }
+
+    @Nonnull
+    @Override
+    public String getServiceName() {
+        return MapService.SERVICE_NAME;
+    }
+
+    @Override
+    public void setSerializationService(SerializationService serializationService) {
+        this.serializationService = serializationService;
     }
 }
