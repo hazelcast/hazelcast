@@ -153,12 +153,12 @@ public class WanCacheEntryView<K, V> implements CacheEntryView<K, V>, Identified
             return false;
         }
         WanCacheEntryView<?, ?> that = (WanCacheEntryView<?, ?>) o;
-        return creationTime == that.creationTime &&
-                expirationTime == that.expirationTime &&
-                lastAccessTime == that.lastAccessTime &&
-                hits == that.hits &&
-                dataKey.equals(that.dataKey) &&
-                dataValue.equals(that.dataValue);
+        return creationTime == that.creationTime
+                && expirationTime == that.expirationTime
+                && lastAccessTime == that.lastAccessTime
+                && hits == that.hits
+                && dataKey.equals(that.dataKey)
+                && dataValue.equals(that.dataValue);
     }
 
     @Override
