@@ -265,9 +265,7 @@
         <prefetch-count>100</prefetch-count>
         <prefetch-validity-millis>600000</prefetch-validity-millis>
         <epoch-start>1514764800000</epoch-start>
-        <id-offset>0</id-offset>
         <node-id-offset>0</node-id-offset>
-        <bits-timestamp>41</bits-timestamp>
         <bits-sequence>6</bits-sequence>
         <bits-node-id>16</bits-node-id>
         <allowed-future-millis>15000</allowed-future-millis>

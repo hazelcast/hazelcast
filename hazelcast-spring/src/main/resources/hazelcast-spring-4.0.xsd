@@ -3309,29 +3309,12 @@
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
-        <xs:attribute name="bitsTimestamp" default="41" use="optional">
-            <xs:annotation>
-                <xs:documentation>
-                    Sets the timestamp component bit length, default 41 bits.
-
-                    Sum of bitsTimestamp + bitsSequence + bitsNodeId should be 63 in total, 64 in case negative IDs 
-                    are acceptable.
-                </xs:documentation>
-            </xs:annotation>
-            <xs:simpleType>
-                <xs:restriction base="xs:int">
-                    <xs:maxInclusive value="63" />
-                    <xs:minInclusive value="1" />
-                </xs:restriction>
-            </xs:simpleType>
-        </xs:attribute>
         <xs:attribute name="bitsSequence" default="6" use="optional">
             <xs:annotation>
                 <xs:documentation>
                     Sets the sequence component bit length, default 6 bits.
 
-                    Sum of bitsTimestamp + bitsSequence + bitsNodeId should be 63 in total, 64 in case negative IDs
-                    are acceptable.
+                    Sum of bitsSequence + bitsNodeId should be max 32.
                 </xs:documentation>
             </xs:annotation>
             <xs:simpleType>
@@ -3345,8 +3328,7 @@
                 <xs:documentation>
                     Sets the node id component bit length, default 16 bits.
 
-                    Sum of bitsTimestamp + bitsSequence + bitsNodeId should be 63 in total, 64 in case negative IDs
-                    are acceptable.
+                    Sum of bitsSequence + bitsNodeId should be max 32.
                 </xs:documentation>
             </xs:annotation>
             <xs:simpleType>

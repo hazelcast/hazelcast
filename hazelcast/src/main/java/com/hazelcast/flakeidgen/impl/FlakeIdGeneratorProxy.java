@@ -50,15 +50,16 @@ public class FlakeIdGeneratorProxy
 
     private static final int NODE_ID_NOT_YET_SET = -1;
     private static final int NODE_ID_OUT_OF_RANGE = -2;
-    private static final int MAX_BIT_LENGTH = 64;
+    private static final int MAX_BIT_LENGTH = 63;
+    private static final int RESERVED_TIMESTAMP_BIT_LENGTH = 32;
 
     private final String name;
     private final UUID source;
     private final long epochStart;
     private final long nodeIdOffset;
+    private final int bitsTimestamp;
     private final int bitsSequence;
     private final int bitsNodeId;
-    private final long maxId;
     private final long allowedFutureMillis;
     private volatile int nodeId = NODE_ID_NOT_YET_SET;
     private volatile long nextNodeIdUpdate = Long.MIN_VALUE;
@@ -86,15 +87,17 @@ public class FlakeIdGeneratorProxy
         this.source = source;
 
         FlakeIdGeneratorConfig config = nodeEngine.getConfig().findFlakeIdGeneratorConfig(getName());
-        int bitsTimestamp = config.getBitsTimestamp();
         bitsSequence = config.getBitsSequence();
         bitsNodeId = config.getBitsNodeId();
+        int configuredBitLength = bitsSequence + bitsNodeId;
+        checkTrue(configuredBitLength <= RESERVED_TIMESTAMP_BIT_LENGTH,
+                "Configuration error, maximum configurable bit length exceeded: "
+                        + configuredBitLength
+                        + ", max " + RESERVED_TIMESTAMP_BIT_LENGTH);
+        bitsTimestamp = MAX_BIT_LENGTH - (bitsSequence + bitsNodeId);
         allowedFutureMillis = config.getAllowedFutureMillis();
-        int bitLength = bitsTimestamp + bitsSequence + bitsNodeId;
-        checkTrue(bitLength <= MAX_BIT_LENGTH, "Configuration error, maximum ID bit length exceeded: " + bitLength +", max " + MAX_BIT_LENGTH);
-        maxId = bitLength == 64 ? Long.MAX_VALUE : (1L << bitLength) - 1L;
         increment = 1 << bitsNodeId;
-        epochStart = config.getEpochStart() - (config.getIdOffset() >> (bitsSequence + bitsNodeId));
+        epochStart = config.getEpochStart();
         nodeIdOffset = config.getNodeIdOffset();
         batcher = new AutoBatcher(config.getPrefetchCount(), config.getPrefetchValidityMillis(),
                 new AutoBatcher.IdBatchSupplier() {
@@ -122,7 +125,7 @@ public class FlakeIdGeneratorProxy
     public long newId() {
         // The cluster version is checked when ClusterService.getMemberListJoinVersion() is called. This always happens
         // before first ID is generated.
-        return batcher.newId() & maxId;
+        return batcher.newId();
     }
 
     public IdBatchAndWaitTime newIdBatch(int batchSize) {
@@ -175,6 +178,9 @@ public class FlakeIdGeneratorProxy
         }
         assert (nodeId & -1 << bitsNodeId) == 0  : "nodeId out of range: " + nodeId;
         now -= epochStart;
+        if (now < -(1L << bitsTimestamp) || now >= (1L << bitsTimestamp)) {
+            throw new HazelcastException("Current time out of allowed range");
+        }
         now <<= bitsSequence;
         long oldGeneratedValue;
         long base;

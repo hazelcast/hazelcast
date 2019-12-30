@@ -20,6 +20,7 @@ import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.impl.MemberImpl;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.FlakeIdGeneratorConfig;
+import com.hazelcast.core.HazelcastException;
 import com.hazelcast.flakeidgen.impl.FlakeIdGeneratorProxy.IdBatchAndWaitTime;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.logging.ILogger;
@@ -43,7 +44,6 @@ import java.util.UUID;
 import static com.hazelcast.config.FlakeIdGeneratorConfig.DEFAULT_ALLOWED_FUTURE_MILLIS;
 import static com.hazelcast.config.FlakeIdGeneratorConfig.DEFAULT_BITS_NODE_ID;
 import static com.hazelcast.config.FlakeIdGeneratorConfig.DEFAULT_BITS_SEQUENCE;
-import static com.hazelcast.config.FlakeIdGeneratorConfig.DEFAULT_BITS_TIMESTAMP;
 import static com.hazelcast.config.FlakeIdGeneratorConfig.DEFAULT_EPOCH_START;
 import static com.hazelcast.flakeidgen.impl.FlakeIdGeneratorProxy.NODE_ID_UPDATE_INTERVAL_NS;
 import static java.util.concurrent.TimeUnit.MINUTES;
@@ -60,6 +60,8 @@ public class FlakeIdGeneratorProxyTest {
      * Available number of IDs per second from single member
      */
     private final int IDS_PER_SECOND = 1 << DEFAULT_BITS_SEQUENCE;
+    private static final int MAX_BIT_LENGTH = 63;
+    private final long DEFAULT_BITS_TIMESTAMP = MAX_BIT_LENGTH - (DEFAULT_BITS_NODE_ID + DEFAULT_BITS_SEQUENCE);
     private static final ILogger LOG = Logger.getLogger(FlakeIdGeneratorProxyTest.class);
 
     @Rule
@@ -70,10 +72,10 @@ public class FlakeIdGeneratorProxyTest {
 
     @Before
     public void before() {
-        before(0, 0);
+        before(0);
     }
 
-    public void before(long idOffset, long nodeIdOffset) {
+    public void before(long nodeIdOffset) {
         ILogger logger = mock(ILogger.class);
         clusterService = mock(ClusterService.class);
         NodeEngine nodeEngine = mock(NodeEngine.class);
@@ -81,7 +83,7 @@ public class FlakeIdGeneratorProxyTest {
         when(nodeEngine.getLogger(FlakeIdGeneratorProxy.class)).thenReturn(logger);
         when(nodeEngine.isRunning()).thenReturn(true);
         when(nodeEngine.getConfig()).thenReturn(new Config().addFlakeIdGeneratorConfig(
-                new FlakeIdGeneratorConfig("foo").setIdOffset(idOffset).setNodeIdOffset(nodeIdOffset)
+                new FlakeIdGeneratorConfig("foo").setNodeIdOffset(nodeIdOffset)
         ));
         when(nodeEngine.getClusterService()).thenReturn(clusterService);
         Address address = null;
@@ -107,7 +109,7 @@ public class FlakeIdGeneratorProxyTest {
     }
 
     public void test_usedBits() {
-        assertEquals(63, DEFAULT_BITS_NODE_ID + DEFAULT_BITS_TIMESTAMP + DEFAULT_BITS_SEQUENCE);
+        assertEquals(24, DEFAULT_BITS_NODE_ID + DEFAULT_BITS_SEQUENCE);
     }
 
     @Test
@@ -142,6 +144,23 @@ public class FlakeIdGeneratorProxyTest {
     }
 
     @Test
+    public void when_currentTimeBeforeAllowedRange_then_fail() {
+        long lowestGoodTimestamp = DEFAULT_EPOCH_START - (1L << DEFAULT_BITS_TIMESTAMP);
+        gen.newIdBaseLocal(lowestGoodTimestamp, 0, 1);
+        exception.expect(HazelcastException.class);
+        exception.expectMessage("Current time out of allowed range");
+        gen.newIdBaseLocal(lowestGoodTimestamp - 1, 0, 1);
+    }
+
+    @Test
+    public void when_currentTimeAfterAllowedRange_then_fail() {
+        gen.newIdBaseLocal(DEFAULT_EPOCH_START + (1L << DEFAULT_BITS_TIMESTAMP) - 1, 0, 1);
+        exception.expect(HazelcastException.class);
+        exception.expectMessage("Current time out of allowed range");
+        gen.newIdBaseLocal(DEFAULT_EPOCH_START + (1L << DEFAULT_BITS_TIMESTAMP), 0, 1);
+    }
+
+    @Test
     public void when_twoIdsAtTheSameMoment_then_higherSeq() {
         long id1 = gen.newIdBaseLocal(1516028439000L, 1234, 1).idBatch.base();
         long id2 = gen.newIdBaseLocal(1516028439000L, 1234, 1).idBatch.base();
@@ -150,30 +169,10 @@ public class FlakeIdGeneratorProxyTest {
     }
 
     @Test
-    public void test_minimumIdOffset() {
-        // By assigning MIN_VALUE idOffset we'll offset the default epoch start by (Long.MIN_VALUE >> 22) ms, that is
-        // by about 69 years. So the lowest working date will be:
-        before(Long.MIN_VALUE, 0);
-        long id = gen.newIdBaseLocal(DEFAULT_EPOCH_START, 1234, 1).idBatch.base();
-        LOG.info("ID=" + id);
-        assertEquals(-9223372036854774574L, id);
-    }
-
-    @Test
-    public void test_maximumIdOffset() {
-        // By assigning MIN_VALUE idOffset we'll offset the default epoch start by (Long.MIN_VALUE >> 22) ms, that is
-        // by about 69 years. So the lowest working date will be:
-        before(Long.MAX_VALUE, 0);
-        long id = gen.newIdBaseLocal(DEFAULT_EPOCH_START, 1234, 1).idBatch.base();
-        LOG.info("ID=" + id);
-        assertEquals(9223372036850582738L, id);
-    }
-
-    @Test
     public void test_positiveNodeIdOffset() {
         int nodeIdOffset = 5;
         int memberListJoinVersion = 20;
-        before(0, nodeIdOffset);
+        before(0);
 
         when(clusterService.getMemberListJoinVersion()).thenReturn(memberListJoinVersion);
         assertEquals((memberListJoinVersion + nodeIdOffset), gen.getNodeId(0));
@@ -186,12 +185,10 @@ public class FlakeIdGeneratorProxyTest {
         // and check, that the ID after idOffset is set is larger than the value from IG.
         long largestIdGeneratorValue = 5421380884070400000L;
         long currentFlakeGenValue = gen.newId();
-        // this number is mentioned in FlakeIdGeneratorConfig.setIdOffset()
-        long reserve = 274877906944L;
         // This test will start failing after December 17th 2058 3:52:07 UTC: after this time no idOffset will be needed.
         assertTrue(largestIdGeneratorValue > currentFlakeGenValue);
         // the before() call will create a new gen
-        before(largestIdGeneratorValue - currentFlakeGenValue + reserve, 0);
+        before(0);
 
         // Then
         long newFlakeGenValue = gen.newId();

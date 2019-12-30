@@ -3930,25 +3930,6 @@
                 </xs:annotation>
             </xs:element>
             
-            <xs:element name="id-offset" type="xs:long" minOccurs="0" default="0">
-                <xs:annotation>
-                    <xs:documentation>
-                        Sets the offset that will be added to the returned IDs. Default value is 0. Setting might be
-                        useful when migrating from IdGenerator, default value works for all green-field projects.
-
-                        For example: Largest ID returned from IdGenerator is 150. FlakeIdGenerator now returns
-                        100. If you configure idOffset of 50 and stop using the IdGenerator, the next ID from
-                        FlakeIdGenerator will be 151 or larger and no duplicate IDs will be generated. In real-life,
-                        the IDs are much larger. You also need to add a reserve to the offset because the IDs
-                        from FlakeIdGenerator are only roughly ordered. Recommended reserve is 2^38, that is
-                        274877906944.
-
-                        Negative values are allowed to increase the lifespan of the generator, however keep in
-                        mind that the generated IDs might also be negative.
-                    </xs:documentation>
-                </xs:annotation>
-            </xs:element>
-
             <xs:element name="node-id-offset" type="xs:long" minOccurs="0" default="0">
                 <xs:annotation>
                     <xs:documentation>
@@ -3959,30 +3940,13 @@
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
-
-            <xs:element name="bits-timestamp" minOccurs="0" default="41">
-                <xs:annotation>
-                    <xs:documentation>
-                        Sets the timestamp component bit length, default 41 bits.
-
-                        Sum of bitsTimestamp + bitsSequence + bitsNodeId should be 63 in total, 64 in case negative IDs
-                        are acceptable.
-                    </xs:documentation>
-                </xs:annotation>
-                <xs:simpleType>
-                    <xs:restriction base="xs:int">
-                        <xs:minInclusive value="1" />
-                    </xs:restriction>
-                </xs:simpleType>
-            </xs:element>
-
+            
             <xs:element name="bits-sequence" minOccurs="0" default="6">
                 <xs:annotation>
                     <xs:documentation>
                         Sets the sequence component bit length, default 6 bits.
 
-                        Sum of bitsTimestamp + bitsSequence + bitsNodeId should be 63 in total, 64 in case negative IDs
-                        are acceptable.
+                        Sum of bitsTimestamp + bitsSequence + bitsNodeId should max 32.
                     </xs:documentation>
                 </xs:annotation>
                 <xs:simpleType>
@@ -3997,8 +3961,7 @@
                     <xs:documentation>
                         Sets the node id component bit length, default 16 bits.
 
-                        Sum of bitsTimestamp + bitsSequence + bitsNodeId should be 63 in total, 64 in case negative IDs
-                        are acceptable.
+                        Sum of bitsSequence + bitsNodeId should be max 32.
                     </xs:documentation>
                 </xs:annotation>
                 <xs:simpleType>
