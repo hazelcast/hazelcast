@@ -106,28 +106,6 @@ public final class ProxyManager implements DistributedObjectListener {
     private final ConcurrentMap<String, ClientProxyFactory> proxyFactories = new ConcurrentHashMap<>();
     private final ConcurrentMap<ObjectNamespace, ClientProxyFuture> proxies = new ConcurrentHashMap<>();
 
-    private final ListenerMessageCodec distributedObjectListenerCodec = new ListenerMessageCodec() {
-        @Override
-        public ClientMessage encodeAddRequest(boolean localOnly) {
-            return ClientAddDistributedObjectListenerCodec.encodeRequest(localOnly);
-        }
-
-        @Override
-        public UUID decodeAddResponse(ClientMessage clientMessage) {
-            return ClientAddDistributedObjectListenerCodec.decodeResponse(clientMessage).response;
-        }
-
-        @Override
-        public ClientMessage encodeRemoveRequest(UUID realRegistrationId) {
-            return ClientRemoveDistributedObjectListenerCodec.encodeRequest(realRegistrationId);
-        }
-
-        @Override
-        public boolean decodeRemoveResponse(ClientMessage clientMessage) {
-            return ClientRemoveDistributedObjectListenerCodec.decodeResponse(clientMessage).response;
-        }
-    };
-
     private final HazelcastClientInstanceImpl client;
 
     private ClientContext context;
@@ -138,7 +116,7 @@ public final class ProxyManager implements DistributedObjectListener {
 
     @SuppressWarnings("checkstyle:methodlength")
     public void init(ClientConfig config, ClientContext clientContext) {
-        addDistributedObjectListener(this);
+        addDistributeObjectListenerInternal(this, true);
 
         List<ListenerConfig> listenerConfigs = client.getClientConfig().getListenerConfigs();
         if (listenerConfigs != null && !listenerConfigs.isEmpty()) {
@@ -383,8 +361,7 @@ public final class ProxyManager implements DistributedObjectListener {
     }
 
     public UUID addDistributedObjectListener(@Nonnull DistributedObjectListener listener) {
-        final EventHandler<ClientMessage> eventHandler = new DistributedObjectEventHandler(listener, this);
-        return client.getListenerService().registerListener(distributedObjectListenerCodec, eventHandler);
+        return addDistributeObjectListenerInternal(listener, false);
     }
 
     public void createDistributedObjectsOnCluster() {
@@ -461,6 +438,39 @@ public final class ProxyManager implements DistributedObjectListener {
 
     public boolean removeDistributedObjectListener(@Nonnull UUID id) {
         return client.getListenerService().deregisterListener(id);
+    }
+
+    private UUID addDistributeObjectListenerInternal(@Nonnull DistributedObjectListener listener, boolean isInternal) {
+        final EventHandler<ClientMessage> eventHandler = new DistributedObjectEventHandler(listener, this);
+        return client.getListenerService().registerListener(new DistributeObjectListenerMessageCodec(isInternal), eventHandler);
+    }
+
+    private static final class DistributeObjectListenerMessageCodec implements ListenerMessageCodec {
+        private final boolean isInternal;
+
+        private DistributeObjectListenerMessageCodec(boolean isInternal) {
+            this.isInternal = isInternal;
+        }
+
+        @Override
+        public ClientMessage encodeAddRequest(boolean localOnly) {
+            return ClientAddDistributedObjectListenerCodec.encodeRequest(localOnly, isInternal);
+        }
+
+        @Override
+        public UUID decodeAddResponse(ClientMessage clientMessage) {
+            return ClientAddDistributedObjectListenerCodec.decodeResponse(clientMessage).response;
+        }
+
+        @Override
+        public ClientMessage encodeRemoveRequest(UUID realRegistrationId) {
+            return ClientRemoveDistributedObjectListenerCodec.encodeRequest(realRegistrationId);
+        }
+
+        @Override
+        public boolean decodeRemoveResponse(ClientMessage clientMessage) {
+            return ClientRemoveDistributedObjectListenerCodec.decodeResponse(clientMessage).response;
+        }
     }
 
     private static class ClientProxyFuture {
