@@ -150,8 +150,11 @@ public class AdvancedNetworkClientIntegrationTest {
         for (Partition partition : partitions) {
             Partition memberPartition = memberPartitions.next();
             assertEquals(memberPartition.getPartitionId(), partition.getPartitionId());
-            assertEquals(memberPartition.getOwner().getAddressMap().get(CLIENT),
-                        partition.getOwner().getAddress());
+            assertTrueEventually(() -> {
+                Member owner = partition.getOwner();
+                assertNotNull(owner);
+                assertEquals(memberPartition.getOwner().getAddressMap().get(CLIENT), owner.getAddress());
+            });
         }
     }
 
