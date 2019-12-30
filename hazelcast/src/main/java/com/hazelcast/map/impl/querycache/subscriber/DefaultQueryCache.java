@@ -16,12 +16,17 @@
 
 package com.hazelcast.map.impl.querycache.subscriber;
 
+import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.config.IndexConfig;
 import com.hazelcast.config.QueryCacheConfig;
 import com.hazelcast.core.EntryEventType;
-import com.hazelcast.map.IMap;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.internal.util.ContextMutexFactory;
+import com.hazelcast.internal.util.FutureUtil;
+import com.hazelcast.internal.util.MapUtil;
+import com.hazelcast.map.IMap;
 import com.hazelcast.map.impl.EntryEventFilter;
 import com.hazelcast.map.impl.query.QueryEventFilter;
 import com.hazelcast.map.impl.querycache.InvokerWrapper;
@@ -32,19 +37,14 @@ import com.hazelcast.map.impl.querycache.accumulator.Accumulator;
 import com.hazelcast.map.impl.querycache.accumulator.AccumulatorInfoSupplier;
 import com.hazelcast.map.impl.querycache.subscriber.record.QueryCacheRecord;
 import com.hazelcast.map.listener.MapListener;
-import com.hazelcast.cluster.Address;
-import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.Predicates;
 import com.hazelcast.query.impl.CachedQueryEntry;
 import com.hazelcast.query.impl.Index;
 import com.hazelcast.query.impl.QueryEntry;
 import com.hazelcast.query.impl.QueryableEntry;
-import com.hazelcast.spi.impl.eventservice.EventFilter;
 import com.hazelcast.spi.impl.UnmodifiableLazyList;
-import com.hazelcast.internal.util.ContextMutexFactory;
-import com.hazelcast.internal.util.FutureUtil;
-import com.hazelcast.internal.util.MapUtil;
+import com.hazelcast.spi.impl.eventservice.EventFilter;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -57,13 +57,13 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Future;
 
-import static com.hazelcast.map.impl.querycache.subscriber.AbstractQueryCacheEndToEndConstructor.OPERATION_WAIT_TIMEOUT_MINUTES;
-import static com.hazelcast.map.impl.querycache.subscriber.EventPublisherHelper.publishEntryEvent;
-import static com.hazelcast.map.impl.querycache.subscriber.QueryCacheRequest.newQueryCacheRequest;
 import static com.hazelcast.internal.nio.IOUtil.closeResource;
 import static com.hazelcast.internal.util.FutureUtil.waitWithDeadline;
 import static com.hazelcast.internal.util.Preconditions.checkNoNullInside;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
+import static com.hazelcast.map.impl.querycache.subscriber.AbstractQueryCacheEndToEndConstructor.OPERATION_WAIT_TIMEOUT_MINUTES;
+import static com.hazelcast.map.impl.querycache.subscriber.EventPublisherHelper.publishEntryEvent;
+import static com.hazelcast.map.impl.querycache.subscriber.QueryCacheRequest.newQueryCacheRequest;
 import static java.lang.Boolean.TRUE;
 import static java.util.concurrent.TimeUnit.MINUTES;
 
@@ -487,26 +487,36 @@ class DefaultQueryCache<K, V> extends AbstractInternalQueryCache<K, V> {
 
     @Override
     public void recreate() {
-        SubscriberContext subscriberContext = context.getSubscriberContext();
+        ContextMutexFactory.Mutex mutex = context.getLifecycleMutexFactory().mutexFor(mapName);
+        try {
+            // done other mutex to prevent races with `destroy`
+            synchronized (mutex) {
+                SubscriberContext subscriberContext = context.getSubscriberContext();
 
-        // 0. Check subscriber still exists
-        SubscriberAccumulator subscriberAccumulator = getOrNullSubscriberAccumulator();
-        if (subscriberAccumulator == null) {
-            return;
+                // 0. Check subscriber still exists
+                SubscriberAccumulator subscriberAccumulator = getOrNullSubscriberAccumulator();
+                if (subscriberAccumulator == null) {
+                    return;
+                }
+
+                // 1. Reset client-side subscriber resources
+                subscriberAccumulator.reset();
+
+                // 2. Reset/recreate server-side publisher resources
+                QueryCacheRequest request = newQueryCacheRequest()
+                        .withCacheName(cacheName)
+                        .forMap(delegate)
+                        .urgent(true)
+                        .withContext(context);
+
+                QueryCacheEndToEndProvider queryCacheEndToEndProvider
+                        = subscriberContext.getEndToEndQueryCacheProvider();
+                queryCacheEndToEndProvider.tryCreateQueryCache(mapName, cacheName,
+                        subscriberContext.newEndToEndConstructor(request));
+            }
+        } finally {
+            closeResource(mutex);
         }
-
-        // 1. Reset client-side subscriber resources
-        subscriberAccumulator.reset();
-
-        // 2. Reset/recreate server-side publisher resources
-        QueryCacheRequest request = newQueryCacheRequest()
-                .withCacheName(cacheName)
-                .forMap(delegate)
-                .urgent(true)
-                .withContext(context);
-
-        QueryCacheEndToEndProvider queryCacheEndToEndProvider = subscriberContext.getEndToEndQueryCacheProvider();
-        queryCacheEndToEndProvider.tryCreateQueryCache(mapName, cacheName, subscriberContext.newEndToEndConstructor(request));
     }
 
     private SubscriberAccumulator getOrNullSubscriberAccumulator() {
