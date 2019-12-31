@@ -51,6 +51,13 @@ public final class JmxLeakHelper {
     }
 
     public static void checkJmxBeans() {
+        //noinspection ConstantConditions
+        if (true) {
+            // TODO: Disabled due to racy JMX registration (see https://github.com/hazelcast/hazelcast/issues/16384).
+            //  Please re-enable when fixed.
+            return;
+        }
+
         if (ignoreOnce) {
             ignoreOnce = false;
 
