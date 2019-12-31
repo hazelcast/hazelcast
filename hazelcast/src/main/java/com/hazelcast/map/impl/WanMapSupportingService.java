@@ -17,24 +17,24 @@
 package com.hazelcast.map.impl;
 
 import com.hazelcast.config.WanAcknowledgeType;
+import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.services.WanSupportingService;
 import com.hazelcast.map.impl.operation.MapOperation;
 import com.hazelcast.map.impl.operation.MapOperationProvider;
+import com.hazelcast.map.impl.wan.WanMapAddOrUpdateEvent;
 import com.hazelcast.map.impl.wan.WanMapRemoveEvent;
-import com.hazelcast.map.impl.wan.WanMapUpdateEvent;
-import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 import com.hazelcast.spi.merge.SplitBrainMergeTypes.MapMergeTypes;
-import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.wan.WanEventCounters;
-import com.hazelcast.wan.WanEvent;
+import com.hazelcast.wan.impl.InternalWanEvent;
 
 import java.util.concurrent.Future;
 
+import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
 import static com.hazelcast.spi.impl.merge.MergingValueFactory.createMergingEntry;
-import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 
 class WanMapSupportingService implements WanSupportingService {
     private final MapServiceContext mapServiceContext;
@@ -49,9 +49,9 @@ class WanMapSupportingService implements WanSupportingService {
     }
 
     @Override
-    public void onReplicationEvent(WanEvent event, WanAcknowledgeType acknowledgeType) {
-        if (event instanceof WanMapUpdateEvent) {
-            handleUpdate((WanMapUpdateEvent) event);
+    public void onReplicationEvent(InternalWanEvent event, WanAcknowledgeType acknowledgeType) {
+        if (event instanceof WanMapAddOrUpdateEvent) {
+            handleAddOrUpdate((WanMapAddOrUpdateEvent) event);
         } else if (event instanceof WanMapRemoveEvent) {
             handleRemove((WanMapRemoveEvent) event);
         }
@@ -74,7 +74,7 @@ class WanMapSupportingService implements WanSupportingService {
         }
     }
 
-    private void handleUpdate(WanMapUpdateEvent replicationUpdate) {
+    private void handleAddOrUpdate(WanMapAddOrUpdateEvent replicationUpdate) {
         SplitBrainMergePolicy mergePolicy = replicationUpdate.getMergePolicy();
         String mapName = replicationUpdate.getObjectName();
         MapOperationProvider operationProvider = mapServiceContext.getMapOperationProvider(mapName);

@@ -16,10 +16,11 @@
 
 package com.hazelcast.wan.impl;
 
+import com.hazelcast.cache.impl.wan.WanCacheEntryView;
 import com.hazelcast.internal.serialization.DataSerializerHook;
 import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
 import com.hazelcast.map.impl.wan.WanMapRemoveEvent;
-import com.hazelcast.map.impl.wan.WanMapUpdateEvent;
+import com.hazelcast.map.impl.wan.WanMapAddOrUpdateEvent;
 import com.hazelcast.map.impl.wan.WanMapEntryView;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 
@@ -36,7 +37,8 @@ public class WanDataSerializerHook implements DataSerializerHook {
     public static final int MAP_REPLICATION_UPDATE = 0;
     public static final int MAP_REPLICATION_REMOVE = 1;
     public static final int WAN_MAP_ENTRY_VIEW = 2;
-    public static final int WAN_EVENT_CONTAINER_REPLICATION_OPERATION = 3;
+    public static final int WAN_CACHE_ENTRY_VIEW = 3;
+    public static final int WAN_EVENT_CONTAINER_REPLICATION_OPERATION = 4;
 
     @Override
     public int getFactoryId() {
@@ -48,11 +50,13 @@ public class WanDataSerializerHook implements DataSerializerHook {
         return typeId -> {
             switch (typeId) {
                 case MAP_REPLICATION_UPDATE:
-                    return new WanMapUpdateEvent();
+                    return new WanMapAddOrUpdateEvent();
                 case MAP_REPLICATION_REMOVE:
                     return new WanMapRemoveEvent();
                 case WAN_MAP_ENTRY_VIEW:
                     return new WanMapEntryView<>();
+                case WAN_CACHE_ENTRY_VIEW:
+                    return new WanCacheEntryView<>();
                 case WAN_EVENT_CONTAINER_REPLICATION_OPERATION:
                     return new WanEventContainerReplicationOperation();
                 default:

@@ -16,8 +16,10 @@
 
 package com.hazelcast.map.impl.event;
 
+import com.hazelcast.cluster.Address;
 import com.hazelcast.core.EntryEventType;
-import com.hazelcast.core.EntryView;
+import com.hazelcast.internal.partition.IPartitionService;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.impl.EntryEventFilter;
@@ -26,29 +28,28 @@ import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapPartitionLostEventFilter;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.query.QueryEventFilter;
+import com.hazelcast.map.impl.wan.WanMapAddOrUpdateEvent;
+import com.hazelcast.map.impl.wan.WanMapEntryView;
 import com.hazelcast.map.impl.wan.WanMapRemoveEvent;
-import com.hazelcast.map.impl.wan.WanMapUpdateEvent;
-import com.hazelcast.cluster.Address;
-import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.eventservice.EventFilter;
 import com.hazelcast.spi.impl.eventservice.EventRegistration;
 import com.hazelcast.spi.impl.eventservice.EventService;
-import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.eventservice.impl.TrueEventFilter;
 import com.hazelcast.spi.merge.SplitBrainMergePolicy;
-import com.hazelcast.internal.partition.IPartitionService;
 import com.hazelcast.spi.properties.HazelcastProperty;
 import com.hazelcast.wan.WanPublisher;
-import com.hazelcast.wan.impl.InternalWanEvent;
 import com.hazelcast.wan.impl.DelegatingWanScheme;
+import com.hazelcast.wan.impl.InternalWanEvent;
 
+import javax.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedList;
 
+import static com.hazelcast.internal.util.CollectionUtil.isEmpty;
 import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
 import static com.hazelcast.map.impl.event.AbstractFilteringStrategy.FILTER_DOES_NOT_MATCH;
-import static com.hazelcast.internal.util.CollectionUtil.isEmpty;
 
 public class MapEventPublisherImpl implements MapEventPublisher {
 
@@ -96,25 +97,26 @@ public class MapEventPublisherImpl implements MapEventPublisher {
     }
 
     @Override
-    public void publishWanUpdate(String mapName,
-                                 EntryView<Data, Data> entryView, boolean hasLoadProvenance) {
-        if (!isOwnedPartition(entryView.getKey())) {
+    public void publishWanUpdate(@Nonnull String mapName,
+                                 @Nonnull WanMapEntryView<Object, Object> entryView,
+                                 boolean hasLoadProvenance) {
+        if (!isOwnedPartition(entryView.getDataKey())) {
             return;
         }
 
         MapContainer mapContainer = mapServiceContext.getMapContainer(mapName);
         SplitBrainMergePolicy wanMergePolicy = mapContainer.getWanMergePolicy();
-        WanMapUpdateEvent event = new WanMapUpdateEvent(mapName, wanMergePolicy, entryView);
+        WanMapAddOrUpdateEvent event = new WanMapAddOrUpdateEvent(mapName, wanMergePolicy, entryView);
         publishWanEvent(mapName, event);
     }
 
     @Override
-    public void publishWanRemove(String mapName, Data key) {
+    public void publishWanRemove(@Nonnull String mapName, @Nonnull Data key) {
         if (!isOwnedPartition(key)) {
             return;
         }
 
-        WanMapRemoveEvent event = new WanMapRemoveEvent(mapName, key);
+        WanMapRemoveEvent event = new WanMapRemoveEvent(mapName, key, serializationService);
         publishWanEvent(mapName, event);
     }
 

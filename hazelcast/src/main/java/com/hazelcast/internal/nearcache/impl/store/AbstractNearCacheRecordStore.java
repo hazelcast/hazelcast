@@ -531,6 +531,7 @@ public abstract class AbstractNearCacheRecordStore<K, V, KS, R extends NearCache
 
     // overridden in EE
     protected R reserveForCacheOnUpdate0(K key, Data keyData, R existingRecord, long reservationId) {
+        // 1. When no existingRecord, create it
         if (existingRecord == null) {
             R record = null;
             try {
@@ -542,25 +543,28 @@ public abstract class AbstractNearCacheRecordStore<K, V, KS, R extends NearCache
                 throw rethrow(throwable);
             }
             return record;
-        } else {
-            if (existingRecord.getReservationId() == READ_PERMITTED) {
-                existingRecord.setReservationId(reservationId);
-                return existingRecord;
-            } else {
-                // Delete previously reserved record if we are here. Reasoning
-                // is: CACHE_ON_UPDATE mode has different characteristics than
-                // INVALIDATE mode when updating local near-cache. During update, if
-                // CACHE_ON_UPDATE finds a previously reserved record, it is deleted.
-                // This is different from INVALIDATE mode which doesn't delete
-                // previously reserved record and keeps it as is. The reason for this
-                // deletion is: concurrent reservation attempts. If CACHE_ON_UPDATE
-                // doesn't delete previously reserved record, indefinite read of stale
-                // value situation can be seen. Since we don't apply invalidations
-                // which are sent from server to near-cache if the source UUID of
-                // the invalidation is same with the end's UUID which has near-cache
-                // on it (client or server UUID which has near cache on it).
-                return null;
-            }
         }
+
+        // 2. When there is one readable existingRecord, change its reservation id
+        if (existingRecord.getReservationId() == READ_PERMITTED) {
+            existingRecord.setReservationId(reservationId);
+            return existingRecord;
+        }
+
+        // 3. If this record is a previously reserved one, delete it.
+
+        // Delete previously reserved record if we are here. Reasoning
+        // is: CACHE_ON_UPDATE mode has different characteristics than
+        // INVALIDATE mode when updating local near-cache. During update, if
+        // CACHE_ON_UPDATE finds a previously reserved record, it is deleted.
+        // This is different from INVALIDATE mode which doesn't delete
+        // previously reserved record and keeps it as is. The reason for this
+        // deletion is: concurrent reservation attempts. If CACHE_ON_UPDATE
+        // doesn't delete previously reserved record, indefinite read of stale
+        // value situation can be seen. Since we don't apply invalidations
+        // which are sent from server to near-cache if the source UUID of
+        // the invalidation is same with the end's UUID which has near-cache
+        // on it (client or server UUID which has near cache on it).
+        return null;
     }
 }

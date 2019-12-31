@@ -48,7 +48,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BiConsumer;
 import java.util.function.Supplier;
 
@@ -851,48 +850,28 @@ public class NearCachedClientCacheProxy<K, V> extends ClientCacheProxy<K, V> {
                 ? nearCache.tryReserveForCacheOnUpdate(nearCacheKey, keyData) : NOT_RESERVED;
         CompletableFuture<T> future = remoteCallSupplier.get();
         if (reservationId != NOT_RESERVED) {
-            return future.whenCompleteAsync(new BiConsumer<T, Throwable>() {
-                private final AtomicBoolean executed = new AtomicBoolean();
+            return future.whenCompleteAsync((response, throwable) -> {
+                if (statsCallback != null) {
+                    statsCallback.accept(response, throwable);
+                }
 
-                @Override
-                public void accept(T response, Throwable throwable) {
-                    if (!executed.compareAndSet(false, true)) {
-                        // execute only one time.
-                        return;
-                    }
-
-                    if (statsCallback != null) {
-                        statsCallback.accept(response, throwable);
-                    }
-
-                    if (throwable != null) {
-                        invalidateNearCache(nearCacheKey);
-                    } else if ((calledByBooleanMethod && response instanceof Boolean ? ((Boolean) response) : true)) {
-                        Object nearCacheValue = toNearCacheValue(value, valueData);
-                        tryPublishReserved(nearCacheKey, nearCacheValue, reservationId, false);
-                    } else {
-                        // Remove reservation, we haven't managed to put value.
-                        invalidateNearCache(nearCacheKey);
-                    }
+                if (throwable != null) {
+                    invalidateNearCache(nearCacheKey);
+                } else if ((calledByBooleanMethod && response instanceof Boolean ? ((Boolean) response) : true)) {
+                    Object nearCacheValue = toNearCacheValue(value, valueData);
+                    tryPublishReserved(nearCacheKey, nearCacheValue, reservationId, false);
+                } else {
+                    // Remove reservation, we haven't managed to put value.
+                    invalidateNearCache(nearCacheKey);
                 }
             });
         } else {
-            return future.whenCompleteAsync(new BiConsumer<T, Throwable>() {
-                private final AtomicBoolean executed = new AtomicBoolean();
-
-                @Override
-                public void accept(T response, Throwable throwable) {
-                    if (!executed.compareAndSet(false, true)) {
-                        // execute only one time.
-                        return;
-                    }
-
-                    if (statsCallback != null) {
-                        statsCallback.accept(response, throwable);
-                    }
-
-                    invalidateNearCache(nearCacheKey);
+            return future.whenCompleteAsync((response, throwable) -> {
+                if (statsCallback != null) {
+                    statsCallback.accept(response, throwable);
                 }
+
+                invalidateNearCache(nearCacheKey);
             });
         }
     }

@@ -415,6 +415,7 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> {
      * <ul>
      * <li>BINARY (default): keys and values will be stored as binary data</li>
      * <li>OBJECT: values will be stored in their object forms</li>
+     * <li>NATIVE: values will be stored in non-heap region of JVM (Hazelcast Enterprise only)</li>
      * </ul>
      *
      * @param inMemoryFormat the record type to set

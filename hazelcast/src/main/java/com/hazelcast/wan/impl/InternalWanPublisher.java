@@ -17,13 +17,12 @@
 package com.hazelcast.wan.impl;
 
 import com.hazelcast.internal.monitor.LocalWanPublisherStats;
-import com.hazelcast.wan.WanEvent;
 import com.hazelcast.wan.WanPublisher;
 
 /**
  * Methods exposed on WAN publishers for internal use.
  */
-public interface InternalWanPublisher extends WanPublisher {
+public interface InternalWanPublisher<T> extends WanPublisher<T> {
 
     /**
      * Releases all resources for the map with the given {@code mapName}.
@@ -51,7 +50,7 @@ public interface InternalWanPublisher extends WanPublisher {
      *
      * @param wanEvent the WAN event to publish
      */
-    void republishReplicationEvent(WanEvent wanEvent);
+    void republishReplicationEvent(InternalWanEvent<T> wanEvent);
 
     /**
      * Publishes a WAN anti-entropy event. This method may also process the

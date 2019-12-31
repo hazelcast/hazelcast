@@ -18,39 +18,28 @@ package com.hazelcast.wan.impl;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.WanCustomPublisherConfig;
-import com.hazelcast.config.MapConfig;
-import com.hazelcast.config.WanReplicationConfig;
-import com.hazelcast.config.WanReplicationRef;
+import com.hazelcast.core.EntryView;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.partition.InternalPartitionService;
-import com.hazelcast.internal.serialization.InternalSerializationService;
-import com.hazelcast.map.EntryProcessor;
+import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.map.IMap;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.SimpleEntryView;
 import com.hazelcast.map.impl.operation.MapOperation;
 import com.hazelcast.map.impl.operation.MapOperationProvider;
-import com.hazelcast.map.impl.proxy.MapProxyImpl;
-import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.spi.impl.operationservice.OperationFactory;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 import com.hazelcast.spi.merge.PassThroughMergePolicy;
 import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 import com.hazelcast.spi.merge.SplitBrainMergeTypes.MapMergeTypes;
-import com.hazelcast.internal.serialization.SerializationService;
-import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
-import com.hazelcast.test.annotation.ParallelJVMTest;
-import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.wan.WanEvent;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -58,26 +47,24 @@ import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Stream;
 
 import static com.hazelcast.spi.impl.merge.MergingValueFactory.createMergingEntry;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
- * Tests for WAN replication API.
+ * Tests for custom WAN publisher.
  */
-@RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelJVMTest.class})
-public class WanCustomPublisherTest extends HazelcastTestSupport {
+public class AbstractWanCustomPublisherMapTest extends HazelcastTestSupport {
 
     private TestHazelcastInstanceFactory factory;
     private HazelcastInstance instance1;
     private HazelcastInstance instance2;
-    private IMap<Object, Object> map;
-
-    private WanDummyPublisher impl1;
-    private WanDummyPublisher impl2;
+    private IMap<Integer, Object> map;
 
     @Before
     public void setUp() {
@@ -94,11 +81,18 @@ public class WanCustomPublisherTest extends HazelcastTestSupport {
         initInstancesAndMap("wan-replication-test-put-replace-remove");
         for (int i = 0; i < 10; i++) {
             map.put(i, i);
+        }
+        assertQueueContents(10, map);
+
+        for (int i = 0; i < 10; i++) {
             map.replace(i, i * 2);
+        }
+        assertQueueContents(20, map);
+
+        for (int i = 0; i < 10; i++) {
             map.remove(i);
         }
-
-        assertTotalQueueSize(30);
+        assertQueueContents(30, map);
     }
 
     @Test
@@ -110,7 +104,7 @@ public class WanCustomPublisherTest extends HazelcastTestSupport {
             map.remove(i);
         }
 
-        assertTotalQueueSize(30);
+        assertQueueContents(30, map);
     }
 
     @Test
@@ -122,7 +116,7 @@ public class WanCustomPublisherTest extends HazelcastTestSupport {
             map.remove(i, i * 2);
         }
 
-        assertTotalQueueSize(30);
+        assertQueueContents(30, map);
     }
 
     @Test
@@ -133,7 +127,7 @@ public class WanCustomPublisherTest extends HazelcastTestSupport {
             assertTrue(map.tryRemove(i, 10, TimeUnit.SECONDS));
         }
 
-        assertTotalQueueSize(20);
+        assertQueueContents(20, map);
     }
 
     @Test
@@ -144,7 +138,7 @@ public class WanCustomPublisherTest extends HazelcastTestSupport {
             map.delete(i);
         }
 
-        assertTotalQueueSize(20);
+        assertQueueContents(20, map);
     }
 
     @Test
@@ -154,12 +148,12 @@ public class WanCustomPublisherTest extends HazelcastTestSupport {
             map.putTransient(i, i, 1, TimeUnit.SECONDS);
         }
 
-        assertTotalQueueSize(10);
+        assertQueueContents(10, map);
     }
 
     @Test
     public void mapPutAllTest() {
-        Map<Object, Object> userMap = new HashMap<>();
+        Map<Integer, Integer> userMap = new HashMap<>();
         for (int i = 0; i < 10; i++) {
             userMap.put(i, i);
         }
@@ -167,45 +161,36 @@ public class WanCustomPublisherTest extends HazelcastTestSupport {
         initInstancesAndMap("wan-replication-test-put-all");
         map.putAll(userMap);
 
-        assertTotalQueueSize(10);
+        assertQueueContents(10, map);
     }
 
     @Test
-    public void entryProcessorTest() throws Exception {
+    public void entryProcessorTest() {
         initInstancesAndMap("wan-replication-test-entry-processor");
         for (int i = 0; i < 10; i++) {
             map.put(i, i);
         }
 
-        assertTotalQueueSize(10);
+        assertQueueContents(10, map);
 
         // clean event queues
-        impl1.eventQueue.clear();
-        impl2.eventQueue.clear();
+        getWanReplicationImpl(instance1).getEventQueue().clear();
+        getWanReplicationImpl(instance2).getEventQueue().clear();
 
-        InternalSerializationService serializationService = getSerializationService(instance1);
-        Set<Data> keySet = new HashSet<>();
+        Set<Integer> keys = new HashSet<>();
         for (int i = 0; i < 10; i++) {
-            keySet.add(serializationService.toData(i));
+            keys.add(i);
         }
 
-        // multiple entry operations (update)
-        OperationFactory operationFactory = getOperationProvider(map).createMultipleEntryOperationFactory(map.getName(), keySet,
-                new UpdatingEntryProcessor());
-
-        OperationServiceImpl operationService = getOperationService(instance1);
-        operationService.invokeOnAllPartitions(MapService.SERVICE_NAME, operationFactory);
+        map.executeOnKeys(keys, e -> e.setValue("EP" + e.getValue()));
 
         // there should be 10 events since all entries should be processed
-        assertTotalQueueSize(10);
+        assertQueueContents(10, map);
 
-        // multiple entry operations (remove)
-        OperationFactory deletingOperationFactory = getOperationProvider(map).createMultipleEntryOperationFactory(map.getName(),
-                keySet, new DeletingEntryProcessor());
-        operationService.invokeOnAllPartitions(MapService.SERVICE_NAME, deletingOperationFactory);
+        map.executeOnKeys(keys, e -> e.setValue(null));
 
         // 10 more event should be published
-        assertTotalQueueSize(20);
+        assertQueueContents(20, map);
     }
 
     @Test
@@ -222,19 +207,15 @@ public class WanCustomPublisherTest extends HazelcastTestSupport {
     }
 
     @Test
-    @SuppressWarnings("ConstantConditions")
     public void mergeOperationGeneratesWanReplicationEvent() {
-        boolean enableWANReplicationEvent = true;
-        runMergeOpForWAN(enableWANReplicationEvent);
+        runMergeOpForWAN(true);
 
         assertTotalQueueSize(1);
     }
 
     @Test
-    @SuppressWarnings("ConstantConditions")
     public void mergeOperationDoesNotGenerateWanReplicationEventWhenDisabled() {
-        boolean enableWANReplicationEvent = false;
-        runMergeOpForWAN(enableWANReplicationEvent);
+        runMergeOpForWAN(false);
 
         assertTrueAllTheTime(() -> assertTotalQueueSize(0), 3);
     }
@@ -260,8 +241,7 @@ public class WanCustomPublisherTest extends HazelcastTestSupport {
         SimpleEntryView<Data, Data> entryView = new SimpleEntryView<Data, Data>().withKey(data).withValue(data);
 
         MapMergeTypes mergingEntry = createMergingEntry(serializationService, entryView);
-        SplitBrainMergePolicy<Data, MapMergeTypes> mergePolicy
-                = new com.hazelcast.spi.merge.PassThroughMergePolicy<>();
+        SplitBrainMergePolicy<Data, MapMergeTypes> mergePolicy = new PassThroughMergePolicy<>();
         op = operationProvider.createMergeOperation(mapName, mergingEntry, mergePolicy, !enableWANReplicationEvent);
         operationService.createInvocationBuilder(MapService.SERVICE_NAME, op, partitionService.getPartitionId(data)).invoke();
     }
@@ -272,25 +252,7 @@ public class WanCustomPublisherTest extends HazelcastTestSupport {
         map = instance1.getMap(name);
     }
 
-    @Override
-    protected Config getConfig() {
-        WanReplicationConfig wanReplicationConfig = new WanReplicationConfig()
-                .setName("dummyWan")
-                .addCustomPublisherConfig(getPublisherConfig());
-
-        WanReplicationRef wanRef = new WanReplicationRef()
-                .setName("dummyWan")
-                .setMergePolicy(PassThroughMergePolicy.class.getName());
-
-        MapConfig mapConfig = new MapConfig("default")
-                .setWanReplicationRef(wanRef);
-
-        return new Config()
-                .addWanReplicationConfig(wanReplicationConfig)
-                .addMapConfig(mapConfig);
-    }
-
-    private WanCustomPublisherConfig getPublisherConfig() {
+    protected WanCustomPublisherConfig getPublisherConfig() {
         return new WanCustomPublisherConfig()
                 .setPublisherId("dummyPublisherId")
                 .setClassName(WanDummyPublisher.class.getName());
@@ -302,38 +264,41 @@ public class WanCustomPublisherTest extends HazelcastTestSupport {
         return (WanDummyPublisher) delegate.getPublishers().iterator().next();
     }
 
-    private MapOperationProvider getOperationProvider(Map map) {
-        MapProxyImpl mapProxy = (MapProxyImpl) map;
-        MapServiceContext mapServiceContext = ((MapService) mapProxy.getService()).getMapServiceContext();
-        return mapServiceContext.getMapOperationProvider(mapProxy.getName());
-    }
-
     private void assertTotalQueueSize(final int expectedQueueSize) {
-        if (impl1 == null) {
-            impl1 = getWanReplicationImpl(instance1);
-            impl2 = getWanReplicationImpl(instance2);
-        }
-
-        final Queue<WanEvent> eventQueue1 = impl1.eventQueue;
-        final Queue<WanEvent> eventQueue2 = impl2.eventQueue;
+        Queue<WanEvent<Object>> eventQueue1 = getWanReplicationImpl(instance1).getEventQueue();
+        Queue<WanEvent<Object>> eventQueue2 = getWanReplicationImpl(instance2).getEventQueue();
         assertTrueEventually(() -> assertEquals(expectedQueueSize, eventQueue1.size() + eventQueue2.size()));
     }
 
-    private static class UpdatingEntryProcessor implements EntryProcessor<Object, Object, String> {
+    private void assertQueueContents(int expectedQueueSize, IMap<?, ?> map) {
+        Queue<WanEvent<Object>> eventQueue1 = getWanReplicationImpl(instance1).getEventQueue();
+        Queue<WanEvent<Object>> eventQueue2 = getWanReplicationImpl(instance2).getEventQueue();
+        assertTrueEventually(() -> assertEquals(expectedQueueSize, eventQueue1.size() + eventQueue2.size()));
 
-        @Override
-        public String process(Map.Entry<Object, Object> entry) {
-            entry.setValue("EP" + entry.getValue());
-            return "done";
-        }
-    }
+        HashMap<Object, Object> actualMap = new HashMap<>();
+        Stream.of(instance1, instance2)
+              .flatMap(i -> getWanReplicationImpl(i).getEventQueue().stream())
+              .forEach(e -> {
+                  assertEquals(MapService.SERVICE_NAME, e.getServiceName());
+                  assertEquals(map.getName(), e.getObjectName());
+                  Object eventObject = e.getEventObject();
+                  assertNotNull(eventObject);
 
-    private static class DeletingEntryProcessor implements EntryProcessor<Object, Object, String> {
+                  switch (e.getEventType()) {
+                      case SYNC:
+                          fail("Unexpected event type");
+                          break;
+                      case ADD_OR_UPDATE:
+                          @SuppressWarnings("unchecked")
+                          EntryView<Object, Object> o = (EntryView<Object, Object>) eventObject;
+                          actualMap.put(o.getKey(), o.getValue());
+                          break;
+                      case REMOVE:
+                          actualMap.remove(eventObject);
+                          break;
+                  }
+              });
 
-        @Override
-        public String process(Map.Entry<Object, Object> entry) {
-            entry.setValue(null);
-            return "done";
-        }
+        assertEquals(map.entrySet(), actualMap.entrySet());
     }
 }

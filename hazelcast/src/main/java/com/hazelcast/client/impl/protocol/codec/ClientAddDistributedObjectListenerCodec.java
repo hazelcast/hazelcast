@@ -37,14 +37,15 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * TODO DOC
  */
-@Generated("fb82ded6cdcbb9418985f1db252e4b49")
+@Generated("144e5c3164540f34dd468dc838db14b6")
 public final class ClientAddDistributedObjectListenerCodec {
     //hex: 0x000A00
     public static final int REQUEST_MESSAGE_TYPE = 2560;
     //hex: 0x000A01
     public static final int RESPONSE_MESSAGE_TYPE = 2561;
     private static final int REQUEST_LOCAL_ONLY_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_LOCAL_ONLY_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
+    private static final int REQUEST_INTERNAL_FIELD_OFFSET = REQUEST_LOCAL_ONLY_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
+    private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_INTERNAL_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
     private static final int RESPONSE_RESPONSE_FIELD_OFFSET = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_RESPONSE_FIELD_OFFSET + UUID_SIZE_IN_BYTES;
     private static final int EVENT_DISTRIBUTED_OBJECT_SOURCE_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
@@ -63,15 +64,21 @@ public final class ClientAddDistributedObjectListenerCodec {
          * members in the cluster.
          */
         public boolean localOnly;
+
+        /**
+         * Set to true for the registration for ProxyManager initiation and set to false for user listeners.
+         */
+        public boolean internal;
     }
 
-    public static ClientMessage encodeRequest(boolean localOnly) {
+    public static ClientMessage encodeRequest(boolean localOnly, boolean internal) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
         clientMessage.setOperationName("Client.AddDistributedObjectListener");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
         encodeBoolean(initialFrame.content, REQUEST_LOCAL_ONLY_FIELD_OFFSET, localOnly);
+        encodeBoolean(initialFrame.content, REQUEST_INTERNAL_FIELD_OFFSET, internal);
         clientMessage.add(initialFrame);
         return clientMessage;
     }
@@ -81,6 +88,7 @@ public final class ClientAddDistributedObjectListenerCodec {
         RequestParameters request = new RequestParameters();
         ClientMessage.Frame initialFrame = iterator.next();
         request.localOnly = decodeBoolean(initialFrame.content, REQUEST_LOCAL_ONLY_FIELD_OFFSET);
+        request.internal = decodeBoolean(initialFrame.content, REQUEST_INTERNAL_FIELD_OFFSET);
         return request;
     }
 
