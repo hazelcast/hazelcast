@@ -32,7 +32,6 @@ import java.util.Map;
 import java.util.concurrent.Callable;
 
 import static java.lang.System.currentTimeMillis;
-import static java.lang.Thread.sleep;
 
 /**
  * Common methods used in ScheduledExecutorService tests.
@@ -125,11 +124,7 @@ public class ScheduledExecutorServiceTestSupport extends HazelcastTestSupport {
 
         @Override
         public Double call() {
-            try {
-                sleep(sleepPeriod);
-            } catch (InterruptedException e) {
-                Thread.interrupted();
-            }
+            sleepAtLeastMillis(sleepPeriod);
 
             instance.getCountDownLatch(runLatchName).countDown();
             return 77 * 2.2;
@@ -216,14 +211,10 @@ public class ScheduledExecutorServiceTestSupport extends HazelcastTestSupport {
         public void run() {
             long start = currentTimeMillis();
             while (true) {
-                try {
-                    sleep(5000);
-                    if (currentTimeMillis() - start >= 30000) {
-                        instance.getCountDownLatch(runFinishedLatchName).countDown();
-                        break;
-                    }
-                } catch (InterruptedException e) {
-                    // ignore
+                sleepAtLeastMillis(5000);
+                if (currentTimeMillis() - start >= 30000) {
+                    instance.getCountDownLatch(runFinishedLatchName).countDown();
+                    break;
                 }
             }
         }

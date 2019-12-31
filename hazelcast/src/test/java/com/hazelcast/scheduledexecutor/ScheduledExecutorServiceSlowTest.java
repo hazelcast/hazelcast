@@ -82,15 +82,16 @@ public class ScheduledExecutorServiceSlowTest extends ScheduledExecutorServiceTe
                 key, 10, 10, SECONDS);
 
         // wait for task to get scheduled and start
-        latch.await(11, SECONDS);
+        assertOpenEventually(latch);
 
-        Thread.sleep(waitStateSyncPeriodToAvoidPassiveState);
+        sleepAtLeastMillis(waitStateSyncPeriodToAvoidPassiveState);
 
         instances[1].getLifecycleService().shutdown();
 
         // reset latch - task should be running on a replica now
         latch.trySetCount(7);
-        latch.await(70, SECONDS);
+
+        assertOpenEventually(latch);
         future.cancel(false);
 
         assertEquals(getPartitionService(instances[0]).getPartitionId(key), future.getHandler().getPartitionId());
@@ -114,11 +115,12 @@ public class ScheduledExecutorServiceSlowTest extends ScheduledExecutorServiceTe
         IScheduledFuture future = executorService.scheduleOnKeyOwnerAtFixedRate(
                 new ICountdownLatchRunnableTask("firstLatch", "lastLatch"), key, 0, 10, SECONDS);
 
-        firstLatch.await(12, SECONDS);
+        assertOpenEventually(firstLatch);
 
         instances[1].getLifecycleService().shutdown();
 
-        lastLatch.await(70, SECONDS);
+        assertOpenEventually(lastLatch);
+
         // wait for run-cycle to finish before cancelling, in order for stats to get updated
         sleepSeconds(4);
         future.cancel(false);
@@ -138,7 +140,7 @@ public class ScheduledExecutorServiceSlowTest extends ScheduledExecutorServiceTe
         IScheduledFuture future = executorService.scheduleAtFixedRate(
                 new ICountdownLatchRunnableTask("latch"), 0, 10, SECONDS);
 
-        latch.await(120, SECONDS);
+        assertOpenEventually(latch);
         future.cancel(false);
 
         ScheduledTaskStatistics stats = future.getStats();
@@ -190,7 +192,7 @@ public class ScheduledExecutorServiceSlowTest extends ScheduledExecutorServiceTe
             s.scheduleOnKeyOwnerAtFixedRate(new ICountdownLatchRunnableTask(runsCounterName), key, 0, 2, SECONDS);
         }
 
-        runsLatch.await(10, SECONDS);
+        assertOpenEventually(runsLatch);
         instances[1].getLifecycleService().shutdown();
 
         assertEquals(expectedTotal, countScheduledTasksOn(s), 0);
@@ -217,7 +219,7 @@ public class ScheduledExecutorServiceSlowTest extends ScheduledExecutorServiceTe
             }
         }
 
-        runsLatch.await(10, SECONDS);
+        assertOpenEventually(runsLatch);
 
         int actualTotal = 0;
         for (int i = 0; i < numOfSchedulers; i++) {
@@ -249,7 +251,7 @@ public class ScheduledExecutorServiceSlowTest extends ScheduledExecutorServiceTe
             }
         }
 
-        runsLatch.await(10, SECONDS);
+        assertOpenEventually(runsLatch);
 
         getScheduledExecutor(instances, "scheduler_" + 0).shutdown();
         getScheduledExecutor(instances, "scheduler_" + 1).shutdown();
@@ -284,7 +286,7 @@ public class ScheduledExecutorServiceSlowTest extends ScheduledExecutorServiceTe
             }
         }
 
-        runsLatch.await(10, SECONDS);
+        assertOpenEventually(runsLatch);
 
         instances[1].getLifecycleService().terminate();
 
@@ -316,7 +318,7 @@ public class ScheduledExecutorServiceSlowTest extends ScheduledExecutorServiceTe
         assertTrue(future.isDone());
 
         // wait till the task is actually done, since even though we cancelled the task is current task is still running
-        latch.await(60, SECONDS);
+        assertOpenEventually(latch);
 
         // make sure SyncState goes through
         sleepSeconds(10);
@@ -349,7 +351,7 @@ public class ScheduledExecutorServiceSlowTest extends ScheduledExecutorServiceTe
         assertTrue(future.isDone());
 
         // wait till the task is actually done, since even though we cancelled the task is current task is still running
-        latch.await(60, SECONDS);
+        assertOpenEventually(latch);
 
         // make sure SyncState goes through
         sleepSeconds(10);
