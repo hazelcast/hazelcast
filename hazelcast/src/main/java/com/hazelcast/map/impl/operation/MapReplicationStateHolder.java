@@ -117,16 +117,19 @@ public class MapReplicationStateHolder implements IdentifiedDataSerializable, Ve
             Set<IndexInfo> indexInfos = new HashSet<IndexInfo>();
             if (mapContainer.isGlobalIndexEnabled()) {
                 // global-index
-                for (Index index : mapContainer.getIndexes().getIndexes()) {
+                final Indexes indexes = mapContainer.getIndexes();
+                for (Index index : indexes.getIndexes()) {
                     indexInfos.add(new IndexInfo(index.getName(), index.isOrdered()));
                 }
+                indexInfos.addAll(indexes.getIndexDefinitions());
             } else {
                 // partitioned-index
                 final Indexes indexes = mapContainer.getIndexes(container.getPartitionId());
-                if (indexes != null && indexes.haveAtLeastOneIndex()) {
+                if (indexes != null && indexes.haveAtLeastOneIndexOrDefinition()) {
                     for (Index index : indexes.getIndexes()) {
                         indexInfos.add(new IndexInfo(index.getName(), index.isOrdered()));
                     }
+                    indexInfos.addAll(indexes.getIndexDefinitions());
                 }
             }
             MapIndexInfo mapIndexInfo = new MapIndexInfo(mapName);
@@ -224,6 +227,7 @@ public class MapReplicationStateHolder implements IdentifiedDataSerializable, Ve
             }
         } else {
             Indexes indexes = mapContainer.getIndexes(operation.getPartitionId());
+            indexes.createIndexesFromRecordedDefinitions();
             for (IndexInfo indexInfo : indexInfos) {
                 indexes.addOrGetIndex(indexInfo.getName(), indexInfo.isOrdered());
             }

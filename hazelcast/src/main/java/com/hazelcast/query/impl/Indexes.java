@@ -28,10 +28,13 @@ import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.spi.serialization.SerializationService;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 import static com.hazelcast.util.Preconditions.checkNotNull;
 
@@ -55,7 +58,7 @@ public class Indexes {
     private final Map<String, InternalIndex> indexesByName = new ConcurrentHashMap<String, InternalIndex>(3);
     private final AttributeIndexRegistry attributeIndexRegistry = new AttributeIndexRegistry();
     private final ConverterCache converterCache = new ConverterCache(this);
-    private final Map<String, Boolean> definitions = new ConcurrentHashMap<String, Boolean>();
+    private final ConcurrentMap<String, Boolean> definitions = new ConcurrentHashMap<String, Boolean>();
 
     private volatile InternalIndex[] indexes = EMPTY_INDEXES;
     private volatile InternalIndex[] compositeIndexes = EMPTY_INDEXES;
@@ -178,8 +181,16 @@ public class Indexes {
     public void createIndexesFromRecordedDefinitions() {
         for (Map.Entry<String, Boolean> definition : definitions.entrySet()) {
             addOrGetIndex(definition.getKey(), definition.getValue());
+            definitions.remove(definition.getKey(), definition.getValue());
         }
-        definitions.clear();
+    }
+
+    public Collection<IndexInfo> getIndexDefinitions() {
+        Collection<IndexInfo> indexInfos = new ArrayList<IndexInfo>(definitions.size());
+        for (Map.Entry<String, Boolean> definition : definitions.entrySet()) {
+            indexInfos.add(new IndexInfo(definition.getKey(), definition.getValue()));
+        }
+        return indexInfos;
     }
 
     /**
@@ -232,6 +243,19 @@ public class Indexes {
      */
     public boolean haveAtLeastOneIndex() {
         return indexes != EMPTY_INDEXES;
+    }
+
+    /**
+     * Returns {@code true} if the indexes instance contains either at least one index or its definition,
+     * {@code false} otherwise.
+     *
+     * @return
+     */
+    public boolean haveAtLeastOneIndexOrDefinition() {
+        boolean haveAtLeastOneIndexOrDefinition = haveAtLeastOneIndex() || !definitions.isEmpty();
+        // for local indexes assert that indexes and definitions are exclusive
+        assert isGlobal() || !haveAtLeastOneIndexOrDefinition || !haveAtLeastOneIndex() || definitions.isEmpty();
+        return haveAtLeastOneIndexOrDefinition;
     }
 
     /**
