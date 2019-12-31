@@ -26,6 +26,8 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.wan.impl.WanDataSerializerHook;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.io.IOException;
 import java.util.Objects;
 
@@ -50,14 +52,20 @@ public class WanCacheEntryView<K, V> implements CacheEntryView<K, V>, Identified
     public WanCacheEntryView() {
     }
 
-    public WanCacheEntryView(Data dataKey, Data dataValue, long creationTime,
-                             long expirationTime, long lastAccessTime, long hits) {
+    public WanCacheEntryView(@Nonnull Data dataKey,
+                             @Nullable Data dataValue,
+                             long creationTime,
+                             long expirationTime,
+                             long lastAccessTime,
+                             long hits,
+                             @Nonnull SerializationService serializationService) {
         this.dataKey = dataKey;
         this.dataValue = dataValue;
         this.creationTime = creationTime;
         this.expirationTime = expirationTime;
         this.lastAccessTime = lastAccessTime;
         this.hits = hits;
+        this.serializationService = serializationService;
     }
 
     @Override
