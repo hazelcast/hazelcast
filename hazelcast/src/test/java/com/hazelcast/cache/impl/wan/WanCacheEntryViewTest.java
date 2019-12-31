@@ -42,8 +42,7 @@ public class WanCacheEntryViewTest extends HazelcastTestSupport {
         Data keyData = serializationService.toData(keyString);
         Data valueData = serializationService.toData(valueString);
         WanCacheEntryView<String, String> expected
-                = new WanCacheEntryView<>(keyData, valueData, 100, 101, 102, 103);
-        expected.setSerializationService(serializationService);
+                = new WanCacheEntryView<>(keyData, valueData, 100, 101, 102, 103, serializationService);
 
         WanCacheEntryView<String, String> actual
                 = serializationService.toObject(serializationService.toData(expected));
