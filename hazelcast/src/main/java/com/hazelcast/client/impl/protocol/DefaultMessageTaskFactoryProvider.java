@@ -87,6 +87,7 @@ import com.hazelcast.client.impl.protocol.codec.ClientRemoveAllListenersCodec;
 import com.hazelcast.client.impl.protocol.codec.ClientRemoveDistributedObjectListenerCodec;
 import com.hazelcast.client.impl.protocol.codec.ClientRemovePartitionLostListenerCodec;
 import com.hazelcast.client.impl.protocol.codec.ClientStatisticsCodec;
+import com.hazelcast.client.impl.protocol.codec.ClientTriggerPartitionAssignmentCodec;
 import com.hazelcast.client.impl.protocol.codec.ContinuousQueryAddListenerCodec;
 import com.hazelcast.client.impl.protocol.codec.ContinuousQueryDestroyCacheCodec;
 import com.hazelcast.client.impl.protocol.codec.ContinuousQueryMadePublishableCodec;
@@ -177,9 +178,9 @@ import com.hazelcast.client.impl.protocol.codec.MCRunGcCodec;
 import com.hazelcast.client.impl.protocol.codec.MCRunScriptCodec;
 import com.hazelcast.client.impl.protocol.codec.MCShutdownClusterCodec;
 import com.hazelcast.client.impl.protocol.codec.MCShutdownMemberCodec;
-import com.hazelcast.client.impl.protocol.codec.MCTriggerPartialStartCodec;
 import com.hazelcast.client.impl.protocol.codec.MCTriggerForceStartCodec;
 import com.hazelcast.client.impl.protocol.codec.MCTriggerHotRestartBackupCodec;
+import com.hazelcast.client.impl.protocol.codec.MCTriggerPartialStartCodec;
 import com.hazelcast.client.impl.protocol.codec.MCUpdateMapConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.MapAddEntryListenerCodec;
 import com.hazelcast.client.impl.protocol.codec.MapAddEntryListenerToKeyCodec;
@@ -427,6 +428,7 @@ import com.hazelcast.client.impl.protocol.task.PingMessageTask;
 import com.hazelcast.client.impl.protocol.task.RemoveAllListenersMessageTask;
 import com.hazelcast.client.impl.protocol.task.RemoveDistributedObjectListenerMessageTask;
 import com.hazelcast.client.impl.protocol.task.RemovePartitionLostListenerMessageTask;
+import com.hazelcast.client.impl.protocol.task.TriggerPartitionAssignmentMessageTask;
 import com.hazelcast.client.impl.protocol.task.cache.CacheAddEntryListenerMessageTask;
 import com.hazelcast.client.impl.protocol.task.cache.CacheAddNearCacheInvalidationListenerTask;
 import com.hazelcast.client.impl.protocol.task.cache.CacheAddPartitionLostListenerMessageTask;
@@ -1434,6 +1436,8 @@ public class DefaultMessageTaskFactoryProvider implements MessageTaskFactoryProv
                 (cm, con) -> new IsFailoverSupportedMessageTask(cm, node, con));
         factories.put(ClientLocalBackupListenerCodec.REQUEST_MESSAGE_TYPE,
                 (cm, con) -> new AddBackupListenerMessageTask(cm, node, con));
+        factories.put(ClientTriggerPartitionAssignmentCodec.REQUEST_MESSAGE_TYPE,
+                (cm, con) -> new TriggerPartitionAssignmentMessageTask(cm, node, con));
 
 //endregion
 //region ----------  REGISTRATION FOR com.hazelcast.client.impl.protocol.task.queue

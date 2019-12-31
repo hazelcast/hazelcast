@@ -18,6 +18,8 @@ package com.hazelcast.client.impl.spi.impl;
 
 import com.hazelcast.client.HazelcastClientOfflineException;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
+import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.codec.ClientTriggerPartitionAssignmentCodec;
 import com.hazelcast.client.impl.spi.ClientPartitionService;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.Member;
@@ -36,7 +38,6 @@ import java.util.Collection;
 import java.util.EventListener;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -50,7 +51,6 @@ public final class ClientPartitionServiceImpl implements ClientPartitionService 
     private final AtomicReference<PartitionTable> partitionTable =
             new AtomicReference<>(new PartitionTable(null, -1, new Int2ObjectHashMap<>()));
     private volatile AtomicInteger partitionCount = new AtomicInteger(0);
-    private final AtomicBoolean triggeringPartitionAssingment = new AtomicBoolean();
 
     public ClientPartitionServiceImpl(HazelcastClientInstanceImpl client) {
         this.client = client;
@@ -231,10 +231,13 @@ public final class ClientPartitionServiceImpl implements ClientPartitionService 
         @Override
         public Member getOwner() {
             Address owner = getPartitionOwner(partitionId);
-            if (owner != null) {
-                return client.getClientClusterService().getMember(owner);
+            if (owner == null) {
+                ClientMessage message = ClientTriggerPartitionAssignmentCodec.encodeRequest();
+                ClientInvocation invocation = new ClientInvocation(client, message, null);
+                invocation.invoke();
+                return null;
             }
-            return null;
+            return client.getClientClusterService().getMember(owner);
         }
 
         @Override
