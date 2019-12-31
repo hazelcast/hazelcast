@@ -18,9 +18,9 @@ package com.hazelcast.internal.nearcache;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.EvictionConfig;
-import com.hazelcast.config.MaxSizePolicy;
 import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.InMemoryFormat;
+import com.hazelcast.config.MaxSizePolicy;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.adapter.DataStructureAdapter;
@@ -29,16 +29,16 @@ import com.hazelcast.internal.adapter.DataStructureAdapterMethod;
 import com.hazelcast.internal.adapter.IMapDataStructureAdapter;
 import com.hazelcast.internal.adapter.MethodAvailableMatcher;
 import com.hazelcast.internal.adapter.ReplicatedMapDataStructureAdapter;
+import com.hazelcast.internal.monitor.impl.NearCacheStatsImpl;
 import com.hazelcast.internal.nearcache.impl.DefaultNearCache;
 import com.hazelcast.internal.nearcache.impl.record.NearCacheDataRecord;
 import com.hazelcast.internal.nearcache.impl.record.NearCacheObjectRecord;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.nearcache.MapNearCacheManager;
 import com.hazelcast.nearcache.NearCacheStats;
-import com.hazelcast.internal.monitor.impl.NearCacheStatsImpl;
-import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -47,11 +47,12 @@ import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
-import static com.hazelcast.config.MaxSizePolicy.USED_NATIVE_MEMORY_PERCENTAGE;
 import static com.hazelcast.config.EvictionPolicy.LRU;
 import static com.hazelcast.config.InMemoryFormat.BINARY;
 import static com.hazelcast.config.InMemoryFormat.OBJECT;
+import static com.hazelcast.config.MaxSizePolicy.USED_NATIVE_MEMORY_PERCENTAGE;
 import static com.hazelcast.config.NearCacheConfig.LocalUpdatePolicy.CACHE_ON_UPDATE;
+import static com.hazelcast.internal.nearcache.AbstractNearCacheBasicTest.DEFAULT_NEAR_CACHE_NAME;
 import static com.hazelcast.internal.nearcache.NearCacheRecord.READ_PERMITTED;
 import static com.hazelcast.spi.properties.ClusterProperty.CACHE_INVALIDATION_MESSAGE_BATCH_FREQUENCY_SECONDS;
 import static com.hazelcast.spi.properties.ClusterProperty.MAP_INVALIDATION_MESSAGE_BATCH_FREQUENCY_SECONDS;
@@ -109,8 +110,20 @@ public final class NearCacheTestUtils extends HazelcastTestSupport {
      * @return the {@link NearCacheConfig}
      */
     public static NearCacheConfig createNearCacheConfig(InMemoryFormat inMemoryFormat, boolean serializeKeys) {
+        return createNearCacheConfig(DEFAULT_NEAR_CACHE_NAME + "*", inMemoryFormat, serializeKeys);
+    }
+
+    /**
+     * Creates a {@link NearCacheConfig} with a given {@link InMemoryFormat}.
+     *
+     * @param name           name of near cache
+     * @param inMemoryFormat the {@link InMemoryFormat} to set
+     * @param serializeKeys  defines if Near Caches keys should be serialized
+     * @return the {@link NearCacheConfig}
+     */
+    public static NearCacheConfig createNearCacheConfig(String name, InMemoryFormat inMemoryFormat, boolean serializeKeys) {
         NearCacheConfig nearCacheConfig = new NearCacheConfig()
-                .setName(AbstractNearCacheBasicTest.DEFAULT_NEAR_CACHE_NAME + "*")
+                .setName(name)
                 .setInMemoryFormat(inMemoryFormat)
                 .setSerializeKeys(serializeKeys)
                 .setInvalidateOnChange(false);
