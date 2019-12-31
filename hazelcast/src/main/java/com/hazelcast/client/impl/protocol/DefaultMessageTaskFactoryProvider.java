@@ -428,7 +428,7 @@ import com.hazelcast.client.impl.protocol.task.PingMessageTask;
 import com.hazelcast.client.impl.protocol.task.RemoveAllListenersMessageTask;
 import com.hazelcast.client.impl.protocol.task.RemoveDistributedObjectListenerMessageTask;
 import com.hazelcast.client.impl.protocol.task.RemovePartitionLostListenerMessageTask;
-import com.hazelcast.client.impl.protocol.task.TriggerPartitionArrangementMessageTask;
+import com.hazelcast.client.impl.protocol.task.TriggerPartitionAssignmentMessageTask;
 import com.hazelcast.client.impl.protocol.task.cache.CacheAddEntryListenerMessageTask;
 import com.hazelcast.client.impl.protocol.task.cache.CacheAddNearCacheInvalidationListenerTask;
 import com.hazelcast.client.impl.protocol.task.cache.CacheAddPartitionLostListenerMessageTask;
@@ -1437,7 +1437,7 @@ public class DefaultMessageTaskFactoryProvider implements MessageTaskFactoryProv
         factories.put(ClientLocalBackupListenerCodec.REQUEST_MESSAGE_TYPE,
                 (cm, con) -> new AddBackupListenerMessageTask(cm, node, con));
         factories.put(ClientTriggerPartitionAssignmentCodec.REQUEST_MESSAGE_TYPE,
-                (cm, con) -> new TriggerPartitionArrangementMessageTask(cm, node, con));
+                (cm, con) -> new TriggerPartitionAssignmentMessageTask(cm, node, con));
 
 //endregion
 //region ----------  REGISTRATION FOR com.hazelcast.client.impl.protocol.task.queue

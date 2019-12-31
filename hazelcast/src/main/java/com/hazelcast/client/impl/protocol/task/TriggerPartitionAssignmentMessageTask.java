@@ -24,10 +24,10 @@ import com.hazelcast.internal.partition.InternalPartitionService;
 
 import java.security.Permission;
 
-public class TriggerPartitionArrangementMessageTask
+public class TriggerPartitionAssignmentMessageTask
         extends AbstractCallableMessageTask<ClientTriggerPartitionAssignmentCodec.RequestParameters> {
 
-    public TriggerPartitionArrangementMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
+    public TriggerPartitionAssignmentMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
