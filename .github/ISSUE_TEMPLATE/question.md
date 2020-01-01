@@ -1,3 +1,9 @@
+---		
+  name: Question		
+  about: Ask us a question		
+  labels: 'Type: Question'		
+ ---
+ 
 <!--
 Thank you for reaching out.
 
