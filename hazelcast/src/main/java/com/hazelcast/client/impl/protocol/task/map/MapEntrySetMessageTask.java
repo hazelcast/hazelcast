@@ -46,11 +46,8 @@ public class MapEntrySetMessageTask
 
     @Override
     protected Object reduce(Collection<QueryResultRow> result) {
-        List<Map.Entry<Data, Data>> entries = new ArrayList<Map.Entry<Data, Data>>(result.size());
-        for (QueryResultRow row : result) {
-            entries.add(row);
-        }
-        incrementOtherOperationsCount((MapService) getService(MapService.SERVICE_NAME), parameters.name);
+        List<Map.Entry<Data, Data>> entries = new ArrayList<>(result);
+        incrementOtherOperationsCount(getService(MapService.SERVICE_NAME), parameters.name);
         return entries;
     }
 
