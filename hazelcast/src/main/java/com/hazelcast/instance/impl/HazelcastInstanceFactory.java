@@ -20,10 +20,7 @@ import com.hazelcast.cluster.Member;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.config.XmlConfigBuilder;
-import com.hazelcast.config.YamlConfigBuilder;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.internal.config.XmlConfigLocator;
-import com.hazelcast.internal.config.YamlConfigLocator;
 import com.hazelcast.internal.jmx.ManagementService;
 import com.hazelcast.internal.util.ExceptionUtil;
 import com.hazelcast.internal.util.ModularJavaUtils;
@@ -40,8 +37,6 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.core.LifecycleEvent.LifecycleState.STARTED;
-import static com.hazelcast.internal.config.DeclarativeConfigUtil.SYSPROP_MEMBER_CONFIG;
-import static com.hazelcast.internal.config.DeclarativeConfigUtil.validateSuffixInSystemProperty;
 import static com.hazelcast.internal.util.EmptyStatement.ignore;
 import static com.hazelcast.internal.util.Preconditions.checkHasText;
 import static com.hazelcast.internal.util.SetUtil.createHashSet;
@@ -127,32 +122,7 @@ public final class HazelcastInstanceFactory {
      */
     public static HazelcastInstance newHazelcastInstance(Config config) {
         if (config == null) {
-            validateSuffixInSystemProperty(SYSPROP_MEMBER_CONFIG);
-
-            XmlConfigLocator xmlConfigLocator = new XmlConfigLocator();
-            YamlConfigLocator yamlConfigLocator = new YamlConfigLocator();
-
-            if (xmlConfigLocator.locateFromSystemProperty()) {
-                // 1. Try loading XML config from the configuration provided in system property
-                config = new XmlConfigBuilder(xmlConfigLocator).build();
-
-            } else if (yamlConfigLocator.locateFromSystemProperty()) {
-                // 2. Try loading YAML config from the configuration provided in system property
-                config = new YamlConfigBuilder(yamlConfigLocator).build();
-
-            } else if (xmlConfigLocator.locateInWorkDirOrOnClasspath()) {
-                // 3. Try loading XML config from the working directory or from the classpath
-                config = new XmlConfigBuilder(xmlConfigLocator).build();
-
-            } else if (yamlConfigLocator.locateInWorkDirOrOnClasspath()) {
-                // 4. Try loading YAML config from the working directory or from the classpath
-                config = new YamlConfigBuilder(yamlConfigLocator).build();
-
-            } else {
-                // 5. Loading the default XML configuration file
-                xmlConfigLocator.locateDefault();
-                config = new XmlConfigBuilder(xmlConfigLocator).build();
-            }
+            config = Config.load();
         }
 
         return newHazelcastInstance(
