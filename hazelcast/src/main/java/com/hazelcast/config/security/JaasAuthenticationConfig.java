@@ -45,7 +45,7 @@ public class JaasAuthenticationConfig implements AuthenticationConfig {
 
     @Override
     public LoginModuleConfig[] asLoginModuleConfigs() {
-        return loginModuleConfigs.toArray(new LoginModuleConfig[loginModuleConfigs.size()]);
+        return loginModuleConfigs.toArray(new LoginModuleConfig[0]);
     }
 
     @Override
