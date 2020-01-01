@@ -39,11 +39,7 @@ public class MapEntriesWithPredicateMessageTask
 
     @Override
     protected Object reduce(Collection<QueryResultRow> result) {
-        List<Map.Entry<Data, Data>> entries = new ArrayList<Map.Entry<Data, Data>>(result.size());
-        for (QueryResultRow resultRow : result) {
-            entries.add(resultRow);
-        }
-        return entries;
+        return new ArrayList<Map.Entry<Data, Data>>(result);
     }
 
     @Override

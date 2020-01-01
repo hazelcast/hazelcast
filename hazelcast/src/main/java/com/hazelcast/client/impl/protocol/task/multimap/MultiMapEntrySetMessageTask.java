@@ -53,16 +53,13 @@ public class MultiMapEntrySetMessageTask
 
     @Override
     protected Object reduce(Map<Integer, Object> map) {
-        List<Map.Entry<Data, Data>> entries = new ArrayList<Map.Entry<Data, Data>>();
+        List<Map.Entry<Data, Data>> entries = new ArrayList<>();
         for (Object obj : map.values()) {
             if (obj == null) {
                 continue;
             }
             EntrySetResponse response = (EntrySetResponse) obj;
-            Set<Map.Entry<Data, Data>> entrySet = response.getDataEntrySet();
-            for (Map.Entry<Data, Data> entry : entrySet) {
-                entries.add(entry);
-            }
+            entries.addAll(response.getDataEntrySet());
         }
         return entries;
     }
