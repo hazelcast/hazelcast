@@ -191,7 +191,7 @@ public class ClientMessageEncoderDecoderTest extends HazelcastTestSupport {
         UUID clusterId = UUID.randomUUID();
 
         ClientMessage message = ClientAuthenticationCodec.encodeResponse((byte) 2, new Address("127.0.0.1", 5701),
-                uuid, (byte) 1, "3.12", 271, clusterId);
+                uuid, (byte) 1, "3.12", 271, clusterId, true);
         AtomicReference<ClientMessage> reference = new AtomicReference<>(message);
 
 
@@ -229,6 +229,7 @@ public class ClientMessageEncoderDecoderTest extends HazelcastTestSupport {
         assertEquals("3.12", parameters.serverHazelcastVersion);
         assertEquals(271, parameters.partitionCount);
         assertEquals(clusterId, parameters.clusterId);
+        assertEquals(true, parameters.failoverSupported);
     }
 
     class EventHandler extends MapAddEntryListenerCodec.AbstractEventHandler {

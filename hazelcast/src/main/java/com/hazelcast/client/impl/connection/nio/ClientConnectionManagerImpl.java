@@ -38,7 +38,6 @@ import com.hazelcast.client.impl.protocol.AuthenticationStatus;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ClientAuthenticationCodec;
 import com.hazelcast.client.impl.protocol.codec.ClientAuthenticationCustomCodec;
-import com.hazelcast.client.impl.protocol.codec.ClientIsFailoverSupportedCodec;
 import com.hazelcast.client.impl.spi.impl.ClientExecutionServiceImpl;
 import com.hazelcast.client.impl.spi.impl.ClientInvocation;
 import com.hazelcast.client.impl.spi.impl.ClientInvocationFuture;
@@ -90,7 +89,6 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -99,6 +97,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.client.config.ClientConnectionStrategyConfig.ReconnectMode.OFF;
 import static com.hazelcast.client.impl.management.ManagementCenterService.MC_CLIENT_MODE_PROP;
+import static com.hazelcast.client.impl.protocol.AuthenticationStatus.NOT_ALLOWED_IN_CLUSTER;
 import static com.hazelcast.client.properties.ClientProperty.IO_BALANCER_INTERVAL_SECONDS;
 import static com.hazelcast.client.properties.ClientProperty.IO_INPUT_THREAD_COUNT;
 import static com.hazelcast.client.properties.ClientProperty.IO_OUTPUT_THREAD_COUNT;
@@ -441,7 +440,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
 
                     Connection connection = connect(address);
                     if (connection != null) {
-                        return checkFailoverSupport(connection);
+                        return true;
                     }
                 }
 
@@ -481,10 +480,10 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
 
     Collection<Address> getPossibleMemberAddresses(AddressProvider addressProvider) {
         List<Address> memberAddresses = client.getClientClusterService()
-                                              .getMemberList()
-                                              .stream()
-                                              .map(Member::getAddress)
-                                              .collect(toList());
+                .getMemberList()
+                .stream()
+                .map(Member::getAddress)
+                .collect(toList());
         if (shuffleMemberList) {
             Collections.shuffle(memberAddresses);
         }
@@ -766,6 +765,10 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
         }
 
         AuthenticationStatus authenticationStatus = AuthenticationStatus.getById(response.status);
+        if (failoverConfigProvided && !response.failoverSupported) {
+            logger.warning("Cluster does not support failover. This feature is available in Hazelcast Enterprise");
+            authenticationStatus = NOT_ALLOWED_IN_CLUSTER;
+        }
         switch (authenticationStatus) {
             case AUTHENTICATED:
                 handleSuccessfulAuth(connection, response);
@@ -864,24 +867,6 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
                     + " because it has a different partition count. "
                     + "Expected partition count: " + partitionService.getPartitionCount()
                     + ", Member partition count: " + newPartitionCount);
-        }
-    }
-
-    private boolean checkFailoverSupport(Connection connection) {
-        if (!failoverConfigProvided) {
-            return true;
-        }
-        ClientMessage request = ClientIsFailoverSupportedCodec.encodeRequest();
-        ClientInvocationFuture future = new ClientInvocation(client, request, null, connection).invokeUrgent();
-        try {
-            boolean isAllowed = ClientIsFailoverSupportedCodec.decodeResponse(future.get()).response;
-            if (!isAllowed) {
-                logger.warning("Cluster does not support failover. This feature is available in Hazelcast Enterprise");
-            }
-            return isAllowed;
-        } catch (InterruptedException | ExecutionException e) {
-            logger.warning("Cluster has not answered the failover support query.", e);
-            return false;
         }
     }
 
