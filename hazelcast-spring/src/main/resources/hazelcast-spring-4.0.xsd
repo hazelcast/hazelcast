@@ -3281,24 +3281,6 @@
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
-        <xs:attribute name="idOffset" type="xs:long" default="0" use="optional">
-            <xs:annotation>
-                <xs:documentation>
-                    Sets the offset that will be added to the returned IDs. Default value is 0. Setting might be
-                    useful when migrating from IdGenerator, default value works for all green-field projects.
-
-                    For example: Largest ID returned from IdGenerator is 150. FlakeIdGenerator now returns
-                    100. If you configure idOffset of 50 and stop using the IdGenerator, the next ID from
-                    FlakeIdGenerator will be 151 or larger and no duplicate IDs will be generated. In real-life,
-                    the IDs are much larger. You also need to add a reserve to the offset because the IDs
-                    from FlakeIdGenerator are only roughly ordered. Recommended reserve is 2^38, that is
-                    274877906944.
-
-                    Negative values are allowed to increase the lifespan of the generator, however keep in
-                    mind that the generated IDs might also be negative.
-                </xs:documentation>
-            </xs:annotation>
-        </xs:attribute>
         <xs:attribute name="nodeIdOffset" type="xs:long" default="0" use="optional">
             <xs:annotation>
                 <xs:documentation>
