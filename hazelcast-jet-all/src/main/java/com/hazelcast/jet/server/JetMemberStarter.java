@@ -19,12 +19,10 @@ package com.hazelcast.jet.server;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.Jet;
 import com.hazelcast.jet.JetInstance;
+import com.hazelcast.jet.impl.JetBootstrap;
 
 import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
 import java.io.PrintWriter;
-import java.util.logging.LogManager;
 
 import static com.hazelcast.internal.nio.IOUtil.closeResource;
 
@@ -44,14 +42,9 @@ public final class JetMemberStarter {
      * Hazelcast instance to a file named by the property.
      */
     public static void main(String[] args) throws Exception {
-        configureLogging();
+        JetBootstrap.configureLogging();
         JetInstance jet = Jet.newJetInstance();
         printMemberPort(jet.getHazelcastInstance());
-    }
-
-    public static void configureLogging() throws IOException {
-        InputStream input = JetMemberStarter.class.getClassLoader().getResourceAsStream("logging.properties");
-        LogManager.getLogManager().readConfiguration(input);
     }
 
     private static void printMemberPort(HazelcastInstance hz) throws Exception {

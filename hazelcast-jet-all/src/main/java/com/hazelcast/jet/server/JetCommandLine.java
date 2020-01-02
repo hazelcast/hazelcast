@@ -36,6 +36,7 @@ import com.hazelcast.jet.core.JobNotFoundException;
 import com.hazelcast.jet.core.JobStatus;
 import com.hazelcast.jet.impl.JetClientInstanceImpl;
 import com.hazelcast.jet.impl.JobSummary;
+import com.hazelcast.jet.impl.JetBootstrap;
 import com.hazelcast.jet.impl.config.ConfigProvider;
 import com.hazelcast.jet.server.JetCommandLine.JetVersionProvider;
 import picocli.CommandLine;
@@ -463,7 +464,7 @@ public class JetCommandLine implements Runnable {
     }
 
     private void configureLogging() throws IOException {
-        JetMemberStarter.configureLogging();
+        JetBootstrap.configureLogging();
         Level logLevel = Level.WARNING;
         if (verbosity.isVerbose) {
             println("Verbose mode is on, setting logging level to INFO");

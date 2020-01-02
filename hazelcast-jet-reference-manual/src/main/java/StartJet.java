@@ -19,7 +19,6 @@ import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.pipeline.Pipeline;
-import com.hazelcast.jet.server.JetBootstrap;
 
 public class StartJet {
     static void s1() {
@@ -65,7 +64,7 @@ public class StartJet {
     //tag::s4[]
     class CustomJetJob {
         public static void main(String[] args) {
-            JetInstance jet = JetBootstrap.getInstance();
+            JetInstance jet = Jet.bootstrappedInstance();
             jet.newJob(buildPipeline(args)).join();
         }
 

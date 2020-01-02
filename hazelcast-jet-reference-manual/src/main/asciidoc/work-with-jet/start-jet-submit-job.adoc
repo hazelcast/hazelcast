@@ -262,7 +262,7 @@ zip file, in the `bin` directory. On Windows use `jet.bat`. To use
 it, follow these steps:
 
 * Write your `main()` method and your Jet code the usual way, but call
-{jet-javadoc}/server/JetBootstrap.html[`JetBootstrap.getInstance()`]
+{jet-javadoc}/Jet.html[`Jet.bootstrappedInstance()`]
 instead of `Jet.newJetClient()` to acquire a Jet client instance.
 * Create a runnable JAR which declares its `Main-Class` in `MANIFEST.MF`.
 

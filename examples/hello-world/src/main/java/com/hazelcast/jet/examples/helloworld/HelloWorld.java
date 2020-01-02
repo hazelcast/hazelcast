@@ -17,7 +17,7 @@
 package com.hazelcast.jet.examples.helloworld;
 
 import com.hazelcast.function.ComparatorEx;
-//import com.hazelcast.jet.Jet;
+import com.hazelcast.jet.Jet;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.aggregate.AggregateOperations;
@@ -26,7 +26,6 @@ import com.hazelcast.jet.config.ProcessingGuarantee;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.jet.pipeline.test.TestSources;
-import com.hazelcast.jet.server.JetBootstrap;
 import com.hazelcast.map.IMap;
 import org.apache.log4j.Logger;
 
@@ -66,13 +65,7 @@ public class HelloWorld {
     }
 
     public static void main(String[] args) throws InterruptedException {
-        /*
-         * JetBootstrap.getInstance() can be changed to Jet.newJetInstance()
-         * to start an embedded Jet node instead and submit the job to it.
-         */
-        JetInstance jet = JetBootstrap.getInstance();
-//        JetInstance jet = Jet.newJetInstance();
-
+        JetInstance jet = Jet.bootstrappedInstance();
         Pipeline p = buildPipeline();
 
         JobConfig config = new JobConfig();

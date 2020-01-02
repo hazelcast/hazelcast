@@ -14,28 +14,32 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.server;
+package com.hazelcast.jet.impl;
 
 import com.hazelcast.cluster.Cluster;
 import com.hazelcast.collection.IList;
+import com.hazelcast.config.Config;
+import com.hazelcast.config.DiscoveryConfig;
+import com.hazelcast.config.JoinConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.util.StringUtil;
 import com.hazelcast.jet.Jet;
 import com.hazelcast.jet.JetCacheManager;
-import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.DAG;
-import com.hazelcast.jet.impl.AbstractJetInstance;
 import com.hazelcast.jet.impl.util.ConcurrentMemoizingSupplier;
+import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
 import com.hazelcast.map.IMap;
 import com.hazelcast.replicatedmap.ReplicatedMap;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.io.InputStream;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.net.URL;
@@ -45,8 +49,14 @@ import java.security.PrivilegedAction;
 import java.util.List;
 import java.util.function.Supplier;
 import java.util.jar.JarFile;
+import java.util.logging.LogManager;
+
+import static com.hazelcast.jet.impl.config.ConfigProvider.locateAndGetJetConfig;
 
 /**
+ * This class shouldn't be directly used, instead see {@link Jet#bootstrappedInstance()}
+ * for the replacement and docs.
+ * <p>
  * A helper class that allows one to create a standalone runnable JAR which
  * contains all the code needed to submit a job to a running Jet cluster.
  * The main issue with achieving this is that the JAR must be attached as a
@@ -54,67 +64,29 @@ import java.util.jar.JarFile;
  * load and use its classes. However, from within a running {@code main()}
  * method it is not trivial to find out the filename of the JAR containing
  * it.
- * <p>
- * This helper is a part of the solution to the above "bootstrapping"
- * issue. To use it, follow these steps:
- * <ol><li>
- * Write your {@code main()} method and your Jet code the usual way, except
- * for calling {@link JetBootstrap#getInstance()} to acquire a Jet client
- * instance (instead of {@link Jet#newJetClient()}).
- * </li><li>
- * Create a runnable JAR with your entry point declared as the {@code
- * Main-Class} in {@code MANIFEST.MF}.
- * </li><li>
- * Run your JAR, but instead of {@code java -jar jetjob.jar} use {@code
- * jet submit jetjob.jar}. The script is found in the Jet distribution
- * zipfile, in the {@code bin} directory. On Windows use {@code
- * jet.bat}.
- * </li><li>
- * The Jet client will be configured from {@code hazelcast-client.xml}
- * found in the {@code config} directory in Jet's distribution directory
- * structure. Adjust that file to suit your needs.
- * </li></ol>
- * <p>
- * For example, write a class like this:
- * <pre>
- * public class CustomJetJob {
- *   public static void main(String[] args) {
- *     JetInstance jet = JetBootstrap.getInstance();
- *     jet.newJob(buildDag()).execute().get();
- *   }
- *
- *   public static DAG buildDag() {
- *       // ...
- *   }
- * }
- * </pre>
- * <p>
- * After building the JAR, submit the job:
- * <pre>
- * $ jet submit jetjob.jar
- * </pre>
- *
- * @since 3.0
- */
+ **/
 public final class JetBootstrap {
 
-    // these params must be set before a job is submitted
-    private static String jarName;
-    private static String snapshotName;
-    private static String jobName;
+    // supplier should be set only once
     private static ConcurrentMemoizingSupplier<JetInstance> supplier;
+
+    private static final ILogger LOGGER = Logger.getLogger(Jet.class.getName());
 
     private JetBootstrap() {
     }
 
-    static synchronized void executeJar(@Nonnull Supplier<JetInstance> supplier,
+    public static synchronized void executeJar(@Nonnull Supplier<JetInstance> supplier,
                            @Nonnull String jar, @Nullable String snapshotName,
                            @Nullable String jobName, @Nullable String mainClass, @Nonnull List<String> args
     ) throws Exception {
-        JetBootstrap.jarName = jar;
-        JetBootstrap.snapshotName = snapshotName;
-        JetBootstrap.jobName = jobName;
-        JetBootstrap.supplier = new ConcurrentMemoizingSupplier<>(() -> new InstanceProxy(supplier.get()));
+        if (JetBootstrap.supplier != null) {
+            throw new IllegalStateException("Supplier was already set. This method should not be called outside" +
+                    "the Jet command line.");
+        }
+
+        JetBootstrap.supplier = new ConcurrentMemoizingSupplier<>(() ->
+                new InstanceProxy(supplier.get(), jar, snapshotName, jobName)
+        );
 
         try (JarFile jarFile = new JarFile(jar)) {
             if (StringUtil.isNullOrEmpty(mainClass)) {
@@ -148,6 +120,7 @@ public final class JetBootstrap {
             if (remembered != null) {
                 remembered.shutdown();
             }
+            JetBootstrap.supplier = null;
         }
     }
 
@@ -160,22 +133,65 @@ public final class JetBootstrap {
      * Returns the bootstrapped {@code JetInstance}. The instance will be
      * automatically shut down once the {@code main()} method of the JAR returns.
      */
-    public static JetInstance getInstance() {
+    @Nonnull
+    public static synchronized JetInstance getInstance() {
         if (supplier == null) {
-            throw new JetException(
-                    "JetBootstrap.getInstance() should be used in conjunction with the jet submit command"
-            );
+            supplier = new ConcurrentMemoizingSupplier<>(() -> new InstanceProxy(createStandaloneInstance()));
         }
         return supplier.get();
+    }
+
+    private static JetInstance createStandaloneInstance() {
+        configureLogging();
+        LOGGER.info("Bootstrapped instance requested but application wasn't called from jet submit script. " +
+                "Creating a standalone Jet instance instead.");
+        JetConfig config = locateAndGetJetConfig();
+        Config hzConfig = config.getHazelcastConfig();
+
+        // turn off all discovery to make sure node doesn't join any existing cluster
+        hzConfig.setProperty("hazelcast.wait.seconds.before.join", "0");
+        hzConfig.getAdvancedNetworkConfig().setEnabled(false);
+
+        JoinConfig join = hzConfig.getNetworkConfig().getJoin();
+        join.getMulticastConfig().setEnabled(false);
+        join.getTcpIpConfig().setEnabled(false);
+        join.getAwsConfig().setEnabled(false);
+        join.getGcpConfig().setEnabled(false);
+        join.getAzureConfig().setEnabled(false);
+        join.getKubernetesConfig().setEnabled(false);
+        join.getEurekaConfig().setEnabled(false);
+        join.setDiscoveryConfig(new DiscoveryConfig());
+        return Jet.newJetInstance(config);
+    }
+
+    public static void configureLogging() {
+        InputStream input = JetBootstrap.class.getClassLoader().getResourceAsStream("logging.properties");
+        Util.uncheckRun(() -> LogManager.getLogManager().readConfiguration(input));
     }
 
     private static class InstanceProxy extends AbstractJetInstance {
 
         private final AbstractJetInstance instance;
+        private final String jar;
+        private final String snapshotName;
+        private final String jobName;
 
-        InstanceProxy(JetInstance instance) {
+        InstanceProxy(JetInstance hazelcastInstance) {
+            this(hazelcastInstance, null, null, null);
+        }
+
+        InstanceProxy(
+                JetInstance instance,
+                @Nullable String jar,
+                @Nullable String snapshotName,
+                @Nullable String jobName
+        ) {
             super(instance.getHazelcastInstance());
+
             this.instance = (AbstractJetInstance) instance;
+            this.jar = jar;
+            this.snapshotName = snapshotName;
+            this.jobName = jobName;
         }
 
         @Nonnull @Override
@@ -209,8 +225,8 @@ public final class JetBootstrap {
         }
 
         private JobConfig updateJobConfig(@Nonnull JobConfig config) {
-            if (jarName != null) {
-                config.addJar(jarName);
+            if (jar != null) {
+                config.addJar(jar);
             }
             if (snapshotName != null) {
                 config.setInitialSnapshotName(snapshotName);
