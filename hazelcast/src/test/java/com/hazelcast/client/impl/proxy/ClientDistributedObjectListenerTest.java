@@ -22,6 +22,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -32,8 +33,7 @@ import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class ClientDistributedObjectListenerTest
-        extends com.hazelcast.core.DistributedObjectListenerTest {
+public class ClientDistributedObjectListenerTest extends com.hazelcast.core.DistributedObjectListenerTest {
 
     @Override
     protected HazelcastInstance newInstance() {
@@ -86,6 +86,11 @@ public class ClientDistributedObjectListenerTest
             Collection<DistributedObject> distributedObjects2 = newClusterInstance2.getDistributedObjects();
             assertEquals(1, distributedObjects2.size());
         });
+    }
+
+    @Test
+    @Ignore("TODO: Unignore when https://github.com/hazelcast/hazelcast/issues/16374 is fixed")
+    public void getDistributedObjects_ShouldNotRecreateProxy_AfterDestroy() {
     }
 
 }
