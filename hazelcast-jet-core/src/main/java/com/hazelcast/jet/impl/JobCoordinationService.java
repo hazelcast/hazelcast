@@ -22,6 +22,7 @@ import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.util.Clock;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.JobAlreadyExistsException;
@@ -36,7 +37,6 @@ import com.hazelcast.jet.impl.metrics.RawJobMetrics;
 import com.hazelcast.jet.impl.operation.NotifyMemberShutdownOperation;
 import com.hazelcast.jet.impl.util.LoggingUtil;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.executionservice.ExecutionService;
@@ -104,6 +104,8 @@ public class JobCoordinationService {
     private static final ThreadLocal<Boolean> IS_JOB_COORDINATOR_THREAD = ThreadLocal.withInitial(() -> false);
     private static final int COORDINATOR_THREADS_POOL_SIZE = 4;
 
+    private static final int MIN_JOB_SCAN_PERIOD_MILLIS = 100;
+
     private final NodeEngineImpl nodeEngine;
     private final JetService jetService;
     private final JetConfig config;
@@ -124,6 +126,8 @@ public class JobCoordinationService {
 
     private final AtomicInteger scaleUpScheduledCount = new AtomicInteger();
 
+    private long maxJobScanPeriodInMillis;
+
     JobCoordinationService(NodeEngineImpl nodeEngine, JetService jetService, JetConfig config,
                            JobRepository jobRepository) {
         this.nodeEngine = nodeEngine;
@@ -143,9 +147,8 @@ public class JobCoordinationService {
     void startScanningForJobs() {
         ExecutionService executionService = nodeEngine.getExecutionService();
         HazelcastProperties properties = new HazelcastProperties(config.getProperties());
-        long jobScanPeriodInMillis = properties.getMillis(JOB_SCAN_PERIOD);
-        executionService.scheduleWithRepetition(COORDINATOR_EXECUTOR_NAME, this::scanJobs,
-                0, jobScanPeriodInMillis, MILLISECONDS);
+        maxJobScanPeriodInMillis = properties.getMillis(JOB_SCAN_PERIOD);
+        executionService.schedule(COORDINATOR_EXECUTOR_NAME, this::scanJobs, 0, MILLISECONDS);
     }
 
     public CompletableFuture<Void> submitJob(long jobId, Data dag, Data serializedConfig) {
@@ -492,9 +495,13 @@ public class JobCoordinationService {
     }
 
     boolean shouldStartJobs() {
+        if (!isMaster() || !nodeEngine.isRunning()) {
+            return false;
+        }
+
         ClusterState clusterState = nodeEngine.getClusterService().getClusterState();
-        if (!isMaster() || !nodeEngine.isRunning() || isClusterEnteringPassiveState
-                || clusterState == PASSIVE || clusterState == IN_TRANSITION) {
+        if (isClusterEnteringPassiveState || clusterState == PASSIVE || clusterState == IN_TRANSITION) {
+            logger.fine("Not starting jobs because cluster is in passive state or in transition.");
             return false;
         }
         // if there are any members in a shutdown process, don't start jobs
@@ -503,10 +510,15 @@ public class JobCoordinationService {
                     membersShuttingDown.keySet());
             return false;
         }
-        InternalPartitionServiceImpl partitionService = getInternalPartitionService();
-        return partitionService.getPartitionStateManager().isInitialized()
-                && partitionService.areMigrationTasksAllowed()
-                && !partitionService.hasOnGoingMigrationLocal();
+        if (!getInternalPartitionService().isMemberStateSafe()) {
+            logger.fine("Not starting jobs because master is not in safe state.");
+            return false;
+        }
+        if (!getInternalPartitionService().getPartitionStateManager().isInitialized()) {
+            logger.fine("Not starting jobs because partitions are not yet initialized.");
+            return false;
+        }
+        return true;
     }
 
     private CompletableFuture<Void> runWithJob(
@@ -868,27 +880,39 @@ public class JobCoordinationService {
 
     // runs periodically to restart jobs on coordinator failure and perform GC
     private void scanJobs() {
+        long nextScanDelay = maxJobScanPeriodInMillis;
         try {
-            if (!shouldStartJobs()) {
-                return;
-            }
-            Collection<JobRecord> jobs = jobRepository.getJobRecords();
-            for (JobRecord jobRecord : jobs) {
-                JobExecutionRecord jobExecutionRecord = ensureExecutionRecord(jobRecord.getJobId(),
-                        jobRepository.getJobExecutionRecord(jobRecord.getJobId()));
-                startJobIfNotStartedOrCompleted(jobRecord, jobExecutionRecord, "discovered by scanning of JobRecords");
-            }
-            jobRepository.cleanup(nodeEngine);
-            if (!jobsScanned) {
-                synchronized (lock) {
-                    jobsScanned = true;
+            // explicit check for master because we don't want to use shorter delay on non-master nodes
+            // it will be checked again in shouldStartJobs()
+            if (isMaster()) {
+                if (shouldStartJobs()) {
+                    doScanJobs();
+                } else {
+                    // use a smaller delay when cluster is not in ready state
+                    nextScanDelay = MIN_JOB_SCAN_PERIOD_MILLIS;
                 }
             }
+        } catch (HazelcastInstanceNotActiveException ignored) {
+            // ignore this exception
         } catch (Exception e) {
-            if (e instanceof HazelcastInstanceNotActiveException) {
-                return;
-            }
             logger.severe("Scanning jobs failed", e);
+        }
+        ExecutionService executionService = nodeEngine.getExecutionService();
+        executionService.schedule(this::scanJobs, nextScanDelay, MILLISECONDS);
+    }
+
+    private void doScanJobs() {
+        Collection<JobRecord> jobs = jobRepository.getJobRecords();
+        for (JobRecord jobRecord : jobs) {
+            JobExecutionRecord jobExecutionRecord = ensureExecutionRecord(jobRecord.getJobId(),
+                    jobRepository.getJobExecutionRecord(jobRecord.getJobId()));
+            startJobIfNotStartedOrCompleted(jobRecord, jobExecutionRecord, "discovered by scanning of JobRecords");
+        }
+        jobRepository.cleanup(nodeEngine);
+        if (!jobsScanned) {
+            synchronized (lock) {
+                jobsScanned = true;
+            }
         }
     }
 
