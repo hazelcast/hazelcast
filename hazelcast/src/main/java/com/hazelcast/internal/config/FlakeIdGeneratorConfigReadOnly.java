@@ -63,6 +63,11 @@ public class FlakeIdGeneratorConfigReadOnly extends FlakeIdGeneratorConfig {
     }
 
     @Override
+    public FlakeIdGeneratorConfig setAllowedFutureMillis(long allowedFutureMillis) {
+        throw throwReadOnly();
+    }
+
+    @Override
     public FlakeIdGeneratorConfig setStatisticsEnabled(boolean statisticsEnabled) {
         throw throwReadOnly();
     }

@@ -183,9 +183,11 @@ public class FlakeIdGeneratorConfig implements IdentifiedDataSerializable, Named
 
     /**
      * Sets the offset of timestamp component in milliseconds. By default it's {@value
-     * DEFAULT_EPOCH_START}. You can adjust the value to extend the lifespan of the generator.
+     * DEFAULT_EPOCH_START}, that is the beginning of 2018. You can adjust the value to determine the
+     * lifespan of the generator. See {@link FlakeIdGenerator}'s class javadoc for more information.
      * <p>
-     * <i>Note:</i> If you set it to a future instant, negative IDs will be generated.
+     * <i>Note:</i> If you set the epoch start to a future instant, negative IDs will be generated
+     * until that time occurs.
      *
      * @param epochStart the desired epoch start
      * @return this instance for fluent API
@@ -234,10 +236,11 @@ public class FlakeIdGeneratorConfig implements IdentifiedDataSerializable, Named
     }
 
     /**
-     * Sets the bit length of the sequence component.
-     * TODO [viliam]
+     * Sets the bit-length of the sequence component. This setting determines the maximum rate at
+     * which IDs can be generated. See {@link FlakeIdGenerator}'s class javadoc for more
+     * information.
      *
-     * @param bitsSequence sequence component bit length
+     * @param bitsSequence sequence component bit-length
      * @return this instance for fluent API
      * @since 4.0
      */
@@ -255,10 +258,10 @@ public class FlakeIdGeneratorConfig implements IdentifiedDataSerializable, Named
     }
 
     /**
-     * Sets the bit length of node id component.
-     * TODO [viliam]
+     * Sets the bit-length of node id component. See {@link FlakeIdGenerator}'s class javadoc for
+     * more information.
      *
-     * @param bitsNodeId node id component bit length
+     * @param bitsNodeId node id component bit-length
      * @return this instance for fluent API
      * @since 4.0
      */
@@ -276,7 +279,20 @@ public class FlakeIdGeneratorConfig implements IdentifiedDataSerializable, Named
     }
 
     /**
-     * Sets how far to the future is it allowed to go to generate IDs.
+     * Sets how far to the future is the generator allowed to go to generate IDs without blocking.
+     * <p>
+     * The number of bits configured for the sequence number ({@link #setBitsSequence(int)}
+     * determines how many IDs can be generated per second. We allow the generator to generate IDs
+     * with future timestamps, and this settings limits how much. When more IDs are requested, the
+     * call will block. This is important in case of a cluster black-out or cluster restart: we
+     * don't store how far the members went and after they restart, they will start from current
+     * time. If before the restart the generator went beyond the current time, duplicate IDs could
+     * be generated.
+     * <p>
+     * The default value is 15 seconds (15000). If your cluster is able to restart more quickly, set
+     * a lower value.
+     * <p>
+     * See {@link FlakeIdGenerator}'s class javadoc for more information.
      *
      * @param allowedFutureMillis value in milliseconds
      * @return this instance for fluent API
@@ -296,8 +312,7 @@ public class FlakeIdGeneratorConfig implements IdentifiedDataSerializable, Named
     }
 
     /**
-     * Enables or disables statistics gathering of
-     * {@link LocalFlakeIdGeneratorStats}.
+     * Enables or disables statistics gathering of {@link LocalFlakeIdGeneratorStats}.
      *
      * @param statisticsEnabled {@code true} if statistics gathering is enabled
      *                          (which is also the default), {@code false} otherwise
