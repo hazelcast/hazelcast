@@ -50,33 +50,33 @@ public class FlakeIdGeneratorConfig implements IdentifiedDataSerializable, Named
     public static final long DEFAULT_PREFETCH_VALIDITY_MILLIS = 600000;
 
     /**
-     * {@code 1514764800000} is the value {@code System.currentTimeMillis()} would return on
-     * 1.1.2018 0:00 UTC.
+     * Default value for {@link #getEpochStart()}. {@code 1514764800000} is the value {@code
+     * System.currentTimeMillis()} would return on 1.1.2018 0:00 UTC.
      */
-    @SuppressWarnings("checkstyle:magicnumber")
     public static final long DEFAULT_EPOCH_START = 1514764800000L;
 
     /**
-     * Sequence component bit length, default 6 bits. Default value for {@link #getBitsSequence()}.
+     * Default value for {@link #getBitsSequence()}.
      */
     public static final int DEFAULT_BITS_SEQUENCE = 6;
+
     /**
-     * Node ID component bit length, default 16 bits. Default value for {@link #getBitsNodeId()}.
+     * Default value for {@link #getBitsNodeId()}.
      */
     public static final int DEFAULT_BITS_NODE_ID = 16;
+
     /**
-     * How far to the future is it allowed to go to generate IDs, default 15 seconds.
      * Default value for {@link #getAllowedFutureMillis()}.
      */
     public static final long DEFAULT_ALLOWED_FUTURE_MILLIS = 15000;
 
     /**
-     * Maximum value for prefetch count. The limit is ~10% of the time we allow the IDs to be from the future
+     * Maximum value for prefetch count. The limit is ~10% of the default time we allow the IDs to be from the future
      * (see {@link #DEFAULT_ALLOWED_FUTURE_MILLIS}).
      * <p>
      * The reason to limit the prefetch count is that a single call to {@link FlakeIdGenerator#newId()} might
-     * be blocked if the future allowance is exceeded: we want to avoid a single call for large batch to block
-     * another call for small batch.
+     * be blocked if the future allowance is exceeded: we want to avoid a single call for a large batch to block
+     * another call for a small batch.
      */
     public static final int MAXIMUM_PREFETCH_COUNT = 100000;
 
@@ -140,15 +140,15 @@ public class FlakeIdGeneratorConfig implements IdentifiedDataSerializable, Named
      * Sets how many IDs are pre-fetched on the background when one call to
      * {@link FlakeIdGenerator#newId()} is made. Default is 100.
      * <p>
-     * This setting pertains only to {@link FlakeIdGenerator#newId newId} calls made on the member
+     * This setting pertains only to {@link FlakeIdGenerator#newId newId()} calls made on the member
      * that configured it.
      *
-     * @param prefetchCount the desired prefetch count, in the range 1..100,000.
+     * @param prefetchCount the desired prefetch count, in the range 1..{@value #MAXIMUM_PREFETCH_COUNT}.
      * @return this instance for fluent API
      */
     public FlakeIdGeneratorConfig setPrefetchCount(int prefetchCount) {
         checkTrue(prefetchCount > 0 && prefetchCount <= MAXIMUM_PREFETCH_COUNT,
-                "prefetch-count must be 1.." + MAXIMUM_PREFETCH_COUNT + ", not " + prefetchCount);
+                "prefetch-count must be 1.." + MAXIMUM_PREFETCH_COUNT + ", but is " + prefetchCount);
         this.prefetchCount = prefetchCount;
         return this;
     }
@@ -180,10 +180,14 @@ public class FlakeIdGeneratorConfig implements IdentifiedDataSerializable, Named
     }
 
     /**
-     * Sets the offset of timestamp component in milliseconds.
+     * Sets the offset of timestamp component in milliseconds. By default it's {@value
+     * DEFAULT_EPOCH_START}. You can adjust the value to extend the lifespan of the generator.
      * <p>
+     * <i>Note:</i> If you set it to a future instant, negative IDs will be generated.
+     *
      * @param epochStart the desired epoch start
      * @return this instance for fluent API
+     * @since 4.0
      */
     public FlakeIdGeneratorConfig setEpochStart(long epochStart) {
         this.epochStart = epochStart;
@@ -228,15 +232,15 @@ public class FlakeIdGeneratorConfig implements IdentifiedDataSerializable, Named
     }
 
     /**
-     * Sets the bit length of sequence component.
-     * <p>
-     * Sum of {@code bitsSequence + bitsNodeId} should max 32.
+     * Sets the bit length of the sequence component.
+     * TODO [viliam]
      *
      * @param bitsSequence sequence component bit length
      * @return this instance for fluent API
+     * @since 4.0
      */
     public FlakeIdGeneratorConfig setBitsSequence(int bitsSequence) {
-        checkNotNegative(bitsSequence, "sequence bit length must be non-negative");
+        checkTrue(bitsSequence >= 0 && bitsSequence < 63, "sequence bit-length must be 0..63");
         this.bitsSequence = bitsSequence;
         return this;
     }
@@ -250,14 +254,14 @@ public class FlakeIdGeneratorConfig implements IdentifiedDataSerializable, Named
 
     /**
      * Sets the bit length of node id component.
-     * <p>
-     * Sum of {@code bitsSequence + bitsNodeId} should be max 32.
+     * TODO [viliam]
      *
      * @param bitsNodeId node id component bit length
      * @return this instance for fluent API
+     * @since 4.0
      */
     public FlakeIdGeneratorConfig setBitsNodeId(int bitsNodeId) {
-        checkNotNegative(bitsNodeId, "node id bit length must be non-negative");
+        checkTrue(bitsNodeId >= 0 && bitsNodeId < 63, "node ID bit-length must be 0..63");
         this.bitsNodeId = bitsNodeId;
         return this;
     }
@@ -274,6 +278,7 @@ public class FlakeIdGeneratorConfig implements IdentifiedDataSerializable, Named
      *
      * @param allowedFutureMillis value in milliseconds
      * @return this instance for fluent API
+     * @since 4.0
      */
     public FlakeIdGeneratorConfig setAllowedFutureMillis(long allowedFutureMillis) {
         checkNotNegative(allowedFutureMillis, "allowedFutureMillis must be non-negative");
@@ -302,7 +307,6 @@ public class FlakeIdGeneratorConfig implements IdentifiedDataSerializable, Named
     }
 
     @Override
-    @SuppressWarnings("checkstyle:cyclomaticcomplexity")
     public boolean equals(Object o) {
         if (this == o) {
             return true;
