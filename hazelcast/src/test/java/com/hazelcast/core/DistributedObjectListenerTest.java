@@ -165,14 +165,15 @@ public class DistributedObjectListenerTest extends HazelcastTestSupport {
         map2.destroy();
         AssertTask task = () -> {
             /**
-             * Uncomment the following lines once the race reported at issue(https://github.com/hazelcast/hazelcast/issues/16374)
-             * is properly solved. This test aims to test the destroy case only, hence the proxy creation race is not in
-             * the scope of this test.
+             * TODO: Uncomment the following lines once the race reported at
+             * issue(https://github.com/hazelcast/hazelcast/issues/16374)
+             * is properly solved. This test aims to test the destroy case only,
+             * hence the proxy creation race is not in the scope of this test.
              */
             /**
             Assert.assertEquals("Create event failed. unexpectedObjectName:" + listener.unexpectedObjectName, 1,
                     listener.createdCount.get());
-             */
+            */
             Assert.assertEquals("Destroy event failed. unexpectedObjectName:" + listener.unexpectedObjectName, 1,
                     listener.destroyedCount.get());
             Collection<DistributedObject> distributedObjects = instance.getDistributedObjects();
