@@ -80,6 +80,8 @@ public class FlakeIdGeneratorConfig implements IdentifiedDataSerializable, Named
      */
     public static final int MAXIMUM_PREFETCH_COUNT = 100000;
 
+    private static final int MAX_BITS = 63;
+
     private String name;
     private int prefetchCount = DEFAULT_PREFETCH_COUNT;
     private long prefetchValidityMillis = DEFAULT_PREFETCH_VALIDITY_MILLIS;
@@ -240,7 +242,7 @@ public class FlakeIdGeneratorConfig implements IdentifiedDataSerializable, Named
      * @since 4.0
      */
     public FlakeIdGeneratorConfig setBitsSequence(int bitsSequence) {
-        checkTrue(bitsSequence >= 0 && bitsSequence < 63, "sequence bit-length must be 0..63");
+        checkTrue(bitsSequence >= 0 && bitsSequence < MAX_BITS, "sequence bit-length must be 0.." + MAX_BITS);
         this.bitsSequence = bitsSequence;
         return this;
     }
@@ -261,7 +263,7 @@ public class FlakeIdGeneratorConfig implements IdentifiedDataSerializable, Named
      * @since 4.0
      */
     public FlakeIdGeneratorConfig setBitsNodeId(int bitsNodeId) {
-        checkTrue(bitsNodeId >= 0 && bitsNodeId < 63, "node ID bit-length must be 0..63");
+        checkTrue(bitsNodeId >= 0 && bitsNodeId < MAX_BITS, "node ID bit-length must be 0.." + MAX_BITS);
         this.bitsNodeId = bitsNodeId;
         return this;
     }
