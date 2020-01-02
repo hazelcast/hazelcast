@@ -84,7 +84,6 @@ public class FlakeIdGeneratorConfig implements IdentifiedDataSerializable, Named
     private int prefetchCount = DEFAULT_PREFETCH_COUNT;
     private long prefetchValidityMillis = DEFAULT_PREFETCH_VALIDITY_MILLIS;
     private long epochStart = DEFAULT_EPOCH_START;
-    private long idOffset;
     private long nodeIdOffset;
     private int bitsSequence = DEFAULT_BITS_SEQUENCE;
     private int bitsNodeId = DEFAULT_BITS_NODE_ID;
@@ -107,7 +106,6 @@ public class FlakeIdGeneratorConfig implements IdentifiedDataSerializable, Named
         this.prefetchCount = other.prefetchCount;
         this.prefetchValidityMillis = other.prefetchValidityMillis;
         this.epochStart = other.epochStart;
-        this.idOffset = other.idOffset;
         this.nodeIdOffset = other.nodeIdOffset;
         this.bitsSequence = other.bitsSequence;
         this.bitsNodeId = other.bitsNodeId;
@@ -318,7 +316,6 @@ public class FlakeIdGeneratorConfig implements IdentifiedDataSerializable, Named
         return prefetchCount == that.prefetchCount
                 && prefetchValidityMillis == that.prefetchValidityMillis
                 && epochStart == that.epochStart
-                && idOffset == that.idOffset
                 && nodeIdOffset == that.nodeIdOffset
                 && bitsSequence == that.bitsSequence
                 && bitsNodeId == that.bitsNodeId
@@ -334,7 +331,7 @@ public class FlakeIdGeneratorConfig implements IdentifiedDataSerializable, Named
                 prefetchCount,
                 prefetchValidityMillis,
                 epochStart,
-                idOffset,
+                nodeIdOffset,
                 bitsSequence,
                 bitsNodeId,
                 allowedFutureMillis,
@@ -348,7 +345,6 @@ public class FlakeIdGeneratorConfig implements IdentifiedDataSerializable, Named
                 + ", prefetchCount=" + prefetchCount
                 + ", prefetchValidityMillis=" + prefetchValidityMillis
                 + ", epochStart=" + epochStart
-                + ", idOffset=" + idOffset
                 + ", nodeIdOffset=" + nodeIdOffset
                 + ", bitsSequence=" + bitsSequence
                 + ", bitsNodeId=" + bitsNodeId
@@ -373,7 +369,6 @@ public class FlakeIdGeneratorConfig implements IdentifiedDataSerializable, Named
         out.writeInt(prefetchCount);
         out.writeLong(prefetchValidityMillis);
         out.writeLong(epochStart);
-        out.writeLong(idOffset);
         out.writeLong(nodeIdOffset);
         out.writeInt(bitsSequence);
         out.writeInt(bitsNodeId);
@@ -387,7 +382,6 @@ public class FlakeIdGeneratorConfig implements IdentifiedDataSerializable, Named
         prefetchCount = in.readInt();
         prefetchValidityMillis = in.readLong();
         epochStart = in.readLong();
-        idOffset = in.readLong();
         nodeIdOffset = in.readLong();
         bitsSequence = in.readInt();
         bitsNodeId = in.readInt();

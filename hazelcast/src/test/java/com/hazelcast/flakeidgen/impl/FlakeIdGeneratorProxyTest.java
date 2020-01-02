@@ -46,7 +46,6 @@ import static com.hazelcast.config.FlakeIdGeneratorConfig.DEFAULT_BITS_NODE_ID;
 import static com.hazelcast.config.FlakeIdGeneratorConfig.DEFAULT_BITS_SEQUENCE;
 import static com.hazelcast.config.FlakeIdGeneratorConfig.DEFAULT_EPOCH_START;
 import static com.hazelcast.flakeidgen.impl.FlakeIdGeneratorProxy.NODE_ID_UPDATE_INTERVAL_NS;
-import static java.util.concurrent.TimeUnit.MINUTES;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
@@ -177,25 +176,6 @@ public class FlakeIdGeneratorProxyTest {
         when(clusterService.getMemberListJoinVersion()).thenReturn(memberListJoinVersion);
         assertEquals((memberListJoinVersion + nodeIdOffset), gen.getNodeId(0));
     }
-
-    @Test
-    public void when_migrationScenario_then_idFromFlakeIdIsLarger() {
-        // This simulates the migration scenario: we take the largest IdGenerator value (a constant here)
-        // and the current FIG value. Then we configure the offset based on their difference plus the reserve
-        // and check, that the ID after idOffset is set is larger than the value from IG.
-        long largestIdGeneratorValue = 5421380884070400000L;
-        long currentFlakeGenValue = gen.newId();
-        // This test will start failing after December 17th 2058 3:52:07 UTC: after this time no idOffset will be needed.
-        assertTrue(largestIdGeneratorValue > currentFlakeGenValue);
-        // the before() call will create a new gen
-        before(0);
-
-        // Then
-        long newFlakeGenValue = gen.newId();
-        assertTrue(newFlakeGenValue > largestIdGeneratorValue);
-        assertTrue(newFlakeGenValue - largestIdGeneratorValue < MINUTES.toMillis(10) * (1 << (DEFAULT_BITS_NODE_ID + DEFAULT_BITS_SEQUENCE)));
-    }
-
 
     // #### Tests pertaining to wait time ####
 
