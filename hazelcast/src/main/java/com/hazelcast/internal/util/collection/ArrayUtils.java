@@ -179,7 +179,7 @@ public final class ArrayUtils {
      *
      * @param capacity capacity of the buffer
      * @param index    index of copying will start from/to
-     * @param length   length of the buffer that will be read/writen
+     * @param length   length of the buffer that will be read/written
      */
     public static void boundsCheck(int capacity, int index, int length) {
         if (capacity < 0 || index < 0 || length < 0 || (index > (capacity - length))) {
