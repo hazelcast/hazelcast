@@ -19,15 +19,15 @@ package com.hazelcast.client.impl.protocol.task.map;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.MapEntrySetCodec;
 import com.hazelcast.instance.impl.Node;
-import com.hazelcast.map.impl.MapService;
-import com.hazelcast.map.impl.query.QueryResultRow;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.internal.util.IterationType;
+import com.hazelcast.map.impl.MapService;
+import com.hazelcast.map.impl.query.QueryResultRow;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.Predicates;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MapPermission;
-import com.hazelcast.internal.util.IterationType;
 
 import java.security.Permission;
 import java.util.ArrayList;

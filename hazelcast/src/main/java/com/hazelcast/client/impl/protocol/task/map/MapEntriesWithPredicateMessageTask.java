@@ -19,11 +19,11 @@ package com.hazelcast.client.impl.protocol.task.map;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.MapEntriesWithPredicateCodec;
 import com.hazelcast.instance.impl.Node;
-import com.hazelcast.map.impl.query.QueryResultRow;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.serialization.Data;
-import com.hazelcast.query.Predicate;
 import com.hazelcast.internal.util.IterationType;
+import com.hazelcast.map.impl.query.QueryResultRow;
+import com.hazelcast.query.Predicate;
 
 import java.util.ArrayList;
 import java.util.Collection;
