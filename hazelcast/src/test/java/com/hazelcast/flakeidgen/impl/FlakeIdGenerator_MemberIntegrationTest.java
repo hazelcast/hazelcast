@@ -34,11 +34,7 @@ import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
 import java.util.Map;
-import java.util.Set;
-import java.util.function.Supplier;
 
-import static com.hazelcast.flakeidgen.impl.FlakeIdConcurrencyTestUtil.IDS_IN_THREAD;
-import static com.hazelcast.flakeidgen.impl.FlakeIdConcurrencyTestUtil.NUM_THREADS;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -65,14 +61,7 @@ public class FlakeIdGenerator_MemberIntegrationTest extends HazelcastTestSupport
     public void smokeTest() throws Exception {
         HazelcastInstance instance = factory.newHazelcastInstance();
         final FlakeIdGenerator generator = instance.getFlakeIdGenerator("gen");
-        Set<Long> ids = FlakeIdConcurrencyTestUtil.concurrentlyGenerateIds(new Supplier<Long>() {
-            @Override
-            public Long get() {
-                return generator.newId();
-            }
-        });
-        // if there were duplicate IDs generated, there will be less items in the set than expected
-        assertEquals(NUM_THREADS * IDS_IN_THREAD, ids.size());
+        FlakeIdConcurrencyTestUtil.concurrentlyGenerateIds(generator::newId);
     }
 
     @Test

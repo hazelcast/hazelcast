@@ -26,7 +26,7 @@ import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.spi.impl.NodeEngine;
-import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.version.MemberVersion;
@@ -39,6 +39,7 @@ import org.junit.runner.RunWith;
 
 import java.net.UnknownHostException;
 import java.util.Date;
+import java.util.Iterator;
 import java.util.UUID;
 
 import static com.hazelcast.config.FlakeIdGeneratorConfig.DEFAULT_ALLOWED_FUTURE_MILLIS;
@@ -51,12 +52,12 @@ import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-@RunWith(HazelcastParallelClassRunner.class)
+@RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class FlakeIdGeneratorProxyTest {
 
     /**
-     * Available number of IDs per second from single member
+     * Available number of IDs per second from a single member
      */
     private final int IDS_PER_SECOND = 1 << DEFAULT_BITS_SEQUENCE;
     private static final int MAX_BIT_LENGTH = 63;
@@ -71,19 +72,18 @@ public class FlakeIdGeneratorProxyTest {
 
     @Before
     public void before() {
-        before(0);
+        before(new FlakeIdGeneratorConfig());
     }
 
-    public void before(long nodeIdOffset) {
+    public void before(FlakeIdGeneratorConfig config) {
         ILogger logger = mock(ILogger.class);
         clusterService = mock(ClusterService.class);
         NodeEngine nodeEngine = mock(NodeEngine.class);
         FlakeIdGeneratorService service = mock(FlakeIdGeneratorService.class);
         when(nodeEngine.getLogger(FlakeIdGeneratorProxy.class)).thenReturn(logger);
         when(nodeEngine.isRunning()).thenReturn(true);
-        when(nodeEngine.getConfig()).thenReturn(new Config().addFlakeIdGeneratorConfig(
-                new FlakeIdGeneratorConfig("foo").setNodeIdOffset(nodeIdOffset)
-        ));
+        config.setName("foo");
+        when(nodeEngine.getConfig()).thenReturn(new Config().addFlakeIdGeneratorConfig(config));
         when(nodeEngine.getClusterService()).thenReturn(clusterService);
         Address address = null;
         try {
@@ -107,26 +107,35 @@ public class FlakeIdGeneratorProxyTest {
         assertEquals(30, gen.getNodeId(NODE_ID_UPDATE_INTERVAL_NS));
     }
 
-    public void test_usedBits() {
-        assertEquals(24, DEFAULT_BITS_NODE_ID + DEFAULT_BITS_SEQUENCE);
+    @Test
+    public void test_timeLowPositiveEdge() {
+        long id = gen.newIdBaseLocal(DEFAULT_EPOCH_START, 1234, 10).idBatch.base();
+        assertEquals(1234L, id);
     }
 
     @Test
     public void test_timeMiddle() {
-        IdBatchAndWaitTime result = gen.newIdBaseLocal(1516028439000L, 1234, 10);
-        assertEquals(5300086112257234L, result.idBatch.base());
-    }
-
-    @Test
-    public void test_timeLowEdge() {
-        IdBatchAndWaitTime result = gen.newIdBaseLocal(DEFAULT_EPOCH_START, 1234, 10);
-        assertEquals(1234L, result.idBatch.base());
+        long id = gen.newIdBaseLocal(1516028439000L, 1234, 10).idBatch.base();
+        assertEquals(5300086112257234L, id);
     }
 
     @Test
     public void test_timeHighEdge() {
         IdBatchAndWaitTime result = gen.newIdBaseLocal(DEFAULT_EPOCH_START + (1L << DEFAULT_BITS_TIMESTAMP) - 1L, 1234, 10);
         assertEquals(9223372036850582738L, result.idBatch.base());
+    }
+
+    @Test
+    public void test_negativeId() {
+        long id = gen.newIdBaseLocal(DEFAULT_EPOCH_START - 1, 1234, 10).idBatch.base();
+        assertEquals((-1 << DEFAULT_BITS_SEQUENCE + DEFAULT_BITS_NODE_ID) + 1234, id);
+    }
+
+    @Test
+    public void test_lowNegativeEdge() {
+        long timestamp = -(1L << DEFAULT_BITS_TIMESTAMP);
+        long id = gen.newIdBaseLocal(DEFAULT_EPOCH_START + timestamp, 1234, 10).idBatch.base();
+        assertEquals(Long.MIN_VALUE + 1234, id);
     }
 
     @Test
@@ -171,10 +180,34 @@ public class FlakeIdGeneratorProxyTest {
     public void test_positiveNodeIdOffset() {
         int nodeIdOffset = 5;
         int memberListJoinVersion = 20;
-        before(0);
+        before(new FlakeIdGeneratorConfig().setNodeIdOffset(nodeIdOffset));
 
         when(clusterService.getMemberListJoinVersion()).thenReturn(memberListJoinVersion);
         assertEquals((memberListJoinVersion + nodeIdOffset), gen.getNodeId(0));
+    }
+
+    @Test
+    public void when_customBits_then_used() {
+        int bitsSequence = 10;
+        int bitsNodeId = 11;
+        before(new FlakeIdGeneratorConfig()
+                .setBitsSequence(bitsSequence)
+                .setBitsNodeId(bitsNodeId)
+                .setEpochStart(0));
+        Iterator<Long> result = gen.newIdBaseLocal(1, 1234, 2).idBatch.iterator();
+        long expected = (1L << bitsSequence + bitsNodeId) + 1234;
+        assertEquals(expected, result.next().longValue());
+        expected += 1L << bitsNodeId;
+        assertEquals(expected, result.next().longValue());
+    }
+
+    @Test
+    public void when_epochStart_then_used() {
+        int epochStart = 456;
+        int timeSinceEpochStart = 1;
+        before(new FlakeIdGeneratorConfig().setEpochStart(epochStart));
+        long id = gen.newIdBaseLocal(epochStart + timeSinceEpochStart, 1234, 10).idBatch.base();
+        assertEquals((timeSinceEpochStart << DEFAULT_BITS_SEQUENCE + DEFAULT_BITS_NODE_ID) + 1234, id);
     }
 
     // #### Tests pertaining to wait time ####
@@ -198,16 +231,16 @@ public class FlakeIdGeneratorProxyTest {
     }
 
     @Test
-    public void when_10mIds_then_wait() {
-        int batchSize = 10000000;
+    public void when_10mIdsInOneBatch_then_wait() {
+        int batchSize = 10_000_000;
         IdBatchAndWaitTime result = gen.newIdBaseLocal(1516028439000L, 1234, batchSize);
         assertEquals(batchSize / IDS_PER_SECOND - DEFAULT_ALLOWED_FUTURE_MILLIS, result.waitTimeMillis);
     }
 
     @Test
-    public void when_10mIdsInSmallChunks_then_wait() {
-        int batchSize = 100;
-        for (int numIds = 0; numIds < 10000000; numIds += batchSize) {
+    public void when_10mIdsInSmallBatches_then_wait() {
+        int batchSize = 1000;
+        for (int numIds = 0; numIds < 10_000_000; numIds += batchSize) {
             IdBatchAndWaitTime result = gen.newIdBaseLocal(1516028439000L, 1234, batchSize);
             assertEquals(Math.max(0, (numIds + batchSize) / IDS_PER_SECOND - DEFAULT_ALLOWED_FUTURE_MILLIS), result.waitTimeMillis);
         }

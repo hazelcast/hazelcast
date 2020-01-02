@@ -45,7 +45,6 @@ public class FlakeIdGeneratorProxy
         extends AbstractDistributedObject<FlakeIdGeneratorService>
         implements FlakeIdGenerator {
 
-    /** The difference between two IDs from a sequence on single member */
     static final long NODE_ID_UPDATE_INTERVAL_NS = SECONDS.toNanos(2);
 
     private static final int NODE_ID_NOT_YET_SET = -1;
@@ -159,9 +158,9 @@ public class FlakeIdGeneratorProxy
 
     /**
      * The layout of the ID is as follows (starting from most significant bits):<ul>
-     *     <li>41 bits timestamp
-     *     <li>6 bits sequence
-     *     <li>16 bits node ID
+     *     <li>timestamp bits (41 by default)
+     *     <li>sequence bits (6 by default)
+     *     <li>node ID bits (16 by default)
      * </ul>
      *
      * This order is important: timestamp must be first to keep IDs ordered. Sequence must be second for
