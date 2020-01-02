@@ -60,7 +60,7 @@ public abstract class AbstractFilteringStrategy implements FilteringStrategy {
     }
 
     /**
-     * Evalues the {@code filter} using a {@link CachedQueryEntry} together with the
+     * Evaluates the {@code filter} using a {@link CachedQueryEntry} together with the
      * value {@link Extractors} configured for this map. The filter must be of {@link QueryEventFilter} type.
      *
      * @param filter        a {@link QueryEventFilter} filter

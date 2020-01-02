@@ -93,7 +93,7 @@ public abstract class AbstractSchedulerOperation
         super.toString(sb);
 
         sb.append(", name=").append(schedulerName);
-        sb.append(", partiotionId=").append(getPartitionId());
+        sb.append(", partitionId=").append(getPartitionId());
     }
 }
 
