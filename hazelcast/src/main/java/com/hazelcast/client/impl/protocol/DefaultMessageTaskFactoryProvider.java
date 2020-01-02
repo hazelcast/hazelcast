@@ -80,7 +80,6 @@ import com.hazelcast.client.impl.protocol.codec.ClientCreateProxyCodec;
 import com.hazelcast.client.impl.protocol.codec.ClientDeployClassesCodec;
 import com.hazelcast.client.impl.protocol.codec.ClientDestroyProxyCodec;
 import com.hazelcast.client.impl.protocol.codec.ClientGetDistributedObjectsCodec;
-import com.hazelcast.client.impl.protocol.codec.ClientIsFailoverSupportedCodec;
 import com.hazelcast.client.impl.protocol.codec.ClientLocalBackupListenerCodec;
 import com.hazelcast.client.impl.protocol.codec.ClientPingCodec;
 import com.hazelcast.client.impl.protocol.codec.ClientRemoveAllListenersCodec;
@@ -423,7 +422,6 @@ import com.hazelcast.client.impl.protocol.task.CreateProxyMessageTask;
 import com.hazelcast.client.impl.protocol.task.DeployClassesMessageTask;
 import com.hazelcast.client.impl.protocol.task.DestroyProxyMessageTask;
 import com.hazelcast.client.impl.protocol.task.GetDistributedObjectsMessageTask;
-import com.hazelcast.client.impl.protocol.task.IsFailoverSupportedMessageTask;
 import com.hazelcast.client.impl.protocol.task.PingMessageTask;
 import com.hazelcast.client.impl.protocol.task.RemoveAllListenersMessageTask;
 import com.hazelcast.client.impl.protocol.task.RemoveDistributedObjectListenerMessageTask;
@@ -1432,8 +1430,6 @@ public class DefaultMessageTaskFactoryProvider implements MessageTaskFactoryProv
                 (cm, con) -> new DeployClassesMessageTask(cm, node, con));
         factories.put(ClientCreateProxiesCodec.REQUEST_MESSAGE_TYPE,
                 (cm, con) -> new CreateProxiesMessageTask(cm, node, con));
-        factories.put(ClientIsFailoverSupportedCodec.REQUEST_MESSAGE_TYPE,
-                (cm, con) -> new IsFailoverSupportedMessageTask(cm, node, con));
         factories.put(ClientLocalBackupListenerCodec.REQUEST_MESSAGE_TYPE,
                 (cm, con) -> new AddBackupListenerMessageTask(cm, node, con));
         factories.put(ClientTriggerPartitionAssignmentCodec.REQUEST_MESSAGE_TYPE,

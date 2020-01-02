@@ -37,12 +37,12 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Triggers partition assignment manually on the cluster.
  * Note that Partition based operations triggers this automatically
  */
-@Generated("34fc2753aec717b2ab2e8cfcbb691db0")
+@Generated("2590118b2687d6c0da34b9c2897a33d4")
 public final class ClientTriggerPartitionAssignmentCodec {
-    //hex: 0x001200
-    public static final int REQUEST_MESSAGE_TYPE = 4608;
-    //hex: 0x001201
-    public static final int RESPONSE_MESSAGE_TYPE = 4609;
+    //hex: 0x001100
+    public static final int REQUEST_MESSAGE_TYPE = 4352;
+    //hex: 0x001101
+    public static final int RESPONSE_MESSAGE_TYPE = 4353;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
 
