@@ -59,6 +59,7 @@ import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.util.AddressUtil;
 import com.hazelcast.internal.util.ConcurrencyUtil;
 import com.hazelcast.internal.util.EmptyStatement;
+import com.hazelcast.internal.util.RuntimeAvailableProcessors;
 import com.hazelcast.internal.util.UuidUtil;
 import com.hazelcast.internal.util.executor.LoggingScheduledExecutor;
 import com.hazelcast.internal.util.executor.PoolExecutorThreadFactory;
@@ -117,6 +118,8 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
 
     private static final int DEFAULT_SMART_CLIENT_THREAD_COUNT = 3;
     private static final int EXECUTOR_CORE_POOL_SIZE = 10;
+    private static final int SMALL_MACHINE_PROCESSOR_COUNT = 8;
+
     protected final AtomicInteger connectionIdGen = new AtomicInteger();
 
     private final AtomicBoolean isAlive = new AtomicBoolean();
@@ -241,14 +244,22 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
 
         int inputThreads;
         if (configuredInputThreads == -1) {
-            inputThreads = isSmartRoutingEnabled ? DEFAULT_SMART_CLIENT_THREAD_COUNT : 1;
+            if (isSmartRoutingEnabled && RuntimeAvailableProcessors.get() > SMALL_MACHINE_PROCESSOR_COUNT) {
+                inputThreads = DEFAULT_SMART_CLIENT_THREAD_COUNT;
+            } else {
+                inputThreads = 1;
+            }
         } else {
             inputThreads = configuredInputThreads;
         }
 
         int outputThreads;
         if (configuredOutputThreads == -1) {
-            outputThreads = isSmartRoutingEnabled ? DEFAULT_SMART_CLIENT_THREAD_COUNT : 1;
+            if (isSmartRoutingEnabled && RuntimeAvailableProcessors.get() > SMALL_MACHINE_PROCESSOR_COUNT) {
+                outputThreads = DEFAULT_SMART_CLIENT_THREAD_COUNT;
+            } else {
+                outputThreads = 1;
+            }
         } else {
             outputThreads = configuredOutputThreads;
         }
@@ -481,10 +492,10 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
 
     Collection<Address> getPossibleMemberAddresses(AddressProvider addressProvider) {
         List<Address> memberAddresses = client.getClientClusterService()
-                                              .getMemberList()
-                                              .stream()
-                                              .map(Member::getAddress)
-                                              .collect(toList());
+                .getMemberList()
+                .stream()
+                .map(Member::getAddress)
+                .collect(toList());
         if (shuffleMemberList) {
             Collections.shuffle(memberAddresses);
         }
