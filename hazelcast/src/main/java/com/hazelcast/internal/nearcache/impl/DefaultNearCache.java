@@ -247,4 +247,13 @@ public class DefaultNearCache<K, V> implements NearCache<K, V> {
                     TimeUnit.SECONDS);
         }
     }
+
+    @Override
+    public String toString() {
+        return "DefaultNearCache{"
+                + "name='" + name + '\''
+                + ", nearCacheConfig=" + nearCacheConfig
+                + ", preloadDone=" + preloadDone
+                + '}';
+    }
 }
