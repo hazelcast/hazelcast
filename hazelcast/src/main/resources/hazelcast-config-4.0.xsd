@@ -3944,14 +3944,13 @@
             <xs:element name="bits-sequence" minOccurs="0" default="6">
                 <xs:annotation>
                     <xs:documentation>
-                        Sets the sequence component bit length, default 6 bits.
-
-                        Sum of bitsTimestamp + bitsSequence + bitsNodeId should max 32.
+                        Sets the bit-length of the sequence component, default is 6 bits.
                     </xs:documentation>
                 </xs:annotation>
                 <xs:simpleType>
                     <xs:restriction base="xs:int">
                         <xs:minInclusive value="0" />
+                        <xs:maxInclusive value="63"/>
                     </xs:restriction>
                 </xs:simpleType>
             </xs:element>
@@ -3959,24 +3958,28 @@
             <xs:element name="bits-node-id" minOccurs="0" default="16">
                 <xs:annotation>
                     <xs:documentation>
-                        Sets the node id component bit length, default 16 bits.
-
-                        Sum of bitsSequence + bitsNodeId should be max 32.
+                        Sets the bit-length of node id component. Default value is 16 bits.
                     </xs:documentation>
                 </xs:annotation>
                 <xs:simpleType>
                     <xs:restriction base="xs:int">
-                        <xs:minInclusive value="1" />
+                        <xs:minInclusive value="0" />
+                        <xs:maxInclusive value="63"/>
                     </xs:restriction>
                 </xs:simpleType>
             </xs:element>
 
-            <xs:element name="allowed-future-millis" type="xs:long" minOccurs="0" default="15000">
+            <xs:element name="allowed-future-millis" minOccurs="0" default="15000">
                 <xs:annotation>
                     <xs:documentation>
-                        Sets how far to the future is it allowed to go to generate IDs, default 15 seconds.
+                        Sets how far to the future is the generator allowed to go to generate IDs without blocking, default is 15 seconds.
                     </xs:documentation>
                 </xs:annotation>
+                <xs:simpleType>
+                    <xs:restriction base="xs:long">
+                        <xs:minInclusive value="0"/>
+                    </xs:restriction>
+                </xs:simpleType>
             </xs:element>
 
             <xs:element name="statistics-enabled" type="xs:boolean" minOccurs="0" maxOccurs="1" default="true">

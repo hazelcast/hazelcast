@@ -3294,37 +3294,40 @@
         <xs:attribute name="bitsSequence" default="6" use="optional">
             <xs:annotation>
                 <xs:documentation>
-                    Sets the sequence component bit length, default 6 bits.
-
-                    Sum of bitsSequence + bitsNodeId should be max 32.
+                    Sets the bit-length of the sequence component, default is 6 bits.
                 </xs:documentation>
             </xs:annotation>
             <xs:simpleType>
                 <xs:restriction base="xs:int">
                     <xs:minInclusive value="0" />
+                    <xs:maxInclusive value="63" />
                 </xs:restriction>
             </xs:simpleType>
         </xs:attribute>
         <xs:attribute name="bitsNodeId" default="16" use="optional">
             <xs:annotation>
                 <xs:documentation>
-                    Sets the node id component bit length, default 16 bits.
-
-                    Sum of bitsSequence + bitsNodeId should be max 32.
+                    Sets the bit-length of node id component. Default value is 16 bits.
                 </xs:documentation>
             </xs:annotation>
             <xs:simpleType>
                 <xs:restriction base="xs:int">
-                    <xs:minInclusive value="1" />
+                    <xs:minInclusive value="0" />
+                    <xs:maxInclusive value="63" />
                 </xs:restriction>
             </xs:simpleType>
         </xs:attribute>
-        <xs:attribute name="allowedFutureMillis" type="xs:long" default="15000" use="optional">
+        <xs:attribute name="allowedFutureMillis" default="15000" use="optional">
             <xs:annotation>
                 <xs:documentation>
-                    Sets how far to the future is it allowed to go to generate IDs, default 15 seconds.
+                    Sets how far to the future is the generator allowed to go to generate IDs without blocking, default is 15 seconds.
                 </xs:documentation>
             </xs:annotation>
+            <xs:simpleType>
+                <xs:restriction base="xs:long">
+                    <xs:minInclusive value="0"/>
+                </xs:restriction>
+            </xs:simpleType>
         </xs:attribute>
         <xs:attribute name="statistics-enabled" type="parameterized-boolean" use="optional" default="true">
             <xs:annotation>

@@ -20,6 +20,7 @@ import com.hazelcast.cluster.Member;
 import com.hazelcast.config.FlakeIdGeneratorConfig;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.flakeidgen.FlakeIdGenerator;
+import com.hazelcast.flakeidgen.impl.AutoBatcher.IdBatchSupplier;
 import com.hazelcast.internal.util.Clock;
 import com.hazelcast.internal.util.ThreadLocalRandomProvider;
 import com.hazelcast.logging.ILogger;
@@ -50,7 +51,6 @@ public class FlakeIdGeneratorProxy
     private static final int NODE_ID_NOT_YET_SET = -1;
     private static final int NODE_ID_OUT_OF_RANGE = -2;
     private static final int MAX_BIT_LENGTH = 63;
-    private static final int RESERVED_TIMESTAMP_BIT_LENGTH = 32;
 
     private final String name;
     private final UUID source;
@@ -88,18 +88,14 @@ public class FlakeIdGeneratorProxy
         FlakeIdGeneratorConfig config = nodeEngine.getConfig().findFlakeIdGeneratorConfig(getName());
         bitsSequence = config.getBitsSequence();
         bitsNodeId = config.getBitsNodeId();
-        int configuredBitLength = bitsSequence + bitsNodeId;
-        checkTrue(configuredBitLength <= RESERVED_TIMESTAMP_BIT_LENGTH,
-                "Configuration error, maximum configurable bit length exceeded: "
-                        + configuredBitLength
-                        + ", max " + RESERVED_TIMESTAMP_BIT_LENGTH);
         bitsTimestamp = MAX_BIT_LENGTH - (bitsSequence + bitsNodeId);
+        checkTrue(bitsTimestamp >= 0, "Configuration error, no bits left for the timestamp");
         allowedFutureMillis = config.getAllowedFutureMillis();
         increment = 1 << bitsNodeId;
         epochStart = config.getEpochStart();
         nodeIdOffset = config.getNodeIdOffset();
         batcher = new AutoBatcher(config.getPrefetchCount(), config.getPrefetchValidityMillis(),
-                new AutoBatcher.IdBatchSupplier() {
+                new IdBatchSupplier() {
                     @Override
                     public IdBatch newIdBatch(int batchSize) {
                         IdBatchAndWaitTime result = FlakeIdGeneratorProxy.this.newIdBatch(batchSize);
