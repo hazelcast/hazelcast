@@ -36,7 +36,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(PowerMockRunner.class)
-@PrepareForTest(KubernetesApiEndpointResolver.class)
+@PrepareForTest({KubernetesApiEndpointResolver.class})
 public class HazelcastKubernetesDiscoveryStrategyFactoryTest {
 
     private static final ILogger LOGGER = new NoLogFactory().getLogger("no");
@@ -76,6 +76,7 @@ public class HazelcastKubernetesDiscoveryStrategyFactoryTest {
         properties.put(KubernetesProperties.KUBERNETES_API_TOKEN.key(), API_TOKEN);
         properties.put(KubernetesProperties.KUBERNETES_CA_CERTIFICATE.key(), CA_CERTIFICATE);
         properties.put(String.valueOf(KubernetesProperties.SERVICE_PORT), 333);
+        properties.put(KubernetesProperties.NAMESPACE.key(), "default");
         HazelcastKubernetesDiscoveryStrategyFactory factory = new HazelcastKubernetesDiscoveryStrategyFactory();
         DiscoveryStrategy strategy = factory.newDiscoveryStrategy(discoveryNode, LOGGER, properties);
         assertTrue(strategy instanceof HazelcastKubernetesDiscoveryStrategy);

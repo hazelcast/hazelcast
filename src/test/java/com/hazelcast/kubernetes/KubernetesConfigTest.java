@@ -28,11 +28,16 @@ import java.io.OutputStreamWriter;
 import java.nio.charset.Charset;
 import java.util.HashMap;
 import java.util.Map;
+import org.junit.runner.RunWith;
+import org.powermock.api.mockito.PowerMockito;
+import org.powermock.core.classloader.annotations.PrepareForTest;
+import org.powermock.modules.junit4.PowerMockRunner;
 
 import static com.hazelcast.kubernetes.KubernetesConfig.DiscoveryMode;
 import static com.hazelcast.kubernetes.KubernetesProperties.KUBERNETES_API_RETIRES;
 import static com.hazelcast.kubernetes.KubernetesProperties.KUBERNETES_API_TOKEN;
 import static com.hazelcast.kubernetes.KubernetesProperties.KUBERNETES_CA_CERTIFICATE;
+import static com.hazelcast.kubernetes.KubernetesProperties.NAMESPACE;
 import static com.hazelcast.kubernetes.KubernetesProperties.SERVICE_DNS;
 import static com.hazelcast.kubernetes.KubernetesProperties.SERVICE_DNS_TIMEOUT;
 import static com.hazelcast.kubernetes.KubernetesProperties.SERVICE_LABEL_NAME;
@@ -40,10 +45,14 @@ import static com.hazelcast.kubernetes.KubernetesProperties.SERVICE_LABEL_VALUE;
 import static com.hazelcast.kubernetes.KubernetesProperties.SERVICE_NAME;
 import static com.hazelcast.kubernetes.KubernetesProperties.SERVICE_PORT;
 import static org.junit.Assert.assertEquals;
+import static org.powermock.api.mockito.PowerMockito.doReturn;
 
+@RunWith(PowerMockRunner.class)
+@PrepareForTest({KubernetesConfig.class})
 public class KubernetesConfigTest {
     private static final String TEST_API_TOKEN = "api-token";
     private static final String TEST_CA_CERTIFICATE = "ca-certificate";
+    private static final String TEST_NAMESPACE = "test";
 
     @Test
     public void dnsLookupMode() {
@@ -68,7 +77,7 @@ public class KubernetesConfigTest {
     }
 
     @Test
-    public void kubernetesApiModeDefault() {
+    public void kubernetesApiModeDefault() throws Exception {
         // given
         Map<String, Comparable> properties = createProperties();
 
@@ -77,7 +86,7 @@ public class KubernetesConfigTest {
 
         // then
         assertEquals(DiscoveryMode.KUBERNETES_API, config.getMode());
-        assertEquals("default", config.getNamespace());
+        assertEquals("test", config.getNamespace());
         assertEquals(true, config.isResolveNotReadyAddresses());
         assertEquals(false, config.isUseNodeNameAsExternalAddress());
         assertEquals(TEST_API_TOKEN, config.getKubernetesApiToken());
@@ -128,6 +137,27 @@ public class KubernetesConfigTest {
 
         // then
         assertEquals(true, config.isUseNodeNameAsExternalAddress());
+    }
+
+    @Test
+    public void readTokenCertificateAndNamespaceFromFilesWhenPropertiesNotSet() throws Exception {
+        // given
+        PowerMockito.spy(KubernetesConfig.class);
+        doReturn("token-xyz")
+                .when(KubernetesConfig.class, "readFileContents", "/var/run/secrets/kubernetes.io/serviceaccount/token");
+        doReturn("certificate-xyz")
+                .when(KubernetesConfig.class, "readFileContents", "/var/run/secrets/kubernetes.io/serviceaccount/ca.crt");
+        doReturn("namespace-xyz")
+                .when(KubernetesConfig.class, "readFileContents", "/var/run/secrets/kubernetes.io/serviceaccount/namespace");
+        Map<String, Comparable> properties = new HashMap<String, Comparable>();
+
+        // when
+        KubernetesConfig config = new KubernetesConfig(properties);
+
+        // then
+        assertEquals("certificate-xyz", config.getKubernetesCaCertificate());
+        assertEquals("token-xyz", config.getKubernetesApiToken());
+        assertEquals("namespace-xyz", config.getNamespace());
     }
 
     @Test(expected = InvalidConfigurationException.class)
@@ -219,6 +249,7 @@ public class KubernetesConfigTest {
         // Predefined test properties
         properties.put(KUBERNETES_API_TOKEN.key(), TEST_API_TOKEN);
         properties.put(KUBERNETES_CA_CERTIFICATE.key(), TEST_CA_CERTIFICATE);
+        properties.put(NAMESPACE.key(), TEST_NAMESPACE);
         return properties;
     }
 

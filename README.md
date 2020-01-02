@@ -120,7 +120,7 @@ config.getNetworkConfig().getJoin().getKubernetesConfig().setEnabled(true)
 ```
 
 There are several properties to configure the plugin, all of them are optional.
- * `namespace`: Kubernetes Namespace where Hazelcast is running; if not specified, the value is taken from the environment variables `KUBERNETES_NAMESPACE` or `OPENSHIFT_BUILD_NAMESPACE`
+ * `namespace`: Kubernetes Namespace where Hazelcast is running; if not specified, the value is taken from the environment variables `KUBERNETES_NAMESPACE` or `OPENSHIFT_BUILD_NAMESPACE`. If those are not set, the namespace of the POD will be used (retrieved from `/var/run/secrets/kubernetes.io/serviceaccount/namespace`).
  * `service-name`: service name used to scan only PODs connected to the given service; if not specified, then all PODs in the namespace are checked
  * `service-label-name`, `service-label-value`: service label and value used to tag services that should form the Hazelcast cluster together
  * `pod-label-name`, `pod-label-value`: pod label and value used to tag pods that should form the Hazelcast cluster together.
