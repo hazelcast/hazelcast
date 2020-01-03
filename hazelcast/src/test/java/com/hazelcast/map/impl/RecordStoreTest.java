@@ -67,7 +67,11 @@ public class RecordStoreTest extends HazelcastTestSupport {
     public void testRecordStoreResetWithoutClearingIndexes() {
         IMap<Object, Object> map = testRecordStoreReset();
         Collection<Object> values = map.values(Predicates.equal("name", "tom"));
-        assertFalse(values.isEmpty());
+        // Although, on record store reset we don't destroy indexes, we still mark partition as
+        // "unindexed" in the IndexingMutationObserver#clearGlobalIndexes. Since introduction of
+        // indexes consistency check (before using them for query), we don't use incomplete indexes
+        // for query. Thus, the below query ignores the indexes and uses record store to run the query.
+        assertTrue(values.isEmpty());
     }
 
     private IMap<Object, Object> testRecordStoreReset() {
