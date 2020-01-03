@@ -24,7 +24,6 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.Objects;
 
 import static com.hazelcast.internal.util.Preconditions.checkNotNegative;
@@ -347,7 +346,7 @@ public class FlakeIdGeneratorConfig implements IdentifiedDataSerializable, Named
 
     @Override
     public int hashCode() {
-        return Arrays.hashCode(new Object[]{
+        return Objects.hash(
                 name,
                 prefetchCount,
                 prefetchValidityMillis,
@@ -356,7 +355,7 @@ public class FlakeIdGeneratorConfig implements IdentifiedDataSerializable, Named
                 bitsSequence,
                 bitsNodeId,
                 allowedFutureMillis,
-                statisticsEnabled});
+                statisticsEnabled);
     }
 
     @Override
