@@ -14,9 +14,10 @@
  * limitations under the License.
  */
 
-package com.hazelcast.client.cache.nearcache;
+package com.hazelcast.client.cache.impl.nearcache;
 
 import com.hazelcast.config.InMemoryFormat;
+import com.hazelcast.config.NearCacheConfig.LocalUpdatePolicy;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.SlowTest;
@@ -30,25 +31,25 @@ import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
 import java.util.Collection;
 
+import static com.hazelcast.internal.nearcache.NearCacheTestUtils.createNearCacheConfig;
 import static java.util.Arrays.asList;
 
 @RunWith(Parameterized.class)
 @UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
 @Category({SlowTest.class, ParallelJVMTest.class})
-public class ClientCacheNearCachePreloaderSlowTest extends ClientCacheNearCachePreloaderTest {
+public class ClientCacheNearCacheBasicSlowTest extends ClientCacheNearCacheBasicTest {
 
-    @Parameters(name = "format:{0} invalidationOnChange:{1} serializeKeys:{2}")
+    @Parameters(name = "format:{0} serializeKeys:{1} localUpdatePolicy:{2}")
     public static Collection<Object[]> parameters() {
         return asList(new Object[][]{
-                {InMemoryFormat.BINARY, false, true},
-                {InMemoryFormat.BINARY, false, false},
-                {InMemoryFormat.BINARY, true, true},
-                {InMemoryFormat.BINARY, true, false},
-
-                {InMemoryFormat.OBJECT, false, true},
-                {InMemoryFormat.OBJECT, false, false},
-                {InMemoryFormat.OBJECT, true, true},
-                {InMemoryFormat.OBJECT, true, false},
+                {InMemoryFormat.BINARY, true, LocalUpdatePolicy.INVALIDATE},
+                {InMemoryFormat.BINARY, true, LocalUpdatePolicy.CACHE_ON_UPDATE},
+                {InMemoryFormat.BINARY, false, LocalUpdatePolicy.INVALIDATE},
+                {InMemoryFormat.BINARY, false, LocalUpdatePolicy.CACHE_ON_UPDATE},
+                {InMemoryFormat.OBJECT, true, LocalUpdatePolicy.INVALIDATE},
+                {InMemoryFormat.OBJECT, true, LocalUpdatePolicy.CACHE_ON_UPDATE},
+                {InMemoryFormat.OBJECT, false, LocalUpdatePolicy.INVALIDATE},
+                {InMemoryFormat.OBJECT, false, LocalUpdatePolicy.CACHE_ON_UPDATE},
         });
     }
 
@@ -56,14 +57,14 @@ public class ClientCacheNearCachePreloaderSlowTest extends ClientCacheNearCacheP
     public InMemoryFormat inMemoryFormat;
 
     @Parameter(value = 1)
-    public boolean invalidationOnChange;
+    public boolean serializeKeys;
 
     @Parameter(value = 2)
-    public boolean serializeKeys;
+    public LocalUpdatePolicy localUpdatePolicy;
 
     @Before
     public void setUp() {
-        nearCacheConfig = getNearCacheConfig(inMemoryFormat, serializeKeys, invalidationOnChange, KEY_COUNT,
-                storeFile.getParent());
+        nearCacheConfig = createNearCacheConfig(inMemoryFormat, serializeKeys)
+                .setLocalUpdatePolicy(localUpdatePolicy);
     }
 }

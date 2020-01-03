@@ -14,17 +14,22 @@
  * limitations under the License.
  */
 
-package com.hazelcast.client.cache.impl;
+package com.hazelcast.client.cache.impl.nearcache;
 
 import com.hazelcast.cache.CacheStatistics;
 import com.hazelcast.cache.impl.ICacheInternal;
+import com.hazelcast.client.cache.impl.ClientCacheProxy;
+import com.hazelcast.client.cache.impl.ClientCacheStatisticsImpl;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.CacheAddNearCacheInvalidationListenerCodec;
+import com.hazelcast.client.impl.protocol.codec.CacheRemoveEntryListenerCodec;
 import com.hazelcast.client.impl.spi.ClientContext;
 import com.hazelcast.client.impl.spi.EventHandler;
+import com.hazelcast.client.impl.spi.impl.ListenerMessageCodec;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.config.InMemoryFormat;
+import com.hazelcast.config.NativeMemoryConfig;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.internal.adapter.ICacheDataStructureAdapter;
 import com.hazelcast.internal.nearcache.NearCache;
@@ -51,14 +56,14 @@ import java.util.concurrent.CompletableFuture;
 import java.util.function.BiConsumer;
 import java.util.function.Supplier;
 
-import static com.hazelcast.client.cache.impl.ClientCacheProxySupportUtil.checkNearCacheConfig;
-import static com.hazelcast.client.cache.impl.ClientCacheProxySupportUtil.createInvalidationListenerCodec;
+import static com.hazelcast.config.InMemoryFormat.NATIVE;
 import static com.hazelcast.config.NearCacheConfig.LocalUpdatePolicy.CACHE_ON_UPDATE;
 import static com.hazelcast.internal.nearcache.NearCache.CACHED_AS_NULL;
 import static com.hazelcast.internal.nearcache.NearCache.NOT_CACHED;
 import static com.hazelcast.internal.nearcache.NearCacheRecord.NOT_RESERVED;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 import static com.hazelcast.internal.util.MapUtil.createHashMap;
+import static com.hazelcast.internal.util.Preconditions.checkTrue;
 
 /**
  * An {@link ICacheInternal} implementation which
@@ -79,7 +84,7 @@ public class NearCachedClientCacheProxy<K, V> extends ClientCacheProxy<K, V> {
     private NearCache<Object, Object> nearCache;
     private UUID nearCacheMembershipRegistrationId;
 
-    NearCachedClientCacheProxy(CacheConfig<K, V> cacheConfig, ClientContext context) {
+    public NearCachedClientCacheProxy(CacheConfig<K, V> cacheConfig, ClientContext context) {
         super(cacheConfig, context);
     }
 
@@ -109,6 +114,18 @@ public class NearCachedClientCacheProxy<K, V> extends ClientCacheProxy<K, V> {
         if (nearCacheConfig.getPreloaderConfig().isEnabled()) {
             nearCacheManager.startPreloading(nearCache, new ICacheDataStructureAdapter<>(this));
         }
+    }
+
+    private static NearCacheConfig checkNearCacheConfig(NearCacheConfig nearCacheConfig,
+                                                        NativeMemoryConfig nativeMemoryConfig) {
+        InMemoryFormat inMemoryFormat = nearCacheConfig.getInMemoryFormat();
+        if (inMemoryFormat != NATIVE) {
+            return nearCacheConfig;
+        }
+
+        checkTrue(nativeMemoryConfig.isEnabled(),
+                "Enable native memory config to use NATIVE in-memory-format for Near Cache");
+        return nearCacheConfig;
     }
 
     @Override
@@ -726,8 +743,32 @@ public class NearCachedClientCacheProxy<K, V> extends ClientCacheProxy<K, V> {
         }
     }
 
-    public UUID addNearCacheInvalidationListener(EventHandler eventHandler) {
-        return registerListener(createInvalidationListenerCodec(nameWithPrefix), eventHandler);
+    UUID addNearCacheInvalidationListener(EventHandler eventHandler) {
+        return registerListener(createNearCacheInvalidationListenerCodec(), eventHandler);
+    }
+
+    private ListenerMessageCodec createNearCacheInvalidationListenerCodec() {
+        return new ListenerMessageCodec() {
+            @Override
+            public ClientMessage encodeAddRequest(boolean localOnly) {
+                return CacheAddNearCacheInvalidationListenerCodec.encodeRequest(nameWithPrefix, localOnly);
+            }
+
+            @Override
+            public UUID decodeAddResponse(ClientMessage clientMessage) {
+                return CacheAddNearCacheInvalidationListenerCodec.decodeResponse(clientMessage).response;
+            }
+
+            @Override
+            public ClientMessage encodeRemoveRequest(UUID realRegistrationId) {
+                return CacheRemoveEntryListenerCodec.encodeRequest(nameWithPrefix, realRegistrationId);
+            }
+
+            @Override
+            public boolean decodeRemoveResponse(ClientMessage clientMessage) {
+                return CacheRemoveEntryListenerCodec.decodeResponse(clientMessage).response;
+            }
+        };
     }
 
     private void registerInvalidationListener() {

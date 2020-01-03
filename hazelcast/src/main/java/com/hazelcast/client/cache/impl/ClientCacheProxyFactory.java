@@ -18,6 +18,7 @@ package com.hazelcast.client.cache.impl;
 
 import com.hazelcast.cache.CacheNotExistsException;
 import com.hazelcast.cache.HazelcastCacheManager;
+import com.hazelcast.client.cache.impl.nearcache.NearCachedClientCacheProxy;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.spi.ClientContext;
 import com.hazelcast.client.impl.spi.ClientProxy;
