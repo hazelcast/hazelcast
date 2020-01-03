@@ -16,7 +16,6 @@
 
 package com.hazelcast.map;
 
-import com.hazelcast.internal.util.collection.PartitionIdSet;
 import com.hazelcast.query.impl.QueryContext;
 import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.query.impl.predicates.IndexAwarePredicate;
@@ -43,14 +42,14 @@ class TestPredicate implements IndexAwarePredicate<String, TestData> {
 
     @Override
     @SuppressWarnings("unchecked")
-    public Set<QueryableEntry<String, TestData>> filter(QueryContext queryContext, PartitionIdSet queryPartitions) {
+    public Set<QueryableEntry<String, TestData>> filter(QueryContext queryContext, int ownedPartitionCount) {
         filtered = true;
-        return (Set) queryContext.getIndex("attr1", queryPartitions).getRecords(value);
+        return (Set) queryContext.getIndex("attr1", ownedPartitionCount).getRecords(value);
     }
 
     @Override
-    public boolean isIndexed(QueryContext queryContext, PartitionIdSet queryPartitions) {
-        return queryContext.getIndex("attr1", queryPartitions) != null;
+    public boolean isIndexed(QueryContext queryContext, int ownedPartitionCount) {
+        return queryContext.getIndex("attr1", ownedPartitionCount) != null;
     }
 
     boolean isFilteredAndApplied(int times) {

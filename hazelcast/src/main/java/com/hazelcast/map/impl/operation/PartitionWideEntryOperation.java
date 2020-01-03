@@ -21,7 +21,6 @@ import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.ManagedContext;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
-import com.hazelcast.internal.util.collection.PartitionIdSet;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.MapEntries;
@@ -44,7 +43,6 @@ import java.util.Queue;
 import java.util.Set;
 
 import static com.hazelcast.internal.util.CollectionUtil.isEmpty;
-import static com.hazelcast.internal.util.SetUtil.singletonPartitionIdSet;
 import static com.hazelcast.internal.util.ToHeapDataConverter.toHeapData;
 import static com.hazelcast.map.impl.operation.EntryOperator.operator;
 
@@ -115,9 +113,7 @@ public class PartitionWideEntryOperation extends MapOperation
 
         // we use the partitioned-index to operate on the selected keys only
         Indexes indexes = mapContainer.getIndexes(getPartitionId());
-        int partitionCount = mapService.getMapServiceContext().getNodeEngine().getPartitionService().getPartitionCount();
-        PartitionIdSet partitions = singletonPartitionIdSet(partitionCount, getPartitionId());
-        Set<QueryableEntry> entries = indexes.query(queryOptimizer.optimize(predicate, indexes), partitions);
+        Set<QueryableEntry> entries = indexes.query(queryOptimizer.optimize(predicate, indexes), 1);
         if (entries == null) {
             return false;
         }

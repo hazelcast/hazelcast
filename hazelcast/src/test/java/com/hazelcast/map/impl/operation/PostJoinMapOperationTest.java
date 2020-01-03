@@ -18,7 +18,6 @@ package com.hazelcast.map.impl.operation;
 
 import com.hazelcast.config.IndexType;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.internal.util.collection.PartitionIdSet;
 import com.hazelcast.map.IMap;
 import com.hazelcast.map.MapInterceptor;
 import com.hazelcast.map.impl.MapContainer;
@@ -142,8 +141,8 @@ public class PostJoinMapOperationTest extends HazelcastTestSupport {
         }
 
         @Override
-        public Set<QueryableEntry> filter(QueryContext queryContext, PartitionIdSet queryPartitions) {
-            Index ix = queryContext.getIndex("age", queryPartitions);
+        public Set<QueryableEntry> filter(QueryContext queryContext, int ownedPartitionCount) {
+            Index ix = queryContext.getIndex("age", ownedPartitionCount);
             if (ix != null) {
                 return ix.getRecords(Comparison.GREATER, 50);
             } else {
@@ -152,8 +151,8 @@ public class PostJoinMapOperationTest extends HazelcastTestSupport {
         }
 
         @Override
-        public boolean isIndexed(QueryContext queryContext, PartitionIdSet queryPartitions) {
-            Index ix = queryContext.getIndex("age", queryPartitions);
+        public boolean isIndexed(QueryContext queryContext, int ownedPartitionCount) {
+            Index ix = queryContext.getIndex("age", ownedPartitionCount);
             if (ix != null) {
                 isIndexedInvocationCounter.incrementAndGet();
                 return true;

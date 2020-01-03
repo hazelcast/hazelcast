@@ -22,7 +22,6 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;
 import com.hazelcast.query.impl.predicates.SqlPredicate;
 import com.hazelcast.test.HazelcastSerialClassRunner;
-import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
@@ -30,64 +29,63 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.util.Collection;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static com.hazelcast.query.impl.predicates.BoundedRangePredicateQueriesTest.Person;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class IndexConcurrencyTest extends HazelcastTestSupport {
+public class IndexConcurrencyTest extends AbstractIndexConcurrencyTest {
 
-    private static final int QUERY_THREADS_NUM = 5;
+    @Override
+    protected Config getConfig() {
+        return smallInstanceConfig();
+    }
 
     @Test
-    public void testIndexCreationAndQueryConcurrency() throws InterruptedException {
-        String mapName = randomMapName();
-
-        Config config = smallInstanceConfig();
+    public void testIndexCreationAndQueryDeterministicConcurrency() {
+        Config config = getConfig();
 
         HazelcastInstance node = createHazelcastInstance(config);
-        IMap<Integer, Person> map = node.getMap("persons");
+        IMap<Integer, Person> map = node.getMap(randomMapName());
 
         // put some data
         for (int i = 0; i < 10000; ++i) {
             map.put(i, new Person(i));
         }
 
+        // initialize age field access counter
+        Person.accessCountDown = new AtomicLong(5000);
+
+        // start indexer, it will await for latch in the middle
         AtomicReference<Throwable> exception = new AtomicReference<>();
-
-        // run index creation and queries concurrently
-        Thread[] threads = new Thread[QUERY_THREADS_NUM + 1];
-
-        threads[0] = new Thread(() -> {
+        Thread indexer = new Thread(() -> {
             try {
                 map.addIndex(IndexType.SORTED, "age");
             } catch (Throwable t) {
                 exception.compareAndSet(null, t);
             }
         });
-        threads[0].start();
+        indexer.start();
 
-        for (int i = 1; i < threads.length; i++) {
-            threads[i] = new Thread(() -> {
-                try {
-                    Collection<Person> persons = map.values(new SqlPredicate("age >= 5000"));
-                    assertEquals(5000, persons.size());
-                } catch (Throwable t) {
-                    exception.compareAndSet(null, t);
-                }
-            });
-            threads[i].start();
-        }
+        // await for query latch
+        assertOpenEventually(Person.queryLatch);
+        Person.accessCountDown = null;
 
-        // wait for for all threads to finish
-        for (int i = 0; i < threads.length; ++i) {
-            threads[i].join();
-        }
+        // run checking query
+        Collection<Person> persons = map.values(new SqlPredicate("age >= 5000"));
+        assertEquals(5000, persons.size());
+
+        // open indexer latch
+        Person.indexerLatch.countDown();
+
+        // wait for indexer to finish
+        assertJoinable(indexer);
 
         // assert no unexpected exceptions
         assertNull(exception.get());
     }
+
 }

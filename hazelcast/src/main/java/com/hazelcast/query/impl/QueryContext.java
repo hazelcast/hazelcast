@@ -16,8 +16,6 @@
 
 package com.hazelcast.query.impl;
 
-import com.hazelcast.internal.util.collection.PartitionIdSet;
-
 /**
  * Provides the context for queries execution.
  */
@@ -61,11 +59,13 @@ public class QueryContext {
      * context.
      *
      * @param attribute the attribute to obtain the index for.
+     * @param ownedPartitionCount a count of owned partitions a query runs on.
+     * Negative value indicates that the value is not defined.
      * @return the obtained index or {@code null} if there is no index available
      * for the given attribute.
      */
-    public Index getIndex(String attribute, PartitionIdSet queryPartitions) {
-        return matchIndex(attribute, IndexMatchHint.NONE, queryPartitions);
+    public Index getIndex(String attribute, int ownedPartitionCount) {
+        return matchIndex(attribute, IndexMatchHint.NONE, ownedPartitionCount);
     }
 
     /**
@@ -74,11 +74,13 @@ public class QueryContext {
      * @param pattern   the pattern to match an index for. May be either an
      *                  attribute name or an exact index name.
      * @param matchHint the match hint.
+     * @param ownedPartitionCount a count of owned partitions a query runs on.
+     * Negative value indicates that the value is not defined.
      * @return the matched index or {@code null} if nothing matched.
      * @see QueryContext.IndexMatchHint
      */
-    public Index matchIndex(String pattern, IndexMatchHint matchHint, PartitionIdSet queryPartitions) {
-        return indexes.matchIndex(pattern, matchHint, queryPartitions);
+    public Index matchIndex(String pattern, IndexMatchHint matchHint, int ownedPartitionCount) {
+        return indexes.matchIndex(pattern, matchHint, ownedPartitionCount);
     }
 
     /**

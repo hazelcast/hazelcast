@@ -17,7 +17,6 @@
 package com.hazelcast.query.impl;
 
 import com.hazelcast.internal.monitor.impl.PerIndexStats;
-import com.hazelcast.internal.util.collection.PartitionIdSet;
 
 /**
  * Provides the private index API.
@@ -45,9 +44,17 @@ public interface InternalIndex extends Index {
     /**
      * Returns {@code true} if all {@code queryPartitions} are indexed,
      * {@code false} otherwise.
-     * @param queryPartitions a set of partitions a query runs on.
+     * <p>
+     * The method is used to check whether a global index is still being constructed concurrently
+     * so that some partitions are not indexed and query may suffer from entry misses.
+     * If the index construction is still in progress, a query optimizer ignores the index.
+     * <p>
+     * The aforementioned race condition is not relevant to local off-heap indexes,
+     * since index construction is performed in partition-threads.
+     * @param ownedPartitionCount a count of owned partitions a query runs on.
+     * Negative value indicates that the value is not defined.
      */
-    boolean allPartitionsIndexed(PartitionIdSet queryPartitions);
+    boolean allPartitionsIndexed(int ownedPartitionCount);
 
     /**
      * Marks the given partition as indexed by this index.

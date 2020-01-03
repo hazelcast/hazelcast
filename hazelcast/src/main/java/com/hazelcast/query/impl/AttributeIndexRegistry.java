@@ -20,7 +20,6 @@ import com.hazelcast.config.IndexConfig;
 import com.hazelcast.core.TypeConverter;
 import com.hazelcast.internal.monitor.impl.PerIndexStats;
 import com.hazelcast.internal.serialization.Data;
-import com.hazelcast.internal.util.collection.PartitionIdSet;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -308,8 +307,8 @@ public class AttributeIndexRegistry {
         }
 
         @Override
-        public boolean allPartitionsIndexed(PartitionIdSet queryPartitions) {
-            throw newUnsupportedException();
+        public boolean allPartitionsIndexed(int ownedPartitionCount) {
+            return delegate.allPartitionsIndexed(ownedPartitionCount);
         }
 
         @Override

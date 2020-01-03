@@ -16,17 +16,16 @@
 
 package com.hazelcast.query.impl.predicates;
 
-import com.hazelcast.internal.util.collection.PartitionIdSet;
+import com.hazelcast.internal.serialization.BinaryInterface;
+import com.hazelcast.internal.util.collection.ArrayUtils;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.internal.serialization.BinaryInterface;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.Predicates;
 import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.query.impl.QueryContext;
 import com.hazelcast.query.impl.QueryableEntry;
-import com.hazelcast.internal.util.collection.ArrayUtils;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -92,16 +91,16 @@ public class SqlPredicate
     }
 
     @Override
-    public boolean isIndexed(QueryContext queryContext, PartitionIdSet queryPartitions) {
+    public boolean isIndexed(QueryContext queryContext, int ownedPartitionCount) {
         if (predicate instanceof IndexAwarePredicate) {
-            return ((IndexAwarePredicate) predicate).isIndexed(queryContext, queryPartitions);
+            return ((IndexAwarePredicate) predicate).isIndexed(queryContext, ownedPartitionCount);
         }
         return false;
     }
 
     @Override
-    public Set<QueryableEntry> filter(QueryContext queryContext, PartitionIdSet queryPartitions) {
-        return ((IndexAwarePredicate) predicate).filter(queryContext, queryPartitions);
+    public Set<QueryableEntry> filter(QueryContext queryContext, int ownedPartitionCount) {
+        return ((IndexAwarePredicate) predicate).filter(queryContext, ownedPartitionCount);
     }
 
     @Override

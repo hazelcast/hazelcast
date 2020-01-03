@@ -20,7 +20,6 @@ import com.hazelcast.config.IndexConfig;
 import com.hazelcast.core.TypeConverter;
 import com.hazelcast.internal.monitor.impl.PerIndexStats;
 import com.hazelcast.internal.serialization.Data;
-import com.hazelcast.internal.util.collection.PartitionIdSet;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -53,8 +52,8 @@ public class GlobalQueryContextWithStats extends QueryContext {
     }
 
     @Override
-    public Index matchIndex(String pattern, IndexMatchHint matchHint, PartitionIdSet queryPartitions) {
-        InternalIndex delegate = indexes.matchIndex(pattern, matchHint, queryPartitions);
+    public Index matchIndex(String pattern, IndexMatchHint matchHint, int ownedPartitionCount) {
+        InternalIndex delegate = indexes.matchIndex(pattern, matchHint, ownedPartitionCount);
         if (delegate == null) {
             return null;
         }
@@ -175,8 +174,8 @@ public class GlobalQueryContextWithStats extends QueryContext {
         }
 
         @Override
-        public boolean allPartitionsIndexed(PartitionIdSet queryPartitions) {
-            return delegate.allPartitionsIndexed(queryPartitions);
+        public boolean allPartitionsIndexed(int ownedPartitionCount) {
+            return delegate.allPartitionsIndexed(ownedPartitionCount);
         }
 
         @Override

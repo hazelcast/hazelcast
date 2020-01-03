@@ -16,7 +16,6 @@
 
 package com.hazelcast.query.impl.predicates;
 
-import com.hazelcast.internal.util.collection.PartitionIdSet;
 import com.hazelcast.query.impl.Comparables;
 import com.hazelcast.query.impl.Index;
 import com.hazelcast.query.impl.QueryContext;
@@ -66,8 +65,8 @@ public class BoundedRangePredicate extends AbstractIndexAwarePredicate implement
     }
 
     @Override
-    public Set<QueryableEntry> filter(QueryContext queryContext, PartitionIdSet queryPartitions) {
-        Index index = matchIndex(queryContext, QueryContext.IndexMatchHint.PREFER_ORDERED, queryPartitions);
+    public Set<QueryableEntry> filter(QueryContext queryContext, int ownedPartitionCount) {
+        Index index = matchIndex(queryContext, QueryContext.IndexMatchHint.PREFER_ORDERED, ownedPartitionCount);
         return index.getRecords(from, fromInclusive, to, toInclusive);
     }
 
