@@ -26,6 +26,7 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -36,8 +37,8 @@ import java.util.UUID;
 import static com.hazelcast.cp.CPGroup.CPGroupStatus.ACTIVE;
 import static com.hazelcast.cp.CPGroup.CPGroupStatus.DESTROYED;
 import static com.hazelcast.cp.CPGroup.CPGroupStatus.DESTROYING;
-import static java.util.Collections.unmodifiableSet;
 import static com.hazelcast.internal.util.Preconditions.checkState;
+import static java.util.Collections.unmodifiableSet;
 
 /**
  * Contains metadata information for Raft groups, such as group id,
@@ -61,6 +62,15 @@ public final class CPGroupInfo implements IdentifiedDataSerializable {
         this.status = ACTIVE;
         this.initialMembers = unmodifiableSet(new LinkedHashSet<>(members));
         this.members = unmodifiableSet(new LinkedHashSet<>(members));
+    }
+
+    // Copy constructor
+    CPGroupInfo(CPGroupInfo other) {
+        this.id = other.id;
+        this.status = other.status;
+        this.membersCommitIndex = other.membersCommitIndex;
+        this.initialMembers = Collections.unmodifiableSet(new LinkedHashSet<>(other.initialMembers));
+        this.members = Collections.unmodifiableSet(new LinkedHashSet<>(other.members));
     }
 
     public RaftGroupId id() {
