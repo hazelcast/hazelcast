@@ -33,6 +33,10 @@ public class SpringManagedContext implements ManagedContext, ApplicationContextA
     public SpringManagedContext() {
     }
 
+    public SpringManagedContext(ApplicationContext applicationContext) {
+        setApplicationContext(applicationContext);
+    }
+
     @Override
     public Object initialize(Object obj) {
         Object resultObject = obj;
