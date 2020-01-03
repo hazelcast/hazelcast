@@ -1137,9 +1137,9 @@ public class ConfigXmlGenerator {
         if (wan != null) {
             gen.open("wan-replication-ref", "name", wan.getName());
 
-            String mergePolicy = wan.getMergePolicy();
+            String mergePolicy = wan.getMergePolicyClassName();
             if (!isNullOrEmpty(mergePolicy)) {
-                gen.node("merge-policy", mergePolicy);
+                gen.node("merge-policy-class-name", mergePolicy);
             }
 
             List<String> filters = wan.getFilters();

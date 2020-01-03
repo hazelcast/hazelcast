@@ -3694,11 +3694,13 @@
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
-        <xs:attribute name="merge-policy" type="xs:string">
+        <xs:attribute name="merge-policy-class-name" type="xs:string"
+                      default="com.hazelcast.spi.merge.PassThroughMergePolicy">
             <xs:annotation>
                 <xs:documentation>
-                    Resolve conflicts that occurred when target cluster already has the replicated
-                    entry key.
+                    Sets the merge policy sent to the WAN replication target to merge
+                    replicated entries with existing target entries.
+                    The default merge policy is com.hazelcast.spi.merge.PassThroughMergePolicy.
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>

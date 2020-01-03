@@ -165,7 +165,7 @@ public class CacheConfigTest extends HazelcastTestSupport {
 
         WanReplicationRef wanRefCacheConfig = config1.getCacheConfig("wanRefTestCache").getWanReplicationRef();
         assertEquals("testWanRef", wanRefCacheConfig.getName());
-        assertEquals("TestMergePolicy", wanRefCacheConfig.getMergePolicy());
+        assertEquals("TestMergePolicy", wanRefCacheConfig.getMergePolicyClassName());
         assertTrue(wanRefCacheConfig.isRepublishingEnabled());
 
         WanReplicationRef wanRefDisabledRepublishingTestCache =

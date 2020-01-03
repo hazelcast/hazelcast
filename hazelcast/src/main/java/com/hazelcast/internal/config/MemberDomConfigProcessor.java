@@ -2029,8 +2029,8 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         for (Node wanChild : childElements(n)) {
             String wanChildName = cleanNodeName(wanChild);
             String wanChildValue = getTextContent(wanChild);
-            if ("merge-policy".equals(wanChildName)) {
-                wanReplicationRef.setMergePolicy(wanChildValue);
+            if ("merge-policy-class-name".equals(wanChildName)) {
+                wanReplicationRef.setMergePolicyClassName(wanChildValue);
             } else if ("filters".equals(wanChildName)) {
                 handleWanFilters(wanChild, wanReplicationRef);
             } else if ("republishing-enabled".equals(wanChildName)) {
@@ -2093,8 +2093,8 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         for (Node wanChild : childElements(n)) {
             String wanChildName = cleanNodeName(wanChild);
             String wanChildValue = getTextContent(wanChild);
-            if ("merge-policy".equals(wanChildName)) {
-                wanReplicationRef.setMergePolicy(wanChildValue);
+            if ("merge-policy-class-name".equals(wanChildName)) {
+                wanReplicationRef.setMergePolicyClassName(wanChildValue);
             } else if ("republishing-enabled".equals(wanChildName)) {
                 wanReplicationRef.setRepublishingEnabled(getBooleanValue(wanChildValue));
             } else if ("filters".equals(wanChildName)) {

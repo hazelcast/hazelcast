@@ -2010,7 +2010,7 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
     private static WanReplicationRef wanReplicationRef() {
         return new WanReplicationRef()
                 .setName("wanReplication")
-                .setMergePolicy("mergePolicy")
+                .setMergePolicyClassName("mergePolicy")
                 .setRepublishingEnabled(true)
                 .setFilters(Arrays.asList("filter1", "filter2"));
     }

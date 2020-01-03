@@ -40,7 +40,7 @@ public final class WanReplicationRefCodec {
         clientMessage.add(initialFrame);
 
         StringCodec.encode(clientMessage, wanReplicationRef.getName());
-        StringCodec.encode(clientMessage, wanReplicationRef.getMergePolicy());
+        StringCodec.encode(clientMessage, wanReplicationRef.getMergePolicyClassName());
         ListMultiFrameCodec.encodeNullable(clientMessage, wanReplicationRef.getFilters(), StringCodec::encode);
 
         clientMessage.add(END_FRAME.copy());

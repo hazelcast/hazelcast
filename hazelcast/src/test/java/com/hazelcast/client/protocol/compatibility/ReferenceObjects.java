@@ -234,7 +234,7 @@ public class ReferenceObjects {
         if (!a.getName().equals(b.getName())) {
             return false;
         }
-        if (!a.getMergePolicy().equals(b.getMergePolicy())) {
+        if (!a.getMergePolicyClassName().equals(b.getMergePolicyClassName())) {
             return false;
         }
         return a.getFilters() != null ? a.getFilters().equals(b.getFilters()) : b.getFilters() == null;
