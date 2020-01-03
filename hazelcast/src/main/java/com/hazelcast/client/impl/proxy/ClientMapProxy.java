@@ -88,7 +88,7 @@ import com.hazelcast.client.impl.protocol.codec.MapValuesCodec;
 import com.hazelcast.client.impl.protocol.codec.MapValuesWithPagingPredicateCodec;
 import com.hazelcast.client.impl.protocol.codec.MapValuesWithPredicateCodec;
 import com.hazelcast.client.impl.protocol.codec.holder.PagingPredicateHolder;
-import com.hazelcast.client.impl.querycache.ClientQueryCacheContext;
+import com.hazelcast.client.map.impl.querycache.ClientQueryCacheContext;
 import com.hazelcast.client.impl.spi.ClientContext;
 import com.hazelcast.client.impl.spi.ClientPartitionService;
 import com.hazelcast.client.impl.spi.ClientProxy;
