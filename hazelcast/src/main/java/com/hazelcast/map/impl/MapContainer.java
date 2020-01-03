@@ -229,7 +229,8 @@ public class MapContainer {
 
         WanReplicationService wanReplicationService = nodeEngine.getWanReplicationService();
         wanReplicationDelegate = wanReplicationService.getWanReplicationPublishers(wanReplicationRefName);
-        wanMergePolicy = nodeEngine.getSplitBrainMergePolicyProvider().getMergePolicy(wanReplicationRef.getMergePolicyClassName());
+        wanMergePolicy = nodeEngine.getSplitBrainMergePolicyProvider()
+                                   .getMergePolicy(wanReplicationRef.getMergePolicyClassName());
 
         WanReplicationConfig wanReplicationConfig = config.getWanReplicationConfig(wanReplicationRefName);
         if (wanReplicationConfig != null) {

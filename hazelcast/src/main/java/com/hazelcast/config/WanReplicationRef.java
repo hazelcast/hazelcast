@@ -222,10 +222,10 @@ public class WanReplicationRef implements IdentifiedDataSerializable, Serializab
             return false;
         }
         WanReplicationRef that = (WanReplicationRef) o;
-        return republishingEnabled == that.republishingEnabled &&
-                Objects.equals(name, that.name) &&
-                Objects.equals(mergePolicyClassName, that.mergePolicyClassName) &&
-                Objects.equals(filters, that.filters);
+        return republishingEnabled == that.republishingEnabled
+                && Objects.equals(name, that.name)
+                && Objects.equals(mergePolicyClassName, that.mergePolicyClassName)
+                && Objects.equals(filters, that.filters);
     }
 
     @Override
