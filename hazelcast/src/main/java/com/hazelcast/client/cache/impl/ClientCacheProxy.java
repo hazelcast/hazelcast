@@ -98,7 +98,7 @@ public class ClientCacheProxy<K, V> extends ClientCacheProxySupport<K, V>
     private ClientMessageDecoder eventJournalSubscribeResponseDecoder;
 
 
-    ClientCacheProxy(CacheConfig<K, V> cacheConfig, ClientContext context) {
+    public ClientCacheProxy(CacheConfig<K, V> cacheConfig, ClientContext context) {
         super(cacheConfig, context);
     }
 

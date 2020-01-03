@@ -23,7 +23,7 @@ import com.hazelcast.client.config.SocketOptions;
 import com.hazelcast.client.impl.ClientExtension;
 import com.hazelcast.client.impl.connection.nio.ClientPlainChannelInitializer;
 import com.hazelcast.client.impl.proxy.ClientMapProxy;
-import com.hazelcast.client.impl.proxy.NearCachedClientMapProxy;
+import com.hazelcast.client.map.impl.nearcache.NearCachedClientMapProxy;
 import com.hazelcast.client.impl.spi.ClientProxyFactory;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.config.SSLConfig;

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.client.impl.proxy;
+package com.hazelcast.client.map.impl.nearcache;
 
 import com.hazelcast.client.impl.ClientDelegatingFuture;
 import com.hazelcast.client.impl.protocol.ClientMessage;
@@ -22,6 +22,7 @@ import com.hazelcast.client.impl.protocol.codec.MapAddNearCacheInvalidationListe
 import com.hazelcast.client.impl.protocol.codec.MapGetCodec;
 import com.hazelcast.client.impl.protocol.codec.MapRemoveCodec;
 import com.hazelcast.client.impl.protocol.codec.MapRemoveEntryListenerCodec;
+import com.hazelcast.client.impl.proxy.ClientMapProxy;
 import com.hazelcast.client.impl.spi.ClientContext;
 import com.hazelcast.client.impl.spi.EventHandler;
 import com.hazelcast.client.impl.spi.impl.ClientInvocationFuture;
@@ -612,10 +613,6 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
         nearCache.invalidate(key);
     }
 
-    public UUID addNearCacheInvalidationListener(EventHandler handler) {
-        return registerListener(createNearCacheEntryListenerCodec(), handler);
-    }
-
     private void registerInvalidationListener() {
         try {
             invalidationListenerId = addNearCacheInvalidationListener(new NearCacheInvalidationEventHandler());
@@ -625,8 +622,12 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
         }
     }
 
+    public UUID addNearCacheInvalidationListener(EventHandler handler) {
+        return registerListener(createNearCacheInvalidationListenerCodec(), handler);
+    }
+
     @SuppressWarnings("checkstyle:anoninnerlength")
-    private ListenerMessageCodec createNearCacheEntryListenerCodec() {
+    private ListenerMessageCodec createNearCacheInvalidationListenerCodec() {
         return new ListenerMessageCodec() {
             @Override
             public ClientMessage encodeAddRequest(boolean localOnly) {

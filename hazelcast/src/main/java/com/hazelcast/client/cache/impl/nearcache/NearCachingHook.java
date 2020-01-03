@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.client.cache.impl;
+package com.hazelcast.client.cache.impl.nearcache;
 
 
 import com.hazelcast.internal.serialization.Data;
@@ -25,7 +25,7 @@ import com.hazelcast.internal.serialization.Data;
  * With this hook, you can implement needed logic
  * for truly invalidate/populate local near cache.
  */
-interface NearCachingHook<K, V> {
+public interface NearCachingHook<K, V> {
 
     NearCachingHook EMPTY_HOOK = new NearCachingHook() {
 

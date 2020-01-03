@@ -70,7 +70,8 @@ public class NearCachedMapProxyImpl<K, V> extends MapProxyImpl<K, V> {
 
     private volatile UUID invalidationListenerId;
 
-    public NearCachedMapProxyImpl(String name, MapService mapService, NodeEngine nodeEngine, MapConfig mapConfig) {
+    public NearCachedMapProxyImpl(String name, MapService mapService,
+                                  NodeEngine nodeEngine, MapConfig mapConfig) {
         super(name, mapService, nodeEngine, mapConfig);
 
         clusterService = nodeEngine.getClusterService();

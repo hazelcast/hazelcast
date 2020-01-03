@@ -17,7 +17,6 @@
 package com.hazelcast.client.cache.impl.nearcache;
 
 import com.hazelcast.client.cache.impl.HazelcastClientCacheManager;
-import com.hazelcast.client.cache.impl.NearCachedClientCacheProxy;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.CacheConfig;

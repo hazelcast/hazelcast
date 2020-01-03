@@ -16,7 +16,7 @@
 
 package com.hazelcast.map.impl.nearcache;
 
-import com.hazelcast.client.impl.proxy.NearCachedClientMapProxy;
+import com.hazelcast.client.map.impl.nearcache.NearCachedClientMapProxy;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.EvictionPolicy;

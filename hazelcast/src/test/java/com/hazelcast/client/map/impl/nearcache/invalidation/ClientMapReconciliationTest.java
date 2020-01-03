@@ -17,7 +17,7 @@
 package com.hazelcast.client.map.impl.nearcache.invalidation;
 
 import com.hazelcast.client.config.ClientConfig;
-import com.hazelcast.client.impl.proxy.NearCachedClientMapProxy;
+import com.hazelcast.client.map.impl.nearcache.NearCachedClientMapProxy;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.NearCacheConfig;

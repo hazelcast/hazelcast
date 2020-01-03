@@ -283,7 +283,7 @@
     <suppress checks="MethodCount" files="com[\\/]hazelcast[\\/]map[\\/]impl[\\/]operation[\\/]DefaultMapOperationProvider"/>
     <suppress checks="MethodCount" files="com[\\/]hazelcast[\\/]map[\\/]impl[\\/]MapContainer"/>
     <suppress checks="MethodCount" files="com[\\/]hazelcast[\\/]map[\\/]impl[\\/]proxy[\\/]NearCachedMapProxyImpl"/>
-    <suppress checks="MethodCount" files="com[\\/]hazelcast[\\/]client[\\/]impl[\\/]proxy[\\/]NearCachedClientMapProxy"/>
+    <suppress checks="MethodCount" files="com[\\/]hazelcast[\\/]client[\\/]map[\\/]impl[\\/]nearcache[\\/]NearCachedClientMapProxy"/>
     <suppress checks="MethodCount" files="com[\\/]hazelcast[\\/]map[\\/]impl[\\/]query[\\/]MapQueryEngineImpl"/>
     <suppress checks="MethodCount" files="com[\\/]hazelcast[\\/]map[\\/]impl[\\/]MapServiceContext"/>
     <suppress checks="MethodCount|ClassDataAbstractionCoupling"

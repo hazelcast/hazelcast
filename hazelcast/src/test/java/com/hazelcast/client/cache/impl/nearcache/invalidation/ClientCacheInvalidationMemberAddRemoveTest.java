@@ -18,7 +18,7 @@ package com.hazelcast.client.cache.impl.nearcache.invalidation;
 
 import com.hazelcast.cache.impl.CacheEventHandler;
 import com.hazelcast.cache.impl.CacheService;
-import com.hazelcast.client.cache.impl.NearCachedClientCacheProxy;
+import com.hazelcast.client.cache.impl.nearcache.NearCachedClientCacheProxy;
 import com.hazelcast.client.cache.impl.nearcache.ClientNearCacheTestSupport;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.impl.clientside.HazelcastClientProxy;
