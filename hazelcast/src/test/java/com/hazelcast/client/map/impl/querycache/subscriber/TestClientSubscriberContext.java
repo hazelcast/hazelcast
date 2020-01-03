@@ -16,7 +16,6 @@
 
 package com.hazelcast.client.map.impl.querycache.subscriber;
 
-import com.hazelcast.client.impl.querycache.subscriber.ClientSubscriberContext;
 import com.hazelcast.map.impl.querycache.QueryCacheContext;
 import com.hazelcast.map.impl.querycache.accumulator.Accumulator;
 import com.hazelcast.map.impl.querycache.accumulator.AccumulatorInfo;

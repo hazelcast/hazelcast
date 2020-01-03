@@ -18,4 +18,4 @@
  * Contains Hazelcast Enterprise version client-side query cache
  * subscriber implementation classes.
  */
-package com.hazelcast.client.impl.querycache.subscriber;
+package com.hazelcast.client.map.impl.querycache.subscriber;

@@ -22,7 +22,7 @@ import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.impl.ClientExtension;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.connection.ClientConnectionManager;
-import com.hazelcast.client.impl.querycache.ClientQueryCacheContext;
+import com.hazelcast.client.map.impl.querycache.ClientQueryCacheContext;
 import com.hazelcast.client.map.impl.nearcache.invalidation.ClientMapInvalidationMetaDataFetcher;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.LifecycleService;
