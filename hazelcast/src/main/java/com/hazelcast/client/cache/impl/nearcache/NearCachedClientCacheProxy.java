@@ -38,7 +38,6 @@ import com.hazelcast.internal.nearcache.impl.invalidation.RepairingHandler;
 import com.hazelcast.internal.nearcache.impl.invalidation.RepairingTask;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.serialization.Data;
-import com.hazelcast.spi.impl.InternalCompletableFuture;
 
 import javax.annotation.Nonnull;
 import javax.cache.expiry.ExpiryPolicy;
@@ -154,12 +153,12 @@ public class NearCachedClientCacheProxy<K, V> extends ClientCacheProxy<K, V> {
     @Nonnull
     @Override
     @SuppressWarnings("unchecked")
-    protected InternalCompletableFuture<V> callGetAsync(Object key, ExpiryPolicy expiryPolicy,
-                                                        BiConsumer<V, Throwable> statsCallback) {
+    protected CompletableFuture<V> callGetAsync(Object key, ExpiryPolicy expiryPolicy,
+                                                BiConsumer<V, Throwable> statsCallback) {
         final Object nearCacheKey = useObjectKey ? key : toData(key);
         V value = (V) getCachedValue(nearCacheKey, false);
         if (value != NOT_CACHED) {
-            return InternalCompletableFuture.newCompletedFuture(value);
+            return CompletableFuture.completedFuture(value);
         }
 
         try {

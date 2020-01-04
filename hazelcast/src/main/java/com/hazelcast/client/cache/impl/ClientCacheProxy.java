@@ -405,12 +405,12 @@ public class ClientCacheProxy<K, V> extends ClientCacheProxySupport<K, V>
     }
 
     @Override
-    public InternalCompletableFuture<V> getAsync(K key) {
+    public CompletableFuture<V> getAsync(K key) {
         return getAsync(key, null);
     }
 
     @Override
-    public InternalCompletableFuture<V> getAsync(K key, ExpiryPolicy expiryPolicy) {
+    public CompletableFuture<V> getAsync(K key, ExpiryPolicy expiryPolicy) {
         ensureOpen();
         validateNotNull(key);
 
