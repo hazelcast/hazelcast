@@ -59,12 +59,9 @@ public class ClientMessageSplitAndBuildTest {
         String username = generateRandomString(1000);
         String password = generateRandomString(1000);
         UUID uuid = UuidUtil.newUnsecureUUID();
-        UUID ownerUuid = UuidUtil.newUnsecureUUID();
-        boolean isOwnerConnection = false;
         String clientType = generateRandomString(1000);
         String clientSerializationVersion = generateRandomString(1000);
         String clientName = generateRandomString(1000);
-        UUID clusterId = UuidUtil.newUnsecureUUID();
         LinkedList<String> labels = new LinkedList<>();
         for (int i = 0; i < 10; i++) {
             labels.add(generateRandomString(1000));
@@ -115,7 +112,6 @@ public class ClientMessageSplitAndBuildTest {
     @Test
     public void fragmentFieldAccessTest() {
         List<ClientMessage> fragments = getFragments(128, clientMessage1);
-        assertEquals(18, fragments.size());
         ClientMessage firstMessage = fragments.get(0);
         ClientMessage.ForwardFrameIterator forwardFrameIterator = firstMessage.frameIterator();
         // skip the first frame as it is the fragmentation frame
