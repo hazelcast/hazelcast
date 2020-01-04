@@ -38,6 +38,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.function.BiConsumer;
@@ -79,10 +80,9 @@ final class ClientCacheProxySupportUtil {
         }
     }
 
-    static <T> InternalCompletableFuture<T> addCallback(InternalCompletableFuture<T> future,
-                                                        BiConsumer<T, Throwable> callback) {
-        return callback == null
-                ? future : (InternalCompletableFuture<T>) future.whenCompleteAsync(callback, CALLER_RUNS);
+    static <T> CompletableFuture<T> addCallback(InternalCompletableFuture<T> future,
+                                                BiConsumer<T, Throwable> callback) {
+        return callback == null ? future : future.whenCompleteAsync(callback, CALLER_RUNS);
     }
 
     static EventHandler createHandler(CacheEventListenerAdaptor<?, ?> adaptor) {

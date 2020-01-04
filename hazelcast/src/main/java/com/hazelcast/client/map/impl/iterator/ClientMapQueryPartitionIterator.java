@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.client.map.impl;
+package com.hazelcast.client.map.impl.iterator;
 
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
