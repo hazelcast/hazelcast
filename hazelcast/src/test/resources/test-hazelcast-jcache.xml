@@ -111,7 +111,7 @@
         <statistics-enabled>false</statistics-enabled>
         <management-enabled>false</management-enabled>
         <wan-replication-ref name="testWanRef">
-            <merge-policy>TestMergePolicy</merge-policy>
+            <merge-policy-class-name>TestMergePolicy</merge-policy-class-name>
         </wan-replication-ref>
     </cache>
 
@@ -121,7 +121,7 @@
         <statistics-enabled>false</statistics-enabled>
         <management-enabled>false</management-enabled>
         <wan-replication-ref name="testWanRef">
-            <merge-policy>TestMergePolicy</merge-policy>
+            <merge-policy-class-name>TestMergePolicy</merge-policy-class-name>
             <republishing-enabled>false</republishing-enabled>
         </wan-replication-ref>
     </cache>
