@@ -34,9 +34,10 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  */
 
 /**
- * Removes the specified distributed object listener. Returns silently if there is no such listener added before.
+ * Removes the specified distributed object listener. If there is no such listener added before, this call does no
+ * change in the cluster and returns false.
  */
-@Generated("29b502d7e50d8e840d9a8663beb7249b")
+@Generated("9d389a19af6c03d7c4f0a8ca04c33e7b")
 public final class ClientRemoveDistributedObjectListenerCodec {
     //hex: 0x000A00
     public static final int REQUEST_MESSAGE_TYPE = 2560;

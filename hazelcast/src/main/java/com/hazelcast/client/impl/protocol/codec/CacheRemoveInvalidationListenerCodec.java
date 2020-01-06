@@ -34,9 +34,10 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  */
 
 /**
- * Removes the specified invalidation listener. Returns silently if there is no such listener added before.
+ * Removes the specified invalidation listener. If there is no such listener added before, this call does no change
+ * in the cluster and returns false.
  */
-@Generated("1f05e20375ee62107889976e30eeeb81")
+@Generated("dfa742e7ef0eb24599ccc1034acd74b1")
 public final class CacheRemoveInvalidationListenerCodec {
     //hex: 0x131500
     public static final int REQUEST_MESSAGE_TYPE = 1250560;
