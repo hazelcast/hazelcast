@@ -109,3 +109,38 @@ avoided and instead Hadoop JARs should be present on the classpath of
 the running members. Hadoop JARs contain some JVM hooks and can keep
 lingering references inside the JVM long after the job has ended,
 causing memory leaks.
+
+Firstly you need to put Hadoop module JAR to the `lib` directory, you
+can find it (`hazelcast-jet-hadoop-<jet-version>.jar`) in `opt` directory
+along with other module JARs. Next you'll need Hadoop common and mapreduce
+JARs and their dependencies in your classpath.
+
+You can find Hadoop common JAR in `share/hadoop/common/` directory as
+`hadoop-common-<hadoop-version>.jar` and its dependencies in
+`share/hadoop/common/lib/`. You can find Hadoop mapreduce JAR in
+`share/hadoop/mapreduce/` directory as
+`hadoop-mapreduce-client-core-<hadoop-version>.jar` and its
+dependencies in `share/hadoop/mapreduce/lib/`.
+
+You can either copy all the necessary JARs to the `lib` directory or
+set `CLASSPATH` variable before starting the cluster using
+`bin/jet-start` script and submitting the job using `bin/jet` script.
+You can use this
+https://hadoop.apache.org/docs/r2.10.0/hadoop-project-dist/hadoop-common/CommandsManual.html#classpath[command]
+to obtain the class path needed for the Hadoop JARs.
+
+[source]
+----
+CLASSPATH="<hadoop-root>/share/hadoop/common/*:<hadoop-root>/share/hadoop/common/lib/*: \
+<hadoop-root>/share/hadoop/mapreduce/*:<hadoop-root>/share/hadoop/mapreduce/lib/*"  \
+bin/jet-start
+
+CLASSPATH="<hadoop-root>/share/hadoop/common/*:<hadoop-root>/share/hadoop/common/lib/*: \
+<hadoop-root>/share/hadoop/mapreduce/*:<hadoop-root>/share/hadoop/mapreduce/lib/*"  \
+bin/jet submit the-hadoop-job.jar
+----
+
+Depending on your usage you may need to add other Hadoop JARs to the
+classpath, you can find them in `share/hadoop/` directory.
+
+
