@@ -348,7 +348,6 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
             try {
                 doConnectToCluster();
                 synchronized (clientStateMutex) {
-
                     connectToClusterTaskSubmitted = false;
                     if (activeConnections.isEmpty()) {
                         if (logger.isFineEnabled()) {
@@ -419,7 +418,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
             logger.warning("Exception during initial connection to " + address + ": " + e);
             throw e;
         } catch (Exception e) {
-            logger.warning("Exception during x initial connection to " + address + ": " + e);
+            logger.warning("Exception during initial connection to " + address + ": " + e);
             return null;
         }
     }
@@ -823,6 +822,15 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
 
             fireConnectionAddedEvent(connection);
         }
+
+        // It could happen that this connection is already closed and
+        // onConnectionClose() is called even before the synchronized block
+        // above is executed. In this case, now we have a closed but registered
+        // connection. We do a final check here to remove this connection
+        // if needed.
+        if (!connection.isAlive()) {
+            onConnectionClose(connection);
+        }
     }
 
     private ClientMessage encodeAuthenticationRequest() {
@@ -928,7 +936,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
             logger.warning("Failure during sending state to the cluster.", e);
             synchronized (clientStateMutex) {
                 if (targetClusterId.equals(clusterId)) {
-                    if (logger.isSevereEnabled()) {
+                    if (logger.isFineEnabled()) {
                         logger.warning("Retrying sending state to the cluster: " + targetClusterId + ", name: " + clusterName);
                     }
 
