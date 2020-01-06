@@ -366,7 +366,7 @@ public final class HazelcastClient {
      */
     public static void shutdown(String instanceName) {
         InstanceFuture<HazelcastClientProxy> future = CLIENTS.remove(instanceName);
-        if (future == null) {
+        if (future == null || !future.isSet()) {
             return;
         }
 
