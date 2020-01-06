@@ -211,11 +211,21 @@ class OperationRunnerImpl extends OperationRunner implements MetricsProvider {
 
         switch (callStatus.ordinal()) {
             case DONE_RESPONSE_ORDINAL:
-                handleResponse(op);
+                int backupAcks = backupHandler.sendBackups(op);
+                Object response = op.getResponse();
+                if (backupAcks > 0) {
+                    response = new NormalResponse(response, op.getCallId(), backupAcks, op.isUrgent());
+                }
+                try {
+                    op.sendResponse(response);
+                } catch (ResponseAlreadySentException e) {
+                    logOperationError(op, e);
+                }
                 afterRun(op);
                 break;
             case DONE_VOID_ORDINAL:
-                op.afterRun();
+                backupHandler.sendBackups(op);
+                afterRun(op);
                 break;
             case OFFLOAD_ORDINAL:
                 op.afterRun();
@@ -228,20 +238,6 @@ class OperationRunnerImpl extends OperationRunner implements MetricsProvider {
                 break;
             default:
                 throw new IllegalStateException();
-        }
-    }
-
-    private void handleResponse(Operation op) throws Exception {
-        int backupAcks = backupHandler.sendBackups(op);
-
-        try {
-            Object response = op.getResponse();
-            if (backupAcks > 0) {
-                response = new NormalResponse(response, op.getCallId(), backupAcks, op.isUrgent());
-            }
-            op.sendResponse(response);
-        } catch (ResponseAlreadySentException e) {
-            logOperationError(op, e);
         }
     }
 
