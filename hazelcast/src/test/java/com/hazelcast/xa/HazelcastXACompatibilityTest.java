@@ -19,6 +19,7 @@ package com.hazelcast.xa;
 import com.atomikos.datasource.xa.XID;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.TransactionalMap;
+import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -76,6 +77,18 @@ public class HazelcastXACompatibilityTest extends HazelcastTestSupport {
         doSomeWorkWithXa(xaResource);
         performPrepareWithXa(xaResource);
         performCommitWithXa(secondXaResource);
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                assertRecoversNothing(xaResource);
+            }
+        });
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                assertRecoversNothing(secondXaResource);
+            }
+        });
     }
 
     @Test
@@ -90,11 +103,6 @@ public class HazelcastXACompatibilityTest extends HazelcastTestSupport {
         doSomeWorkWithXa(xaResource);
         performPrepareWithXa(xaResource);
         assertRecoversXid(xaResource);
-    }
-
-    private void assertRecoversXid(XAResource xaResource) throws XAException {
-        Xid[] xids = xaResource.recover(XAResource.TMSTARTRSCAN | XAResource.TMENDRSCAN);
-        assertTrue("" + xids.length, xids.length == 1);
     }
 
     @Test
@@ -238,5 +246,14 @@ public class HazelcastXACompatibilityTest extends HazelcastTestSupport {
         assertOpenEventually(latch, 10);
     }
 
+    private void assertRecoversXid(XAResource xaResource) throws XAException {
+        Xid[] xids = xaResource.recover(XAResource.TMSTARTRSCAN | XAResource.TMENDRSCAN);
+        assertEquals("One Xid was expected when calling recover", 1, xids.length);
+    }
+
+    private void assertRecoversNothing(XAResource xaResource) throws XAException {
+        Xid[] xids = xaResource.recover(XAResource.TMSTARTRSCAN | XAResource.TMENDRSCAN);
+        assertEquals("No prepared transaction should exist", 0, xids.length);
+  }
 
 }
