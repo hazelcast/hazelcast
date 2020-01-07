@@ -20,6 +20,7 @@ import com.hazelcast.config.MergePolicyConfig;
 import com.hazelcast.config.ScheduledExecutorConfig;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.partition.PartitionLostEvent;
 import com.hazelcast.partition.PartitionLostListener;
 import com.hazelcast.scheduledexecutor.impl.operations.MergeOperation;
@@ -39,13 +40,18 @@ import com.hazelcast.spi.impl.executionservice.InternalExecutionService;
 import com.hazelcast.spi.impl.merge.AbstractContainerMerger;
 import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 import com.hazelcast.spi.merge.SplitBrainMergeTypes.ScheduledExecutorMergeTypes;
+import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.spi.partition.MigrationEndpoint;
+import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.util.ContextMutexFactory;
+import com.hazelcast.util.MutableInteger;
+import com.hazelcast.util.executor.HazelcastManagedThread;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
@@ -53,6 +59,7 @@ import java.util.Set;
 import java.util.WeakHashMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.hazelcast.internal.config.ConfigValidator.checkScheduledExecutorConfig;
@@ -95,6 +102,7 @@ public class DistributedScheduledExecutorService
     private ScheduledExecutorPartition[] partitions;
     private ScheduledExecutorMemberBin memberBin;
     private String partitionLostRegistration;
+    private StatsLoggerThread tasksSizeLoggerThread;
 
     public DistributedScheduledExecutorService() {
     }
@@ -105,6 +113,11 @@ public class DistributedScheduledExecutorService
         this.nodeEngine = nodeEngine;
         this.partitions = new ScheduledExecutorPartition[partitionCount];
         reset();
+        int logDelaySeconds = nodeEngine.getProperties().getInteger(GroupProperty.SCHEDULED_EXECUTOR_LOG_DELAY_SECONDS);
+        if (logDelaySeconds > 0) {
+            this.tasksSizeLoggerThread = new StatsLoggerThread(logDelaySeconds);
+            tasksSizeLoggerThread.start();
+        }
     }
 
     public ScheduledExecutorPartition getPartition(int partitionId) {
@@ -145,6 +158,9 @@ public class DistributedScheduledExecutorService
     @Override
     public void shutdown(boolean terminate) {
         shutdownExecutors.clear();
+        if (tasksSizeLoggerThread != null) {
+            tasksSizeLoggerThread.shutdown();
+        }
 
         if (memberBin != null) {
             memberBin.destroy();
@@ -357,6 +373,72 @@ public class DistributedScheduledExecutorService
                                SplitBrainMergePolicy<ScheduledTaskDescriptor, ScheduledExecutorMergeTypes> mergePolicy) {
             MergeOperation operation = new MergeOperation(name, mergingEntries, mergePolicy);
             invoke(SERVICE_NAME, operation, partitionId);
+        }
+    }
+
+    private final class StatsLoggerThread extends HazelcastManagedThread {
+        private final Map<String, MutableInteger> tasksSizes = new HashMap<String, MutableInteger>();
+        private final ILogger logger = nodeEngine.getLogger(DistributedScheduledExecutorService.class);
+        private final IPartitionService partitionService = nodeEngine.getPartitionService();
+        private final long logDelayMillis;
+        private volatile boolean shutdown;
+
+        private StatsLoggerThread(int logDelaySeconds) {
+            this.logDelayMillis = TimeUnit.SECONDS.toMillis(logDelaySeconds);
+        }
+
+        private void shutdown() {
+            shutdown = true;
+            interrupt();
+        }
+
+        @Override
+        public void run() {
+            try {
+                while (!shutdown) {
+                    try {
+                        Thread.sleep(logDelayMillis);
+                    } catch (InterruptedException e) {
+                        continue;
+                    }
+
+                    gatherStats();
+                    logStats();
+                    tasksSizes.clear();
+                }
+            } catch (Exception e) {
+                logger.warning("StatsLoggerThread failed, message [" + e.getMessage() + "]", e);
+            }
+        }
+
+        private void gatherStats() {
+            for (ScheduledExecutorPartition partition : partitions) {
+                if (partition == null) {
+                    continue;
+                }
+
+                if (!partitionService.getPartition(partition.partitionId()).isLocal()) {
+                    // skip non primary partitions.
+                    continue;
+                }
+
+                for (Map.Entry<String, ScheduledExecutorContainer> entry : partition.containers.entrySet()) {
+                    String name = entry.getKey();
+                    ScheduledExecutorContainer container = entry.getValue();
+                    MutableInteger tasksSize = tasksSizes.get(name);
+                    if (tasksSize == null) {
+                        tasksSize = new MutableInteger();
+                        tasksSizes.put(name, tasksSize);
+                    }
+                    tasksSize.value += container.tasks.size();
+                }
+            }
+        }
+
+        private void logStats() {
+            for (Map.Entry<String, MutableInteger> entry : tasksSizes.entrySet()) {
+                logger.info("ScheduledExecutorService(name=" + entry.getKey() + ",tasksSize=" + entry.getValue().value + ")");
+            }
         }
     }
 }
