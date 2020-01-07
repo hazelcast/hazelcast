@@ -38,6 +38,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import static com.hazelcast.client.HazelcastClientUtil.getInstanceName;
+
 public class TestHazelcastFactory extends TestHazelcastInstanceFactory {
 
     private final boolean mockNetwork = TestEnvironment.isMockNetwork();
@@ -76,8 +78,8 @@ public class TestHazelcastFactory extends TestHazelcastInstanceFactory {
             if (tccl == ClassLoader.getSystemClassLoader()) {
                 currentThread.setContextClassLoader(HazelcastClient.class.getClassLoader());
             }
-            HazelcastClientInstanceImpl client = new HazelcastClientInstanceImpl(config, null,
-                    clientRegistry.createClientServiceFactory(), createAddressProvider(config));
+            HazelcastClientInstanceImpl client = new HazelcastClientInstanceImpl(getInstanceName(config), config,
+                    null, clientRegistry.createClientServiceFactory(), createAddressProvider(config));
             client.start();
             clients.add(client);
             OutOfMemoryErrorDispatcher.registerClient(client);
