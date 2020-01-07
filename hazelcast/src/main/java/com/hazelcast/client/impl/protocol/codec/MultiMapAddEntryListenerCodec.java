@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Adds an entry listener for this multimap. The listener will be notified for all multimap add/remove/update/evict events.
  */
-@Generated("81a976ee12fd09082a777afcd523f476")
+@Generated("3c3af2552f776dfb5f057d118e925831")
 public final class MultiMapAddEntryListenerCodec {
     //hex: 0x020E00
     public static final int REQUEST_MESSAGE_TYPE = 134656;
@@ -163,26 +163,6 @@ public final class MultiMapAddEntryListenerCodec {
             }
             Logger.getLogger(super.getClass()).finest("Unknown message type received on event handler :" + messageType);
         }
-
-        /**
-         * @param key Key of the entry event.
-         * @param value Value of the entry event.
-         * @param oldValue Old value of the entry event.
-         * @param mergingValue Incoming merging value of the entry event.
-         * @param eventType Type of the entry event. Possible values are
-         *                  ADDED(1)
-         *                  REMOVED(2)
-         *                  UPDATED(4)
-         *                  EVICTED(8)
-         *                  EXPIRED(16)
-         *                  EVICT_ALL(32)
-         *                  CLEAR_ALL(64)
-         *                  MERGED(128)
-         *                  INVALIDATION(256)
-         *                  LOADED(512)
-         * @param uuid UUID of the member that dispatches the event.
-         * @param numberOfAffectedEntries Number of entries affected by this event.
-        */
         public abstract void handleEntryEvent(@Nullable com.hazelcast.internal.serialization.Data key, @Nullable com.hazelcast.internal.serialization.Data value, @Nullable com.hazelcast.internal.serialization.Data oldValue, @Nullable com.hazelcast.internal.serialization.Data mergingValue, int eventType, java.util.UUID uuid, int numberOfAffectedEntries);
     }
 }

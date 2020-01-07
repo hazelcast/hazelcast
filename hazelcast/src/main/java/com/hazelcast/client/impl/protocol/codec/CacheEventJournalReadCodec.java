@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -43,12 +43,12 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * The predicate, filter and projection may be {@code null} in which case all elements are returned
  * and no projection is applied.
  */
-@Generated("c718b1389dbd9a439d3c5c17c4a76040")
+@Generated("9030141c6840a6b488a79fde43057bcd")
 public final class CacheEventJournalReadCodec {
-    //hex: 0x132000
-    public static final int REQUEST_MESSAGE_TYPE = 1253376;
-    //hex: 0x132001
-    public static final int RESPONSE_MESSAGE_TYPE = 1253377;
+    //hex: 0x132100
+    public static final int REQUEST_MESSAGE_TYPE = 1253632;
+    //hex: 0x132101
+    public static final int RESPONSE_MESSAGE_TYPE = 1253633;
     private static final int REQUEST_START_SEQUENCE_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_MIN_SIZE_FIELD_OFFSET = REQUEST_START_SEQUENCE_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
     private static final int REQUEST_MAX_SIZE_FIELD_OFFSET = REQUEST_MIN_SIZE_FIELD_OFFSET + INT_SIZE_IN_BYTES;
@@ -127,22 +127,22 @@ public final class CacheEventJournalReadCodec {
     public static class ResponseParameters {
 
         /**
-         * Number of items that have been read.
+         * TODO DOC
          */
         public int readCount;
 
         /**
-         * List of items that have been read.
+         * TODO DOC
          */
         public java.util.List<com.hazelcast.internal.serialization.Data> items;
 
         /**
-         * Sequence numbers of items in the event journal.
+         * TODO DOC
          */
         public @Nullable long[] itemSeqs;
 
         /**
-         * Sequence number of the item following the last read item.
+         * TODO DOC
          */
         public long nextSeq;
     }

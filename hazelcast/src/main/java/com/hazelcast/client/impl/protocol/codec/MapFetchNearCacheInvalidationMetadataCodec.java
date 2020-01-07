@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,12 +36,12 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Fetches invalidation metadata from partitions of map.
  */
-@Generated("80c2f0f703d77ecf0acf1911f955d6be")
+@Generated("c53a0354151518dec445984cdf65d256")
 public final class MapFetchNearCacheInvalidationMetadataCodec {
-    //hex: 0x013D00
-    public static final int REQUEST_MESSAGE_TYPE = 81152;
-    //hex: 0x013D01
-    public static final int RESPONSE_MESSAGE_TYPE = 81153;
+    //hex: 0x013E00
+    public static final int REQUEST_MESSAGE_TYPE = 81408;
+    //hex: 0x013E01
+    public static final int RESPONSE_MESSAGE_TYPE = 81409;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
 
@@ -57,7 +57,7 @@ public final class MapFetchNearCacheInvalidationMetadataCodec {
         public java.util.List<java.lang.String> names;
 
         /**
-         * Address of the member.
+         * TODO DOC
          */
         public com.hazelcast.cluster.Address address;
     }
@@ -88,12 +88,12 @@ public final class MapFetchNearCacheInvalidationMetadataCodec {
     public static class ResponseParameters {
 
         /**
-         * Map of partition ids and sequence number of invalidations mapped by the map name.
+         * TODO DOC
          */
         public java.util.List<java.util.Map.Entry<java.lang.String, java.util.List<java.util.Map.Entry<java.lang.Integer, java.lang.Long>>>> namePartitionSequenceList;
 
         /**
-         * Map of member UUIDs mapped by the partition ids of invalidations.
+         * TODO DOC
          */
         public java.util.List<java.util.Map.Entry<java.lang.Integer, java.util.UUID>> partitionUuidList;
     }

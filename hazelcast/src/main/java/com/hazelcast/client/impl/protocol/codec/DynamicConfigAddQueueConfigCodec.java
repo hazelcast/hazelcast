@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,7 +38,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * If a queue configuration with the given {@code name} already exists, then
  * the new configuration is ignored and the existing one is preserved.
  */
-@Generated("05196108fb6e56c79a4a77a040531df8")
+@Generated("1f8adc9005afc4d20d18bcf928086803")
 public final class DynamicConfigAddQueueConfigCodec {
     //hex: 0x1B0B00
     public static final int REQUEST_MESSAGE_TYPE = 1772288;
@@ -107,12 +107,12 @@ public final class DynamicConfigAddQueueConfigCodec {
         public @Nullable com.hazelcast.client.impl.protocol.task.dynamicconfig.QueueStoreConfigHolder queueStoreConfig;
 
         /**
-         * Classname of the merge policy.
+         * TODO DOC
          */
         public java.lang.String mergePolicy;
 
         /**
-         * Number of entries to be sent in a merge operation.
+         * TODO DOC
          */
         public int mergeBatchSize;
     }

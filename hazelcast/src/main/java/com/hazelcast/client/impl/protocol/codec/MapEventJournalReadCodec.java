@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -43,12 +43,12 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * The predicate, filter and projection may be {@code null} in which case all elements are returned
  * and no projection is applied.
  */
-@Generated("fb3cbda32375547f841f5b50aedc4f3f")
+@Generated("3a08a43ceba2c5da7c677af688c7bda9")
 public final class MapEventJournalReadCodec {
-    //hex: 0x014200
-    public static final int REQUEST_MESSAGE_TYPE = 82432;
-    //hex: 0x014201
-    public static final int RESPONSE_MESSAGE_TYPE = 82433;
+    //hex: 0x014400
+    public static final int REQUEST_MESSAGE_TYPE = 82944;
+    //hex: 0x014401
+    public static final int RESPONSE_MESSAGE_TYPE = 82945;
     private static final int REQUEST_START_SEQUENCE_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_MIN_SIZE_FIELD_OFFSET = REQUEST_START_SEQUENCE_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
     private static final int REQUEST_MAX_SIZE_FIELD_OFFSET = REQUEST_MIN_SIZE_FIELD_OFFSET + INT_SIZE_IN_BYTES;
@@ -127,22 +127,22 @@ public final class MapEventJournalReadCodec {
     public static class ResponseParameters {
 
         /**
-         * Number of items that have been read.
+         * TODO DOC
          */
         public int readCount;
 
         /**
-         * List of items that have been read.
+         * TODO DOC
          */
         public java.util.List<com.hazelcast.internal.serialization.Data> items;
 
         /**
-         * Sequence numbers of items in the event journal.
+         * TODO DOC
          */
         public @Nullable long[] itemSeqs;
 
         /**
-         * Sequence number of the item following the last read item.
+         * TODO DOC
          */
         public long nextSeq;
     }

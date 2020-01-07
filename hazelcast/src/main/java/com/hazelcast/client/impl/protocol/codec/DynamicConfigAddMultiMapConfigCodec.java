@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,7 +38,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * If a multimap configuration with the given {@code name} already exists, then
  * the new multimap config is ignored and the existing one is preserved.
  */
-@Generated("7865a8474a468dd647c6b552b22d0c17")
+@Generated("58742afc56f7248894cd22a3ba7f0f24")
 public final class DynamicConfigAddMultiMapConfigCodec {
     //hex: 0x1B0100
     public static final int REQUEST_MESSAGE_TYPE = 1769728;
@@ -102,13 +102,12 @@ public final class DynamicConfigAddMultiMapConfigCodec {
         public @Nullable java.lang.String splitBrainProtectionName;
 
         /**
-         * Name of a class implementing SplitBrainMergePolicy that handles merging of values for this cache
-         * while recovering from network partitioning.
+         * TODO DOC
          */
         public java.lang.String mergePolicy;
 
         /**
-         * Number of entries to be sent in a merge operation.
+         * TODO DOC
          */
         public int mergeBatchSize;
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -43,7 +43,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * If smart routing is disabled, the actual member processing the client
  * message may act as a proxy.
  */
-@Generated("ae60c1ff5678d7a62f357d05f52c6a80")
+@Generated("45796f10ff03e3dc3a31649e0a8c9cb0")
 public final class PNCounterGetCodec {
     //hex: 0x1D0100
     public static final int REQUEST_MESSAGE_TYPE = 1900800;
@@ -104,7 +104,7 @@ public final class PNCounterGetCodec {
     public static class ResponseParameters {
 
         /**
-         * Value of the counter.
+         * TODO DOC
          */
         public long value;
 
@@ -114,7 +114,7 @@ public final class PNCounterGetCodec {
         public java.util.List<java.util.Map.Entry<java.util.UUID, java.lang.Long>> replicaTimestamps;
 
         /**
-         * Number of replicas that keep the state of this counter.
+         * TODO DOC
          */
         public int replicaCount;
     }

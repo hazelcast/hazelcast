@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,15 +34,14 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  */
 
 /**
- * Removes the specified distributed object listener. If there is no such listener added before, this call does no
- * change in the cluster and returns false.
+ * TODO DOC
  */
-@Generated("9d389a19af6c03d7c4f0a8ca04c33e7b")
+@Generated("7d0bfef127c8e656591fcb13d1069880")
 public final class ClientRemoveDistributedObjectListenerCodec {
-    //hex: 0x000A00
-    public static final int REQUEST_MESSAGE_TYPE = 2560;
-    //hex: 0x000A01
-    public static final int RESPONSE_MESSAGE_TYPE = 2561;
+    //hex: 0x000B00
+    public static final int REQUEST_MESSAGE_TYPE = 2816;
+    //hex: 0x000B01
+    public static final int RESPONSE_MESSAGE_TYPE = 2817;
     private static final int REQUEST_REGISTRATION_ID_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_REGISTRATION_ID_FIELD_OFFSET + UUID_SIZE_IN_BYTES;
     private static final int RESPONSE_RESPONSE_FIELD_OFFSET = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;

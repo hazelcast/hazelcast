@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,12 +36,12 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Fetches specified number of keys from the specified partition starting from specified table index.
  */
-@Generated("6872c0b7bf55b07a94d45616786bb998")
+@Generated("3b6375882d17503320e6f496528ccd68")
 public final class MapFetchKeysCodec {
-    //hex: 0x013700
-    public static final int REQUEST_MESSAGE_TYPE = 79616;
-    //hex: 0x013701
-    public static final int RESPONSE_MESSAGE_TYPE = 79617;
+    //hex: 0x013800
+    public static final int REQUEST_MESSAGE_TYPE = 79872;
+    //hex: 0x013801
+    public static final int RESPONSE_MESSAGE_TYPE = 79873;
     private static final int REQUEST_BATCH_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_BATCH_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
@@ -100,7 +100,7 @@ public final class MapFetchKeysCodec {
         public java.util.List<java.util.Map.Entry<java.lang.Integer, java.lang.Integer>> iterationPointers;
 
         /**
-         * List of keys.
+         * TODO DOC
          */
         public java.util.List<com.hazelcast.internal.serialization.Data> keys;
     }

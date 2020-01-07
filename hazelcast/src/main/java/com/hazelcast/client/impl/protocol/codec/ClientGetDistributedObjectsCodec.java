@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,14 +34,14 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  */
 
 /**
- * Gets the list of distributed objects in the cluster.
+ * TODO DOC
  */
-@Generated("a5efb97482e29d39e58973a3c64c793f")
+@Generated("3cd50dce3dd35c1504a5e20453a12e6f")
 public final class ClientGetDistributedObjectsCodec {
-    //hex: 0x000800
-    public static final int REQUEST_MESSAGE_TYPE = 2048;
-    //hex: 0x000801
-    public static final int RESPONSE_MESSAGE_TYPE = 2049;
+    //hex: 0x000900
+    public static final int REQUEST_MESSAGE_TYPE = 2304;
+    //hex: 0x000901
+    public static final int RESPONSE_MESSAGE_TYPE = 2305;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
 

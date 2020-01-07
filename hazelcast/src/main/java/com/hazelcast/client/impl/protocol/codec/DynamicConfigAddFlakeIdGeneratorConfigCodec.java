@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,7 +38,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * If a flake ID generator configuration for the same name already exists, then
  * the new configuration is ignored and the existing one is preserved.
  */
-@Generated("582e1b15e872aafc7132484e75b6a088")
+@Generated("60d4f2f1ca1a54f4d9f4179c4f14d055")
 public final class DynamicConfigAddFlakeIdGeneratorConfigCodec {
     //hex: 0x1B0F00
     public static final int REQUEST_MESSAGE_TYPE = 1773312;
@@ -82,7 +82,7 @@ public final class DynamicConfigAddFlakeIdGeneratorConfigCodec {
         public boolean statisticsEnabled;
 
         /**
-         * Offset that will be added to the node id assigned to the cluster members for this generator.
+         * TODO DOC
          */
         public long nodeIdOffset;
 
@@ -102,7 +102,7 @@ public final class DynamicConfigAddFlakeIdGeneratorConfigCodec {
         public int bitsNodeId;
 
         /**
-         * how far to the future is it allowed to go to generate IDs
+         * how far to the future is it allowed to go to generate IDs 
          */
         public long allowedFutureMillis;
     }

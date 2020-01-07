@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,10 +34,9 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  */
 
 /**
- * Removes the specified entry listener. If there is no such listener added before, this call does no change in the
- * cluster and returns false.
+ * Removes the specified entry listener. Returns silently if there is no such listener added before.
  */
-@Generated("4c1d919a5854345fbb6defad4a407fc9")
+@Generated("414c6f908314452e3e38eb29cae3d624")
 public final class MapRemoveEntryListenerCodec {
     //hex: 0x011A00
     public static final int REQUEST_MESSAGE_TYPE = 72192;

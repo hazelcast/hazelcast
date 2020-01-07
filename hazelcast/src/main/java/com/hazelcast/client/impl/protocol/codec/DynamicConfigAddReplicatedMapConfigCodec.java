@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,7 +38,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * If a replicated map configuration with the given {@code name} already exists, then
  * the new configuration is ignored and the existing one is preserved.
  */
-@Generated("a3ebf2eb860aaf1d846c72b5d95d9028")
+@Generated("aacaad44746b6016f324d6c8a8966d06")
 public final class DynamicConfigAddReplicatedMapConfigCodec {
     //hex: 0x1B0600
     public static final int REQUEST_MESSAGE_TYPE = 1771008;
@@ -80,7 +80,7 @@ public final class DynamicConfigAddReplicatedMapConfigCodec {
 
         /**
          * class name of a class implementing
-         * SplitBrainMergePolicy to merge entries
+         * {@link com.hazelcast.spi.merge.SplitBrainMergePolicy} to merge entries
          * while recovering from a split brain
          */
         public java.lang.String mergePolicy;
@@ -98,7 +98,7 @@ public final class DynamicConfigAddReplicatedMapConfigCodec {
         public @Nullable java.lang.String splitBrainProtectionName;
 
         /**
-         * Number of entries to be sent in a merge operation.
+         * TODO DOC
          */
         public int mergeBatchSize;
     }

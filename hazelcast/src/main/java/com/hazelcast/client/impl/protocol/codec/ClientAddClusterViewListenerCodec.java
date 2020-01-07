@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,9 +35,9 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  */
 
 /**
- * Adds a cluster view listener to a connection.
+ * TODO DOC
  */
-@Generated("bfffaa3d1ea67dafd89ab037ef02a0db")
+@Generated("aa82d8590192c2e40b614e82b67811db")
 public final class ClientAddClusterViewListenerCodec {
     //hex: 0x000300
     public static final int REQUEST_MESSAGE_TYPE = 768;
@@ -144,18 +144,7 @@ public final class ClientAddClusterViewListenerCodec {
             }
             Logger.getLogger(super.getClass()).finest("Unknown message type received on event handler :" + messageType);
         }
-
-        /**
-         * @param version Incremental member list version
-         * @param memberInfos List of member infos  at the cluster associated with the given version
-         *                    params:
-        */
         public abstract void handleMembersViewEvent(int version, java.util.Collection<com.hazelcast.internal.cluster.MemberInfo> memberInfos);
-
-        /**
-         * @param version Incremental state version of the partition table
-         * @param partitions The partition table. In each entry, it has address and list of partitions belonging to that address
-        */
         public abstract void handlePartitionsViewEvent(int version, java.util.Collection<java.util.Map.Entry<com.hazelcast.cluster.Address, java.util.List<java.lang.Integer>>> partitions);
     }
 }
