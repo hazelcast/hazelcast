@@ -54,6 +54,10 @@ public class ScheduledExecutorPartition
         this.partitionId = partitionId;
     }
 
+    public int partitionId() {
+        return partitionId;
+    }
+
     public Operation prepareReplicationOperation(int replicaIndex, boolean migrationMode) {
         Map<String, Map<String, ScheduledTaskDescriptor>> map = createHashMap(containers.size());
 
