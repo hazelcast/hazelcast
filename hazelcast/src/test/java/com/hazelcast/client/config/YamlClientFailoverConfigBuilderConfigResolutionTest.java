@@ -209,7 +209,7 @@ public class YamlClientFailoverConfigBuilderConfigResolutionTest {
     @Test
     public void testResolveFromWorkDirYamlAndYaml() throws Exception {
         helper.givenYamlClientFailoverConfigFileInWorkDir(42);
-        helper.givenYmlClientFailoverConfigFileInWorkDir(42);
+        helper.givenYmlClientFailoverConfigFileInWorkDir(24);
 
         ClientFailoverConfig config = new YamlClientFailoverConfigBuilder().build();
 
@@ -237,7 +237,7 @@ public class YamlClientFailoverConfigBuilderConfigResolutionTest {
     @Test
     public void testResolveFromClasspathYamlAndYml() throws Exception {
         helper.givenYamlClientFailoverConfigFileOnClasspath(42);
-        helper.givenYmlClientFailoverConfigFileOnClasspath(42);
+        helper.givenYmlClientFailoverConfigFileOnClasspath(24);
 
         ClientFailoverConfig config = new YamlClientFailoverConfigBuilder().build();
 

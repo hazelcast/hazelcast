@@ -209,7 +209,7 @@ public class YamlClientConfigBuilderResolutionTest {
     @Test
     public void testResolveFromWorkDirYamlAndYml() throws Exception {
         helper.givenYamlClientConfigFileInWorkDir("cluster-yaml-workdir");
-        helper.givenYmlClientConfigFileInWorkDir("cluster-yaml-workdir");
+        helper.givenYmlClientConfigFileInWorkDir("cluster-yml-workdir");
 
         ClientConfig config = new YamlClientConfigBuilder().build();
 

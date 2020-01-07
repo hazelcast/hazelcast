@@ -18,6 +18,7 @@ package com.hazelcast.config;
 
 import com.hazelcast.config.helpers.DeclarativeConfigFileHelper;
 import com.hazelcast.core.HazelcastException;
+import com.hazelcast.internal.config.DeclarativeConfigUtil;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
@@ -29,6 +30,8 @@ import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
 import java.io.File;
+import java.util.ArrayList;
+import java.util.Collections;
 
 import static com.hazelcast.internal.config.DeclarativeConfigUtil.SYSPROP_MEMBER_CONFIG;
 import static com.hazelcast.internal.config.DeclarativeConfigUtil.YAML_ACCEPTED_SUFFIXES_STRING;
@@ -248,6 +251,16 @@ public class YamlConfigBuilderConfigResolutionTest {
     public void testResolveDefault() {
         Config config = new YamlConfigBuilder().build();
         assertEquals("dev", config.getClusterName());
+    }
+
+    @Test
+    public void testYamlSuffixSearchSequence() {
+        ArrayList<String> YAML_ACCEPTED_SUFFIXES_SORTED =
+            new ArrayList<>(DeclarativeConfigUtil.YAML_ACCEPTED_SUFFIXES);
+        Collections.sort(YAML_ACCEPTED_SUFFIXES_SORTED);
+
+        assertEquals("YAML_ACCEPTED_SUFFIXES sequence", YAML_ACCEPTED_SUFFIXES_SORTED, DeclarativeConfigUtil.YAML_ACCEPTED_SUFFIXES);
+        assertEquals("YAML_ACCEPTED_SUFFIXES size", 2, YAML_ACCEPTED_SUFFIXES_SORTED.size());
     }
 
 }
