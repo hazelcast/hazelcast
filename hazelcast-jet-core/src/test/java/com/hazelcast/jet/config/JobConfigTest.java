@@ -23,15 +23,8 @@ import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
-import java.io.File;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.util.List;
-
 import static com.hazelcast.jet.config.ProcessingGuarantee.EXACTLY_ONCE;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -92,135 +85,6 @@ public class JobConfigTest extends JetTestSupport {
     }
 
     @Test
-    public void when_addClass_thenReturnsResourceConfig() {
-        // When
-        JobConfig config = new JobConfig();
-        Class clazz = this.getClass();
-        config.addClass(clazz);
-
-        // Then
-        ResourceConfig resourceConfig = assertAndGet(config);
-        String expectedId = clazz.getName().replace('.', '/') + ".class";
-        assertEquals(ResourceType.REGULAR_FILE, resourceConfig.getResourceType());
-        assertEquals(expectedId, resourceConfig.getId());
-        assertEquals(clazz.getClassLoader().getResource(expectedId), resourceConfig.getUrl());
-    }
-
-
-    @Test
-    public void when_addJarWithPath_thenReturnsResourceConfig() throws MalformedURLException {
-        // When
-        JobConfig config = new JobConfig();
-        String path = "/path/to/my.jar";
-        config.addJar(path);
-
-        // Then
-        ResourceConfig resourceConfig = assertAndGet(config);
-        assertEquals(ResourceType.JAR, resourceConfig.getResourceType());
-        assertEquals(new File(path).toURI().toURL(), resourceConfig.getUrl());
-        assertNull(resourceConfig.getId());
-    }
-
-    @Test
-    public void when_addJarWithFile_thenReturnsResourceConfig() throws MalformedURLException {
-        // When
-        JobConfig config = new JobConfig();
-        File file = new File("/path/to/my.jar");
-        config.addJar(file);
-
-        // Then
-        ResourceConfig resourceConfig = assertAndGet(config);
-        assertEquals(ResourceType.JAR, resourceConfig.getResourceType());
-        assertEquals(file.toURI().toURL(), resourceConfig.getUrl());
-        assertNull(resourceConfig.getId());
-    }
-
-    @Test
-    public void when_addJarWithURL_thenReturnsResourceConfig() throws MalformedURLException {
-        // When
-        JobConfig config = new JobConfig();
-        URL url = new URL("http://path.to/my.jar");
-        config.addJar(url);
-
-        // Then
-        ResourceConfig resourceConfig = assertAndGet(config);
-        assertEquals(ResourceType.JAR, resourceConfig.getResourceType());
-        assertEquals(url, resourceConfig.getUrl());
-        assertNull(resourceConfig.getId());
-    }
-
-
-    @Test
-    public void when_addResourceWithPath_thenReturnsResourceConfig() throws MalformedURLException {
-        // When
-        JobConfig config = new JobConfig();
-        String path = "/path/to/my.txt";
-        config.addResource(path);
-
-        // Then
-        ResourceConfig resourceConfig = assertAndGet(config);
-        assertEquals(ResourceType.REGULAR_FILE, resourceConfig.getResourceType());
-        assertEquals(new File(path).toURI().toURL(), resourceConfig.getUrl());
-        assertEquals("my.txt", resourceConfig.getId());
-    }
-
-    @Test
-    public void when_addResourceWithPathAndId_thenReturnsResourceConfig() throws MalformedURLException {
-        // When
-        JobConfig config = new JobConfig();
-        String path = "/path/to/my.txt";
-        config.addResource(path, "customId");
-
-        // Then
-        ResourceConfig resourceConfig = assertAndGet(config);
-        assertEquals(ResourceType.REGULAR_FILE, resourceConfig.getResourceType());
-        assertEquals(new File(path).toURI().toURL(), resourceConfig.getUrl());
-        assertEquals("customId", resourceConfig.getId());
-    }
-
-    @Test
-    public void when_addResourceWithFile_thenReturnsResourceConfig() throws MalformedURLException {
-        // When
-        JobConfig config = new JobConfig();
-        File file = new File("/path/to/my.txt");
-        config.addResource(file);
-
-        // Then
-        ResourceConfig resourceConfig = assertAndGet(config);
-        assertEquals(ResourceType.REGULAR_FILE, resourceConfig.getResourceType());
-        assertEquals(file.toURI().toURL(), resourceConfig.getUrl());
-        assertEquals("my.txt", resourceConfig.getId());
-    }
-
-    @Test
-    public void when_addResourceWithFileAndId_thenReturnsResourceConfig() throws MalformedURLException {
-        // When
-        JobConfig config = new JobConfig();
-        File file = new File("/path/to/my.txt");
-        config.addResource(file, "customId");
-
-        // Then
-        ResourceConfig resourceConfig = assertAndGet(config);
-        assertEquals(ResourceType.REGULAR_FILE, resourceConfig.getResourceType());
-        assertEquals(file.toURI().toURL(), resourceConfig.getUrl());
-        assertEquals("customId", resourceConfig.getId());
-    }
-
-    @Test
-    public void when_addResourceWithURL_thenReturnsResourceConfig() throws MalformedURLException {
-        // When
-        JobConfig config = new JobConfig();
-        URL url = new URL("http://path.to/my.txt");
-        config.addResource(url);
-
-        // Then
-        ResourceConfig resourceConfig = assertAndGet(config);
-        assertEquals(ResourceType.REGULAR_FILE, resourceConfig.getResourceType());
-        assertEquals(url, resourceConfig.getUrl());
-        assertEquals("my.txt", resourceConfig.getId());
-    }
-
-    @Test
     public void when_losslessRestartEnabled_then_openSourceMemberDoesNotStart() {
         // When
         JetConfig jetConfig = new JetConfig();
@@ -230,12 +94,5 @@ public class JobConfigTest extends JetTestSupport {
         exception.expect(IllegalStateException.class);
         exception.expectMessage("Hot Restart requires Hazelcast Enterprise Edition");
         createJetMember(jetConfig);
-    }
-
-    private ResourceConfig assertAndGet(JobConfig config) {
-        List<ResourceConfig> resourceConfigs = config.getResourceConfigs();
-        assertNotNull(resourceConfigs);
-        assertEquals(1, resourceConfigs.size());
-        return resourceConfigs.iterator().next();
     }
 }

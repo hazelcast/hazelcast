@@ -16,12 +16,12 @@
 
 package com.hazelcast.jet.config;
 
+import com.hazelcast.internal.util.Preconditions;
+
 import javax.annotation.Nonnull;
 import java.io.Serializable;
 import java.net.URL;
-
-import static com.hazelcast.internal.util.Preconditions.checkNotNull;
-import static com.hazelcast.internal.util.Preconditions.checkTrue;
+import java.util.Objects;
 
 /**
  * Describes a single resource to deploy to the Jet cluster.
@@ -29,6 +29,7 @@ import static com.hazelcast.internal.util.Preconditions.checkTrue;
  * @since 3.0
  */
 public class ResourceConfig implements Serializable {
+
     private final URL url;
     private final String id;
     private final ResourceType resourceType;
@@ -40,9 +41,11 @@ public class ResourceConfig implements Serializable {
      * @param id            id of the resource
      * @param resourceType  type of the resource
      */
-    ResourceConfig(@Nonnull URL url, String id, ResourceType resourceType) {
-        checkTrue((resourceType != ResourceType.REGULAR_FILE) ^ id != null,
-                "Either archive file or id != null, exclusively");
+    ResourceConfig(@Nonnull URL url, @Nonnull String id, @Nonnull ResourceType resourceType) {
+        Preconditions.checkNotNull(url, "url");
+        Preconditions.checkNotNull(resourceType, "resourceType");
+        Preconditions.checkHasText(id, "id cannot be null or empty");
+
         this.url = url;
         this.id = id;
         this.resourceType = resourceType;
@@ -54,23 +57,34 @@ public class ResourceConfig implements Serializable {
      *
      * @param clazz the class to deploy
      */
-    ResourceConfig(Class clazz) {
-        id = clazz.getName().replace('.', '/') + ".class";
-        url = clazz.getClassLoader().getResource(id);
-        checkNotNull(this.url, "Couldn't derive URL from class " + clazz);
-        resourceType = ResourceType.REGULAR_FILE;
+    ResourceConfig(@Nonnull Class<?> clazz) {
+        Preconditions.checkNotNull(clazz, "clazz");
+
+        String id = clazz.getName().replace('.', '/') + ".class";
+        URL url = clazz.getClassLoader().getResource(id);
+        if (url == null) {
+            throw new IllegalArgumentException("Couldn't derive URL from class " + clazz);
+        }
+
+        this.id = id;
+        this.url = url;
+        this.resourceType = ResourceType.CLASS;
     }
 
     /**
-     * Returns the URL at which the resource will be available.
+     * Returns the URL at which the resource is available. Resolved on the
+     * local machine during job submission.
      */
+    @Nonnull
     public URL getUrl() {
         return url;
     }
 
     /**
-     * The ID of the resource, null for archive files.
+     * Returns the ID of the resource that will be used to form the {@code
+     * IMap} key under which it will be stored in the Jet cluster.
      */
+    @Nonnull
     public String getId() {
         return id;
     }
@@ -78,13 +92,18 @@ public class ResourceConfig implements Serializable {
     /**
      * Returns the type of the resource.
      */
+    @Nonnull
     public ResourceType getResourceType() {
         return resourceType;
     }
 
     @Override
     public String toString() {
-        return "ResourceConfig{url=" + url + ", id='" + id + '\'' + '}';
+        return "ResourceConfig{" +
+                "url=" + url +
+                ", id='" + id + '\'' +
+                ", resourceType=" + resourceType +
+                '}';
     }
 
     @Override
@@ -95,23 +114,14 @@ public class ResourceConfig implements Serializable {
         if (o == null || getClass() != o.getClass()) {
             return false;
         }
-
         ResourceConfig that = (ResourceConfig) o;
-
-        if (url != null ? !url.toString().equals(that.url.toString()) : that.url != null) {
-            return false;
-        }
-        if (id != null ? !id.equals(that.id) : that.id != null) {
-            return false;
-        }
-        return resourceType == that.resourceType;
+        return url.toString().equals(that.url.toString()) &&
+                id.equals(that.id) &&
+                resourceType == that.resourceType;
     }
 
     @Override
     public int hashCode() {
-        int result = url != null ? url.toString().hashCode() : 0;
-        result = 31 * result + (id != null ? id.hashCode() : 0);
-        result = 31 * result + (resourceType != null ? resourceType.hashCode() : 0);
-        return result;
+        return Objects.hash(url, id, resourceType);
     }
 }

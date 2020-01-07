@@ -16,20 +16,48 @@
 
 package com.hazelcast.jet.config;
 
+import com.hazelcast.jet.core.ProcessorSupplier;
+
 /**
  * Represents the type of the resource to be uploaded.
  */
 public enum ResourceType {
     /**
-     * Represent a file of any type.
+     * Represents a classpath resource that will be on the classpath of the Jet
+     * job.
      */
-    REGULAR_FILE,
+    CLASSPATH_RESOURCE,
     /**
-     * Represents a JAR file.
+     * Represents a plain file. It will be available to the Jet job by its ID,
+     * through {@link ProcessorSupplier.Context#attachedFile}.
+     */
+    FILE,
+    /**
+     * Represents a directory of plain files. It will be available to the Jet
+     * job by its ID, through {@link ProcessorSupplier.Context#attachedDirectory}.
+     */
+    DIRECTORY,
+    /**
+     * Represents a class that will be on the classpath of the Jet job.
+     */
+    CLASS,
+    /**
+     * Represents a JAR file whose classes will be on the classpath of the Jet
+     * job.
      */
     JAR,
     /**
-     * Represents a ZIP file that contains JAR files.
+     * Represents a ZIP file that contains JAR files, all of whose classes will
+     * be on the classpath of the Jet job.
      */
-    JARS_IN_ZIP
+    JARS_IN_ZIP;
+
+    /**
+     * Returns whether this resource type represents an archive containing
+     * classes.
+     */
+    public boolean isClassArchive() {
+        return this == ResourceType.JAR || this == ResourceType.JARS_IN_ZIP;
+    }
+
 }

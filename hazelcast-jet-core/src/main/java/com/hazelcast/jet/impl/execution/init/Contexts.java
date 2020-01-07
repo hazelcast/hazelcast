@@ -16,15 +16,29 @@
 
 package com.hazelcast.jet.impl.execution.init;
 
+import com.hazelcast.internal.util.Preconditions;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.config.ProcessingGuarantee;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.ProcessorSupplier;
+import com.hazelcast.jet.impl.deployment.IMapInputStream;
+import com.hazelcast.jet.impl.util.ExceptionUtil;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.map.IMap;
 
 import javax.annotation.Nonnull;
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.concurrent.ConcurrentHashMap;
+
+import static com.hazelcast.jet.Util.idToString;
+import static com.hazelcast.jet.impl.JobRepository.fileKeyName;
+import static com.hazelcast.jet.impl.JobRepository.jobResourcesMapName;
+import static com.hazelcast.jet.impl.util.IOUtil.unzip;
 
 public final class Contexts {
 
@@ -43,9 +57,18 @@ public final class Contexts {
         private final int memberCount;
         private final ProcessingGuarantee processingGuarantee;
 
-        MetaSupplierCtx(JetInstance jetInstance, long jobId, long executionId, JobConfig jobConfig, ILogger logger,
-                        String vertexName, int localParallelism, int totalParallelism, int memberCount,
-                        ProcessingGuarantee processingGuarantee) {
+        MetaSupplierCtx(
+                JetInstance jetInstance,
+                long jobId,
+                long executionId,
+                JobConfig jobConfig,
+                ILogger logger,
+                String vertexName,
+                int localParallelism,
+                int totalParallelism,
+                int memberCount,
+                ProcessingGuarantee processingGuarantee
+        ) {
             this.jetInstance = jetInstance;
             this.jobId = jobId;
             this.executionId = executionId;
@@ -108,25 +131,66 @@ public final class Contexts {
         public ProcessingGuarantee processingGuarantee() {
             return processingGuarantee;
         }
+
     }
 
     static class ProcSupplierCtx extends MetaSupplierCtx implements ProcessorSupplier.Context {
 
         private final int memberIndex;
+        private final ConcurrentHashMap<String, File> tempDirectories;
 
         @SuppressWarnings("checkstyle:ParameterNumber")
         ProcSupplierCtx(
-                JetInstance jetInstance, long jobId, long executionId, JobConfig jobConfig, ILogger logger,
-                String vertexName, int localParallelism, int totalParallelism, int memberIndex, int memberCount,
-                ProcessingGuarantee processingGuarantee) {
+                JetInstance jetInstance,
+                long jobId,
+                long executionId,
+                JobConfig jobConfig,
+                ILogger logger,
+                String vertexName,
+                int localParallelism,
+                int totalParallelism,
+                int memberIndex,
+                int memberCount,
+                ProcessingGuarantee processingGuarantee,
+                ConcurrentHashMap<String, File> tempDirectories
+        ) {
             super(jetInstance, jobId, executionId, jobConfig, logger, vertexName, localParallelism, totalParallelism,
                     memberCount, processingGuarantee);
             this.memberIndex = memberIndex;
+            this.tempDirectories = tempDirectories;
         }
 
         @Override
         public int memberIndex() {
             return memberIndex;
+        }
+
+        @Nonnull @Override
+        public File attachedDirectory(@Nonnull String id) {
+            Preconditions.checkHasText(id, "id cannot be null or empty");
+            return tempDirectories.computeIfAbsent(id, x -> extractFileToDisk(id));
+        }
+
+        @Nonnull @Override
+        public File attachedFile(@Nonnull String id) {
+            Preconditions.checkHasText(id, "id cannot be null or empty");
+            return new File(attachedDirectory(id), id);
+        }
+
+        public ConcurrentHashMap<String, File> tempDirectories() {
+            return tempDirectories;
+        }
+
+        private File extractFileToDisk(String id) {
+            IMap<String, byte[]> map = jetInstance().getMap(jobResourcesMapName(jobId()));
+            try (IMapInputStream inputStream = new IMapInputStream(map, fileKeyName(id))) {
+                String prefix = "jet-" + jetInstance().getName() + "-" + idToString(jobId()) + "-" + id;
+                Path directory = Files.createTempDirectory(prefix);
+                unzip(inputStream, directory);
+                return directory.toFile();
+            } catch (IOException e) {
+                throw ExceptionUtil.rethrow(e);
+            }
         }
     }
 
@@ -139,9 +203,10 @@ public final class Contexts {
         public ProcCtx(JetInstance instance, long jobId, long executionId, JobConfig jobConfig,
                        ILogger logger, String vertexName, int localProcessorIndex,
                        int globalProcessorIndex, ProcessingGuarantee processingGuarantee, int localParallelism,
-                       int memberIndex, int memberCount) {
+                       int memberIndex, int memberCount, ConcurrentHashMap<String, File> tempDirectories) {
             super(instance, jobId, executionId, jobConfig, logger, vertexName, localParallelism,
-                    memberCount * localParallelism, memberIndex, memberCount, processingGuarantee);
+                    memberCount * localParallelism, memberIndex, memberCount, processingGuarantee,
+                    tempDirectories);
             this.localProcessorIndex = localProcessorIndex;
             this.globalProcessorIndex = globalProcessorIndex;
         }
@@ -155,5 +220,6 @@ public final class Contexts {
         public int globalProcessorIndex() {
             return globalProcessorIndex;
         }
+
     }
 }

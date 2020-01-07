@@ -16,7 +16,7 @@
 
 package com.hazelcast.jet.config;
 
-import com.hazelcast.jet.impl.util.Util;
+import com.hazelcast.jet.impl.util.IOUtil;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import org.junit.runner.RunWith;
 
@@ -39,7 +39,7 @@ public class YamlJetConfigLoadFromFileSystemOrClasspathTest extends AbstractJetC
         File tempFile = File.createTempFile("jet", ".yaml");
         try (FileOutputStream os = new FileOutputStream(tempFile)) {
             InputStream resourceAsStream = getClass().getClassLoader().getResourceAsStream(TEST_YAML_JET);
-            os.write(Util.readFully(resourceAsStream));
+            os.write(IOUtil.readFully(resourceAsStream));
         }
 
         // When

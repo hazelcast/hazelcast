@@ -22,9 +22,13 @@ import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.logging.ILogger;
 
 import javax.annotation.Nonnull;
+import java.io.File;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
- * {@link ProcessorSupplier.Context} implementation suitable to be used in tests.
+ * Implementation of {@link ProcessorSupplier.Context} suitable to be used
+ * in tests.
  *
  * @since 3.0
  */
@@ -33,6 +37,7 @@ public class TestProcessorSupplierContext
         implements ProcessorSupplier.Context {
 
     private int memberIndex;
+    private final Map<String, File> attached = new HashMap<>();
 
     @Nonnull @Override
     public TestProcessorSupplierContext setLogger(@Nonnull ILogger logger) {
@@ -71,9 +76,33 @@ public class TestProcessorSupplierContext
         return memberIndex;
     }
 
+    @Nonnull @Override
+    public File attachedDirectory(@Nonnull String id) {
+        return attachedFile(id);
+    }
+
+    @Nonnull @Override
+    public File attachedFile(@Nonnull String id) {
+        File file = attached.get(id);
+        if (file == null) {
+            throw new IllegalArgumentException("File '" + id + "' was not found");
+        }
+        return file;
+    }
+
     /**
-     * Set the member index.
+     * Add an attached file or folder. The test context doesn't distinguish
+     * between files and folders;
      */
+    public TestProcessorSupplierContext addFile(@Nonnull String id, @Nonnull File file) {
+        attached.put(id, file);
+        return this;
+    }
+
+    /**
+     * Sets the member index
+     */
+    @Nonnull
     public TestProcessorSupplierContext setMemberIndex(int memberIndex) {
         this.memberIndex = memberIndex;
         return this;

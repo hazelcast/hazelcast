@@ -32,9 +32,7 @@ import com.hazelcast.spi.impl.NodeEngine;
 
 import javax.annotation.CheckReturnValue;
 import javax.annotation.Nonnull;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.InvalidClassException;
 import java.io.NotSerializableException;
 import java.io.ObjectOutputStream;
@@ -72,8 +70,6 @@ import static java.util.stream.Collectors.toList;
 import static java.util.stream.IntStream.range;
 
 public final class Util {
-
-    private static final int BUFFER_SIZE = 1 << 15;
 
     private static final DateTimeFormatter LOCAL_TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm:ss.SSS");
     private static final Pattern TRAILING_NUMBER_PATTERN = Pattern.compile("(.*)-([0-9]+)");
@@ -124,17 +120,6 @@ public final class Util {
 
     public static JetInstance getJetInstance(NodeEngine nodeEngine) {
         return nodeEngine.<JetService>getService(JetService.SERVICE_NAME).getJetInstance();
-    }
-
-    @Nonnull
-    public static byte[] readFully(@Nonnull InputStream in) throws IOException {
-        try (ByteArrayOutputStream out = new ByteArrayOutputStream()) {
-            byte[] b = new byte[BUFFER_SIZE];
-            for (int len; (len = in.read(b)) != -1; ) {
-                out.write(b, 0, len);
-            }
-            return out.toByteArray();
-        }
     }
 
     public static long addClamped(long a, long b) {
@@ -202,10 +187,10 @@ public final class Util {
      * round-robin fashion. If the object count is smaller than processor
      * count, an empty list is put for the rest of the processors.
      *
-     * @param count count of processors
+     * @param count   count of processors
      * @param objects list of objects to distribute
      * @return a map which has the processor index as the key and a list of objects as
-     *      the value
+     * the value
      */
     public static <T> Map<Integer, List<T>> distributeObjects(int count, List<T> objects) {
         Map<Integer, List<T>> processorToObjects = range(0, objects.size())
@@ -230,8 +215,8 @@ public final class Util {
      * It's used to assign partitions to processors.
      *
      * @param objectCount total number of objects to distribute
-     * @param count total number of subsets
-     * @param index index of the requested subset
+     * @param count       total number of subsets
+     * @param index       index of the requested subset
      * @return an array with assigned objects
      */
     public static int[] roundRobinPart(int objectCount, int count, int index) {

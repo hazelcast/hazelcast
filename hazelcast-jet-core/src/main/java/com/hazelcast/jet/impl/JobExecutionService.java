@@ -95,9 +95,7 @@ public class JobExecutionService implements DynamicMetricsProvider {
                             ClassLoader parent = config.getClassLoaderFactory() != null
                                     ? config.getClassLoaderFactory().getJobClassLoader()
                                     : nodeEngine.getConfigClassLoader();
-                            return new JetClassLoader(
-                                    nodeEngine, parent, config.getName(), jobId, jobRepository.getJobResources(jobId)
-                            );
+                            return new JetClassLoader(nodeEngine, parent, config.getName(), jobId, jobRepository);
                         }));
     }
 

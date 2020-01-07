@@ -18,6 +18,8 @@ package com.hazelcast.jet.impl.deployment;
 
 import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.jet.config.JobConfig;
+import com.hazelcast.jet.impl.JobRepository;
+import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.IMap;
 import com.hazelcast.spi.impl.NodeEngine;
@@ -36,6 +38,7 @@ import java.util.function.Supplier;
 import java.util.zip.InflaterInputStream;
 
 import static com.hazelcast.jet.Util.idToString;
+import static com.hazelcast.jet.impl.JobRepository.classKeyName;
 import static com.hazelcast.jet.impl.util.Util.uncheckCall;
 
 public class JetClassLoader extends ClassLoader {
@@ -52,14 +55,14 @@ public class JetClassLoader extends ClassLoader {
 
     public JetClassLoader(@Nonnull NodeEngine nodeEngine,
                           @Nullable ClassLoader parent, @Nullable String jobName,
-                          long jobId, @Nonnull Supplier<IMap<String, byte[]>> resourcesSupplier
+                          long jobId, @Nonnull JobRepository jobRepository
     ) {
         super(parent == null ? JetClassLoader.class.getClassLoader() : parent);
         this.jobName = jobName;
         this.jobId = jobId;
-        this.resourcesSupplier = resourcesSupplier;
+        this.resourcesSupplier = Util.memoizeConcurrent(() -> jobRepository.getJobResources(jobId));
         this.logger = nodeEngine.getLogger(getClass());
-        jobResourceURLStreamHandler = new JobResourceURLStreamHandler();
+        this.jobResourceURLStreamHandler = new JobResourceURLStreamHandler();
     }
 
     @Override
@@ -79,7 +82,7 @@ public class JetClassLoader extends ClassLoader {
     @Override
     protected URL findResource(String name) {
         if (!checkShutdown(name)) {
-            if (isEmpty(name) || !resourcesSupplier.get().containsKey(name)) {
+            if (isEmpty(name) || !resourcesSupplier.get().containsKey(classKeyName(name))) {
                 return null;
             }
 
@@ -109,7 +112,7 @@ public class JetClassLoader extends ClassLoader {
     @SuppressWarnings("unchecked")
     private InputStream resourceStream(String name) {
         if (!checkShutdown(name)) {
-            byte[] classData = resourcesSupplier.get().get(name);
+            byte[] classData = resourcesSupplier.get().get(classKeyName(name));
             if (classData == null) {
                 return null;
             }

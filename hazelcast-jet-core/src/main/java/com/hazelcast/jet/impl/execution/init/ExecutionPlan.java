@@ -53,6 +53,7 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -62,6 +63,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -135,11 +137,12 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
     }
 
     public void initialize(
-            NodeEngine nodeEngine, long jobId, long executionId, SnapshotContext snapshotContext
+            NodeEngine nodeEngine, long jobId, long executionId, SnapshotContext snapshotContext,
+            ConcurrentHashMap<String, File> tempDirectories
     ) {
         this.nodeEngine = (NodeEngineImpl) nodeEngine;
         this.executionId = executionId;
-        initProcSuppliers(jobId, executionId);
+        initProcSuppliers(jobId, executionId, tempDirectories);
         initDag();
 
         this.ptionArrgmt = new PartitionArrangement(partitionOwners, nodeEngine.getThisAddress());
@@ -182,7 +185,8 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
                         jobConfig.getProcessingGuarantee(),
                         vertex.localParallelism(),
                         memberIndex,
-                        memberCount
+                        memberCount,
+                        tempDirectories
                 );
 
                 // createOutboundEdgeStreams() populates localConveyorMap and edgeSenderConveyorMap.
@@ -288,7 +292,7 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
 
     // End implementation of IdentifiedDataSerializable
 
-    private void initProcSuppliers(long jobId, long executionId) {
+    private void initProcSuppliers(long jobId, long executionId, ConcurrentHashMap<String, File> tempDirectories) {
         JetService service = nodeEngine.getService(JetService.SERVICE_NAME);
 
         for (VertexDef vertex : vertices) {
@@ -307,7 +311,8 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
                         vertex.localParallelism() * memberCount,
                         memberIndex,
                         memberCount,
-                        jobConfig.getProcessingGuarantee()
+                        jobConfig.getProcessingGuarantee(),
+                        tempDirectories
                 ));
             } catch (Exception e) {
                 throw sneakyThrow(e);

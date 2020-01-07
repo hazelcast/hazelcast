@@ -18,10 +18,9 @@ package com.hazelcast.jet.impl.deployment;
 
 import com.hazelcast.internal.util.FilteringClassLoader;
 import com.hazelcast.jet.JetInstance;
-import com.hazelcast.jet.JetTestInstanceFactory;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.test.HazelcastSerialClassRunner;
-import org.junit.After;
+import org.junit.BeforeClass;
 import org.junit.runner.RunWith;
 
 import static java.util.Collections.singletonList;
@@ -29,27 +28,17 @@ import static java.util.Collections.singletonList;
 @RunWith(HazelcastSerialClassRunner.class)
 public class DeploymentTest extends AbstractDeploymentTest {
 
-    private JetInstance instance;
-    private JetTestInstanceFactory factory;
+    @BeforeClass
+    public static void beforeClass() {
+        JetConfig jetConfig = new JetConfig();
+        FilteringClassLoader filteringClassLoader = new FilteringClassLoader(singletonList("deployment"), null);
+        jetConfig.getHazelcastConfig().setClassLoader(filteringClassLoader);
 
-    @After
-    public void tearDown() {
-        factory.shutdownAll();
+        initialize(2, jetConfig);
     }
 
     @Override
     protected JetInstance getJetInstance() {
-        return instance;
-    }
-
-    @Override
-    protected void createCluster() {
-        factory = new JetTestInstanceFactory();
-        instance = factory.newMember();
-
-        JetConfig jetConfig = new JetConfig();
-        FilteringClassLoader filteringClassLoader = new FilteringClassLoader(singletonList("deployment"), null);
-        jetConfig.getHazelcastConfig().setClassLoader(filteringClassLoader);
-        factory.newMember(jetConfig);
+        return instance();
     }
 }

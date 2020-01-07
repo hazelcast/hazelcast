@@ -19,7 +19,7 @@ package com.hazelcast.jet.config;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.jet.impl.config.ConfigProvider;
 import com.hazelcast.jet.impl.config.YamlJetConfigBuilder;
-import com.hazelcast.jet.impl.util.Util;
+import com.hazelcast.jet.impl.util.IOUtil;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import org.junit.Rule;
 import org.junit.Test;
@@ -78,7 +78,7 @@ public class YamlJetConfigWithSystemPropertyTest extends AbstractJetMemberConfig
         File tempFile = File.createTempFile("jet", ".yaml");
         try (FileOutputStream os = new FileOutputStream(tempFile)) {
             InputStream resourceAsStream = getClass().getClassLoader().getResourceAsStream(JET_TEST_YAML);
-            os.write(Util.readFully(resourceAsStream));
+            os.write(IOUtil.readFully(resourceAsStream));
         }
         System.setProperty(SYSPROP_JET_CONFIG, tempFile.getAbsolutePath());
 
@@ -123,7 +123,7 @@ public class YamlJetConfigWithSystemPropertyTest extends AbstractJetMemberConfig
         File tempFile = File.createTempFile("jet", ".yaml");
         try (FileOutputStream os = new FileOutputStream(tempFile)) {
             InputStream resourceAsStream = getClass().getClassLoader().getResourceAsStream(JET_MEMBER_TEST_YAML);
-            os.write(Util.readFully(resourceAsStream));
+            os.write(IOUtil.readFully(resourceAsStream));
         }
         System.setProperty(SYSPROP_MEMBER_CONFIG, tempFile.getAbsolutePath());
 

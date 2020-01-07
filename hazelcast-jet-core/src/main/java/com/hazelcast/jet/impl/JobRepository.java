@@ -28,6 +28,7 @@ import com.hazelcast.jet.config.ResourceConfig;
 import com.hazelcast.jet.core.JetProperties;
 import com.hazelcast.jet.core.JobNotFoundException;
 import com.hazelcast.jet.core.metrics.JobMetrics;
+import com.hazelcast.jet.impl.deployment.IMapOutputStream;
 import com.hazelcast.jet.impl.execution.init.JetInitDataSerializerHook;
 import com.hazelcast.jet.impl.metrics.RawJobMetrics;
 import com.hazelcast.jet.impl.util.ImdgUtil;
@@ -47,9 +48,14 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.io.BufferedInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URISyntaxException;
 import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -68,12 +74,15 @@ import java.util.zip.ZipInputStream;
 
 import static com.hazelcast.jet.Util.idFromString;
 import static com.hazelcast.jet.Util.idToString;
+import static com.hazelcast.jet.impl.util.IOUtil.packDirectoryIntoZip;
+import static com.hazelcast.jet.impl.util.IOUtil.packStreamIntoZip;
 import static com.hazelcast.jet.impl.util.LoggingUtil.logFine;
 import static java.util.Comparator.comparing;
 import static java.util.concurrent.TimeUnit.HOURS;
 import static java.util.stream.Collectors.toList;
 
 public class JobRepository {
+
 
     /**
      * Prefix of all Hazelcast internal objects used by Jet (such as job
@@ -93,9 +102,19 @@ public class JobRepository {
     public static final String EXPORTED_SNAPSHOTS_DETAIL_CACHE = INTERNAL_JET_OBJECTS_PREFIX + "exportedSnapshotsCache";
 
     /**
-     * Name of internal IMap which stores job resources.
+     * Name of internal IMap which stores job resources and attached files.
      */
     public static final String RESOURCES_MAP_NAME_PREFIX = INTERNAL_JET_OBJECTS_PREFIX + "resources.";
+
+    /**
+     * Key prefix for attached job files in the IMap named {@link JobRepository#RESOURCES_MAP_NAME_PREFIX}.
+     */
+    public static final String FILE_STORAGE_KEY_NAME_PREFIX = "f.";
+
+    /**
+     * Key prefix for added class resources in the IMap named {@link JobRepository#RESOURCES_MAP_NAME_PREFIX}.
+     */
+    public static final String CLASS_STORAGE_KEY_NAME_PREFIX = "c.";
 
     /**
      * Name of internal flake ID generator which is used for unique id generation.
@@ -176,21 +195,37 @@ public class JobRepository {
      * If the upload process fails for any reason, such as being unable to access a resource,
      * uploaded resources are cleaned up.
      */
+    @SuppressFBWarnings(value = "RCN_REDUNDANT_NULLCHECK_WOULD_HAVE_BEEN_A_NPE",
+            justification = "it's a false positive since java 11: https://github.com/spotbugs/spotbugs/issues/756")
     long uploadJobResources(JobConfig jobConfig) {
         long jobId = newJobId();
         Map<String, byte[]> tmpMap = new HashMap<>();
         try {
-            for (ResourceConfig rc : jobConfig.getResourceConfigs()) {
+            Supplier<IMap<String, byte[]>> jobFileStorage = Util.memoize(() -> getJobResources(jobId));
+            for (ResourceConfig rc : jobConfig.getResourceConfigs().values()) {
                 switch (rc.getResourceType()) {
-                    case REGULAR_FILE:
-                        InputStream in = rc.getUrl().openStream();
-                        readStreamAndPutCompressedToMap(rc.getId(), tmpMap, in);
-                        in.close();
+                    case CLASSPATH_RESOURCE:
+                    case CLASS:
+                        try (InputStream in = rc.getUrl().openStream()) {
+                            readStreamAndPutCompressedToMap(rc.getId(), tmpMap, in);
+                        }
+                        break;
+                    case FILE:
+                        try (
+                                InputStream in = rc.getUrl().openStream();
+                                IMapOutputStream os = new IMapOutputStream(jobFileStorage.get(), fileKeyName(rc.getId()))
+                        ) {
+                            packStreamIntoZip(in, os, rc.getId());
+                        }
+                        break;
+                    case DIRECTORY:
+                        Path baseDir = validateAndGetDirectoryPath(rc);
+                        try (IMapOutputStream os = new IMapOutputStream(jobFileStorage.get(), fileKeyName(rc.getId()))) {
+                            packDirectoryIntoZip(baseDir, os);
+                        }
                         break;
                     case JAR:
-                        InputStream is = rc.getUrl().openStream();
-                        loadJarFromInputStream(tmpMap, is);
-                        is.close();
+                        loadJar(tmpMap, rc);
                         break;
                     case JARS_IN_ZIP:
                         loadJarsInZip(tmpMap, rc.getUrl());
@@ -199,12 +234,12 @@ public class JobRepository {
                         throw new JetException("Unsupported resource type: " + rc.getResourceType());
                 }
             }
-        } catch (Exception e) {
+        } catch (IOException | URISyntaxException e) {
             throw new JetException("Job resource upload failed", e);
         }
         // avoid creating resources map if map is empty
         if (tmpMap.size() > 0) {
-            IMap<String, Object> jobResourcesMap = getJobResources(jobId).get();
+            IMap<String, byte[]> jobResourcesMap = getJobResources(jobId);
             // now upload it all
             try {
                 jobResourcesMap.putAll(tmpMap);
@@ -216,8 +251,24 @@ public class JobRepository {
         return jobId;
     }
 
+    private Path validateAndGetDirectoryPath(ResourceConfig rc) throws URISyntaxException, IOException {
+        Path baseDir = Paths.get(rc.getUrl().toURI());
+        if (!Files.isDirectory(baseDir)) {
+            throw new FileNotFoundException(baseDir + " is not a valid directory");
+        }
+        return baseDir;
+    }
+
     private long newJobId() {
         return idGenerator.newId();
+    }
+
+    @SuppressFBWarnings(value = "RCN_REDUNDANT_NULLCHECK_WOULD_HAVE_BEEN_A_NPE",
+            justification = "it's a false positive since java 11: https://github.com/spotbugs/spotbugs/issues/756")
+    private void loadJar(Map<String, byte[]> tmpMap, ResourceConfig rc) throws IOException {
+        try (InputStream in = rc.getUrl().openStream()) {
+            loadJarFromInputStream(tmpMap, in);
+        }
     }
 
     /**
@@ -254,8 +305,7 @@ public class JobRepository {
 
     private void readStreamAndPutCompressedToMap(
             String resourceName, Map<String, byte[]> map, InputStream in
-    )
-            throws IOException {
+    ) throws IOException {
         // ignore duplicates: the first resource in first jar takes precedence
         if (map.containsKey(resourceName)) {
             return;
@@ -266,7 +316,7 @@ public class JobRepository {
             IOUtil.drainTo(in, compressor);
         }
 
-        map.put(resourceName, baos.toByteArray());
+        map.put(classKeyName(resourceName), baos.toByteArray());
     }
 
     /**
@@ -288,7 +338,7 @@ public class JobRepository {
      * newQuorumSize}.
      */
     void updateJobQuorumSizeIfSmaller(long jobId, int newQuorumSize) {
-        jobExecutionRecords.executeOnKey(jobId, ImdgUtil.<Long, JobExecutionRecord>entryProcessor((key, value) -> {
+        jobExecutionRecords.executeOnKey(jobId, ImdgUtil.entryProcessor((key, value) -> {
             if (value == null) {
                 return null;
             }
@@ -373,27 +423,7 @@ public class JobRepository {
                     map.destroy();
                 }
             } else if (map.getName().startsWith(RESOURCES_MAP_NAME_PREFIX)) {
-                long id = jobIdFromMapName(map.getName(), RESOURCES_MAP_NAME_PREFIX);
-                if (activeJobs.contains(id)) {
-                    // job is still active, do nothing
-                    continue;
-                }
-                if (jobResults.containsKey(id)) {
-                    // if job is finished, we can safely delete the map
-                    logFine(logger, "Deleting job resource map '%s' because job is already finished", map.getName());
-                    map.destroy();
-                } else {
-                    // Job might be in the process of uploading resources, check how long the map has been there.
-                    // If we happen to recreate a just-deleted map, it will be destroyed again after
-                    // resourcesExpirationMillis.
-                    IMap resourceMap = (IMap) map;
-                    long creationTime = resourceMap.getLocalMapStats().getCreationTime();
-                    if (isResourceMapExpired(creationTime)) {
-                        logger.fine("Deleting job resource map " + map.getName() + " because the map " +
-                                "was created long ago and job record or result still doesn't exist");
-                        resourceMap.destroy();
-                    }
-                }
+                deleteMap(activeJobs, map);
             }
         }
         int maxNoResults = Math.max(1, nodeEngine.getProperties().getInteger(JetProperties.JOB_RESULTS_MAX_SIZE));
@@ -410,6 +440,31 @@ public class JobRepository {
         }
         long elapsed = System.nanoTime() - start;
         logger.fine("Job cleanup took " + TimeUnit.NANOSECONDS.toMillis(elapsed) + "ms");
+    }
+
+    private void deleteMap(Set<Long> activeJobs, DistributedObject map) {
+        long id = jobIdFromMapName(map.getName(), RESOURCES_MAP_NAME_PREFIX);
+        if (activeJobs.contains(id)) {
+            // job is still active, do nothing
+            return;
+        }
+        if (jobResults.containsKey(id)) {
+            // if job is finished, we can safely delete the map
+            logFine(logger, "Deleting job resource map '%s' because job is already finished", map.getName());
+            map.destroy();
+        } else {
+            // Job might be in the process of uploading resources, check how long the map has been there.
+            // If we happen to recreate a just-deleted map, it will be destroyed again after
+            // resourcesExpirationMillis.
+            @SuppressWarnings("rawtypes")
+            IMap resourceMap = (IMap) map;
+            long creationTime = resourceMap.getLocalMapStats().getCreationTime();
+            if (isResourceMapExpired(creationTime)) {
+                logger.fine("Deleting job resource map " + map.getName() + " because the map " +
+                        "was created long ago and job record or result still doesn't exist");
+                resourceMap.destroy();
+            }
+        }
     }
 
     private static String toErrorMsg(@Nullable Throwable error) {
@@ -452,10 +507,10 @@ public class JobRepository {
     }
 
     /**
-     * Gets the job resources map, lazily evaluated to avoid creating the map if it won't be needed
+     * Gets the job resources map
      */
-    <T> Supplier<IMap<String, T>> getJobResources(long jobId) {
-        return Util.memoizeConcurrent(() -> instance.getMap(RESOURCES_MAP_NAME_PREFIX + idToString(jobId)));
+    public IMap<String, byte[]> getJobResources(long jobId) {
+        return instance.getMap(jobResourcesMapName(jobId));
     }
 
     @Nullable
@@ -499,6 +554,27 @@ public class JobRepository {
      */
     public static String snapshotDataMapName(long jobId, int dataMapIndex) {
         return SNAPSHOT_DATA_MAP_PREFIX + idToString(jobId) + '.' + dataMapIndex;
+    }
+
+    /**
+     * Returns the map name in the form {@code __jet.resources.<jobId>}
+     */
+    public static String jobResourcesMapName(long jobId) {
+        return RESOURCES_MAP_NAME_PREFIX + idToString(jobId);
+    }
+
+    /**
+     * Returns the key name in the form {@code file.<id>}
+     */
+    public static String fileKeyName(String id) {
+        return FILE_STORAGE_KEY_NAME_PREFIX + id;
+    }
+
+    /**
+     * Returns the key name in the form {@code class.<id>}
+     */
+    public static String classKeyName(String id) {
+        return CLASS_STORAGE_KEY_NAME_PREFIX + id;
     }
 
     /**
