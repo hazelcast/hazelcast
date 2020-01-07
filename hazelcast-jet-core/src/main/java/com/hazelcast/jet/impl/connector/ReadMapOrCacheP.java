@@ -16,9 +16,9 @@
 
 package com.hazelcast.jet.impl.connector;
 
-import com.hazelcast.cache.impl.CacheEntryIterationResult;
+import com.hazelcast.cache.impl.CacheEntriesWithCursor;
 import com.hazelcast.cache.impl.CacheProxy;
-import com.hazelcast.cache.impl.operation.CacheEntryIteratorOperation;
+import com.hazelcast.cache.impl.operation.CacheFetchEntriesOperation;
 import com.hazelcast.client.cache.impl.ClientCacheProxy;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.clientside.HazelcastClientProxy;
@@ -32,8 +32,9 @@ import com.hazelcast.client.impl.spi.impl.ClientInvocationFuture;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.function.FunctionEx;
-import com.hazelcast.function.ToIntFunctionEx;
 import com.hazelcast.instance.impl.HazelcastInstanceImpl;
+import com.hazelcast.internal.iteration.IterationPointer;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.util.IterationType;
 import com.hazelcast.jet.JetException;
@@ -56,7 +57,6 @@ import com.hazelcast.map.impl.query.Query;
 import com.hazelcast.map.impl.query.QueryResult;
 import com.hazelcast.map.impl.query.QueryResultRow;
 import com.hazelcast.map.impl.query.ResultSegment;
-import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.partition.Partition;
 import com.hazelcast.projection.Projection;
@@ -81,6 +81,8 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import static com.hazelcast.client.HazelcastClient.newHazelcastClient;
+import static com.hazelcast.internal.iteration.IterationPointer.decodePointers;
+import static com.hazelcast.internal.iteration.IterationPointer.encodePointers;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.peel;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
 import static com.hazelcast.jet.impl.util.ImdgUtil.asClientConfig;
@@ -103,7 +105,7 @@ public final class ReadMapOrCacheP<F extends CompletableFuture, B, R> extends Ab
     private final Reader<F, B, R> reader;
     private final int[] partitionIds;
     private final BooleanSupplier migrationWatcher;
-    private final int[] readOffsets;
+    private final IterationPointer[][] readPointers;
 
     private F[] readFutures;
 
@@ -122,8 +124,9 @@ public final class ReadMapOrCacheP<F extends CompletableFuture, B, R> extends Ab
         this.partitionIds = partitionIds;
         this.migrationWatcher = migrationWatcher;
 
-        readOffsets = new int[partitionIds.length];
-        Arrays.fill(readOffsets, Integer.MAX_VALUE);
+        readPointers = new IterationPointer[partitionIds.length][];
+
+        Arrays.fill(readPointers, new IterationPointer[]{new IterationPointer(Integer.MAX_VALUE, -1)});
     }
 
     @Override
@@ -143,7 +146,7 @@ public final class ReadMapOrCacheP<F extends CompletableFuture, B, R> extends Ab
     private void initialRead() {
         readFutures = (F[]) new CompletableFuture[partitionIds.length];
         for (int i = 0; i < readFutures.length; i++) {
-            readFutures[i] = reader.readBatch(partitionIds[i], Integer.MAX_VALUE);
+            readFutures[i] = reader.readBatch(partitionIds[i], readPointers[i].clone());
         }
     }
 
@@ -165,7 +168,9 @@ public final class ReadMapOrCacheP<F extends CompletableFuture, B, R> extends Ab
 
     private boolean tryGetNextResultSet() {
         while (currentBatch.size() == currentBatchPosition && ++currentPartitionIndex < partitionIds.length) {
-            if (readOffsets[currentPartitionIndex] < 0) {  // partition is completed
+            IterationPointer[] partitionPointers = readPointers[currentPartitionIndex];
+
+            if (isDone(partitionPointers)) {  // partition is completed
                 assert readFutures[currentPartitionIndex] == null : "future not null";
                 continue;
             }
@@ -177,8 +182,8 @@ public final class ReadMapOrCacheP<F extends CompletableFuture, B, R> extends Ab
 
             B result = toBatchResult(future);
 
-            int nextIndex = reader.toNextIndex(result);
-            if (nextIndex < 0) {
+            IterationPointer[] pointers = reader.toNextPointer(result);
+            if (isDone(pointers)) {
                 numCompletedPartitions++;
             } else {
                 assert !currentBatch.isEmpty() : "empty but not terminal batch";
@@ -186,10 +191,10 @@ public final class ReadMapOrCacheP<F extends CompletableFuture, B, R> extends Ab
 
             currentBatch = reader.toRecordSet(result);
             currentBatchPosition = 0;
-            readOffsets[currentPartitionIndex] = nextIndex;
+            readPointers[currentPartitionIndex] = pointers;
             // make another read on the same partition
-            readFutures[currentPartitionIndex] = readOffsets[currentPartitionIndex] >= 0
-                    ? reader.readBatch(partitionIds[currentPartitionIndex], readOffsets[currentPartitionIndex])
+            readFutures[currentPartitionIndex] = !isDone(pointers)
+                    ? reader.readBatch(partitionIds[currentPartitionIndex], pointers.clone())
                     : null;
         }
 
@@ -198,6 +203,10 @@ public final class ReadMapOrCacheP<F extends CompletableFuture, B, R> extends Ab
             return false;
         }
         return true;
+    }
+
+    private boolean isDone(IterationPointer[] partitionPointers) {
+        return partitionPointers[partitionPointers.length - 1].getIndex() < 0;
     }
 
     private B toBatchResult(F future) {
@@ -240,9 +249,9 @@ public final class ReadMapOrCacheP<F extends CompletableFuture, B, R> extends Ab
         public void init(@Nonnull ProcessorMetaSupplier.Context context) {
             Set<Partition> partitions = context.jetInstance().getHazelcastInstance().getPartitionService().getPartitions();
             addrToPartitions = partitions.stream()
-                    .collect(groupingBy(
-                            p -> p.getOwner().getAddress(),
-                            mapping(Partition::getPartitionId, toList())));
+                     .collect(groupingBy(
+                             p -> p.getOwner().getAddress(),
+                             mapping(Partition::getPartitionId, toList())));
         }
 
         @Override @Nonnull
@@ -266,8 +275,9 @@ public final class ReadMapOrCacheP<F extends CompletableFuture, B, R> extends Ab
         private transient BooleanSupplier migrationWatcher;
         private transient HazelcastInstanceImpl hzInstance;
 
-        private LocalProcessorSupplier(Function<HazelcastInstance, Reader<F, B, R>> readerSupplier,
-                                       List<Integer> memberPartitions) {
+        private LocalProcessorSupplier(
+                Function<HazelcastInstance, Reader<F, B, R>> readerSupplier, List<Integer> memberPartitions
+        ) {
             this.readerSupplier = readerSupplier;
             this.memberPartitions = memberPartitions;
         }
@@ -353,19 +363,19 @@ public final class ReadMapOrCacheP<F extends CompletableFuture, B, R> extends Ab
         protected final String objectName;
         protected InternalSerializationService serializationService;
 
-        private final ToIntFunctionEx<B> toNextIndexFn;
+        private final FunctionEx<B, IterationPointer[]> toNextIterationPointerFn;
         private FunctionEx<B, List<R>> toRecordSetFn;
 
         Reader(@Nonnull String objectName,
-               @Nonnull ToIntFunctionEx<B> toNextIndexFn,
-               @Nonnull FunctionEx<B, List<R>> toRecordSetFn) {
+                @Nonnull FunctionEx<B, IterationPointer[]> toNextIterationPointerFn,
+                @Nonnull FunctionEx<B, List<R>> toRecordSetFn) {
             this.objectName = objectName;
-            this.toNextIndexFn = toNextIndexFn;
+            this.toNextIterationPointerFn = toNextIterationPointerFn;
             this.toRecordSetFn = toRecordSetFn;
         }
 
         @Nonnull
-        abstract F readBatch(int partitionId, int offset);
+        abstract F readBatch(int partitionId, IterationPointer[] pointers);
 
         @Nonnull
         @SuppressWarnings("unchecked")
@@ -373,8 +383,8 @@ public final class ReadMapOrCacheP<F extends CompletableFuture, B, R> extends Ab
             return (B) future.get();
         }
 
-        final int toNextIndex(@Nonnull B result) {
-            return toNextIndexFn.applyAsInt(result);
+        final IterationPointer[] toNextPointer(@Nonnull B result) {
+            return toNextIterationPointerFn.apply(result);
         }
 
         @Nonnull
@@ -388,8 +398,8 @@ public final class ReadMapOrCacheP<F extends CompletableFuture, B, R> extends Ab
     }
 
     static class LocalCacheReader extends Reader<
-            InternalCompletableFuture<CacheEntryIterationResult>,
-            CacheEntryIterationResult,
+            InternalCompletableFuture<CacheEntriesWithCursor>,
+            CacheEntriesWithCursor,
             Entry<Data, Data>
             > {
 
@@ -397,8 +407,8 @@ public final class ReadMapOrCacheP<F extends CompletableFuture, B, R> extends Ab
 
         LocalCacheReader(HazelcastInstance hzInstance, @Nonnull String cacheName) {
             super(cacheName,
-                CacheEntryIterationResult::getTableIndex,
-                CacheEntryIterationResult::getEntries);
+                    CacheEntriesWithCursor::getPointers,
+                    CacheEntriesWithCursor::getEntries);
 
             this.cacheProxy = (CacheProxy) hzInstance.getCacheManager().getCache(cacheName);
             this.serializationService = (InternalSerializationService)
@@ -406,8 +416,8 @@ public final class ReadMapOrCacheP<F extends CompletableFuture, B, R> extends Ab
         }
 
         @Nonnull @Override
-        public InternalCompletableFuture<CacheEntryIterationResult> readBatch(int partitionId, int offset) {
-            Operation op = new CacheEntryIteratorOperation(cacheProxy.getPrefixedName(), offset, MAX_FETCH_SIZE);
+        public InternalCompletableFuture<CacheEntriesWithCursor> readBatch(int partitionId, IterationPointer[] pointers) {
+            Operation op = new CacheFetchEntriesOperation(cacheProxy.getPrefixedName(), pointers, MAX_FETCH_SIZE);
             //no access to CacheOperationProvider, have to be explicit
             OperationService operationService = cacheProxy.getOperationService();
             return operationService.invokeOnPartition(cacheProxy.getServiceName(), op, partitionId);
@@ -429,7 +439,7 @@ public final class ReadMapOrCacheP<F extends CompletableFuture, B, R> extends Ab
 
         RemoteCacheReader(HazelcastInstance hzInstance, @Nonnull String cacheName) {
             super(cacheName,
-                r -> r.tableIndex,
+                r -> decodePointers(r.iterationPointers),
                 r -> r.entries
             );
             this.clientCacheProxy = (ClientCacheProxy) hzInstance.getCacheManager().getCache(cacheName);
@@ -437,11 +447,11 @@ public final class ReadMapOrCacheP<F extends CompletableFuture, B, R> extends Ab
         }
 
         @Nonnull @Override
-        public ClientInvocationFuture readBatch(int partitionId, int offset) {
+        public ClientInvocationFuture readBatch(int partitionId, IterationPointer[] pointers) {
             String name = clientCacheProxy.getPrefixedName();
-            ClientMessage request = CacheIterateEntriesCodec.encodeRequest(name, offset, MAX_FETCH_SIZE);
+            ClientMessage request = CacheIterateEntriesCodec.encodeRequest(name, encodePointers(pointers), MAX_FETCH_SIZE);
             HazelcastClientInstanceImpl client = (HazelcastClientInstanceImpl) clientCacheProxy.getContext()
-                    .getHazelcastInstance();
+                   .getHazelcastInstance();
             return new ClientInvocation(client, request, name, partitionId).invoke();
         }
 
@@ -467,16 +477,16 @@ public final class ReadMapOrCacheP<F extends CompletableFuture, B, R> extends Ab
 
         LocalMapReader(@Nonnull HazelcastInstance hzInstance, @Nonnull String mapName) {
             super(mapName,
-                AbstractCursor::getNextTableIndexToReadFrom,
-                AbstractCursor::getBatch);
+                    AbstractCursor::getIterationPointers,
+                    AbstractCursor::getBatch);
             this.mapProxyImpl = (MapProxyImpl) hzInstance.getMap(mapName);
             this.serializationService = ((HazelcastInstanceImpl) hzInstance).getSerializationService();
         }
 
         @Nonnull @Override
-        public InternalCompletableFuture<MapEntriesWithCursor> readBatch(int partitionId, int offset) {
+        public InternalCompletableFuture<MapEntriesWithCursor> readBatch(int partitionId, IterationPointer[] pointers) {
             MapOperationProvider operationProvider = mapProxyImpl.getOperationProvider();
-            Operation op = operationProvider.createFetchEntriesOperation(objectName, offset, MAX_FETCH_SIZE);
+            Operation op = operationProvider.createFetchEntriesOperation(objectName, pointers, MAX_FETCH_SIZE);
             return mapProxyImpl.getOperationService().invokeOnPartition(mapProxyImpl.getServiceName(), op, partitionId);
         }
 
@@ -503,8 +513,8 @@ public final class ReadMapOrCacheP<F extends CompletableFuture, B, R> extends Ab
                 @Nonnull Projection projection
         ) {
             super(mapName,
-                ResultSegment::getNextTableIndexToReadFrom,
-                r -> ((QueryResult) r.getResult()).getRows()
+                    ResultSegment::getPointers,
+                    r -> ((QueryResult) r.getResult()).getRows()
             );
             this.predicate = predicate;
             this.projection = projection;
@@ -513,18 +523,18 @@ public final class ReadMapOrCacheP<F extends CompletableFuture, B, R> extends Ab
         }
 
         @Nonnull @Override
-        public InternalCompletableFuture<ResultSegment> readBatch(int partitionId, int offset) {
+        public InternalCompletableFuture<ResultSegment> readBatch(int partitionId, IterationPointer[] pointers) {
             MapOperationProvider operationProvider = mapProxyImpl.getOperationProvider();
             MapOperation op = operationProvider.createFetchWithQueryOperation(
                     objectName,
-                    offset,
+                    pointers,
                     MAX_FETCH_SIZE,
                     Query.of()
-                            .mapName(objectName)
-                            .iterationType(IterationType.VALUE)
-                            .predicate(predicate)
-                            .projection(projection)
-                            .build()
+                         .mapName(objectName)
+                         .iterationType(IterationType.VALUE)
+                         .predicate(predicate)
+                         .projection(projection)
+                         .build()
             );
 
             return mapProxyImpl.getOperationService().invokeOnPartition(mapProxyImpl.getServiceName(), op, partitionId);
@@ -545,15 +555,17 @@ public final class ReadMapOrCacheP<F extends CompletableFuture, B, R> extends Ab
         private final ClientMapProxy clientMapProxy;
 
         RemoteMapReader(@Nonnull HazelcastInstance hzInstance, @Nonnull String mapName) {
-            super(mapName, r -> r.tableIndex, r -> r.entries);
+            super(mapName, r -> decodePointers(r.iterationPointers), r -> r.entries);
 
             this.clientMapProxy = (ClientMapProxy) hzInstance.getMap(mapName);
             this.serializationService = clientMapProxy.getContext().getSerializationService();
         }
 
         @Nonnull @Override
-        public ClientInvocationFuture readBatch(int partitionId, int offset) {
-            ClientMessage request = MapFetchEntriesCodec.encodeRequest(objectName, offset, MAX_FETCH_SIZE);
+        public ClientInvocationFuture readBatch(int partitionId, IterationPointer[] pointers) {
+            ClientMessage request = MapFetchEntriesCodec.encodeRequest(
+                    objectName, encodePointers(pointers), MAX_FETCH_SIZE
+            );
             ClientInvocation clientInvocation = new ClientInvocation(
                     (HazelcastClientInstanceImpl) clientMapProxy.getContext().getHazelcastInstance(),
                     request,
@@ -590,7 +602,7 @@ public final class ReadMapOrCacheP<F extends CompletableFuture, B, R> extends Ab
                 @Nonnull Predicate predicate,
                 @Nonnull Projection projection
         ) {
-            super(mapName, r -> r.nextTableIndexToReadFrom, r -> r.results);
+            super(mapName, r -> decodePointers(r.iterationPointers), r -> r.results);
             this.predicate = predicate;
             this.projection = projection;
             this.clientMapProxy = (ClientMapProxy) hzInstance.getMap(mapName);
@@ -598,10 +610,12 @@ public final class ReadMapOrCacheP<F extends CompletableFuture, B, R> extends Ab
         }
 
         @Nonnull @Override
-        public ClientInvocationFuture readBatch(int partitionId, int offset) {
-            ClientMessage request = MapFetchWithQueryCodec.encodeRequest(objectName, offset, MAX_FETCH_SIZE,
+        public ClientInvocationFuture readBatch(int partitionId, IterationPointer[] pointers) {
+            ClientMessage request = MapFetchWithQueryCodec.encodeRequest(
+                    objectName, encodePointers(pointers), MAX_FETCH_SIZE,
                     serializationService.toData(projection),
-                    serializationService.toData(predicate));
+                    serializationService.toData(predicate)
+            );
             ClientInvocation clientInvocation = new ClientInvocation(
                     (HazelcastClientInstanceImpl) clientMapProxy.getContext().getHazelcastInstance(),
                     request,
