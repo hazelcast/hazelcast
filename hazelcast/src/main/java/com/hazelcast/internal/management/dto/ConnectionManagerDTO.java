@@ -16,7 +16,6 @@
 
 package com.hazelcast.internal.management.dto;
 
-import com.hazelcast.internal.jmx.NetworkingServiceMBean;
 import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.internal.nio.AggregateEndpointManager;
 import com.hazelcast.internal.nio.EndpointManager;
@@ -27,7 +26,7 @@ import static com.hazelcast.instance.EndpointQualifier.CLIENT;
 import static com.hazelcast.internal.util.JsonUtil.getInt;
 
 /**
- * A Serializable DTO for {@link NetworkingServiceMBean}.
+ * A Serializable DTO for {@link NetworkingService}.
  */
 public class ConnectionManagerDTO implements JsonSerializable {
 
