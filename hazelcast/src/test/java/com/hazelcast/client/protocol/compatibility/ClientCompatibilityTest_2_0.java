@@ -1391,7 +1391,7 @@ public class ClientCompatibilityTest_2_0 {
     @Test
     public void test_MapFetchKeysCodec_encodeRequest() {
         int fileClientMessageIndex = 154;
-        ClientMessage encoded = MapFetchKeysCodec.encodeRequest(aString, anInt, anInt);
+        ClientMessage encoded = MapFetchKeysCodec.encodeRequest(aString, aListOfIntegerToInteger, anInt);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
     }
@@ -1401,14 +1401,14 @@ public class ClientCompatibilityTest_2_0 {
         int fileClientMessageIndex = 155;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         MapFetchKeysCodec.ResponseParameters parameters = MapFetchKeysCodec.decodeResponse(fromFile);
-        assertTrue(isEqual(anInt, parameters.tableIndex));
+        assertTrue(isEqual(aListOfIntegerToInteger, parameters.iterationPointers));
         assertTrue(isEqual(aListOfData, parameters.keys));
     }
 
     @Test
     public void test_MapFetchEntriesCodec_encodeRequest() {
         int fileClientMessageIndex = 156;
-        ClientMessage encoded = MapFetchEntriesCodec.encodeRequest(aString, anInt, anInt);
+        ClientMessage encoded = MapFetchEntriesCodec.encodeRequest(aString, aListOfIntegerToInteger, anInt);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
     }
@@ -1418,7 +1418,7 @@ public class ClientCompatibilityTest_2_0 {
         int fileClientMessageIndex = 157;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         MapFetchEntriesCodec.ResponseParameters parameters = MapFetchEntriesCodec.decodeResponse(fromFile);
-        assertTrue(isEqual(anInt, parameters.tableIndex));
+        assertTrue(isEqual(aListOfIntegerToInteger, parameters.iterationPointers));
         assertTrue(isEqual(aListOfDataToData, parameters.entries));
     }
 
@@ -1586,7 +1586,7 @@ public class ClientCompatibilityTest_2_0 {
     @Test
     public void test_MapFetchWithQueryCodec_encodeRequest() {
         int fileClientMessageIndex = 176;
-        ClientMessage encoded = MapFetchWithQueryCodec.encodeRequest(aString, anInt, anInt, aData, aData);
+        ClientMessage encoded = MapFetchWithQueryCodec.encodeRequest(aString, aListOfIntegerToInteger, anInt, aData, aData);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
     }
@@ -1597,7 +1597,7 @@ public class ClientCompatibilityTest_2_0 {
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         MapFetchWithQueryCodec.ResponseParameters parameters = MapFetchWithQueryCodec.decodeResponse(fromFile);
         assertTrue(isEqual(aListOfData, parameters.results));
-        assertTrue(isEqual(anInt, parameters.nextTableIndexToReadFrom));
+        assertTrue(isEqual(aListOfIntegerToInteger, parameters.iterationPointers));
     }
 
     @Test
@@ -4829,7 +4829,7 @@ public class ClientCompatibilityTest_2_0 {
     @Test
     public void test_CacheIterateCodec_encodeRequest() {
         int fileClientMessageIndex = 566;
-        ClientMessage encoded = CacheIterateCodec.encodeRequest(aString, anInt, anInt);
+        ClientMessage encoded = CacheIterateCodec.encodeRequest(aString, aListOfIntegerToInteger, anInt);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
     }
@@ -4839,7 +4839,7 @@ public class ClientCompatibilityTest_2_0 {
         int fileClientMessageIndex = 567;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         CacheIterateCodec.ResponseParameters parameters = CacheIterateCodec.decodeResponse(fromFile);
-        assertTrue(isEqual(anInt, parameters.tableIndex));
+        assertTrue(isEqual(aListOfIntegerToInteger, parameters.iterationPointers));
         assertTrue(isEqual(aListOfData, parameters.keys));
     }
 
@@ -5066,7 +5066,7 @@ public class ClientCompatibilityTest_2_0 {
     @Test
     public void test_CacheIterateEntriesCodec_encodeRequest() {
         int fileClientMessageIndex = 595;
-        ClientMessage encoded = CacheIterateEntriesCodec.encodeRequest(aString, anInt, anInt);
+        ClientMessage encoded = CacheIterateEntriesCodec.encodeRequest(aString, aListOfIntegerToInteger, anInt);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
     }
@@ -5076,7 +5076,7 @@ public class ClientCompatibilityTest_2_0 {
         int fileClientMessageIndex = 596;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         CacheIterateEntriesCodec.ResponseParameters parameters = CacheIterateEntriesCodec.decodeResponse(fromFile);
-        assertTrue(isEqual(anInt, parameters.tableIndex));
+        assertTrue(isEqual(aListOfIntegerToInteger, parameters.iterationPointers));
         assertTrue(isEqual(aListOfDataToData, parameters.entries));
     }
 

@@ -1420,14 +1420,14 @@ public class MemberCompatibilityNullTest_2_0 {
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         MapFetchKeysCodec.RequestParameters parameters = MapFetchKeysCodec.decodeRequest(fromFile);
         assertTrue(isEqual(aString, parameters.name));
-        assertTrue(isEqual(anInt, parameters.tableIndex));
+        assertTrue(isEqual(aListOfIntegerToInteger, parameters.iterationPointers));
         assertTrue(isEqual(anInt, parameters.batch));
     }
 
     @Test
     public void test_MapFetchKeysCodec_encodeResponse() {
         int fileClientMessageIndex = 155;
-        ClientMessage encoded = MapFetchKeysCodec.encodeResponse(anInt, aListOfData);
+        ClientMessage encoded = MapFetchKeysCodec.encodeResponse(aListOfIntegerToInteger, aListOfData);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
     }
@@ -1438,14 +1438,14 @@ public class MemberCompatibilityNullTest_2_0 {
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         MapFetchEntriesCodec.RequestParameters parameters = MapFetchEntriesCodec.decodeRequest(fromFile);
         assertTrue(isEqual(aString, parameters.name));
-        assertTrue(isEqual(anInt, parameters.tableIndex));
+        assertTrue(isEqual(aListOfIntegerToInteger, parameters.iterationPointers));
         assertTrue(isEqual(anInt, parameters.batch));
     }
 
     @Test
     public void test_MapFetchEntriesCodec_encodeResponse() {
         int fileClientMessageIndex = 157;
-        ClientMessage encoded = MapFetchEntriesCodec.encodeResponse(anInt, aListOfDataToData);
+        ClientMessage encoded = MapFetchEntriesCodec.encodeResponse(aListOfIntegerToInteger, aListOfDataToData);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
     }
@@ -1609,7 +1609,7 @@ public class MemberCompatibilityNullTest_2_0 {
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         MapFetchWithQueryCodec.RequestParameters parameters = MapFetchWithQueryCodec.decodeRequest(fromFile);
         assertTrue(isEqual(aString, parameters.name));
-        assertTrue(isEqual(anInt, parameters.tableIndex));
+        assertTrue(isEqual(aListOfIntegerToInteger, parameters.iterationPointers));
         assertTrue(isEqual(anInt, parameters.batch));
         assertTrue(isEqual(aData, parameters.projection));
         assertTrue(isEqual(aData, parameters.predicate));
@@ -1618,7 +1618,7 @@ public class MemberCompatibilityNullTest_2_0 {
     @Test
     public void test_MapFetchWithQueryCodec_encodeResponse() {
         int fileClientMessageIndex = 177;
-        ClientMessage encoded = MapFetchWithQueryCodec.encodeResponse(aListOfData, anInt);
+        ClientMessage encoded = MapFetchWithQueryCodec.encodeResponse(aListOfData, aListOfIntegerToInteger);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
     }
@@ -5081,14 +5081,14 @@ public class MemberCompatibilityNullTest_2_0 {
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         CacheIterateCodec.RequestParameters parameters = CacheIterateCodec.decodeRequest(fromFile);
         assertTrue(isEqual(aString, parameters.name));
-        assertTrue(isEqual(anInt, parameters.tableIndex));
+        assertTrue(isEqual(aListOfIntegerToInteger, parameters.iterationPointers));
         assertTrue(isEqual(anInt, parameters.batch));
     }
 
     @Test
     public void test_CacheIterateCodec_encodeResponse() {
         int fileClientMessageIndex = 567;
-        ClientMessage encoded = CacheIterateCodec.encodeResponse(anInt, aListOfData);
+        ClientMessage encoded = CacheIterateCodec.encodeResponse(aListOfIntegerToInteger, aListOfData);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
     }
@@ -5347,14 +5347,14 @@ public class MemberCompatibilityNullTest_2_0 {
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         CacheIterateEntriesCodec.RequestParameters parameters = CacheIterateEntriesCodec.decodeRequest(fromFile);
         assertTrue(isEqual(aString, parameters.name));
-        assertTrue(isEqual(anInt, parameters.tableIndex));
+        assertTrue(isEqual(aListOfIntegerToInteger, parameters.iterationPointers));
         assertTrue(isEqual(anInt, parameters.batch));
     }
 
     @Test
     public void test_CacheIterateEntriesCodec_encodeResponse() {
         int fileClientMessageIndex = 596;
-        ClientMessage encoded = CacheIterateEntriesCodec.encodeResponse(anInt, aListOfDataToData);
+        ClientMessage encoded = CacheIterateEntriesCodec.encodeResponse(aListOfIntegerToInteger, aListOfDataToData);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
     }
