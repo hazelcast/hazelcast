@@ -125,6 +125,8 @@ public final class NioNetworking implements Networking, DynamicMetricsProvider {
     private volatile NioThread[] inputThreads;
     private volatile NioThread[] outputThreads;
     private volatile ScheduledFuture publishFuture;
+    private final AtomicInteger activeInputThreads = new AtomicInteger();
+    private final AtomicInteger activeOutputThreads = new AtomicInteger();
 
     // Currently this is a coarse grained aggregation of the bytes/send received.
     // In the future you probably want to split this up in member and client and potentially
@@ -242,14 +244,20 @@ public final class NioNetworking implements Networking, DynamicMetricsProvider {
         }
         this.outputThreads = outThreads;
 
-
         startIOBalancer();
 
         metricsRegistry.registerDynamicMetricsProvider(this);
     }
 
     private void startIOBalancer() {
-        ioBalancer = new IOBalancer(inputThreads, outputThreads, threadNamePrefix, balancerIntervalSeconds, loggingService);
+        ioBalancer = new IOBalancer(
+                inputThreads,
+                activeInputThreads,
+                outputThreads,
+                activeOutputThreads,
+                threadNamePrefix,
+                balancerIntervalSeconds,
+                loggingService);
         ioBalancer.start();
     }
 
@@ -324,7 +332,7 @@ public final class NioNetworking implements Networking, DynamicMetricsProvider {
     }
 
     private NioOutboundPipeline newOutboundPipeline(NioChannel channel) {
-        int index = hashToIndex(nextOutputThreadIndex.getAndIncrement(), outputThreadCount);
+        int index = hashToIndex(nextOutputThreadIndex.getAndIncrement(), activeOutputThreads.get());
         NioThread[] threads = outputThreads;
         if (threads == null) {
             throw new IllegalStateException("NioNetworking is shutdown!");
@@ -342,7 +350,7 @@ public final class NioNetworking implements Networking, DynamicMetricsProvider {
     }
 
     private NioInboundPipeline newInboundPipeline(NioChannel channel) {
-        int index = hashToIndex(nextInputThreadIndex.getAndIncrement(), inputThreadCount);
+        int index = hashToIndex(nextInputThreadIndex.getAndIncrement(), activeInputThreads.get());
         NioThread[] threads = inputThreads;
         if (threads == null) {
             throw new IllegalStateException("NioNetworking is shutdown!");
@@ -486,6 +494,8 @@ public final class NioNetworking implements Networking, DynamicMetricsProvider {
         private ChannelErrorHandler errorHandler;
         private int inputThreadCount = 1;
         private int outputThreadCount = 1;
+        private int activeInputThreadCount = 1;
+        private int activeOutputThreadCount = 1;
         private int balancerIntervalSeconds;
         // The selector mode determines how IO threads will block (or not) on the Selector:
         //  select:         this is the default mode, uses Selector.select(long timeout)

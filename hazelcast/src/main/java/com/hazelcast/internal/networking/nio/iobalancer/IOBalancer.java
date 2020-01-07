@@ -23,14 +23,19 @@ import com.hazelcast.internal.networking.nio.NioOutboundPipeline;
 import com.hazelcast.internal.networking.nio.NioThread;
 import com.hazelcast.internal.nio.ConnectionListener;
 import com.hazelcast.internal.nio.EndpointManager;
+import com.hazelcast.internal.util.ThreadAffinity;
 import com.hazelcast.internal.util.counters.MwCounter;
 import com.hazelcast.internal.util.counters.SwCounter;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.spi.properties.ClusterProperty;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.NETWORKING_METRIC_NIO_IO_BALANCER_IMBALANCE_DETECTED_COUNT;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.NETWORKING_METRIC_NIO_IO_BALANCER_MIGRATION_COMPLETED_COUNT;
@@ -41,7 +46,7 @@ import static com.hazelcast.spi.properties.ClusterProperty.IO_THREAD_COUNT;
 
 /**
  * It attempts to detect and fix a selector imbalance problem.
- *
+ * <p>
  * By default Hazelcast uses 3 threads to read data from TCP connections and
  * 3 threads to write data to connections. We have measured significant fluctuations
  * of performance when the threads are not utilized equally.
@@ -49,14 +54,14 @@ import static com.hazelcast.spi.properties.ClusterProperty.IO_THREAD_COUNT;
  * <code>IOBalancer</code> tries to detect such situations and fix them by moving
  * {@link NioInboundPipeline} and {@link NioOutboundPipeline} between {@link NioThread}
  * instances.
- *
+ * <p>
  * It measures load serviced by each pipeline in a given interval and
  * if imbalance is detected then it schedules pipeline migration to fix the situation.
  * The exact migration strategy can be customized via
  * {@link com.hazelcast.internal.networking.nio.iobalancer.MigrationStrategy}.
- *
+ * <p>
  * Measuring interval can be customized via {@link ClusterProperty#IO_BALANCER_INTERVAL_SECONDS}
- *
+ * <p>
  * It doesn't leverage {@link ConnectionListener} capability
  * provided by {@link EndpointManager} to observe connections
  * as it has to be notified right after a physical TCP connection is created whilst
@@ -74,6 +79,10 @@ public class IOBalancer {
     private final LoadTracker outLoadTracker;
     private final String hzName;
     private final BlockingQueue<Runnable> workQueue = new LinkedBlockingQueue<>();
+    private final AtomicInteger activeInputThreads;
+    private final AtomicInteger activeOutputThreads;
+    private final NioThread[] inputThreads;
+    private final NioThread[] outputTreads;
     private volatile boolean enabled;
     private IOBalancerThread ioBalancerThread;
 
@@ -84,19 +93,27 @@ public class IOBalancer {
     // multiple threads can update this field.
     @Probe(name = NETWORKING_METRIC_NIO_IO_BALANCER_MIGRATION_COMPLETED_COUNT)
     private final MwCounter migrationCompletedCount = newMwCounter();
+    private final boolean adaptiveIOThreadSizing = Boolean.parseBoolean(System.getProperty("adaptiveIOThreadSizing", "false"));
+    private final float lowWaterMarkLoad = Float.parseFloat(System.getProperty("ioCpusLowLoadPercent", "40"));
+    private final float highWaterMarkLoad = Float.parseFloat(System.getProperty("ioCpusHighLoadPercent", "60"));
 
     public IOBalancer(NioThread[] inputThreads,
+                      AtomicInteger activeInputThreads,
                       NioThread[] outputThreads,
+                      AtomicInteger activeOutputThreads,
                       String hzName,
                       int balancerIntervalSeconds, LoggingService loggingService) {
         this.logger = loggingService.getLogger(IOBalancer.class);
-        this.balancerIntervalSeconds = balancerIntervalSeconds;
 
+        this.balancerIntervalSeconds = balancerIntervalSeconds;
+        this.activeInputThreads = activeInputThreads;
+        this.activeOutputThreads = activeOutputThreads;
+        this.inputThreads = inputThreads;
+        this.outputTreads = outputThreads;
         this.strategy = createMigrationStrategy();
         this.hzName = hzName;
-
-        this.inLoadTracker = new LoadTracker(inputThreads, logger);
-        this.outLoadTracker = new LoadTracker(outputThreads, logger);
+        this.inLoadTracker = new LoadTracker(inputThreads, activeInputThreads, logger);
+        this.outLoadTracker = new LoadTracker(outputThreads, activeOutputThreads, logger);
 
         this.enabled = isEnabled(inputThreads, outputThreads);
     }
@@ -146,8 +163,45 @@ public class IOBalancer {
     }
 
     void rebalance() {
+        rescale(inputThreads, activeInputThreads);
+        rescale(outputTreads, activeOutputThreads);
+
         scheduleMigrationIfNeeded(inLoadTracker);
         scheduleMigrationIfNeeded(outLoadTracker);
+    }
+
+    private void rescale(NioThread[] threads, AtomicInteger activeThreads) {
+        if (!adaptiveIOThreadSizing) {
+            return;
+        }
+
+        float load = load(threads, activeThreads);
+        if (load < lowWaterMarkLoad) {
+            if (activeThreads.get() < threads.length) {
+                activeThreads.incrementAndGet();
+            }
+        } else if (load > highWaterMarkLoad) {
+            if (activeThreads.get() >= 1) {
+                activeThreads.decrementAndGet();
+            }
+        }
+    }
+
+    private float load(NioThread[] threads, AtomicInteger activeThreads) {
+        List<Integer> cpus = new ArrayList<>(activeThreads.get());
+        for (int k = 0; k < activeThreads.get(); k++) {
+            NioThread t = threads[k];
+            cpus.add(t.getCpu());
+        }
+
+        Map<Integer, Float> load = ThreadAffinity.cpuLoad(cpus);
+        float loadSum = 0;
+        for (int k = 0; k < cpus.size(); k++) {
+            Integer cpu = cpus.get(k);
+            System.out.println("      cpu:" + cpu + " " + threads[k].getName() + " load:" + load.get(cpu));
+            loadSum += load.get(cpu);
+        }
+        return loadSum / load.size();
     }
 
     private void scheduleMigrationIfNeeded(LoadTracker loadTracker) {

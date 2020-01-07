@@ -24,6 +24,7 @@ import com.hazelcast.internal.util.ItemCounter;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.internal.util.MapUtil.createHashMap;
 import static com.hazelcast.internal.util.StringUtil.LINE_SEPARATOR;
@@ -39,7 +40,7 @@ class LoadTracker {
     private final ILogger logger;
 
     //all known IO ioThreads. we assume no. of ioThreads is constant during a lifespan of a member
-    private final NioThread[] ioThreads;
+    //   private final NioThread[] ioThreads;
     private final Map<NioThread, Set<MigratablePipeline>> ownerToPipelines;
 
     //load per pipeline since an instance started
@@ -54,11 +55,14 @@ class LoadTracker {
     private final Set<MigratablePipeline> pipelines = new HashSet<MigratablePipeline>();
 
     private final LoadImbalance imbalance;
+    private final AtomicInteger activeIOThread;
+    private final NioThread[] ioThreads;
 
-    LoadTracker(NioThread[] ioThreads, ILogger logger) {
+    LoadTracker(NioThread[] ioThreads, AtomicInteger activeIOThreads, ILogger logger) {
         this.logger = logger;
 
         this.ioThreads = new NioThread[ioThreads.length];
+        this.activeIOThread = activeIOThreads;
         System.arraycopy(ioThreads, 0, this.ioThreads, 0, ioThreads.length);
 
         this.ownerToPipelines = createHashMap(ioThreads.length);
@@ -75,7 +79,9 @@ class LoadTracker {
      * @return recalculated imbalance
      */
     LoadImbalance updateImbalance() {
-        clearWorkingImbalance();
+        reset();
+        // if there is a pipeline on an inactive thread, it needs to be moved first.
+
         updateNewWorkingImbalance();
         updateNewFinalImbalance();
         printDebugTable();
@@ -102,7 +108,8 @@ class LoadTracker {
         imbalance.maximumLoad = Long.MIN_VALUE;
         imbalance.srcOwner = null;
         imbalance.dstOwner = null;
-        for (NioThread owner : ioThreads) {
+        for (int k = 0; k < activeIOThread.get(); k++) {
+            NioThread owner = ioThreads[k];
             long load = ownerLoad.get(owner);
             int pipelineCount = ownerToPipelines.get(owner).size();
 
@@ -145,7 +152,7 @@ class LoadTracker {
         return load - lastLoad;
     }
 
-    private void clearWorkingImbalance() {
+    private void reset() {
         pipelineLoadCount.reset();
         ownerLoad.reset();
         for (Set<MigratablePipeline> pipelines : ownerToPipelines.values()) {

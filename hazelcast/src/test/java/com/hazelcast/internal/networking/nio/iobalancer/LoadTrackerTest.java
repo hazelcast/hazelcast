@@ -50,7 +50,7 @@ public class LoadTrackerTest {
         ILogger logger = mock(ILogger.class);
         when(logger.isFinestEnabled()).thenReturn(true);
 
-        loadTracker = new LoadTracker(owner3, logger);
+        loadTracker = new LoadTracker(owner3, activeInputThreads, logger);
     }
 
     @Test
