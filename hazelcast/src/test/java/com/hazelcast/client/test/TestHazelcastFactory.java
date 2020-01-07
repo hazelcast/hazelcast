@@ -39,6 +39,8 @@ import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
+import static com.hazelcast.client.HazelcastClientUtil.getInstanceName;
+
 public class TestHazelcastFactory extends TestHazelcastInstanceFactory {
 
     private final boolean mockNetwork = TestEnvironment.isMockNetwork();
@@ -76,8 +78,8 @@ public class TestHazelcastFactory extends TestHazelcastInstanceFactory {
             if (tccl == ClassLoader.getSystemClassLoader()) {
                 currentThread.setContextClassLoader(HazelcastClient.class.getClassLoader());
             }
-            HazelcastClientInstanceImpl client = new HazelcastClientInstanceImpl(config, null,
-                    clientRegistry.createClientServiceFactory(), createAddressProvider(config));
+            HazelcastClientInstanceImpl client = new HazelcastClientInstanceImpl(getInstanceName(config), config,
+                    null, clientRegistry.createClientServiceFactory(), createAddressProvider(config));
             client.start();
             if (clients.putIfAbsent(client.getName(), client) != null) {
                 throw new InvalidConfigurationException("HazelcastClientInstance with name '" + client.getName()
@@ -93,8 +95,7 @@ public class TestHazelcastFactory extends TestHazelcastInstanceFactory {
 
     // used by MC tests
     public HazelcastInstance getHazelcastClientByName(String clientName) {
-        return clients.values().stream()
-                .filter(client -> client.getName().equals(clientName)).findFirst().orElse(null);
+        return clients.get(clientName);
     }
 
     private AddressProvider createAddressProvider(ClientConfig config) {

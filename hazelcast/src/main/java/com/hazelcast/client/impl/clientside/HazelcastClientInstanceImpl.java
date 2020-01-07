@@ -195,23 +195,17 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
     private final ConcurrentLinkedQueue<Disposable> onClusterChangeDisposables = new ConcurrentLinkedQueue();
     private final ConcurrentLinkedQueue<Disposable> onClientShutdownDisposables = new ConcurrentLinkedQueue();
 
-    public HazelcastClientInstanceImpl(ClientConfig clientConfig,
+    public HazelcastClientInstanceImpl(String instanceName, ClientConfig clientConfig,
                                        ClientFailoverConfig clientFailoverConfig,
                                        ClientConnectionManagerFactory clientConnectionManagerFactory,
                                        AddressProvider externalAddressProvider) {
-        assert clientConfig != null || clientFailoverConfig != null : "At most one type of config can be provided";
-        assert clientConfig == null || clientFailoverConfig == null : "At least one config should be provided ";
         if (clientConfig != null) {
             this.config = clientConfig;
         } else {
             this.config = clientFailoverConfig.getClientConfigs().get(0);
         }
         this.clientFailoverConfig = clientFailoverConfig;
-        if (config.getInstanceName() != null) {
-            instanceName = config.getInstanceName();
-        } else {
-            instanceName = "hz.client_" + id;
-        }
+        this.instanceName = instanceName;
 
         String loggingType = config.getProperty(ClusterProperty.LOGGING_TYPE.getName());
         this.loggingService = new ClientLoggingService(config.getClusterName(),
