@@ -38,7 +38,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Adds an continuous entry listener for this map. The listener will be notified for map add/remove/update/evict
  * events filtered by the given predicate.
  */
-@Generated("a19bc86e81e8065f488daab420792902")
+@Generated("38c81eecfeca2be409a69267389aa58e")
 public final class ReplicatedMapAddEntryListenerWithPredicateCodec {
     //hex: 0x0D0B00
     public static final int REQUEST_MESSAGE_TYPE = 854784;
@@ -163,6 +163,26 @@ public final class ReplicatedMapAddEntryListenerWithPredicateCodec {
             }
             Logger.getLogger(super.getClass()).finest("Unknown message type received on event handler :" + messageType);
         }
+
+        /**
+         * @param key Key of the entry event.
+         * @param value Value of the entry event.
+         * @param oldValue Old value of the entry event.
+         * @param mergingValue Incoming merging value of the entry event.
+         * @param eventType Type of the entry event. Possible values are
+         *                  ADDED(1)
+         *                  REMOVED(2)
+         *                  UPDATED(4)
+         *                  EVICTED(8)
+         *                  EXPIRED(16)
+         *                  EVICT_ALL(32)
+         *                  CLEAR_ALL(64)
+         *                  MERGED(128)
+         *                  INVALIDATION(256)
+         *                  LOADED(512)
+         * @param uuid UUID of the member that dispatches the event.
+         * @param numberOfAffectedEntries Number of entries affected by this event.
+        */
         public abstract void handleEntryEvent(@Nullable com.hazelcast.internal.serialization.Data key, @Nullable com.hazelcast.internal.serialization.Data value, @Nullable com.hazelcast.internal.serialization.Data oldValue, @Nullable com.hazelcast.internal.serialization.Data mergingValue, int eventType, java.util.UUID uuid, int numberOfAffectedEntries);
     }
 }

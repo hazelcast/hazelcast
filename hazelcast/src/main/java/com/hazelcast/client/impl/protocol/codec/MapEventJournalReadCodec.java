@@ -43,12 +43,12 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * The predicate, filter and projection may be {@code null} in which case all elements are returned
  * and no projection is applied.
  */
-@Generated("343e247a8cf3940e85e24f3ece5a870f")
+@Generated("fb3cbda32375547f841f5b50aedc4f3f")
 public final class MapEventJournalReadCodec {
-    //hex: 0x014400
-    public static final int REQUEST_MESSAGE_TYPE = 82944;
-    //hex: 0x014401
-    public static final int RESPONSE_MESSAGE_TYPE = 82945;
+    //hex: 0x014200
+    public static final int REQUEST_MESSAGE_TYPE = 82432;
+    //hex: 0x014201
+    public static final int RESPONSE_MESSAGE_TYPE = 82433;
     private static final int REQUEST_START_SEQUENCE_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_MIN_SIZE_FIELD_OFFSET = REQUEST_START_SEQUENCE_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
     private static final int REQUEST_MAX_SIZE_FIELD_OFFSET = REQUEST_MIN_SIZE_FIELD_OFFSET + INT_SIZE_IN_BYTES;
@@ -127,22 +127,22 @@ public final class MapEventJournalReadCodec {
     public static class ResponseParameters {
 
         /**
-         * TODO DOC
+         * Number of items that have been read.
          */
         public int readCount;
 
         /**
-         * TODO DOC
+         * List of items that have been read.
          */
         public java.util.List<com.hazelcast.internal.serialization.Data> items;
 
         /**
-         * TODO DOC
+         * Sequence numbers of items in the event journal.
          */
         public @Nullable long[] itemSeqs;
 
         /**
-         * TODO DOC
+         * Sequence number of the item following the last read item.
          */
         public long nextSeq;
     }

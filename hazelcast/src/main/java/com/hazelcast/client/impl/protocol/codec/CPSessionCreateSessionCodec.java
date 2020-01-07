@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Creates a session for the caller on the given CP group.
  */
-@Generated("638727a006abcb1997502c8281acd621")
+@Generated("0d12c861dfe16b4a3bea0d3d4ee05d40")
 public final class CPSessionCreateSessionCodec {
     //hex: 0x1F0100
     public static final int REQUEST_MESSAGE_TYPE = 2031872;
@@ -91,17 +91,17 @@ public final class CPSessionCreateSessionCodec {
     public static class ResponseParameters {
 
         /**
-         * TODO DOC
+         * Id of the session.
          */
         public long sessionId;
 
         /**
-         * TODO DOC
+         * Time to live value in milliseconds that must be respected by the caller.
          */
         public long ttlMillis;
 
         /**
-         * TODO DOC
+         * Time between heartbeats in milliseconds that must be respected by the caller.
          */
         public long heartbeatMillis;
     }

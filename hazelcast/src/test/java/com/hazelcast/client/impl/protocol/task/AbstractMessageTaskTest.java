@@ -16,7 +16,7 @@
 
 package com.hazelcast.client.impl.protocol.task;
 
-import com.hazelcast.client.impl.protocol.codec.MapClearNearCacheCodec;
+import com.hazelcast.client.impl.protocol.codec.PNCounterAddCodec;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.config.Config;
 import com.hazelcast.instance.impl.Node;
@@ -46,9 +46,9 @@ import static org.mockito.Mockito.when;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class AbstractMessageTaskTest {
 
-    private final Collection<Address> memberAddresses = new ArrayList<Address>();
+    private final Collection<Address> memberAddresses = new ArrayList<>();
     private final Config config = new Config();
-    private final MapClearNearCacheCodec.RequestParameters parameters = new MapClearNearCacheCodec.RequestParameters();
+    private final PNCounterAddCodec.RequestParameters parameters = new PNCounterAddCodec.RequestParameters();
     private AbstractMessageTask messageTask;
 
     @Before
@@ -68,7 +68,6 @@ public class AbstractMessageTaskTest {
 
         // setup common fields of parameters object
         parameters.name = "test";
-        parameters.name = "cacheNAme";
         Whitebox.setInternalState(messageTask, "parameters", parameters);
     }
 
@@ -76,7 +75,7 @@ public class AbstractMessageTaskTest {
     public void assertionFalse_whenUnknownAddressesInDecodedMessage() throws UnknownHostException {
         config.getAdvancedNetworkConfig().setEnabled(true);
         memberAddresses.add(new Address("127.0.0.1", 5701));
-        parameters.target = new Address("127.0.0.1", 65000);
+        parameters.targetReplica = new Address("127.0.0.1", 65000);
 
         assertFalse(messageTask.addressesDecodedWithTranslation());
     }
@@ -85,7 +84,7 @@ public class AbstractMessageTaskTest {
     public void assertionTrue_whenKnownAddressesInDecodedMessage() throws UnknownHostException {
         config.getAdvancedNetworkConfig().setEnabled(true);
         memberAddresses.add(new Address("127.0.0.1", 5701));
-        parameters.target = new Address("127.0.0.1", 5701);
+        parameters.targetReplica = new Address("127.0.0.1", 5701);
 
         assertTrue(messageTask.addressesDecodedWithTranslation());
     }
@@ -94,7 +93,7 @@ public class AbstractMessageTaskTest {
     public void assertionTrue_whenAdvancedNetworkDisabled() throws UnknownHostException {
         config.getAdvancedNetworkConfig().setEnabled(false);
         memberAddresses.add(new Address("127.0.0.1", 5701));
-        parameters.target = new Address("127.0.0.1", 65000);
+        parameters.targetReplica = new Address("127.0.0.1", 65000);
 
         assertTrue(messageTask.addressesDecodedWithTranslation());
     }

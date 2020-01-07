@@ -34,14 +34,14 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  */
 
 /**
- * TODO DOC
+ * Checks whether or not the member supports cluster failover.
  */
-@Generated("c51acf3fa99478a20b2148948b9ab68b")
+@Generated("e596b2d91fb52476831d775b162e1efc")
 public final class ClientIsFailoverSupportedCodec {
-    //hex: 0x001000
-    public static final int REQUEST_MESSAGE_TYPE = 4096;
-    //hex: 0x001001
-    public static final int RESPONSE_MESSAGE_TYPE = 4097;
+    //hex: 0x000F00
+    public static final int REQUEST_MESSAGE_TYPE = 3840;
+    //hex: 0x000F01
+    public static final int RESPONSE_MESSAGE_TYPE = 3841;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_RESPONSE_FIELD_OFFSET = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_RESPONSE_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
@@ -75,7 +75,7 @@ public final class ClientIsFailoverSupportedCodec {
     public static class ResponseParameters {
 
         /**
-         * Returns true if server supports cluster failover
+         * Returns true if the member supports cluster failover
          */
         public boolean response;
     }

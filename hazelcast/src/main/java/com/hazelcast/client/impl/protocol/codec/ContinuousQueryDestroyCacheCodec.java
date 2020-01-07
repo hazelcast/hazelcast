@@ -34,9 +34,9 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  */
 
 /**
- * TODO DOC
+ * Destroys the query cache with the given name for a specific map.
  */
-@Generated("64b5095f7519aa816e6d4363a599310a")
+@Generated("de550e562884be822f11db5242e64543")
 public final class ContinuousQueryDestroyCacheCodec {
     //hex: 0x160600
     public static final int REQUEST_MESSAGE_TYPE = 1443328;

@@ -34,9 +34,10 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  */
 
 /**
- * TODO DOC
+ * Removes the specified entry listener. If there is no such listener added before, this call does no change in the
+ * cluster and returns false.
  */
-@Generated("2e9b2105da32f314a549d75d5fe9a429")
+@Generated("c59f6dc247d3fee903ba96ed48ae1463")
 public final class CacheRemoveEntryListenerCodec {
     //hex: 0x131400
     public static final int REQUEST_MESSAGE_TYPE = 1250304;

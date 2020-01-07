@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Adds listener to cache. This listener will be used to listen near cache invalidation events.
  */
-@Generated("322ceb3db2418070cc25c5a38010f7a1")
+@Generated("3fdf99b07ef2cab049ac8a76c81a52bc")
 public final class CacheAddNearCacheInvalidationListenerCodec {
     //hex: 0x131D00
     public static final int REQUEST_MESSAGE_TYPE = 1252608;
@@ -179,7 +179,23 @@ public final class CacheAddNearCacheInvalidationListenerCodec {
             }
             Logger.getLogger(super.getClass()).finest("Unknown message type received on event handler :" + messageType);
         }
+
+        /**
+         * @param name Name of the cache.
+         * @param key The key of the invalidated entry.
+         * @param sourceUuid UUID of the member who fired this event.
+         * @param partitionUuid UUID of the source partition that invalidated entry belongs to.
+         * @param sequence Sequence number of the invalidation event.
+        */
         public abstract void handleCacheInvalidationEvent(java.lang.String name, @Nullable com.hazelcast.internal.serialization.Data key, @Nullable java.util.UUID sourceUuid, java.util.UUID partitionUuid, long sequence);
+
+        /**
+         * @param name Name of the cache.
+         * @param keys List of the keys of the invalidated entries.
+         * @param sourceUuids List of UUIDs of the members who fired these events.
+         * @param partitionUuids List of UUIDs of the source partitions that invalidated entries belong to.
+         * @param sequences List of sequence numbers of the invalidation events.
+        */
         public abstract void handleCacheBatchInvalidationEvent(java.lang.String name, java.util.Collection<com.hazelcast.internal.serialization.Data> keys, java.util.Collection<java.util.UUID> sourceUuids, java.util.Collection<java.util.UUID> partitionUuids, java.util.Collection<java.lang.Long> sequences);
     }
 }

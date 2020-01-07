@@ -34,9 +34,9 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  */
 
 /**
- * TODO DOC
+ * Cancels the task running on the member with the given address.
  */
-@Generated("93bf7910cf2bd35787b7af1e951fe081")
+@Generated("cf4da66ad1793ae4089fb0ee3d3eab5c")
 public final class ExecutorServiceCancelOnAddressCodec {
     //hex: 0x080400
     public static final int REQUEST_MESSAGE_TYPE = 525312;

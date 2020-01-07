@@ -36,12 +36,12 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Removes all entries which match with the supplied predicate
  */
-@Generated("4e8bb6812b3804db839dc2bf3ba302ac")
+@Generated("edb97259105d7de3ebbc06f55c5a04ef")
 public final class MapRemoveAllCodec {
-    //hex: 0x014000
-    public static final int REQUEST_MESSAGE_TYPE = 81920;
-    //hex: 0x014001
-    public static final int RESPONSE_MESSAGE_TYPE = 81921;
+    //hex: 0x013E00
+    public static final int REQUEST_MESSAGE_TYPE = 81408;
+    //hex: 0x013E01
+    public static final int RESPONSE_MESSAGE_TYPE = 81409;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
 

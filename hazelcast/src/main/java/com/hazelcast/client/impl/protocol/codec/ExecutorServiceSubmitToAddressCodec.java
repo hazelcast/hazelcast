@@ -34,9 +34,9 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  */
 
 /**
- * TODO DOC
+ * Submits the task to member specified by the address.
  */
-@Generated("8d2576dbfac02b836f1966e0adc1452e")
+@Generated("2df7034617b01a5503f6e489aeb8125c")
 public final class ExecutorServiceSubmitToAddressCodec {
     //hex: 0x080600
     public static final int REQUEST_MESSAGE_TYPE = 525824;

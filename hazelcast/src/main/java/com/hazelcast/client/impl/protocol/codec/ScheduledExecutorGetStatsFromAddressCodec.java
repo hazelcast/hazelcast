@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Returns statistics of the task
  */
-@Generated("7f8789400e1088fa55ba8dd2d838e1c5")
+@Generated("af44a623f2c292a34808f4992e7b5466")
 public final class ScheduledExecutorGetStatsFromAddressCodec {
     //hex: 0x1A0600
     public static final int REQUEST_MESSAGE_TYPE = 1705472;
@@ -100,27 +100,27 @@ public final class ScheduledExecutorGetStatsFromAddressCodec {
     public static class ResponseParameters {
 
         /**
-         * TODO DOC
+         * Last period of time the task was idle, waiting to get scheduled.
          */
         public long lastIdleTimeNanos;
 
         /**
-         * TODO DOC
+         * Total amount of time the task was idle, waiting to get scheduled in.
          */
         public long totalIdleTimeNanos;
 
         /**
-         * TODO DOC
+         * How many times the task was ran/called.
          */
         public long totalRuns;
 
         /**
-         * TODO DOC
+         * The total amount of time the task spent while scheduled in.
          */
         public long totalRunTimeNanos;
 
         /**
-         * TODO DOC
+         * The duration of the task's last execution.
          */
         public long lastRunDurationNanos;
     }

@@ -38,7 +38,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * If a cache configuration with the given {@code name} already exists, then
  * the new configuration is ignored and the existing one is preserved.
  */
-@Generated("0ea93cc67c912d6a5a419a6c7daa671c")
+@Generated("b7bc1d252cabae95962ad81345166454")
 public final class DynamicConfigAddCacheConfigCodec {
     //hex: 0x1B0E00
     public static final int REQUEST_MESSAGE_TYPE = 1773056;
@@ -140,7 +140,7 @@ public final class DynamicConfigAddCacheConfigCodec {
         public @Nullable java.lang.String splitBrainProtectionName;
 
         /**
-         * name of a class implementing {@link com.hazelcast.spi.merge.SplitBrainMergePolicy}
+         * name of a class implementing SplitBrainMergePolicy
          * that handles merging of values for this cache while recovering from
          * network partitioning
          */

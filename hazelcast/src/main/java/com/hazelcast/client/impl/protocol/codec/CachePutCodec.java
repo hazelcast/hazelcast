@@ -34,9 +34,9 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  */
 
 /**
- * TODO DOC
+ * Puts the entry with the given key, value and the expiry policy to the cache.
  */
-@Generated("b1851b5aaaa7c72ff77f6cc97911cb77")
+@Generated("796ab6b9b7e8004d1f5616728581f9f1")
 public final class CachePutCodec {
     //hex: 0x131300
     public static final int REQUEST_MESSAGE_TYPE = 1250048;
