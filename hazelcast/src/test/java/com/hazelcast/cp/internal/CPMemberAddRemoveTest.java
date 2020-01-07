@@ -41,6 +41,7 @@ import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -652,6 +653,7 @@ public class CPMemberAddRemoveTest extends HazelcastRaftTestSupport {
     }
 
     @Test
+    @Ignore("METADATA snapshot serialization is disabled.")
     public void when_newCPMemberIsAddedToTheMetadataGroupAfterSnapshot_newMemberInstallsSnapshot() throws ExecutionException, InterruptedException {
         int nodeCount = 3;
         final int commitIndexAdvanceCountToSnapshot = 50;
@@ -822,6 +824,7 @@ public class CPMemberAddRemoveTest extends HazelcastRaftTestSupport {
     }
 
     @Test
+    @Ignore("METADATA snapshot serialization is disabled.")
     public void when_newCPMemberIsAddedToTheMetadataGroupAfterRestartAndSnapshot_newMemberInstallsSnapshot() throws ExecutionException, InterruptedException {
         int nodeCount = 3;
         final int commitIndexAdvanceCountToSnapshot = 50;
