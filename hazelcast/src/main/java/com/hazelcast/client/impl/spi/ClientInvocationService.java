@@ -19,16 +19,17 @@ package com.hazelcast.client.impl.spi;
 import com.hazelcast.client.impl.connection.nio.ClientConnection;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.spi.impl.ClientInvocation;
-import com.hazelcast.cluster.Address;
+import com.hazelcast.cluster.Member;
 
 import java.io.IOException;
+import java.util.UUID;
 import java.util.function.Consumer;
 
 /**
  * Invocation service for Hazelcast clients.
  *
  * Allows remote invocations on different targets like {@link ClientConnection},
- * partition owners or {@link Address} based targets.
+ * partition owners or {@link Member} based targets.
  */
 public interface ClientInvocationService {
 
@@ -38,7 +39,7 @@ public interface ClientInvocationService {
 
     void invokeOnRandomTarget(ClientInvocation invocation) throws IOException;
 
-    void invokeOnTarget(ClientInvocation invocation, Address target) throws IOException;
+    void invokeOnTarget(ClientInvocation invocation, UUID uuid) throws IOException;
 
     boolean isRedoOperation();
 

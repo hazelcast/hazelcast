@@ -17,10 +17,10 @@
 package com.hazelcast.client.impl.protocol.task.scheduledexecutor;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.codec.ScheduledExecutorSubmitToAddressCodec;
-import com.hazelcast.client.impl.protocol.task.AbstractAddressMessageTask;
+import com.hazelcast.client.impl.protocol.codec.ScheduledExecutorSubmitToMemberCodec;
+import com.hazelcast.client.impl.protocol.task.AbstractTargetMessageTask;
+import com.hazelcast.cluster.Member;
 import com.hazelcast.instance.impl.Node;
-import com.hazelcast.cluster.Address;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.scheduledexecutor.impl.DistributedScheduledExecutorService;
 import com.hazelcast.scheduledexecutor.impl.TaskDefinition;
@@ -30,13 +30,14 @@ import com.hazelcast.security.permission.ScheduledExecutorPermission;
 import com.hazelcast.spi.impl.operationservice.Operation;
 
 import java.security.Permission;
+import java.util.UUID;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 
-public class ScheduledExecutorSubmitToAddressMessageTask
-        extends AbstractAddressMessageTask<ScheduledExecutorSubmitToAddressCodec.RequestParameters> {
+public class ScheduledExecutorSubmitToTargetMessageTask
+        extends AbstractTargetMessageTask<ScheduledExecutorSubmitToMemberCodec.RequestParameters> {
 
-    public ScheduledExecutorSubmitToAddressMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
+    public ScheduledExecutorSubmitToTargetMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
@@ -50,20 +51,18 @@ public class ScheduledExecutorSubmitToAddressMessageTask
     }
 
     @Override
-    protected Address getAddress() {
-        return parameters.address;
+    protected UUID getTargetUuid() {
+        return parameters.memberUuid;
     }
 
     @Override
-    protected ScheduledExecutorSubmitToAddressCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
-        parameters = ScheduledExecutorSubmitToAddressCodec.decodeRequest(clientMessage);
-        parameters.address = clientEngine.memberAddressOf(parameters.address);
-        return parameters;
+    protected ScheduledExecutorSubmitToMemberCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return ScheduledExecutorSubmitToMemberCodec.decodeRequest(clientMessage);
     }
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return ScheduledExecutorSubmitToAddressCodec.encodeResponse();
+        return ScheduledExecutorSubmitToMemberCodec.encodeResponse();
     }
 
     @Override
@@ -92,6 +91,7 @@ public class ScheduledExecutorSubmitToAddressMessageTask
         TaskDefinition def = new TaskDefinition(TaskDefinition.Type.getById(parameters.type),
                 parameters.taskName, callable, parameters.initialDelayInMillis, parameters.periodInMillis,
                 TimeUnit.MILLISECONDS);
-        return new Object[]{parameters.schedulerName, parameters.address, def};
+        Member member = nodeEngine.getClusterService().getMember(parameters.memberUuid);
+        return new Object[]{parameters.schedulerName, member.getAddress(), def};
     }
 }

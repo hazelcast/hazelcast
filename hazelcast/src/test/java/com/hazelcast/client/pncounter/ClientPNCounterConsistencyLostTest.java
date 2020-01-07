@@ -73,7 +73,7 @@ public class ClientPNCounterConsistencyLostTest extends AbstractPNCounterConsist
 
     @Override
     protected Address getCurrentTargetReplicaAddress(PNCounter driver) {
-        return ((ClientPNCounterProxy) driver).getCurrentTargetReplicaAddress();
+        return ((ClientPNCounterProxy) driver).getCurrentTargetReplica().getAddress();
     }
 
     @Override

@@ -123,28 +123,6 @@ public interface ClientEngine extends Consumer<ClientMessage> {
     void applySelector(ClientSelector selector);
 
     /**
-     * Locates the cluster member that has the provided client address and returns its member address,
-     * to be used for intra-cluster communication. This is required when clients deliver messages with
-     * designated target members, since clients may be unaware of the actual member address (when
-     * advanced network config is enabled).
-     * Throws a {@link com.hazelcast.spi.exception.TargetNotMemberException} when no member with the
-     * provided client address can be located.
-     *
-     * @param clientAddress the client address of the member
-     * @return the member address of the member
-     */
-    Address memberAddressOf(Address clientAddress);
-
-    /**
-     * Locates the client address of the given member address. Performs the reverse transformation
-     * of {@link #memberAddressOf(Address)}.
-     *
-     * @param memberAddress the member address of the member
-     * @return the client address of the member
-     */
-    Address clientAddressOf(Address memberAddress);
-
-    /**
      * Notify client engine that a client with given uuid required a resource (lock) on this member
      *
      * @param uuid client uuid

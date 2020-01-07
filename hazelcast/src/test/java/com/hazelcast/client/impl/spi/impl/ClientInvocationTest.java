@@ -23,7 +23,6 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.MapSizeCodec;
 import com.hazelcast.client.test.ClientTestSupport;
 import com.hazelcast.client.test.TestHazelcastFactory;
-import com.hazelcast.cluster.Address;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.LifecycleEvent;
@@ -40,6 +39,7 @@ import org.junit.runner.RunWith;
 
 import java.util.Arrays;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.CountDownLatch;
@@ -208,11 +208,11 @@ public class ClientInvocationTest extends ClientTestSupport {
     @Test
     public void invokeOnMemberRedirectsToRandom_whenMemberIsNotInMemberList() throws Exception {
         hazelcastFactory.newHazelcastInstance();
-        Address unavailableAddress = new Address("100.100.100.100", 1);
+        UUID unavailableTarget = UUID.randomUUID();
         HazelcastClientInstanceImpl client = getHazelcastClientInstanceImpl(hazelcastFactory.newHazelcastClient());
 
         ClientMessage request = MapSizeCodec.encodeRequest("test");
-        ClientInvocation invocation = new ClientInvocation(client, request, "map", unavailableAddress);
+        ClientInvocation invocation = new ClientInvocation(client, request, "map", unavailableTarget);
         assertEquals(0, MapSizeCodec.decodeResponse(invocation.invoke().get()).response);
     }
 }

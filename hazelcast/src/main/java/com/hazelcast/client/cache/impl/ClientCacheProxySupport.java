@@ -49,7 +49,6 @@ import com.hazelcast.client.impl.spi.ClientPartitionService;
 import com.hazelcast.client.impl.spi.ClientProxy;
 import com.hazelcast.client.impl.spi.impl.ClientInvocation;
 import com.hazelcast.client.impl.spi.impl.ClientInvocationFuture;
-import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.core.ManagedContext;
@@ -1036,11 +1035,11 @@ abstract class ClientCacheProxySupport<K, V> extends ClientProxy implements ICac
         Collection<Member> members = getContext().getClusterService().getMemberList();
         for (Member member : members) {
             try {
-                Address address = member.getAddress();
+                UUID uuid = member.getUuid();
                 Data configData = toData(cacheEntryListenerConfiguration);
                 ClientMessage request = CacheListenerRegistrationCodec.encodeRequest(nameWithPrefix, configData, isRegister,
-                        address);
-                ClientInvocation invocation = new ClientInvocation(getClient(), request, getName(), address);
+                        uuid);
+                ClientInvocation invocation = new ClientInvocation(getClient(), request, getName(), uuid);
                 invocation.invoke();
             } catch (Exception e) {
                 sneakyThrow(e);

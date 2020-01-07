@@ -19,7 +19,7 @@ package com.hazelcast.client.map.impl.querycache.subscriber;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.spi.impl.ClientInvocation;
-import com.hazelcast.cluster.Address;
+import com.hazelcast.cluster.Member;
 import com.hazelcast.map.impl.querycache.InvokerWrapper;
 import com.hazelcast.map.impl.querycache.QueryCacheContext;
 import com.hazelcast.spi.impl.operationservice.Operation;
@@ -69,12 +69,12 @@ public class ClientInvokerWrapper implements InvokerWrapper {
     }
 
     @Override
-    public Future invokeOnTarget(Object request, Address address) {
+    public Future invokeOnTarget(Object request, Member member) {
         checkNotNull(request, "request cannot be null");
-        checkNotNull(address, "address cannot be null");
+        checkNotNull(member, "address cannot be null");
 
         ClientMessage clientRequest = (ClientMessage) request;
-        ClientInvocation invocation = new ClientInvocation(client, clientRequest, null, address);
+        ClientInvocation invocation = new ClientInvocation(client, clientRequest, null, member.getUuid());
         return invocation.invoke();
     }
 

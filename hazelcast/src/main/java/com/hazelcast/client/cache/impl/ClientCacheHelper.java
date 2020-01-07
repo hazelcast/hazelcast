@@ -28,11 +28,11 @@ import com.hazelcast.cluster.Member;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.SerializationService;
-import com.hazelcast.cluster.Address;
 import com.hazelcast.internal.util.FutureUtil;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.UUID;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
@@ -124,9 +124,9 @@ final class ClientCacheHelper {
         Collection<Future> futures = new ArrayList<Future>();
         for (Member member : members) {
             try {
-                Address address = member.getAddress();
-                ClientMessage request = CacheManagementConfigCodec.encodeRequest(cacheName, statOrMan, enabled, address);
-                ClientInvocation clientInvocation = new ClientInvocation(client, request, cacheName, address);
+                UUID uuid = member.getUuid();
+                ClientMessage request = CacheManagementConfigCodec.encodeRequest(cacheName, statOrMan, enabled, uuid);
+                ClientInvocation clientInvocation = new ClientInvocation(client, request, cacheName, uuid);
                 Future<ClientMessage> future = clientInvocation.invoke();
                 futures.add(future);
             } catch (Exception e) {

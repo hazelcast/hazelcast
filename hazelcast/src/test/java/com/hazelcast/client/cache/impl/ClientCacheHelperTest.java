@@ -137,7 +137,7 @@ public class ClientCacheHelperTest extends HazelcastTestSupport {
     @Test(expected = IllegalArgumentException.class)
     public void testEnableStatisticManagementOnNodes_sneakyThrowsException() {
         Member member = mock(Member.class);
-        when(member.getAddress()).thenThrow(new IllegalArgumentException("expected"));
+        when(member.getUuid()).thenThrow(new IllegalArgumentException("expected"));
 
         Collection<Member> members = singletonList(member);
         when(exceptionThrowingClient.getClientClusterService().getMemberList()).thenReturn(members);

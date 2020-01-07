@@ -183,7 +183,7 @@ public class AdvancedNetworkClientIntegrationTest {
         IScheduledFuture<Address> future = executorService.scheduleOnMember(new ReportExecutionMember(),
                 targetMember, 3, TimeUnit.SECONDS);
 
-        assertEquals(targetMember.getAddress(), future.getHandler().getAddress());
+        assertEquals(targetMember.getUuid(), future.getHandler().getUuid());
 
         Address clusterMemberAddress = null;
         for (HazelcastInstance instance : instances) {

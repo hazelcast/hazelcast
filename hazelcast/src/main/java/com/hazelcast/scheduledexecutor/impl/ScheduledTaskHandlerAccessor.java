@@ -16,8 +16,9 @@
 
 package com.hazelcast.scheduledexecutor.impl;
 
-import com.hazelcast.cluster.Address;
 import com.hazelcast.scheduledexecutor.ScheduledTaskHandler;
+
+import java.util.UUID;
 
 public final class ScheduledTaskHandlerAccessor {
 
@@ -25,7 +26,7 @@ public final class ScheduledTaskHandlerAccessor {
 
     }
 
-    public static void setAddress(ScheduledTaskHandler handler, Address newAddress) {
-        ((ScheduledTaskHandlerImpl) handler).setAddress(newAddress);
+    public static void setUuid(ScheduledTaskHandler handler, UUID uuid) {
+        ((ScheduledTaskHandlerImpl) handler).setUuid(uuid);
     }
 }

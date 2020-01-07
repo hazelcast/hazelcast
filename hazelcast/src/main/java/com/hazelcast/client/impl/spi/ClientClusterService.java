@@ -74,7 +74,7 @@ public interface ClientClusterService {
      *
      * @return The address of the master member. Could be null if the master is not yet known.
      */
-    Address getMasterAddress();
+    Member getMasterMember();
 
     /**
      * Gets the current number of members.

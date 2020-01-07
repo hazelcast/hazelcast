@@ -16,7 +16,6 @@
 
 package com.hazelcast.client.impl.protocol.util;
 
-import com.hazelcast.client.impl.MemberImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.ClientMessage.Frame;
 import com.hazelcast.client.impl.protocol.codec.ClientAuthenticationCodec;
@@ -24,10 +23,11 @@ import com.hazelcast.client.impl.protocol.codec.MapAddEntryListenerCodec;
 import com.hazelcast.client.impl.protocol.codec.MapPutCodec;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.Member;
+import com.hazelcast.cluster.impl.MemberImpl;
 import com.hazelcast.internal.networking.HandlerStatus;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.impl.HeapData;
 import com.hazelcast.internal.util.counters.SwCounter;
-import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -183,9 +183,9 @@ public class ClientMessageEncoderDecoderTest extends HazelcastTestSupport {
     public void testAuthenticationResponse() throws UnknownHostException {
         Collection<Member> members = new LinkedList<>();
         Address address1 = new Address("127.0.0.1", 5702);
-        members.add(new MemberImpl(address1, MemberVersion.of("3.12"), UUID.randomUUID()));
+        members.add(new MemberImpl(address1, MemberVersion.of("3.12"), false, UUID.randomUUID()));
         Address address2 = new Address("127.0.0.1", 5703);
-        members.add(new MemberImpl(address2, MemberVersion.of("3.12"), UUID.randomUUID()));
+        members.add(new MemberImpl(address2, MemberVersion.of("3.12"), false, UUID.randomUUID()));
         UUID uuid = UUID.randomUUID();
         UUID ownerUuid = UUID.randomUUID();
         UUID clusterId = UUID.randomUUID();
