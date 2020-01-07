@@ -36,13 +36,14 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Returns statistics of the task
  */
-@Generated("afbe199ae3624406944f7754bc97d1d5")
-public final class ScheduledExecutorGetStatsFromAddressCodec {
+@Generated("7bcfad6f975c7f858b1a8beb3e2122fa")
+public final class ScheduledExecutorGetStatsFromMemberCodec {
     //hex: 0x1A0600
     public static final int REQUEST_MESSAGE_TYPE = 1705472;
     //hex: 0x1A0601
     public static final int RESPONSE_MESSAGE_TYPE = 1705473;
-    private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int REQUEST_MEMBER_UUID_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_MEMBER_UUID_FIELD_OFFSET + UUID_SIZE_IN_BYTES;
     private static final int RESPONSE_LAST_IDLE_TIME_NANOS_FIELD_OFFSET = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_TOTAL_IDLE_TIME_NANOS_FIELD_OFFSET = RESPONSE_LAST_IDLE_TIME_NANOS_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
     private static final int RESPONSE_TOTAL_RUNS_FIELD_OFFSET = RESPONSE_TOTAL_IDLE_TIME_NANOS_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
@@ -50,7 +51,7 @@ public final class ScheduledExecutorGetStatsFromAddressCodec {
     private static final int RESPONSE_LAST_RUN_DURATION_NANOS_FIELD_OFFSET = RESPONSE_TOTAL_RUN_TIME_NANOS_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_LAST_RUN_DURATION_NANOS_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
 
-    private ScheduledExecutorGetStatsFromAddressCodec() {
+    private ScheduledExecutorGetStatsFromMemberCodec() {
     }
 
     @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
@@ -67,32 +68,31 @@ public final class ScheduledExecutorGetStatsFromAddressCodec {
         public java.lang.String taskName;
 
         /**
-         * The address of the member where the task will get scheduled.
+         * The UUID of the member where the task will get scheduled.
          */
-        public com.hazelcast.cluster.Address address;
+        public java.util.UUID memberUuid;
     }
 
-    public static ClientMessage encodeRequest(java.lang.String schedulerName, java.lang.String taskName, com.hazelcast.cluster.Address address) {
+    public static ClientMessage encodeRequest(java.lang.String schedulerName, java.lang.String taskName, java.util.UUID memberUuid) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(true);
-        clientMessage.setOperationName("ScheduledExecutor.GetStatsFromAddress");
+        clientMessage.setOperationName("ScheduledExecutor.GetStatsFromMember");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
+        encodeUUID(initialFrame.content, REQUEST_MEMBER_UUID_FIELD_OFFSET, memberUuid);
         clientMessage.add(initialFrame);
         StringCodec.encode(clientMessage, schedulerName);
         StringCodec.encode(clientMessage, taskName);
-        AddressCodec.encode(clientMessage, address);
         return clientMessage;
     }
 
-    public static ScheduledExecutorGetStatsFromAddressCodec.RequestParameters decodeRequest(ClientMessage clientMessage) {
+    public static ScheduledExecutorGetStatsFromMemberCodec.RequestParameters decodeRequest(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         RequestParameters request = new RequestParameters();
-        //empty initial frame
-        iterator.next();
+        ClientMessage.Frame initialFrame = iterator.next();
+        request.memberUuid = decodeUUID(initialFrame.content, REQUEST_MEMBER_UUID_FIELD_OFFSET);
         request.schedulerName = StringCodec.decode(iterator);
         request.taskName = StringCodec.decode(iterator);
-        request.address = AddressCodec.decode(iterator);
         return request;
     }
 
@@ -139,7 +139,7 @@ public final class ScheduledExecutorGetStatsFromAddressCodec {
         return clientMessage;
     }
 
-    public static ScheduledExecutorGetStatsFromAddressCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
+    public static ScheduledExecutorGetStatsFromMemberCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         ResponseParameters response = new ResponseParameters();
         ClientMessage.Frame initialFrame = iterator.next();

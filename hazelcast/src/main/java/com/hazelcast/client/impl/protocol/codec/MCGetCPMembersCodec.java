@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Returns the current list of CP members.
  */
-@Generated("c754e78eabaf3d7b5d219fb2451d054e")
+@Generated("d287109dd154982abeec1b4fef8388dd")
 public final class MCGetCPMembersCodec {
     //hex: 0x201900
     public static final int REQUEST_MESSAGE_TYPE = 2103552;
@@ -76,16 +76,16 @@ public final class MCGetCPMembersCodec {
         /**
          * List of CP members
          */
-        public java.util.List<java.util.Map.Entry<java.util.UUID, com.hazelcast.cluster.Address>> cpMembers;
+        public java.util.List<java.util.UUID> cpMembers;
     }
 
-    public static ClientMessage encodeResponse(java.util.Collection<java.util.Map.Entry<java.util.UUID, com.hazelcast.cluster.Address>> cpMembers) {
+    public static ClientMessage encodeResponse(java.util.Collection<java.util.UUID> cpMembers) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, RESPONSE_MESSAGE_TYPE);
         clientMessage.add(initialFrame);
 
-        EntryListUUIDAddressCodec.encode(clientMessage, cpMembers);
+        ListUUIDCodec.encode(clientMessage, cpMembers);
         return clientMessage;
     }
 
@@ -94,7 +94,7 @@ public final class MCGetCPMembersCodec {
         ResponseParameters response = new ResponseParameters();
         //empty initial frame
         iterator.next();
-        response.cpMembers = EntryListUUIDAddressCodec.decode(iterator);
+        response.cpMembers = ListUUIDCodec.decode(iterator);
         return response;
     }
 

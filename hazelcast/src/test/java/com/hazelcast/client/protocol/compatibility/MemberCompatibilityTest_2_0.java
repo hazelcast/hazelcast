@@ -1383,26 +1383,6 @@ public class MemberCompatibilityTest_2_0 {
     }
 
     @Test
-<<<<<<< HEAD
-=======
-    public void test_MapClearNearCacheCodec_decodeRequest() {
-        int fileClientMessageIndex = 152;
-        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
-        MapClearNearCacheCodec.RequestParameters parameters = MapClearNearCacheCodec.decodeRequest(fromFile);
-        assertTrue(isEqual(aString, parameters.name));
-        assertTrue(isEqual(aUUID, parameters.uuid));
-    }
-
-    @Test
-    public void test_MapClearNearCacheCodec_encodeResponse() {
-        int fileClientMessageIndex = 153;
-        ClientMessage encoded = MapClearNearCacheCodec.encodeResponse();
-        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
-        compareClientMessages(fromFile, encoded);
-    }
-
-    @Test
->>>>>>> InvokeOnUuid instead of address
     public void test_MapFetchKeysCodec_decodeRequest() {
         int fileClientMessageIndex = 150;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
@@ -3298,13 +3278,8 @@ public class MemberCompatibilityTest_2_0 {
     }
 
     @Test
-<<<<<<< HEAD
-    public void test_ExecutorServiceCancelOnAddressCodec_decodeRequest() {
-        int fileClientMessageIndex = 368;
-=======
     public void test_ExecutorServiceCancelOnMemberCodec_decodeRequest() {
-        int fileClientMessageIndex = 374;
->>>>>>> InvokeOnUuid instead of address
+        int fileClientMessageIndex = 368;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         ExecutorServiceCancelOnMemberCodec.RequestParameters parameters = ExecutorServiceCancelOnMemberCodec.decodeRequest(fromFile);
         assertTrue(isEqual(aUUID, parameters.uuid));
@@ -3313,15 +3288,9 @@ public class MemberCompatibilityTest_2_0 {
     }
 
     @Test
-<<<<<<< HEAD
-    public void test_ExecutorServiceCancelOnAddressCodec_encodeResponse() {
-        int fileClientMessageIndex = 369;
-        ClientMessage encoded = ExecutorServiceCancelOnAddressCodec.encodeResponse(aBoolean);
-=======
     public void test_ExecutorServiceCancelOnMemberCodec_encodeResponse() {
-        int fileClientMessageIndex = 375;
+        int fileClientMessageIndex = 369;
         ClientMessage encoded = ExecutorServiceCancelOnMemberCodec.encodeResponse(aBoolean);
->>>>>>> InvokeOnUuid instead of address
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
     }
@@ -3345,13 +3314,8 @@ public class MemberCompatibilityTest_2_0 {
     }
 
     @Test
-<<<<<<< HEAD
-    public void test_ExecutorServiceSubmitToAddressCodec_decodeRequest() {
-        int fileClientMessageIndex = 372;
-=======
     public void test_ExecutorServiceSubmitToMemberCodec_decodeRequest() {
-        int fileClientMessageIndex = 378;
->>>>>>> InvokeOnUuid instead of address
+        int fileClientMessageIndex = 372;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         ExecutorServiceSubmitToMemberCodec.RequestParameters parameters = ExecutorServiceSubmitToMemberCodec.decodeRequest(fromFile);
         assertTrue(isEqual(aString, parameters.name));
@@ -3361,15 +3325,9 @@ public class MemberCompatibilityTest_2_0 {
     }
 
     @Test
-<<<<<<< HEAD
-    public void test_ExecutorServiceSubmitToAddressCodec_encodeResponse() {
-        int fileClientMessageIndex = 373;
-        ClientMessage encoded = ExecutorServiceSubmitToAddressCodec.encodeResponse(aData);
-=======
     public void test_ExecutorServiceSubmitToMemberCodec_encodeResponse() {
-        int fileClientMessageIndex = 379;
+        int fileClientMessageIndex = 373;
         ClientMessage encoded = ExecutorServiceSubmitToMemberCodec.encodeResponse(aData);
->>>>>>> InvokeOnUuid instead of address
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
     }
@@ -6082,13 +6040,8 @@ public class MemberCompatibilityTest_2_0 {
     }
 
     @Test
-<<<<<<< HEAD
-    public void test_ScheduledExecutorSubmitToAddressCodec_decodeRequest() {
-        int fileClientMessageIndex = 675;
-=======
     public void test_ScheduledExecutorSubmitToMemberCodec_decodeRequest() {
-        int fileClientMessageIndex = 683;
->>>>>>> InvokeOnUuid instead of address
+        int fileClientMessageIndex = 675;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         ScheduledExecutorSubmitToMemberCodec.RequestParameters parameters = ScheduledExecutorSubmitToMemberCodec.decodeRequest(fromFile);
         assertTrue(isEqual(aString, parameters.schedulerName));
@@ -6101,15 +6054,9 @@ public class MemberCompatibilityTest_2_0 {
     }
 
     @Test
-<<<<<<< HEAD
-    public void test_ScheduledExecutorSubmitToAddressCodec_encodeResponse() {
-        int fileClientMessageIndex = 676;
-        ClientMessage encoded = ScheduledExecutorSubmitToAddressCodec.encodeResponse();
-=======
     public void test_ScheduledExecutorSubmitToMemberCodec_encodeResponse() {
-        int fileClientMessageIndex = 684;
+        int fileClientMessageIndex = 676;
         ClientMessage encoded = ScheduledExecutorSubmitToMemberCodec.encodeResponse();
->>>>>>> InvokeOnUuid instead of address
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
     }
@@ -6124,13 +6071,8 @@ public class MemberCompatibilityTest_2_0 {
 
     @Test
     public void test_ScheduledExecutorGetAllScheduledFuturesCodec_encodeResponse() {
-<<<<<<< HEAD
         int fileClientMessageIndex = 678;
-        ClientMessage encoded = ScheduledExecutorGetAllScheduledFuturesCodec.encodeResponse(aListOfMemberToListOfScheduledTaskHandlers);
-=======
-        int fileClientMessageIndex = 686;
         ClientMessage encoded = ScheduledExecutorGetAllScheduledFuturesCodec.encodeResponse(aListOfScheduledTaskHandler);
->>>>>>> InvokeOnUuid instead of address
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
     }
@@ -6153,13 +6095,8 @@ public class MemberCompatibilityTest_2_0 {
     }
 
     @Test
-<<<<<<< HEAD
-    public void test_ScheduledExecutorGetStatsFromAddressCodec_decodeRequest() {
-        int fileClientMessageIndex = 681;
-=======
     public void test_ScheduledExecutorGetStatsFromMemberCodec_decodeRequest() {
-        int fileClientMessageIndex = 689;
->>>>>>> InvokeOnUuid instead of address
+        int fileClientMessageIndex = 681;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         ScheduledExecutorGetStatsFromMemberCodec.RequestParameters parameters = ScheduledExecutorGetStatsFromMemberCodec.decodeRequest(fromFile);
         assertTrue(isEqual(aString, parameters.schedulerName));
@@ -6168,15 +6105,9 @@ public class MemberCompatibilityTest_2_0 {
     }
 
     @Test
-<<<<<<< HEAD
-    public void test_ScheduledExecutorGetStatsFromAddressCodec_encodeResponse() {
-        int fileClientMessageIndex = 682;
-        ClientMessage encoded = ScheduledExecutorGetStatsFromAddressCodec.encodeResponse(aLong, aLong, aLong, aLong, aLong);
-=======
     public void test_ScheduledExecutorGetStatsFromMemberCodec_encodeResponse() {
-        int fileClientMessageIndex = 690;
+        int fileClientMessageIndex = 682;
         ClientMessage encoded = ScheduledExecutorGetStatsFromMemberCodec.encodeResponse(aLong, aLong, aLong, aLong, aLong);
->>>>>>> InvokeOnUuid instead of address
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
     }
@@ -6199,13 +6130,8 @@ public class MemberCompatibilityTest_2_0 {
     }
 
     @Test
-<<<<<<< HEAD
-    public void test_ScheduledExecutorGetDelayFromAddressCodec_decodeRequest() {
-        int fileClientMessageIndex = 685;
-=======
     public void test_ScheduledExecutorGetDelayFromMemberCodec_decodeRequest() {
-        int fileClientMessageIndex = 693;
->>>>>>> InvokeOnUuid instead of address
+        int fileClientMessageIndex = 685;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         ScheduledExecutorGetDelayFromMemberCodec.RequestParameters parameters = ScheduledExecutorGetDelayFromMemberCodec.decodeRequest(fromFile);
         assertTrue(isEqual(aString, parameters.schedulerName));
@@ -6214,15 +6140,9 @@ public class MemberCompatibilityTest_2_0 {
     }
 
     @Test
-<<<<<<< HEAD
-    public void test_ScheduledExecutorGetDelayFromAddressCodec_encodeResponse() {
-        int fileClientMessageIndex = 686;
-        ClientMessage encoded = ScheduledExecutorGetDelayFromAddressCodec.encodeResponse(aLong);
-=======
     public void test_ScheduledExecutorGetDelayFromMemberCodec_encodeResponse() {
-        int fileClientMessageIndex = 694;
+        int fileClientMessageIndex = 686;
         ClientMessage encoded = ScheduledExecutorGetDelayFromMemberCodec.encodeResponse(aLong);
->>>>>>> InvokeOnUuid instead of address
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
     }
@@ -6246,13 +6166,8 @@ public class MemberCompatibilityTest_2_0 {
     }
 
     @Test
-<<<<<<< HEAD
-    public void test_ScheduledExecutorCancelFromAddressCodec_decodeRequest() {
-        int fileClientMessageIndex = 689;
-=======
     public void test_ScheduledExecutorCancelFromMemberCodec_decodeRequest() {
-        int fileClientMessageIndex = 697;
->>>>>>> InvokeOnUuid instead of address
+        int fileClientMessageIndex = 689;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         ScheduledExecutorCancelFromMemberCodec.RequestParameters parameters = ScheduledExecutorCancelFromMemberCodec.decodeRequest(fromFile);
         assertTrue(isEqual(aString, parameters.schedulerName));
@@ -6262,15 +6177,9 @@ public class MemberCompatibilityTest_2_0 {
     }
 
     @Test
-<<<<<<< HEAD
-    public void test_ScheduledExecutorCancelFromAddressCodec_encodeResponse() {
-        int fileClientMessageIndex = 690;
-        ClientMessage encoded = ScheduledExecutorCancelFromAddressCodec.encodeResponse(aBoolean);
-=======
     public void test_ScheduledExecutorCancelFromMemberCodec_encodeResponse() {
-        int fileClientMessageIndex = 698;
+        int fileClientMessageIndex = 690;
         ClientMessage encoded = ScheduledExecutorCancelFromMemberCodec.encodeResponse(aBoolean);
->>>>>>> InvokeOnUuid instead of address
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
     }
@@ -6293,13 +6202,8 @@ public class MemberCompatibilityTest_2_0 {
     }
 
     @Test
-<<<<<<< HEAD
-    public void test_ScheduledExecutorIsCancelledFromAddressCodec_decodeRequest() {
-        int fileClientMessageIndex = 693;
-=======
     public void test_ScheduledExecutorIsCancelledFromMemberCodec_decodeRequest() {
-        int fileClientMessageIndex = 701;
->>>>>>> InvokeOnUuid instead of address
+        int fileClientMessageIndex = 693;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         ScheduledExecutorIsCancelledFromMemberCodec.RequestParameters parameters = ScheduledExecutorIsCancelledFromMemberCodec.decodeRequest(fromFile);
         assertTrue(isEqual(aString, parameters.schedulerName));
@@ -6308,15 +6212,9 @@ public class MemberCompatibilityTest_2_0 {
     }
 
     @Test
-<<<<<<< HEAD
-    public void test_ScheduledExecutorIsCancelledFromAddressCodec_encodeResponse() {
-        int fileClientMessageIndex = 694;
-        ClientMessage encoded = ScheduledExecutorIsCancelledFromAddressCodec.encodeResponse(aBoolean);
-=======
     public void test_ScheduledExecutorIsCancelledFromMemberCodec_encodeResponse() {
-        int fileClientMessageIndex = 702;
+        int fileClientMessageIndex = 694;
         ClientMessage encoded = ScheduledExecutorIsCancelledFromMemberCodec.encodeResponse(aBoolean);
->>>>>>> InvokeOnUuid instead of address
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
     }
@@ -6339,13 +6237,8 @@ public class MemberCompatibilityTest_2_0 {
     }
 
     @Test
-<<<<<<< HEAD
-    public void test_ScheduledExecutorIsDoneFromAddressCodec_decodeRequest() {
-        int fileClientMessageIndex = 697;
-=======
     public void test_ScheduledExecutorIsDoneFromMemberCodec_decodeRequest() {
-        int fileClientMessageIndex = 705;
->>>>>>> InvokeOnUuid instead of address
+        int fileClientMessageIndex = 697;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         ScheduledExecutorIsDoneFromMemberCodec.RequestParameters parameters = ScheduledExecutorIsDoneFromMemberCodec.decodeRequest(fromFile);
         assertTrue(isEqual(aString, parameters.schedulerName));
@@ -6354,15 +6247,9 @@ public class MemberCompatibilityTest_2_0 {
     }
 
     @Test
-<<<<<<< HEAD
-    public void test_ScheduledExecutorIsDoneFromAddressCodec_encodeResponse() {
-        int fileClientMessageIndex = 698;
-        ClientMessage encoded = ScheduledExecutorIsDoneFromAddressCodec.encodeResponse(aBoolean);
-=======
     public void test_ScheduledExecutorIsDoneFromMemberCodec_encodeResponse() {
-        int fileClientMessageIndex = 706;
+        int fileClientMessageIndex = 698;
         ClientMessage encoded = ScheduledExecutorIsDoneFromMemberCodec.encodeResponse(aBoolean);
->>>>>>> InvokeOnUuid instead of address
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
     }
@@ -6385,13 +6272,8 @@ public class MemberCompatibilityTest_2_0 {
     }
 
     @Test
-<<<<<<< HEAD
-    public void test_ScheduledExecutorGetResultFromAddressCodec_decodeRequest() {
-        int fileClientMessageIndex = 701;
-=======
     public void test_ScheduledExecutorGetResultFromMemberCodec_decodeRequest() {
-        int fileClientMessageIndex = 709;
->>>>>>> InvokeOnUuid instead of address
+        int fileClientMessageIndex = 701;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         ScheduledExecutorGetResultFromMemberCodec.RequestParameters parameters = ScheduledExecutorGetResultFromMemberCodec.decodeRequest(fromFile);
         assertTrue(isEqual(aString, parameters.schedulerName));
@@ -6400,15 +6282,9 @@ public class MemberCompatibilityTest_2_0 {
     }
 
     @Test
-<<<<<<< HEAD
-    public void test_ScheduledExecutorGetResultFromAddressCodec_encodeResponse() {
-        int fileClientMessageIndex = 702;
-        ClientMessage encoded = ScheduledExecutorGetResultFromAddressCodec.encodeResponse(aData);
-=======
     public void test_ScheduledExecutorGetResultFromMemberCodec_encodeResponse() {
-        int fileClientMessageIndex = 710;
+        int fileClientMessageIndex = 702;
         ClientMessage encoded = ScheduledExecutorGetResultFromMemberCodec.encodeResponse(aData);
->>>>>>> InvokeOnUuid instead of address
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
     }
@@ -6431,13 +6307,8 @@ public class MemberCompatibilityTest_2_0 {
     }
 
     @Test
-<<<<<<< HEAD
-    public void test_ScheduledExecutorDisposeFromAddressCodec_decodeRequest() {
-        int fileClientMessageIndex = 705;
-=======
     public void test_ScheduledExecutorDisposeFromMemberCodec_decodeRequest() {
-        int fileClientMessageIndex = 713;
->>>>>>> InvokeOnUuid instead of address
+        int fileClientMessageIndex = 705;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         ScheduledExecutorDisposeFromMemberCodec.RequestParameters parameters = ScheduledExecutorDisposeFromMemberCodec.decodeRequest(fromFile);
         assertTrue(isEqual(aString, parameters.schedulerName));
@@ -6446,15 +6317,9 @@ public class MemberCompatibilityTest_2_0 {
     }
 
     @Test
-<<<<<<< HEAD
-    public void test_ScheduledExecutorDisposeFromAddressCodec_encodeResponse() {
-        int fileClientMessageIndex = 706;
-        ClientMessage encoded = ScheduledExecutorDisposeFromAddressCodec.encodeResponse();
-=======
     public void test_ScheduledExecutorDisposeFromMemberCodec_encodeResponse() {
-        int fileClientMessageIndex = 714;
+        int fileClientMessageIndex = 706;
         ClientMessage encoded = ScheduledExecutorDisposeFromMemberCodec.encodeResponse();
->>>>>>> InvokeOnUuid instead of address
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
     }
@@ -7441,13 +7306,8 @@ public class MemberCompatibilityTest_2_0 {
 
     @Test
     public void test_MCGetCPMembersCodec_encodeResponse() {
-<<<<<<< HEAD
         int fileClientMessageIndex = 808;
-        ClientMessage encoded = MCGetCPMembersCodec.encodeResponse(aListOfUUIDToAddress);
-=======
-        int fileClientMessageIndex = 816;
         ClientMessage encoded = MCGetCPMembersCodec.encodeResponse(aListOfUUIDs);
->>>>>>> InvokeOnUuid instead of address
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
     }

@@ -36,19 +36,20 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Cancels the task running on the member with the given address.
  */
-@Generated("8ad2837a3a1814d2b3b559233ea3cb17")
-public final class ExecutorServiceCancelOnAddressCodec {
+@Generated("b6b05d7610ba265134257b8902330204")
+public final class ExecutorServiceCancelOnMemberCodec {
     //hex: 0x080400
     public static final int REQUEST_MESSAGE_TYPE = 525312;
     //hex: 0x080401
     public static final int RESPONSE_MESSAGE_TYPE = 525313;
     private static final int REQUEST_UUID_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    private static final int REQUEST_INTERRUPT_FIELD_OFFSET = REQUEST_UUID_FIELD_OFFSET + UUID_SIZE_IN_BYTES;
+    private static final int REQUEST_MEMBER_UUID_FIELD_OFFSET = REQUEST_UUID_FIELD_OFFSET + UUID_SIZE_IN_BYTES;
+    private static final int REQUEST_INTERRUPT_FIELD_OFFSET = REQUEST_MEMBER_UUID_FIELD_OFFSET + UUID_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_INTERRUPT_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
     private static final int RESPONSE_RESPONSE_FIELD_OFFSET = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_RESPONSE_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
 
-    private ExecutorServiceCancelOnAddressCodec() {
+    private ExecutorServiceCancelOnMemberCodec() {
     }
 
     @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
@@ -60,9 +61,9 @@ public final class ExecutorServiceCancelOnAddressCodec {
         public java.util.UUID uuid;
 
         /**
-         * Address of the host to execute the request on.
+         * The UUID of the member to execute the request on.
          */
-        public com.hazelcast.cluster.Address address;
+        public java.util.UUID memberUUID;
 
         /**
          * If true, then the thread interrupt call can be used to cancel the thread, otherwise interrupt can not be used.
@@ -70,26 +71,26 @@ public final class ExecutorServiceCancelOnAddressCodec {
         public boolean interrupt;
     }
 
-    public static ClientMessage encodeRequest(java.util.UUID uuid, com.hazelcast.cluster.Address address, boolean interrupt) {
+    public static ClientMessage encodeRequest(java.util.UUID uuid, java.util.UUID memberUUID, boolean interrupt) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
-        clientMessage.setOperationName("ExecutorService.CancelOnAddress");
+        clientMessage.setOperationName("ExecutorService.CancelOnMember");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
         encodeUUID(initialFrame.content, REQUEST_UUID_FIELD_OFFSET, uuid);
+        encodeUUID(initialFrame.content, REQUEST_MEMBER_UUID_FIELD_OFFSET, memberUUID);
         encodeBoolean(initialFrame.content, REQUEST_INTERRUPT_FIELD_OFFSET, interrupt);
         clientMessage.add(initialFrame);
-        AddressCodec.encode(clientMessage, address);
         return clientMessage;
     }
 
-    public static ExecutorServiceCancelOnAddressCodec.RequestParameters decodeRequest(ClientMessage clientMessage) {
+    public static ExecutorServiceCancelOnMemberCodec.RequestParameters decodeRequest(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         RequestParameters request = new RequestParameters();
         ClientMessage.Frame initialFrame = iterator.next();
         request.uuid = decodeUUID(initialFrame.content, REQUEST_UUID_FIELD_OFFSET);
+        request.memberUUID = decodeUUID(initialFrame.content, REQUEST_MEMBER_UUID_FIELD_OFFSET);
         request.interrupt = decodeBoolean(initialFrame.content, REQUEST_INTERRUPT_FIELD_OFFSET);
-        request.address = AddressCodec.decode(iterator);
         return request;
     }
 
@@ -112,7 +113,7 @@ public final class ExecutorServiceCancelOnAddressCodec {
         return clientMessage;
     }
 
-    public static ExecutorServiceCancelOnAddressCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
+    public static ExecutorServiceCancelOnMemberCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         ResponseParameters response = new ResponseParameters();
         ClientMessage.Frame initialFrame = iterator.next();

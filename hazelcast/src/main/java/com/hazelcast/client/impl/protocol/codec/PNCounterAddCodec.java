@@ -44,7 +44,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * If smart routing is disabled, the actual member processing the client
  * message may act as a proxy.
  */
-@Generated("fce9372e6195d46740ca9bc90ca61278")
+@Generated("3baf90dfa99f010610dc4dde15521df7")
 public final class PNCounterAddCodec {
     //hex: 0x1D0200
     public static final int REQUEST_MESSAGE_TYPE = 1901056;
@@ -52,7 +52,8 @@ public final class PNCounterAddCodec {
     public static final int RESPONSE_MESSAGE_TYPE = 1901057;
     private static final int REQUEST_DELTA_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_GET_BEFORE_UPDATE_FIELD_OFFSET = REQUEST_DELTA_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
-    private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_GET_BEFORE_UPDATE_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
+    private static final int REQUEST_TARGET_REPLICA_UUID_FIELD_OFFSET = REQUEST_GET_BEFORE_UPDATE_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
+    private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_TARGET_REPLICA_UUID_FIELD_OFFSET + UUID_SIZE_IN_BYTES;
     private static final int RESPONSE_VALUE_FIELD_OFFSET = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_REPLICA_COUNT_FIELD_OFFSET = RESPONSE_VALUE_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_REPLICA_COUNT_FIELD_OFFSET + INT_SIZE_IN_BYTES;
@@ -88,10 +89,10 @@ public final class PNCounterAddCodec {
         /**
          * the target replica
          */
-        public com.hazelcast.cluster.Address targetReplica;
+        public java.util.UUID targetReplicaUUID;
     }
 
-    public static ClientMessage encodeRequest(java.lang.String name, long delta, boolean getBeforeUpdate, java.util.Collection<java.util.Map.Entry<java.util.UUID, java.lang.Long>> replicaTimestamps, com.hazelcast.cluster.Address targetReplica) {
+    public static ClientMessage encodeRequest(java.lang.String name, long delta, boolean getBeforeUpdate, java.util.Collection<java.util.Map.Entry<java.util.UUID, java.lang.Long>> replicaTimestamps, java.util.UUID targetReplicaUUID) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
         clientMessage.setOperationName("PNCounter.Add");
@@ -99,10 +100,10 @@ public final class PNCounterAddCodec {
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
         encodeLong(initialFrame.content, REQUEST_DELTA_FIELD_OFFSET, delta);
         encodeBoolean(initialFrame.content, REQUEST_GET_BEFORE_UPDATE_FIELD_OFFSET, getBeforeUpdate);
+        encodeUUID(initialFrame.content, REQUEST_TARGET_REPLICA_UUID_FIELD_OFFSET, targetReplicaUUID);
         clientMessage.add(initialFrame);
         StringCodec.encode(clientMessage, name);
         EntryListUUIDLongCodec.encode(clientMessage, replicaTimestamps);
-        AddressCodec.encode(clientMessage, targetReplica);
         return clientMessage;
     }
 
@@ -112,9 +113,9 @@ public final class PNCounterAddCodec {
         ClientMessage.Frame initialFrame = iterator.next();
         request.delta = decodeLong(initialFrame.content, REQUEST_DELTA_FIELD_OFFSET);
         request.getBeforeUpdate = decodeBoolean(initialFrame.content, REQUEST_GET_BEFORE_UPDATE_FIELD_OFFSET);
+        request.targetReplicaUUID = decodeUUID(initialFrame.content, REQUEST_TARGET_REPLICA_UUID_FIELD_OFFSET);
         request.name = StringCodec.decode(iterator);
         request.replicaTimestamps = EntryListUUIDLongCodec.decode(iterator);
-        request.targetReplica = AddressCodec.decode(iterator);
         return request;
     }
 
