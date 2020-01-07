@@ -17,46 +17,48 @@
 package com.hazelcast.cache.impl;
 
 import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationService;
-import com.hazelcast.internal.serialization.SerializationService;
 
 import javax.cache.Cache;
 import java.util.Iterator;
 import java.util.List;
 
 /**
- * Cluster-wide iterator for {@link com.hazelcast.cache.ICache}.
- * <p>
- * <p>
- * This implementation is used for server or embedded mode.
- * </p>
- * Note: For more information on the iterator details, see {@link AbstractClusterWideIterator}.
- *
- * @param <K> the type of key.
- * @param <V> the type of value.
- * @see AbstractClusterWideIterator
+ * Iterator for iterating cache entries over multiple partitions.
+ * The values are fetched in batches. This implementation is used for embedded mode.
+ * <b>NOTE</b>
+ * The iteration may be done when the map is being mutated or when there are
+ * membership changes. The iterator does not reflect the state when it has
+ * been constructed - it may return some entries that were added after the
+ * iteration has started and may not return some entries that were removed
+ * after iteration has started.
+ * The iterator will not, however, skip an entry if it has not been changed
+ * and will not return an entry twice.
+ * For more information on the iterator details, see
+ * {@link AbstractCachePartitionsIterator}.
  */
-public class ClusterWideIterator<K, V>
-        extends AbstractClusterWideIterator<K, V>
+public class CachePartitionsIterator<K, V>
+        extends AbstractCachePartitionsIterator<K, V>
         implements Iterator<Cache.Entry<K, V>> {
 
     private final SerializationService serializationService;
     private final CacheProxy<K, V> cacheProxy;
 
-    public ClusterWideIterator(CacheProxy<K, V> cache, boolean prefetchValues) {
+    public CachePartitionsIterator(CacheProxy<K, V> cache, boolean prefetchValues) {
         this(cache, DEFAULT_FETCH_SIZE, prefetchValues);
     }
 
-    public ClusterWideIterator(CacheProxy<K, V> cache, int fetchSize, boolean prefetchValues) {
+    public CachePartitionsIterator(CacheProxy<K, V> cache, int fetchSize, boolean prefetchValues) {
         super(cache, cache.getNodeEngine().getPartitionService().getPartitionCount(), fetchSize, prefetchValues);
         this.cacheProxy = cache;
         this.serializationService = cache.getNodeEngine().getSerializationService();
         advance();
     }
 
-    public ClusterWideIterator(CacheProxy<K, V> cache, int fetchSize, int partitionId, boolean prefetchValues) {
+    public CachePartitionsIterator(CacheProxy<K, V> cache, int fetchSize, int partitionId, boolean prefetchValues) {
         super(cache, cache.getNodeEngine().getPartitionService().getPartitionCount(), fetchSize, prefetchValues);
         this.cacheProxy = cache;
         this.serializationService = cache.getNodeEngine().getSerializationService();
@@ -67,21 +69,21 @@ public class ClusterWideIterator<K, V>
     protected List fetch() {
         final OperationService operationService = cacheProxy.getNodeEngine().getOperationService();
         if (prefetchValues) {
-            Operation operation = cacheProxy.operationProvider.createEntryIteratorOperation(lastTableIndex, fetchSize);
-            final InternalCompletableFuture<CacheEntryIterationResult> f = operationService
+            Operation operation = cacheProxy.operationProvider.createFetchEntriesOperation(pointers, fetchSize);
+            InternalCompletableFuture<CacheEntriesWithCursor> f = operationService
                     .invokeOnPartition(CacheService.SERVICE_NAME, operation, partitionIndex);
-            CacheEntryIterationResult iteratorResult = f.joinInternal();
+            CacheEntriesWithCursor iteratorResult = f.joinInternal();
             if (iteratorResult != null) {
-                setLastTableIndex(iteratorResult.getEntries(), iteratorResult.getTableIndex());
+                setLastTableIndex(iteratorResult.getEntries(), iteratorResult.getPointers());
                 return iteratorResult.getEntries();
             }
         } else {
-            Operation operation = cacheProxy.operationProvider.createKeyIteratorOperation(lastTableIndex, fetchSize);
-            final InternalCompletableFuture<CacheKeyIterationResult> f = operationService
+            Operation operation = cacheProxy.operationProvider.createFetchKeysOperation(pointers, fetchSize);
+            InternalCompletableFuture<CacheKeysWithCursor> f = operationService
                     .invokeOnPartition(CacheService.SERVICE_NAME, operation, partitionIndex);
-            CacheKeyIterationResult iteratorResult = f.joinInternal();
+            CacheKeysWithCursor iteratorResult = f.joinInternal();
             if (iteratorResult != null) {
-                setLastTableIndex(iteratorResult.getKeys(), iteratorResult.getTableIndex());
+                setLastTableIndex(iteratorResult.getKeys(), iteratorResult.getPointers());
                 return iteratorResult.getKeys();
             }
         }

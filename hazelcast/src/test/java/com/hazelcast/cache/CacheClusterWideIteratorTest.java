@@ -16,8 +16,8 @@
 
 package com.hazelcast.cache;
 
+import com.hazelcast.cache.impl.CachePartitionsIterator;
 import com.hazelcast.cache.impl.CacheProxy;
-import com.hazelcast.cache.impl.ClusterWideIterator;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
@@ -64,7 +64,7 @@ public class CacheClusterWideIteratorTest extends HazelcastTestSupport {
     public boolean prefetchValues;
 
     protected Iterator getIterator(Cache cache) {
-        return new ClusterWideIterator((CacheProxy) cache, prefetchValues);
+        return new CachePartitionsIterator((CacheProxy) cache, prefetchValues);
     }
 
     @Before

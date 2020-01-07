@@ -16,39 +16,44 @@
 
 package com.hazelcast.cache.impl;
 
+import com.hazelcast.internal.iteration.IterationPointer;
 import com.hazelcast.internal.nio.IOUtil;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
 /**
- * <p>Response data object returned by {@link com.hazelcast.cache.impl.operation.CacheKeyIteratorOperation }.</p>
- * This result wrapper is used in {@link AbstractClusterWideIterator}'s subclasses to return a collection of keys
- * and the last tableIndex processed.
+ * Container class for a collection of keys along with pointers defining
+ * the iteration state from which new keys can be fetched.
+ * This class is usually used when iterating cache keys.
  *
- * @see AbstractClusterWideIterator
- * @see com.hazelcast.cache.impl.operation.CacheKeyIteratorOperation
+ * @see CacheProxy#iterator
  */
-public class CacheKeyIterationResult implements IdentifiedDataSerializable {
-
-    private int tableIndex;
+public class CacheKeysWithCursor implements IdentifiedDataSerializable {
     private List<Data> keys;
+    private IterationPointer[] pointers;
 
-    public CacheKeyIterationResult() {
+    public CacheKeysWithCursor() {
     }
 
-    public CacheKeyIterationResult(List<Data> keys, int tableIndex) {
+    @SuppressFBWarnings(value = "EI_EXPOSE_REP2", justification = "This is an internal class")
+    public CacheKeysWithCursor(List<Data> keys, IterationPointer[] pointers) {
         this.keys = keys;
-        this.tableIndex = tableIndex;
+        this.pointers = pointers;
     }
 
-    public int getTableIndex() {
-        return tableIndex;
+    /**
+     * Returns the iteration pointers representing the current iteration state.
+     */
+    @SuppressFBWarnings(value = "EI_EXPOSE_REP", justification = "This is an internal class")
+    public IterationPointer[] getPointers() {
+        return pointers;
     }
 
     public List<Data> getKeys() {
@@ -68,7 +73,11 @@ public class CacheKeyIterationResult implements IdentifiedDataSerializable {
     @Override
     public void writeData(ObjectDataOutput out)
             throws IOException {
-        out.writeInt(tableIndex);
+        out.writeInt(pointers.length);
+        for (IterationPointer pointer : pointers) {
+            out.writeInt(pointer.getIndex());
+            out.writeInt(pointer.getSize());
+        }
         int size = keys.size();
         out.writeInt(size);
         for (Data o : keys) {
@@ -80,9 +89,13 @@ public class CacheKeyIterationResult implements IdentifiedDataSerializable {
     @Override
     public void readData(ObjectDataInput in)
             throws IOException {
-        tableIndex = in.readInt();
+        int pointersCount = in.readInt();
+        pointers = new IterationPointer[pointersCount];
+        for (int i = 0; i < pointersCount; i++) {
+            pointers[i] = new IterationPointer(in.readInt(), in.readInt());
+        }
         int size = in.readInt();
-        keys = new ArrayList<Data>(size);
+        keys = new ArrayList<>(size);
         for (int i = 0; i < size; i++) {
             Data data = IOUtil.readData(in);
             keys.add(data);
@@ -91,7 +104,7 @@ public class CacheKeyIterationResult implements IdentifiedDataSerializable {
 
     @Override
     public String toString() {
-        return "CacheKeyIteratorResult{tableIndex=" + tableIndex + '}';
+        return "CacheKeyIteratorResult";
     }
 
     public int getCount() {

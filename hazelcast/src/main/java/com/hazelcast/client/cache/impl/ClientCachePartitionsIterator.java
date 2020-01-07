@@ -16,7 +16,7 @@
 
 package com.hazelcast.client.cache.impl;
 
-import com.hazelcast.cache.impl.AbstractClusterWideIterator;
+import com.hazelcast.cache.impl.AbstractCachePartitionsIterator;
 import com.hazelcast.cache.impl.ICacheInternal;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
@@ -25,43 +25,47 @@ import com.hazelcast.client.impl.protocol.codec.CacheIterateEntriesCodec;
 import com.hazelcast.client.impl.spi.ClientContext;
 import com.hazelcast.client.impl.spi.impl.ClientInvocation;
 import com.hazelcast.client.impl.spi.impl.ClientInvocationFuture;
+import com.hazelcast.internal.iteration.IterationPointer;
 import com.hazelcast.internal.serialization.Data;
 
 import javax.cache.Cache;
 import java.util.Iterator;
 import java.util.List;
 
+import static com.hazelcast.internal.iteration.IterationPointer.decodePointers;
+import static com.hazelcast.internal.iteration.IterationPointer.encodePointers;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 
 /**
  * Client side cluster-wide iterator for {@link com.hazelcast.cache.ICache}.
- *
+ * <p>
  * This implementation is used by client implementation of JCache.
- *
- * Note: For more information on the iterator details, see {@link AbstractClusterWideIterator}.
+ * <p>
+ * Note: For more information on the iterator details, see {@link AbstractCachePartitionsIterator}.
  *
  * @param <K> the type of key.
  * @param <V> the type of value.
  */
-public class ClientClusterWideIterator<K, V> extends AbstractClusterWideIterator<K, V> implements Iterator<Cache.Entry<K, V>> {
+public class ClientCachePartitionsIterator<K, V> extends AbstractCachePartitionsIterator<K, V>
+        implements Iterator<Cache.Entry<K, V>> {
 
     private ICacheInternal<K, V> cacheProxy;
     private ClientContext context;
 
-    public ClientClusterWideIterator(ICacheInternal<K, V> cacheProxy, ClientContext context, boolean prefetchValues) {
+    public ClientCachePartitionsIterator(ICacheInternal<K, V> cacheProxy, ClientContext context, boolean prefetchValues) {
         this(cacheProxy, context, DEFAULT_FETCH_SIZE, prefetchValues);
     }
 
-    public ClientClusterWideIterator(ICacheInternal<K, V> cacheProxy, ClientContext context,
-                                     int fetchSize, boolean prefetchValues) {
+    public ClientCachePartitionsIterator(ICacheInternal<K, V> cacheProxy, ClientContext context,
+                                         int fetchSize, boolean prefetchValues) {
         super(cacheProxy, context.getPartitionService().getPartitionCount(), fetchSize, prefetchValues);
         this.cacheProxy = cacheProxy;
         this.context = context;
         advance();
     }
 
-    public ClientClusterWideIterator(ICacheInternal<K, V> cacheProxy, ClientContext context, int fetchSize,
-                                     int partitionId, boolean prefetchValues) {
+    public ClientCachePartitionsIterator(ICacheInternal<K, V> cacheProxy, ClientContext context, int fetchSize,
+                                         int partitionId, boolean prefetchValues) {
         super(cacheProxy, context.getPartitionService().getPartitionCount(), fetchSize, prefetchValues);
         this.cacheProxy = cacheProxy;
         this.context = context;
@@ -73,24 +77,27 @@ public class ClientClusterWideIterator<K, V> extends AbstractClusterWideIterator
         HazelcastClientInstanceImpl client = (HazelcastClientInstanceImpl) context.getHazelcastInstance();
         String name = cacheProxy.getPrefixedName();
         if (prefetchValues) {
-            ClientMessage request = CacheIterateEntriesCodec.encodeRequest(name, lastTableIndex, fetchSize);
+            ClientMessage request = CacheIterateEntriesCodec.encodeRequest(
+                    name, encodePointers(pointers), fetchSize);
             try {
                 ClientInvocation clientInvocation = new ClientInvocation(client, request, name, partitionIndex);
                 ClientInvocationFuture future = clientInvocation.invoke();
                 CacheIterateEntriesCodec.ResponseParameters responseParameters = CacheIterateEntriesCodec.decodeResponse(
                         future.get());
-                setLastTableIndex(responseParameters.entries, responseParameters.tableIndex);
+                IterationPointer[] pointers = decodePointers(responseParameters.iterationPointers);
+                setLastTableIndex(responseParameters.entries, pointers);
                 return responseParameters.entries;
             } catch (Exception e) {
                 throw rethrow(e);
             }
         } else {
-            ClientMessage request = CacheIterateCodec.encodeRequest(name, lastTableIndex, fetchSize);
+            ClientMessage request = CacheIterateCodec.encodeRequest(name, encodePointers(pointers), fetchSize);
             try {
                 ClientInvocation clientInvocation = new ClientInvocation(client, request, name, partitionIndex);
                 ClientInvocationFuture future = clientInvocation.invoke();
                 CacheIterateCodec.ResponseParameters responseParameters = CacheIterateCodec.decodeResponse(future.get());
-                setLastTableIndex(responseParameters.keys, responseParameters.tableIndex);
+                IterationPointer[] pointers = decodePointers(responseParameters.iterationPointers);
+                setLastTableIndex(responseParameters.keys, pointers);
                 return responseParameters.keys;
             } catch (Exception e) {
                 throw rethrow(e);

@@ -24,19 +24,27 @@ import com.hazelcast.client.impl.proxy.ClientMapProxy;
 import com.hazelcast.client.impl.spi.ClientContext;
 import com.hazelcast.client.impl.spi.impl.ClientInvocation;
 import com.hazelcast.client.impl.spi.impl.ClientInvocationFuture;
-import com.hazelcast.map.IMap;
-import com.hazelcast.map.impl.iterator.AbstractMapPartitionIterator;
+import com.hazelcast.internal.iteration.IterationPointer;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.util.ExceptionUtil;
+import com.hazelcast.map.impl.iterator.AbstractMapPartitionIterator;
 
 import java.util.List;
 
+import static com.hazelcast.internal.iteration.IterationPointer.decodePointers;
+import static com.hazelcast.internal.iteration.IterationPointer.encodePointers;
+
 /**
- * Iterator for iterating map entries in the {@code partitionId}. The values are not fetched one-by-one but rather in batches.
+ * Iterator for iterating map entries in a single partition.
+ * The values are fetched in batches.
  * <b>NOTE</b>
- * Iterating the map should be done only when the {@link IMap} is not being
- * mutated and the cluster is stable (there are no migrations or membership changes).
- * In other cases, the iterator may not return some entries or may return an entry twice.
+ * The iteration may be done when the map is being mutated or when there are
+ * membership changes. The iterator does not reflect the state when it has
+ * been constructed - it may return some entries that were added after the
+ * iteration has started and may not return some entries that were removed
+ * after iteration has started.
+ * The iterator will not, however, skip an entry if it has not been changed
+ * and will not return an entry twice.
  */
 public class ClientMapPartitionIterator<K, V> extends AbstractMapPartitionIterator<K, V> {
 
@@ -61,12 +69,14 @@ public class ClientMapPartitionIterator<K, V> extends AbstractMapPartitionIterat
     }
 
     private List fetchWithoutPrefetchValues(HazelcastClientInstanceImpl client) {
-        ClientMessage request = MapFetchKeysCodec.encodeRequest(mapProxy.getName(), lastTableIndex, fetchSize);
+        ClientMessage request = MapFetchKeysCodec.encodeRequest(
+                mapProxy.getName(), encodePointers(pointers), fetchSize);
         ClientInvocation clientInvocation = new ClientInvocation(client, request, mapProxy.getName(), partitionId);
         try {
             ClientInvocationFuture f = clientInvocation.invoke();
             MapFetchKeysCodec.ResponseParameters responseParameters = MapFetchKeysCodec.decodeResponse(f.get());
-            setLastTableIndex(responseParameters.keys, responseParameters.tableIndex);
+            IterationPointer[] pointers = decodePointers(responseParameters.iterationPointers);
+            setIterationPointers(responseParameters.keys, pointers);
             return responseParameters.keys;
         } catch (Exception e) {
             throw ExceptionUtil.rethrow(e);
@@ -74,12 +84,14 @@ public class ClientMapPartitionIterator<K, V> extends AbstractMapPartitionIterat
     }
 
     private List fetchWithPrefetchValues(HazelcastClientInstanceImpl client) {
-        ClientMessage request = MapFetchEntriesCodec.encodeRequest(mapProxy.getName(), lastTableIndex, fetchSize);
+        ClientMessage request = MapFetchEntriesCodec.encodeRequest(
+                mapProxy.getName(), encodePointers(pointers), fetchSize);
         ClientInvocation clientInvocation = new ClientInvocation(client, request, mapProxy.getName(), partitionId);
         try {
             ClientInvocationFuture f = clientInvocation.invoke();
             MapFetchEntriesCodec.ResponseParameters responseParameters = MapFetchEntriesCodec.decodeResponse(f.get());
-            setLastTableIndex(responseParameters.entries, responseParameters.tableIndex);
+            IterationPointer[] pointers = decodePointers(responseParameters.iterationPointers);
+            setIterationPointers(responseParameters.entries, pointers);
             return responseParameters.entries;
         } catch (Exception e) {
             throw ExceptionUtil.rethrow(e);

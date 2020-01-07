@@ -14,11 +14,11 @@
  * limitations under the License.
  */
 
-package com.hazelcast.map.impl.operation;
+package com.hazelcast.cache.impl.operation;
 
+import com.hazelcast.cache.impl.CacheDataSerializerHook;
 import com.hazelcast.internal.iteration.IterationPointer;
-import com.hazelcast.map.impl.MapDataSerializerHook;
-import com.hazelcast.map.impl.iterator.MapKeysWithCursor;
+import com.hazelcast.internal.serialization.impl.HeapData;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.impl.operationservice.ReadonlyOperation;
@@ -27,63 +27,61 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.io.IOException;
 
 /**
- * Operation for fetching a chunk of keys from a single
- * {@link com.hazelcast.map.IMap} partition.
+ * Operation for fetching a chunk of entries from a single
+ * {@link com.hazelcast.cache.ICache} partition.
  * The iteration state is defined by the {@link #pointers} and the soft
  * limit is defined by the {@link #fetchSize}.
  *
- * @see com.hazelcast.map.impl.proxy.MapProxyImpl#iterator(int, int, boolean)
+ * @see com.hazelcast.cache.impl.ICacheRecordStore#fetchEntries(IterationPointer[], int)
  */
-public class MapFetchKeysOperation extends MapOperation implements ReadonlyOperation {
+public class CacheFetchEntriesOperation extends KeyBasedCacheOperation implements ReadonlyOperation {
 
-    private int fetchSize;
     private IterationPointer[] pointers;
-    private transient MapKeysWithCursor response;
+    private int fetchSize;
 
-    public MapFetchKeysOperation() {
+    public CacheFetchEntriesOperation() {
     }
 
     @SuppressFBWarnings(value = "EI_EXPOSE_REP2", justification = "This is an internal class")
-    public MapFetchKeysOperation(String name, IterationPointer[] pointers, int fetchSize) {
-        super(name);
+    public CacheFetchEntriesOperation(String name, IterationPointer[] pointers, int fetchSize) {
+        super(name, new HeapData());
         this.pointers = pointers;
         this.fetchSize = fetchSize;
     }
 
     @Override
-    protected void runInternal() {
-        response = recordStore.fetchKeys(pointers, fetchSize);
+    public int getClassId() {
+        return CacheDataSerializerHook.ENTRY_ITERATOR;
     }
 
     @Override
-    public Object getResponse() {
-        return response;
+    public void run()
+            throws Exception {
+        response = recordStore.fetchEntries(pointers, fetchSize);
     }
 
     @Override
-    protected void readInternal(ObjectDataInput in) throws IOException {
-        super.readInternal(in);
-        fetchSize = in.readInt();
-        int pointersCount = in.readInt();
-        pointers = new IterationPointer[pointersCount];
-        for (int i = 0; i < pointersCount; i++) {
-            pointers[i] = new IterationPointer(in.readInt(), in.readInt());
-        }
-    }
-
-    @Override
-    protected void writeInternal(ObjectDataOutput out) throws IOException {
+    protected void writeInternal(ObjectDataOutput out)
+            throws IOException {
         super.writeInternal(out);
-        out.writeInt(fetchSize);
         out.writeInt(pointers.length);
         for (IterationPointer pointer : pointers) {
             out.writeInt(pointer.getIndex());
             out.writeInt(pointer.getSize());
         }
+        out.writeInt(fetchSize);
     }
 
     @Override
-    public int getClassId() {
-        return MapDataSerializerHook.FETCH_KEYS;
+    protected void readInternal(ObjectDataInput in)
+            throws IOException {
+        super.readInternal(in);
+
+        final int pointersCount = in.readInt();
+        pointers = new IterationPointer[pointersCount];
+        for (int i = 0; i < pointersCount; i++) {
+            pointers[i] = new IterationPointer(in.readInt(), in.readInt());
+        }
+        fetchSize = in.readInt();
     }
 }

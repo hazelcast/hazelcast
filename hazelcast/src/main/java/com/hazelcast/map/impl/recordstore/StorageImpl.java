@@ -18,6 +18,7 @@ package com.hazelcast.map.impl.recordstore;
 
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.core.EntryView;
+import com.hazelcast.internal.iteration.IterationPointer;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.map.impl.EntryCostEstimator;
 import com.hazelcast.map.impl.iterator.MapEntriesWithCursor;
@@ -42,17 +43,17 @@ import static com.hazelcast.map.impl.OwnedEntryCostEstimatorFactory.createMapSiz
 public class StorageImpl<R extends Record> implements Storage<Data, R> {
 
     private final StorageSCHM<R> records;
-    private final SerializationService ss;
+    private final SerializationService serializationService;
     private final InMemoryFormat inMemoryFormat;
 
     // not final for testing purposes.
     private EntryCostEstimator<Data, Record> entryCostEstimator;
 
-    StorageImpl(InMemoryFormat inMemoryFormat, SerializationService ss) {
+    StorageImpl(InMemoryFormat inMemoryFormat, SerializationService serializationService) {
         this.entryCostEstimator = createMapSizeEstimator(inMemoryFormat);
         this.inMemoryFormat = inMemoryFormat;
-        this.records = new StorageSCHM<>(ss);
-        this.ss = ss;
+        this.records = new StorageSCHM<>(serializationService);
+        this.serializationService = serializationService;
     }
 
     @Override
@@ -84,7 +85,7 @@ public class StorageImpl<R extends Record> implements Storage<Data, R> {
         updateCostEstimate(-entryCostEstimator.calculateValueCost(record));
 
         record.setValue(inMemoryFormat == BINARY
-                ? ss.toData(value) : ss.toObject(value));
+                ? serializationService.toData(value) : serializationService.toObject(value));
 
         updateCostEstimate(entryCostEstimator.calculateValueCost(record));
     }
@@ -144,23 +145,23 @@ public class StorageImpl<R extends Record> implements Storage<Data, R> {
     }
 
     @Override
-    public MapKeysWithCursor fetchKeys(int tableIndex, int size) {
+    public MapKeysWithCursor fetchKeys(IterationPointer[] pointers, int size) {
         List<Data> keys = new ArrayList<>(size);
-        int newTableIndex = records.fetchKeys(tableIndex, size, keys);
-        return new MapKeysWithCursor(keys, newTableIndex);
+        IterationPointer[] newPointers = records.fetchKeys(pointers, size, keys);
+        return new MapKeysWithCursor(keys, newPointers);
     }
 
     @Override
-    public MapEntriesWithCursor fetchEntries(int tableIndex, int size, SerializationService serializationService) {
+    public MapEntriesWithCursor fetchEntries(IterationPointer[] pointers, int size) {
         List<Map.Entry<Data, R>> entries = new ArrayList<>(size);
-        int newTableIndex = records.fetchEntries(tableIndex, size, entries);
+        IterationPointer[] newPointers = records.fetchEntries(pointers, size, entries);
         List<Map.Entry<Data, Data>> entriesData = new ArrayList<>(entries.size());
         for (Map.Entry<Data, R> entry : entries) {
             R record = entry.getValue();
             Data dataValue = serializationService.toData(record.getValue());
             entriesData.add(new AbstractMap.SimpleEntry<>(entry.getKey(), dataValue));
         }
-        return new MapEntriesWithCursor(entriesData, newTableIndex);
+        return new MapEntriesWithCursor(entriesData, newPointers);
     }
 
     @Override
