@@ -17,10 +17,9 @@
 package com.hazelcast.client.impl.protocol.task.scheduledexecutor;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.codec.ScheduledExecutorGetDelayFromAddressCodec;
-import com.hazelcast.client.impl.protocol.task.AbstractAddressMessageTask;
+import com.hazelcast.client.impl.protocol.codec.ScheduledExecutorGetDelayFromMemberCodec;
+import com.hazelcast.client.impl.protocol.task.AbstractTargetMessageTask;
 import com.hazelcast.instance.impl.Node;
-import com.hazelcast.cluster.Address;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.scheduledexecutor.ScheduledTaskHandler;
 import com.hazelcast.scheduledexecutor.impl.DistributedScheduledExecutorService;
@@ -31,38 +30,37 @@ import com.hazelcast.security.permission.ScheduledExecutorPermission;
 import com.hazelcast.spi.impl.operationservice.Operation;
 
 import java.security.Permission;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
-public class ScheduledExecutorTaskGetDelayFromAddressMessageTask
-        extends AbstractAddressMessageTask<ScheduledExecutorGetDelayFromAddressCodec.RequestParameters> {
+public class ScheduledExecutorTaskGetDelayFromTargetMessageTask
+        extends AbstractTargetMessageTask<ScheduledExecutorGetDelayFromMemberCodec.RequestParameters> {
 
-    public ScheduledExecutorTaskGetDelayFromAddressMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
+    public ScheduledExecutorTaskGetDelayFromTargetMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
     @Override
     protected Operation prepareOperation() {
-        ScheduledTaskHandler handler = ScheduledTaskHandlerImpl.of(parameters.address,
+        ScheduledTaskHandler handler = ScheduledTaskHandlerImpl.of(parameters.memberUuid,
                 parameters.schedulerName,
                 parameters.taskName);
         return new GetDelayOperation(handler, TimeUnit.NANOSECONDS);
     }
 
     @Override
-    protected Address getAddress() {
-        return parameters.address;
+    protected UUID getTargetUuid() {
+        return parameters.memberUuid;
     }
 
     @Override
-    protected ScheduledExecutorGetDelayFromAddressCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
-        parameters = ScheduledExecutorGetDelayFromAddressCodec.decodeRequest(clientMessage);
-        parameters.address = clientEngine.memberAddressOf(parameters.address);
-        return parameters;
+    protected ScheduledExecutorGetDelayFromMemberCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return ScheduledExecutorGetDelayFromMemberCodec.decodeRequest(clientMessage);
     }
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return ScheduledExecutorGetDelayFromAddressCodec.encodeResponse((Long) response);
+        return ScheduledExecutorGetDelayFromMemberCodec.encodeResponse((Long) response);
     }
 
     @Override

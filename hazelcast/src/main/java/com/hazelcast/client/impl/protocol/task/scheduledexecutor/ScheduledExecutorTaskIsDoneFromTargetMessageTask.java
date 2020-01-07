@@ -17,10 +17,9 @@
 package com.hazelcast.client.impl.protocol.task.scheduledexecutor;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.codec.ScheduledExecutorIsDoneFromAddressCodec;
-import com.hazelcast.client.impl.protocol.task.AbstractAddressMessageTask;
+import com.hazelcast.client.impl.protocol.codec.ScheduledExecutorIsDoneFromMemberCodec;
+import com.hazelcast.client.impl.protocol.task.AbstractTargetMessageTask;
 import com.hazelcast.instance.impl.Node;
-import com.hazelcast.cluster.Address;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.scheduledexecutor.ScheduledTaskHandler;
 import com.hazelcast.scheduledexecutor.impl.DistributedScheduledExecutorService;
@@ -31,37 +30,36 @@ import com.hazelcast.security.permission.ScheduledExecutorPermission;
 import com.hazelcast.spi.impl.operationservice.Operation;
 
 import java.security.Permission;
+import java.util.UUID;
 
-public class ScheduledExecutorTaskIsDoneFromAddressMessageTask
-        extends AbstractAddressMessageTask<ScheduledExecutorIsDoneFromAddressCodec.RequestParameters> {
+public class ScheduledExecutorTaskIsDoneFromTargetMessageTask
+        extends AbstractTargetMessageTask<ScheduledExecutorIsDoneFromMemberCodec.RequestParameters> {
 
-    public ScheduledExecutorTaskIsDoneFromAddressMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
+    public ScheduledExecutorTaskIsDoneFromTargetMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
     @Override
     protected Operation prepareOperation() {
-        ScheduledTaskHandler handler = ScheduledTaskHandlerImpl.of(parameters.address,
+        ScheduledTaskHandler handler = ScheduledTaskHandlerImpl.of(parameters.memberUuid,
                 parameters.schedulerName,
                 parameters.taskName);
         return new IsDoneOperation(handler);
     }
 
     @Override
-    protected Address getAddress() {
-        return parameters.address;
+    protected UUID getTargetUuid() {
+        return parameters.memberUuid;
     }
 
     @Override
-    protected ScheduledExecutorIsDoneFromAddressCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
-        parameters = ScheduledExecutorIsDoneFromAddressCodec.decodeRequest(clientMessage);
-        parameters.address = clientEngine.memberAddressOf(parameters.address);
-        return parameters;
+    protected ScheduledExecutorIsDoneFromMemberCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return ScheduledExecutorIsDoneFromMemberCodec.decodeRequest(clientMessage);
     }
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return ScheduledExecutorIsDoneFromAddressCodec.encodeResponse((Boolean) response);
+        return ScheduledExecutorIsDoneFromMemberCodec.encodeResponse((Boolean) response);
     }
 
     @Override

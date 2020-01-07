@@ -17,51 +17,49 @@
 package com.hazelcast.client.impl.protocol.task.scheduledexecutor;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.codec.ScheduledExecutorCancelFromAddressCodec;
-import com.hazelcast.client.impl.protocol.task.AbstractAddressMessageTask;
+import com.hazelcast.client.impl.protocol.codec.ScheduledExecutorIsCancelledFromMemberCodec;
+import com.hazelcast.client.impl.protocol.task.AbstractTargetMessageTask;
 import com.hazelcast.instance.impl.Node;
-import com.hazelcast.cluster.Address;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.scheduledexecutor.ScheduledTaskHandler;
 import com.hazelcast.scheduledexecutor.impl.DistributedScheduledExecutorService;
 import com.hazelcast.scheduledexecutor.impl.ScheduledTaskHandlerImpl;
-import com.hazelcast.scheduledexecutor.impl.operations.CancelTaskOperation;
+import com.hazelcast.scheduledexecutor.impl.operations.IsCanceledOperation;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.ScheduledExecutorPermission;
 import com.hazelcast.spi.impl.operationservice.Operation;
 
 import java.security.Permission;
+import java.util.UUID;
 
-public class ScheduledExecutorTaskCancelFromAddressMessageTask
-        extends AbstractAddressMessageTask<ScheduledExecutorCancelFromAddressCodec.RequestParameters> {
+public class ScheduledExecutorTaskIsCancelledFromTargetMessageTask
+        extends AbstractTargetMessageTask<ScheduledExecutorIsCancelledFromMemberCodec.RequestParameters> {
 
-    public ScheduledExecutorTaskCancelFromAddressMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
+    public ScheduledExecutorTaskIsCancelledFromTargetMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
     @Override
     protected Operation prepareOperation() {
-        ScheduledTaskHandler handler = ScheduledTaskHandlerImpl.of(parameters.address,
+        ScheduledTaskHandler handler = ScheduledTaskHandlerImpl.of(parameters.memberUuid,
                 parameters.schedulerName,
                 parameters.taskName);
-        return new CancelTaskOperation(handler, parameters.mayInterruptIfRunning);
+        return new IsCanceledOperation(handler);
     }
 
     @Override
-    protected Address getAddress() {
-        return parameters.address;
+    protected UUID getTargetUuid() {
+        return parameters.memberUuid;
     }
 
     @Override
-    protected ScheduledExecutorCancelFromAddressCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
-        parameters = ScheduledExecutorCancelFromAddressCodec.decodeRequest(clientMessage);
-        parameters.address = clientEngine.memberAddressOf(parameters.address);
-        return parameters;
+    protected ScheduledExecutorIsCancelledFromMemberCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return ScheduledExecutorIsCancelledFromMemberCodec.decodeRequest(clientMessage);
     }
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return ScheduledExecutorCancelFromAddressCodec.encodeResponse((Boolean) response);
+        return ScheduledExecutorIsCancelledFromMemberCodec.encodeResponse((Boolean) response);
     }
 
     @Override
@@ -71,7 +69,7 @@ public class ScheduledExecutorTaskCancelFromAddressMessageTask
 
     @Override
     public Permission getRequiredPermission() {
-        return new ScheduledExecutorPermission(parameters.schedulerName, ActionConstants.ACTION_MODIFY);
+        return new ScheduledExecutorPermission(parameters.schedulerName, ActionConstants.ACTION_READ);
     }
 
     @Override
@@ -81,11 +79,11 @@ public class ScheduledExecutorTaskCancelFromAddressMessageTask
 
     @Override
     public String getMethodName() {
-        return "cancel";
+        return "isCancelled";
     }
 
     @Override
     public Object[] getParameters() {
-        return new Object[] { parameters.mayInterruptIfRunning };
+        return null;
     }
 }

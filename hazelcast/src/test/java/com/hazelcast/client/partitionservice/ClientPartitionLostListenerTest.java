@@ -18,6 +18,7 @@ package com.hazelcast.client.partitionservice;
 
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.test.TestHazelcastFactory;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.partition.PartitionLostEventImpl;
@@ -109,7 +110,8 @@ public class ClientPartitionLostListenerTest {
 
         final InternalPartitionServiceImpl partitionService = getNode(instance).getNodeEngine().getService(SERVICE_NAME);
         final int partitionId = 5;
-        partitionService.onPartitionLost(new PartitionLostEventImpl(partitionId, 0, null));
+        Address address = instance.getCluster().getLocalMember().getAddress();
+        partitionService.onPartitionLost(new PartitionLostEventImpl(partitionId, 0, address));
 
         assertPartitionLostEventEventually(listener, partitionId);
     }
@@ -129,7 +131,8 @@ public class ClientPartitionLostListenerTest {
 
         final InternalPartitionServiceImpl partitionService = getNode(instance).getNodeEngine().getService(SERVICE_NAME);
         final int partitionId = 5;
-        partitionService.onPartitionLost(new PartitionLostEventImpl(partitionId, 0, null));
+        Address address = instance.getCluster().getLocalMember().getAddress();
+        partitionService.onPartitionLost(new PartitionLostEventImpl(partitionId, 0, address));
 
         assertPartitionLostEventEventually(listener, partitionId);
     }
@@ -152,7 +155,8 @@ public class ClientPartitionLostListenerTest {
 
         final InternalPartitionServiceImpl partitionService = getNode(instance2).getNodeEngine().getService(SERVICE_NAME);
         final int partitionId = 5;
-        partitionService.onPartitionLost(new PartitionLostEventImpl(partitionId, 0, null));
+        Address address = instance1.getCluster().getLocalMember().getAddress();
+        partitionService.onPartitionLost(new PartitionLostEventImpl(partitionId, 0, address));
 
         assertPartitionLostEventEventually(listener, partitionId);
     }

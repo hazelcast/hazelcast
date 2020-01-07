@@ -64,7 +64,7 @@ public class ScheduledExecutorMemberOwnedContainer
 
     @Override
     public ScheduledTaskHandler offprintHandler(String taskName) {
-        return ScheduledTaskHandlerImpl.of(getNodeEngine().getThisAddress(), getName(), taskName);
+        return ScheduledTaskHandlerImpl.of(getNodeEngine().getClusterService().getLocalMember().getUuid(), getName(), taskName);
     }
 
     @Override

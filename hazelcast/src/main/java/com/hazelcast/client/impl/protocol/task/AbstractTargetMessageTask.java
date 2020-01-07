@@ -17,20 +17,22 @@
 package com.hazelcast.client.impl.protocol.task;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.cluster.Address;
+import com.hazelcast.cluster.impl.MemberImpl;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
+import com.hazelcast.spi.exception.TargetNotMemberException;
 import com.hazelcast.spi.impl.operationservice.Operation;
 
+import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
 /**
  * AbstractAddressMessageTask
  */
-public abstract class AbstractAddressMessageTask<P>
+public abstract class AbstractTargetMessageTask<P>
         extends AbstractAsyncMessageTask<P, Object> {
 
-    protected AbstractAddressMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
+    protected AbstractTargetMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
@@ -38,13 +40,17 @@ public abstract class AbstractAddressMessageTask<P>
     protected CompletableFuture<Object> processInternal() {
         Operation op = prepareOperation();
         op.setCallerUuid(endpoint.getUuid());
+        MemberImpl member = nodeEngine.getClusterService().getMember(getTargetUuid());
+        if (member == null) {
+            throw new TargetNotMemberException(String.format("Member with uuid(%s) is not in member list ", getTargetUuid()));
+        }
         return nodeEngine.getOperationService()
-                         .createInvocationBuilder(getServiceName(), op, getAddress())
-                         .setResultDeserialized(false)
-                         .invoke();
+                .createInvocationBuilder(getServiceName(), op, member.getAddress())
+                .setResultDeserialized(false)
+                .invoke();
     }
 
-    protected abstract Address getAddress();
+    protected abstract UUID getTargetUuid();
 
     protected abstract Operation prepareOperation();
 

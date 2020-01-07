@@ -1108,7 +1108,7 @@ public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceT
             } catch (IllegalStateException ex) {
                 System.err.println(ex.getMessage());
                 assertEquals(format("Member with address: %s,  holding this scheduled task is not part of this cluster.",
-                        future.getHandler().getAddress()), ex.getMessage());
+                        future.getHandler().getUuid()), ex.getMessage());
             } catch (TimeoutException ex) {
                 ignore(ex);
             }

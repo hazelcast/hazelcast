@@ -18,9 +18,9 @@ package com.hazelcast.client.impl.spi.impl;
 
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.connection.nio.ClientConnection;
-import com.hazelcast.cluster.Address;
 
 import java.io.IOException;
+import java.util.UUID;
 
 public class NonSmartClientInvocationService extends AbstractClientInvocationService {
 
@@ -45,7 +45,7 @@ public class NonSmartClientInvocationService extends AbstractClientInvocationSer
     }
 
     @Override
-    public void invokeOnTarget(ClientInvocation invocation, Address target) throws IOException {
+    public void invokeOnTarget(ClientInvocation invocation, UUID uuid) throws IOException {
         send(invocation, getConnection());
     }
 

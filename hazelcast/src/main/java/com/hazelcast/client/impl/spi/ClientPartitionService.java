@@ -16,11 +16,11 @@
 
 package com.hazelcast.client.impl.spi;
 
-import com.hazelcast.cluster.Address;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.partition.Partition;
 
 import javax.annotation.Nonnull;
+import java.util.UUID;
 
 /**
  * Partition service for Hazelcast clients.
@@ -33,7 +33,7 @@ public interface ClientPartitionService {
      * @param partitionId
      * @return the owner of the partition or null if a partition is not assigned yet
      */
-    Address getPartitionOwner(int partitionId);
+    UUID getPartitionOwner(int partitionId);
 
     /**
      * @return the partition id associated with given data

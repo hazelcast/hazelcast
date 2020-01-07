@@ -18,7 +18,11 @@ package com.hazelcast.client.impl.protocol.task;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ClientAddPartitionLostListenerCodec;
+import com.hazelcast.cluster.Address;
+import com.hazelcast.cluster.impl.MemberImpl;
 import com.hazelcast.instance.impl.Node;
+import com.hazelcast.internal.cluster.ClusterService;
+import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.partition.IPartitionService;
 import com.hazelcast.partition.PartitionLostListener;
@@ -43,8 +47,11 @@ public class AddPartitionLostListenerMessageTask
 
         final PartitionLostListener listener = event -> {
             if (endpoint.isAlive()) {
+                ClusterService clusterService = getService(ClusterServiceImpl.SERVICE_NAME);
+                Address eventSource = event.getEventSource();
+                MemberImpl member = clusterService.getMember(eventSource);
                 ClientMessage eventMessage = ClientAddPartitionLostListenerCodec
-                        .encodePartitionLostEvent(event.getPartitionId(), event.getLostBackupCount(), event.getEventSource());
+                        .encodePartitionLostEvent(event.getPartitionId(), event.getLostBackupCount(), member.getUuid());
                 sendClientMessage(null, eventMessage);
             }
         };

@@ -37,6 +37,7 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -110,7 +111,7 @@ public class ClusterViewListenerService {
     private ClientMessage getPartitionViewMessageOrNull() {
         InternalPartitionService partitionService = (InternalPartitionService) nodeEngine.getPartitionService();
         PartitionTableView partitionTableView = partitionService.createPartitionTableView();
-        Map<Address, List<Integer>> partitions = getPartitions(partitionTableView);
+        Map<UUID, List<Integer>> partitions = getPartitions(partitionTableView);
         if (partitions.size() == 0) {
             return null;
         }
@@ -158,9 +159,9 @@ public class ClusterViewListenerService {
      * @param partitionTableView will be converted to address-&gt;partitions mapping
      * @return address-&gt;partitions mapping, where address is the client address of the member
      */
-    public Map<Address, List<Integer>> getPartitions(PartitionTableView partitionTableView) {
+    public Map<UUID, List<Integer>> getPartitions(PartitionTableView partitionTableView) {
 
-        Map<Address, List<Integer>> partitionsMap = new HashMap<>();
+        Map<UUID, List<Integer>> partitionsMap = new HashMap<>();
 
         int partitionCount = partitionTableView.getLength();
         for (int partitionId = 0; partitionId < partitionCount; partitionId++) {
@@ -169,12 +170,12 @@ public class ClusterViewListenerService {
                 partitionsMap.clear();
                 return partitionsMap;
             }
-            Address clientOwnerAddress = clientAddressOf(owner.address());
-            if (clientOwnerAddress == null) {
+            UUID ownerUUID = owner.uuid();
+            if (ownerUUID == null) {
                 partitionsMap.clear();
                 return partitionsMap;
             }
-            List<Integer> indexes = partitionsMap.computeIfAbsent(clientOwnerAddress, k -> new LinkedList<>());
+            List<Integer> indexes = partitionsMap.computeIfAbsent(ownerUUID, k -> new LinkedList<>());
             indexes.add(partitionId);
         }
         return partitionsMap;

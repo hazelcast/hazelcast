@@ -17,10 +17,9 @@
 package com.hazelcast.client.impl.protocol.task.scheduledexecutor;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.codec.ScheduledExecutorGetStatsFromAddressCodec;
-import com.hazelcast.client.impl.protocol.task.AbstractAddressMessageTask;
+import com.hazelcast.client.impl.protocol.codec.ScheduledExecutorGetStatsFromMemberCodec;
+import com.hazelcast.client.impl.protocol.task.AbstractTargetMessageTask;
 import com.hazelcast.instance.impl.Node;
-import com.hazelcast.cluster.Address;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.scheduledexecutor.ScheduledTaskHandler;
 import com.hazelcast.scheduledexecutor.ScheduledTaskStatistics;
@@ -32,40 +31,39 @@ import com.hazelcast.security.permission.ScheduledExecutorPermission;
 import com.hazelcast.spi.impl.operationservice.Operation;
 
 import java.security.Permission;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
-public class ScheduledExecutorTaskGetStatisticsFromAddressMessageTask
-        extends AbstractAddressMessageTask<ScheduledExecutorGetStatsFromAddressCodec.RequestParameters> {
+public class ScheduledExecutorTaskGetStatisticsFromTargetMessageTask
+        extends AbstractTargetMessageTask<ScheduledExecutorGetStatsFromMemberCodec.RequestParameters> {
 
-    public ScheduledExecutorTaskGetStatisticsFromAddressMessageTask(ClientMessage clientMessage, Node node,
-                                                                    Connection connection) {
+    public ScheduledExecutorTaskGetStatisticsFromTargetMessageTask(ClientMessage clientMessage, Node node,
+                                                                   Connection connection) {
         super(clientMessage, node, connection);
     }
 
     @Override
     protected Operation prepareOperation() {
-        ScheduledTaskHandler handler = ScheduledTaskHandlerImpl.of(parameters.address,
+        ScheduledTaskHandler handler = ScheduledTaskHandlerImpl.of(parameters.memberUuid,
                 parameters.schedulerName,
                 parameters.taskName);
         return new GetStatisticsOperation(handler);
     }
 
     @Override
-    protected Address getAddress() {
-        return parameters.address;
+    protected UUID getTargetUuid() {
+        return parameters.memberUuid;
     }
 
     @Override
-    protected ScheduledExecutorGetStatsFromAddressCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
-        parameters = ScheduledExecutorGetStatsFromAddressCodec.decodeRequest(clientMessage);
-        parameters.address = clientEngine.memberAddressOf(parameters.address);
-        return parameters;
+    protected ScheduledExecutorGetStatsFromMemberCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return ScheduledExecutorGetStatsFromMemberCodec.decodeRequest(clientMessage);
     }
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
         ScheduledTaskStatistics stats = (ScheduledTaskStatistics) response;
-        return ScheduledExecutorGetStatsFromAddressCodec.encodeResponse(stats.getLastIdleTime(TimeUnit.NANOSECONDS),
+        return ScheduledExecutorGetStatsFromMemberCodec.encodeResponse(stats.getLastIdleTime(TimeUnit.NANOSECONDS),
                 stats.getTotalIdleTime(TimeUnit.NANOSECONDS), stats.getTotalRuns(),
                 stats.getTotalRunTime(TimeUnit.NANOSECONDS), stats.getLastRunDuration(TimeUnit.NANOSECONDS));
     }

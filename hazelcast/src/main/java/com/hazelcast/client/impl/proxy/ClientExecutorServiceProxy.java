@@ -19,18 +19,16 @@ package com.hazelcast.client.impl.proxy;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ExecutorServiceIsShutdownCodec;
 import com.hazelcast.client.impl.protocol.codec.ExecutorServiceShutdownCodec;
-import com.hazelcast.client.impl.protocol.codec.ExecutorServiceSubmitToAddressCodec;
+import com.hazelcast.client.impl.protocol.codec.ExecutorServiceSubmitToMemberCodec;
 import com.hazelcast.client.impl.protocol.codec.ExecutorServiceSubmitToPartitionCodec;
 import com.hazelcast.client.impl.spi.ClientContext;
 import com.hazelcast.client.impl.spi.ClientPartitionService;
 import com.hazelcast.client.impl.spi.ClientProxy;
 import com.hazelcast.client.impl.spi.impl.ClientInvocation;
 import com.hazelcast.client.impl.spi.impl.ClientInvocationFuture;
-import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.cluster.MemberSelector;
 import com.hazelcast.core.ExecutionCallback;
-import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.IExecutorService;
 import com.hazelcast.core.MultiExecutionCallback;
 import com.hazelcast.executor.LocalExecutorStats;
@@ -96,8 +94,7 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
     public void executeOnMember(@Nonnull Runnable command,
                                 @Nonnull Member member) {
         checkNotNull(member, "member must not be null");
-        final Address memberAddress = getMemberAddress(member);
-        submitToTargetInternal(toData(command), memberAddress, null);
+        submitToTargetInternal(toData(command), member, null);
     }
 
     @Override
@@ -139,8 +136,7 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
     public <T> Future<T> submitToMember(@Nonnull Callable<T> task,
                                         @Nonnull Member member) {
         checkNotNull(member, "member must not be null");
-        final Address memberAddress = getMemberAddress(member);
-        return submitToTargetInternal(toData(task), memberAddress, null, false);
+        return submitToTargetInternal(toData(task), member, null, false);
     }
 
     @Override
@@ -150,8 +146,7 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
         Map<Member, Future<T>> futureMap = new HashMap<>(members.size());
         Data taskData = toData(task);
         for (Member member : members) {
-            final Address memberAddress = getMemberAddress(member);
-            Future<T> f = submitToTargetInternal(taskData, memberAddress, null, true);
+            Future<T> f = submitToTargetInternal(taskData, member, null, true);
             futureMap.put(member, f);
         }
         return futureMap;
@@ -178,7 +173,7 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
         Map<Member, Future<T>> futureMap = new HashMap<>(memberList.size());
         Data taskData = toData(task);
         for (Member m : memberList) {
-            Future<T> f = submitToTargetInternal(taskData, m.getAddress(), null, true);
+            Future<T> f = submitToTargetInternal(taskData, m, null, true);
             futureMap.put(m, f);
         }
         return futureMap;
@@ -190,8 +185,7 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
                                @Nonnull Member member,
                                @Nullable ExecutionCallback callback) {
         checkNotNull(member, "member must not be null");
-        final Address memberAddress = getMemberAddress(member);
-        submitToTargetInternal(toData(command), memberAddress, callback);
+        submitToTargetInternal(toData(command), member, callback);
     }
 
     @Override
@@ -213,8 +207,7 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
                                    @Nonnull Member member,
                                    @Nullable ExecutionCallback<T> callback) {
         checkNotNull(member, "member must not be null");
-        final Address memberAddress = getMemberAddress(member);
-        submitToTargetInternal(toData(task), memberAddress, callback);
+        submitToTargetInternal(toData(task), member, callback);
     }
 
     @Override
@@ -228,7 +221,7 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
         members.forEach(member -> {
             final ExecutionCallbackWrapper<T> executionCallback =
                     new ExecutionCallbackWrapper<>(multiExecutionCallbackWrapper, member);
-            submitToTargetInternal(taskData, getMemberAddress(member), executionCallback);
+            submitToTargetInternal(taskData, member, executionCallback);
         });
     }
 
@@ -470,11 +463,11 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
 
         if (callback != null) {
             delegatingFuture.whenCompleteAsync(new ExecutionCallbackAdapter<>(callback))
-                            .whenCompleteAsync((v, t) -> {
-                                if (t instanceof RejectedExecutionException) {
-                                    callback.onFailure(t);
-                                }
-                            }, DEFAULT_ASYNC_EXECUTOR);
+                    .whenCompleteAsync((v, t) -> {
+                        if (t instanceof RejectedExecutionException) {
+                            callback.onFailure(t);
+                        }
+                    }, DEFAULT_ASYNC_EXECUTOR);
         }
         return delegatingFuture;
     }
@@ -501,43 +494,43 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
                 (T) null);
         if (callback != null) {
             delegatingFuture.whenCompleteAsync(new ExecutionCallbackAdapter<>(callback))
-                            .whenCompleteAsync((v, t) -> {
-                                if (t instanceof RejectedExecutionException) {
-                                    callback.onFailure(t);
-                                }
-                            }, DEFAULT_ASYNC_EXECUTOR);
+                    .whenCompleteAsync((v, t) -> {
+                        if (t instanceof RejectedExecutionException) {
+                            callback.onFailure(t);
+                        }
+                    }, DEFAULT_ASYNC_EXECUTOR);
         }
     }
 
     private <T> Future<T> submitToTargetInternal(@Nonnull Data task,
-                                                 Address address,
+                                                 Member member,
                                                  T defaultValue,
                                                  boolean preventSync) {
         checkNotNull(task, "task should not be null");
 
         UUID uuid = getUUID();
-        ClientMessage request = ExecutorServiceSubmitToAddressCodec.encodeRequest(name, uuid, task, address);
-        ClientInvocationFuture f = invokeOnTarget(request, address);
-        return checkSync(f, uuid, address, preventSync, defaultValue);
+        ClientMessage request = ExecutorServiceSubmitToMemberCodec.encodeRequest(name, uuid, task, member.getUuid());
+        ClientInvocationFuture f = invokeOnTarget(request, member);
+        return checkSync(f, uuid, member, preventSync, defaultValue);
     }
 
     private <T> void submitToTargetInternal(@Nonnull Data task,
-                                            Address address,
+                                            Member member,
                                             @Nullable ExecutionCallback<T> callback) {
         checkNotNull(task, "task should not be null");
 
         UUID uuid = getUUID();
-        ClientMessage request = ExecutorServiceSubmitToAddressCodec.encodeRequest(name, uuid, task, address);
-        ClientInvocationFuture f = invokeOnTarget(request, address);
-        InternalCompletableFuture<T> delegatingFuture = (InternalCompletableFuture<T>) checkSync(f, uuid, address, false,
+        ClientMessage request = ExecutorServiceSubmitToMemberCodec.encodeRequest(name, uuid, task, member.getUuid());
+        ClientInvocationFuture f = invokeOnTarget(request, member);
+        InternalCompletableFuture<T> delegatingFuture = (InternalCompletableFuture<T>) checkSync(f, uuid, member, false,
                 (T) null);
         if (callback != null) {
             delegatingFuture.whenCompleteAsync(new ExecutionCallbackAdapter<>(callback))
-                            .whenCompleteAsync((v, t) -> {
-                                if (t instanceof RejectedExecutionException) {
-                                    callback.onFailure(t);
-                                }
-                            }, DEFAULT_ASYNC_EXECUTOR);
+                    .whenCompleteAsync((v, t) -> {
+                        if (t instanceof RejectedExecutionException) {
+                            callback.onFailure(t);
+                        }
+                    }, DEFAULT_ASYNC_EXECUTOR);
         }
     }
 
@@ -548,7 +541,7 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
 
     private <T> Future<T> checkSync(ClientInvocationFuture f,
                                     UUID uuid,
-                                    Address address,
+                                    Member member,
                                     boolean preventSync,
                                     T defaultValue) {
         boolean sync = isSyncComputation(preventSync);
@@ -557,7 +550,7 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
             return newCompletedFuture(response, getSerializationService());
         } else {
             return new IExecutorDelegatingFuture<>(f, getContext(), uuid, defaultValue,
-                    message -> ExecutorServiceSubmitToAddressCodec.decodeResponse(message).response, name, address);
+                    message -> ExecutorServiceSubmitToMemberCodec.decodeResponse(message).response, name, member);
         }
     }
 
@@ -588,7 +581,7 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
         Object response;
         try {
             SerializationService serializationService = getClient().getSerializationService();
-            Data data = ExecutorServiceSubmitToAddressCodec.decodeResponse(f.get()).response;
+            Data data = ExecutorServiceSubmitToMemberCodec.decodeResponse(f.get()).response;
             response = serializationService.toObject(data);
         } catch (Exception e) {
             response = e;
@@ -689,9 +682,9 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
         }
     }
 
-    private ClientInvocationFuture invokeOnTarget(ClientMessage request, Address target) {
+    private ClientInvocationFuture invokeOnTarget(ClientMessage request, Member target) {
         try {
-            ClientInvocation invocation = new ClientInvocation(getClient(), request, getName(), target);
+            ClientInvocation invocation = new ClientInvocation(getClient(), request, getName(), target.getUuid());
             return invocation.invoke();
         } catch (Exception e) {
             throw rethrow(e);
@@ -700,14 +693,6 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
 
     private UUID getUUID() {
         return UuidUtil.newUnsecureUUID();
-    }
-
-    private Address getMemberAddress(@Nonnull Member member) {
-        Member m = getContext().getClusterService().getMember(member.getUuid());
-        if (m == null) {
-            throw new HazelcastException(member + " is not available!");
-        }
-        return m.getAddress();
     }
 
     private int getPartitionId(@Nonnull Object key) {

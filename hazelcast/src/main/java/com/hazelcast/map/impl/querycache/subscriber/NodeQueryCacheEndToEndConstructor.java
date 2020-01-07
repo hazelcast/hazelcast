@@ -17,16 +17,15 @@
 package com.hazelcast.map.impl.querycache.subscriber;
 
 import com.hazelcast.cluster.Member;
+import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.internal.util.ExceptionUtil;
 import com.hazelcast.map.impl.query.QueryResult;
 import com.hazelcast.map.impl.query.QueryResultRow;
 import com.hazelcast.map.impl.querycache.InvokerWrapper;
 import com.hazelcast.map.impl.querycache.accumulator.AccumulatorInfo;
 import com.hazelcast.map.impl.querycache.subscriber.operation.MadePublishableOperation;
 import com.hazelcast.map.impl.querycache.subscriber.operation.PublisherCreateOperation;
-import com.hazelcast.cluster.Address;
-import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.spi.impl.operationservice.Operation;
-import com.hazelcast.internal.util.ExceptionUtil;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -75,8 +74,7 @@ public class NodeQueryCacheEndToEndConstructor extends AbstractQueryCacheEndToEn
 
         List<Future<QueryResult>> futures = new ArrayList<>(members.size());
         for (Member member : members) {
-            Address address = member.getAddress();
-            Future future = invokerWrapper.invokeOnTarget(new PublisherCreateOperation(info), address);
+            Future future = invokerWrapper.invokeOnTarget(new PublisherCreateOperation(info), member);
             futures.add(future);
         }
         return returnWithDeadline(futures, OPERATION_WAIT_TIMEOUT_MINUTES, MINUTES);
@@ -89,7 +87,7 @@ public class NodeQueryCacheEndToEndConstructor extends AbstractQueryCacheEndToEn
         List<Future> futures = new ArrayList<>(memberList.size());
         for (Member member : memberList) {
             Operation operation = new MadePublishableOperation(mapName, cacheId);
-            Future future = invokerWrapper.invokeOnTarget(operation, member.getAddress());
+            Future future = invokerWrapper.invokeOnTarget(operation, member);
             futures.add(future);
         }
 

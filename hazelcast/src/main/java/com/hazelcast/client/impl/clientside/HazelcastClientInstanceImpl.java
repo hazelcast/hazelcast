@@ -635,7 +635,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
     @Nonnull
     @Override
     public PartitionService getPartitionService() {
-        return new PartitionServiceProxy(partitionService, listenerService);
+        return new PartitionServiceProxy(partitionService, listenerService, clusterService);
     }
 
     @Nonnull

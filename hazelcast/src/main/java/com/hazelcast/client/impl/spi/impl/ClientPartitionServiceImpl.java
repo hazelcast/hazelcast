@@ -21,7 +21,6 @@ import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ClientTriggerPartitionAssignmentCodec;
 import com.hazelcast.client.impl.spi.ClientPartitionService;
-import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.internal.nio.ClassLoaderUtil;
@@ -38,6 +37,7 @@ import java.util.Collection;
 import java.util.EventListener;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -81,9 +81,9 @@ public final class ClientPartitionServiceImpl implements ClientPartitionService 
     private static class PartitionTable {
         final Connection connection;
         final int partitionSateVersion;
-        final Int2ObjectHashMap<Address> partitions;
+        final Int2ObjectHashMap<UUID> partitions;
 
-        PartitionTable(Connection connection, int partitionSateVersion, Int2ObjectHashMap<Address> partitions) {
+        PartitionTable(Connection connection, int partitionSateVersion, Int2ObjectHashMap<UUID> partitions) {
             this.connection = connection;
             this.partitionSateVersion = partitionSateVersion;
             this.partitions = partitions;
@@ -93,7 +93,7 @@ public final class ClientPartitionServiceImpl implements ClientPartitionService 
     /**
      * The partitions can be empty on the response, client will not apply the empty partition table,
      */
-    public void handlePartitionsViewEvent(Connection connection, Collection<Map.Entry<Address, List<Integer>>> partitions,
+    public void handlePartitionsViewEvent(Connection connection, Collection<Map.Entry<UUID, List<Integer>>> partitions,
                                           int partitionStateVersion) {
         if (logger.isFinestEnabled()) {
             logger.finest("Handling new partition table with  partitionStateVersion: " + partitionStateVersion);
@@ -103,7 +103,7 @@ public final class ClientPartitionServiceImpl implements ClientPartitionService 
             if (!shouldBeApplied(connection, partitions, partitionStateVersion, current)) {
                 return;
             }
-            Int2ObjectHashMap<Address> newPartitions = convertToPartitionToAddressMap(partitions);
+            Int2ObjectHashMap<UUID> newPartitions = convertToMap(partitions);
             PartitionTable newMetaData = new PartitionTable(connection, partitionStateVersion, newPartitions);
             if (this.partitionTable.compareAndSet(current, newMetaData)) {
                 if (logger.isFineEnabled()) {
@@ -115,7 +115,7 @@ public final class ClientPartitionServiceImpl implements ClientPartitionService 
         }
     }
 
-    private boolean shouldBeApplied(Connection connection, Collection<Map.Entry<Address, List<Integer>>> partitions,
+    private boolean shouldBeApplied(Connection connection, Collection<Map.Entry<UUID, List<Integer>>> partitions,
                                     int partitionStateVersion, PartitionTable current) {
         if (partitions.isEmpty()) {
             if (logger.isFinestEnabled()) {
@@ -149,27 +149,27 @@ public final class ClientPartitionServiceImpl implements ClientPartitionService 
                 + ". Current state version: " + current.partitionSateVersion);
     }
 
-    private Int2ObjectHashMap<Address> convertToPartitionToAddressMap(Collection<Map.Entry<Address, List<Integer>>> partitions) {
-        Int2ObjectHashMap<Address> newPartitions = new Int2ObjectHashMap<Address>();
-        for (Map.Entry<Address, List<Integer>> entry : partitions) {
-            Address address = entry.getKey();
+    private Int2ObjectHashMap<UUID> convertToMap(Collection<Map.Entry<UUID, List<Integer>>> partitions) {
+        Int2ObjectHashMap<UUID> newPartitions = new Int2ObjectHashMap<>();
+        for (Map.Entry<UUID, List<Integer>> entry : partitions) {
+            UUID uuid = entry.getKey();
             for (Integer partition : entry.getValue()) {
-                newPartitions.put(partition, address);
+                newPartitions.put(partition, uuid);
             }
         }
         return newPartitions;
     }
 
     public void reset() {
-        partitionTable.set(new PartitionTable(null, -1, new Int2ObjectHashMap<Address>()));
+        partitionTable.set(new PartitionTable(null, -1, new Int2ObjectHashMap<>()));
     }
 
     @Override
-    public Address getPartitionOwner(int partitionId) {
+    public UUID getPartitionOwner(int partitionId) {
         return getPartitions().get(partitionId);
     }
 
-    private Int2ObjectHashMap<Address> getPartitions() {
+    private Int2ObjectHashMap<UUID> getPartitions() {
         return partitionTable.get().partitions;
     }
 
@@ -230,7 +230,7 @@ public final class ClientPartitionServiceImpl implements ClientPartitionService 
 
         @Override
         public Member getOwner() {
-            Address owner = getPartitionOwner(partitionId);
+            UUID owner = getPartitionOwner(partitionId);
             if (owner == null) {
                 ClientMessage message = ClientTriggerPartitionAssignmentCodec.encodeRequest();
                 ClientInvocation invocation = new ClientInvocation(client, message, null);
