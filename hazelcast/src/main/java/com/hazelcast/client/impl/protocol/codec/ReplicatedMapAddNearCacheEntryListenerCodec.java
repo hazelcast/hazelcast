@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Adds a near cache entry listener for this map. This listener will be notified when an entry is added/removed/updated/evicted/expired etc. so that the near cache entries can be invalidated.
  */
-@Generated("4b84e140a0af6750938e48f274f2e788")
+@Generated("906f699ecb19bf1b36e0073d309d959e")
 public final class ReplicatedMapAddNearCacheEntryListenerCodec {
     //hex: 0x0D1200
     public static final int REQUEST_MESSAGE_TYPE = 856576;
@@ -163,6 +163,26 @@ public final class ReplicatedMapAddNearCacheEntryListenerCodec {
             }
             Logger.getLogger(super.getClass()).finest("Unknown message type received on event handler :" + messageType);
         }
+
+        /**
+         * @param key Key of the entry event.
+         * @param value Value of the entry event.
+         * @param oldValue Old value of the entry event.
+         * @param mergingValue Incoming merging value of the entry event.
+         * @param eventType Type of the entry event. Possible values are
+         *                  ADDED(1)
+         *                  REMOVED(2)
+         *                  UPDATED(4)
+         *                  EVICTED(8)
+         *                  EXPIRED(16)
+         *                  EVICT_ALL(32)
+         *                  CLEAR_ALL(64)
+         *                  MERGED(128)
+         *                  INVALIDATION(256)
+         *                  LOADED(512)
+         * @param uuid UUID of the member that dispatches the event.
+         * @param numberOfAffectedEntries Number of entries affected by this event.
+        */
         public abstract void handleEntryEvent(@Nullable com.hazelcast.internal.serialization.Data key, @Nullable com.hazelcast.internal.serialization.Data value, @Nullable com.hazelcast.internal.serialization.Data oldValue, @Nullable com.hazelcast.internal.serialization.Data mergingValue, int eventType, java.util.UUID uuid, int numberOfAffectedEntries);
     }
 }

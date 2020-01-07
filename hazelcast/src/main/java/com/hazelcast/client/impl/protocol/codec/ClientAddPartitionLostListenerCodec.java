@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Adds a partition lost listener to the cluster.
  */
-@Generated("9ea2c8defa467250c8364548daa8e004")
+@Generated("7c00892c87c2851fa9123a8b2a554630")
 public final class ClientAddPartitionLostListenerCodec {
     //hex: 0x000600
     public static final int REQUEST_MESSAGE_TYPE = 1536;
@@ -140,6 +140,12 @@ public final class ClientAddPartitionLostListenerCodec {
             }
             Logger.getLogger(super.getClass()).finest("Unknown message type received on event handler :" + messageType);
         }
+
+        /**
+         * @param partitionId Id of the lost partition.
+         * @param lostBackupCount The number of lost backups for the partition. 0: the owner, 1: first backup, 2: second backup...
+         * @param source Address of the node that dispatches the event
+        */
         public abstract void handlePartitionLostEvent(int partitionId, int lostBackupCount, @Nullable com.hazelcast.cluster.Address source);
     }
 }

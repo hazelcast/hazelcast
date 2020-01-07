@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Adds listener to map. This listener will be used to listen near cache invalidation events.
  */
-@Generated("d519fd210a036a8fd8260a1994843cfd")
+@Generated("38b2d941468ea5d13266fef72d6a86a5")
 public final class MapAddNearCacheInvalidationListenerCodec {
     //hex: 0x013F00
     public static final int REQUEST_MESSAGE_TYPE = 81664;
@@ -183,7 +183,21 @@ public final class MapAddNearCacheInvalidationListenerCodec {
             }
             Logger.getLogger(super.getClass()).finest("Unknown message type received on event handler :" + messageType);
         }
+
+        /**
+         * @param key The key of the invalidated entry.
+         * @param sourceUuid UUID of the member who fired this event.
+         * @param partitionUuid UUID of the source partition that invalidated entry belongs to.
+         * @param sequence Sequence number of the invalidation event.
+        */
         public abstract void handleIMapInvalidationEvent(@Nullable com.hazelcast.internal.serialization.Data key, java.util.UUID sourceUuid, java.util.UUID partitionUuid, long sequence);
+
+        /**
+         * @param keys List of the keys of the invalidated entries.
+         * @param sourceUuids List of UUIDs of the members who fired these events.
+         * @param partitionUuids List of UUIDs of the source partitions that invalidated entries belong to.
+         * @param sequences List of sequence numbers of the invalidation events.
+        */
         public abstract void handleIMapBatchInvalidationEvent(java.util.Collection<com.hazelcast.internal.serialization.Data> keys, java.util.Collection<java.util.UUID> sourceUuids, java.util.Collection<java.util.UUID> partitionUuids, java.util.Collection<java.lang.Long> sequences);
     }
 }

@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Adds listener for backup acks
  */
-@Generated("ac3ba261715a6a9d80c3ad1ad1466380")
+@Generated("edf82912e0c0c7644343b3c41aea9b06")
 public final class ClientLocalBackupListenerCodec {
     //hex: 0x000F00
     public static final int REQUEST_MESSAGE_TYPE = 3840;
@@ -127,6 +127,10 @@ public final class ClientLocalBackupListenerCodec {
             }
             Logger.getLogger(super.getClass()).finest("Unknown message type received on event handler :" + messageType);
         }
+
+        /**
+         * @param sourceInvocationCorrelationId correlation id of the invocation that backup acks belong to
+        */
         public abstract void handleBackupEvent(long sourceInvocationCorrelationId);
     }
 }

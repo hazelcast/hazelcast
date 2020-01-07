@@ -38,7 +38,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Adds a distributed object listener to the cluster. This listener will be notified
  * when a distributed object is created or destroyed.
  */
-@Generated("bfab14708dbc8fe764e29f776ec69ab7")
+@Generated("ba1d9647228301cdb0348c59c0cd3557")
 public final class ClientAddDistributedObjectListenerCodec {
     //hex: 0x000900
     public static final int REQUEST_MESSAGE_TYPE = 2304;
@@ -150,6 +150,13 @@ public final class ClientAddDistributedObjectListenerCodec {
             }
             Logger.getLogger(super.getClass()).finest("Unknown message type received on event handler :" + messageType);
         }
+
+        /**
+         * @param name Name of the distributed object.
+         * @param serviceName Service name of the distributed object.
+         * @param eventType Type of the event. It is either CREATED or DESTROYED.
+         * @param source The UUID (client or member) of the source of this proxy event.
+        */
         public abstract void handleDistributedObjectEvent(java.lang.String name, java.lang.String serviceName, java.lang.String eventType, java.util.UUID source);
     }
 }

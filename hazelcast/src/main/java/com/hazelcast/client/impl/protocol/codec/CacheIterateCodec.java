@@ -39,7 +39,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * CacheEntryRemoveListeners notified. java.util.Iterator#next() may return null if the entry is no longer present,
  * has expired or has been evicted.
  */
-@Generated("bfc2dd27376973b0d405946f79be71f1")
+@Generated("f6d44725a3cfda6e322845225da18060")
 public final class CacheIterateCodec {
     //hex: 0x130E00
     public static final int REQUEST_MESSAGE_TYPE = 1248768;
@@ -103,7 +103,7 @@ public final class CacheIterateCodec {
         public java.util.List<java.util.Map.Entry<java.lang.Integer, java.lang.Integer>> iterationPointers;
 
         /**
-         * TODO DOC
+         * The keys fetched from the cache.
          */
         public java.util.List<com.hazelcast.internal.serialization.Data> keys;
     }
