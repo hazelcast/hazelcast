@@ -21,6 +21,7 @@ import com.hazelcast.client.impl.protocol.codec.ClientAuthenticationCodec;
 import com.hazelcast.client.impl.protocol.util.ClientMessageDecoder;
 import com.hazelcast.client.impl.protocol.util.ClientMessageEncoder;
 import com.hazelcast.internal.networking.HandlerStatus;
+import com.hazelcast.internal.nio.Bits;
 import com.hazelcast.internal.util.UuidUtil;
 import com.hazelcast.internal.util.counters.SwCounter;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -58,12 +59,9 @@ public class ClientMessageSplitAndBuildTest {
         String username = generateRandomString(1000);
         String password = generateRandomString(1000);
         UUID uuid = UuidUtil.newUnsecureUUID();
-        UUID ownerUuid = UuidUtil.newUnsecureUUID();
-        boolean isOwnerConnection = false;
         String clientType = generateRandomString(1000);
         String clientSerializationVersion = generateRandomString(1000);
         String clientName = generateRandomString(1000);
-        UUID clusterId = UuidUtil.newUnsecureUUID();
         LinkedList<String> labels = new LinkedList<>();
         for (int i = 0; i < 10; i++) {
             labels.add(generateRandomString(1000));
@@ -111,6 +109,18 @@ public class ClientMessageSplitAndBuildTest {
         assertEquals(clientMessage1.getFrameLength(), resultingMessage.get().getFrameLength());
     }
 
+    @Test
+    public void fragmentFieldAccessTest() {
+        List<ClientMessage> fragments = getFragments(128, clientMessage1);
+        ClientMessage firstMessage = fragments.get(0);
+        ClientMessage.ForwardFrameIterator forwardFrameIterator = firstMessage.frameIterator();
+        // skip the first frame as it is the fragmentation frame
+        forwardFrameIterator.next();
+        byte[] startFrameContent = forwardFrameIterator.next().content;
+        assertEquals(clientMessage1.getMessageType(), Bits.readIntL(startFrameContent, ClientMessage.TYPE_FIELD_OFFSET));
+        assertEquals(clientMessage1.getCorrelationId(),
+                Bits.readIntL(startFrameContent, ClientMessage.CORRELATION_ID_FIELD_OFFSET));
+    }
 
     @Test
     public void splitAndBuild_multipleMessages() {

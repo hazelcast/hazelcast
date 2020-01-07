@@ -295,12 +295,28 @@ public final class ClientMessage implements OutboundFrame {
         sb.append("connection=").append(connection);
         if (startFrame != null) {
             sb.append(", length=").append(getFrameLength());
-            sb.append(", correlationId=").append(getCorrelationId());
             sb.append(", operation=").append(getOperationName());
-            sb.append(", messageType=").append(Integer.toHexString(getMessageType()));
             sb.append(", isRetryable=").append(isRetryable());
-            sb.append(", isEvent=").append(isFlagSet(startFrame.flags, IS_EVENT_FLAG));
-            sb.append(", isFragmented=").append(!isFlagSet(startFrame.flags, UNFRAGMENTED_MESSAGE));
+
+            boolean beginFragment = isFlagSet(startFrame.flags, BEGIN_FRAGMENT_FLAG);
+            boolean unFragmented = isFlagSet(startFrame.flags, UNFRAGMENTED_MESSAGE);
+            // print correlation id, and message type only if it is unfragmented message or
+            // the first message of a fragmented message
+            if (unFragmented) {
+                sb.append(", correlationId=").append(getCorrelationId());
+                sb.append(", messageType=").append(Integer.toHexString(getMessageType()));
+                sb.append(", isEvent=").append(isFlagSet(startFrame.flags, IS_EVENT_FLAG));
+            } else if (beginFragment) {
+                Frame messageFirstFrame = startFrame.next;
+                sb.append(", fragmentationId=").append(Bits.readLongL(startFrame.content, FRAGMENTATION_ID_OFFSET));
+                sb.append(", correlationId=").append(Bits.readLongL(messageFirstFrame.content, CORRELATION_ID_FIELD_OFFSET));
+                sb.append(", messageType=")
+                  .append(Integer.toHexString(Bits.readIntL(messageFirstFrame.content, ClientMessage.TYPE_FIELD_OFFSET)));
+                sb.append(", isEvent=").append(isFlagSet(messageFirstFrame.flags, IS_EVENT_FLAG));
+            } else {
+                sb.append(", fragmentationId=").append(Bits.readLongL(startFrame.content, FRAGMENTATION_ID_OFFSET));
+            }
+            sb.append(", isfragmented=").append(!unFragmented);
         }
         sb.append('}');
         return sb.toString();
