@@ -510,7 +510,6 @@ hazelcast:
 
   listeners:
     - com.hazelcast.examples.MembershipListener
-    - com.hazelcast.examples.InstanceListener
     - com.hazelcast.examples.MigrationListener
     - com.hazelcast.examples.PartitionLostListener
 
