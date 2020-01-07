@@ -34,67 +34,62 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  */
 
 /**
- * Submits the task to member specified by the address.
+ * Checks whether a task is done.
+ * @see {@link java.util.concurrent.Future#cancel(boolean)}
  */
-@Generated("de3ba402a557173fd9d7734bf062e850")
-public final class ExecutorServiceSubmitToAddressCodec {
-    //hex: 0x080600
-    public static final int REQUEST_MESSAGE_TYPE = 525824;
-    //hex: 0x080601
-    public static final int RESPONSE_MESSAGE_TYPE = 525825;
-    private static final int REQUEST_UUID_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_UUID_FIELD_OFFSET + UUID_SIZE_IN_BYTES;
-    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+@Generated("d82c256901eaab09b3280b78bc1f1127")
+public final class ScheduledExecutorIsDoneFromMemberCodec {
+    //hex: 0x1A0E00
+    public static final int REQUEST_MESSAGE_TYPE = 1707520;
+    //hex: 0x1A0E01
+    public static final int RESPONSE_MESSAGE_TYPE = 1707521;
+    private static final int REQUEST_MEMBER_UUID_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_MEMBER_UUID_FIELD_OFFSET + UUID_SIZE_IN_BYTES;
+    private static final int RESPONSE_RESPONSE_FIELD_OFFSET = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_RESPONSE_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
 
-    private ExecutorServiceSubmitToAddressCodec() {
+    private ScheduledExecutorIsDoneFromMemberCodec() {
     }
 
     @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
     public static class RequestParameters {
 
         /**
-         * Name of the executor.
+         * The name of the scheduler.
          */
-        public java.lang.String name;
+        public java.lang.String schedulerName;
 
         /**
-         * Unique id for the execution.
+         * The name of the task
          */
-        public java.util.UUID uuid;
+        public java.lang.String taskName;
 
         /**
-         * The callable object to be executed.
+         * The UUID of the member where the task will get scheduled.
          */
-        public com.hazelcast.internal.serialization.Data callable;
-
-        /**
-         * The member host on which the callable shall be executed on.
-         */
-        public com.hazelcast.cluster.Address address;
+        public java.util.UUID memberUuid;
     }
 
-    public static ClientMessage encodeRequest(java.lang.String name, java.util.UUID uuid, com.hazelcast.internal.serialization.Data callable, com.hazelcast.cluster.Address address) {
+    public static ClientMessage encodeRequest(java.lang.String schedulerName, java.lang.String taskName, java.util.UUID memberUuid) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
-        clientMessage.setRetryable(false);
-        clientMessage.setOperationName("ExecutorService.SubmitToAddress");
+        clientMessage.setRetryable(true);
+        clientMessage.setOperationName("ScheduledExecutor.IsDoneFromMember");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
-        encodeUUID(initialFrame.content, REQUEST_UUID_FIELD_OFFSET, uuid);
+        encodeUUID(initialFrame.content, REQUEST_MEMBER_UUID_FIELD_OFFSET, memberUuid);
         clientMessage.add(initialFrame);
-        StringCodec.encode(clientMessage, name);
-        DataCodec.encode(clientMessage, callable);
-        AddressCodec.encode(clientMessage, address);
+        StringCodec.encode(clientMessage, schedulerName);
+        StringCodec.encode(clientMessage, taskName);
         return clientMessage;
     }
 
-    public static ExecutorServiceSubmitToAddressCodec.RequestParameters decodeRequest(ClientMessage clientMessage) {
+    public static ScheduledExecutorIsDoneFromMemberCodec.RequestParameters decodeRequest(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         RequestParameters request = new RequestParameters();
         ClientMessage.Frame initialFrame = iterator.next();
-        request.uuid = decodeUUID(initialFrame.content, REQUEST_UUID_FIELD_OFFSET);
-        request.name = StringCodec.decode(iterator);
-        request.callable = DataCodec.decode(iterator);
-        request.address = AddressCodec.decode(iterator);
+        request.memberUuid = decodeUUID(initialFrame.content, REQUEST_MEMBER_UUID_FIELD_OFFSET);
+        request.schedulerName = StringCodec.decode(iterator);
+        request.taskName = StringCodec.decode(iterator);
         return request;
     }
 
@@ -102,27 +97,26 @@ public final class ExecutorServiceSubmitToAddressCodec {
     public static class ResponseParameters {
 
         /**
-         * The result of the callable execution.
+         * True if the task is done
          */
-        public @Nullable com.hazelcast.internal.serialization.Data response;
+        public boolean response;
     }
 
-    public static ClientMessage encodeResponse(@Nullable com.hazelcast.internal.serialization.Data response) {
+    public static ClientMessage encodeResponse(boolean response) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, RESPONSE_MESSAGE_TYPE);
+        encodeBoolean(initialFrame.content, RESPONSE_RESPONSE_FIELD_OFFSET, response);
         clientMessage.add(initialFrame);
 
-        CodecUtil.encodeNullable(clientMessage, response, DataCodec::encode);
         return clientMessage;
     }
 
-    public static ExecutorServiceSubmitToAddressCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
+    public static ScheduledExecutorIsDoneFromMemberCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         ResponseParameters response = new ResponseParameters();
-        //empty initial frame
-        iterator.next();
-        response.response = CodecUtil.decodeNullable(iterator, DataCodec::decode);
+        ClientMessage.Frame initialFrame = iterator.next();
+        response.response = decodeBoolean(initialFrame.content, RESPONSE_RESPONSE_FIELD_OFFSET);
         return response;
     }
 

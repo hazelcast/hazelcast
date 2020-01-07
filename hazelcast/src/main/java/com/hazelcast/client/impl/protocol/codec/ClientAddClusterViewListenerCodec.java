@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Adds a cluster view listener to a connection.
  */
-@Generated("ea708c413d727807642464224b9ad68a")
+@Generated("6ee07ca43f7ca07fb133787266522a35")
 public final class ClientAddClusterViewListenerCodec {
     //hex: 0x000300
     public static final int REQUEST_MESSAGE_TYPE = 768;
@@ -111,7 +111,7 @@ public final class ClientAddClusterViewListenerCodec {
         ListMultiFrameCodec.encode(clientMessage, memberInfos, MemberInfoCodec::encode);
         return clientMessage;
     }
-    public static ClientMessage encodePartitionsViewEvent(int version, java.util.Collection<java.util.Map.Entry<com.hazelcast.cluster.Address, java.util.List<java.lang.Integer>>> partitions) {
+    public static ClientMessage encodePartitionsViewEvent(int version, java.util.Collection<java.util.Map.Entry<java.util.UUID, java.util.List<java.lang.Integer>>> partitions) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[EVENT_PARTITIONS_VIEW_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         initialFrame.flags |= ClientMessage.IS_EVENT_FLAG;
@@ -119,7 +119,7 @@ public final class ClientAddClusterViewListenerCodec {
         encodeInt(initialFrame.content, EVENT_PARTITIONS_VIEW_VERSION_FIELD_OFFSET, version);
         clientMessage.add(initialFrame);
 
-        EntryListCodec.encode(clientMessage, partitions, AddressCodec::encode, ListIntegerCodec::encode);
+        EntryListUUIDListIntegerCodec.encode(clientMessage, partitions);
         return clientMessage;
     }
 
@@ -138,7 +138,7 @@ public final class ClientAddClusterViewListenerCodec {
             if (messageType == EVENT_PARTITIONS_VIEW_MESSAGE_TYPE) {
                 ClientMessage.Frame initialFrame = iterator.next();
                 int version = decodeInt(initialFrame.content, EVENT_PARTITIONS_VIEW_VERSION_FIELD_OFFSET);
-                java.util.Collection<java.util.Map.Entry<com.hazelcast.cluster.Address, java.util.List<java.lang.Integer>>> partitions = EntryListCodec.decode(iterator, AddressCodec::decode, ListIntegerCodec::decode);
+                java.util.Collection<java.util.Map.Entry<java.util.UUID, java.util.List<java.lang.Integer>>> partitions = EntryListUUIDListIntegerCodec.decode(iterator);
                 handlePartitionsViewEvent(version, partitions);
                 return;
             }
@@ -154,8 +154,8 @@ public final class ClientAddClusterViewListenerCodec {
 
         /**
          * @param version Incremental state version of the partition table
-         * @param partitions The partition table. In each entry, it has address and list of partitions belonging to that address
+         * @param partitions The partition table. In each entry, it has uuid of the member and list of partitions belonging to that member
         */
-        public abstract void handlePartitionsViewEvent(int version, java.util.Collection<java.util.Map.Entry<com.hazelcast.cluster.Address, java.util.List<java.lang.Integer>>> partitions);
+        public abstract void handlePartitionsViewEvent(int version, java.util.Collection<java.util.Map.Entry<java.util.UUID, java.util.List<java.lang.Integer>>> partitions);
     }
 }

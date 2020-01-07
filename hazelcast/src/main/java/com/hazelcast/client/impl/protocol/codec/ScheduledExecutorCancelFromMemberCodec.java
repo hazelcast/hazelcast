@@ -34,19 +34,21 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  */
 
 /**
- * Returns the ScheduledFuture's delay in nanoseconds for the task in the scheduler.
+ * Cancels further execution and scheduling of the task
  */
-@Generated("a078d6444bf812f363ee37567f6953c1")
-public final class ScheduledExecutorGetDelayFromAddressCodec {
-    //hex: 0x1A0800
-    public static final int REQUEST_MESSAGE_TYPE = 1705984;
-    //hex: 0x1A0801
-    public static final int RESPONSE_MESSAGE_TYPE = 1705985;
-    private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+@Generated("f8c67fdd1924f3b8eedea6d23553a32e")
+public final class ScheduledExecutorCancelFromMemberCodec {
+    //hex: 0x1A0A00
+    public static final int REQUEST_MESSAGE_TYPE = 1706496;
+    //hex: 0x1A0A01
+    public static final int RESPONSE_MESSAGE_TYPE = 1706497;
+    private static final int REQUEST_MEMBER_UUID_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int REQUEST_MAY_INTERRUPT_IF_RUNNING_FIELD_OFFSET = REQUEST_MEMBER_UUID_FIELD_OFFSET + UUID_SIZE_IN_BYTES;
+    private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_MAY_INTERRUPT_IF_RUNNING_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
     private static final int RESPONSE_RESPONSE_FIELD_OFFSET = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_RESPONSE_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
+    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_RESPONSE_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
 
-    private ScheduledExecutorGetDelayFromAddressCodec() {
+    private ScheduledExecutorCancelFromMemberCodec() {
     }
 
     @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
@@ -63,32 +65,38 @@ public final class ScheduledExecutorGetDelayFromAddressCodec {
         public java.lang.String taskName;
 
         /**
-         * The address of the member where the task will get scheduled.
+         * The UUID of the member where the task will get scheduled.
          */
-        public com.hazelcast.cluster.Address address;
+        public java.util.UUID memberUuid;
+
+        /**
+         * A boolean flag to indicate whether the task should be interrupted.
+         */
+        public boolean mayInterruptIfRunning;
     }
 
-    public static ClientMessage encodeRequest(java.lang.String schedulerName, java.lang.String taskName, com.hazelcast.cluster.Address address) {
+    public static ClientMessage encodeRequest(java.lang.String schedulerName, java.lang.String taskName, java.util.UUID memberUuid, boolean mayInterruptIfRunning) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(true);
-        clientMessage.setOperationName("ScheduledExecutor.GetDelayFromAddress");
+        clientMessage.setOperationName("ScheduledExecutor.CancelFromMember");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
+        encodeUUID(initialFrame.content, REQUEST_MEMBER_UUID_FIELD_OFFSET, memberUuid);
+        encodeBoolean(initialFrame.content, REQUEST_MAY_INTERRUPT_IF_RUNNING_FIELD_OFFSET, mayInterruptIfRunning);
         clientMessage.add(initialFrame);
         StringCodec.encode(clientMessage, schedulerName);
         StringCodec.encode(clientMessage, taskName);
-        AddressCodec.encode(clientMessage, address);
         return clientMessage;
     }
 
-    public static ScheduledExecutorGetDelayFromAddressCodec.RequestParameters decodeRequest(ClientMessage clientMessage) {
+    public static ScheduledExecutorCancelFromMemberCodec.RequestParameters decodeRequest(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         RequestParameters request = new RequestParameters();
-        //empty initial frame
-        iterator.next();
+        ClientMessage.Frame initialFrame = iterator.next();
+        request.memberUuid = decodeUUID(initialFrame.content, REQUEST_MEMBER_UUID_FIELD_OFFSET);
+        request.mayInterruptIfRunning = decodeBoolean(initialFrame.content, REQUEST_MAY_INTERRUPT_IF_RUNNING_FIELD_OFFSET);
         request.schedulerName = StringCodec.decode(iterator);
         request.taskName = StringCodec.decode(iterator);
-        request.address = AddressCodec.decode(iterator);
         return request;
     }
 
@@ -96,26 +104,26 @@ public final class ScheduledExecutorGetDelayFromAddressCodec {
     public static class ResponseParameters {
 
         /**
-         * The remaining delay of the task formatted in nanoseconds.
+         * True if the task was cancelled
          */
-        public long response;
+        public boolean response;
     }
 
-    public static ClientMessage encodeResponse(long response) {
+    public static ClientMessage encodeResponse(boolean response) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, RESPONSE_MESSAGE_TYPE);
-        encodeLong(initialFrame.content, RESPONSE_RESPONSE_FIELD_OFFSET, response);
+        encodeBoolean(initialFrame.content, RESPONSE_RESPONSE_FIELD_OFFSET, response);
         clientMessage.add(initialFrame);
 
         return clientMessage;
     }
 
-    public static ScheduledExecutorGetDelayFromAddressCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
+    public static ScheduledExecutorCancelFromMemberCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         ResponseParameters response = new ResponseParameters();
         ClientMessage.Frame initialFrame = iterator.next();
-        response.response = decodeLong(initialFrame.content, RESPONSE_RESPONSE_FIELD_OFFSET);
+        response.response = decodeBoolean(initialFrame.content, RESPONSE_RESPONSE_FIELD_OFFSET);
         return response;
     }
 

@@ -24,42 +24,37 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.fastFor
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
-@Generated("0a95b511c2a1035e3454693f5e263968")
-public final class ScheduledTaskHandlerCodec {
-    private static final int UUID_FIELD_OFFSET = 0;
-    private static final int PARTITION_ID_FIELD_OFFSET = UUID_FIELD_OFFSET + UUID_SIZE_IN_BYTES;
-    private static final int INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+@Generated("aaa5bd7c97c35661926df5947ccdbb1b")
+public final class AddressCodec {
+    private static final int PORT_FIELD_OFFSET = 0;
+    private static final int INITIAL_FRAME_SIZE = PORT_FIELD_OFFSET + INT_SIZE_IN_BYTES;
 
-    private ScheduledTaskHandlerCodec() {
+    private AddressCodec() {
     }
 
-    public static void encode(ClientMessage clientMessage, com.hazelcast.scheduledexecutor.ScheduledTaskHandler scheduledTaskHandler) {
+    public static void encode(ClientMessage clientMessage, com.hazelcast.cluster.Address address) {
         clientMessage.add(BEGIN_FRAME.copy());
 
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[INITIAL_FRAME_SIZE]);
-        encodeUUID(initialFrame.content, UUID_FIELD_OFFSET, scheduledTaskHandler.getUuid());
-        encodeInt(initialFrame.content, PARTITION_ID_FIELD_OFFSET, scheduledTaskHandler.getPartitionId());
+        encodeInt(initialFrame.content, PORT_FIELD_OFFSET, address.getPort());
         clientMessage.add(initialFrame);
 
-        StringCodec.encode(clientMessage, scheduledTaskHandler.getSchedulerName());
-        StringCodec.encode(clientMessage, scheduledTaskHandler.getTaskName());
+        StringCodec.encode(clientMessage, address.getHost());
 
         clientMessage.add(END_FRAME.copy());
     }
 
-    public static com.hazelcast.scheduledexecutor.impl.ScheduledTaskHandlerImpl decode(ClientMessage.ForwardFrameIterator iterator) {
+    public static com.hazelcast.cluster.Address decode(ClientMessage.ForwardFrameIterator iterator) {
         // begin frame
         iterator.next();
 
         ClientMessage.Frame initialFrame = iterator.next();
-        java.util.UUID uuid = decodeUUID(initialFrame.content, UUID_FIELD_OFFSET);
-        int partitionId = decodeInt(initialFrame.content, PARTITION_ID_FIELD_OFFSET);
+        int port = decodeInt(initialFrame.content, PORT_FIELD_OFFSET);
 
-        java.lang.String schedulerName = StringCodec.decode(iterator);
-        java.lang.String taskName = StringCodec.decode(iterator);
+        java.lang.String host = StringCodec.decode(iterator);
 
         fastForwardToEndFrame(iterator);
 
-        return new com.hazelcast.scheduledexecutor.impl.ScheduledTaskHandlerImpl(uuid, partitionId, schedulerName, taskName);
+        return CustomTypeFactory.createAddress(host, port);
     }
 }

@@ -34,18 +34,20 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  */
 
 /**
- * Dispose the task from the scheduler
+ * Returns the ScheduledFuture's delay in nanoseconds for the task in the scheduler.
  */
-@Generated("76625c9899bb5ffc10118f1956943fc4")
-public final class ScheduledExecutorDisposeFromAddressCodec {
-    //hex: 0x1A1200
-    public static final int REQUEST_MESSAGE_TYPE = 1708544;
-    //hex: 0x1A1201
-    public static final int RESPONSE_MESSAGE_TYPE = 1708545;
-    private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+@Generated("0c32cb4cdd17b273a6f7c3d9283bbad3")
+public final class ScheduledExecutorGetDelayFromMemberCodec {
+    //hex: 0x1A0800
+    public static final int REQUEST_MESSAGE_TYPE = 1705984;
+    //hex: 0x1A0801
+    public static final int RESPONSE_MESSAGE_TYPE = 1705985;
+    private static final int REQUEST_MEMBER_UUID_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_MEMBER_UUID_FIELD_OFFSET + UUID_SIZE_IN_BYTES;
+    private static final int RESPONSE_RESPONSE_FIELD_OFFSET = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_RESPONSE_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
 
-    private ScheduledExecutorDisposeFromAddressCodec() {
+    private ScheduledExecutorGetDelayFromMemberCodec() {
     }
 
     @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
@@ -62,53 +64,58 @@ public final class ScheduledExecutorDisposeFromAddressCodec {
         public java.lang.String taskName;
 
         /**
-         * The address of the member where the task will get scheduled.
+         * The UUID of the member where the task will get scheduled.
          */
-        public com.hazelcast.cluster.Address address;
+        public java.util.UUID memberUuid;
     }
 
-    public static ClientMessage encodeRequest(java.lang.String schedulerName, java.lang.String taskName, com.hazelcast.cluster.Address address) {
+    public static ClientMessage encodeRequest(java.lang.String schedulerName, java.lang.String taskName, java.util.UUID memberUuid) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(true);
-        clientMessage.setOperationName("ScheduledExecutor.DisposeFromAddress");
+        clientMessage.setOperationName("ScheduledExecutor.GetDelayFromMember");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
+        encodeUUID(initialFrame.content, REQUEST_MEMBER_UUID_FIELD_OFFSET, memberUuid);
         clientMessage.add(initialFrame);
         StringCodec.encode(clientMessage, schedulerName);
         StringCodec.encode(clientMessage, taskName);
-        AddressCodec.encode(clientMessage, address);
         return clientMessage;
     }
 
-    public static ScheduledExecutorDisposeFromAddressCodec.RequestParameters decodeRequest(ClientMessage clientMessage) {
+    public static ScheduledExecutorGetDelayFromMemberCodec.RequestParameters decodeRequest(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         RequestParameters request = new RequestParameters();
-        //empty initial frame
-        iterator.next();
+        ClientMessage.Frame initialFrame = iterator.next();
+        request.memberUuid = decodeUUID(initialFrame.content, REQUEST_MEMBER_UUID_FIELD_OFFSET);
         request.schedulerName = StringCodec.decode(iterator);
         request.taskName = StringCodec.decode(iterator);
-        request.address = AddressCodec.decode(iterator);
         return request;
     }
 
     @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
     public static class ResponseParameters {
+
+        /**
+         * The remaining delay of the task formatted in nanoseconds.
+         */
+        public long response;
     }
 
-    public static ClientMessage encodeResponse() {
+    public static ClientMessage encodeResponse(long response) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, RESPONSE_MESSAGE_TYPE);
+        encodeLong(initialFrame.content, RESPONSE_RESPONSE_FIELD_OFFSET, response);
         clientMessage.add(initialFrame);
 
         return clientMessage;
     }
 
-    public static ScheduledExecutorDisposeFromAddressCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
+    public static ScheduledExecutorGetDelayFromMemberCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         ResponseParameters response = new ResponseParameters();
-        //empty initial frame
-        iterator.next();
+        ClientMessage.Frame initialFrame = iterator.next();
+        response.response = decodeLong(initialFrame.content, RESPONSE_RESPONSE_FIELD_OFFSET);
         return response;
     }
 

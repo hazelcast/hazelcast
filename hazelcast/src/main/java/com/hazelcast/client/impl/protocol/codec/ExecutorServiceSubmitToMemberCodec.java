@@ -34,53 +34,68 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  */
 
 /**
- * Fetches invalidation metadata from partitions of map.
+ * Submits the task to member specified by the address.
  */
-@Generated("859462f42e2bf3e4de622030aa882af9")
-public final class MapFetchNearCacheInvalidationMetadataCodec {
-    //hex: 0x013D00
-    public static final int REQUEST_MESSAGE_TYPE = 81152;
-    //hex: 0x013D01
-    public static final int RESPONSE_MESSAGE_TYPE = 81153;
+@Generated("ffde1b7e230c49c01e9379a06a0470f6")
+public final class ExecutorServiceSubmitToMemberCodec {
+    //hex: 0x080600
+    public static final int REQUEST_MESSAGE_TYPE = 525824;
+    //hex: 0x080601
+    public static final int RESPONSE_MESSAGE_TYPE = 525825;
     private static final int REQUEST_UUID_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_UUID_FIELD_OFFSET + UUID_SIZE_IN_BYTES;
+    private static final int REQUEST_MEMBER_UUID_FIELD_OFFSET = REQUEST_UUID_FIELD_OFFSET + UUID_SIZE_IN_BYTES;
+    private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_MEMBER_UUID_FIELD_OFFSET + UUID_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
 
-    private MapFetchNearCacheInvalidationMetadataCodec() {
+    private ExecutorServiceSubmitToMemberCodec() {
     }
 
     @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
     public static class RequestParameters {
 
         /**
-         * names of the maps
+         * Name of the executor.
          */
-        public java.util.List<java.lang.String> names;
+        public java.lang.String name;
 
         /**
-         * The uuid of the member to fetch the near cahce invalidation meta data
+         * Unique id for the execution.
          */
         public java.util.UUID uuid;
+
+        /**
+         * The callable object to be executed.
+         */
+        public com.hazelcast.internal.serialization.Data callable;
+
+        /**
+         * The UUID of the member host on which the callable shall be executed on.
+         */
+        public java.util.UUID memberUUID;
     }
 
-    public static ClientMessage encodeRequest(java.util.Collection<java.lang.String> names, java.util.UUID uuid) {
+    public static ClientMessage encodeRequest(java.lang.String name, java.util.UUID uuid, com.hazelcast.internal.serialization.Data callable, java.util.UUID memberUUID) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
-        clientMessage.setOperationName("Map.FetchNearCacheInvalidationMetadata");
+        clientMessage.setOperationName("ExecutorService.SubmitToMember");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
         encodeUUID(initialFrame.content, REQUEST_UUID_FIELD_OFFSET, uuid);
+        encodeUUID(initialFrame.content, REQUEST_MEMBER_UUID_FIELD_OFFSET, memberUUID);
         clientMessage.add(initialFrame);
-        ListMultiFrameCodec.encode(clientMessage, names, StringCodec::encode);
+        StringCodec.encode(clientMessage, name);
+        DataCodec.encode(clientMessage, callable);
         return clientMessage;
     }
 
-    public static MapFetchNearCacheInvalidationMetadataCodec.RequestParameters decodeRequest(ClientMessage clientMessage) {
+    public static ExecutorServiceSubmitToMemberCodec.RequestParameters decodeRequest(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         RequestParameters request = new RequestParameters();
         ClientMessage.Frame initialFrame = iterator.next();
         request.uuid = decodeUUID(initialFrame.content, REQUEST_UUID_FIELD_OFFSET);
-        request.names = ListMultiFrameCodec.decode(iterator, StringCodec::decode);
+        request.memberUUID = decodeUUID(initialFrame.content, REQUEST_MEMBER_UUID_FIELD_OFFSET);
+        request.name = StringCodec.decode(iterator);
+        request.callable = DataCodec.decode(iterator);
         return request;
     }
 
@@ -88,34 +103,27 @@ public final class MapFetchNearCacheInvalidationMetadataCodec {
     public static class ResponseParameters {
 
         /**
-         * Map of partition ids and sequence number of invalidations mapped by the map name.
+         * The result of the callable execution.
          */
-        public java.util.List<java.util.Map.Entry<java.lang.String, java.util.List<java.util.Map.Entry<java.lang.Integer, java.lang.Long>>>> namePartitionSequenceList;
-
-        /**
-         * Map of member UUIDs mapped by the partition ids of invalidations.
-         */
-        public java.util.List<java.util.Map.Entry<java.lang.Integer, java.util.UUID>> partitionUuidList;
+        public @Nullable com.hazelcast.internal.serialization.Data response;
     }
 
-    public static ClientMessage encodeResponse(java.util.Collection<java.util.Map.Entry<java.lang.String, java.util.List<java.util.Map.Entry<java.lang.Integer, java.lang.Long>>>> namePartitionSequenceList, java.util.Collection<java.util.Map.Entry<java.lang.Integer, java.util.UUID>> partitionUuidList) {
+    public static ClientMessage encodeResponse(@Nullable com.hazelcast.internal.serialization.Data response) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, RESPONSE_MESSAGE_TYPE);
         clientMessage.add(initialFrame);
 
-        EntryListCodec.encode(clientMessage, namePartitionSequenceList, StringCodec::encode, EntryListIntegerLongCodec::encode);
-        EntryListIntegerUUIDCodec.encode(clientMessage, partitionUuidList);
+        CodecUtil.encodeNullable(clientMessage, response, DataCodec::encode);
         return clientMessage;
     }
 
-    public static MapFetchNearCacheInvalidationMetadataCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
+    public static ExecutorServiceSubmitToMemberCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         ResponseParameters response = new ResponseParameters();
         //empty initial frame
         iterator.next();
-        response.namePartitionSequenceList = EntryListCodec.decode(iterator, StringCodec::decode, EntryListIntegerLongCodec::decode);
-        response.partitionUuidList = EntryListIntegerUUIDCodec.decode(iterator);
+        response.response = CodecUtil.decodeNullable(iterator, DataCodec::decode);
         return response;
     }
 
