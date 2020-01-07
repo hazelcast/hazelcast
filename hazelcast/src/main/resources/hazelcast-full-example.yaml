@@ -1623,7 +1623,7 @@ hazelcast:
         eviction-policy: LFU
       wan-replication-ref:
          name: my-wan-cluster-batch
-         merge-policy: PassThroughMergePolicy
+         merge-policy-class-name: PassThroughMergePolicy
          republishing-enabled: true
          filters:
            - com.example.SampleFilter

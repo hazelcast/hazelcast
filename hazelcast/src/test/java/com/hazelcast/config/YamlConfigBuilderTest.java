@@ -1211,7 +1211,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "    " + mapName + ":\n"
                 + "      wan-replication-ref:\n"
                 + "        test:\n"
-                + "          merge-policy: TestMergePolicy\n"
+                + "          merge-policy-class-name: TestMergePolicy\n"
                 + "          filters:\n"
                 + "            - com.example.SampleFilter\n";
 
@@ -2233,7 +2233,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "          eviction-policy: LFU\n"
                 + "      wan-replication-ref:\n"
                 + "        my-wan-cluster-batch:\n"
-                + "          merge-policy: PassThroughMergePolicy\n"
+                + "          merge-policy-class-name: PassThroughMergePolicy\n"
                 + "          filters:\n"
                 + "            - com.example.SampleFilter\n"
                 + "          republishing-enabled: false\n"
