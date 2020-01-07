@@ -45,4 +45,12 @@ public class ClientListenerRegistration {
     Map<Connection, ClientConnectionRegistration> getConnectionRegistrations() {
         return registrations;
     }
+
+    @Override
+    public String toString() {
+        return "ClientListenerRegistration{"
+                + "codec=" + codec
+                + ", handler=" + handler
+                + '}';
+    }
 }
