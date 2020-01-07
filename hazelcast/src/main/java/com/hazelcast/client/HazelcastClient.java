@@ -232,8 +232,9 @@ public final class HazelcastClient {
      *     </li>
      * </ol>
      * <p>
-     * If Hazelcast doesn't find any config file, it will start with the default configuration (hazelcast-client-default.xml)
-     * located in hazelcast.jar.
+     * If a configuration file is not located, an {@link IllegalArgumentException} will be thrown.
+     *
+     * If a Hazelcast instance with the same name as the configuration exists, then it is returned, otherwise it is created.
      *
      * @return the new HazelcastInstance
      * @throws IllegalArgumentException if the instance name of the config is null or empty or if no config file can be
@@ -273,8 +274,7 @@ public final class HazelcastClient {
      *     </li>
      * </ol>
      * <p>
-     * If Hazelcast doesn't find any config file, it will start with the default configuration (hazelcast-client-default.xml)
-     * located in hazelcast.jar.
+     * If a configuration file is not located, an {@link IllegalArgumentException} will be thrown.
      *
      * @param config Client configuration
      * @return the new HazelcastInstance
