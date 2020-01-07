@@ -40,6 +40,19 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 public final class GroupProperty {
 
     /**
+     * Logs the statistics (the tasks currently) of the scheduled executors to the main log file.
+     *
+     * a value equal or less than 0 will disable the logging.
+     *
+     * a value larger than 1 is the interval between the logs.
+     *
+     * The value returned is a best effort. When a migration is going on, the numbers might not
+     * be accurate.
+     */
+    public static final HazelcastProperty SCHEDULED_EXECUTOR_LOG_DELAY_SECONDS
+            = new HazelcastProperty("hazelcast.scheduledexecutor.logdelay.seconds", 0);
+
+    /**
      * Use this property to verify that Hazelcast nodes only join the cluster when their 'application' level configuration is the
      * same.
      * <p/>
