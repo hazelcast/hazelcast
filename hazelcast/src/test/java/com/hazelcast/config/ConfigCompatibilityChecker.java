@@ -628,8 +628,11 @@ public class ConfigCompatibilityChecker {
             return nullSafeEqual(c1.getName(), c2.getName())
                     && c1.getPrefetchCount() == c2.getPrefetchCount()
                     && c1.getPrefetchValidityMillis() == c2.getPrefetchValidityMillis()
-                    && c1.getIdOffset() == c2.getIdOffset()
+                    && c1.getEpochStart() == c2.getEpochStart()
                     && c1.getNodeIdOffset() == c2.getNodeIdOffset()
+                    && c1.getBitsSequence() == c2.getBitsSequence()
+                    && c1.getBitsNodeId() == c2.getBitsNodeId()
+                    && c1.getAllowedFutureMillis() == c2.getAllowedFutureMillis()
                     && c1.isStatisticsEnabled() == c2.isStatisticsEnabled();
         }
 

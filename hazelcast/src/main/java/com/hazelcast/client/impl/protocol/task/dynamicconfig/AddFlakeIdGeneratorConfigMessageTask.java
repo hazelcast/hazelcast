@@ -46,8 +46,11 @@ public class AddFlakeIdGeneratorConfigMessageTask
         FlakeIdGeneratorConfig config = new FlakeIdGeneratorConfig(parameters.name);
         config.setPrefetchCount(parameters.prefetchCount);
         config.setPrefetchValidityMillis(parameters.prefetchValidity);
-        config.setIdOffset(parameters.idOffset);
         config.setNodeIdOffset(parameters.nodeIdOffset);
+        config.setEpochStart(parameters.epochStart);
+        config.setBitsSequence(parameters.bitsSequence);
+        config.setBitsNodeId(parameters.bitsNodeId);
+        config.setAllowedFutureMillis(parameters.allowedFutureMillis);
         config.setStatisticsEnabled(parameters.statisticsEnabled);
         return config;
     }

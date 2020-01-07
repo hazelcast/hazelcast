@@ -1367,8 +1367,11 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "    gen:\n"
                 + "      prefetch-count: 3\n"
                 + "      prefetch-validity-millis: 10\n"
-                + "      id-offset: 20\n"
+                + "      epoch-start: 1514764800001\n"
                 + "      node-id-offset: 30\n"
+                + "      bits-sequence: 22\n"
+                + "      bits-node-id: 33\n"
+                + "      allowed-future-millis: 20000\n"
                 + "      statistics-enabled: false\n"
                 + "    gen2:\n"
                 + "      statistics-enabled: true";
@@ -1378,8 +1381,11 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
         assertEquals("gen", fConfig.getName());
         assertEquals(3, fConfig.getPrefetchCount());
         assertEquals(10L, fConfig.getPrefetchValidityMillis());
-        assertEquals(20L, fConfig.getIdOffset());
+        assertEquals(1514764800001L, fConfig.getEpochStart());
         assertEquals(30L, fConfig.getNodeIdOffset());
+        assertEquals(22, fConfig.getBitsSequence());
+        assertEquals(33, fConfig.getBitsNodeId());
+        assertEquals(20000L, fConfig.getAllowedFutureMillis());
         assertFalse(fConfig.isStatisticsEnabled());
 
         FlakeIdGeneratorConfig f2Config = config.findFlakeIdGeneratorConfig("gen2");

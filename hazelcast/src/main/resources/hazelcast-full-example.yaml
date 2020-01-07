@@ -1906,26 +1906,26 @@ hazelcast:
   #
   #     This setting pertains only to newId() calls made on the member that configured it.
   #
-  # * "id-offset":
-  #     Sets the offset that will be added to the returned IDs. Default value is 0. Setting might be
-  #     useful when migrating from IdGenerator, default value works for all green-field projects.
-  #
-  #     For example: Largest ID returned from IdGenerator is 150. FlakeIdGenerator now returns
-  #     100. If you configure idOffset of 50 and stop using the IdGenerator, the next ID from
-  #     FlakeIdGenerator will be 151 or larger and no duplicate IDs will be generated. In real-life,
-  #     the IDs are much larger. You also need to add a reserve to the offset because the IDs
-  #     from FlakeIdGenerator are only roughly ordered. Recommended reserve is 2^38, that is
-  #     274877906944.
-  #
-  #     Negative values are allowed to increase the lifespan of the generator, however keep in
-  #     mind that the generated IDs might also be negative.
-  #
+  # * "epoch-start":
+  #     Sets the offset of timestamp component. Time unit is milliseconds, default is 1514764800000
+  #     (1.1.2018 0:00 UTC).
+  #       
   # * "node-id-offset":
   #     Sets the offset that will be added to the node ID assigned to cluster member for this generator.
   #     Might be useful in A/B deployment scenarios where you have cluster A which you want to upgrade.
   #     You create cluster B and for some time both will generate IDs and you want to have them unique.
   #     In this case, configure node ID offset for generators on cluster B.
   #
+  # * "bits-sequence":
+  #     Sets the bit-length of the sequence component, default is 6 bits.
+  #
+  # * "bits-node-id":
+  #     Sets the bit-length of node id component. Default value is 16 bits.
+  #      
+  # * "allowed-future-millis":
+  #     Sets how far to the future is the generator allowed to go to generate IDs without blocking, default is
+  #     15 seconds.
+  #  
   # * "statistics-enabled":
   #     When you enable it, you can retrieve the Flake ID generators statistics. Its default value is true.
   #
@@ -1933,8 +1933,11 @@ hazelcast:
     default:
       prefetch-count: 100
       prefetch-validity-millis: 600000
-      id-offset: 0
+      epoch-start: 1514764800000
       node-id-offset: 0
+      bits-sequence: 6
+      bits-node-id: 16
+      allowed-future-millis: 15000
       statistics-enabled: true
 
   #

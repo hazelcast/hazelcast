@@ -6748,9 +6748,12 @@ public class MemberCompatibilityNullTest_2_0 {
         assertTrue(isEqual(aString, parameters.name));
         assertTrue(isEqual(anInt, parameters.prefetchCount));
         assertTrue(isEqual(aLong, parameters.prefetchValidity));
-        assertTrue(isEqual(aLong, parameters.idOffset));
         assertTrue(isEqual(aBoolean, parameters.statisticsEnabled));
         assertTrue(isEqual(aLong, parameters.nodeIdOffset));
+        assertTrue(isEqual(aLong, parameters.epochStart));
+        assertTrue(isEqual(anInt, parameters.bitsSequence));
+        assertTrue(isEqual(anInt, parameters.bitsNodeId));
+        assertTrue(isEqual(aLong, parameters.allowedFutureMillis));
     }
 
     @Test

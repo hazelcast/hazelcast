@@ -782,8 +782,11 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
         FlakeIdGeneratorConfig figConfig = new FlakeIdGeneratorConfig("flake-id-gen1")
                 .setPrefetchCount(3)
                 .setPrefetchValidityMillis(10L)
-                .setIdOffset(20L)
+                .setEpochStart(1000000L)
                 .setNodeIdOffset(30L)
+                .setBitsSequence(2)
+                .setBitsNodeId(3)
+                .setAllowedFutureMillis(123L)
                 .setStatisticsEnabled(false);
 
         Config config = new Config()

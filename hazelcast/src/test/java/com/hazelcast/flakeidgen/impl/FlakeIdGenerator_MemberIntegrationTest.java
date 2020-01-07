@@ -34,7 +34,6 @@ import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
 import java.util.Map;
-import java.util.function.Supplier;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -62,12 +61,7 @@ public class FlakeIdGenerator_MemberIntegrationTest extends HazelcastTestSupport
     public void smokeTest() throws Exception {
         HazelcastInstance instance = factory.newHazelcastInstance();
         final FlakeIdGenerator generator = instance.getFlakeIdGenerator("gen");
-        FlakeIdConcurrencyTestUtil.concurrentlyGenerateIds(new Supplier<Long>() {
-            @Override
-            public Long get() {
-                return generator.newId();
-            }
-        });
+        FlakeIdConcurrencyTestUtil.concurrentlyGenerateIds(generator::newId);
     }
 
     @Test

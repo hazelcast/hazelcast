@@ -38,7 +38,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * If a flake ID generator configuration for the same name already exists, then
  * the new configuration is ignored and the existing one is preserved.
  */
-@Generated("f998bdef9b5d75f20d026bfa302fce1a")
+@Generated("de4b2622a6be3436137c65589607ba0d")
 public final class DynamicConfigAddFlakeIdGeneratorConfigCodec {
     //hex: 0x1B0F00
     public static final int REQUEST_MESSAGE_TYPE = 1773312;
@@ -46,10 +46,13 @@ public final class DynamicConfigAddFlakeIdGeneratorConfigCodec {
     public static final int RESPONSE_MESSAGE_TYPE = 1773313;
     private static final int REQUEST_PREFETCH_COUNT_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_PREFETCH_VALIDITY_FIELD_OFFSET = REQUEST_PREFETCH_COUNT_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    private static final int REQUEST_ID_OFFSET_FIELD_OFFSET = REQUEST_PREFETCH_VALIDITY_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
-    private static final int REQUEST_STATISTICS_ENABLED_FIELD_OFFSET = REQUEST_ID_OFFSET_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
+    private static final int REQUEST_STATISTICS_ENABLED_FIELD_OFFSET = REQUEST_PREFETCH_VALIDITY_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
     private static final int REQUEST_NODE_ID_OFFSET_FIELD_OFFSET = REQUEST_STATISTICS_ENABLED_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
-    private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_NODE_ID_OFFSET_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
+    private static final int REQUEST_EPOCH_START_FIELD_OFFSET = REQUEST_NODE_ID_OFFSET_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
+    private static final int REQUEST_BITS_SEQUENCE_FIELD_OFFSET = REQUEST_EPOCH_START_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
+    private static final int REQUEST_BITS_NODE_ID_FIELD_OFFSET = REQUEST_BITS_SEQUENCE_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int REQUEST_ALLOWED_FUTURE_MILLIS_FIELD_OFFSET = REQUEST_BITS_NODE_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_ALLOWED_FUTURE_MILLIS_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
 
     private DynamicConfigAddFlakeIdGeneratorConfigCodec() {
@@ -74,11 +77,6 @@ public final class DynamicConfigAddFlakeIdGeneratorConfigCodec {
         public long prefetchValidity;
 
         /**
-         * TODO DOC
-         */
-        public long idOffset;
-
-        /**
          * {@code true} to enable gathering of statistics, otherwise {@code false}
          */
         public boolean statisticsEnabled;
@@ -87,9 +85,29 @@ public final class DynamicConfigAddFlakeIdGeneratorConfigCodec {
          * TODO DOC
          */
         public long nodeIdOffset;
+
+        /**
+         * offset of timestamp component in milliseconds 
+         */
+        public long epochStart;
+
+        /**
+         * bit length of sequence component 
+         */
+        public int bitsSequence;
+
+        /**
+         * bit length of node id component
+         */
+        public int bitsNodeId;
+
+        /**
+         * how far to the future is it allowed to go to generate IDs 
+         */
+        public long allowedFutureMillis;
     }
 
-    public static ClientMessage encodeRequest(java.lang.String name, int prefetchCount, long prefetchValidity, long idOffset, boolean statisticsEnabled, long nodeIdOffset) {
+    public static ClientMessage encodeRequest(java.lang.String name, int prefetchCount, long prefetchValidity, boolean statisticsEnabled, long nodeIdOffset, long epochStart, int bitsSequence, int bitsNodeId, long allowedFutureMillis) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
         clientMessage.setOperationName("DynamicConfig.AddFlakeIdGeneratorConfig");
@@ -97,9 +115,12 @@ public final class DynamicConfigAddFlakeIdGeneratorConfigCodec {
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
         encodeInt(initialFrame.content, REQUEST_PREFETCH_COUNT_FIELD_OFFSET, prefetchCount);
         encodeLong(initialFrame.content, REQUEST_PREFETCH_VALIDITY_FIELD_OFFSET, prefetchValidity);
-        encodeLong(initialFrame.content, REQUEST_ID_OFFSET_FIELD_OFFSET, idOffset);
         encodeBoolean(initialFrame.content, REQUEST_STATISTICS_ENABLED_FIELD_OFFSET, statisticsEnabled);
         encodeLong(initialFrame.content, REQUEST_NODE_ID_OFFSET_FIELD_OFFSET, nodeIdOffset);
+        encodeLong(initialFrame.content, REQUEST_EPOCH_START_FIELD_OFFSET, epochStart);
+        encodeInt(initialFrame.content, REQUEST_BITS_SEQUENCE_FIELD_OFFSET, bitsSequence);
+        encodeInt(initialFrame.content, REQUEST_BITS_NODE_ID_FIELD_OFFSET, bitsNodeId);
+        encodeLong(initialFrame.content, REQUEST_ALLOWED_FUTURE_MILLIS_FIELD_OFFSET, allowedFutureMillis);
         clientMessage.add(initialFrame);
         StringCodec.encode(clientMessage, name);
         return clientMessage;
@@ -111,9 +132,12 @@ public final class DynamicConfigAddFlakeIdGeneratorConfigCodec {
         ClientMessage.Frame initialFrame = iterator.next();
         request.prefetchCount = decodeInt(initialFrame.content, REQUEST_PREFETCH_COUNT_FIELD_OFFSET);
         request.prefetchValidity = decodeLong(initialFrame.content, REQUEST_PREFETCH_VALIDITY_FIELD_OFFSET);
-        request.idOffset = decodeLong(initialFrame.content, REQUEST_ID_OFFSET_FIELD_OFFSET);
         request.statisticsEnabled = decodeBoolean(initialFrame.content, REQUEST_STATISTICS_ENABLED_FIELD_OFFSET);
         request.nodeIdOffset = decodeLong(initialFrame.content, REQUEST_NODE_ID_OFFSET_FIELD_OFFSET);
+        request.epochStart = decodeLong(initialFrame.content, REQUEST_EPOCH_START_FIELD_OFFSET);
+        request.bitsSequence = decodeInt(initialFrame.content, REQUEST_BITS_SEQUENCE_FIELD_OFFSET);
+        request.bitsNodeId = decodeInt(initialFrame.content, REQUEST_BITS_NODE_ID_FIELD_OFFSET);
+        request.allowedFutureMillis = decodeLong(initialFrame.content, REQUEST_ALLOWED_FUTURE_MILLIS_FIELD_OFFSET);
         request.name = StringCodec.decode(iterator);
         return request;
     }

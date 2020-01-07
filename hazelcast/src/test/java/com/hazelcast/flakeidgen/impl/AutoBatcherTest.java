@@ -24,7 +24,6 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.util.Set;
-import java.util.function.Supplier;
 
 import static com.hazelcast.flakeidgen.impl.FlakeIdConcurrencyTestUtil.IDS_IN_THREAD;
 import static com.hazelcast.flakeidgen.impl.FlakeIdConcurrencyTestUtil.NUM_THREADS;
@@ -68,12 +67,7 @@ public class AutoBatcherTest {
 
     @Test
     public void concurrencySmokeTest() throws Exception {
-        Set<Long> ids = FlakeIdConcurrencyTestUtil.concurrentlyGenerateIds(new Supplier<Long>() {
-            @Override
-            public Long get() {
-                return batcher.newId();
-            }
-        });
+        Set<Long> ids = FlakeIdConcurrencyTestUtil.concurrentlyGenerateIds(() -> batcher.newId());
         for (int i = 0; i < NUM_THREADS * IDS_IN_THREAD; i++) {
             assertTrue("Missing ID: " + i, ids.contains((long) i));
         }

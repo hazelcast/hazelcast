@@ -1370,8 +1370,11 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "<flake-id-generator name='gen'>"
                 + "  <prefetch-count>3</prefetch-count>"
                 + "  <prefetch-validity-millis>10</prefetch-validity-millis>"
-                + "  <id-offset>20</id-offset>"
+                + "  <epoch-start>1514764800001</epoch-start>"
                 + "  <node-id-offset>30</node-id-offset>"
+                + "  <bits-sequence>22</bits-sequence>"
+                + "  <bits-node-id>33</bits-node-id>"
+                + "  <allowed-future-millis>20000</allowed-future-millis>"
                 + "  <statistics-enabled>false</statistics-enabled>"
                 + "</flake-id-generator>"
                 + HAZELCAST_END_TAG;
@@ -1380,8 +1383,11 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         assertEquals("gen", fConfig.getName());
         assertEquals(3, fConfig.getPrefetchCount());
         assertEquals(10L, fConfig.getPrefetchValidityMillis());
-        assertEquals(20L, fConfig.getIdOffset());
+        assertEquals(1514764800001L, fConfig.getEpochStart());
         assertEquals(30L, fConfig.getNodeIdOffset());
+        assertEquals(22, fConfig.getBitsSequence());
+        assertEquals(33, fConfig.getBitsNodeId());
+        assertEquals(20000L, fConfig.getAllowedFutureMillis());
         assertFalse(fConfig.isStatisticsEnabled());
     }
 
