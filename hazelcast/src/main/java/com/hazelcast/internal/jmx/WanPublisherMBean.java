@@ -27,7 +27,7 @@ import java.util.Map;
  * WAN publishers do not share a single common interface, we need to access
  * them through the WAN replication service until such an interface is introduced.
  */
-@ManagedDescription("WanReplicationPublisher")
+@ManagedDescription("WanPublisher")
 public class WanPublisherMBean extends HazelcastMBean<WanReplicationService> {
     private final String wanReplicationName;
     private final String wanPublisherId;
@@ -39,7 +39,7 @@ public class WanPublisherMBean extends HazelcastMBean<WanReplicationService> {
         super(wanReplicationService, service);
         this.wanReplicationName = wanReplicationName;
         this.wanPublisherId = wanPublisherId;
-        this.objectName = service.createObjectName("WanReplicationPublisher",
+        this.objectName = service.createObjectName("WanPublisher",
                 wanReplicationName + "." + wanPublisherId);
     }
 
