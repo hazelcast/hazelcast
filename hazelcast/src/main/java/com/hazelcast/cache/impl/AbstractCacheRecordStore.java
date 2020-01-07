@@ -1740,8 +1740,8 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
     }
 
     @Override
-    public CacheRecord merge(CacheMergeTypes mergingEntry,
-                             SplitBrainMergePolicy<Data, CacheMergeTypes> mergePolicy,
+    public CacheRecord merge(CacheMergeTypes<Object, Object> mergingEntry,
+                             SplitBrainMergePolicy<Object, CacheMergeTypes<Object, Object>, Object> mergePolicy,
                              CallerProvenance callerProvenance) {
         final long now = Clock.currentTimeMillis();
         final long start = isStatisticsEnabled() ? System.nanoTime() : 0;
@@ -1750,22 +1750,23 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
         injectDependencies(mergePolicy);
 
         boolean merged = false;
-        Data key = mergingEntry.getKey();
+
+        Data key = toData(mergingEntry.getRawKey());
         long expiryTime = mergingEntry.getExpirationTime();
         R record = records.get(key);
         boolean isExpired = processExpiredEntry(key, record, now);
         boolean disableWriteThrough = !persistenceEnabledFor(callerProvenance);
 
         if (record == null || isExpired) {
-            Data newValue = mergePolicy.merge(mergingEntry, null);
+            Object newValue = mergePolicy.merge(mergingEntry, null);
             if (newValue != null) {
                 record = createRecordWithExpiry(key, newValue, expiryTime, now, disableWriteThrough, IGNORE_COMPLETION);
                 merged = record != null;
             }
         } else {
             Data oldValue = ss.toData(record.getValue());
-            CacheMergeTypes existingEntry = createMergingEntry(ss, key, oldValue, record);
-            Data newValue = mergePolicy.merge(mergingEntry, existingEntry);
+            CacheMergeTypes<Object, Object> existingEntry = createMergingEntry(ss, key, oldValue, record);
+            Object newValue = mergePolicy.merge(mergingEntry, existingEntry);
 
             merged = updateWithMergingValue(key, oldValue, newValue, record, expiryTime, now, disableWriteThrough);
         }

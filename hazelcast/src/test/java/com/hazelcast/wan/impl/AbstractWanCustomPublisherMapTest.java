@@ -31,7 +31,6 @@ import com.hazelcast.map.impl.operation.MapOperation;
 import com.hazelcast.map.impl.operation.MapOperationProvider;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
-import com.hazelcast.spi.merge.PassThroughMergePolicy;
 import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 import com.hazelcast.spi.merge.SplitBrainMergeTypes.MapMergeTypes;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -240,8 +239,9 @@ public class AbstractWanCustomPublisherMapTest extends HazelcastTestSupport {
         MapOperation op;
         SimpleEntryView<Data, Data> entryView = new SimpleEntryView<Data, Data>().withKey(data).withValue(data);
 
-        MapMergeTypes mergingEntry = createMergingEntry(serializationService, entryView);
-        SplitBrainMergePolicy<Data, MapMergeTypes> mergePolicy = new PassThroughMergePolicy<>();
+        MapMergeTypes<Object, Object> mergingEntry = createMergingEntry(serializationService, entryView);
+        SplitBrainMergePolicy<Object, MapMergeTypes<Object, Object>, Object> mergePolicy
+                = new com.hazelcast.spi.merge.PassThroughMergePolicy<>();
         op = operationProvider.createMergeOperation(mapName, mergingEntry, mergePolicy, !enableWANReplicationEvent);
         operationService.createInvocationBuilder(MapService.SERVICE_NAME, op, partitionService.getPartitionId(data)).invoke();
     }

@@ -23,7 +23,7 @@ import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 import com.hazelcast.spi.merge.SplitBrainMergeTypes.RingbufferMergeTypes;
 
 class RingbufferMergeIntegerValuesMergePolicy
-        implements SplitBrainMergePolicy<RingbufferMergeData, RingbufferMergeTypes> {
+        implements SplitBrainMergePolicy<RingbufferMergeData, RingbufferMergeTypes, RingbufferMergeData> {
 
     @Override
     public RingbufferMergeData merge(RingbufferMergeTypes mergingValue, RingbufferMergeTypes existingValue) {

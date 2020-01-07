@@ -20,17 +20,18 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.merge.MergingCosts;
 import com.hazelcast.spi.merge.MergingExpirationTime;
+import com.hazelcast.spi.merge.MergingValue;
 import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 
 import java.io.IOException;
 
 @SuppressWarnings("unused")
 public class ComplexCustomBaseMergePolicy<V, C extends Comparable<V>, S extends String,
-        T extends MergingExpirationTime<V> & MergingCosts<V>, U extends Comparable<T>>
-        implements SplitBrainMergePolicy<V, T> {
+        T extends MergingValue<V> & MergingExpirationTime & MergingCosts, U extends Comparable<T>>
+        implements SplitBrainMergePolicy<V, T, Object> {
 
     @Override
-    public V merge(T mergingValue, T existingValue) {
+    public Object merge(T mergingValue, T existingValue) {
         return null;
     }
 

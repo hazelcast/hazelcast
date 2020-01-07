@@ -78,12 +78,12 @@ public class CardinalityEstimatorContainer
      * @return the used {@link HyperLogLog} if merge is applied, otherwise {@code null}
      */
     public HyperLogLog merge(CardinalityEstimatorMergeTypes mergingEntry,
-                             SplitBrainMergePolicy<HyperLogLog, CardinalityEstimatorMergeTypes> mergePolicy,
+                             SplitBrainMergePolicy<HyperLogLog, CardinalityEstimatorMergeTypes, HyperLogLog> mergePolicy,
                              SerializationService serializationService) {
         serializationService.getManagedContext().initialize(mergingEntry);
         serializationService.getManagedContext().initialize(mergePolicy);
 
-        String name = mergingEntry.getKey();
+        String name = mergingEntry.getDeserializedKey();
         if (hll.estimate() != 0) {
             CardinalityEstimatorMergeTypes existingEntry = createMergingEntry(serializationService, name, hll);
             HyperLogLog newValue = mergePolicy.merge(mergingEntry, existingEntry);

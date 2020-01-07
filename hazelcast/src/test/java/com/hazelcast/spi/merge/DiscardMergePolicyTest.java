@@ -41,7 +41,7 @@ public class DiscardMergePolicyTest {
     private static final Data EXISTING = SERIALIZATION_SERVICE.toData("EXISTING");
     private static final Data MERGING = SERIALIZATION_SERVICE.toData("MERGING");
 
-    private SplitBrainMergePolicy<Data, MapMergeTypes> mergePolicy;
+    private SplitBrainMergePolicy<String, MapMergeTypes<Object, String>, Object> mergePolicy;
 
     @Before
     public void setup() {
@@ -85,7 +85,7 @@ public class DiscardMergePolicyTest {
     private MapMergeTypes mergingValueWithGivenValue(Data value) {
         MapMergeTypes mergingValue = mock(MapMergeTypes.class);
         try {
-            when(mergingValue.getValue()).thenReturn(value);
+            when(mergingValue.getRawValue()).thenReturn(value);
             return mergingValue;
         } catch (Exception e) {
             throw new RuntimeException(e);

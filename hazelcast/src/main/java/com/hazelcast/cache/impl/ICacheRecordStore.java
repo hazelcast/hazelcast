@@ -539,8 +539,9 @@ public interface ICacheRecordStore {
      * @param callerProvenance
      * @return the used {@link CacheRecord} if merge is applied, otherwise {@code null}
      */
-    CacheRecord merge(CacheMergeTypes mergingEntry,
-                      SplitBrainMergePolicy<Data, CacheMergeTypes> mergePolicy, CallerProvenance callerProvenance);
+    CacheRecord merge(CacheMergeTypes<Object, Object> mergingEntry,
+                      SplitBrainMergePolicy<Object, CacheMergeTypes<Object, Object>, Object> mergePolicy,
+                      CallerProvenance callerProvenance);
 
     /**
      * @return partition ID of this store

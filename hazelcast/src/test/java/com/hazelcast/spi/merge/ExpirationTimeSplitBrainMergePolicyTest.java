@@ -16,7 +16,6 @@
 
 package com.hazelcast.spi.merge;
 
-import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.spi.merge.SplitBrainMergeTypes.MapMergeTypes;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -29,7 +28,7 @@ import org.junit.runner.RunWith;
 public class ExpirationTimeSplitBrainMergePolicyTest extends AbstractSplitBrainMergePolicyTest {
 
     @Override
-    protected SplitBrainMergePolicy<Data, MapMergeTypes> createMergePolicy() {
-        return new ExpirationTimeMergePolicy<Data, MapMergeTypes>();
+    protected SplitBrainMergePolicy<String, MapMergeTypes<Object, String>, Object> createMergePolicy() {
+        return new ExpirationTimeMergePolicy<>();
     }
 }

@@ -217,7 +217,7 @@ public class CardinalityEstimatorService
 
                 for (CardinalityEstimatorContainer container : containerList) {
                     String containerName = collector.getContainerName(container);
-                    SplitBrainMergePolicy<HyperLogLog, CardinalityEstimatorMergeTypes> mergePolicy
+                    SplitBrainMergePolicy<HyperLogLog, CardinalityEstimatorMergeTypes, HyperLogLog> mergePolicy
                             = getMergePolicy(collector.getMergePolicyConfig(container));
 
                     MergeOperation operation = new MergeOperation(containerName, mergePolicy, container.hll);

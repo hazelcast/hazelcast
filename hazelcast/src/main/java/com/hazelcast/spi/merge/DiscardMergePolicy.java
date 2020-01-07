@@ -26,17 +26,17 @@ import com.hazelcast.spi.impl.merge.SplitBrainDataSerializerHook;
  * @param <T> the type of the merging value
  * @since 3.10
  */
-public class DiscardMergePolicy<V, T extends MergingValue<V>> extends AbstractSplitBrainMergePolicy<V, T> {
+public class DiscardMergePolicy<V, T extends MergingValue<V>> extends AbstractSplitBrainMergePolicy<V, T, Object> {
 
     public DiscardMergePolicy() {
     }
 
     @Override
-    public V merge(T mergingValue, T existingValue) {
+    public Object merge(T mergingValue, T existingValue) {
         if (existingValue == null) {
             return null;
         }
-        return existingValue.getValue();
+        return existingValue.getRawValue();
     }
 
     @Override

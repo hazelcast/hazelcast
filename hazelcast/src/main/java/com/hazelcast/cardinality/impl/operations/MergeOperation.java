@@ -37,7 +37,7 @@ import static com.hazelcast.spi.impl.merge.MergingValueFactory.createMergingEntr
 public class MergeOperation
         extends CardinalityEstimatorBackupAwareOperation {
 
-    private SplitBrainMergePolicy<HyperLogLog, CardinalityEstimatorMergeTypes> mergePolicy;
+    private SplitBrainMergePolicy<HyperLogLog, CardinalityEstimatorMergeTypes, HyperLogLog> mergePolicy;
     private HyperLogLog value;
 
     private transient HyperLogLog backupValue;
@@ -45,7 +45,8 @@ public class MergeOperation
     public MergeOperation() {
     }
 
-    public MergeOperation(String name, SplitBrainMergePolicy<HyperLogLog, CardinalityEstimatorMergeTypes> mergePolicy,
+    public MergeOperation(String name,
+                          SplitBrainMergePolicy<HyperLogLog, CardinalityEstimatorMergeTypes, HyperLogLog> mergePolicy,
                           HyperLogLog value) {
         super(name);
         this.mergePolicy = mergePolicy;

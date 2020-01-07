@@ -109,7 +109,7 @@ public abstract class AbstractContainerMerger<C, V, T extends MergingValue<V>> i
      * @param mergePolicyConfig the {@link MergePolicyConfig} to retrieve the merge policy from
      * @return the {@link SplitBrainMergePolicy} instance
      */
-    protected SplitBrainMergePolicy<V, T> getMergePolicy(MergePolicyConfig mergePolicyConfig) {
+    protected <R> SplitBrainMergePolicy<V, T, R> getMergePolicy(MergePolicyConfig mergePolicyConfig) {
         String mergePolicyName = mergePolicyConfig.getPolicy();
         return splitBrainMergePolicyProvider.getMergePolicy(mergePolicyName);
     }

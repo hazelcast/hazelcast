@@ -16,10 +16,11 @@
 
 package com.hazelcast.replicatedmap.impl.record;
 
+import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.cluster.memberselector.MemberSelectors;
-import com.hazelcast.cluster.Address;
 import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.internal.util.Clock;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapEventPublishingService;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
 import com.hazelcast.replicatedmap.impl.operation.ReplicateUpdateOperation;
@@ -27,7 +28,6 @@ import com.hazelcast.replicatedmap.impl.operation.VersionResponsePair;
 import com.hazelcast.spi.impl.operationservice.OperationService;
 import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 import com.hazelcast.spi.merge.SplitBrainMergeTypes.ReplicatedMapMergeTypes;
-import com.hazelcast.internal.util.Clock;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -40,9 +40,9 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.core.EntryEventType.EVICTED;
+import static com.hazelcast.internal.util.Preconditions.isNotNull;
 import static com.hazelcast.replicatedmap.impl.ReplicatedMapService.SERVICE_NAME;
 import static com.hazelcast.spi.impl.merge.MergingValueFactory.createMergingEntry;
-import static com.hazelcast.internal.util.Preconditions.isNotNull;
 
 /**
  * This is the base class for all {@link ReplicatedRecordStore} implementations
@@ -335,12 +335,12 @@ public abstract class AbstractReplicatedRecordStore<K, V> extends AbstractBaseRe
 
     @Override
     @SuppressWarnings("unchecked")
-    public boolean merge(ReplicatedMapMergeTypes mergingEntry,
-                         SplitBrainMergePolicy<Object, ReplicatedMapMergeTypes> mergePolicy) {
+    public boolean merge(ReplicatedMapMergeTypes<Object, Object> mergingEntry,
+                         SplitBrainMergePolicy<Object, ReplicatedMapMergeTypes<Object, Object>, Object> mergePolicy) {
         serializationService.getManagedContext().initialize(mergingEntry);
         serializationService.getManagedContext().initialize(mergePolicy);
 
-        K marshalledKey = (K) marshall(mergingEntry.getKey());
+        K marshalledKey = (K) marshall(mergingEntry.getRawKey());
         InternalReplicatedMapStorage<K, V> storage = getStorage();
         ReplicatedRecord<K, V> record = storage.get(marshalledKey);
         if (record == null) {
@@ -353,16 +353,16 @@ public abstract class AbstractReplicatedRecordStore<K, V> extends AbstractBaseRe
             storage.incrementVersion();
             Data dataKey = serializationService.toData(marshalledKey);
             Data dataValue = serializationService.toData(newValue);
-            VersionResponsePair responsePair = new VersionResponsePair(mergingEntry.getValue(), getVersion());
+            VersionResponsePair responsePair = new VersionResponsePair(mergingEntry.getRawValue(), getVersion());
             sendReplicationOperation(false, name, dataKey, dataValue, record.getTtlMillis(), responsePair);
         } else {
-            ReplicatedMapMergeTypes existingEntry = createMergingEntry(serializationService, record);
+            ReplicatedMapMergeTypes<Object, Object> existingEntry = createMergingEntry(serializationService, record);
             V newValue = (V) mergePolicy.merge(mergingEntry, existingEntry);
             if (newValue == null) {
                 storage.remove(marshalledKey, record);
                 storage.incrementVersion();
                 Data dataKey = serializationService.toData(marshalledKey);
-                VersionResponsePair responsePair = new VersionResponsePair(mergingEntry.getValue(), getVersion());
+                VersionResponsePair responsePair = new VersionResponsePair(mergingEntry.getRawValue(), getVersion());
                 sendReplicationOperation(true, name, dataKey, null, record.getTtlMillis(), responsePair);
                 return false;
             }
@@ -370,7 +370,7 @@ public abstract class AbstractReplicatedRecordStore<K, V> extends AbstractBaseRe
             storage.incrementVersion();
             Data dataKey = serializationService.toData(marshalledKey);
             Data dataValue = serializationService.toData(newValue);
-            VersionResponsePair responsePair = new VersionResponsePair(mergingEntry.getValue(), getVersion());
+            VersionResponsePair responsePair = new VersionResponsePair(mergingEntry.getRawValue(), getVersion());
             sendReplicationOperation(false, name, dataKey, dataValue, record.getTtlMillis(), responsePair);
         }
         return true;

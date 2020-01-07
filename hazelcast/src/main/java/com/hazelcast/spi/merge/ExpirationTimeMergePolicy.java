@@ -29,21 +29,21 @@ import com.hazelcast.spi.impl.merge.SplitBrainDataSerializerHook;
  * @param <T> the type of the merging value
  * @since 3.10
  */
-public class ExpirationTimeMergePolicy<V, T extends MergingExpirationTime<V>>
-        extends AbstractSplitBrainMergePolicy<V, T> {
+public class ExpirationTimeMergePolicy<V, T extends MergingValue<V> & MergingExpirationTime>
+        extends AbstractSplitBrainMergePolicy<V, T, Object> {
 
     @Override
-    public V merge(T mergingValue, T existingValue) {
+    public Object merge(T mergingValue, T existingValue) {
         if (mergingValue == null) {
-            return existingValue.getValue();
+            return existingValue.getRawValue();
         }
         if (existingValue == null) {
-            return mergingValue.getValue();
+            return mergingValue.getRawValue();
         }
         if (mergingValue.getExpirationTime() >= existingValue.getExpirationTime()) {
-            return mergingValue.getValue();
+            return mergingValue.getRawValue();
         }
-        return existingValue.getValue();
+        return existingValue.getRawValue();
     }
 
     @Override

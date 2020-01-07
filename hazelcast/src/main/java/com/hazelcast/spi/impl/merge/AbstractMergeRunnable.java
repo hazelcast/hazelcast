@@ -142,7 +142,7 @@ public abstract class AbstractMergeRunnable<K, V, Store, MergingItem extends Mer
     }
 
     private MergingItemBiConsumer newConsumer(String dataStructureName) {
-        SplitBrainMergePolicy<V, MergingItem> policy = getMergePolicy(dataStructureName);
+        SplitBrainMergePolicy<V, MergingItem, Object> policy = getMergePolicy(dataStructureName);
         int batchSize = getBatchSize(dataStructureName);
         return new MergingItemBiConsumer(dataStructureName, policy, batchSize);
     }
@@ -169,13 +169,14 @@ public abstract class AbstractMergeRunnable<K, V, Store, MergingItem extends Mer
         private final String dataStructureName;
         private final Address[] addresses;
         private final MutableLong[] counterPerMember;
-        private final SplitBrainMergePolicy<V, MergingItem> mergePolicy;
+        private final SplitBrainMergePolicy<V, MergingItem, Object> mergePolicy;
         private final List<MergingItem>[] mergingItemsPerPartition;
         private final Map<Address, List<Integer>> memberPartitionsMap;
 
         private int mergedCount;
 
-        MergingItemBiConsumer(String dataStructureName, SplitBrainMergePolicy<V, MergingItem> mergePolicy, int batchSize) {
+        MergingItemBiConsumer(String dataStructureName, SplitBrainMergePolicy<V, MergingItem, Object> mergePolicy,
+                              int batchSize) {
             this.dataStructureName = dataStructureName;
             this.batchSize = batchSize;
             this.mergePolicy = mergePolicy;
@@ -230,7 +231,7 @@ public abstract class AbstractMergeRunnable<K, V, Store, MergingItem extends Mer
         }
 
         private void sendBatch(String dataStructureName, List<Integer> memberPartitions, List<MergingItem>[] entriesPerPartition,
-                               SplitBrainMergePolicy<V, MergingItem> mergePolicy) {
+                               SplitBrainMergePolicy<V, MergingItem, Object> mergePolicy) {
             int size = memberPartitions.size();
             int[] partitions = new int[size];
             int index = 0;
@@ -265,7 +266,7 @@ public abstract class AbstractMergeRunnable<K, V, Store, MergingItem extends Mer
             sendMergingData(dataStructureName, mergePolicy, partitions, entries, totalSize);
         }
 
-        private void sendMergingData(String dataStructureName, SplitBrainMergePolicy<V, MergingItem> mergePolicy,
+        private void sendMergingData(String dataStructureName, SplitBrainMergePolicy<V, MergingItem, Object> mergePolicy,
                                      int[] partitions, List<MergingItem>[] entries, int totalSize) {
             try {
                 OperationFactory factory = createMergeOperationFactory(dataStructureName, mergePolicy, partitions, entries);
@@ -316,7 +317,7 @@ public abstract class AbstractMergeRunnable<K, V, Store, MergingItem extends Mer
     /**
      * @return a type of {@link SplitBrainMergePolicy}
      */
-    protected abstract SplitBrainMergePolicy<V, MergingItem> getMergePolicy(String dataStructureName);
+    protected abstract SplitBrainMergePolicy<V, MergingItem, Object> getMergePolicy(String dataStructureName);
 
     protected abstract String getDataStructureName(Store store);
 
@@ -333,6 +334,6 @@ public abstract class AbstractMergeRunnable<K, V, Store, MergingItem extends Mer
      * @return a new operation factory
      */
     protected abstract OperationFactory createMergeOperationFactory(String dataStructureName,
-                                                                    SplitBrainMergePolicy<V, MergingItem> mergePolicy,
+                                                                    SplitBrainMergePolicy<V, MergingItem, Object> mergePolicy,
                                                                     int[] partitions, List<MergingItem>[] entries);
 }

@@ -33,8 +33,8 @@ import com.hazelcast.internal.serialization.SerializationService;
  *            or a composition like {@code MergingEntry<String, V> & MergingHits}
  * @since 3.10
  */
-public abstract class AbstractSplitBrainMergePolicy<V, T extends MergingValue<V>>
-        implements SplitBrainMergePolicy<V, T>, IdentifiedDataSerializable {
+public abstract class AbstractSplitBrainMergePolicy<V, T extends MergingValue<V>, R>
+        implements SplitBrainMergePolicy<V, T, R>, IdentifiedDataSerializable {
 
     @Override
     public int getFactoryId() {
