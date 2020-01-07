@@ -128,7 +128,6 @@ public class DistributedObjectListenerTest extends HazelcastTestSupport {
 
         // TODO: This line is not needed when the create destroy order is guaranteed.
         // The issue: https://github.com/hazelcast/hazelcast/issues/16374
-        assertEqualsEventually(1, listener.createdCount);
         checkTheNumberOfObjectsInClusterIsEventuallyAsExpected(1);
 
         map.destroy();
@@ -147,7 +146,6 @@ public class DistributedObjectListenerTest extends HazelcastTestSupport {
 
         // TODO: This line is not needed when the create destroy order is guaranteed.
         // The issue: https://github.com/hazelcast/hazelcast/issues/16374
-        assertEqualsEventually(1, listener.createdCount);
         checkTheNumberOfObjectsInClusterIsEventuallyAsExpected(1);
 
         IMap<Object, Object> map2 = instance2.getMap(mapName);
@@ -167,7 +165,6 @@ public class DistributedObjectListenerTest extends HazelcastTestSupport {
 
         // TODO: This line is not needed when the create destroy order is guaranteed.
         // The issue: https://github.com/hazelcast/hazelcast/issues/16374
-        assertEqualsEventually(1, listener.createdCount);
         checkTheNumberOfObjectsInClusterIsEventuallyAsExpected(1);
 
         IMap<Object, Object> map2 = server.getMap(mapName);
@@ -177,7 +174,6 @@ public class DistributedObjectListenerTest extends HazelcastTestSupport {
     }
 
     public static class EventCountListener implements DistributedObjectListener {
-
         public AtomicInteger createdCount = new AtomicInteger();
         public AtomicInteger destroyedCount = new AtomicInteger();
         public List<DistributedObjectEvent> events = new CopyOnWriteArrayList();

@@ -47,7 +47,7 @@ public class ClientDistributedObjectListenerTest extends com.hazelcast.core.Dist
 
         hazelcastFactory.shutdownAllMembers();
 
-        final HazelcastInstance instance2 = hazelcastFactory.newHazelcastInstance();
+        hazelcastFactory.newHazelcastInstance();
 
         checkTheNumberOfObjectsInClusterIsEventuallyAsExpected(1);
     }
@@ -62,8 +62,8 @@ public class ClientDistributedObjectListenerTest extends com.hazelcast.core.Dist
 
         hazelcastFactory.shutdownAllMembers();
 
-        final HazelcastInstance member1 = hazelcastFactory.newHazelcastInstance();
-        final HazelcastInstance member2 = hazelcastFactory.newHazelcastInstance();
+        hazelcastFactory.newHazelcastInstance();
+        hazelcastFactory.newHazelcastInstance();
 
         checkTheNumberOfObjectsInClusterIsEventuallyAsExpected(1);
     }
