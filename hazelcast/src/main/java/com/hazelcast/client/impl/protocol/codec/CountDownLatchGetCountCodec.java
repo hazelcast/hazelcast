@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Returns the current count.
  */
-@Generated("2ffda6028527e15ca9e14b925c0af331")
+@Generated("16fae4f638f1b60f8d829b70d2736324")
 public final class CountDownLatchGetCountCodec {
     //hex: 0x0B0400
     public static final int REQUEST_MESSAGE_TYPE = 721920;

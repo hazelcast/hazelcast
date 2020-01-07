@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,7 +39,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * if the old value is not needed.
  * The object to be set will be accessible only in the current transaction context until the transaction is committed.
  */
-@Generated("0b53b7af53a6142dfa496e3dc947c738")
+@Generated("00fa9fe459cd5c18c4402437bbf46a28")
 public final class TransactionalMapSetCodec {
     //hex: 0x0E0700
     public static final int REQUEST_MESSAGE_TYPE = 919296;

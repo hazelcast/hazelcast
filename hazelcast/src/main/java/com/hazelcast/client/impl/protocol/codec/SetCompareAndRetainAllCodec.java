@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,7 +39,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * If the specified collection is also a set, this operation effectively modifies this set so that its value is the
  * intersection of the two sets.
  */
-@Generated("c7a7b33d232ff5b7792be79f80d7d54d")
+@Generated("91113b8c355a12812a9a1e532621421c")
 public final class SetCompareAndRetainAllCodec {
     //hex: 0x060800
     public static final int REQUEST_MESSAGE_TYPE = 395264;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -43,7 +43,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * If an addAll is executed concurrently with an add or addAll, no guarantee is given that items are contiguous.
  * The result of the future contains the sequenceId of the last written item
  */
-@Generated("e76ff4be830370dab313df75cbe2a594")
+@Generated("b638fcd66b26f06a0a91934d364596dd")
 public final class RingbufferAddAllCodec {
     //hex: 0x170800
     public static final int REQUEST_MESSAGE_TYPE = 1509376;

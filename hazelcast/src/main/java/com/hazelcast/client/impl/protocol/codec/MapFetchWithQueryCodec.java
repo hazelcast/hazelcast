@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Fetches the specified number of entries from the specified partition starting from specified table index
  * that match the predicate and applies the projection logic on them.
  */
-@Generated("49c7da5cb47e045e55b8b48cad74b32e")
+@Generated("4e808a9dc56869f3670a377123a7936c")
 public final class MapFetchWithQueryCodec {
     //hex: 0x014000
     public static final int REQUEST_MESSAGE_TYPE = 81920;

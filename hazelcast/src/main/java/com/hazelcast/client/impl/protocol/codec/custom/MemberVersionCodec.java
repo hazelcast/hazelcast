@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.fastFor
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
-@Generated("a20adaebb8d3ac896bef0c9dad3e84c9")
+@Generated("745500d3ab1aa5470eb1b5e8d55dbd66")
 public final class MemberVersionCodec {
     private static final int MAJOR_FIELD_OFFSET = 0;
     private static final int MINOR_FIELD_OFFSET = MAJOR_FIELD_OFFSET + INT_SIZE_IN_BYTES;

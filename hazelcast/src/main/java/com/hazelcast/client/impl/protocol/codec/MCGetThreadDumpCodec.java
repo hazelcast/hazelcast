@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Takes a thread dump of the member it's called on.
  */
-@Generated("b26ba757912a6786a95d0df679067448")
+@Generated("15f48cb40d260918a6f41cfa12ad39e8")
 public final class MCGetThreadDumpCodec {
     //hex: 0x200700
     public static final int REQUEST_MESSAGE_TYPE = 2098944;

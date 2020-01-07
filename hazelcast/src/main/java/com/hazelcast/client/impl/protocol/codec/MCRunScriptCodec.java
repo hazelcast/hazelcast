@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Runs given script on the member it's called on.
  */
-@Generated("959e7fc7187f2d88d0bfdc1412c1c24b")
+@Generated("69dc42c4c4dbd6d90257e8569b0d9fd9")
 public final class MCRunScriptCodec {
     //hex: 0x201100
     public static final int REQUEST_MESSAGE_TYPE = 2101504;

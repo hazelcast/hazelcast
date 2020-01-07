@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Removes all entries which match with the supplied predicate
  */
-@Generated("edb97259105d7de3ebbc06f55c5a04ef")
+@Generated("08590e71a2f389d4b8d3ea7a01cc6ee1")
 public final class MapRemoveAllCodec {
     //hex: 0x013E00
     public static final int REQUEST_MESSAGE_TYPE = 81408;

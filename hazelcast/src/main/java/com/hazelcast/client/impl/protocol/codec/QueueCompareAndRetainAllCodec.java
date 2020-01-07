@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Retains only the elements in this collection that are contained in the specified collection (optional operation).
  * In other words, removes from this collection all of its elements that are not contained in the specified collection.
  */
-@Generated("ec6febc340e420e8335c332713e4f219")
+@Generated("cffc42dd4d7335b85bca8b6658b84bfb")
 public final class QueueCompareAndRetainAllCodec {
     //hex: 0x030E00
     public static final int REQUEST_MESSAGE_TYPE = 200192;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Applies the user defined EntryProcessor to the entries in the map which satisfies provided predicate.
  * Returns the results mapped by each key in the map.
  */
-@Generated("df9fcb93f23f454b6b7275857e66a048")
+@Generated("940d5d97d6adb0e752cb5b4277273348")
 public final class MapExecuteWithPredicateCodec {
     //hex: 0x013100
     public static final int REQUEST_MESSAGE_TYPE = 78080;

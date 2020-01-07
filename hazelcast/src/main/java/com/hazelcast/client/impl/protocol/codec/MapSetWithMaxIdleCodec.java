@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,7 +40,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * 
  * Similar to the put operation except that set doesn't return the old value, which is more efficient.
  */
-@Generated("b6cf65ad7139ff2d353825d2c289e57b")
+@Generated("64d116eef9d1dfe83dbc56356cfeffbb")
 public final class MapSetWithMaxIdleCodec {
     //hex: 0x014700
     public static final int REQUEST_MESSAGE_TYPE = 83712;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Returns the number of elements in this collection.If this collection contains more than Integer.MAX_VALUE
  * elements, returns Integer.MAX_VALUE.
  */
-@Generated("b5e40120457e4d7c3a80362a149ab331")
+@Generated("76f699af14ca5526154812f299950cdc")
 public final class TransactionalQueueSizeCodec {
     //hex: 0x120500
     public static final int REQUEST_MESSAGE_TYPE = 1180928;

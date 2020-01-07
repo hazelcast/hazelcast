@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,7 +39,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * write-through operation mode, the underlying configured javax.cache.integration.CacheWriter might be called to
  * store the value of the key to any kind of external resource.
  */
-@Generated("d76ef338875ca52b2837a5a59c0b2e74")
+@Generated("412623452d0d13e6c8519f8f9a8ad57e")
 public final class CacheGetAndReplaceCodec {
     //hex: 0x130B00
     public static final int REQUEST_MESSAGE_TYPE = 1248000;

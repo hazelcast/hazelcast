@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Returns true if this map contains an entry for the specified value.
  */
-@Generated("c9d82ce4d2bd0c7991d89978613b19a6")
+@Generated("3c441265f684c19e17fdda79c2be6d15")
 public final class TransactionalMapContainsValueCodec {
     //hex: 0x0E1200
     public static final int REQUEST_MESSAGE_TYPE = 922112;

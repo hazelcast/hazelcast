@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,7 +38,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Adds an continuous entry listener for this map. Listener will get notified for map add/remove/update/evict events
  * filtered by the given predicate.
  */
-@Generated("825ec4aec3146b879140afa7924e7d86")
+@Generated("6cba214385719554c5cc65fc543794c5")
 public final class MapAddEntryListenerWithPredicateCodec {
     //hex: 0x011700
     public static final int REQUEST_MESSAGE_TYPE = 71424;

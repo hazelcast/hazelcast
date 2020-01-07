@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Adds listener to map. This listener will be used to listen near cache invalidation events.
  */
-@Generated("38b2d941468ea5d13266fef72d6a86a5")
+@Generated("57697ea986ba1aaf6d79805c1ffcdb6d")
 public final class MapAddNearCacheInvalidationListenerCodec {
     //hex: 0x013F00
     public static final int REQUEST_MESSAGE_TYPE = 81664;
