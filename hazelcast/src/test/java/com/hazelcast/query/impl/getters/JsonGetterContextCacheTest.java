@@ -19,7 +19,6 @@ package com.hazelcast.query.impl.getters;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.test.annotation.Repeat;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -62,7 +61,6 @@ public class JsonGetterContextCacheTest {
     }
 
     @Test
-    @Repeat(20)
     public void testMostRecentlyAddedElementIsNotImmediatelyEvicted() {
         JsonGetterContextCache cache = new JsonGetterContextCache(3, 2);
         cache.getContext("a");
