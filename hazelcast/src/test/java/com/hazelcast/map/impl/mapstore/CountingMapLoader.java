@@ -60,12 +60,7 @@ class CountingMapLoader extends SimpleMapLoader {
     public Iterable<Integer> loadAllKeys() {
         final Iterable<Integer> allKeys = super.loadAllKeys();
         loadAllKeysInvocations.incrementAndGet();
-        return new Iterable<Integer>() {
-            @Override
-            public Iterator<Integer> iterator() {
-                return new CloseableIterator<Integer>(allKeys.iterator());
-            }
-        };
+        return () -> new CloseableIterator<>(allKeys.iterator());
     }
 
     public int getLoadAllKeysInvocations() {
