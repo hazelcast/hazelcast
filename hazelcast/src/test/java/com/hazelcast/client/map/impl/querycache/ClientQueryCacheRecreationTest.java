@@ -30,6 +30,7 @@ import com.hazelcast.query.Predicates;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
+import com.hazelcast.test.annotation.Flaky;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
@@ -82,6 +83,7 @@ public class ClientQueryCacheRecreationTest extends HazelcastTestSupport {
     }
 
     @Test
+    @Flaky(maxRuns = 3, issueUrl = "https://github.com/hazelcast/hazelcast/issues/16340")
     public void query_cache_recreates_itself_after_server_restart() {
         IMap<Object, Object> map = client.getMap(mapName);
         for (int i = 0; i < 100; i++) {

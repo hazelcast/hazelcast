@@ -19,6 +19,7 @@ package com.hazelcast.test;
 import com.hazelcast.cache.jsr.JsrTestUtil;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.test.annotation.Flaky;
 import com.hazelcast.test.annotation.Repeat;
 import com.hazelcast.test.bounce.BounceMemberRule;
 import com.hazelcast.test.compatibility.CompatibilityTestUtils;
@@ -38,6 +39,7 @@ import org.junit.runners.model.MultipleFailureException;
 import org.junit.runners.model.Statement;
 import org.junit.runners.model.TestClass;
 
+import javax.annotation.Nullable;
 import java.lang.annotation.Annotation;
 import java.lang.management.ManagementFactory;
 import java.lang.management.ThreadInfo;
@@ -46,14 +48,15 @@ import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.cache.jsr.JsrTestUtil.clearCachingProviderRegistry;
 import static com.hazelcast.cache.jsr.JsrTestUtil.getCachingProviderRegistrySize;
-import static com.hazelcast.test.TestEnvironment.isRunningCompatibilityTest;
 import static com.hazelcast.internal.util.EmptyStatement.ignore;
+import static com.hazelcast.test.TestEnvironment.isRunningCompatibilityTest;
 import static java.lang.Integer.getInteger;
 
 /**
@@ -225,11 +228,25 @@ public abstract class AbstractHazelcastClassRunner extends AbstractParameterized
     @Override
     protected Statement methodBlock(FrameworkMethod method) {
         Statement statement = super.methodBlock(method);
-        Repeat repeatable = getRepeatable(method);
-        if (repeatable == null || repeatable.value() < 2) {
+        Statement withRepeatStatement = withRepeatStatement(method, statement);
+        Statement withFlakyStatement = withFlakyStatement(method, withRepeatStatement);
+        return withFlakyStatement;
+    }
+
+    private Statement withRepeatStatement(FrameworkMethod method, Statement statement) {
+        Repeat repeat = getAnnotation(Repeat.class, method);
+        if (repeat == null || repeat.value() < 2) {
             return statement;
         }
-        return new TestRepeater(statement, method.getMethod(), repeatable.value());
+        return new TestRepeater(statement, method.getMethod(), repeat.value());
+    }
+
+    private Statement withFlakyStatement(FrameworkMethod method, Statement statement) {
+        Flaky flaky = getAnnotation(Flaky.class, method);
+        if (flaky == null || flaky.maxRuns() < 2) {
+            return statement;
+        }
+        return new FlakyRunner(statement, method.getMethod(), flaky.maxRuns());
     }
 
     /**
@@ -237,12 +254,13 @@ public abstract class AbstractHazelcastClassRunner extends AbstractParameterized
      * <p>
      * Method level definition overrides class level definition.
      */
-    private Repeat getRepeatable(FrameworkMethod method) {
-        Repeat repeatable = method.getAnnotation(Repeat.class);
-        if (repeatable == null) {
-            repeatable = super.getTestClass().getJavaClass().getAnnotation(Repeat.class);
+    @Nullable
+    private <A extends Annotation> A getAnnotation(Class<A> annotationType, FrameworkMethod method) {
+        A annotation = method.getAnnotation(annotationType);
+        if (annotation == null) {
+            annotation = super.getTestClass().getJavaClass().getAnnotation(annotationType);
         }
-        return repeatable;
+        return annotation;
     }
 
     @Override
@@ -447,6 +465,49 @@ public abstract class AbstractHazelcastClassRunner extends AbstractParameterized
                             testMethod.getName(), i + 1));
                 }
                 statement.evaluate();
+            }
+        }
+    }
+
+    private class FlakyRunner extends Statement {
+
+        private final Statement statement;
+        private final Method testMethod;
+        private final int maxRuns;
+
+        FlakyRunner(Statement statement, Method testMethod, int maxRuns) {
+            this.statement = statement;
+            this.testMethod = testMethod;
+            this.maxRuns = Math.max(1, maxRuns);
+        }
+
+        /**
+         * Invokes the next {@link Statement statement} in
+         * the execution chain for the specified flaky tolerance.
+         */
+        @Override
+        public void evaluate() throws Throwable {
+            List<Throwable> errors = null;
+            int triedTimes = 0;
+
+            do {
+                if (maxRuns > 1) {
+                    System.out.println(String.format("---> Running flaky test [%s:%s], run count [%d]",
+                            testMethod.getDeclaringClass().getCanonicalName(),
+                            testMethod.getName(), triedTimes + 1));
+                }
+                try {
+                    statement.evaluate();
+                } catch (AssertionError e) {
+                    if (errors == null) {
+                        errors = new LinkedList<>();
+                    }
+                    errors.add(e);
+                }
+            } while (errors != null && ++triedTimes < maxRuns);
+
+            if (errors != null) {
+                throw new MultipleFailureException(errors);
             }
         }
     }
