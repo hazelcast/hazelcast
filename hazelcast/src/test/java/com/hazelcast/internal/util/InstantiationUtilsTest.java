@@ -90,7 +90,7 @@ public class InstantiationUtilsTest extends HazelcastTestSupport {
         assertNotNull(instance);
     }
 
-    @Test(expected = AmbigiousInstantiationException.class)
+    @Test(expected = AmbiguousInstantiationException.class)
     public void newInstanceOrNull_ambigiousConstructor() {
         InstantiationUtils.newInstanceOrNull(ClassWithTwoConstructors.class, "foo");
     }

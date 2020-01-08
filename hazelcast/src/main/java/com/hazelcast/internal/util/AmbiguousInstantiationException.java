@@ -22,8 +22,8 @@ import com.hazelcast.core.HazelcastException;
  * Indicates there are multiple constructors matching given parameters.
  *
  */
-final class AmbigiousInstantiationException extends HazelcastException {
-    AmbigiousInstantiationException(String message) {
+final class AmbiguousInstantiationException extends HazelcastException {
+    AmbiguousInstantiationException(String message) {
         super(message);
     }
 }
