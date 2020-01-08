@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Applies the user defined EntryProcessor to the entry mapped by the key. Returns the the object which is result of
  * the process() method of EntryProcessor.
  */
-@Generated("f52985df27650b8c8c2748d8ac73d8cf")
+@Generated("a3bfa254d781dd424e6f2628b1ff1df1")
 public final class MapExecuteOnKeyCodec {
     //hex: 0x012E00
     public static final int REQUEST_MESSAGE_TYPE = 77312;
@@ -69,7 +69,7 @@ public final class MapExecuteOnKeyCodec {
         public com.hazelcast.internal.serialization.Data key;
 
         /**
-         * TODO DOC
+         * Id of the thread that the task is submitted from.
          */
         public long threadId;
     }

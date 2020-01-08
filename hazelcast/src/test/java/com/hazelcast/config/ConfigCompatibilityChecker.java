@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -628,8 +628,11 @@ public class ConfigCompatibilityChecker {
             return nullSafeEqual(c1.getName(), c2.getName())
                     && c1.getPrefetchCount() == c2.getPrefetchCount()
                     && c1.getPrefetchValidityMillis() == c2.getPrefetchValidityMillis()
-                    && c1.getIdOffset() == c2.getIdOffset()
+                    && c1.getEpochStart() == c2.getEpochStart()
                     && c1.getNodeIdOffset() == c2.getNodeIdOffset()
+                    && c1.getBitsSequence() == c2.getBitsSequence()
+                    && c1.getBitsNodeId() == c2.getBitsNodeId()
+                    && c1.getAllowedFutureMillis() == c2.getAllowedFutureMillis()
                     && c1.isStatisticsEnabled() == c2.isStatisticsEnabled();
         }
 
@@ -829,7 +832,7 @@ public class ConfigCompatibilityChecker {
         private static boolean isCompatible(WanReplicationRef c1, WanReplicationRef c2) {
             return c1 == c2 || !(c1 == null || c2 == null)
                     && nullSafeEqual(c1.getName(), c2.getName())
-                    && nullSafeEqual(c1.getMergePolicy(), c2.getMergePolicy())
+                    && nullSafeEqual(c1.getMergePolicyClassName(), c2.getMergePolicyClassName())
                     && nullSafeEqual(c1.getFilters(), c2.getFilters())
                     && nullSafeEqual(c1.isRepublishingEnabled(), c2.isRepublishingEnabled());
         }
@@ -886,7 +889,7 @@ public class ConfigCompatibilityChecker {
         private static boolean isCompatible(WanReplicationRef c1, WanReplicationRef c2) {
             return c1 == c2 || !(c1 == null || c2 == null)
                     && nullSafeEqual(c1.getName(), c2.getName())
-                    && nullSafeEqual(c1.getMergePolicy(), c2.getMergePolicy())
+                    && nullSafeEqual(c1.getMergePolicyClassName(), c2.getMergePolicyClassName())
                     && nullSafeEqual(c1.getFilters(), c2.getFilters())
                     && nullSafeEqual(c1.isRepublishingEnabled(), c2.isRepublishingEnabled());
         }

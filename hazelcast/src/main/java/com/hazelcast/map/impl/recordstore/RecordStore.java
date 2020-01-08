@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import com.hazelcast.cluster.Address;
 import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.internal.eviction.ExpiredKey;
+import com.hazelcast.internal.iteration.IterationPointer;
 import com.hazelcast.internal.monitor.LocalRecordStoreStats;
 import com.hazelcast.internal.nearcache.impl.invalidation.InvalidationQueue;
 import com.hazelcast.internal.serialization.Data;
@@ -303,18 +304,38 @@ public interface RecordStore<R extends Record> {
     void forEachAfterLoad(BiConsumer<Data, R> consumer, boolean backup);
 
     /**
-     * Fetches specified number of keys from provided tableIndex.
+     * Fetch minimally {@code size} keys from the {@code pointers} position.
+     * The key is fetched on-heap.
+     * <p>
+     * NOTE: The implementation is free to return more than {@code size} items.
+     * This can happen if we cannot easily resume from the last returned item
+     * by receiving the {@code tableIndex} of the last item. The index can
+     * represent a bucket with multiple items and in this case the returned
+     * object will contain all items in that bucket, regardless if we exceed
+     * the requested {@code size}.
      *
-     * @return {@link MapKeysWithCursor} which is a holder for keys and next index to read from.
+     * @param pointers the pointers defining the state of iteration
+     * @param size     the minimal count of returned items
+     * @return fetched keys and the new iteration state
      */
-    MapKeysWithCursor fetchKeys(int tableIndex, int size);
+    MapKeysWithCursor fetchKeys(IterationPointer[] pointers, int size);
 
     /**
-     * Fetches specified number of entries from provided tableIndex.
+     * Fetch minimally {@code size} items from the {@code pointers} position.
+     * Both the key and value are fetched on-heap.
+     * <p>
+     * NOTE: The implementation is free to return more than {@code size} items.
+     * This can happen if we cannot easily resume from the last returned item
+     * by receiving the {@code tableIndex} of the last item. The index can
+     * represent a bucket with multiple items and in this case the returned
+     * object will contain all items in that bucket, regardless if we exceed
+     * the requested {@code size}.
      *
-     * @return {@link MapEntriesWithCursor} which is a holder for entries and next index to read from.
+     * @param pointers the pointers defining the state of iteration
+     * @param size     the minimal count of returned items
+     * @return fetched entries and the new iteration state
      */
-    MapEntriesWithCursor fetchEntries(int tableIndex, int size);
+    MapEntriesWithCursor fetchEntries(IterationPointer[] pointers, int size);
 
     int size();
 
@@ -554,7 +575,7 @@ public interface RecordStore<R extends Record> {
     /**
      * Called by {@link IMap#destroy()} or {@link
      * com.hazelcast.map.impl.MapMigrationAwareService}
-     *
+     * <p>
      * Clears internal partition data.
      *
      * @param onShutdown           true if {@code close} is called during
@@ -568,7 +589,7 @@ public interface RecordStore<R extends Record> {
 
     /**
      * Called by {@link IMap#clear()}.
-     *
+     * <p>
      * Clears data in this record store.
      *
      * @return number of cleared entries.
@@ -577,7 +598,7 @@ public interface RecordStore<R extends Record> {
 
     /**
      * Resets the record store to it's initial state.
-     *
+     * <p>
      * Used in replication operations.
      *
      * @see #putReplicatedRecord
@@ -586,7 +607,7 @@ public interface RecordStore<R extends Record> {
 
     /**
      * Called by {@link IMap#destroy()}.
-     *
+     * <p>
      * Destroys data in this record store.
      */
     void destroy();

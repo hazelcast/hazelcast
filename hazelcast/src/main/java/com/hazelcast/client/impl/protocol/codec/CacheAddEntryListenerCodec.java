@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,9 +35,10 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  */
 
 /**
- * TODO DOC
+ * Adds an entry listener for this cache. For the types of events that the listener
+ * will be notified for, see the documentation of the type field of the Cache event below.
  */
-@Generated("62de91f5fca2f53f7da9ae9280c348b8")
+@Generated("2c74c4ee007b848064746ff09e5b055b")
 public final class CacheAddEntryListenerCodec {
     //hex: 0x130100
     public static final int REQUEST_MESSAGE_TYPE = 1245440;
@@ -65,7 +66,7 @@ public final class CacheAddEntryListenerCodec {
         public java.lang.String name;
 
         /**
-         * if true fires events that originated from this node only, otherwise fires all events
+         * If true fires events that originated from this node only, otherwise fires all events
          */
         public boolean localOnly;
     }
@@ -146,6 +147,22 @@ public final class CacheAddEntryListenerCodec {
             }
             Logger.getLogger(super.getClass()).finest("Unknown message type received on event handler :" + messageType);
         }
+
+        /**
+         * @param type The type of the event. Possible values for the event are:
+         *             CREATED(1): An event type indicating that the cache entry was created.
+         *             UPDATED(2): An event type indicating that the cache entry was updated, i.e. a previous mapping existed.
+         *             REMOVED(3): An event type indicating that the cache entry was removed.
+         *             EXPIRED(4): An event type indicating that the cache entry has expired.
+         *             EVICTED(5): An event type indicating that the cache entry has evicted.
+         *             INVALIDATED(6): An event type indicating that the cache entry has invalidated for near cache invalidation.
+         *             COMPLETED(7): An event type indicating that the cache operation has completed.
+         *             EXPIRATION_TIME_UPDATED(8): An event type indicating that the expiration time of cache record has been updated
+         *             PARTITION_LOST(9): An event type indicating that partition loss is detected in given cache with name
+         * @param keys The keys of the entries in the cache.
+         * @param completionId User generated id which shall be received as a field of the cache event upon completion of the
+         *                     request in the cluster.
+        */
         public abstract void handleCacheEvent(int type, java.util.Collection<com.hazelcast.cache.impl.CacheEventData> keys, int completionId);
     }
 }

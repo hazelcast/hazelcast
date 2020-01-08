@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,6 @@ import com.hazelcast.client.impl.connection.nio.ClientConnection;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.spi.ClientClusterService;
 import com.hazelcast.client.impl.spi.EventHandler;
-import com.hazelcast.cluster.Address;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.LifecycleService;
 import com.hazelcast.core.OperationTimeoutException;
@@ -36,6 +35,7 @@ import com.hazelcast.spi.impl.operationservice.impl.BaseInvocation;
 import com.hazelcast.spi.impl.sequence.CallIdSequence;
 
 import java.io.IOException;
+import java.util.UUID;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
@@ -63,7 +63,7 @@ public class ClientInvocation extends BaseInvocation implements Runnable {
     private final TaskScheduler executionService;
     private volatile ClientMessage clientMessage;
     private final CallIdSequence callIdSequence;
-    private final Address address;
+    private final UUID uuid;
     private final int partitionId;
     private final Connection connection;
     private final long startTimeMillis;
@@ -79,7 +79,7 @@ public class ClientInvocation extends BaseInvocation implements Runnable {
                                ClientMessage clientMessage,
                                Object objectName,
                                int partitionId,
-                               Address address,
+                               UUID uuid,
                                Connection connection) {
         this.clientClusterService = client.getClientClusterService();
         this.lifecycleService = client.getLifecycleService();
@@ -88,7 +88,7 @@ public class ClientInvocation extends BaseInvocation implements Runnable {
         this.objectName = objectName;
         this.clientMessage = clientMessage;
         this.partitionId = partitionId;
-        this.address = address;
+        this.uuid = uuid;
         this.connection = connection;
         this.startTimeMillis = System.currentTimeMillis();
         this.retryPauseMillis = invocationService.getInvocationRetryPauseMillis();
@@ -118,8 +118,8 @@ public class ClientInvocation extends BaseInvocation implements Runnable {
      * Create an invocation that will be executed on member with given {@code address}.
      */
     public ClientInvocation(HazelcastClientInstanceImpl client, ClientMessage clientMessage, Object objectName,
-                            Address address) {
-        this(client, clientMessage, objectName, UNASSIGNED_PARTITION, address, null);
+                            UUID uuid) {
+        this(client, clientMessage, objectName, UNASSIGNED_PARTITION, uuid, null);
     }
 
     /**
@@ -164,8 +164,8 @@ public class ClientInvocation extends BaseInvocation implements Runnable {
                 invocationService.invokeOnConnection(this, (ClientConnection) connection);
             } else if (partitionId != -1) {
                 invocationService.invokeOnPartitionOwner(this, partitionId);
-            } else if (address != null) {
-                invocationService.invokeOnTarget(this, address);
+            } else if (uuid != null) {
+                invocationService.invokeOnTarget(this, uuid);
             } else {
                 invocationService.invokeOnRandomTarget(this);
             }
@@ -301,9 +301,9 @@ public class ClientInvocation extends BaseInvocation implements Runnable {
             return true;
         }
 
-        if (address != null
+        if (uuid != null
                 && exception instanceof TargetNotMemberException
-                && clientClusterService.getMember(address) == null) {
+                && clientClusterService.getMember(uuid) == null) {
             //when invocation send over address
             //if exception is target not member and
             //address is not available in member list , don't retry
@@ -357,8 +357,8 @@ public class ClientInvocation extends BaseInvocation implements Runnable {
             target = "connection " + connection;
         } else if (partitionId != -1) {
             target = "partition " + partitionId;
-        } else if (address != null) {
-            target = "address " + address;
+        } else if (uuid != null) {
+            target = "uuid " + uuid;
         } else {
             target = "random";
         }

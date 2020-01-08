@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -1072,10 +1072,16 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
                 generatorConfig.setPrefetchCount(Integer.parseInt(value));
             } else if ("prefetch-validity-millis".equalsIgnoreCase(nodeName)) {
                 generatorConfig.setPrefetchValidityMillis(Long.parseLong(value));
-            } else if ("id-offset".equalsIgnoreCase(nodeName)) {
-                generatorConfig.setIdOffset(Long.parseLong(value));
+            } else if ("epoch-start".equalsIgnoreCase(nodeName)) {
+                generatorConfig.setEpochStart(Long.parseLong(value));
             } else if ("node-id-offset".equalsIgnoreCase(nodeName)) {
                 generatorConfig.setNodeIdOffset(Long.parseLong(value));
+            } else if ("bits-sequence".equalsIgnoreCase(nodeName)) {
+                generatorConfig.setBitsSequence(Integer.parseInt(value));
+            } else if ("bits-node-id".equalsIgnoreCase(nodeName)) {
+                generatorConfig.setBitsNodeId(Integer.parseInt(value));
+            } else if ("allowed-future-millis".equalsIgnoreCase(nodeName)) {
+                generatorConfig.setAllowedFutureMillis(Long.parseLong(value));
             } else if ("statistics-enabled".equals(nodeName)) {
                 generatorConfig.setStatisticsEnabled(getBooleanValue(value));
             }
@@ -2023,8 +2029,8 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         for (Node wanChild : childElements(n)) {
             String wanChildName = cleanNodeName(wanChild);
             String wanChildValue = getTextContent(wanChild);
-            if ("merge-policy".equals(wanChildName)) {
-                wanReplicationRef.setMergePolicy(wanChildValue);
+            if ("merge-policy-class-name".equals(wanChildName)) {
+                wanReplicationRef.setMergePolicyClassName(wanChildValue);
             } else if ("filters".equals(wanChildName)) {
                 handleWanFilters(wanChild, wanReplicationRef);
             } else if ("republishing-enabled".equals(wanChildName)) {
@@ -2087,8 +2093,8 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         for (Node wanChild : childElements(n)) {
             String wanChildName = cleanNodeName(wanChild);
             String wanChildValue = getTextContent(wanChild);
-            if ("merge-policy".equals(wanChildName)) {
-                wanReplicationRef.setMergePolicy(wanChildValue);
+            if ("merge-policy-class-name".equals(wanChildName)) {
+                wanReplicationRef.setMergePolicyClassName(wanChildValue);
             } else if ("republishing-enabled".equals(wanChildName)) {
                 wanReplicationRef.setRepublishingEnabled(getBooleanValue(wanChildValue));
             } else if ("filters".equals(wanChildName)) {

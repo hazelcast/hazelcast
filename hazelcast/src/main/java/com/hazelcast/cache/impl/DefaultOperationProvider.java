@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,13 +18,13 @@ package com.hazelcast.cache.impl;
 
 import com.hazelcast.cache.impl.operation.CacheClearOperationFactory;
 import com.hazelcast.cache.impl.operation.CacheContainsKeyOperation;
-import com.hazelcast.cache.impl.operation.CacheEntryIteratorOperation;
 import com.hazelcast.cache.impl.operation.CacheEntryProcessorOperation;
+import com.hazelcast.cache.impl.operation.CacheFetchEntriesOperation;
+import com.hazelcast.cache.impl.operation.CacheFetchKeysOperation;
 import com.hazelcast.cache.impl.operation.CacheGetAllOperationFactory;
 import com.hazelcast.cache.impl.operation.CacheGetAndRemoveOperation;
 import com.hazelcast.cache.impl.operation.CacheGetAndReplaceOperation;
 import com.hazelcast.cache.impl.operation.CacheGetOperation;
-import com.hazelcast.cache.impl.operation.CacheKeyIteratorOperation;
 import com.hazelcast.cache.impl.operation.CacheLoadAllOperationFactory;
 import com.hazelcast.cache.impl.operation.CacheMergeOperation;
 import com.hazelcast.cache.impl.operation.CacheMergeOperationFactory;
@@ -37,6 +37,7 @@ import com.hazelcast.cache.impl.operation.CacheReplaceOperation;
 import com.hazelcast.cache.impl.operation.CacheSetExpiryPolicyOperation;
 import com.hazelcast.cache.impl.operation.CacheSizeOperationFactory;
 import com.hazelcast.config.InMemoryFormat;
+import com.hazelcast.internal.iteration.IterationPointer;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationFactory;
@@ -112,13 +113,13 @@ public class DefaultOperationProvider implements CacheOperationProvider {
     }
 
     @Override
-    public Operation createKeyIteratorOperation(int lastTableIndex, int fetchSize) {
-        return new CacheKeyIteratorOperation(nameWithPrefix, lastTableIndex, fetchSize);
+    public Operation createFetchKeysOperation(IterationPointer[] pointers, int fetchSize) {
+        return new CacheFetchKeysOperation(nameWithPrefix, pointers, fetchSize);
     }
 
     @Override
-    public Operation createEntryIteratorOperation(int lastTableIndex, int fetchSize) {
-        return new CacheEntryIteratorOperation(nameWithPrefix, lastTableIndex, fetchSize);
+    public Operation createFetchEntriesOperation(IterationPointer[] pointers, int fetchSize) {
+        return new CacheFetchEntriesOperation(nameWithPrefix, pointers, fetchSize);
     }
 
     @Override

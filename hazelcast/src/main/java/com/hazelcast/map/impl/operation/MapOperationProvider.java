@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ package com.hazelcast.map.impl.operation;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.IMap;
 import com.hazelcast.map.impl.MapEntries;
+import com.hazelcast.internal.iteration.IterationPointer;
 import com.hazelcast.map.impl.query.Query;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.query.Predicate;
@@ -118,17 +119,30 @@ public interface MapOperationProvider {
 
     MapOperation createLoadMapOperation(String name, boolean replaceExistingValues);
 
-    MapOperation createFetchKeysOperation(String name, int lastTableIndex, int fetchSize);
-
-    MapOperation createFetchEntriesOperation(String name, int lastTableIndex, int fetchSize);
+    /**
+     * Creates an operation for fetching a segment of a keys from a single
+     * partition.
+     *
+     * @see com.hazelcast.map.impl.proxy.MapProxyImpl#iterator(int, int, boolean)
+     */
+    MapOperation createFetchKeysOperation(String name, IterationPointer[] pointers, int fetchSize);
 
     /**
-     * Creates an operation for fetching a segment of a query result from a single partition.
+     * Creates an operation for fetching a segment of a entries from a single
+     * partition.
+     *
+     * @see com.hazelcast.map.impl.proxy.MapProxyImpl#iterator(int, int, boolean)
+     */
+    MapOperation createFetchEntriesOperation(String name, IterationPointer[] pointers, int fetchSize);
+
+    /**
+     * Creates an operation for fetching a segment of a query result from a
+     * single partition.
      *
      * @see com.hazelcast.map.impl.proxy.MapProxyImpl#iterator(int, int, com.hazelcast.projection.Projection, Predicate)
      * @since 3.9
      */
-    MapOperation createFetchWithQueryOperation(String name, int lastTableIndex, int fetchSize, Query query);
+    MapOperation createFetchWithQueryOperation(String name, IterationPointer[] pointers, int fetchSize, Query query);
 
     OperationFactory createPartitionWideEntryOperationFactory(String name, EntryProcessor entryProcessor);
 

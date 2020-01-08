@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,6 @@ package com.hazelcast.client.impl.spi.impl;
 import com.hazelcast.client.Client;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.impl.ClientImpl;
-import com.hazelcast.client.impl.MemberImpl;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.connection.ClientConnectionManager;
 import com.hazelcast.client.impl.connection.nio.ClientConnection;
@@ -33,6 +32,7 @@ import com.hazelcast.cluster.Member;
 import com.hazelcast.cluster.MemberSelector;
 import com.hazelcast.cluster.MembershipEvent;
 import com.hazelcast.cluster.MembershipListener;
+import com.hazelcast.cluster.impl.MemberImpl;
 import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.internal.cluster.MemberInfo;
 import com.hazelcast.internal.cluster.impl.MemberSelectingCollection;
@@ -50,6 +50,7 @@ import java.net.InetSocketAddress;
 import java.util.Collection;
 import java.util.EventListener;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -150,9 +151,13 @@ public class ClientClusterServiceImpl implements ClientClusterService {
     }
 
     @Override
-    public Address getMasterAddress() {
+    public Member getMasterMember() {
         final Collection<Member> memberList = getMemberList();
-        return !memberList.isEmpty() ? new Address(memberList.iterator().next().getSocketAddress()) : null;
+        Iterator<Member> iterator = memberList.iterator();
+        if (iterator.hasNext()) {
+            return iterator.next();
+        }
+        return null;
     }
 
     @Override
@@ -264,8 +269,12 @@ public class ClientClusterServiceImpl implements ClientClusterService {
         LinkedHashMap<Address, Member> newMembers = new LinkedHashMap<>();
         for (MemberInfo memberInfo : memberInfos) {
             Address address = memberInfo.getAddress();
-            newMembers.put(address, new MemberImpl(address, memberInfo.getVersion(), memberInfo.getUuid(),
-                    memberInfo.getAttributes(), memberInfo.isLiteMember()));
+            MemberImpl member = new MemberImpl.Builder(address).version(memberInfo.getVersion())
+                    .uuid(memberInfo.getUuid())
+                    .attributes(memberInfo.getAttributes())
+                    .liteMember(memberInfo.isLiteMember())
+                    .memberListJoinVersion(memberInfo.getMemberListJoinVersion()).build();
+            newMembers.put(address, member);
         }
         return new MemberListSnapshot(memberListVersion, newMembers);
     }
@@ -329,7 +338,7 @@ public class ClientClusterServiceImpl implements ClientClusterService {
             logger.finest("Handling new snapshot with membership version: " + memberListVersion + ", membersString "
                     + membersString(snapshot));
         }
-        MemberListSnapshot  clusterViewSnapshot = memberListSnapshot.get();
+        MemberListSnapshot clusterViewSnapshot = memberListSnapshot.get();
         if (clusterViewSnapshot == EMPTY_SNAPSHOT) {
             synchronized (clusterViewLock) {
                 clusterViewSnapshot = memberListSnapshot.get();

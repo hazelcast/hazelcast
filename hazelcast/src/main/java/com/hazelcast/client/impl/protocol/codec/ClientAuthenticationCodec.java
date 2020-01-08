@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,9 +34,9 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  */
 
 /**
- * TODO DOC
+ * Makes an authentication request to the cluster.
  */
-@Generated("24f834007cbc0a85020ba8f0b8976c1b")
+@Generated("e82a1f0c731f83d24e5aa93a32476c22")
 public final class ClientAuthenticationCodec {
     //hex: 0x000100
     public static final int REQUEST_MESSAGE_TYPE = 256;
@@ -146,12 +146,13 @@ public final class ClientAuthenticationCodec {
     public static class ResponseParameters {
 
         /**
-         * TODO DOC
+         * A byte that represents the authentication status. It can be AUTHENTICATED(0), CREDENTIALS_FAILED(1),
+         * SERIALIZATION_VERSION_MISMATCH(2) or NOT_ALLOWED_IN_CLUSTER(3).
          */
         public byte status;
 
         /**
-         * TODO DOC
+         * Address of the Hazelcast member which sends the authentication response.
          */
         public @Nullable com.hazelcast.cluster.Address address;
 
@@ -166,7 +167,7 @@ public final class ClientAuthenticationCodec {
         public byte serializationVersion;
 
         /**
-         * TODO DOC
+         * Version of the Hazelcast member which sends the authentication response.
          */
         public java.lang.String serverHazelcastVersion;
 

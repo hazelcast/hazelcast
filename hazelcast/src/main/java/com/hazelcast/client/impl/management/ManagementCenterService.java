@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -53,7 +53,6 @@ import com.hazelcast.client.impl.protocol.codec.MCTriggerPartialStartCodec;
 import com.hazelcast.client.impl.protocol.codec.MCUpdateMapConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.MCWanSyncMapCodec;
 import com.hazelcast.client.impl.spi.impl.ClientInvocation;
-import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.cp.CPMember;
@@ -113,7 +112,7 @@ public class ManagementCenterService {
     @Nonnull
     public CompletableFuture<MetricsResultSet> readMetricsAsync(Member member, long startSequence) {
         ClientMessage request = MCReadMetricsCodec.encodeRequest(member.getUuid(), startSequence);
-        ClientInvocation invocation = new ClientInvocation(client, request, null, member.getAddress());
+        ClientInvocation invocation = new ClientInvocation(client, request, null, member.getUuid());
 
         ClientMessageDecoder<MetricsResultSet> decoder = (clientMessage) -> {
             MCReadMetricsCodec.ResponseParameters response = MCReadMetricsCodec.decodeResponse(clientMessage);
@@ -177,7 +176,7 @@ public class ManagementCenterService {
                     client,
                     MCGetMapConfigCodec.encodeRequest(map),
                     map,
-                    member.getAddress()
+                    member.getUuid()
             );
         }
 
@@ -215,7 +214,7 @@ public class ManagementCenterService {
                         parameters.getMaxSize(),
                         parameters.getMaxSizePolicy().getId()),
                 parameters.getMap(),
-                member.getAddress()
+                member.getUuid()
         );
 
         return new ClientDelegatingFuture<>(
@@ -236,7 +235,7 @@ public class ManagementCenterService {
                 client,
                 MCGetMemberConfigCodec.encodeRequest(),
                 null,
-                member.getAddress()
+                member.getUuid()
         );
 
         return new ClientDelegatingFuture<>(
@@ -257,7 +256,7 @@ public class ManagementCenterService {
                 client,
                 MCRunGcCodec.encodeRequest(),
                 null,
-                member.getAddress()
+                member.getUuid()
         );
 
         return new ClientDelegatingFuture<>(
@@ -281,7 +280,7 @@ public class ManagementCenterService {
                 client,
                 MCGetThreadDumpCodec.encodeRequest(dumpDeadLocks),
                 null,
-                member.getAddress()
+                member.getUuid()
         );
 
         return new ClientDelegatingFuture<>(
@@ -303,7 +302,7 @@ public class ManagementCenterService {
                 client,
                 MCShutdownMemberCodec.encodeRequest(),
                 null,
-                member.getAddress()
+                member.getUuid()
         );
         invocation.invoke();
     }
@@ -321,7 +320,7 @@ public class ManagementCenterService {
                 client,
                 MCPromoteLiteMemberCodec.encodeRequest(),
                 null,
-                member.getAddress()
+                member.getUuid()
         );
 
         return new ClientDelegatingFuture<>(
@@ -344,7 +343,7 @@ public class ManagementCenterService {
                 client,
                 MCGetSystemPropertiesCodec.encodeRequest(),
                 null,
-                member.getAddress()
+                member.getUuid()
         );
 
         return new ClientDelegatingFuture<>(
@@ -376,7 +375,7 @@ public class ManagementCenterService {
                 client,
                 MCGetTimedMemberStateCodec.encodeRequest(),
                 null,
-                member.getAddress()
+                member.getUuid()
         );
 
         return new ClientDelegatingFuture<>(
@@ -403,7 +402,7 @@ public class ManagementCenterService {
                 client,
                 MCMatchMCConfigCodec.encodeRequest(eTag),
                 null,
-                member.getAddress()
+                member.getUuid()
         );
 
         return new ClientDelegatingFuture<>(
@@ -437,7 +436,7 @@ public class ManagementCenterService {
                 client,
                 MCApplyMCConfigCodec.encodeRequest(eTag, clientBwList.mode.getId(), clientBwList.entries),
                 null,
-                member.getAddress()
+                member.getUuid()
         );
 
         return new ClientDelegatingFuture<>(
@@ -460,7 +459,7 @@ public class ManagementCenterService {
                 client,
                 MCGetClusterMetadataCodec.encodeRequest(),
                 null,
-                member.getAddress()
+                member.getUuid()
         );
 
         return new ClientDelegatingFuture<>(
@@ -524,7 +523,7 @@ public class ManagementCenterService {
                 client,
                 MCRunScriptCodec.encodeRequest(engine, script),
                 null,
-                member.getAddress()
+                member.getUuid()
         );
 
         return new ClientDelegatingFuture<>(
@@ -551,7 +550,7 @@ public class ManagementCenterService {
                 client,
                 MCRunConsoleCommandCodec.encodeRequest(namespace, command),
                 null,
-                member.getAddress()
+                member.getUuid()
         );
 
         return new ClientDelegatingFuture<>(
@@ -585,7 +584,7 @@ public class ManagementCenterService {
                 client,
                 MCChangeWanReplicationStateCodec.encodeRequest(wanReplicationName, wanPublisherId, newState.getId()),
                 null,
-                member.getAddress()
+                member.getUuid()
         );
 
         return new ClientDelegatingFuture<>(
@@ -616,7 +615,7 @@ public class ManagementCenterService {
                 client,
                 MCClearWanQueuesCodec.encodeRequest(wanReplicationName, wanPublisherId),
                 null,
-                member.getAddress()
+                member.getUuid()
         );
 
         return new ClientDelegatingFuture<>(
@@ -766,7 +765,7 @@ public class ManagementCenterService {
                 client,
                 MCPollMCEventsCodec.encodeRequest(),
                 null,
-                member.getAddress()
+                member.getUuid()
         );
 
         return new ClientDelegatingFuture<>(
@@ -796,7 +795,7 @@ public class ManagementCenterService {
                 serializationService,
                 clientMessage -> MCGetCPMembersCodec.decodeResponse(clientMessage).cpMembers
                         .stream()
-                        .map(e -> new CPMemberInfo(e.getKey(), e.getValue()))
+                        .map(uuid -> new CPMemberInfo(client.getClientClusterService().getMember(uuid)))
                         .collect(Collectors.toList())
         );
     }
@@ -816,7 +815,7 @@ public class ManagementCenterService {
                 client,
                 MCPromoteToCPMemberCodec.encodeRequest(),
                 null,
-                member.getAddress()
+                member.getUuid()
         );
 
         return new ClientDelegatingFuture<>(
@@ -860,7 +859,7 @@ public class ManagementCenterService {
     @Nonnull
     public CompletableFuture<Void> resetCPSubsystem() {
         // this operation must be executed on master
-        Address masterAddress = client.getClientClusterService().getMasterAddress();
+        Member masterAddress = client.getClientClusterService().getMasterMember();
         if (masterAddress == null) {
             throw new IllegalStateException("Master member is not known yet.");
         }
@@ -868,7 +867,7 @@ public class ManagementCenterService {
                 client,
                 MCResetCPSubsystemCodec.encodeRequest(),
                 null,
-                masterAddress
+                masterAddress.getUuid()
         );
 
         return new ClientDelegatingFuture<>(

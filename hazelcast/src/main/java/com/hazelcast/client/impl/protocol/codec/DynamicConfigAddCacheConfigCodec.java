@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,7 +38,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * If a cache configuration with the given {@code name} already exists, then
  * the new configuration is ignored and the existing one is preserved.
  */
-@Generated("0ea93cc67c912d6a5a419a6c7daa671c")
+@Generated("a073c6a5b3ceb1bd3e20b74a34794d26")
 public final class DynamicConfigAddCacheConfigCodec {
     //hex: 0x1B0E00
     public static final int REQUEST_MESSAGE_TYPE = 1773056;
@@ -140,7 +140,7 @@ public final class DynamicConfigAddCacheConfigCodec {
         public @Nullable java.lang.String splitBrainProtectionName;
 
         /**
-         * name of a class implementing {@link com.hazelcast.spi.merge.SplitBrainMergePolicy}
+         * name of a class implementing SplitBrainMergePolicy
          * that handles merging of values for this cache while recovering from
          * network partitioning
          */

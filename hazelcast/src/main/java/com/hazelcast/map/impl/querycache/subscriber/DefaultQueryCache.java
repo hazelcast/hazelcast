@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package com.hazelcast.map.impl.querycache.subscriber;
 
-import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.config.IndexConfig;
 import com.hazelcast.config.QueryCacheConfig;
@@ -202,9 +201,8 @@ class DefaultQueryCache<K, V> extends AbstractInternalQueryCache<K, V> {
             List<Future> futures = new ArrayList<>(memberList.size());
 
             for (Member member : memberList) {
-                Address address = member.getAddress();
                 Object removePublisher = subscriberContextSupport.createDestroyQueryCacheOperation(mapName, cacheId);
-                Future future = invokerWrapper.invokeOnTarget(removePublisher, address);
+                Future future = invokerWrapper.invokeOnTarget(removePublisher, member);
                 futures.add(future);
             }
             waitWithDeadline(futures, OPERATION_WAIT_TIMEOUT_MINUTES, MINUTES);

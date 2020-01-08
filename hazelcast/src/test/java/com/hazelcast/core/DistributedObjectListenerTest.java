@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,13 +32,14 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.util.Collection;
+import java.util.List;
 import java.util.Random;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertFalse;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -127,7 +128,7 @@ public class DistributedObjectListenerTest extends HazelcastTestSupport {
 
         // TODO: This line is not needed when the create destroy order is guaranteed.
         // The issue: https://github.com/hazelcast/hazelcast/issues/16374
-        assertEqualsEventually(1, listener.createdCount);
+        checkTheNumberOfObjectsInClusterIsEventuallyAsExpected(1);
 
         map.destroy();
 
@@ -145,7 +146,7 @@ public class DistributedObjectListenerTest extends HazelcastTestSupport {
 
         // TODO: This line is not needed when the create destroy order is guaranteed.
         // The issue: https://github.com/hazelcast/hazelcast/issues/16374
-        assertEqualsEventually(1, listener.createdCount);
+        checkTheNumberOfObjectsInClusterIsEventuallyAsExpected(1);
 
         IMap<Object, Object> map2 = instance2.getMap(mapName);
         map2.destroy();
@@ -162,6 +163,10 @@ public class DistributedObjectListenerTest extends HazelcastTestSupport {
         instance.addDistributedObjectListener(listener);
         instance.getMap(mapName);
 
+        // TODO: This line is not needed when the create destroy order is guaranteed.
+        // The issue: https://github.com/hazelcast/hazelcast/issues/16374
+        checkTheNumberOfObjectsInClusterIsEventuallyAsExpected(1);
+
         IMap<Object, Object> map2 = server.getMap(mapName);
         map2.destroy();
 
@@ -169,11 +174,9 @@ public class DistributedObjectListenerTest extends HazelcastTestSupport {
     }
 
     public static class EventCountListener implements DistributedObjectListener {
-
         public AtomicInteger createdCount = new AtomicInteger();
         public AtomicInteger destroyedCount = new AtomicInteger();
-        public AtomicReference<DistributedObjectEvent> lastProxyDestroyedEvent = new AtomicReference<>();
-        public volatile String unexpectedObjectName;
+        public List<DistributedObjectEvent> events = new CopyOnWriteArrayList();
 
         private final String objectName;
 
@@ -185,19 +188,24 @@ public class DistributedObjectListenerTest extends HazelcastTestSupport {
             Object objectName = event.getObjectName();
             if (objectName.equals(this.objectName)) {
                 createdCount.incrementAndGet();
-            } else {
-                unexpectedObjectName = (String) objectName;
             }
+
+            events.add(event);
         }
 
         public void distributedObjectDestroyed(DistributedObjectEvent event) {
             Object objectName = event.getObjectName();
             if (objectName.equals(this.objectName)) {
-                lastProxyDestroyedEvent.set(event);
                 destroyedCount.incrementAndGet();
-            } else {
-                unexpectedObjectName = (String) objectName;
             }
+
+            events.add(event);
+        }
+
+        @Override
+        public String toString() {
+            return "EventCountListener{" + "createdCount=" + createdCount + ", destroyedCount=" + destroyedCount + ", events="
+                    + events + ", objectName='" + objectName + '\'' + '}';
         }
     }
 
@@ -220,28 +228,30 @@ public class DistributedObjectListenerTest extends HazelcastTestSupport {
             // other server yet, it may cause a problem. Therefore, we have the previous verification step to verify
             // that all servers in cluster deleted the proxy locally.
             Collection<DistributedObject> distributedObjects = listeningInstance.getDistributedObjects();
-            Assert.assertTrue(
-                    "Instance1 did not destroy the proxy! instance:" + listeningInstance + ", objects:" + distributedObjects,
+            Assert.assertTrue("Listening instance proxies are not destroyed! listeningInstance:" + listeningInstance
+                            + " destroyingInstance:" + destroyingInstance + ", proxies:" + distributedObjects + ", listener:" + listener,
                     distributedObjects.isEmpty());
 
             distributedObjects = destroyingInstance.getDistributedObjects();
-            Assert.assertTrue(
-                    "Instance2 did not destroy the proxy! instance:" + destroyingInstance + ", objects:" + distributedObjects,
+            Assert.assertTrue("Destroying instance proxies are not destroyed! listeningInstance:" + listeningInstance
+                            + " destroyingInstance:" + destroyingInstance + ", proxies:" + distributedObjects + ", listener:" + listener,
                     distributedObjects.isEmpty());
 
-            DistributedObjectEvent lastDestroyedEvent = listener.lastProxyDestroyedEvent.get();
-            assertNotNull(lastDestroyedEvent);
-            Assert.assertEquals(destroyingInstance.getLocalEndpoint().getUuid(), lastDestroyedEvent.getSource());
+            assertFalse("No event received. " + listener, listener.events.isEmpty());
+            DistributedObjectEvent event = listener.events.get(listener.events.size() - 1);
+            assertEquals("Last received event is not a destroy event" + listener, DistributedObjectEvent.EventType.DESTROYED,
+                    event.getEventType());
+            Assert.assertEquals(destroyingInstance.getLocalEndpoint().getUuid(), event.getSource());
         };
     }
 
-    private void checkTheNumberOfObjectsInClusterIsEventuallyAsExpected(int numberOfObjects) {
+    protected void checkTheNumberOfObjectsInClusterIsEventuallyAsExpected(int numberOfObjects) {
         // getDistributedObjects() call may be done against a random node when instance is client and we need to have the creation event propagated to all cluster first
         assertTrueEventually(() -> {
             hazelcastFactory.getAllHazelcastInstances().forEach(member -> {
                 Collection<DistributedObject> distributedObjects = member.getDistributedObjects();
-                assertEquals("Distributed object is not created for member:" + member + ", objects:" + distributedObjects,
-                        numberOfObjects, distributedObjects.size());
+                assertEquals("Number of distributed objects is not as expected for member" + member + ", objects:"
+                        + distributedObjects, numberOfObjects, distributedObjects.size());
             });
         });
     }

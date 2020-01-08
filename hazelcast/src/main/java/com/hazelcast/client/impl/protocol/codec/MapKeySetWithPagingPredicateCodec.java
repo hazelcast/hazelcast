@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,9 +34,12 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  */
 
 /**
- * TODO DOC
+ * Queries the map based on the specified predicate and returns the keys of matching entries. Specified predicate
+ * runs on all members in parallel. The collection is NOT backed by the map, so changes to the map are NOT reflected
+ * in the collection, and vice-versa. This method is always executed by a distributed query, so it may throw a
+ * QueryResultSizeExceededException if query result size limit is configured.
  */
-@Generated("f2fdecddf9b0e61a54033649c6775f9a")
+@Generated("754eb5a4906d84e7b76c8876c967e2a5")
 public final class MapKeySetWithPagingPredicateCodec {
     //hex: 0x013400
     public static final int REQUEST_MESSAGE_TYPE = 78848;

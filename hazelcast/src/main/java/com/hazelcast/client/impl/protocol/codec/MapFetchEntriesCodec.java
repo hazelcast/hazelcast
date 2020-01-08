@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,17 +36,15 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Fetches specified number of entries from the specified partition starting from specified table index.
  */
-@Generated("705da8ffb9be61d0e2f007e9266709c5")
+@Generated("318929964e396253eda8a64752e14d52")
 public final class MapFetchEntriesCodec {
-    //hex: 0x013900
-    public static final int REQUEST_MESSAGE_TYPE = 80128;
-    //hex: 0x013901
-    public static final int RESPONSE_MESSAGE_TYPE = 80129;
-    private static final int REQUEST_TABLE_INDEX_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    private static final int REQUEST_BATCH_FIELD_OFFSET = REQUEST_TABLE_INDEX_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    //hex: 0x013800
+    public static final int REQUEST_MESSAGE_TYPE = 79872;
+    //hex: 0x013801
+    public static final int RESPONSE_MESSAGE_TYPE = 79873;
+    private static final int REQUEST_BATCH_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_BATCH_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    private static final int RESPONSE_TABLE_INDEX_FIELD_OFFSET = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_TABLE_INDEX_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
 
     private MapFetchEntriesCodec() {
     }
@@ -60,9 +58,9 @@ public final class MapFetchEntriesCodec {
         public java.lang.String name;
 
         /**
-         * The slot number (or index) to start the iterator
+         * The index-size pairs that define the state of iteration
          */
-        public int tableIndex;
+        public java.util.List<java.util.Map.Entry<java.lang.Integer, java.lang.Integer>> iterationPointers;
 
         /**
          * The number of items to be batched
@@ -70,16 +68,16 @@ public final class MapFetchEntriesCodec {
         public int batch;
     }
 
-    public static ClientMessage encodeRequest(java.lang.String name, int tableIndex, int batch) {
+    public static ClientMessage encodeRequest(java.lang.String name, java.util.Collection<java.util.Map.Entry<java.lang.Integer, java.lang.Integer>> iterationPointers, int batch) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(true);
         clientMessage.setOperationName("Map.FetchEntries");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
-        encodeInt(initialFrame.content, REQUEST_TABLE_INDEX_FIELD_OFFSET, tableIndex);
         encodeInt(initialFrame.content, REQUEST_BATCH_FIELD_OFFSET, batch);
         clientMessage.add(initialFrame);
         StringCodec.encode(clientMessage, name);
+        EntryListIntegerIntegerCodec.encode(clientMessage, iterationPointers);
         return clientMessage;
     }
 
@@ -87,9 +85,9 @@ public final class MapFetchEntriesCodec {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         RequestParameters request = new RequestParameters();
         ClientMessage.Frame initialFrame = iterator.next();
-        request.tableIndex = decodeInt(initialFrame.content, REQUEST_TABLE_INDEX_FIELD_OFFSET);
         request.batch = decodeInt(initialFrame.content, REQUEST_BATCH_FIELD_OFFSET);
         request.name = StringCodec.decode(iterator);
+        request.iterationPointers = EntryListIntegerIntegerCodec.decode(iterator);
         return request;
     }
 
@@ -97,23 +95,23 @@ public final class MapFetchEntriesCodec {
     public static class ResponseParameters {
 
         /**
-         * The slot number (or index) to start the iterator
+         * The index-size pairs that define the state of iteration
          */
-        public int tableIndex;
+        public java.util.List<java.util.Map.Entry<java.lang.Integer, java.lang.Integer>> iterationPointers;
 
         /**
-         * TODO DOC
+         * List of entries.
          */
         public java.util.List<java.util.Map.Entry<com.hazelcast.internal.serialization.Data, com.hazelcast.internal.serialization.Data>> entries;
     }
 
-    public static ClientMessage encodeResponse(int tableIndex, java.util.Collection<java.util.Map.Entry<com.hazelcast.internal.serialization.Data, com.hazelcast.internal.serialization.Data>> entries) {
+    public static ClientMessage encodeResponse(java.util.Collection<java.util.Map.Entry<java.lang.Integer, java.lang.Integer>> iterationPointers, java.util.Collection<java.util.Map.Entry<com.hazelcast.internal.serialization.Data, com.hazelcast.internal.serialization.Data>> entries) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, RESPONSE_MESSAGE_TYPE);
-        encodeInt(initialFrame.content, RESPONSE_TABLE_INDEX_FIELD_OFFSET, tableIndex);
         clientMessage.add(initialFrame);
 
+        EntryListIntegerIntegerCodec.encode(clientMessage, iterationPointers);
         EntryListCodec.encode(clientMessage, entries, DataCodec::encode, DataCodec::encode);
         return clientMessage;
     }
@@ -121,8 +119,9 @@ public final class MapFetchEntriesCodec {
     public static MapFetchEntriesCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         ResponseParameters response = new ResponseParameters();
-        ClientMessage.Frame initialFrame = iterator.next();
-        response.tableIndex = decodeInt(initialFrame.content, RESPONSE_TABLE_INDEX_FIELD_OFFSET);
+        //empty initial frame
+        iterator.next();
+        response.iterationPointers = EntryListIntegerIntegerCodec.decode(iterator);
         response.entries = EntryListCodec.decode(iterator, DataCodec::decode, DataCodec::decode);
         return response;
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,8 @@
 
 package com.hazelcast.cache;
 
+import com.hazelcast.cache.impl.CachePartitionsIterator;
 import com.hazelcast.cache.impl.CacheProxy;
-import com.hazelcast.cache.impl.ClusterWideIterator;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
@@ -64,7 +64,7 @@ public class CacheClusterWideIteratorTest extends HazelcastTestSupport {
     public boolean prefetchValues;
 
     protected Iterator getIterator(Cache cache) {
-        return new ClusterWideIterator((CacheProxy) cache, prefetchValues);
+        return new CachePartitionsIterator((CacheProxy) cache, prefetchValues);
     }
 
     @Before

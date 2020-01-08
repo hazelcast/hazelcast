@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import com.hazelcast.cache.impl.operation.CacheGetInvalidationMetaDataOperation;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.CacheFetchNearCacheInvalidationMetadataCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractInvocationMessageTask;
+import com.hazelcast.cluster.Member;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.spi.impl.operationservice.InvocationBuilder;
@@ -39,7 +40,8 @@ public class CacheFetchNearCacheInvalidationMetadataTask
     @Override
     protected InvocationBuilder getInvocationBuilder(Operation op) {
         OperationServiceImpl operationService = nodeEngine.getOperationService();
-        return operationService.createInvocationBuilder(getServiceName(), op, parameters.address);
+        Member member = nodeEngine.getClusterService().getMember(parameters.uuid);
+        return operationService.createInvocationBuilder(getServiceName(), op, member.getAddress());
     }
 
     @Override
@@ -49,9 +51,7 @@ public class CacheFetchNearCacheInvalidationMetadataTask
 
     @Override
     protected CacheFetchNearCacheInvalidationMetadataCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
-        parameters = CacheFetchNearCacheInvalidationMetadataCodec.decodeRequest(clientMessage);
-        parameters.address = clientEngine.memberAddressOf(parameters.address);
-        return parameters;
+        return CacheFetchNearCacheInvalidationMetadataCodec.decodeRequest(clientMessage);
     }
 
     @Override

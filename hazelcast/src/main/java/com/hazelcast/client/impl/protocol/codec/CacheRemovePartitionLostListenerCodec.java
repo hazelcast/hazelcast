@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,9 +34,10 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  */
 
 /**
- * Removes the specified cache partition lost listener. Returns silently if there is no such listener added before
+ * Removes the specified cache partition lost listener. If there is no such listener added before, this call does no
+ * change in the cluster and returns false.
  */
-@Generated("1b3d2e26225ec8fa0ec7054abe7d1f2a")
+@Generated("e1e61e676aea5066d683f6487f71eb3d")
 public final class CacheRemovePartitionLostListenerCodec {
     //hex: 0x131A00
     public static final int REQUEST_MESSAGE_TYPE = 1251840;

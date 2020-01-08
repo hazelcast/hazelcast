@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,9 +34,10 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  */
 
 /**
- * Removes the specified item listener. Returns silently if the specified listener was not added before.
+ * Removes the specified item listener. If there is no such listener added before, this call does no change in the
+ * cluster and returns false.
  */
-@Generated("47861a902d444a4dcfba93d83ed18bd2")
+@Generated("689a4b52dbe7a16ee7cdd69e4b8a93b1")
 public final class SetRemoveListenerCodec {
     //hex: 0x060C00
     public static final int REQUEST_MESSAGE_TYPE = 396288;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,6 @@ import com.hazelcast.client.impl.spi.ClientContext;
 import com.hazelcast.client.impl.spi.impl.ClientInvocation;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.internal.nearcache.impl.invalidation.InvalidationMetaDataFetcher;
-import com.hazelcast.cluster.Address;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
 
 import java.util.Collection;
@@ -55,9 +54,9 @@ public class ClientCacheInvalidationMetaDataFetcher extends InvalidationMetaData
     }
 
     @Override
-    protected InternalCompletableFuture fetchMetadataOf(Address address, List<String> names) {
-        ClientMessage message = encodeRequest(names, address);
-        ClientInvocation invocation = new ClientInvocation(clientImpl, message, null, address);
+    protected InternalCompletableFuture fetchMetadataOf(Member member, List<String> names) {
+        ClientMessage message = encodeRequest(names, member.getUuid());
+        ClientInvocation invocation = new ClientInvocation(clientImpl, message, null, member.getUuid());
         return invocation.invoke();
     }
 

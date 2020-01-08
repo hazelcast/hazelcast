@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,7 +27,7 @@ import java.util.Map;
  * WAN publishers do not share a single common interface, we need to access
  * them through the WAN replication service until such an interface is introduced.
  */
-@ManagedDescription("WanReplicationPublisher")
+@ManagedDescription("WanPublisher")
 public class WanPublisherMBean extends HazelcastMBean<WanReplicationService> {
     private final String wanReplicationName;
     private final String wanPublisherId;
@@ -39,7 +39,7 @@ public class WanPublisherMBean extends HazelcastMBean<WanReplicationService> {
         super(wanReplicationService, service);
         this.wanReplicationName = wanReplicationName;
         this.wanPublisherId = wanPublisherId;
-        this.objectName = service.createObjectName("WanReplicationPublisher",
+        this.objectName = service.createObjectName("WanPublisher",
                 wanReplicationName + "." + wanPublisherId);
     }
 

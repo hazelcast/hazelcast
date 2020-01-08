@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,23 +35,24 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  */
 
 /**
- * TODO DOC
+ * Adds a partition lost listener to the cluster.
  */
-@Generated("ef10a6d1680b586e91cf324b352d2eb0")
+@Generated("d969d694b9e3a0df9f684853e58f53ff")
 public final class ClientAddPartitionLostListenerCodec {
-    //hex: 0x000700
-    public static final int REQUEST_MESSAGE_TYPE = 1792;
-    //hex: 0x000701
-    public static final int RESPONSE_MESSAGE_TYPE = 1793;
+    //hex: 0x000600
+    public static final int REQUEST_MESSAGE_TYPE = 1536;
+    //hex: 0x000601
+    public static final int RESPONSE_MESSAGE_TYPE = 1537;
     private static final int REQUEST_LOCAL_ONLY_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_LOCAL_ONLY_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
     private static final int RESPONSE_RESPONSE_FIELD_OFFSET = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_RESPONSE_FIELD_OFFSET + UUID_SIZE_IN_BYTES;
     private static final int EVENT_PARTITION_LOST_PARTITION_ID_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int EVENT_PARTITION_LOST_LOST_BACKUP_COUNT_FIELD_OFFSET = EVENT_PARTITION_LOST_PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    private static final int EVENT_PARTITION_LOST_INITIAL_FRAME_SIZE = EVENT_PARTITION_LOST_LOST_BACKUP_COUNT_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    //hex: 0x000702
-    private static final int EVENT_PARTITION_LOST_MESSAGE_TYPE = 1794;
+    private static final int EVENT_PARTITION_LOST_SOURCE_FIELD_OFFSET = EVENT_PARTITION_LOST_LOST_BACKUP_COUNT_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int EVENT_PARTITION_LOST_INITIAL_FRAME_SIZE = EVENT_PARTITION_LOST_SOURCE_FIELD_OFFSET + UUID_SIZE_IN_BYTES;
+    //hex: 0x000602
+    private static final int EVENT_PARTITION_LOST_MESSAGE_TYPE = 1538;
 
     private ClientAddPartitionLostListenerCodec() {
     }
@@ -112,16 +113,16 @@ public final class ClientAddPartitionLostListenerCodec {
         return response;
     }
 
-    public static ClientMessage encodePartitionLostEvent(int partitionId, int lostBackupCount, @Nullable com.hazelcast.cluster.Address source) {
+    public static ClientMessage encodePartitionLostEvent(int partitionId, int lostBackupCount, @Nullable java.util.UUID source) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[EVENT_PARTITION_LOST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         initialFrame.flags |= ClientMessage.IS_EVENT_FLAG;
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, EVENT_PARTITION_LOST_MESSAGE_TYPE);
         encodeInt(initialFrame.content, EVENT_PARTITION_LOST_PARTITION_ID_FIELD_OFFSET, partitionId);
         encodeInt(initialFrame.content, EVENT_PARTITION_LOST_LOST_BACKUP_COUNT_FIELD_OFFSET, lostBackupCount);
+        encodeUUID(initialFrame.content, EVENT_PARTITION_LOST_SOURCE_FIELD_OFFSET, source);
         clientMessage.add(initialFrame);
 
-        CodecUtil.encodeNullable(clientMessage, source, AddressCodec::encode);
         return clientMessage;
     }
 
@@ -134,12 +135,18 @@ public final class ClientAddPartitionLostListenerCodec {
                 ClientMessage.Frame initialFrame = iterator.next();
                 int partitionId = decodeInt(initialFrame.content, EVENT_PARTITION_LOST_PARTITION_ID_FIELD_OFFSET);
                 int lostBackupCount = decodeInt(initialFrame.content, EVENT_PARTITION_LOST_LOST_BACKUP_COUNT_FIELD_OFFSET);
-                com.hazelcast.cluster.Address source = CodecUtil.decodeNullable(iterator, AddressCodec::decode);
+                java.util.UUID source = decodeUUID(initialFrame.content, EVENT_PARTITION_LOST_SOURCE_FIELD_OFFSET);
                 handlePartitionLostEvent(partitionId, lostBackupCount, source);
                 return;
             }
             Logger.getLogger(super.getClass()).finest("Unknown message type received on event handler :" + messageType);
         }
-        public abstract void handlePartitionLostEvent(int partitionId, int lostBackupCount, @Nullable com.hazelcast.cluster.Address source);
+
+        /**
+         * @param partitionId Id of the lost partition.
+         * @param lostBackupCount The number of lost backups for the partition. 0: the owner, 1: first backup, 2: second backup...
+         * @param source UUID of the node that dispatches the event
+        */
+        public abstract void handlePartitionLostEvent(int partitionId, int lostBackupCount, @Nullable java.util.UUID source);
     }
 }

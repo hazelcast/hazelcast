@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package com.hazelcast.internal.config;
 
 import com.hazelcast.config.WanReplicationRef;
 
+import javax.annotation.Nonnull;
 import java.util.List;
 
 /**
@@ -30,22 +31,22 @@ public class WanReplicationRefReadOnly extends WanReplicationRef {
     }
 
     @Override
-    public WanReplicationRef setName(String name) {
+    public WanReplicationRef setName(@Nonnull String name) {
         throw throwReadOnly();
     }
 
     @Override
-    public WanReplicationRef setMergePolicy(String mergePolicy) {
+    public WanReplicationRef setMergePolicyClassName(@Nonnull String mergePolicyClassName) {
         throw throwReadOnly();
     }
 
     @Override
-    public WanReplicationRef setFilters(List<String> filters) {
+    public WanReplicationRef setFilters(@Nonnull List<String> filters) {
         throw throwReadOnly();
     }
 
     @Override
-    public WanReplicationRef addFilter(String filter) {
+    public WanReplicationRef addFilter(@Nonnull String filterClassName) {
         throw throwReadOnly();
     }
 

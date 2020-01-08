@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -43,13 +43,14 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * If smart routing is disabled, the actual member processing the client
  * message may act as a proxy.
  */
-@Generated("17630ca2b8e81abde3a579f07c7ebf55")
+@Generated("abf1360f8eda3deb6021463797f495ef")
 public final class PNCounterGetCodec {
     //hex: 0x1D0100
     public static final int REQUEST_MESSAGE_TYPE = 1900800;
     //hex: 0x1D0101
     public static final int RESPONSE_MESSAGE_TYPE = 1900801;
-    private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int REQUEST_TARGET_REPLICA_UUID_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_TARGET_REPLICA_UUID_FIELD_OFFSET + UUID_SIZE_IN_BYTES;
     private static final int RESPONSE_VALUE_FIELD_OFFSET = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_REPLICA_COUNT_FIELD_OFFSET = RESPONSE_VALUE_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_REPLICA_COUNT_FIELD_OFFSET + INT_SIZE_IN_BYTES;
@@ -73,30 +74,29 @@ public final class PNCounterGetCodec {
         /**
          * the target replica
          */
-        public com.hazelcast.cluster.Address targetReplica;
+        public java.util.UUID targetReplicaUUID;
     }
 
-    public static ClientMessage encodeRequest(java.lang.String name, java.util.Collection<java.util.Map.Entry<java.util.UUID, java.lang.Long>> replicaTimestamps, com.hazelcast.cluster.Address targetReplica) {
+    public static ClientMessage encodeRequest(java.lang.String name, java.util.Collection<java.util.Map.Entry<java.util.UUID, java.lang.Long>> replicaTimestamps, java.util.UUID targetReplicaUUID) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(true);
         clientMessage.setOperationName("PNCounter.Get");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
+        encodeUUID(initialFrame.content, REQUEST_TARGET_REPLICA_UUID_FIELD_OFFSET, targetReplicaUUID);
         clientMessage.add(initialFrame);
         StringCodec.encode(clientMessage, name);
         EntryListUUIDLongCodec.encode(clientMessage, replicaTimestamps);
-        AddressCodec.encode(clientMessage, targetReplica);
         return clientMessage;
     }
 
     public static PNCounterGetCodec.RequestParameters decodeRequest(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         RequestParameters request = new RequestParameters();
-        //empty initial frame
-        iterator.next();
+        ClientMessage.Frame initialFrame = iterator.next();
+        request.targetReplicaUUID = decodeUUID(initialFrame.content, REQUEST_TARGET_REPLICA_UUID_FIELD_OFFSET);
         request.name = StringCodec.decode(iterator);
         request.replicaTimestamps = EntryListUUIDLongCodec.decode(iterator);
-        request.targetReplica = AddressCodec.decode(iterator);
         return request;
     }
 
@@ -104,7 +104,7 @@ public final class PNCounterGetCodec {
     public static class ResponseParameters {
 
         /**
-         * TODO DOC
+         * Value of the counter.
          */
         public long value;
 
@@ -114,7 +114,7 @@ public final class PNCounterGetCodec {
         public java.util.List<java.util.Map.Entry<java.util.UUID, java.lang.Long>> replicaTimestamps;
 
         /**
-         * TODO DOC
+         * Number of replicas that keep the state of this counter.
          */
         public int replicaCount;
     }

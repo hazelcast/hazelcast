@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,7 @@ package com.hazelcast.client.cache.impl;
 import com.hazelcast.cache.impl.ICacheInternal;
 import com.hazelcast.client.impl.spi.ClientContext;
 
-public class ClientCachePartitionIterator<K, V> extends ClientClusterWideIterator<K, V> {
+public class ClientCachePartitionIterator<K, V> extends ClientCachePartitionsIterator<K, V> {
 
     public ClientCachePartitionIterator(ICacheInternal<K, V> cacheProxy, ClientContext context, int fetchSize,
                                         int partitionId, boolean prefetchValues) {
@@ -28,8 +28,8 @@ public class ClientCachePartitionIterator<K, V> extends ClientClusterWideIterato
 
     @Override
     protected boolean advance() {
-        if (lastTableIndex < 0) {
-            lastTableIndex = Integer.MAX_VALUE;
+        if (pointers[pointers.length - 1].getIndex() < 0) {
+            resetPointers();
             return false;
         }
         result = fetch();

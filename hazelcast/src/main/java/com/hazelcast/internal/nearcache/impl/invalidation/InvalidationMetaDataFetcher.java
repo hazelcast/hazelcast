@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -91,7 +91,7 @@ public abstract class InvalidationMetaDataFetcher {
                                                   InternalCompletableFuture future,
                                                   MetadataHolder metadataHolder) throws Exception;
 
-    protected abstract InternalCompletableFuture fetchMetadataOf(Address address, List<String> names);
+    protected abstract InternalCompletableFuture fetchMetadataOf(Member member, List<String> names);
 
     private Map<Member, InternalCompletableFuture> fetchMembersMetadataFor(List<String> names) {
         Collection<Member> members = getDataMembers();
@@ -103,7 +103,7 @@ public abstract class InvalidationMetaDataFetcher {
         for (Member member : members) {
             Address address = member.getAddress();
             try {
-                futureByMember.put(member, fetchMetadataOf(address, names));
+                futureByMember.put(member, fetchMetadataOf(member, names));
             } catch (Exception e) {
                 handleExceptionWhileProcessingMetadata(member, e);
             }

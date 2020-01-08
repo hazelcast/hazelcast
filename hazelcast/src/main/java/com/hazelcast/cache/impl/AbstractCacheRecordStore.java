@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -42,6 +42,7 @@ import com.hazelcast.internal.eviction.EvictionPolicyEvaluatorProvider;
 import com.hazelcast.internal.eviction.ExpiredKey;
 import com.hazelcast.internal.eviction.impl.evaluator.EvictionPolicyEvaluator;
 import com.hazelcast.internal.eviction.impl.strategy.sampling.SamplingEvictionStrategy;
+import com.hazelcast.internal.iteration.IterationPointer;
 import com.hazelcast.internal.nearcache.impl.invalidation.InvalidationQueue;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
@@ -1798,13 +1799,13 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
     }
 
     @Override
-    public CacheKeyIterationResult fetchKeys(int tableIndex, int size) {
-        return records.fetchKeys(tableIndex, size);
+    public CacheKeysWithCursor fetchKeys(IterationPointer[] pointers, int size) {
+        return records.fetchKeys(pointers, size);
     }
 
     @Override
-    public CacheEntryIterationResult fetchEntries(int tableIndex, int size) {
-        return records.fetchEntries(tableIndex, size);
+    public CacheEntriesWithCursor fetchEntries(IterationPointer[] pointers, int size) {
+        return records.fetchEntries(pointers, size);
     }
 
     @Override

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -43,12 +43,27 @@ public class FlakeIdGeneratorConfigReadOnly extends FlakeIdGeneratorConfig {
     }
 
     @Override
-    public FlakeIdGeneratorConfig setIdOffset(long idOffset) {
+    public FlakeIdGeneratorConfig setEpochStart(long epochStart) {
         throw throwReadOnly();
     }
 
     @Override
     public FlakeIdGeneratorConfig setNodeIdOffset(long nodeIdOffset) {
+        throw throwReadOnly();
+    }
+
+    @Override
+    public FlakeIdGeneratorConfig setBitsSequence(int bitsSequence) {
+        throw throwReadOnly();
+    }
+
+    @Override
+    public FlakeIdGeneratorConfig setBitsNodeId(int bitsNodeId) {
+        throw throwReadOnly();
+    }
+
+    @Override
+    public FlakeIdGeneratorConfig setAllowedFutureMillis(long allowedFutureMillis) {
         throw throwReadOnly();
     }
 

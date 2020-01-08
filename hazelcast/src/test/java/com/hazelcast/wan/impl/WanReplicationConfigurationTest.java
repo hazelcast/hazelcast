@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -84,7 +84,7 @@ public class WanReplicationConfigurationTest extends HazelcastTestSupport {
 
         WanReplicationRef wanReplicationRef = mapContainer.getMapConfig().getWanReplicationRef();
         assertNotNull(wanReplicationRef);
-        assertEquals(mapContainer.getWanMergePolicy().getClass().getName(), wanReplicationRef.getMergePolicy());
+        assertEquals(mapContainer.getWanMergePolicy().getClass().getName(), wanReplicationRef.getMergePolicyClassName());
         assertFalse(wanReplicationRef.isRepublishingEnabled());
     }
 
@@ -101,7 +101,7 @@ public class WanReplicationConfigurationTest extends HazelcastTestSupport {
 
         WanReplicationRef wanReplicationRef = mapContainer.getMapConfig().getWanReplicationRef();
         assertNotNull(wanReplicationRef);
-        assertEquals(mapContainer.getWanMergePolicy().getClass().getName(), wanReplicationRef.getMergePolicy());
+        assertEquals(mapContainer.getWanMergePolicy().getClass().getName(), wanReplicationRef.getMergePolicyClassName());
         assertTrue(wanReplicationRef.isRepublishingEnabled());
     }
 
@@ -122,7 +122,7 @@ public class WanReplicationConfigurationTest extends HazelcastTestSupport {
         WanReplicationRef wanRef = new WanReplicationRef()
                 .setName("dummyWan")
                 .setRepublishingEnabled(isWanRepublishingEnabled)
-                .setMergePolicy(PassThroughMergePolicy.class.getName());
+                .setMergePolicyClassName(PassThroughMergePolicy.class.getName());
 
         MapConfig mapConfig = new MapConfig("default")
                 .setWanReplicationRef(wanRef);

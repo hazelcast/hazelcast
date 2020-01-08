@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -189,7 +189,7 @@ public class YamlClientConfigBuilderResolutionTest {
     }
 
     @Test
-    public void testResolveFromWorkDir() throws Exception {
+    public void testResolveFromWorkDirYamlButNotYml() throws Exception {
         helper.givenYamlClientConfigFileInWorkDir("cluster-yaml-workdir");
 
         ClientConfig config = new YamlClientConfigBuilder().build();
@@ -198,8 +198,46 @@ public class YamlClientConfigBuilderResolutionTest {
     }
 
     @Test
-    public void testResolveFromClasspath() throws Exception {
+    public void testResolveFromWorkDirYmlButNotYaml() throws Exception {
+        helper.givenYmlClientConfigFileInWorkDir("cluster-yml-workdir");
+
+        ClientConfig config = new YamlClientConfigBuilder().build();
+
+        assertEquals("cluster-yml-workdir", config.getInstanceName());
+    }
+
+    @Test
+    public void testResolveFromWorkDirYamlAndYml() throws Exception {
+        helper.givenYamlClientConfigFileInWorkDir("cluster-yaml-workdir");
+        helper.givenYmlClientConfigFileInWorkDir("cluster-yml-workdir");
+
+        ClientConfig config = new YamlClientConfigBuilder().build();
+
+        assertEquals("cluster-yaml-workdir", config.getInstanceName());
+    }
+
+    @Test
+    public void testResolveFromClasspathYamlButNotYml() throws Exception {
         helper.givenYamlClientConfigFileOnClasspath("cluster-yaml-classpath");
+
+        ClientConfig config = new YamlClientConfigBuilder().build();
+
+        assertEquals("cluster-yaml-classpath", config.getInstanceName());
+    }
+
+    @Test
+    public void testResolveFromClasspathYmlButNotYaml() throws Exception {
+        helper.givenYmlClientConfigFileOnClasspath("cluster-yml-classpath");
+
+        ClientConfig config = new YamlClientConfigBuilder().build();
+
+        assertEquals("cluster-yml-classpath", config.getInstanceName());
+    }
+
+    @Test
+    public void testResolveFromClasspathYamlAndYml() throws Exception {
+        helper.givenYamlClientConfigFileOnClasspath("cluster-yaml-classpath");
+        helper.givenYmlClientConfigFileOnClasspath("cluster-yml-classpath");
 
         ClientConfig config = new YamlClientConfigBuilder().build();
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -183,7 +183,7 @@ public class AdvancedNetworkClientIntegrationTest {
         IScheduledFuture<Address> future = executorService.scheduleOnMember(new ReportExecutionMember(),
                 targetMember, 3, TimeUnit.SECONDS);
 
-        assertEquals(targetMember.getAddress(), future.getHandler().getAddress());
+        assertEquals(targetMember.getUuid(), future.getHandler().getUuid());
 
         Address clusterMemberAddress = null;
         for (HazelcastInstance instance : instances) {

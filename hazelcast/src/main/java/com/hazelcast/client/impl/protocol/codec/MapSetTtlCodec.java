@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -48,12 +48,12 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * <p>
  * Time resolution for TTL is seconds. The given TTL value is rounded to the next closest second value.
  */
-@Generated("9156bea2a947250e5b587b453703a81a")
+@Generated("1bb755ce76c849dffce368b031a74e0d")
 public final class MapSetTtlCodec {
-    //hex: 0x014500
-    public static final int REQUEST_MESSAGE_TYPE = 83200;
-    //hex: 0x014501
-    public static final int RESPONSE_MESSAGE_TYPE = 83201;
+    //hex: 0x014300
+    public static final int REQUEST_MESSAGE_TYPE = 82688;
+    //hex: 0x014301
+    public static final int RESPONSE_MESSAGE_TYPE = 82689;
     private static final int REQUEST_TTL_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_TTL_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
     private static final int RESPONSE_RESPONSE_FIELD_OFFSET = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
