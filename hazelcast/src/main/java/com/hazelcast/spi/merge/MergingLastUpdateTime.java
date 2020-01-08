@@ -21,7 +21,7 @@ package com.hazelcast.spi.merge;
  *
  * @since 3.10
  */
-public interface MergingLastUpdateTime {
+public interface MergingLastUpdateTime extends MergingView {
 
     /**
      * Returns the last update time of the merge data.

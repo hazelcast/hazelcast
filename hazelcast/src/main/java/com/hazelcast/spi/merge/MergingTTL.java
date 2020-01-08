@@ -21,7 +21,7 @@ package com.hazelcast.spi.merge;
  *
  * @since 3.10
  */
-public interface MergingTTL {
+public interface MergingTTL extends MergingView {
 
     /**
      * Returns the TTL of the merge data.

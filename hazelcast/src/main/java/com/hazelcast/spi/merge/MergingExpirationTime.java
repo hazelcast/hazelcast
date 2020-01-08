@@ -21,7 +21,7 @@ package com.hazelcast.spi.merge;
  *
  * @since 3.10
  */
-public interface MergingExpirationTime {
+public interface MergingExpirationTime extends MergingView {
 
     /**
      * Returns the expiration time of the merge data.

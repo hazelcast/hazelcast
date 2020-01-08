@@ -22,7 +22,7 @@ package com.hazelcast.spi.merge;
  * @param <V> the type of the value
  * @since 3.10
  */
-public interface MergingValue<V> {
+public interface MergingValue<V> extends MergingView {
 
     /**
      * Returns the merging value in the in-memory format of the backing data structure.

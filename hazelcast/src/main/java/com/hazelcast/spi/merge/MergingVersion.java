@@ -21,7 +21,7 @@ package com.hazelcast.spi.merge;
  *
  * @since 3.10
  */
-public interface MergingVersion {
+public interface MergingVersion extends MergingView {
 
     /**
      * Returns the version of the merge data.

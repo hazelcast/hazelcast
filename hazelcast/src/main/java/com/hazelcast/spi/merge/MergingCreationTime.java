@@ -21,7 +21,7 @@ package com.hazelcast.spi.merge;
  *
  * @since 3.10
  */
-public interface MergingCreationTime {
+public interface MergingCreationTime extends MergingView {
 
     /**
      * Returns the creation time of the merge data.

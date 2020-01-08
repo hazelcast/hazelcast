@@ -21,7 +21,7 @@ package com.hazelcast.spi.merge;
  *
  * @since 3.10
  */
-public interface MergingHits {
+public interface MergingHits extends MergingView {
 
     /**
      * Returns the access hits of the merge data.

@@ -21,7 +21,7 @@ package com.hazelcast.spi.merge;
  *
  * @since 3.10
  */
-public interface MergingMaxIdle {
+public interface MergingMaxIdle extends MergingView {
 
     /**
      * Returns the MaxIdle of the merge data.
