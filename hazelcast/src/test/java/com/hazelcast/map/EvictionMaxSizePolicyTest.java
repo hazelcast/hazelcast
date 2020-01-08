@@ -159,8 +159,8 @@ public class EvictionMaxSizePolicyTest extends HazelcastTestSupport {
         LocalMapStats localMapStats1 = map1.getLocalMapStats();
         LocalMapStats localMapStats2 = map2.getLocalMapStats();
 
-        assertEquals(localMapStats1.getOwnedEntryCount(), localMapStats2.getBackupEntryCount());
-        assertEquals(localMapStats2.getOwnedEntryCount(), localMapStats1.getBackupEntryCount());
+        assertEqualsEventually(() -> localMapStats2.getBackupEntryCount(), localMapStats1.getOwnedEntryCount());
+        assertEqualsEventually(() -> localMapStats1.getBackupEntryCount(), localMapStats2.getOwnedEntryCount());
     }
 
     @Test
