@@ -1195,7 +1195,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         String xml = HAZELCAST_START_TAG
                 + "  <map name=\"" + mapName + "\">\n"
                 + "    <wan-replication-ref name=\"test\">\n"
-                + "      <merge-policy>TestMergePolicy</merge-policy>\n"
+                + "      <merge-policy-class-name>TestMergePolicy</merge-policy-class-name>\n"
                 + "      <filters>\n"
                 + "        <filter-impl>com.example.SampleFilter</filter-impl>\n"
                 + "      </filters>\n"
@@ -1208,7 +1208,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         WanReplicationRef wanRef = mapConfig.getWanReplicationRef();
 
         assertEquals(refName, wanRef.getName());
-        assertEquals(mergePolicy, wanRef.getMergePolicy());
+        assertEquals(mergePolicy, wanRef.getMergePolicyClassName());
         assertTrue(wanRef.isRepublishingEnabled());
         assertEquals(1, wanRef.getFilters().size());
         assertEquals("com.example.SampleFilter", wanRef.getFilters().get(0));
@@ -2216,7 +2216,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "            <eviction size=\"1000\" max-size-policy=\"ENTRY_COUNT\" eviction-policy=\"LFU\"/>\n"
                 + "          </near-cache>"
                 + "        <wan-replication-ref name=\"my-wan-cluster-batch\">\n"
-                + "            <merge-policy>PassThroughMergePolicy</merge-policy>\n"
+                + "            <merge-policy-class-name>PassThroughMergePolicy</merge-policy-class-name>\n"
                 + "            <filters>\n"
                 + "                <filter-impl>com.example.SampleFilter</filter-impl>\n"
                 + "            </filters>\n"
@@ -2305,7 +2305,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         WanReplicationRef wanReplicationRef = mapConfig.getWanReplicationRef();
         assertNotNull(wanReplicationRef);
         assertFalse(wanReplicationRef.isRepublishingEnabled());
-        assertEquals("PassThroughMergePolicy", wanReplicationRef.getMergePolicy());
+        assertEquals("PassThroughMergePolicy", wanReplicationRef.getMergePolicyClassName());
         assertEquals(1, wanReplicationRef.getFilters().size());
         assertEquals("com.example.SampleFilter".toLowerCase(), wanReplicationRef.getFilters().get(0).toLowerCase());
     }

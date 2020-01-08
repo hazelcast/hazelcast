@@ -1211,7 +1211,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "    " + mapName + ":\n"
                 + "      wan-replication-ref:\n"
                 + "        test:\n"
-                + "          merge-policy: TestMergePolicy\n"
+                + "          merge-policy-class-name: TestMergePolicy\n"
                 + "          filters:\n"
                 + "            - com.example.SampleFilter\n";
 
@@ -1220,7 +1220,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
         WanReplicationRef wanRef = mapConfig.getWanReplicationRef();
 
         assertEquals(refName, wanRef.getName());
-        assertEquals(mergePolicy, wanRef.getMergePolicy());
+        assertEquals(mergePolicy, wanRef.getMergePolicyClassName());
         assertTrue(wanRef.isRepublishingEnabled());
         assertEquals(1, wanRef.getFilters().size());
         assertEquals("com.example.SampleFilter", wanRef.getFilters().get(0));
@@ -2233,7 +2233,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "          eviction-policy: LFU\n"
                 + "      wan-replication-ref:\n"
                 + "        my-wan-cluster-batch:\n"
-                + "          merge-policy: PassThroughMergePolicy\n"
+                + "          merge-policy-class-name: PassThroughMergePolicy\n"
                 + "          filters:\n"
                 + "            - com.example.SampleFilter\n"
                 + "          republishing-enabled: false\n"
@@ -2315,7 +2315,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
         WanReplicationRef wanReplicationRef = mapConfig.getWanReplicationRef();
         assertNotNull(wanReplicationRef);
         assertFalse(wanReplicationRef.isRepublishingEnabled());
-        assertEquals("PassThroughMergePolicy", wanReplicationRef.getMergePolicy());
+        assertEquals("PassThroughMergePolicy", wanReplicationRef.getMergePolicyClassName());
         assertEquals(1, wanReplicationRef.getFilters().size());
         assertEquals("com.example.SampleFilter".toLowerCase(), wanReplicationRef.getFilters().get(0).toLowerCase());
     }

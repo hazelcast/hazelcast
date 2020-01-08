@@ -832,7 +832,7 @@ public class ConfigCompatibilityChecker {
         private static boolean isCompatible(WanReplicationRef c1, WanReplicationRef c2) {
             return c1 == c2 || !(c1 == null || c2 == null)
                     && nullSafeEqual(c1.getName(), c2.getName())
-                    && nullSafeEqual(c1.getMergePolicy(), c2.getMergePolicy())
+                    && nullSafeEqual(c1.getMergePolicyClassName(), c2.getMergePolicyClassName())
                     && nullSafeEqual(c1.getFilters(), c2.getFilters())
                     && nullSafeEqual(c1.isRepublishingEnabled(), c2.isRepublishingEnabled());
         }
@@ -889,7 +889,7 @@ public class ConfigCompatibilityChecker {
         private static boolean isCompatible(WanReplicationRef c1, WanReplicationRef c2) {
             return c1 == c2 || !(c1 == null || c2 == null)
                     && nullSafeEqual(c1.getName(), c2.getName())
-                    && nullSafeEqual(c1.getMergePolicy(), c2.getMergePolicy())
+                    && nullSafeEqual(c1.getMergePolicyClassName(), c2.getMergePolicyClassName())
                     && nullSafeEqual(c1.getFilters(), c2.getFilters())
                     && nullSafeEqual(c1.isRepublishingEnabled(), c2.isRepublishingEnabled());
         }

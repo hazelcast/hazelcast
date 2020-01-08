@@ -158,7 +158,7 @@ public class WanPublisherMigrationTest extends HazelcastTestSupport {
 
         WanReplicationRef wanRef = new WanReplicationRef()
                 .setName("dummyWan")
-                .setMergePolicy(PassThroughMergePolicy.class.getName());
+                .setMergePolicyClassName(PassThroughMergePolicy.class.getName());
 
         MapConfig mapConfig = new MapConfig("default")
                 .setWanReplicationRef(wanRef);

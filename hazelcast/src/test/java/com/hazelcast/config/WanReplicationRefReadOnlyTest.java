@@ -41,7 +41,7 @@ public class WanReplicationRefReadOnlyTest {
 
     @Test(expected = UnsupportedOperationException.class)
     public void setMergePolicyOnReadOnlyWanReplicationRefShouldFail() {
-        getReadOnlyRef().setMergePolicy("myMergePolicy");
+        getReadOnlyRef().setMergePolicyClassName("myMergePolicy");
     }
 
     @Test(expected = UnsupportedOperationException.class)

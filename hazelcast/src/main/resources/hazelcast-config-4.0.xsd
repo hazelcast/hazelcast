@@ -512,7 +512,7 @@
             <xs:element name="wan-replication-ref" type="wan-replication-ref" minOccurs="0">
                 <xs:annotation>
                     <xs:documentation>
-                        Wan replication configuration for cache.
+                        WAN replication configuration for cache.
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
@@ -3227,11 +3227,13 @@
 
     <xs:complexType name="wan-replication-ref">
         <xs:all>
-            <xs:element name="merge-policy" type="xs:string" minOccurs="0">
+            <xs:element name="merge-policy-class-name" type="xs:string" minOccurs="0"
+                        default="com.hazelcast.spi.merge.PassThroughMergePolicy">
                 <xs:annotation>
                     <xs:documentation>
-                        Resolve conflicts that occurred when target cluster already has the replicated
-                        entry key.
+                        Sets the merge policy sent to the WAN replication target to merge
+                        replicated entries with existing target entries.
+                        The default merge policy is com.hazelcast.spi.merge.PassThroughMergePolicy.
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>

@@ -1200,7 +1200,7 @@ hazelcast:
   #     - "republishing-enabled":
   #         When enabled, an incoming event to a member is forwarded to target cluster of that member. Its
   #         default value is true.
-  #      - "merge-policy":
+  #      - "merge-policy-class-name":
   #         Resolve conflicts that occurred when target cluster already has the replicated
   #         entry key.
   #
@@ -1225,6 +1225,8 @@ hazelcast:
   #         target one.
   #         com.hazelcast.spi.merge.PassThroughMergePolicy: Incoming entry merges from
   #         the source cache to the target cache unless the incoming entry is not null.
+  #
+  #         The default policy is com.hazelcast.spi.merge.PassThroughMergePolicy.
   # * "indexes":
   # You can define indexes for your map using this element's "index" sub-elements. Index definition consists of type,
   # optional name and the list of columns to be indexed. Valid types are SORTED (default) and HASH.
@@ -1291,7 +1293,7 @@ hazelcast:
           eviction-policy: LFU
       wan-replication-ref:
         my-wan-cluster-batch:
-          merge-policy: PassThroughMergePolicy
+          merge-policy-class-name: PassThroughMergePolicy
           filters:
             - com.example.SampleFilter
             - com.example.SampleFilter2
@@ -1621,7 +1623,7 @@ hazelcast:
         eviction-policy: LFU
       wan-replication-ref:
          name: my-wan-cluster-batch
-         merge-policy: PassThroughMergePolicy
+         merge-policy-class-name: PassThroughMergePolicy
          republishing-enabled: true
          filters:
            - com.example.SampleFilter

@@ -60,7 +60,7 @@ public class WanCustomPublisherMapTest extends AbstractWanCustomPublisherMapTest
 
         WanReplicationRef wanRef = new WanReplicationRef()
                 .setName("dummyWan")
-                .setMergePolicy(PassThroughMergePolicy.class.getName());
+                .setMergePolicyClassName(PassThroughMergePolicy.class.getName());
 
         MapConfig mapConfig = new MapConfig("default")
                 .setInMemoryFormat(inMemoryFormat)
