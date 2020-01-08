@@ -120,6 +120,6 @@ Hazelcast is available under the Apache 2 License. Please see the [Licensing sec
 
 #### Copyright
 
-Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
 
 Visit [www.hazelcast.com](http://www.hazelcast.com/) for more info.
