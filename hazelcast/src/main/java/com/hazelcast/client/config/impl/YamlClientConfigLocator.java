@@ -40,12 +40,12 @@ public class YamlClientConfigLocator extends AbstractConfigLocator {
 
     @Override
     protected boolean locateInWorkDir() {
-        return loadFromWorkingDirectory("hazelcast-client.yaml");
+        return loadFromWorkingDirectory("hazelcast-client", YAML_ACCEPTED_SUFFIXES);
     }
 
     @Override
     protected boolean locateOnClasspath() {
-        return loadConfigurationFromClasspath("hazelcast-client.yaml");
+        return loadConfigurationFromClasspath("hazelcast-client", YAML_ACCEPTED_SUFFIXES);
     }
 
     @Override
