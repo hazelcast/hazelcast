@@ -1,6 +1,6 @@
 /*******************************************************************************
  * Original work Copyright (c) 2013, 2016 EclipseSource.
- * Modified work Copyright (c) 2019, Hazelcast, Inc. All Rights Reserved.
+ * Modified work Copyright (c) 2019-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal

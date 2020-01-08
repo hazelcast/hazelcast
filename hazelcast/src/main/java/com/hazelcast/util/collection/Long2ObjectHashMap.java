@@ -1,6 +1,6 @@
 /*
  * Original work Copyright 2015 Real Logic Ltd.
- * Modified work Copyright (c) 2015-2019, Hazelcast, Inc. All Rights Reserved.
+ * Modified work Copyright (c) 2015-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
