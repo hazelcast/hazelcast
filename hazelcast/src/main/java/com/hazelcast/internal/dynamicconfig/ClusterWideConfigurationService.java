@@ -501,23 +501,24 @@ public class ClusterWideConfigurationService implements PreJoinAwareService,
         if (noConfigurationExist(allConfigurations)) {
             return null;
         }
-        return new Merger(nodeEngine, new DynamicConfigPreJoinOperation(allConfigurations, ConfigCheckMode.SILENT));
+        return new Merger(nodeEngine, allConfigurations);
     }
 
     public static class Merger implements Runnable {
         private final NodeEngine nodeEngine;
-        private final Operation replicationOperation;
+        private final IdentifiedDataSerializable[] allConfigurations;
 
-        public Merger(NodeEngine nodeEngine, Operation replicationOperation) {
+        public Merger(NodeEngine nodeEngine, IdentifiedDataSerializable[] allConfigurations) {
             this.nodeEngine = nodeEngine;
-            this.replicationOperation = replicationOperation;
+            this.allConfigurations = allConfigurations;
         }
 
         @Override
         public void run() {
             try {
                 Future<Object> future = invokeOnStableClusterSerial(nodeEngine,
-                        () -> replicationOperation, CONFIG_PUBLISH_MAX_ATTEMPT_COUNT);
+                        () -> new DynamicConfigPreJoinOperation(allConfigurations, ConfigCheckMode.SILENT),
+                        CONFIG_PUBLISH_MAX_ATTEMPT_COUNT);
                 waitForever(singleton(future), FutureUtil.RETHROW_EVERYTHING);
             } catch (Exception e) {
                 throw new HazelcastException("Error while merging configurations", e);
