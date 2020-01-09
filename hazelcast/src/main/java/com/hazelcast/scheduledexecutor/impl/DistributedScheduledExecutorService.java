@@ -59,7 +59,6 @@ import java.util.Set;
 import java.util.WeakHashMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.hazelcast.internal.config.ConfigValidator.checkScheduledExecutorConfig;
@@ -69,6 +68,7 @@ import static com.hazelcast.util.ExceptionUtil.peel;
 import static com.hazelcast.util.ExceptionUtil.rethrow;
 import static java.util.Collections.newSetFromMap;
 import static java.util.Collections.synchronizedSet;
+import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
  * Scheduled executor service, middle-man responsible for managing Scheduled Executor containers.
@@ -384,7 +384,7 @@ public class DistributedScheduledExecutorService
         private volatile boolean shutdown;
 
         private StatsLoggerThread(int logDelaySeconds) {
-            this.logDelayMillis = TimeUnit.SECONDS.toMillis(logDelaySeconds);
+            this.logDelayMillis = SECONDS.toMillis(logDelaySeconds);
         }
 
         private void shutdown() {
@@ -422,16 +422,27 @@ public class DistributedScheduledExecutorService
                     continue;
                 }
 
-                for (Map.Entry<String, ScheduledExecutorContainer> entry : partition.containers.entrySet()) {
-                    String name = entry.getKey();
-                    ScheduledExecutorContainer container = entry.getValue();
-                    MutableInteger tasksSize = tasksSizes.get(name);
-                    if (tasksSize == null) {
-                        tasksSize = new MutableInteger();
-                        tasksSizes.put(name, tasksSize);
-                    }
-                    tasksSize.value += container.tasks.size();
+                gatherStats(partition);
+            }
+
+            gatherStats(memberBin);
+        }
+
+        @SuppressWarnings("checkstyle:illegaltype")
+        private void gatherStats(AbstractScheduledExecutorContainerHolder holder) {
+            if (holder == null) {
+                return;
+            }
+
+            for (Map.Entry<String, ScheduledExecutorContainer> entry : holder.containers.entrySet()) {
+                String name = entry.getKey();
+                ScheduledExecutorContainer container = entry.getValue();
+                MutableInteger tasksSize = tasksSizes.get(name);
+                if (tasksSize == null) {
+                    tasksSize = new MutableInteger();
+                    tasksSizes.put(name, tasksSize);
                 }
+                tasksSize.value += container.tasks.size();
             }
         }
 
