@@ -285,7 +285,7 @@ abstract class BaseMigrationOperation extends AbstractPartitionOperation
 
     @Override
     public ExceptionAction onInvocationException(Throwable throwable) {
-        if (throwable instanceof MemberLeftException) {
+        if (throwable instanceof MemberLeftException || throwable instanceof TargetNotMemberException) {
             return ExceptionAction.THROW_EXCEPTION;
         }
         if (!migrationInfo.isValid()) {
