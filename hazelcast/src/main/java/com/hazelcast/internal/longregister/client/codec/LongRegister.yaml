@@ -8,7 +8,6 @@ methods:
       Atomically adds the given value to the current value.
     request:
       retryable: false
-      acquiresResource: false
       partitionIdentifier: name
       params:
         - name: name
@@ -31,14 +30,13 @@ methods:
           since: 2.0
           doc: |
             the updated value, the given value added to the current value
-  - id: 3
+  - id: 2
     name: decrementAndGet
     since: 2.0
     doc: |
       Atomically decrements the current value by one.
     request:
       retryable: false
-      acquiresResource: false
       partitionIdentifier: name
       params:
         - name: name
@@ -55,14 +53,13 @@ methods:
           since: 2.0
           doc: |
             the updated value, the current value decremented by one
-  - id: 4
+  - id: 3
     name: get
     since: 2.0
     doc: |
       Gets the current value.
     request:
       retryable: false
-      acquiresResource: false
       partitionIdentifier: name
       params:
         - name: name
@@ -79,14 +76,13 @@ methods:
           since: 2.0
           doc: |
             the current value
-  - id: 5
+  - id: 4
     name: getAndAdd
     since: 2.0
     doc: |
       Atomically adds the given value to the current value.
     request:
       retryable: false
-      acquiresResource: false
       partitionIdentifier: name
       params:
         - name: name
@@ -109,14 +105,13 @@ methods:
           since: 2.0
           doc: |
             the old value before the add
-  - id: 6
+  - id: 5
     name: getAndSet
     since: 2.0
     doc: |
       Atomically sets the given value and returns the old value.
     request:
       retryable: false
-      acquiresResource: false
       partitionIdentifier: name
       params:
         - name: name
@@ -139,14 +134,13 @@ methods:
           since: 2.0
           doc: |
             the old value
-  - id: 7
+  - id: 6
     name: incrementAndGet
     since: 2.0
     doc: |
       Atomically increments the current value by one.
     request:
       retryable: false
-      acquiresResource: false
       partitionIdentifier: name
       params:
         - name: name
@@ -163,14 +157,13 @@ methods:
           since: 2.0
           doc: |
             The updated value, the current value incremented by one
-  - id: 8
+  - id: 7
     name: getAndIncrement
     since: 2.0
     doc: |
       Atomically increments the current value by one.
     request:
       retryable: false
-      acquiresResource: false
       partitionIdentifier: name
       params:
         - name: name
@@ -187,14 +180,13 @@ methods:
           since: 2.0
           doc: |
             the old value
-  - id: 9
+  - id: 8
     name: set
     since: 2.0
     doc: |
       Atomically sets the given value.
     request:
       retryable: false
-      acquiresResource: false
       partitionIdentifier: name
       params:
         - name: name
