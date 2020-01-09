@@ -39,6 +39,7 @@ import com.hazelcast.config.TopicConfig;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.cluster.ClusterVersionListener;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.services.CoreService;
 import com.hazelcast.internal.services.ManagedService;
@@ -46,12 +47,12 @@ import com.hazelcast.internal.services.PreJoinAwareService;
 import com.hazelcast.internal.services.SplitBrainHandlerService;
 import com.hazelcast.internal.util.FutureUtil;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.version.Version;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -167,7 +168,7 @@ public class ClusterWideConfigurationService implements PreJoinAwareService,
     }
 
     private IdentifiedDataSerializable[] collectAllDynamicConfigs() {
-        List<IdentifiedDataSerializable> all = new ArrayList<IdentifiedDataSerializable>();
+        List<IdentifiedDataSerializable> all = new ArrayList<>();
         for (Map<?, ? extends IdentifiedDataSerializable> entry : allConfigurations) {
             Collection<? extends IdentifiedDataSerializable> values = entry.values();
             all.addAll(values);
@@ -501,23 +502,25 @@ public class ClusterWideConfigurationService implements PreJoinAwareService,
         if (noConfigurationExist(allConfigurations)) {
             return null;
         }
-        return new Merger(nodeEngine, new DynamicConfigPreJoinOperation(allConfigurations, ConfigCheckMode.SILENT));
+        return new Merger(nodeEngine, allConfigurations);
     }
 
     public static class Merger implements Runnable {
         private final NodeEngine nodeEngine;
-        private final Operation replicationOperation;
+        private final IdentifiedDataSerializable[] allConfigurations;
 
-        public Merger(NodeEngine nodeEngine, Operation replicationOperation) {
+        @SuppressFBWarnings(value = "EI_EXPOSE_REP2")
+        public Merger(NodeEngine nodeEngine, IdentifiedDataSerializable[] allConfigurations) {
             this.nodeEngine = nodeEngine;
-            this.replicationOperation = replicationOperation;
+            this.allConfigurations = allConfigurations;
         }
 
         @Override
         public void run() {
             try {
                 Future<Object> future = invokeOnStableClusterSerial(nodeEngine,
-                        () -> replicationOperation, CONFIG_PUBLISH_MAX_ATTEMPT_COUNT);
+                        () -> new DynamicConfigPreJoinOperation(allConfigurations, ConfigCheckMode.SILENT),
+                        CONFIG_PUBLISH_MAX_ATTEMPT_COUNT);
                 waitForever(singleton(future), FutureUtil.RETHROW_EVERYTHING);
             } catch (Exception e) {
                 throw new HazelcastException("Error while merging configurations", e);
