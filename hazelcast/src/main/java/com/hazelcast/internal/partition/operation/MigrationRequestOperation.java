@@ -32,7 +32,6 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.CallStatus;
-import com.hazelcast.spi.ExceptionAction;
 import com.hazelcast.spi.FragmentedMigrationAwareService;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Offload;
@@ -41,7 +40,6 @@ import com.hazelcast.spi.PartitionMigrationEvent;
 import com.hazelcast.spi.PartitionReplicationEvent;
 import com.hazelcast.spi.ServiceNamespace;
 import com.hazelcast.spi.UrgentSystemOperation;
-import com.hazelcast.spi.exception.TargetNotMemberException;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.PartitionSpecificRunnable;
 import com.hazelcast.spi.impl.SimpleExecutionCallback;
@@ -276,14 +274,6 @@ public class MigrationRequestOperation extends BaseMigrationOperation {
     private Level getLogLevel(Throwable e) {
         return (e instanceof MemberLeftException || e instanceof InterruptedException)
                 || !getNodeEngine().isRunning() ? Level.INFO : Level.WARNING;
-    }
-
-    @Override
-    public ExceptionAction onInvocationException(Throwable throwable) {
-        if (throwable instanceof TargetNotMemberException) {
-            return ExceptionAction.THROW_EXCEPTION;
-        }
-        return super.onInvocationException(throwable);
     }
 
     @Override
