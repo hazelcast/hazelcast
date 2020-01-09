@@ -318,7 +318,7 @@
         <dependency>
             <groupId>net.openhft</groupId>
             <artifactId>affinity</artifactId>
-            <version>3.1.11</version>
+            <version>3.2.2</version>
         </dependency>
         <dependency>
             <groupId>org.slf4j</groupId>
