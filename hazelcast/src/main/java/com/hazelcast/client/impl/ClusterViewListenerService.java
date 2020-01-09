@@ -181,4 +181,8 @@ public class ClusterViewListenerService {
         return partitionsMap;
     }
 
+    //for test purpose only
+    public Map<ClientEndpoint, Long> getClusterListeningEndpoints() {
+        return clusterListeningEndpoints;
+    }
 }

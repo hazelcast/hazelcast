@@ -78,8 +78,6 @@ public interface ClientEndpoint extends Client, DynamicMetricsProvider {
 
     Subject getSubject();
 
-    void clearAllListeners();
-
     Connection getConnection();
 
     void setLoginContext(LoginContext lc);
