@@ -51,11 +51,6 @@ public class MBeanTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testConnection() throws Exception {
-        holder.assertMBeanExistEventually("HazelcastInstance.NetworkingService", holder.getHz().getName());
-    }
-
-    @Test
     public void testMap() throws Exception {
         IMap map = holder.getHz().getMap("map");
         map.size();

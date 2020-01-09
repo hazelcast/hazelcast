@@ -23,7 +23,7 @@ import com.hazelcast.spi.impl.proxyservice.ProxyService;
 import static com.hazelcast.internal.util.JsonUtil.getInt;
 
 /**
- * A Serializable DTO for {@link com.hazelcast.internal.jmx.ProxyServiceMBean}.
+ * A Serializable DTO for {@link ProxyService}.
  */
 public class ProxyServiceDTO implements JsonSerializable {
 

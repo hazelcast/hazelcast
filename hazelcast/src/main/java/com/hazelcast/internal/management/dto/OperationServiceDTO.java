@@ -24,7 +24,7 @@ import static com.hazelcast.internal.util.JsonUtil.getInt;
 import static com.hazelcast.internal.util.JsonUtil.getLong;
 
 /**
- * A Serializable DTO for {@link com.hazelcast.internal.jmx.OperationServiceMBean}.
+ * A Serializable DTO for {@link OperationServiceImpl}.
  */
 public class OperationServiceDTO implements JsonSerializable {
 
