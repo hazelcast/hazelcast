@@ -36,14 +36,14 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Removes the given interceptor for this map so it will not intercept operations anymore.
  */
-@Generated("fc446f91c5fde5e74ed64bffc8080abc")
+@Generated("1e576923c4391ad9ee097f73727793c4")
 public final class MapRemoveInterceptorCodec {
     //hex: 0x011500
     public static final int REQUEST_MESSAGE_TYPE = 70912;
     //hex: 0x011501
     public static final int RESPONSE_MESSAGE_TYPE = 70913;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    private static final int RESPONSE_RESPONSE_FIELD_OFFSET = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int RESPONSE_RESPONSE_FIELD_OFFSET = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_RESPONSE_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
 
     private MapRemoveInterceptorCodec() {

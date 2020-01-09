@@ -38,7 +38,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * This method returns a clone of original mapping, modifying the returned value does not change the actual value
  * in the map. One should put modified value back to make changes visible to all nodes.
  */
-@Generated("65db0f50bb87ccbe766b2ce0fb8093ce")
+@Generated("5914074aa3f6d7a2847c41a18cebad4d")
 public final class MapGetEntryViewCodec {
     //hex: 0x011D00
     public static final int REQUEST_MESSAGE_TYPE = 72960;
@@ -46,7 +46,7 @@ public final class MapGetEntryViewCodec {
     public static final int RESPONSE_MESSAGE_TYPE = 72961;
     private static final int REQUEST_THREAD_ID_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_THREAD_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
-    private static final int RESPONSE_MAX_IDLE_FIELD_OFFSET = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int RESPONSE_MAX_IDLE_FIELD_OFFSET = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_MAX_IDLE_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
 
     private MapGetEntryViewCodec() {

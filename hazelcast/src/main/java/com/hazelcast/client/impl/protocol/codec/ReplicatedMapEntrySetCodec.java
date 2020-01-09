@@ -36,14 +36,14 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Gets a lazy set view of the mappings contained in this map.
  */
-@Generated("11554af227311d0ce8022277e396c552")
+@Generated("40d2164bceec345ca8ce249dabbebf61")
 public final class ReplicatedMapEntrySetCodec {
     //hex: 0x0D1100
     public static final int REQUEST_MESSAGE_TYPE = 856320;
     //hex: 0x0D1101
     public static final int RESPONSE_MESSAGE_TYPE = 856321;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
 
     private ReplicatedMapEntrySetCodec() {
     }

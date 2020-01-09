@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Adds an item listener for this collection. Listener will be notified for all collection add/remove events.
  */
-@Generated("8ba02894a1819b0f39a188e9e726408a")
+@Generated("9853705ca63a24a38a04c3adec00e94f")
 public final class SetAddListenerCodec {
     //hex: 0x060B00
     public static final int REQUEST_MESSAGE_TYPE = 396032;
@@ -46,7 +46,7 @@ public final class SetAddListenerCodec {
     private static final int REQUEST_INCLUDE_VALUE_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_LOCAL_ONLY_FIELD_OFFSET = REQUEST_INCLUDE_VALUE_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_LOCAL_ONLY_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
-    private static final int RESPONSE_RESPONSE_FIELD_OFFSET = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int RESPONSE_RESPONSE_FIELD_OFFSET = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_RESPONSE_FIELD_OFFSET + UUID_SIZE_IN_BYTES;
     private static final int EVENT_ITEM_UUID_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int EVENT_ITEM_EVENT_TYPE_FIELD_OFFSET = EVENT_ITEM_UUID_FIELD_OFFSET + UUID_SIZE_IN_BYTES;

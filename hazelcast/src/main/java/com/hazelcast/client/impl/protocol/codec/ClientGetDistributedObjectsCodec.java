@@ -36,14 +36,14 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Gets the list of distributed objects in the cluster.
  */
-@Generated("cba1df5ffc11fa1d3bdc36523823e2c3")
+@Generated("f34aaf1888b090b44ade1322d096d238")
 public final class ClientGetDistributedObjectsCodec {
     //hex: 0x000800
     public static final int REQUEST_MESSAGE_TYPE = 2048;
     //hex: 0x000801
     public static final int RESPONSE_MESSAGE_TYPE = 2049;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
 
     private ClientGetDistributedObjectsCodec() {
     }

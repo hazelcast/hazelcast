@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Copies all the mappings from the specified map to this cache with the given expiry policy.
  */
-@Generated("b311e0c0cda54056db439beb7d63e725")
+@Generated("770ca3577c562ca2465b06116e2179df")
 public final class CachePutAllCodec {
     //hex: 0x131B00
     public static final int REQUEST_MESSAGE_TYPE = 1252096;
@@ -44,7 +44,7 @@ public final class CachePutAllCodec {
     public static final int RESPONSE_MESSAGE_TYPE = 1252097;
     private static final int REQUEST_COMPLETION_ID_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_COMPLETION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
 
     private CachePutAllCodec() {
     }

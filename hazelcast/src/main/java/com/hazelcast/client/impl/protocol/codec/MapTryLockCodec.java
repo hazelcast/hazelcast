@@ -39,7 +39,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * purposes and lies dormant until one of two things happens the lock is acquired by the current thread, or
  * the specified waiting time elapses.
  */
-@Generated("bceb00f6a4bf0568eb4e498e32c080bf")
+@Generated("2c7b25a0c977e75f06fb5c9c736ee31b")
 public final class MapTryLockCodec {
     //hex: 0x011100
     public static final int REQUEST_MESSAGE_TYPE = 69888;
@@ -50,7 +50,7 @@ public final class MapTryLockCodec {
     private static final int REQUEST_TIMEOUT_FIELD_OFFSET = REQUEST_LEASE_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
     private static final int REQUEST_REFERENCE_ID_FIELD_OFFSET = REQUEST_TIMEOUT_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_REFERENCE_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
-    private static final int RESPONSE_RESPONSE_FIELD_OFFSET = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int RESPONSE_RESPONSE_FIELD_OFFSET = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_RESPONSE_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
 
     private MapTryLockCodec() {

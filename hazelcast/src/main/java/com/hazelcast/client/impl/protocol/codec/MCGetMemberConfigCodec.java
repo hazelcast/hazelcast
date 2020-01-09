@@ -36,14 +36,14 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Gets the effective config of a member rendered as XML.
  */
-@Generated("3c7cdbfa5bf3cd30abc3a01dd150d717")
+@Generated("551fc4f94e5d228b5c4e5f0b8cfbe416")
 public final class MCGetMemberConfigCodec {
     //hex: 0x200500
     public static final int REQUEST_MESSAGE_TYPE = 2098432;
     //hex: 0x200501
     public static final int RESPONSE_MESSAGE_TYPE = 2098433;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
 
     private MCGetMemberConfigCodec() {
     }

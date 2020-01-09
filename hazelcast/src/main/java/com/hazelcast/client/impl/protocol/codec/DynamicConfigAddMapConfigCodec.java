@@ -38,7 +38,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * If a map configuration with the given {@code name} already exists, then
  * the new configuration is ignored and the existing one is preserved.
  */
-@Generated("10286fe346ac03eba1704b6ca104655f")
+@Generated("087bf0f7a21468170852c5bf570e0069")
 public final class DynamicConfigAddMapConfigCodec {
     //hex: 0x1B0C00
     public static final int REQUEST_MESSAGE_TYPE = 1772544;
@@ -53,7 +53,7 @@ public final class DynamicConfigAddMapConfigCodec {
     private static final int REQUEST_STATISTICS_ENABLED_FIELD_OFFSET = REQUEST_MERGE_BATCH_SIZE_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_METADATA_POLICY_FIELD_OFFSET = REQUEST_STATISTICS_ENABLED_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_METADATA_POLICY_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
 
     private DynamicConfigAddMapConfigCodec() {
     }

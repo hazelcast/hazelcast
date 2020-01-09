@@ -38,7 +38,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * If a ringbuffer configuration with the given {@code name} already exists, then
  * the new ringbuffer config is ignored and the existing one is preserved.
  */
-@Generated("f7e384aac2b3a24757e2b8f0d27eb239")
+@Generated("d49469e8d23a064121f446a42aa4c65f")
 public final class DynamicConfigAddRingbufferConfigCodec {
     //hex: 0x1B0200
     public static final int REQUEST_MESSAGE_TYPE = 1769984;
@@ -50,7 +50,7 @@ public final class DynamicConfigAddRingbufferConfigCodec {
     private static final int REQUEST_TIME_TO_LIVE_SECONDS_FIELD_OFFSET = REQUEST_ASYNC_BACKUP_COUNT_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_MERGE_BATCH_SIZE_FIELD_OFFSET = REQUEST_TIME_TO_LIVE_SECONDS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_MERGE_BATCH_SIZE_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
 
     private DynamicConfigAddRingbufferConfigCodec() {
     }

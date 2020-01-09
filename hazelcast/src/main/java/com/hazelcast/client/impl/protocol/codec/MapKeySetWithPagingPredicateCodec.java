@@ -39,14 +39,14 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * in the collection, and vice-versa. This method is always executed by a distributed query, so it may throw a
  * QueryResultSizeExceededException if query result size limit is configured.
  */
-@Generated("754eb5a4906d84e7b76c8876c967e2a5")
+@Generated("07c8e61eef3582b307d89d0fb3a2b5e2")
 public final class MapKeySetWithPagingPredicateCodec {
     //hex: 0x013400
     public static final int REQUEST_MESSAGE_TYPE = 78848;
     //hex: 0x013401
     public static final int RESPONSE_MESSAGE_TYPE = 78849;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
 
     private MapKeySetWithPagingPredicateCodec() {
     }

@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Submits the task to partition for execution, partition is chosen based on multiple criteria of the given task.
  */
-@Generated("4ae52e7a74d1e99d43ad5dcf4906be5d")
+@Generated("19cfdd6757b6c56bcf607e589156d3c5")
 public final class ScheduledExecutorSubmitToPartitionCodec {
     //hex: 0x1A0200
     public static final int REQUEST_MESSAGE_TYPE = 1704448;
@@ -46,7 +46,7 @@ public final class ScheduledExecutorSubmitToPartitionCodec {
     private static final int REQUEST_INITIAL_DELAY_IN_MILLIS_FIELD_OFFSET = REQUEST_TYPE_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
     private static final int REQUEST_PERIOD_IN_MILLIS_FIELD_OFFSET = REQUEST_INITIAL_DELAY_IN_MILLIS_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_PERIOD_IN_MILLIS_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
-    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
 
     private ScheduledExecutorSubmitToPartitionCodec() {
     }

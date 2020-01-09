@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Submits the task to a member for execution. Member is provided with its uuid.
  */
-@Generated("3e81e5a6730244819def1214ffb6d3c9")
+@Generated("c4b01960f4395398c0d3e63533171afb")
 public final class ScheduledExecutorSubmitToMemberCodec {
     //hex: 0x1A0300
     public static final int REQUEST_MESSAGE_TYPE = 1704704;
@@ -47,7 +47,7 @@ public final class ScheduledExecutorSubmitToMemberCodec {
     private static final int REQUEST_INITIAL_DELAY_IN_MILLIS_FIELD_OFFSET = REQUEST_TYPE_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
     private static final int REQUEST_PERIOD_IN_MILLIS_FIELD_OFFSET = REQUEST_INITIAL_DELAY_IN_MILLIS_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_PERIOD_IN_MILLIS_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
-    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
 
     private ScheduledExecutorSubmitToMemberCodec() {
     }

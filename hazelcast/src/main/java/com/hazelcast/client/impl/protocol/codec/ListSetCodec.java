@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * The element previously at the specified position
  */
-@Generated("3fce62dc3a5c1d1b4cf272641a624977")
+@Generated("9a2119042a286988ca96ac85273706a6")
 public final class ListSetCodec {
     //hex: 0x051000
     public static final int REQUEST_MESSAGE_TYPE = 331776;
@@ -44,7 +44,7 @@ public final class ListSetCodec {
     public static final int RESPONSE_MESSAGE_TYPE = 331777;
     private static final int REQUEST_INDEX_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_INDEX_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
 
     private ListSetCodec() {
     }

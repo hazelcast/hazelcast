@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Removes the specified entry listener. If there is no such listener added before, this call does no change in the
  * cluster and returns false.
  */
-@Generated("44a312e1f955405094463ba330d0e293")
+@Generated("cfe547217b41179a15467030ced52d80")
 public final class MultiMapRemoveEntryListenerCodec {
     //hex: 0x020F00
     public static final int REQUEST_MESSAGE_TYPE = 134912;
@@ -45,7 +45,7 @@ public final class MultiMapRemoveEntryListenerCodec {
     public static final int RESPONSE_MESSAGE_TYPE = 134913;
     private static final int REQUEST_REGISTRATION_ID_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_REGISTRATION_ID_FIELD_OFFSET + UUID_SIZE_IN_BYTES;
-    private static final int RESPONSE_RESPONSE_FIELD_OFFSET = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int RESPONSE_RESPONSE_FIELD_OFFSET = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_RESPONSE_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
 
     private MultiMapRemoveEntryListenerCodec() {

@@ -36,14 +36,14 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Triggers partial start
  */
-@Generated("48765e316c40428cd34e962c611e2161")
+@Generated("c403c29fd09132d3b52b14c161703a38")
 public final class MCTriggerPartialStartCodec {
     //hex: 0x201D00
     public static final int REQUEST_MESSAGE_TYPE = 2104576;
     //hex: 0x201D01
     public static final int RESPONSE_MESSAGE_TYPE = 2104577;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    private static final int RESPONSE_RESULT_FIELD_OFFSET = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int RESPONSE_RESULT_FIELD_OFFSET = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_RESULT_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
 
     private MCTriggerPartialStartCodec() {

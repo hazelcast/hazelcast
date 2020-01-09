@@ -38,7 +38,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * If a topic configuration with the given {@code name} already exists, then
  * the new configuration is ignored and the existing one is preserved.
  */
-@Generated("6bbd1931055d6c7700b16362d3eac27b")
+@Generated("45324998d2a1e66a0f5767c694413e80")
 public final class DynamicConfigAddTopicConfigCodec {
     //hex: 0x1B0700
     public static final int REQUEST_MESSAGE_TYPE = 1771264;
@@ -48,7 +48,7 @@ public final class DynamicConfigAddTopicConfigCodec {
     private static final int REQUEST_STATISTICS_ENABLED_FIELD_OFFSET = REQUEST_GLOBAL_ORDERING_ENABLED_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
     private static final int REQUEST_MULTI_THREADING_ENABLED_FIELD_OFFSET = REQUEST_STATISTICS_ENABLED_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_MULTI_THREADING_ENABLED_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
-    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
 
     private DynamicConfigAddTopicConfigCodec() {
     }

@@ -39,14 +39,14 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * set so that its value is the union of the two sets. The behavior of this operation is undefined if the specified
  * collection is modified while the operation is in progress.
  */
-@Generated("2158dedd29efae6a088e2c466a00f394")
+@Generated("643d4aa836c73576cec0098b5880cd17")
 public final class SetAddAllCodec {
     //hex: 0x060600
     public static final int REQUEST_MESSAGE_TYPE = 394752;
     //hex: 0x060601
     public static final int RESPONSE_MESSAGE_TYPE = 394753;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    private static final int RESPONSE_RESPONSE_FIELD_OFFSET = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int RESPONSE_RESPONSE_FIELD_OFFSET = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_RESPONSE_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
 
     private SetAddAllCodec() {

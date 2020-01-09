@@ -37,14 +37,14 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Returns the index of the first occurrence of the specified element in this list, or -1 if this list does not
  * contain the element.
  */
-@Generated("627539c519f5d9c8d9ffdae79787d3cd")
+@Generated("9d1298bad3123353a8cddc5cd999305c")
 public final class ListIndexOfCodec {
     //hex: 0x051400
     public static final int REQUEST_MESSAGE_TYPE = 332800;
     //hex: 0x051401
     public static final int RESPONSE_MESSAGE_TYPE = 332801;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    private static final int RESPONSE_RESPONSE_FIELD_OFFSET = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int RESPONSE_RESPONSE_FIELD_OFFSET = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_RESPONSE_FIELD_OFFSET + INT_SIZE_IN_BYTES;
 
     private ListIndexOfCodec() {

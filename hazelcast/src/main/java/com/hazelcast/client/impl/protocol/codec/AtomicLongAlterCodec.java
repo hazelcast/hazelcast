@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Alters the currently stored value by applying a function on it.
  */
-@Generated("c1f43ab74542119f703ee71610a59d27")
+@Generated("256e6ef4ef5b8b7db0dfd17aad3855e5")
 public final class AtomicLongAlterCodec {
     //hex: 0x090200
     public static final int REQUEST_MESSAGE_TYPE = 590336;
@@ -44,7 +44,7 @@ public final class AtomicLongAlterCodec {
     public static final int RESPONSE_MESSAGE_TYPE = 590337;
     private static final int REQUEST_RETURN_VALUE_TYPE_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_RETURN_VALUE_TYPE_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    private static final int RESPONSE_RESPONSE_FIELD_OFFSET = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int RESPONSE_RESPONSE_FIELD_OFFSET = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_RESPONSE_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
 
     private AtomicLongAlterCodec() {

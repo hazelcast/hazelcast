@@ -38,7 +38,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Subscribes to this topic. When someone publishes a message on this topic. onMessage() function of the given
  * MessageListener is called. More than one message listener can be added on one instance.
  */
-@Generated("6145597011b7e453ce0988fe08f67269")
+@Generated("3b9efe78c9d1f345eaf9687a3500b4ab")
 public final class TopicAddMessageListenerCodec {
     //hex: 0x040200
     public static final int REQUEST_MESSAGE_TYPE = 262656;
@@ -46,7 +46,7 @@ public final class TopicAddMessageListenerCodec {
     public static final int RESPONSE_MESSAGE_TYPE = 262657;
     private static final int REQUEST_LOCAL_ONLY_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_LOCAL_ONLY_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
-    private static final int RESPONSE_RESPONSE_FIELD_OFFSET = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int RESPONSE_RESPONSE_FIELD_OFFSET = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_RESPONSE_FIELD_OFFSET + UUID_SIZE_IN_BYTES;
     private static final int EVENT_TOPIC_PUBLISH_TIME_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int EVENT_TOPIC_UUID_FIELD_OFFSET = EVENT_TOPIC_PUBLISH_TIME_FIELD_OFFSET + LONG_SIZE_IN_BYTES;

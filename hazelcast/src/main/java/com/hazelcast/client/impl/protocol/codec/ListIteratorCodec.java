@@ -36,14 +36,14 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Returns an iterator over the elements in this list in proper sequence.
  */
-@Generated("1f9c643f6be939f0961e238b2297265d")
+@Generated("6f180722dc05dfbd4c5ad8c5ebf45bae")
 public final class ListIteratorCodec {
     //hex: 0x051600
     public static final int REQUEST_MESSAGE_TYPE = 333312;
     //hex: 0x051601
     public static final int RESPONSE_MESSAGE_TYPE = 333313;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
 
     private ListIteratorCodec() {
     }

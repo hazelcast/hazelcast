@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Stop, pause or resume WAN replication for the given WAN replication and publisher
  */
-@Generated("e703bb8dd9a880f27621227a3a0b20a1")
+@Generated("966795afd4add703e0d89d002d465223")
 public final class MCChangeWanReplicationStateCodec {
     //hex: 0x201300
     public static final int REQUEST_MESSAGE_TYPE = 2102016;
@@ -44,7 +44,7 @@ public final class MCChangeWanReplicationStateCodec {
     public static final int RESPONSE_MESSAGE_TYPE = 2102017;
     private static final int REQUEST_NEW_STATE_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_NEW_STATE_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
-    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
 
     private MCChangeWanReplicationStateCodec() {
     }

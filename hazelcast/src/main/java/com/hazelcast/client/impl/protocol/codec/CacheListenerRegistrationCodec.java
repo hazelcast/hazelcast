@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Tries to register the listener configuration for the cache specified by its name
  * to the given member.
  */
-@Generated("41b739eb15be09ea4fbc75fb48d5d778")
+@Generated("76e90f2af25426d6d5da54897121d013")
 public final class CacheListenerRegistrationCodec {
     //hex: 0x130F00
     public static final int REQUEST_MESSAGE_TYPE = 1249024;
@@ -46,7 +46,7 @@ public final class CacheListenerRegistrationCodec {
     private static final int REQUEST_SHOULD_REGISTER_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_UUID_FIELD_OFFSET = REQUEST_SHOULD_REGISTER_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_UUID_FIELD_OFFSET + UUID_SIZE_IN_BYTES;
-    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
 
     private CacheListenerRegistrationCodec() {
     }

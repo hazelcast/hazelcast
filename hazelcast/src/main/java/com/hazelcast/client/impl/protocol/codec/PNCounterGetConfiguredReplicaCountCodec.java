@@ -39,14 +39,14 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * The actual replica count may be less, depending on the number of data
  * members in the cluster (members that own data).
  */
-@Generated("c50d8533a75346c4f85e778b3f3311d9")
+@Generated("bffac14e476369b2f1ba91d7678fa1af")
 public final class PNCounterGetConfiguredReplicaCountCodec {
     //hex: 0x1D0300
     public static final int REQUEST_MESSAGE_TYPE = 1901312;
     //hex: 0x1D0301
     public static final int RESPONSE_MESSAGE_TYPE = 1901313;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    private static final int RESPONSE_RESPONSE_FIELD_OFFSET = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int RESPONSE_RESPONSE_FIELD_OFFSET = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_RESPONSE_FIELD_OFFSET + INT_SIZE_IN_BYTES;
 
     private PNCounterGetConfiguredReplicaCountCodec() {

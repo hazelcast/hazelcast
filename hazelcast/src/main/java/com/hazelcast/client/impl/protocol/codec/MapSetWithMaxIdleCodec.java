@@ -40,7 +40,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * 
  * Similar to the put operation except that set doesn't return the old value, which is more efficient.
  */
-@Generated("64d116eef9d1dfe83dbc56356cfeffbb")
+@Generated("b0ed7da1122604f53ecba5a8a07f347b")
 public final class MapSetWithMaxIdleCodec {
     //hex: 0x014700
     public static final int REQUEST_MESSAGE_TYPE = 83712;
@@ -50,7 +50,7 @@ public final class MapSetWithMaxIdleCodec {
     private static final int REQUEST_TTL_FIELD_OFFSET = REQUEST_THREAD_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
     private static final int REQUEST_MAX_IDLE_FIELD_OFFSET = REQUEST_TTL_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_MAX_IDLE_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
-    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
 
     private MapSetWithMaxIdleCodec() {
     }

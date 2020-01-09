@@ -36,14 +36,14 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Clears the multimap. Removes all key-value pairs.
  */
-@Generated("2e188e9749569a6c04329bba354728b1")
+@Generated("4232ec2154030f73b064fce8356491e8")
 public final class MultiMapClearCodec {
     //hex: 0x020B00
     public static final int REQUEST_MESSAGE_TYPE = 133888;
     //hex: 0x020B01
     public static final int RESPONSE_MESSAGE_TYPE = 133889;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
 
     private MultiMapClearCodec() {
     }

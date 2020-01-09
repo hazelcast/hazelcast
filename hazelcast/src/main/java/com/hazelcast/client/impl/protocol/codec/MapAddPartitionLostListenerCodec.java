@@ -42,7 +42,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * IMPORTANT: Listeners registered from HazelcastClient may miss some of the map partition lost events due
  * to design limitations.
  */
-@Generated("1db1c8ae9b8eda1cf10be31183619a87")
+@Generated("4c8f94ee2f9ddf2cafece2a79b92ee77")
 public final class MapAddPartitionLostListenerCodec {
     //hex: 0x011B00
     public static final int REQUEST_MESSAGE_TYPE = 72448;
@@ -50,7 +50,7 @@ public final class MapAddPartitionLostListenerCodec {
     public static final int RESPONSE_MESSAGE_TYPE = 72449;
     private static final int REQUEST_LOCAL_ONLY_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_LOCAL_ONLY_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
-    private static final int RESPONSE_RESPONSE_FIELD_OFFSET = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int RESPONSE_RESPONSE_FIELD_OFFSET = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_RESPONSE_FIELD_OFFSET + UUID_SIZE_IN_BYTES;
     private static final int EVENT_MAP_PARTITION_LOST_PARTITION_ID_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int EVENT_MAP_PARTITION_LOST_UUID_FIELD_OFFSET = EVENT_MAP_PARTITION_LOST_PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;

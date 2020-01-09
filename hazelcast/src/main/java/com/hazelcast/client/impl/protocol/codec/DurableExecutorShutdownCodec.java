@@ -37,14 +37,14 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Initiates an orderly shutdown in which previously submitted tasks are executed, but no new tasks will be accepted.
  * Invocation has no additional effect if already shut down.
  */
-@Generated("e65d5f110ecbb27953d3baa927fab84c")
+@Generated("0fc354c0f152fafcafbada25da7f5d37")
 public final class DurableExecutorShutdownCodec {
     //hex: 0x180100
     public static final int REQUEST_MESSAGE_TYPE = 1573120;
     //hex: 0x180101
     public static final int RESPONSE_MESSAGE_TYPE = 1573121;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
 
     private DurableExecutorShutdownCodec() {
     }

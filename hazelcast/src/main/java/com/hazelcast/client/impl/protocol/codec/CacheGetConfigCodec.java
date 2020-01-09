@@ -36,14 +36,14 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Gets the cache configuration with the given name from members.
  */
-@Generated("03ff7d6ce7999feac52b5725a447840f")
+@Generated("535b5164c898778f42a543cc909424bd")
 public final class CacheGetConfigCodec {
     //hex: 0x130C00
     public static final int REQUEST_MESSAGE_TYPE = 1248256;
     //hex: 0x130C01
     public static final int RESPONSE_MESSAGE_TYPE = 1248257;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
 
     private CacheGetConfigCodec() {
     }

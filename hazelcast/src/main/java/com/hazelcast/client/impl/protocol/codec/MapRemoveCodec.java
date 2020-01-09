@@ -40,7 +40,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * possible that the map explicitly mapped the key to null. The map will not contain a mapping for the specified key once the
  * call returns.
  */
-@Generated("79958b8e95073a285406ed2285e0195d")
+@Generated("8afb1ebf8287281cc93555c89f67b3a2")
 public final class MapRemoveCodec {
     //hex: 0x010300
     public static final int REQUEST_MESSAGE_TYPE = 66304;
@@ -48,7 +48,7 @@ public final class MapRemoveCodec {
     public static final int RESPONSE_MESSAGE_TYPE = 66305;
     private static final int REQUEST_THREAD_ID_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_THREAD_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
-    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
 
     private MapRemoveCodec() {
     }

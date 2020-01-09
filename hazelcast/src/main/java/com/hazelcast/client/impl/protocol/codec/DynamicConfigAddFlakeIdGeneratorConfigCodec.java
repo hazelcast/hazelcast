@@ -38,7 +38,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * If a flake ID generator configuration for the same name already exists, then
  * the new configuration is ignored and the existing one is preserved.
  */
-@Generated("c4ac8c974b4bdb35e6181c118964da04")
+@Generated("584a7cd9988633cd0e61fda7b860562f")
 public final class DynamicConfigAddFlakeIdGeneratorConfigCodec {
     //hex: 0x1B0F00
     public static final int REQUEST_MESSAGE_TYPE = 1773312;
@@ -53,7 +53,7 @@ public final class DynamicConfigAddFlakeIdGeneratorConfigCodec {
     private static final int REQUEST_BITS_NODE_ID_FIELD_OFFSET = REQUEST_BITS_SEQUENCE_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_ALLOWED_FUTURE_MILLIS_FIELD_OFFSET = REQUEST_BITS_NODE_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_ALLOWED_FUTURE_MILLIS_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
-    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
 
     private DynamicConfigAddFlakeIdGeneratorConfigCodec() {
     }

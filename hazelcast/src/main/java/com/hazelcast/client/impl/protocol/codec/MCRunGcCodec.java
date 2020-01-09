@@ -36,14 +36,14 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Requests garbage collection to be performed on the member it's called on.
  */
-@Generated("1734b34e0d32ca0630be156ae2fee4a3")
+@Generated("9b0e2afb6c7b0400eb7ac67bb4cdda38")
 public final class MCRunGcCodec {
     //hex: 0x200600
     public static final int REQUEST_MESSAGE_TYPE = 2098688;
     //hex: 0x200601
     public static final int RESPONSE_MESSAGE_TYPE = 2098689;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
 
     private MCRunGcCodec() {
     }

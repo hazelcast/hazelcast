@@ -43,7 +43,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * duration passes. If the session is closed between reentrant acquires,
  * the call fails with {@code LockOwnershipLostException}.
  */
-@Generated("f790a2b25fa941089e04bc3598ceca60")
+@Generated("45b0a924549ebe64dcf52553306f16bf")
 public final class FencedLockTryLockCodec {
     //hex: 0x070200
     public static final int REQUEST_MESSAGE_TYPE = 459264;
@@ -54,7 +54,7 @@ public final class FencedLockTryLockCodec {
     private static final int REQUEST_INVOCATION_UID_FIELD_OFFSET = REQUEST_THREAD_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
     private static final int REQUEST_TIMEOUT_MS_FIELD_OFFSET = REQUEST_INVOCATION_UID_FIELD_OFFSET + UUID_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_TIMEOUT_MS_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
-    private static final int RESPONSE_RESPONSE_FIELD_OFFSET = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int RESPONSE_RESPONSE_FIELD_OFFSET = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_RESPONSE_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
 
     private FencedLockTryLockCodec() {

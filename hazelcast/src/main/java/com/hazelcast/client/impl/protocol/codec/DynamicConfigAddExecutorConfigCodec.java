@@ -38,7 +38,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * If an executor configuration with the given {@code name} already exists, then
  * the new configuration is ignored and the existing one is preserved.
  */
-@Generated("e5903f9b356ea1994a8eaf2b33ae4e30")
+@Generated("58897b0e366090349752386b151d6bc7")
 public final class DynamicConfigAddExecutorConfigCodec {
     //hex: 0x1B0800
     public static final int REQUEST_MESSAGE_TYPE = 1771520;
@@ -48,7 +48,7 @@ public final class DynamicConfigAddExecutorConfigCodec {
     private static final int REQUEST_QUEUE_CAPACITY_FIELD_OFFSET = REQUEST_POOL_SIZE_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_STATISTICS_ENABLED_FIELD_OFFSET = REQUEST_QUEUE_CAPACITY_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_STATISTICS_ENABLED_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
-    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
 
     private DynamicConfigAddExecutorConfigCodec() {
     }

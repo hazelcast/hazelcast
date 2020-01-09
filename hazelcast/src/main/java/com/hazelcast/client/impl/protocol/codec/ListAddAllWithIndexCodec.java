@@ -40,7 +40,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * The behavior of this operation is undefined if the specified collection is modified while the operation is in progress.
  * (Note that this will occur if the specified collection is this list, and it's nonempty.)
  */
-@Generated("d43ae9b936c9a1c12188d82bb0807889")
+@Generated("1592b866690ae6c131a5fdbe156c2743")
 public final class ListAddAllWithIndexCodec {
     //hex: 0x050E00
     public static final int REQUEST_MESSAGE_TYPE = 331264;
@@ -48,7 +48,7 @@ public final class ListAddAllWithIndexCodec {
     public static final int RESPONSE_MESSAGE_TYPE = 331265;
     private static final int REQUEST_INDEX_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_INDEX_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    private static final int RESPONSE_RESPONSE_FIELD_OFFSET = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int RESPONSE_RESPONSE_FIELD_OFFSET = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_RESPONSE_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
 
     private ListAddAllWithIndexCodec() {

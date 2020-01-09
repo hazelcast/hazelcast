@@ -36,14 +36,14 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Returns true if this list contains all of the elements of the specified collection.
  */
-@Generated("5ffac0428f28ef6fbc58c30adcbe2d3c")
+@Generated("f2c3155726c922191ab1768a21517f91")
 public final class ListContainsAllCodec {
     //hex: 0x050300
     public static final int REQUEST_MESSAGE_TYPE = 328448;
     //hex: 0x050301
     public static final int RESPONSE_MESSAGE_TYPE = 328449;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    private static final int RESPONSE_RESPONSE_FIELD_OFFSET = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int RESPONSE_RESPONSE_FIELD_OFFSET = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_RESPONSE_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
 
     private ListContainsAllCodec() {

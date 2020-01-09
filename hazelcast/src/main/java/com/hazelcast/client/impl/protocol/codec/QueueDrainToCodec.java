@@ -40,14 +40,14 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * thrown. Attempts to drain a queue to itself result in ILLEGAL_ARGUMENT. Further, the behavior of
  * this operation is undefined if the specified collection is modified while the operation is in progress.
  */
-@Generated("59efde414847d164e22e47076210be18")
+@Generated("06589a2e9c7f4a78fa3449bea504944d")
 public final class QueueDrainToCodec {
     //hex: 0x030900
     public static final int REQUEST_MESSAGE_TYPE = 198912;
     //hex: 0x030901
     public static final int RESPONSE_MESSAGE_TYPE = 198913;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
 
     private QueueDrainToCodec() {
     }

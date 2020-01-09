@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Add a new WAN batch publisher configuration
  */
-@Generated("365edd429bd852f9711e4b19fd4a1cc7")
+@Generated("a7b37370c9032bb22d693e469fd4136d")
 public final class MCAddWanBatchPublisherConfigCodec {
     //hex: 0x201500
     public static final int REQUEST_MESSAGE_TYPE = 2102528;
@@ -49,7 +49,7 @@ public final class MCAddWanBatchPublisherConfigCodec {
     private static final int REQUEST_ACK_TYPE_FIELD_OFFSET = REQUEST_RESPONSE_TIMEOUT_MILLIS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_QUEUE_FULL_BEHAVIOR_FIELD_OFFSET = REQUEST_ACK_TYPE_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_QUEUE_FULL_BEHAVIOR_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
 
     private MCAddWanBatchPublisherConfigCodec() {
     }

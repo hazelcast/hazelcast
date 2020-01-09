@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Returns the collection of values associated with the key. The collection is NOT backed by the map, so changes to
  * the map are NOT reflected in the collection, and vice-versa.
  */
-@Generated("29a7373bd278e295c01efcb95cf5bcc3")
+@Generated("72ed3eaea5982d8bbca78e0d95f789c4")
 public final class MultiMapGetCodec {
     //hex: 0x020200
     public static final int REQUEST_MESSAGE_TYPE = 131584;
@@ -45,7 +45,7 @@ public final class MultiMapGetCodec {
     public static final int RESPONSE_MESSAGE_TYPE = 131585;
     private static final int REQUEST_THREAD_ID_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_THREAD_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
-    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
 
     private MultiMapGetCodec() {
     }

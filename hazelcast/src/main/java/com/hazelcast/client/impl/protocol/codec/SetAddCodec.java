@@ -41,14 +41,14 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * element, including null, and throw an exception, as described in the specification for Collection
  * Individual set implementations should clearly document any restrictions on the elements that they may contain.
  */
-@Generated("06a9e9e3294c10c036bb5e38213a2882")
+@Generated("0470813d4b0e1325a711b756460e44d8")
 public final class SetAddCodec {
     //hex: 0x060400
     public static final int REQUEST_MESSAGE_TYPE = 394240;
     //hex: 0x060401
     public static final int RESPONSE_MESSAGE_TYPE = 394241;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    private static final int RESPONSE_RESPONSE_FIELD_OFFSET = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int RESPONSE_RESPONSE_FIELD_OFFSET = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_RESPONSE_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
 
     private SetAddCodec() {

@@ -36,14 +36,14 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Applies the aggregation logic on all map entries and returns the result
  */
-@Generated("c1106dfd0eae0ccb2c0eb335e3a169f8")
+@Generated("ed817ba708a36957a4a5070c9ab6174b")
 public final class MapAggregateCodec {
     //hex: 0x013900
     public static final int REQUEST_MESSAGE_TYPE = 80128;
     //hex: 0x013901
     public static final int RESPONSE_MESSAGE_TYPE = 80129;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
 
     private MapAggregateCodec() {
     }

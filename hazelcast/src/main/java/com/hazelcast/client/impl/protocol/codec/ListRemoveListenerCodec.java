@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Removes the specified item listener. If there is no such listener added before, this call does no change in the
  * cluster and returns false.
  */
-@Generated("677280e5d0c69b336f31e4e2a1eb5e04")
+@Generated("7d0048ea01fd692f2bf7dedfe1438b28")
 public final class ListRemoveListenerCodec {
     //hex: 0x050C00
     public static final int REQUEST_MESSAGE_TYPE = 330752;
@@ -45,7 +45,7 @@ public final class ListRemoveListenerCodec {
     public static final int RESPONSE_MESSAGE_TYPE = 330753;
     private static final int REQUEST_REGISTRATION_ID_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_REGISTRATION_ID_FIELD_OFFSET + UUID_SIZE_IN_BYTES;
-    private static final int RESPONSE_RESPONSE_FIELD_OFFSET = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int RESPONSE_RESPONSE_FIELD_OFFSET = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_RESPONSE_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
 
     private ListRemoveListenerCodec() {

@@ -36,14 +36,14 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Triggers force start
  */
-@Generated("61d61080f8c41c7477ba347b1db192a2")
+@Generated("dddca346b0427cabbe992f83597cd154")
 public final class MCTriggerForceStartCodec {
     //hex: 0x201E00
     public static final int REQUEST_MESSAGE_TYPE = 2104832;
     //hex: 0x201E01
     public static final int RESPONSE_MESSAGE_TYPE = 2104833;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    private static final int RESPONSE_RESULT_FIELD_OFFSET = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int RESPONSE_RESULT_FIELD_OFFSET = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_RESULT_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
 
     private MCTriggerForceStartCodec() {

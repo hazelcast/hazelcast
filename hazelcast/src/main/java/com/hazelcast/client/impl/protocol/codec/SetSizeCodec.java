@@ -37,14 +37,14 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Returns the number of elements in this set (its cardinality). If this set contains more than Integer.MAX_VALUE
  * elements, returns Integer.MAX_VALUE.
  */
-@Generated("e89162ac7e848fc536a561e8a56d48a9")
+@Generated("17bb174eb76faa886d3d93c56657092f")
 public final class SetSizeCodec {
     //hex: 0x060100
     public static final int REQUEST_MESSAGE_TYPE = 393472;
     //hex: 0x060101
     public static final int RESPONSE_MESSAGE_TYPE = 393473;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    private static final int RESPONSE_RESPONSE_FIELD_OFFSET = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int RESPONSE_RESPONSE_FIELD_OFFSET = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_RESPONSE_FIELD_OFFSET + INT_SIZE_IN_BYTES;
 
     private SetSizeCodec() {

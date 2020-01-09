@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Stops receiving messages for the given message listener.If the given listener already removed, this method does nothing.
  */
-@Generated("1edef5a1cc0d5ac4d14216439b96be21")
+@Generated("fa4f4e63bdab8ee54fd51d6a2ce473d0")
 public final class TopicRemoveMessageListenerCodec {
     //hex: 0x040300
     public static final int REQUEST_MESSAGE_TYPE = 262912;
@@ -44,7 +44,7 @@ public final class TopicRemoveMessageListenerCodec {
     public static final int RESPONSE_MESSAGE_TYPE = 262913;
     private static final int REQUEST_REGISTRATION_ID_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_REGISTRATION_ID_FIELD_OFFSET + UUID_SIZE_IN_BYTES;
-    private static final int RESPONSE_RESPONSE_FIELD_OFFSET = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int RESPONSE_RESPONSE_FIELD_OFFSET = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_RESPONSE_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
 
     private TopicRemoveMessageListenerCodec() {

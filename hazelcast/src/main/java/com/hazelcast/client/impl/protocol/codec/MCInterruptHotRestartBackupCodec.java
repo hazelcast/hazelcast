@@ -36,14 +36,14 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Interrupts hot restart backup
  */
-@Generated("5e0d860074e7ccc2228d20ef379e4d18")
+@Generated("36d902e98232eef421864e1ee421f31d")
 public final class MCInterruptHotRestartBackupCodec {
     //hex: 0x202000
     public static final int REQUEST_MESSAGE_TYPE = 2105344;
     //hex: 0x202001
     public static final int RESPONSE_MESSAGE_TYPE = 2105345;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
 
     private MCInterruptHotRestartBackupCodec() {
     }

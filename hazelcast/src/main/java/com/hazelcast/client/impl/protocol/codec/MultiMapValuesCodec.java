@@ -37,14 +37,14 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Returns the collection of values in the multimap.The collection is NOT backed by the map, so changes to the map
  * are NOT reflected in the collection, and vice-versa.
  */
-@Generated("09e98898c8686259cc47f984155dbdb0")
+@Generated("4d7afd49afb58ef60f5c6647088c26ca")
 public final class MultiMapValuesCodec {
     //hex: 0x020500
     public static final int REQUEST_MESSAGE_TYPE = 132352;
     //hex: 0x020501
     public static final int RESPONSE_MESSAGE_TYPE = 132353;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
 
     private MultiMapValuesCodec() {
     }

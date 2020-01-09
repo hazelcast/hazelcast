@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Loads all keys into the store. This is a batch load operation so that an implementation can optimize the multiple loads.
  */
-@Generated("7783ecb5bf0030bd91f1780e0592a3a6")
+@Generated("9b8ce0e32859894483ff17cd7064a814")
 public final class MapLoadAllCodec {
     //hex: 0x012000
     public static final int REQUEST_MESSAGE_TYPE = 73728;
@@ -44,7 +44,7 @@ public final class MapLoadAllCodec {
     public static final int RESPONSE_MESSAGE_TYPE = 73729;
     private static final int REQUEST_REPLACE_EXISTING_VALUES_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_REPLACE_EXISTING_VALUES_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
-    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
 
     private MapLoadAllCodec() {
     }

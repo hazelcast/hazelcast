@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Reads the recorded metrics starting with the smallest sequence number
  * greater or equals to the sequence number set in fromSequence.
  */
-@Generated("16eea756304d3b54a970c367f5dc74f2")
+@Generated("5a69f943883721a80516e77323ec521a")
 public final class MCReadMetricsCodec {
     //hex: 0x200100
     public static final int REQUEST_MESSAGE_TYPE = 2097408;
@@ -46,7 +46,7 @@ public final class MCReadMetricsCodec {
     private static final int REQUEST_UUID_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_FROM_SEQUENCE_FIELD_OFFSET = REQUEST_UUID_FIELD_OFFSET + UUID_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_FROM_SEQUENCE_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
-    private static final int RESPONSE_NEXT_SEQUENCE_FIELD_OFFSET = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int RESPONSE_NEXT_SEQUENCE_FIELD_OFFSET = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_NEXT_SEQUENCE_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
 
     private MCReadMetricsCodec() {

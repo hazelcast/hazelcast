@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Same as put except that MapStore, if defined, will not be called to store/persist the entry.
  * If ttl and maxIdle are 0, then the entry lives forever.
  */
-@Generated("9105d8a2d6c072afcdec27387347376a")
+@Generated("f80ac50ed8b2e8850cdc22a1f43682ba")
 public final class MapPutTransientWithMaxIdleCodec {
     //hex: 0x014500
     public static final int REQUEST_MESSAGE_TYPE = 83200;
@@ -47,7 +47,7 @@ public final class MapPutTransientWithMaxIdleCodec {
     private static final int REQUEST_TTL_FIELD_OFFSET = REQUEST_THREAD_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
     private static final int REQUEST_MAX_IDLE_FIELD_OFFSET = REQUEST_TTL_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_MAX_IDLE_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
-    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
 
     private MapPutTransientWithMaxIdleCodec() {
     }

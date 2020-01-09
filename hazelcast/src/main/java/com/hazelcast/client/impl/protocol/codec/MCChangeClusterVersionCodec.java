@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Changes the cluster version.
  */
-@Generated("7606d77d31b54a8ae62dd4c2a08cd2c9")
+@Generated("2d4304f70a8ec3e3273a6a5a1d0a0bb3")
 public final class MCChangeClusterVersionCodec {
     //hex: 0x201000
     public static final int REQUEST_MESSAGE_TYPE = 2101248;
@@ -45,7 +45,7 @@ public final class MCChangeClusterVersionCodec {
     private static final int REQUEST_MAJOR_VERSION_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_MINOR_VERSION_FIELD_OFFSET = REQUEST_MAJOR_VERSION_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_MINOR_VERSION_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
-    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
 
     private MCChangeClusterVersionCodec() {
     }

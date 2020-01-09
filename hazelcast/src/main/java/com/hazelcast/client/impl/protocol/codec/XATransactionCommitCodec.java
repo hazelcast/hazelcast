@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Commits the global transaction specified by xid.
  */
-@Generated("47606855c41befa129131e97267d225d")
+@Generated("7dd5efc079474ccd6419f01b6602d5dc")
 public final class XATransactionCommitCodec {
     //hex: 0x140400
     public static final int REQUEST_MESSAGE_TYPE = 1311744;
@@ -45,7 +45,7 @@ public final class XATransactionCommitCodec {
     private static final int REQUEST_TRANSACTION_ID_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_ONE_PHASE_FIELD_OFFSET = REQUEST_TRANSACTION_ID_FIELD_OFFSET + UUID_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_ONE_PHASE_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
-    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
 
     private XATransactionCommitCodec() {
     }

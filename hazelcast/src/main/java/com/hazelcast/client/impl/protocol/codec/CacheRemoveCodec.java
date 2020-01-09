@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Atomically removes the mapping for a key only if currently mapped to the given value.
  */
-@Generated("f2261c3cd8a390512d5d37c46c40f1bf")
+@Generated("2eeba4f03bacb9995dab58b15ad5cbd0")
 public final class CacheRemoveCodec {
     //hex: 0x131600
     public static final int REQUEST_MESSAGE_TYPE = 1250816;
@@ -44,7 +44,7 @@ public final class CacheRemoveCodec {
     public static final int RESPONSE_MESSAGE_TYPE = 1250817;
     private static final int REQUEST_COMPLETION_ID_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_COMPLETION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    private static final int RESPONSE_RESPONSE_FIELD_OFFSET = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int RESPONSE_RESPONSE_FIELD_OFFSET = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_RESPONSE_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
 
     private CacheRemoveCodec() {
