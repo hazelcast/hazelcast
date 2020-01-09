@@ -77,7 +77,6 @@ public class ManagementCenterService {
         this.commandHandler = new ConsoleCommandHandler(instance);
         this.bwListConfigHandler = new ClientBwListConfigHandler(instance.node.clientEngine);
         registerExecutor();
-        logger.info("Hazelcast is ready for communication with Hazelcast Management Center");
     }
 
     private void registerExecutor() {
