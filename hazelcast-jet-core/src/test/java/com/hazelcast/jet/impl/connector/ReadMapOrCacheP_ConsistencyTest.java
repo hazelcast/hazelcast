@@ -53,10 +53,10 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastSerialClassRunner.class)
-public class MapSource_ConsistencyTest extends JetTestSupport {
+public class ReadMapOrCacheP_ConsistencyTest extends JetTestSupport {
 
     private static final String MAP_NAME = "map";
-    private static final int NO_ITEMS = 100_000;
+    private static final int NUM_ITEMS = 100_000;
 
     private static AtomicInteger processedCount;
     private static CountDownLatch startLatch;
@@ -77,61 +77,63 @@ public class MapSource_ConsistencyTest extends JetTestSupport {
     @After
     public void after() {
         for (HazelcastInstance instance : remoteInstances) {
-            instance.shutdown();
+            instance.getLifecycleService().terminate();
         }
     }
 
     @Test
-    public void when_adding_items_then_stable_iteration_local() {
-        testAddingItems(jet.getMap(MAP_NAME), null);
+    public void test_addingItems_local() {
+        test_addingItems(jet.getMap(MAP_NAME), null);
     }
 
     @Test
-    public void when_adding_items_then_stable_iteration_remote() {
+    public void test_addingItems_remote() {
         Config config = new Config().setClusterName(UuidUtil.newUnsecureUuidString());
         HazelcastInstance hz = Hazelcast.newHazelcastInstance(config);
         remoteInstances.add(hz);
 
         ClientConfig clientConfig = new ClientConfig().setClusterName(config.getClusterName());
-        testAddingItems(hz.getMap(MAP_NAME), clientConfig);
+        test_addingItems(hz.getMap(MAP_NAME), clientConfig);
     }
 
     @Test
-    public void when_removing_items_then_stable_iteration_local() {
-        testRemovingItems(jet.getMap(MAP_NAME), null);
+    public void test_removingItems_local() {
+        test_removingItems(jet.getMap(MAP_NAME), null);
     }
 
     @Test
-    public void when_removing_items_then_stable_iteration_remote() {
+    public void test_removingItems_remote() {
         Config config = new Config().setClusterName(UuidUtil.newUnsecureUuidString());
         HazelcastInstance hz = Hazelcast.newHazelcastInstance(config);
         remoteInstances.add(hz);
 
         ClientConfig clientConfig = new ClientConfig().setClusterName(config.getClusterName());
-        testAddingItems(hz.getMap(MAP_NAME), clientConfig);
+        test_removingItems(hz.getMap(MAP_NAME), clientConfig);
     }
 
     @Test
-    public void when_migration_then_stable_iteration_local() throws Exception {
-        testMigration(jet.getMap(MAP_NAME), null, this::createJetMember);
+    public void test_migration_local() throws Exception {
+        test_migration(jet.getMap(MAP_NAME), null, this::createJetMember);
     }
 
     @Test
-    public void when_migration_then_stable_iteration_remote() throws Exception {
+    public void test_migration_remote() throws Exception {
         Config config = new Config().setClusterName(UuidUtil.newUnsecureUuidString());
         HazelcastInstance hz = Hazelcast.newHazelcastInstance(config);
         remoteInstances.add(hz);
 
         ClientConfig clientConfig = new ClientConfig().setClusterName(config.getClusterName());
 
-        testMigration(hz.getMap(MAP_NAME), clientConfig,
+        test_migration(hz.getMap(MAP_NAME), clientConfig,
                 () -> remoteInstances.add(Hazelcast.newHazelcastInstance(config)));
     }
 
-    private void testRemovingItems(IMap<Integer, Integer> map, ClientConfig clientConfig) {
-        for (int i = 0; i < NO_ITEMS; i++) {
-            map.put(i, i);
+    private void test_removingItems(IMap<Integer, Integer> map, ClientConfig clientConfig) {
+        Map<Integer, Integer> tmpMap = new HashMap<>();
+        for (int i = 0; i < NUM_ITEMS; i++) {
+            tmpMap.put(i, i);
         }
+        map.putAll(tmpMap);
 
         int remainingItemCount = 1024;
 
@@ -161,15 +163,15 @@ public class MapSource_ConsistencyTest extends JetTestSupport {
 
         proceedLatch.countDown();
 
-        // put some additional items
-        for (int i = remainingItemCount; i < NO_ITEMS; i++) {
+        // delete some items
+        for (int i = remainingItemCount; i < NUM_ITEMS; i++) {
             map.delete(i);
         }
 
         job.join();
     }
 
-    private void testAddingItems(IMap<Integer, Integer> map, ClientConfig clientConfig) {
+    private void test_addingItems(IMap<Integer, Integer> map, ClientConfig clientConfig) {
         int initialItemCount = 1024; // use low initial item count to force resizing
         for (int i = 0; i < initialItemCount; i++) {
             map.put(i, i);
@@ -202,18 +204,18 @@ public class MapSource_ConsistencyTest extends JetTestSupport {
         proceedLatch.countDown();
 
         // put some additional items
-        for (int i = initialItemCount; i < initialItemCount + NO_ITEMS; i++) {
+        for (int i = initialItemCount; i < initialItemCount + NUM_ITEMS; i++) {
             map.put(i, i);
         }
 
         job.join();
     }
 
-    private void testMigration(IMap<Integer, Integer> map, ClientConfig clientConfig, Runnable newInstance)
+    private void test_migration(IMap<Integer, Integer> map, ClientConfig clientConfig, Runnable newInstanceAction)
             throws InterruptedException {
         // populate the map
         Map<Integer, Integer> tmpMap = new HashMap<>();
-        for (int i = 0; i < NO_ITEMS; i++) {
+        for (int i = 0; i < NUM_ITEMS; i++) {
             tmpMap.put(i, i);
         }
         map.putAll(tmpMap);
@@ -234,14 +236,14 @@ public class MapSource_ConsistencyTest extends JetTestSupport {
              return o.getKey();
          })
          .setLocalParallelism(1)
-         .writeTo(AssertionSinks.assertAnyOrder(IntStream.range(0, NO_ITEMS).boxed().collect(toList())));
+         .writeTo(AssertionSinks.assertAnyOrder(IntStream.range(0, NUM_ITEMS).boxed().collect(toList())));
 
         Job job = jet.newJob(p, new JobConfig().setAutoScaling(false));
 
         // start the job. The map reader will be blocked thanks to the backpressure from the mapping stage
         startLatch.await();
         // create new member, migration will take place
-        newInstance.run();
+        newInstanceAction.run();
         // release the latch, the rest of the items will be processed after the migration
         proceedLatch.countDown();
 
