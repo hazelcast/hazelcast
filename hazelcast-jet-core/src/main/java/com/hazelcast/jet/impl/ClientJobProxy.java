@@ -18,8 +18,7 @@ package com.hazelcast.jet.impl;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.spi.impl.ClientInvocation;
-import com.hazelcast.cluster.Address;
-import com.hazelcast.cluster.Member;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.JobStateSnapshot;
@@ -38,11 +37,10 @@ import com.hazelcast.jet.impl.client.protocol.codec.JetResumeJobCodec;
 import com.hazelcast.jet.impl.client.protocol.codec.JetSubmitJobCodec;
 import com.hazelcast.jet.impl.client.protocol.codec.JetTerminateJobCodec;
 import com.hazelcast.logging.LoggingService;
-import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.spi.exception.TargetNotMemberException;
 
 import javax.annotation.Nonnull;
-import java.util.Optional;
+import java.util.UUID;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -74,7 +72,7 @@ public class ClientJobProxy extends AbstractJobProxy<JetClientInstanceImpl> {
     public JobStatus getStatus() {
         return callAndRetryIfTargetNotFound(()  -> {
             ClientMessage request = JetGetJobStatusCodec.encodeRequest(getId());
-            ClientMessage response = invocation(request, masterAddress()).invoke().get();
+            ClientMessage response = invocation(request, masterUuid()).invoke().get();
             ResponseParameters parameters = JetGetJobStatusCodec.decodeResponse(response);
             return JobStatus.values()[parameters.response];
         });
@@ -85,7 +83,7 @@ public class ClientJobProxy extends AbstractJobProxy<JetClientInstanceImpl> {
     public JobMetrics getMetrics() {
         return callAndRetryIfTargetNotFound(()  -> {
             ClientMessage request = JetGetJobMetricsCodec.encodeRequest(getId());
-            ClientMessage response = invocation(request, masterAddress()).invoke().get();
+            ClientMessage response = invocation(request, masterUuid()).invoke().get();
             JetGetJobMetricsCodec.ResponseParameters parameters = JetGetJobMetricsCodec.decodeResponse(response);
             return toJobMetrics(serializationService().toObject(parameters.response));
         });
@@ -95,13 +93,13 @@ public class ClientJobProxy extends AbstractJobProxy<JetClientInstanceImpl> {
     protected CompletableFuture<Void> invokeSubmitJob(Data dag, JobConfig config) {
         Data configData = serializationService().toData(config);
         ClientMessage request = JetSubmitJobCodec.encodeRequest(getId(), dag, configData);
-        return invocation(request, masterAddress()).invoke().thenApply(c -> null);
+        return invocation(request, masterUuid()).invoke().thenApply(c -> null);
     }
 
     @Override
     protected CompletableFuture<Void> invokeJoinJob() {
         ClientMessage request = JetJoinSubmittedJobCodec.encodeRequest(getId());
-        ClientInvocation invocation = invocation(request, masterAddress());
+        ClientInvocation invocation = invocation(request, masterUuid());
         // this invocation should never time out, as the job may be running for a long time
         invocation.setInvocationTimeoutMillis(Long.MAX_VALUE); // 0 is not supported
         return invocation.invoke().thenApply(c -> null);
@@ -110,14 +108,14 @@ public class ClientJobProxy extends AbstractJobProxy<JetClientInstanceImpl> {
     @Override
     protected CompletableFuture<Void> invokeTerminateJob(TerminationMode mode) {
         ClientMessage request = JetTerminateJobCodec.encodeRequest(getId(), mode.ordinal());
-        return invocation(request, masterAddress()).invoke().thenApply(c -> null);
+        return invocation(request, masterUuid()).invoke().thenApply(c -> null);
     }
 
     @Override
     public void resume() {
         ClientMessage request = JetResumeJobCodec.encodeRequest(getId());
         try {
-            invocation(request, masterAddress()).invoke().get();
+            invocation(request, masterUuid()).invoke().get();
         } catch (Throwable t) {
             throw rethrow(t);
         }
@@ -136,7 +134,7 @@ public class ClientJobProxy extends AbstractJobProxy<JetClientInstanceImpl> {
     private JobStateSnapshot doExportSnapshot(String name, boolean cancelJob) {
         ClientMessage request = JetExportSnapshotCodec.encodeRequest(getId(), name, cancelJob);
         try {
-            invocation(request, masterAddress()).invoke().get();
+            invocation(request, masterUuid()).invoke().get();
         } catch (Throwable t) {
             throw rethrow(t);
         }
@@ -147,7 +145,7 @@ public class ClientJobProxy extends AbstractJobProxy<JetClientInstanceImpl> {
     protected long doGetJobSubmissionTime() {
         return callAndRetryIfTargetNotFound(() -> {
             ClientMessage request = JetGetJobSubmissionTimeCodec.encodeRequest(getId());
-            ClientMessage response = invocation(request, masterAddress()).invoke().get();
+            ClientMessage response = invocation(request, masterUuid()).invoke().get();
             return JetGetJobSubmissionTimeCodec.decodeResponse(response).response;
         });
     }
@@ -156,16 +154,15 @@ public class ClientJobProxy extends AbstractJobProxy<JetClientInstanceImpl> {
     protected JobConfig doGetJobConfig() {
         return callAndRetryIfTargetNotFound(() -> {
             ClientMessage request = JetGetJobConfigCodec.encodeRequest(getId());
-            ClientMessage response = invocation(request, masterAddress()).invoke().get();
+            ClientMessage response = invocation(request, masterUuid()).invoke().get();
             Data data = JetGetJobConfigCodec.decodeResponse(response).response;
             return serializationService().toObject(data);
         });
     }
 
     @Override
-    protected Address masterAddress() {
-        Optional<Member> first = container().getCluster().getMembers().stream().findFirst();
-        return first.orElseThrow(() -> new IllegalStateException("No members found in cluster")).getAddress();
+    protected UUID masterUuid() {
+        return container().getHazelcastClient().getClientClusterService().getMasterMember().getUuid();
     }
 
     @Override
@@ -178,9 +175,9 @@ public class ClientJobProxy extends AbstractJobProxy<JetClientInstanceImpl> {
         return container().getHazelcastClient().getLoggingService();
     }
 
-    private ClientInvocation invocation(ClientMessage request, Address invocationAddr) {
+    private ClientInvocation invocation(ClientMessage request, UUID invocationUuid) {
         return new ClientInvocation(
-                container().getHazelcastClient(), request, "jobId=" + getIdString(), invocationAddr
+                container().getHazelcastClient(), request, "jobId=" + getIdString(), invocationUuid
         );
     }
 

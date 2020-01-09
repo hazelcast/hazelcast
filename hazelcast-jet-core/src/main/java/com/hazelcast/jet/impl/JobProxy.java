@@ -17,6 +17,8 @@
 package com.hazelcast.jet.impl;
 
 import com.hazelcast.cluster.Address;
+import com.hazelcast.cluster.Member;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.JobStateSnapshot;
@@ -34,12 +36,13 @@ import com.hazelcast.jet.impl.operation.ResumeJobOperation;
 import com.hazelcast.jet.impl.operation.SubmitJobOperation;
 import com.hazelcast.jet.impl.operation.TerminateJobOperation;
 import com.hazelcast.logging.LoggingService;
-import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationservice.Operation;
 
 import javax.annotation.Nonnull;
+import java.util.Collection;
 import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
 import static com.hazelcast.jet.impl.JobMetricsUtil.toJobMetrics;
@@ -142,12 +145,12 @@ public class JobProxy extends AbstractJobProxy<NodeEngineImpl> {
     }
 
     @Override
-    protected Address masterAddress() {
-        Address masterAddress = container().getMasterAddress();
-        if (masterAddress == null) {
-            throw new IllegalStateException("Master address unknown: instance is not yet initialized or is shut down");
+    protected UUID masterUuid() {
+        Collection<Member> members = container().getClusterService().getMembers();
+        if (members.isEmpty()) {
+            throw new IllegalStateException("No members in cluster");
         }
-        return masterAddress;
+        return members.iterator().next().getUuid();
     }
 
     @Override
@@ -165,5 +168,13 @@ public class JobProxy extends AbstractJobProxy<NodeEngineImpl> {
                 .getOperationService()
                 .createInvocationBuilder(JetService.SERVICE_NAME, op, masterAddress())
                 .invoke();
+    }
+
+    private Address masterAddress() {
+        Address masterAddress = container().getMasterAddress();
+        if (masterAddress == null) {
+            throw new IllegalStateException("Master address unknown: instance is not yet initialized or is shut down");
+        }
+        return masterAddress;
     }
 }

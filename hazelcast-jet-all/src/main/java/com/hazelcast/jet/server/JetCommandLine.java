@@ -34,9 +34,9 @@ import com.hazelcast.jet.JobStateSnapshot;
 import com.hazelcast.jet.Util;
 import com.hazelcast.jet.core.JobNotFoundException;
 import com.hazelcast.jet.core.JobStatus;
+import com.hazelcast.jet.impl.JetBootstrap;
 import com.hazelcast.jet.impl.JetClientInstanceImpl;
 import com.hazelcast.jet.impl.JobSummary;
-import com.hazelcast.jet.impl.JetBootstrap;
 import com.hazelcast.jet.impl.config.ConfigProvider;
 import com.hazelcast.jet.server.JetCommandLine.JetVersionProvider;
 import picocli.CommandLine;
@@ -406,7 +406,7 @@ public class JetCommandLine implements Runnable {
             JetClientInstanceImpl client = (JetClientInstanceImpl) jet;
             HazelcastClientInstanceImpl hazelcastClient = client.getHazelcastClient();
             ClientClusterService clientClusterService = hazelcastClient.getClientClusterService();
-            Member masterMember = clientClusterService.getMember(clientClusterService.getMasterAddress());
+            Member masterMember = clientClusterService.getMember(clientClusterService.getMasterMember().getUuid());
             MCClusterMetadata clusterMetadata = FutureUtil.getValue(hazelcastClient.getManagementCenterService()
                                                                                    .getClusterMetadata(masterMember));
             Cluster cluster = client.getCluster();
