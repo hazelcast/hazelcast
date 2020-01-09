@@ -51,7 +51,7 @@ public final class ClientEndpointImpl implements ClientEndpoint {
     private final Connection connection;
     private final ConcurrentMap<String, TransactionContext> transactionContextMap
             = new ConcurrentHashMap<String, TransactionContext>();
-    private final ConcurrentHashMap<String, Callable> removeListenerActions = new ConcurrentHashMap<String, Callable>();
+    private final ConcurrentMap<String, Callable> removeListenerActions = new ConcurrentHashMap<String, Callable>();
     private final SocketAddress socketAddress;
     private final long creationTime;
 
@@ -66,6 +66,7 @@ public final class ClientEndpointImpl implements ClientEndpoint {
     private volatile String stats;
     private String clientName;
     private Set<String> labels;
+    private volatile boolean destroyed;
 
     public ClientEndpointImpl(ClientEngine clientEngine, NodeEngineImpl nodeEngine, Connection connection) {
         this.clientEngine = clientEngine;
@@ -223,6 +224,9 @@ public final class ClientEndpointImpl implements ClientEndpoint {
     @Override
     public void setTransactionContext(TransactionContext transactionContext) {
         transactionContextMap.put(transactionContext.getTxnId(), transactionContext);
+        if (destroyed) {
+            removedAndRollbackTransactionContext(transactionContext.getTxnId());
+        }
     }
 
     @Override
@@ -244,6 +248,9 @@ public final class ClientEndpointImpl implements ClientEndpoint {
     @Override
     public void addDestroyAction(String registrationId, Callable<Boolean> removeAction) {
         removeListenerActions.put(registrationId, removeAction);
+        if (destroyed) {
+            removeAndCallRemoveAction(registrationId);
+        }
     }
 
     @Override
@@ -253,27 +260,44 @@ public final class ClientEndpointImpl implements ClientEndpoint {
 
     @Override
     public void clearAllListeners() {
-        for (Callable removeAction : removeListenerActions.values()) {
-            try {
-                removeAction.call();
-            } catch (Exception e) {
-                logger.warning("Exception during remove listener action", e);
-            }
+        for (String registrationId : removeListenerActions.keySet()) {
+            removeAndCallRemoveAction(registrationId);
         }
-        removeListenerActions.clear();
     }
 
     public void destroy() throws LoginException {
-        clearAllListeners();
+        destroyed = true;
         nodeEngine.onClientDisconnected(getUuid());
 
         LoginContext lc = loginContext;
         if (lc != null) {
             lc.logout();
         }
-        for (TransactionContext context : transactionContextMap.values()) {
+
+        clearAllListeners();
+
+        for (String txnId : transactionContextMap.keySet()) {
+            removedAndRollbackTransactionContext(txnId);
+        }
+        authenticated = false;
+    }
+
+    private void removeAndCallRemoveAction(String uuid) {
+        Callable callable = removeListenerActions.remove(uuid);
+        if (callable != null) {
+            try {
+                callable.call();
+            } catch (Exception e) {
+                logger.warning("Exception during remove listener action", e);
+            }
+        }
+    }
+
+    private void removedAndRollbackTransactionContext(String txnId) {
+        TransactionContext context = transactionContextMap.remove(txnId);
+        if (context != null) {
             if (context instanceof XATransactionContextImpl) {
-                continue;
+                return;
             }
             try {
                 context.rollbackTransaction();
@@ -283,8 +307,8 @@ public final class ClientEndpointImpl implements ClientEndpoint {
                 logger.warning(e);
             }
         }
-        authenticated = false;
     }
+
 
     @Override
     public String toString() {

@@ -124,4 +124,9 @@ public class ClientPartitionListenerService {
             return null;
         }
     }
+
+    //for test purpose only
+    public Map<ClientEndpoint, Long> getPartitionListeningEndpoints() {
+        return partitionListeningEndpoints;
+    }
 }

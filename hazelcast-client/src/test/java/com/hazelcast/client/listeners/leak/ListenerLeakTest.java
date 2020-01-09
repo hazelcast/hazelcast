@@ -254,4 +254,17 @@ public class ListenerLeakTest extends HazelcastTestSupport {
             }
         });
     }
+
+    @Test
+    public void testListenerLeakOnMember_whenClientDestroyed() {
+        Collection<Node> nodes = createNodes();
+
+        for (int i = 0; i < 100; i++) {
+            newHazelcastClient().shutdown();
+        }
+
+        for (Node node : nodes) {
+            assertEquals(0, node.getClientEngine().getPartitionListenerService().getPartitionListeningEndpoints().size());
+        }
+    }
 }
