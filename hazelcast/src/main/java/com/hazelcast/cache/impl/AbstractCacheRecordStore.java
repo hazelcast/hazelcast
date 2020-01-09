@@ -57,6 +57,7 @@ import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.eventservice.EventRegistration;
 import com.hazelcast.spi.impl.eventservice.EventService;
+import com.hazelcast.spi.impl.merge.CacheMergingEntryImpl;
 import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 import com.hazelcast.spi.merge.SplitBrainMergeTypes.CacheMergeTypes;
 import com.hazelcast.wan.impl.CallerProvenance;
@@ -1750,8 +1751,9 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
         injectDependencies(mergePolicy);
 
         boolean merged = false;
-
-        Data key = toData(mergingEntry.getRawKey());
+        assert mergingEntry instanceof CacheMergingEntryImpl;
+        CacheMergingEntryImpl<Object, Object> mergingEntryImpl = (CacheMergingEntryImpl<Object, Object>) mergingEntry;
+        Data key = mergingEntryImpl.getRawKey();
         long expiryTime = mergingEntry.getExpirationTime();
         R record = records.get(key);
         boolean isExpired = processExpiredEntry(key, record, now);
