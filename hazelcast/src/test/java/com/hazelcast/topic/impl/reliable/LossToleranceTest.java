@@ -34,7 +34,6 @@ import org.junit.runner.RunWith;
 import java.util.UUID;
 
 import static com.hazelcast.ringbuffer.impl.RingbufferService.TOPIC_RB_PREFIX;
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -103,10 +102,7 @@ public class LossToleranceTest extends HazelcastTestSupport {
         topic.addMessageListener(listener);
         topic.publish("newItem");
 
-        assertTrueEventually(() -> {
-            assertContains(listener.objects, "newItem");
-            assertFalse(topic.runnersMap.isEmpty());
-        });
+        assertTrueEventually(() -> assertContains(listener.objects, "newItem"));
     }
 
     @Test
@@ -126,10 +122,7 @@ public class LossToleranceTest extends HazelcastTestSupport {
         assertTrueEventually(() -> {
             String item = "newItem " + UUID.randomUUID();
             topic.publish(item);
-            assertTrueEventually(() -> {
-                assertContains(listener.objects, item);
-                assertFalse(topic.runnersMap.isEmpty());
-            }, 5);
+            assertTrueEventually(() -> assertContains(listener.objects, item), 5);
         });
     }
 }
