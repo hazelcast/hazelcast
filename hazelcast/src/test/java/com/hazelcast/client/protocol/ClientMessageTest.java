@@ -90,7 +90,6 @@ public class ClientMessageTest {
 
 
         clientMessage.setRetryable(true);
-        clientMessage.setAcquiresResource(true);
         clientMessage.setOperationName("operationName");
         clientMessage.add(new ClientMessage.Frame(new byte[20], ClientMessage.IS_FINAL_FLAG));
 
@@ -108,7 +107,6 @@ public class ClientMessageTest {
         assertEquals(newCorrelationId, copyMessage.getCorrelationId());
         assertEquals(clientMessage.getPartitionId(), copyMessage.getPartitionId());
         assertEquals(clientMessage.isRetryable(), copyMessage.isRetryable());
-        assertEquals(clientMessage.acquiresResource(), copyMessage.acquiresResource());
         assertEquals(clientMessage.getOperationName(), copyMessage.getOperationName());
     }
 }

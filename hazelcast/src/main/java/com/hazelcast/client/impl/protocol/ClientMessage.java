@@ -133,7 +133,6 @@ public final class ClientMessage implements OutboundFrame {
     transient Frame endFrame;
 
     private transient boolean isRetryable;
-    private transient boolean acquiresResource;
     private transient String operationName;
     private transient Connection connection;
 
@@ -235,14 +234,6 @@ public final class ClientMessage implements OutboundFrame {
         return isRetryable;
     }
 
-    public boolean acquiresResource() {
-        return acquiresResource;
-    }
-
-    public void setAcquiresResource(boolean acquiresResource) {
-        this.acquiresResource = acquiresResource;
-    }
-
     public void setRetryable(boolean isRetryable) {
         this.isRetryable = isRetryable;
     }
@@ -337,7 +328,6 @@ public final class ClientMessage implements OutboundFrame {
         newMessage.setCorrelationId(correlationId);
 
         newMessage.isRetryable = isRetryable;
-        newMessage.acquiresResource = acquiresResource;
         newMessage.operationName = operationName;
 
         return newMessage;
@@ -360,9 +350,6 @@ public final class ClientMessage implements OutboundFrame {
         if (isRetryable != message.isRetryable) {
             return false;
         }
-        if (acquiresResource != message.acquiresResource) {
-            return false;
-        }
         if (!Objects.equals(operationName, message.operationName)) {
             return false;
         }
@@ -373,7 +360,6 @@ public final class ClientMessage implements OutboundFrame {
     public int hashCode() {
         int result = super.hashCode();
         result = 31 * result + (isRetryable ? 1 : 0);
-        result = 31 * result + (acquiresResource ? 1 : 0);
         result = 31 * result + (operationName != null ? operationName.hashCode() : 0);
         result = 31 * result + (connection != null ? connection.hashCode() : 0);
         return result;
