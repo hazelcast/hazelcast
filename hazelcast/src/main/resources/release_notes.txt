@@ -4,7 +4,7 @@ This document lists the new features, enhancements, fixed issues and, removed or
 
 1. Enhancements
 
-* Introduced logging the sizes of pending number of tasks
+* Introduced logging the count of pending tasks
 for the Scheduled Executor Service. Also, for this, the new 
 'hazelcast.scheduledexecutor.logdelay.seconds` property has
 been added. See the Scheduled Executor Service section in Hazelcast
