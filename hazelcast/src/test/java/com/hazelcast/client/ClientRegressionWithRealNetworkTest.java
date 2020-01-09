@@ -195,9 +195,9 @@ public class ClientRegressionWithRealNetworkTest extends ClientTestSupport {
         Hazelcast.newHazelcastInstance(config);
 
         assertTrueEventually(() -> {
+            map.remove(1);
             map.put(1, 2);
             assertNotEquals(0, eventCount.get());
-            map.remove(1);
         });
     }
 
