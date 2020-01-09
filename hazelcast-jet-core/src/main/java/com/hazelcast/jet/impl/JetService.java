@@ -69,10 +69,6 @@ public class JetService implements ManagedService, MembershipAwareService, LiveO
     private final AtomicReference<CompletableFuture> shutdownFuture = new AtomicReference<>();
     private final Thread shutdownHookThread;
 
-    // We share the migration watcher for local member because there's a deadlock possible when many
-    // vertices registered/deregistered their own watchers.
-    private MigrationWatcher sharedMigrationWatcher;
-
     private JetConfig config;
     private JetInstance jetInstance;
     private Networking networking;
@@ -96,7 +92,6 @@ public class JetService implements ManagedService, MembershipAwareService, LiveO
     public void init(NodeEngine engine, Properties hzProperties) {
         this.nodeEngine = (NodeEngineImpl) engine;
         this.config = findJetServiceConfig(engine.getConfig());
-        this.sharedMigrationWatcher = new MigrationWatcher(engine.getHazelcastInstance());
         jetInstance = new JetInstanceImpl((HazelcastInstanceImpl) engine.getHazelcastInstance(), config);
         taskletExecutionService = new TaskletExecutionService(
                 nodeEngine, config.getInstanceConfig().getCooperativeThreadCount(), nodeEngine.getProperties()
@@ -283,10 +278,6 @@ public class JetService implements ManagedService, MembershipAwareService, LiveO
             }
         }
         return keys;
-    }
-
-    public MigrationWatcher getSharedMigrationWatcher() {
-        return sharedMigrationWatcher;
     }
 
     private Thread shutdownHookThread(Node node) {

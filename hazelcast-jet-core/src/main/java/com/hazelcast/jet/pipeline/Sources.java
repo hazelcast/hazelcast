@@ -155,12 +155,9 @@ public final class Sources {
      * The source does not save any state to snapshot. If the job is restarted,
      * it will re-emit all entries.
      * <p>
-     * If the {@code IMap} is modified while being read, or if there is a
-     * cluster topology change (triggering data migration), the source may miss
-     * and/or duplicate some entries. If we detect a topology change, the job
-     * will fail, but the detection is only on a best-effort basis - we might
-     * still give incorrect results without reporting a failure. Concurrent
-     * mutation is not detected at all.
+     * If entries are added or removed to the map during the job, the keys which
+     * have been deleted or added since the job started will be emitted at most
+     * once, other keys must be emitted exactly once.
      * <p>
      * The default local parallelism for this processor is 1.
      */
@@ -183,12 +180,9 @@ public final class Sources {
      * The source does not save any state to snapshot. If the job is restarted,
      * it will re-emit all entries.
      * <p>
-     * If the {@code IMap} is modified while being read, or if there is a
-     * cluster topology change (triggering data migration), the source may miss
-     * and/or duplicate some entries. If we detect a topology change, the job
-     * will fail, but the detection is only on a best-effort basis - we might
-     * still give incorrect results without reporting a failure. Concurrent
-     * mutation is not detected at all.
+     * If entries are added or removed to the map during the job, the keys which
+     * have been deleted or added since the job started will be emitted at most
+     * once, other keys must be emitted exactly once.
      * <p>
      * The default local parallelism for this processor is 1.
      */
@@ -222,12 +216,9 @@ public final class Sources {
      * The source does not save any state to snapshot. If the job is restarted,
      * it will re-emit all entries.
      * <p>
-     * If the {@code IMap} is modified while being read, or if there is a
-     * cluster topology change (triggering data migration), the source may miss
-     * and/or duplicate some entries. If we detect a topology change, the job
-     * will fail, but the detection is only on a best-effort basis - we might
-     * still give incorrect results without reporting a failure. Concurrent
-     * mutation is not detected at all.
+     * If entries are added or removed to the map during the job, the keys which
+     * have been deleted or added since the job started will be emitted at most
+     * once, other keys must be emitted exactly once.
      * <p>
      * The default local parallelism for this processor is 1.
      *
@@ -291,12 +282,9 @@ public final class Sources {
      * The source does not save any state to snapshot. If the job is restarted,
      * it will re-emit all entries.
      * <p>
-     * If the {@code IMap} is modified while being read, or if there is a
-     * cluster topology change (triggering data migration), the source may miss
-     * and/or duplicate some entries. If we detect a topology change, the job
-     * will fail, but the detection is only on a best-effort basis - we might
-     * still give incorrect results without reporting a failure. Concurrent
-     * mutation is not detected at all.
+     * If entries are added or removed to the map during the job, the keys which
+     * have been deleted or added since the job started will be emitted at most
+     * once, other keys must be emitted exactly once.
      * <p>
      * The default local parallelism for this processor 1.
      *
@@ -677,12 +665,9 @@ public final class Sources {
      * The source does not save any state to snapshot. If the job is restarted,
      * it will re-emit all entries.
      * <p>
-     * If the {@code ICache} is modified while being read, or if there is a
-     * cluster topology change (triggering data migration), the source may miss
-     * and/or duplicate some entries. If we detect a topology change, the job
-     * will fail, but the detection is only on a best-effort basis - we might
-     * still give incorrect results without reporting a failure. Concurrent
-     * mutation is not detected at all.
+     * If entries are added or removed to the cache during the job, the keys which
+     * have been deleted or added since the job started will be emitted at most
+     * once, other keys must be emitted exactly once.
      * <p>
      * The default local parallelism for this processor 1.
      */
@@ -774,12 +759,9 @@ public final class Sources {
      * The source does not save any state to snapshot. If the job is restarted,
      * it will re-emit all entries.
      * <p>
-     * If the {@code ICache} is modified while being read, or if there is a
-     * cluster topology change (triggering data migration), the source may miss
-     * and/or duplicate some entries. If we detect a topology change, the job
-     * will fail, but the detection is only on a best-effort basis - we might
-     * still give incorrect results without reporting a failure. Concurrent
-     * mutation is not detected at all.
+     * If entries are added or removed to the cache during the job, the keys which
+     * have been deleted or added since the job started will be emitted at most
+     * once, other keys must be emitted exactly once.
      * <p>
      * The default local parallelism for this processor is 1.
      */

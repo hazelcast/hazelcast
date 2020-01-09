@@ -38,14 +38,11 @@ import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.util.IterationType;
 import com.hazelcast.jet.JetException;
-import com.hazelcast.jet.RestartableException;
 import com.hazelcast.jet.core.AbstractProcessor;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.core.processor.SourceProcessors;
-import com.hazelcast.jet.impl.JetService;
-import com.hazelcast.jet.impl.MigrationWatcher;
 import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.map.impl.LazyMapEntry;
 import com.hazelcast.map.impl.iterator.AbstractCursor;
@@ -75,7 +72,6 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
-import java.util.function.BooleanSupplier;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -104,7 +100,6 @@ public final class ReadMapOrCacheP<F extends CompletableFuture, B, R> extends Ab
 
     private final Reader<F, B, R> reader;
     private final int[] partitionIds;
-    private final BooleanSupplier migrationWatcher;
     private final IterationPointer[][] readPointers;
 
     private F[] readFutures;
@@ -115,17 +110,11 @@ public final class ReadMapOrCacheP<F extends CompletableFuture, B, R> extends Ab
     private int currentPartitionIndex = -1;
     private int numCompletedPartitions;
 
-    private ReadMapOrCacheP(
-            @Nonnull Reader<F, B, R> reader,
-            @Nonnull int[] partitionIds,
-            @Nonnull BooleanSupplier migrationWatcher
-    ) {
+    private ReadMapOrCacheP(@Nonnull Reader<F, B, R> reader, @Nonnull int[] partitionIds) {
         this.reader = reader;
         this.partitionIds = partitionIds;
-        this.migrationWatcher = migrationWatcher;
 
         readPointers = new IterationPointer[partitionIds.length][];
-
         Arrays.fill(readPointers, new IterationPointer[]{new IterationPointer(Integer.MAX_VALUE, -1)});
     }
 
@@ -146,12 +135,11 @@ public final class ReadMapOrCacheP<F extends CompletableFuture, B, R> extends Ab
     private void initialRead() {
         readFutures = (F[]) new CompletableFuture[partitionIds.length];
         for (int i = 0; i < readFutures.length; i++) {
-            readFutures[i] = reader.readBatch(partitionIds[i], readPointers[i].clone());
+            readFutures[i] = reader.readBatch(partitionIds[i], readPointers[i]);
         }
     }
 
     private boolean emitResultSet() {
-        checkMigration();
         for (; currentBatchPosition < currentBatch.size(); currentBatchPosition++) {
             Object result = reader.toObject(currentBatch.get(currentBatchPosition));
             if (result == null) {
@@ -194,7 +182,7 @@ public final class ReadMapOrCacheP<F extends CompletableFuture, B, R> extends Ab
             readPointers[currentPartitionIndex] = pointers;
             // make another read on the same partition
             readFutures[currentPartitionIndex] = !isDone(pointers)
-                    ? reader.readBatch(partitionIds[currentPartitionIndex], pointers.clone())
+                    ? reader.readBatch(partitionIds[currentPartitionIndex], pointers)
                     : null;
         }
 
@@ -226,12 +214,6 @@ public final class ReadMapOrCacheP<F extends CompletableFuture, B, R> extends Ab
             throw rethrow(e);
         }
         return result;
-    }
-
-    private void checkMigration() {
-        if (migrationWatcher.getAsBoolean()) {
-            throw new RestartableException("Partition migration detected");
-        }
     }
 
     static class LocalProcessorMetaSupplier<F extends CompletableFuture, B, R> implements ProcessorMetaSupplier {
@@ -272,7 +254,6 @@ public final class ReadMapOrCacheP<F extends CompletableFuture, B, R> extends Ab
         private final Function<HazelcastInstance, Reader<F, B, R>> readerSupplier;
         private final List<Integer> memberPartitions;
 
-        private transient BooleanSupplier migrationWatcher;
         private transient HazelcastInstanceImpl hzInstance;
 
         private LocalProcessorSupplier(
@@ -285,16 +266,13 @@ public final class ReadMapOrCacheP<F extends CompletableFuture, B, R> extends Ab
         @Override
         public void init(@Nonnull Context context) {
             hzInstance = (HazelcastInstanceImpl) context.jetInstance().getHazelcastInstance();
-            JetService jetService = hzInstance.node.nodeEngine.getService(JetService.SERVICE_NAME);
-            migrationWatcher = jetService.getSharedMigrationWatcher().createWatcher();
         }
 
         @Override @Nonnull
         public List<Processor> get(int count) {
             return distributeObjects(count, memberPartitions).values().stream()
                     .map(partitions -> partitions.stream().mapToInt(Integer::intValue).toArray())
-                    .map(partitions -> new ReadMapOrCacheP<>(readerSupplier.apply(hzInstance), partitions,
-                            migrationWatcher))
+                    .map(partitions -> new ReadMapOrCacheP<>(readerSupplier.apply(hzInstance), partitions))
                     .collect(toList());
         }
     }
@@ -307,7 +285,6 @@ public final class ReadMapOrCacheP<F extends CompletableFuture, B, R> extends Ab
         private final FunctionEx<HazelcastInstance, Reader<F, B, R>> readerSupplier;
 
         private transient HazelcastClientProxy client;
-        private transient MigrationWatcher migrationWatcher;
         private transient int totalParallelism;
         private transient int baseIndex;
 
@@ -322,16 +299,12 @@ public final class ReadMapOrCacheP<F extends CompletableFuture, B, R> extends Ab
         @Override
         public void init(@Nonnull Context context) {
             client = (HazelcastClientProxy) newHazelcastClient(asClientConfig(clientXml));
-            migrationWatcher = new MigrationWatcher(client);
             totalParallelism = context.totalParallelism();
             baseIndex = context.memberIndex() * context.localParallelism();
         }
 
         @Override
         public void close(Throwable error) {
-            if (migrationWatcher != null) {
-                migrationWatcher.deregister();
-            }
             if (client != null) {
                 client.shutdown();
             }
@@ -340,12 +313,11 @@ public final class ReadMapOrCacheP<F extends CompletableFuture, B, R> extends Ab
         @Override @Nonnull
         public List<Processor> get(int count) {
             int remotePartitionCount = client.client.getClientPartitionService().getPartitionCount();
-            BooleanSupplier watcherInstance = migrationWatcher.createWatcher();
 
             return IntStream.range(0, count)
                      .mapToObj(i -> {
                          int[] partitionIds = Util.roundRobinPart(remotePartitionCount, totalParallelism, baseIndex + i);
-                         return new ReadMapOrCacheP<>(readerSupplier.apply(client), partitionIds, watcherInstance);
+                         return new ReadMapOrCacheP<>(readerSupplier.apply(client), partitionIds);
                      })
                      .collect(Collectors.toList());
         }
@@ -417,7 +389,8 @@ public final class ReadMapOrCacheP<F extends CompletableFuture, B, R> extends Ab
 
         @Nonnull @Override
         public InternalCompletableFuture<CacheEntriesWithCursor> readBatch(int partitionId, IterationPointer[] pointers) {
-            Operation op = new CacheFetchEntriesOperation(cacheProxy.getPrefixedName(), pointers, MAX_FETCH_SIZE);
+            // clone the pointers as they can be mutated for local ops
+            Operation op = new CacheFetchEntriesOperation(cacheProxy.getPrefixedName(), pointers.clone(), MAX_FETCH_SIZE);
             //no access to CacheOperationProvider, have to be explicit
             OperationService operationService = cacheProxy.getOperationService();
             return operationService.invokeOnPartition(cacheProxy.getServiceName(), op, partitionId);
@@ -486,7 +459,8 @@ public final class ReadMapOrCacheP<F extends CompletableFuture, B, R> extends Ab
         @Nonnull @Override
         public InternalCompletableFuture<MapEntriesWithCursor> readBatch(int partitionId, IterationPointer[] pointers) {
             MapOperationProvider operationProvider = mapProxyImpl.getOperationProvider();
-            Operation op = operationProvider.createFetchEntriesOperation(objectName, pointers, MAX_FETCH_SIZE);
+            // clone the pointers as they can be mutated for local ops
+            Operation op = operationProvider.createFetchEntriesOperation(objectName, pointers.clone(), MAX_FETCH_SIZE);
             return mapProxyImpl.getOperationService().invokeOnPartition(mapProxyImpl.getServiceName(), op, partitionId);
         }
 
@@ -525,9 +499,10 @@ public final class ReadMapOrCacheP<F extends CompletableFuture, B, R> extends Ab
         @Nonnull @Override
         public InternalCompletableFuture<ResultSegment> readBatch(int partitionId, IterationPointer[] pointers) {
             MapOperationProvider operationProvider = mapProxyImpl.getOperationProvider();
+            // clone the pointers as they can be mutated for local ops
             MapOperation op = operationProvider.createFetchWithQueryOperation(
                     objectName,
-                    pointers,
+                    pointers.clone(),
                     MAX_FETCH_SIZE,
                     Query.of()
                          .mapName(objectName)
