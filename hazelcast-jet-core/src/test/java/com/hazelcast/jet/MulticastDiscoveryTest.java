@@ -55,22 +55,22 @@ public class MulticastDiscoveryTest extends JetTestSupport {
 
     @Test
     public void when_twoJetInstancesCreated_then_clusterOfTwoShouldBeFormed() {
-        JetInstance instance1 = Jet.newJetInstance();
-        JetInstance instance2 = Jet.newJetInstance();
+        JetInstance instance = Jet.newJetInstance();
+        Jet.newJetInstance();
 
-        assertEquals(2, instance1.getCluster().getMembers().size());
+        assertEquals(2, instance.getCluster().getMembers().size());
     }
 
     @Test
     public void when_twoJetAndTwoHzInstancesCreated_then_twoClustersOfTwoShouldBeFormed() {
-        JetInstance jetInstance1 = Jet.newJetInstance();
-        JetInstance jetInstance2 = Jet.newJetInstance();
+        JetInstance jetInstance = Jet.newJetInstance();
+        Jet.newJetInstance();
 
-        HazelcastInstance hazelcastInstance1 = Hazelcast.newHazelcastInstance();
-        HazelcastInstance hazelcastInstance2 = Hazelcast.newHazelcastInstance();
+        HazelcastInstance hazelcastInstance = Hazelcast.newHazelcastInstance();
+        Hazelcast.newHazelcastInstance();
 
-        assertEquals(2, jetInstance1.getCluster().getMembers().size());
-        assertEquals(2, hazelcastInstance1.getCluster().getMembers().size());
+        assertEquals(2, jetInstance.getCluster().getMembers().size());
+        assertEquals(2, hazelcastInstance.getCluster().getMembers().size());
     }
 
     @Test

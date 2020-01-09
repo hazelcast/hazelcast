@@ -23,7 +23,6 @@ import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.management.MCClusterMetadata;
 import com.hazelcast.client.impl.spi.ClientClusterService;
 import com.hazelcast.cluster.Cluster;
-import com.hazelcast.cluster.Member;
 import com.hazelcast.instance.JetBuildInfo;
 import com.hazelcast.internal.util.FutureUtil;
 import com.hazelcast.jet.Jet;
@@ -406,9 +405,8 @@ public class JetCommandLine implements Runnable {
             JetClientInstanceImpl client = (JetClientInstanceImpl) jet;
             HazelcastClientInstanceImpl hazelcastClient = client.getHazelcastClient();
             ClientClusterService clientClusterService = hazelcastClient.getClientClusterService();
-            Member masterMember = clientClusterService.getMember(clientClusterService.getMasterMember().getUuid());
             MCClusterMetadata clusterMetadata = FutureUtil.getValue(hazelcastClient.getManagementCenterService()
-                                                                                   .getClusterMetadata(masterMember));
+                    .getClusterMetadata(clientClusterService.getMasterMember()));
             Cluster cluster = client.getCluster();
 
             println("State: " + clusterMetadata.getCurrentState());
@@ -463,7 +461,7 @@ public class JetCommandLine implements Runnable {
         return config != null;
     }
 
-    private void configureLogging() throws IOException {
+    private void configureLogging() {
         JetBootstrap.configureLogging();
         Level logLevel = Level.WARNING;
         if (verbosity.isVerbose) {
