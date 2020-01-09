@@ -58,9 +58,8 @@ public final class ClientEndpointImpl implements ClientEndpoint {
     private final ILogger logger;
     private final NodeEngineImpl nodeEngine;
     private final Connection connection;
-    private final ConcurrentMap<UUID, TransactionContext> transactionContextMap
-            = new ConcurrentHashMap<>();
-    private final ConcurrentHashMap<UUID, Callable> removeListenerActions = new ConcurrentHashMap<>();
+    private final ConcurrentMap<UUID, TransactionContext> transactionContextMap = new ConcurrentHashMap<>();
+    private final ConcurrentMap<UUID, Callable> removeListenerActions = new ConcurrentHashMap<>();
     private final SocketAddress socketAddress;
     private final long creationTime;
 
@@ -72,6 +71,7 @@ public final class ClientEndpointImpl implements ClientEndpoint {
     private final AtomicReference<ClientStatistics> statsRef = new AtomicReference<>();
     private String clientName;
     private Set<String> labels;
+    private volatile boolean destroyed;
 
     public ClientEndpointImpl(ClientEngine clientEngine, NodeEngineImpl nodeEngine, Connection connection) {
         this.clientEngine = clientEngine;
@@ -182,6 +182,9 @@ public final class ClientEndpointImpl implements ClientEndpoint {
     @Override
     public void setTransactionContext(TransactionContext transactionContext) {
         transactionContextMap.put(transactionContext.getTxnId(), transactionContext);
+        if (destroyed) {
+            removedAndRollbackTransactionContext(transactionContext.getTxnId());
+        }
     }
 
     @Override
@@ -198,6 +201,9 @@ public final class ClientEndpointImpl implements ClientEndpoint {
     @Override
     public void addDestroyAction(UUID registrationId, Callable<Boolean> removeAction) {
         removeListenerActions.put(registrationId, removeAction);
+        if (destroyed) {
+            removeAndCallRemoveAction(registrationId);
+        }
     }
 
     @Override
@@ -205,29 +211,41 @@ public final class ClientEndpointImpl implements ClientEndpoint {
         return removeListenerActions.remove(id) != null;
     }
 
-    @Override
-    public void clearAllListeners() {
-        for (Callable removeAction : removeListenerActions.values()) {
-            try {
-                removeAction.call();
-            } catch (Exception e) {
-                logger.warning("Exception during remove listener action", e);
-            }
-        }
-        removeListenerActions.clear();
-    }
-
     public void destroy() throws LoginException {
-        clearAllListeners();
+        destroyed = true;
         nodeEngine.onClientDisconnected(getUuid());
 
         LoginContext lc = loginContext;
         if (lc != null) {
             lc.logout();
         }
-        for (TransactionContext context : transactionContextMap.values()) {
+
+        for (UUID registrationId : removeListenerActions.keySet()) {
+            removeAndCallRemoveAction(registrationId);
+        }
+
+        for (UUID txnId : transactionContextMap.keySet()) {
+            removedAndRollbackTransactionContext(txnId);
+        }
+        authenticated = false;
+    }
+
+    private void removeAndCallRemoveAction(UUID uuid) {
+        Callable callable = removeListenerActions.remove(uuid);
+        if (callable != null) {
+            try {
+                callable.call();
+            } catch (Exception e) {
+                logger.warning("Exception during remove listener action", e);
+            }
+        }
+    }
+
+    private void removedAndRollbackTransactionContext(UUID txnId) {
+        TransactionContext context = transactionContextMap.remove(txnId);
+        if (context != null) {
             if (context instanceof XATransactionContextImpl) {
-                continue;
+                return;
             }
             try {
                 context.rollbackTransaction();
@@ -237,7 +255,6 @@ public final class ClientEndpointImpl implements ClientEndpoint {
                 logger.warning(e);
             }
         }
-        authenticated = false;
     }
 
     @Override
@@ -271,13 +288,13 @@ public final class ClientEndpointImpl implements ClientEndpoint {
 
                 private MetricDescriptor enhanceDescriptor(MetricDescriptor descriptor, long timestamp) {
                     return descriptor
-                        // we exclude all metric targets here besides MANAGEMENT_CENTER
-                        // since we want to send the client-side metrics only to MC
-                        .withExcludedTargets(MetricTarget.ALL_TARGETS)
-                        .withIncludedTarget(MANAGEMENT_CENTER)
-                        // we add "client" and "timestamp" tags for MC
-                        .withTag(METRICS_TAG_CLIENT, getUuid().toString())
-                        .withTag(METRICS_TAG_TIMESTAMP, Long.toString(timestamp));
+                            // we exclude all metric targets here besides MANAGEMENT_CENTER
+                            // since we want to send the client-side metrics only to MC
+                            .withExcludedTargets(MetricTarget.ALL_TARGETS)
+                            .withIncludedTarget(MANAGEMENT_CENTER)
+                            // we add "client" and "timestamp" tags for MC
+                            .withTag(METRICS_TAG_CLIENT, getUuid().toString())
+                            .withTag(METRICS_TAG_TIMESTAMP, Long.toString(timestamp));
                 }
             };
             MetricsCompressor.extractMetrics(metricsBlob, consumer);

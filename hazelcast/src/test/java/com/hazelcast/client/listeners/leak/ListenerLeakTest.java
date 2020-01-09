@@ -263,4 +263,17 @@ public class ListenerLeakTest extends ClientTestSupport {
         Map<UUID, Consumer<Long>> backupListeners = ((ClientEngineImpl) getNode(hazelcast).clientEngine).getBackupListeners();
         assertTrueEventually(() -> assertEquals(0, backupListeners.size()));
     }
+
+    @Test
+    public void testListenerLeakOnMember_whenClientDestroyed() {
+        Collection<Node> nodes = createNodes();
+
+        for (int i = 0; i < 100; i++) {
+            newHazelcastClient().shutdown();
+        }
+
+        for (Node node : nodes) {
+            assertEquals(0, node.getClientEngine().getClusterListenerService().getClusterListeningEndpoints().size());
+        }
+    }
 }
