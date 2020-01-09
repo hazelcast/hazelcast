@@ -44,6 +44,12 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
 @SuppressWarnings("checkstyle:finalclass")
 public class Indexes {
 
+    /**
+     * The partitions count check detects a race condition when a
+     * query is executed on the index which is under (re)construction.
+     * The negative value means the check should be skipped.
+     */
+    public static final int SKIP_PARTITIONS_COUNT_CHECK = -1;
     private static final InternalIndex[] EMPTY_INDEXES = {};
 
     private final boolean global;
@@ -316,12 +322,14 @@ public class Indexes {
     /**
      * Performs a query on this indexes instance using the given predicate.
      *
-     * @param predicate the predicate to evaluate.
+     * @param predicate           the predicate to evaluate.
+     * @param ownedPartitionCount a count of owned partitions a query runs on.
+     *                            Negative value indicates that the value is not defined.
      * @return the produced result set or {@code null} if the query can't be
      * performed using the indexes known to this indexes instance.
      */
     @SuppressWarnings("unchecked")
-    public Set<QueryableEntry> query(Predicate predicate) {
+    public Set<QueryableEntry> query(Predicate predicate, int ownedPartitionCount) {
         stats.incrementQueryCount();
 
         if (!haveAtLeastOneIndex() || !(predicate instanceof IndexAwarePredicate)) {
@@ -329,7 +337,7 @@ public class Indexes {
         }
 
         IndexAwarePredicate indexAwarePredicate = (IndexAwarePredicate) predicate;
-        QueryContext queryContext = queryContextProvider.obtainContextFor(this);
+        QueryContext queryContext = queryContextProvider.obtainContextFor(this, ownedPartitionCount);
         if (!indexAwarePredicate.isIndexed(queryContext)) {
             return null;
         }
@@ -346,19 +354,28 @@ public class Indexes {
     /**
      * Matches an index for the given pattern and match hint.
      *
-     * @param pattern   the pattern to match an index for. May be either an
-     *                  attribute name or an exact index name.
-     * @param matchHint the match hint.
+     * @param pattern             the pattern to match an index for. May be either an
+     *                            attribute name or an exact index name.
+     * @param matchHint           the match hint.
+     * @param ownedPartitionCount a count of owned partitions a query runs on.
+     *                            Negative value indicates that the value is not defined.
      * @return the matched index or {@code null} if nothing matched.
      * @see QueryContext.IndexMatchHint
      * @see Indexes#matchIndex
      */
-    public InternalIndex matchIndex(String pattern, QueryContext.IndexMatchHint matchHint) {
+    public InternalIndex matchIndex(String pattern, QueryContext.IndexMatchHint matchHint, int ownedPartitionCount) {
+        InternalIndex index;
         if (matchHint == QueryContext.IndexMatchHint.EXACT_NAME) {
-            return indexesByName.get(pattern);
+            index = indexesByName.get(pattern);
         } else {
-            return attributeIndexRegistry.match(pattern, matchHint);
+            index = attributeIndexRegistry.match(pattern, matchHint);
         }
+
+        if (index == null || !index.allPartitionsIndexed(ownedPartitionCount)) {
+            return null;
+        }
+
+        return index;
     }
 
     /**

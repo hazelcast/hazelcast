@@ -21,6 +21,7 @@ import com.hazelcast.core.TypeConverter;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import static com.hazelcast.query.impl.Indexes.SKIP_PARTITIONS_COUNT_CHECK;
 import static com.hazelcast.query.impl.TypeConverters.NULL_CONVERTER;
 
 /**
@@ -111,7 +112,8 @@ public final class ConverterCache {
         }
 
         // try non-composite index first, if any
-        InternalIndex nonCompositeIndex = indexes.matchIndex(attribute, QueryContext.IndexMatchHint.NONE);
+        InternalIndex nonCompositeIndex = indexes.matchIndex(attribute, QueryContext.IndexMatchHint.NONE,
+                SKIP_PARTITIONS_COUNT_CHECK);
         if (nonCompositeIndex != null) {
             TypeConverter converter = nonCompositeIndex.getConverter();
             if (isNull(converter)) {

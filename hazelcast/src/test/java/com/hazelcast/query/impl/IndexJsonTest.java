@@ -38,6 +38,7 @@ import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 import java.util.Arrays;
 import java.util.Collection;
 
+import static com.hazelcast.query.impl.Indexes.SKIP_PARTITIONS_COUNT_CHECK;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(Parameterized.class)
@@ -78,9 +79,9 @@ public class IndexJsonTest {
         assertEquals(0, numberIndex.getRecords(-1).size());
         assertEquals(1001, stringIndex.getRecords("sancar").size());
         assertEquals(501, boolIndex.getRecords(true).size());
-        assertEquals(501, is.query(new AndPredicate(new EqualPredicate("name", "sancar"), new EqualPredicate("active", "true"))).size());
-        assertEquals(300, is.query(Predicates.and(Predicates.greaterThan("age", 400), Predicates.equal("active", true))).size());
-        assertEquals(1001, is.query(new SqlPredicate("name == sancar")).size());
+        assertEquals(501, is.query(new AndPredicate(new EqualPredicate("name", "sancar"), new EqualPredicate("active", "true")), SKIP_PARTITIONS_COUNT_CHECK).size());
+        assertEquals(300, is.query(Predicates.and(Predicates.greaterThan("age", 400), Predicates.equal("active", true)), SKIP_PARTITIONS_COUNT_CHECK).size());
+        assertEquals(1001, is.query(new SqlPredicate("name == sancar"), SKIP_PARTITIONS_COUNT_CHECK).size());
     }
 
 }

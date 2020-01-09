@@ -83,6 +83,9 @@ public class CompositeEqualPredicate implements Predicate, IndexAwarePredicate {
     @Override
     public Set<QueryableEntry> filter(QueryContext queryContext) {
         Index index = queryContext.matchIndex(indexName, QueryContext.IndexMatchHint.EXACT_NAME);
+        if (index == null) {
+            return null;
+        }
         return index.getRecords(value);
     }
 

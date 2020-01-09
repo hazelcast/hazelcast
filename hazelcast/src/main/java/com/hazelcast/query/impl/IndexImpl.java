@@ -58,6 +58,14 @@ public class IndexImpl extends AbstractIndex {
     }
 
     @Override
+    public boolean allPartitionsIndexed(int ownedPartitionCount) {
+        // This check guarantees that all partitions are indexed
+        // only if there is no concurrent migrations. Check migration stamp
+        // to detect concurrent migrations if needed.
+        return ownedPartitionCount < 0 || indexedPartitions.size() == ownedPartitionCount;
+    }
+
+    @Override
     public void markPartitionAsIndexed(int partitionId) {
         assert !indexedPartitions.contains(partitionId);
         indexedPartitions.add(partitionId);

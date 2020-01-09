@@ -67,6 +67,9 @@ public class BoundedRangePredicate extends AbstractIndexAwarePredicate implement
     @Override
     public Set<QueryableEntry> filter(QueryContext queryContext) {
         Index index = matchIndex(queryContext, QueryContext.IndexMatchHint.PREFER_ORDERED);
+        if (index == null) {
+            return null;
+        }
         return index.getRecords(from, fromInclusive, to, toInclusive);
     }
 

@@ -34,8 +34,9 @@ public class PartitionQueryContextProviderWithStats implements QueryContextProvi
     }
 
     @Override
-    public QueryContext obtainContextFor(Indexes indexes) {
-        queryContext.attachTo(indexes);
+    public QueryContext obtainContextFor(Indexes indexes, int ownedPartitionCount) {
+        assert queryContext.ownedPartitionCount == 1 && ownedPartitionCount == 1;
+        queryContext.attachTo(indexes, ownedPartitionCount);
         return queryContext;
     }
 
